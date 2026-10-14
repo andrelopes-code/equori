@@ -6,6 +6,7 @@ services:
       - "8080:8080"
     environment:
       EQUORI_DATABASE_URL: postgres://equori:${POSTGRES_PASSWORD:-equori}@db:5432/equori?sslmode=disable
+      EQUORI_TIMEZONE: ${EQUORI_TIMEZONE:-UTC}
     depends_on:
       db:
         condition: service_healthy

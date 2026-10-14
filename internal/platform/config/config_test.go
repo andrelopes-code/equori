@@ -3,6 +3,7 @@ package config
 import (
 	"log/slog"
 	"testing"
+	"time"
 )
 
 func TestLoad(t *testing.T) {
@@ -15,7 +16,7 @@ func TestLoad(t *testing.T) {
 		{
 			name: "defaults",
 			env:  map[string]string{"EQUORI_DATABASE_URL": "postgres://x"},
-			want: Config{DatabaseURL: "postgres://x", HTTPAddr: ":8080", LogLevel: slog.LevelInfo},
+			want: Config{DatabaseURL: "postgres://x", HTTPAddr: ":8080", LogLevel: slog.LevelInfo, TimeZone: time.UTC},
 		},
 		{
 			name: "explicit values",
@@ -24,13 +25,22 @@ func TestLoad(t *testing.T) {
 				"EQUORI_HTTP_ADDR":        "127.0.0.1:9000",
 				"EQUORI_LOG_LEVEL":        "debug",
 				"EQUORI_INSECURE_COOKIES": "true",
+				"EQUORI_TIMEZONE":         "UTC",
 			},
-			want: Config{DatabaseURL: "postgres://x", HTTPAddr: "127.0.0.1:9000", LogLevel: slog.LevelDebug, InsecureCookies: true},
+			want: Config{
+				DatabaseURL: "postgres://x", HTTPAddr: "127.0.0.1:9000", LogLevel: slog.LevelDebug,
+				TimeZone: time.UTC, InsecureCookies: true,
+			},
 		},
 		{name: "missing database url", env: map[string]string{}, wantErr: true},
 		{
 			name:    "invalid insecure cookies",
 			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_INSECURE_COOKIES": "maybe"},
+			wantErr: true,
+		},
+		{
+			name:    "unknown time zone",
+			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_TIMEZONE": "Mars/Olympus"},
 			wantErr: true,
 		},
 		{
@@ -49,5 +59,17 @@ func TestLoad(t *testing.T) {
 				t.Fatalf("got %+v, want %+v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestLoadNamedTimeZone(t *testing.T) {
+	cfg, err := Load(func(k string) string {
+		return map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_TIMEZONE": "America/Sao_Paulo"}[k]
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.TimeZone.String() != "America/Sao_Paulo" {
+		t.Fatalf("TimeZone = %s", cfg.TimeZone)
 	}
 }

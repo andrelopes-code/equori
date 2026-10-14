@@ -13,7 +13,7 @@ Module layout:
 internal/<module>/
   <module>.go          # public API: Module, Service interface, DTOs
   internal/
-    domain/            # entities and invariants; stdlib only
+    domain/            # entities and invariants; stdlib and platform/money only
     app/               # use cases; declares ports (Repository, Clock)
     adapter/
       postgres/        # implements ports; sqlc output (*.gen.go) lives here
@@ -27,7 +27,7 @@ The root package composes the module and exposes `RegisterRoutes`; `cmd/equori` 
 
 | Rule | Enforcement |
 |---|---|
-| `domain` imports only the stdlib | `depguard` (`.golangci.yml`) |
+| `domain` imports only the stdlib and `internal/platform/money` (ADR 005) | `depguard` (`.golangci.yml`) |
 | `app` does not import `adapter`, `net/http`, `database/sql` or `pgx` | `depguard` |
 | A module reaches another module only through its root package | Compiler: nested `internal` directory |
 | Each table has one owner module; only the owner writes to it | Table name prefixed by module; sqlc queries in `db/queries/<module>/` |

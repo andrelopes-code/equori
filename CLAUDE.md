@@ -48,7 +48,7 @@ Everything is in English: identifiers, files, packages, comments, log messages, 
 ## Code
 
 - Standard library first. A new dependency needs an ADR or explicit approval.
-- Money is `domain.Money{Amount int64, Currency string}` in minor units. Never `float64`.
+- Cross-cutting conventions (transactions, money, dates, pagination) are in ADR 005: `platform/money`, `platform/clock`, `platform/page`. Never `float64` for amounts.
 - `context.Context` is the first parameter of any function doing I/O.
 - No global mutable state. Dependencies are passed through constructors.
 - Tests sit next to the code, table-driven. Postgres adapters are tested against a real database from `pgtest.New(t)`, not mocks.

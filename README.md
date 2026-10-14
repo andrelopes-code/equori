@@ -25,6 +25,7 @@ docker compose exec app /equori user create --email you@example.com --admin
 | `EQUORI_DATABASE_URL` | set by `compose.yaml` | PostgreSQL connection URL |
 | `EQUORI_HTTP_ADDR` | `:8080` | HTTP listen address |
 | `EQUORI_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
+| `EQUORI_TIMEZONE` | `UTC` | IANA time zone for "today" and month boundaries, e.g. `America/Sao_Paulo` |
 | `EQUORI_INSECURE_COOKIES` | `false` | `true` drops the `Secure` cookie attribute; required to log in over plain HTTP from another host |
 | `POSTGRES_PASSWORD` | `equori` | Database password used by `compose.yaml` |
 

@@ -11,6 +11,7 @@ import (
 	"runtime/debug"
 	"syscall"
 	"time"
+	_ "time/tzdata" // EQUORI_TIMEZONE must resolve in images without a zoneinfo database.
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -53,7 +54,7 @@ func serve() error {
 	if err != nil {
 		return err
 	}
-	log.Info("starting equori", "version", buildVersion())
+	log.Info("starting equori", "version", buildVersion(), "timezone", cfg.TimeZone.String())
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

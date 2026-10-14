@@ -19,6 +19,7 @@ linters:
           allow:
             - $gostd
             - github.com/andrelopes-code/equori/internal/*/internal/domain
+            - github.com/andrelopes-code/equori/internal/platform/money
         app:
           list-mode: lax
           files:

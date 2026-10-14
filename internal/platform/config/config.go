@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
+	"time"
 )
 
 type Config struct {
 	DatabaseURL string
 	HTTPAddr    string
 	LogLevel    slog.Level
+	// TimeZone defines "today" and month boundaries for accounting dates (ADR 005).
+	TimeZone *time.Location
 	// InsecureCookies drops the Secure cookie attribute for plain-HTTP LAN deployments (ADR 003).
 	InsecureCookies bool
 }
@@ -32,6 +35,11 @@ func Load(getenv func(string) string) (Config, error) {
 			return Config{}, fmt.Errorf("EQUORI_LOG_LEVEL: %w", err)
 		}
 	}
+	tz, err := time.LoadLocation(getenv("EQUORI_TIMEZONE"))
+	if err != nil {
+		return Config{}, fmt.Errorf("EQUORI_TIMEZONE: %w", err)
+	}
+	cfg.TimeZone = tz
 	if v := getenv("EQUORI_INSECURE_COOKIES"); v != "" {
 		b, err := strconv.ParseBool(v)
 		if err != nil {
