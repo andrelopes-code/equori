@@ -1,0 +1,30 @@
+services:
+  app:
+    image: ghcr.io/andrelopes-code/equori:latest
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      EQUORI_DATABASE_URL: postgres://equori:${POSTGRES_PASSWORD:-equori}@db:5432/equori?sslmode=disable
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: equori
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-equori}
+      POSTGRES_DB: equori
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "equori", "-d", "equori"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  pgdata:

@@ -1,0 +1,48 @@
+version: "2"
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - depguard
+    - dupl
+    - errorlint
+    - gosec
+    - noctx
+  settings:
+    depguard:
+      rules:
+        domain:
+          list-mode: strict
+          files:
+            - "**/internal/domain/**"
+          allow:
+            - $gostd
+            - github.com/andrelopes-code/equori/internal/*/internal/domain
+        app:
+          list-mode: lax
+          files:
+            - "**/internal/app/**"
+          deny:
+            - pkg: net/http
+              desc: app must not depend on transport; use adapter/httpapi
+            - pkg: database/sql
+              desc: app reaches data through ports; use adapter/postgres
+            - pkg: github.com/jackc/pgx
+              desc: app reaches data through ports; use adapter/postgres
+            - pkg: github.com/andrelopes-code/equori/internal/*/internal/adapter
+              desc: inverted dependency; adapter imports app, never the reverse
+            - pkg: github.com/andrelopes-code/equori/internal/platform/problem
+              desc: HTTP error mapping belongs to adapter/httpapi (ADR 004)
+  exclusions:
+    presets:
+      - std-error-handling
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/andrelopes-code/equori

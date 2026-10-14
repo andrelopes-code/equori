@@ -1,0 +1,106 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"log/slog"
+	"net"
+	"net/http"
+	"os"
+	"os/signal"
+	"runtime/debug"
+	"syscall"
+	"time"
+
+	"github.com/andrelopes-code/equori/internal/platform/config"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
+	"github.com/andrelopes-code/equori/internal/platform/postgres"
+)
+
+// version is set at build time with -ldflags "-X main.version=...".
+var version string
+
+func main() {
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "healthcheck":
+			os.Exit(healthcheck())
+		case "version":
+			fmt.Println(buildVersion())
+			return
+		default:
+			fmt.Fprintf(os.Stderr, "unknown command %q; available: healthcheck, version\n", os.Args[1])
+			os.Exit(2)
+		}
+	}
+	if err := run(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
+	cfg, err := config.Load(os.Getenv)
+	if err != nil {
+		return err
+	}
+	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: cfg.LogLevel}))
+	log.Info("starting equori", "version", buildVersion())
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	pool, err := postgres.Open(ctx, cfg.DatabaseURL)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+
+	if err := postgres.Migrate(ctx, pool, log); err != nil {
+		return err
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle("GET /healthz", httpserver.Health(pool))
+
+	return httpserver.Run(ctx, cfg.HTTPAddr, httpserver.Middleware(mux, log), log)
+}
+
+// healthcheck backs the container HEALTHCHECK: the distroless image has no curl.
+//
+//nolint:gosec // G704: host is fixed to 127.0.0.1; only the port comes from EQUORI_HTTP_ADDR.
+func healthcheck() int {
+	port := "8080"
+	if addr := os.Getenv("EQUORI_HTTP_ADDR"); addr != "" {
+		_, p, err := net.SplitHostPort(addr)
+		if err != nil {
+			return 1
+		}
+		port = p
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://"+net.JoinHostPort("127.0.0.1", port)+"/healthz", nil)
+	if err != nil {
+		return 1
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return 1
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return 1
+	}
+	return 0
+}
+
+func buildVersion() string {
+	if version != "" {
+		return version
+	}
+	if info, ok := debug.ReadBuildInfo(); ok {
+		return info.Main.Version
+	}
+	return "unknown"
+}

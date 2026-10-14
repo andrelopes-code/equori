@@ -1,0 +1,6 @@
+.git
+.github
+.claude
+bin
+docs
+web/node_modules

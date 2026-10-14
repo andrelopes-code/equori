@@ -1,0 +1,5 @@
+# Development override: publishes Postgres on 127.0.0.1 only. Port 54329 avoids clashing with a host Postgres on 5432.
+services:
+  db:
+    ports:
+      - "127.0.0.1:${EQUORI_DEV_DB_PORT:-54329}:5432"
