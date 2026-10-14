@@ -1,0 +1,141 @@
+openapi: 3.0.3
+info:
+  title: equori API
+  version: 0.1.0
+  description: |
+    Every endpoint under /api/v1 requires a session cookie except POST /api/v1/session.
+    Errors use RFC 9457 problem details (docs/adr/004-api-errors.md).
+servers:
+  - url: /api/v1
+tags:
+  - name: identity
+    description: Users and sessions.
+paths:
+  /session:
+    post:
+      tags: [identity]
+      operationId: createSession
+      summary: Log in and start a session.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Credentials"
+      responses:
+        "204":
+          description: Session created.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [identity]
+      operationId: deleteSession
+      summary: Log out and end the current session.
+      parameters:
+        - $ref: "#/components/parameters/SessionCookie"
+      responses:
+        "204":
+          description: Session ended.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Problem"
+  /me:
+    get:
+      tags: [identity]
+      operationId: getCurrentUser
+      summary: Return the authenticated user.
+      responses:
+        "200":
+          description: Authenticated user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Problem"
+security:
+  - sessionCookie: []
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: equori_session
+  parameters:
+    SessionCookie:
+      name: equori_session
+      in: cookie
+      required: false
+      schema:
+        type: string
+  responses:
+    Problem:
+      description: Error.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+  schemas:
+    Credentials:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+    User:
+      type: object
+      required: [id, email, role]
+      properties:
+        id:
+          type: integer
+          format: int64
+        email:
+          type: string
+        role:
+          type: string
+          enum: [admin, member]
+    Problem:
+      type: object
+      required: [type, title, status, code]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          type: string
+          description: |
+            Stable error identifier. Values: invalid_request, invalid_credentials,
+            too_many_attempts, unauthenticated, forbidden, not_found, validation_failed, internal_error.
+        request_id:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/FieldError"
+    FieldError:
+      type: object
+      required: [field, message]
+      properties:
+        field:
+          type: string
+        message:
+          type: string

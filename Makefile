@@ -6,9 +6,9 @@ DEV_DATABASE_URL := postgres://equori:equori@127.0.0.1:$(EQUORI_DEV_DB_PORT)/equ
 # Tests create and drop one database per test on this server.
 export EQUORI_TEST_DATABASE_URL ?= postgres://equori:equori@127.0.0.1:$(EQUORI_DEV_DB_PORT)/postgres?sslmode=disable
 
-.PHONY: check fmt fmt-check lint tidy-check test vuln build dev db-up db-down hooks
+.PHONY: check fmt fmt-check lint tidy-check gen gen-check test vuln build dev db-up db-down hooks tools
 
-check: fmt-check tidy-check lint test
+check: fmt-check tidy-check gen-check lint test
 
 fmt: $(TOOLS)
 	$(BIN)/golangci-lint fmt
@@ -18,6 +18,17 @@ fmt-check: $(TOOLS)
 
 lint: $(TOOLS)
 	$(BIN)/golangci-lint run
+
+# Each module's adapter/httpapi holds an oapi-codegen.yaml selecting its tag from api/openapi.yaml.
+gen: $(TOOLS)
+	$(BIN)/sqlc generate
+	for cfg in $$(find internal -name oapi-codegen.yaml); do \
+		(cd $$(dirname $$cfg) && $(BIN)/oapi-codegen -config oapi-codegen.yaml $(CURDIR)/api/openapi.yaml) || exit 1; \
+	done
+
+gen-check: gen
+	git diff --exit-code -- '*.gen.go'
+	test -z "$$(git ls-files --others --exclude-standard -- '*.gen.go')"
 
 tidy-check:
 	go mod tidy -diff
@@ -43,6 +54,8 @@ db-down:
 
 hooks:
 	git config core.hooksPath .githooks
+
+tools: $(TOOLS)
 
 # Tool versions are pinned in tools/go.mod; rebuilt when tools/go.sum changes.
 $(TOOLS): tools/go.mod tools/go.sum

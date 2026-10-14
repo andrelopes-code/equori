@@ -12,6 +12,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/andrelopes-code/equori/internal/identity"
 	"github.com/andrelopes-code/equori/internal/platform/config"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/postgres"
@@ -21,49 +24,75 @@ import (
 var version string
 
 func main() {
+	cmd := "serve"
 	if len(os.Args) > 1 {
-		switch os.Args[1] {
-		case "healthcheck":
-			os.Exit(healthcheck())
-		case "version":
-			fmt.Println(buildVersion())
-			return
-		default:
-			fmt.Fprintf(os.Stderr, "unknown command %q; available: healthcheck, version\n", os.Args[1])
-			os.Exit(2)
-		}
+		cmd = os.Args[1]
 	}
-	if err := run(); err != nil {
+	var err error
+	switch cmd {
+	case "serve":
+		err = serve()
+	case "user":
+		err = userCommand(os.Args[2:])
+	case "healthcheck":
+		os.Exit(healthcheck())
+	case "version":
+		fmt.Println(buildVersion())
+	default:
+		fmt.Fprintf(os.Stderr, "unknown command %q; available: serve, user, healthcheck, version\n", cmd)
+		os.Exit(2)
+	}
+	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func run() error {
-	cfg, err := config.Load(os.Getenv)
+func serve() error {
+	cfg, log, err := setup()
 	if err != nil {
 		return err
 	}
-	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: cfg.LogLevel}))
 	log.Info("starting equori", "version", buildVersion())
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	pool, err := postgres.Open(ctx, cfg.DatabaseURL)
+	pool, err := openDatabase(ctx, cfg, log)
 	if err != nil {
 		return err
 	}
 	defer pool.Close()
 
-	if err := postgres.Migrate(ctx, pool, log); err != nil {
-		return err
-	}
+	identityModule := identity.New(pool, identity.Config{SecureCookies: !cfg.InsecureCookies}, log)
 
 	mux := http.NewServeMux()
 	mux.Handle("GET /healthz", httpserver.Health(pool))
+	identityModule.RegisterRoutes(mux)
 
-	return httpserver.Run(ctx, cfg.HTTPAddr, httpserver.Middleware(mux, log), log)
+	handler := httpserver.Middleware(identityModule.RequireSession(mux), log)
+	return httpserver.Run(ctx, cfg.HTTPAddr, handler, log)
+}
+
+func setup() (config.Config, *slog.Logger, error) {
+	cfg, err := config.Load(os.Getenv)
+	if err != nil {
+		return config.Config{}, nil, err
+	}
+	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: cfg.LogLevel}))
+	return cfg, log, nil
+}
+
+func openDatabase(ctx context.Context, cfg config.Config, log *slog.Logger) (*pgxpool.Pool, error) {
+	pool, err := postgres.Open(ctx, cfg.DatabaseURL)
+	if err != nil {
+		return nil, err
+	}
+	if err := postgres.Migrate(ctx, pool, log); err != nil {
+		pool.Close()
+		return nil, err
+	}
+	return pool, nil
 }
 
 // healthcheck backs the container HEALTHCHECK: the distroless image has no curl.

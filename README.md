@@ -4,7 +4,7 @@ Self-hosted personal finance manager.
 
 Status: early development. No features yet.
 
-Security reports: see [SECURITY.md](SECURITY.md).
+API contract: [api/openapi.yaml](api/openapi.yaml). Security reports: [SECURITY.md](SECURITY.md).
 
 ## Run
 
@@ -14,11 +14,18 @@ POSTGRES_PASSWORD=change-me docker compose up -d
 
 The app listens on `http://localhost:8080`. `GET /healthz` returns `200` when the database is reachable.
 
+Create the first admin (the password is prompted without echo):
+
+```sh
+docker compose exec app /equori user create --email you@example.com --admin
+```
+
 | Variable | Default | Description |
 |---|---|---|
 | `EQUORI_DATABASE_URL` | set by `compose.yaml` | PostgreSQL connection URL |
 | `EQUORI_HTTP_ADDR` | `:8080` | HTTP listen address |
 | `EQUORI_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
+| `EQUORI_INSECURE_COOKIES` | `false` | `true` drops the `Secure` cookie attribute; required to log in over plain HTTP from another host |
 | `POSTGRES_PASSWORD` | `equori` | Database password used by `compose.yaml` |
 
 Data lives in the `pgdata` Docker volume. Back it up with:
@@ -37,7 +44,8 @@ Requirements: Go 1.27, Docker, make.
 make hooks    # pre-commit runs make check
 make db-up    # local Postgres on 127.0.0.1:54329 (EQUORI_DEV_DB_PORT)
 make dev      # run the app
-make check    # format check, tidy check, lint, test (starts Postgres)
+make gen      # regenerate sqlc and oapi-codegen output
+make check    # format, tidy and codegen checks, lint, test (starts Postgres)
 ```
 
 ## License

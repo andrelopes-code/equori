@@ -3,7 +3,6 @@ package postgres
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/fs"
 	"log/slog"
@@ -27,7 +26,6 @@ func Open(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-// Migrate returns nil when db/migrations contains no .sql file.
 func Migrate(ctx context.Context, pool *pgxpool.Pool, log *slog.Logger) error {
 	dir, err := fs.Sub(db.Migrations, "migrations")
 	if err != nil {
@@ -37,9 +35,6 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool, log *slog.Logger) error {
 	defer sqlDB.Close()
 
 	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, dir)
-	if errors.Is(err, goose.ErrNoMigrations) {
-		return nil
-	}
 	if err != nil {
 		return fmt.Errorf("create migration provider: %w", err)
 	}

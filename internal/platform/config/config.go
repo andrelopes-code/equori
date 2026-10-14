@@ -5,12 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strconv"
 )
 
 type Config struct {
 	DatabaseURL string
 	HTTPAddr    string
 	LogLevel    slog.Level
+	// InsecureCookies drops the Secure cookie attribute for plain-HTTP LAN deployments (ADR 003).
+	InsecureCookies bool
 }
 
 func Load(getenv func(string) string) (Config, error) {
@@ -28,6 +31,13 @@ func Load(getenv func(string) string) (Config, error) {
 		if err := cfg.LogLevel.UnmarshalText([]byte(lvl)); err != nil {
 			return Config{}, fmt.Errorf("EQUORI_LOG_LEVEL: %w", err)
 		}
+	}
+	if v := getenv("EQUORI_INSECURE_COOKIES"); v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			return Config{}, fmt.Errorf("EQUORI_INSECURE_COOKIES: %w", err)
+		}
+		cfg.InsecureCookies = b
 	}
 	return cfg, nil
 }

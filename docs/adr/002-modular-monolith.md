@@ -16,9 +16,12 @@ internal/<module>/
     domain/            # entities and invariants; stdlib only
     app/               # use cases; declares ports (Repository, Clock)
     adapter/
-      postgres/        # implements ports with sqlc code
-      httpapi/         # HTTP handlers → app
+      postgres/        # implements ports; sqlc output (*.gen.go) lives here
+      httpapi/         # strict server from api/openapi.yaml (oapi-codegen.yaml selects the module tag)
+    <mechanism>/       # optional module-private package, e.g. identity/internal/password
 ```
+
+The root package composes the module and exposes `RegisterRoutes`; `cmd/equori` registers every module on one `http.ServeMux`.
 
 ## Dependency rules
 

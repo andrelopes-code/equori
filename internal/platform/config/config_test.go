@@ -20,13 +20,19 @@ func TestLoad(t *testing.T) {
 		{
 			name: "explicit values",
 			env: map[string]string{
-				"EQUORI_DATABASE_URL": "postgres://x",
-				"EQUORI_HTTP_ADDR":    "127.0.0.1:9000",
-				"EQUORI_LOG_LEVEL":    "debug",
+				"EQUORI_DATABASE_URL":     "postgres://x",
+				"EQUORI_HTTP_ADDR":        "127.0.0.1:9000",
+				"EQUORI_LOG_LEVEL":        "debug",
+				"EQUORI_INSECURE_COOKIES": "true",
 			},
-			want: Config{DatabaseURL: "postgres://x", HTTPAddr: "127.0.0.1:9000", LogLevel: slog.LevelDebug},
+			want: Config{DatabaseURL: "postgres://x", HTTPAddr: "127.0.0.1:9000", LogLevel: slog.LevelDebug, InsecureCookies: true},
 		},
 		{name: "missing database url", env: map[string]string{}, wantErr: true},
+		{
+			name:    "invalid insecure cookies",
+			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_INSECURE_COOKIES": "maybe"},
+			wantErr: true,
+		},
 		{
 			name:    "invalid log level",
 			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_LOG_LEVEL": "verbose"},

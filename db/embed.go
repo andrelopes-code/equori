@@ -3,7 +3,5 @@ package db
 
 import "embed"
 
-// The all: prefix includes .gitkeep, which keeps the embed valid while no migration exists.
-//
-//go:embed all:migrations
+//go:embed migrations/*.sql
 var Migrations embed.FS
