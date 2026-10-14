@@ -70,4 +70,6 @@ Write a comment only when it carries information the code cannot: a non-obvious 
 
 ## Commits
 
-Conventional Commits: `<type>(<scope>): <summary>`, imperative, lowercase, no trailing period. Types: `feat`, `fix`, `refactor`, `test`, `docs`, `build`, `ci`, `chore`. Scope is the module or `platform`.
+Conventional Commits 1.0: `<type>(<scope>): <summary>`, imperative, lowercase, no trailing period, summary at most 72 characters. Types: `feat`, `fix`, `refactor`, `perf`, `test`, `docs`, `build`, `ci`, `chore`. Scope is the module, `platform`, `api` or `deps`. A breaking change uses `!` after the scope and a `BREAKING CHANGE:` footer. The body explains what changed and why, wrapped at 72 columns.
+
+Commits, pull requests, tags and release notes never mention AI tools or assistants: no `Co-Authored-By` trailers, no "generated with" footers, no tool names. `.claude/settings.json` sets empty attribution.
