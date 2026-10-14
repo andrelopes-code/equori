@@ -40,6 +40,14 @@ An instance holds financial data of several users, for example the members of on
 - Successful and failed logins are logged (`login succeeded` with user ID, `login failed` with email and reason).
 - Known limit: a third party who knows an email can keep that account throttled. A per-IP limit requires a trusted-proxy setting and is not implemented.
 
+## Deferred
+
+The instance has one user until further notice. Data stays isolated by `user_id`, so more users need no migration. Deferred until a second user exists:
+
+- Admin endpoints to create and disable users (the CLI creates users meanwhile).
+- Password change endpoint (must delete the user's sessions).
+- Per-IP login limit (requires a trusted-proxy setting).
+
 ## Not covered
 
 - Encryption of stored integration credentials (bank tokens): separate ADR before the first integration.
