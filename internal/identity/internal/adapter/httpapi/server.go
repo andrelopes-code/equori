@@ -83,9 +83,15 @@ func (s *Server) CreateSession(ctx context.Context, req CreateSessionRequestObje
 		return nil, errInvalidRequest
 	}
 	session, err := s.svc.Login(ctx, req.Body.Email, req.Body.Password)
-	if err != nil {
+	switch {
+	case errors.Is(err, app.ErrInvalidCredentials), errors.Is(err, app.ErrTooManyAttempts):
+		s.log.WarnContext(ctx, "login failed", "email", req.Body.Email, "reason", err.Error(),
+			"request_id", httpserver.RequestID(ctx))
+		return nil, err
+	case err != nil:
 		return nil, err
 	}
+	s.log.InfoContext(ctx, "login succeeded", "user_id", session.UserID, "request_id", httpserver.RequestID(ctx))
 	cookie := s.cookie(session.Token, session.ExpiresAt)
 	return CreateSession204Response{Headers: CreateSession204ResponseHeaders{SetCookie: &cookie}}, nil
 }
@@ -138,6 +144,9 @@ func (s *Server) writeError(w http.ResponseWriter, r *http.Request, err error) {
 }
 
 func toProblem(err error) problem.Details {
+	if d, ok := problem.Transport(err); ok {
+		return d
+	}
 	switch {
 	case errors.Is(err, errInvalidRequest):
 		return problem.New(http.StatusBadRequest, "invalid_request", "malformed request")
@@ -146,7 +155,9 @@ func toProblem(err error) problem.Details {
 	case errors.Is(err, app.ErrUnauthenticated):
 		return problem.New(http.StatusUnauthorized, "unauthenticated", "a valid session is required")
 	case errors.Is(err, app.ErrTooManyAttempts):
-		return problem.New(http.StatusTooManyRequests, "too_many_attempts", "too many failed login attempts; retry in 15 minutes")
+		return problem.New(http.StatusTooManyRequests, "too_many_attempts", "too many login attempts; retry in 15 minutes")
+	case errors.Is(err, app.ErrBusy):
+		return problem.New(http.StatusServiceUnavailable, "server_busy", "server is busy; retry shortly")
 	default:
 		return problem.New(http.StatusInternalServerError, "internal_error", "")
 	}

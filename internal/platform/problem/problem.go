@@ -3,6 +3,7 @@ package problem
 
 import (
 	"encoding/json/v2"
+	"errors"
 	"net/http"
 )
 
@@ -31,6 +32,14 @@ func New(status int, code, detail string) Details {
 		Detail: detail,
 		Code:   code,
 	}
+}
+
+// Transport maps errors raised while reading the request, before any module logic runs.
+func Transport(err error) (Details, bool) {
+	if _, ok := errors.AsType[*http.MaxBytesError](err); ok {
+		return New(http.StatusRequestEntityTooLarge, "request_too_large", "request body is too large"), true
+	}
+	return Details{}, false
 }
 
 func Write(w http.ResponseWriter, d Details) {

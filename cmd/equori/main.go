@@ -69,6 +69,7 @@ func serve() error {
 	mux := http.NewServeMux()
 	mux.Handle("GET /healthz", httpserver.Health(pool))
 	identityModule.RegisterRoutes(mux)
+	mux.Handle("/api/", httpserver.NotFound())
 
 	handler := httpserver.Middleware(identityModule.RequireSession(mux), log)
 	return httpserver.Run(ctx, cfg.HTTPAddr, handler, log)

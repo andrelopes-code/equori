@@ -18,9 +18,12 @@ func RequestID(ctx context.Context) string {
 	return id
 }
 
+const maxBodyBytes = 1 << 20
+
 // Middleware wraps h with, from outermost to innermost: request ID, access log,
-// panic recovery and cross-origin protection (CSRF defense, ADR 003).
+// panic recovery, cross-origin protection (CSRF defense, ADR 003) and a 1 MiB body limit.
 func Middleware(h http.Handler, log *slog.Logger) http.Handler {
+	h = limitBody(h)
 	h = http.NewCrossOriginProtection().Handler(h)
 	h = recoverPanic(h, log)
 	h = accessLog(h, log)
@@ -33,6 +36,22 @@ func withRequestID(next http.Handler) http.Handler {
 		id := rand.Text()
 		w.Header().Set("X-Request-ID", id)
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), requestIDKey{}, id)))
+	})
+}
+
+func limitBody(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
+		next.ServeHTTP(w, r)
+	})
+}
+
+// NotFound answers unmatched /api/ routes, so API clients always receive ADR 004 problems.
+func NotFound() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		d := problem.New(http.StatusNotFound, "not_found", "no endpoint matches "+r.Method+" "+r.URL.Path)
+		d.RequestID = RequestID(r.Context())
+		problem.Write(w, d)
 	})
 }
 

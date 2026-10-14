@@ -33,7 +33,12 @@ An instance holds financial data of several users, for example the members of on
 ### Request forgery and brute force
 
 - `http.CrossOriginProtection` (stdlib, Go 1.25+) rejects cross-origin non-safe requests using `Sec-Fetch-Site` and `Origin`. It is part of `httpserver.Middleware`.
-- Failed logins are throttled per email: 5 attempts per 15 minutes, in memory. The response for unknown email and wrong password is identical, and both run argon2id.
+- Login attempts are counted per email: 5 per 15 minutes, in memory. The count is checked and incremented under one lock before the password is verified, so concurrent requests cannot exceed it. A successful login clears it.
+- The response for unknown email and wrong password is identical, and both run argon2id.
+- Concurrent argon2id runs are capped at the CPU count (19 MiB each). A request waits at most 5 s for a slot, then receives 503 `server_busy`.
+- Request bodies are capped at 1 MiB (`httpserver.Middleware`).
+- Successful and failed logins are logged (`login succeeded` with user ID, `login failed` with email and reason).
+- Known limit: a third party who knows an email can keep that account throttled. A per-IP limit requires a trusted-proxy setting and is not implemented.
 
 ## Not covered
 

@@ -22,7 +22,7 @@ Every error response from `/api/v1` has `Content-Type: application/problem+json`
 | Field | Rule |
 |---|---|
 | `type` | Always `about:blank`; `title` is then the HTTP status text (RFC 9457 §4.2.1). |
-| `code` | Stable snake_case identifier. Clients branch on `code`, never on `detail`. Codes are declared in `api/openapi.yaml`. |
+| `code` | Stable snake_case identifier. Clients branch on `code`, never on `detail`. Codes are declared in `api/openapi.yaml`. Unmatched `/api/` routes return `not_found` (`httpserver.NotFound`); oversized bodies return `request_too_large` (`problem.Transport`). |
 | `detail` | Human-readable, English. Empty for 5xx: internal errors never reach the client. |
 | `request_id` | Same value as the `X-Request-ID` header and the access log entry. |
 | `errors` | Only for validation failures (422), one entry per invalid field. |

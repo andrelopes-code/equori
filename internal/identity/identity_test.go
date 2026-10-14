@@ -10,6 +10,8 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/identity"
@@ -23,27 +25,31 @@ const (
 )
 
 type harness struct {
-	t      *testing.T
-	module *identity.Module
-	server *httptest.Server
-	client *http.Client
+	t          *testing.T
+	module     *identity.Module
+	server     *httptest.Server
+	client     *http.Client
+	probeCalls atomic.Int32
 }
 
 // newHarness wires the module the same way cmd/equori does.
 func newHarness(t *testing.T, cfg identity.Config) *harness {
 	t.Helper()
+	h := &harness{t: t}
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	m := identity.New(pgtest.New(t), cfg, log)
 	mux := http.NewServeMux()
 	m.RegisterRoutes(mux)
-	mux.HandleFunc("GET /api/v1/probe", func(http.ResponseWriter, *http.Request) {})
+	mux.HandleFunc("GET /api/v1/probe", func(http.ResponseWriter, *http.Request) { h.probeCalls.Add(1) })
+	mux.Handle("/api/", httpserver.NotFound())
 	srv := httptest.NewServer(httpserver.Middleware(m.RequireSession(mux), log))
 	t.Cleanup(srv.Close)
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &harness{t: t, module: m, server: srv, client: &http.Client{Jar: jar}}
+	h.module, h.server, h.client = m, srv, &http.Client{Jar: jar}
+	return h
 }
 
 type response struct {
@@ -153,8 +159,59 @@ func TestRequireSessionDeniesByDefault(t *testing.T) {
 	expectProblem(t, h.do(http.MethodGet, "/api/v1/probe", ""), http.StatusUnauthorized, "unauthenticated")
 	expectProblem(t, h.do(http.MethodGet, "/api/v2/anything", ""), http.StatusUnauthorized, "unauthenticated")
 
+	for _, path := range []string{"/x/../api/v1/probe", "//api/v1/probe", "/%61pi/v1/probe", "/api/v1/./probe"} {
+		if resp := h.do(http.MethodGet, path, ""); resp.status == http.StatusOK {
+			t.Errorf("GET %s = 200 without a session", path)
+		}
+	}
+
 	h.client.Jar.SetCookies(mustURL(t, h.server.URL), []*http.Cookie{{Name: "equori_session", Value: "forged"}})
 	expectProblem(t, h.do(http.MethodGet, "/api/v1/probe", ""), http.StatusUnauthorized, "unauthenticated")
+
+	if n := h.probeCalls.Load(); n != 0 {
+		t.Fatalf("protected handler ran %d times without a valid session", n)
+	}
+}
+
+func TestUnknownAPIRoute(t *testing.T) {
+	h := newHarness(t, identity.Config{})
+	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleMember); err != nil {
+		t.Fatal(err)
+	}
+	h.login(password)
+
+	expectProblem(t, h.do(http.MethodGet, "/api/v1/nope", ""), http.StatusNotFound, "not_found")
+}
+
+func TestLoginBodyTooLarge(t *testing.T) {
+	h := newHarness(t, identity.Config{})
+	body := `{"email":"` + email + `","password":"` + strings.Repeat("a", 2<<20) + `"}`
+
+	expectProblem(t, h.do(http.MethodPost, "/api/v1/session", body), http.StatusRequestEntityTooLarge, "request_too_large")
+}
+
+func TestConcurrentLoginAttemptsRespectLimit(t *testing.T) {
+	h := newHarness(t, identity.Config{})
+	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleMember); err != nil {
+		t.Fatal(err)
+	}
+	var wg sync.WaitGroup
+	statuses := make(chan int, 20)
+	for range 20 {
+		wg.Go(func() { statuses <- h.login("wrong password!").status })
+	}
+	wg.Wait()
+	close(statuses)
+
+	unauthorized := 0
+	for s := range statuses {
+		if s == http.StatusUnauthorized {
+			unauthorized++
+		}
+	}
+	if unauthorized != 5 {
+		t.Fatalf("%d of 20 concurrent attempts reached password verification, want 5", unauthorized)
+	}
 }
 
 func TestSessionCookieAttributes(t *testing.T) {

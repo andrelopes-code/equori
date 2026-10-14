@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"runtime"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/identity/internal/domain"
@@ -15,8 +16,9 @@ var (
 	ErrNotFound           = errors.New("not found")
 	ErrEmailTaken         = errors.New("email already registered")
 	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrTooManyAttempts    = errors.New("too many failed login attempts")
+	ErrTooManyAttempts    = errors.New("too many login attempts")
 	ErrUnauthenticated    = errors.New("unauthenticated")
+	ErrBusy               = errors.New("too many concurrent password operations")
 )
 
 // Repository returns ErrNotFound for missing rows and ErrEmailTaken on duplicate email.
@@ -29,10 +31,19 @@ type Repository interface {
 	DeleteExpiredSessions(ctx context.Context, now time.Time) error
 }
 
+const (
+	loginAttemptLimit  = 5
+	loginAttemptWindow = 15 * time.Minute
+	// hashSlotWait bounds how long a request queues for a password slot before ErrBusy.
+	hashSlotWait = 5 * time.Second
+)
+
 type Service struct {
 	repo     Repository
 	now      func() time.Time
 	throttle *throttle
+	// hashSlots caps concurrent argon2id runs; each one allocates 19 MiB.
+	hashSlots chan struct{}
 	// dummyHash is verified when the email is unknown, so both failure paths cost one argon2id run.
 	dummyHash string
 }
@@ -41,7 +52,8 @@ func NewService(repo Repository, now func() time.Time) *Service {
 	return &Service{
 		repo:      repo,
 		now:       now,
-		throttle:  newThrottle(5, 15*time.Minute),
+		throttle:  newThrottle(loginAttemptLimit, loginAttemptWindow),
+		hashSlots: make(chan struct{}, runtime.NumCPU()),
 		dummyHash: password.Hash("dummy password for timing equalization"),
 	}
 }
@@ -57,14 +69,23 @@ func (s *Service) CreateUser(ctx context.Context, email, plain string, role doma
 	if !role.Valid() {
 		return domain.User{}, domain.ErrInvalidRole
 	}
-	return s.repo.CreateUser(ctx, domain.User{Email: email, PasswordHash: password.Hash(plain), Role: role})
+	release, err := s.acquireHashSlot(ctx)
+	if err != nil {
+		return domain.User{}, err
+	}
+	hash := password.Hash(plain)
+	release()
+	return s.repo.CreateUser(ctx, domain.User{Email: email, PasswordHash: hash, Role: role})
 }
 
 type Session struct {
+	UserID    int64
 	Token     string
 	ExpiresAt time.Time
 }
 
+// Login counts every attempt against the email, including the successful one,
+// which then clears the count.
 func (s *Service) Login(ctx context.Context, email, plain string) (Session, error) {
 	now := s.now()
 	email, emailErr := domain.NormalizeEmail(email)
@@ -72,25 +93,25 @@ func (s *Service) Login(ctx context.Context, email, plain string) (Session, erro
 	if emailErr != nil || len(plain) > 4*domain.MaxPasswordLength {
 		return Session{}, ErrInvalidCredentials
 	}
-	if !s.throttle.allowed(email, now) {
+	if !s.throttle.attempt(email, now) {
 		return Session{}, ErrTooManyAttempts
 	}
 
 	user, err := s.repo.UserByEmail(ctx, email)
 	switch {
 	case errors.Is(err, ErrNotFound):
-		_, _ = password.Verify(plain, s.dummyHash)
-		s.throttle.fail(email, now)
+		if _, err := s.verify(ctx, plain, s.dummyHash); err != nil {
+			return Session{}, err
+		}
 		return Session{}, ErrInvalidCredentials
 	case err != nil:
 		return Session{}, fmt.Errorf("load user: %w", err)
 	}
-	ok, err := password.Verify(plain, user.PasswordHash)
+	ok, err := s.verify(ctx, plain, user.PasswordHash)
 	if err != nil {
 		return Session{}, fmt.Errorf("verify password of user %d: %w", user.ID, err)
 	}
 	if !ok || user.Disabled {
-		s.throttle.fail(email, now)
 		return Session{}, ErrInvalidCredentials
 	}
 	s.throttle.reset(email)
@@ -102,7 +123,7 @@ func (s *Service) Login(ctx context.Context, email, plain string) (Session, erro
 	if err := s.repo.CreateSession(ctx, session); err != nil {
 		return Session{}, fmt.Errorf("create session: %w", err)
 	}
-	return Session{Token: token, ExpiresAt: session.ExpiresAt}, nil
+	return Session{UserID: user.ID, Token: token, ExpiresAt: session.ExpiresAt}, nil
 }
 
 func (s *Service) Logout(ctx context.Context, token string) error {
@@ -121,4 +142,24 @@ func (s *Service) Authenticate(ctx context.Context, token string) (domain.User, 
 		return domain.User{}, ErrUnauthenticated
 	}
 	return user, nil
+}
+
+func (s *Service) verify(ctx context.Context, plain, hash string) (bool, error) {
+	release, err := s.acquireHashSlot(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer release()
+	return password.Verify(plain, hash)
+}
+
+func (s *Service) acquireHashSlot(ctx context.Context) (release func(), err error) {
+	ctx, cancel := context.WithTimeout(ctx, hashSlotWait)
+	defer cancel()
+	select {
+	case s.hashSlots <- struct{}{}:
+		return func() { <-s.hashSlots }, nil
+	case <-ctx.Done():
+		return nil, ErrBusy
+	}
 }

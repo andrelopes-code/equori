@@ -47,8 +47,9 @@ type FieldError struct {
 
 // Problem defines model for Problem.
 type Problem struct {
-	// Code Stable error identifier. Values: invalid_request, invalid_credentials,
-	// too_many_attempts, unauthenticated, forbidden, not_found, validation_failed, internal_error.
+	// Code Stable error identifier. Values: invalid_request, request_too_large, invalid_credentials,
+	// too_many_attempts, unauthenticated, forbidden, not_found, validation_failed, internal_error,
+	// server_busy.
 	Code      string        `json:"code"`
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`
@@ -424,6 +425,20 @@ func (response CreateSession401ApplicationProblemPlusJSONResponse) VisitCreateSe
 	return err
 }
 
+type CreateSession413ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateSession413ApplicationProblemPlusJSONResponse) VisitCreateSessionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type CreateSession429ApplicationProblemPlusJSONResponse Problem
 
 func (response CreateSession429ApplicationProblemPlusJSONResponse) VisitCreateSessionResponse(w http.ResponseWriter) error {
@@ -434,6 +449,20 @@ func (response CreateSession429ApplicationProblemPlusJSONResponse) VisitCreateSe
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateSession503ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateSession503ApplicationProblemPlusJSONResponse) VisitCreateSessionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
 	_, err := buf.WriteTo(w)
 	return err
 }

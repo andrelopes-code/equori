@@ -84,3 +84,26 @@ func TestMiddlewareRejectsCrossOriginWrite(t *testing.T) {
 		t.Fatalf("status = %d, handler called = %v; want 403 and not called", rec.Code, called)
 	}
 }
+
+func TestMiddlewareLimitsBody(t *testing.T) {
+	var readErr error
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, readErr = io.ReadAll(r.Body) })
+	body := strings.NewReader(strings.Repeat("a", maxBodyBytes+1))
+
+	serve(t, h, httptest.NewRequestWithContext(t.Context(), http.MethodPut, "/", body))
+
+	if _, ok := problem.Transport(readErr); !ok {
+		t.Fatalf("read err = %v, want a transport error for an oversized body", readErr)
+	}
+}
+
+func TestNotFound(t *testing.T) {
+	rec, _ := serve(t, NotFound(), httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/v1/nope", nil))
+
+	if rec.Code != http.StatusNotFound || rec.Header().Get("Content-Type") != problem.ContentType {
+		t.Fatalf("status = %d, content type = %q; want 404 problem", rec.Code, rec.Header().Get("Content-Type"))
+	}
+	if !strings.Contains(rec.Body.String(), `"code":"not_found"`) || !strings.Contains(rec.Body.String(), `"request_id":"`) {
+		t.Fatalf("body = %s", rec.Body.String())
+	}
+}

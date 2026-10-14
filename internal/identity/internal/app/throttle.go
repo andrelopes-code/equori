@@ -9,53 +9,55 @@ import (
 // when an attacker submits many distinct emails.
 const maxThrottleKeys = 10_000
 
-// throttle counts failed logins per key inside a sliding window. State is in
+// throttle counts login attempts per key inside a sliding window. State is in
 // memory: it resets on restart and is not shared between instances (ADR 002: one instance).
 type throttle struct {
 	mu       sync.Mutex
 	limit    int
 	window   time.Duration
-	failures map[string][]time.Time
+	attempts map[string][]time.Time
 }
 
 func newThrottle(limit int, window time.Duration) *throttle {
-	return &throttle{limit: limit, window: window, failures: make(map[string][]time.Time)}
+	return &throttle{limit: limit, window: window, attempts: make(map[string][]time.Time)}
 }
 
-func (t *throttle) allowed(key string, now time.Time) bool {
+// attempt records an attempt and reports whether it is within the limit. Checking
+// and recording happen under one lock, so concurrent requests cannot exceed the limit.
+func (t *throttle) attempt(key string, now time.Time) bool {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	return len(t.recent(key, now)) < t.limit
-}
-
-func (t *throttle) fail(key string, now time.Time) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	if len(t.failures) >= maxThrottleKeys {
-		for k := range t.failures {
+	if len(t.attempts) >= maxThrottleKeys {
+		for k := range t.attempts {
 			t.recent(k, now)
 		}
 	}
-	t.failures[key] = append(t.recent(key, now), now)
+	recent := t.recent(key, now)
+	if len(recent) >= t.limit {
+		return false
+	}
+	t.attempts[key] = append(recent, now)
+	return true
 }
 
+// reset clears the key after a successful login.
 func (t *throttle) reset(key string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	delete(t.failures, key)
+	delete(t.attempts, key)
 }
 
-// recent drops failures older than the window and returns the rest. Callers hold mu.
+// recent drops attempts older than the window and returns the rest. Callers hold mu.
 func (t *throttle) recent(key string, now time.Time) []time.Time {
-	times := t.failures[key]
+	times := t.attempts[key]
 	i := 0
 	for i < len(times) && now.Sub(times[i]) >= t.window {
 		i++
 	}
 	if i == len(times) {
-		delete(t.failures, key)
+		delete(t.attempts, key)
 		return nil
 	}
-	t.failures[key] = times[i:]
+	t.attempts[key] = times[i:]
 	return times[i:]
 }
