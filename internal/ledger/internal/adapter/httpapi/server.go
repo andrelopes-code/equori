@@ -10,7 +10,6 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/money"
-	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 
 const BaseURL = "/api/v1"
@@ -53,8 +52,12 @@ func (s *Server) UpdateSettings(ctx context.Context, req UpdateSettingsRequestOb
 	return UpdateSettings200JSONResponse(*req.Body), nil
 }
 
-func (s *Server) ListInstitutions(ctx context.Context, _ ListInstitutionsRequestObject) (ListInstitutionsResponseObject, error) {
-	rows, err := s.svc.ListInstitutions(ctx, auth.MustUserID(ctx))
+func (s *Server) ListInstitutions(ctx context.Context, req ListInstitutionsRequestObject) (ListInstitutionsResponseObject, error) {
+	p, err := listPage[app.InstitutionKey](req.Params.Limit, req.Params.Cursor)
+	if err != nil {
+		return nil, err
+	}
+	rows, next, err := s.svc.ListInstitutions(ctx, auth.MustUserID(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +65,8 @@ func (s *Server) ListInstitutions(ctx context.Context, _ ListInstitutionsRequest
 	for i, r := range rows {
 		out.Items[i] = toInstitutionAPI(r)
 	}
-	return out, nil
+	out.NextCursor, err = nextCursor(next)
+	return out, err
 }
 
 func (s *Server) CreateInstitution(ctx context.Context, req CreateInstitutionRequestObject) (CreateInstitutionResponseObject, error) {
@@ -73,8 +77,12 @@ func (s *Server) CreateInstitution(ctx context.Context, req CreateInstitutionReq
 	return CreateInstitution201JSONResponse(toInstitutionAPI(i)), nil
 }
 
-func (s *Server) ListPayees(ctx context.Context, _ ListPayeesRequestObject) (ListPayeesResponseObject, error) {
-	rows, err := s.svc.ListPayees(ctx, auth.MustUserID(ctx))
+func (s *Server) ListPayees(ctx context.Context, req ListPayeesRequestObject) (ListPayeesResponseObject, error) {
+	p, err := listPage[app.PayeeKey](req.Params.Limit, req.Params.Cursor)
+	if err != nil {
+		return nil, err
+	}
+	rows, next, err := s.svc.ListPayees(ctx, auth.MustUserID(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +90,8 @@ func (s *Server) ListPayees(ctx context.Context, _ ListPayeesRequestObject) (Lis
 	for i, r := range rows {
 		out.Items[i] = toPayeeAPI(r)
 	}
-	return out, nil
+	out.NextCursor, err = nextCursor(next)
+	return out, err
 }
 
 func (s *Server) CreatePayee(ctx context.Context, req CreatePayeeRequestObject) (CreatePayeeResponseObject, error) {
@@ -93,16 +102,26 @@ func (s *Server) CreatePayee(ctx context.Context, req CreatePayeeRequestObject) 
 	return CreatePayee201JSONResponse(toPayeeAPI(p)), nil
 }
 
-func (s *Server) ListTags(ctx context.Context, _ ListTagsRequestObject) (ListTagsResponseObject, error) {
-	tags, err := s.svc.ListTags(ctx, auth.MustUserID(ctx))
+func (s *Server) ListTags(ctx context.Context, req ListTagsRequestObject) (ListTagsResponseObject, error) {
+	p, err := listPage[app.TagKey](req.Params.Limit, req.Params.Cursor)
 	if err != nil {
 		return nil, err
 	}
-	return ListTags200JSONResponse{Items: append([]string{}, tags...)}, nil
+	tags, next, err := s.svc.ListTags(ctx, auth.MustUserID(ctx), p)
+	if err != nil {
+		return nil, err
+	}
+	out := ListTags200JSONResponse{Items: append([]string{}, tags...)}
+	out.NextCursor, err = nextCursor(next)
+	return out, err
 }
 
-func (s *Server) ListAccounts(ctx context.Context, _ ListAccountsRequestObject) (ListAccountsResponseObject, error) {
-	rows, err := s.svc.ListAccounts(ctx, auth.MustUserID(ctx))
+func (s *Server) ListAccounts(ctx context.Context, req ListAccountsRequestObject) (ListAccountsResponseObject, error) {
+	p, err := listPage[app.AccountKey](req.Params.Limit, req.Params.Cursor)
+	if err != nil {
+		return nil, err
+	}
+	rows, next, err := s.svc.ListAccounts(ctx, auth.MustUserID(ctx), p)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +129,8 @@ func (s *Server) ListAccounts(ctx context.Context, _ ListAccountsRequestObject) 
 	for i, r := range rows {
 		out.Items[i] = toAccountAPI(r)
 	}
-	return out, nil
+	out.NextCursor, err = nextCursor(next)
+	return out, err
 }
 
 func (s *Server) CreateAccount(ctx context.Context, req CreateAccountRequestObject) (CreateAccountResponseObject, error) {
@@ -179,20 +199,13 @@ func (s *Server) GetAccountBalance(ctx context.Context, req GetAccountBalanceReq
 }
 
 func (s *Server) ListTransactions(ctx context.Context, req ListTransactionsRequestObject) (ListTransactionsResponseObject, error) {
-	limit, err := page.Limit(req.Params.Limit)
+	p, err := listPage[app.TransactionCursor](req.Params.Limit, req.Params.Cursor)
 	if err != nil {
-		return nil, errInvalidRequest
+		return nil, err
 	}
 	q := app.TransactionQuery{
 		UserID: auth.MustUserID(ctx), AccountID: optUUID(req.Params.AccountId), PayeeID: optUUID(req.Params.PayeeId),
-		Tag: optString(req.Params.Tag), From: optDate(req.Params.From), To: optDate(req.Params.To), Limit: limit,
-	}
-	if req.Params.Cursor != nil {
-		var c app.TransactionCursor
-		if err := page.DecodeCursor(*req.Params.Cursor, &c); err != nil {
-			return nil, &paramError{field: "cursor", message: "is not a cursor of this list"}
-		}
-		q.After = &c
+		Tag: optString(req.Params.Tag), From: optDate(req.Params.From), To: optDate(req.Params.To), Limit: p.Limit, After: p.After,
 	}
 	rows, next, err := s.svc.ListTransactions(ctx, q)
 	if err != nil {
@@ -202,14 +215,8 @@ func (s *Server) ListTransactions(ctx context.Context, req ListTransactionsReque
 	for i, t := range rows {
 		out.Items[i] = toTransactionAPI(t)
 	}
-	if next != nil {
-		cursor, err := page.EncodeCursor(next)
-		if err != nil {
-			return nil, err
-		}
-		out.NextCursor = &cursor
-	}
-	return out, nil
+	out.NextCursor, err = nextCursor(next)
+	return out, err
 }
 
 func (s *Server) CreateTransaction(ctx context.Context, req CreateTransactionRequestObject) (CreateTransactionResponseObject, error) {

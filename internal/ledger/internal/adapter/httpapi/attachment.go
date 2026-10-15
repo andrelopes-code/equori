@@ -57,7 +57,11 @@ func (s *Server) CreateAttachment(ctx context.Context, req CreateAttachmentReque
 }
 
 func (s *Server) ListAttachments(ctx context.Context, req ListAttachmentsRequestObject) (ListAttachmentsResponseObject, error) {
-	as, err := s.svc.Attachments(ctx, auth.MustUserID(ctx), req.Id)
+	p, err := listPage[app.AttachmentKey](req.Params.Limit, req.Params.Cursor)
+	if err != nil {
+		return nil, err
+	}
+	as, next, err := s.svc.Attachments(ctx, auth.MustUserID(ctx), req.Id, p)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +69,8 @@ func (s *Server) ListAttachments(ctx context.Context, req ListAttachmentsRequest
 	for i, a := range as {
 		out.Items[i] = toAttachmentAPI(a)
 	}
-	return ListAttachments200JSONResponse(out), nil
+	out.NextCursor, err = nextCursor(next)
+	return ListAttachments200JSONResponse(out), err
 }
 
 func (s *Server) GetAttachmentContent(ctx context.Context, req GetAttachmentContentRequestObject) (GetAttachmentContentResponseObject, error) {

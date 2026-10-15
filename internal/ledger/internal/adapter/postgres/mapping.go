@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/andrelopes-code/equori/internal/platform/page"
+
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
@@ -18,6 +20,21 @@ func mapAll[R, T any](rows []R, f func(R) T) []T {
 	}
 	return out
 }
+
+// pageOf keeps the first limit of the limit+1 rows a keyset query fetched and returns the
+// key of the last kept row when more rows follow (ADR 005, section 4).
+func pageOf[R, T, K any](rows []R, limit int, item func(R) T, key func(R) K) ([]T, *K) {
+	kept, more := page.Trim(rows, limit)
+	out := mapAll(kept, item)
+	if !more {
+		return out, nil
+	}
+	k := key(kept[len(kept)-1])
+	return out, &k
+}
+
+// rowLimit is the LIMIT of a keyset query: one row more than the page, to detect a next page.
+func rowLimit(limit int) int32 { return int32(limit + 1) } //nolint:gosec // limit is at most page.MaxLimit
 
 func nullString(s string) *string {
 	if s == "" {

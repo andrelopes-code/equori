@@ -48,7 +48,11 @@ func (s *Server) ListBalanceAssertions(ctx context.Context, req ListBalanceAsser
 	if err != nil {
 		return nil, err
 	}
-	assertions, err := s.svc.BalanceAssertions(ctx, userID, req.Id)
+	p, err := listPage[app.AssertionKey](req.Params.Limit, req.Params.Cursor)
+	if err != nil {
+		return nil, err
+	}
+	assertions, next, err := s.svc.BalanceAssertions(ctx, userID, req.Id, p)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +60,8 @@ func (s *Server) ListBalanceAssertions(ctx context.Context, req ListBalanceAsser
 	for i, x := range assertions {
 		out.Items[i] = toAssertionAPI(x, a.Instrument)
 	}
-	return ListBalanceAssertions200JSONResponse(out), nil
+	out.NextCursor, err = nextCursor(next)
+	return ListBalanceAssertions200JSONResponse(out), err
 }
 
 func (s *Server) ResolveBalanceAssertion(ctx context.Context, req ResolveBalanceAssertionRequestObject) (ResolveBalanceAssertionResponseObject, error) {

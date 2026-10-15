@@ -14,8 +14,10 @@ RETURNING *;
 SELECT a.*, b.size
 FROM ledger_attachment a
 JOIN ledger_attachment_blob b ON b.user_id = a.user_id AND b.sha256 = a.sha256
-WHERE a.user_id = $1 AND a.transaction_id = $2
-ORDER BY a.created_at, a.id;
+WHERE a.user_id = @user_id AND a.transaction_id = @transaction_id
+  AND (sqlc.narg(after_created)::timestamptz IS NULL OR (a.created_at, a.id) > (sqlc.narg(after_created)::timestamptz, sqlc.narg(after_id)::uuid))
+ORDER BY a.created_at, a.id
+LIMIT @row_limit;
 
 -- name: GetAttachmentContent :one
 SELECT a.file_name, a.media_type, b.content

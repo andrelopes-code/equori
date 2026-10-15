@@ -21,7 +21,12 @@ SELECT * FROM ledger_account WHERE user_id = $1 AND id = $2;
 SELECT * FROM ledger_account WHERE user_id = $1 AND id = ANY(@ids::uuid[]);
 
 -- name: ListAccounts :many
-SELECT * FROM ledger_account WHERE user_id = $1 ORDER BY account_class, lower(name);
+SELECT *, lower(name)::text AS sort_name FROM ledger_account
+WHERE user_id = @user_id
+  AND (sqlc.narg(after_class)::text IS NULL
+       OR (account_class, lower(name), id) > (sqlc.narg(after_class)::text, sqlc.narg(after_name)::text, sqlc.narg(after_id)::uuid))
+ORDER BY account_class, lower(name), id
+LIMIT @row_limit;
 
 -- name: SetSystemAccountsInstrument :exec
 UPDATE ledger_account SET instrument = $2, updated_at = now()

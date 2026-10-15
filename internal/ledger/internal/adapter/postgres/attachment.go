@@ -25,19 +25,26 @@ func (r *Repository) InsertAttachment(ctx context.Context, a app.Attachment, con
 	}, nil
 }
 
-func (r *Repository) Attachments(ctx context.Context, userID int64, transactionID uuid.UUID) ([]app.Attachment, error) {
-	rows, err := r.q.ListAttachments(ctx, ListAttachmentsParams{UserID: userID, TransactionID: transactionID})
+func (r *Repository) Attachments(ctx context.Context, userID int64, transactionID uuid.UUID, p app.Page[app.AttachmentKey]) ([]app.Attachment, *app.AttachmentKey, error) {
+	params := ListAttachmentsParams{UserID: userID, TransactionID: transactionID, RowLimit: rowLimit(p.Limit)}
+	if p.After != nil {
+		params.AfterCreated, params.AfterID = &p.After.CreatedAt, nullUUID(p.After.ID)
+	}
+	rows, err := r.q.ListAttachments(ctx, params)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	out := make([]app.Attachment, len(rows))
-	for i, row := range rows {
-		out[i] = app.Attachment{
-			ID: row.ID, UserID: row.UserID, TransactionID: row.TransactionID, FileName: row.FileName,
-			MediaType: row.MediaType, Size: int64(row.Size), SHA256: row.Sha256, CreatedAt: row.CreatedAt,
-		}
-	}
-	return out, nil
+	items, next := pageOf(rows, p.Limit,
+		func(row ListAttachmentsRow) app.Attachment {
+			return app.Attachment{
+				ID: row.ID, UserID: row.UserID, TransactionID: row.TransactionID, FileName: row.FileName,
+				MediaType: row.MediaType, Size: int64(row.Size), SHA256: row.Sha256, CreatedAt: row.CreatedAt,
+			}
+		},
+		func(row ListAttachmentsRow) app.AttachmentKey {
+			return app.AttachmentKey{CreatedAt: row.CreatedAt, ID: row.ID}
+		})
+	return items, next, nil
 }
 
 func (r *Repository) AttachmentContent(ctx context.Context, userID int64, id uuid.UUID) (app.AttachmentContent, error) {

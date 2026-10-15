@@ -42,7 +42,11 @@ func (s *Server) ListStatements(ctx context.Context, req ListStatementsRequestOb
 	if err != nil {
 		return nil, err
 	}
-	views, a, err := s.svc.Statements(ctx, auth.MustUserID(ctx), req.Id, from, to)
+	p, err := listPage[app.StatementKey](req.Params.Limit, req.Params.Cursor)
+	if err != nil {
+		return nil, err
+	}
+	views, next, a, err := s.svc.Statements(ctx, auth.MustUserID(ctx), req.Id, from, to, p)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +54,8 @@ func (s *Server) ListStatements(ctx context.Context, req ListStatementsRequestOb
 	for i, v := range views {
 		out.Items[i] = toStatementAPI(v, a.Instrument)
 	}
-	return out, nil
+	out.NextCursor, err = nextCursor(next)
+	return out, err
 }
 
 func (s *Server) GetStatement(ctx context.Context, req GetStatementRequestObject) (GetStatementResponseObject, error) {

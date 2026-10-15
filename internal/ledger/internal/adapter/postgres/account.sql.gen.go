@@ -222,18 +222,56 @@ func (q *Queries) InsertAccount(ctx context.Context, arg InsertAccountParams) (L
 }
 
 const listAccounts = `-- name: ListAccounts :many
-SELECT id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at FROM ledger_account WHERE user_id = $1 ORDER BY account_class, lower(name)
+SELECT id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, lower(name)::text AS sort_name FROM ledger_account
+WHERE user_id = $1
+  AND ($2::text IS NULL
+       OR (account_class, lower(name), id) > ($2::text, $3::text, $4::uuid))
+ORDER BY account_class, lower(name), id
+LIMIT $5
 `
 
-func (q *Queries) ListAccounts(ctx context.Context, userID int64) ([]LedgerAccount, error) {
-	rows, err := q.db.Query(ctx, listAccounts, userID)
+type ListAccountsParams struct {
+	UserID     int64
+	AfterClass *string
+	AfterName  *string
+	AfterID    uuid.NullUUID
+	RowLimit   int32
+}
+
+type ListAccountsRow struct {
+	ID                  uuid.UUID
+	UserID              int64
+	Name                string
+	AccountClass        string
+	Kind                *string
+	Instrument          string
+	ParentID            uuid.NullUUID
+	InstitutionID       uuid.NullUUID
+	CounterpartyPayeeID uuid.NullUUID
+	OpenedOn            time.Time
+	ClosedOn            *time.Time
+	YieldMode           string
+	SystemRole          *string
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
+	SortName            string
+}
+
+func (q *Queries) ListAccounts(ctx context.Context, arg ListAccountsParams) ([]ListAccountsRow, error) {
+	rows, err := q.db.Query(ctx, listAccounts,
+		arg.UserID,
+		arg.AfterClass,
+		arg.AfterName,
+		arg.AfterID,
+		arg.RowLimit,
+	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []LedgerAccount
+	var items []ListAccountsRow
 	for rows.Next() {
-		var i LedgerAccount
+		var i ListAccountsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,
@@ -250,6 +288,7 @@ func (q *Queries) ListAccounts(ctx context.Context, userID int64) ([]LedgerAccou
 			&i.SystemRole,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.SortName,
 		); err != nil {
 			return nil, err
 		}

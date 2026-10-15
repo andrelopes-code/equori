@@ -654,6 +654,9 @@ type AccountInputYieldMode string
 // AccountList defines model for AccountList.
 type AccountList struct {
 	Items []Account `json:"items"`
+
+	// NextCursor Absent on the last page.
+	NextCursor *string `json:"next_cursor,omitempty"`
 }
 
 // AccountPatch defines model for AccountPatch.
@@ -715,6 +718,9 @@ type Attachment struct {
 // AttachmentList defines model for AttachmentList.
 type AttachmentList struct {
 	Items []Attachment `json:"items"`
+
+	// NextCursor Absent on the last page.
+	NextCursor *string `json:"next_cursor,omitempty"`
 }
 
 // Balance defines model for Balance.
@@ -755,6 +761,9 @@ type BalanceAssertionInputSource string
 // BalanceAssertionList defines model for BalanceAssertionList.
 type BalanceAssertionList struct {
 	Items []BalanceAssertion `json:"items"`
+
+	// NextCursor Absent on the last page.
+	NextCursor *string `json:"next_cursor,omitempty"`
 }
 
 // BillingCycleRule defines model for BillingCycleRule.
@@ -924,6 +933,9 @@ type InstitutionInput struct {
 // InstitutionList defines model for InstitutionList.
 type InstitutionList struct {
 	Items []Institution `json:"items"`
+
+	// NextCursor Absent on the last page.
+	NextCursor *string `json:"next_cursor,omitempty"`
 }
 
 // Link defines model for Link.
@@ -965,6 +977,9 @@ type PayeeInput struct {
 // PayeeList defines model for PayeeList.
 type PayeeList struct {
 	Items []Payee `json:"items"`
+
+	// NextCursor Absent on the last page.
+	NextCursor *string `json:"next_cursor,omitempty"`
 }
 
 // Posting defines model for Posting.
@@ -1088,6 +1103,9 @@ type StatementFinancingInput struct {
 // StatementList defines model for StatementList.
 type StatementList struct {
 	Items []StatementSummary `json:"items"`
+
+	// NextCursor Absent on the last page.
+	NextCursor *string `json:"next_cursor,omitempty"`
 }
 
 // StatementPaymentInput defines model for StatementPaymentInput.
@@ -1140,6 +1158,9 @@ type StatementSummaryStatus string
 // TagList defines model for TagList.
 type TagList struct {
 	Items []string `json:"items"`
+
+	// NextCursor Absent on the last page.
+	NextCursor *string `json:"next_cursor,omitempty"`
 }
 
 // Transaction defines model for Transaction.
@@ -1209,6 +1230,12 @@ type ID = openapi_types.UUID
 // Limit defines model for Limit.
 type Limit = int
 
+// ListAccountsParams defines parameters for ListAccounts.
+type ListAccountsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
 // GetAccountBalanceParams defines parameters for GetAccountBalance.
 type GetAccountBalanceParams struct {
 	Date  openapi_types.Date            `form:"date" json:"date"`
@@ -1218,6 +1245,12 @@ type GetAccountBalanceParams struct {
 // GetAccountBalanceParamsBasis defines parameters for GetAccountBalance.
 type GetAccountBalanceParamsBasis string
 
+// ListBalanceAssertionsParams defines parameters for ListBalanceAssertions.
+type ListBalanceAssertionsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
 // GetCommitmentParams defines parameters for GetCommitment.
 type GetCommitmentParams struct {
 	Month string `form:"month" json:"month"`
@@ -1225,8 +1258,28 @@ type GetCommitmentParams struct {
 
 // ListStatementsParams defines parameters for ListStatements.
 type ListStatementsParams struct {
-	From *string `form:"from,omitempty" json:"from,omitempty"`
-	To   *string `form:"to,omitempty" json:"to,omitempty"`
+	From   *string `form:"from,omitempty" json:"from,omitempty"`
+	To     *string `form:"to,omitempty" json:"to,omitempty"`
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListInstitutionsParams defines parameters for ListInstitutions.
+type ListInstitutionsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListPayeesParams defines parameters for ListPayees.
+type ListPayeesParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListTagsParams defines parameters for ListTags.
+type ListTagsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
 // ListTransactionsParams defines parameters for ListTransactions.
@@ -1238,6 +1291,12 @@ type ListTransactionsParams struct {
 	Tag       *string             `form:"tag,omitempty" json:"tag,omitempty"`
 	From      *openapi_types.Date `form:"from,omitempty" json:"from,omitempty"`
 	To        *openapi_types.Date `form:"to,omitempty" json:"to,omitempty"`
+}
+
+// ListAttachmentsParams defines parameters for ListAttachments.
+type ListAttachmentsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
 // CreateAttachmentMultipartBody defines parameters for CreateAttachment.
@@ -1324,7 +1383,7 @@ type VoidTransactionJSONRequestBody = VoidInput
 type ServerInterface interface {
 	// ListAccounts List accounts, categories included.
 	// (GET /accounts)
-	ListAccounts(w http.ResponseWriter, r *http.Request)
+	ListAccounts(w http.ResponseWriter, r *http.Request, params ListAccountsParams)
 	// CreateAccount Create an account or category.
 	// (POST /accounts)
 	CreateAccount(w http.ResponseWriter, r *http.Request)
@@ -1339,7 +1398,7 @@ type ServerInterface interface {
 	GetAccountBalance(w http.ResponseWriter, r *http.Request, id ID, params GetAccountBalanceParams)
 	// ListBalanceAssertions Balances reported by the institution for a leaf balance account.
 	// (GET /accounts/{id}/balance-assertions)
-	ListBalanceAssertions(w http.ResponseWriter, r *http.Request, id ID)
+	ListBalanceAssertions(w http.ResponseWriter, r *http.Request, id ID, params ListBalanceAssertionsParams)
 	// CreateBalanceAssertion Record the institution's balance and reconcile the account when it matches.
 	// (POST /accounts/{id}/balance-assertions)
 	CreateBalanceAssertion(w http.ResponseWriter, r *http.Request, id ID)
@@ -1399,13 +1458,13 @@ type ServerInterface interface {
 	CreateInstallmentPurchase(w http.ResponseWriter, r *http.Request)
 	// ListInstitutions List institutions.
 	// (GET /institutions)
-	ListInstitutions(w http.ResponseWriter, r *http.Request)
+	ListInstitutions(w http.ResponseWriter, r *http.Request, params ListInstitutionsParams)
 	// CreateInstitution Create an institution.
 	// (POST /institutions)
 	CreateInstitution(w http.ResponseWriter, r *http.Request)
 	// ListPayees List payees.
 	// (GET /payees)
-	ListPayees(w http.ResponseWriter, r *http.Request)
+	ListPayees(w http.ResponseWriter, r *http.Request, params ListPayeesParams)
 	// CreatePayee Create a payee.
 	// (POST /payees)
 	CreatePayee(w http.ResponseWriter, r *http.Request)
@@ -1429,7 +1488,7 @@ type ServerInterface interface {
 	ReconcileStatement(w http.ResponseWriter, r *http.Request, id ID)
 	// ListTags List tags in use.
 	// (GET /tags)
-	ListTags(w http.ResponseWriter, r *http.Request)
+	ListTags(w http.ResponseWriter, r *http.Request, params ListTagsParams)
 	// ListTransactions List transactions, newest first.
 	// (GET /transactions)
 	ListTransactions(w http.ResponseWriter, r *http.Request, params ListTransactionsParams)
@@ -1444,7 +1503,7 @@ type ServerInterface interface {
 	CorrectTransaction(w http.ResponseWriter, r *http.Request, id ID)
 	// ListAttachments Files attached to a transaction.
 	// (GET /transactions/{id}/attachments)
-	ListAttachments(w http.ResponseWriter, r *http.Request, id ID)
+	ListAttachments(w http.ResponseWriter, r *http.Request, id ID, params ListAttachmentsParams)
 	// CreateAttachment Attach a file to a transaction.
 	// (POST /transactions/{id}/attachments)
 	CreateAttachment(w http.ResponseWriter, r *http.Request, id ID)
@@ -1474,8 +1533,40 @@ type MiddlewareFunc func(http.Handler) http.Handler
 // ListAccounts operation middleware
 func (siw *ServerInterfaceWrapper) ListAccounts(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListAccountsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListAccounts(w, r)
+		siw.Handler.ListAccounts(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1621,8 +1712,37 @@ func (siw *ServerInterfaceWrapper) ListBalanceAssertions(w http.ResponseWriter, 
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListBalanceAssertionsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListBalanceAssertions(w, r, id)
+		siw.Handler.ListBalanceAssertions(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1952,6 +2072,32 @@ func (siw *ServerInterfaceWrapper) ListStatements(w http.ResponseWriter, r *http
 		return
 	}
 
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListStatements(w, r, id, params)
 	}))
@@ -2162,8 +2308,40 @@ func (siw *ServerInterfaceWrapper) CreateInstallmentPurchase(w http.ResponseWrit
 // ListInstitutions operation middleware
 func (siw *ServerInterfaceWrapper) ListInstitutions(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListInstitutionsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListInstitutions(w, r)
+		siw.Handler.ListInstitutions(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2190,8 +2368,40 @@ func (siw *ServerInterfaceWrapper) CreateInstitution(w http.ResponseWriter, r *h
 // ListPayees operation middleware
 func (siw *ServerInterfaceWrapper) ListPayees(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListPayeesParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListPayees(w, r)
+		siw.Handler.ListPayees(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2350,8 +2560,40 @@ func (siw *ServerInterfaceWrapper) ReconcileStatement(w http.ResponseWriter, r *
 // ListTags operation middleware
 func (siw *ServerInterfaceWrapper) ListTags(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListTagsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListTags(w, r)
+		siw.Handler.ListTags(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2553,8 +2795,37 @@ func (siw *ServerInterfaceWrapper) ListAttachments(w http.ResponseWriter, r *htt
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListAttachmentsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListAttachments(w, r, id)
+		siw.Handler.ListAttachments(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2867,6 +3138,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 type ProblemApplicationProblemPlusJSONResponse Problem
 
 type ListAccountsRequestObject struct {
+	Params ListAccountsParams
 }
 
 type ListAccountsResponseObject interface {
@@ -3152,7 +3424,8 @@ func (response GetAccountBalance404ApplicationProblemPlusJSONResponse) VisitGetA
 }
 
 type ListBalanceAssertionsRequestObject struct {
-	Id ID `json:"id"`
+	Id     ID `json:"id"`
+	Params ListBalanceAssertionsParams
 }
 
 type ListBalanceAssertionsResponseObject interface {
@@ -4457,6 +4730,7 @@ func (response CreateInstallmentPurchase422ApplicationProblemPlusJSONResponse) V
 }
 
 type ListInstitutionsRequestObject struct {
+	Params ListInstitutionsParams
 }
 
 type ListInstitutionsResponseObject interface {
@@ -4546,6 +4820,7 @@ func (response CreateInstitution422ApplicationProblemPlusJSONResponse) VisitCrea
 }
 
 type ListPayeesRequestObject struct {
+	Params ListPayeesParams
 }
 
 type ListPayeesResponseObject interface {
@@ -5029,6 +5304,7 @@ func (response ReconcileStatement422ApplicationProblemPlusJSONResponse) VisitRec
 }
 
 type ListTagsRequestObject struct {
+	Params ListTagsParams
 }
 
 type ListTagsResponseObject interface {
@@ -5313,7 +5589,8 @@ func (response CorrectTransaction422ApplicationProblemPlusJSONResponse) VisitCor
 }
 
 type ListAttachmentsRequestObject struct {
-	Id ID `json:"id"`
+	Id     ID `json:"id"`
+	Params ListAttachmentsParams
 }
 
 type ListAttachmentsResponseObject interface {
@@ -5918,8 +6195,10 @@ type strictHandler struct {
 }
 
 // ListAccounts operation middleware
-func (sh *strictHandler) ListAccounts(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) ListAccounts(w http.ResponseWriter, r *http.Request, params ListAccountsParams) {
 	var request ListAccountsRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.ListAccounts(ctx, request.(ListAccountsRequestObject))
@@ -6059,10 +6338,11 @@ func (sh *strictHandler) GetAccountBalance(w http.ResponseWriter, r *http.Reques
 }
 
 // ListBalanceAssertions operation middleware
-func (sh *strictHandler) ListBalanceAssertions(w http.ResponseWriter, r *http.Request, id ID) {
+func (sh *strictHandler) ListBalanceAssertions(w http.ResponseWriter, r *http.Request, id ID, params ListBalanceAssertionsParams) {
 	var request ListBalanceAssertionsRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.ListBalanceAssertions(ctx, request.(ListBalanceAssertionsRequestObject))
@@ -6656,8 +6936,10 @@ func (sh *strictHandler) CreateInstallmentPurchase(w http.ResponseWriter, r *htt
 }
 
 // ListInstitutions operation middleware
-func (sh *strictHandler) ListInstitutions(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) ListInstitutions(w http.ResponseWriter, r *http.Request, params ListInstitutionsParams) {
 	var request ListInstitutionsRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.ListInstitutions(ctx, request.(ListInstitutionsRequestObject))
@@ -6711,8 +6993,10 @@ func (sh *strictHandler) CreateInstitution(w http.ResponseWriter, r *http.Reques
 }
 
 // ListPayees operation middleware
-func (sh *strictHandler) ListPayees(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) ListPayees(w http.ResponseWriter, r *http.Request, params ListPayeesParams) {
 	var request ListPayeesRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.ListPayees(ctx, request.(ListPayeesRequestObject))
@@ -6946,8 +7230,10 @@ func (sh *strictHandler) ReconcileStatement(w http.ResponseWriter, r *http.Reque
 }
 
 // ListTags operation middleware
-func (sh *strictHandler) ListTags(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) ListTags(w http.ResponseWriter, r *http.Request, params ListTagsParams) {
 	var request ListTagsRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.ListTags(ctx, request.(ListTagsRequestObject))
@@ -7086,10 +7372,11 @@ func (sh *strictHandler) CorrectTransaction(w http.ResponseWriter, r *http.Reque
 }
 
 // ListAttachments operation middleware
-func (sh *strictHandler) ListAttachments(w http.ResponseWriter, r *http.Request, id ID) {
+func (sh *strictHandler) ListAttachments(w http.ResponseWriter, r *http.Request, id ID, params ListAttachmentsParams) {
 	var request ListAttachmentsRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.ListAttachments(ctx, request.(ListAttachmentsRequestObject))

@@ -93,9 +93,23 @@ func (r *Repository) InsertInstitution(ctx context.Context, i app.Institution) (
 	return toInstitution(row), nil
 }
 
-func (r *Repository) ListInstitutions(ctx context.Context, userID int64) ([]app.Institution, error) {
-	rows, err := r.q.ListInstitutions(ctx, userID)
-	return mapAll(rows, toInstitution), err
+func (r *Repository) ListInstitutions(ctx context.Context, userID int64, p app.Page[app.InstitutionKey]) ([]app.Institution, *app.InstitutionKey, error) {
+	params := ListInstitutionsParams{UserID: userID, RowLimit: rowLimit(p.Limit)}
+	if p.After != nil {
+		params.AfterName, params.AfterID = &p.After.Name, nullUUID(p.After.ID)
+	}
+	rows, err := r.q.ListInstitutions(ctx, params)
+	if err != nil {
+		return nil, nil, err
+	}
+	items, next := pageOf(rows, p.Limit,
+		func(row ListInstitutionsRow) app.Institution {
+			return toInstitution(LedgerInstitution{ID: row.ID, UserID: row.UserID, Name: row.Name, Code: row.Code})
+		},
+		func(row ListInstitutionsRow) app.InstitutionKey {
+			return app.InstitutionKey{Name: row.SortName, ID: row.ID}
+		})
+	return items, next, nil
 }
 
 func (r *Repository) InsertPayee(ctx context.Context, p app.Payee) (app.Payee, error) {
@@ -114,13 +128,34 @@ func (r *Repository) Payee(ctx context.Context, userID int64, id uuid.UUID) (app
 	return toPayee(row), nil
 }
 
-func (r *Repository) ListPayees(ctx context.Context, userID int64) ([]app.Payee, error) {
-	rows, err := r.q.ListPayees(ctx, userID)
-	return mapAll(rows, toPayee), err
+func (r *Repository) ListPayees(ctx context.Context, userID int64, p app.Page[app.PayeeKey]) ([]app.Payee, *app.PayeeKey, error) {
+	params := ListPayeesParams{UserID: userID, RowLimit: rowLimit(p.Limit)}
+	if p.After != nil {
+		params.AfterName, params.AfterID = &p.After.Name, nullUUID(p.After.ID)
+	}
+	rows, err := r.q.ListPayees(ctx, params)
+	if err != nil {
+		return nil, nil, err
+	}
+	items, next := pageOf(rows, p.Limit,
+		func(row ListPayeesRow) app.Payee {
+			return toPayee(LedgerPayee{ID: row.ID, UserID: row.UserID, Name: row.Name})
+		},
+		func(row ListPayeesRow) app.PayeeKey { return app.PayeeKey{Name: row.SortName, ID: row.ID} })
+	return items, next, nil
 }
 
-func (r *Repository) ListTags(ctx context.Context, userID int64) ([]string, error) {
-	return r.q.ListTags(ctx, userID)
+func (r *Repository) ListTags(ctx context.Context, userID int64, p app.Page[app.TagKey]) ([]string, *app.TagKey, error) {
+	params := ListTagsParams{UserID: userID, RowLimit: rowLimit(p.Limit)}
+	if p.After != nil {
+		params.AfterName = &p.After.Name
+	}
+	rows, err := r.q.ListTags(ctx, params)
+	if err != nil {
+		return nil, nil, err
+	}
+	items, next := pageOf(rows, p.Limit, func(name string) string { return name }, func(name string) app.TagKey { return app.TagKey{Name: name} })
+	return items, next, nil
 }
 
 func (r *Repository) Account(ctx context.Context, userID int64, id uuid.UUID) (domain.Account, error) {
@@ -143,9 +178,28 @@ func (r *Repository) Accounts(ctx context.Context, userID int64, ids []uuid.UUID
 	return out, nil
 }
 
-func (r *Repository) ListAccounts(ctx context.Context, userID int64) ([]domain.Account, error) {
-	rows, err := r.q.ListAccounts(ctx, userID)
-	return mapAll(rows, toAccount), err
+func (r *Repository) ListAccounts(ctx context.Context, userID int64, p app.Page[app.AccountKey]) ([]domain.Account, *app.AccountKey, error) {
+	params := ListAccountsParams{UserID: userID, RowLimit: rowLimit(p.Limit)}
+	if p.After != nil {
+		params.AfterClass, params.AfterName, params.AfterID = &p.After.Class, &p.After.Name, nullUUID(p.After.ID)
+	}
+	rows, err := r.q.ListAccounts(ctx, params)
+	if err != nil {
+		return nil, nil, err
+	}
+	items, next := pageOf(rows, p.Limit,
+		func(row ListAccountsRow) domain.Account {
+			return toAccount(LedgerAccount{
+				ID: row.ID, UserID: row.UserID, Name: row.Name, AccountClass: row.AccountClass, Kind: row.Kind,
+				Instrument: row.Instrument, ParentID: row.ParentID, InstitutionID: row.InstitutionID,
+				CounterpartyPayeeID: row.CounterpartyPayeeID, OpenedOn: row.OpenedOn, ClosedOn: row.ClosedOn,
+				YieldMode: row.YieldMode, SystemRole: row.SystemRole, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
+			})
+		},
+		func(row ListAccountsRow) app.AccountKey {
+			return app.AccountKey{Class: row.AccountClass, Name: row.SortName, ID: row.ID}
+		})
+	return items, next, nil
 }
 
 func (r *Repository) InsertAccount(ctx context.Context, a domain.Account) (domain.Account, error) {

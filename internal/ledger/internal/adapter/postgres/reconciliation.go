@@ -49,6 +49,28 @@ func (r *Repository) BalanceAssertion(ctx context.Context, userID int64, id uuid
 	}, row.Reconciled), nil
 }
 
+func (r *Repository) BalanceAssertionPage(ctx context.Context, userID int64, accountID uuid.UUID, p app.Page[app.AssertionKey]) ([]app.BalanceAssertion, *app.AssertionKey, error) {
+	params := ListBalanceAssertionPageParams{UserID: userID, AccountID: accountID, RowLimit: rowLimit(p.Limit)}
+	if p.After != nil {
+		params.AfterDate, params.AfterID = &p.After.Date, nullUUID(p.After.ID)
+	}
+	rows, err := r.q.ListBalanceAssertionPage(ctx, params)
+	if err != nil {
+		return nil, nil, err
+	}
+	items, next := pageOf(rows, p.Limit,
+		func(row ListBalanceAssertionPageRow) app.BalanceAssertion {
+			return toAssertion(LedgerBalanceAssertion{
+				ID: row.ID, UserID: row.UserID, AccountID: row.AccountID, Date: row.Date,
+				Amount: row.Amount, Source: row.Source, RecordedAt: row.RecordedAt,
+			}, row.Reconciled)
+		},
+		func(row ListBalanceAssertionPageRow) app.AssertionKey {
+			return app.AssertionKey{Date: row.Date, ID: row.ID}
+		})
+	return items, next, nil
+}
+
 func (r *Repository) BalanceAssertions(ctx context.Context, userID int64, accountID uuid.UUID) ([]app.BalanceAssertion, error) {
 	rows, err := r.q.ListBalanceAssertions(ctx, ListBalanceAssertionsParams{UserID: userID, AccountID: accountID})
 	if err != nil {

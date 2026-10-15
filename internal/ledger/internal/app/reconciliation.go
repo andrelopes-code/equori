@@ -236,11 +236,11 @@ func (s *Service) ReconcileStatement(ctx context.Context, userID int64, statemen
 	})
 }
 
-func (s *Service) BalanceAssertions(ctx context.Context, userID int64, accountID uuid.UUID) ([]BalanceAssertion, error) {
+func (s *Service) BalanceAssertions(ctx context.Context, userID int64, accountID uuid.UUID, p Page[AssertionKey]) ([]BalanceAssertion, *AssertionKey, error) {
 	if _, err := s.repo.Account(ctx, userID, accountID); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return s.repo.BalanceAssertions(ctx, userID, accountID)
+	return s.repo.BalanceAssertionPage(ctx, userID, accountID, p)
 }
 
 // lockLeafBalance serializes the reconciliations of one account.

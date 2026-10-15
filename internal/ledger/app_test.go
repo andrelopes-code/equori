@@ -19,6 +19,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
+	"github.com/andrelopes-code/equori/internal/platform/page"
 	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
 )
 
@@ -125,7 +126,7 @@ func TestProvisionCreatesSystemAccounts(t *testing.T) {
 	if err != nil || settings.BaseCurrency != "BRL" {
 		t.Fatalf("settings = %+v, %v", settings, err)
 	}
-	accounts, err := f.svc.ListAccounts(t.Context(), f.userID)
+	accounts, _, err := f.svc.ListAccounts(t.Context(), f.userID, app.Page[app.AccountKey]{Limit: page.MaxLimit})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -144,7 +145,7 @@ func TestProvisionCreatesSystemAccounts(t *testing.T) {
 	if err := f.svc.Provision(t.Context(), f.userID, "BRL"); err != nil {
 		t.Fatal(err)
 	}
-	again, _ := f.svc.ListAccounts(t.Context(), f.userID)
+	again, _, _ := f.svc.ListAccounts(t.Context(), f.userID, app.Page[app.AccountKey]{Limit: page.MaxLimit})
 	if len(again) != len(accounts) {
 		t.Fatalf("second provisioning created %d accounts", len(again)-len(accounts))
 	}

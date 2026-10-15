@@ -9,6 +9,14 @@ FROM ledger_balance_assertion a
 WHERE a.user_id = $1 AND a.account_id = $2
 ORDER BY a.date DESC, a.id DESC;
 
+-- name: ListBalanceAssertionPage :many
+SELECT a.*, EXISTS (SELECT 1 FROM ledger_reconciliation r WHERE r.assertion_id = a.id) AS reconciled
+FROM ledger_balance_assertion a
+WHERE a.user_id = @user_id AND a.account_id = @account_id
+  AND (sqlc.narg(after_date)::date IS NULL OR (a.date, a.id) < (sqlc.narg(after_date)::date, sqlc.narg(after_id)::uuid))
+ORDER BY a.date DESC, a.id DESC
+LIMIT @row_limit;
+
 -- name: GetBalanceAssertion :one
 SELECT a.*, EXISTS (SELECT 1 FROM ledger_reconciliation r WHERE r.assertion_id = a.id) AS reconciled
 FROM ledger_balance_assertion a

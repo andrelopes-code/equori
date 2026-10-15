@@ -173,6 +173,69 @@ func (q *Queries) LastReconciledOn(ctx context.Context, arg LastReconciledOnPara
 	return date, err
 }
 
+const listBalanceAssertionPage = `-- name: ListBalanceAssertionPage :many
+SELECT a.id, a.user_id, a.account_id, a.date, a.amount, a.source, a.recorded_at, EXISTS (SELECT 1 FROM ledger_reconciliation r WHERE r.assertion_id = a.id) AS reconciled
+FROM ledger_balance_assertion a
+WHERE a.user_id = $1 AND a.account_id = $2
+  AND ($3::date IS NULL OR (a.date, a.id) < ($3::date, $4::uuid))
+ORDER BY a.date DESC, a.id DESC
+LIMIT $5
+`
+
+type ListBalanceAssertionPageParams struct {
+	UserID    int64
+	AccountID uuid.UUID
+	AfterDate *time.Time
+	AfterID   uuid.NullUUID
+	RowLimit  int32
+}
+
+type ListBalanceAssertionPageRow struct {
+	ID         uuid.UUID
+	UserID     int64
+	AccountID  uuid.UUID
+	Date       time.Time
+	Amount     int64
+	Source     string
+	RecordedAt time.Time
+	Reconciled bool
+}
+
+func (q *Queries) ListBalanceAssertionPage(ctx context.Context, arg ListBalanceAssertionPageParams) ([]ListBalanceAssertionPageRow, error) {
+	rows, err := q.db.Query(ctx, listBalanceAssertionPage,
+		arg.UserID,
+		arg.AccountID,
+		arg.AfterDate,
+		arg.AfterID,
+		arg.RowLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListBalanceAssertionPageRow
+	for rows.Next() {
+		var i ListBalanceAssertionPageRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.AccountID,
+			&i.Date,
+			&i.Amount,
+			&i.Source,
+			&i.RecordedAt,
+			&i.Reconciled,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listBalanceAssertions = `-- name: ListBalanceAssertions :many
 SELECT a.id, a.user_id, a.account_id, a.date, a.amount, a.source, a.recorded_at, EXISTS (SELECT 1 FROM ledger_reconciliation r WHERE r.assertion_id = a.id) AS reconciled
 FROM ledger_balance_assertion a

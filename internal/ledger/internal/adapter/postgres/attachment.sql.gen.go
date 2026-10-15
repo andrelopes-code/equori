@@ -74,12 +74,17 @@ SELECT a.id, a.user_id, a.transaction_id, a.sha256, a.file_name, a.media_type, a
 FROM ledger_attachment a
 JOIN ledger_attachment_blob b ON b.user_id = a.user_id AND b.sha256 = a.sha256
 WHERE a.user_id = $1 AND a.transaction_id = $2
+  AND ($3::timestamptz IS NULL OR (a.created_at, a.id) > ($3::timestamptz, $4::uuid))
 ORDER BY a.created_at, a.id
+LIMIT $5
 `
 
 type ListAttachmentsParams struct {
 	UserID        int64
 	TransactionID uuid.UUID
+	AfterCreated  *time.Time
+	AfterID       uuid.NullUUID
+	RowLimit      int32
 }
 
 type ListAttachmentsRow struct {
@@ -94,7 +99,13 @@ type ListAttachmentsRow struct {
 }
 
 func (q *Queries) ListAttachments(ctx context.Context, arg ListAttachmentsParams) ([]ListAttachmentsRow, error) {
-	rows, err := q.db.Query(ctx, listAttachments, arg.UserID, arg.TransactionID)
+	rows, err := q.db.Query(ctx, listAttachments,
+		arg.UserID,
+		arg.TransactionID,
+		arg.AfterCreated,
+		arg.AfterID,
+		arg.RowLimit,
+	)
 	if err != nil {
 		return nil, err
 	}

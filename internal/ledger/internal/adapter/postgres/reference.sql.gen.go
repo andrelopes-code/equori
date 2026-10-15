@@ -77,23 +77,48 @@ func (q *Queries) InsertPayee(ctx context.Context, arg InsertPayeeParams) (Ledge
 }
 
 const listInstitutions = `-- name: ListInstitutions :many
-SELECT id, user_id, name, code FROM ledger_institution WHERE user_id = $1 ORDER BY lower(name)
+SELECT id, user_id, name, code, lower(name)::text AS sort_name FROM ledger_institution
+WHERE user_id = $1
+  AND ($2::text IS NULL OR (lower(name), id) > ($2::text, $3::uuid))
+ORDER BY lower(name), id
+LIMIT $4
 `
 
-func (q *Queries) ListInstitutions(ctx context.Context, userID int64) ([]LedgerInstitution, error) {
-	rows, err := q.db.Query(ctx, listInstitutions, userID)
+type ListInstitutionsParams struct {
+	UserID    int64
+	AfterName *string
+	AfterID   uuid.NullUUID
+	RowLimit  int32
+}
+
+type ListInstitutionsRow struct {
+	ID       uuid.UUID
+	UserID   int64
+	Name     string
+	Code     *string
+	SortName string
+}
+
+func (q *Queries) ListInstitutions(ctx context.Context, arg ListInstitutionsParams) ([]ListInstitutionsRow, error) {
+	rows, err := q.db.Query(ctx, listInstitutions,
+		arg.UserID,
+		arg.AfterName,
+		arg.AfterID,
+		arg.RowLimit,
+	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []LedgerInstitution
+	var items []ListInstitutionsRow
 	for rows.Next() {
-		var i LedgerInstitution
+		var i ListInstitutionsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,
 			&i.Name,
 			&i.Code,
+			&i.SortName,
 		); err != nil {
 			return nil, err
 		}
@@ -106,19 +131,47 @@ func (q *Queries) ListInstitutions(ctx context.Context, userID int64) ([]LedgerI
 }
 
 const listPayees = `-- name: ListPayees :many
-SELECT id, user_id, name FROM ledger_payee WHERE user_id = $1 ORDER BY lower(name)
+SELECT id, user_id, name, lower(name)::text AS sort_name FROM ledger_payee
+WHERE user_id = $1
+  AND ($2::text IS NULL OR (lower(name), id) > ($2::text, $3::uuid))
+ORDER BY lower(name), id
+LIMIT $4
 `
 
-func (q *Queries) ListPayees(ctx context.Context, userID int64) ([]LedgerPayee, error) {
-	rows, err := q.db.Query(ctx, listPayees, userID)
+type ListPayeesParams struct {
+	UserID    int64
+	AfterName *string
+	AfterID   uuid.NullUUID
+	RowLimit  int32
+}
+
+type ListPayeesRow struct {
+	ID       uuid.UUID
+	UserID   int64
+	Name     string
+	SortName string
+}
+
+func (q *Queries) ListPayees(ctx context.Context, arg ListPayeesParams) ([]ListPayeesRow, error) {
+	rows, err := q.db.Query(ctx, listPayees,
+		arg.UserID,
+		arg.AfterName,
+		arg.AfterID,
+		arg.RowLimit,
+	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []LedgerPayee
+	var items []ListPayeesRow
 	for rows.Next() {
-		var i LedgerPayee
-		if err := rows.Scan(&i.ID, &i.UserID, &i.Name); err != nil {
+		var i ListPayeesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Name,
+			&i.SortName,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -130,11 +183,20 @@ func (q *Queries) ListPayees(ctx context.Context, userID int64) ([]LedgerPayee, 
 }
 
 const listTags = `-- name: ListTags :many
-SELECT name FROM ledger_tag WHERE user_id = $1 ORDER BY name
+SELECT name FROM ledger_tag
+WHERE user_id = $1 AND ($2::text IS NULL OR name > $2::text)
+ORDER BY name
+LIMIT $3
 `
 
-func (q *Queries) ListTags(ctx context.Context, userID int64) ([]string, error) {
-	rows, err := q.db.Query(ctx, listTags, userID)
+type ListTagsParams struct {
+	UserID    int64
+	AfterName *string
+	RowLimit  int32
+}
+
+func (q *Queries) ListTags(ctx context.Context, arg ListTagsParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, listTags, arg.UserID, arg.AfterName, arg.RowLimit)
 	if err != nil {
 		return nil, err
 	}

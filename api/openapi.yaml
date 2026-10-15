@@ -117,6 +117,9 @@ paths:
       tags: [ledger]
       operationId: listInstitutions
       summary: List institutions.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
       responses:
         "200":
           description: OK.
@@ -152,6 +155,9 @@ paths:
       tags: [ledger]
       operationId: listPayees
       summary: List payees.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
       responses:
         "200":
           description: OK.
@@ -187,6 +193,9 @@ paths:
       tags: [ledger]
       operationId: listTags
       summary: List tags in use.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
       responses:
         "200":
           description: OK.
@@ -201,6 +210,9 @@ paths:
       tags: [ledger]
       operationId: listAccounts
       summary: List accounts, categories included.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
       responses:
         "200":
           description: OK.
@@ -719,6 +731,8 @@ paths:
           schema:
             type: string
             pattern: "^[0-9]{4}-[0-9]{2}$"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
       responses:
         "200":
           description: OK.
@@ -1013,6 +1027,8 @@ paths:
       summary: Balances reported by the institution for a leaf balance account.
       parameters:
         - $ref: "#/components/parameters/ID"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
       responses:
         "200":
           description: OK.
@@ -1169,6 +1185,8 @@ paths:
       summary: Files attached to a transaction.
       parameters:
         - $ref: "#/components/parameters/ID"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
       responses:
         "200":
           description: OK.
@@ -1329,6 +1347,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Attachment"
+        next_cursor:
+          type: string
+          description: Absent on the last page.
     StatementReconciliationInput:
       type: object
       additionalProperties: false
@@ -1416,6 +1437,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/BalanceAssertion"
+        next_cursor:
+          type: string
+          description: Absent on the last page.
     AssertionResult:
       type: object
       required: [assertion, difference]
@@ -1663,6 +1687,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/StatementSummary"
+        next_cursor:
+          type: string
+          description: Absent on the last page.
     StatementPosting:
       type: object
       required: [transaction_id, date, description, card_role, amount]
@@ -1870,6 +1897,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Institution"
+        next_cursor:
+          type: string
+          description: Absent on the last page.
     PayeeInput:
       type: object
       additionalProperties: false
@@ -1896,6 +1926,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Payee"
+        next_cursor:
+          type: string
+          description: Absent on the last page.
     TagList:
       type: object
       required: [items]
@@ -1904,6 +1937,9 @@ components:
           type: array
           items:
             type: string
+        next_cursor:
+          type: string
+          description: Absent on the last page.
     AccountClass:
       type: string
       enum: [asset, liability, equity, income, expense]
@@ -1960,6 +1996,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Account"
+        next_cursor:
+          type: string
+          description: Absent on the last page.
     AccountPatch:
       type: object
       additionalProperties: false

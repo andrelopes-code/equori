@@ -66,11 +66,11 @@ func (s *Service) Attach(ctx context.Context, userID int64, transactionID uuid.U
 	return created, err
 }
 
-func (s *Service) Attachments(ctx context.Context, userID int64, transactionID uuid.UUID) ([]Attachment, error) {
+func (s *Service) Attachments(ctx context.Context, userID int64, transactionID uuid.UUID, p Page[AttachmentKey]) ([]Attachment, *AttachmentKey, error) {
 	if _, err := s.repo.Transaction(ctx, userID, transactionID); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return s.repo.Attachments(ctx, userID, transactionID)
+	return s.repo.Attachments(ctx, userID, transactionID, p)
 }
 
 func (s *Service) AttachmentContent(ctx context.Context, userID int64, id uuid.UUID) (AttachmentContent, error) {
