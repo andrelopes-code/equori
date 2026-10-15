@@ -263,6 +263,9 @@ func (s *Service) RecordTransaction(ctx context.Context, userID int64, t domain.
 		if err != nil {
 			return err
 		}
+		if err := s.bill(ctx, r, &valid); err != nil {
+			return err
+		}
 		if created, err = r.InsertTransaction(ctx, valid); err != nil {
 			return err
 		}
@@ -290,6 +293,9 @@ func (s *Service) CorrectTransaction(ctx context.Context, userID int64, id uuid.
 			return err
 		}
 		if corrected, err = prev.Correct(next, expectedVersion, accounts); err != nil {
+			return err
+		}
+		if err := s.bill(ctx, r, &corrected); err != nil {
 			return err
 		}
 		if err := r.ReplaceTransaction(ctx, prev, corrected, reason); err != nil {

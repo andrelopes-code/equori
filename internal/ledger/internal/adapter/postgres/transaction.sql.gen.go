@@ -132,10 +132,13 @@ func (q *Queries) InsertLink(ctx context.Context, arg InsertLinkParams) error {
 const insertPosting = `-- name: InsertPosting :exec
 INSERT INTO ledger_posting (
     user_id, transaction_id, account_id, position, amount, weight, booked_on, settled_on,
-    status, original_amount, original_instrument, memo
+    status, original_amount, original_instrument, memo,
+    statement_id, card_role, installment_plan_id, installment_number, installment_count
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8,
-    $9, $10, $11, $12
+    $9, $10, $11, $12,
+    $13, $14, $15,
+    $16, $17
 )
 `
 
@@ -152,6 +155,11 @@ type InsertPostingParams struct {
 	OriginalAmount     *int64
 	OriginalInstrument *string
 	Memo               *string
+	StatementID        uuid.NullUUID
+	CardRole           *string
+	InstallmentPlanID  uuid.NullUUID
+	InstallmentNumber  *int16
+	InstallmentCount   *int16
 }
 
 func (q *Queries) InsertPosting(ctx context.Context, arg InsertPostingParams) error {
@@ -168,6 +176,11 @@ func (q *Queries) InsertPosting(ctx context.Context, arg InsertPostingParams) er
 		arg.OriginalAmount,
 		arg.OriginalInstrument,
 		arg.Memo,
+		arg.StatementID,
+		arg.CardRole,
+		arg.InstallmentPlanID,
+		arg.InstallmentNumber,
+		arg.InstallmentCount,
 	)
 	return err
 }
@@ -291,10 +304,11 @@ func (q *Queries) ListLinksFrom(ctx context.Context, arg ListLinksFromParams) ([
 }
 
 const listPostings = `-- name: ListPostings :many
-SELECT p.id, p.user_id, p.transaction_id, p.account_id, p.position, p.amount, p.weight, p.booked_on, p.settled_on, p.status, p.original_amount, p.original_instrument, p.memo, p.voided, p.statement_id, p.card_role, p.installment_plan_id, p.installment_number, p.installment_count, a.instrument AS account_instrument, t.balancing_currency
+SELECT p.id, p.user_id, p.transaction_id, p.account_id, p.position, p.amount, p.weight, p.booked_on, p.settled_on, p.status, p.original_amount, p.original_instrument, p.memo, p.voided, p.statement_id, p.card_role, p.installment_plan_id, p.installment_number, p.installment_count, a.instrument AS account_instrument, t.balancing_currency, s.reference_month AS statement_reference
 FROM ledger_posting p
 JOIN ledger_account a ON a.id = p.account_id
 JOIN ledger_transaction t ON t.id = p.transaction_id
+LEFT JOIN ledger_statement s ON s.id = p.statement_id
 WHERE p.user_id = $1 AND p.transaction_id = ANY($2::uuid[])
 ORDER BY p.transaction_id, p.position
 `
@@ -326,6 +340,7 @@ type ListPostingsRow struct {
 	InstallmentCount   *int16
 	AccountInstrument  string
 	BalancingCurrency  string
+	StatementReference *time.Time
 }
 
 func (q *Queries) ListPostings(ctx context.Context, arg ListPostingsParams) ([]ListPostingsRow, error) {
@@ -359,6 +374,7 @@ func (q *Queries) ListPostings(ctx context.Context, arg ListPostingsParams) ([]L
 			&i.InstallmentCount,
 			&i.AccountInstrument,
 			&i.BalancingCurrency,
+			&i.StatementReference,
 		); err != nil {
 			return nil, err
 		}

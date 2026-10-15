@@ -18,3 +18,23 @@ INSERT INTO ledger_card (user_id, account_id, holder, last_four, virtual) VALUES
 
 -- name: ListCards :many
 SELECT * FROM ledger_card WHERE user_id = $1 AND account_id = $2 ORDER BY created_at, id;
+
+-- name: EnsureStatement :one
+WITH inserted AS (
+    INSERT INTO ledger_statement (user_id, account_id, reference_month, closing_date, due_date)
+    VALUES (@user_id, @account_id, @reference_month, @closing_date, @due_date)
+    ON CONFLICT (account_id, reference_month) DO NOTHING
+    RETURNING id
+)
+SELECT id FROM inserted
+UNION ALL
+SELECT id FROM ledger_statement WHERE account_id = @account_id AND reference_month = @reference_month
+LIMIT 1;
+
+-- name: ListStatements :many
+SELECT * FROM ledger_statement WHERE user_id = $1 AND account_id = $2 ORDER BY reference_month;
+
+-- name: ListStatementLines :many
+SELECT p.statement_id, p.card_role, p.amount
+FROM ledger_posting p
+WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided AND p.statement_id IS NOT NULL;

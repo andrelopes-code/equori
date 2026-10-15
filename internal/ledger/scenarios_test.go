@@ -32,7 +32,7 @@ func newFixture(t *testing.T) fixture {
 	f.emergency = h.Account("Emergency fund", "asset", "reserve", map[string]any{"institution_id": nubankInst, "parent_id": f.nubank})
 	f.wallet = h.Account("Wallet", "asset", "cash", nil)
 	f.vr = h.Account("VR", "asset", "benefit", nil)
-	f.itauVisa = h.Account("Itaú Visa", "liability", "credit_card", nil)
+	f.itauVisa = h.Card("Itaú Visa", 3, 10, "next")
 	f.receivableAna = h.Account("Receivable Ana", "asset", "receivable", nil)
 	f.receivableBruno = h.Account("Receivable Bruno", "asset", "receivable", nil)
 	f.loanToAna = h.Account("Loan to Ana", "asset", "loan", nil)
@@ -137,10 +137,12 @@ func TestScenarios(t *testing.T) {
 	})
 
 	t.Run("S19", func(t *testing.T) {
-		t.Skip("card postings need statements (I03); billing arrives in P2 Task 5")
 		f := newFixture(t)
-		f.h.Record("2026-10-12",
+		dinner := f.h.Record("2026-10-12",
 			p(f.itauVisa, -30000), p(f.restaurant, 10000), p(f.receivableAna, 10000), p(f.receivableBruno, 10000))
+		if card := f.h.Transaction(dinner).Postings[0]; card.Statement != "2026-11" || card.CardRole != "charge" {
+			t.Errorf("dinner card posting billed on %q as %q, want 2026-11 charge", card.Statement, card.CardRole)
+		}
 		f.h.Record("2026-10-13", p(f.checking, 10000), p(f.receivableAna, -10000))
 		f.expectBalances(t, "2026-10-13", map[string]int64{
 			f.itauVisa: -30000, f.restaurant: 10000, f.receivableAna: 0, f.receivableBruno: 10000, f.checking: 10000,

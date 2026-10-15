@@ -85,6 +85,17 @@ type LedgerSetting struct {
 	BaseCurrency string
 }
 
+type LedgerStatement struct {
+	ID               uuid.UUID
+	UserID           int64
+	AccountID        uuid.UUID
+	ReferenceMonth   time.Time
+	ClosingDate      time.Time
+	DueDate          time.Time
+	FinancedByPlanID uuid.NullUUID
+	CreatedAt        time.Time
+}
+
 type LedgerTransaction struct {
 	ID                uuid.UUID
 	UserID            int64

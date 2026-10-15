@@ -11,10 +11,12 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andrelopes-code/equori/internal/identity"
+	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
 	"github.com/andrelopes-code/equori/internal/server"
 )
@@ -29,12 +31,29 @@ type Harness struct {
 	Client *http.Client
 }
 
+// Option changes the application the harness starts.
+type Option func(*server.Config)
+
+// Today fixes the instance clock at 12:00 UTC of date (YYYY-MM-DD).
+func Today(date string) Option {
+	d, err := time.Parse(time.DateOnly, date)
+	if err != nil {
+		panic(err)
+	}
+	clk := clock.New(time.UTC, func() time.Time { return d.Add(12 * time.Hour) })
+	return func(c *server.Config) { c.Clock = &clk }
+}
+
 // New starts the application and logs in owner@example.com as Client.
-func New(t *testing.T) *Harness {
+func New(t *testing.T, opts ...Option) *Harness {
 	t.Helper()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	pool := pgtest.New(t)
-	app := server.New(pool, server.Config{}, log)
+	cfg := server.Config{}
+	for _, o := range opts {
+		o(&cfg)
+	}
+	app := server.New(pool, cfg, log)
 	srv := httptest.NewServer(app.Handler)
 	t.Cleanup(srv.Close)
 	h := &Harness{t: t, Pool: pool, App: app, server: srv}
@@ -178,4 +197,42 @@ func BRL(amount int64) map[string]any { return map[string]any{"amount": amount, 
 
 func Posting(account string, amount int64) map[string]any {
 	return map[string]any{"account_id": account, "amount": BRL(amount)}
+}
+
+// Card creates a credit card account with a billing cycle rule from 2026-01.
+func (h *Harness) Card(name string, closingDay, dueDay int, assignment string) string {
+	h.t.Helper()
+	id := h.Account(name, "liability", "credit_card", nil)
+	h.MustDo(http.MethodPost, "/api/v1/accounts/"+id+"/billing-cycle-rules", map[string]any{
+		"effective_from": "2026-01", "closing_day": closingDay, "due_day": dueDay, "closing_day_assignment": assignment,
+	}, http.StatusCreated, nil)
+	return id
+}
+
+// Transaction returns the decoded transaction.
+func (h *Harness) Transaction(id string) TransactionView {
+	h.t.Helper()
+	var out TransactionView
+	h.MustDo(http.MethodGet, "/api/v1/transactions/"+id, nil, http.StatusOK, &out)
+	return out
+}
+
+type TransactionView struct {
+	ID       string        `json:"id"`
+	Version  int           `json:"version"`
+	Postings []PostingView `json:"postings"`
+}
+
+type PostingView struct {
+	AccountID string `json:"account_id"`
+	Amount    struct {
+		Amount int64 `json:"amount"`
+	} `json:"amount"`
+	Statement   string `json:"statement"`
+	CardRole    string `json:"card_role"`
+	Installment *struct {
+		Number int    `json:"number"`
+		Count  int    `json:"count"`
+		PlanID string `json:"plan_id"`
+	} `json:"installment"`
 }

@@ -91,6 +91,14 @@ func toPosting(row ListPostingsRow) (domain.Posting, error) {
 	p := domain.Posting{
 		ID: row.ID, AccountID: row.AccountID, Amount: amount, Weight: weight,
 		Status: domain.PostingStatus(row.Status), SettledOn: row.SettledOn, Memo: deref(row.Memo),
+		StatementID: row.StatementID.UUID, CardRole: deref(row.CardRole),
+	}
+	if row.StatementReference != nil {
+		m := domain.MonthOf(*row.StatementReference)
+		p.Statement = &m
+	}
+	if row.InstallmentPlanID.Valid && row.InstallmentNumber != nil && row.InstallmentCount != nil {
+		p.Installment = &domain.InstallmentRef{PlanID: row.InstallmentPlanID.UUID, Number: int(*row.InstallmentNumber), Count: int(*row.InstallmentCount)}
 	}
 	if row.OriginalAmount != nil && row.OriginalInstrument != nil {
 		orig, err := money.New(*row.OriginalAmount, money.Currency(*row.OriginalInstrument))
@@ -123,15 +131,19 @@ type snapshotLink struct {
 }
 
 type snapshotPosting struct {
-	AccountID          uuid.UUID `json:"account_id"`
-	Amount             int64     `json:"amount"`
-	Currency           string    `json:"currency"`
-	Weight             int64     `json:"weight"`
-	Status             string    `json:"status"`
-	SettledOn          string    `json:"settled_on,omitempty"`
-	OriginalAmount     *int64    `json:"original_amount,omitempty"`
-	OriginalInstrument *string   `json:"original_instrument,omitempty"`
-	Memo               string    `json:"memo,omitempty"`
+	AccountID          uuid.UUID              `json:"account_id"`
+	Amount             int64                  `json:"amount"`
+	Currency           string                 `json:"currency"`
+	Weight             int64                  `json:"weight"`
+	Status             string                 `json:"status"`
+	SettledOn          string                 `json:"settled_on,omitempty"`
+	OriginalAmount     *int64                 `json:"original_amount,omitempty"`
+	OriginalInstrument *string                `json:"original_instrument,omitempty"`
+	Memo               string                 `json:"memo,omitempty"`
+	Statement          string                 `json:"statement,omitempty"`
+	StatementID        uuid.UUID              `json:"statement_id,omitzero"`
+	CardRole           string                 `json:"card_role,omitempty"`
+	Installment        *domain.InstallmentRef `json:"installment,omitempty"`
 }
 
 func toSnapshot(t domain.Transaction) snapshot {
@@ -150,6 +162,10 @@ func toSnapshot(t domain.Transaction) snapshot {
 		if p.SettledOn != nil {
 			sp.SettledOn = p.SettledOn.Format(time.DateOnly)
 		}
+		if p.Statement != nil {
+			sp.Statement = p.Statement.String()
+		}
+		sp.StatementID, sp.CardRole, sp.Installment = p.StatementID, p.CardRole, p.Installment
 		s.Postings = append(s.Postings, sp)
 	}
 	return s
@@ -176,7 +192,17 @@ func (s snapshot) transaction() (domain.Transaction, error) {
 		if err != nil {
 			return domain.Transaction{}, err
 		}
-		p := domain.Posting{AccountID: sp.AccountID, Amount: amount, Weight: weight, Status: domain.PostingStatus(sp.Status), Memo: sp.Memo}
+		p := domain.Posting{
+			AccountID: sp.AccountID, Amount: amount, Weight: weight, Status: domain.PostingStatus(sp.Status), Memo: sp.Memo,
+			StatementID: sp.StatementID, CardRole: sp.CardRole, Installment: sp.Installment,
+		}
+		if sp.Statement != "" {
+			m, err := domain.ParseReferenceMonth(sp.Statement)
+			if err != nil {
+				return domain.Transaction{}, err
+			}
+			p.Statement = &m
+		}
 		if sp.SettledOn != "" {
 			settled, err := time.Parse(time.DateOnly, sp.SettledOn)
 			if err != nil {
@@ -205,4 +231,27 @@ func toBillingRule(row LedgerBillingCycleRule) domain.BillingCycleRule {
 
 func toCard(row LedgerCard) domain.Card {
 	return domain.Card{ID: row.ID, UserID: row.UserID, AccountID: row.AccountID, Holder: row.Holder, LastFour: row.LastFour, Virtual: row.Virtual, Active: row.Active}
+}
+
+func installmentPlan(i *domain.InstallmentRef) uuid.NullUUID {
+	if i == nil {
+		return uuid.NullUUID{}
+	}
+	return nullUUID(i.PlanID)
+}
+
+func installmentNumber(i *domain.InstallmentRef) *int16 {
+	if i == nil {
+		return nil
+	}
+	n := int16(i.Number) //nolint:gosec // at most 420 installments.
+	return &n
+}
+
+func installmentCount(i *domain.InstallmentRef) *int16 {
+	if i == nil {
+		return nil
+	}
+	n := int16(i.Count) //nolint:gosec // at most 420 installments.
+	return &n
 }

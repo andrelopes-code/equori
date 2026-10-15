@@ -42,6 +42,14 @@ type CardSummary struct {
 	AvailableLimit money.Money
 }
 
+// Statement is a stored statement with the lines its summary is derived from.
+type Statement struct {
+	ID         uuid.UUID
+	AccountID  uuid.UUID
+	FinancedBy uuid.UUID
+	Input      domain.StatementInput
+}
+
 type Settings struct {
 	UserID       int64
 	BaseCurrency money.Currency
@@ -142,6 +150,9 @@ type Repository interface {
 	CreditLimits(ctx context.Context, userID int64, accountID uuid.UUID) ([]CreditLimit, error)
 	InsertCard(ctx context.Context, c domain.Card) (domain.Card, error)
 	Cards(ctx context.Context, userID int64, accountID uuid.UUID) ([]domain.Card, error)
+
+	EnsureStatement(ctx context.Context, userID int64, accountID uuid.UUID, d domain.StatementDates, due time.Time) (uuid.UUID, error)
+	Statements(ctx context.Context, userID int64, accountID uuid.UUID) ([]Statement, error)
 
 	// BalanceAt sums the postings of the account and its descendants up to and including date.
 	BalanceAt(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis Basis) (int64, error)

@@ -139,6 +139,16 @@ func fromTransactionInput(in TransactionInput) (domain.Transaction, error) {
 		if p.Status != nil {
 			posting.Status = domain.PostingStatus(*p.Status)
 		}
+		if p.Statement != nil {
+			m, err := domain.ParseReferenceMonth(*p.Statement)
+			if err != nil {
+				return domain.Transaction{}, &domain.FieldError{Field: field("statement"), Message: "must be YYYY-MM", Err: domain.ErrValidation}
+			}
+			posting.Statement = &m
+		}
+		if p.CardRole != nil {
+			posting.CardRole = string(*p.CardRole)
+		}
 		t.Postings = append(t.Postings, posting)
 	}
 	return t, nil
@@ -162,6 +172,17 @@ func toTransactionAPI(t domain.Transaction) Transaction {
 		if p.Original != nil {
 			o := toMoneyAPI(*p.Original)
 			ap.Original = &o
+		}
+		if p.Statement != nil {
+			ref := p.Statement.String()
+			ap.Statement = &ref
+		}
+		if p.CardRole != "" {
+			role := PostingCardRole(p.CardRole)
+			ap.CardRole = &role
+		}
+		if p.Installment != nil {
+			ap.Installment = &Installment{PlanId: p.Installment.PlanID, Number: p.Installment.Number, Count: p.Installment.Count}
 		}
 		out.Postings = append(out.Postings, ap)
 	}

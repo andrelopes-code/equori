@@ -261,6 +261,27 @@ func (e LinkType) Valid() bool {
 	}
 }
 
+// Defines values for PostingCardRole.
+const (
+	PostingCardRoleCharge  PostingCardRole = "charge"
+	PostingCardRoleCredit  PostingCardRole = "credit"
+	PostingCardRolePayment PostingCardRole = "payment"
+)
+
+// Valid indicates whether the value is a known member of the PostingCardRole enum.
+func (e PostingCardRole) Valid() bool {
+	switch e {
+	case PostingCardRoleCharge:
+		return true
+	case PostingCardRoleCredit:
+		return true
+	case PostingCardRolePayment:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PostingStatus.
 const (
 	PostingStatusCleared    PostingStatus = "cleared"
@@ -276,6 +297,27 @@ func (e PostingStatus) Valid() bool {
 	case PostingStatusPending:
 		return true
 	case PostingStatusReconciled:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PostingInputCardRole.
+const (
+	PostingInputCardRoleCharge  PostingInputCardRole = "charge"
+	PostingInputCardRoleCredit  PostingInputCardRole = "credit"
+	PostingInputCardRolePayment PostingInputCardRole = "payment"
+)
+
+// Valid indicates whether the value is a known member of the PostingInputCardRole enum.
+func (e PostingInputCardRole) Valid() bool {
+	switch e {
+	case PostingInputCardRoleCharge:
+		return true
+	case PostingInputCardRoleCredit:
+		return true
+	case PostingInputCardRolePayment:
 		return true
 	default:
 		return false
@@ -495,6 +537,13 @@ type FieldError struct {
 	Message string `json:"message"`
 }
 
+// Installment defines model for Installment.
+type Installment struct {
+	Count  int                `json:"count"`
+	Number int                `json:"number"`
+	PlanId openapi_types.UUID `json:"plan_id"`
+}
+
 // Institution defines model for Institution.
 type Institution struct {
 	Code *string            `json:"code,omitempty"`
@@ -549,29 +598,48 @@ type PayeeList struct {
 
 // Posting defines model for Posting.
 type Posting struct {
-	AccountId openapi_types.UUID  `json:"account_id"`
-	Amount    Money               `json:"amount"`
-	Id        openapi_types.UUID  `json:"id"`
-	Memo      *string             `json:"memo,omitempty"`
-	Original  *Money              `json:"original,omitempty"`
-	SettledOn *openapi_types.Date `json:"settled_on,omitempty"`
-	Status    PostingStatus       `json:"status"`
-	Weight    Money               `json:"weight"`
+	AccountId openapi_types.UUID `json:"account_id"`
+	Amount    Money              `json:"amount"`
+
+	// CardRole Card postings only; derived from the amount and the other postings when absent.
+	CardRole    *PostingCardRole    `json:"card_role,omitempty"`
+	Id          openapi_types.UUID  `json:"id"`
+	Installment *Installment        `json:"installment,omitempty"`
+	Memo        *string             `json:"memo,omitempty"`
+	Original    *Money              `json:"original,omitempty"`
+	SettledOn   *openapi_types.Date `json:"settled_on,omitempty"`
+
+	// Statement Card postings only. Reference month of the statement; derived from the date when absent.
+	Statement *string       `json:"statement,omitempty"`
+	Status    PostingStatus `json:"status"`
+	Weight    Money         `json:"weight"`
 }
+
+// PostingCardRole Card postings only; derived from the amount and the other postings when absent.
+type PostingCardRole string
 
 // PostingStatus defines model for Posting.Status.
 type PostingStatus string
 
 // PostingInput defines model for PostingInput.
 type PostingInput struct {
-	AccountId openapi_types.UUID  `json:"account_id"`
-	Amount    Money               `json:"amount"`
-	Memo      *string             `json:"memo,omitempty"`
-	Original  *Money              `json:"original,omitempty"`
-	SettledOn *openapi_types.Date `json:"settled_on,omitempty"`
+	AccountId openapi_types.UUID `json:"account_id"`
+	Amount    Money              `json:"amount"`
+
+	// CardRole Card postings only; derived from the amount and the other postings when absent.
+	CardRole  *PostingInputCardRole `json:"card_role,omitempty"`
+	Memo      *string               `json:"memo,omitempty"`
+	Original  *Money                `json:"original,omitempty"`
+	SettledOn *openapi_types.Date   `json:"settled_on,omitempty"`
+
+	// Statement Card postings only. Reference month of the statement; derived from the date when absent.
+	Statement *string             `json:"statement,omitempty"`
 	Status    *PostingInputStatus `json:"status,omitempty"`
 	Weight    *Money              `json:"weight,omitempty"`
 }
+
+// PostingInputCardRole Card postings only; derived from the amount and the other postings when absent.
+type PostingInputCardRole string
 
 // PostingInputStatus defines model for PostingInput.Status.
 type PostingInputStatus string

@@ -68,6 +68,20 @@ type Posting struct {
 	SettledOn *time.Time
 	Original  *money.Money
 	Memo      string
+
+	// Card postings only (I03, I04). Statement is the requested or resolved reference
+	// month; StatementID is set by the application once the statement row exists.
+	Statement   *ReferenceMonth
+	StatementID uuid.UUID
+	CardRole    string
+	Installment *InstallmentRef
+}
+
+// InstallmentRef places a card posting in an installment plan ("3/12").
+type InstallmentRef struct {
+	PlanID uuid.UUID
+	Number int
+	Count  int
 }
 
 type Transaction struct {
@@ -119,9 +133,18 @@ func NewTransaction(t Transaction, accounts map[uuid.UUID]Account) (Transaction,
 
 	postings := make([]Posting, len(t.Postings))
 	var sum int64
+	hasCategory := false
+	for _, p := range t.Postings {
+		if a, ok := accounts[p.AccountID]; ok && (a.Class == ClassIncome || a.Class == ClassExpense) {
+			hasCategory = true
+		}
+	}
 	for i, p := range t.Postings {
 		checked, err := checkPosting(i, p, t, accounts)
 		if err != nil {
+			return Transaction{}, err
+		}
+		if checked, err = checkCardPosting(i, checked, accounts[checked.AccountID], hasCategory); err != nil {
 			return Transaction{}, err
 		}
 		postings[i] = checked
@@ -252,4 +275,40 @@ func (t Transaction) checkMutable() error {
 		}
 	}
 	return nil
+}
+
+// checkCardPosting applies I03/I04 and the role rules: a charge is negative; a credit
+// or payment is positive. Without an explicit role, a negative amount is a charge, a
+// positive one is a credit when the transaction touches a category, a payment otherwise.
+func checkCardPosting(i int, p Posting, a Account, hasCategory bool) (Posting, error) {
+	field := func(name string) string { return fmt.Sprintf("postings[%d].%s", i, name) }
+	if a.Kind != KindCreditCard {
+		if p.Statement != nil || p.CardRole != "" || p.Installment != nil {
+			return Posting{}, invalid(field("statement"), "statements, card roles and installments apply to credit card postings only")
+		}
+		return p, nil
+	}
+	if p.CardRole == "" {
+		switch {
+		case p.Amount.IsNegative():
+			p.CardRole = RoleCharge
+		case hasCategory:
+			p.CardRole = RoleCredit
+		default:
+			p.CardRole = RolePayment
+		}
+	}
+	switch p.CardRole {
+	case RoleCharge:
+		if !p.Amount.IsNegative() {
+			return Posting{}, invalid(field("card_role"), "a charge must be negative")
+		}
+	case RoleCredit, RolePayment:
+		if p.Amount.IsNegative() {
+			return Posting{}, invalid(field("card_role"), "a credit or payment must be positive")
+		}
+	default:
+		return Posting{}, invalid(field("card_role"), "must be charge, credit or payment")
+	}
+	return p, nil
 }

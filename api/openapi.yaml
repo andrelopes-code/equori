@@ -1027,6 +1027,25 @@ components:
           $ref: "#/components/schemas/Money"
         memo:
           type: string
+        statement:
+          type: string
+          pattern: "^[0-9]{4}-[0-9]{2}$"
+          description: Card postings only. Reference month of the statement; derived from the date when absent.
+        card_role:
+          type: string
+          enum: [charge, credit, payment]
+          description: Card postings only; derived from the amount and the other postings when absent.
+    Installment:
+      type: object
+      required: [plan_id, number, count]
+      properties:
+        plan_id:
+          type: string
+          format: uuid
+        number:
+          type: integer
+        count:
+          type: integer
     Posting:
       allOf:
         - $ref: "#/components/schemas/PostingInput"
@@ -1036,6 +1055,8 @@ components:
             id:
               type: string
               format: uuid
+            installment:
+              $ref: "#/components/schemas/Installment"
     Link:
       type: object
       required: [type, target]

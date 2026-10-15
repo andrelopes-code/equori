@@ -12,6 +12,40 @@ import (
 	"github.com/google/uuid"
 )
 
+const ensureStatement = `-- name: EnsureStatement :one
+WITH inserted AS (
+    INSERT INTO ledger_statement (user_id, account_id, reference_month, closing_date, due_date)
+    VALUES ($1, $2, $3, $4, $5)
+    ON CONFLICT (account_id, reference_month) DO NOTHING
+    RETURNING id
+)
+SELECT id FROM inserted
+UNION ALL
+SELECT id FROM ledger_statement WHERE account_id = $2 AND reference_month = $3
+LIMIT 1
+`
+
+type EnsureStatementParams struct {
+	UserID         int64
+	AccountID      uuid.UUID
+	ReferenceMonth time.Time
+	ClosingDate    time.Time
+	DueDate        time.Time
+}
+
+func (q *Queries) EnsureStatement(ctx context.Context, arg EnsureStatementParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, ensureStatement,
+		arg.UserID,
+		arg.AccountID,
+		arg.ReferenceMonth,
+		arg.ClosingDate,
+		arg.DueDate,
+	)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const insertBillingRule = `-- name: InsertBillingRule :one
 INSERT INTO ledger_billing_cycle_rule (
     user_id, account_id, effective_from, closing_day, due_day, closing_day_assignment, due_date_adjustment, calendar
@@ -219,6 +253,81 @@ func (q *Queries) ListCreditLimits(ctx context.Context, arg ListCreditLimitsPara
 			&i.AccountID,
 			&i.EffectiveFrom,
 			&i.Amount,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listStatementLines = `-- name: ListStatementLines :many
+SELECT p.statement_id, p.card_role, p.amount
+FROM ledger_posting p
+WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided AND p.statement_id IS NOT NULL
+`
+
+type ListStatementLinesParams struct {
+	UserID    int64
+	AccountID uuid.UUID
+}
+
+type ListStatementLinesRow struct {
+	StatementID uuid.NullUUID
+	CardRole    *string
+	Amount      int64
+}
+
+func (q *Queries) ListStatementLines(ctx context.Context, arg ListStatementLinesParams) ([]ListStatementLinesRow, error) {
+	rows, err := q.db.Query(ctx, listStatementLines, arg.UserID, arg.AccountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListStatementLinesRow
+	for rows.Next() {
+		var i ListStatementLinesRow
+		if err := rows.Scan(&i.StatementID, &i.CardRole, &i.Amount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listStatements = `-- name: ListStatements :many
+SELECT id, user_id, account_id, reference_month, closing_date, due_date, financed_by_plan_id, created_at FROM ledger_statement WHERE user_id = $1 AND account_id = $2 ORDER BY reference_month
+`
+
+type ListStatementsParams struct {
+	UserID    int64
+	AccountID uuid.UUID
+}
+
+func (q *Queries) ListStatements(ctx context.Context, arg ListStatementsParams) ([]LedgerStatement, error) {
+	rows, err := q.db.Query(ctx, listStatements, arg.UserID, arg.AccountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []LedgerStatement
+	for rows.Next() {
+		var i LedgerStatement
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.AccountID,
+			&i.ReferenceMonth,
+			&i.ClosingDate,
+			&i.DueDate,
+			&i.FinancedByPlanID,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err

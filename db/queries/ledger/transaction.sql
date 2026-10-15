@@ -25,20 +25,24 @@ SELECT * FROM ledger_transaction WHERE user_id = $1 AND id = $2 FOR UPDATE;
 -- name: InsertPosting :exec
 INSERT INTO ledger_posting (
     user_id, transaction_id, account_id, position, amount, weight, booked_on, settled_on,
-    status, original_amount, original_instrument, memo
+    status, original_amount, original_instrument, memo,
+    statement_id, card_role, installment_plan_id, installment_number, installment_count
 ) VALUES (
     @user_id, @transaction_id, @account_id, @position, @amount, @weight, @booked_on, sqlc.narg(settled_on),
-    @status, sqlc.narg(original_amount), sqlc.narg(original_instrument), sqlc.narg(memo)
+    @status, sqlc.narg(original_amount), sqlc.narg(original_instrument), sqlc.narg(memo),
+    sqlc.narg(statement_id), sqlc.narg(card_role), sqlc.narg(installment_plan_id),
+    sqlc.narg(installment_number), sqlc.narg(installment_count)
 );
 
 -- name: DeletePostings :exec
 DELETE FROM ledger_posting WHERE transaction_id = $1;
 
 -- name: ListPostings :many
-SELECT p.*, a.instrument AS account_instrument, t.balancing_currency
+SELECT p.*, a.instrument AS account_instrument, t.balancing_currency, s.reference_month AS statement_reference
 FROM ledger_posting p
 JOIN ledger_account a ON a.id = p.account_id
 JOIN ledger_transaction t ON t.id = p.transaction_id
+LEFT JOIN ledger_statement s ON s.id = p.statement_id
 WHERE p.user_id = $1 AND p.transaction_id = ANY(@transaction_ids::uuid[])
 ORDER BY p.transaction_id, p.position;
 

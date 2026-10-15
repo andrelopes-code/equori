@@ -297,7 +297,9 @@ func (r *Repository) writeChildren(ctx context.Context, t domain.Transaction) er
 			UserID: t.UserID, TransactionID: t.ID, AccountID: p.AccountID, Position: int16(i), //nolint:gosec // at most 500 postings (domain.MaxPostings).
 			Amount: p.Amount.Amount(), Weight: p.Weight.Amount(), BookedOn: t.Date, SettledOn: p.SettledOn,
 			Status: string(p.Status), OriginalAmount: originalAmount(p.Original), OriginalInstrument: originalInstrument(p.Original),
-			Memo: nullString(p.Memo),
+			Memo: nullString(p.Memo), StatementID: nullUUID(p.StatementID), CardRole: nullString(p.CardRole),
+			InstallmentPlanID: installmentPlan(p.Installment), InstallmentNumber: installmentNumber(p.Installment),
+			InstallmentCount: installmentCount(p.Installment),
 		})
 		if err != nil {
 			return referenceError(err)
@@ -439,4 +441,36 @@ func (r *Repository) InsertCard(ctx context.Context, c domain.Card) (domain.Card
 func (r *Repository) Cards(ctx context.Context, userID int64, accountID uuid.UUID) ([]domain.Card, error) {
 	rows, err := r.q.ListCards(ctx, ListCardsParams{UserID: userID, AccountID: accountID})
 	return mapAll(rows, toCard), err
+}
+
+func (r *Repository) EnsureStatement(ctx context.Context, userID int64, accountID uuid.UUID, d domain.StatementDates, due time.Time) (uuid.UUID, error) {
+	return r.q.EnsureStatement(ctx, EnsureStatementParams{
+		UserID: userID, AccountID: accountID, ReferenceMonth: d.Reference.FirstDay(), ClosingDate: d.Closing, DueDate: due,
+	})
+}
+
+func (r *Repository) Statements(ctx context.Context, userID int64, accountID uuid.UUID) ([]app.Statement, error) {
+	rows, err := r.q.ListStatements(ctx, ListStatementsParams{UserID: userID, AccountID: accountID})
+	if err != nil {
+		return nil, err
+	}
+	lines, err := r.q.ListStatementLines(ctx, ListStatementLinesParams{UserID: userID, AccountID: accountID})
+	if err != nil {
+		return nil, err
+	}
+	byStatement := make(map[uuid.UUID][]domain.StatementLine)
+	for _, l := range lines {
+		byStatement[l.StatementID.UUID] = append(byStatement[l.StatementID.UUID], domain.StatementLine{Role: deref(l.CardRole), Amount: l.Amount})
+	}
+	out := make([]app.Statement, len(rows))
+	for i, row := range rows {
+		out[i] = app.Statement{
+			ID: row.ID, AccountID: row.AccountID, FinancedBy: row.FinancedByPlanID.UUID,
+			Input: domain.StatementInput{
+				Reference: domain.MonthOf(row.ReferenceMonth), Closing: row.ClosingDate, Due: row.DueDate,
+				Lines: byStatement[row.ID], Financed: row.FinancedByPlanID.Valid,
+			},
+		}
+	}
+	return out, nil
 }
