@@ -14,6 +14,8 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/andrelopes-code/equori/internal/identity"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
@@ -30,6 +32,7 @@ type harness struct {
 	server     *httptest.Server
 	client     *http.Client
 	probeCalls atomic.Int32
+	pool       *pgxpool.Pool
 }
 
 // newHarness wires the module the same way cmd/equori does.
@@ -37,7 +40,9 @@ func newHarness(t *testing.T, cfg identity.Config) *harness {
 	t.Helper()
 	h := &harness{t: t}
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	m := identity.New(pgtest.New(t), cfg, log)
+	pool := pgtest.New(t)
+	h.pool = pool
+	m := identity.New(pool, cfg, log)
 	mux := http.NewServeMux()
 	m.RegisterRoutes(mux)
 	mux.HandleFunc("GET /api/v1/probe", func(http.ResponseWriter, *http.Request) { h.probeCalls.Add(1) })
@@ -256,4 +261,21 @@ func mustURL(t *testing.T, raw string) *url.URL {
 		t.Fatal(err)
 	}
 	return u
+}
+
+func TestCreateUserPublishesEvent(t *testing.T) {
+	h := newHarness(t, identity.Config{})
+
+	u, err := h.module.CreateUser(t.Context(), email, password, identity.RoleAdmin)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var n int
+	var userID int64
+	err = h.pool.QueryRow(t.Context(),
+		`SELECT count(*), max(user_id) FROM outbox_event WHERE type = 'identity.user_created.v1'`).Scan(&n, &userID)
+	if err != nil || n != 1 || userID != u.ID {
+		t.Fatalf("events = %d for user %d, %v; want 1 for user %d", n, userID, err, u.ID)
+	}
 }
