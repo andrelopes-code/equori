@@ -237,3 +237,36 @@ func TestOtherEventsKeepFlowing(t *testing.T) {
 		t.Fatalf("delivered = %v, want [good]", delivered)
 	}
 }
+
+func TestHandlerPanicIsRetriedNotFatal(t *testing.T) {
+	pool := pgtest.New(t)
+	userID := pgtest.CreateUser(t, pool)
+	d := newDispatcher(pool)
+	d.Subscribe("c", eventType, func(context.Context, pgx.Tx, outbox.Delivered) error { panic("handler bug") })
+	insertEvent(t, pool, outbox.Event{Type: eventType, UserID: userID, AggregateID: "x", Payload: 1})
+
+	if n := dispatch(t, d); n != 0 {
+		t.Fatalf("delivered %d, want 0", n)
+	}
+	if status, attempts := delivery(t, pool, "c"); status != "retrying" || attempts != 1 {
+		t.Fatalf("delivery = %s, %d; want retrying, 1", status, attempts)
+	}
+}
+
+func TestDrainDeliversMoreThanOneBatch(t *testing.T) {
+	pool := pgtest.New(t)
+	userID := pgtest.CreateUser(t, pool)
+	d := newDispatcher(pool)
+	d.Subscribe("c", eventType, func(context.Context, pgx.Tx, outbox.Delivered) error { return nil })
+	_, err := pool.Exec(t.Context(), `
+		INSERT INTO outbox_event (user_id, type, aggregate_id, payload)
+		SELECT $1, $2, g::text, '1' FROM generate_series(1, 250) g`, userID, eventType)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	n, err := outbox.Drain(t.Context(), d)
+	if err != nil || n != 250 {
+		t.Fatalf("Drain = %d, %v; want 250", n, err)
+	}
+}

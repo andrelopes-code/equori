@@ -56,7 +56,7 @@ func (d *Dispatcher) Run(ctx context.Context) error {
 
 	lastCleanup := time.Time{}
 	for {
-		if _, err := d.DispatchPending(ctx); err != nil && ctx.Err() == nil {
+		if _, err := d.drain(ctx); err != nil && ctx.Err() == nil {
 			d.log.ErrorContext(ctx, "outbox dispatch failed", "error", err)
 		}
 		if d.now().Sub(lastCleanup) >= cleanupInterval {
@@ -74,6 +74,19 @@ func (d *Dispatcher) Run(ctx context.Context) error {
 		}
 		if err != nil && !errors.Is(err, context.DeadlineExceeded) {
 			return fmt.Errorf("wait for outbox notification: %w", err)
+		}
+	}
+}
+
+// drain repeats DispatchPending until a pass delivers nothing, so a backlog larger
+// than one batch does not wait for the next notification or poll.
+func (d *Dispatcher) drain(ctx context.Context) (int, error) {
+	total := 0
+	for {
+		n, err := d.DispatchPending(ctx)
+		total += n
+		if err != nil || n == 0 {
+			return total, err
 		}
 	}
 }
@@ -121,7 +134,7 @@ func (d *Dispatcher) pending(ctx context.Context, s subscription) ([]Delivered, 
 // deliver reports false when the handler failed and the failure was recorded for retry.
 func (d *Dispatcher) deliver(ctx context.Context, s subscription, e Delivered) (bool, error) {
 	handlerErr := pgx.BeginFunc(ctx, d.pool, func(tx pgx.Tx) error {
-		if err := s.handler(ctx, tx, e); err != nil {
+		if err := callHandler(ctx, s.handler, tx, e); err != nil {
 			return err
 		}
 		_, err := tx.Exec(ctx, `
@@ -155,6 +168,17 @@ func (d *Dispatcher) deliver(ctx context.Context, s subscription, e Delivered) (
 	}
 	d.log.WarnContext(ctx, "outbox handler failed", "consumer", s.consumer, "event_id", e.ID, "error", handlerErr)
 	return false, nil
+}
+
+// callHandler turns a handler panic into an error: a poison event then retries and
+// fails like any other, instead of crashing the process on every restart.
+func callHandler(ctx context.Context, h Handler, tx pgx.Tx, e Delivered) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("handler panic: %v", r)
+		}
+	}()
+	return h(ctx, tx, e)
 }
 
 func (d *Dispatcher) cleanup(ctx context.Context) error {
