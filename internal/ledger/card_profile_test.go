@@ -85,3 +85,10 @@ func TestCards(t *testing.T) {
 		t.Fatalf("cards = %+v", cards.Items)
 	}
 }
+
+func TestBillingRuleUnknownCalendarIs422(t *testing.T) {
+	h := apitest.New(t)
+	card := h.Account("Itaú Visa", "liability", "credit_card", nil)
+	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/accounts/"+card+"/billing-cycle-rules",
+		map[string]any{"effective_from": "2026-01", "closing_day": 3, "due_day": 10, "calendar": "mars"}), http.StatusUnprocessableEntity, "validation_failed", "calendar")
+}

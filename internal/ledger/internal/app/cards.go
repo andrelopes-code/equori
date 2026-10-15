@@ -25,6 +25,9 @@ func (s *Service) AddBillingRule(ctx context.Context, userID int64, accountID uu
 	if err != nil {
 		return domain.BillingCycleRule{}, err
 	}
+	if _, err := s.cal.Adjust(ctx, rule.Calendar, s.clock.Today(), "none"); err != nil {
+		return domain.BillingCycleRule{}, validationError("calendar", "is not a known calendar")
+	}
 	var created domain.BillingCycleRule
 	err = s.repo.InTx(ctx, func(tx Repository) error {
 		if created, err = tx.InsertBillingRule(ctx, userID, accountID, rule); err != nil {

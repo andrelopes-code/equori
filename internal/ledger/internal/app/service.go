@@ -292,6 +292,11 @@ func (s *Service) CorrectTransaction(ctx context.Context, userID int64, id uuid.
 		if err != nil {
 			return err
 		}
+		for _, p := range prev.Postings {
+			if p.Installment != nil {
+				return validationError("transaction_id", "installment transactions change through refunds, cancellation or anticipation")
+			}
+		}
 		next.ID, next.UserID = id, userID
 		if next.BalancingCurrency == "" {
 			next.BalancingCurrency = prev.BalancingCurrency

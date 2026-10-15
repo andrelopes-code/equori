@@ -158,3 +158,18 @@ func TestTwoInstallmentPurchasesGetDistinctIDs(t *testing.T) {
 		t.Fatalf("transaction ids %s and %s", a.Transaction.ID, b.Transaction.ID)
 	}
 }
+
+func TestInstallmentPurchaseCannotBeCorrected(t *testing.T) {
+	h := apitest.New(t)
+	card := h.Card("Itaú Visa", 3, 10, "next")
+	electronics := h.Account("Electronics", "expense", "", nil)
+	res := installmentPurchase(t, h, map[string]any{
+		"card_account_id": card, "date": "2026-10-20",
+		"splits": []map[string]any{{"account_id": electronics, "amount": apitest.BRL(100000)}}, "installment_count": 2,
+	})
+	correction := tx("2026-10-20", apitest.Posting(card, -100000), apitest.Posting(electronics, 100000))
+	correction["expected_version"] = 1
+	correction["reason"] = "edit"
+	h.ExpectProblem(h.Do(http.MethodPut, "/api/v1/transactions/"+res.Transaction.ID, correction),
+		http.StatusUnprocessableEntity, "validation_failed", "transaction_id")
+}
