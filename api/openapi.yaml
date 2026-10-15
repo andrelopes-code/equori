@@ -1017,6 +1017,78 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /balance-assertions/{id}/resolution:
+    post:
+      tags: [ledger]
+      operationId: resolveBalanceAssertion
+      summary: Resolve the open difference of an assertion and reconcile the account.
+      description: |
+        adjustment records the difference against the equity account Adjustments; transactions_added
+        requires the settled balance to match the assertion after the missing transactions were recorded.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssertionResolutionInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssertionResult"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/reconciliation:
+    get:
+      tags: [ledger]
+      operationId: getReconciliationStatus
+      summary: Last reconciliation date and the open difference of the latest assertion.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReconciliationStatus"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/unlock:
+    post:
+      tags: [ledger]
+      operationId: unlockAccount
+      summary: Return reconciled postings settled on or after a date to cleared.
+      description: Deletes the account's reconciliations dated on or after the date (P3 amendment A8).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UnlockInput"
+      responses:
+        "204":
+          description: Unlocked.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
 security:
   - sessionCookie: []
 components:
@@ -1062,6 +1134,40 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
   schemas:
+    AssertionResolutionInput:
+      type: object
+      required: [resolution]
+      properties:
+        resolution:
+          type: string
+          enum: [adjustment, transactions_added]
+    ReconciliationStatus:
+      type: object
+      properties:
+        last_reconciled_on:
+          type: string
+          format: date
+        open_difference:
+          $ref: "#/components/schemas/OpenDifference"
+    OpenDifference:
+      type: object
+      required: [assertion_id, date, difference]
+      properties:
+        assertion_id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        difference:
+          $ref: "#/components/schemas/Money"
+    UnlockInput:
+      type: object
+      required: [from]
+      properties:
+        from:
+          type: string
+          format: date
     BalanceAssertionInput:
       type: object
       required: [date, amount]
@@ -1076,7 +1182,7 @@ components:
           enum: [manual, import, open_finance]
     BalanceAssertion:
       type: object
-      required: [id, account_id, date, amount, source, recorded_at]
+      required: [id, account_id, date, amount, source, recorded_at, reconciled]
       properties:
         id:
           type: string
@@ -1095,6 +1201,8 @@ components:
         recorded_at:
           type: string
           format: date-time
+        reconciled:
+          type: boolean
     BalanceAssertionList:
       type: object
       required: [items]
@@ -1115,9 +1223,10 @@ components:
           type: string
           enum: [none, yield, adjustment, transactions_added]
           description: Absent while the difference stays open.
-        yield_transaction_id:
+        resolution_transaction_id:
           type: string
           format: uuid
+          description: The yield or adjustment transaction recorded by the resolution.
     DisputeInput:
       type: object
       required: [opened_on]
@@ -1854,7 +1963,7 @@ components:
             too_many_attempts, unauthenticated, forbidden, not_found, validation_failed, internal_error,
             server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
             account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
-            already_reconciled.
+            already_reconciled, difference_remains.
         request_id:
           type: string
         errors:

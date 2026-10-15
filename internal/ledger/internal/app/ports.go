@@ -22,6 +22,7 @@ var (
 	ErrStatementFinanced  = errors.New("statement is already financed")
 	ErrDisputeOpen        = errors.New("the transaction already has an open dispute")
 	ErrDisputeResolved    = errors.New("the dispute is already resolved")
+	ErrDifferenceRemains  = errors.New("the settled balance still differs from the assertion")
 )
 
 // Clock is satisfied by platform/clock.Clock.
@@ -90,6 +91,7 @@ type BalanceAssertion struct {
 	Amount     int64
 	Source     string
 	RecordedAt time.Time
+	Reconciled bool
 }
 
 // Reconciliation records that an account matched its institution through Date,
@@ -225,12 +227,17 @@ type Repository interface {
 
 	LockAccount(ctx context.Context, userID int64, id uuid.UUID) (domain.Account, error)
 	InsertBalanceAssertion(ctx context.Context, a BalanceAssertion) (BalanceAssertion, error)
+	BalanceAssertion(ctx context.Context, userID int64, id uuid.UUID) (BalanceAssertion, error)
+	// BalanceAssertions returns the account's assertions, latest date first.
 	BalanceAssertions(ctx context.Context, userID int64, accountID uuid.UUID) ([]BalanceAssertion, error)
 	LastReconciledOn(ctx context.Context, userID int64, accountID uuid.UUID) (*time.Time, error)
 	FirstSettledOn(ctx context.Context, userID int64, accountID uuid.UUID) (*time.Time, error)
 	InsertReconciliation(ctx context.Context, rec Reconciliation) error
 	// ReconcilePostings marks the account's non-voided postings settled through the date as reconciled.
 	ReconcilePostings(ctx context.Context, userID int64, accountID uuid.UUID, through time.Time) error
+	// UnlockAccount returns reconciled postings settled from the date to cleared and deletes
+	// the reconciliations dated from it.
+	UnlockAccount(ctx context.Context, userID int64, accountID uuid.UUID, from time.Time) error
 
 	// BalanceAt sums the postings of the account and its descendants up to and including date.
 	BalanceAt(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis Basis) (int64, error)

@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,10 +20,10 @@ type AccountReconciledEvent struct {
 }
 
 type AssertionResult struct {
-	Assertion          BalanceAssertion
-	Difference         money.Money
-	Resolution         domain.Resolution // empty while the difference stays open
-	YieldTransactionID uuid.UUID
+	Assertion               BalanceAssertion
+	Difference              money.Money
+	Resolution              domain.Resolution // empty while the difference stays open
+	ResolutionTransactionID uuid.UUID
 }
 
 const (
@@ -84,17 +85,122 @@ func (s *Service) AssertBalance(ctx context.Context, userID int64, accountID uui
 			return nil
 		}
 		if outcome.Resolution == domain.ResolutionYield {
-			if res.YieldTransactionID, err = s.recordYield(ctx, r, a, *start, date, outcome.Yield); err != nil {
+			if res.ResolutionTransactionID, err = s.recordYield(ctx, r, a, *start, date, outcome.Yield); err != nil {
 				return err
 			}
 		}
 		res.Resolution = outcome.Resolution
 		return s.reconcile(ctx, r, Reconciliation{
 			UserID: userID, AccountID: accountID, Date: date, AssertionID: res.Assertion.ID,
-			Difference: outcome.Difference, Resolution: outcome.Resolution, ResolutionTransactionID: res.YieldTransactionID,
+			Difference: outcome.Difference, Resolution: outcome.Resolution, ResolutionTransactionID: res.ResolutionTransactionID,
 		})
 	})
 	return res, err
+}
+
+// ResolveAssertion settles the open difference of an assertion chosen by the owner (F6, S26).
+func (s *Service) ResolveAssertion(ctx context.Context, userID int64, id uuid.UUID, resolution domain.Resolution) (AssertionResult, error) {
+	if resolution != domain.ResolutionAdjustment && resolution != domain.ResolutionTransactionsAdded {
+		return AssertionResult{}, validationError("resolution", "must be adjustment or transactions_added")
+	}
+	found, err := s.repo.BalanceAssertion(ctx, userID, id)
+	if err != nil {
+		return AssertionResult{}, err
+	}
+	var res AssertionResult
+	err = s.repo.InTx(ctx, func(r Repository) error {
+		a, err := s.lockLeafBalance(ctx, r, userID, found.AccountID)
+		if err != nil {
+			return err
+		}
+		// Reread under the account lock: every reconciliation of the account holds it.
+		if res.Assertion, err = r.BalanceAssertion(ctx, userID, id); err != nil {
+			return err
+		}
+		if res.Assertion.Reconciled {
+			return domain.ErrAlreadyReconciled
+		}
+		last, err := r.LastReconciledOn(ctx, userID, a.ID)
+		if err != nil {
+			return err
+		}
+		if err := domain.CheckAssertionDate(res.Assertion.Date, last); err != nil {
+			return err
+		}
+		settled, err := r.BalanceAt(ctx, userID, a.ID, res.Assertion.Date, BasisSettled)
+		if err != nil {
+			return err
+		}
+		if res.Difference, err = money.New(res.Assertion.Amount-settled, a.Instrument); err != nil {
+			return err
+		}
+		if !res.Difference.IsZero() {
+			if resolution == domain.ResolutionTransactionsAdded {
+				return fmt.Errorf("%w: %s", ErrDifferenceRemains, res.Difference)
+			}
+			if res.ResolutionTransactionID, err = s.recordAdjustment(ctx, r, a, res.Assertion.Date, res.Difference); err != nil {
+				return err
+			}
+		}
+		res.Resolution, res.Assertion.Reconciled = resolution, true
+		return s.reconcile(ctx, r, Reconciliation{
+			UserID: userID, AccountID: a.ID, Date: res.Assertion.Date, AssertionID: id,
+			Difference: res.Difference.Amount(), Resolution: resolution, ResolutionTransactionID: res.ResolutionTransactionID,
+		})
+	})
+	return res, err
+}
+
+type ReconciliationStatus struct {
+	LastReconciledOn *time.Time
+	Open             *OpenDifference
+}
+
+type OpenDifference struct {
+	AssertionID uuid.UUID
+	Date        time.Time
+	Difference  money.Money
+}
+
+// ReconciliationStatus reports the latest assertion's difference while it is open and
+// not superseded by a later reconciliation; the difference reflects the current postings.
+func (s *Service) ReconciliationStatus(ctx context.Context, userID int64, accountID uuid.UUID) (ReconciliationStatus, error) {
+	a, err := s.repo.Account(ctx, userID, accountID)
+	if err != nil {
+		return ReconciliationStatus{}, err
+	}
+	var st ReconciliationStatus
+	if st.LastReconciledOn, err = s.repo.LastReconciledOn(ctx, userID, accountID); err != nil {
+		return ReconciliationStatus{}, err
+	}
+	assertions, err := s.repo.BalanceAssertions(ctx, userID, accountID)
+	if err != nil || len(assertions) == 0 {
+		return st, err
+	}
+	latest := assertions[0]
+	if latest.Reconciled || (st.LastReconciledOn != nil && latest.Date.Before(*st.LastReconciledOn)) {
+		return st, nil
+	}
+	settled, err := s.repo.BalanceAt(ctx, userID, accountID, latest.Date, BasisSettled)
+	if err != nil {
+		return ReconciliationStatus{}, err
+	}
+	diff, err := money.New(latest.Amount-settled, a.Instrument)
+	if err != nil {
+		return ReconciliationStatus{}, err
+	}
+	st.Open = &OpenDifference{AssertionID: latest.ID, Date: latest.Date, Difference: diff}
+	return st, nil
+}
+
+// Unlock is the explicit step chapter 2 requires before reconciled postings change (A8).
+func (s *Service) Unlock(ctx context.Context, userID int64, accountID uuid.UUID, from time.Time) error {
+	return s.repo.InTx(ctx, func(r Repository) error {
+		if _, err := r.LockAccount(ctx, userID, accountID); err != nil {
+			return err
+		}
+		return r.UnlockAccount(ctx, userID, accountID, from)
+	})
 }
 
 func (s *Service) BalanceAssertions(ctx context.Context, userID int64, accountID uuid.UUID) ([]BalanceAssertion, error) {
@@ -156,6 +262,18 @@ func (s *Service) recordYield(ctx context.Context, r Repository, a domain.Accoun
 		UserID: a.UserID, Date: end, Origin: domain.OriginSystem,
 		Description: "Yield " + start.Format(time.DateOnly) + " to " + end.Format(time.DateOnly),
 		Postings:    []domain.Posting{{AccountID: a.ID, Amount: gain}, {AccountID: income.ID, Amount: gain.Neg()}},
+	})
+	return t.ID, err
+}
+
+func (s *Service) recordAdjustment(ctx context.Context, r Repository, a domain.Account, date time.Time, diff money.Money) (uuid.UUID, error) {
+	equity, err := r.SystemAccount(ctx, a.UserID, domain.RoleAdjustments)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	t, err := s.insert(ctx, r, domain.Transaction{
+		UserID: a.UserID, Date: date, Origin: domain.OriginSystem, Description: "Balance adjustment",
+		Postings: []domain.Posting{{AccountID: a.ID, Amount: diff}, {AccountID: equity.ID, Amount: diff.Neg()}},
 	})
 	return t.ID, err
 }

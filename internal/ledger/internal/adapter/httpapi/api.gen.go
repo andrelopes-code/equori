@@ -189,6 +189,24 @@ func (e AccountPatchYieldMode) Valid() bool {
 	}
 }
 
+// Defines values for AssertionResolutionInputResolution.
+const (
+	AssertionResolutionInputResolutionAdjustment        AssertionResolutionInputResolution = "adjustment"
+	AssertionResolutionInputResolutionTransactionsAdded AssertionResolutionInputResolution = "transactions_added"
+)
+
+// Valid indicates whether the value is a known member of the AssertionResolutionInputResolution enum.
+func (e AssertionResolutionInputResolution) Valid() bool {
+	switch e {
+	case AssertionResolutionInputResolutionAdjustment:
+		return true
+	case AssertionResolutionInputResolutionTransactionsAdded:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AssertionResultResolution.
 const (
 	AssertionResultResolutionAdjustment        AssertionResultResolution = "adjustment"
@@ -656,14 +674,24 @@ type AnticipationInput struct {
 	ToInstallment   int                `json:"to_installment"`
 }
 
+// AssertionResolutionInput defines model for AssertionResolutionInput.
+type AssertionResolutionInput struct {
+	Resolution AssertionResolutionInputResolution `json:"resolution"`
+}
+
+// AssertionResolutionInputResolution defines model for AssertionResolutionInput.Resolution.
+type AssertionResolutionInputResolution string
+
 // AssertionResult defines model for AssertionResult.
 type AssertionResult struct {
 	Assertion  BalanceAssertion `json:"assertion"`
 	Difference Money            `json:"difference"`
 
 	// Resolution Absent while the difference stays open.
-	Resolution         *AssertionResultResolution `json:"resolution,omitempty"`
-	YieldTransactionId *openapi_types.UUID        `json:"yield_transaction_id,omitempty"`
+	Resolution *AssertionResultResolution `json:"resolution,omitempty"`
+
+	// ResolutionTransactionId The yield or adjustment transaction recorded by the resolution.
+	ResolutionTransactionId *openapi_types.UUID `json:"resolution_transaction_id,omitempty"`
 }
 
 // AssertionResultResolution Absent while the difference stays open.
@@ -686,6 +714,7 @@ type BalanceAssertion struct {
 	Amount     Money                  `json:"amount"`
 	Date       openapi_types.Date     `json:"date"`
 	Id         openapi_types.UUID     `json:"id"`
+	Reconciled bool                   `json:"reconciled"`
 	RecordedAt time.Time              `json:"recorded_at"`
 	Source     BalanceAssertionSource `json:"source"`
 }
@@ -895,6 +924,13 @@ type Money struct {
 	Currency string `json:"currency"`
 }
 
+// OpenDifference defines model for OpenDifference.
+type OpenDifference struct {
+	AssertionId openapi_types.UUID `json:"assertion_id"`
+	Date        openapi_types.Date `json:"date"`
+	Difference  Money              `json:"difference"`
+}
+
 // Payee defines model for Payee.
 type Payee struct {
 	Id   openapi_types.UUID `json:"id"`
@@ -965,7 +1001,7 @@ type Problem struct {
 	// too_many_attempts, unauthenticated, forbidden, not_found, validation_failed, internal_error,
 	// server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
 	// account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
-	// already_reconciled.
+	// already_reconciled, difference_remains.
 	Code      string        `json:"code"`
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`
@@ -973,6 +1009,12 @@ type Problem struct {
 	Status    int           `json:"status"`
 	Title     string        `json:"title"`
 	Type      string        `json:"type"`
+}
+
+// ReconciliationStatus defines model for ReconciliationStatus.
+type ReconciliationStatus struct {
+	LastReconciledOn *openapi_types.Date `json:"last_reconciled_on,omitempty"`
+	OpenDifference   *OpenDifference     `json:"open_difference,omitempty"`
 }
 
 // RefundInput defines model for RefundInput.
@@ -1119,6 +1161,11 @@ type TransactionVersionList struct {
 	Items []TransactionVersion `json:"items"`
 }
 
+// UnlockInput defines model for UnlockInput.
+type UnlockInput struct {
+	From openapi_types.Date `json:"from"`
+}
+
 // VoidInput defines model for VoidInput.
 type VoidInput struct {
 	Reason string `json:"reason"`
@@ -1184,6 +1231,12 @@ type CloseAccountJSONRequestBody = CloseAccountInput
 
 // CreateCreditLimitJSONRequestBody defines body for CreateCreditLimit for application/json ContentType.
 type CreateCreditLimitJSONRequestBody = CreditLimit
+
+// UnlockAccountJSONRequestBody defines body for UnlockAccount for application/json ContentType.
+type UnlockAccountJSONRequestBody = UnlockInput
+
+// ResolveBalanceAssertionJSONRequestBody defines body for ResolveBalanceAssertion for application/json ContentType.
+type ResolveBalanceAssertionJSONRequestBody = AssertionResolutionInput
 
 // ResolveDisputeJSONRequestBody defines body for ResolveDispute for application/json ContentType.
 type ResolveDisputeJSONRequestBody = DisputeResolution
@@ -1274,9 +1327,18 @@ type ServerInterface interface {
 	// CreateCreditLimit Add a credit limit version.
 	// (POST /accounts/{id}/credit-limits)
 	CreateCreditLimit(w http.ResponseWriter, r *http.Request, id ID)
+	// GetReconciliationStatus Last reconciliation date and the open difference of the latest assertion.
+	// (GET /accounts/{id}/reconciliation)
+	GetReconciliationStatus(w http.ResponseWriter, r *http.Request, id ID)
 	// ListStatements Statements of a card with amounts and status derived from its postings.
 	// (GET /accounts/{id}/statements)
 	ListStatements(w http.ResponseWriter, r *http.Request, id ID, params ListStatementsParams)
+	// UnlockAccount Return reconciled postings settled on or after a date to cleared.
+	// (POST /accounts/{id}/unlock)
+	UnlockAccount(w http.ResponseWriter, r *http.Request, id ID)
+	// ResolveBalanceAssertion Resolve the open difference of an assertion and reconcile the account.
+	// (POST /balance-assertions/{id}/resolution)
+	ResolveBalanceAssertion(w http.ResponseWriter, r *http.Request, id ID)
 	// ResolveDispute Resolve a dispute; a won dispute refunds the remaining charged amount.
 	// (POST /disputes/{id}/resolution)
 	ResolveDispute(w http.ResponseWriter, r *http.Request, id ID)
@@ -1765,6 +1827,32 @@ func (siw *ServerInterfaceWrapper) CreateCreditLimit(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// GetReconciliationStatus operation middleware
+func (siw *ServerInterfaceWrapper) GetReconciliationStatus(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetReconciliationStatus(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListStatements operation middleware
 func (siw *ServerInterfaceWrapper) ListStatements(w http.ResponseWriter, r *http.Request) {
 
@@ -1811,6 +1899,58 @@ func (siw *ServerInterfaceWrapper) ListStatements(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListStatements(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UnlockAccount operation middleware
+func (siw *ServerInterfaceWrapper) UnlockAccount(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnlockAccount(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ResolveBalanceAssertion operation middleware
+func (siw *ServerInterfaceWrapper) ResolveBalanceAssertion(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ResolveBalanceAssertion(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2527,6 +2667,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/disputes/{id}/resolution", wrapper.ResolveDispute)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/balance-assertions", wrapper.ListBalanceAssertions)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/balance-assertions", wrapper.CreateBalanceAssertion)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/balance-assertions/{id}/resolution", wrapper.ResolveBalanceAssertion)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/reconciliation", wrapper.GetReconciliationStatus)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/unlock", wrapper.UnlockAccount)
 
 	return m
 }
@@ -3440,6 +3583,58 @@ func (response CreateCreditLimit422ApplicationProblemPlusJSONResponse) VisitCrea
 	return err
 }
 
+type GetReconciliationStatusRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type GetReconciliationStatusResponseObject interface {
+	VisitGetReconciliationStatusResponse(w http.ResponseWriter) error
+}
+
+type GetReconciliationStatus200JSONResponse ReconciliationStatus
+
+func (response GetReconciliationStatus200JSONResponse) VisitGetReconciliationStatusResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetReconciliationStatus401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetReconciliationStatus401ApplicationProblemPlusJSONResponse) VisitGetReconciliationStatusResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetReconciliationStatus404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetReconciliationStatus404ApplicationProblemPlusJSONResponse) VisitGetReconciliationStatusResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListStatementsRequestObject struct {
 	Id     ID `json:"id"`
 	Params ListStatementsParams
@@ -3496,6 +3691,148 @@ func (response ListStatements404ApplicationProblemPlusJSONResponse) VisitListSta
 type ListStatements422ApplicationProblemPlusJSONResponse Problem
 
 func (response ListStatements422ApplicationProblemPlusJSONResponse) VisitListStatementsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnlockAccountRequestObject struct {
+	Id   ID `json:"id"`
+	Body *UnlockAccountJSONRequestBody
+}
+
+type UnlockAccountResponseObject interface {
+	VisitUnlockAccountResponse(w http.ResponseWriter) error
+}
+
+type UnlockAccount204Response struct {
+}
+
+func (response UnlockAccount204Response) VisitUnlockAccountResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type UnlockAccount401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UnlockAccount401ApplicationProblemPlusJSONResponse) VisitUnlockAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnlockAccount404ApplicationProblemPlusJSONResponse Problem
+
+func (response UnlockAccount404ApplicationProblemPlusJSONResponse) VisitUnlockAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnlockAccount422ApplicationProblemPlusJSONResponse Problem
+
+func (response UnlockAccount422ApplicationProblemPlusJSONResponse) VisitUnlockAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveBalanceAssertionRequestObject struct {
+	Id   ID `json:"id"`
+	Body *ResolveBalanceAssertionJSONRequestBody
+}
+
+type ResolveBalanceAssertionResponseObject interface {
+	VisitResolveBalanceAssertionResponse(w http.ResponseWriter) error
+}
+
+type ResolveBalanceAssertion200JSONResponse AssertionResult
+
+func (response ResolveBalanceAssertion200JSONResponse) VisitResolveBalanceAssertionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveBalanceAssertion401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ResolveBalanceAssertion401ApplicationProblemPlusJSONResponse) VisitResolveBalanceAssertionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveBalanceAssertion404ApplicationProblemPlusJSONResponse Problem
+
+func (response ResolveBalanceAssertion404ApplicationProblemPlusJSONResponse) VisitResolveBalanceAssertionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveBalanceAssertion409ApplicationProblemPlusJSONResponse Problem
+
+func (response ResolveBalanceAssertion409ApplicationProblemPlusJSONResponse) VisitResolveBalanceAssertionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveBalanceAssertion422ApplicationProblemPlusJSONResponse Problem
+
+func (response ResolveBalanceAssertion422ApplicationProblemPlusJSONResponse) VisitResolveBalanceAssertionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -4851,9 +5188,18 @@ type StrictServerInterface interface {
 	// CreateCreditLimit Add a credit limit version.
 	// (POST /accounts/{id}/credit-limits)
 	CreateCreditLimit(ctx context.Context, request CreateCreditLimitRequestObject) (CreateCreditLimitResponseObject, error)
+	// GetReconciliationStatus Last reconciliation date and the open difference of the latest assertion.
+	// (GET /accounts/{id}/reconciliation)
+	GetReconciliationStatus(ctx context.Context, request GetReconciliationStatusRequestObject) (GetReconciliationStatusResponseObject, error)
 	// ListStatements Statements of a card with amounts and status derived from its postings.
 	// (GET /accounts/{id}/statements)
 	ListStatements(ctx context.Context, request ListStatementsRequestObject) (ListStatementsResponseObject, error)
+	// UnlockAccount Return reconciled postings settled on or after a date to cleared.
+	// (POST /accounts/{id}/unlock)
+	UnlockAccount(ctx context.Context, request UnlockAccountRequestObject) (UnlockAccountResponseObject, error)
+	// ResolveBalanceAssertion Resolve the open difference of an assertion and reconcile the account.
+	// (POST /balance-assertions/{id}/resolution)
+	ResolveBalanceAssertion(ctx context.Context, request ResolveBalanceAssertionRequestObject) (ResolveBalanceAssertionResponseObject, error)
 	// ResolveDispute Resolve a dispute; a won dispute refunds the remaining charged amount.
 	// (POST /disputes/{id}/resolution)
 	ResolveDispute(ctx context.Context, request ResolveDisputeRequestObject) (ResolveDisputeResponseObject, error)
@@ -5398,6 +5744,32 @@ func (sh *strictHandler) CreateCreditLimit(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// GetReconciliationStatus operation middleware
+func (sh *strictHandler) GetReconciliationStatus(w http.ResponseWriter, r *http.Request, id ID) {
+	var request GetReconciliationStatusRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetReconciliationStatus(ctx, request.(GetReconciliationStatusRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetReconciliationStatus")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetReconciliationStatusResponseObject); ok {
+		if err := validResponse.VisitGetReconciliationStatusResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListStatements operation middleware
 func (sh *strictHandler) ListStatements(w http.ResponseWriter, r *http.Request, id ID, params ListStatementsParams) {
 	var request ListStatementsRequestObject
@@ -5418,6 +5790,72 @@ func (sh *strictHandler) ListStatements(w http.ResponseWriter, r *http.Request, 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListStatementsResponseObject); ok {
 		if err := validResponse.VisitListStatementsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UnlockAccount operation middleware
+func (sh *strictHandler) UnlockAccount(w http.ResponseWriter, r *http.Request, id ID) {
+	var request UnlockAccountRequestObject
+
+	request.Id = id
+
+	var body UnlockAccountJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UnlockAccount(ctx, request.(UnlockAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnlockAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UnlockAccountResponseObject); ok {
+		if err := validResponse.VisitUnlockAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ResolveBalanceAssertion operation middleware
+func (sh *strictHandler) ResolveBalanceAssertion(w http.ResponseWriter, r *http.Request, id ID) {
+	var request ResolveBalanceAssertionRequestObject
+
+	request.Id = id
+
+	var body ResolveBalanceAssertionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ResolveBalanceAssertion(ctx, request.(ResolveBalanceAssertionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ResolveBalanceAssertion")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ResolveBalanceAssertionResponseObject); ok {
+		if err := validResponse.VisitResolveBalanceAssertionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

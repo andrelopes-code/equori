@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
+	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
@@ -11,8 +12,20 @@ import (
 func toAssertionAPI(a app.BalanceAssertion, currency money.Currency) BalanceAssertion {
 	return BalanceAssertion{
 		Id: a.ID, AccountId: a.AccountID, Date: apiDate(a.Date), Source: BalanceAssertionSource(a.Source),
-		Amount: Money{Amount: a.Amount, Currency: string(currency)}, RecordedAt: a.RecordedAt,
+		Amount: Money{Amount: a.Amount, Currency: string(currency)}, RecordedAt: a.RecordedAt, Reconciled: a.Reconciled,
 	}
+}
+
+func toAssertionResultAPI(res app.AssertionResult) AssertionResult {
+	out := AssertionResult{
+		Assertion:  toAssertionAPI(res.Assertion, res.Difference.Currency()),
+		Difference: toMoneyAPI(res.Difference), ResolutionTransactionId: apiOptUUID(res.ResolutionTransactionID),
+	}
+	if res.Resolution != "" {
+		r := AssertionResultResolution(res.Resolution)
+		out.Resolution = &r
+	}
+	return out
 }
 
 func (s *Server) CreateBalanceAssertion(ctx context.Context, req CreateBalanceAssertionRequestObject) (CreateBalanceAssertionResponseObject, error) {
@@ -24,15 +37,7 @@ func (s *Server) CreateBalanceAssertion(ctx context.Context, req CreateBalanceAs
 	if err != nil {
 		return nil, err
 	}
-	out := AssertionResult{
-		Assertion:  toAssertionAPI(res.Assertion, amount.Currency()),
-		Difference: toMoneyAPI(res.Difference), YieldTransactionId: apiOptUUID(res.YieldTransactionID),
-	}
-	if res.Resolution != "" {
-		r := AssertionResultResolution(res.Resolution)
-		out.Resolution = &r
-	}
-	return CreateBalanceAssertion201JSONResponse(out), nil
+	return CreateBalanceAssertion201JSONResponse(toAssertionResultAPI(res)), nil
 }
 
 func (s *Server) ListBalanceAssertions(ctx context.Context, req ListBalanceAssertionsRequestObject) (ListBalanceAssertionsResponseObject, error) {
@@ -50,4 +55,31 @@ func (s *Server) ListBalanceAssertions(ctx context.Context, req ListBalanceAsser
 		out.Items[i] = toAssertionAPI(x, a.Instrument)
 	}
 	return ListBalanceAssertions200JSONResponse(out), nil
+}
+
+func (s *Server) ResolveBalanceAssertion(ctx context.Context, req ResolveBalanceAssertionRequestObject) (ResolveBalanceAssertionResponseObject, error) {
+	res, err := s.svc.ResolveAssertion(ctx, auth.MustUserID(ctx), req.Id, domain.Resolution(req.Body.Resolution))
+	if err != nil {
+		return nil, err
+	}
+	return ResolveBalanceAssertion200JSONResponse(toAssertionResultAPI(res)), nil
+}
+
+func (s *Server) GetReconciliationStatus(ctx context.Context, req GetReconciliationStatusRequestObject) (GetReconciliationStatusResponseObject, error) {
+	st, err := s.svc.ReconciliationStatus(ctx, auth.MustUserID(ctx), req.Id)
+	if err != nil {
+		return nil, err
+	}
+	out := ReconciliationStatus{LastReconciledOn: apiOptDate(st.LastReconciledOn)}
+	if st.Open != nil {
+		out.OpenDifference = &OpenDifference{AssertionId: st.Open.AssertionID, Date: apiDate(st.Open.Date), Difference: toMoneyAPI(st.Open.Difference)}
+	}
+	return GetReconciliationStatus200JSONResponse(out), nil
+}
+
+func (s *Server) UnlockAccount(ctx context.Context, req UnlockAccountRequestObject) (UnlockAccountResponseObject, error) {
+	if err := s.svc.Unlock(ctx, auth.MustUserID(ctx), req.Id, dateOf(req.Body.From)); err != nil {
+		return nil, err
+	}
+	return UnlockAccount204Response{}, nil
 }

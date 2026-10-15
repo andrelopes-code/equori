@@ -20,10 +20,10 @@ func (r *Repository) LockAccount(ctx context.Context, userID int64, id uuid.UUID
 	return toAccount(row), nil
 }
 
-func toAssertion(row LedgerBalanceAssertion) app.BalanceAssertion {
+func toAssertion(row LedgerBalanceAssertion, reconciled bool) app.BalanceAssertion {
 	return app.BalanceAssertion{
 		ID: row.ID, UserID: row.UserID, AccountID: row.AccountID, Date: row.Date,
-		Amount: row.Amount, Source: row.Source, RecordedAt: row.RecordedAt,
+		Amount: row.Amount, Source: row.Source, RecordedAt: row.RecordedAt, Reconciled: reconciled,
 	}
 }
 
@@ -34,7 +34,18 @@ func (r *Repository) InsertBalanceAssertion(ctx context.Context, a app.BalanceAs
 	if err != nil {
 		return app.BalanceAssertion{}, err
 	}
-	return toAssertion(row), nil
+	return toAssertion(row, false), nil
+}
+
+func (r *Repository) BalanceAssertion(ctx context.Context, userID int64, id uuid.UUID) (app.BalanceAssertion, error) {
+	row, err := r.q.GetBalanceAssertion(ctx, GetBalanceAssertionParams{UserID: userID, ID: id})
+	if err != nil {
+		return app.BalanceAssertion{}, notFound(err)
+	}
+	return toAssertion(LedgerBalanceAssertion{
+		ID: row.ID, UserID: row.UserID, AccountID: row.AccountID, Date: row.Date,
+		Amount: row.Amount, Source: row.Source, RecordedAt: row.RecordedAt,
+	}, row.Reconciled), nil
 }
 
 func (r *Repository) BalanceAssertions(ctx context.Context, userID int64, accountID uuid.UUID) ([]app.BalanceAssertion, error) {
@@ -44,7 +55,10 @@ func (r *Repository) BalanceAssertions(ctx context.Context, userID int64, accoun
 	}
 	out := make([]app.BalanceAssertion, len(rows))
 	for i, row := range rows {
-		out[i] = toAssertion(row)
+		out[i] = toAssertion(LedgerBalanceAssertion{
+			ID: row.ID, UserID: row.UserID, AccountID: row.AccountID, Date: row.Date,
+			Amount: row.Amount, Source: row.Source, RecordedAt: row.RecordedAt,
+		}, row.Reconciled)
 	}
 	return out, nil
 }
@@ -79,4 +93,18 @@ func (r *Repository) InsertReconciliation(ctx context.Context, rec app.Reconcili
 
 func (r *Repository) ReconcilePostings(ctx context.Context, userID int64, accountID uuid.UUID, through time.Time) error {
 	return r.q.ReconcileAccountPostings(ctx, ReconcileAccountPostingsParams{UserID: userID, AccountID: accountID, OnDate: through})
+}
+
+// UnlockAccount bypasses the I05 trigger for the current database transaction only (A8).
+func (r *Repository) UnlockAccount(ctx context.Context, userID int64, accountID uuid.UUID, from time.Time) error {
+	if r.tx == nil {
+		return errors.New("unlock outside a transaction")
+	}
+	if err := r.q.EnableReconciledUnlock(ctx); err != nil {
+		return err
+	}
+	if err := r.q.UnreconcileAccountPostings(ctx, UnreconcileAccountPostingsParams{UserID: userID, AccountID: accountID, FromDate: from}); err != nil {
+		return err
+	}
+	return r.q.DeleteReconciliationsFrom(ctx, DeleteReconciliationsFromParams{UserID: userID, AccountID: accountID, FromDate: from})
 }
