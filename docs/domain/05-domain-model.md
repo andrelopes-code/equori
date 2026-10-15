@@ -214,7 +214,7 @@ flowchart LR
   O --> D[Amount due]
   C[Charges billed:<br/>purchases, installments, fees, interest] --> D
   R[Credits billed:<br/>refunds, cashback] --> D
-  D --> S{Payments linked<br/>payment_of}
+  D --> S{Payments:<br/>role payment}
   S --> U[Unpaid amount<br/>carried to next]
 ```
 
@@ -223,7 +223,7 @@ flowchart LR
 | Creation | A statement exists for every reference month from the card's first posting to the last statement with a billed installment. It is created on demand by the billing service. |
 | Dates | `closingDate` and `dueDate` come from the billing cycle rule in force for that reference month (T05). The due date is shifted by the business-day calendar per `dueDateAdjustment` (`following` by default) (T06). Stored on creation; later rule changes do not move them unless the statement is still open and has no postings. |
 | Amount due | Opening amount + charges − credits. Derived, never stored. |
-| Payments | Card postings with a positive amount linked `payment_of` the statement. A payment posting is billed on the statement it pays. |
+| Payments | Card postings with role `payment`, billed on the statement they pay. Every card posting has a role: `charge`, `credit` or `payment`. |
 | Unpaid amount | Amount due − payments, when positive after the due date. Becomes the opening amount of the next statement (revolving credit). |
 | Status | Derived from dates, amount due and payments (chapter 3, 3.4.1). |
 | Closed | After `closingDate`, adding or changing a posting on the statement requires the issuer origin flag (late issuer charge) and is never allowed for user-entered postings (I05). |

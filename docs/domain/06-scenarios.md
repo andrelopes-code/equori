@@ -129,7 +129,7 @@ Given statement 2026-11 with amount due 1,500.00:
 
 | Case | Postings | Result |
 |---|---|---|
-| Full payment on 2026-11-10 | Nubank checking −1,500.00; Itaú Visa +1,500.00 (billed on 2026-11, `payment_of` 2026-11) | Status `paid` |
+| Full payment on 2026-11-10 | Nubank checking −1,500.00; Itaú Visa +1,500.00 (role `payment`, billed on 2026-11) | Status `paid` |
 | Early payment of 300.00 on 2026-10-28, then 1,200.00 on 2026-11-10 | Two payment postings billed on 2026-11 | Status `paid` after the second |
 | Partial payment of 1,000.00 on 2026-11-10 | Nubank checking −1,000.00; Itaú Visa +1,000.00 | Status `partially_paid`; after the due date: `overdue`; 500.00 becomes the opening amount of 2026-12 |
 | Revolving interest billed by the issuer on 2026-12-01 | Itaú Visa −62.50 (2026-12); Interest +62.50 | Amount due of 2026-12 includes 500.00 + 62.50 + new charges |
@@ -140,7 +140,7 @@ Given statement 2026-11 overdue with 2,000.00 unpaid, when it is financed on 202
 
 | Account | Amount | Billed on |
 |---|---|---|
-| Itaú Visa | +2,000.00 (`payment_of` 2026-11) | 2026-11 |
+| Itaú Visa | +2,000.00 (role `payment`) | 2026-11 |
 | Itaú Visa | −363.40 each, installments 1/6 to 6/6 | 2026-12 to 2027-05 |
 | Interest | +180.40 | |
 
