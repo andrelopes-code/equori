@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/platform/problem"
@@ -26,14 +27,30 @@ type BodyLimit struct {
 	Bytes   int64
 }
 
-// Middleware wraps h with, from outermost to innermost: request ID, access log,
-// panic recovery, cross-origin protection (CSRF defense, ADR 003) and the body limit.
+// Middleware wraps h with, from outermost to innermost: request ID, security headers,
+// access log, panic recovery, cross-origin protection (CSRF defense, ADR 003) and the body limit.
 func Middleware(h http.Handler, log *slog.Logger, limits ...BodyLimit) http.Handler {
 	h = limitBody(h, limits)
 	h = http.NewCrossOriginProtection().Handler(h)
 	h = recoverPanic(h, log)
 	h = accessLog(h, log)
+	h = securityHeaders(h)
 	return withRequestID(h)
+}
+
+// securityHeaders are set before the handler runs, so every response carries them,
+// including problems written by the middleware itself (ADR 007, C9).
+func securityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := w.Header()
+		h.Set("X-Content-Type-Options", "nosniff")
+		h.Set("Referrer-Policy", "no-referrer")
+		if strings.HasPrefix(r.URL.Path, "/api/") {
+			h.Set("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
+			h.Set("Cache-Control", "no-store")
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // withRequestID always generates the ID; an incoming X-Request-ID is not trusted.

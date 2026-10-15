@@ -132,3 +132,41 @@ func TestNotFound(t *testing.T) {
 		t.Fatalf("body = %s", rec.Body.String())
 	}
 }
+
+// ADR 007, C9.
+func TestMiddlewareSetsSecurityHeaders(t *testing.T) {
+	common := map[string]string{"X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer"}
+	api := map[string]string{"Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'", "Cache-Control": "no-store"}
+	ok := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte("ok")) })
+	failing := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		problem.Write(w, problem.New(http.StatusConflict, "conflict", "conflict"))
+	})
+	panicking := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { panic("boom") })
+	tests := []struct {
+		name string
+		h    http.Handler
+		path string
+		api  bool
+	}{
+		{"api success", ok, "/api/v1/accounts", true},
+		{"api problem", failing, "/api/v1/accounts", true},
+		{"api not found", NotFound(), "/api/v1/nope", true},
+		{"api panic", panicking, "/api/v1/accounts", true},
+		{"non-api", ok, "/healthz", false},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			rec, _ := serve(t, tc.h, httptest.NewRequestWithContext(t.Context(), http.MethodGet, tc.path, nil))
+			for k, v := range common {
+				if got := rec.Header().Get(k); got != v {
+					t.Errorf("%s = %q, want %q", k, got, v)
+				}
+			}
+			for k, v := range api {
+				if got, want := rec.Header().Get(k), map[bool]string{true: v}[tc.api]; got != want {
+					t.Errorf("%s = %q, want %q", k, got, want)
+				}
+			}
+		})
+	}
+}
