@@ -59,6 +59,10 @@ func toProblem(err error) problem.Details {
 		return problem.New(http.StatusConflict, "statement_not_closed", err.Error())
 	case errors.Is(err, app.ErrStatementFinanced):
 		return problem.New(http.StatusConflict, "statement_financed", err.Error())
+	case errors.Is(err, app.ErrDisputeOpen):
+		return problem.New(http.StatusConflict, "dispute_open", err.Error())
+	case errors.Is(err, app.ErrDisputeResolved):
+		return problem.New(http.StatusConflict, "dispute_resolved", err.Error())
 	default:
 		return problem.New(http.StatusInternalServerError, "internal_error", "")
 	}

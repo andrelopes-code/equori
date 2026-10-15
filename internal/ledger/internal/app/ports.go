@@ -20,6 +20,8 @@ var (
 	ErrSettingsLocked     = errors.New("settings cannot change after the first transaction")
 	ErrStatementNotClosed = errors.New("statement has not closed yet")
 	ErrStatementFinanced  = errors.New("statement is already financed")
+	ErrDisputeOpen        = errors.New("the transaction already has an open dispute")
+	ErrDisputeResolved    = errors.New("the dispute is already resolved")
 )
 
 // Clock is satisfied by platform/clock.Clock.
@@ -68,6 +70,16 @@ type PlanInstallment struct {
 	Amount    int64 // negative: a charge
 	Reference domain.ReferenceMonth
 	Closing   time.Time
+}
+
+type Dispute struct {
+	ID                  uuid.UUID
+	UserID              int64
+	TransactionID       uuid.UUID
+	OpenedOn            time.Time
+	ResolvedOn          *time.Time
+	Outcome             string
+	RefundTransactionID uuid.UUID
 }
 
 type Settings struct {
@@ -181,6 +193,9 @@ type Repository interface {
 	Plan(ctx context.Context, userID int64, id uuid.UUID) (domain.InstallmentPlan, error)
 	PlanInstallments(ctx context.Context, userID int64, planID uuid.UUID) ([]PlanInstallment, error)
 	RefundedTotal(ctx context.Context, userID int64, originID uuid.UUID) (int64, error)
+	InsertDispute(ctx context.Context, d Dispute) (Dispute, error)
+	LockDispute(ctx context.Context, userID int64, id uuid.UUID) (Dispute, error)
+	ResolveDispute(ctx context.Context, d Dispute) (Dispute, error)
 	SystemAccount(ctx context.Context, userID int64, role domain.SystemRole) (domain.Account, error)
 	CommittedInstallments(ctx context.Context, userID int64, accountID uuid.UUID, month domain.ReferenceMonth, today time.Time) (int64, error)
 	StatementPostings(ctx context.Context, userID int64, statementID uuid.UUID) ([]StatementPosting, error)

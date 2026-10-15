@@ -231,6 +231,42 @@ func (e BillingCycleRuleDueDateAdjustment) Valid() bool {
 	}
 }
 
+// Defines values for DisputeOutcome.
+const (
+	DisputeOutcomeLost DisputeOutcome = "lost"
+	DisputeOutcomeWon  DisputeOutcome = "won"
+)
+
+// Valid indicates whether the value is a known member of the DisputeOutcome enum.
+func (e DisputeOutcome) Valid() bool {
+	switch e {
+	case DisputeOutcomeLost:
+		return true
+	case DisputeOutcomeWon:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DisputeResolutionOutcome.
+const (
+	DisputeResolutionOutcomeLost DisputeResolutionOutcome = "lost"
+	DisputeResolutionOutcomeWon  DisputeResolutionOutcome = "won"
+)
+
+// Valid indicates whether the value is a known member of the DisputeResolutionOutcome enum.
+func (e DisputeResolutionOutcome) Valid() bool {
+	switch e {
+	case DisputeResolutionOutcomeLost:
+		return true
+	case DisputeResolutionOutcomeWon:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for LinkType.
 const (
 	AnticipationOf  LinkType = "anticipation_of"
@@ -633,6 +669,34 @@ type CreditLimitList struct {
 	Items []CreditLimit `json:"items"`
 }
 
+// Dispute defines model for Dispute.
+type Dispute struct {
+	Id                  openapi_types.UUID  `json:"id"`
+	OpenedOn            openapi_types.Date  `json:"opened_on"`
+	Outcome             *DisputeOutcome     `json:"outcome,omitempty"`
+	RefundTransactionId *openapi_types.UUID `json:"refund_transaction_id,omitempty"`
+	ResolvedOn          *openapi_types.Date `json:"resolved_on,omitempty"`
+	TransactionId       openapi_types.UUID  `json:"transaction_id"`
+}
+
+// DisputeOutcome defines model for Dispute.Outcome.
+type DisputeOutcome string
+
+// DisputeInput defines model for DisputeInput.
+type DisputeInput struct {
+	OpenedOn openapi_types.Date `json:"opened_on"`
+}
+
+// DisputeResolution defines model for DisputeResolution.
+type DisputeResolution struct {
+	Outcome    DisputeResolutionOutcome `json:"outcome"`
+	ResolvedOn openapi_types.Date       `json:"resolved_on"`
+	Statement  *string                  `json:"statement,omitempty"`
+}
+
+// DisputeResolutionOutcome defines model for DisputeResolution.Outcome.
+type DisputeResolutionOutcome string
+
 // FieldError defines model for FieldError.
 type FieldError struct {
 	Field   string `json:"field"`
@@ -771,7 +835,7 @@ type Problem struct {
 	// Code Stable error identifier. Values: invalid_request, request_too_large, invalid_credentials,
 	// too_many_attempts, unauthenticated, forbidden, not_found, validation_failed, internal_error,
 	// server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
-	// account_not_empty, settings_locked, statement_not_closed, statement_financed.
+	// account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved.
 	Code      string        `json:"code"`
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`
@@ -988,6 +1052,9 @@ type CloseAccountJSONRequestBody = CloseAccountInput
 // CreateCreditLimitJSONRequestBody defines body for CreateCreditLimit for application/json ContentType.
 type CreateCreditLimitJSONRequestBody = CreditLimit
 
+// ResolveDisputeJSONRequestBody defines body for ResolveDispute for application/json ContentType.
+type ResolveDisputeJSONRequestBody = DisputeResolution
+
 // AnticipateInstallmentsJSONRequestBody defines body for AnticipateInstallments for application/json ContentType.
 type AnticipateInstallmentsJSONRequestBody = AnticipationInput
 
@@ -1017,6 +1084,9 @@ type CreateTransactionJSONRequestBody = TransactionInput
 
 // CorrectTransactionJSONRequestBody defines body for CorrectTransaction for application/json ContentType.
 type CorrectTransactionJSONRequestBody = CorrectionInput
+
+// OpenDisputeJSONRequestBody defines body for OpenDispute for application/json ContentType.
+type OpenDisputeJSONRequestBody = DisputeInput
 
 // RefundTransactionJSONRequestBody defines body for RefundTransaction for application/json ContentType.
 type RefundTransactionJSONRequestBody = RefundInput
@@ -1068,6 +1138,9 @@ type ServerInterface interface {
 	// ListStatements Statements of a card with amounts and status derived from its postings.
 	// (GET /accounts/{id}/statements)
 	ListStatements(w http.ResponseWriter, r *http.Request, id ID, params ListStatementsParams)
+	// ResolveDispute Resolve a dispute; a won dispute refunds the remaining charged amount.
+	// (POST /disputes/{id}/resolution)
+	ResolveDispute(w http.ResponseWriter, r *http.Request, id ID)
 	// AnticipateInstallments Pay future installments early.
 	// (POST /installment-plans/{id}/anticipation)
 	AnticipateInstallments(w http.ResponseWriter, r *http.Request, id ID)
@@ -1119,6 +1192,9 @@ type ServerInterface interface {
 	// CorrectTransaction Correct a transaction; creates a new version.
 	// (PUT /transactions/{id})
 	CorrectTransaction(w http.ResponseWriter, r *http.Request, id ID)
+	// OpenDispute Open a dispute on a card purchase.
+	// (POST /transactions/{id}/disputes)
+	OpenDispute(w http.ResponseWriter, r *http.Request, id ID)
 	// RefundTransaction Refund all or part of a card purchase.
 	// (POST /transactions/{id}/refunds)
 	RefundTransaction(w http.ResponseWriter, r *http.Request, id ID)
@@ -1553,6 +1629,32 @@ func (siw *ServerInterfaceWrapper) ListStatements(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r)
 }
 
+// ResolveDispute operation middleware
+func (siw *ServerInterfaceWrapper) ResolveDispute(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ResolveDispute(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // AnticipateInstallments operation middleware
 func (siw *ServerInterfaceWrapper) AnticipateInstallments(w http.ResponseWriter, r *http.Request) {
 
@@ -1972,6 +2074,32 @@ func (siw *ServerInterfaceWrapper) CorrectTransaction(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
+// OpenDispute operation middleware
+func (siw *ServerInterfaceWrapper) OpenDispute(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.OpenDispute(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // RefundTransaction operation middleware
 func (siw *ServerInterfaceWrapper) RefundTransaction(w http.ResponseWriter, r *http.Request) {
 
@@ -2204,6 +2332,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/refunds", wrapper.RefundTransaction)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/installment-plans/{id}/cancellation", wrapper.CancelInstallmentPlan)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/installment-plans/{id}/anticipation", wrapper.AnticipateInstallments)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/disputes", wrapper.OpenDispute)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/disputes/{id}/resolution", wrapper.ResolveDispute)
 
 	return m
 }
@@ -3040,6 +3170,87 @@ func (response ListStatements404ApplicationProblemPlusJSONResponse) VisitListSta
 type ListStatements422ApplicationProblemPlusJSONResponse Problem
 
 func (response ListStatements422ApplicationProblemPlusJSONResponse) VisitListStatementsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveDisputeRequestObject struct {
+	Id   ID `json:"id"`
+	Body *ResolveDisputeJSONRequestBody
+}
+
+type ResolveDisputeResponseObject interface {
+	VisitResolveDisputeResponse(w http.ResponseWriter) error
+}
+
+type ResolveDispute200JSONResponse Dispute
+
+func (response ResolveDispute200JSONResponse) VisitResolveDisputeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveDispute401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ResolveDispute401ApplicationProblemPlusJSONResponse) VisitResolveDisputeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveDispute404ApplicationProblemPlusJSONResponse Problem
+
+func (response ResolveDispute404ApplicationProblemPlusJSONResponse) VisitResolveDisputeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveDispute409ApplicationProblemPlusJSONResponse Problem
+
+func (response ResolveDispute409ApplicationProblemPlusJSONResponse) VisitResolveDisputeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveDispute422ApplicationProblemPlusJSONResponse Problem
+
+func (response ResolveDispute422ApplicationProblemPlusJSONResponse) VisitResolveDisputeResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -3992,6 +4203,87 @@ func (response CorrectTransaction422ApplicationProblemPlusJSONResponse) VisitCor
 	return err
 }
 
+type OpenDisputeRequestObject struct {
+	Id   ID `json:"id"`
+	Body *OpenDisputeJSONRequestBody
+}
+
+type OpenDisputeResponseObject interface {
+	VisitOpenDisputeResponse(w http.ResponseWriter) error
+}
+
+type OpenDispute201JSONResponse Dispute
+
+func (response OpenDispute201JSONResponse) VisitOpenDisputeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type OpenDispute401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response OpenDispute401ApplicationProblemPlusJSONResponse) VisitOpenDisputeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type OpenDispute404ApplicationProblemPlusJSONResponse Problem
+
+func (response OpenDispute404ApplicationProblemPlusJSONResponse) VisitOpenDisputeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type OpenDispute409ApplicationProblemPlusJSONResponse Problem
+
+func (response OpenDispute409ApplicationProblemPlusJSONResponse) VisitOpenDisputeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type OpenDispute422ApplicationProblemPlusJSONResponse Problem
+
+func (response OpenDispute422ApplicationProblemPlusJSONResponse) VisitOpenDisputeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type RefundTransactionRequestObject struct {
 	Id   ID `json:"id"`
 	Body *RefundTransactionJSONRequestBody
@@ -4230,6 +4522,9 @@ type StrictServerInterface interface {
 	// ListStatements Statements of a card with amounts and status derived from its postings.
 	// (GET /accounts/{id}/statements)
 	ListStatements(ctx context.Context, request ListStatementsRequestObject) (ListStatementsResponseObject, error)
+	// ResolveDispute Resolve a dispute; a won dispute refunds the remaining charged amount.
+	// (POST /disputes/{id}/resolution)
+	ResolveDispute(ctx context.Context, request ResolveDisputeRequestObject) (ResolveDisputeResponseObject, error)
 	// AnticipateInstallments Pay future installments early.
 	// (POST /installment-plans/{id}/anticipation)
 	AnticipateInstallments(ctx context.Context, request AnticipateInstallmentsRequestObject) (AnticipateInstallmentsResponseObject, error)
@@ -4281,6 +4576,9 @@ type StrictServerInterface interface {
 	// CorrectTransaction Correct a transaction; creates a new version.
 	// (PUT /transactions/{id})
 	CorrectTransaction(ctx context.Context, request CorrectTransactionRequestObject) (CorrectTransactionResponseObject, error)
+	// OpenDispute Open a dispute on a card purchase.
+	// (POST /transactions/{id}/disputes)
+	OpenDispute(ctx context.Context, request OpenDisputeRequestObject) (OpenDisputeResponseObject, error)
 	// RefundTransaction Refund all or part of a card purchase.
 	// (POST /transactions/{id}/refunds)
 	RefundTransaction(ctx context.Context, request RefundTransactionRequestObject) (RefundTransactionResponseObject, error)
@@ -4729,6 +5027,39 @@ func (sh *strictHandler) ListStatements(w http.ResponseWriter, r *http.Request, 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListStatementsResponseObject); ok {
 		if err := validResponse.VisitListStatementsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ResolveDispute operation middleware
+func (sh *strictHandler) ResolveDispute(w http.ResponseWriter, r *http.Request, id ID) {
+	var request ResolveDisputeRequestObject
+
+	request.Id = id
+
+	var body ResolveDisputeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ResolveDispute(ctx, request.(ResolveDisputeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ResolveDispute")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ResolveDisputeResponseObject); ok {
+		if err := validResponse.VisitResolveDisputeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -5223,6 +5554,39 @@ func (sh *strictHandler) CorrectTransaction(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CorrectTransactionResponseObject); ok {
 		if err := validResponse.VisitCorrectTransactionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// OpenDispute operation middleware
+func (sh *strictHandler) OpenDispute(w http.ResponseWriter, r *http.Request, id ID) {
+	var request OpenDisputeRequestObject
+
+	request.Id = id
+
+	var body OpenDisputeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.OpenDispute(ctx, request.(OpenDisputeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "OpenDispute")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(OpenDisputeResponseObject); ok {
+		if err := validResponse.VisitOpenDisputeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

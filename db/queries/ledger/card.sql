@@ -91,5 +91,16 @@ ORDER BY p.installment_number;
 SELECT coalesce(sum(p.amount), 0)::bigint
 FROM ledger_link l
 JOIN ledger_posting p ON p.transaction_id = l.from_transaction_id
-WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND l.link_type IN ('refund_of', 'cancellation_of')
+WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND l.link_type IN ('refund_of', 'cancellation_of', 'chargeback_of')
   AND p.card_role = 'credit' AND NOT p.voided;
+
+-- name: InsertDispute :one
+INSERT INTO ledger_dispute (user_id, transaction_id, opened_on) VALUES ($1, $2, $3) RETURNING *;
+
+-- name: GetDisputeForUpdate :one
+SELECT * FROM ledger_dispute WHERE user_id = $1 AND id = $2 FOR UPDATE;
+
+-- name: ResolveDispute :one
+UPDATE ledger_dispute SET resolved_on = @resolved_on, outcome = @outcome, refund_transaction_id = sqlc.narg(refund_transaction_id)
+WHERE id = @id
+RETURNING *;

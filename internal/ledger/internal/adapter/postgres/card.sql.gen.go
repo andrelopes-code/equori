@@ -74,6 +74,30 @@ func (q *Queries) EnsureStatement(ctx context.Context, arg EnsureStatementParams
 	return id, err
 }
 
+const getDisputeForUpdate = `-- name: GetDisputeForUpdate :one
+SELECT id, user_id, transaction_id, opened_on, resolved_on, outcome, refund_transaction_id FROM ledger_dispute WHERE user_id = $1 AND id = $2 FOR UPDATE
+`
+
+type GetDisputeForUpdateParams struct {
+	UserID int64
+	ID     uuid.UUID
+}
+
+func (q *Queries) GetDisputeForUpdate(ctx context.Context, arg GetDisputeForUpdateParams) (LedgerDispute, error) {
+	row := q.db.QueryRow(ctx, getDisputeForUpdate, arg.UserID, arg.ID)
+	var i LedgerDispute
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.TransactionID,
+		&i.OpenedOn,
+		&i.ResolvedOn,
+		&i.Outcome,
+		&i.RefundTransactionID,
+	)
+	return i, err
+}
+
 const getPlan = `-- name: GetPlan :one
 SELECT id, user_id, account_id, origin_transaction_id, plan_kind, installment_count, principal, interest, monthly_rate, first_statement_id, created_at FROM ledger_installment_plan WHERE user_id = $1 AND id = $2
 `
@@ -262,6 +286,31 @@ func (q *Queries) InsertCreditLimit(ctx context.Context, arg InsertCreditLimitPa
 		&i.EffectiveFrom,
 		&i.Amount,
 		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const insertDispute = `-- name: InsertDispute :one
+INSERT INTO ledger_dispute (user_id, transaction_id, opened_on) VALUES ($1, $2, $3) RETURNING id, user_id, transaction_id, opened_on, resolved_on, outcome, refund_transaction_id
+`
+
+type InsertDisputeParams struct {
+	UserID        int64
+	TransactionID uuid.UUID
+	OpenedOn      time.Time
+}
+
+func (q *Queries) InsertDispute(ctx context.Context, arg InsertDisputeParams) (LedgerDispute, error) {
+	row := q.db.QueryRow(ctx, insertDispute, arg.UserID, arg.TransactionID, arg.OpenedOn)
+	var i LedgerDispute
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.TransactionID,
+		&i.OpenedOn,
+		&i.ResolvedOn,
+		&i.Outcome,
+		&i.RefundTransactionID,
 	)
 	return i, err
 }
@@ -636,7 +685,7 @@ const refundedTotal = `-- name: RefundedTotal :one
 SELECT coalesce(sum(p.amount), 0)::bigint
 FROM ledger_link l
 JOIN ledger_posting p ON p.transaction_id = l.from_transaction_id
-WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND l.link_type IN ('refund_of', 'cancellation_of')
+WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND l.link_type IN ('refund_of', 'cancellation_of', 'chargeback_of')
   AND p.card_role = 'credit' AND NOT p.voided
 `
 
@@ -650,6 +699,39 @@ func (q *Queries) RefundedTotal(ctx context.Context, arg RefundedTotalParams) (i
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
+}
+
+const resolveDispute = `-- name: ResolveDispute :one
+UPDATE ledger_dispute SET resolved_on = $1, outcome = $2, refund_transaction_id = $3
+WHERE id = $4
+RETURNING id, user_id, transaction_id, opened_on, resolved_on, outcome, refund_transaction_id
+`
+
+type ResolveDisputeParams struct {
+	ResolvedOn          *time.Time
+	Outcome             *string
+	RefundTransactionID uuid.NullUUID
+	ID                  uuid.UUID
+}
+
+func (q *Queries) ResolveDispute(ctx context.Context, arg ResolveDisputeParams) (LedgerDispute, error) {
+	row := q.db.QueryRow(ctx, resolveDispute,
+		arg.ResolvedOn,
+		arg.Outcome,
+		arg.RefundTransactionID,
+		arg.ID,
+	)
+	var i LedgerDispute
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.TransactionID,
+		&i.OpenedOn,
+		&i.ResolvedOn,
+		&i.Outcome,
+		&i.RefundTransactionID,
+	)
+	return i, err
 }
 
 const setStatementFinanced = `-- name: SetStatementFinanced :exec

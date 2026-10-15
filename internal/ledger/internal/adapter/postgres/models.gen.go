@@ -60,6 +60,16 @@ type LedgerCreditLimit struct {
 	CreatedAt     time.Time
 }
 
+type LedgerDispute struct {
+	ID                  uuid.UUID
+	UserID              int64
+	TransactionID       uuid.UUID
+	OpenedOn            time.Time
+	ResolvedOn          *time.Time
+	Outcome             *string
+	RefundTransactionID uuid.NullUUID
+}
+
 type LedgerInstallmentPlan struct {
 	ID                  uuid.UUID
 	UserID              int64
