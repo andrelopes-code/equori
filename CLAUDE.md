@@ -59,6 +59,20 @@ Everything is in English: identifiers, files, packages, comments, log messages, 
 - `*.gen.go` files are generated; never edit them. A new module adds an entry to `sqlc.yaml`, `db/queries/<module>/`, a tag in `api/openapi.yaml` and `adapter/httpapi/oapi-codegen.yaml`.
 - Every business table has `user_id`; every query on it filters by `user_id` (ADR 003).
 
+## Tests
+
+The suite is the safety net against regressions; agents change code only behind it.
+
+- A behavior change starts with a test that fails without it. Run it and read the failure before writing the implementation; a test that passes on first run proves nothing until it is shown to fail.
+- A bug fix starts with a test that reproduces the bug.
+- Never delete a test, add `t.Skip`, loosen an assertion or change an expected value to make a failing test pass. A test changes only when the specified behavior changes; the commit body names the spec section or amendment.
+- Each acceptance scenario of `docs/domain/06-*.md` in a delivered phase has a test through the HTTP API (`internal/apitest`) whose name or comment carries the scenario ID (`S24`).
+- Each database invariant has a schema test that violates it with direct SQL and expects the rejection.
+- Each `Problem.code` returned by a module has a test that triggers it through the HTTP API.
+- Assert exact values. Check the status before decoding a body: a 404 decoded into a struct yields zero values that pass emptiness checks.
+- Tests are deterministic: a fixed date through `apitest.Today`, no sleeps, no wall clock, no dependence on map order.
+- Assert observable outcomes (HTTP responses, rows, published events), not internal calls. No mocks of the repository or of PostgreSQL.
+
 ## Comments
 
 Write a comment only when it carries information the code cannot: a non-obvious reason, an invariant, an external constraint, a `nolint` justification. Do not restate what the code does. Package comments: one line.

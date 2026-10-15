@@ -148,3 +148,12 @@ func TestUnauthenticated(t *testing.T) {
 		}
 	}
 }
+
+func TestCloseAccountWithBalanceIs409(t *testing.T) {
+	h := apitest.New(t)
+	checking := h.Account("Nubank", "asset", "checking", nil)
+	food := h.Account("Food", "expense", "", nil)
+	h.Record("2026-10-01", apitest.Posting(checking, -100), apitest.Posting(food, 100))
+	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/accounts/"+checking+"/close", map[string]string{"closed_on": "2026-10-31"}),
+		http.StatusConflict, "account_not_empty", "")
+}
