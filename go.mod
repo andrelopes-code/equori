@@ -5,7 +5,7 @@ go 1.27.2
 ignore ./web/node_modules
 
 require (
-	github.com/getkin/kin-openapi v0.142.0
+	github.com/getkin/kin-openapi v0.144.0
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/oapi-codegen/runtime v1.7.0
