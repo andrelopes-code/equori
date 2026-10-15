@@ -211,7 +211,7 @@ erDiagram
 | I01 Weights sum to zero | Deferred constraint trigger on `ledger_posting`, checked at commit per touched transaction, ignoring voided transactions. |
 | I02 At least two postings | Same trigger. |
 | I03, I04 Statement only on card postings | Trigger: `statement_id` set if and only if the account kind is `credit_card`, and the statement belongs to the same account. |
-| I05 Immutable postings | Trigger rejects `UPDATE` and `DELETE` of a posting whose status is `reconciled` or whose statement's closing date has passed, unless the session sets `equori.allow_issuer_late_posting` for an issuer late posting. Corrections of such transactions go through new transactions. |
+| I05 Immutable postings | Trigger rejects `UPDATE` and `DELETE` of a posting whose status is `reconciled`, except the void copy; an explicit unlock (P3) sets `equori.unlock_reconciled`. Corrections of such transactions go through new transactions. |
 | I06 Refund ceiling | Domain check inside the database transaction that locks the origin plan row (`SELECT ... FOR UPDATE`). |
 | I07 One match per occurrence and record | Partial unique indexes (7.3). |
 | I08 No overlapping versions | `UNIQUE (subject_id, effective_from)` and the "latest effective_from" rule; exclusion constraint for pause periods. |

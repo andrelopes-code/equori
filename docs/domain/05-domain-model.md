@@ -194,7 +194,7 @@ classDiagram
 | `statement` | Required on card account postings, forbidden on others (I03, I04). |
 | `installment`, `installmentPlan` | Set together, only on card postings that belong to a plan. |
 | `originalAmount` | Amount in the currency of the original charge when it differs from the account instrument (foreign purchase on a BRL card, M11). Informational; the rate is `amount / originalAmount`. |
-| Correction | A correction creates version n+1 of the same transaction and keeps version n in history. Allowed while no posting of the transaction is `reconciled` and no card posting belongs to a closed statement (I05). Otherwise the change is a new transaction linked `correction_of`. |
+| Correction | A correction creates version n+1 of the same transaction and keeps version n in history. Allowed while no posting of the transaction is `reconciled` (I05). Otherwise the change is a new transaction linked `correction_of`. |
 | Void | Sets `voidedAt`; the transaction stops counting in every balance. Same restrictions as correction. |
 | Origin | `manual`, `import`, `schedule`, `system` (yield, adjustment, revolving). Informational. |
 
@@ -226,7 +226,8 @@ flowchart LR
 | Payments | Card postings with role `payment`, billed on the statement they pay. Every card posting has a role: `charge`, `credit` or `payment`. |
 | Unpaid amount | Amount due − payments, when positive after the due date. Becomes the opening amount of the next statement (revolving credit). |
 | Status | Derived from dates, amount due and payments (chapter 3, 3.4.1). |
-| Closed | After `closingDate`, adding or changing a posting on the statement requires the issuer origin flag (late issuer charge) and is never allowed for user-entered postings (I05). |
+| Reference month | The month of the due date. The closing date falls in the reference month when `closingDay < dueDay`, otherwise in the previous month (P2 amendment A1). |
+| Closed | After `closingDate` the statement is closed; postings may still be added (back-fill, late issuer charges). Its postings become immutable when reconciled (I05, amendment A3). Only the due date is shifted by the calendar (A2). |
 
 ### 5.2.5 Installment plan
 
@@ -467,6 +468,6 @@ classDiagram
 | DM1 | Every posting stores its weight in the balancing currency explicitly. | Rate × amount computed on read: introduces rounding differences between reads. |
 | DM2 | Interest of an installment purchase is recorded in full at purchase, in the `interest` category. | Interest spread per installment: more postings, same cash view. |
 | DM3 | The rounding remainder of an installment split goes to the first installment, unless imported data says otherwise. | Last installment. |
-| DM4 | A correction is a new version of the same transaction while nothing in it is reconciled or on a closed statement; afterwards only compensating transactions. | Compensating transactions only: noisy history for typo fixes. |
+| DM4 | A correction is a new version of the same transaction while nothing in it is reconciled; afterwards only compensating transactions. | Compensating transactions only: noisy history for typo fixes. |
 | DM5 | One instrument per account; brokerage accounts are parents with one child per instrument. | Multi-instrument accounts: balance is no longer a single number. |
 | DM6 | Statements are aggregates with stored dates; their amounts are derived from postings. | Statement totals stored: duplicate state that can diverge. |

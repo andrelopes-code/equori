@@ -291,7 +291,7 @@ func (q *Queries) ListLinksFrom(ctx context.Context, arg ListLinksFromParams) ([
 }
 
 const listPostings = `-- name: ListPostings :many
-SELECT p.id, p.user_id, p.transaction_id, p.account_id, p.position, p.amount, p.weight, p.booked_on, p.settled_on, p.status, p.original_amount, p.original_instrument, p.memo, p.voided, a.instrument AS account_instrument, t.balancing_currency
+SELECT p.id, p.user_id, p.transaction_id, p.account_id, p.position, p.amount, p.weight, p.booked_on, p.settled_on, p.status, p.original_amount, p.original_instrument, p.memo, p.voided, p.statement_id, p.card_role, p.installment_plan_id, p.installment_number, p.installment_count, a.instrument AS account_instrument, t.balancing_currency
 FROM ledger_posting p
 JOIN ledger_account a ON a.id = p.account_id
 JOIN ledger_transaction t ON t.id = p.transaction_id
@@ -319,6 +319,11 @@ type ListPostingsRow struct {
 	OriginalInstrument *string
 	Memo               *string
 	Voided             bool
+	StatementID        uuid.NullUUID
+	CardRole           *string
+	InstallmentPlanID  uuid.NullUUID
+	InstallmentNumber  *int16
+	InstallmentCount   *int16
 	AccountInstrument  string
 	BalancingCurrency  string
 }
@@ -347,6 +352,11 @@ func (q *Queries) ListPostings(ctx context.Context, arg ListPostingsParams) ([]L
 			&i.OriginalInstrument,
 			&i.Memo,
 			&i.Voided,
+			&i.StatementID,
+			&i.CardRole,
+			&i.InstallmentPlanID,
+			&i.InstallmentNumber,
+			&i.InstallmentCount,
 			&i.AccountInstrument,
 			&i.BalancingCurrency,
 		); err != nil {

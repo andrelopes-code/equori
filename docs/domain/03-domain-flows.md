@@ -95,7 +95,7 @@ flowchart LR
 |---|---|---|
 | `CardPurchaseRecorded` | transaction, card, installment count, interest | A `TransactionRecorded` whose card postings carry statement assignments. With N installments, the card side has N postings and the expense side has the full amount. |
 | `PostingBilled` | posting, statement | Default statement: the first statement whose closing date is after the transaction date, or equal to it when the card's closing-day assignment is `closing`, under the billing cycle rule effective for that statement (T04, T05). Installment k goes to the (k−1)-th statement after the first (T07). An explicit statement from import data overrides the default. |
-| `StatementClosed` | statement, closed balance | Happens on the closing date. After it, new postings for that cycle require an explicit assignment (late issuer postings). |
+| `StatementClosed` | statement, closed balance | Happens on the closing date. Postings may still be added to it (history back-fill, late issuer charges); its postings become immutable when reconciled. |
 | `StatementPaymentRecorded` | transaction, statement, amount | Transfer from a balance account to the card account; the card posting has role `payment` and is billed on the paid statement. Allowed before closing (early payment), after closing, and after the due date. |
 | `StatementOverdue` | statement, unpaid amount | Due date (shifted by the business-day calendar, T06) passed with paid amount < closed balance. |
 | `BalanceCarriedToNextStatement` | from, to, amount | The unpaid part of a closed statement appears as the opening amount of the next one. No new transaction: the card account balance already holds the debt. |
@@ -323,7 +323,7 @@ Each invariant is enforced in the domain and covered by a scenario in chapter 6.
 | I02 | A transaction has at least two postings. |
 | I03 | A posting on a card account belongs to exactly one statement of that account. |
 | I04 | A posting on any other account belongs to no statement. |
-| I05 | Postings on a closed statement and `reconciled` postings are never edited; changes are new transactions linked to the original. |
+| I05 | `reconciled` postings are never edited or deleted; changes are new transactions linked to the original. A statement's closing date does not freeze its postings (P2 amendment A3). |
 | I06 | The total refunded or cancelled for a purchase never exceeds its original amount. |
 | I07 | An occurrence is realized by at most one transaction; an external record is matched to at most one transaction. |
 | I08 | Effective-dated values never overlap: at any date exactly one version is in force. |
