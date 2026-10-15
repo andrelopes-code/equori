@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
 	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
@@ -83,12 +84,20 @@ func (r *Repository) FirstSettledOn(ctx context.Context, userID int64, accountID
 }
 
 func (r *Repository) InsertReconciliation(ctx context.Context, rec app.Reconciliation) error {
-	return r.q.InsertReconciliation(ctx, InsertReconciliationParams{
+	err := r.q.InsertReconciliation(ctx, InsertReconciliationParams{
 		UserID: rec.UserID, AccountID: rec.AccountID, Date: rec.Date,
 		AssertionID: nullUUID(rec.AssertionID), StatementID: nullUUID(rec.StatementID),
 		Difference: rec.Difference, Resolution: string(rec.Resolution),
 		ResolutionTransactionID: nullUUID(rec.ResolutionTransactionID),
 	})
+	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == uniqueViolation {
+		return domain.ErrAlreadyReconciled
+	}
+	return err
+}
+
+func (r *Repository) ReconcileStatementPostings(ctx context.Context, userID int64, statementID uuid.UUID) error {
+	return r.q.ReconcileStatementPostings(ctx, ReconcileStatementPostingsParams{UserID: userID, StatementID: nullUUID(statementID)})
 }
 
 func (r *Repository) ReconcilePostings(ctx context.Context, userID int64, accountID uuid.UUID, through time.Time) error {

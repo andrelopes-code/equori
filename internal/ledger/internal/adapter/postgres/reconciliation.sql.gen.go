@@ -244,11 +244,28 @@ func (q *Queries) ReconcileAccountPostings(ctx context.Context, arg ReconcileAcc
 	return err
 }
 
+const reconcileStatementPostings = `-- name: ReconcileStatementPostings :exec
+UPDATE ledger_posting SET status = 'reconciled'
+WHERE user_id = $1 AND statement_id = $2 AND NOT voided AND status <> 'reconciled'
+`
+
+type ReconcileStatementPostingsParams struct {
+	UserID      int64
+	StatementID uuid.NullUUID
+}
+
+func (q *Queries) ReconcileStatementPostings(ctx context.Context, arg ReconcileStatementPostingsParams) error {
+	_, err := q.db.Exec(ctx, reconcileStatementPostings, arg.UserID, arg.StatementID)
+	return err
+}
+
 const unreconcileAccountPostings = `-- name: UnreconcileAccountPostings :exec
-UPDATE ledger_posting SET status = 'cleared'
-WHERE user_id = $1 AND account_id = $2
-  AND status = 'reconciled'
-  AND coalesce(settled_on, booked_on) >= $3::date
+UPDATE ledger_posting p SET status = 'cleared'
+WHERE p.user_id = $1 AND p.account_id = $2
+  AND p.status = 'reconciled'
+  AND (coalesce(p.settled_on, p.booked_on) >= $3::date
+       OR p.statement_id IN (SELECT r.statement_id FROM ledger_reconciliation r
+                           WHERE r.user_id = $1 AND r.account_id = $2 AND r.date >= $3::date))
 `
 
 type UnreconcileAccountPostingsParams struct {
@@ -257,6 +274,7 @@ type UnreconcileAccountPostingsParams struct {
 	FromDate  time.Time
 }
 
+// A statement reconciliation is released whole: its postings may settle before from_date.
 func (q *Queries) UnreconcileAccountPostings(ctx context.Context, arg UnreconcileAccountPostingsParams) error {
 	_, err := q.db.Exec(ctx, unreconcileAccountPostings, arg.UserID, arg.AccountID, arg.FromDate)
 	return err

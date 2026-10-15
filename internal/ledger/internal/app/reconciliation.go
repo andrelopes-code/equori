@@ -203,6 +203,39 @@ func (s *Service) Unlock(ctx context.Context, userID int64, accountID uuid.UUID,
 	})
 }
 
+// ReconcileStatement confirms the institution's amount due for a closed card statement (A7).
+func (s *Service) ReconcileStatement(ctx context.Context, userID int64, statementID uuid.UUID, amountDue money.Money) error {
+	accountID, err := s.repo.StatementAccount(ctx, userID, statementID)
+	if err != nil {
+		return err
+	}
+	return s.repo.InTx(ctx, func(r Repository) error {
+		if _, err := r.LockAccount(ctx, userID, accountID); err != nil {
+			return err
+		}
+		v, card, err := s.statementView(ctx, r, userID, statementID)
+		if err != nil {
+			return err
+		}
+		if amountDue.Currency() != card.Instrument {
+			return validationError("amount_due", "must be in the card currency")
+		}
+		if s.clock.Today().Before(v.Input.Closing) {
+			return ErrStatementNotClosed
+		}
+		diff, err := money.New(amountDue.Amount()-v.Summary.AmountDue, card.Instrument)
+		if err != nil {
+			return err
+		}
+		if !diff.IsZero() {
+			return fmt.Errorf("%w: %s", ErrDifferenceRemains, diff)
+		}
+		return s.reconcile(ctx, r, Reconciliation{
+			UserID: userID, AccountID: accountID, Date: v.Input.Closing, StatementID: statementID, Resolution: domain.ResolutionNone,
+		})
+	})
+}
+
 func (s *Service) BalanceAssertions(ctx context.Context, userID int64, accountID uuid.UUID) ([]BalanceAssertion, error) {
 	if _, err := s.repo.Account(ctx, userID, accountID); err != nil {
 		return nil, err
@@ -282,7 +315,11 @@ func (s *Service) reconcile(ctx context.Context, r Repository, rec Reconciliatio
 	if err := r.InsertReconciliation(ctx, rec); err != nil {
 		return err
 	}
-	if err := r.ReconcilePostings(ctx, rec.UserID, rec.AccountID, rec.Date); err != nil {
+	mark := func() error { return r.ReconcilePostings(ctx, rec.UserID, rec.AccountID, rec.Date) }
+	if rec.StatementID != uuid.Nil {
+		mark = func() error { return r.ReconcileStatementPostings(ctx, rec.UserID, rec.StatementID) }
+	}
+	if err := mark(); err != nil {
 		return err
 	}
 	return r.Publish(ctx, outbox.Event{

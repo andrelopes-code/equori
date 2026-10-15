@@ -248,3 +248,57 @@ func TestUnlockKeepsEarlierReconciliations(t *testing.T) {
 		t.Fatal("posting settled before the unlock date lost its reconciled status")
 	}
 }
+
+func reconcileStatement(c cardSetup, reference string, amountDue int64) apitest.Response {
+	id := statements(c.h.T(), c.h, c.card)[reference].ID
+	return c.h.Do(http.MethodPost, "/api/v1/statements/"+id+"/reconciliation", map[string]any{"amount_due": apitest.BRL(amountDue)})
+}
+
+func TestStatementReconciliationLocksPurchases(t *testing.T) {
+	c := newCardSetup(t, "2026-11-05")
+	purchase := c.purchase("2026-10-14", 100000)
+	c.purchase("2026-10-20", 50000)
+	if resp := reconcileStatement(c, "2026-11", 150000); resp.Status != http.StatusNoContent {
+		t.Fatalf("status %d: %s", resp.Status, resp.Body)
+	}
+	for _, p := range c.h.Transaction(purchase).Postings {
+		if want := map[bool]string{true: "reconciled", false: "cleared"}[p.AccountID == c.card]; p.Status != want {
+			t.Fatalf("posting of %s: status %q, want %q", p.AccountID, p.Status, want)
+		}
+	}
+	if s := reconciliationOf(c.h, c.card); s.LastReconciledOn != "2026-11-03" {
+		t.Fatalf("card reconciliation = %+v", s)
+	}
+	c.h.ExpectProblem(c.h.Do(http.MethodPut, "/api/v1/transactions/"+purchase, map[string]any{
+		"date": "2026-10-14", "expected_version": 1, "reason": "wrong amount",
+		"postings": []map[string]any{apitest.Posting(c.card, -90000), apitest.Posting(c.food, 90000)},
+	}), http.StatusConflict, "posting_reconciled", "")
+	c.h.ExpectProblem(reconcileStatement(c, "2026-11", 150000), http.StatusConflict, "already_reconciled", "")
+}
+
+func TestStatementReconciliationRejects(t *testing.T) {
+	c := newCardSetup(t, "2026-11-05")
+	purchase := c.purchase("2026-10-14", 100000)
+	c.purchase("2026-11-04", 30000)
+	c.h.ExpectProblem(reconcileStatement(c, "2026-11", 99000), http.StatusConflict, "difference_remains", "")
+	c.h.ExpectProblem(reconcileStatement(c, "2026-12", 30000), http.StatusConflict, "statement_not_closed", "")
+	for _, p := range c.h.Transaction(purchase).Postings {
+		if p.Status == "reconciled" {
+			t.Fatal("rejected reconciliation marked postings")
+		}
+	}
+}
+
+func TestUnlockReleasesWholeStatement(t *testing.T) {
+	c := newCardSetup(t, "2026-11-05")
+	purchase := c.purchase("2026-10-14", 100000)
+	if resp := reconcileStatement(c, "2026-11", 100000); resp.Status != http.StatusNoContent {
+		t.Fatalf("status %d: %s", resp.Status, resp.Body)
+	}
+	c.h.MustDo(http.MethodPost, "/api/v1/accounts/"+c.card+"/unlock", map[string]string{"from": "2026-10-20"}, http.StatusNoContent, nil)
+	for _, p := range c.h.Transaction(purchase).Postings {
+		if p.Status == "reconciled" {
+			t.Fatal("a posting of an unlocked statement stayed reconciled")
+		}
+	}
+}

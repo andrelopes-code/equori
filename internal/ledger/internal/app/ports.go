@@ -232,9 +232,11 @@ type Repository interface {
 	BalanceAssertions(ctx context.Context, userID int64, accountID uuid.UUID) ([]BalanceAssertion, error)
 	LastReconciledOn(ctx context.Context, userID int64, accountID uuid.UUID) (*time.Time, error)
 	FirstSettledOn(ctx context.Context, userID int64, accountID uuid.UUID) (*time.Time, error)
+	// InsertReconciliation returns domain.ErrAlreadyReconciled for an assertion or statement reconciled before.
 	InsertReconciliation(ctx context.Context, rec Reconciliation) error
 	// ReconcilePostings marks the account's non-voided postings settled through the date as reconciled.
 	ReconcilePostings(ctx context.Context, userID int64, accountID uuid.UUID, through time.Time) error
+	ReconcileStatementPostings(ctx context.Context, userID int64, statementID uuid.UUID) error
 	// UnlockAccount returns reconciled postings settled from the date to cleared and deletes
 	// the reconciliations dated from it.
 	UnlockAccount(ctx context.Context, userID int64, accountID uuid.UUID, from time.Time) error

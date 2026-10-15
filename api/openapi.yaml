@@ -1089,6 +1089,33 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /statements/{id}/reconciliation:
+    post:
+      tags: [ledger]
+      operationId: reconcileStatement
+      summary: Confirm the institution's amount due for a closed statement.
+      description: |
+        An amount equal to the derived amount due marks the statement's postings reconciled
+        (P3 amendment A7); a different amount returns difference_remains.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatementReconciliationInput"
+      responses:
+        "204":
+          description: Reconciled.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
 security:
   - sessionCookie: []
 components:
@@ -1134,6 +1161,12 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
   schemas:
+    StatementReconciliationInput:
+      type: object
+      required: [amount_due]
+      properties:
+        amount_due:
+          $ref: "#/components/schemas/Money"
     AssertionResolutionInput:
       type: object
       required: [resolution]

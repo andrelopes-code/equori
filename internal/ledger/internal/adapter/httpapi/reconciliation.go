@@ -83,3 +83,14 @@ func (s *Server) UnlockAccount(ctx context.Context, req UnlockAccountRequestObje
 	}
 	return UnlockAccount204Response{}, nil
 }
+
+func (s *Server) ReconcileStatement(ctx context.Context, req ReconcileStatementRequestObject) (ReconcileStatementResponseObject, error) {
+	amount, err := fromMoneyAPI("amount_due", req.Body.AmountDue)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.svc.ReconcileStatement(ctx, auth.MustUserID(ctx), req.Id, amount); err != nil {
+		return nil, err
+	}
+	return ReconcileStatement204Response{}, nil
+}

@@ -1088,6 +1088,11 @@ type StatementPosting struct {
 // StatementPostingCardRole defines model for StatementPosting.CardRole.
 type StatementPostingCardRole string
 
+// StatementReconciliationInput defines model for StatementReconciliationInput.
+type StatementReconciliationInput struct {
+	AmountDue Money `json:"amount_due"`
+}
+
 // StatementSummary Amounts are integer minor units, positive when owed by the user.
 type StatementSummary struct {
 	AccountId   openapi_types.UUID     `json:"account_id"`
@@ -1265,6 +1270,9 @@ type FinanceStatementJSONRequestBody = StatementFinancingInput
 // PayStatementJSONRequestBody defines body for PayStatement for application/json ContentType.
 type PayStatementJSONRequestBody = StatementPaymentInput
 
+// ReconcileStatementJSONRequestBody defines body for ReconcileStatement for application/json ContentType.
+type ReconcileStatementJSONRequestBody = StatementReconciliationInput
+
 // CreateTransactionJSONRequestBody defines body for CreateTransaction for application/json ContentType.
 type CreateTransactionJSONRequestBody = TransactionInput
 
@@ -1378,6 +1386,9 @@ type ServerInterface interface {
 	// PayStatement Pay a statement from a balance account.
 	// (POST /statements/{id}/payments)
 	PayStatement(w http.ResponseWriter, r *http.Request, id ID)
+	// ReconcileStatement Confirm the institution's amount due for a closed statement.
+	// (POST /statements/{id}/reconciliation)
+	ReconcileStatement(w http.ResponseWriter, r *http.Request, id ID)
 	// ListTags List tags in use.
 	// (GET /tags)
 	ListTags(w http.ResponseWriter, r *http.Request)
@@ -2214,6 +2225,32 @@ func (siw *ServerInterfaceWrapper) PayStatement(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
+// ReconcileStatement operation middleware
+func (siw *ServerInterfaceWrapper) ReconcileStatement(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReconcileStatement(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListTags operation middleware
 func (siw *ServerInterfaceWrapper) ListTags(w http.ResponseWriter, r *http.Request) {
 
@@ -2670,6 +2707,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/balance-assertions/{id}/resolution", wrapper.ResolveBalanceAssertion)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/reconciliation", wrapper.GetReconciliationStatus)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/unlock", wrapper.UnlockAccount)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/statements/{id}/reconciliation", wrapper.ReconcileStatement)
 
 	return m
 }
@@ -4592,6 +4630,81 @@ func (response PayStatement422ApplicationProblemPlusJSONResponse) VisitPayStatem
 	return err
 }
 
+type ReconcileStatementRequestObject struct {
+	Id   ID `json:"id"`
+	Body *ReconcileStatementJSONRequestBody
+}
+
+type ReconcileStatementResponseObject interface {
+	VisitReconcileStatementResponse(w http.ResponseWriter) error
+}
+
+type ReconcileStatement204Response struct {
+}
+
+func (response ReconcileStatement204Response) VisitReconcileStatementResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type ReconcileStatement401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ReconcileStatement401ApplicationProblemPlusJSONResponse) VisitReconcileStatementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReconcileStatement404ApplicationProblemPlusJSONResponse Problem
+
+func (response ReconcileStatement404ApplicationProblemPlusJSONResponse) VisitReconcileStatementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReconcileStatement409ApplicationProblemPlusJSONResponse Problem
+
+func (response ReconcileStatement409ApplicationProblemPlusJSONResponse) VisitReconcileStatementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReconcileStatement422ApplicationProblemPlusJSONResponse Problem
+
+func (response ReconcileStatement422ApplicationProblemPlusJSONResponse) VisitReconcileStatementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListTagsRequestObject struct {
 }
 
@@ -5239,6 +5352,9 @@ type StrictServerInterface interface {
 	// PayStatement Pay a statement from a balance account.
 	// (POST /statements/{id}/payments)
 	PayStatement(ctx context.Context, request PayStatementRequestObject) (PayStatementResponseObject, error)
+	// ReconcileStatement Confirm the institution's amount due for a closed statement.
+	// (POST /statements/{id}/reconciliation)
+	ReconcileStatement(ctx context.Context, request ReconcileStatementRequestObject) (ReconcileStatementResponseObject, error)
 	// ListTags List tags in use.
 	// (GET /tags)
 	ListTags(ctx context.Context, request ListTagsRequestObject) (ListTagsResponseObject, error)
@@ -6243,6 +6359,39 @@ func (sh *strictHandler) PayStatement(w http.ResponseWriter, r *http.Request, id
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(PayStatementResponseObject); ok {
 		if err := validResponse.VisitPayStatementResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReconcileStatement operation middleware
+func (sh *strictHandler) ReconcileStatement(w http.ResponseWriter, r *http.Request, id ID) {
+	var request ReconcileStatementRequestObject
+
+	request.Id = id
+
+	var body ReconcileStatementJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReconcileStatement(ctx, request.(ReconcileStatementRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReconcileStatement")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReconcileStatementResponseObject); ok {
+		if err := validResponse.VisitReconcileStatementResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

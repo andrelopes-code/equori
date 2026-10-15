@@ -37,10 +37,17 @@ ORDER BY 1 LIMIT 1;
 SELECT set_config('equori.unlock_reconciled', 'on', true);
 
 -- name: UnreconcileAccountPostings :exec
-UPDATE ledger_posting SET status = 'cleared'
-WHERE user_id = @user_id AND account_id = @account_id
-  AND status = 'reconciled'
-  AND coalesce(settled_on, booked_on) >= @from_date::date;
+-- A statement reconciliation is released whole: its postings may settle before from_date.
+UPDATE ledger_posting p SET status = 'cleared'
+WHERE p.user_id = @user_id AND p.account_id = @account_id
+  AND p.status = 'reconciled'
+  AND (coalesce(p.settled_on, p.booked_on) >= @from_date::date
+       OR p.statement_id IN (SELECT r.statement_id FROM ledger_reconciliation r
+                           WHERE r.user_id = @user_id AND r.account_id = @account_id AND r.date >= @from_date::date));
 
 -- name: DeleteReconciliationsFrom :exec
 DELETE FROM ledger_reconciliation WHERE user_id = @user_id AND account_id = @account_id AND date >= @from_date::date;
+
+-- name: ReconcileStatementPostings :exec
+UPDATE ledger_posting SET status = 'reconciled'
+WHERE user_id = @user_id AND statement_id = @statement_id AND NOT voided AND status <> 'reconciled';
