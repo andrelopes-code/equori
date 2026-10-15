@@ -157,3 +157,30 @@ func TestNewBillingCycleRule(t *testing.T) {
 		requireField(t, err, field, ErrValidation)
 	}
 }
+
+func TestAllocate(t *testing.T) {
+	tests := []struct {
+		total  int64
+		shares []int64
+		want   []int64
+	}{
+		{10000, []int64{18000, 5000}, []int64{7827, 2173}},
+		{23000, []int64{18000, 5000}, []int64{18000, 5000}},
+		{1, []int64{1, 1, 1}, []int64{1, 0, 0}},
+		{100000, []int64{200000, 22540}, []int64{89872, 10128}},
+	}
+	for _, tt := range tests {
+		got := Allocate(tt.total, tt.shares)
+		var sum int64
+		for i := range got {
+			sum += got[i]
+			if got[i] != tt.want[i] {
+				t.Errorf("Allocate(%d, %v) = %v, want %v", tt.total, tt.shares, got, tt.want)
+				break
+			}
+		}
+		if sum != tt.total {
+			t.Errorf("Allocate(%d, %v) sums to %d", tt.total, tt.shares, sum)
+		}
+	}
+}

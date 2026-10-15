@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type LedgerAccount struct {
@@ -57,6 +58,20 @@ type LedgerCreditLimit struct {
 	EffectiveFrom time.Time
 	Amount        int64
 	CreatedAt     time.Time
+}
+
+type LedgerInstallmentPlan struct {
+	ID                  uuid.UUID
+	UserID              int64
+	AccountID           uuid.UUID
+	OriginTransactionID uuid.UUID
+	PlanKind            string
+	InstallmentCount    int16
+	Principal           int64
+	Interest            int64
+	MonthlyRate         pgtype.Numeric
+	FirstStatementID    uuid.UUID
+	CreatedAt           time.Time
 }
 
 type LedgerInstitution struct {

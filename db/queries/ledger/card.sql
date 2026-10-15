@@ -76,3 +76,20 @@ WHERE p.user_id = @user_id AND p.account_id = @account_id AND NOT p.voided
 
 -- name: SetStatementFinanced :exec
 UPDATE ledger_statement SET financed_by_plan_id = @plan_id WHERE id = @id;
+
+-- name: GetPlan :one
+SELECT * FROM ledger_installment_plan WHERE user_id = $1 AND id = $2;
+
+-- name: ListPlanInstallments :many
+SELECT p.installment_number, p.amount, s.reference_month, s.closing_date
+FROM ledger_posting p
+JOIN ledger_statement s ON s.id = p.statement_id
+WHERE p.user_id = $1 AND p.installment_plan_id = $2 AND NOT p.voided AND p.card_role = 'charge'
+ORDER BY p.installment_number;
+
+-- name: RefundedTotal :one
+SELECT coalesce(sum(p.amount), 0)::bigint
+FROM ledger_link l
+JOIN ledger_posting p ON p.transaction_id = l.from_transaction_id
+WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND l.link_type IN ('refund_of', 'cancellation_of')
+  AND p.card_role = 'credit' AND NOT p.voided;

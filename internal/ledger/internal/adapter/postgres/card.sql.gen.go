@@ -74,6 +74,34 @@ func (q *Queries) EnsureStatement(ctx context.Context, arg EnsureStatementParams
 	return id, err
 }
 
+const getPlan = `-- name: GetPlan :one
+SELECT id, user_id, account_id, origin_transaction_id, plan_kind, installment_count, principal, interest, monthly_rate, first_statement_id, created_at FROM ledger_installment_plan WHERE user_id = $1 AND id = $2
+`
+
+type GetPlanParams struct {
+	UserID int64
+	ID     uuid.UUID
+}
+
+func (q *Queries) GetPlan(ctx context.Context, arg GetPlanParams) (LedgerInstallmentPlan, error) {
+	row := q.db.QueryRow(ctx, getPlan, arg.UserID, arg.ID)
+	var i LedgerInstallmentPlan
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.AccountID,
+		&i.OriginTransactionID,
+		&i.PlanKind,
+		&i.InstallmentCount,
+		&i.Principal,
+		&i.Interest,
+		&i.MonthlyRate,
+		&i.FirstStatementID,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getStatement = `-- name: GetStatement :one
 SELECT id, user_id, account_id, reference_month, closing_date, due_date, financed_by_plan_id, created_at FROM ledger_statement WHERE user_id = $1 AND id = $2
 `
@@ -430,6 +458,51 @@ func (q *Queries) ListOpenStatementsFrom(ctx context.Context, arg ListOpenStatem
 	return items, nil
 }
 
+const listPlanInstallments = `-- name: ListPlanInstallments :many
+SELECT p.installment_number, p.amount, s.reference_month, s.closing_date
+FROM ledger_posting p
+JOIN ledger_statement s ON s.id = p.statement_id
+WHERE p.user_id = $1 AND p.installment_plan_id = $2 AND NOT p.voided AND p.card_role = 'charge'
+ORDER BY p.installment_number
+`
+
+type ListPlanInstallmentsParams struct {
+	UserID            int64
+	InstallmentPlanID uuid.NullUUID
+}
+
+type ListPlanInstallmentsRow struct {
+	InstallmentNumber *int16
+	Amount            int64
+	ReferenceMonth    time.Time
+	ClosingDate       time.Time
+}
+
+func (q *Queries) ListPlanInstallments(ctx context.Context, arg ListPlanInstallmentsParams) ([]ListPlanInstallmentsRow, error) {
+	rows, err := q.db.Query(ctx, listPlanInstallments, arg.UserID, arg.InstallmentPlanID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPlanInstallmentsRow
+	for rows.Next() {
+		var i ListPlanInstallmentsRow
+		if err := rows.Scan(
+			&i.InstallmentNumber,
+			&i.Amount,
+			&i.ReferenceMonth,
+			&i.ClosingDate,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listStatementLines = `-- name: ListStatementLines :many
 SELECT p.statement_id, p.card_role, p.amount
 FROM ledger_posting p
@@ -557,6 +630,26 @@ func (q *Queries) ListStatements(ctx context.Context, arg ListStatementsParams) 
 		return nil, err
 	}
 	return items, nil
+}
+
+const refundedTotal = `-- name: RefundedTotal :one
+SELECT coalesce(sum(p.amount), 0)::bigint
+FROM ledger_link l
+JOIN ledger_posting p ON p.transaction_id = l.from_transaction_id
+WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND l.link_type IN ('refund_of', 'cancellation_of')
+  AND p.card_role = 'credit' AND NOT p.voided
+`
+
+type RefundedTotalParams struct {
+	UserID          int64
+	ToTransactionID uuid.UUID
+}
+
+func (q *Queries) RefundedTotal(ctx context.Context, arg RefundedTotalParams) (int64, error) {
+	row := q.db.QueryRow(ctx, refundedTotal, arg.UserID, arg.ToTransactionID)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
 }
 
 const setStatementFinanced = `-- name: SetStatementFinanced :exec

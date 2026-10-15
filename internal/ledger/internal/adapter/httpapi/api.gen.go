@@ -523,6 +523,15 @@ type AccountPatch struct {
 	ParentId      *openapi_types.UUID `json:"parent_id,omitempty"`
 }
 
+// AnticipationInput defines model for AnticipationInput.
+type AnticipationInput struct {
+	Amount          Money              `json:"amount"`
+	Date            openapi_types.Date `json:"date"`
+	FromInstallment int                `json:"from_installment"`
+	TargetStatement string             `json:"target_statement"`
+	ToInstallment   int                `json:"to_installment"`
+}
+
 // Balance defines model for Balance.
 type Balance struct {
 	AccountId openapi_types.UUID `json:"account_id"`
@@ -555,6 +564,12 @@ type BillingCycleRuleDueDateAdjustment string
 // BillingCycleRuleList defines model for BillingCycleRuleList.
 type BillingCycleRuleList struct {
 	Items []BillingCycleRule `json:"items"`
+}
+
+// CancellationInput defines model for CancellationInput.
+type CancellationInput struct {
+	CreditStatement *string            `json:"credit_statement,omitempty"`
+	Date            openapi_types.Date `json:"date"`
 }
 
 // Card defines model for Card.
@@ -766,6 +781,13 @@ type Problem struct {
 	Type      string        `json:"type"`
 }
 
+// RefundInput defines model for RefundInput.
+type RefundInput struct {
+	Amount    Money              `json:"amount"`
+	Date      openapi_types.Date `json:"date"`
+	Statement *string            `json:"statement,omitempty"`
+}
+
 // Settings defines model for Settings.
 type Settings struct {
 	BaseCurrency string `json:"base_currency"`
@@ -966,6 +988,12 @@ type CloseAccountJSONRequestBody = CloseAccountInput
 // CreateCreditLimitJSONRequestBody defines body for CreateCreditLimit for application/json ContentType.
 type CreateCreditLimitJSONRequestBody = CreditLimit
 
+// AnticipateInstallmentsJSONRequestBody defines body for AnticipateInstallments for application/json ContentType.
+type AnticipateInstallmentsJSONRequestBody = AnticipationInput
+
+// CancelInstallmentPlanJSONRequestBody defines body for CancelInstallmentPlan for application/json ContentType.
+type CancelInstallmentPlanJSONRequestBody = CancellationInput
+
 // CreateInstallmentPurchaseJSONRequestBody defines body for CreateInstallmentPurchase for application/json ContentType.
 type CreateInstallmentPurchaseJSONRequestBody = InstallmentPurchaseInput
 
@@ -989,6 +1017,9 @@ type CreateTransactionJSONRequestBody = TransactionInput
 
 // CorrectTransactionJSONRequestBody defines body for CorrectTransaction for application/json ContentType.
 type CorrectTransactionJSONRequestBody = CorrectionInput
+
+// RefundTransactionJSONRequestBody defines body for RefundTransaction for application/json ContentType.
+type RefundTransactionJSONRequestBody = RefundInput
 
 // VoidTransactionJSONRequestBody defines body for VoidTransaction for application/json ContentType.
 type VoidTransactionJSONRequestBody = VoidInput
@@ -1037,6 +1068,12 @@ type ServerInterface interface {
 	// ListStatements Statements of a card with amounts and status derived from its postings.
 	// (GET /accounts/{id}/statements)
 	ListStatements(w http.ResponseWriter, r *http.Request, id ID, params ListStatementsParams)
+	// AnticipateInstallments Pay future installments early.
+	// (POST /installment-plans/{id}/anticipation)
+	AnticipateInstallments(w http.ResponseWriter, r *http.Request, id ID)
+	// CancelInstallmentPlan Cancel an installment purchase.
+	// (POST /installment-plans/{id}/cancellation)
+	CancelInstallmentPlan(w http.ResponseWriter, r *http.Request, id ID)
 	// CreateInstallmentPurchase Record a card purchase in installments.
 	// (POST /installment-purchases)
 	CreateInstallmentPurchase(w http.ResponseWriter, r *http.Request)
@@ -1082,6 +1119,9 @@ type ServerInterface interface {
 	// CorrectTransaction Correct a transaction; creates a new version.
 	// (PUT /transactions/{id})
 	CorrectTransaction(w http.ResponseWriter, r *http.Request, id ID)
+	// RefundTransaction Refund all or part of a card purchase.
+	// (POST /transactions/{id}/refunds)
+	RefundTransaction(w http.ResponseWriter, r *http.Request, id ID)
 	// ListTransactionVersions Previous versions of a transaction.
 	// (GET /transactions/{id}/versions)
 	ListTransactionVersions(w http.ResponseWriter, r *http.Request, id ID)
@@ -1513,6 +1553,58 @@ func (siw *ServerInterfaceWrapper) ListStatements(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r)
 }
 
+// AnticipateInstallments operation middleware
+func (siw *ServerInterfaceWrapper) AnticipateInstallments(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AnticipateInstallments(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CancelInstallmentPlan operation middleware
+func (siw *ServerInterfaceWrapper) CancelInstallmentPlan(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CancelInstallmentPlan(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // CreateInstallmentPurchase operation middleware
 func (siw *ServerInterfaceWrapper) CreateInstallmentPurchase(w http.ResponseWriter, r *http.Request) {
 
@@ -1880,6 +1972,32 @@ func (siw *ServerInterfaceWrapper) CorrectTransaction(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
+// RefundTransaction operation middleware
+func (siw *ServerInterfaceWrapper) RefundTransaction(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RefundTransaction(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListTransactionVersions operation middleware
 func (siw *ServerInterfaceWrapper) ListTransactionVersions(w http.ResponseWriter, r *http.Request) {
 
@@ -2083,6 +2201,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/commitments", wrapper.GetCommitment)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/statements/{id}/payments", wrapper.PayStatement)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/statements/{id}/financing", wrapper.FinanceStatement)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/refunds", wrapper.RefundTransaction)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/installment-plans/{id}/cancellation", wrapper.CancelInstallmentPlan)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/installment-plans/{id}/anticipation", wrapper.AnticipateInstallments)
 
 	return m
 }
@@ -2930,6 +3051,140 @@ func (response ListStatements422ApplicationProblemPlusJSONResponse) VisitListSta
 	return err
 }
 
+type AnticipateInstallmentsRequestObject struct {
+	Id   ID `json:"id"`
+	Body *AnticipateInstallmentsJSONRequestBody
+}
+
+type AnticipateInstallmentsResponseObject interface {
+	VisitAnticipateInstallmentsResponse(w http.ResponseWriter) error
+}
+
+type AnticipateInstallments201JSONResponse Transaction
+
+func (response AnticipateInstallments201JSONResponse) VisitAnticipateInstallmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AnticipateInstallments401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response AnticipateInstallments401ApplicationProblemPlusJSONResponse) VisitAnticipateInstallmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AnticipateInstallments404ApplicationProblemPlusJSONResponse Problem
+
+func (response AnticipateInstallments404ApplicationProblemPlusJSONResponse) VisitAnticipateInstallmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AnticipateInstallments422ApplicationProblemPlusJSONResponse Problem
+
+func (response AnticipateInstallments422ApplicationProblemPlusJSONResponse) VisitAnticipateInstallmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelInstallmentPlanRequestObject struct {
+	Id   ID `json:"id"`
+	Body *CancelInstallmentPlanJSONRequestBody
+}
+
+type CancelInstallmentPlanResponseObject interface {
+	VisitCancelInstallmentPlanResponse(w http.ResponseWriter) error
+}
+
+type CancelInstallmentPlan201JSONResponse Transaction
+
+func (response CancelInstallmentPlan201JSONResponse) VisitCancelInstallmentPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelInstallmentPlan401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CancelInstallmentPlan401ApplicationProblemPlusJSONResponse) VisitCancelInstallmentPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelInstallmentPlan404ApplicationProblemPlusJSONResponse Problem
+
+func (response CancelInstallmentPlan404ApplicationProblemPlusJSONResponse) VisitCancelInstallmentPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelInstallmentPlan422ApplicationProblemPlusJSONResponse Problem
+
+func (response CancelInstallmentPlan422ApplicationProblemPlusJSONResponse) VisitCancelInstallmentPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type CreateInstallmentPurchaseRequestObject struct {
 	Body *CreateInstallmentPurchaseJSONRequestBody
 }
@@ -3737,6 +3992,73 @@ func (response CorrectTransaction422ApplicationProblemPlusJSONResponse) VisitCor
 	return err
 }
 
+type RefundTransactionRequestObject struct {
+	Id   ID `json:"id"`
+	Body *RefundTransactionJSONRequestBody
+}
+
+type RefundTransactionResponseObject interface {
+	VisitRefundTransactionResponse(w http.ResponseWriter) error
+}
+
+type RefundTransaction201JSONResponse Transaction
+
+func (response RefundTransaction201JSONResponse) VisitRefundTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RefundTransaction401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RefundTransaction401ApplicationProblemPlusJSONResponse) VisitRefundTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RefundTransaction404ApplicationProblemPlusJSONResponse Problem
+
+func (response RefundTransaction404ApplicationProblemPlusJSONResponse) VisitRefundTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RefundTransaction422ApplicationProblemPlusJSONResponse Problem
+
+func (response RefundTransaction422ApplicationProblemPlusJSONResponse) VisitRefundTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListTransactionVersionsRequestObject struct {
 	Id ID `json:"id"`
 }
@@ -3908,6 +4230,12 @@ type StrictServerInterface interface {
 	// ListStatements Statements of a card with amounts and status derived from its postings.
 	// (GET /accounts/{id}/statements)
 	ListStatements(ctx context.Context, request ListStatementsRequestObject) (ListStatementsResponseObject, error)
+	// AnticipateInstallments Pay future installments early.
+	// (POST /installment-plans/{id}/anticipation)
+	AnticipateInstallments(ctx context.Context, request AnticipateInstallmentsRequestObject) (AnticipateInstallmentsResponseObject, error)
+	// CancelInstallmentPlan Cancel an installment purchase.
+	// (POST /installment-plans/{id}/cancellation)
+	CancelInstallmentPlan(ctx context.Context, request CancelInstallmentPlanRequestObject) (CancelInstallmentPlanResponseObject, error)
 	// CreateInstallmentPurchase Record a card purchase in installments.
 	// (POST /installment-purchases)
 	CreateInstallmentPurchase(ctx context.Context, request CreateInstallmentPurchaseRequestObject) (CreateInstallmentPurchaseResponseObject, error)
@@ -3953,6 +4281,9 @@ type StrictServerInterface interface {
 	// CorrectTransaction Correct a transaction; creates a new version.
 	// (PUT /transactions/{id})
 	CorrectTransaction(ctx context.Context, request CorrectTransactionRequestObject) (CorrectTransactionResponseObject, error)
+	// RefundTransaction Refund all or part of a card purchase.
+	// (POST /transactions/{id}/refunds)
+	RefundTransaction(ctx context.Context, request RefundTransactionRequestObject) (RefundTransactionResponseObject, error)
 	// ListTransactionVersions Previous versions of a transaction.
 	// (GET /transactions/{id}/versions)
 	ListTransactionVersions(ctx context.Context, request ListTransactionVersionsRequestObject) (ListTransactionVersionsResponseObject, error)
@@ -4405,6 +4736,72 @@ func (sh *strictHandler) ListStatements(w http.ResponseWriter, r *http.Request, 
 	}
 }
 
+// AnticipateInstallments operation middleware
+func (sh *strictHandler) AnticipateInstallments(w http.ResponseWriter, r *http.Request, id ID) {
+	var request AnticipateInstallmentsRequestObject
+
+	request.Id = id
+
+	var body AnticipateInstallmentsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AnticipateInstallments(ctx, request.(AnticipateInstallmentsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AnticipateInstallments")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AnticipateInstallmentsResponseObject); ok {
+		if err := validResponse.VisitAnticipateInstallmentsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CancelInstallmentPlan operation middleware
+func (sh *strictHandler) CancelInstallmentPlan(w http.ResponseWriter, r *http.Request, id ID) {
+	var request CancelInstallmentPlanRequestObject
+
+	request.Id = id
+
+	var body CancelInstallmentPlanJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CancelInstallmentPlan(ctx, request.(CancelInstallmentPlanRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CancelInstallmentPlan")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CancelInstallmentPlanResponseObject); ok {
+		if err := validResponse.VisitCancelInstallmentPlanResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // CreateInstallmentPurchase operation middleware
 func (sh *strictHandler) CreateInstallmentPurchase(w http.ResponseWriter, r *http.Request) {
 	var request CreateInstallmentPurchaseRequestObject
@@ -4826,6 +5223,39 @@ func (sh *strictHandler) CorrectTransaction(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CorrectTransactionResponseObject); ok {
 		if err := validResponse.VisitCorrectTransactionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RefundTransaction operation middleware
+func (sh *strictHandler) RefundTransaction(w http.ResponseWriter, r *http.Request, id ID) {
+	var request RefundTransactionRequestObject
+
+	request.Id = id
+
+	var body RefundTransactionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RefundTransaction(ctx, request.(RefundTransactionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RefundTransaction")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RefundTransactionResponseObject); ok {
+		if err := validResponse.VisitRefundTransactionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

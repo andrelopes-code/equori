@@ -542,3 +542,34 @@ func (r *Repository) CommittedInstallments(ctx context.Context, userID int64, ac
 func (r *Repository) SetStatementFinanced(ctx context.Context, statementID, planID uuid.UUID) error {
 	return r.q.SetStatementFinanced(ctx, SetStatementFinancedParams{ID: statementID, PlanID: nullUUID(planID)})
 }
+
+func (r *Repository) Plan(ctx context.Context, userID int64, id uuid.UUID) (domain.InstallmentPlan, error) {
+	row, err := r.q.GetPlan(ctx, GetPlanParams{UserID: userID, ID: id})
+	if err != nil {
+		return domain.InstallmentPlan{}, notFound(err)
+	}
+	return domain.InstallmentPlan{
+		ID: row.ID, UserID: row.UserID, AccountID: row.AccountID, OriginTransactionID: row.OriginTransactionID,
+		Kind: row.PlanKind, Count: int(row.InstallmentCount), FirstStatementID: row.FirstStatementID,
+	}, nil
+}
+
+func (r *Repository) PlanInstallments(ctx context.Context, userID int64, planID uuid.UUID) ([]app.PlanInstallment, error) {
+	rows, err := r.q.ListPlanInstallments(ctx, ListPlanInstallmentsParams{UserID: userID, InstallmentPlanID: nullUUID(planID)})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]app.PlanInstallment, len(rows))
+	for i, row := range rows {
+		number := 0
+		if row.InstallmentNumber != nil {
+			number = int(*row.InstallmentNumber)
+		}
+		out[i] = app.PlanInstallment{Number: number, Amount: row.Amount, Reference: domain.MonthOf(row.ReferenceMonth), Closing: row.ClosingDate}
+	}
+	return out, nil
+}
+
+func (r *Repository) RefundedTotal(ctx context.Context, userID int64, originID uuid.UUID) (int64, error) {
+	return r.q.RefundedTotal(ctx, RefundedTotalParams{UserID: userID, ToTransactionID: originID})
+}

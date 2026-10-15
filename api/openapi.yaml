@@ -834,6 +834,84 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /transactions/{id}/refunds:
+    post:
+      tags: [ledger]
+      operationId: refundTransaction
+      summary: Refund all or part of a card purchase.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefundInput"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /installment-plans/{id}/cancellation:
+    post:
+      tags: [ledger]
+      operationId: cancelInstallmentPlan
+      summary: Cancel an installment purchase.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancellationInput"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /installment-plans/{id}/anticipation:
+    post:
+      tags: [ledger]
+      operationId: anticipateInstallments
+      summary: Pay future installments early.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnticipationInput"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
 security:
   - sessionCookie: []
 components:
@@ -879,6 +957,44 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
   schemas:
+    RefundInput:
+      type: object
+      required: [date, amount]
+      properties:
+        date:
+          type: string
+          format: date
+        amount:
+          $ref: "#/components/schemas/Money"
+        statement:
+          type: string
+          pattern: "^[0-9]{4}-[0-9]{2}$"
+    CancellationInput:
+      type: object
+      required: [date]
+      properties:
+        date:
+          type: string
+          format: date
+        credit_statement:
+          type: string
+          pattern: "^[0-9]{4}-[0-9]{2}$"
+    AnticipationInput:
+      type: object
+      required: [date, from_installment, to_installment, target_statement, amount]
+      properties:
+        date:
+          type: string
+          format: date
+        from_installment:
+          type: integer
+        to_installment:
+          type: integer
+        target_statement:
+          type: string
+          pattern: "^[0-9]{4}-[0-9]{2}$"
+        amount:
+          $ref: "#/components/schemas/Money"
     StatementPaymentInput:
       type: object
       required: [date, from_account_id, amount]

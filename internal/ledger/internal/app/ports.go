@@ -62,6 +62,14 @@ type StatementPosting struct {
 	Installment   *domain.InstallmentRef
 }
 
+// PlanInstallment is one installment of a plan with the statement it is billed on.
+type PlanInstallment struct {
+	Number    int
+	Amount    int64 // negative: a charge
+	Reference domain.ReferenceMonth
+	Closing   time.Time
+}
+
 type Settings struct {
 	UserID       int64
 	BaseCurrency money.Currency
@@ -170,6 +178,9 @@ type Repository interface {
 	UpdateStatementDates(ctx context.Context, id uuid.UUID, closing, due time.Time) error
 	InsertPlan(ctx context.Context, p domain.InstallmentPlan) error
 	SetStatementFinanced(ctx context.Context, statementID, planID uuid.UUID) error
+	Plan(ctx context.Context, userID int64, id uuid.UUID) (domain.InstallmentPlan, error)
+	PlanInstallments(ctx context.Context, userID int64, planID uuid.UUID) ([]PlanInstallment, error)
+	RefundedTotal(ctx context.Context, userID int64, originID uuid.UUID) (int64, error)
 	SystemAccount(ctx context.Context, userID int64, role domain.SystemRole) (domain.Account, error)
 	CommittedInstallments(ctx context.Context, userID int64, accountID uuid.UUID, month domain.ReferenceMonth, today time.Time) (int64, error)
 	StatementPostings(ctx context.Context, userID int64, statementID uuid.UUID) ([]StatementPosting, error)

@@ -88,3 +88,48 @@ func (s *Server) FinanceStatement(ctx context.Context, req FinanceStatementReque
 	}
 	return FinanceStatement201JSONResponse{Transaction: toTransactionAPI(t), PlanId: planID}, nil
 }
+
+func (s *Server) RefundTransaction(ctx context.Context, req RefundTransactionRequestObject) (RefundTransactionResponseObject, error) {
+	amount, err := fromMoneyAPI("amount", req.Body.Amount)
+	if err != nil {
+		return nil, err
+	}
+	statement, err := optMonth("statement", req.Body.Statement)
+	if err != nil {
+		return nil, err
+	}
+	t, err := s.svc.RefundPurchase(ctx, auth.MustUserID(ctx), req.Id, dateOf(req.Body.Date), amount, statement)
+	if err != nil {
+		return nil, err
+	}
+	return RefundTransaction201JSONResponse(toTransactionAPI(t)), nil
+}
+
+func (s *Server) CancelInstallmentPlan(ctx context.Context, req CancelInstallmentPlanRequestObject) (CancelInstallmentPlanResponseObject, error) {
+	statement, err := optMonth("credit_statement", req.Body.CreditStatement)
+	if err != nil {
+		return nil, err
+	}
+	t, err := s.svc.CancelPlan(ctx, auth.MustUserID(ctx), req.Id, dateOf(req.Body.Date), statement)
+	if err != nil {
+		return nil, err
+	}
+	return CancelInstallmentPlan201JSONResponse(toTransactionAPI(t)), nil
+}
+
+func (s *Server) AnticipateInstallments(ctx context.Context, req AnticipateInstallmentsRequestObject) (AnticipateInstallmentsResponseObject, error) {
+	b := req.Body
+	amount, err := fromMoneyAPI("amount", b.Amount)
+	if err != nil {
+		return nil, err
+	}
+	target, err := optMonth("target_statement", &b.TargetStatement)
+	if err != nil {
+		return nil, err
+	}
+	t, err := s.svc.AnticipatePlan(ctx, auth.MustUserID(ctx), req.Id, dateOf(b.Date), b.FromInstallment, b.ToInstallment, *target, amount)
+	if err != nil {
+		return nil, err
+	}
+	return AnticipateInstallments201JSONResponse(toTransactionAPI(t)), nil
+}
