@@ -66,6 +66,9 @@ func New(t *testing.T, opts ...Option) *Harness {
 	return h
 }
 
+// T returns the test the harness reports to.
+func (h *Harness) T() *testing.T { return h.t }
+
 // Login creates the user, runs the outbox so the ledger provisions it, and returns a client with its session.
 func (h *Harness) Login(email string) *http.Client {
 	h.t.Helper()
