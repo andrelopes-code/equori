@@ -8,8 +8,9 @@ Each scenario is an executable specification: given a state, when something happ
 
 | Account | Class / kind | Instrument | Notes |
 |---|---|---|---|
-| Nubank checking | asset / checking | BRL | |
-| Emergency fund | asset / reserve | BRL | Child of Nubank checking, yield mode `auto` |
+| Nubank | asset / checking | BRL | Parent account without postings of its own (5.2.2) |
+| Nubank checking | asset / checking | BRL | Child of Nubank |
+| Emergency fund | asset / reserve | BRL | Child of Nubank, yield mode `auto` |
 | Wallet | asset / cash | BRL | |
 | VR | asset / benefit | BRL | Meal voucher |
 | Itaú Visa | liability / credit_card | BRL | Closes day 3, due day 10, closing-day purchases to `next`, due date `following` |
