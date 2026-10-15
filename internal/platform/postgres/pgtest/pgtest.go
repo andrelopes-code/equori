@@ -22,6 +22,17 @@ const envURL = "EQUORI_TEST_DATABASE_URL"
 // migrations and drops the database when the test ends.
 func New(t testing.TB) *pgxpool.Pool {
 	t.Helper()
+	pool := Empty(t)
+	if err := postgres.Migrate(context.Background(), pool, slog.New(slog.NewTextHandler(io.Discard, nil))); err != nil {
+		t.Fatalf("migrate: %v", err)
+	}
+	return pool
+}
+
+// Empty creates a database without migrations, for example as a restore target, and
+// drops it when the test ends.
+func Empty(t testing.TB) *pgxpool.Pool {
+	t.Helper()
 	adminURL := os.Getenv(envURL)
 	if adminURL == "" {
 		t.Fatalf("%s is not set; run tests with make test", envURL)
@@ -59,10 +70,6 @@ func New(t testing.TB) *pgxpool.Pool {
 		t.Fatalf("open pool: %v", err)
 	}
 	t.Cleanup(pool.Close)
-
-	if err := postgres.Migrate(ctx, pool, slog.New(slog.NewTextHandler(io.Discard, nil))); err != nil {
-		t.Fatalf("migrate: %v", err)
-	}
 	return pool
 }
 
