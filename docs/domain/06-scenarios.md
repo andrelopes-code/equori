@@ -1,0 +1,378 @@
+# 6. Scenarios
+
+Status: approved
+
+Each scenario is an executable specification: given a state, when something happens, then exactly these postings exist and these values hold. Every scenario becomes an acceptance test. Amounts follow the sign convention of chapter 2: positive increases assets and expenses; negative increases liabilities, income and equity.
+
+## 6.1 Fixture
+
+| Account | Class / kind | Instrument | Notes |
+|---|---|---|---|
+| Nubank checking | asset / checking | BRL | |
+| Emergency fund | asset / reserve | BRL | Child of Nubank checking, yield mode `auto` |
+| Wallet | asset / cash | BRL | |
+| VR | asset / benefit | BRL | Meal voucher |
+| Itaú Visa | liability / credit_card | BRL | Closes day 3, due day 10, closing-day purchases to `next`, due date `following` |
+| Wise USD | asset / checking | USD | |
+| XP | asset / brokerage | — | Parent of XP cash (BRL), XP MXRF11, XP PETR4 |
+| Receivable Ana, Receivable Bruno, Receivable Employer | asset / receivable | BRL | |
+| Loan to Ana | asset / loan | BRL | |
+| Personal loan | liability / loan | BRL | |
+| Categories | expense | BRL | Food › Supermarket, Food › Restaurant, Electronics, Travel, Transport, Health, Subscriptions, Housing › Rent, and system roles: Interest, Fees, Taxes › IOF, Taxes › Income tax, Taxes › INSS |
+| Categories | income | BRL | Salary, Cashback, Dividends, JCP, Interest income, and system roles: Yield, Discounts, Realized gains |
+| Equity | equity | BRL | Opening balances, Adjustments |
+
+Itaú Visa statements used below:
+
+| Statement | Closing date | Due date |
+|---|---|---|
+| 2026-11 | 2026-11-03 | 2026-11-10 |
+| 2026-12 | 2026-12-03 | 2026-12-10 |
+| 2027-01 | 2027-01-03 | 2027-01-11 (10th is a Sunday) |
+
+## 6.2 Income and expenses
+
+### S01 Salary (M01)
+
+When the salary of 5,000.00 is credited on 2026-10-05:
+
+| Account | Amount |
+|---|---|
+| Nubank checking | +5,000.00 |
+| Salary | −5,000.00 |
+
+### S02 Payroll breakdown (M28)
+
+When the payslip shows gross 7,000.00, INSS 700.00, income tax 900.00, health plan 200.00 and net 5,200.00:
+
+| Account | Amount |
+|---|---|
+| Salary | −7,000.00 |
+| Taxes › INSS | +700.00 |
+| Taxes › Income tax | +900.00 |
+| Health | +200.00 |
+| Nubank checking | +5,200.00 |
+
+Then the accrual view shows income 7,000.00 and expenses 1,800.00; the checking balance increases by 5,200.00.
+
+### S03 Expenses by payment method (M02)
+
+| Payment | Postings |
+|---|---|
+| PIX to a restaurant, 120.00 | Nubank checking −120.00; Food › Restaurant +120.00 |
+| Boleto, 389.00 | Nubank checking −389.00; Housing +389.00 |
+| Meal voucher, 45.90 | VR −45.90; Food › Restaurant +45.90 |
+| Cash, 18.00 | Wallet −18.00; Transport +18.00 |
+| Debit card on Saturday 2026-10-17, settled Monday 2026-10-19, 80.00 | Nubank checking −80.00 (`settledOn` 2026-10-19); Food › Supermarket +80.00 |
+
+Then the checking balance at 2026-10-18 is 80.00 lower by transaction date and unchanged by settlement date; a balance assertion for 2026-10-18 compares against the settlement-date balance.
+
+### S04 Transfers between own accounts (M03)
+
+| Transfer | Postings |
+|---|---|
+| Checking to reserve, 1,000.00 | Nubank checking −1,000.00; Emergency fund +1,000.00 |
+| Cash withdrawal, 300.00 | Nubank checking −300.00; Wallet +300.00 |
+
+Then no income or expense is recorded, and the Nubank parent balance is unchanged by the first transfer.
+
+## 6.3 Credit card
+
+### S05 Single purchase and statement assignment (M04, T04)
+
+| Purchase | Date | Postings | Billed on |
+|---|---|---|---|
+| Supermarket, 230.00 | 2026-10-14 | Itaú Visa −230.00; Food › Supermarket +230.00 | 2026-11 |
+| Pharmacy, 60.00 | 2026-11-03 (closing date) | Itaú Visa −60.00; Health +60.00 | 2026-12 (closing-day purchases go to `next`) |
+| Same pharmacy purchase, card set to `closing` | 2026-11-03 | same | 2026-11 |
+
+### S06 Installment purchase without interest (M05, T07, DM3)
+
+When a laptop of 1,000.00 is bought in 3× on 2026-10-20:
+
+| Account | Amount | Installment | Billed on |
+|---|---|---|---|
+| Electronics | +1,000.00 | | |
+| Itaú Visa | −333.34 | 1/3 | 2026-11 |
+| Itaú Visa | −333.33 | 2/3 | 2026-12 |
+| Itaú Visa | −333.33 | 3/3 | 2027-01 |
+
+Then: card balance −1,000.00 (available limit reduced by 1,000.00); statement 2026-11 contains 333.34; accrual view: Electronics 1,000.00 in October 2026; committed amount for December 2026: 333.33.
+
+### S07 Installment purchase with interest (M05, DM2)
+
+When a TV of 2,000.00 is bought in 10× of 222.54 (1.99% per month) on 2026-10-25:
+
+| Account | Amount | Billed on |
+|---|---|---|
+| Electronics | +2,000.00 | |
+| Interest | +225.40 | |
+| Itaú Visa | −222.54 each, installments 1/10 to 10/10 | 2026-11 to 2027-08 |
+
+Then the card postings sum to −2,225.40 and the transaction balances.
+
+### S08 Refunds (M06, I06)
+
+| Case | Postings | Billed on |
+|---|---|---|
+| Full refund of the 230.00 supermarket purchase on 2026-10-20 | Itaú Visa +230.00; Food › Supermarket −230.00; link `refund_of` S05 | 2026-11 |
+| Partial refund of 50.00 on the laptop on 2026-11-15 | Itaú Visa +50.00; Electronics −50.00; link `refund_of` S06 | 2026-12 |
+| Second refund of 960.00 on the laptop | Rejected: refunds would total 1,010.00 > 1,000.00 (I06) | |
+
+### S09 Card charges (M07)
+
+When the annual fee of 40.00 is billed on 2026-11-01: Itaú Visa −40.00 (2026-11); Fees +40.00.
+
+### S10 Statement payment (M08)
+
+Given statement 2026-11 with amount due 1,500.00:
+
+| Case | Postings | Result |
+|---|---|---|
+| Full payment on 2026-11-10 | Nubank checking −1,500.00; Itaú Visa +1,500.00 (billed on 2026-11, `payment_of` 2026-11) | Status `paid` |
+| Early payment of 300.00 on 2026-10-28, then 1,200.00 on 2026-11-10 | Two payment postings billed on 2026-11 | Status `paid` after the second |
+| Partial payment of 1,000.00 on 2026-11-10 | Nubank checking −1,000.00; Itaú Visa +1,000.00 | Status `partially_paid`; after the due date: `overdue`; 500.00 becomes the opening amount of 2026-12 |
+| Revolving interest billed by the issuer on 2026-12-01 | Itaú Visa −62.50 (2026-12); Interest +62.50 | Amount due of 2026-12 includes 500.00 + 62.50 + new charges |
+
+### S11 Statement financing (M09)
+
+Given statement 2026-11 overdue with 2,000.00 unpaid, when it is financed on 2026-11-12 in 6× of 363.40:
+
+| Account | Amount | Billed on |
+|---|---|---|
+| Itaú Visa | +2,000.00 (`payment_of` 2026-11) | 2026-11 |
+| Itaú Visa | −363.40 each, installments 1/6 to 6/6 | 2026-12 to 2027-05 |
+| Interest | +180.40 | |
+
+Then statement 2026-11 is `financed`; the card balance increases its debt by 180.40.
+
+### S12 Cashback (M10)
+
+Itaú Visa +12.30 (2026-12); Cashback −12.30.
+
+### S13 Chargeback (M22)
+
+Given an unrecognized charge of 199.90 billed on 2026-11, when a dispute is opened and later won:
+
+| Step | Postings |
+|---|---|
+| `DisputeOpened` | None; the original stays in its category, flagged as disputed |
+| `DisputeResolved` won, credited on 2026-12 | Itaú Visa +199.90 (2026-12); original category −199.90; link `chargeback_of` |
+| `DisputeResolved` lost | None |
+
+### S14 Installment cancellation (M25, T08)
+
+Given the laptop of S06 with installment 1/3 billed on the closed statement 2026-11, when the purchase is cancelled on 2026-11-20 and the issuer credits the billed installment on 2026-12:
+
+| Account | Amount | Billed on |
+|---|---|---|
+| Itaú Visa | +333.33 (reverses 2/3) | 2026-12 |
+| Itaú Visa | +333.33 (reverses 3/3) | 2027-01 |
+| Itaú Visa | +333.34 (credits 1/3) | 2026-12 |
+| Electronics | −1,000.00 | |
+
+Then the original postings are unchanged; statement 2026-12 nets +333.34; statement 2027-01 nets 0.00; the plan is `cancelled`; Electronics nets 0.00 for the purchase.
+
+### S15 Installment anticipation (M26)
+
+Given the TV of S07, when on 2027-01-15 installments 5/10 to 10/10 (statements 2027-03 to 2027-08, 6 × 222.54 = 1,335.24) are anticipated to statement 2027-02 for 1,260.00:
+
+| Account | Amount | Billed on |
+|---|---|---|
+| Itaú Visa | +222.54 each (reverses 5/10 to 10/10) | 2027-03 to 2027-08 |
+| Itaú Visa | −1,260.00 | 2027-02 |
+| Discounts | −75.24 | |
+
+Then statements 2027-03 to 2027-08 net 0.00 for this plan; the plan is `anticipated`.
+
+## 6.4 Currencies
+
+### S16 Foreign purchase on a BRL card (M11)
+
+When a hotel of 100.00 USD is charged at 5.4830 with IOF 3.5% on 2026-10-22:
+
+| Account | Amount | Original amount | Billed on |
+|---|---|---|---|
+| Travel | +548.30 | 100.00 USD | |
+| Taxes › IOF | +19.19 | | |
+| Itaú Visa | −548.30 | 100.00 USD | 2026-11 |
+| Itaú Visa | −19.19 | | 2026-11 |
+
+### S17 Currency exchange (M12, DM1)
+
+When 1,000.00 USD is bought for 5,483.00 BRL plus a 30.00 BRL fee:
+
+| Account | Amount | Weight (BRL) |
+|---|---|---|
+| Nubank checking | −5,513.00 BRL | −5,513.00 |
+| Fees | +30.00 BRL | +30.00 |
+| Wise USD | +1,000.00 USD | +5,483.00 |
+
+Then the weights sum to 0.00; the Wise USD balance is 1,000.00 USD; net worth in BRL on a date with price 5.5000 shows Wise as 5,500.00.
+
+## 6.5 People, reimbursements and loans
+
+### S18 Reimbursement (M13)
+
+| Step | Postings |
+|---|---|
+| Hotel for work, 800.00 on the card, reimbursable by the employer | Itaú Visa −800.00 (2026-11); Receivable Employer +800.00 |
+| Employer pays 700.00 | Nubank checking +700.00; Receivable Employer −700.00; link `reimbursement_of` |
+| Owner writes off the remaining 100.00 | Travel +100.00; Receivable Employer −100.00 |
+
+Then the expense is only 100.00, in the month of the write-off.
+
+### S19 Shared expense (M14)
+
+| Step | Postings |
+|---|---|
+| Dinner of 300.00 on the card, split in three | Itaú Visa −300.00; Food › Restaurant +100.00; Receivable Ana +100.00; Receivable Bruno +100.00 |
+| Ana pays by PIX | Nubank checking +100.00; Receivable Ana −100.00 |
+
+### S20 Loans (M15, M16)
+
+| Step | Postings |
+|---|---|
+| Loan of 1,000.00 to Ana | Nubank checking −1,000.00; Loan to Ana +1,000.00 |
+| Ana repays 1,050.00 | Nubank checking +1,050.00; Loan to Ana −1,000.00; Interest income −50.00 |
+| Personal loan of 10,000.00 taken | Nubank checking +10,000.00; Personal loan −10,000.00 |
+| Installment of 1,250.00: principal 900.00, interest 350.00 | Nubank checking −1,250.00; Personal loan +900.00; Interest +350.00 |
+
+## 6.6 Investments
+
+### S21 Purchase and sale (M17, D1)
+
+| Step | Account | Amount | Weight (BRL) |
+|---|---|---|---|
+| Buy 150 MXRF11 at 10.05 + 4.90 fees | XP cash | −1,512.40 BRL | −1,512.40 |
+| | XP MXRF11 | +150 MXRF11 | +1,512.40 |
+| Sell 50 MXRF11 at 10.80 − 2.10 fees | XP cash | +537.90 BRL | +537.90 |
+| | XP MXRF11 | −50 MXRF11 | −504.13 |
+| | Realized gains | −33.77 BRL | −33.77 |
+
+Then: average cost 10.0827 (1,512.40 ÷ 150); cost of the 50 sold = 504.13 (half to even); remaining position 100 MXRF11 with cost basis 1,008.27; realized result 33.77 in the sale month.
+
+### S22 Investment income (M18)
+
+| Income | Postings |
+|---|---|
+| MXRF11 dividend, 100 × 0.10 | XP cash +10.00; Dividends −10.00 |
+| PETR4 JCP, gross 45.00, 15% withheld | XP cash +38.25; Taxes › Income tax +6.75; JCP −45.00 |
+
+## 6.7 Balances, yield and reconciliation
+
+### S23 Opening balances (M19)
+
+| Account | Postings on 2026-01-01 |
+|---|---|
+| Nubank checking with 1,240.55 | Nubank checking +1,240.55; Opening balances −1,240.55 |
+| Itaú Visa with 1,100.00 on the open statement and 3 installments of 400.00 still to bill | Itaú Visa −1,100.00 (2026-01), −400.00 (2026-02), −400.00 (2026-03), −400.00 (2026-04); Opening balances +2,300.00 |
+
+### S24 Yield on a reserve (M23, B04)
+
+Given the Emergency fund with a derived balance of 10,000.00 and a previous assertion on 2026-10-01, when the institution reports 10,083.41 on 2026-10-31:
+
+| Account | Amount |
+|---|---|
+| Emergency fund | +83.41 |
+| Yield | −83.41 |
+
+Then the reserve is reconciled at 2026-10-31. If the report were 9,990.00 (difference −10.00), no yield is recorded and the difference waits for the owner (F6).
+
+### S25 Redemption with tax (M24)
+
+When 2,000.00 is redeemed from the reserve, of which 40.00 is yield held for 45 days (income tax 22.5%, no IOF after 30 days):
+
+| Account | Amount |
+|---|---|
+| Emergency fund | −2,000.00 |
+| Nubank checking | +1,991.00 |
+| Taxes › Income tax | +9.00 |
+
+### S26 Balance adjustment (M20)
+
+Given a derived balance of 3,203.27 and an assertion of 3,201.17, when the owner resolves the difference as an adjustment: Nubank checking −2.10; Adjustments +2.10. Then the account is reconciled.
+
+## 6.8 Schedules and subscriptions
+
+### S27 Monthly rent with business-day adjustment (M21, T01, T06)
+
+Schedule: rent 2,100.00, monthly on day 5, adjustment `following`.
+
+| Occurrence | Expected date | Reason |
+|---|---|---|
+| 2026-11 | 2026-11-05 (Thursday) | |
+| 2026-12 | 2026-12-07 (Monday) | 2026-12-05 is a Saturday |
+| 2027-01 | 2027-01-05 (Tuesday) | |
+
+When a PIX of 2,100.00 to the landlord is recorded on 2026-11-05, the 2026-11 occurrence becomes `realized`.
+
+### S28 Day 31 schedule (T02)
+
+Schedule monthly on day 31 from 2027-01-31: occurrences 2027-01-31, 2027-02-28, 2027-03-31, 2027-04-30.
+
+### S29 Subscription with price change and pause (M27, T09)
+
+Streaming 39.90 monthly on day 12 on the card; price 44.90 effective 2027-01-01; paused from 2027-02-01 to 2027-03-31; ended from 2027-06-01.
+
+| Occurrence | Expected amount | State |
+|---|---|---|
+| 2026-11-12 | 39.90 | expected |
+| 2026-12-12 | 39.90 | expected |
+| 2027-01-12 | 44.90 | expected |
+| 2027-02-12, 2027-03-12 | | not generated (paused) |
+| 2027-04-12, 2027-05-12 | 44.90 | expected |
+| 2027-06-12 onward | | not generated (ended) |
+
+## 6.9 Views
+
+### S30 Accrual and cash views of a card statement (G1)
+
+Given statement 2026-11 contains Supermarket 230.00 (bought 2026-10-14) and laptop installment 1/3 333.34 (laptop bought 2026-10-20 for 1,000.00), amount due 563.34:
+
+| View | October 2026 | November 2026 |
+|---|---|---|
+| Accrual | Food › Supermarket 230.00; Electronics 1,000.00 | — |
+| Cash, statement paid in full on 2026-11-10 | — | Food › Supermarket 230.00; Electronics 333.34 |
+| Cash, statement paid 50% (281.67) on 2026-11-10 | — | Food › Supermarket 115.00; Electronics 166.67 |
+
+In the cash view, a payment is distributed over the categories of the statement in proportion to their share of the amount due; the rounding remainder goes to the largest share.
+
+## 6.10 Attachments
+
+### S31 Receipt (M29, D2)
+
+When a 230 KB PDF receipt is attached to the S05 supermarket transaction and the same file to another transaction, the file content is stored once and both transactions list it. A 12 MiB file is rejected (limit 10 MiB).
+
+## 6.11 Coverage
+
+| Transaction kind | Scenarios |
+|---|---|
+| M01 | S01 |
+| M02 | S03 |
+| M03 | S04 |
+| M04 | S05 |
+| M05 | S06, S07 |
+| M06 | S08 |
+| M07 | S09, S10 |
+| M08 | S10 |
+| M09 | S11 |
+| M10 | S12 |
+| M11 | S16 |
+| M12 | S17 |
+| M13 | S18 |
+| M14 | S19 |
+| M15, M16 | S20 |
+| M17 | S21 |
+| M18 | S22 |
+| M19 | S23 |
+| M20 | S26 |
+| M21 | S27, S28 |
+| M22 | S13 |
+| M23 | S24 |
+| M24 | S25 |
+| M25 | S14 |
+| M26 | S15 |
+| M27 | S29 |
+| M28 | S02 |
+| M29 | S31 |
