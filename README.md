@@ -37,6 +37,8 @@ Data lives in the `pgdata` Docker volume. Back it up with:
 docker compose exec db pg_dump -U equori equori > equori.sql
 ```
 
+Backup and restore: [docs/operations/backup.md](docs/operations/backup.md).
+
 The Postgres major version is pinned to 18. To upgrade the major version, dump the database, recreate the volume with the new image and restore the dump.
 
 ## Development
