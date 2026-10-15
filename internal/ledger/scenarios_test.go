@@ -16,10 +16,11 @@ type fixture struct {
 	food, restaurant, housing, transport, health        string
 	taxes, inss, incomeTax, interest                    string
 	salary, interestIncome, openingBalances             string
+	yield, adjustments                                  string
 }
 
-func newFixture(t *testing.T) fixture {
-	h := apitest.New(t)
+func newFixture(t *testing.T, opts ...apitest.Option) fixture {
+	h := apitest.New(t, opts...)
 	f := fixture{h: h}
 	inst := func(name string) string {
 		var out idOnly
@@ -60,6 +61,10 @@ func newFixture(t *testing.T) fixture {
 			f.interest = a.ID
 		case "opening_balances":
 			f.openingBalances = a.ID
+		case "yield":
+			f.yield = a.ID
+		case "adjustments":
+			f.adjustments = a.ID
 		}
 	}
 	f.inss = h.Account("INSS", "expense", "", map[string]any{"parent_id": f.taxes})
