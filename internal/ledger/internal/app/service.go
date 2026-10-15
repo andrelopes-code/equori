@@ -255,8 +255,6 @@ func accountIDs(ts ...domain.Transaction) []uuid.UUID {
 
 func (s *Service) RecordTransaction(ctx context.Context, userID int64, t domain.Transaction) (domain.Transaction, error) {
 	t.UserID = userID
-	t.ID = uuid.Must(uuid.NewV7())
-	t.Version = 0
 	var created domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		var err error
@@ -268,6 +266,8 @@ func (s *Service) RecordTransaction(ctx context.Context, userID int64, t domain.
 
 // insert validates, bills, stores and publishes t inside the caller's database transaction.
 func (s *Service) insert(ctx context.Context, r Repository, t domain.Transaction) (domain.Transaction, error) {
+	t.ID = uuid.Must(uuid.NewV7())
+	t.Version = 0
 	valid, err := s.validate(ctx, r, t)
 	if err != nil {
 		return domain.Transaction{}, err

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -47,7 +48,11 @@ func Today(date string) Option {
 // New starts the application and logs in owner@example.com as Client.
 func New(t *testing.T, opts ...Option) *Harness {
 	t.Helper()
-	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	out := io.Discard
+	if os.Getenv("EQUORI_TEST_LOG") == "1" {
+		out = os.Stderr
+	}
+	log := slog.New(slog.NewTextHandler(out, nil))
 	pool := pgtest.New(t)
 	cfg := server.Config{}
 	for _, o := range opts {

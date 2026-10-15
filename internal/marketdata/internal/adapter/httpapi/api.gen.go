@@ -61,7 +61,7 @@ type Problem struct {
 	// Code Stable error identifier. Values: invalid_request, request_too_large, invalid_credentials,
 	// too_many_attempts, unauthenticated, forbidden, not_found, validation_failed, internal_error,
 	// server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
-	// account_not_empty, settings_locked.
+	// account_not_empty, settings_locked, statement_not_closed, statement_financed.
 	Code      string        `json:"code"`
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`

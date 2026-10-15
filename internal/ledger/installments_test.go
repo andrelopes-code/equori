@@ -144,3 +144,17 @@ func TestRuleChangeMovesFutureStatementDates(t *testing.T) {
 		t.Fatalf("2026-12 = %+v, want due 2026-12-10 under the old rule", s)
 	}
 }
+
+func TestTwoInstallmentPurchasesGetDistinctIDs(t *testing.T) {
+	h := apitest.New(t)
+	card := h.Card("Itaú Visa", 3, 10, "next")
+	electronics := h.Account("Electronics", "expense", "", nil)
+	body := map[string]any{
+		"card_account_id": card, "date": "2026-10-20",
+		"splits": []map[string]any{{"account_id": electronics, "amount": apitest.BRL(100000)}}, "installment_count": 2,
+	}
+	a, b := installmentPurchase(t, h, body), installmentPurchase(t, h, body)
+	if a.Transaction.ID == b.Transaction.ID || a.Transaction.ID == "00000000-0000-0000-0000-000000000000" {
+		t.Fatalf("transaction ids %s and %s", a.Transaction.ID, b.Transaction.ID)
+	}
+}

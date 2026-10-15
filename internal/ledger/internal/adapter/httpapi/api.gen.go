@@ -756,7 +756,7 @@ type Problem struct {
 	// Code Stable error identifier. Values: invalid_request, request_too_large, invalid_credentials,
 	// too_many_attempts, unauthenticated, forbidden, not_found, validation_failed, internal_error,
 	// server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
-	// account_not_empty, settings_locked.
+	// account_not_empty, settings_locked, statement_not_closed, statement_financed.
 	Code      string        `json:"code"`
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`
@@ -798,9 +798,23 @@ type StatementDetail struct {
 // StatementDetailStatus defines model for StatementDetail.Status.
 type StatementDetailStatus string
 
+// StatementFinancingInput defines model for StatementFinancingInput.
+type StatementFinancingInput struct {
+	Date              openapi_types.Date `json:"date"`
+	InstallmentAmount Money              `json:"installment_amount"`
+	InstallmentCount  int                `json:"installment_count"`
+}
+
 // StatementList defines model for StatementList.
 type StatementList struct {
 	Items []StatementSummary `json:"items"`
+}
+
+// StatementPaymentInput defines model for StatementPaymentInput.
+type StatementPaymentInput struct {
+	Amount        Money              `json:"amount"`
+	Date          openapi_types.Date `json:"date"`
+	FromAccountId openapi_types.UUID `json:"from_account_id"`
 }
 
 // StatementPosting defines model for StatementPosting.
@@ -964,6 +978,12 @@ type CreatePayeeJSONRequestBody = PayeeInput
 // UpdateSettingsJSONRequestBody defines body for UpdateSettings for application/json ContentType.
 type UpdateSettingsJSONRequestBody = Settings
 
+// FinanceStatementJSONRequestBody defines body for FinanceStatement for application/json ContentType.
+type FinanceStatementJSONRequestBody = StatementFinancingInput
+
+// PayStatementJSONRequestBody defines body for PayStatement for application/json ContentType.
+type PayStatementJSONRequestBody = StatementPaymentInput
+
 // CreateTransactionJSONRequestBody defines body for CreateTransaction for application/json ContentType.
 type CreateTransactionJSONRequestBody = TransactionInput
 
@@ -1041,6 +1061,12 @@ type ServerInterface interface {
 	// GetStatement A statement with its postings.
 	// (GET /statements/{id})
 	GetStatement(w http.ResponseWriter, r *http.Request, id ID)
+	// FinanceStatement Convert the unpaid amount of a closed statement into installments.
+	// (POST /statements/{id}/financing)
+	FinanceStatement(w http.ResponseWriter, r *http.Request, id ID)
+	// PayStatement Pay a statement from a balance account.
+	// (POST /statements/{id}/payments)
+	PayStatement(w http.ResponseWriter, r *http.Request, id ID)
 	// ListTags List tags in use.
 	// (GET /tags)
 	ListTags(w http.ResponseWriter, r *http.Request)
@@ -1611,6 +1637,58 @@ func (siw *ServerInterfaceWrapper) GetStatement(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
+// FinanceStatement operation middleware
+func (siw *ServerInterfaceWrapper) FinanceStatement(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.FinanceStatement(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PayStatement operation middleware
+func (siw *ServerInterfaceWrapper) PayStatement(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PayStatement(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListTags operation middleware
 func (siw *ServerInterfaceWrapper) ListTags(w http.ResponseWriter, r *http.Request) {
 
@@ -2003,6 +2081,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statements/{id}", wrapper.GetStatement)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/installment-purchases", wrapper.CreateInstallmentPurchase)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/commitments", wrapper.GetCommitment)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/statements/{id}/payments", wrapper.PayStatement)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/statements/{id}/financing", wrapper.FinanceStatement)
 
 	return m
 }
@@ -3235,6 +3315,154 @@ func (response GetStatement404ApplicationProblemPlusJSONResponse) VisitGetStatem
 	return err
 }
 
+type FinanceStatementRequestObject struct {
+	Id   ID `json:"id"`
+	Body *FinanceStatementJSONRequestBody
+}
+
+type FinanceStatementResponseObject interface {
+	VisitFinanceStatementResponse(w http.ResponseWriter) error
+}
+
+type FinanceStatement201JSONResponse InstallmentPurchase
+
+func (response FinanceStatement201JSONResponse) VisitFinanceStatementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type FinanceStatement401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response FinanceStatement401ApplicationProblemPlusJSONResponse) VisitFinanceStatementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type FinanceStatement404ApplicationProblemPlusJSONResponse Problem
+
+func (response FinanceStatement404ApplicationProblemPlusJSONResponse) VisitFinanceStatementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type FinanceStatement409ApplicationProblemPlusJSONResponse Problem
+
+func (response FinanceStatement409ApplicationProblemPlusJSONResponse) VisitFinanceStatementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type FinanceStatement422ApplicationProblemPlusJSONResponse Problem
+
+func (response FinanceStatement422ApplicationProblemPlusJSONResponse) VisitFinanceStatementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PayStatementRequestObject struct {
+	Id   ID `json:"id"`
+	Body *PayStatementJSONRequestBody
+}
+
+type PayStatementResponseObject interface {
+	VisitPayStatementResponse(w http.ResponseWriter) error
+}
+
+type PayStatement201JSONResponse Transaction
+
+func (response PayStatement201JSONResponse) VisitPayStatementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PayStatement401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response PayStatement401ApplicationProblemPlusJSONResponse) VisitPayStatementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PayStatement404ApplicationProblemPlusJSONResponse Problem
+
+func (response PayStatement404ApplicationProblemPlusJSONResponse) VisitPayStatementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PayStatement422ApplicationProblemPlusJSONResponse Problem
+
+func (response PayStatement422ApplicationProblemPlusJSONResponse) VisitPayStatementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListTagsRequestObject struct {
 }
 
@@ -3704,6 +3932,12 @@ type StrictServerInterface interface {
 	// GetStatement A statement with its postings.
 	// (GET /statements/{id})
 	GetStatement(ctx context.Context, request GetStatementRequestObject) (GetStatementResponseObject, error)
+	// FinanceStatement Convert the unpaid amount of a closed statement into installments.
+	// (POST /statements/{id}/financing)
+	FinanceStatement(ctx context.Context, request FinanceStatementRequestObject) (FinanceStatementResponseObject, error)
+	// PayStatement Pay a statement from a balance account.
+	// (POST /statements/{id}/payments)
+	PayStatement(ctx context.Context, request PayStatementRequestObject) (PayStatementResponseObject, error)
 	// ListTags List tags in use.
 	// (GET /tags)
 	ListTags(ctx context.Context, request ListTagsRequestObject) (ListTagsResponseObject, error)
@@ -4386,6 +4620,72 @@ func (sh *strictHandler) GetStatement(w http.ResponseWriter, r *http.Request, id
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetStatementResponseObject); ok {
 		if err := validResponse.VisitGetStatementResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// FinanceStatement operation middleware
+func (sh *strictHandler) FinanceStatement(w http.ResponseWriter, r *http.Request, id ID) {
+	var request FinanceStatementRequestObject
+
+	request.Id = id
+
+	var body FinanceStatementJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.FinanceStatement(ctx, request.(FinanceStatementRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "FinanceStatement")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(FinanceStatementResponseObject); ok {
+		if err := validResponse.VisitFinanceStatementResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PayStatement operation middleware
+func (sh *strictHandler) PayStatement(w http.ResponseWriter, r *http.Request, id ID) {
+	var request PayStatementRequestObject
+
+	request.Id = id
+
+	var body PayStatementJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PayStatement(ctx, request.(PayStatementRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PayStatement")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PayStatementResponseObject); ok {
+		if err := validResponse.VisitPayStatementResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

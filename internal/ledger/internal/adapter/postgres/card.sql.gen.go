@@ -559,6 +559,20 @@ func (q *Queries) ListStatements(ctx context.Context, arg ListStatementsParams) 
 	return items, nil
 }
 
+const setStatementFinanced = `-- name: SetStatementFinanced :exec
+UPDATE ledger_statement SET financed_by_plan_id = $1 WHERE id = $2
+`
+
+type SetStatementFinancedParams struct {
+	PlanID uuid.NullUUID
+	ID     uuid.UUID
+}
+
+func (q *Queries) SetStatementFinanced(ctx context.Context, arg SetStatementFinancedParams) error {
+	_, err := q.db.Exec(ctx, setStatementFinanced, arg.PlanID, arg.ID)
+	return err
+}
+
 const updateStatementDates = `-- name: UpdateStatementDates :exec
 UPDATE ledger_statement SET closing_date = $1, due_date = $2 WHERE id = $3
 `

@@ -73,3 +73,6 @@ JOIN ledger_statement s ON s.id = p.statement_id
 WHERE p.user_id = @user_id AND p.account_id = @account_id AND NOT p.voided
   AND p.installment_plan_id IS NOT NULL AND p.card_role = 'charge'
   AND s.reference_month = @reference_month AND s.closing_date > @today;
+
+-- name: SetStatementFinanced :exec
+UPDATE ledger_statement SET financed_by_plan_id = @plan_id WHERE id = @id;

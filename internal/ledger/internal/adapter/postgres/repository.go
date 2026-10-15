@@ -538,3 +538,7 @@ func (r *Repository) SystemAccount(ctx context.Context, userID int64, role domai
 func (r *Repository) CommittedInstallments(ctx context.Context, userID int64, accountID uuid.UUID, month domain.ReferenceMonth, today time.Time) (int64, error) {
 	return r.q.CommittedInstallments(ctx, CommittedInstallmentsParams{UserID: userID, AccountID: accountID, ReferenceMonth: month.FirstDay(), Today: today})
 }
+
+func (r *Repository) SetStatementFinanced(ctx context.Context, statementID, planID uuid.UUID) error {
+	return r.q.SetStatementFinanced(ctx, SetStatementFinancedParams{ID: statementID, PlanID: nullUUID(planID)})
+}

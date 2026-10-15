@@ -18,6 +18,8 @@ var (
 	ErrNonZeroBalance     = errors.New("account balance is not zero")
 	ErrPostingsAfterClose = errors.New("account has postings after the closing date")
 	ErrSettingsLocked     = errors.New("settings cannot change after the first transaction")
+	ErrStatementNotClosed = errors.New("statement has not closed yet")
+	ErrStatementFinanced  = errors.New("statement is already financed")
 )
 
 // Clock is satisfied by platform/clock.Clock.
@@ -167,6 +169,7 @@ type Repository interface {
 	OpenStatementsFrom(ctx context.Context, userID int64, accountID uuid.UUID, from domain.ReferenceMonth, today time.Time) ([]Statement, error)
 	UpdateStatementDates(ctx context.Context, id uuid.UUID, closing, due time.Time) error
 	InsertPlan(ctx context.Context, p domain.InstallmentPlan) error
+	SetStatementFinanced(ctx context.Context, statementID, planID uuid.UUID) error
 	SystemAccount(ctx context.Context, userID int64, role domain.SystemRole) (domain.Account, error)
 	CommittedInstallments(ctx context.Context, userID int64, accountID uuid.UUID, month domain.ReferenceMonth, today time.Time) (int64, error)
 	StatementPostings(ctx context.Context, userID int64, statementID uuid.UUID) ([]StatementPosting, error)

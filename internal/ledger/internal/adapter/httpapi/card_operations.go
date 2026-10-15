@@ -64,3 +64,27 @@ func (s *Server) GetCommitment(ctx context.Context, req GetCommitmentRequestObje
 	}
 	return GetCommitment200JSONResponse{Month: m.String(), Amount: toMoneyAPI(amount)}, nil
 }
+
+func (s *Server) PayStatement(ctx context.Context, req PayStatementRequestObject) (PayStatementResponseObject, error) {
+	amount, err := fromMoneyAPI("amount", req.Body.Amount)
+	if err != nil {
+		return nil, err
+	}
+	t, err := s.svc.PayStatement(ctx, auth.MustUserID(ctx), req.Id, dateOf(req.Body.Date), req.Body.FromAccountId, amount)
+	if err != nil {
+		return nil, err
+	}
+	return PayStatement201JSONResponse(toTransactionAPI(t)), nil
+}
+
+func (s *Server) FinanceStatement(ctx context.Context, req FinanceStatementRequestObject) (FinanceStatementResponseObject, error) {
+	installment, err := fromMoneyAPI("installment_amount", req.Body.InstallmentAmount)
+	if err != nil {
+		return nil, err
+	}
+	t, planID, err := s.svc.FinanceStatement(ctx, auth.MustUserID(ctx), req.Id, dateOf(req.Body.Date), req.Body.InstallmentCount, installment)
+	if err != nil {
+		return nil, err
+	}
+	return FinanceStatement201JSONResponse{Transaction: toTransactionAPI(t), PlanId: planID}, nil
+}

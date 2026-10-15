@@ -780,6 +780,60 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /statements/{id}/payments:
+    post:
+      tags: [ledger]
+      operationId: payStatement
+      summary: Pay a statement from a balance account.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatementPaymentInput"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /statements/{id}/financing:
+    post:
+      tags: [ledger]
+      operationId: financeStatement
+      summary: Convert the unpaid amount of a closed statement into installments.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatementFinancingInput"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstallmentPurchase"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
 security:
   - sessionCookie: []
 components:
@@ -825,6 +879,31 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
   schemas:
+    StatementPaymentInput:
+      type: object
+      required: [date, from_account_id, amount]
+      properties:
+        date:
+          type: string
+          format: date
+        from_account_id:
+          type: string
+          format: uuid
+        amount:
+          $ref: "#/components/schemas/Money"
+    StatementFinancingInput:
+      type: object
+      required: [date, installment_count, installment_amount]
+      properties:
+        date:
+          type: string
+          format: date
+        installment_count:
+          type: integer
+          minimum: 2
+          maximum: 420
+        installment_amount:
+          $ref: "#/components/schemas/Money"
     Split:
       type: object
       required: [account_id, amount]
@@ -1452,7 +1531,7 @@ components:
             Stable error identifier. Values: invalid_request, request_too_large, invalid_credentials,
             too_many_attempts, unauthenticated, forbidden, not_found, validation_failed, internal_error,
             server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
-            account_not_empty, settings_locked.
+            account_not_empty, settings_locked, statement_not_closed, statement_financed.
         request_id:
           type: string
         errors:

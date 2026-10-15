@@ -55,6 +55,10 @@ func toProblem(err error) problem.Details {
 		return problem.New(http.StatusConflict, "account_not_empty", err.Error())
 	case errors.Is(err, app.ErrSettingsLocked):
 		return problem.New(http.StatusConflict, "settings_locked", err.Error())
+	case errors.Is(err, app.ErrStatementNotClosed):
+		return problem.New(http.StatusConflict, "statement_not_closed", err.Error())
+	case errors.Is(err, app.ErrStatementFinanced):
+		return problem.New(http.StatusConflict, "statement_financed", err.Error())
 	default:
 		return problem.New(http.StatusInternalServerError, "internal_error", "")
 	}
