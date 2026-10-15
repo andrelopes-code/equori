@@ -34,3 +34,6 @@ SELECT EXISTS (SELECT 1 FROM ledger_account WHERE user_id = $1 AND parent_id = $
 SELECT coalesce(sum(p.amount), 0)::bigint AS total, coalesce(max(p.booked_on), '1900-01-01')::date AS last_booked_on
 FROM ledger_posting p
 WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided;
+
+-- name: GetAccountForUpdate :one
+SELECT * FROM ledger_account WHERE user_id = $1 AND id = $2 FOR UPDATE;

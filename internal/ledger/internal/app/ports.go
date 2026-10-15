@@ -82,6 +82,29 @@ type Dispute struct {
 	RefundTransactionID uuid.UUID
 }
 
+type BalanceAssertion struct {
+	ID         uuid.UUID
+	UserID     int64
+	AccountID  uuid.UUID
+	Date       time.Time
+	Amount     int64
+	Source     string
+	RecordedAt time.Time
+}
+
+// Reconciliation records that an account matched its institution through Date,
+// from an assertion or from a card statement (P3 amendment A7).
+type Reconciliation struct {
+	UserID                  int64
+	AccountID               uuid.UUID
+	Date                    time.Time
+	AssertionID             uuid.UUID
+	StatementID             uuid.UUID
+	Difference              int64
+	Resolution              domain.Resolution
+	ResolutionTransactionID uuid.UUID
+}
+
 type Settings struct {
 	UserID       int64
 	BaseCurrency money.Currency
@@ -199,6 +222,15 @@ type Repository interface {
 	SystemAccount(ctx context.Context, userID int64, role domain.SystemRole) (domain.Account, error)
 	CommittedInstallments(ctx context.Context, userID int64, accountID uuid.UUID, month domain.ReferenceMonth, today time.Time) (int64, error)
 	StatementPostings(ctx context.Context, userID int64, statementID uuid.UUID) ([]StatementPosting, error)
+
+	LockAccount(ctx context.Context, userID int64, id uuid.UUID) (domain.Account, error)
+	InsertBalanceAssertion(ctx context.Context, a BalanceAssertion) (BalanceAssertion, error)
+	BalanceAssertions(ctx context.Context, userID int64, accountID uuid.UUID) ([]BalanceAssertion, error)
+	LastReconciledOn(ctx context.Context, userID int64, accountID uuid.UUID) (*time.Time, error)
+	FirstSettledOn(ctx context.Context, userID int64, accountID uuid.UUID) (*time.Time, error)
+	InsertReconciliation(ctx context.Context, rec Reconciliation) error
+	// ReconcilePostings marks the account's non-voided postings settled through the date as reconciled.
+	ReconcilePostings(ctx context.Context, userID int64, accountID uuid.UUID, through time.Time) error
 
 	// BalanceAt sums the postings of the account and its descendants up to and including date.
 	BalanceAt(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis Basis) (int64, error)

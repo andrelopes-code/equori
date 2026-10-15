@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
+	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/page"
@@ -138,9 +139,12 @@ func (s *Server) GetAccount(ctx context.Context, req GetAccountRequestObject) (G
 }
 
 func (s *Server) UpdateAccount(ctx context.Context, req UpdateAccountRequestObject) (UpdateAccountResponseObject, error) {
-	a, err := s.svc.UpdateAccount(ctx, auth.MustUserID(ctx), req.Id, app.AccountPatch{
-		Name: req.Body.Name, ParentID: req.Body.ParentId, InstitutionID: req.Body.InstitutionId,
-	})
+	patch := app.AccountPatch{Name: req.Body.Name, ParentID: req.Body.ParentId, InstitutionID: req.Body.InstitutionId}
+	if req.Body.YieldMode != nil {
+		mode := domain.YieldMode(*req.Body.YieldMode)
+		patch.YieldMode = &mode
+	}
+	a, err := s.svc.UpdateAccount(ctx, auth.MustUserID(ctx), req.Id, patch)
 	if err != nil {
 		return nil, err
 	}

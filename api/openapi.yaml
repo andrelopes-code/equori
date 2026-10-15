@@ -968,6 +968,55 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /accounts/{id}/balance-assertions:
+    get:
+      tags: [ledger]
+      operationId: listBalanceAssertions
+      summary: Balances reported by the institution for a leaf balance account.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BalanceAssertionList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [ledger]
+      operationId: createBalanceAssertion
+      summary: Record the institution's balance and reconcile the account when it matches.
+      description: |
+        The difference is the asserted amount minus the settled balance at the date. Zero reconciles
+        the account; a positive difference on an account with yield mode auto records yield and
+        reconciles; any other difference stays open.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BalanceAssertionInput"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssertionResult"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
 security:
   - sessionCookie: []
 components:
@@ -1013,6 +1062,62 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
   schemas:
+    BalanceAssertionInput:
+      type: object
+      required: [date, amount]
+      properties:
+        date:
+          type: string
+          format: date
+        amount:
+          $ref: "#/components/schemas/Money"
+        source:
+          type: string
+          enum: [manual, import, open_finance]
+    BalanceAssertion:
+      type: object
+      required: [id, account_id, date, amount, source, recorded_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        account_id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        amount:
+          $ref: "#/components/schemas/Money"
+        source:
+          type: string
+          enum: [manual, import, open_finance]
+        recorded_at:
+          type: string
+          format: date-time
+    BalanceAssertionList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BalanceAssertion"
+    AssertionResult:
+      type: object
+      required: [assertion, difference]
+      properties:
+        assertion:
+          $ref: "#/components/schemas/BalanceAssertion"
+        difference:
+          $ref: "#/components/schemas/Money"
+        resolution:
+          type: string
+          enum: [none, yield, adjustment, transactions_added]
+          description: Absent while the difference stays open.
+        yield_transaction_id:
+          type: string
+          format: uuid
     DisputeInput:
       type: object
       required: [opened_on]
@@ -1514,6 +1619,9 @@ components:
         institution_id:
           type: string
           format: uuid
+        yield_mode:
+          type: string
+          enum: [none, auto]
     CloseAccountInput:
       type: object
       required: [closed_on]
@@ -1745,7 +1853,8 @@ components:
             Stable error identifier. Values: invalid_request, request_too_large, invalid_credentials,
             too_many_attempts, unauthenticated, forbidden, not_found, validation_failed, internal_error,
             server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
-            account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved.
+            account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
+            already_reconciled.
         request_id:
           type: string
         errors:

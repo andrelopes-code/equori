@@ -171,6 +171,48 @@ func (e AccountInputYieldMode) Valid() bool {
 	}
 }
 
+// Defines values for AccountPatchYieldMode.
+const (
+	AccountPatchYieldModeAuto AccountPatchYieldMode = "auto"
+	AccountPatchYieldModeNone AccountPatchYieldMode = "none"
+)
+
+// Valid indicates whether the value is a known member of the AccountPatchYieldMode enum.
+func (e AccountPatchYieldMode) Valid() bool {
+	switch e {
+	case AccountPatchYieldModeAuto:
+		return true
+	case AccountPatchYieldModeNone:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssertionResultResolution.
+const (
+	AssertionResultResolutionAdjustment        AssertionResultResolution = "adjustment"
+	AssertionResultResolutionNone              AssertionResultResolution = "none"
+	AssertionResultResolutionTransactionsAdded AssertionResultResolution = "transactions_added"
+	AssertionResultResolutionYield             AssertionResultResolution = "yield"
+)
+
+// Valid indicates whether the value is a known member of the AssertionResultResolution enum.
+func (e AssertionResultResolution) Valid() bool {
+	switch e {
+	case AssertionResultResolutionAdjustment:
+		return true
+	case AssertionResultResolutionNone:
+		return true
+	case AssertionResultResolutionTransactionsAdded:
+		return true
+	case AssertionResultResolutionYield:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for BalanceBasis.
 const (
 	BalanceBasisBooked  BalanceBasis = "booked"
@@ -183,6 +225,48 @@ func (e BalanceBasis) Valid() bool {
 	case BalanceBasisBooked:
 		return true
 	case BalanceBasisSettled:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BalanceAssertionSource.
+const (
+	BalanceAssertionSourceImport      BalanceAssertionSource = "import"
+	BalanceAssertionSourceManual      BalanceAssertionSource = "manual"
+	BalanceAssertionSourceOpenFinance BalanceAssertionSource = "open_finance"
+)
+
+// Valid indicates whether the value is a known member of the BalanceAssertionSource enum.
+func (e BalanceAssertionSource) Valid() bool {
+	switch e {
+	case BalanceAssertionSourceImport:
+		return true
+	case BalanceAssertionSourceManual:
+		return true
+	case BalanceAssertionSourceOpenFinance:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BalanceAssertionInputSource.
+const (
+	BalanceAssertionInputSourceImport      BalanceAssertionInputSource = "import"
+	BalanceAssertionInputSourceManual      BalanceAssertionInputSource = "manual"
+	BalanceAssertionInputSourceOpenFinance BalanceAssertionInputSource = "open_finance"
+)
+
+// Valid indicates whether the value is a known member of the BalanceAssertionInputSource enum.
+func (e BalanceAssertionInputSource) Valid() bool {
+	switch e {
+	case BalanceAssertionInputSourceImport:
+		return true
+	case BalanceAssertionInputSourceManual:
+		return true
+	case BalanceAssertionInputSourceOpenFinance:
 		return true
 	default:
 		return false
@@ -464,22 +548,22 @@ func (e StatementSummaryStatus) Valid() bool {
 
 // Defines values for TransactionOrigin.
 const (
-	Import   TransactionOrigin = "import"
-	Manual   TransactionOrigin = "manual"
-	Schedule TransactionOrigin = "schedule"
-	System   TransactionOrigin = "system"
+	TransactionOriginImport   TransactionOrigin = "import"
+	TransactionOriginManual   TransactionOrigin = "manual"
+	TransactionOriginSchedule TransactionOrigin = "schedule"
+	TransactionOriginSystem   TransactionOrigin = "system"
 )
 
 // Valid indicates whether the value is a known member of the TransactionOrigin enum.
 func (e TransactionOrigin) Valid() bool {
 	switch e {
-	case Import:
+	case TransactionOriginImport:
 		return true
-	case Manual:
+	case TransactionOriginManual:
 		return true
-	case Schedule:
+	case TransactionOriginSchedule:
 		return true
-	case System:
+	case TransactionOriginSystem:
 		return true
 	default:
 		return false
@@ -554,10 +638,14 @@ type AccountList struct {
 
 // AccountPatch defines model for AccountPatch.
 type AccountPatch struct {
-	InstitutionId *openapi_types.UUID `json:"institution_id,omitempty"`
-	Name          *string             `json:"name,omitempty"`
-	ParentId      *openapi_types.UUID `json:"parent_id,omitempty"`
+	InstitutionId *openapi_types.UUID    `json:"institution_id,omitempty"`
+	Name          *string                `json:"name,omitempty"`
+	ParentId      *openapi_types.UUID    `json:"parent_id,omitempty"`
+	YieldMode     *AccountPatchYieldMode `json:"yield_mode,omitempty"`
 }
+
+// AccountPatchYieldMode defines model for AccountPatch.YieldMode.
+type AccountPatchYieldMode string
 
 // AnticipationInput defines model for AnticipationInput.
 type AnticipationInput struct {
@@ -567,6 +655,19 @@ type AnticipationInput struct {
 	TargetStatement string             `json:"target_statement"`
 	ToInstallment   int                `json:"to_installment"`
 }
+
+// AssertionResult defines model for AssertionResult.
+type AssertionResult struct {
+	Assertion  BalanceAssertion `json:"assertion"`
+	Difference Money            `json:"difference"`
+
+	// Resolution Absent while the difference stays open.
+	Resolution         *AssertionResultResolution `json:"resolution,omitempty"`
+	YieldTransactionId *openapi_types.UUID        `json:"yield_transaction_id,omitempty"`
+}
+
+// AssertionResultResolution Absent while the difference stays open.
+type AssertionResultResolution string
 
 // Balance defines model for Balance.
 type Balance struct {
@@ -578,6 +679,34 @@ type Balance struct {
 
 // BalanceBasis defines model for Balance.Basis.
 type BalanceBasis string
+
+// BalanceAssertion defines model for BalanceAssertion.
+type BalanceAssertion struct {
+	AccountId  openapi_types.UUID     `json:"account_id"`
+	Amount     Money                  `json:"amount"`
+	Date       openapi_types.Date     `json:"date"`
+	Id         openapi_types.UUID     `json:"id"`
+	RecordedAt time.Time              `json:"recorded_at"`
+	Source     BalanceAssertionSource `json:"source"`
+}
+
+// BalanceAssertionSource defines model for BalanceAssertion.Source.
+type BalanceAssertionSource string
+
+// BalanceAssertionInput defines model for BalanceAssertionInput.
+type BalanceAssertionInput struct {
+	Amount Money                        `json:"amount"`
+	Date   openapi_types.Date           `json:"date"`
+	Source *BalanceAssertionInputSource `json:"source,omitempty"`
+}
+
+// BalanceAssertionInputSource defines model for BalanceAssertionInput.Source.
+type BalanceAssertionInputSource string
+
+// BalanceAssertionList defines model for BalanceAssertionList.
+type BalanceAssertionList struct {
+	Items []BalanceAssertion `json:"items"`
+}
 
 // BillingCycleRule defines model for BillingCycleRule.
 type BillingCycleRule struct {
@@ -835,7 +964,8 @@ type Problem struct {
 	// Code Stable error identifier. Values: invalid_request, request_too_large, invalid_credentials,
 	// too_many_attempts, unauthenticated, forbidden, not_found, validation_failed, internal_error,
 	// server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
-	// account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved.
+	// account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
+	// already_reconciled.
 	Code      string        `json:"code"`
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`
@@ -1040,6 +1170,9 @@ type CreateAccountJSONRequestBody = AccountInput
 // UpdateAccountJSONRequestBody defines body for UpdateAccount for application/json ContentType.
 type UpdateAccountJSONRequestBody = AccountPatch
 
+// CreateBalanceAssertionJSONRequestBody defines body for CreateBalanceAssertion for application/json ContentType.
+type CreateBalanceAssertionJSONRequestBody = BalanceAssertionInput
+
 // CreateBillingCycleRuleJSONRequestBody defines body for CreateBillingCycleRule for application/json ContentType.
 type CreateBillingCycleRuleJSONRequestBody = BillingCycleRule
 
@@ -1111,6 +1244,12 @@ type ServerInterface interface {
 	// GetAccountBalance Balance of an account at the end of a date.
 	// (GET /accounts/{id}/balance)
 	GetAccountBalance(w http.ResponseWriter, r *http.Request, id ID, params GetAccountBalanceParams)
+	// ListBalanceAssertions Balances reported by the institution for a leaf balance account.
+	// (GET /accounts/{id}/balance-assertions)
+	ListBalanceAssertions(w http.ResponseWriter, r *http.Request, id ID)
+	// CreateBalanceAssertion Record the institution's balance and reconcile the account when it matches.
+	// (POST /accounts/{id}/balance-assertions)
+	CreateBalanceAssertion(w http.ResponseWriter, r *http.Request, id ID)
 	// ListBillingCycleRules Billing cycle rule versions of a card.
 	// (GET /accounts/{id}/billing-cycle-rules)
 	ListBillingCycleRules(w http.ResponseWriter, r *http.Request, id ID)
@@ -1341,6 +1480,58 @@ func (siw *ServerInterfaceWrapper) GetAccountBalance(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetAccountBalance(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListBalanceAssertions operation middleware
+func (siw *ServerInterfaceWrapper) ListBalanceAssertions(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListBalanceAssertions(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateBalanceAssertion operation middleware
+func (siw *ServerInterfaceWrapper) CreateBalanceAssertion(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateBalanceAssertion(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2334,6 +2525,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/installment-plans/{id}/anticipation", wrapper.AnticipateInstallments)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/disputes", wrapper.OpenDispute)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/disputes/{id}/resolution", wrapper.ResolveDispute)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/balance-assertions", wrapper.ListBalanceAssertions)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/balance-assertions", wrapper.CreateBalanceAssertion)
 
 	return m
 }
@@ -2611,6 +2804,139 @@ func (response GetAccountBalance404ApplicationProblemPlusJSONResponse) VisitGetA
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListBalanceAssertionsRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type ListBalanceAssertionsResponseObject interface {
+	VisitListBalanceAssertionsResponse(w http.ResponseWriter) error
+}
+
+type ListBalanceAssertions200JSONResponse BalanceAssertionList
+
+func (response ListBalanceAssertions200JSONResponse) VisitListBalanceAssertionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListBalanceAssertions401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListBalanceAssertions401ApplicationProblemPlusJSONResponse) VisitListBalanceAssertionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListBalanceAssertions404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListBalanceAssertions404ApplicationProblemPlusJSONResponse) VisitListBalanceAssertionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBalanceAssertionRequestObject struct {
+	Id   ID `json:"id"`
+	Body *CreateBalanceAssertionJSONRequestBody
+}
+
+type CreateBalanceAssertionResponseObject interface {
+	VisitCreateBalanceAssertionResponse(w http.ResponseWriter) error
+}
+
+type CreateBalanceAssertion201JSONResponse AssertionResult
+
+func (response CreateBalanceAssertion201JSONResponse) VisitCreateBalanceAssertionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBalanceAssertion401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateBalanceAssertion401ApplicationProblemPlusJSONResponse) VisitCreateBalanceAssertionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBalanceAssertion404ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateBalanceAssertion404ApplicationProblemPlusJSONResponse) VisitCreateBalanceAssertionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBalanceAssertion409ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateBalanceAssertion409ApplicationProblemPlusJSONResponse) VisitCreateBalanceAssertionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBalanceAssertion422ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateBalanceAssertion422ApplicationProblemPlusJSONResponse) VisitCreateBalanceAssertionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -4495,6 +4821,12 @@ type StrictServerInterface interface {
 	// GetAccountBalance Balance of an account at the end of a date.
 	// (GET /accounts/{id}/balance)
 	GetAccountBalance(ctx context.Context, request GetAccountBalanceRequestObject) (GetAccountBalanceResponseObject, error)
+	// ListBalanceAssertions Balances reported by the institution for a leaf balance account.
+	// (GET /accounts/{id}/balance-assertions)
+	ListBalanceAssertions(ctx context.Context, request ListBalanceAssertionsRequestObject) (ListBalanceAssertionsResponseObject, error)
+	// CreateBalanceAssertion Record the institution's balance and reconcile the account when it matches.
+	// (POST /accounts/{id}/balance-assertions)
+	CreateBalanceAssertion(ctx context.Context, request CreateBalanceAssertionRequestObject) (CreateBalanceAssertionResponseObject, error)
 	// ListBillingCycleRules Billing cycle rule versions of a card.
 	// (GET /accounts/{id}/billing-cycle-rules)
 	ListBillingCycleRules(ctx context.Context, request ListBillingCycleRulesRequestObject) (ListBillingCycleRulesResponseObject, error)
@@ -4763,6 +5095,65 @@ func (sh *strictHandler) GetAccountBalance(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetAccountBalanceResponseObject); ok {
 		if err := validResponse.VisitGetAccountBalanceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListBalanceAssertions operation middleware
+func (sh *strictHandler) ListBalanceAssertions(w http.ResponseWriter, r *http.Request, id ID) {
+	var request ListBalanceAssertionsRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListBalanceAssertions(ctx, request.(ListBalanceAssertionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListBalanceAssertions")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListBalanceAssertionsResponseObject); ok {
+		if err := validResponse.VisitListBalanceAssertionsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateBalanceAssertion operation middleware
+func (sh *strictHandler) CreateBalanceAssertion(w http.ResponseWriter, r *http.Request, id ID) {
+	var request CreateBalanceAssertionRequestObject
+
+	request.Id = id
+
+	var body CreateBalanceAssertionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateBalanceAssertion(ctx, request.(CreateBalanceAssertionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateBalanceAssertion")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateBalanceAssertionResponseObject); ok {
+		if err := validResponse.VisitCreateBalanceAssertionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

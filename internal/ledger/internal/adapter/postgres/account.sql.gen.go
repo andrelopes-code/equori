@@ -83,6 +83,38 @@ func (q *Queries) GetAccount(ctx context.Context, arg GetAccountParams) (LedgerA
 	return i, err
 }
 
+const getAccountForUpdate = `-- name: GetAccountForUpdate :one
+SELECT id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at FROM ledger_account WHERE user_id = $1 AND id = $2 FOR UPDATE
+`
+
+type GetAccountForUpdateParams struct {
+	UserID int64
+	ID     uuid.UUID
+}
+
+func (q *Queries) GetAccountForUpdate(ctx context.Context, arg GetAccountForUpdateParams) (LedgerAccount, error) {
+	row := q.db.QueryRow(ctx, getAccountForUpdate, arg.UserID, arg.ID)
+	var i LedgerAccount
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.AccountClass,
+		&i.Kind,
+		&i.Instrument,
+		&i.ParentID,
+		&i.InstitutionID,
+		&i.CounterpartyPayeeID,
+		&i.OpenedOn,
+		&i.ClosedOn,
+		&i.YieldMode,
+		&i.SystemRole,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getAccountsByIDs = `-- name: GetAccountsByIDs :many
 SELECT id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at FROM ledger_account WHERE user_id = $1 AND id = ANY($2::uuid[])
 `

@@ -29,6 +29,16 @@ type LedgerAccount struct {
 	UpdatedAt           time.Time
 }
 
+type LedgerBalanceAssertion struct {
+	ID         uuid.UUID
+	UserID     int64
+	AccountID  uuid.UUID
+	Date       time.Time
+	Amount     int64
+	Source     string
+	RecordedAt time.Time
+}
+
 type LedgerBillingCycleRule struct {
 	UserID               int64
 	AccountID            uuid.UUID

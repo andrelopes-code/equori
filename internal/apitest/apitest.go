@@ -226,9 +226,12 @@ func (h *Harness) Transaction(id string) TransactionView {
 }
 
 type TransactionView struct {
-	ID       string        `json:"id"`
-	Version  int           `json:"version"`
-	Postings []PostingView `json:"postings"`
+	ID          string        `json:"id"`
+	Version     int           `json:"version"`
+	Date        string        `json:"date"`
+	Description string        `json:"description"`
+	Origin      string        `json:"origin"`
+	Postings    []PostingView `json:"postings"`
 }
 
 type PostingView struct {
@@ -237,6 +240,7 @@ type PostingView struct {
 		Amount int64 `json:"amount"`
 	} `json:"amount"`
 	Statement   string `json:"statement"`
+	Status      string `json:"status"`
 	CardRole    string `json:"card_role"`
 	Installment *struct {
 		Number int    `json:"number"`

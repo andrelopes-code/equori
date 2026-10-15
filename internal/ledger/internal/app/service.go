@@ -145,6 +145,7 @@ type AccountPatch struct {
 	Name          *string
 	ParentID      *uuid.UUID
 	InstitutionID *uuid.UUID
+	YieldMode     *domain.YieldMode
 }
 
 func (s *Service) UpdateAccount(ctx context.Context, userID int64, id uuid.UUID, p AccountPatch) (domain.Account, error) {
@@ -162,6 +163,9 @@ func (s *Service) UpdateAccount(ctx context.Context, userID int64, id uuid.UUID,
 		}
 		if p.InstitutionID != nil {
 			a.InstitutionID = *p.InstitutionID
+		}
+		if p.YieldMode != nil {
+			a.YieldMode = *p.YieldMode
 		}
 		if a, err = domain.NewAccount(a); err != nil {
 			return err
