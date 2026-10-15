@@ -127,7 +127,7 @@ The model must represent every item below. Each item gets at least one worked ex
 | T01 | Recurrence rules cover: every N days, weeks, months or years; a fixed day of the month; the last day of the month; the Nth weekday of the month; the Nth business day of the month. Each rule has a start date and an optional end date or occurrence count. |
 | T02 | A day of month that does not exist in a month (31 in April, 29–31 in February) resolves to the last day of that month. |
 | T03 | Each occurrence of a recurrence has an expected amount, which may vary, and is linked to the real transaction once it happens. Occurrences can be skipped or moved one by one without changing the rule. |
-| T04 | A credit card has a closing day and a due day. A purchase on or before the closing date belongs to that statement; a purchase after it belongs to the next one. |
+| T04 | A credit card has a closing day and a due day. A purchase before the closing date belongs to the statement that closes on that date; a purchase after it belongs to the next one. A purchase on the closing date belongs to the next statement by default; each card can set it to the closing statement, because issuers differ. |
 | T05 | Closing and due days change over time. A change applies from a given statement on; past statements keep their dates. |
 | T06 | A due date on a non-business day moves according to a business-day calendar: Brazilian national holidays at minimum, extensible per instance. |
 | T07 | Installment N of a purchase is billed on the Nth statement from the purchase statement, not on a calendar month offset. |

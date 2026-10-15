@@ -118,7 +118,7 @@ classDiagram
 | Card account | Conta do cartão | Liability account of kind `credit_card`. Its balance is the total debt, including installments not yet billed. | "Itaú Visa" balance −3,450.00 |
 | Card | Cartão | A physical or virtual card of a card account, with holder and last four digits. Additional and virtual cards share the card account and its statements. | Virtual card •••• 4021 |
 | Credit limit | Limite | Maximum debt of a card account, effective-dated. Available limit = limit − debt. | 10,000.00 from 2026-03-01 |
-| Billing cycle rule | Regra de ciclo | The closing day and due day of a card account, effective-dated (T05). | Closes on day 3, due on day 10, from statement 2026-11 |
+| Billing cycle rule | Regra de ciclo | The closing day, the due day and the closing-day assignment of a card account, effective-dated (T05). Closing-day assignment: whether a purchase made on the closing date goes to the `next` statement (default) or to the `closing` statement (T04). | Closes on day 3, due on day 10, closing-day purchases to the next statement, from statement 2026-11 |
 | Statement | Fatura | The bill of one billing cycle of a card account, identified by its reference month, with closing date, due date and the postings billed on it. | Statement 2026-11: closes 2026-11-03, due 2026-11-10 |
 | Billed on | Faturado em | The statement a card posting belongs to. Defaults from the transaction date and the billing cycle rule (T04); import data can set it explicitly. | Purchase on 2026-11-04 billed on statement 2026-12 |
 | Statement status | Situação da fatura | `open` (accepting postings), `closed` (closing date passed, unpaid), `paid`, `partially_paid`, `overdue`. Derived from dates and payments. | |
