@@ -319,11 +319,11 @@ Each invariant is enforced in the domain and covered by a scenario in chapter 6.
 
 | ID | Invariant |
 |---|---|
-| I01 | The postings of a transaction sum to zero per instrument. |
+| I01 | The weights of the postings of a transaction sum to zero (refined in chapter 5, 5.2.3). |
 | I02 | A transaction has at least two postings. |
 | I03 | A posting on a card account belongs to exactly one statement of that account. |
 | I04 | A posting on any other account belongs to no statement. |
-| I05 | Billed postings and `reconciled` postings are never edited; changes are new transactions linked to the original. |
+| I05 | Postings on a closed statement and `reconciled` postings are never edited; changes are new transactions linked to the original. |
 | I06 | The total refunded or cancelled for a purchase never exceeds its original amount. |
 | I07 | An occurrence is realized by at most one transaction; an external record is matched to at most one transaction. |
 | I08 | Effective-dated values never overlap: at any date exactly one version is in force. |
