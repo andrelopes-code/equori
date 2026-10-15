@@ -167,7 +167,7 @@ func reconciliationOf(h *apitest.Harness, account string) reconciliationStatus {
 }
 
 func resolve(h *apitest.Harness, assertion, resolution string) apitest.Response {
-	return h.Do(http.MethodPost, "/api/v1/balance-assertions/"+assertion+"/resolution", map[string]string{"resolution": resolution})
+	return h.Do(http.MethodPost, "/api/v1/balance-assertions/"+assertion+"/resolve", map[string]string{"resolution": resolution})
 }
 
 // newDifference leaves the S26 difference open: derived 3,203.27, asserted 3,201.17.
@@ -211,7 +211,7 @@ func TestTransactionsAddedNeedsMatchingBalance(t *testing.T) {
 	fees := h.Account("Bank fees", "expense", "", nil)
 	h.Record("2026-10-20", apitest.Posting(checking, -210), apitest.Posting(fees, 210))
 	var res assertionResult
-	h.MustDo(http.MethodPost, "/api/v1/balance-assertions/"+assertion+"/resolution", map[string]string{"resolution": "transactions_added"}, http.StatusOK, &res)
+	h.MustDo(http.MethodPost, "/api/v1/balance-assertions/"+assertion+"/resolve", map[string]string{"resolution": "transactions_added"}, http.StatusOK, &res)
 	if res.Resolution != "transactions_added" || res.Difference.Amount != 0 || res.ResolutionTransactionID != "" {
 		t.Fatalf("result = %+v", res)
 	}
@@ -229,7 +229,7 @@ func TestUnlockAllowsCorrection(t *testing.T) {
 	r.h.ExpectProblem(r.h.Do(http.MethodPut, "/api/v1/transactions/"+r.transfer, correction), http.StatusConflict, "posting_reconciled", "")
 	r.h.ExpectProblem(r.h.Do(http.MethodPost, "/api/v1/transactions/"+r.transfer+"/void", map[string]string{"reason": "duplicate"}), http.StatusConflict, "posting_reconciled", "")
 
-	r.h.MustDo(http.MethodPost, "/api/v1/accounts/"+r.reserve+"/unlock", map[string]string{"from": "2026-10-01"}, http.StatusNoContent, nil)
+	r.h.MustDo(http.MethodPost, "/api/v1/accounts/"+r.reserve+"/unlock", map[string]string{"from": "2026-10-01"}, http.StatusOK, nil)
 	if s := reconciliationOf(r.h, r.reserve); s.LastReconciledOn != "" || s.OpenDifference == nil {
 		t.Fatalf("status after unlock = %+v", s)
 	}
@@ -240,7 +240,7 @@ func TestUnlockKeepsEarlierReconciliations(t *testing.T) {
 	r := newReserveSetup(t)
 	assertBalance(r.h, r.reserve, "2026-10-15", 1000000)
 	assertBalance(r.h, r.reserve, "2026-10-31", 1000000)
-	r.h.MustDo(http.MethodPost, "/api/v1/accounts/"+r.reserve+"/unlock", map[string]string{"from": "2026-10-20"}, http.StatusNoContent, nil)
+	r.h.MustDo(http.MethodPost, "/api/v1/accounts/"+r.reserve+"/unlock", map[string]string{"from": "2026-10-20"}, http.StatusOK, nil)
 	if s := reconciliationOf(r.h, r.reserve); s.LastReconciledOn != "2026-10-15" {
 		t.Fatalf("status after unlock = %+v", s)
 	}
@@ -251,14 +251,14 @@ func TestUnlockKeepsEarlierReconciliations(t *testing.T) {
 
 func reconcileStatement(c cardSetup, reference string, amountDue int64) apitest.Response {
 	id := statements(c.h.T(), c.h, c.card)[reference].ID
-	return c.h.Do(http.MethodPost, "/api/v1/statements/"+id+"/reconciliation", map[string]any{"amount_due": apitest.BRL(amountDue)})
+	return c.h.Do(http.MethodPost, "/api/v1/statements/"+id+"/reconcile", map[string]any{"amount_due": apitest.BRL(amountDue)})
 }
 
 func TestStatementReconciliationLocksPurchases(t *testing.T) {
 	c := newCardSetup(t, "2026-11-05")
 	purchase := c.purchase("2026-10-14", 100000)
 	c.purchase("2026-10-20", 50000)
-	if resp := reconcileStatement(c, "2026-11", 150000); resp.Status != http.StatusNoContent {
+	if resp := reconcileStatement(c, "2026-11", 150000); resp.Status != http.StatusOK {
 		t.Fatalf("status %d: %s", resp.Status, resp.Body)
 	}
 	for _, p := range c.h.Transaction(purchase).Postings {
@@ -292,10 +292,10 @@ func TestStatementReconciliationRejects(t *testing.T) {
 func TestUnlockReleasesWholeStatement(t *testing.T) {
 	c := newCardSetup(t, "2026-11-05")
 	purchase := c.purchase("2026-10-14", 100000)
-	if resp := reconcileStatement(c, "2026-11", 100000); resp.Status != http.StatusNoContent {
+	if resp := reconcileStatement(c, "2026-11", 100000); resp.Status != http.StatusOK {
 		t.Fatalf("status %d: %s", resp.Status, resp.Body)
 	}
-	c.h.MustDo(http.MethodPost, "/api/v1/accounts/"+c.card+"/unlock", map[string]string{"from": "2026-10-20"}, http.StatusNoContent, nil)
+	c.h.MustDo(http.MethodPost, "/api/v1/accounts/"+c.card+"/unlock", map[string]string{"from": "2026-10-20"}, http.StatusOK, nil)
 	for _, p := range c.h.Transaction(purchase).Postings {
 		if p.Status == "reconciled" {
 			t.Fatal("a posting of an unlocked statement stayed reconciled")

@@ -27,6 +27,12 @@ func fromMoneyAPI(field string, m Money) (money.Money, error) {
 
 func dateOf(d openapi_types.Date) time.Time { return d.Time }
 
+// location is the Location header of a created record (ADR 007, C6).
+func location(collection string, id uuid.UUID) *string {
+	l := BaseURL + collection + id.String()
+	return &l
+}
+
 func apiDate(t time.Time) openapi_types.Date { return openapi_types.Date{Time: t} }
 
 func optDate(d *openapi_types.Date) *time.Time {

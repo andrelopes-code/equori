@@ -1,6 +1,8 @@
 package httpapi
 
 import (
+	"github.com/google/uuid"
+
 	"context"
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
@@ -66,22 +68,35 @@ func (s *Server) ResolveBalanceAssertion(ctx context.Context, req ResolveBalance
 }
 
 func (s *Server) GetReconciliationStatus(ctx context.Context, req GetReconciliationStatusRequestObject) (GetReconciliationStatusResponseObject, error) {
-	st, err := s.svc.ReconciliationStatus(ctx, auth.MustUserID(ctx), req.Id)
+	out, err := s.reconciliationStatus(ctx, auth.MustUserID(ctx), req.Id)
 	if err != nil {
 		return nil, err
+	}
+	return GetReconciliationStatus200JSONResponse(out), nil
+}
+
+func (s *Server) reconciliationStatus(ctx context.Context, userID int64, accountID uuid.UUID) (ReconciliationStatus, error) {
+	st, err := s.svc.ReconciliationStatus(ctx, userID, accountID)
+	if err != nil {
+		return ReconciliationStatus{}, err
 	}
 	out := ReconciliationStatus{LastReconciledOn: apiOptDate(st.LastReconciledOn)}
 	if st.Open != nil {
 		out.OpenDifference = &OpenDifference{AssertionId: st.Open.AssertionID, Date: apiDate(st.Open.Date), Difference: toMoneyAPI(st.Open.Difference)}
 	}
-	return GetReconciliationStatus200JSONResponse(out), nil
+	return out, nil
 }
 
 func (s *Server) UnlockAccount(ctx context.Context, req UnlockAccountRequestObject) (UnlockAccountResponseObject, error) {
-	if err := s.svc.Unlock(ctx, auth.MustUserID(ctx), req.Id, dateOf(req.Body.From)); err != nil {
+	userID := auth.MustUserID(ctx)
+	if err := s.svc.Unlock(ctx, userID, req.Id, dateOf(req.Body.From)); err != nil {
 		return nil, err
 	}
-	return UnlockAccount204Response{}, nil
+	out, err := s.reconciliationStatus(ctx, userID, req.Id)
+	if err != nil {
+		return nil, err
+	}
+	return UnlockAccount200JSONResponse(out), nil
 }
 
 func (s *Server) ReconcileStatement(ctx context.Context, req ReconcileStatementRequestObject) (ReconcileStatementResponseObject, error) {
@@ -89,8 +104,13 @@ func (s *Server) ReconcileStatement(ctx context.Context, req ReconcileStatementR
 	if err != nil {
 		return nil, err
 	}
-	if err := s.svc.ReconcileStatement(ctx, auth.MustUserID(ctx), req.Id, amount); err != nil {
+	userID := auth.MustUserID(ctx)
+	if err := s.svc.ReconcileStatement(ctx, userID, req.Id, amount); err != nil {
 		return nil, err
 	}
-	return ReconcileStatement204Response{}, nil
+	out, err := s.statementDetail(ctx, userID, req.Id)
+	if err != nil {
+		return nil, err
+	}
+	return ReconcileStatement200JSONResponse(out), nil
 }

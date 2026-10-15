@@ -1,6 +1,8 @@
 package httpapi
 
 import (
+	"github.com/google/uuid"
+
 	"context"
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
@@ -50,12 +52,20 @@ func (s *Server) ListStatements(ctx context.Context, req ListStatementsRequestOb
 }
 
 func (s *Server) GetStatement(ctx context.Context, req GetStatementRequestObject) (GetStatementResponseObject, error) {
-	v, a, postings, err := s.svc.Statement(ctx, auth.MustUserID(ctx), req.Id)
+	out, err := s.statementDetail(ctx, auth.MustUserID(ctx), req.Id)
 	if err != nil {
 		return nil, err
 	}
+	return GetStatement200JSONResponse(out), nil
+}
+
+func (s *Server) statementDetail(ctx context.Context, userID int64, id uuid.UUID) (StatementDetail, error) {
+	v, a, postings, err := s.svc.Statement(ctx, userID, id)
+	if err != nil {
+		return StatementDetail{}, err
+	}
 	summary := toStatementAPI(v, a.Instrument)
-	out := GetStatement200JSONResponse{
+	out := StatementDetail{
 		Id: summary.Id, AccountId: summary.AccountId, Reference: summary.Reference, ClosingDate: summary.ClosingDate,
 		DueDate: summary.DueDate, Currency: summary.Currency, Opening: summary.Opening, Charges: summary.Charges,
 		Credits: summary.Credits, AmountDue: summary.AmountDue, Payments: summary.Payments, Unpaid: summary.Unpaid,

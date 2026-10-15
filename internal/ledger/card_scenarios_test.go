@@ -139,7 +139,7 @@ func TestCardScenarios(t *testing.T) {
 		c := newCardSetup(t, "2026-12-05")
 		charge := c.purchase("2026-10-14", 19990)
 		d := openDispute(t, c.h, charge)
-		c.h.MustDo(http.MethodPost, "/api/v1/disputes/"+d.ID+"/resolution",
+		c.h.MustDo(http.MethodPost, "/api/v1/disputes/"+d.ID+"/resolve",
 			map[string]any{"resolved_on": "2026-12-02", "outcome": "won", "statement": "2026-12"}, http.StatusOK, nil)
 		if s := statements(t, c.h, c.card)["2026-12"]; s.Credits != 19990 {
 			t.Fatalf("2026-12 credits = %d", s.Credits)

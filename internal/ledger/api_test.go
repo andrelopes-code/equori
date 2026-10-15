@@ -83,7 +83,7 @@ func TestCorrectionConflictIs409(t *testing.T) {
 		t.Fatalf("versions = %+v", versions)
 	}
 
-	h.MustDo(http.MethodPost, "/api/v1/transactions/"+id+"/void", map[string]string{"reason": "duplicate"}, http.StatusNoContent, nil)
+	h.MustDo(http.MethodPost, "/api/v1/transactions/"+id+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, nil)
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/transactions/"+id+"/void", map[string]string{"reason": "again"}),
 		http.StatusConflict, "transaction_voided", "")
 }

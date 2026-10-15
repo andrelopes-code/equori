@@ -96,7 +96,7 @@ func TestStatementOverpaymentBecomesCredit(t *testing.T) {
 func TestEmptyStatementAfterVoid(t *testing.T) {
 	c := newCardSetup(t, "2026-11-12")
 	id := c.purchase("2026-10-14", 1000)
-	c.h.MustDo(http.MethodPost, "/api/v1/transactions/"+id+"/void", map[string]string{"reason": "duplicate"}, http.StatusNoContent, nil)
+	c.h.MustDo(http.MethodPost, "/api/v1/transactions/"+id+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, nil)
 
 	if s := statements(t, c.h, c.card)["2026-11"]; s.AmountDue != 0 || s.Charges != 0 || s.Status != "paid" {
 		t.Fatalf("statement = %+v", s)

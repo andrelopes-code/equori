@@ -223,6 +223,11 @@ paths:
       responses:
         "201":
           description: OK.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -288,8 +293,12 @@ paths:
             schema:
               $ref: "#/components/schemas/CloseAccountInput"
       responses:
-        "204":
+        "200":
           description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
         "401":
           $ref: "#/components/responses/Problem"
         "404":
@@ -386,6 +395,11 @@ paths:
       responses:
         "201":
           description: OK.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -453,8 +467,12 @@ paths:
             schema:
               $ref: "#/components/schemas/VoidInput"
       responses:
-        "204":
+        "200":
           description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
         "401":
           $ref: "#/components/responses/Problem"
         "404":
@@ -796,6 +814,11 @@ paths:
       responses:
         "201":
           description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -850,6 +873,11 @@ paths:
       responses:
         "201":
           description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -876,6 +904,11 @@ paths:
       responses:
         "201":
           description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -902,6 +935,11 @@ paths:
       responses:
         "201":
           description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
           content:
             application/json:
               schema:
@@ -940,7 +978,7 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
-  /disputes/{id}/resolution:
+  /disputes/{id}/resolve:
     post:
       tags: [ledger]
       operationId: resolveDispute
@@ -1017,7 +1055,7 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
-  /balance-assertions/{id}/resolution:
+  /balance-assertions/{id}/resolve:
     post:
       tags: [ledger]
       operationId: resolveBalanceAssertion
@@ -1081,15 +1119,19 @@ paths:
             schema:
               $ref: "#/components/schemas/UnlockInput"
       responses:
-        "204":
-          description: Unlocked.
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReconciliationStatus"
         "401":
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
-  /statements/{id}/reconciliation:
+  /statements/{id}/reconcile:
     post:
       tags: [ledger]
       operationId: reconcileStatement
@@ -1106,8 +1148,12 @@ paths:
             schema:
               $ref: "#/components/schemas/StatementReconciliationInput"
       responses:
-        "204":
-          description: Reconciled.
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatementDetail"
         "401":
           $ref: "#/components/responses/Problem"
         "404":

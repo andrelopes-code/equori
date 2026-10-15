@@ -59,7 +59,7 @@ func TestReconciliationScenarios(t *testing.T) {
 		var open assertionResult
 		assertBalance(f.h, f.checking, "2026-10-31", 320117).Decode(t, &open)
 		var res assertionResult
-		f.h.MustDo(http.MethodPost, "/api/v1/balance-assertions/"+open.Assertion.ID+"/resolution", map[string]string{"resolution": "adjustment"}, http.StatusOK, &res)
+		f.h.MustDo(http.MethodPost, "/api/v1/balance-assertions/"+open.Assertion.ID+"/resolve", map[string]string{"resolution": "adjustment"}, http.StatusOK, &res)
 		want := map[string]int64{f.checking: -210, f.adjustments: 210}
 		if got := amountsByAccount(f.h.Transaction(res.ResolutionTransactionID)); fmt.Sprint(got) != fmt.Sprint(want) {
 			t.Fatalf("adjustment postings = %v, want %v", got, want)

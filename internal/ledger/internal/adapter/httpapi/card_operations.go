@@ -74,7 +74,7 @@ func (s *Server) PayStatement(ctx context.Context, req PayStatementRequestObject
 	if err != nil {
 		return nil, err
 	}
-	return PayStatement201JSONResponse(toTransactionAPI(t)), nil
+	return PayStatement201JSONResponse{Body: toTransactionAPI(t), Headers: PayStatement201ResponseHeaders{Location: location("/transactions/", t.ID)}}, nil
 }
 
 func (s *Server) FinanceStatement(ctx context.Context, req FinanceStatementRequestObject) (FinanceStatementResponseObject, error) {
@@ -102,7 +102,7 @@ func (s *Server) RefundTransaction(ctx context.Context, req RefundTransactionReq
 	if err != nil {
 		return nil, err
 	}
-	return RefundTransaction201JSONResponse(toTransactionAPI(t)), nil
+	return RefundTransaction201JSONResponse{Body: toTransactionAPI(t), Headers: RefundTransaction201ResponseHeaders{Location: location("/transactions/", t.ID)}}, nil
 }
 
 func (s *Server) CancelInstallmentPlan(ctx context.Context, req CancelInstallmentPlanRequestObject) (CancelInstallmentPlanResponseObject, error) {
@@ -114,7 +114,7 @@ func (s *Server) CancelInstallmentPlan(ctx context.Context, req CancelInstallmen
 	if err != nil {
 		return nil, err
 	}
-	return CancelInstallmentPlan201JSONResponse(toTransactionAPI(t)), nil
+	return CancelInstallmentPlan201JSONResponse{Body: toTransactionAPI(t), Headers: CancelInstallmentPlan201ResponseHeaders{Location: location("/transactions/", t.ID)}}, nil
 }
 
 func (s *Server) AnticipateInstallments(ctx context.Context, req AnticipateInstallmentsRequestObject) (AnticipateInstallmentsResponseObject, error) {
@@ -131,5 +131,5 @@ func (s *Server) AnticipateInstallments(ctx context.Context, req AnticipateInsta
 	if err != nil {
 		return nil, err
 	}
-	return AnticipateInstallments201JSONResponse(toTransactionAPI(t)), nil
+	return AnticipateInstallments201JSONResponse{Body: toTransactionAPI(t), Headers: AnticipateInstallments201ResponseHeaders{Location: location("/transactions/", t.ID)}}, nil
 }

@@ -92,7 +92,7 @@ func TestSeriesDropsVoided(t *testing.T) {
 	id := h.Record("2026-10-02", apitest.Posting(checking, -50), apitest.Posting(food, 50))
 	h.Dispatch()
 
-	h.MustDo(http.MethodPost, "/api/v1/transactions/"+id+"/void", map[string]string{"reason": "duplicate"}, http.StatusNoContent, nil)
+	h.MustDo(http.MethodPost, "/api/v1/transactions/"+id+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, nil)
 	h.Dispatch()
 
 	if got := series(t, h, checking, "2026-10-01", "2026-10-03", "booked"); got["2026-10-03"] != -100 {

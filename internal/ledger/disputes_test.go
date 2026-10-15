@@ -28,7 +28,7 @@ func TestDisputeWon(t *testing.T) {
 		http.StatusConflict, "dispute_open", "")
 
 	var resolved disputeView
-	c.h.MustDo(http.MethodPost, "/api/v1/disputes/"+d.ID+"/resolution",
+	c.h.MustDo(http.MethodPost, "/api/v1/disputes/"+d.ID+"/resolve",
 		map[string]any{"resolved_on": "2026-12-02", "outcome": "won", "statement": "2026-12"}, http.StatusOK, &resolved)
 	if resolved.Outcome != "won" || resolved.RefundTransactionID == "" {
 		t.Fatalf("resolved = %+v", resolved)
@@ -40,7 +40,7 @@ func TestDisputeWon(t *testing.T) {
 	if amountsByAccount(refund)[c.food] != -19990 {
 		t.Fatalf("chargeback category = %v", amountsByAccount(refund))
 	}
-	c.h.ExpectProblem(c.h.Do(http.MethodPost, "/api/v1/disputes/"+d.ID+"/resolution",
+	c.h.ExpectProblem(c.h.Do(http.MethodPost, "/api/v1/disputes/"+d.ID+"/resolve",
 		map[string]any{"resolved_on": "2026-12-03", "outcome": "lost"}), http.StatusConflict, "dispute_resolved", "")
 	c.h.ExpectProblem(refundAgain(c.h, charge), http.StatusUnprocessableEntity, "validation_failed", "amount")
 }
@@ -54,7 +54,7 @@ func TestDisputeLost(t *testing.T) {
 	charge := c.purchase("2026-10-14", 19990)
 	d := openDispute(t, c.h, charge)
 	var resolved disputeView
-	c.h.MustDo(http.MethodPost, "/api/v1/disputes/"+d.ID+"/resolution",
+	c.h.MustDo(http.MethodPost, "/api/v1/disputes/"+d.ID+"/resolve",
 		map[string]any{"resolved_on": "2026-12-02", "outcome": "lost"}, http.StatusOK, &resolved)
 	if resolved.Outcome != "lost" || resolved.RefundTransactionID != "" {
 		t.Fatalf("resolved = %+v", resolved)

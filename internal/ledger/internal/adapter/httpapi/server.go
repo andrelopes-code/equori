@@ -118,7 +118,7 @@ func (s *Server) CreateAccount(ctx context.Context, req CreateAccountRequestObje
 	if err != nil {
 		return nil, err
 	}
-	return CreateAccount201JSONResponse(toAccountAPI(a)), nil
+	return CreateAccount201JSONResponse{Body: toAccountAPI(a), Headers: CreateAccount201ResponseHeaders{Location: location("/accounts/", a.ID)}}, nil
 }
 
 func (s *Server) GetAccount(ctx context.Context, req GetAccountRequestObject) (GetAccountResponseObject, error) {
@@ -153,10 +153,15 @@ func (s *Server) UpdateAccount(ctx context.Context, req UpdateAccountRequestObje
 }
 
 func (s *Server) CloseAccount(ctx context.Context, req CloseAccountRequestObject) (CloseAccountResponseObject, error) {
-	if err := s.svc.CloseAccount(ctx, auth.MustUserID(ctx), req.Id, dateOf(req.Body.ClosedOn)); err != nil {
+	userID := auth.MustUserID(ctx)
+	if err := s.svc.CloseAccount(ctx, userID, req.Id, dateOf(req.Body.ClosedOn)); err != nil {
 		return nil, err
 	}
-	return CloseAccount204Response{}, nil
+	a, err := s.svc.Account(ctx, userID, req.Id)
+	if err != nil {
+		return nil, err
+	}
+	return CloseAccount200JSONResponse(toAccountAPI(a)), nil
 }
 
 func (s *Server) GetAccountBalance(ctx context.Context, req GetAccountBalanceRequestObject) (GetAccountBalanceResponseObject, error) {
@@ -216,7 +221,7 @@ func (s *Server) CreateTransaction(ctx context.Context, req CreateTransactionReq
 	if err != nil {
 		return nil, err
 	}
-	return CreateTransaction201JSONResponse(toTransactionAPI(t)), nil
+	return CreateTransaction201JSONResponse{Body: toTransactionAPI(t), Headers: CreateTransaction201ResponseHeaders{Location: location("/transactions/", t.ID)}}, nil
 }
 
 func (s *Server) GetTransaction(ctx context.Context, req GetTransactionRequestObject) (GetTransactionResponseObject, error) {
@@ -243,10 +248,15 @@ func (s *Server) CorrectTransaction(ctx context.Context, req CorrectTransactionR
 }
 
 func (s *Server) VoidTransaction(ctx context.Context, req VoidTransactionRequestObject) (VoidTransactionResponseObject, error) {
-	if err := s.svc.VoidTransaction(ctx, auth.MustUserID(ctx), req.Id, req.Body.Reason); err != nil {
+	userID := auth.MustUserID(ctx)
+	if err := s.svc.VoidTransaction(ctx, userID, req.Id, req.Body.Reason); err != nil {
 		return nil, err
 	}
-	return VoidTransaction204Response{}, nil
+	t, err := s.svc.Transaction(ctx, userID, req.Id)
+	if err != nil {
+		return nil, err
+	}
+	return VoidTransaction200JSONResponse(toTransactionAPI(t)), nil
 }
 
 func (s *Server) ListTransactionVersions(ctx context.Context, req ListTransactionVersionsRequestObject) (ListTransactionVersionsResponseObject, error) {

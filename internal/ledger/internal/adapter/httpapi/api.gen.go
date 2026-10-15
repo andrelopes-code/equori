@@ -1379,10 +1379,10 @@ type ServerInterface interface {
 	// (GET /attachments/{id}/content)
 	GetAttachmentContent(w http.ResponseWriter, r *http.Request, id ID)
 	// ResolveBalanceAssertion Resolve the open difference of an assertion and reconcile the account.
-	// (POST /balance-assertions/{id}/resolution)
+	// (POST /balance-assertions/{id}/resolve)
 	ResolveBalanceAssertion(w http.ResponseWriter, r *http.Request, id ID)
 	// ResolveDispute Resolve a dispute; a won dispute refunds the remaining charged amount.
-	// (POST /disputes/{id}/resolution)
+	// (POST /disputes/{id}/resolve)
 	ResolveDispute(w http.ResponseWriter, r *http.Request, id ID)
 	// AnticipateInstallments Pay future installments early.
 	// (POST /installment-plans/{id}/anticipation)
@@ -1421,7 +1421,7 @@ type ServerInterface interface {
 	// (POST /statements/{id}/payments)
 	PayStatement(w http.ResponseWriter, r *http.Request, id ID)
 	// ReconcileStatement Confirm the institution's amount due for a closed statement.
-	// (POST /statements/{id}/reconciliation)
+	// (POST /statements/{id}/reconcile)
 	ReconcileStatement(w http.ResponseWriter, r *http.Request, id ID)
 	// ListTags List tags in use.
 	// (GET /tags)
@@ -2845,13 +2845,13 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/installment-plans/{id}/cancellation", wrapper.CancelInstallmentPlan)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/installment-plans/{id}/anticipation", wrapper.AnticipateInstallments)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/disputes", wrapper.OpenDispute)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/disputes/{id}/resolution", wrapper.ResolveDispute)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/disputes/{id}/resolve", wrapper.ResolveDispute)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/balance-assertions", wrapper.ListBalanceAssertions)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/balance-assertions", wrapper.CreateBalanceAssertion)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/balance-assertions/{id}/resolution", wrapper.ResolveBalanceAssertion)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/balance-assertions/{id}/resolve", wrapper.ResolveBalanceAssertion)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/reconciliation", wrapper.GetReconciliationStatus)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/unlock", wrapper.UnlockAccount)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/statements/{id}/reconciliation", wrapper.ReconcileStatement)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/statements/{id}/reconcile", wrapper.ReconcileStatement)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions/{id}/attachments", wrapper.ListAttachments)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/attachments", wrapper.CreateAttachment)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/attachments/{id}", wrapper.DeleteAttachment)
@@ -2907,15 +2907,25 @@ type CreateAccountResponseObject interface {
 	VisitCreateAccountResponse(w http.ResponseWriter) error
 }
 
-type CreateAccount201JSONResponse Account
+type CreateAccount201ResponseHeaders struct {
+	Location *string
+}
+
+type CreateAccount201JSONResponse struct {
+	Body    Account
+	Headers CreateAccount201ResponseHeaders
+}
 
 func (response CreateAccount201JSONResponse) VisitCreateAccountResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
 	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
@@ -3517,12 +3527,18 @@ type CloseAccountResponseObject interface {
 	VisitCloseAccountResponse(w http.ResponseWriter) error
 }
 
-type CloseAccount204Response struct {
-}
+type CloseAccount200JSONResponse Account
 
-func (response CloseAccount204Response) VisitCloseAccountResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
+func (response CloseAccount200JSONResponse) VisitCloseAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type CloseAccount401ApplicationProblemPlusJSONResponse struct {
@@ -3897,12 +3913,18 @@ type UnlockAccountResponseObject interface {
 	VisitUnlockAccountResponse(w http.ResponseWriter) error
 }
 
-type UnlockAccount204Response struct {
-}
+type UnlockAccount200JSONResponse ReconciliationStatus
 
-func (response UnlockAccount204Response) VisitUnlockAccountResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
+func (response UnlockAccount200JSONResponse) VisitUnlockAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type UnlockAccount401ApplicationProblemPlusJSONResponse struct {
@@ -4233,15 +4255,25 @@ type AnticipateInstallmentsResponseObject interface {
 	VisitAnticipateInstallmentsResponse(w http.ResponseWriter) error
 }
 
-type AnticipateInstallments201JSONResponse Transaction
+type AnticipateInstallments201ResponseHeaders struct {
+	Location *string
+}
+
+type AnticipateInstallments201JSONResponse struct {
+	Body    Transaction
+	Headers AnticipateInstallments201ResponseHeaders
+}
 
 func (response AnticipateInstallments201JSONResponse) VisitAnticipateInstallmentsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
 	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
@@ -4300,15 +4332,25 @@ type CancelInstallmentPlanResponseObject interface {
 	VisitCancelInstallmentPlanResponse(w http.ResponseWriter) error
 }
 
-type CancelInstallmentPlan201JSONResponse Transaction
+type CancelInstallmentPlan201ResponseHeaders struct {
+	Location *string
+}
+
+type CancelInstallmentPlan201JSONResponse struct {
+	Body    Transaction
+	Headers CancelInstallmentPlan201ResponseHeaders
+}
 
 func (response CancelInstallmentPlan201JSONResponse) VisitCancelInstallmentPlanResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
 	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
@@ -4833,15 +4875,25 @@ type PayStatementResponseObject interface {
 	VisitPayStatementResponse(w http.ResponseWriter) error
 }
 
-type PayStatement201JSONResponse Transaction
+type PayStatement201ResponseHeaders struct {
+	Location *string
+}
+
+type PayStatement201JSONResponse struct {
+	Body    Transaction
+	Headers PayStatement201ResponseHeaders
+}
 
 func (response PayStatement201JSONResponse) VisitPayStatementResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
 	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
@@ -4900,12 +4952,18 @@ type ReconcileStatementResponseObject interface {
 	VisitReconcileStatementResponse(w http.ResponseWriter) error
 }
 
-type ReconcileStatement204Response struct {
-}
+type ReconcileStatement200JSONResponse StatementDetail
 
-func (response ReconcileStatement204Response) VisitReconcileStatementResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
+func (response ReconcileStatement200JSONResponse) VisitReconcileStatementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type ReconcileStatement401ApplicationProblemPlusJSONResponse struct {
@@ -5063,15 +5121,25 @@ type CreateTransactionResponseObject interface {
 	VisitCreateTransactionResponse(w http.ResponseWriter) error
 }
 
-type CreateTransaction201JSONResponse Transaction
+type CreateTransaction201ResponseHeaders struct {
+	Location *string
+}
+
+type CreateTransaction201JSONResponse struct {
+	Body    Transaction
+	Headers CreateTransaction201ResponseHeaders
+}
 
 func (response CreateTransaction201JSONResponse) VisitCreateTransactionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
 	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
@@ -5463,15 +5531,25 @@ type RefundTransactionResponseObject interface {
 	VisitRefundTransactionResponse(w http.ResponseWriter) error
 }
 
-type RefundTransaction201JSONResponse Transaction
+type RefundTransaction201ResponseHeaders struct {
+	Location *string
+}
+
+type RefundTransaction201JSONResponse struct {
+	Body    Transaction
+	Headers RefundTransaction201ResponseHeaders
+}
 
 func (response RefundTransaction201JSONResponse) VisitRefundTransactionResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
 		return err
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
 	w.WriteHeader(201)
 	_, err := buf.WriteTo(w)
 	return err
@@ -5582,12 +5660,18 @@ type VoidTransactionResponseObject interface {
 	VisitVoidTransactionResponse(w http.ResponseWriter) error
 }
 
-type VoidTransaction204Response struct {
-}
+type VoidTransaction200JSONResponse Transaction
 
-func (response VoidTransaction204Response) VisitVoidTransactionResponse(w http.ResponseWriter) error {
-	w.WriteHeader(204)
-	return nil
+func (response VoidTransaction200JSONResponse) VisitVoidTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 type VoidTransaction401ApplicationProblemPlusJSONResponse struct {
@@ -5711,10 +5795,10 @@ type StrictServerInterface interface {
 	// (GET /attachments/{id}/content)
 	GetAttachmentContent(ctx context.Context, request GetAttachmentContentRequestObject) (GetAttachmentContentResponseObject, error)
 	// ResolveBalanceAssertion Resolve the open difference of an assertion and reconcile the account.
-	// (POST /balance-assertions/{id}/resolution)
+	// (POST /balance-assertions/{id}/resolve)
 	ResolveBalanceAssertion(ctx context.Context, request ResolveBalanceAssertionRequestObject) (ResolveBalanceAssertionResponseObject, error)
 	// ResolveDispute Resolve a dispute; a won dispute refunds the remaining charged amount.
-	// (POST /disputes/{id}/resolution)
+	// (POST /disputes/{id}/resolve)
 	ResolveDispute(ctx context.Context, request ResolveDisputeRequestObject) (ResolveDisputeResponseObject, error)
 	// AnticipateInstallments Pay future installments early.
 	// (POST /installment-plans/{id}/anticipation)
@@ -5753,7 +5837,7 @@ type StrictServerInterface interface {
 	// (POST /statements/{id}/payments)
 	PayStatement(ctx context.Context, request PayStatementRequestObject) (PayStatementResponseObject, error)
 	// ReconcileStatement Confirm the institution's amount due for a closed statement.
-	// (POST /statements/{id}/reconciliation)
+	// (POST /statements/{id}/reconcile)
 	ReconcileStatement(ctx context.Context, request ReconcileStatementRequestObject) (ReconcileStatementResponseObject, error)
 	// ListTags List tags in use.
 	// (GET /tags)
