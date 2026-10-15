@@ -69,11 +69,12 @@ func serve() error {
 
 	dispatcher := outbox.NewDispatcher(pool, log)
 	identityModule := identity.New(pool, identity.Config{SecureCookies: !cfg.InsecureCookies}, log)
-	ledger.New(pool, dispatcher, log)
+	ledgerModule := ledger.New(pool, dispatcher, log)
 
 	mux := http.NewServeMux()
 	mux.Handle("GET /healthz", httpserver.Health(pool))
 	identityModule.RegisterRoutes(mux)
+	ledgerModule.RegisterRoutes(mux)
 	mux.Handle("/api/", httpserver.NotFound())
 
 	// Subscriptions are registered by the modules above; the dispatcher must stop before the pool closes.

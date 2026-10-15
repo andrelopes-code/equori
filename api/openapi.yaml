@@ -10,6 +10,8 @@ servers:
 tags:
   - name: identity
     description: Users and sessions.
+  - name: ledger
+    description: Accounts, transactions and balances.
 paths:
   /session:
     post:
@@ -69,6 +71,412 @@ paths:
                 $ref: "#/components/schemas/User"
         "401":
           $ref: "#/components/responses/Problem"
+  /settings:
+    get:
+      tags: [ledger]
+      operationId: getSettings
+      summary: Return the ledger settings.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+        "401":
+          $ref: "#/components/responses/Problem"
+    put:
+      tags: [ledger]
+      operationId: updateSettings
+      summary: Change the base currency; allowed only before the first transaction.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Settings"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /institutions:
+    get:
+      tags: [ledger]
+      operationId: listInstitutions
+      summary: List institutions.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstitutionList"
+        "401":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [ledger]
+      operationId: createInstitution
+      summary: Create an institution.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstitutionInput"
+      responses:
+        "201":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Institution"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /payees:
+    get:
+      tags: [ledger]
+      operationId: listPayees
+      summary: List payees.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayeeList"
+        "401":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [ledger]
+      operationId: createPayee
+      summary: Create a payee.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PayeeInput"
+      responses:
+        "201":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payee"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /tags:
+    get:
+      tags: [ledger]
+      operationId: listTags
+      summary: List tags in use.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TagList"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /accounts:
+    get:
+      tags: [ledger]
+      operationId: listAccounts
+      summary: List accounts, categories included.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountList"
+        "401":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [ledger]
+      operationId: createAccount
+      summary: Create an account or category.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountInput"
+      responses:
+        "201":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}:
+    get:
+      tags: [ledger]
+      operationId: getAccount
+      summary: Return an account.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    patch:
+      tags: [ledger]
+      operationId: updateAccount
+      summary: Rename or move an account.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountPatch"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/close:
+    post:
+      tags: [ledger]
+      operationId: closeAccount
+      summary: Close an account with zero balance.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CloseAccountInput"
+      responses:
+        "204":
+          description: OK.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/balance:
+    get:
+      tags: [ledger]
+      operationId: getAccountBalance
+      summary: Balance of an account at the end of a date.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: basis
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [booked, settled]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Balance"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /transactions:
+    get:
+      tags: [ledger]
+      operationId: listTransactions
+      summary: List transactions, newest first.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+        - name: account_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: payee_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: tag
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionPage"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [ledger]
+      operationId: createTransaction
+      summary: Record a transaction.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionInput"
+      responses:
+        "201":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /transactions/{id}:
+    get:
+      tags: [ledger]
+      operationId: getTransaction
+      summary: Return a transaction.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    put:
+      tags: [ledger]
+      operationId: correctTransaction
+      summary: Correct a transaction; creates a new version.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CorrectionInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /transactions/{id}/void:
+    post:
+      tags: [ledger]
+      operationId: voidTransaction
+      summary: Void a transaction; it stays in history.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VoidInput"
+      responses:
+        "204":
+          description: OK.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /transactions/{id}/versions:
+    get:
+      tags: [ledger]
+      operationId: listTransactionVersions
+      summary: Previous versions of a transaction.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionVersionList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
 security:
   - sessionCookie: []
 components:
@@ -78,6 +486,28 @@ components:
       in: cookie
       name: equori_session
   parameters:
+    ID:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
     SessionCookie:
       name: equori_session
       in: cookie
@@ -92,6 +522,312 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
   schemas:
+    Money:
+      type: object
+      required: [amount, currency]
+      properties:
+        amount:
+          type: integer
+          format: int64
+          description: Integer minor units (ADR 005).
+        currency:
+          type: string
+          example: BRL
+    Settings:
+      type: object
+      required: [base_currency]
+      properties:
+        base_currency:
+          type: string
+    InstitutionInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+    Institution:
+      allOf:
+        - $ref: "#/components/schemas/InstitutionInput"
+        - type: object
+          required: [id]
+          properties:
+            id:
+              type: string
+              format: uuid
+    InstitutionList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Institution"
+    PayeeInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+    Payee:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    PayeeList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Payee"
+    TagList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: string
+    AccountClass:
+      type: string
+      enum: [asset, liability, equity, income, expense]
+    AccountInput:
+      type: object
+      required: [name, class, currency]
+      properties:
+        name:
+          type: string
+        class:
+          $ref: "#/components/schemas/AccountClass"
+        kind:
+          type: string
+          enum: [checking, savings, cash, wallet, benefit, reserve, brokerage, receivable, credit_card, loan, payable]
+        currency:
+          type: string
+        parent_id:
+          type: string
+          format: uuid
+        institution_id:
+          type: string
+          format: uuid
+        opened_on:
+          type: string
+          format: date
+        yield_mode:
+          type: string
+          enum: [none, auto]
+    Account:
+      allOf:
+        - $ref: "#/components/schemas/AccountInput"
+        - type: object
+          required: [id, opened_on, yield_mode]
+          properties:
+            id:
+              type: string
+              format: uuid
+            closed_on:
+              type: string
+              format: date
+            system_role:
+              type: string
+    AccountList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Account"
+    AccountPatch:
+      type: object
+      properties:
+        name:
+          type: string
+        parent_id:
+          type: string
+          format: uuid
+        institution_id:
+          type: string
+          format: uuid
+    CloseAccountInput:
+      type: object
+      required: [closed_on]
+      properties:
+        closed_on:
+          type: string
+          format: date
+    Balance:
+      type: object
+      required: [account_id, date, basis, balance]
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        basis:
+          type: string
+          enum: [booked, settled]
+        balance:
+          $ref: "#/components/schemas/Money"
+    PostingInput:
+      type: object
+      required: [account_id, amount]
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        amount:
+          $ref: "#/components/schemas/Money"
+        weight:
+          $ref: "#/components/schemas/Money"
+        status:
+          type: string
+          enum: [pending, cleared, reconciled]
+        settled_on:
+          type: string
+          format: date
+        original:
+          $ref: "#/components/schemas/Money"
+        memo:
+          type: string
+    Posting:
+      allOf:
+        - $ref: "#/components/schemas/PostingInput"
+        - type: object
+          required: [id, weight, status]
+          properties:
+            id:
+              type: string
+              format: uuid
+    Link:
+      type: object
+      required: [type, target]
+      properties:
+        type:
+          type: string
+          enum: [refund_of, reimbursement_of, cancellation_of, anticipation_of, chargeback_of, correction_of]
+        target:
+          type: string
+          format: uuid
+    TransactionInput:
+      type: object
+      required: [date, postings]
+      properties:
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+        payee_id:
+          type: string
+          format: uuid
+        tags:
+          type: array
+          items:
+            type: string
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/Link"
+        postings:
+          type: array
+          items:
+            $ref: "#/components/schemas/PostingInput"
+    CorrectionInput:
+      allOf:
+        - $ref: "#/components/schemas/TransactionInput"
+        - type: object
+          required: [expected_version, reason]
+          properties:
+            expected_version:
+              type: integer
+            reason:
+              type: string
+    Transaction:
+      type: object
+      required: [id, date, description, balancing_currency, origin, version, tags, links, postings]
+      properties:
+        id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+        payee_id:
+          type: string
+          format: uuid
+        balancing_currency:
+          type: string
+        origin:
+          type: string
+          enum: [manual, import, schedule, system]
+        version:
+          type: integer
+        voided_at:
+          type: string
+          format: date-time
+        void_reason:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/Link"
+        postings:
+          type: array
+          items:
+            $ref: "#/components/schemas/Posting"
+    TransactionPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Transaction"
+        next_cursor:
+          type: string
+    VoidInput:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+    TransactionVersion:
+      type: object
+      required: [version, reason, replaced_at, transaction]
+      properties:
+        version:
+          type: integer
+        reason:
+          type: string
+        replaced_at:
+          type: string
+          format: date-time
+        transaction:
+          $ref: "#/components/schemas/Transaction"
+    TransactionVersionList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransactionVersion"
     Credentials:
       type: object
       required: [email, password]
@@ -129,7 +865,8 @@ components:
           description: |
             Stable error identifier. Values: invalid_request, request_too_large, invalid_credentials,
             too_many_attempts, unauthenticated, forbidden, not_found, validation_failed, internal_error,
-            server_busy.
+            server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
+            account_not_empty, settings_locked.
         request_id:
           type: string
         errors:

@@ -7,11 +7,13 @@ import (
 	"encoding/json/v2"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/andrelopes-code/equori/internal/ledger/internal/adapter/httpapi"
 	"github.com/andrelopes-code/equori/internal/ledger/internal/adapter/postgres"
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
@@ -31,15 +33,16 @@ const (
 type TransactionEvent = app.TransactionEvent
 
 type Module struct {
-	svc *app.Service
-	log *slog.Logger
+	http *httpapi.Server
 }
 
 func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, log *slog.Logger) *Module {
-	m := &Module{svc: app.NewService(postgres.NewRepository(pool), time.Now), log: log}
+	svc := app.NewService(postgres.NewRepository(pool), time.Now)
 	dispatcher.Subscribe("ledger-provisioning", "identity.user_created.v1", provision)
-	return m
+	return &Module{http: httpapi.NewServer(svc, log)}
 }
+
+func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 
 type userCreated struct {
 	UserID int64 `json:"user_id"`
