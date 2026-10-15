@@ -46,6 +46,31 @@ func (q *Queries) EnsureStatement(ctx context.Context, arg EnsureStatementParams
 	return id, err
 }
 
+const getStatement = `-- name: GetStatement :one
+SELECT id, user_id, account_id, reference_month, closing_date, due_date, financed_by_plan_id, created_at FROM ledger_statement WHERE user_id = $1 AND id = $2
+`
+
+type GetStatementParams struct {
+	UserID int64
+	ID     uuid.UUID
+}
+
+func (q *Queries) GetStatement(ctx context.Context, arg GetStatementParams) (LedgerStatement, error) {
+	row := q.db.QueryRow(ctx, getStatement, arg.UserID, arg.ID)
+	var i LedgerStatement
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.AccountID,
+		&i.ReferenceMonth,
+		&i.ClosingDate,
+		&i.DueDate,
+		&i.FinancedByPlanID,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const insertBillingRule = `-- name: InsertBillingRule :one
 INSERT INTO ledger_billing_cycle_rule (
     user_id, account_id, effective_from, closing_day, due_day, closing_day_assignment, due_date_adjustment, calendar
@@ -292,6 +317,60 @@ func (q *Queries) ListStatementLines(ctx context.Context, arg ListStatementLines
 	for rows.Next() {
 		var i ListStatementLinesRow
 		if err := rows.Scan(&i.StatementID, &i.CardRole, &i.Amount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listStatementPostings = `-- name: ListStatementPostings :many
+SELECT p.transaction_id, t.date, t.description, p.card_role, p.amount,
+       p.installment_plan_id, p.installment_number, p.installment_count
+FROM ledger_posting p
+JOIN ledger_transaction t ON t.id = p.transaction_id
+WHERE p.user_id = $1 AND p.statement_id = $2 AND NOT p.voided
+ORDER BY t.date, t.id, p.position
+`
+
+type ListStatementPostingsParams struct {
+	UserID      int64
+	StatementID uuid.NullUUID
+}
+
+type ListStatementPostingsRow struct {
+	TransactionID     uuid.UUID
+	Date              time.Time
+	Description       string
+	CardRole          *string
+	Amount            int64
+	InstallmentPlanID uuid.NullUUID
+	InstallmentNumber *int16
+	InstallmentCount  *int16
+}
+
+func (q *Queries) ListStatementPostings(ctx context.Context, arg ListStatementPostingsParams) ([]ListStatementPostingsRow, error) {
+	rows, err := q.db.Query(ctx, listStatementPostings, arg.UserID, arg.StatementID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListStatementPostingsRow
+	for rows.Next() {
+		var i ListStatementPostingsRow
+		if err := rows.Scan(
+			&i.TransactionID,
+			&i.Date,
+			&i.Description,
+			&i.CardRole,
+			&i.Amount,
+			&i.InstallmentPlanID,
+			&i.InstallmentNumber,
+			&i.InstallmentCount,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

@@ -474,3 +474,29 @@ func (r *Repository) Statements(ctx context.Context, userID int64, accountID uui
 	}
 	return out, nil
 }
+
+func (r *Repository) StatementAccount(ctx context.Context, userID int64, statementID uuid.UUID) (uuid.UUID, error) {
+	row, err := r.q.GetStatement(ctx, GetStatementParams{UserID: userID, ID: statementID})
+	if err != nil {
+		return uuid.Nil, notFound(err)
+	}
+	return row.AccountID, nil
+}
+
+func (r *Repository) StatementPostings(ctx context.Context, userID int64, statementID uuid.UUID) ([]app.StatementPosting, error) {
+	rows, err := r.q.ListStatementPostings(ctx, ListStatementPostingsParams{UserID: userID, StatementID: nullUUID(statementID)})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]app.StatementPosting, len(rows))
+	for i, row := range rows {
+		out[i] = app.StatementPosting{
+			TransactionID: row.TransactionID, Date: row.Date, Description: row.Description,
+			CardRole: deref(row.CardRole), Amount: row.Amount,
+		}
+		if row.InstallmentPlanID.Valid && row.InstallmentNumber != nil && row.InstallmentCount != nil {
+			out[i].Installment = &domain.InstallmentRef{PlanID: row.InstallmentPlanID.UUID, Number: int(*row.InstallmentNumber), Count: int(*row.InstallmentCount)}
+		}
+	}
+	return out, nil
+}

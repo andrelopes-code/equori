@@ -50,6 +50,16 @@ type Statement struct {
 	Input      domain.StatementInput
 }
 
+// StatementPosting is one posting billed on a statement, with its transaction context.
+type StatementPosting struct {
+	TransactionID uuid.UUID
+	Date          time.Time
+	Description   string
+	CardRole      string
+	Amount        int64
+	Installment   *domain.InstallmentRef
+}
+
 type Settings struct {
 	UserID       int64
 	BaseCurrency money.Currency
@@ -153,6 +163,8 @@ type Repository interface {
 
 	EnsureStatement(ctx context.Context, userID int64, accountID uuid.UUID, d domain.StatementDates, due time.Time) (uuid.UUID, error)
 	Statements(ctx context.Context, userID int64, accountID uuid.UUID) ([]Statement, error)
+	StatementAccount(ctx context.Context, userID int64, statementID uuid.UUID) (uuid.UUID, error)
+	StatementPostings(ctx context.Context, userID int64, statementID uuid.UUID) ([]StatementPosting, error)
 
 	// BalanceAt sums the postings of the account and its descendants up to and including date.
 	BalanceAt(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis Basis) (int64, error)

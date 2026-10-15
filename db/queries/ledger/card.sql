@@ -38,3 +38,14 @@ SELECT * FROM ledger_statement WHERE user_id = $1 AND account_id = $2 ORDER BY r
 SELECT p.statement_id, p.card_role, p.amount
 FROM ledger_posting p
 WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided AND p.statement_id IS NOT NULL;
+
+-- name: GetStatement :one
+SELECT * FROM ledger_statement WHERE user_id = $1 AND id = $2;
+
+-- name: ListStatementPostings :many
+SELECT p.transaction_id, t.date, t.description, p.card_role, p.amount,
+       p.installment_plan_id, p.installment_number, p.installment_count
+FROM ledger_posting p
+JOIN ledger_transaction t ON t.id = p.transaction_id
+WHERE p.user_id = $1 AND p.statement_id = $2 AND NOT p.voided
+ORDER BY t.date, t.id, p.position;

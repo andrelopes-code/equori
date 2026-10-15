@@ -345,6 +345,87 @@ func (e PostingInputStatus) Valid() bool {
 	}
 }
 
+// Defines values for StatementDetailStatus.
+const (
+	StatementDetailStatusClosed        StatementDetailStatus = "closed"
+	StatementDetailStatusFinanced      StatementDetailStatus = "financed"
+	StatementDetailStatusOpen          StatementDetailStatus = "open"
+	StatementDetailStatusOverdue       StatementDetailStatus = "overdue"
+	StatementDetailStatusPaid          StatementDetailStatus = "paid"
+	StatementDetailStatusPartiallyPaid StatementDetailStatus = "partially_paid"
+)
+
+// Valid indicates whether the value is a known member of the StatementDetailStatus enum.
+func (e StatementDetailStatus) Valid() bool {
+	switch e {
+	case StatementDetailStatusClosed:
+		return true
+	case StatementDetailStatusFinanced:
+		return true
+	case StatementDetailStatusOpen:
+		return true
+	case StatementDetailStatusOverdue:
+		return true
+	case StatementDetailStatusPaid:
+		return true
+	case StatementDetailStatusPartiallyPaid:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for StatementPostingCardRole.
+const (
+	StatementPostingCardRoleCharge  StatementPostingCardRole = "charge"
+	StatementPostingCardRoleCredit  StatementPostingCardRole = "credit"
+	StatementPostingCardRolePayment StatementPostingCardRole = "payment"
+)
+
+// Valid indicates whether the value is a known member of the StatementPostingCardRole enum.
+func (e StatementPostingCardRole) Valid() bool {
+	switch e {
+	case StatementPostingCardRoleCharge:
+		return true
+	case StatementPostingCardRoleCredit:
+		return true
+	case StatementPostingCardRolePayment:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for StatementSummaryStatus.
+const (
+	StatementSummaryStatusClosed        StatementSummaryStatus = "closed"
+	StatementSummaryStatusFinanced      StatementSummaryStatus = "financed"
+	StatementSummaryStatusOpen          StatementSummaryStatus = "open"
+	StatementSummaryStatusOverdue       StatementSummaryStatus = "overdue"
+	StatementSummaryStatusPaid          StatementSummaryStatus = "paid"
+	StatementSummaryStatusPartiallyPaid StatementSummaryStatus = "partially_paid"
+)
+
+// Valid indicates whether the value is a known member of the StatementSummaryStatus enum.
+func (e StatementSummaryStatus) Valid() bool {
+	switch e {
+	case StatementSummaryStatusClosed:
+		return true
+	case StatementSummaryStatusFinanced:
+		return true
+	case StatementSummaryStatusOpen:
+		return true
+	case StatementSummaryStatusOverdue:
+		return true
+	case StatementSummaryStatusPaid:
+		return true
+	case StatementSummaryStatusPartiallyPaid:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for TransactionOrigin.
 const (
 	Import   TransactionOrigin = "import"
@@ -664,6 +745,65 @@ type Settings struct {
 	BaseCurrency string `json:"base_currency"`
 }
 
+// StatementDetail defines model for StatementDetail.
+type StatementDetail struct {
+	AccountId   openapi_types.UUID    `json:"account_id"`
+	AmountDue   int64                 `json:"amount_due"`
+	Charges     int64                 `json:"charges"`
+	ClosingDate openapi_types.Date    `json:"closing_date"`
+	Credits     int64                 `json:"credits"`
+	Currency    string                `json:"currency"`
+	DueDate     openapi_types.Date    `json:"due_date"`
+	Id          openapi_types.UUID    `json:"id"`
+	Opening     int64                 `json:"opening"`
+	Payments    int64                 `json:"payments"`
+	Postings    []StatementPosting    `json:"postings"`
+	Reference   string                `json:"reference"`
+	Status      StatementDetailStatus `json:"status"`
+	Unpaid      int64                 `json:"unpaid"`
+}
+
+// StatementDetailStatus defines model for StatementDetail.Status.
+type StatementDetailStatus string
+
+// StatementList defines model for StatementList.
+type StatementList struct {
+	Items []StatementSummary `json:"items"`
+}
+
+// StatementPosting defines model for StatementPosting.
+type StatementPosting struct {
+	Amount        Money                    `json:"amount"`
+	CardRole      StatementPostingCardRole `json:"card_role"`
+	Date          openapi_types.Date       `json:"date"`
+	Description   string                   `json:"description"`
+	Installment   *Installment             `json:"installment,omitempty"`
+	TransactionId openapi_types.UUID       `json:"transaction_id"`
+}
+
+// StatementPostingCardRole defines model for StatementPosting.CardRole.
+type StatementPostingCardRole string
+
+// StatementSummary Amounts are integer minor units, positive when owed by the user.
+type StatementSummary struct {
+	AccountId   openapi_types.UUID     `json:"account_id"`
+	AmountDue   int64                  `json:"amount_due"`
+	Charges     int64                  `json:"charges"`
+	ClosingDate openapi_types.Date     `json:"closing_date"`
+	Credits     int64                  `json:"credits"`
+	Currency    string                 `json:"currency"`
+	DueDate     openapi_types.Date     `json:"due_date"`
+	Id          openapi_types.UUID     `json:"id"`
+	Opening     int64                  `json:"opening"`
+	Payments    int64                  `json:"payments"`
+	Reference   string                 `json:"reference"`
+	Status      StatementSummaryStatus `json:"status"`
+	Unpaid      int64                  `json:"unpaid"`
+}
+
+// StatementSummaryStatus defines model for StatementSummary.Status.
+type StatementSummaryStatus string
+
 // TagList defines model for TagList.
 type TagList struct {
 	Items []string `json:"items"`
@@ -739,6 +879,12 @@ type GetAccountBalanceParams struct {
 
 // GetAccountBalanceParamsBasis defines parameters for GetAccountBalance.
 type GetAccountBalanceParamsBasis string
+
+// ListStatementsParams defines parameters for ListStatements.
+type ListStatementsParams struct {
+	From *string `form:"from,omitempty" json:"from,omitempty"`
+	To   *string `form:"to,omitempty" json:"to,omitempty"`
+}
 
 // ListTransactionsParams defines parameters for ListTransactions.
 type ListTransactionsParams struct {
@@ -825,6 +971,9 @@ type ServerInterface interface {
 	// CreateCreditLimit Add a credit limit version.
 	// (POST /accounts/{id}/credit-limits)
 	CreateCreditLimit(w http.ResponseWriter, r *http.Request, id ID)
+	// ListStatements Statements of a card with amounts and status derived from its postings.
+	// (GET /accounts/{id}/statements)
+	ListStatements(w http.ResponseWriter, r *http.Request, id ID, params ListStatementsParams)
 	// ListInstitutions List institutions.
 	// (GET /institutions)
 	ListInstitutions(w http.ResponseWriter, r *http.Request)
@@ -843,6 +992,9 @@ type ServerInterface interface {
 	// UpdateSettings Change the base currency; allowed only before the first transaction.
 	// (PUT /settings)
 	UpdateSettings(w http.ResponseWriter, r *http.Request)
+	// GetStatement A statement with its postings.
+	// (GET /statements/{id})
+	GetStatement(w http.ResponseWriter, r *http.Request, id ID)
 	// ListTags List tags in use.
 	// (GET /tags)
 	ListTags(w http.ResponseWriter, r *http.Request)
@@ -1192,6 +1344,61 @@ func (siw *ServerInterfaceWrapper) CreateCreditLimit(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// ListStatements operation middleware
+func (siw *ServerInterfaceWrapper) ListStatements(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListStatementsParams
+
+	// ------------- Optional query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListStatements(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListInstitutions operation middleware
 func (siw *ServerInterfaceWrapper) ListInstitutions(w http.ResponseWriter, r *http.Request) {
 
@@ -1267,6 +1474,32 @@ func (siw *ServerInterfaceWrapper) UpdateSettings(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateSettings(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetStatement operation middleware
+func (siw *ServerInterfaceWrapper) GetStatement(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetStatement(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1664,6 +1897,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/credit-limits", wrapper.CreateCreditLimit)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/cards", wrapper.ListCards)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/cards", wrapper.CreateCard)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/statements", wrapper.ListStatements)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statements/{id}", wrapper.GetStatement)
 
 	return m
 }
@@ -2377,6 +2612,73 @@ func (response CreateCreditLimit422ApplicationProblemPlusJSONResponse) VisitCrea
 	return err
 }
 
+type ListStatementsRequestObject struct {
+	Id     ID `json:"id"`
+	Params ListStatementsParams
+}
+
+type ListStatementsResponseObject interface {
+	VisitListStatementsResponse(w http.ResponseWriter) error
+}
+
+type ListStatements200JSONResponse StatementList
+
+func (response ListStatements200JSONResponse) VisitListStatementsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListStatements401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListStatements401ApplicationProblemPlusJSONResponse) VisitListStatementsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListStatements404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListStatements404ApplicationProblemPlusJSONResponse) VisitListStatementsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListStatements422ApplicationProblemPlusJSONResponse Problem
+
+func (response ListStatements422ApplicationProblemPlusJSONResponse) VisitListStatementsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListInstitutionsRequestObject struct {
 }
 
@@ -2654,6 +2956,58 @@ func (response UpdateSettings422ApplicationProblemPlusJSONResponse) VisitUpdateS
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetStatementRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type GetStatementResponseObject interface {
+	VisitGetStatementResponse(w http.ResponseWriter) error
+}
+
+type GetStatement200JSONResponse StatementDetail
+
+func (response GetStatement200JSONResponse) VisitGetStatementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetStatement401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetStatement401ApplicationProblemPlusJSONResponse) VisitGetStatementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetStatement404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetStatement404ApplicationProblemPlusJSONResponse) VisitGetStatementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -3097,6 +3451,9 @@ type StrictServerInterface interface {
 	// CreateCreditLimit Add a credit limit version.
 	// (POST /accounts/{id}/credit-limits)
 	CreateCreditLimit(ctx context.Context, request CreateCreditLimitRequestObject) (CreateCreditLimitResponseObject, error)
+	// ListStatements Statements of a card with amounts and status derived from its postings.
+	// (GET /accounts/{id}/statements)
+	ListStatements(ctx context.Context, request ListStatementsRequestObject) (ListStatementsResponseObject, error)
 	// ListInstitutions List institutions.
 	// (GET /institutions)
 	ListInstitutions(ctx context.Context, request ListInstitutionsRequestObject) (ListInstitutionsResponseObject, error)
@@ -3115,6 +3472,9 @@ type StrictServerInterface interface {
 	// UpdateSettings Change the base currency; allowed only before the first transaction.
 	// (PUT /settings)
 	UpdateSettings(ctx context.Context, request UpdateSettingsRequestObject) (UpdateSettingsResponseObject, error)
+	// GetStatement A statement with its postings.
+	// (GET /statements/{id})
+	GetStatement(ctx context.Context, request GetStatementRequestObject) (GetStatementResponseObject, error)
 	// ListTags List tags in use.
 	// (GET /tags)
 	ListTags(ctx context.Context, request ListTagsRequestObject) (ListTagsResponseObject, error)
@@ -3528,6 +3888,33 @@ func (sh *strictHandler) CreateCreditLimit(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// ListStatements operation middleware
+func (sh *strictHandler) ListStatements(w http.ResponseWriter, r *http.Request, id ID, params ListStatementsParams) {
+	var request ListStatementsRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListStatements(ctx, request.(ListStatementsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListStatements")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListStatementsResponseObject); ok {
+		if err := validResponse.VisitListStatementsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListInstitutions operation middleware
 func (sh *strictHandler) ListInstitutions(w http.ResponseWriter, r *http.Request) {
 	var request ListInstitutionsRequestObject
@@ -3686,6 +4073,32 @@ func (sh *strictHandler) UpdateSettings(w http.ResponseWriter, r *http.Request) 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateSettingsResponseObject); ok {
 		if err := validResponse.VisitUpdateSettingsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetStatement operation middleware
+func (sh *strictHandler) GetStatement(w http.ResponseWriter, r *http.Request, id ID) {
+	var request GetStatementRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetStatement(ctx, request.(GetStatementRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetStatement")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetStatementResponseObject); ok {
+		if err := validResponse.VisitGetStatementResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -684,6 +684,54 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /accounts/{id}/statements:
+    get:
+      tags: [ledger]
+      operationId: listStatements
+      summary: Statements of a card with amounts and status derived from its postings.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - name: from
+          in: query
+          schema:
+            type: string
+            pattern: "^[0-9]{4}-[0-9]{2}$"
+        - name: to
+          in: query
+          schema:
+            type: string
+            pattern: "^[0-9]{4}-[0-9]{2}$"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatementList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /statements/{id}:
+    get:
+      tags: [ledger]
+      operationId: getStatement
+      summary: A statement with its postings.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatementDetail"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
 security:
   - sessionCookie: []
 components:
@@ -729,6 +777,85 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
   schemas:
+    StatementSummary:
+      type: object
+      required: [id, account_id, reference, closing_date, due_date, currency, opening, charges, credits, amount_due, payments, unpaid, status]
+      description: Amounts are integer minor units, positive when owed by the user.
+      properties:
+        id:
+          type: string
+          format: uuid
+        account_id:
+          type: string
+          format: uuid
+        reference:
+          type: string
+        closing_date:
+          type: string
+          format: date
+        due_date:
+          type: string
+          format: date
+        currency:
+          type: string
+        opening:
+          type: integer
+          format: int64
+        charges:
+          type: integer
+          format: int64
+        credits:
+          type: integer
+          format: int64
+        amount_due:
+          type: integer
+          format: int64
+        payments:
+          type: integer
+          format: int64
+        unpaid:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum: [open, closed, paid, partially_paid, overdue, financed]
+    StatementList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatementSummary"
+    StatementPosting:
+      type: object
+      required: [transaction_id, date, description, card_role, amount]
+      properties:
+        transaction_id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+        card_role:
+          type: string
+          enum: [charge, credit, payment]
+        amount:
+          $ref: "#/components/schemas/Money"
+        installment:
+          $ref: "#/components/schemas/Installment"
+    StatementDetail:
+      allOf:
+        - $ref: "#/components/schemas/StatementSummary"
+        - type: object
+          required: [postings]
+          properties:
+            postings:
+              type: array
+              items:
+                $ref: "#/components/schemas/StatementPosting"
     BillingCycleRule:
       type: object
       required: [effective_from, closing_day, due_day]
