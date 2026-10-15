@@ -259,22 +259,30 @@ func (s *Service) RecordTransaction(ctx context.Context, userID int64, t domain.
 	t.Version = 0
 	var created domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		valid, err := s.validate(ctx, r, t)
-		if err != nil {
-			return err
-		}
-		if err := s.bill(ctx, r, &valid); err != nil {
-			return err
-		}
-		if created, err = r.InsertTransaction(ctx, valid); err != nil {
-			return err
-		}
-		return r.Publish(ctx, outbox.Event{
-			Type: EventTransactionRecorded, UserID: userID, AggregateID: created.ID.String(),
-			Payload: TransactionEvent{TransactionID: created.ID, Date: created.Date.Format(time.DateOnly), AccountIDs: accountIDs(created)},
-		})
+		var err error
+		created, err = s.insert(ctx, r, t)
+		return err
 	})
 	return created, err
+}
+
+// insert validates, bills, stores and publishes t inside the caller's database transaction.
+func (s *Service) insert(ctx context.Context, r Repository, t domain.Transaction) (domain.Transaction, error) {
+	valid, err := s.validate(ctx, r, t)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+	if err := s.bill(ctx, r, &valid); err != nil {
+		return domain.Transaction{}, err
+	}
+	created, err := r.InsertTransaction(ctx, valid)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+	return created, r.Publish(ctx, outbox.Event{
+		Type: EventTransactionRecorded, UserID: t.UserID, AggregateID: created.ID.String(),
+		Payload: TransactionEvent{TransactionID: created.ID, Date: created.Date.Format(time.DateOnly), AccountIDs: accountIDs(created)},
+	})
 }
 
 func (s *Service) CorrectTransaction(ctx context.Context, userID int64, id uuid.UUID, expectedVersion int, next domain.Transaction, reason string) (domain.Transaction, error) {

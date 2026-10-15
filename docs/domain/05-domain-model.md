@@ -221,7 +221,7 @@ flowchart LR
 | Rule | Statement |
 |---|---|
 | Creation | A statement exists for every reference month from the card's first posting to the last statement with a billed installment. It is created on demand by the billing service. |
-| Dates | `closingDate` and `dueDate` come from the billing cycle rule in force for that reference month (T05). The due date is shifted by the business-day calendar per `dueDateAdjustment` (`following` by default) (T06). Stored on creation; later rule changes do not move them unless the statement is still open and has no postings. |
+| Dates | `closingDate` and `dueDate` come from the billing cycle rule in force for that reference month (T05). The due date is shifted by the business-day calendar per `dueDateAdjustment` (`following` by default) (T06). Stored on creation. A new rule version re-dates the statements from its effective month whose closing date has not passed; their postings keep the reference month. Closed statements keep their dates. |
 | Amount due | Opening amount + charges − credits. Derived, never stored. |
 | Payments | Card postings with role `payment`, billed on the statement they pay. Every card posting has a role: `charge`, `credit` or `payment`. |
 | Unpaid amount | Amount due − payments, when positive after the due date. Becomes the opening amount of the next statement (revolving credit). |

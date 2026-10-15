@@ -49,3 +49,27 @@ FROM ledger_posting p
 JOIN ledger_transaction t ON t.id = p.transaction_id
 WHERE p.user_id = $1 AND p.statement_id = $2 AND NOT p.voided
 ORDER BY t.date, t.id, p.position;
+
+-- name: InsertInstallmentPlan :exec
+INSERT INTO ledger_installment_plan (
+    id, user_id, account_id, origin_transaction_id, plan_kind, installment_count, principal, interest, first_statement_id
+) VALUES (@id, @user_id, @account_id, @origin_transaction_id, @plan_kind, @installment_count, @principal, @interest, @first_statement_id);
+
+-- name: GetSystemAccount :one
+SELECT * FROM ledger_account WHERE user_id = $1 AND system_role = $2;
+
+-- name: ListOpenStatementsFrom :many
+SELECT * FROM ledger_statement
+WHERE user_id = @user_id AND account_id = @account_id AND reference_month >= @from_month AND closing_date > @today
+ORDER BY reference_month;
+
+-- name: UpdateStatementDates :exec
+UPDATE ledger_statement SET closing_date = @closing_date, due_date = @due_date WHERE id = @id;
+
+-- name: CommittedInstallments :one
+SELECT coalesce(-sum(p.amount), 0)::bigint
+FROM ledger_posting p
+JOIN ledger_statement s ON s.id = p.statement_id
+WHERE p.user_id = @user_id AND p.account_id = @account_id AND NOT p.voided
+  AND p.installment_plan_id IS NOT NULL AND p.card_role = 'charge'
+  AND s.reference_month = @reference_month AND s.closing_date > @today;

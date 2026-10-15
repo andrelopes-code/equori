@@ -164,6 +164,11 @@ type Repository interface {
 	EnsureStatement(ctx context.Context, userID int64, accountID uuid.UUID, d domain.StatementDates, due time.Time) (uuid.UUID, error)
 	Statements(ctx context.Context, userID int64, accountID uuid.UUID) ([]Statement, error)
 	StatementAccount(ctx context.Context, userID int64, statementID uuid.UUID) (uuid.UUID, error)
+	OpenStatementsFrom(ctx context.Context, userID int64, accountID uuid.UUID, from domain.ReferenceMonth, today time.Time) ([]Statement, error)
+	UpdateStatementDates(ctx context.Context, id uuid.UUID, closing, due time.Time) error
+	InsertPlan(ctx context.Context, p domain.InstallmentPlan) error
+	SystemAccount(ctx context.Context, userID int64, role domain.SystemRole) (domain.Account, error)
+	CommittedInstallments(ctx context.Context, userID int64, accountID uuid.UUID, month domain.ReferenceMonth, today time.Time) (int64, error)
 	StatementPostings(ctx context.Context, userID int64, statementID uuid.UUID) ([]StatementPosting, error)
 
 	// BalanceAt sums the postings of the account and its descendants up to and including date.

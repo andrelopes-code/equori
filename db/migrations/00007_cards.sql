@@ -82,7 +82,8 @@ ALTER TABLE ledger_posting
     ADD COLUMN installment_number  smallint,
     ADD COLUMN installment_count   smallint,
     ADD FOREIGN KEY (user_id, statement_id) REFERENCES ledger_statement (user_id, id),
-    ADD FOREIGN KEY (user_id, installment_plan_id) REFERENCES ledger_installment_plan (user_id, id),
+    -- Deferred: a purchase writes its postings and its plan in one transaction, in either order.
+    ADD FOREIGN KEY (user_id, installment_plan_id) REFERENCES ledger_installment_plan (user_id, id) DEFERRABLE INITIALLY DEFERRED,
     ADD CHECK ((statement_id IS NULL) = (card_role IS NULL)),
     ADD CHECK ((installment_plan_id IS NULL) = (installment_number IS NULL)
                AND (installment_number IS NULL) = (installment_count IS NULL)),

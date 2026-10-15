@@ -12,6 +12,34 @@ import (
 	"github.com/google/uuid"
 )
 
+const committedInstallments = `-- name: CommittedInstallments :one
+SELECT coalesce(-sum(p.amount), 0)::bigint
+FROM ledger_posting p
+JOIN ledger_statement s ON s.id = p.statement_id
+WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided
+  AND p.installment_plan_id IS NOT NULL AND p.card_role = 'charge'
+  AND s.reference_month = $3 AND s.closing_date > $4
+`
+
+type CommittedInstallmentsParams struct {
+	UserID         int64
+	AccountID      uuid.UUID
+	ReferenceMonth time.Time
+	Today          time.Time
+}
+
+func (q *Queries) CommittedInstallments(ctx context.Context, arg CommittedInstallmentsParams) (int64, error) {
+	row := q.db.QueryRow(ctx, committedInstallments,
+		arg.UserID,
+		arg.AccountID,
+		arg.ReferenceMonth,
+		arg.Today,
+	)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const ensureStatement = `-- name: EnsureStatement :one
 WITH inserted AS (
     INSERT INTO ledger_statement (user_id, account_id, reference_month, closing_date, due_date)
@@ -67,6 +95,38 @@ func (q *Queries) GetStatement(ctx context.Context, arg GetStatementParams) (Led
 		&i.DueDate,
 		&i.FinancedByPlanID,
 		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getSystemAccount = `-- name: GetSystemAccount :one
+SELECT id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at FROM ledger_account WHERE user_id = $1 AND system_role = $2
+`
+
+type GetSystemAccountParams struct {
+	UserID     int64
+	SystemRole *string
+}
+
+func (q *Queries) GetSystemAccount(ctx context.Context, arg GetSystemAccountParams) (LedgerAccount, error) {
+	row := q.db.QueryRow(ctx, getSystemAccount, arg.UserID, arg.SystemRole)
+	var i LedgerAccount
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.AccountClass,
+		&i.Kind,
+		&i.Instrument,
+		&i.ParentID,
+		&i.InstitutionID,
+		&i.CounterpartyPayeeID,
+		&i.OpenedOn,
+		&i.ClosedOn,
+		&i.YieldMode,
+		&i.SystemRole,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -178,6 +238,39 @@ func (q *Queries) InsertCreditLimit(ctx context.Context, arg InsertCreditLimitPa
 	return i, err
 }
 
+const insertInstallmentPlan = `-- name: InsertInstallmentPlan :exec
+INSERT INTO ledger_installment_plan (
+    id, user_id, account_id, origin_transaction_id, plan_kind, installment_count, principal, interest, first_statement_id
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+`
+
+type InsertInstallmentPlanParams struct {
+	ID                  uuid.UUID
+	UserID              int64
+	AccountID           uuid.UUID
+	OriginTransactionID uuid.UUID
+	PlanKind            string
+	InstallmentCount    int16
+	Principal           int64
+	Interest            int64
+	FirstStatementID    uuid.UUID
+}
+
+func (q *Queries) InsertInstallmentPlan(ctx context.Context, arg InsertInstallmentPlanParams) error {
+	_, err := q.db.Exec(ctx, insertInstallmentPlan,
+		arg.ID,
+		arg.UserID,
+		arg.AccountID,
+		arg.OriginTransactionID,
+		arg.PlanKind,
+		arg.InstallmentCount,
+		arg.Principal,
+		arg.Interest,
+		arg.FirstStatementID,
+	)
+	return err
+}
+
 const listBillingRules = `-- name: ListBillingRules :many
 SELECT user_id, account_id, effective_from, closing_day, due_day, closing_day_assignment, due_date_adjustment, calendar, created_at FROM ledger_billing_cycle_rule WHERE user_id = $1 AND account_id = $2 ORDER BY effective_from
 `
@@ -278,6 +371,53 @@ func (q *Queries) ListCreditLimits(ctx context.Context, arg ListCreditLimitsPara
 			&i.AccountID,
 			&i.EffectiveFrom,
 			&i.Amount,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listOpenStatementsFrom = `-- name: ListOpenStatementsFrom :many
+SELECT id, user_id, account_id, reference_month, closing_date, due_date, financed_by_plan_id, created_at FROM ledger_statement
+WHERE user_id = $1 AND account_id = $2 AND reference_month >= $3 AND closing_date > $4
+ORDER BY reference_month
+`
+
+type ListOpenStatementsFromParams struct {
+	UserID    int64
+	AccountID uuid.UUID
+	FromMonth time.Time
+	Today     time.Time
+}
+
+func (q *Queries) ListOpenStatementsFrom(ctx context.Context, arg ListOpenStatementsFromParams) ([]LedgerStatement, error) {
+	rows, err := q.db.Query(ctx, listOpenStatementsFrom,
+		arg.UserID,
+		arg.AccountID,
+		arg.FromMonth,
+		arg.Today,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []LedgerStatement
+	for rows.Next() {
+		var i LedgerStatement
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.AccountID,
+			&i.ReferenceMonth,
+			&i.ClosingDate,
+			&i.DueDate,
+			&i.FinancedByPlanID,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -417,4 +557,19 @@ func (q *Queries) ListStatements(ctx context.Context, arg ListStatementsParams) 
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateStatementDates = `-- name: UpdateStatementDates :exec
+UPDATE ledger_statement SET closing_date = $1, due_date = $2 WHERE id = $3
+`
+
+type UpdateStatementDatesParams struct {
+	ClosingDate time.Time
+	DueDate     time.Time
+	ID          uuid.UUID
+}
+
+func (q *Queries) UpdateStatementDates(ctx context.Context, arg UpdateStatementDatesParams) error {
+	_, err := q.db.Exec(ctx, updateStatementDates, arg.ClosingDate, arg.DueDate, arg.ID)
+	return err
 }

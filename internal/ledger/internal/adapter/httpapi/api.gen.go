@@ -589,6 +589,12 @@ type CloseAccountInput struct {
 	ClosedOn openapi_types.Date `json:"closed_on"`
 }
 
+// Commitment defines model for Commitment.
+type Commitment struct {
+	Amount Money  `json:"amount"`
+	Month  string `json:"month"`
+}
+
 // CorrectionInput defines model for CorrectionInput.
 type CorrectionInput struct {
 	Date            openapi_types.Date  `json:"date"`
@@ -623,6 +629,26 @@ type Installment struct {
 	Count  int                `json:"count"`
 	Number int                `json:"number"`
 	PlanId openapi_types.UUID `json:"plan_id"`
+}
+
+// InstallmentPurchase defines model for InstallmentPurchase.
+type InstallmentPurchase struct {
+	PlanId      openapi_types.UUID `json:"plan_id"`
+	Transaction Transaction        `json:"transaction"`
+}
+
+// InstallmentPurchaseInput defines model for InstallmentPurchaseInput.
+type InstallmentPurchaseInput struct {
+	CardAccountId      openapi_types.UUID  `json:"card_account_id"`
+	Date               openapi_types.Date  `json:"date"`
+	Description        *string             `json:"description,omitempty"`
+	FirstStatement     *string             `json:"first_statement,omitempty"`
+	InstallmentAmounts *[]Money            `json:"installment_amounts,omitempty"`
+	InstallmentCount   int                 `json:"installment_count"`
+	Interest           *Money              `json:"interest,omitempty"`
+	PayeeId            *openapi_types.UUID `json:"payee_id,omitempty"`
+	Splits             []Split             `json:"splits"`
+	Tags               *[]string           `json:"tags,omitempty"`
 }
 
 // Institution defines model for Institution.
@@ -743,6 +769,12 @@ type Problem struct {
 // Settings defines model for Settings.
 type Settings struct {
 	BaseCurrency string `json:"base_currency"`
+}
+
+// Split defines model for Split.
+type Split struct {
+	AccountId openapi_types.UUID `json:"account_id"`
+	Amount    Money              `json:"amount"`
 }
 
 // StatementDetail defines model for StatementDetail.
@@ -880,6 +912,11 @@ type GetAccountBalanceParams struct {
 // GetAccountBalanceParamsBasis defines parameters for GetAccountBalance.
 type GetAccountBalanceParamsBasis string
 
+// GetCommitmentParams defines parameters for GetCommitment.
+type GetCommitmentParams struct {
+	Month string `form:"month" json:"month"`
+}
+
 // ListStatementsParams defines parameters for ListStatements.
 type ListStatementsParams struct {
 	From *string `form:"from,omitempty" json:"from,omitempty"`
@@ -914,6 +951,9 @@ type CloseAccountJSONRequestBody = CloseAccountInput
 
 // CreateCreditLimitJSONRequestBody defines body for CreateCreditLimit for application/json ContentType.
 type CreateCreditLimitJSONRequestBody = CreditLimit
+
+// CreateInstallmentPurchaseJSONRequestBody defines body for CreateInstallmentPurchase for application/json ContentType.
+type CreateInstallmentPurchaseJSONRequestBody = InstallmentPurchaseInput
 
 // CreateInstitutionJSONRequestBody defines body for CreateInstitution for application/json ContentType.
 type CreateInstitutionJSONRequestBody = InstitutionInput
@@ -965,6 +1005,9 @@ type ServerInterface interface {
 	// CloseAccount Close an account with zero balance.
 	// (POST /accounts/{id}/close)
 	CloseAccount(w http.ResponseWriter, r *http.Request, id ID)
+	// GetCommitment Installments not yet billed on the statement of a month.
+	// (GET /accounts/{id}/commitments)
+	GetCommitment(w http.ResponseWriter, r *http.Request, id ID, params GetCommitmentParams)
 	// ListCreditLimits Credit limit versions of a card.
 	// (GET /accounts/{id}/credit-limits)
 	ListCreditLimits(w http.ResponseWriter, r *http.Request, id ID)
@@ -974,6 +1017,9 @@ type ServerInterface interface {
 	// ListStatements Statements of a card with amounts and status derived from its postings.
 	// (GET /accounts/{id}/statements)
 	ListStatements(w http.ResponseWriter, r *http.Request, id ID, params ListStatementsParams)
+	// CreateInstallmentPurchase Record a card purchase in installments.
+	// (POST /installment-purchases)
+	CreateInstallmentPurchase(w http.ResponseWriter, r *http.Request)
 	// ListInstitutions List institutions.
 	// (GET /institutions)
 	ListInstitutions(w http.ResponseWriter, r *http.Request)
@@ -1292,6 +1338,48 @@ func (siw *ServerInterfaceWrapper) CloseAccount(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
+// GetCommitment operation middleware
+func (siw *ServerInterfaceWrapper) GetCommitment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetCommitmentParams
+
+	// ------------- Required query parameter "month" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "month", r.URL.Query(), &params.Month, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "month"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "month", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCommitment(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListCreditLimits operation middleware
 func (siw *ServerInterfaceWrapper) ListCreditLimits(w http.ResponseWriter, r *http.Request) {
 
@@ -1390,6 +1478,20 @@ func (siw *ServerInterfaceWrapper) ListStatements(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListStatements(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateInstallmentPurchase operation middleware
+func (siw *ServerInterfaceWrapper) CreateInstallmentPurchase(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateInstallmentPurchase(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1899,6 +2001,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/cards", wrapper.CreateCard)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/statements", wrapper.ListStatements)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statements/{id}", wrapper.GetStatement)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/installment-purchases", wrapper.CreateInstallmentPurchase)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/commitments", wrapper.GetCommitment)
 
 	return m
 }
@@ -2493,6 +2597,73 @@ func (response CloseAccount422ApplicationProblemPlusJSONResponse) VisitCloseAcco
 	return err
 }
 
+type GetCommitmentRequestObject struct {
+	Id     ID `json:"id"`
+	Params GetCommitmentParams
+}
+
+type GetCommitmentResponseObject interface {
+	VisitGetCommitmentResponse(w http.ResponseWriter) error
+}
+
+type GetCommitment200JSONResponse Commitment
+
+func (response GetCommitment200JSONResponse) VisitGetCommitmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCommitment401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetCommitment401ApplicationProblemPlusJSONResponse) VisitGetCommitmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCommitment404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetCommitment404ApplicationProblemPlusJSONResponse) VisitGetCommitmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCommitment422ApplicationProblemPlusJSONResponse Problem
+
+func (response GetCommitment422ApplicationProblemPlusJSONResponse) VisitGetCommitmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListCreditLimitsRequestObject struct {
 	Id ID `json:"id"`
 }
@@ -2668,6 +2839,58 @@ func (response ListStatements404ApplicationProblemPlusJSONResponse) VisitListSta
 type ListStatements422ApplicationProblemPlusJSONResponse Problem
 
 func (response ListStatements422ApplicationProblemPlusJSONResponse) VisitListStatementsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateInstallmentPurchaseRequestObject struct {
+	Body *CreateInstallmentPurchaseJSONRequestBody
+}
+
+type CreateInstallmentPurchaseResponseObject interface {
+	VisitCreateInstallmentPurchaseResponse(w http.ResponseWriter) error
+}
+
+type CreateInstallmentPurchase201JSONResponse InstallmentPurchase
+
+func (response CreateInstallmentPurchase201JSONResponse) VisitCreateInstallmentPurchaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateInstallmentPurchase401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateInstallmentPurchase401ApplicationProblemPlusJSONResponse) VisitCreateInstallmentPurchaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateInstallmentPurchase422ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateInstallmentPurchase422ApplicationProblemPlusJSONResponse) VisitCreateInstallmentPurchaseResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -3445,6 +3668,9 @@ type StrictServerInterface interface {
 	// CloseAccount Close an account with zero balance.
 	// (POST /accounts/{id}/close)
 	CloseAccount(ctx context.Context, request CloseAccountRequestObject) (CloseAccountResponseObject, error)
+	// GetCommitment Installments not yet billed on the statement of a month.
+	// (GET /accounts/{id}/commitments)
+	GetCommitment(ctx context.Context, request GetCommitmentRequestObject) (GetCommitmentResponseObject, error)
 	// ListCreditLimits Credit limit versions of a card.
 	// (GET /accounts/{id}/credit-limits)
 	ListCreditLimits(ctx context.Context, request ListCreditLimitsRequestObject) (ListCreditLimitsResponseObject, error)
@@ -3454,6 +3680,9 @@ type StrictServerInterface interface {
 	// ListStatements Statements of a card with amounts and status derived from its postings.
 	// (GET /accounts/{id}/statements)
 	ListStatements(ctx context.Context, request ListStatementsRequestObject) (ListStatementsResponseObject, error)
+	// CreateInstallmentPurchase Record a card purchase in installments.
+	// (POST /installment-purchases)
+	CreateInstallmentPurchase(ctx context.Context, request CreateInstallmentPurchaseRequestObject) (CreateInstallmentPurchaseResponseObject, error)
 	// ListInstitutions List institutions.
 	// (GET /institutions)
 	ListInstitutions(ctx context.Context, request ListInstitutionsRequestObject) (ListInstitutionsResponseObject, error)
@@ -3829,6 +4058,33 @@ func (sh *strictHandler) CloseAccount(w http.ResponseWriter, r *http.Request, id
 	}
 }
 
+// GetCommitment operation middleware
+func (sh *strictHandler) GetCommitment(w http.ResponseWriter, r *http.Request, id ID, params GetCommitmentParams) {
+	var request GetCommitmentRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCommitment(ctx, request.(GetCommitmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCommitment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCommitmentResponseObject); ok {
+		if err := validResponse.VisitGetCommitmentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListCreditLimits operation middleware
 func (sh *strictHandler) ListCreditLimits(w http.ResponseWriter, r *http.Request, id ID) {
 	var request ListCreditLimitsRequestObject
@@ -3908,6 +4164,37 @@ func (sh *strictHandler) ListStatements(w http.ResponseWriter, r *http.Request, 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListStatementsResponseObject); ok {
 		if err := validResponse.VisitListStatementsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateInstallmentPurchase operation middleware
+func (sh *strictHandler) CreateInstallmentPurchase(w http.ResponseWriter, r *http.Request) {
+	var request CreateInstallmentPurchaseRequestObject
+
+	var body CreateInstallmentPurchaseJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateInstallmentPurchase(ctx, request.(CreateInstallmentPurchaseRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateInstallmentPurchase")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateInstallmentPurchaseResponseObject); ok {
+		if err := validResponse.VisitCreateInstallmentPurchaseResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

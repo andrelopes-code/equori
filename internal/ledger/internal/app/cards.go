@@ -21,11 +21,46 @@ func (s *Service) AddBillingRule(ctx context.Context, userID int64, accountID uu
 	if _, err := s.card(ctx, userID, accountID); err != nil {
 		return domain.BillingCycleRule{}, err
 	}
-	r, err := domain.NewBillingCycleRule(r)
+	rule, err := domain.NewBillingCycleRule(r)
 	if err != nil {
 		return domain.BillingCycleRule{}, err
 	}
-	return s.repo.InsertBillingRule(ctx, userID, accountID, r)
+	var created domain.BillingCycleRule
+	err = s.repo.InTx(ctx, func(tx Repository) error {
+		if created, err = tx.InsertBillingRule(ctx, userID, accountID, rule); err != nil {
+			return err
+		}
+		return s.redateOpenStatements(ctx, tx, userID, accountID, rule.EffectiveFrom)
+	})
+	return created, err
+}
+
+// redateOpenStatements applies a new rule version to statements that have not closed
+// yet; their postings stay on the same reference month.
+func (s *Service) redateOpenStatements(ctx context.Context, r Repository, userID int64, accountID uuid.UUID, from domain.ReferenceMonth) error {
+	rules, err := r.BillingRules(ctx, userID, accountID)
+	if err != nil {
+		return err
+	}
+	open, err := r.OpenStatementsFrom(ctx, userID, accountID, from, s.clock.Today())
+	if err != nil {
+		return err
+	}
+	for _, st := range open {
+		rule, err := rules.For(st.Input.Reference)
+		if err != nil {
+			return err
+		}
+		dates := domain.DatesFor(st.Input.Reference, rule)
+		due, err := s.cal.Adjust(ctx, rule.Calendar, dates.DueUnadjusted, rule.Adjustment)
+		if err != nil {
+			return err
+		}
+		if err := r.UpdateStatementDates(ctx, st.ID, dates.Closing, due); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *Service) BillingRules(ctx context.Context, userID int64, accountID uuid.UUID) (domain.Rules, error) {

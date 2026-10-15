@@ -500,3 +500,41 @@ func (r *Repository) StatementPostings(ctx context.Context, userID int64, statem
 	}
 	return out, nil
 }
+
+func (r *Repository) OpenStatementsFrom(ctx context.Context, userID int64, accountID uuid.UUID, from domain.ReferenceMonth, today time.Time) ([]app.Statement, error) {
+	rows, err := r.q.ListOpenStatementsFrom(ctx, ListOpenStatementsFromParams{UserID: userID, AccountID: accountID, FromMonth: from.FirstDay(), Today: today})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]app.Statement, len(rows))
+	for i, row := range rows {
+		out[i] = app.Statement{ID: row.ID, AccountID: row.AccountID, Input: domain.StatementInput{
+			Reference: domain.MonthOf(row.ReferenceMonth), Closing: row.ClosingDate, Due: row.DueDate,
+		}}
+	}
+	return out, nil
+}
+
+func (r *Repository) UpdateStatementDates(ctx context.Context, id uuid.UUID, closing, due time.Time) error {
+	return r.q.UpdateStatementDates(ctx, UpdateStatementDatesParams{ID: id, ClosingDate: closing, DueDate: due})
+}
+
+func (r *Repository) InsertPlan(ctx context.Context, p domain.InstallmentPlan) error {
+	return r.q.InsertInstallmentPlan(ctx, InsertInstallmentPlanParams{
+		ID: p.ID, UserID: p.UserID, AccountID: p.AccountID, OriginTransactionID: p.OriginTransactionID, PlanKind: p.Kind,
+		InstallmentCount: int16(p.Count), //nolint:gosec // at most 420 installments.
+		Principal:        p.Principal.Amount(), Interest: p.Interest.Amount(), FirstStatementID: p.FirstStatementID,
+	})
+}
+
+func (r *Repository) SystemAccount(ctx context.Context, userID int64, role domain.SystemRole) (domain.Account, error) {
+	row, err := r.q.GetSystemAccount(ctx, GetSystemAccountParams{UserID: userID, SystemRole: nullString(string(role))})
+	if err != nil {
+		return domain.Account{}, notFound(err)
+	}
+	return toAccount(row), nil
+}
+
+func (r *Repository) CommittedInstallments(ctx context.Context, userID int64, accountID uuid.UUID, month domain.ReferenceMonth, today time.Time) (int64, error) {
+	return r.q.CommittedInstallments(ctx, CommittedInstallmentsParams{UserID: userID, AccountID: accountID, ReferenceMonth: month.FirstDay(), Today: today})
+}
