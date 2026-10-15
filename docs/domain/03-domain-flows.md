@@ -219,11 +219,12 @@ flowchart LR
 
 | Event | Data | Rules |
 |---|---|---|
-| `BalanceAsserted` | account, date, amount, source | Stored as a fact (B03). Several assertions per account and date are allowed; the latest recorded wins for that date. |
-| `YieldRecorded` | transaction, account, period | Account yield mode `auto` (default for kinds `reserve` and accounts marked as remunerated): a positive difference becomes one transaction: account +difference, income "Yield". Period: from the previous assertion date to this one. A negative difference never becomes yield. |
+| `BalanceAsserted` | account, date, amount, source | Stored as a fact (B03). Several assertions per account and date are allowed; the latest recorded wins for that date. Leaf balance accounts only (P3 amendment A9). |
+| `YieldRecorded` | transaction, account, period | Account yield mode `auto` (default for kinds `reserve` and accounts marked as remunerated): a positive difference becomes one transaction: account +difference, income "Yield". Dated on the assertion date; the period starts the day after the previous assertion, or at the account's first posting when there is none (P3 amendment A10). An account with no posting up to the date keeps the difference open. A negative difference never becomes yield. |
 | `DifferenceFound` | account, date, difference | Shown until resolved by recording the missing transactions or by `BalanceAdjusted`. |
 | `BalanceAdjusted` | transaction, difference | Transaction against the equity account "Adjustments" (M20). |
-| `AccountReconciled` | account, date | Postings of the account up to the date become `reconciled`. |
+| `AccountReconciled` | account, date | Postings of the account up to the date become `reconciled`. For a card, the owner confirms a closed statement's amount due instead, and the statement's postings become `reconciled` (P3 amendment A7). |
+| `AccountUnlocked` | account, from | Reconciliations dated on or after `from` are deleted and their postings return to `cleared` (P3 amendment A8). |
 | `TaxWithheld` | transaction, tax type, base | On redemption from a reserve or fixed income: income tax by the regressive table and IOF before 30 days, as expense postings of type tax (M24, D1). |
 
 ## 3.9 F7 Schedules and subscriptions

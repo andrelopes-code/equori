@@ -248,6 +248,12 @@ flowchart LR
 | Difference | Assertion amount − balance by settlement date at that date. |
 | Resolution | `none` (difference is zero), `yield` (F6 auto), `adjustment`, `transactions_added`. |
 | Effect | On resolution, the account's postings with settlement date ≤ assertion date become `reconciled`. |
+| Scope | Leaf balance accounts. A parent account or a category is rejected (P3 amendment A9). |
+| Order | An assertion or resolution dated before the account's last reconciliation is rejected until an unlock. |
+| Yield | One transaction on the assertion date: account +difference, income "Yield" (P3 amendment A10). |
+| Adjustment | One transaction on the assertion date: account +difference, equity "Adjustments". `transactions_added` requires a zero difference recomputed from the current postings. |
+| Statement | A card statement is reconciled when its closing date has passed and the institution's amount due equals the derived amount due; the statement's postings become `reconciled` (P3 amendment A7). |
+| Unlock | From a date: the account's reconciliations dated on or after it are deleted; its reconciled postings settled on or after it, and every posting of a deleted statement reconciliation, return to `cleared` (P3 amendment A8). |
 
 ## 5.3 Planning
 
