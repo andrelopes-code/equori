@@ -4,6 +4,16 @@
 
 package postgres
 
+import (
+	"time"
+)
+
+type MarketdataHoliday struct {
+	Calendar string
+	Date     time.Time
+	Name     string
+}
+
 type MarketdataInstrument struct {
 	Code           string
 	InstrumentType string

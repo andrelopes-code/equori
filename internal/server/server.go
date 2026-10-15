@@ -10,6 +10,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/identity"
 	"github.com/andrelopes-code/equori/internal/ledger"
+	"github.com/andrelopes-code/equori/internal/marketdata"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 	"github.com/andrelopes-code/equori/internal/reporting"
@@ -32,12 +33,14 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) *App {
 	identityModule := identity.New(pool, identity.Config{SecureCookies: cfg.SecureCookies}, log)
 	ledgerModule := ledger.New(pool, dispatcher, log)
 	reportingModule := reporting.New(pool, dispatcher, log)
+	marketdataModule := marketdata.New(pool)
 
 	mux := http.NewServeMux()
 	mux.Handle("GET /healthz", httpserver.Health(pool))
 	identityModule.RegisterRoutes(mux)
 	ledgerModule.RegisterRoutes(mux)
 	reportingModule.RegisterRoutes(mux)
+	marketdataModule.RegisterRoutes(mux, log)
 	mux.Handle("/api/", httpserver.NotFound())
 
 	return &App{
