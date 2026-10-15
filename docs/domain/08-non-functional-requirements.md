@@ -62,7 +62,7 @@ Every requirement has a measurable criterion and a verification method. Performa
 |---|---|---|
 | N21 | Interface languages: Brazilian Portuguese and English. Number, currency and date formats follow the selected locale. | UI tests |
 | N22 | Manual expense entry with at most three inputs (SC4). | UI test |
-| N23 | Every list endpoint follows the pagination and filter rules of ADR 005. | Contract tests |
+| N23 | Every list that grows with use is paginated, and every list follows the filter rules of ADR 005 (ADR 007, C8). | API tests per list |
 
 ## 8.8 Compatibility and limits
 

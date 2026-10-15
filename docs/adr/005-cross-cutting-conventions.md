@@ -59,7 +59,7 @@ Package `internal/platform/money` (stdlib only) is the shared kernel for amounts
 
 ## 4. List endpoints
 
-- Cursor (keyset) pagination: `GET /api/v1/<resource>?limit=50&cursor=<opaque>`.
+- Cursor (keyset) pagination: `GET /api/v1/<resource>?limit=50&cursor=<opaque>`. ADR 007 (C8) lists which lists paginate.
 - `limit`: default 50, maximum 200 (`page.DefaultLimit`, `page.MaxLimit`). Out-of-range values return 400 `invalid_request`.
 - `cursor`: opaque base64url string produced by `page.EncodeCursor` from the sort key of the last returned row. Clients never build or parse it. An invalid cursor returns 400 `invalid_request`.
 - Queries order by a unique key (for example `date DESC, id DESC`), fetch `limit + 1` rows and pass them to `page.Trim` to compute `next_cursor`.
