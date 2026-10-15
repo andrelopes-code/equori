@@ -50,6 +50,22 @@ type AccountTotals struct {
 	LastBookedOn time.Time
 }
 
+// Basis selects the date that places a posting in time: the transaction date or the
+// institution's settlement date (chapter 5, 5.2.3).
+type Basis string
+
+const (
+	BasisBooked  Basis = "booked"
+	BasisSettled Basis = "settled"
+)
+
+type Balance struct {
+	AccountID uuid.UUID
+	Date      time.Time
+	Basis     Basis
+	Amount    money.Money
+}
+
 type TransactionCursor struct {
 	Date time.Time `json:"d"`
 	ID   uuid.UUID `json:"i"`
@@ -97,4 +113,7 @@ type Repository interface {
 	VoidTransaction(ctx context.Context, t domain.Transaction) error
 	ListTransactions(ctx context.Context, q TransactionQuery) ([]domain.Transaction, error)
 	Versions(ctx context.Context, userID int64, id uuid.UUID) ([]Version, error)
+
+	// BalanceAt sums the postings of the account and its descendants up to and including date.
+	BalanceAt(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis Basis) (int64, error)
 }

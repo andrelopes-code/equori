@@ -33,5 +33,4 @@ SELECT EXISTS (SELECT 1 FROM ledger_account WHERE user_id = $1 AND parent_id = $
 -- name: AccountTotals :one
 SELECT coalesce(sum(p.amount), 0)::bigint AS total, coalesce(max(p.booked_on), '1900-01-01')::date AS last_booked_on
 FROM ledger_posting p
-JOIN ledger_transaction t ON t.id = p.transaction_id
-WHERE p.user_id = $1 AND p.account_id = $2 AND t.voided_at IS NULL;
+WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided;

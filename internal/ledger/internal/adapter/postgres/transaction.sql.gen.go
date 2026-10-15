@@ -291,7 +291,7 @@ func (q *Queries) ListLinksFrom(ctx context.Context, arg ListLinksFromParams) ([
 }
 
 const listPostings = `-- name: ListPostings :many
-SELECT p.id, p.user_id, p.transaction_id, p.account_id, p.position, p.amount, p.weight, p.booked_on, p.settled_on, p.status, p.original_amount, p.original_instrument, p.memo, a.instrument AS account_instrument, t.balancing_currency
+SELECT p.id, p.user_id, p.transaction_id, p.account_id, p.position, p.amount, p.weight, p.booked_on, p.settled_on, p.status, p.original_amount, p.original_instrument, p.memo, p.voided, a.instrument AS account_instrument, t.balancing_currency
 FROM ledger_posting p
 JOIN ledger_account a ON a.id = p.account_id
 JOIN ledger_transaction t ON t.id = p.transaction_id
@@ -318,6 +318,7 @@ type ListPostingsRow struct {
 	OriginalAmount     *int64
 	OriginalInstrument *string
 	Memo               *string
+	Voided             bool
 	AccountInstrument  string
 	BalancingCurrency  string
 }
@@ -345,6 +346,7 @@ func (q *Queries) ListPostings(ctx context.Context, arg ListPostingsParams) ([]L
 			&i.OriginalAmount,
 			&i.OriginalInstrument,
 			&i.Memo,
+			&i.Voided,
 			&i.AccountInstrument,
 			&i.BalancingCurrency,
 		); err != nil {

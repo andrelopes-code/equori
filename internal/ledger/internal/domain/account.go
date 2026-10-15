@@ -190,8 +190,10 @@ func ValidateParent(child, parent Account) error {
 		return &FieldError{Field: "parent_id", Message: "unknown account", Err: ErrUnknownAccount}
 	case child.Class != parent.Class:
 		return invalid("parent_id", "must have the same class")
-	case child.IsBalance() && (child.InstitutionID != parent.InstitutionID || child.Instrument != parent.Instrument):
-		return invalid("parent_id", "must be at the same institution and in the same currency")
+	case child.Instrument != parent.Instrument:
+		return invalid("parent_id", "must use the same currency, so the parent balance is a sum of one currency")
+	case child.IsBalance() && child.InstitutionID != parent.InstitutionID:
+		return invalid("parent_id", "must be at the same institution")
 	}
 	return nil
 }

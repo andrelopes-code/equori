@@ -5,6 +5,7 @@ import (
 	"encoding/json/v2"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -373,4 +374,11 @@ func referenceError(err error) error {
 		return &domain.FieldError{Field: "reference", Message: "unknown reference: " + pgErr.ConstraintName, Err: domain.ErrUnknownAccount}
 	}
 	return err
+}
+
+func (r *Repository) BalanceAt(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis app.Basis) (int64, error) {
+	if basis == app.BasisSettled {
+		return r.q.BalanceSettledAt(ctx, BalanceSettledAtParams{UserID: userID, AccountID: accountID, OnDate: &date})
+	}
+	return r.q.BalanceBookedAt(ctx, BalanceBookedAtParams{UserID: userID, AccountID: accountID, OnDate: date})
 }

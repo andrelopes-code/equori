@@ -118,14 +118,16 @@ CREATE TABLE ledger_posting (
     original_amount     bigint,
     original_instrument text REFERENCES marketdata_instrument (code),
     memo                text CHECK (length(memo) <= 500),
+    -- Copy of the transaction's void state, so balance sums read only this table's index.
+    voided              boolean  NOT NULL DEFAULT false,
     PRIMARY KEY (id),
     UNIQUE (transaction_id, position),
     FOREIGN KEY (user_id, transaction_id) REFERENCES ledger_transaction (user_id, id) ON DELETE CASCADE,
     FOREIGN KEY (user_id, account_id) REFERENCES ledger_account (user_id, id),
     CHECK ((original_amount IS NULL) = (original_instrument IS NULL))
 );
-CREATE INDEX ledger_posting_booked_idx ON ledger_posting (account_id, booked_on) INCLUDE (amount, weight);
-CREATE INDEX ledger_posting_settled_idx ON ledger_posting (account_id, coalesce(settled_on, booked_on)) INCLUDE (amount);
+CREATE INDEX ledger_posting_booked_idx ON ledger_posting (account_id, booked_on) INCLUDE (amount) WHERE NOT voided;
+CREATE INDEX ledger_posting_settled_idx ON ledger_posting (account_id, coalesce(settled_on, booked_on)) INCLUDE (amount) WHERE NOT voided;
 CREATE INDEX ledger_posting_transaction_idx ON ledger_posting (transaction_id);
 
 CREATE TABLE ledger_link (
@@ -202,7 +204,7 @@ CREATE TRIGGER ledger_transaction_date_sync
     AFTER UPDATE OF date ON ledger_transaction
     FOR EACH ROW EXECUTE FUNCTION ledger_sync_booked_on();
 
--- Voiding re-checks nothing; un-voiding is not allowed.
+-- Un-voiding is not allowed; voiding marks the postings.
 -- +goose StatementBegin
 CREATE FUNCTION ledger_forbid_unvoid() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
@@ -213,6 +215,19 @@ BEGIN
 END;
 $$;
 -- +goose StatementEnd
+
+-- +goose StatementBegin
+CREATE FUNCTION ledger_mark_postings_voided() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE ledger_posting SET voided = true WHERE transaction_id = NEW.id;
+    RETURN NEW;
+END;
+$$;
+-- +goose StatementEnd
+CREATE TRIGGER ledger_transaction_voided
+    AFTER UPDATE OF voided_at ON ledger_transaction
+    FOR EACH ROW WHEN (OLD.voided_at IS NULL AND NEW.voided_at IS NOT NULL)
+    EXECUTE FUNCTION ledger_mark_postings_voided();
 CREATE TRIGGER ledger_transaction_unvoid
     BEFORE UPDATE OF voided_at ON ledger_transaction
     FOR EACH ROW EXECUTE FUNCTION ledger_forbid_unvoid();
@@ -220,4 +235,4 @@ CREATE TRIGGER ledger_transaction_unvoid
 -- +goose Down
 DROP TABLE ledger_link, ledger_posting, ledger_transaction_tag, ledger_transaction_version,
     ledger_transaction, ledger_tag, ledger_account, ledger_payee, ledger_institution, ledger_settings;
-DROP FUNCTION ledger_check_transaction_balance, ledger_check_account_open, ledger_sync_booked_on, ledger_forbid_unvoid;
+DROP FUNCTION ledger_check_transaction_balance, ledger_check_account_open, ledger_sync_booked_on, ledger_forbid_unvoid, ledger_mark_postings_voided;

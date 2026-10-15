@@ -29,7 +29,7 @@ type ledgerFixture struct {
 	food       domain.Account
 }
 
-func newLedgerFixture(t *testing.T) ledgerFixture {
+func newLedgerFixture(t testing.TB) ledgerFixture {
 	t.Helper()
 	pool := pgtest.New(t)
 	d := outbox.NewDispatcher(pool, slog.New(slog.NewTextHandler(io.Discard, nil)))
@@ -42,7 +42,7 @@ func newLedgerFixture(t *testing.T) ledgerFixture {
 }
 
 // provisionedUser creates a user, publishes identity.user_created.v1 and dispatches it.
-func provisionedUser(t *testing.T, pool *pgxpool.Pool, d *outbox.Dispatcher) int64 {
+func provisionedUser(t testing.TB, pool *pgxpool.Pool, d *outbox.Dispatcher) int64 {
 	t.Helper()
 	userID := pgtest.CreateUser(t, pool)
 	err := pgx.BeginFunc(t.Context(), pool, func(tx pgx.Tx) error {
@@ -60,7 +60,7 @@ func provisionedUser(t *testing.T, pool *pgxpool.Pool, d *outbox.Dispatcher) int
 	return userID
 }
 
-func (f ledgerFixture) createAccount(t *testing.T, a domain.Account) domain.Account {
+func (f ledgerFixture) createAccount(t testing.TB, a domain.Account) domain.Account {
 	t.Helper()
 	a.UserID = f.userID
 	if a.Instrument == "" {

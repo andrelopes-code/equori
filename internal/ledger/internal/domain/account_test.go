@@ -94,6 +94,7 @@ func TestValidateParent(t *testing.T) {
 	requireField(t, ValidateParent(mustAccount(t, Account{Class: ClassAsset, Kind: KindReserve, InstitutionID: itau}), checking), "parent_id", ErrValidation)
 	requireField(t, ValidateParent(mustAccount(t, Account{Class: ClassAsset, Kind: KindReserve, InstitutionID: nubank, Instrument: "USD"}), checking), "parent_id", ErrValidation)
 	requireField(t, ValidateParent(checking, checking), "parent_id", ErrValidation)
+	requireField(t, ValidateParent(mustAccount(t, Account{Class: ClassExpense, Instrument: "USD"}), food), "parent_id", ErrValidation)
 }
 
 func requireField(t *testing.T, err error, field string, sentinel error) {
