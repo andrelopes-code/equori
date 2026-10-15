@@ -16,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andrelopes-code/equori/internal/identity"
+	"github.com/andrelopes-code/equori/internal/ledger"
 	"github.com/andrelopes-code/equori/internal/platform/config"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
@@ -68,6 +69,7 @@ func serve() error {
 
 	dispatcher := outbox.NewDispatcher(pool, log)
 	identityModule := identity.New(pool, identity.Config{SecureCookies: !cfg.InsecureCookies}, log)
+	ledger.New(pool, dispatcher, log)
 
 	mux := http.NewServeMux()
 	mux.Handle("GET /healthz", httpserver.Health(pool))
