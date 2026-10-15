@@ -189,6 +189,48 @@ func (e BalanceBasis) Valid() bool {
 	}
 }
 
+// Defines values for BillingCycleRuleClosingDayAssignment.
+const (
+	Closing BillingCycleRuleClosingDayAssignment = "closing"
+	Next    BillingCycleRuleClosingDayAssignment = "next"
+)
+
+// Valid indicates whether the value is a known member of the BillingCycleRuleClosingDayAssignment enum.
+func (e BillingCycleRuleClosingDayAssignment) Valid() bool {
+	switch e {
+	case Closing:
+		return true
+	case Next:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BillingCycleRuleDueDateAdjustment.
+const (
+	BillingCycleRuleDueDateAdjustmentFollowing         BillingCycleRuleDueDateAdjustment = "following"
+	BillingCycleRuleDueDateAdjustmentModifiedFollowing BillingCycleRuleDueDateAdjustment = "modified_following"
+	BillingCycleRuleDueDateAdjustmentNone              BillingCycleRuleDueDateAdjustment = "none"
+	BillingCycleRuleDueDateAdjustmentPreceding         BillingCycleRuleDueDateAdjustment = "preceding"
+)
+
+// Valid indicates whether the value is a known member of the BillingCycleRuleDueDateAdjustment enum.
+func (e BillingCycleRuleDueDateAdjustment) Valid() bool {
+	switch e {
+	case BillingCycleRuleDueDateAdjustmentFollowing:
+		return true
+	case BillingCycleRuleDueDateAdjustmentModifiedFollowing:
+		return true
+	case BillingCycleRuleDueDateAdjustmentNone:
+		return true
+	case BillingCycleRuleDueDateAdjustmentPreceding:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for LinkType.
 const (
 	AnticipationOf  LinkType = "anticipation_of"
@@ -305,6 +347,7 @@ func (e GetAccountBalanceParamsBasis) Valid() bool {
 
 // Account defines model for Account.
 type Account struct {
+	Card          *CardSummary        `json:"card,omitempty"`
 	Class         AccountClass        `json:"class"`
 	ClosedOn      *openapi_types.Date `json:"closed_on,omitempty"`
 	Currency      string              `json:"currency"`
@@ -368,6 +411,56 @@ type Balance struct {
 // BalanceBasis defines model for Balance.Basis.
 type BalanceBasis string
 
+// BillingCycleRule defines model for BillingCycleRule.
+type BillingCycleRule struct {
+	Calendar             *string                               `json:"calendar,omitempty"`
+	ClosingDay           int                                   `json:"closing_day"`
+	ClosingDayAssignment *BillingCycleRuleClosingDayAssignment `json:"closing_day_assignment,omitempty"`
+	DueDateAdjustment    *BillingCycleRuleDueDateAdjustment    `json:"due_date_adjustment,omitempty"`
+	DueDay               int                                   `json:"due_day"`
+
+	// EffectiveFrom Reference month (YYYY-MM) from which the rule applies.
+	EffectiveFrom string `json:"effective_from"`
+}
+
+// BillingCycleRuleClosingDayAssignment defines model for BillingCycleRule.ClosingDayAssignment.
+type BillingCycleRuleClosingDayAssignment string
+
+// BillingCycleRuleDueDateAdjustment defines model for BillingCycleRule.DueDateAdjustment.
+type BillingCycleRuleDueDateAdjustment string
+
+// BillingCycleRuleList defines model for BillingCycleRuleList.
+type BillingCycleRuleList struct {
+	Items []BillingCycleRule `json:"items"`
+}
+
+// Card defines model for Card.
+type Card struct {
+	Active   bool               `json:"active"`
+	Holder   string             `json:"holder"`
+	Id       openapi_types.UUID `json:"id"`
+	LastFour string             `json:"last_four"`
+	Virtual  *bool              `json:"virtual,omitempty"`
+}
+
+// CardInput defines model for CardInput.
+type CardInput struct {
+	Holder   string `json:"holder"`
+	LastFour string `json:"last_four"`
+	Virtual  *bool  `json:"virtual,omitempty"`
+}
+
+// CardList defines model for CardList.
+type CardList struct {
+	Items []Card `json:"items"`
+}
+
+// CardSummary defines model for CardSummary.
+type CardSummary struct {
+	AvailableLimit *Money `json:"available_limit,omitempty"`
+	CreditLimit    *Money `json:"credit_limit,omitempty"`
+}
+
 // CloseAccountInput defines model for CloseAccountInput.
 type CloseAccountInput struct {
 	ClosedOn openapi_types.Date `json:"closed_on"`
@@ -383,6 +476,17 @@ type CorrectionInput struct {
 	Postings        []PostingInput      `json:"postings"`
 	Reason          string              `json:"reason"`
 	Tags            *[]string           `json:"tags,omitempty"`
+}
+
+// CreditLimit defines model for CreditLimit.
+type CreditLimit struct {
+	Amount        Money              `json:"amount"`
+	EffectiveFrom openapi_types.Date `json:"effective_from"`
+}
+
+// CreditLimitList defines model for CreditLimitList.
+type CreditLimitList struct {
+	Items []CreditLimit `json:"items"`
 }
 
 // FieldError defines model for FieldError.
@@ -585,8 +689,17 @@ type CreateAccountJSONRequestBody = AccountInput
 // UpdateAccountJSONRequestBody defines body for UpdateAccount for application/json ContentType.
 type UpdateAccountJSONRequestBody = AccountPatch
 
+// CreateBillingCycleRuleJSONRequestBody defines body for CreateBillingCycleRule for application/json ContentType.
+type CreateBillingCycleRuleJSONRequestBody = BillingCycleRule
+
+// CreateCardJSONRequestBody defines body for CreateCard for application/json ContentType.
+type CreateCardJSONRequestBody = CardInput
+
 // CloseAccountJSONRequestBody defines body for CloseAccount for application/json ContentType.
 type CloseAccountJSONRequestBody = CloseAccountInput
+
+// CreateCreditLimitJSONRequestBody defines body for CreateCreditLimit for application/json ContentType.
+type CreateCreditLimitJSONRequestBody = CreditLimit
 
 // CreateInstitutionJSONRequestBody defines body for CreateInstitution for application/json ContentType.
 type CreateInstitutionJSONRequestBody = InstitutionInput
@@ -623,9 +736,27 @@ type ServerInterface interface {
 	// GetAccountBalance Balance of an account at the end of a date.
 	// (GET /accounts/{id}/balance)
 	GetAccountBalance(w http.ResponseWriter, r *http.Request, id ID, params GetAccountBalanceParams)
+	// ListBillingCycleRules Billing cycle rule versions of a card.
+	// (GET /accounts/{id}/billing-cycle-rules)
+	ListBillingCycleRules(w http.ResponseWriter, r *http.Request, id ID)
+	// CreateBillingCycleRule Add a billing cycle rule version, effective from a reference month.
+	// (POST /accounts/{id}/billing-cycle-rules)
+	CreateBillingCycleRule(w http.ResponseWriter, r *http.Request, id ID)
+	// ListCards Physical and virtual cards of a card account.
+	// (GET /accounts/{id}/cards)
+	ListCards(w http.ResponseWriter, r *http.Request, id ID)
+	// CreateCard Add a card.
+	// (POST /accounts/{id}/cards)
+	CreateCard(w http.ResponseWriter, r *http.Request, id ID)
 	// CloseAccount Close an account with zero balance.
 	// (POST /accounts/{id}/close)
 	CloseAccount(w http.ResponseWriter, r *http.Request, id ID)
+	// ListCreditLimits Credit limit versions of a card.
+	// (GET /accounts/{id}/credit-limits)
+	ListCreditLimits(w http.ResponseWriter, r *http.Request, id ID)
+	// CreateCreditLimit Add a credit limit version.
+	// (POST /accounts/{id}/credit-limits)
+	CreateCreditLimit(w http.ResponseWriter, r *http.Request, id ID)
 	// ListInstitutions List institutions.
 	// (GET /institutions)
 	ListInstitutions(w http.ResponseWriter, r *http.Request)
@@ -811,6 +942,110 @@ func (siw *ServerInterfaceWrapper) GetAccountBalance(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// ListBillingCycleRules operation middleware
+func (siw *ServerInterfaceWrapper) ListBillingCycleRules(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListBillingCycleRules(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateBillingCycleRule operation middleware
+func (siw *ServerInterfaceWrapper) CreateBillingCycleRule(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateBillingCycleRule(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListCards operation middleware
+func (siw *ServerInterfaceWrapper) ListCards(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCards(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateCard operation middleware
+func (siw *ServerInterfaceWrapper) CreateCard(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateCard(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // CloseAccount operation middleware
 func (siw *ServerInterfaceWrapper) CloseAccount(w http.ResponseWriter, r *http.Request) {
 
@@ -828,6 +1063,58 @@ func (siw *ServerInterfaceWrapper) CloseAccount(w http.ResponseWriter, r *http.R
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CloseAccount(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListCreditLimits operation middleware
+func (siw *ServerInterfaceWrapper) ListCreditLimits(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCreditLimits(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateCreditLimit operation middleware
+func (siw *ServerInterfaceWrapper) CreateCreditLimit(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateCreditLimit(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1303,6 +1590,12 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/transactions/{id}", wrapper.CorrectTransaction)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/void", wrapper.VoidTransaction)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions/{id}/versions", wrapper.ListTransactionVersions)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/billing-cycle-rules", wrapper.ListBillingCycleRules)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/billing-cycle-rules", wrapper.CreateBillingCycleRule)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/credit-limits", wrapper.ListCreditLimits)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/credit-limits", wrapper.CreateCreditLimit)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/cards", wrapper.ListCards)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/cards", wrapper.CreateCard)
 
 	return m
 }
@@ -1584,6 +1877,244 @@ func (response GetAccountBalance404ApplicationProblemPlusJSONResponse) VisitGetA
 	return err
 }
 
+type ListBillingCycleRulesRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type ListBillingCycleRulesResponseObject interface {
+	VisitListBillingCycleRulesResponse(w http.ResponseWriter) error
+}
+
+type ListBillingCycleRules200JSONResponse BillingCycleRuleList
+
+func (response ListBillingCycleRules200JSONResponse) VisitListBillingCycleRulesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListBillingCycleRules401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListBillingCycleRules401ApplicationProblemPlusJSONResponse) VisitListBillingCycleRulesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListBillingCycleRules404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListBillingCycleRules404ApplicationProblemPlusJSONResponse) VisitListBillingCycleRulesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBillingCycleRuleRequestObject struct {
+	Id   ID `json:"id"`
+	Body *CreateBillingCycleRuleJSONRequestBody
+}
+
+type CreateBillingCycleRuleResponseObject interface {
+	VisitCreateBillingCycleRuleResponse(w http.ResponseWriter) error
+}
+
+type CreateBillingCycleRule201JSONResponse BillingCycleRule
+
+func (response CreateBillingCycleRule201JSONResponse) VisitCreateBillingCycleRuleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBillingCycleRule401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateBillingCycleRule401ApplicationProblemPlusJSONResponse) VisitCreateBillingCycleRuleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBillingCycleRule404ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateBillingCycleRule404ApplicationProblemPlusJSONResponse) VisitCreateBillingCycleRuleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBillingCycleRule422ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateBillingCycleRule422ApplicationProblemPlusJSONResponse) VisitCreateBillingCycleRuleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCardsRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type ListCardsResponseObject interface {
+	VisitListCardsResponse(w http.ResponseWriter) error
+}
+
+type ListCards200JSONResponse CardList
+
+func (response ListCards200JSONResponse) VisitListCardsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCards401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListCards401ApplicationProblemPlusJSONResponse) VisitListCardsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCards404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListCards404ApplicationProblemPlusJSONResponse) VisitListCardsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCardRequestObject struct {
+	Id   ID `json:"id"`
+	Body *CreateCardJSONRequestBody
+}
+
+type CreateCardResponseObject interface {
+	VisitCreateCardResponse(w http.ResponseWriter) error
+}
+
+type CreateCard201JSONResponse Card
+
+func (response CreateCard201JSONResponse) VisitCreateCardResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCard401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateCard401ApplicationProblemPlusJSONResponse) VisitCreateCardResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCard404ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateCard404ApplicationProblemPlusJSONResponse) VisitCreateCardResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCard422ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateCard422ApplicationProblemPlusJSONResponse) VisitCreateCardResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type CloseAccountRequestObject struct {
 	Id   ID `json:"id"`
 	Body *CloseAccountJSONRequestBody
@@ -1648,6 +2179,125 @@ func (response CloseAccount409ApplicationProblemPlusJSONResponse) VisitCloseAcco
 type CloseAccount422ApplicationProblemPlusJSONResponse Problem
 
 func (response CloseAccount422ApplicationProblemPlusJSONResponse) VisitCloseAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCreditLimitsRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type ListCreditLimitsResponseObject interface {
+	VisitListCreditLimitsResponse(w http.ResponseWriter) error
+}
+
+type ListCreditLimits200JSONResponse CreditLimitList
+
+func (response ListCreditLimits200JSONResponse) VisitListCreditLimitsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCreditLimits401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListCreditLimits401ApplicationProblemPlusJSONResponse) VisitListCreditLimitsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCreditLimits404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListCreditLimits404ApplicationProblemPlusJSONResponse) VisitListCreditLimitsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCreditLimitRequestObject struct {
+	Id   ID `json:"id"`
+	Body *CreateCreditLimitJSONRequestBody
+}
+
+type CreateCreditLimitResponseObject interface {
+	VisitCreateCreditLimitResponse(w http.ResponseWriter) error
+}
+
+type CreateCreditLimit201JSONResponse CreditLimit
+
+func (response CreateCreditLimit201JSONResponse) VisitCreateCreditLimitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCreditLimit401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateCreditLimit401ApplicationProblemPlusJSONResponse) VisitCreateCreditLimitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCreditLimit404ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateCreditLimit404ApplicationProblemPlusJSONResponse) VisitCreateCreditLimitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateCreditLimit422ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateCreditLimit422ApplicationProblemPlusJSONResponse) VisitCreateCreditLimitResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2358,9 +3008,27 @@ type StrictServerInterface interface {
 	// GetAccountBalance Balance of an account at the end of a date.
 	// (GET /accounts/{id}/balance)
 	GetAccountBalance(ctx context.Context, request GetAccountBalanceRequestObject) (GetAccountBalanceResponseObject, error)
+	// ListBillingCycleRules Billing cycle rule versions of a card.
+	// (GET /accounts/{id}/billing-cycle-rules)
+	ListBillingCycleRules(ctx context.Context, request ListBillingCycleRulesRequestObject) (ListBillingCycleRulesResponseObject, error)
+	// CreateBillingCycleRule Add a billing cycle rule version, effective from a reference month.
+	// (POST /accounts/{id}/billing-cycle-rules)
+	CreateBillingCycleRule(ctx context.Context, request CreateBillingCycleRuleRequestObject) (CreateBillingCycleRuleResponseObject, error)
+	// ListCards Physical and virtual cards of a card account.
+	// (GET /accounts/{id}/cards)
+	ListCards(ctx context.Context, request ListCardsRequestObject) (ListCardsResponseObject, error)
+	// CreateCard Add a card.
+	// (POST /accounts/{id}/cards)
+	CreateCard(ctx context.Context, request CreateCardRequestObject) (CreateCardResponseObject, error)
 	// CloseAccount Close an account with zero balance.
 	// (POST /accounts/{id}/close)
 	CloseAccount(ctx context.Context, request CloseAccountRequestObject) (CloseAccountResponseObject, error)
+	// ListCreditLimits Credit limit versions of a card.
+	// (GET /accounts/{id}/credit-limits)
+	ListCreditLimits(ctx context.Context, request ListCreditLimitsRequestObject) (ListCreditLimitsResponseObject, error)
+	// CreateCreditLimit Add a credit limit version.
+	// (POST /accounts/{id}/credit-limits)
+	CreateCreditLimit(ctx context.Context, request CreateCreditLimitRequestObject) (CreateCreditLimitResponseObject, error)
 	// ListInstitutions List institutions.
 	// (GET /institutions)
 	ListInstitutions(ctx context.Context, request ListInstitutionsRequestObject) (ListInstitutionsResponseObject, error)
@@ -2582,6 +3250,124 @@ func (sh *strictHandler) GetAccountBalance(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// ListBillingCycleRules operation middleware
+func (sh *strictHandler) ListBillingCycleRules(w http.ResponseWriter, r *http.Request, id ID) {
+	var request ListBillingCycleRulesRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListBillingCycleRules(ctx, request.(ListBillingCycleRulesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListBillingCycleRules")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListBillingCycleRulesResponseObject); ok {
+		if err := validResponse.VisitListBillingCycleRulesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateBillingCycleRule operation middleware
+func (sh *strictHandler) CreateBillingCycleRule(w http.ResponseWriter, r *http.Request, id ID) {
+	var request CreateBillingCycleRuleRequestObject
+
+	request.Id = id
+
+	var body CreateBillingCycleRuleJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateBillingCycleRule(ctx, request.(CreateBillingCycleRuleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateBillingCycleRule")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateBillingCycleRuleResponseObject); ok {
+		if err := validResponse.VisitCreateBillingCycleRuleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListCards operation middleware
+func (sh *strictHandler) ListCards(w http.ResponseWriter, r *http.Request, id ID) {
+	var request ListCardsRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCards(ctx, request.(ListCardsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCards")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListCardsResponseObject); ok {
+		if err := validResponse.VisitListCardsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateCard operation middleware
+func (sh *strictHandler) CreateCard(w http.ResponseWriter, r *http.Request, id ID) {
+	var request CreateCardRequestObject
+
+	request.Id = id
+
+	var body CreateCardJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateCard(ctx, request.(CreateCardRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateCard")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateCardResponseObject); ok {
+		if err := validResponse.VisitCreateCardResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // CloseAccount operation middleware
 func (sh *strictHandler) CloseAccount(w http.ResponseWriter, r *http.Request, id ID) {
 	var request CloseAccountRequestObject
@@ -2608,6 +3394,65 @@ func (sh *strictHandler) CloseAccount(w http.ResponseWriter, r *http.Request, id
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CloseAccountResponseObject); ok {
 		if err := validResponse.VisitCloseAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListCreditLimits operation middleware
+func (sh *strictHandler) ListCreditLimits(w http.ResponseWriter, r *http.Request, id ID) {
+	var request ListCreditLimitsRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCreditLimits(ctx, request.(ListCreditLimitsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCreditLimits")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListCreditLimitsResponseObject); ok {
+		if err := validResponse.VisitListCreditLimitsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateCreditLimit operation middleware
+func (sh *strictHandler) CreateCreditLimit(w http.ResponseWriter, r *http.Request, id ID) {
+	var request CreateCreditLimitRequestObject
+
+	request.Id = id
+
+	var body CreateCreditLimitJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateCreditLimit(ctx, request.(CreateCreditLimitRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateCreditLimit")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateCreditLimitResponseObject); ok {
+		if err := validResponse.VisitCreateCreditLimitResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

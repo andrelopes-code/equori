@@ -5,12 +5,14 @@ package server
 import (
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andrelopes-code/equori/internal/identity"
 	"github.com/andrelopes-code/equori/internal/ledger"
 	"github.com/andrelopes-code/equori/internal/marketdata"
+	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 	"github.com/andrelopes-code/equori/internal/reporting"
@@ -18,6 +20,8 @@ import (
 
 type Config struct {
 	SecureCookies bool
+	// Clock defaults to the current time in UTC when nil.
+	Clock *clock.Clock
 }
 
 type App struct {
@@ -30,10 +34,14 @@ type App struct {
 // New registers every module's routes and outbox subscriptions; the caller runs Dispatcher.
 func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) *App {
 	dispatcher := outbox.NewDispatcher(pool, log)
+	clk := clock.New(time.UTC, time.Now)
+	if cfg.Clock != nil {
+		clk = *cfg.Clock
+	}
 	identityModule := identity.New(pool, identity.Config{SecureCookies: cfg.SecureCookies}, log)
-	ledgerModule := ledger.New(pool, dispatcher, log)
-	reportingModule := reporting.New(pool, dispatcher, log)
 	marketdataModule := marketdata.New(pool)
+	ledgerModule := ledger.New(pool, dispatcher, marketdataModule, clk, log)
+	reportingModule := reporting.New(pool, dispatcher, log)
 
 	mux := http.NewServeMux()
 	mux.Handle("GET /healthz", httpserver.Health(pool))

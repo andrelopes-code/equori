@@ -195,3 +195,14 @@ func (s snapshot) transaction() (domain.Transaction, error) {
 	}
 	return t, nil
 }
+
+func toBillingRule(row LedgerBillingCycleRule) domain.BillingCycleRule {
+	return domain.BillingCycleRule{
+		EffectiveFrom: domain.MonthOf(row.EffectiveFrom), ClosingDay: int(row.ClosingDay), DueDay: int(row.DueDay),
+		Assignment: row.ClosingDayAssignment, Adjustment: row.DueDateAdjustment, Calendar: row.Calendar,
+	}
+}
+
+func toCard(row LedgerCard) domain.Card {
+	return domain.Card{ID: row.ID, UserID: row.UserID, AccountID: row.AccountID, Holder: row.Holder, LastFour: row.LastFour, Virtual: row.Virtual, Active: row.Active}
+}

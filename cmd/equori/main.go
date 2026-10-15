@@ -15,6 +15,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/config"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/postgres"
@@ -67,7 +68,8 @@ func serve() error {
 	}
 	defer pool.Close()
 
-	app := server.New(pool, server.Config{SecureCookies: !cfg.InsecureCookies}, log)
+	clk := clock.New(cfg.TimeZone, time.Now)
+	app := server.New(pool, server.Config{SecureCookies: !cfg.InsecureCookies, Clock: &clk}, log)
 
 	// The dispatcher must stop before the pool closes.
 	dispatcherDone := make(chan error, 1)

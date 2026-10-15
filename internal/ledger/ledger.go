@@ -16,6 +16,8 @@ import (
 	"github.com/andrelopes-code/equori/internal/ledger/internal/adapter/httpapi"
 	"github.com/andrelopes-code/equori/internal/ledger/internal/adapter/postgres"
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
+	"github.com/andrelopes-code/equori/internal/marketdata"
+	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 )
 
@@ -36,8 +38,19 @@ type Module struct {
 	http *httpapi.Server
 }
 
-func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, log *slog.Logger) *Module {
-	svc := app.NewService(postgres.NewRepository(pool), time.Now)
+// Calendar is the part of marketdata the ledger uses to shift due dates.
+type Calendar interface {
+	Adjust(ctx context.Context, name string, d time.Time, a marketdata.Adjustment) (time.Time, error)
+}
+
+type calendarAdapter struct{ cal Calendar }
+
+func (c calendarAdapter) Adjust(ctx context.Context, name string, d time.Time, adjustment string) (time.Time, error) {
+	return c.cal.Adjust(ctx, name, d, marketdata.Adjustment(adjustment))
+}
+
+func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, cal Calendar, clk clock.Clock, log *slog.Logger) *Module {
+	svc := app.NewService(postgres.NewRepository(pool), clk, calendarAdapter{cal})
 	dispatcher.Subscribe("ledger-provisioning", "identity.user_created.v1", provision)
 	return &Module{http: httpapi.NewServer(svc, log)}
 }
@@ -54,6 +67,6 @@ func provision(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
 	if err := json.Unmarshal(e.Payload, &p); err != nil {
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
-	svc := app.NewService(postgres.NewRepository(tx), time.Now)
+	svc := app.NewService(postgres.NewRepository(tx), clock.New(time.UTC, time.Now), nil)
 	return svc.Provision(ctx, p.UserID, DefaultBaseCurrency)
 }

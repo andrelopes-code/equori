@@ -28,6 +28,37 @@ type LedgerAccount struct {
 	UpdatedAt           time.Time
 }
 
+type LedgerBillingCycleRule struct {
+	UserID               int64
+	AccountID            uuid.UUID
+	EffectiveFrom        time.Time
+	ClosingDay           int16
+	DueDay               int16
+	ClosingDayAssignment string
+	DueDateAdjustment    string
+	Calendar             string
+	CreatedAt            time.Time
+}
+
+type LedgerCard struct {
+	ID        uuid.UUID
+	UserID    int64
+	AccountID uuid.UUID
+	Holder    string
+	LastFour  string
+	Virtual   bool
+	Active    bool
+	CreatedAt time.Time
+}
+
+type LedgerCreditLimit struct {
+	UserID        int64
+	AccountID     uuid.UUID
+	EffectiveFrom time.Time
+	Amount        int64
+	CreatedAt     time.Time
+}
+
 type LedgerInstitution struct {
 	ID     uuid.UUID
 	UserID int64

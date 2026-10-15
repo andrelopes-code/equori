@@ -120,11 +120,21 @@ func (s *Server) CreateAccount(ctx context.Context, req CreateAccountRequestObje
 }
 
 func (s *Server) GetAccount(ctx context.Context, req GetAccountRequestObject) (GetAccountResponseObject, error) {
-	a, err := s.svc.Account(ctx, auth.MustUserID(ctx), req.Id)
+	userID := auth.MustUserID(ctx)
+	a, err := s.svc.Account(ctx, userID, req.Id)
 	if err != nil {
 		return nil, err
 	}
-	return GetAccount200JSONResponse(toAccountAPI(a)), nil
+	out := toAccountAPI(a)
+	summary, err := s.svc.CardSummary(ctx, userID, a)
+	if err != nil {
+		return nil, err
+	}
+	if summary != nil {
+		limit, available := toMoneyAPI(summary.CreditLimit), toMoneyAPI(summary.AvailableLimit)
+		out.Card = &CardSummary{CreditLimit: &limit, AvailableLimit: &available}
+	}
+	return GetAccount200JSONResponse(out), nil
 }
 
 func (s *Server) UpdateAccount(ctx context.Context, req UpdateAccountRequestObject) (UpdateAccountResponseObject, error) {

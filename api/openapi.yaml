@@ -555,6 +555,135 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /accounts/{id}/billing-cycle-rules:
+    get:
+      tags: [ledger]
+      operationId: listBillingCycleRules
+      summary: Billing cycle rule versions of a card.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingCycleRuleList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [ledger]
+      operationId: createBillingCycleRule
+      summary: Add a billing cycle rule version, effective from a reference month.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BillingCycleRule"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingCycleRule"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/credit-limits:
+    get:
+      tags: [ledger]
+      operationId: listCreditLimits
+      summary: Credit limit versions of a card.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditLimitList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [ledger]
+      operationId: createCreditLimit
+      summary: Add a credit limit version.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreditLimit"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditLimit"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/cards:
+    get:
+      tags: [ledger]
+      operationId: listCards
+      summary: Physical and virtual cards of a card account.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [ledger]
+      operationId: createCard
+      summary: Add a card.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardInput"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
 security:
   - sessionCookie: []
 components:
@@ -600,6 +729,87 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
   schemas:
+    BillingCycleRule:
+      type: object
+      required: [effective_from, closing_day, due_day]
+      properties:
+        effective_from:
+          type: string
+          pattern: "^[0-9]{4}-[0-9]{2}$"
+          description: Reference month (YYYY-MM) from which the rule applies.
+        closing_day:
+          type: integer
+        due_day:
+          type: integer
+        closing_day_assignment:
+          type: string
+          enum: [next, closing]
+        due_date_adjustment:
+          type: string
+          enum: [none, following, preceding, modified_following]
+        calendar:
+          type: string
+    BillingCycleRuleList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BillingCycleRule"
+    CreditLimit:
+      type: object
+      required: [effective_from, amount]
+      properties:
+        effective_from:
+          type: string
+          format: date
+        amount:
+          $ref: "#/components/schemas/Money"
+    CreditLimitList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CreditLimit"
+    CardInput:
+      type: object
+      required: [holder, last_four]
+      properties:
+        holder:
+          type: string
+        last_four:
+          type: string
+        virtual:
+          type: boolean
+    Card:
+      allOf:
+        - $ref: "#/components/schemas/CardInput"
+        - type: object
+          required: [id, active]
+          properties:
+            id:
+              type: string
+              format: uuid
+            active:
+              type: boolean
+    CardList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Card"
+    CardSummary:
+      type: object
+      properties:
+        credit_limit:
+          $ref: "#/components/schemas/Money"
+        available_limit:
+          $ref: "#/components/schemas/Money"
     HolidayList:
       type: object
       required: [items]
@@ -753,6 +963,8 @@ components:
               format: date
             system_role:
               type: string
+            card:
+              $ref: "#/components/schemas/CardSummary"
     AccountList:
       type: object
       required: [items]

@@ -15,6 +15,8 @@ import (
 	"github.com/andrelopes-code/equori/internal/ledger/internal/adapter/postgres"
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
 	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
+	"github.com/andrelopes-code/equori/internal/marketdata"
+	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
@@ -33,8 +35,9 @@ func newLedgerFixture(t testing.TB) ledgerFixture {
 	t.Helper()
 	pool := pgtest.New(t)
 	d := outbox.NewDispatcher(pool, slog.New(slog.NewTextHandler(io.Discard, nil)))
-	New(pool, d, slog.New(slog.NewTextHandler(io.Discard, nil)))
-	f := ledgerFixture{pool: pool, dispatcher: d, svc: app.NewService(postgres.NewRepository(pool), time.Now)}
+	cal := calendarAdapter{marketdata.New(pool)}
+	New(pool, d, cal.cal, clock.New(time.UTC, time.Now), slog.New(slog.NewTextHandler(io.Discard, nil)))
+	f := ledgerFixture{pool: pool, dispatcher: d, svc: app.NewService(postgres.NewRepository(pool), clock.New(time.UTC, time.Now), cal)}
 	f.userID = provisionedUser(t, pool, d)
 	f.checking = f.createAccount(t, domain.Account{Name: "Nubank checking", Class: domain.ClassAsset, Kind: domain.KindChecking})
 	f.food = f.createAccount(t, domain.Account{Name: "Food", Class: domain.ClassExpense})

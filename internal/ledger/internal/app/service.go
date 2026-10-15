@@ -27,12 +27,13 @@ const (
 var earliestDate = time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)
 
 type Service struct {
-	repo Repository
-	now  func() time.Time
+	repo  Repository
+	clock Clock
+	cal   Calendar
 }
 
-func NewService(repo Repository, now func() time.Time) *Service {
-	return &Service{repo: repo, now: now}
+func NewService(repo Repository, clock Clock, cal Calendar) *Service {
+	return &Service{repo: repo, clock: clock, cal: cal}
 }
 
 // Provision creates the settings and system accounts of a new user. It is idempotent.
@@ -311,7 +312,7 @@ func (s *Service) VoidTransaction(ctx context.Context, userID int64, id uuid.UUI
 		if err != nil {
 			return err
 		}
-		voided, err := prev.Void(s.now().UTC(), reason)
+		voided, err := prev.Void(s.clock.Now(), reason)
 		if err != nil {
 			return err
 		}

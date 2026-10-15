@@ -20,6 +20,28 @@ var (
 	ErrSettingsLocked     = errors.New("settings cannot change after the first transaction")
 )
 
+// Clock is satisfied by platform/clock.Clock.
+type Clock interface {
+	Now() time.Time
+	Today() time.Time
+}
+
+// Calendar shifts due dates to business days (marketdata, P2 amendment A2).
+type Calendar interface {
+	Adjust(ctx context.Context, calendar string, d time.Time, adjustment string) (time.Time, error)
+}
+
+type CreditLimit struct {
+	AccountID     uuid.UUID
+	EffectiveFrom time.Time
+	Amount        money.Money
+}
+
+type CardSummary struct {
+	CreditLimit    money.Money
+	AvailableLimit money.Money
+}
+
 type Settings struct {
 	UserID       int64
 	BaseCurrency money.Currency
@@ -113,6 +135,13 @@ type Repository interface {
 	VoidTransaction(ctx context.Context, t domain.Transaction) error
 	ListTransactions(ctx context.Context, q TransactionQuery) ([]domain.Transaction, error)
 	Versions(ctx context.Context, userID int64, id uuid.UUID) ([]Version, error)
+
+	InsertBillingRule(ctx context.Context, userID int64, accountID uuid.UUID, r domain.BillingCycleRule) (domain.BillingCycleRule, error)
+	BillingRules(ctx context.Context, userID int64, accountID uuid.UUID) (domain.Rules, error)
+	InsertCreditLimit(ctx context.Context, userID int64, l CreditLimit) (CreditLimit, error)
+	CreditLimits(ctx context.Context, userID int64, accountID uuid.UUID) ([]CreditLimit, error)
+	InsertCard(ctx context.Context, c domain.Card) (domain.Card, error)
+	Cards(ctx context.Context, userID int64, accountID uuid.UUID) ([]domain.Card, error)
 
 	// BalanceAt sums the postings of the account and its descendants up to and including date.
 	BalanceAt(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis Basis) (int64, error)

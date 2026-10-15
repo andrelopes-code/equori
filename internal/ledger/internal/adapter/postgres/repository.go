@@ -382,3 +382,61 @@ func (r *Repository) BalanceAt(ctx context.Context, userID int64, accountID uuid
 	}
 	return r.q.BalanceBookedAt(ctx, BalanceBookedAtParams{UserID: userID, AccountID: accountID, OnDate: date})
 }
+
+func (r *Repository) InsertBillingRule(ctx context.Context, userID int64, accountID uuid.UUID, rule domain.BillingCycleRule) (domain.BillingCycleRule, error) {
+	row, err := r.q.InsertBillingRule(ctx, InsertBillingRuleParams{
+		UserID: userID, AccountID: accountID, EffectiveFrom: rule.EffectiveFrom.FirstDay(),
+		ClosingDay: int16(rule.ClosingDay), DueDay: int16(rule.DueDay), //nolint:gosec // days are 1 to 31 (domain.NewBillingCycleRule).
+		ClosingDayAssignment: rule.Assignment, DueDateAdjustment: rule.Adjustment, Calendar: rule.Calendar,
+	})
+	if err != nil {
+		return domain.BillingCycleRule{}, duplicate(err, "effective_from")
+	}
+	return toBillingRule(row), nil
+}
+
+func (r *Repository) BillingRules(ctx context.Context, userID int64, accountID uuid.UUID) (domain.Rules, error) {
+	rows, err := r.q.ListBillingRules(ctx, ListBillingRulesParams{UserID: userID, AccountID: accountID})
+	return mapAll(rows, toBillingRule), err
+}
+
+func (r *Repository) InsertCreditLimit(ctx context.Context, userID int64, l app.CreditLimit) (app.CreditLimit, error) {
+	_, err := r.q.InsertCreditLimit(ctx, InsertCreditLimitParams{UserID: userID, AccountID: l.AccountID, EffectiveFrom: l.EffectiveFrom, Amount: l.Amount.Amount()})
+	if err != nil {
+		return app.CreditLimit{}, duplicate(err, "effective_from")
+	}
+	return l, nil
+}
+
+func (r *Repository) CreditLimits(ctx context.Context, userID int64, accountID uuid.UUID) ([]app.CreditLimit, error) {
+	rows, err := r.q.ListCreditLimits(ctx, ListCreditLimitsParams{UserID: userID, AccountID: accountID})
+	if err != nil {
+		return nil, err
+	}
+	a, err := r.Account(ctx, userID, accountID)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]app.CreditLimit, len(rows))
+	for i, row := range rows {
+		amount, err := money.New(row.Amount, a.Instrument)
+		if err != nil {
+			return nil, err
+		}
+		out[i] = app.CreditLimit{AccountID: row.AccountID, EffectiveFrom: row.EffectiveFrom, Amount: amount}
+	}
+	return out, nil
+}
+
+func (r *Repository) InsertCard(ctx context.Context, c domain.Card) (domain.Card, error) {
+	row, err := r.q.InsertCard(ctx, InsertCardParams{UserID: c.UserID, AccountID: c.AccountID, Holder: c.Holder, LastFour: c.LastFour, Virtual: c.Virtual})
+	if err != nil {
+		return domain.Card{}, referenceError(err)
+	}
+	return toCard(row), nil
+}
+
+func (r *Repository) Cards(ctx context.Context, userID int64, accountID uuid.UUID) ([]domain.Card, error) {
+	rows, err := r.q.ListCards(ctx, ListCardsParams{UserID: userID, AccountID: accountID})
+	return mapAll(rows, toCard), err
+}
