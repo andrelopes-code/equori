@@ -18,6 +18,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/identity"
 	"github.com/andrelopes-code/equori/internal/platform/config"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
+	"github.com/andrelopes-code/equori/internal/platform/outbox"
 	"github.com/andrelopes-code/equori/internal/platform/postgres"
 )
 
@@ -65,12 +66,23 @@ func serve() error {
 	}
 	defer pool.Close()
 
+	dispatcher := outbox.NewDispatcher(pool, log)
 	identityModule := identity.New(pool, identity.Config{SecureCookies: !cfg.InsecureCookies}, log)
 
 	mux := http.NewServeMux()
 	mux.Handle("GET /healthz", httpserver.Health(pool))
 	identityModule.RegisterRoutes(mux)
 	mux.Handle("/api/", httpserver.NotFound())
+
+	// Subscriptions are registered by the modules above; the dispatcher must stop before the pool closes.
+	dispatcherDone := make(chan error, 1)
+	go func() { dispatcherDone <- dispatcher.Run(ctx) }()
+	defer func() {
+		stop()
+		if err := <-dispatcherDone; err != nil {
+			log.Error("outbox dispatcher stopped", "error", err)
+		}
+	}()
 
 	handler := httpserver.Middleware(identityModule.RequireSession(mux), log)
 	return httpserver.Run(ctx, cfg.HTTPAddr, handler, log)

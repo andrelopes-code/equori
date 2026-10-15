@@ -8,13 +8,6 @@ import (
 	"time"
 )
 
-type IdentitySession struct {
-	TokenHash []byte
-	UserID    int64
-	CreatedAt time.Time
-	ExpiresAt time.Time
-}
-
 type IdentityUser struct {
 	ID           int64
 	Email        string

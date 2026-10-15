@@ -65,3 +65,16 @@ func New(t testing.TB) *pgxpool.Pool {
 	}
 	return pool
 }
+
+// CreateUser inserts an identity_user row with a unique email and returns its id.
+func CreateUser(t testing.TB, pool *pgxpool.Pool) int64 {
+	t.Helper()
+	var id int64
+	email := strings.ToLower(rand.Text()) + "@example.com"
+	err := pool.QueryRow(context.Background(),
+		`INSERT INTO identity_user (email, password_hash, role) VALUES ($1, 'x', 'admin') RETURNING id`, email).Scan(&id)
+	if err != nil {
+		t.Fatalf("create user: %v", err)
+	}
+	return id
+}
