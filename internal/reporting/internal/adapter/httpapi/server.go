@@ -17,18 +17,20 @@ const BaseURL = "/api/v1"
 var _ StrictServerInterface = (*Server)(nil)
 
 type Server struct {
-	svc *app.Service
-	log *slog.Logger
+	svc  *app.Service
+	errs httpserver.ErrorWriter
 }
 
-func NewServer(svc *app.Service, log *slog.Logger) *Server { return &Server{svc: svc, log: log} }
+func NewServer(svc *app.Service, log *slog.Logger) *Server {
+	return &Server{svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: toProblem}}
+}
 
 func (s *Server) Register(mux *http.ServeMux) {
 	strict := NewStrictHandlerWithOptions(s, nil, StrictHTTPServerOptions{
-		RequestErrorHandlerFunc:  s.writeRequestError,
-		ResponseErrorHandlerFunc: s.writeError,
+		RequestErrorHandlerFunc:  s.errs.WriteRequestError,
+		ResponseErrorHandlerFunc: s.errs.Write,
 	})
-	HandlerWithOptions(strict, StdHTTPServerOptions{BaseURL: BaseURL, BaseRouter: mux, ErrorHandlerFunc: s.writeRequestError})
+	HandlerWithOptions(strict, StdHTTPServerOptions{BaseURL: BaseURL, BaseRouter: mux, ErrorHandlerFunc: s.errs.WriteRequestError})
 }
 
 func (s *Server) GetBalanceSeries(ctx context.Context, req GetBalanceSeriesRequestObject) (GetBalanceSeriesResponseObject, error) {
@@ -47,31 +49,15 @@ func (s *Server) GetBalanceSeries(ctx context.Context, req GetBalanceSeriesReque
 	return out, nil
 }
 
-var errInvalidRequest = errors.New("invalid request")
-
-func (s *Server) writeRequestError(w http.ResponseWriter, r *http.Request, err error) {
-	s.writeError(w, r, errors.Join(errInvalidRequest, err))
-}
-
-func (s *Server) writeError(w http.ResponseWriter, r *http.Request, err error) {
-	var d problem.Details
-	if t, ok := problem.Transport(err); ok {
-		d = t
-	} else {
-		switch {
-		case errors.Is(err, errInvalidRequest):
-			d = problem.New(http.StatusBadRequest, "invalid_request", "malformed request")
-		case errors.Is(err, app.ErrInvalidRange):
-			d = problem.New(http.StatusBadRequest, "invalid_request", "from must not be after to, and the range must not exceed 3660 days")
-		case errors.Is(err, app.ErrNotFound):
-			d = problem.New(http.StatusNotFound, "not_found", "account not found")
-		default:
-			d = problem.New(http.StatusInternalServerError, "internal_error", "")
-		}
+// toProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).
+func toProblem(err error) (problem.Details, bool) {
+	switch {
+	case errors.Is(err, app.ErrInvalidRange):
+		d := problem.New(http.StatusBadRequest, "invalid_request", "from must not be after to, and the range must not exceed 3660 days")
+		d.Errors = []problem.FieldError{{Field: "to", Message: "must be on or after from and at most 3660 days after it"}}
+		return d, true
+	case errors.Is(err, app.ErrNotFound):
+		return problem.New(http.StatusNotFound, "not_found", "account not found"), true
 	}
-	d.RequestID = httpserver.RequestID(r.Context())
-	if d.Status >= http.StatusInternalServerError {
-		s.log.ErrorContext(r.Context(), "request failed", "error", err, "request_id", d.RequestID)
-	}
-	problem.Write(w, d)
+	return problem.Details{}, false
 }

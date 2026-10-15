@@ -33,7 +33,7 @@ func TestBillingCycleRules(t *testing.T) {
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/accounts/"+card+"/billing-cycle-rules",
 		map[string]any{"effective_from": "2026-12", "closing_day": 5, "due_day": 12}), http.StatusUnprocessableEntity, "validation_failed", "effective_from")
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/accounts/"+card+"/billing-cycle-rules",
-		map[string]any{"effective_from": "2027-01", "closing_day": 0, "due_day": 12}), http.StatusUnprocessableEntity, "validation_failed", "closing_day")
+		map[string]any{"effective_from": "2027-01", "closing_day": 0, "due_day": 12}), http.StatusBadRequest, "invalid_request", "closing_day")
 }
 
 func TestCardProfileOnlyForCards(t *testing.T) {
@@ -72,7 +72,7 @@ func TestCards(t *testing.T) {
 	card := h.Account("Itaú Visa", "liability", "credit_card", nil)
 	h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/cards", map[string]any{"holder": "Owner", "last_four": "4021", "virtual": true}, http.StatusCreated, nil)
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/accounts/"+card+"/cards", map[string]any{"holder": "Owner", "last_four": "40a1"}),
-		http.StatusUnprocessableEntity, "validation_failed", "last_four")
+		http.StatusBadRequest, "invalid_request", "last_four")
 	var cards struct {
 		Items []struct {
 			LastFour string `json:"last_four"`

@@ -1464,8 +1464,12 @@ components:
           format: date
         from_installment:
           type: integer
+          minimum: 1
+          maximum: 420
         to_installment:
           type: integer
+          minimum: 1
+          maximum: 420
         target_statement:
           type: string
           pattern: "^[0-9]{4}-[0-9]{2}$"
@@ -1521,6 +1525,7 @@ components:
           format: date
         description:
           type: string
+          maxLength: 500
         payee_id:
           type: string
           format: uuid
@@ -1528,10 +1533,14 @@ components:
           type: array
           items:
             type: string
+            minLength: 1
+            maxLength: 60
         splits:
           type: array
           items:
             $ref: "#/components/schemas/Split"
+          minItems: 1
+          maxItems: 500
         installment_count:
           type: integer
           minimum: 2
@@ -1545,6 +1554,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Money"
+          maxItems: 420
     InstallmentPurchase:
       type: object
       required: [transaction, plan_id]
@@ -1652,8 +1662,12 @@ components:
           description: Reference month (YYYY-MM) from which the rule applies.
         closing_day:
           type: integer
+          minimum: 1
+          maximum: 31
         due_day:
           type: integer
+          minimum: 1
+          maximum: 31
         closing_day_assignment:
           type: string
           enum: [next, closing]
@@ -1695,8 +1709,11 @@ components:
       properties:
         holder:
           type: string
+          minLength: 1
+          maxLength: 120
         last_four:
           type: string
+          pattern: "^[0-9]{4}$"
         virtual:
           type: boolean
     Card:
@@ -1775,6 +1792,7 @@ components:
         currency:
           type: string
           example: BRL
+          pattern: "^[A-Z]{3}$"
     Settings:
       type: object
       additionalProperties: false
@@ -1782,6 +1800,7 @@ components:
       properties:
         base_currency:
           type: string
+          pattern: "^[A-Z]{3}$"
     InstitutionInput:
       type: object
       additionalProperties: false
@@ -1789,6 +1808,8 @@ components:
       properties:
         name:
           type: string
+          minLength: 1
+          maxLength: 120
         code:
           type: string
     Institution:
@@ -1815,6 +1836,8 @@ components:
       properties:
         name:
           type: string
+          minLength: 1
+          maxLength: 120
     Payee:
       type: object
       required: [id, name]
@@ -1850,6 +1873,8 @@ components:
       properties:
         name:
           type: string
+          minLength: 1
+          maxLength: 120
         class:
           $ref: "#/components/schemas/AccountClass"
         kind:
@@ -1857,6 +1882,7 @@ components:
           enum: [checking, savings, cash, wallet, benefit, reserve, brokerage, receivable, credit_card, loan, payable]
         currency:
           type: string
+          pattern: "^[A-Z]{3}$"
         parent_id:
           type: string
           format: uuid
@@ -1899,6 +1925,8 @@ components:
       properties:
         name:
           type: string
+          minLength: 1
+          maxLength: 120
         parent_id:
           type: string
           format: uuid
@@ -1953,6 +1981,7 @@ components:
           $ref: "#/components/schemas/Money"
         memo:
           type: string
+          maxLength: 500
         statement:
           type: string
           pattern: "^[0-9]{4}-[0-9]{2}$"
@@ -2004,6 +2033,7 @@ components:
           format: date
         description:
           type: string
+          maxLength: 500
         payee_id:
           type: string
           format: uuid
@@ -2011,6 +2041,8 @@ components:
           type: array
           items:
             type: string
+            minLength: 1
+            maxLength: 60
         links:
           type: array
           items:
@@ -2019,6 +2051,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PostingInput"
+          minItems: 2
+          maxItems: 500
     CorrectionInput:
       type: object
       additionalProperties: false
@@ -2029,6 +2063,7 @@ components:
           format: date
         description:
           type: string
+          maxLength: 500
         payee_id:
           type: string
           format: uuid
@@ -2036,6 +2071,8 @@ components:
           type: array
           items:
             type: string
+            minLength: 1
+            maxLength: 60
         links:
           type: array
           items:
@@ -2044,10 +2081,14 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PostingInput"
+          minItems: 2
+          maxItems: 500
         expected_version:
           type: integer
+          minimum: 1
         reason:
           type: string
+          maxLength: 500
     Transaction:
       type: object
       required: [id, date, description, balancing_currency, origin, version, tags, links, postings]
@@ -2104,6 +2145,7 @@ components:
       properties:
         reason:
           type: string
+          maxLength: 500
     TransactionVersion:
       type: object
       required: [version, reason, replaced_at, transaction]

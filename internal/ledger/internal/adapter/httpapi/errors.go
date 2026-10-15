@@ -6,7 +6,6 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
 	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
-	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/problem"
 )
 
@@ -17,31 +16,15 @@ type paramError struct{ field, message string }
 
 func (e *paramError) Error() string { return e.field + ": " + e.message }
 
-func (s *Server) writeRequestError(w http.ResponseWriter, r *http.Request, err error) {
-	s.writeError(w, r, errors.Join(errInvalidRequest, err))
-}
-
-func (s *Server) writeError(w http.ResponseWriter, r *http.Request, err error) {
-	d := toProblem(err)
-	d.RequestID = httpserver.RequestID(r.Context())
-	if d.Status >= http.StatusInternalServerError {
-		s.log.ErrorContext(r.Context(), "request failed", "error", err, "request_id", d.RequestID)
-	}
-	problem.Write(w, d)
-}
-
-// toProblem maps errors to the codes declared in api/openapi.yaml (ADR 004).
-func toProblem(err error) problem.Details {
-	if d, ok := problem.Transport(err); ok {
-		return d
-	}
+// toProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).
+func toProblem(err error) (problem.Details, bool) {
 	if pe, ok := errors.AsType[*paramError](err); ok {
 		d := problem.New(http.StatusBadRequest, "invalid_request", pe.Error())
 		d.Errors = []problem.FieldError{{Field: pe.field, Message: pe.message}}
-		return d
+		return d, true
 	}
 	if errors.Is(err, errInvalidRequest) {
-		return problem.New(http.StatusBadRequest, "invalid_request", "malformed request")
+		return problem.New(http.StatusBadRequest, "invalid_request", "malformed request"), true
 	}
 	if fe, ok := errors.AsType[*domain.FieldError](err); ok {
 		code := "validation_failed"
@@ -50,34 +33,34 @@ func toProblem(err error) problem.Details {
 		}
 		d := problem.New(http.StatusUnprocessableEntity, code, fe.Error())
 		d.Errors = []problem.FieldError{{Field: fe.Field, Message: fe.Message}}
-		return d
+		return d, true
 	}
 	switch {
 	case errors.Is(err, app.ErrNotFound):
-		return problem.New(http.StatusNotFound, "not_found", "resource not found")
+		return problem.New(http.StatusNotFound, "not_found", "resource not found"), true
 	case errors.Is(err, domain.ErrVersionConflict):
-		return problem.New(http.StatusConflict, "version_conflict", "the transaction changed since the expected version; reload it")
+		return problem.New(http.StatusConflict, "version_conflict", "the transaction changed since the expected version; reload it"), true
 	case errors.Is(err, domain.ErrVoided):
-		return problem.New(http.StatusConflict, "transaction_voided", "the transaction is voided")
+		return problem.New(http.StatusConflict, "transaction_voided", "the transaction is voided"), true
 	case errors.Is(err, domain.ErrReconciled):
-		return problem.New(http.StatusConflict, "posting_reconciled", "the transaction has reconciled postings")
+		return problem.New(http.StatusConflict, "posting_reconciled", "the transaction has reconciled postings"), true
 	case errors.Is(err, app.ErrDifferenceRemains):
-		return problem.New(http.StatusConflict, "difference_remains", err.Error())
+		return problem.New(http.StatusConflict, "difference_remains", err.Error()), true
 	case errors.Is(err, domain.ErrAlreadyReconciled):
-		return problem.New(http.StatusConflict, "already_reconciled", err.Error())
+		return problem.New(http.StatusConflict, "already_reconciled", err.Error()), true
 	case errors.Is(err, app.ErrNonZeroBalance), errors.Is(err, app.ErrPostingsAfterClose):
-		return problem.New(http.StatusConflict, "account_not_empty", err.Error())
+		return problem.New(http.StatusConflict, "account_not_empty", err.Error()), true
 	case errors.Is(err, app.ErrSettingsLocked):
-		return problem.New(http.StatusConflict, "settings_locked", err.Error())
+		return problem.New(http.StatusConflict, "settings_locked", err.Error()), true
 	case errors.Is(err, app.ErrStatementNotClosed):
-		return problem.New(http.StatusConflict, "statement_not_closed", err.Error())
+		return problem.New(http.StatusConflict, "statement_not_closed", err.Error()), true
 	case errors.Is(err, app.ErrStatementFinanced):
-		return problem.New(http.StatusConflict, "statement_financed", err.Error())
+		return problem.New(http.StatusConflict, "statement_financed", err.Error()), true
 	case errors.Is(err, app.ErrDisputeOpen):
-		return problem.New(http.StatusConflict, "dispute_open", err.Error())
+		return problem.New(http.StatusConflict, "dispute_open", err.Error()), true
 	case errors.Is(err, app.ErrDisputeResolved):
-		return problem.New(http.StatusConflict, "dispute_resolved", err.Error())
+		return problem.New(http.StatusConflict, "dispute_resolved", err.Error()), true
 	default:
-		return problem.New(http.StatusInternalServerError, "internal_error", "")
+		return problem.Details{}, false
 	}
 }

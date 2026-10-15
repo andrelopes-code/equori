@@ -8,6 +8,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
 	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/page"
 )
@@ -17,23 +18,23 @@ const BaseURL = "/api/v1"
 var _ StrictServerInterface = (*Server)(nil)
 
 type Server struct {
-	svc *app.Service
-	log *slog.Logger
+	svc  *app.Service
+	errs httpserver.ErrorWriter
 }
 
 func NewServer(svc *app.Service, log *slog.Logger) *Server {
-	return &Server{svc: svc, log: log}
+	return &Server{svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: toProblem}}
 }
 
 func (s *Server) Register(mux *http.ServeMux) {
 	strict := NewStrictHandlerWithOptions(s, nil, StrictHTTPServerOptions{
-		RequestErrorHandlerFunc:  s.writeRequestError,
-		ResponseErrorHandlerFunc: s.writeError,
+		RequestErrorHandlerFunc:  s.errs.WriteRequestError,
+		ResponseErrorHandlerFunc: s.errs.Write,
 	})
 	HandlerWithOptions(strict, StdHTTPServerOptions{
 		BaseURL:          BaseURL,
 		BaseRouter:       mux,
-		ErrorHandlerFunc: s.writeRequestError,
+		ErrorHandlerFunc: s.errs.WriteRequestError,
 	})
 }
 

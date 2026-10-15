@@ -24,19 +24,19 @@ var _ StrictServerInterface = (*Server)(nil)
 
 type Server struct {
 	holidays HolidayLister
-	log      *slog.Logger
+	errs     httpserver.ErrorWriter
 }
 
 func NewServer(holidays HolidayLister, log *slog.Logger) *Server {
-	return &Server{holidays: holidays, log: log}
+	return &Server{holidays: holidays, errs: httpserver.ErrorWriter{Log: log, Map: toProblem}}
 }
 
 func (s *Server) Register(mux *http.ServeMux) {
 	strict := NewStrictHandlerWithOptions(s, nil, StrictHTTPServerOptions{
-		RequestErrorHandlerFunc:  s.writeRequestError,
-		ResponseErrorHandlerFunc: s.writeError,
+		RequestErrorHandlerFunc:  s.errs.WriteRequestError,
+		ResponseErrorHandlerFunc: s.errs.Write,
 	})
-	HandlerWithOptions(strict, StdHTTPServerOptions{BaseURL: BaseURL, BaseRouter: mux, ErrorHandlerFunc: s.writeRequestError})
+	HandlerWithOptions(strict, StdHTTPServerOptions{BaseURL: BaseURL, BaseRouter: mux, ErrorHandlerFunc: s.errs.WriteRequestError})
 }
 
 func (s *Server) ListHolidays(ctx context.Context, req ListHolidaysRequestObject) (ListHolidaysResponseObject, error) {
@@ -52,23 +52,10 @@ func NewHoliday(date openapi_types.Date, name, source string) Holiday {
 	return Holiday{Date: date, Name: name, Source: HolidaySource(source)}
 }
 
-var errInvalidRequest = errors.New("invalid request")
-
-func (s *Server) writeRequestError(w http.ResponseWriter, r *http.Request, err error) {
-	s.writeError(w, r, errors.Join(errInvalidRequest, err))
-}
-
-func (s *Server) writeError(w http.ResponseWriter, r *http.Request, err error) {
-	var d problem.Details
-	switch {
-	case errors.Is(err, errInvalidRequest):
-		d = problem.New(http.StatusBadRequest, "invalid_request", "malformed request")
-	case errors.Is(err, ErrNotFound):
-		d = problem.New(http.StatusNotFound, "not_found", "unknown calendar")
-	default:
-		d = problem.New(http.StatusInternalServerError, "internal_error", "")
-		s.log.ErrorContext(r.Context(), "request failed", "error", err)
+// toProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).
+func toProblem(err error) (problem.Details, bool) {
+	if errors.Is(err, ErrNotFound) {
+		return problem.New(http.StatusNotFound, "not_found", "unknown calendar"), true
 	}
-	d.RequestID = httpserver.RequestID(r.Context())
-	problem.Write(w, d)
+	return problem.Details{}, false
 }

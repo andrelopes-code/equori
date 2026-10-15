@@ -26,21 +26,22 @@ type Server struct {
 	svc           *app.Service
 	secureCookies bool
 	log           *slog.Logger
+	errs          httpserver.ErrorWriter
 }
 
 func NewServer(svc *app.Service, secureCookies bool, log *slog.Logger) *Server {
-	return &Server{svc: svc, secureCookies: secureCookies, log: log}
+	return &Server{svc: svc, secureCookies: secureCookies, log: log, errs: httpserver.ErrorWriter{Log: log, Map: toProblem}}
 }
 
 func (s *Server) Register(mux *http.ServeMux) {
 	strict := NewStrictHandlerWithOptions(s, nil, StrictHTTPServerOptions{
-		RequestErrorHandlerFunc:  s.writeRequestError,
-		ResponseErrorHandlerFunc: s.writeError,
+		RequestErrorHandlerFunc:  s.errs.WriteRequestError,
+		ResponseErrorHandlerFunc: s.errs.Write,
 	})
 	HandlerWithOptions(strict, StdHTTPServerOptions{
 		BaseURL:          BaseURL,
 		BaseRouter:       mux,
-		ErrorHandlerFunc: s.writeRequestError,
+		ErrorHandlerFunc: s.errs.WriteRequestError,
 	})
 }
 
@@ -56,12 +57,12 @@ func (s *Server) RequireSession(next http.Handler) http.Handler {
 		}
 		cookie, err := r.Cookie(CookieName)
 		if err != nil {
-			s.writeError(w, r, app.ErrUnauthenticated)
+			s.errs.Write(w, r, app.ErrUnauthenticated)
 			return
 		}
 		user, err := s.svc.Authenticate(r.Context(), cookie.Value)
 		if err != nil {
-			s.writeError(w, r, err)
+			s.errs.Write(w, r, err)
 			return
 		}
 		ctx := auth.WithUserID(r.Context(), user.ID)
@@ -130,35 +131,19 @@ func (s *Server) cookie(value string, expires time.Time) string {
 
 var errInvalidRequest = errors.New("invalid request")
 
-func (s *Server) writeRequestError(w http.ResponseWriter, r *http.Request, err error) {
-	s.writeError(w, r, errors.Join(errInvalidRequest, err))
-}
-
-func (s *Server) writeError(w http.ResponseWriter, r *http.Request, err error) {
-	d := toProblem(err)
-	d.RequestID = httpserver.RequestID(r.Context())
-	if d.Status >= http.StatusInternalServerError {
-		s.log.ErrorContext(r.Context(), "request failed", "error", err, "request_id", d.RequestID)
-	}
-	problem.Write(w, d)
-}
-
-func toProblem(err error) problem.Details {
-	if d, ok := problem.Transport(err); ok {
-		return d
-	}
+// toProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).
+func toProblem(err error) (problem.Details, bool) {
 	switch {
 	case errors.Is(err, errInvalidRequest):
-		return problem.New(http.StatusBadRequest, "invalid_request", "malformed request")
+		return problem.New(http.StatusBadRequest, "invalid_request", "malformed request"), true
 	case errors.Is(err, app.ErrInvalidCredentials):
-		return problem.New(http.StatusUnauthorized, "invalid_credentials", "email or password is incorrect")
+		return problem.New(http.StatusUnauthorized, "invalid_credentials", "email or password is incorrect"), true
 	case errors.Is(err, app.ErrUnauthenticated):
-		return problem.New(http.StatusUnauthorized, "unauthenticated", "a valid session is required")
+		return problem.New(http.StatusUnauthorized, "unauthenticated", "a valid session is required"), true
 	case errors.Is(err, app.ErrTooManyAttempts):
-		return problem.New(http.StatusTooManyRequests, "too_many_attempts", "too many login attempts; retry in 15 minutes")
+		return problem.New(http.StatusTooManyRequests, "too_many_attempts", "too many login attempts; retry in 15 minutes"), true
 	case errors.Is(err, app.ErrBusy):
-		return problem.New(http.StatusServiceUnavailable, "server_busy", "server is busy; retry shortly")
-	default:
-		return problem.New(http.StatusInternalServerError, "internal_error", "")
+		return problem.New(http.StatusServiceUnavailable, "server_busy", "server is busy; retry shortly"), true
 	}
+	return problem.Details{}, false
 }
