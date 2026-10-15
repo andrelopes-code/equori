@@ -32,7 +32,10 @@ SELECT id FROM ledger_statement WHERE account_id = @account_id AND reference_mon
 LIMIT 1;
 
 -- name: ListStatements :many
-SELECT * FROM ledger_statement WHERE user_id = $1 AND account_id = $2 ORDER BY reference_month;
+SELECT s.*, EXISTS (SELECT 1 FROM ledger_reconciliation r WHERE r.statement_id = s.id) AS reconciled
+FROM ledger_statement s
+WHERE s.user_id = $1 AND s.account_id = $2
+ORDER BY s.reference_month;
 
 -- name: ListStatementLines :many
 SELECT p.statement_id, p.card_role, p.amount

@@ -258,8 +258,14 @@ func TestStatementReconciliationLocksPurchases(t *testing.T) {
 	c := newCardSetup(t, "2026-11-05")
 	purchase := c.purchase("2026-10-14", 100000)
 	c.purchase("2026-10-20", 50000)
+	if statements(t, c.h, c.card)["2026-11"].Reconciled {
+		t.Fatal("statement reconciled before confirmation")
+	}
 	if resp := reconcileStatement(c, "2026-11", 150000); resp.Status != http.StatusOK {
 		t.Fatalf("status %d: %s", resp.Status, resp.Body)
+	}
+	if !statements(t, c.h, c.card)["2026-11"].Reconciled {
+		t.Fatal("statement not reported as reconciled")
 	}
 	for _, p := range c.h.Transaction(purchase).Postings {
 		if want := map[bool]string{true: "reconciled", false: "cleared"}[p.AccountID == c.card]; p.Status != want {

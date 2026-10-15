@@ -1057,20 +1057,22 @@ type Split struct {
 
 // StatementDetail defines model for StatementDetail.
 type StatementDetail struct {
-	AccountId   openapi_types.UUID    `json:"account_id"`
-	AmountDue   int64                 `json:"amount_due"`
-	Charges     int64                 `json:"charges"`
-	ClosingDate openapi_types.Date    `json:"closing_date"`
-	Credits     int64                 `json:"credits"`
-	Currency    string                `json:"currency"`
-	DueDate     openapi_types.Date    `json:"due_date"`
-	Id          openapi_types.UUID    `json:"id"`
-	Opening     int64                 `json:"opening"`
-	Payments    int64                 `json:"payments"`
-	Postings    []StatementPosting    `json:"postings"`
-	Reference   string                `json:"reference"`
-	Status      StatementDetailStatus `json:"status"`
-	Unpaid      int64                 `json:"unpaid"`
+	AccountId   openapi_types.UUID `json:"account_id"`
+	AmountDue   Money              `json:"amount_due"`
+	Charges     Money              `json:"charges"`
+	ClosingDate openapi_types.Date `json:"closing_date"`
+	Credits     Money              `json:"credits"`
+	DueDate     openapi_types.Date `json:"due_date"`
+	Id          openapi_types.UUID `json:"id"`
+	Opening     Money              `json:"opening"`
+	Payments    Money              `json:"payments"`
+	Postings    []StatementPosting `json:"postings"`
+
+	// Reconciled The institution's amount due was confirmed (POST /statements/{id}/reconcile).
+	Reconciled bool                  `json:"reconciled"`
+	Reference  string                `json:"reference"`
+	Status     StatementDetailStatus `json:"status"`
+	Unpaid     Money                 `json:"unpaid"`
 }
 
 // StatementDetailStatus defines model for StatementDetail.Status.
@@ -1113,21 +1115,23 @@ type StatementReconciliationInput struct {
 	AmountDue Money `json:"amount_due"`
 }
 
-// StatementSummary Amounts are integer minor units, positive when owed by the user.
+// StatementSummary Amounts are positive when owed by the user.
 type StatementSummary struct {
-	AccountId   openapi_types.UUID     `json:"account_id"`
-	AmountDue   int64                  `json:"amount_due"`
-	Charges     int64                  `json:"charges"`
-	ClosingDate openapi_types.Date     `json:"closing_date"`
-	Credits     int64                  `json:"credits"`
-	Currency    string                 `json:"currency"`
-	DueDate     openapi_types.Date     `json:"due_date"`
-	Id          openapi_types.UUID     `json:"id"`
-	Opening     int64                  `json:"opening"`
-	Payments    int64                  `json:"payments"`
-	Reference   string                 `json:"reference"`
-	Status      StatementSummaryStatus `json:"status"`
-	Unpaid      int64                  `json:"unpaid"`
+	AccountId   openapi_types.UUID `json:"account_id"`
+	AmountDue   Money              `json:"amount_due"`
+	Charges     Money              `json:"charges"`
+	ClosingDate openapi_types.Date `json:"closing_date"`
+	Credits     Money              `json:"credits"`
+	DueDate     openapi_types.Date `json:"due_date"`
+	Id          openapi_types.UUID `json:"id"`
+	Opening     Money              `json:"opening"`
+	Payments    Money              `json:"payments"`
+
+	// Reconciled The institution's amount due was confirmed (POST /statements/{id}/reconcile).
+	Reconciled bool                   `json:"reconciled"`
+	Reference  string                 `json:"reference"`
+	Status     StatementSummaryStatus `json:"status"`
+	Unpaid     Money                  `json:"unpaid"`
 }
 
 // StatementSummaryStatus defines model for StatementSummary.Status.

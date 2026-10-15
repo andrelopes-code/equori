@@ -1,23 +1,44 @@
 package ledger_test
 
 import (
+	"encoding/json/v2"
+	"fmt"
 	"net/http"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
 )
 
+// brl decodes a Money object in BRL to its amount (ADR 007, C7).
+type brl int64
+
+func (m *brl) UnmarshalJSON(b []byte) error {
+	var v struct {
+		Amount   int64  `json:"amount"`
+		Currency string `json:"currency"`
+	}
+	if err := json.Unmarshal(b, &v); err != nil {
+		return err
+	}
+	if v.Currency != "BRL" {
+		return fmt.Errorf("currency %q, want BRL", v.Currency)
+	}
+	*m = brl(v.Amount)
+	return nil
+}
+
 type statementView struct {
-	ID        string `json:"id"`
-	Reference string `json:"reference"`
-	DueDate   string `json:"due_date"`
-	Opening   int64  `json:"opening"`
-	Charges   int64  `json:"charges"`
-	Credits   int64  `json:"credits"`
-	AmountDue int64  `json:"amount_due"`
-	Payments  int64  `json:"payments"`
-	Unpaid    int64  `json:"unpaid"`
-	Status    string `json:"status"`
+	ID         string `json:"id"`
+	Reference  string `json:"reference"`
+	DueDate    string `json:"due_date"`
+	Opening    brl    `json:"opening"`
+	Charges    brl    `json:"charges"`
+	Credits    brl    `json:"credits"`
+	AmountDue  brl    `json:"amount_due"`
+	Payments   brl    `json:"payments"`
+	Unpaid     brl    `json:"unpaid"`
+	Status     string `json:"status"`
+	Reconciled bool   `json:"reconciled"`
 }
 
 func statements(t *testing.T, h *apitest.Harness, card string) map[string]statementView {
@@ -110,7 +131,7 @@ func TestStatementDetail(t *testing.T) {
 	id := statements(t, c.h, c.card)["2026-11"].ID
 
 	var detail struct {
-		AmountDue int64 `json:"amount_due"`
+		AmountDue brl `json:"amount_due"`
 		Postings  []struct {
 			TransactionID string `json:"transaction_id"`
 			Date          string `json:"date"`

@@ -1,9 +1,9 @@
 package httpapi
 
 import (
-	"github.com/google/uuid"
-
 	"context"
+
+	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
 	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"

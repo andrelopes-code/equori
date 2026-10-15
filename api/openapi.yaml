@@ -1620,8 +1620,8 @@ components:
           $ref: "#/components/schemas/Money"
     StatementSummary:
       type: object
-      required: [id, account_id, reference, closing_date, due_date, currency, opening, charges, credits, amount_due, payments, unpaid, status]
-      description: Amounts are integer minor units, positive when owed by the user.
+      required: [id, account_id, reference, closing_date, due_date, opening, charges, credits, amount_due, payments, unpaid, status, reconciled]
+      description: Amounts are positive when owed by the user.
       properties:
         id:
           type: string
@@ -1637,29 +1637,24 @@ components:
         due_date:
           type: string
           format: date
-        currency:
-          type: string
         opening:
-          type: integer
-          format: int64
+          $ref: "#/components/schemas/Money"
         charges:
-          type: integer
-          format: int64
+          $ref: "#/components/schemas/Money"
         credits:
-          type: integer
-          format: int64
+          $ref: "#/components/schemas/Money"
         amount_due:
-          type: integer
-          format: int64
+          $ref: "#/components/schemas/Money"
         payments:
-          type: integer
-          format: int64
+          $ref: "#/components/schemas/Money"
         unpaid:
-          type: integer
-          format: int64
+          $ref: "#/components/schemas/Money"
         status:
           type: string
           enum: [open, closed, paid, partially_paid, overdue, financed]
+        reconciled:
+          type: boolean
+          description: The institution's amount due was confirmed (POST /statements/{id}/reconcile).
     StatementList:
       type: object
       required: [items]

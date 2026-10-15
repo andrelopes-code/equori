@@ -465,7 +465,7 @@ func (r *Repository) Statements(ctx context.Context, userID int64, accountID uui
 	out := make([]app.Statement, len(rows))
 	for i, row := range rows {
 		out[i] = app.Statement{
-			ID: row.ID, AccountID: row.AccountID, FinancedBy: row.FinancedByPlanID.UUID,
+			ID: row.ID, AccountID: row.AccountID, FinancedBy: row.FinancedByPlanID.UUID, Reconciled: row.Reconciled,
 			Input: domain.StatementInput{
 				Reference: domain.MonthOf(row.ReferenceMonth), Closing: row.ClosingDate, Due: row.DueDate,
 				Lines: byStatement[row.ID], Financed: row.FinancedByPlanID.Valid,

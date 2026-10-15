@@ -48,7 +48,7 @@ func TestTransitionsReturnTheResource(t *testing.T) {
 	}
 	id := statements(t, c.h, c.card)["2026-11"].ID
 	c.h.MustDo(http.MethodPost, "/api/v1/statements/"+id+"/reconcile", map[string]any{"amount_due": apitest.BRL(100000)}, http.StatusOK, &detail)
-	if detail.ID != id {
+	if detail.ID != id || !detail.Reconciled {
 		t.Fatalf("reconcile = %+v", detail)
 	}
 }

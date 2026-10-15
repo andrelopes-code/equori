@@ -1,9 +1,9 @@
 package httpapi
 
 import (
-	"github.com/google/uuid"
-
 	"context"
+
+	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
 	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
@@ -12,11 +12,13 @@ import (
 )
 
 func toStatementAPI(v app.StatementView, currency money.Currency) StatementSummary {
+	m := func(amount int64) Money { return Money{Amount: amount, Currency: string(currency)} }
 	return StatementSummary{
 		Id: v.ID, AccountId: v.AccountID, Reference: v.Input.Reference.String(),
-		ClosingDate: apiDate(v.Input.Closing), DueDate: apiDate(v.Input.Due), Currency: string(currency),
-		Opening: v.Summary.Opening, Charges: v.Summary.Charges, Credits: v.Summary.Credits, AmountDue: v.Summary.AmountDue,
-		Payments: v.Summary.Payments, Unpaid: v.Summary.Unpaid, Status: StatementSummaryStatus(v.Summary.Status),
+		ClosingDate: apiDate(v.Input.Closing), DueDate: apiDate(v.Input.Due),
+		Opening: m(v.Summary.Opening), Charges: m(v.Summary.Charges), Credits: m(v.Summary.Credits), AmountDue: m(v.Summary.AmountDue),
+		Payments: m(v.Summary.Payments), Unpaid: m(v.Summary.Unpaid), Status: StatementSummaryStatus(v.Summary.Status),
+		Reconciled: v.Reconciled,
 	}
 }
 
@@ -67,9 +69,9 @@ func (s *Server) statementDetail(ctx context.Context, userID int64, id uuid.UUID
 	summary := toStatementAPI(v, a.Instrument)
 	out := StatementDetail{
 		Id: summary.Id, AccountId: summary.AccountId, Reference: summary.Reference, ClosingDate: summary.ClosingDate,
-		DueDate: summary.DueDate, Currency: summary.Currency, Opening: summary.Opening, Charges: summary.Charges,
+		DueDate: summary.DueDate, Opening: summary.Opening, Charges: summary.Charges,
 		Credits: summary.Credits, AmountDue: summary.AmountDue, Payments: summary.Payments, Unpaid: summary.Unpaid,
-		Status: StatementDetailStatus(summary.Status), Postings: make([]StatementPosting, len(postings)),
+		Status: StatementDetailStatus(summary.Status), Reconciled: summary.Reconciled, Postings: make([]StatementPosting, len(postings)),
 	}
 	for i, p := range postings {
 		sp := StatementPosting{

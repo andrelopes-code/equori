@@ -52,6 +52,7 @@ type Statement struct {
 	ID         uuid.UUID
 	AccountID  uuid.UUID
 	FinancedBy uuid.UUID
+	Reconciled bool // the institution's amount due was confirmed (P3 amendment A7)
 	Input      domain.StatementInput
 }
 

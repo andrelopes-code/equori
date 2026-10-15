@@ -644,7 +644,10 @@ func (q *Queries) ListStatementPostings(ctx context.Context, arg ListStatementPo
 }
 
 const listStatements = `-- name: ListStatements :many
-SELECT id, user_id, account_id, reference_month, closing_date, due_date, financed_by_plan_id, created_at FROM ledger_statement WHERE user_id = $1 AND account_id = $2 ORDER BY reference_month
+SELECT s.id, s.user_id, s.account_id, s.reference_month, s.closing_date, s.due_date, s.financed_by_plan_id, s.created_at, EXISTS (SELECT 1 FROM ledger_reconciliation r WHERE r.statement_id = s.id) AS reconciled
+FROM ledger_statement s
+WHERE s.user_id = $1 AND s.account_id = $2
+ORDER BY s.reference_month
 `
 
 type ListStatementsParams struct {
@@ -652,15 +655,27 @@ type ListStatementsParams struct {
 	AccountID uuid.UUID
 }
 
-func (q *Queries) ListStatements(ctx context.Context, arg ListStatementsParams) ([]LedgerStatement, error) {
+type ListStatementsRow struct {
+	ID               uuid.UUID
+	UserID           int64
+	AccountID        uuid.UUID
+	ReferenceMonth   time.Time
+	ClosingDate      time.Time
+	DueDate          time.Time
+	FinancedByPlanID uuid.NullUUID
+	CreatedAt        time.Time
+	Reconciled       bool
+}
+
+func (q *Queries) ListStatements(ctx context.Context, arg ListStatementsParams) ([]ListStatementsRow, error) {
 	rows, err := q.db.Query(ctx, listStatements, arg.UserID, arg.AccountID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []LedgerStatement
+	var items []ListStatementsRow
 	for rows.Next() {
-		var i LedgerStatement
+		var i ListStatementsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,
@@ -670,6 +685,7 @@ func (q *Queries) ListStatements(ctx context.Context, arg ListStatementsParams) 
 			&i.DueDate,
 			&i.FinancedByPlanID,
 			&i.CreatedAt,
+			&i.Reconciled,
 		); err != nil {
 			return nil, err
 		}
