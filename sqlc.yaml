@@ -49,3 +49,10 @@ sql:
       go:
         <<: *go
         out: internal/ledger/internal/adapter/postgres
+  - engine: postgresql
+    schema: db/migrations
+    queries: db/queries/reporting
+    gen:
+      go:
+        <<: *go
+        out: internal/reporting/internal/adapter/postgres

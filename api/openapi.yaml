@@ -12,6 +12,8 @@ tags:
     description: Users and sessions.
   - name: ledger
     description: Accounts, transactions and balances.
+  - name: reporting
+    description: Derived views over the ledger.
 paths:
   /session:
     post:
@@ -477,6 +479,49 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /reports/balances:
+    get:
+      tags: [reporting]
+      operationId: getBalanceSeries
+      summary: Daily balance of an account and its sub-accounts, one item per day in [from, to].
+      parameters:
+        - name: account_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: basis
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [booked, settled]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BalanceSeries"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
 security:
   - sessionCookie: []
 components:
@@ -522,6 +567,24 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
   schemas:
+    BalanceSeries:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          maxItems: 3660
+          items:
+            $ref: "#/components/schemas/BalancePoint"
+    BalancePoint:
+      type: object
+      required: [date, balance]
+      properties:
+        date:
+          type: string
+          format: date
+        balance:
+          $ref: "#/components/schemas/Money"
     Money:
       type: object
       required: [amount, currency]

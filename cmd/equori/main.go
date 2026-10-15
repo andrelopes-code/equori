@@ -15,12 +15,10 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/andrelopes-code/equori/internal/identity"
-	"github.com/andrelopes-code/equori/internal/ledger"
 	"github.com/andrelopes-code/equori/internal/platform/config"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
-	"github.com/andrelopes-code/equori/internal/platform/outbox"
 	"github.com/andrelopes-code/equori/internal/platform/postgres"
+	"github.com/andrelopes-code/equori/internal/server"
 )
 
 // version is set at build time with -ldflags "-X main.version=...".
@@ -37,12 +35,14 @@ func main() {
 		err = serve()
 	case "user":
 		err = userCommand(os.Args[2:])
+	case "reporting":
+		err = reportingCommand(os.Args[2:])
 	case "healthcheck":
 		os.Exit(healthcheck())
 	case "version":
 		fmt.Println(buildVersion())
 	default:
-		fmt.Fprintf(os.Stderr, "unknown command %q; available: serve, user, healthcheck, version\n", cmd)
+		fmt.Fprintf(os.Stderr, "unknown command %q; available: serve, user, reporting, healthcheck, version\n", cmd)
 		os.Exit(2)
 	}
 	if err != nil {
@@ -67,19 +67,11 @@ func serve() error {
 	}
 	defer pool.Close()
 
-	dispatcher := outbox.NewDispatcher(pool, log)
-	identityModule := identity.New(pool, identity.Config{SecureCookies: !cfg.InsecureCookies}, log)
-	ledgerModule := ledger.New(pool, dispatcher, log)
+	app := server.New(pool, server.Config{SecureCookies: !cfg.InsecureCookies}, log)
 
-	mux := http.NewServeMux()
-	mux.Handle("GET /healthz", httpserver.Health(pool))
-	identityModule.RegisterRoutes(mux)
-	ledgerModule.RegisterRoutes(mux)
-	mux.Handle("/api/", httpserver.NotFound())
-
-	// Subscriptions are registered by the modules above; the dispatcher must stop before the pool closes.
+	// The dispatcher must stop before the pool closes.
 	dispatcherDone := make(chan error, 1)
-	go func() { dispatcherDone <- dispatcher.Run(ctx) }()
+	go func() { dispatcherDone <- app.Dispatcher.Run(ctx) }()
 	defer func() {
 		stop()
 		if err := <-dispatcherDone; err != nil {
@@ -87,8 +79,26 @@ func serve() error {
 		}
 	}()
 
-	handler := httpserver.Middleware(identityModule.RequireSession(mux), log)
-	return httpserver.Run(ctx, cfg.HTTPAddr, handler, log)
+	return httpserver.Run(ctx, cfg.HTTPAddr, app.Handler, log)
+}
+
+// reportingCommand rebuilds every derived balance series from the ledger.
+func reportingCommand(args []string) error {
+	if len(args) != 1 || args[0] != "rebuild" {
+		fmt.Fprintln(os.Stderr, "usage: equori reporting rebuild")
+		return errUsage
+	}
+	cfg, log, err := setup()
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+	pool, err := openDatabase(ctx, cfg, log)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+	return server.New(pool, server.Config{}, log).Reporting.RebuildAll(ctx)
 }
 
 func setup() (config.Config, *slog.Logger, error) {
