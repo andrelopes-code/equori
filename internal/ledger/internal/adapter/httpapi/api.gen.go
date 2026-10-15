@@ -11,6 +11,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"time"
 
@@ -697,6 +699,24 @@ type AssertionResult struct {
 // AssertionResultResolution Absent while the difference stays open.
 type AssertionResultResolution string
 
+// Attachment defines model for Attachment.
+type Attachment struct {
+	CreatedAt time.Time          `json:"created_at"`
+	FileName  string             `json:"file_name"`
+	Id        openapi_types.UUID `json:"id"`
+	MediaType string             `json:"media_type"`
+
+	// Sha256 Hexadecimal SHA-256 of the content.
+	Sha256        string             `json:"sha256"`
+	Size          int64              `json:"size"`
+	TransactionId openapi_types.UUID `json:"transaction_id"`
+}
+
+// AttachmentList defines model for AttachmentList.
+type AttachmentList struct {
+	Items []Attachment `json:"items"`
+}
+
 // Balance defines model for Balance.
 type Balance struct {
 	AccountId openapi_types.UUID `json:"account_id"`
@@ -1216,6 +1236,11 @@ type ListTransactionsParams struct {
 	To        *openapi_types.Date `form:"to,omitempty" json:"to,omitempty"`
 }
 
+// CreateAttachmentMultipartBody defines parameters for CreateAttachment.
+type CreateAttachmentMultipartBody struct {
+	File openapi_types.File `json:"file"`
+}
+
 // CreateAccountJSONRequestBody defines body for CreateAccount for application/json ContentType.
 type CreateAccountJSONRequestBody = AccountInput
 
@@ -1278,6 +1303,9 @@ type CreateTransactionJSONRequestBody = TransactionInput
 
 // CorrectTransactionJSONRequestBody defines body for CorrectTransaction for application/json ContentType.
 type CorrectTransactionJSONRequestBody = CorrectionInput
+
+// CreateAttachmentMultipartRequestBody defines body for CreateAttachment for multipart/form-data ContentType.
+type CreateAttachmentMultipartRequestBody CreateAttachmentMultipartBody
 
 // OpenDisputeJSONRequestBody defines body for OpenDispute for application/json ContentType.
 type OpenDisputeJSONRequestBody = DisputeInput
@@ -1344,6 +1372,12 @@ type ServerInterface interface {
 	// UnlockAccount Return reconciled postings settled on or after a date to cleared.
 	// (POST /accounts/{id}/unlock)
 	UnlockAccount(w http.ResponseWriter, r *http.Request, id ID)
+	// DeleteAttachment Remove an attachment; the stored file is deleted when no attachment references it.
+	// (DELETE /attachments/{id})
+	DeleteAttachment(w http.ResponseWriter, r *http.Request, id ID)
+	// GetAttachmentContent Download the attached file.
+	// (GET /attachments/{id}/content)
+	GetAttachmentContent(w http.ResponseWriter, r *http.Request, id ID)
 	// ResolveBalanceAssertion Resolve the open difference of an assertion and reconcile the account.
 	// (POST /balance-assertions/{id}/resolution)
 	ResolveBalanceAssertion(w http.ResponseWriter, r *http.Request, id ID)
@@ -1404,6 +1438,12 @@ type ServerInterface interface {
 	// CorrectTransaction Correct a transaction; creates a new version.
 	// (PUT /transactions/{id})
 	CorrectTransaction(w http.ResponseWriter, r *http.Request, id ID)
+	// ListAttachments Files attached to a transaction.
+	// (GET /transactions/{id}/attachments)
+	ListAttachments(w http.ResponseWriter, r *http.Request, id ID)
+	// CreateAttachment Attach a file to a transaction.
+	// (POST /transactions/{id}/attachments)
+	CreateAttachment(w http.ResponseWriter, r *http.Request, id ID)
 	// OpenDispute Open a dispute on a card purchase.
 	// (POST /transactions/{id}/disputes)
 	OpenDispute(w http.ResponseWriter, r *http.Request, id ID)
@@ -1945,6 +1985,58 @@ func (siw *ServerInterfaceWrapper) UnlockAccount(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
+// DeleteAttachment operation middleware
+func (siw *ServerInterfaceWrapper) DeleteAttachment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteAttachment(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAttachmentContent operation middleware
+func (siw *ServerInterfaceWrapper) GetAttachmentContent(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAttachmentContent(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ResolveBalanceAssertion operation middleware
 func (siw *ServerInterfaceWrapper) ResolveBalanceAssertion(w http.ResponseWriter, r *http.Request) {
 
@@ -2442,6 +2534,58 @@ func (siw *ServerInterfaceWrapper) CorrectTransaction(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
+// ListAttachments operation middleware
+func (siw *ServerInterfaceWrapper) ListAttachments(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListAttachments(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateAttachment operation middleware
+func (siw *ServerInterfaceWrapper) CreateAttachment(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateAttachment(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // OpenDispute operation middleware
 func (siw *ServerInterfaceWrapper) OpenDispute(w http.ResponseWriter, r *http.Request) {
 
@@ -2708,6 +2852,10 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/reconciliation", wrapper.GetReconciliationStatus)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/unlock", wrapper.UnlockAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/statements/{id}/reconciliation", wrapper.ReconcileStatement)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions/{id}/attachments", wrapper.ListAttachments)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/attachments", wrapper.CreateAttachment)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/attachments/{id}", wrapper.DeleteAttachment)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/attachments/{id}/content", wrapper.GetAttachmentContent)
 
 	return m
 }
@@ -3797,6 +3945,119 @@ func (response UnlockAccount422ApplicationProblemPlusJSONResponse) VisitUnlockAc
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteAttachmentRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type DeleteAttachmentResponseObject interface {
+	VisitDeleteAttachmentResponse(w http.ResponseWriter) error
+}
+
+type DeleteAttachment204Response struct {
+}
+
+func (response DeleteAttachment204Response) VisitDeleteAttachmentResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteAttachment401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteAttachment401ApplicationProblemPlusJSONResponse) VisitDeleteAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteAttachment404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteAttachment404ApplicationProblemPlusJSONResponse) VisitDeleteAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAttachmentContentRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type GetAttachmentContentResponseObject interface {
+	VisitGetAttachmentContentResponse(w http.ResponseWriter) error
+}
+
+type GetAttachmentContent200ResponseHeaders struct {
+	ContentDisposition *string
+}
+
+type GetAttachmentContent200AsteriskResponse struct {
+	Body          io.Reader
+	Headers       GetAttachmentContent200ResponseHeaders
+	ContentType   string
+	ContentLength int64
+}
+
+func (response GetAttachmentContent200AsteriskResponse) VisitGetAttachmentContentResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", response.ContentType)
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
+	if response.Headers.ContentDisposition != nil {
+		w.Header().Set("Content-Disposition", fmt.Sprint(*response.Headers.ContentDisposition))
+	}
+	w.WriteHeader(200)
+
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	_, err := io.Copy(w, response.Body)
+	return err
+}
+
+type GetAttachmentContent401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetAttachmentContent401ApplicationProblemPlusJSONResponse) VisitGetAttachmentContentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAttachmentContent404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetAttachmentContent404ApplicationProblemPlusJSONResponse) VisitGetAttachmentContentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -4979,6 +5240,139 @@ func (response CorrectTransaction422ApplicationProblemPlusJSONResponse) VisitCor
 	return err
 }
 
+type ListAttachmentsRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type ListAttachmentsResponseObject interface {
+	VisitListAttachmentsResponse(w http.ResponseWriter) error
+}
+
+type ListAttachments200JSONResponse AttachmentList
+
+func (response ListAttachments200JSONResponse) VisitListAttachmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAttachments401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListAttachments401ApplicationProblemPlusJSONResponse) VisitListAttachmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAttachments404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListAttachments404ApplicationProblemPlusJSONResponse) VisitListAttachmentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateAttachmentRequestObject struct {
+	Id   ID `json:"id"`
+	Body *multipart.Reader
+}
+
+type CreateAttachmentResponseObject interface {
+	VisitCreateAttachmentResponse(w http.ResponseWriter) error
+}
+
+type CreateAttachment201JSONResponse Attachment
+
+func (response CreateAttachment201JSONResponse) VisitCreateAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateAttachment401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateAttachment401ApplicationProblemPlusJSONResponse) VisitCreateAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateAttachment404ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateAttachment404ApplicationProblemPlusJSONResponse) VisitCreateAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateAttachment413ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateAttachment413ApplicationProblemPlusJSONResponse) VisitCreateAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateAttachment422ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateAttachment422ApplicationProblemPlusJSONResponse) VisitCreateAttachmentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type OpenDisputeRequestObject struct {
 	Id   ID `json:"id"`
 	Body *OpenDisputeJSONRequestBody
@@ -5310,6 +5704,12 @@ type StrictServerInterface interface {
 	// UnlockAccount Return reconciled postings settled on or after a date to cleared.
 	// (POST /accounts/{id}/unlock)
 	UnlockAccount(ctx context.Context, request UnlockAccountRequestObject) (UnlockAccountResponseObject, error)
+	// DeleteAttachment Remove an attachment; the stored file is deleted when no attachment references it.
+	// (DELETE /attachments/{id})
+	DeleteAttachment(ctx context.Context, request DeleteAttachmentRequestObject) (DeleteAttachmentResponseObject, error)
+	// GetAttachmentContent Download the attached file.
+	// (GET /attachments/{id}/content)
+	GetAttachmentContent(ctx context.Context, request GetAttachmentContentRequestObject) (GetAttachmentContentResponseObject, error)
 	// ResolveBalanceAssertion Resolve the open difference of an assertion and reconcile the account.
 	// (POST /balance-assertions/{id}/resolution)
 	ResolveBalanceAssertion(ctx context.Context, request ResolveBalanceAssertionRequestObject) (ResolveBalanceAssertionResponseObject, error)
@@ -5370,6 +5770,12 @@ type StrictServerInterface interface {
 	// CorrectTransaction Correct a transaction; creates a new version.
 	// (PUT /transactions/{id})
 	CorrectTransaction(ctx context.Context, request CorrectTransactionRequestObject) (CorrectTransactionResponseObject, error)
+	// ListAttachments Files attached to a transaction.
+	// (GET /transactions/{id}/attachments)
+	ListAttachments(ctx context.Context, request ListAttachmentsRequestObject) (ListAttachmentsResponseObject, error)
+	// CreateAttachment Attach a file to a transaction.
+	// (POST /transactions/{id}/attachments)
+	CreateAttachment(ctx context.Context, request CreateAttachmentRequestObject) (CreateAttachmentResponseObject, error)
 	// OpenDispute Open a dispute on a card purchase.
 	// (POST /transactions/{id}/disputes)
 	OpenDispute(ctx context.Context, request OpenDisputeRequestObject) (OpenDisputeResponseObject, error)
@@ -5939,6 +6345,58 @@ func (sh *strictHandler) UnlockAccount(w http.ResponseWriter, r *http.Request, i
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UnlockAccountResponseObject); ok {
 		if err := validResponse.VisitUnlockAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteAttachment operation middleware
+func (sh *strictHandler) DeleteAttachment(w http.ResponseWriter, r *http.Request, id ID) {
+	var request DeleteAttachmentRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteAttachment(ctx, request.(DeleteAttachmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteAttachment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteAttachmentResponseObject); ok {
+		if err := validResponse.VisitDeleteAttachmentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAttachmentContent operation middleware
+func (sh *strictHandler) GetAttachmentContent(w http.ResponseWriter, r *http.Request, id ID) {
+	var request GetAttachmentContentRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAttachmentContent(ctx, request.(GetAttachmentContentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAttachmentContent")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAttachmentContentResponseObject); ok {
+		if err := validResponse.VisitGetAttachmentContentResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -6532,6 +6990,65 @@ func (sh *strictHandler) CorrectTransaction(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CorrectTransactionResponseObject); ok {
 		if err := validResponse.VisitCorrectTransactionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListAttachments operation middleware
+func (sh *strictHandler) ListAttachments(w http.ResponseWriter, r *http.Request, id ID) {
+	var request ListAttachmentsRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListAttachments(ctx, request.(ListAttachmentsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListAttachments")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListAttachmentsResponseObject); ok {
+		if err := validResponse.VisitListAttachmentsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateAttachment operation middleware
+func (sh *strictHandler) CreateAttachment(w http.ResponseWriter, r *http.Request, id ID) {
+	var request CreateAttachmentRequestObject
+
+	request.Id = id
+
+	if reader, err := r.MultipartReader(); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
+		return
+	} else {
+		request.Body = reader
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateAttachment(ctx, request.(CreateAttachmentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateAttachment")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateAttachmentResponseObject); ok {
+		if err := validResponse.VisitCreateAttachmentResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

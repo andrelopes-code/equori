@@ -241,6 +241,13 @@ type Repository interface {
 	// the reconciliations dated from it.
 	UnlockAccount(ctx context.Context, userID int64, accountID uuid.UUID, from time.Time) error
 
+	// InsertAttachment stores the content unless the user already has a blob with the same hash.
+	InsertAttachment(ctx context.Context, a Attachment, content []byte) (Attachment, error)
+	Attachments(ctx context.Context, userID int64, transactionID uuid.UUID) ([]Attachment, error)
+	AttachmentContent(ctx context.Context, userID int64, id uuid.UUID) (AttachmentContent, error)
+	// DeleteAttachment deletes the blob too when no other attachment references it.
+	DeleteAttachment(ctx context.Context, userID int64, id uuid.UUID) error
+
 	// BalanceAt sums the postings of the account and its descendants up to and including date.
 	BalanceAt(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis Basis) (int64, error)
 }

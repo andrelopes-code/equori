@@ -29,6 +29,16 @@ type LedgerAccount struct {
 	UpdatedAt           time.Time
 }
 
+type LedgerAttachment struct {
+	ID            uuid.UUID
+	UserID        int64
+	TransactionID uuid.UUID
+	Sha256        []byte
+	FileName      string
+	MediaType     string
+	CreatedAt     time.Time
+}
+
 type LedgerBalanceAssertion struct {
 	ID         uuid.UUID
 	UserID     int64

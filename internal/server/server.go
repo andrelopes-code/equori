@@ -52,7 +52,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) *App {
 	mux.Handle("/api/", httpserver.NotFound())
 
 	return &App{
-		Handler:    httpserver.Middleware(identityModule.RequireSession(mux), log),
+		Handler:    httpserver.Middleware(identityModule.RequireSession(mux), log, ledgerModule.BodyLimits()...),
 		Dispatcher: dispatcher,
 		Identity:   identityModule,
 		Reporting:  reportingModule,

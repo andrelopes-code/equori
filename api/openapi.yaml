@@ -1116,6 +1116,97 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /transactions/{id}/attachments:
+    get:
+      tags: [ledger]
+      operationId: listAttachments
+      summary: Files attached to a transaction.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttachmentList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [ledger]
+      operationId: createAttachment
+      summary: Attach a file to a transaction.
+      description: |
+        At most 10 MiB of content (N26); the request body limit of this route is 11 MiB. Accepted media
+        types, detected from the content: application/pdf, image/jpeg, image/png, image/webp, text/plain.
+        A file already attached to the transaction returns the existing attachment.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Attachment"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "413":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /attachments/{id}:
+    delete:
+      tags: [ledger]
+      operationId: deleteAttachment
+      summary: Remove an attachment; the stored file is deleted when no attachment references it.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /attachments/{id}/content:
+    get:
+      tags: [ledger]
+      operationId: getAttachmentContent
+      summary: Download the attached file.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: The file, with its stored media type.
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
 security:
   - sessionCookie: []
 components:
@@ -1161,6 +1252,37 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
   schemas:
+    Attachment:
+      type: object
+      required: [id, transaction_id, file_name, media_type, size, sha256, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        transaction_id:
+          type: string
+          format: uuid
+        file_name:
+          type: string
+        media_type:
+          type: string
+        size:
+          type: integer
+          format: int64
+        sha256:
+          type: string
+          description: Hexadecimal SHA-256 of the content.
+        created_at:
+          type: string
+          format: date-time
+    AttachmentList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Attachment"
     StatementReconciliationInput:
       type: object
       required: [amount_due]

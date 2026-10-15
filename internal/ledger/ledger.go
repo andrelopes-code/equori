@@ -18,6 +18,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
 	"github.com/andrelopes-code/equori/internal/marketdata"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 )
 
@@ -56,6 +57,12 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, cal Calendar, clk cl
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
+
+// BodyLimits raises the request body limit of attachment uploads: 10 MiB of content
+// plus the multipart framing (N26).
+func (m *Module) BodyLimits() []httpserver.BodyLimit {
+	return []httpserver.BodyLimit{{Pattern: "POST /api/v1/transactions/{id}/attachments", Bytes: 11 << 20}}
+}
 
 type userCreated struct {
 	UserID int64 `json:"user_id"`

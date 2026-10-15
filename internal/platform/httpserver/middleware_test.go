@@ -97,6 +97,31 @@ func TestMiddlewareLimitsBody(t *testing.T) {
 	}
 }
 
+func TestMiddlewareRaisesBodyLimitForRoute(t *testing.T) {
+	limits := []BodyLimit{{Pattern: "POST /files/{id}", Bytes: 2 * maxBodyBytes}}
+	tests := []struct {
+		name, method, path string
+		size               int
+		rejected           bool
+	}{
+		{"raised route within its limit", http.MethodPost, "/files/1", 2 * maxBodyBytes, false},
+		{"raised route above its limit", http.MethodPost, "/files/1", 2*maxBodyBytes + 1, true},
+		{"other method keeps the default", http.MethodPut, "/files/1", maxBodyBytes + 1, true},
+		{"other path keeps the default", http.MethodPost, "/other", maxBodyBytes + 1, true},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			var readErr error
+			h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, readErr = io.ReadAll(r.Body) })
+			req := httptest.NewRequestWithContext(t.Context(), tc.method, tc.path, strings.NewReader(strings.Repeat("a", tc.size)))
+			Middleware(h, slog.New(slog.DiscardHandler), limits...).ServeHTTP(httptest.NewRecorder(), req)
+			if _, rejected := problem.Transport(readErr); rejected != tc.rejected {
+				t.Fatalf("rejected = %v, want %v (err %v)", rejected, tc.rejected, readErr)
+			}
+		})
+	}
+}
+
 func TestNotFound(t *testing.T) {
 	rec, _ := serve(t, NotFound(), httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/v1/nope", nil))
 

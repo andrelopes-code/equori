@@ -3,9 +3,11 @@
 package apitest
 
 import (
+	"bytes"
 	"encoding/json/v2"
 	"io"
 	"log/slog"
+	"mime/multipart"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
@@ -97,6 +99,7 @@ func (h *Harness) Dispatch() {
 
 type Response struct {
 	Status int
+	Header http.Header
 	Body   []byte
 }
 
@@ -124,6 +127,11 @@ func (h *Harness) Call(c *http.Client, method, path string, body any) Response {
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
+	return h.send(c, req)
+}
+
+func (h *Harness) send(c *http.Client, req *http.Request) Response {
+	h.t.Helper()
 	resp, err := c.Do(req)
 	if err != nil {
 		h.t.Fatal(err)
@@ -133,7 +141,30 @@ func (h *Harness) Call(c *http.Client, method, path string, body any) Response {
 	if err != nil {
 		h.t.Fatal(err)
 	}
-	return Response{Status: resp.StatusCode, Body: b}
+	return Response{Status: resp.StatusCode, Header: resp.Header, Body: b}
+}
+
+// Upload posts content as the multipart/form-data field "file".
+func (h *Harness) Upload(path, fileName string, content []byte) Response {
+	h.t.Helper()
+	var body bytes.Buffer
+	w := multipart.NewWriter(&body)
+	part, err := w.CreateFormFile("file", fileName)
+	if err != nil {
+		h.t.Fatal(err)
+	}
+	if _, err := part.Write(content); err != nil {
+		h.t.Fatal(err)
+	}
+	if err := w.Close(); err != nil {
+		h.t.Fatal(err)
+	}
+	req, err := http.NewRequestWithContext(h.t.Context(), http.MethodPost, h.server.URL+path, &body)
+	if err != nil {
+		h.t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	return h.send(h.Client, req)
 }
 
 func (h *Harness) Do(method, path string, body any) Response {

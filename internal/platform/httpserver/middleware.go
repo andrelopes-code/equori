@@ -20,10 +20,16 @@ func RequestID(ctx context.Context) string {
 
 const maxBodyBytes = 1 << 20
 
+// BodyLimit replaces the 1 MiB body limit for the requests an http.ServeMux pattern matches.
+type BodyLimit struct {
+	Pattern string
+	Bytes   int64
+}
+
 // Middleware wraps h with, from outermost to innermost: request ID, access log,
-// panic recovery, cross-origin protection (CSRF defense, ADR 003) and a 1 MiB body limit.
-func Middleware(h http.Handler, log *slog.Logger) http.Handler {
-	h = limitBody(h)
+// panic recovery, cross-origin protection (CSRF defense, ADR 003) and the body limit.
+func Middleware(h http.Handler, log *slog.Logger, limits ...BodyLimit) http.Handler {
+	h = limitBody(h, limits)
 	h = http.NewCrossOriginProtection().Handler(h)
 	h = recoverPanic(h, log)
 	h = accessLog(h, log)
@@ -39,9 +45,19 @@ func withRequestID(next http.Handler) http.Handler {
 	})
 }
 
-func limitBody(next http.Handler) http.Handler {
+func limitBody(next http.Handler, limits []BodyLimit) http.Handler {
+	routes := http.NewServeMux()
+	bytes := make(map[string]int64, len(limits))
+	for _, l := range limits {
+		routes.Handle(l.Pattern, next)
+		bytes[l.Pattern] = l.Bytes
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
+		limit := int64(maxBodyBytes)
+		if _, pattern := routes.Handler(r); pattern != "" {
+			limit = bytes[pattern]
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, limit)
 		next.ServeHTTP(w, r)
 	})
 }
