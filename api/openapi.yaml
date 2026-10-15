@@ -1285,12 +1285,14 @@ components:
             $ref: "#/components/schemas/Attachment"
     StatementReconciliationInput:
       type: object
+      additionalProperties: false
       required: [amount_due]
       properties:
         amount_due:
           $ref: "#/components/schemas/Money"
     AssertionResolutionInput:
       type: object
+      additionalProperties: false
       required: [resolution]
       properties:
         resolution:
@@ -1318,6 +1320,7 @@ components:
           $ref: "#/components/schemas/Money"
     UnlockInput:
       type: object
+      additionalProperties: false
       required: [from]
       properties:
         from:
@@ -1325,6 +1328,7 @@ components:
           format: date
     BalanceAssertionInput:
       type: object
+      additionalProperties: false
       required: [date, amount]
       properties:
         date:
@@ -1384,6 +1388,7 @@ components:
           description: The yield or adjustment transaction recorded by the resolution.
     DisputeInput:
       type: object
+      additionalProperties: false
       required: [opened_on]
       properties:
         opened_on:
@@ -1391,6 +1396,7 @@ components:
           format: date
     DisputeResolution:
       type: object
+      additionalProperties: false
       required: [resolved_on, outcome]
       properties:
         resolved_on:
@@ -1426,6 +1432,7 @@ components:
           format: uuid
     RefundInput:
       type: object
+      additionalProperties: false
       required: [date, amount]
       properties:
         date:
@@ -1438,6 +1445,7 @@ components:
           pattern: "^[0-9]{4}-[0-9]{2}$"
     CancellationInput:
       type: object
+      additionalProperties: false
       required: [date]
       properties:
         date:
@@ -1448,6 +1456,7 @@ components:
           pattern: "^[0-9]{4}-[0-9]{2}$"
     AnticipationInput:
       type: object
+      additionalProperties: false
       required: [date, from_installment, to_installment, target_statement, amount]
       properties:
         date:
@@ -1464,6 +1473,7 @@ components:
           $ref: "#/components/schemas/Money"
     StatementPaymentInput:
       type: object
+      additionalProperties: false
       required: [date, from_account_id, amount]
       properties:
         date:
@@ -1476,6 +1486,7 @@ components:
           $ref: "#/components/schemas/Money"
     StatementFinancingInput:
       type: object
+      additionalProperties: false
       required: [date, installment_count, installment_amount]
       properties:
         date:
@@ -1489,6 +1500,7 @@ components:
           $ref: "#/components/schemas/Money"
     Split:
       type: object
+      additionalProperties: false
       required: [account_id, amount]
       properties:
         account_id:
@@ -1498,6 +1510,7 @@ components:
           $ref: "#/components/schemas/Money"
     InstallmentPurchaseInput:
       type: object
+      additionalProperties: false
       required: [card_account_id, date, splits, installment_count]
       properties:
         card_account_id:
@@ -1630,6 +1643,7 @@ components:
                 $ref: "#/components/schemas/StatementPosting"
     BillingCycleRule:
       type: object
+      additionalProperties: false
       required: [effective_from, closing_day, due_day]
       properties:
         effective_from:
@@ -1658,6 +1672,7 @@ components:
             $ref: "#/components/schemas/BillingCycleRule"
     CreditLimit:
       type: object
+      additionalProperties: false
       required: [effective_from, amount]
       properties:
         effective_from:
@@ -1675,6 +1690,7 @@ components:
             $ref: "#/components/schemas/CreditLimit"
     CardInput:
       type: object
+      additionalProperties: false
       required: [holder, last_four]
       properties:
         holder:
@@ -1749,6 +1765,7 @@ components:
           $ref: "#/components/schemas/Money"
     Money:
       type: object
+      additionalProperties: false
       required: [amount, currency]
       properties:
         amount:
@@ -1760,12 +1777,14 @@ components:
           example: BRL
     Settings:
       type: object
+      additionalProperties: false
       required: [base_currency]
       properties:
         base_currency:
           type: string
     InstitutionInput:
       type: object
+      additionalProperties: false
       required: [name]
       properties:
         name:
@@ -1791,6 +1810,7 @@ components:
             $ref: "#/components/schemas/Institution"
     PayeeInput:
       type: object
+      additionalProperties: false
       required: [name]
       properties:
         name:
@@ -1825,6 +1845,7 @@ components:
       enum: [asset, liability, equity, income, expense]
     AccountInput:
       type: object
+      additionalProperties: false
       required: [name, class, currency]
       properties:
         name:
@@ -1874,6 +1895,7 @@ components:
             $ref: "#/components/schemas/Account"
     AccountPatch:
       type: object
+      additionalProperties: false
       properties:
         name:
           type: string
@@ -1888,6 +1910,7 @@ components:
           enum: [none, auto]
     CloseAccountInput:
       type: object
+      additionalProperties: false
       required: [closed_on]
       properties:
         closed_on:
@@ -1910,6 +1933,7 @@ components:
           $ref: "#/components/schemas/Money"
     PostingInput:
       type: object
+      additionalProperties: false
       required: [account_id, amount]
       properties:
         account_id:
@@ -1961,6 +1985,7 @@ components:
               $ref: "#/components/schemas/Installment"
     Link:
       type: object
+      additionalProperties: false
       required: [type, target]
       properties:
         type:
@@ -1971,6 +1996,7 @@ components:
           format: uuid
     TransactionInput:
       type: object
+      additionalProperties: false
       required: [date, postings]
       properties:
         date:
@@ -1994,15 +2020,34 @@ components:
           items:
             $ref: "#/components/schemas/PostingInput"
     CorrectionInput:
-      allOf:
-        - $ref: "#/components/schemas/TransactionInput"
-        - type: object
-          required: [expected_version, reason]
-          properties:
-            expected_version:
-              type: integer
-            reason:
-              type: string
+      type: object
+      additionalProperties: false
+      required: [date, postings, expected_version, reason]
+      properties:
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+        payee_id:
+          type: string
+          format: uuid
+        tags:
+          type: array
+          items:
+            type: string
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/Link"
+        postings:
+          type: array
+          items:
+            $ref: "#/components/schemas/PostingInput"
+        expected_version:
+          type: integer
+        reason:
+          type: string
     Transaction:
       type: object
       required: [id, date, description, balancing_currency, origin, version, tags, links, postings]
@@ -2054,6 +2099,7 @@ components:
           type: string
     VoidInput:
       type: object
+      additionalProperties: false
       required: [reason]
       properties:
         reason:
@@ -2081,6 +2127,7 @@ components:
             $ref: "#/components/schemas/TransactionVersion"
     Credentials:
       type: object
+      additionalProperties: false
       required: [email, password]
       properties:
         email:
@@ -2118,7 +2165,7 @@ components:
             too_many_attempts, unauthenticated, forbidden, not_found, validation_failed, internal_error,
             server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
             account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
-            already_reconciled, difference_remains.
+            already_reconciled, difference_remains, method_not_allowed, unsupported_media_type.
         request_id:
           type: string
         errors:

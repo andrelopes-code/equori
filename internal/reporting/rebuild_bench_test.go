@@ -40,7 +40,10 @@ func BenchmarkRebuildAll(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	app := server.New(pool, server.Config{}, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	app, err := server.New(pool, server.Config{}, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	if err != nil {
+		b.Fatal(err)
+	}
 	for b.Loop() {
 		if err := app.Reporting.RebuildAll(b.Context()); err != nil {
 			b.Fatal(err)

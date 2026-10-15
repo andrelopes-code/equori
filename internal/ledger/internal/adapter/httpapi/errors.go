@@ -12,6 +12,11 @@ import (
 
 var errInvalidRequest = errors.New("invalid request")
 
+// paramError is a parameter that conforms to the contract but whose value the handler cannot use.
+type paramError struct{ field, message string }
+
+func (e *paramError) Error() string { return e.field + ": " + e.message }
+
 func (s *Server) writeRequestError(w http.ResponseWriter, r *http.Request, err error) {
 	s.writeError(w, r, errors.Join(errInvalidRequest, err))
 }
@@ -28,6 +33,11 @@ func (s *Server) writeError(w http.ResponseWriter, r *http.Request, err error) {
 // toProblem maps errors to the codes declared in api/openapi.yaml (ADR 004).
 func toProblem(err error) problem.Details {
 	if d, ok := problem.Transport(err); ok {
+		return d
+	}
+	if pe, ok := errors.AsType[*paramError](err); ok {
+		d := problem.New(http.StatusBadRequest, "invalid_request", pe.Error())
+		d.Errors = []problem.FieldError{{Field: pe.field, Message: pe.message}}
 		return d
 	}
 	if errors.Is(err, errInvalidRequest) {

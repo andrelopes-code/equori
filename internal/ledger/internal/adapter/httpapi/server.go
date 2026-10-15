@@ -184,7 +184,7 @@ func (s *Server) ListTransactions(ctx context.Context, req ListTransactionsReque
 	if req.Params.Cursor != nil {
 		var c app.TransactionCursor
 		if err := page.DecodeCursor(*req.Params.Cursor, &c); err != nil {
-			return nil, errInvalidRequest
+			return nil, &paramError{field: "cursor", message: "is not a cursor of this list"}
 		}
 		q.After = &c
 	}

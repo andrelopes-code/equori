@@ -7,6 +7,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/andrelopes-code/equori/api"
+	"github.com/andrelopes-code/equori/internal/platform/contract"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andrelopes-code/equori/internal/identity"
@@ -32,7 +35,11 @@ type App struct {
 }
 
 // New registers every module's routes and outbox subscriptions; the caller runs Dispatcher.
-func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) *App {
+func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
+	validator, err := contract.New(api.Contract, "/api/v1")
+	if err != nil {
+		return nil, err
+	}
 	dispatcher := outbox.NewDispatcher(pool, log)
 	clk := clock.New(time.UTC, time.Now)
 	if cfg.Clock != nil {
@@ -52,9 +59,9 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) *App {
 	mux.Handle("/api/", httpserver.NotFound())
 
 	return &App{
-		Handler:    httpserver.Middleware(identityModule.RequireSession(mux), log, ledgerModule.BodyLimits()...),
+		Handler:    httpserver.Middleware(identityModule.RequireSession(validator.Middleware(mux)), log, ledgerModule.BodyLimits()...),
 		Dispatcher: dispatcher,
 		Identity:   identityModule,
 		Reporting:  reportingModule,
-	}
+	}, nil
 }

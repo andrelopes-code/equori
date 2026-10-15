@@ -60,7 +60,10 @@ func New(t *testing.T, opts ...Option) *Harness {
 	for _, o := range opts {
 		o(&cfg)
 	}
-	app := server.New(pool, cfg, log)
+	app, err := server.New(pool, cfg, log)
+	if err != nil {
+		t.Fatal(err)
+	}
 	srv := httptest.NewServer(app.Handler)
 	t.Cleanup(srv.Close)
 	h := &Harness{t: t, Pool: pool, App: app, server: srv}
@@ -130,9 +133,18 @@ func (h *Harness) Call(c *http.Client, method, path string, body any) Response {
 	return h.send(c, req)
 }
 
+// URL is the base URL of the test server, for requests the JSON helpers cannot build.
+func (h *Harness) URL() string { return h.server.URL }
+
+// Send executes a request built by the test with the given client.
+func (h *Harness) Send(c *http.Client, req *http.Request) Response {
+	h.t.Helper()
+	return h.send(c, req)
+}
+
 func (h *Harness) send(c *http.Client, req *http.Request) Response {
 	h.t.Helper()
-	resp, err := c.Do(req)
+	resp, err := c.Do(req) //nolint:gosec // tests address the harness's own httptest server
 	if err != nil {
 		h.t.Fatal(err)
 	}

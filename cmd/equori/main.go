@@ -69,7 +69,10 @@ func serve() error {
 	defer pool.Close()
 
 	clk := clock.New(cfg.TimeZone, time.Now)
-	app := server.New(pool, server.Config{SecureCookies: !cfg.InsecureCookies, Clock: &clk}, log)
+	app, err := server.New(pool, server.Config{SecureCookies: !cfg.InsecureCookies, Clock: &clk}, log)
+	if err != nil {
+		return err
+	}
 
 	// The dispatcher must stop before the pool closes.
 	dispatcherDone := make(chan error, 1)
@@ -100,7 +103,11 @@ func reportingCommand(args []string) error {
 		return err
 	}
 	defer pool.Close()
-	return server.New(pool, server.Config{}, log).Reporting.RebuildAll(ctx)
+	app, err := server.New(pool, server.Config{}, log)
+	if err != nil {
+		return err
+	}
+	return app.Reporting.RebuildAll(ctx)
 }
 
 func setup() (config.Config, *slog.Logger, error) {
