@@ -94,3 +94,15 @@ func TestParseCurrency(t *testing.T) {
 		t.Fatalf("ParseCurrency(BTC) err = %v", err)
 	}
 }
+
+func TestCurrencies(t *testing.T) {
+	got := Currencies()
+	if len(got) != len(minorUnits) {
+		t.Fatalf("len = %d, want %d", len(got), len(minorUnits))
+	}
+	for i := 1; i < len(got); i++ {
+		if got[i-1] >= got[i] {
+			t.Fatalf("not sorted at %d: %v", i, got)
+		}
+	}
+}

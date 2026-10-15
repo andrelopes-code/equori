@@ -4,6 +4,7 @@ package money
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 )
 
@@ -33,6 +34,16 @@ func ParseCurrency(s string) (Currency, error) {
 }
 
 func (c Currency) MinorUnits() int { return minorUnits[c] }
+
+// Currencies returns the supported currencies in ascending code order.
+func Currencies() []Currency {
+	cs := make([]Currency, 0, len(minorUnits))
+	for c := range minorUnits {
+		cs = append(cs, c)
+	}
+	slices.Sort(cs)
+	return cs
+}
 
 // Money is immutable. The zero value is invalid; build values with New.
 type Money struct {

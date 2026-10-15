@@ -4,7 +4,7 @@ sql:
     schema: db/migrations
     queries: db/queries/identity
     gen:
-      go:
+      go: &go
         package: postgres
         out: internal/identity/internal/adapter/postgres
         sql_package: pgx/v5
@@ -22,3 +22,10 @@ sql:
               import: time
               type: Time
               pointer: true
+  - engine: postgresql
+    schema: db/migrations
+    queries: db/queries/marketdata
+    gen:
+      go:
+        <<: *go
+        out: internal/marketdata/internal/adapter/postgres
