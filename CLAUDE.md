@@ -1,6 +1,6 @@
 # equori
 
-Self-hosted personal finance manager. Go backend, PostgreSQL, single binary, single container. Frontend (`web/`) comes later and is embedded in the binary.
+Self-hosted personal finance manager. Go backend, PostgreSQL, single binary, single container. The web interface (`web/`) is a single-page application embedded in the binary (ADR 008).
 
 Decisions: `docs/adr/`. Read the relevant ADR before changing what it covers.
 
@@ -8,13 +8,15 @@ Decisions: `docs/adr/`. Read the relevant ADR before changing what it covers.
 
 | Command | Purpose |
 |---|---|
-| `make check` | Format check, tidy check, lint, test with `-race` (starts Postgres). Must pass before every commit. |
+| `make check` | Format check, tidy check, lint, `make web-check`, test with `-race` (starts Postgres). Must pass before every commit. |
 | `make db-up` / `make dev` | Start local Postgres on `127.0.0.1:54329`, run the app on `:8080` |
+| `make web-dev` | Vite dev server for `web/`, proxying `/api` to `make dev` |
+| `make web-check` | Build `web/`, then typecheck, ESLint and Prettier check |
 | `make gen` | Regenerate sqlc and oapi-codegen output after editing `db/queries`, `db/migrations` or `api/openapi.yaml` |
 | `make vuln` | govulncheck |
 | `make hooks` | Enable the pre-commit hook (`make check`) |
 
-Tools are pinned in `tools/go.mod` and built into `bin/`. Do not install tools globally. Do not add custom lint scripts.
+Tools are pinned in `tools/go.mod` and built into `bin/`; `web/` tools are pinned in `web/package.json`, and pnpm runs from inside `web/` so Corepack selects its version. Do not install tools globally. Do not add custom lint scripts.
 
 ## Layout
 
@@ -28,6 +30,7 @@ db/migrations/         goose SQL migrations, embedded
 db/queries/<module>/   sqlc queries, one directory per owner module
 api/openapi.yaml       HTTP contract (source of truth for server and frontend types)
 docs/adr/              decision records
+web/                   single-page application (Vite, React, TypeScript), embedded by web/embed.go
 ```
 
 Module internals: `<module>.go` (public API) → `internal/domain` → `internal/app` → `internal/adapter/{postgres,httpapi}`. Dependency rules are in ADR 002 and enforced by `depguard` and the compiler.
@@ -86,6 +89,6 @@ Write a comment only when it carries information the code cannot: a non-obvious 
 
 ## Commits
 
-Conventional Commits 1.0: `<type>(<scope>): <summary>`, imperative, lowercase, no trailing period, summary at most 72 characters. Types: `feat`, `fix`, `refactor`, `perf`, `test`, `docs`, `build`, `ci`, `chore`. Scope is the module, `platform`, `api` or `deps`. A breaking change uses `!` after the scope and a `BREAKING CHANGE:` footer. The body explains what changed and why, wrapped at 72 columns.
+Conventional Commits 1.0: `<type>(<scope>): <summary>`, imperative, lowercase, no trailing period, summary at most 72 characters. Types: `feat`, `fix`, `refactor`, `perf`, `test`, `docs`, `build`, `ci`, `chore`. Scope is the module, `platform`, `api`, `web` or `deps`. A breaking change uses `!` after the scope and a `BREAKING CHANGE:` footer. The body explains what changed and why, wrapped at 72 columns.
 
 Commits, pull requests, tags and release notes never mention AI tools or assistants: no `Co-Authored-By` trailers, no "generated with" footers, no tool names. `.claude/settings.json` sets empty attribution.

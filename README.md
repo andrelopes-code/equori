@@ -45,14 +45,15 @@ The Postgres major version is pinned to 18. To upgrade the major version, dump t
 
 ## Development
 
-Requirements: Go 1.27, Docker, make.
+Requirements: Go 1.27, Node.js 24 with Corepack enabled (`corepack enable`), Docker, make.
 
 ```sh
 make hooks    # pre-commit runs make check
 make db-up    # local Postgres on 127.0.0.1:54329 (EQUORI_DEV_DB_PORT)
 make dev      # run the app
+make web-dev  # Vite dev server for the web interface, proxying /api to make dev
 make gen      # regenerate sqlc and oapi-codegen output
-make check    # format, tidy and codegen checks, lint, test (starts Postgres)
+make check    # format, tidy and codegen checks, lint, web checks, test (starts Postgres)
 ```
 
 ## License
