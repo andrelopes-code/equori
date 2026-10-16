@@ -69,6 +69,29 @@ func (p ledgerPort) handle(ctx context.Context, tx pgx.Tx, e outbox.Delivered) e
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 
+// ImportLine is a statement line before the ledger records it.
+type ImportLine = app.ImportLine
+
+// DecideImport decides payee, tags and category of each line before the ledger records it
+// (P5 amendment A19); the decision of a line with nothing to set is nil.
+func (m *Module) DecideImport(ctx context.Context, userID int64, lines []ImportLine) ([]*ledger.ImportDecision, error) {
+	decisions, err := m.svc.DecideImport(ctx, userID, lines)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*ledger.ImportDecision, len(decisions))
+	for i, d := range decisions {
+		if d == nil {
+			continue
+		}
+		out[i] = &ledger.ImportDecision{PayeeID: d.PayeeID, AddTags: d.AddTags, Cause: ledger.Cause{Method: d.Method, RuleID: d.RuleID}}
+		for _, a := range d.Parts {
+			out[i].Parts = append(out[i].Parts, ledger.CategoryPart{AccountID: a.CategoryID, Amount: a.Amount})
+		}
+	}
+	return out, nil
+}
+
 type ledgerPort struct{ l *ledger.Module }
 
 func (p ledgerPort) AccountFacts(ctx context.Context, userID int64) ([]app.Account, error) {

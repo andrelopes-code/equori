@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/andrelopes-code/equori/internal/classification"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/adapter/httpapi"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/adapter/postgres"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/app"
@@ -26,8 +27,8 @@ type Module struct {
 	http *httpapi.Server
 }
 
-func New(pool *pgxpool.Pool, l *ledger.Module, log *slog.Logger) *Module {
-	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l})
+func New(pool *pgxpool.Pool, l *ledger.Module, c *classification.Module, log *slog.Logger) *Module {
+	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l, c})
 	return &Module{http: httpapi.NewServer(svc, log)}
 }
 
@@ -40,7 +41,11 @@ func (m *Module) BodyLimits() []httpserver.BodyLimit {
 }
 
 // ledgerPort adapts package ledger to the port app.Ledger, translating its errors.
-type ledgerPort struct{ l *ledger.Module }
+// ledgerPort records lines in the ledger after Classification decides them (P5 amendment A19).
+type ledgerPort struct {
+	l *ledger.Module
+	c *classification.Module
+}
 
 func (p ledgerPort) translate(err error) error {
 	switch {
@@ -74,12 +79,21 @@ func (p ledgerPort) LinkedTransaction(ctx context.Context, userID int64, recordI
 
 func (p ledgerPort) RecordImported(ctx context.Context, userID int64, lines []app.NewLine) ([]uuid.UUID, error) {
 	recs := make([]ledger.ImportedRecord, len(lines))
+	decide := make([]classification.ImportLine, len(lines))
 	for i, l := range lines {
 		posting, err := p.posting(l.Line)
 		if err != nil {
 			return nil, err
 		}
 		recs[i] = ledger.ImportedRecord{RecordID: l.RecordID, Posting: posting}
+		decide[i] = classification.ImportLine{AccountID: posting.AccountID, Date: posting.Date, Amount: posting.Amount, Description: posting.Description}
+	}
+	decisions, err := p.c.DecideImport(ctx, userID, decide)
+	if err != nil {
+		return nil, err
+	}
+	for i := range recs {
+		recs[i].Decision = decisions[i]
 	}
 	ids, err := p.l.RecordImportedBatch(ctx, userID, recs)
 	if le, ok := errors.AsType[*ledger.LineError](err); ok {
