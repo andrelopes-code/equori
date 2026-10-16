@@ -22,7 +22,7 @@ var (
 const (
 	MethodRule    = domain.MethodRule
 	MethodHistory = domain.MethodHistory
-	MethodSource  = "source"
+	MethodSource  = domain.MethodSource
 	MethodManual  = "manual"
 )
 
@@ -76,6 +76,14 @@ type Repository interface {
 	// the key, and the key of the last one when more may follow.
 	PendingCategorizations(ctx context.Context, userID int64, after *PendingKey, limit int) ([]uuid.UUID, *PendingKey, error)
 	CountMethods(ctx context.Context, userID int64, from, to time.Time) (map[string]int, error)
+
+	// CountSourceCategories adds the lines that carried each category and keeps its latest name.
+	CountSourceCategories(ctx context.Context, userID int64, seen []SourceCategory) error
+	// MappedSourceCategories returns the owner's category of each mapped external id.
+	MappedSourceCategories(ctx context.Context, userID int64, provider string, externalIDs []string) (map[string]uuid.UUID, error)
+	ListSourceCategories(ctx context.Context, userID int64, p page.Request[NameKey]) ([]SourceCategory, *NameKey, error)
+	// MapSourceCategory sets or, with uuid.Nil, clears the owner's category.
+	MapSourceCategory(ctx context.Context, userID int64, id, categoryID uuid.UUID) (SourceCategory, error)
 
 	// CorrectedExamples returns up to limit corrected, non-voided transactions with the
 	// match key and category, oldest first.

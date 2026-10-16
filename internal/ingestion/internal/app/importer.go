@@ -43,8 +43,9 @@ type Line struct {
 	Date        time.Time
 	Amount      int64
 	Description string
-	Pending     bool       // the aggregator has not settled it (P6 A36)
-	DueDate     *time.Time // due date of the card bill it belongs to (A39)
+	Pending     bool                   // the aggregator has not settled it (P6 A36)
+	DueDate     *time.Time             // due date of the card bill it belongs to (A39)
+	Category    *domain.SourceCategory // the aggregator's category (A41)
 }
 
 // NewLine is a line to record as a transaction for its external record.
@@ -264,7 +265,7 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 		rec.BatchID = batch.ID
 		pending = append(pending, rec)
 		r := lines[i]
-		line := Line{AccountID: rec.AccountID, Currency: currency, Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description), Pending: r.Pending, DueDate: r.DueDate}
+		line := Line{AccountID: rec.AccountID, Currency: currency, Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description), Pending: r.Pending, DueDate: r.DueDate, Category: r.Category}
 		if sync && r.Installment != nil && r.Amount < 0 {
 			// A40: the line goes to its installment purchase; a resumed one finds its own link.
 			parts = append(parts, InstallmentLine{RecordID: rec.ID, Line: line, Installment: *r.Installment})

@@ -73,6 +73,9 @@ func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 // ImportLine is a statement line before the ledger records it.
 type ImportLine = app.ImportLine
 
+// LineCategory is the aggregator category of an imported line (P6 amendment A41).
+type LineCategory = app.LineCategory
+
 // DecideImport decides payee, tags and category of each line before the ledger records it
 // (P5 amendment A19); the decision of a line with nothing to set is nil.
 func (m *Module) DecideImport(ctx context.Context, userID int64, lines []ImportLine) ([]*ledger.ImportDecision, error) {

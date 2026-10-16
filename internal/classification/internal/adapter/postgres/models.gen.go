@@ -47,6 +47,16 @@ type ClassificationRule struct {
 	UpdatedAt      time.Time
 }
 
+type ClassificationSourceCategory struct {
+	ID         uuid.UUID
+	UserID     int64
+	Provider   string
+	ExternalID string
+	Name       string
+	SeenCount  int32
+	CategoryID uuid.NullUUID
+}
+
 type ClassificationSuggestion struct {
 	ID                    uuid.UUID
 	UserID                int64

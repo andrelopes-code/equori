@@ -147,6 +147,15 @@ func (p ledgerPort) posting(l app.Line) (ledger.ImportedPosting, error) {
 	return ledger.ImportedPosting{AccountID: l.AccountID, Date: l.Date, Amount: amount, Description: l.Description, Pending: l.Pending, DueDate: l.DueDate}, err
 }
 
+// importLine is a line as Classification decides it; aggregator lines carry Pluggy's category.
+func importLine(posting ledger.ImportedPosting, l app.Line) classification.ImportLine {
+	line := classification.ImportLine{AccountID: posting.AccountID, Date: posting.Date, Amount: posting.Amount, Description: posting.Description}
+	if c := l.Category; c != nil {
+		line.SourceCategory = &classification.LineCategory{Provider: string(domain.ProviderPluggy), ExternalID: c.ID, Name: c.Name}
+	}
+	return line
+}
+
 func (p ledgerPort) ImportTarget(ctx context.Context, userID int64, accountID uuid.UUID) (domain.ImportTarget, error) {
 	t, err := p.l.ImportTarget(ctx, userID, accountID)
 	if errors.Is(err, ledger.ErrValidation) {
@@ -169,7 +178,7 @@ func (p ledgerPort) RecordImported(ctx context.Context, userID int64, lines []ap
 			return nil, err
 		}
 		recs[i] = ledger.ImportedRecord{RecordID: l.RecordID, Posting: posting}
-		decide[i] = classification.ImportLine{AccountID: posting.AccountID, Date: posting.Date, Amount: posting.Amount, Description: posting.Description}
+		decide[i] = importLine(posting, l.Line)
 	}
 	decisions, err := p.c.DecideImport(ctx, userID, decide)
 	if err != nil {
@@ -234,7 +243,7 @@ func (p ledgerPort) RecordInstallment(ctx context.Context, userID int64, l app.I
 	if err != nil {
 		return uuid.Nil, uuid.Nil, err
 	}
-	decisions, err := p.c.DecideImport(ctx, userID, []classification.ImportLine{{AccountID: posting.AccountID, Date: posting.Date, Amount: posting.Amount, Description: posting.Description}})
+	decisions, err := p.c.DecideImport(ctx, userID, []classification.ImportLine{importLine(posting, l.Line)})
 	if err != nil {
 		return uuid.Nil, uuid.Nil, err
 	}

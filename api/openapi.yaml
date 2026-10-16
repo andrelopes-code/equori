@@ -1445,6 +1445,51 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /source-categories:
+    get:
+      tags: [classification]
+      operationId: listSourceCategories
+      summary: Categories aggregators assigned to imported lines, by name (P6 amendment A41).
+      description: count is the number of imported lines that carried the category.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SourceCategoryList"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /source-categories/{id}:
+    put:
+      tags: [classification]
+      operationId: mapSourceCategory
+      summary: Set the category of lines that carry the source category and no rule decides.
+      description: category_id null clears it. The mapping applies to lines imported afterwards (method source, F5).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SourceCategoryMapping"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SourceCategory"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /categorization-statistics:
     get:
       tags: [classification]
@@ -2223,6 +2268,46 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
   schemas:
+    SourceCategory:
+      type: object
+      required: [id, provider, external_id, name, count]
+      properties:
+        id:
+          type: string
+          format: uuid
+        provider:
+          type: string
+          enum: [pluggy]
+        external_id:
+          type: string
+        name:
+          type: string
+        count:
+          type: integer
+        category_id:
+          type: string
+          format: uuid
+          description: Absent while unmapped.
+    SourceCategoryList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SourceCategory"
+        next_cursor:
+          type: string
+          description: Absent on the last page.
+    SourceCategoryMapping:
+      type: object
+      additionalProperties: false
+      required: [category_id]
+      properties:
+        category_id:
+          type: string
+          format: uuid
+          nullable: true
     IntegrationInput:
       type: object
       additionalProperties: false

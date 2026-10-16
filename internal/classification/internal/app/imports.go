@@ -16,6 +16,8 @@ type ImportLine struct {
 	Date        time.Time
 	Amount      money.Money
 	Description string
+	// SourceCategory is the aggregator's category of the line, nil for files (P6 A41).
+	SourceCategory *LineCategory
 }
 
 // DecideImport decides each line before it is recorded (P5 amendment A19); the decision of
@@ -28,6 +30,10 @@ func (s *Service) DecideImport(ctx context.Context, userID int64, lines []Import
 	if err != nil {
 		return nil, err
 	}
+	sources, err := s.sourceCategories(ctx, userID, lines)
+	if err != nil {
+		return nil, err
+	}
 	subjects := make([]domain.Subject, len(lines))
 	for i, l := range lines {
 		class := "income"
@@ -37,6 +43,7 @@ func (s *Service) DecideImport(ctx context.Context, userID int64, lines []Import
 		subjects[i] = domain.Subject{
 			Date: l.Date, Description: l.Description, RawDescription: l.Description, Amount: l.Amount,
 			Accounts: []uuid.UUID{l.AccountID}, AccountKinds: []string{accounts[l.AccountID].Kind}, Source: originImport, Class: class,
+			SourceCategory: sources[i],
 		}
 	}
 	decisions, err := s.decideAll(ctx, userID, c, subjects)

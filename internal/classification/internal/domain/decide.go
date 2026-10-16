@@ -45,7 +45,8 @@ func (d Decision) Payee(s Subject) uuid.UUID {
 	return s.PayeeID
 }
 
-// Decide applies aliases (A22), rules (A21) and payee history (A23) to s.
+// Decide applies aliases (A22), rules (A21), the mapped source category (P6 A41) and payee
+// history (A23) to s, in that precedence (F5).
 func Decide(s Subject, c Catalog) Decision {
 	var d Decision
 	if s.PayeeID == uuid.Nil {
@@ -83,6 +84,11 @@ func Decide(s Subject, c Catalog) Decision {
 	}
 	slices.Sort(d.AddTags)
 	d.AddTags = slices.Compact(d.AddTags)
+	if id := s.SourceCategory; !categoryDecided && id != uuid.Nil {
+		if cat, ok := c.Categories[id]; ok && cat.usable(total.Currency(), s.Date) {
+			d.Parts, d.Method, categoryDecided = []Allocation{{CategoryID: id, Amount: total}}, MethodSource, true
+		}
+	}
 	if !categoryDecided {
 		if id, ok := c.History[HistoryKey{PayeeID: d.Payee(s), Class: s.Class}]; ok && d.Payee(s) != uuid.Nil {
 			if cat, ok := c.Categories[id]; ok && cat.usable(total.Currency(), s.Date) {

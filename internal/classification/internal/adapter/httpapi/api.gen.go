@@ -222,6 +222,21 @@ func (e RuleSuggestionState) Valid() bool {
 	}
 }
 
+// Defines values for SourceCategoryProvider.
+const (
+	Pluggy SourceCategoryProvider = "pluggy"
+)
+
+// Valid indicates whether the value is a known member of the SourceCategoryProvider enum.
+func (e SourceCategoryProvider) Valid() bool {
+	switch e {
+	case Pluggy:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ListRuleSuggestionsParamsState.
 const (
 	ListRuleSuggestionsParamsStateAccepted  ListRuleSuggestionsParamsState = "accepted"
@@ -431,6 +446,33 @@ type RuleSuggestionPage struct {
 	NextCursor *string          `json:"next_cursor,omitempty"`
 }
 
+// SourceCategory defines model for SourceCategory.
+type SourceCategory struct {
+	// CategoryId Absent while unmapped.
+	CategoryId *openapi_types.UUID    `json:"category_id,omitempty"`
+	Count      int                    `json:"count"`
+	ExternalId string                 `json:"external_id"`
+	Id         openapi_types.UUID     `json:"id"`
+	Name       string                 `json:"name"`
+	Provider   SourceCategoryProvider `json:"provider"`
+}
+
+// SourceCategoryProvider defines model for SourceCategory.Provider.
+type SourceCategoryProvider string
+
+// SourceCategoryList defines model for SourceCategoryList.
+type SourceCategoryList struct {
+	Items []SourceCategory `json:"items"`
+
+	// NextCursor Absent on the last page.
+	NextCursor *string `json:"next_cursor,omitempty"`
+}
+
+// SourceCategoryMapping defines model for SourceCategoryMapping.
+type SourceCategoryMapping struct {
+	CategoryId *openapi_types.UUID `json:"category_id"`
+}
+
 // Cursor defines model for Cursor.
 type Cursor = string
 
@@ -468,6 +510,12 @@ type ListRulesParams struct {
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
+// ListSourceCategoriesParams defines parameters for ListSourceCategories.
+type ListSourceCategoriesParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
 // CreatePayeeAliasJSONRequestBody defines body for CreatePayeeAlias for application/json ContentType.
 type CreatePayeeAliasJSONRequestBody = PayeeAliasInput
 
@@ -485,6 +533,9 @@ type ReorderRulesJSONRequestBody = RuleOrder
 
 // ChangeRuleJSONRequestBody defines body for ChangeRule for application/json ContentType.
 type ChangeRuleJSONRequestBody = RuleInput
+
+// MapSourceCategoryJSONRequestBody defines body for MapSourceCategory for application/json ContentType.
+type MapSourceCategoryJSONRequestBody = SourceCategoryMapping
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -536,6 +587,12 @@ type ServerInterface interface {
 	// ChangeRule Replace a rule; its priority does not change.
 	// (PUT /rules/{id})
 	ChangeRule(w http.ResponseWriter, r *http.Request, id ID)
+	// ListSourceCategories Categories aggregators assigned to imported lines, by name (P6 amendment A41).
+	// (GET /source-categories)
+	ListSourceCategories(w http.ResponseWriter, r *http.Request, params ListSourceCategoriesParams)
+	// MapSourceCategory Set the category of lines that carry the source category and no rule decides.
+	// (PUT /source-categories/{id})
+	MapSourceCategory(w http.ResponseWriter, r *http.Request, id ID)
 	// GetCategorization How the categories of a transaction were decided (P5 amendment A20).
 	// (GET /transactions/{id}/categorization)
 	GetCategorization(w http.ResponseWriter, r *http.Request, id ID)
@@ -1011,6 +1068,78 @@ func (siw *ServerInterfaceWrapper) ChangeRule(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
+// ListSourceCategories operation middleware
+func (siw *ServerInterfaceWrapper) ListSourceCategories(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListSourceCategoriesParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListSourceCategories(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// MapSourceCategory operation middleware
+func (siw *ServerInterfaceWrapper) MapSourceCategory(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.MapSourceCategory(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetCategorization operation middleware
 func (siw *ServerInterfaceWrapper) GetCategorization(w http.ResponseWriter, r *http.Request) {
 
@@ -1162,6 +1291,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/rules/reorder", wrapper.ReorderRules)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/rules/run", wrapper.RunRules)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions/{id}/categorization", wrapper.GetCategorization)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/source-categories", wrapper.ListSourceCategories)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/source-categories/{id}", wrapper.MapSourceCategory)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/categorization-statistics", wrapper.GetCategorizationStatistics)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/rule-suggestions", wrapper.ListRuleSuggestions)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/rule-suggestions/{id}/accept", wrapper.AcceptRuleSuggestion)
@@ -2232,6 +2363,111 @@ func (response ChangeRule422ApplicationProblemPlusJSONResponse) VisitChangeRuleR
 	return err
 }
 
+type ListSourceCategoriesRequestObject struct {
+	Params ListSourceCategoriesParams
+}
+
+type ListSourceCategoriesResponseObject interface {
+	VisitListSourceCategoriesResponse(w http.ResponseWriter) error
+}
+
+type ListSourceCategories200JSONResponse SourceCategoryList
+
+func (response ListSourceCategories200JSONResponse) VisitListSourceCategoriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListSourceCategories401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListSourceCategories401ApplicationProblemPlusJSONResponse) VisitListSourceCategoriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MapSourceCategoryRequestObject struct {
+	Id   ID `json:"id"`
+	Body *MapSourceCategoryJSONRequestBody
+}
+
+type MapSourceCategoryResponseObject interface {
+	VisitMapSourceCategoryResponse(w http.ResponseWriter) error
+}
+
+type MapSourceCategory200JSONResponse SourceCategory
+
+func (response MapSourceCategory200JSONResponse) VisitMapSourceCategoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MapSourceCategory401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response MapSourceCategory401ApplicationProblemPlusJSONResponse) VisitMapSourceCategoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MapSourceCategory404ApplicationProblemPlusJSONResponse Problem
+
+func (response MapSourceCategory404ApplicationProblemPlusJSONResponse) VisitMapSourceCategoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MapSourceCategory422ApplicationProblemPlusJSONResponse Problem
+
+func (response MapSourceCategory422ApplicationProblemPlusJSONResponse) VisitMapSourceCategoryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetCategorizationRequestObject struct {
 	Id ID `json:"id"`
 }
@@ -2348,6 +2584,12 @@ type StrictServerInterface interface {
 	// ChangeRule Replace a rule; its priority does not change.
 	// (PUT /rules/{id})
 	ChangeRule(ctx context.Context, request ChangeRuleRequestObject) (ChangeRuleResponseObject, error)
+	// ListSourceCategories Categories aggregators assigned to imported lines, by name (P6 amendment A41).
+	// (GET /source-categories)
+	ListSourceCategories(ctx context.Context, request ListSourceCategoriesRequestObject) (ListSourceCategoriesResponseObject, error)
+	// MapSourceCategory Set the category of lines that carry the source category and no rule decides.
+	// (PUT /source-categories/{id})
+	MapSourceCategory(ctx context.Context, request MapSourceCategoryRequestObject) (MapSourceCategoryResponseObject, error)
 	// GetCategorization How the categories of a transaction were decided (P5 amendment A20).
 	// (GET /transactions/{id}/categorization)
 	GetCategorization(ctx context.Context, request GetCategorizationRequestObject) (GetCategorizationResponseObject, error)
@@ -2835,6 +3077,65 @@ func (sh *strictHandler) ChangeRule(w http.ResponseWriter, r *http.Request, id I
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ChangeRuleResponseObject); ok {
 		if err := validResponse.VisitChangeRuleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListSourceCategories operation middleware
+func (sh *strictHandler) ListSourceCategories(w http.ResponseWriter, r *http.Request, params ListSourceCategoriesParams) {
+	var request ListSourceCategoriesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListSourceCategories(ctx, request.(ListSourceCategoriesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListSourceCategories")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListSourceCategoriesResponseObject); ok {
+		if err := validResponse.VisitListSourceCategoriesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// MapSourceCategory operation middleware
+func (sh *strictHandler) MapSourceCategory(w http.ResponseWriter, r *http.Request, id ID) {
+	var request MapSourceCategoryRequestObject
+
+	request.Id = id
+
+	var body MapSourceCategoryJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.MapSourceCategory(ctx, request.(MapSourceCategoryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "MapSourceCategory")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(MapSourceCategoryResponseObject); ok {
+		if err := validResponse.VisitMapSourceCategoryResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

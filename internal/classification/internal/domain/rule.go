@@ -60,6 +60,7 @@ var categoryActions = []ActionType{ActionSetCategory, ActionSplit, ActionTransfe
 
 const (
 	MethodRule    = "rule"
+	MethodSource  = "source"
 	MethodHistory = "history"
 
 	maxNameLength  = 120
@@ -357,6 +358,9 @@ type Subject struct {
 	Installment  bool
 	// Class is the class of the uncategorized posting: "expense" or "income".
 	Class string
+	// SourceCategory is the owner's category for the aggregator's category of the line
+	// (P6 amendment A41); zero when the line has none or it is not mapped.
+	SourceCategory uuid.UUID
 }
 
 type subject struct {
