@@ -141,6 +141,23 @@ func (q *Queries) ListRecordsByKeys(ctx context.Context, arg ListRecordsByKeysPa
 	return items, nil
 }
 
+const moveRecords = `-- name: MoveRecords :exec
+UPDATE ingestion_external_record SET transaction_id = $1
+WHERE user_id = $2 AND id = ANY($3::uuid[]) AND transaction_id IS NOT NULL
+`
+
+type MoveRecordsParams struct {
+	TransactionID uuid.NullUUID
+	UserID        int64
+	RecordIds     []uuid.UUID
+}
+
+// P5b amendment A32: records follow the transaction that kept them after a pairing.
+func (q *Queries) MoveRecords(ctx context.Context, arg MoveRecordsParams) error {
+	_, err := q.db.Exec(ctx, moveRecords, arg.TransactionID, arg.UserID, arg.RecordIds)
+	return err
+}
+
 const moveReviewCount = `-- name: MoveReviewCount :exec
 UPDATE ingestion_batch SET
     needs_review = needs_review - 1,

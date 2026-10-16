@@ -4,6 +4,7 @@ package ingestion
 
 import (
 	"context"
+	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andrelopes-code/equori/internal/classification"
@@ -21,15 +23,26 @@ import (
 	"github.com/andrelopes-code/equori/internal/ledger"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/money"
+	"github.com/andrelopes-code/equori/internal/platform/outbox"
 )
 
 type Module struct {
 	http *httpapi.Server
 }
 
-func New(pool *pgxpool.Pool, l *ledger.Module, c *classification.Module, log *slog.Logger) *Module {
+func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, c *classification.Module, log *slog.Logger) *Module {
 	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l, c})
+	dispatcher.Subscribe("ingestion", ledger.EventTransactionsPaired, followPairing)
 	return &Module{http: httpapi.NewServer(svc, log)}
+}
+
+// followPairing runs in the dispatcher's transaction, so the records move with the delivery.
+func followPairing(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
+	var p ledger.PairedEvent
+	if err := json.Unmarshal(e.Payload, &p); err != nil {
+		return fmt.Errorf("decode %s: %w", e.Type, err)
+	}
+	return app.NewService(postgres.NewTxRepository(tx), nil).FollowPairing(ctx, e.UserID, p.Kept, p.RecordIDs)
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }

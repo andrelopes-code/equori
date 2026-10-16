@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/app"
@@ -19,6 +20,13 @@ type Repository struct {
 }
 
 func NewRepository(pool *pgxpool.Pool) *Repository { return &Repository{pool: pool, q: New(pool)} }
+
+// NewTxRepository runs on an outbox delivery's transaction; it serves MoveRecords only.
+func NewTxRepository(tx pgx.Tx) *Repository { return &Repository{q: New(tx)} }
+
+func (r *Repository) MoveRecords(ctx context.Context, userID int64, recordIDs []uuid.UUID, transactionID uuid.UUID) error {
+	return r.q.MoveRecords(ctx, MoveRecordsParams{UserID: userID, RecordIds: recordIDs, TransactionID: uuid.NullUUID{UUID: transactionID, Valid: true}})
+}
 
 func toBatch(row IngestionBatch) domain.Batch {
 	b := domain.Batch{

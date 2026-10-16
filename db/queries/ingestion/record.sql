@@ -32,3 +32,8 @@ UPDATE ingestion_batch SET
     created = created + (@state::text = 'created')::int,
     discarded = discarded + (@state::text = 'discarded')::int
 WHERE user_id = @user_id AND id = @id;
+
+-- name: MoveRecords :exec
+-- P5b amendment A32: records follow the transaction that kept them after a pairing.
+UPDATE ingestion_external_record SET transaction_id = @transaction_id
+WHERE user_id = @user_id AND id = ANY(@record_ids::uuid[]) AND transaction_id IS NOT NULL;

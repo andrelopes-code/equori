@@ -21,6 +21,8 @@ type BatchKey struct {
 
 // Repository returns ErrNotFound for missing rows.
 type Repository interface {
+	// MoveRecords points the linked records among recordIDs to the transaction.
+	MoveRecords(ctx context.Context, userID int64, recordIDs []uuid.UUID, transactionID uuid.UUID) error
 	ListBatches(ctx context.Context, userID int64, p page.Request[BatchKey]) ([]domain.Batch, *BatchKey, error)
 	Profile(ctx context.Context, userID int64, accountID uuid.UUID) (domain.Profile, error)
 	// SaveProfile returns ErrNotFound when the account does not belong to the user.
@@ -57,6 +59,12 @@ type Service struct {
 
 func NewService(repo Repository, ledger Ledger) *Service {
 	return &Service{repo: repo, ledger: ledger}
+}
+
+// FollowPairing points the records that a ledger pairing moved to the kept transaction
+// (P5b amendment A32); repeating it changes nothing.
+func (s *Service) FollowPairing(ctx context.Context, userID int64, kept uuid.UUID, recordIDs []uuid.UUID) error {
+	return s.repo.MoveRecords(ctx, userID, recordIDs, kept)
 }
 
 func (s *Service) Batch(ctx context.Context, userID int64, id uuid.UUID) (domain.Batch, error) {

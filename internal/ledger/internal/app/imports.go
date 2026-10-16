@@ -32,12 +32,14 @@ type ImportedRecord struct {
 }
 
 // ImportDecision is what Classification decided for a line before it is recorded (P5
-// amendment A19). Without parts, the other side is the uncategorized account.
+// amendment A19). Without parts or a transfer, the other side is the uncategorized account.
 type ImportDecision struct {
 	PayeeID uuid.UUID
 	AddTags []string
 	Parts   []domain.CategoryPart
-	Cause   Cause
+	// TransferTo makes the line a transfer to another of the owner's accounts (P5b A30).
+	TransferTo uuid.UUID
+	Cause      Cause
 }
 
 // LineError names the line of a batch that a ledger rule rejected.
@@ -85,6 +87,9 @@ func (s *Service) RecordImportedBatch(ctx context.Context, userID int64, recs []
 				for _, p := range rec.Decision.Parts {
 					categories = append(categories, p.AccountID)
 				}
+				if rec.Decision.TransferTo != uuid.Nil {
+					categories = append(categories, rec.Decision.TransferTo)
+				}
 			}
 		}
 		existing, err := r.TransactionsByExternalRecords(ctx, userID, recordIDs)
@@ -120,6 +125,16 @@ func (s *Service) RecordImportedBatch(ctx context.Context, userID int64, recs []
 			}
 			if err := leaf[rec.Posting.AccountID]; err != nil {
 				return &LineError{Index: i, Err: err}
+			}
+			if d := rec.Decision; d != nil && d.TransferTo != uuid.Nil {
+				id, err := s.completePairing(ctx, r, userID, rec)
+				if err != nil {
+					return err
+				}
+				if id != uuid.Nil {
+					ids[i] = id
+					continue
+				}
 			}
 			t, err := domain.NewTransaction(importedTransaction(userID, settings.BaseCurrency, rec, expense, income), accounts)
 			if err != nil {
@@ -161,6 +176,9 @@ func importedTransaction(userID int64, base money.Currency, rec ImportedRecord, 
 		for _, p := range d.Parts {
 			t.Postings = append(t.Postings, domain.Posting{AccountID: p.AccountID, Amount: p.Amount})
 		}
+		if d.TransferTo != uuid.Nil {
+			t.Postings = append(t.Postings, domain.Posting{AccountID: d.TransferTo, Amount: rec.Posting.Amount.Neg()})
+		}
 	}
 	if len(t.Postings) == 1 {
 		other := income
@@ -170,6 +188,37 @@ func importedTransaction(userID int64, base money.Currency, rec ImportedRecord, 
 		t.Postings = append(t.Postings, domain.Posting{AccountID: other.ID, Amount: rec.Posting.Amount.Neg()})
 	}
 	return t
+}
+
+// completePairing turns the one pairing candidate of a line decided as a transfer into the
+// transfer, with the line's posting confirming its record (P5b amendment A30). It returns
+// uuid.Nil when the line must be created: no candidate, several, or one that cannot change.
+func (s *Service) completePairing(ctx context.Context, r Repository, userID int64, rec ImportedRecord) (uuid.UUID, error) {
+	line := rec.Posting
+	ids, err := r.PairingCandidates(ctx, PairingQuery{
+		UserID: userID, AccountID: rec.Decision.TransferTo, Amount: line.Amount.Neg().Amount(),
+		From: line.Date.AddDate(0, 0, -pairingWindowDays), To: line.Date.AddDate(0, 0, pairingWindowDays),
+		ExcludedAccounts: []uuid.UUID{line.AccountID},
+	})
+	if err != nil || len(ids) != 1 {
+		return uuid.Nil, err
+	}
+	c, err := r.LockTransaction(ctx, userID, ids[0])
+	if err != nil {
+		return uuid.Nil, err
+	}
+	target, accounts, err := s.transferAccounts(ctx, r, userID, line.AccountID, c)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	next, err := c.Transfer(c.Version, target, rec.RecordID, accounts)
+	if errors.Is(err, domain.ErrReconciled) || errors.Is(err, domain.ErrValidation) {
+		return uuid.Nil, nil
+	}
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return c.ID, s.saveTransfer(ctx, r, c, next, accounts, rec.Decision.Cause)
 }
 
 // ImportCurrency returns the currency of an account that can hold statement lines: a leaf
