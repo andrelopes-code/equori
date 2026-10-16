@@ -12,6 +12,161 @@ import (
 	"github.com/google/uuid"
 )
 
+const completeBatch = `-- name: CompleteBatch :one
+UPDATE ingestion_batch SET
+    received = $1, ignored = $2, matched = $3, created = $4,
+    needs_review = $5, discarded = $6,
+    balance_date = $7, balance_amount = $8,
+    balance_status = $9, balance_reason = $10, completed_at = now()
+WHERE user_id = $11 AND id = $12
+RETURNING id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at
+`
+
+type CompleteBatchParams struct {
+	Received      int32
+	Ignored       int32
+	Matched       int32
+	Created       int32
+	NeedsReview   int32
+	Discarded     int32
+	BalanceDate   *time.Time
+	BalanceAmount *int64
+	BalanceStatus string
+	BalanceReason *string
+	UserID        int64
+	ID            uuid.UUID
+}
+
+func (q *Queries) CompleteBatch(ctx context.Context, arg CompleteBatchParams) (IngestionBatch, error) {
+	row := q.db.QueryRow(ctx, completeBatch,
+		arg.Received,
+		arg.Ignored,
+		arg.Matched,
+		arg.Created,
+		arg.NeedsReview,
+		arg.Discarded,
+		arg.BalanceDate,
+		arg.BalanceAmount,
+		arg.BalanceStatus,
+		arg.BalanceReason,
+		arg.UserID,
+		arg.ID,
+	)
+	var i IngestionBatch
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.AccountID,
+		&i.Source,
+		&i.FileName,
+		&i.Currency,
+		&i.PeriodFrom,
+		&i.PeriodTo,
+		&i.Received,
+		&i.Ignored,
+		&i.Matched,
+		&i.Created,
+		&i.NeedsReview,
+		&i.Discarded,
+		&i.BalanceDate,
+		&i.BalanceAmount,
+		&i.BalanceStatus,
+		&i.BalanceReason,
+		&i.StartedAt,
+		&i.CompletedAt,
+	)
+	return i, err
+}
+
+const getBatch = `-- name: GetBatch :one
+SELECT id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at FROM ingestion_batch WHERE user_id = $1 AND id = $2
+`
+
+type GetBatchParams struct {
+	UserID int64
+	ID     uuid.UUID
+}
+
+func (q *Queries) GetBatch(ctx context.Context, arg GetBatchParams) (IngestionBatch, error) {
+	row := q.db.QueryRow(ctx, getBatch, arg.UserID, arg.ID)
+	var i IngestionBatch
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.AccountID,
+		&i.Source,
+		&i.FileName,
+		&i.Currency,
+		&i.PeriodFrom,
+		&i.PeriodTo,
+		&i.Received,
+		&i.Ignored,
+		&i.Matched,
+		&i.Created,
+		&i.NeedsReview,
+		&i.Discarded,
+		&i.BalanceDate,
+		&i.BalanceAmount,
+		&i.BalanceStatus,
+		&i.BalanceReason,
+		&i.StartedAt,
+		&i.CompletedAt,
+	)
+	return i, err
+}
+
+const insertBatch = `-- name: InsertBatch :one
+INSERT INTO ingestion_batch (user_id, account_id, source, file_name, currency, period_from, period_to)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at
+`
+
+type InsertBatchParams struct {
+	UserID     int64
+	AccountID  uuid.UUID
+	Source     string
+	FileName   string
+	Currency   string
+	PeriodFrom *time.Time
+	PeriodTo   *time.Time
+}
+
+func (q *Queries) InsertBatch(ctx context.Context, arg InsertBatchParams) (IngestionBatch, error) {
+	row := q.db.QueryRow(ctx, insertBatch,
+		arg.UserID,
+		arg.AccountID,
+		arg.Source,
+		arg.FileName,
+		arg.Currency,
+		arg.PeriodFrom,
+		arg.PeriodTo,
+	)
+	var i IngestionBatch
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.AccountID,
+		&i.Source,
+		&i.FileName,
+		&i.Currency,
+		&i.PeriodFrom,
+		&i.PeriodTo,
+		&i.Received,
+		&i.Ignored,
+		&i.Matched,
+		&i.Created,
+		&i.NeedsReview,
+		&i.Discarded,
+		&i.BalanceDate,
+		&i.BalanceAmount,
+		&i.BalanceStatus,
+		&i.BalanceReason,
+		&i.StartedAt,
+		&i.CompletedAt,
+	)
+	return i, err
+}
+
 const listBatches = `-- name: ListBatches :many
 SELECT id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at FROM ingestion_batch
 WHERE user_id = $1
@@ -71,4 +226,23 @@ func (q *Queries) ListBatches(ctx context.Context, arg ListBatchesParams) ([]Ing
 		return nil, err
 	}
 	return items, nil
+}
+
+const lockAccountImports = `-- name: LockAccountImports :exec
+SELECT pg_advisory_lock(hashtextextended($1::text, 0))
+`
+
+// Session-level lock held for one import: imports of one account run one at a time.
+func (q *Queries) LockAccountImports(ctx context.Context, accountKey string) error {
+	_, err := q.db.Exec(ctx, lockAccountImports, accountKey)
+	return err
+}
+
+const unlockAccountImports = `-- name: UnlockAccountImports :exec
+SELECT pg_advisory_unlock(hashtextextended($1::text, 0))
+`
+
+func (q *Queries) UnlockAccountImports(ctx context.Context, accountKey string) error {
+	_, err := q.db.Exec(ctx, unlockAccountImports, accountKey)
+	return err
 }

@@ -49,3 +49,19 @@ type IngestionCsvProfile struct {
 	AmountSign        string
 	UpdatedAt         time.Time
 }
+
+type IngestionExternalRecord struct {
+	ID            uuid.UUID
+	UserID        int64
+	BatchID       uuid.UUID
+	AccountID     uuid.UUID
+	ExternalID    *string
+	DedupKey      []byte
+	Raw           []byte
+	BookedOn      time.Time
+	Amount        int64
+	Description   string
+	State         string
+	TransactionID uuid.NullUUID
+	Candidates    []uuid.UUID
+}

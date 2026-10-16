@@ -1336,6 +1336,70 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /accounts/{id}/imports:
+    post:
+      tags: [ingestion]
+      operationId: importFile
+      summary: Import an OFX or CSV statement into a balance account.
+      description: |
+        Each line is deduplicated (I10), matched to an existing transaction of the account with the
+        same amount within 3 days, or created against an uncategorized account; ambiguous matches
+        wait for review. A file balance becomes a balance assertion (chapter 3, F4). At most 10 MiB
+        (P4 amendment A16); a CSV file needs the account's CSV profile.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [format, file]
+              properties:
+                format:
+                  type: string
+                  enum: [ofx, csv]
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportBatch"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "413":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /import-batches/{id}:
+    get:
+      tags: [ingestion]
+      operationId: getImportBatch
+      summary: One import batch with its counts.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportBatch"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
 security:
   - sessionCookie: []
 components:

@@ -78,6 +78,18 @@ func (m *Module) RecordImported(ctx context.Context, userID int64, recordID uuid
 	return m.svc.RecordImported(ctx, userID, recordID, p)
 }
 
+// ImportCurrency returns the currency of an account that can hold statement lines; an
+// account that cannot is an ErrValidation.
+func (m *Module) ImportCurrency(ctx context.Context, userID int64, accountID uuid.UUID) (money.Currency, error) {
+	return m.svc.ImportCurrency(ctx, userID, accountID)
+}
+
+// LinkedTransaction returns the transaction carrying an external record and whether the
+// import created it; ErrNotFound when none carries it.
+func (m *Module) LinkedTransaction(ctx context.Context, userID int64, recordID uuid.UUID) (uuid.UUID, bool, error) {
+	return m.svc.LinkedTransaction(ctx, userID, recordID)
+}
+
 // MatchCandidates lists the unlinked transactions an external record may confirm.
 func (m *Module) MatchCandidates(ctx context.Context, userID int64, p ImportedPosting, window int) ([]uuid.UUID, error) {
 	return m.svc.MatchCandidates(ctx, userID, p, window)

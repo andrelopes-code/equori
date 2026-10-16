@@ -251,17 +251,23 @@ func (s *Service) lockLeafBalance(ctx context.Context, r Repository, userID int6
 	if err != nil {
 		return domain.Account{}, err
 	}
+	return a, checkLeafBalance(ctx, r, a)
+}
+
+// checkLeafBalance accepts the accounts an institution reports on: balance accounts without
+// sub-accounts (P3 amendment A9).
+func checkLeafBalance(ctx context.Context, r Repository, a domain.Account) error {
 	if !a.IsBalance() {
-		return domain.Account{}, validationError("account_id", "must be a balance account")
+		return validationError("account_id", "must be a balance account")
 	}
-	parent, err := r.AccountHasChildren(ctx, userID, accountID)
+	parent, err := r.AccountHasChildren(ctx, a.UserID, a.ID)
 	if err != nil {
-		return domain.Account{}, err
+		return err
 	}
 	if parent {
-		return domain.Account{}, validationError("account_id", "must not be a parent account")
+		return validationError("account_id", "must not be a parent account")
 	}
-	return a, nil
+	return nil
 }
 
 // yieldStart is the first day of the yield period (A10): the day after the previous

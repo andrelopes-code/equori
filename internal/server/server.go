@@ -51,7 +51,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	marketdataModule := marketdata.New(pool)
 	ledgerModule := ledger.New(pool, dispatcher, marketdataModule, clk, log)
 	reportingModule := reporting.New(pool, dispatcher, log)
-	ingestionModule := ingestion.New(pool, log)
+	ingestionModule := ingestion.New(pool, ledgerModule, log)
 
 	mux := http.NewServeMux()
 	mux.Handle("GET /healthz", httpserver.Health(pool))
@@ -63,7 +63,8 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	mux.Handle("/api/", httpserver.NotFound())
 
 	return &App{
-		Handler:    httpserver.Middleware(identityModule.RequireSession(validator.Middleware(mux)), log, ledgerModule.BodyLimits()...),
+		Handler: httpserver.Middleware(identityModule.RequireSession(validator.Middleware(mux)), log,
+			append(ledgerModule.BodyLimits(), ingestionModule.BodyLimits()...)...),
 		Dispatcher: dispatcher,
 		Identity:   identityModule,
 		Ledger:     ledgerModule,

@@ -3,23 +3,107 @@
 package ingestion
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/adapter/httpapi"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/adapter/postgres"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/app"
+	"github.com/andrelopes-code/equori/internal/ingestion/internal/domain"
+	"github.com/andrelopes-code/equori/internal/ledger"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
 type Module struct {
 	http *httpapi.Server
 }
 
-func New(pool *pgxpool.Pool, log *slog.Logger) *Module {
-	svc := app.NewService(postgres.NewRepository(pool))
+func New(pool *pgxpool.Pool, l *ledger.Module, log *slog.Logger) *Module {
+	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l})
 	return &Module{http: httpapi.NewServer(svc, log)}
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
+
+// BodyLimits raises the request body limit of file imports: 10 MiB of content plus the
+// multipart framing (P4 amendment A16).
+func (m *Module) BodyLimits() []httpserver.BodyLimit {
+	return []httpserver.BodyLimit{{Pattern: "POST /api/v1/accounts/{id}/imports", Bytes: 11 << 20}}
+}
+
+// ledgerPort adapts package ledger to the port app.Ledger, translating its errors.
+type ledgerPort struct{ l *ledger.Module }
+
+func (p ledgerPort) translate(err error) error {
+	switch {
+	case err == nil:
+		return nil
+	case errors.Is(err, ledger.ErrNotFound):
+		return app.ErrNotFound
+	case errors.Is(err, ledger.ErrAlreadyMatched):
+		return app.ErrAlreadyMatched
+	}
+	return err
+}
+
+func (p ledgerPort) posting(l app.Line) (ledger.ImportedPosting, error) {
+	amount, err := money.New(l.Amount, l.Currency)
+	return ledger.ImportedPosting{AccountID: l.AccountID, Date: l.Date, Amount: amount, Description: l.Description}, err
+}
+
+func (p ledgerPort) ImportCurrency(ctx context.Context, userID int64, accountID uuid.UUID) (money.Currency, error) {
+	c, err := p.l.ImportCurrency(ctx, userID, accountID)
+	if errors.Is(err, ledger.ErrValidation) {
+		return "", &domain.FieldError{Field: "account_id", Message: "must be a balance account without sub-accounts"}
+	}
+	return c, p.translate(err)
+}
+
+func (p ledgerPort) LinkedTransaction(ctx context.Context, userID int64, recordID uuid.UUID) (uuid.UUID, bool, error) {
+	id, imported, err := p.l.LinkedTransaction(ctx, userID, recordID)
+	return id, imported, p.translate(err)
+}
+
+func (p ledgerPort) RecordImported(ctx context.Context, userID int64, recordID uuid.UUID, l app.Line) (uuid.UUID, error) {
+	posting, err := p.posting(l)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	id, err := p.l.RecordImported(ctx, userID, recordID, posting)
+	if errors.Is(err, ledger.ErrValidation) {
+		return uuid.Nil, fmt.Errorf("%w: %w", app.ErrLineRejected, err)
+	}
+	return id, p.translate(err)
+}
+
+func (p ledgerPort) MatchCandidates(ctx context.Context, userID int64, l app.Line, window int) ([]uuid.UUID, error) {
+	posting, err := p.posting(l)
+	if err != nil {
+		return nil, err
+	}
+	ids, err := p.l.MatchCandidates(ctx, userID, posting, window)
+	return ids, p.translate(err)
+}
+
+func (p ledgerPort) ClearMatched(ctx context.Context, userID int64, recordID, txID, accountID uuid.UUID) error {
+	return p.translate(p.l.ClearMatched(ctx, userID, recordID, txID, accountID))
+}
+
+func (p ledgerPort) AssertBalance(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Balance, c money.Currency) error {
+	amount, err := money.New(b.Amount, c)
+	if err != nil {
+		return err
+	}
+	err = p.l.AssertBalance(ctx, userID, accountID, b.Date, amount)
+	if errors.Is(err, ledger.ErrAlreadyReconciled) || errors.Is(err, ledger.ErrValidation) {
+		return fmt.Errorf("%w: %w", app.ErrBalanceRejected, err)
+	}
+	return p.translate(err)
+}

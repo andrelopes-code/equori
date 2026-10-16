@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"mime/multipart"
 	"net/http"
 	"time"
 
@@ -122,16 +123,34 @@ func (e ImportBalanceStatus) Valid() bool {
 
 // Defines values for ImportBatchSource.
 const (
-	Csv ImportBatchSource = "csv"
-	Ofx ImportBatchSource = "ofx"
+	ImportBatchSourceCsv ImportBatchSource = "csv"
+	ImportBatchSourceOfx ImportBatchSource = "ofx"
 )
 
 // Valid indicates whether the value is a known member of the ImportBatchSource enum.
 func (e ImportBatchSource) Valid() bool {
 	switch e {
-	case Csv:
+	case ImportBatchSourceCsv:
 		return true
-	case Ofx:
+	case ImportBatchSourceOfx:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ImportFileMultipartBodyFormat.
+const (
+	ImportFileMultipartBodyFormatCsv ImportFileMultipartBodyFormat = "csv"
+	ImportFileMultipartBodyFormatOfx ImportFileMultipartBodyFormat = "ofx"
+)
+
+// Valid indicates whether the value is a known member of the ImportFileMultipartBodyFormat enum.
+func (e ImportFileMultipartBodyFormat) Valid() bool {
+	switch e {
+	case ImportFileMultipartBodyFormatCsv:
+		return true
+	case ImportFileMultipartBodyFormatOfx:
 		return true
 	default:
 		return false
@@ -257,6 +276,15 @@ type ID = openapi_types.UUID
 // Limit defines model for Limit.
 type Limit = int
 
+// ImportFileMultipartBody defines parameters for ImportFile.
+type ImportFileMultipartBody struct {
+	File   openapi_types.File            `json:"file"`
+	Format ImportFileMultipartBodyFormat `json:"format"`
+}
+
+// ImportFileMultipartBodyFormat defines parameters for ImportFile.
+type ImportFileMultipartBodyFormat string
+
 // ListImportBatchesParams defines parameters for ListImportBatches.
 type ListImportBatchesParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
@@ -266,6 +294,9 @@ type ListImportBatchesParams struct {
 // SaveCsvProfileJSONRequestBody defines body for SaveCsvProfile for application/json ContentType.
 type SaveCsvProfileJSONRequestBody = CsvProfile
 
+// ImportFileMultipartRequestBody defines body for ImportFile for multipart/form-data ContentType.
+type ImportFileMultipartRequestBody ImportFileMultipartBody
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// GetCsvProfile How the CSV files of the account are read.
@@ -274,9 +305,15 @@ type ServerInterface interface {
 	// SaveCsvProfile Set how the CSV files of the account are read (P4 amendment A13).
 	// (PUT /accounts/{id}/csv-profile)
 	SaveCsvProfile(w http.ResponseWriter, r *http.Request, id ID)
+	// ImportFile Import an OFX or CSV statement into a balance account.
+	// (POST /accounts/{id}/imports)
+	ImportFile(w http.ResponseWriter, r *http.Request, id ID)
 	// ListImportBatches Import batches, newest first.
 	// (GET /import-batches)
 	ListImportBatches(w http.ResponseWriter, r *http.Request, params ListImportBatchesParams)
+	// GetImportBatch One import batch with its counts.
+	// (GET /import-batches/{id})
+	GetImportBatch(w http.ResponseWriter, r *http.Request, id ID)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -340,6 +377,32 @@ func (siw *ServerInterfaceWrapper) SaveCsvProfile(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r)
 }
 
+// ImportFile operation middleware
+func (siw *ServerInterfaceWrapper) ImportFile(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ImportFile(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListImportBatches operation middleware
 func (siw *ServerInterfaceWrapper) ListImportBatches(w http.ResponseWriter, r *http.Request) {
 
@@ -377,6 +440,32 @@ func (siw *ServerInterfaceWrapper) ListImportBatches(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListImportBatches(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetImportBatch operation middleware
+func (siw *ServerInterfaceWrapper) GetImportBatch(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetImportBatch(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -509,6 +598,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/import-batches", wrapper.ListImportBatches)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/csv-profile", wrapper.GetCsvProfile)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/accounts/{id}/csv-profile", wrapper.SaveCsvProfile)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/imports", wrapper.ImportFile)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/import-batches/{id}", wrapper.GetImportBatch)
 
 	return m
 }
@@ -634,6 +725,97 @@ func (response SaveCsvProfile422ApplicationProblemPlusJSONResponse) VisitSaveCsv
 	return err
 }
 
+type ImportFileRequestObject struct {
+	Id   ID `json:"id"`
+	Body *multipart.Reader
+}
+
+type ImportFileResponseObject interface {
+	VisitImportFileResponse(w http.ResponseWriter) error
+}
+
+type ImportFile201ResponseHeaders struct {
+	Location *string
+}
+
+type ImportFile201JSONResponse struct {
+	Body    ImportBatch
+	Headers ImportFile201ResponseHeaders
+}
+
+func (response ImportFile201JSONResponse) VisitImportFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportFile401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ImportFile401ApplicationProblemPlusJSONResponse) VisitImportFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportFile404ApplicationProblemPlusJSONResponse Problem
+
+func (response ImportFile404ApplicationProblemPlusJSONResponse) VisitImportFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportFile413ApplicationProblemPlusJSONResponse Problem
+
+func (response ImportFile413ApplicationProblemPlusJSONResponse) VisitImportFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportFile422ApplicationProblemPlusJSONResponse Problem
+
+func (response ImportFile422ApplicationProblemPlusJSONResponse) VisitImportFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListImportBatchesRequestObject struct {
 	Params ListImportBatchesParams
 }
@@ -672,6 +854,58 @@ func (response ListImportBatches401ApplicationProblemPlusJSONResponse) VisitList
 	return err
 }
 
+type GetImportBatchRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type GetImportBatchResponseObject interface {
+	VisitGetImportBatchResponse(w http.ResponseWriter) error
+}
+
+type GetImportBatch200JSONResponse ImportBatch
+
+func (response GetImportBatch200JSONResponse) VisitGetImportBatchResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetImportBatch401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetImportBatch401ApplicationProblemPlusJSONResponse) VisitGetImportBatchResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetImportBatch404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetImportBatch404ApplicationProblemPlusJSONResponse) VisitGetImportBatchResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// GetCsvProfile How the CSV files of the account are read.
@@ -680,9 +914,15 @@ type StrictServerInterface interface {
 	// SaveCsvProfile Set how the CSV files of the account are read (P4 amendment A13).
 	// (PUT /accounts/{id}/csv-profile)
 	SaveCsvProfile(ctx context.Context, request SaveCsvProfileRequestObject) (SaveCsvProfileResponseObject, error)
+	// ImportFile Import an OFX or CSV statement into a balance account.
+	// (POST /accounts/{id}/imports)
+	ImportFile(ctx context.Context, request ImportFileRequestObject) (ImportFileResponseObject, error)
 	// ListImportBatches Import batches, newest first.
 	// (GET /import-batches)
 	ListImportBatches(ctx context.Context, request ListImportBatchesRequestObject) (ListImportBatchesResponseObject, error)
+	// GetImportBatch One import batch with its counts.
+	// (GET /import-batches/{id})
+	GetImportBatch(ctx context.Context, request GetImportBatchRequestObject) (GetImportBatchResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -783,6 +1023,39 @@ func (sh *strictHandler) SaveCsvProfile(w http.ResponseWriter, r *http.Request, 
 	}
 }
 
+// ImportFile operation middleware
+func (sh *strictHandler) ImportFile(w http.ResponseWriter, r *http.Request, id ID) {
+	var request ImportFileRequestObject
+
+	request.Id = id
+
+	if reader, err := r.MultipartReader(); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
+		return
+	} else {
+		request.Body = reader
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ImportFile(ctx, request.(ImportFileRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ImportFile")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ImportFileResponseObject); ok {
+		if err := validResponse.VisitImportFileResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListImportBatches operation middleware
 func (sh *strictHandler) ListImportBatches(w http.ResponseWriter, r *http.Request, params ListImportBatchesParams) {
 	var request ListImportBatchesRequestObject
@@ -802,6 +1075,32 @@ func (sh *strictHandler) ListImportBatches(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListImportBatchesResponseObject); ok {
 		if err := validResponse.VisitListImportBatchesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetImportBatch operation middleware
+func (sh *strictHandler) GetImportBatch(w http.ResponseWriter, r *http.Request, id ID) {
+	var request GetImportBatchRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetImportBatch(ctx, request.(GetImportBatchRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetImportBatch")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetImportBatchResponseObject); ok {
+		if err := validResponse.VisitGetImportBatchResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

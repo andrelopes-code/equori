@@ -169,8 +169,25 @@ func (h *Harness) send(c *http.Client, req *http.Request) Response {
 // Upload posts content as the multipart/form-data field "file".
 func (h *Harness) Upload(path, fileName string, content []byte) Response {
 	h.t.Helper()
+	return h.UploadAs(h.Client, path, nil, fileName, content)
+}
+
+// UploadWith posts content as the field "file" with other form fields.
+func (h *Harness) UploadWith(path string, fields map[string]string, fileName string, content []byte) Response {
+	h.t.Helper()
+	return h.UploadAs(h.Client, path, fields, fileName, content)
+}
+
+// UploadAs posts a multipart form with the given client.
+func (h *Harness) UploadAs(c *http.Client, path string, fields map[string]string, fileName string, content []byte) Response {
+	h.t.Helper()
 	var body bytes.Buffer
 	w := multipart.NewWriter(&body)
+	for k, v := range fields {
+		if err := w.WriteField(k, v); err != nil {
+			h.t.Fatal(err)
+		}
+	}
 	part, err := w.CreateFormFile("file", fileName)
 	if err != nil {
 		h.t.Fatal(err)
@@ -186,7 +203,7 @@ func (h *Harness) Upload(path, fileName string, content []byte) Response {
 		h.t.Fatal(err)
 	}
 	req.Header.Set("Content-Type", w.FormDataContentType())
-	return h.send(h.Client, req)
+	return h.send(c, req)
 }
 
 func (h *Harness) Do(method, path string, body any) Response {

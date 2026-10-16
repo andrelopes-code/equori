@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/app"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/domain"
@@ -13,18 +13,12 @@ import (
 
 var _ app.Repository = (*Repository)(nil)
 
-// db is satisfied by *pgxpool.Pool and pgx.Tx (ADR 005).
-type db interface {
-	DBTX
-	Begin(ctx context.Context) (pgx.Tx, error)
-}
-
 type Repository struct {
-	db db
-	q  *Queries
+	pool *pgxpool.Pool
+	q    *Queries
 }
 
-func NewRepository(db db) *Repository { return &Repository{db: db, q: New(db)} }
+func NewRepository(pool *pgxpool.Pool) *Repository { return &Repository{pool: pool, q: New(pool)} }
 
 func toBatch(row IngestionBatch) domain.Batch {
 	b := domain.Batch{

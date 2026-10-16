@@ -53,6 +53,33 @@ func (s *Service) RecordImported(ctx context.Context, userID int64, recordID uui
 	return id, err
 }
 
+// ImportCurrency returns the currency of an account that can hold statement lines: a leaf
+// balance account, like a balance assertion's (P3 amendment A9).
+func (s *Service) ImportCurrency(ctx context.Context, userID int64, accountID uuid.UUID) (money.Currency, error) {
+	a, err := s.repo.Account(ctx, userID, accountID)
+	if err != nil {
+		return "", err
+	}
+	if err := checkLeafBalance(ctx, s.repo, a); err != nil {
+		return "", err
+	}
+	return a.Instrument, nil
+}
+
+// LinkedTransaction returns the transaction carrying the external record and whether the
+// import created it (origin import) or matched it; ErrNotFound when none carries it.
+func (s *Service) LinkedTransaction(ctx context.Context, userID int64, recordID uuid.UUID) (uuid.UUID, bool, error) {
+	id, err := s.repo.TransactionByExternalRecord(ctx, userID, recordID)
+	if err != nil {
+		return uuid.Nil, false, err
+	}
+	t, err := s.repo.Transaction(ctx, userID, id)
+	if err != nil {
+		return uuid.Nil, false, err
+	}
+	return id, t.Origin == domain.OriginImport, nil
+}
+
 // MatchCandidates lists the transactions an external record may confirm: a non-voided
 // posting on the account for the same amount within window days, not linked to another
 // record (chapter 3, F4; I07).
