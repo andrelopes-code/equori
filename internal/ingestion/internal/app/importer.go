@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 	"unicode/utf8"
 
@@ -18,9 +19,6 @@ import (
 const (
 	// MaxFileBytes is the content limit of an imported file (P4 amendment A16).
 	MaxFileBytes = 10 << 20
-	// matchWindow is the distance in days between a statement line and the transaction it
-	// confirms (chapter 3, F4).
-	matchWindow = 3
 	// maxDescription is the ledger's limit on transaction descriptions.
 	maxDescription = 500
 )
@@ -42,16 +40,44 @@ type Line struct {
 	Description string
 }
 
-// Ledger is the part of package ledger an import uses; the module root adapts it.
+// NewLine is a line to record as a transaction for its external record.
+type NewLine struct {
+	RecordID uuid.UUID
+	Line     Line
+}
+
+// Match links an external record to the transaction it confirms.
+type Match struct {
+	RecordID, TransactionID, AccountID uuid.UUID
+}
+
+// RejectedLine is a line of a ledger batch that a ledger rule refused; it matches
+// ErrLineRejected.
+type RejectedLine struct {
+	Index  int
+	Reason error
+}
+
+func (e *RejectedLine) Error() string        { return e.Reason.Error() }
+func (e *RejectedLine) Is(target error) bool { return target == ErrLineRejected }
+
+// Ledger is the part of package ledger an import uses; the module root adapts it. Each call
+// is one database transaction of the ledger (ADR 002).
 type Ledger interface {
 	// ImportCurrency returns ErrNotFound for an unknown account and a *domain.FieldError on
 	// account_id for an account that cannot hold statement lines.
 	ImportCurrency(ctx context.Context, userID int64, accountID uuid.UUID) (money.Currency, error)
 	// LinkedTransaction returns ErrNotFound when no transaction carries the record.
 	LinkedTransaction(ctx context.Context, userID int64, recordID uuid.UUID) (txID uuid.UUID, imported bool, err error)
-	RecordImported(ctx context.Context, userID int64, recordID uuid.UUID, l Line) (uuid.UUID, error)
-	MatchCandidates(ctx context.Context, userID int64, l Line, window int) ([]uuid.UUID, error)
-	ClearMatched(ctx context.Context, userID int64, recordID, txID, accountID uuid.UUID) error
+	// UnlinkedPostings lists the account's postings in [from, to] that no external record
+	// confirms and whose transaction is not voided.
+	UnlinkedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]domain.LedgerPosting, error)
+	// RecordImported creates the transactions of the lines, ids in input order; a refused
+	// line is a *RejectedLine and creates none.
+	RecordImported(ctx context.Context, userID int64, lines []NewLine) ([]uuid.UUID, error)
+	// ClearMatched links the matches and returns the indexes of those whose transaction
+	// already carries another record.
+	ClearMatched(ctx context.Context, userID int64, ms []Match) (conflicts []int, err error)
 	AssertBalance(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Balance, c money.Currency) error
 }
 
@@ -100,21 +126,8 @@ func (s *Service) Import(ctx context.Context, f ImportFile) (domain.Batch, error
 	if err != nil {
 		return domain.Batch{}, err
 	}
-	ordinals := domain.Ordinals{}
-	for i, r := range st.Records {
-		batch.Counts.Received++
-		state, err := s.importRecord(ctx, batch, currency, r, ordinals.Next(r))
-		if errors.Is(err, ErrLineRejected) {
-			return domain.Batch{}, fileError(fmt.Sprintf("record %d (%s, %d): %v", i+1, r.Date.Format(time.DateOnly), r.Amount, err))
-		}
-		if err != nil {
-			return domain.Batch{}, err
-		}
-		if state == "" {
-			batch.Counts.Ignored++
-			continue
-		}
-		batch.Counts.Count(state)
+	if err := s.importRecords(ctx, &batch, currency, st.Records); err != nil {
+		return domain.Batch{}, err
 	}
 	if st.Balance != nil {
 		batch.Balance = domain.FileBalance{Status: domain.BalanceRecorded, Date: &st.Balance.Date, Amount: st.Balance.Amount}
@@ -154,67 +167,132 @@ func (s *Service) read(ctx context.Context, f ImportFile, currency money.Currenc
 	return st, nil
 }
 
-// importRecord returns the record's new state, or "" for a duplicate of a finished record.
-// A record a previous import left received is processed again (P4 amendment A12).
-func (s *Service) importRecord(ctx context.Context, batch domain.Batch, currency money.Currency, r domain.NormalizedRecord, ordinal int) (domain.RecordState, error) {
-	rec, existed, err := s.repo.ClaimRecord(ctx, domain.ExternalRecord{
-		UserID: batch.UserID, BatchID: batch.ID, AccountID: batch.AccountID, ExternalID: r.ExternalID,
-		DedupKey: domain.DedupKey(batch.AccountID, batch.Source, r, ordinal), Raw: r.Raw,
-		Date: r.Date, Amount: r.Amount, Description: r.Description, State: domain.StateReceived,
-	})
+// importRecords deduplicates, matches and creates the lines of one file with a constant
+// number of ledger commits, so that a 1,000-line file stays within N07. A record that a
+// previous import left received is processed again (P4 amendment A12).
+func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, currency money.Currency, lines []domain.NormalizedRecord) error {
+	ordinals := domain.Ordinals{}
+	claims := make([]domain.ExternalRecord, len(lines))
+	for i, r := range lines {
+		claims[i] = domain.ExternalRecord{
+			UserID: batch.UserID, BatchID: batch.ID, AccountID: batch.AccountID, ExternalID: r.ExternalID,
+			DedupKey: domain.DedupKey(batch.AccountID, batch.Source, r, ordinals.Next(r)), Raw: r.Raw,
+			Date: r.Date, Amount: r.Amount, Description: r.Description, State: domain.StateReceived,
+		}
+	}
+	claimed, err := s.repo.ClaimRecords(ctx, claims)
 	if err != nil {
-		return "", err
+		return err
 	}
-	if existed && rec.State != domain.StateReceived {
-		return "", nil
+	batch.Counts.Received = len(lines)
+
+	postings, err := s.unlinked(ctx, batch, claimed)
+	if err != nil {
+		return err
 	}
-	rec.BatchID = batch.ID
-	line := Line{AccountID: rec.AccountID, Currency: currency, Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description)}
-	if err := s.decide(ctx, &rec, line); err != nil {
-		return "", err
+	var (
+		pending []*domain.ExternalRecord
+		creates []NewLine
+		created []*domain.ExternalRecord
+		matches []Match
+		matched []*domain.ExternalRecord
+		taken   = map[uuid.UUID]bool{} // transactions matched by an earlier line of this file (I07)
+	)
+	for i := range claimed {
+		rec := &claimed[i].Record
+		if claimed[i].Existed && rec.State != domain.StateReceived {
+			batch.Counts.Ignored++
+			continue
+		}
+		rec.BatchID = batch.ID
+		pending = append(pending, rec)
+		line := Line{AccountID: rec.AccountID, Currency: currency, Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description)}
+		if claimed[i].Existed {
+			done, err := s.resume(ctx, rec)
+			if err != nil {
+				return err
+			}
+			if done {
+				continue
+			}
+		}
+		candidates := domain.Candidates(rec.Date, rec.Amount, postings, taken)
+		switch len(candidates) {
+		case 0:
+			creates, created = append(creates, NewLine{RecordID: rec.ID, Line: line}), append(created, rec)
+		case 1:
+			taken[candidates[0]] = true
+			matches, matched = append(matches, Match{RecordID: rec.ID, TransactionID: candidates[0], AccountID: rec.AccountID}), append(matched, rec)
+		default:
+			rec.State, rec.Candidates = domain.StateNeedsReview, candidates
+		}
 	}
-	return rec.State, s.repo.SaveOutcome(ctx, rec)
+
+	conflicts, err := s.ledger.ClearMatched(ctx, batch.UserID, matches)
+	if err != nil {
+		return err
+	}
+	for i, rec := range matched {
+		rec.State, rec.TransactionID = domain.StateMatched, matches[i].TransactionID
+		if slices.Contains(conflicts, i) {
+			rec.State, rec.TransactionID, rec.Candidates = domain.StateNeedsReview, uuid.Nil, []uuid.UUID{matches[i].TransactionID}
+		}
+	}
+	ids, err := s.ledger.RecordImported(ctx, batch.UserID, creates)
+	if rejected, ok := errors.AsType[*RejectedLine](err); ok {
+		rec := created[rejected.Index]
+		return fileError(fmt.Sprintf("line dated %s for %d: %v", rec.Date.Format(time.DateOnly), rec.Amount, rejected.Reason))
+	}
+	if err != nil {
+		return err
+	}
+	for i, rec := range created {
+		rec.State, rec.TransactionID = domain.StateCreated, ids[i]
+	}
+
+	outcomes := make([]domain.ExternalRecord, len(pending))
+	for i, rec := range pending {
+		batch.Counts.Count(rec.State)
+		outcomes[i] = *rec
+	}
+	return s.repo.SaveOutcomes(ctx, outcomes)
 }
 
-// decide matches, creates or queues the record. A transaction already carrying the record
-// means a previous import committed it in the ledger and stopped before saving the outcome.
-func (s *Service) decide(ctx context.Context, rec *domain.ExternalRecord, line Line) error {
+// unlinked reads, in one query, the postings the new lines of the file may confirm.
+func (s *Service) unlinked(ctx context.Context, batch *domain.Batch, claimed []Claim) ([]domain.LedgerPosting, error) {
+	var from, to time.Time
+	for _, c := range claimed {
+		if c.Existed {
+			continue
+		}
+		if from.IsZero() || c.Record.Date.Before(from) {
+			from = c.Record.Date
+		}
+		if c.Record.Date.After(to) {
+			to = c.Record.Date
+		}
+	}
+	if from.IsZero() {
+		return nil, nil
+	}
+	return s.ledger.UnlinkedPostings(ctx, batch.UserID, batch.AccountID, from.AddDate(0, 0, -domain.MatchWindow), to.AddDate(0, 0, domain.MatchWindow))
+}
+
+// resume completes a record whose transaction a previous import committed in the ledger
+// before it stopped (P4 amendments A11, A12); it reports whether the record is done.
+func (s *Service) resume(ctx context.Context, rec *domain.ExternalRecord) (bool, error) {
 	txID, imported, err := s.ledger.LinkedTransaction(ctx, rec.UserID, rec.ID)
-	switch {
-	case err == nil && imported:
-		rec.State, rec.TransactionID = domain.StateCreated, txID
-		return nil
-	case err == nil:
-		rec.State, rec.TransactionID = domain.StateMatched, txID
-		return nil
-	case !errors.Is(err, ErrNotFound):
-		return err
+	if errors.Is(err, ErrNotFound) {
+		return false, nil
 	}
-	candidates, err := s.ledger.MatchCandidates(ctx, rec.UserID, line, matchWindow)
 	if err != nil {
-		return err
+		return false, err
 	}
-	switch len(candidates) {
-	case 0:
-		id, err := s.ledger.RecordImported(ctx, rec.UserID, rec.ID, line)
-		if err != nil {
-			return err
-		}
-		rec.State, rec.TransactionID = domain.StateCreated, id
-	case 1:
-		err := s.ledger.ClearMatched(ctx, rec.UserID, rec.ID, candidates[0], rec.AccountID)
-		if errors.Is(err, ErrAlreadyMatched) {
-			rec.State, rec.Candidates = domain.StateNeedsReview, candidates
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		rec.State, rec.TransactionID = domain.StateMatched, candidates[0]
-	default:
-		rec.State, rec.Candidates = domain.StateNeedsReview, candidates
+	rec.State, rec.TransactionID = domain.StateMatched, txID
+	if imported {
+		rec.State = domain.StateCreated
 	}
-	return nil
+	return true, nil
 }
 
 func currencyOf(b domain.Batch) money.Currency { return money.Currency(b.Currency) }

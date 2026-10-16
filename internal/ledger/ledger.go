@@ -46,6 +46,15 @@ type Module struct {
 // ImportedPosting is one statement line of a balance account, normalized by Ingestion.
 type ImportedPosting = app.ImportedPosting
 
+// ImportedRecord is a statement line and the external record it comes from.
+type ImportedRecord = app.ImportedRecord
+
+// Match links an external record to the transaction it confirms.
+type Match = app.Match
+
+// LineError names the line of a batch that a ledger rule rejected.
+type LineError = app.LineError
+
 // Errors returned to other modules.
 var (
 	ErrNotFound          = app.ErrNotFound
@@ -90,9 +99,25 @@ func (m *Module) LinkedTransaction(ctx context.Context, userID int64, recordID u
 	return m.svc.LinkedTransaction(ctx, userID, recordID)
 }
 
-// MatchCandidates lists the unlinked transactions an external record may confirm.
-func (m *Module) MatchCandidates(ctx context.Context, userID int64, p ImportedPosting, window int) ([]uuid.UUID, error) {
-	return m.svc.MatchCandidates(ctx, userID, p, window)
+// RecordImportedBatch creates the transactions of many external records in one database
+// transaction; ids follow the input order and a rejected line is a *LineError.
+func (m *Module) RecordImportedBatch(ctx context.Context, userID int64, recs []ImportedRecord) ([]uuid.UUID, error) {
+	return m.svc.RecordImportedBatch(ctx, userID, recs)
+}
+
+// ClearMatchedBatch links records to transactions in one database transaction and returns
+// the indexes of the matches whose transaction meanwhile carries another record.
+func (m *Module) ClearMatchedBatch(ctx context.Context, userID int64, ms []Match) ([]int, error) {
+	return m.svc.ClearMatchedBatch(ctx, userID, ms)
+}
+
+// UnlinkedPosting is a posting a statement line may confirm.
+type UnlinkedPosting = app.UnlinkedPosting
+
+// UnlinkedPostings lists the account's postings in [from, to] that no external record
+// confirms yet and whose transaction is not voided.
+func (m *Module) UnlinkedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]UnlinkedPosting, error) {
+	return m.svc.UnlinkedPostings(ctx, userID, accountID, from, to)
 }
 
 // ClearMatched links an external record to a transaction and clears its pending postings.

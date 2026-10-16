@@ -131,62 +131,6 @@ func (q *Queries) InsertLink(ctx context.Context, arg InsertLinkParams) error {
 	return err
 }
 
-const insertPosting = `-- name: InsertPosting :exec
-INSERT INTO ledger_posting (
-    user_id, transaction_id, account_id, position, amount, weight, booked_on, settled_on,
-    status, original_amount, original_instrument, memo,
-    statement_id, card_role, installment_plan_id, installment_number, installment_count
-) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8,
-    $9, $10, $11, $12,
-    $13, $14, $15,
-    $16, $17
-)
-`
-
-type InsertPostingParams struct {
-	UserID             int64
-	TransactionID      uuid.UUID
-	AccountID          uuid.UUID
-	Position           int16
-	Amount             int64
-	Weight             int64
-	BookedOn           time.Time
-	SettledOn          *time.Time
-	Status             string
-	OriginalAmount     *int64
-	OriginalInstrument *string
-	Memo               *string
-	StatementID        uuid.NullUUID
-	CardRole           *string
-	InstallmentPlanID  uuid.NullUUID
-	InstallmentNumber  *int16
-	InstallmentCount   *int16
-}
-
-func (q *Queries) InsertPosting(ctx context.Context, arg InsertPostingParams) error {
-	_, err := q.db.Exec(ctx, insertPosting,
-		arg.UserID,
-		arg.TransactionID,
-		arg.AccountID,
-		arg.Position,
-		arg.Amount,
-		arg.Weight,
-		arg.BookedOn,
-		arg.SettledOn,
-		arg.Status,
-		arg.OriginalAmount,
-		arg.OriginalInstrument,
-		arg.Memo,
-		arg.StatementID,
-		arg.CardRole,
-		arg.InstallmentPlanID,
-		arg.InstallmentNumber,
-		arg.InstallmentCount,
-	)
-	return err
-}
-
 const insertTransaction = `-- name: InsertTransaction :one
 INSERT INTO ledger_transaction (id, user_id, date, description, payee_id, balancing_currency, origin, version, external_record_id)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)

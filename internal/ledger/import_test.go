@@ -2,7 +2,9 @@ package ledger_test
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"slices"
 	"testing"
 	"time"
 
@@ -88,7 +90,7 @@ func TestRecordImported(t *testing.T) {
 	}
 }
 
-func TestMatchCandidatesAndClearMatched(t *testing.T) {
+func TestUnlinkedPostingsAndClearMatched(t *testing.T) {
 	c := newCardSetup(t, "2026-11-12")
 	h, uid := c.h, c.h.OwnerID()
 	ctx := t.Context()
@@ -99,13 +101,24 @@ func TestMatchCandidatesAndClearMatched(t *testing.T) {
 	h.Record("2026-10-09", apitest.Posting(c.checking, -4590), apitest.Posting(c.food, 4590))
 	voided := h.Record("2026-10-05", apitest.Posting(c.checking, -4590), apitest.Posting(c.food, 4590))
 	h.MustDo(http.MethodPost, "/api/v1/transactions/"+voided+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, nil)
-	h.Record("2026-10-05", apitest.Posting(c.checking, -4500), apitest.Posting(c.food, 4500))
+	other := h.Record("2026-10-05", apitest.Posting(c.checking, -4500), apitest.Posting(c.food, 4500))
 	h.Record("2026-10-05", apitest.Posting(c.card, -4590), apitest.Posting(c.food, 4590))
 
 	line := imported(t, c.checking, "2026-10-05", -4590)
-	got, err := h.App.Ledger.MatchCandidates(ctx, uid, line, 3)
-	if err != nil || len(got) != 1 || got[0].String() != pending.ID {
-		t.Fatalf("candidates = %v, %v; want only %s", got, err, pending.ID)
+	unlinked := func() []string {
+		ps, err := h.App.Ledger.UnlinkedPostings(ctx, uid, line.AccountID, line.Date.AddDate(0, 0, -3), line.Date.AddDate(0, 0, 3))
+		if err != nil {
+			t.Fatal(err)
+		}
+		var out []string
+		for _, p := range ps {
+			out = append(out, fmt.Sprintf("%s %s %d", p.TransactionID, p.Date.Format(time.DateOnly), p.Amount))
+		}
+		return out
+	}
+	want := []string{pending.ID + " 2026-10-04 -4590", other + " 2026-10-05 -4500"}
+	if got := unlinked(); !slices.Equal(got, want) {
+		t.Fatalf("unlinked = %v, want %v (voided, out of window and other accounts excluded)", got, want)
 	}
 
 	record := uuid.New()
@@ -124,7 +137,7 @@ func TestMatchCandidatesAndClearMatched(t *testing.T) {
 	if err := h.App.Ledger.ClearMatched(ctx, uid, uuid.New(), txID, line.AccountID); !errors.Is(err, ledger.ErrAlreadyMatched) {
 		t.Fatalf("second record: err = %v, want ErrAlreadyMatched", err)
 	}
-	if got, _ := h.App.Ledger.MatchCandidates(ctx, uid, line, 3); len(got) != 0 {
-		t.Fatalf("matched transaction is still a candidate: %v", got)
+	if got := unlinked(); !slices.Equal(got, want[1:]) {
+		t.Fatalf("after the match, unlinked = %v", got)
 	}
 }

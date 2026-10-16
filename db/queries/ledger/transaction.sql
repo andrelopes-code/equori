@@ -22,7 +22,8 @@ SELECT * FROM ledger_transaction WHERE user_id = $1 AND id = $2;
 -- name: GetTransactionForUpdate :one
 SELECT * FROM ledger_transaction WHERE user_id = $1 AND id = $2 FOR UPDATE;
 
--- name: InsertPosting :exec
+-- name: InsertPostings :batchexec
+-- One round trip for all postings of a transaction.
 INSERT INTO ledger_posting (
     user_id, transaction_id, account_id, position, amount, weight, booked_on, settled_on,
     status, original_amount, original_instrument, memo,

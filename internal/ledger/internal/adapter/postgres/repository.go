@@ -306,18 +306,22 @@ func (r *Repository) completeAll(ctx context.Context, userID int64, rows []Ledge
 }
 
 func (r *Repository) InsertTransaction(ctx context.Context, t domain.Transaction) (domain.Transaction, error) {
+	if err := r.InsertTransactionRows(ctx, t); err != nil {
+		return domain.Transaction{}, err
+	}
+	return r.Transaction(ctx, t.UserID, t.ID)
+}
+
+func (r *Repository) InsertTransactionRows(ctx context.Context, t domain.Transaction) error {
 	_, err := r.q.InsertTransaction(ctx, InsertTransactionParams{
 		ID: t.ID, UserID: t.UserID, Date: t.Date, Description: t.Description, PayeeID: nullUUID(t.PayeeID),
 		BalancingCurrency: string(t.BalancingCurrency), Origin: string(t.Origin), Version: int32(t.Version), //nolint:gosec // version is a small positive counter.
 		ExternalRecordID: nullUUID(t.ExternalRecordID),
 	})
 	if err != nil {
-		return domain.Transaction{}, referenceError(err)
+		return referenceError(err)
 	}
-	if err := r.writeChildren(ctx, t); err != nil {
-		return domain.Transaction{}, err
-	}
-	return r.Transaction(ctx, t.UserID, t.ID)
+	return r.writeChildren(ctx, t)
 }
 
 func (r *Repository) ReplaceTransaction(ctx context.Context, prev, next domain.Transaction, reason string) error {
@@ -349,18 +353,25 @@ func (r *Repository) ReplaceTransaction(ctx context.Context, prev, next domain.T
 }
 
 func (r *Repository) writeChildren(ctx context.Context, t domain.Transaction) error {
+	postings := make([]InsertPostingsParams, len(t.Postings))
 	for i, p := range t.Postings {
-		err := r.q.InsertPosting(ctx, InsertPostingParams{
+		postings[i] = InsertPostingsParams{
 			UserID: t.UserID, TransactionID: t.ID, AccountID: p.AccountID, Position: int16(i), //nolint:gosec // at most 500 postings (domain.MaxPostings).
 			Amount: p.Amount.Amount(), Weight: p.Weight.Amount(), BookedOn: t.Date, SettledOn: p.SettledOn,
 			Status: string(p.Status), OriginalAmount: originalAmount(p.Original), OriginalInstrument: originalInstrument(p.Original),
 			Memo: nullString(p.Memo), StatementID: nullUUID(p.StatementID), CardRole: nullString(p.CardRole),
 			InstallmentPlanID: installmentPlan(p.Installment), InstallmentNumber: installmentNumber(p.Installment),
 			InstallmentCount: installmentCount(p.Installment),
-		})
-		if err != nil {
-			return referenceError(err)
 		}
+	}
+	var postingErr error
+	r.q.InsertPostings(ctx, postings).Exec(func(_ int, err error) {
+		if err != nil && postingErr == nil {
+			postingErr = err
+		}
+	})
+	if postingErr != nil {
+		return referenceError(postingErr)
 	}
 	for _, tag := range t.Tags {
 		tagID, err := r.q.UpsertTag(ctx, UpsertTagParams{UserID: t.UserID, Name: tag})

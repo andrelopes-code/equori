@@ -64,20 +64,24 @@ func (s *Service) Resolve(ctx context.Context, userID int64, recordID uuid.UUID,
 		if !slices.Contains(rec.Candidates, txID) {
 			return domain.ExternalRecord{}, domain.Batch{}, &domain.FieldError{Field: "transaction_id", Message: "must be one of the record's candidates"}
 		}
-		if err := s.ledger.ClearMatched(ctx, userID, rec.ID, txID, rec.AccountID); err != nil {
+		conflicts, err := s.ledger.ClearMatched(ctx, userID, []Match{{RecordID: rec.ID, TransactionID: txID, AccountID: rec.AccountID}})
+		if err != nil {
 			return domain.ExternalRecord{}, domain.Batch{}, err
+		}
+		if len(conflicts) > 0 {
+			return domain.ExternalRecord{}, domain.Batch{}, ErrAlreadyMatched
 		}
 		rec.State, rec.TransactionID = domain.StateMatched, txID
 	case ActionCreate:
 		line := Line{AccountID: rec.AccountID, Currency: currencyOf(b), Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description)}
-		id, err := s.ledger.RecordImported(ctx, userID, rec.ID, line)
+		ids, err := s.ledger.RecordImported(ctx, userID, []NewLine{{RecordID: rec.ID, Line: line}})
 		if errors.Is(err, ErrLineRejected) {
 			return domain.ExternalRecord{}, domain.Batch{}, &domain.FieldError{Field: "action", Message: err.Error()}
 		}
 		if err != nil {
 			return domain.ExternalRecord{}, domain.Batch{}, err
 		}
-		rec.State, rec.TransactionID = domain.StateCreated, id
+		rec.State, rec.TransactionID = domain.StateCreated, ids[0]
 	case ActionDiscard:
 		rec.State = domain.StateDiscarded
 	}

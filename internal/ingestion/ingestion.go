@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -71,29 +72,38 @@ func (p ledgerPort) LinkedTransaction(ctx context.Context, userID int64, recordI
 	return id, imported, p.translate(err)
 }
 
-func (p ledgerPort) RecordImported(ctx context.Context, userID int64, recordID uuid.UUID, l app.Line) (uuid.UUID, error) {
-	posting, err := p.posting(l)
-	if err != nil {
-		return uuid.Nil, err
+func (p ledgerPort) RecordImported(ctx context.Context, userID int64, lines []app.NewLine) ([]uuid.UUID, error) {
+	recs := make([]ledger.ImportedRecord, len(lines))
+	for i, l := range lines {
+		posting, err := p.posting(l.Line)
+		if err != nil {
+			return nil, err
+		}
+		recs[i] = ledger.ImportedRecord{RecordID: l.RecordID, Posting: posting}
 	}
-	id, err := p.l.RecordImported(ctx, userID, recordID, posting)
-	if errors.Is(err, ledger.ErrValidation) {
-		return uuid.Nil, fmt.Errorf("%w: %w", app.ErrLineRejected, err)
+	ids, err := p.l.RecordImportedBatch(ctx, userID, recs)
+	if le, ok := errors.AsType[*ledger.LineError](err); ok {
+		return nil, &app.RejectedLine{Index: le.Index, Reason: le.Err}
 	}
-	return id, p.translate(err)
-}
-
-func (p ledgerPort) MatchCandidates(ctx context.Context, userID int64, l app.Line, window int) ([]uuid.UUID, error) {
-	posting, err := p.posting(l)
-	if err != nil {
-		return nil, err
-	}
-	ids, err := p.l.MatchCandidates(ctx, userID, posting, window)
 	return ids, p.translate(err)
 }
 
-func (p ledgerPort) ClearMatched(ctx context.Context, userID int64, recordID, txID, accountID uuid.UUID) error {
-	return p.translate(p.l.ClearMatched(ctx, userID, recordID, txID, accountID))
+func (p ledgerPort) UnlinkedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]domain.LedgerPosting, error) {
+	ps, err := p.l.UnlinkedPostings(ctx, userID, accountID, from, to)
+	out := make([]domain.LedgerPosting, len(ps))
+	for i, x := range ps {
+		out[i] = domain.LedgerPosting{TransactionID: x.TransactionID, Date: x.Date, Amount: x.Amount}
+	}
+	return out, p.translate(err)
+}
+
+func (p ledgerPort) ClearMatched(ctx context.Context, userID int64, ms []app.Match) ([]int, error) {
+	matches := make([]ledger.Match, len(ms))
+	for i, m := range ms {
+		matches[i] = ledger.Match{RecordID: m.RecordID, TransactionID: m.TransactionID, AccountID: m.AccountID}
+	}
+	conflicts, err := p.l.ClearMatchedBatch(ctx, userID, matches)
+	return conflicts, p.translate(err)
 }
 
 func (p ledgerPort) AssertBalance(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Balance, c money.Currency) error {

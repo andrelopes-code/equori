@@ -44,6 +44,29 @@ func (q *Queries) GetTransactionIDByExternalRecord(ctx context.Context, arg GetT
 	return id, err
 }
 
+const getTransactionLinkForUpdate = `-- name: GetTransactionLinkForUpdate :one
+SELECT external_record_id, (voided_at IS NOT NULL)::boolean AS voided FROM ledger_transaction
+WHERE user_id = $1 AND id = $2
+FOR UPDATE
+`
+
+type GetTransactionLinkForUpdateParams struct {
+	UserID int64
+	ID     uuid.UUID
+}
+
+type GetTransactionLinkForUpdateRow struct {
+	ExternalRecordID uuid.NullUUID
+	Voided           bool
+}
+
+func (q *Queries) GetTransactionLinkForUpdate(ctx context.Context, arg GetTransactionLinkForUpdateParams) (GetTransactionLinkForUpdateRow, error) {
+	row := q.db.QueryRow(ctx, getTransactionLinkForUpdate, arg.UserID, arg.ID)
+	var i GetTransactionLinkForUpdateRow
+	err := row.Scan(&i.ExternalRecordID, &i.Voided)
+	return i, err
+}
+
 const linkExternalRecord = `-- name: LinkExternalRecord :exec
 UPDATE ledger_transaction SET external_record_id = $1, updated_at = now()
 WHERE user_id = $2 AND id = $3
@@ -60,36 +83,70 @@ func (q *Queries) LinkExternalRecord(ctx context.Context, arg LinkExternalRecord
 	return err
 }
 
-const listMatchCandidates = `-- name: ListMatchCandidates :many
-SELECT DISTINCT t.id, t.date
-FROM ledger_transaction t
-JOIN ledger_posting p ON p.transaction_id = t.id
-WHERE t.user_id = $1 AND t.external_record_id IS NULL
-  AND p.account_id = $2 AND p.amount = $3 AND NOT p.voided
-  AND p.booked_on BETWEEN $4::date AND $5::date
-ORDER BY t.date, t.id
+const listTransactionsByExternalRecords = `-- name: ListTransactionsByExternalRecords :many
+SELECT external_record_id, id FROM ledger_transaction
+WHERE user_id = $1 AND external_record_id = ANY($2::uuid[])
 `
 
-type ListMatchCandidatesParams struct {
+type ListTransactionsByExternalRecordsParams struct {
+	UserID    int64
+	RecordIds []uuid.UUID
+}
+
+type ListTransactionsByExternalRecordsRow struct {
+	ExternalRecordID uuid.NullUUID
+	ID               uuid.UUID
+}
+
+func (q *Queries) ListTransactionsByExternalRecords(ctx context.Context, arg ListTransactionsByExternalRecordsParams) ([]ListTransactionsByExternalRecordsRow, error) {
+	rows, err := q.db.Query(ctx, listTransactionsByExternalRecords, arg.UserID, arg.RecordIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListTransactionsByExternalRecordsRow
+	for rows.Next() {
+		var i ListTransactionsByExternalRecordsRow
+		if err := rows.Scan(&i.ExternalRecordID, &i.ID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUnlinkedPostings = `-- name: ListUnlinkedPostings :many
+SELECT t.id AS transaction_id, p.booked_on, p.amount
+FROM ledger_posting p
+JOIN ledger_transaction t ON t.id = p.transaction_id
+WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided
+  AND t.external_record_id IS NULL
+  AND p.booked_on BETWEEN $3::date AND $4::date
+ORDER BY p.booked_on, t.id
+`
+
+type ListUnlinkedPostingsParams struct {
 	UserID    int64
 	AccountID uuid.UUID
-	Amount    int64
 	FromDate  time.Time
 	ToDate    time.Time
 }
 
-type ListMatchCandidatesRow struct {
-	ID   uuid.UUID
-	Date time.Time
+type ListUnlinkedPostingsRow struct {
+	TransactionID uuid.UUID
+	BookedOn      time.Time
+	Amount        int64
 }
 
-// Transactions with a non-voided posting on the account for the amount within the window,
-// not linked to an external record yet (I07).
-func (q *Queries) ListMatchCandidates(ctx context.Context, arg ListMatchCandidatesParams) ([]ListMatchCandidatesRow, error) {
-	rows, err := q.db.Query(ctx, listMatchCandidates,
+// Postings of the account in the window whose transaction carries no external record and
+// is not voided: what statement lines may confirm (I07).
+func (q *Queries) ListUnlinkedPostings(ctx context.Context, arg ListUnlinkedPostingsParams) ([]ListUnlinkedPostingsRow, error) {
+	rows, err := q.db.Query(ctx, listUnlinkedPostings,
 		arg.UserID,
 		arg.AccountID,
-		arg.Amount,
 		arg.FromDate,
 		arg.ToDate,
 	)
@@ -97,10 +154,10 @@ func (q *Queries) ListMatchCandidates(ctx context.Context, arg ListMatchCandidat
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListMatchCandidatesRow
+	var items []ListUnlinkedPostingsRow
 	for rows.Next() {
-		var i ListMatchCandidatesRow
-		if err := rows.Scan(&i.ID, &i.Date); err != nil {
+		var i ListUnlinkedPostingsRow
+		if err := rows.Scan(&i.TransactionID, &i.BookedOn, &i.Amount); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

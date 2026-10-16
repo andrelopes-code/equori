@@ -25,35 +25,92 @@ func toRecord(row IngestionExternalRecord) (domain.ExternalRecord, error) {
 	}, nil
 }
 
-func (r *Repository) ClaimRecord(ctx context.Context, rec domain.ExternalRecord) (domain.ExternalRecord, bool, error) {
-	raw, err := json.Marshal(rec.Raw)
-	if err != nil {
-		return domain.ExternalRecord{}, false, err
+// ClaimRecords inserts the file's records in one pipelined round trip; keys that exist come
+// back from one more query.
+func (r *Repository) ClaimRecords(ctx context.Context, recs []domain.ExternalRecord) ([]app.Claim, error) {
+	out := make([]app.Claim, len(recs))
+	if len(recs) == 0 {
+		return out, nil
 	}
-	row, err := r.q.InsertRecord(ctx, InsertRecordParams{
-		UserID: rec.UserID, BatchID: rec.BatchID, AccountID: rec.AccountID, ExternalID: optional(rec.ExternalID),
-		DedupKey: rec.DedupKey, Raw: raw, BookedOn: rec.Date, Amount: rec.Amount, Description: rec.Description,
+	params := make([]InsertRecordsParams, len(recs))
+	for i, rec := range recs {
+		raw, err := json.Marshal(rec.Raw)
+		if err != nil {
+			return nil, err
+		}
+		params[i] = InsertRecordsParams{
+			UserID: rec.UserID, BatchID: rec.BatchID, AccountID: rec.AccountID, ExternalID: optional(rec.ExternalID),
+			DedupKey: rec.DedupKey, Raw: raw, BookedOn: rec.Date, Amount: rec.Amount, Description: rec.Description,
+		}
+	}
+	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
+		q := r.q.WithTx(tx)
+		var existing [][]byte
+		var batchErr error
+		q.InsertRecords(ctx, params).QueryRow(func(i int, row IngestionExternalRecord, err error) {
+			switch {
+			case batchErr != nil:
+			case errors.Is(err, pgx.ErrNoRows):
+				out[i].Existed, existing = true, append(existing, recs[i].DedupKey)
+			case err != nil:
+				batchErr = err
+			default:
+				out[i].Record, batchErr = toRecord(row)
+			}
+		})
+		if batchErr != nil || len(existing) == 0 {
+			return batchErr
+		}
+		rows, err := q.ListRecordsByKeys(ctx, ListRecordsByKeysParams{UserID: recs[0].UserID, Keys: existing})
+		if err != nil {
+			return err
+		}
+		byKey := make(map[string]IngestionExternalRecord, len(rows))
+		for _, row := range rows {
+			byKey[string(row.DedupKey)] = row
+		}
+		for i := range out {
+			if out[i].Existed {
+				if out[i].Record, err = toRecord(byKey[string(recs[i].DedupKey)]); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
 	})
-	existed := errors.Is(err, pgx.ErrNoRows)
-	if existed {
-		row, err = r.q.GetRecordByKey(ctx, GetRecordByKeyParams{UserID: rec.UserID, DedupKey: rec.DedupKey})
-	}
-	if err != nil {
-		return domain.ExternalRecord{}, false, err
-	}
-	out, err := toRecord(row)
-	return out, existed, err
+	return out, err
 }
 
-func (r *Repository) SaveOutcome(ctx context.Context, rec domain.ExternalRecord) error {
+func outcome(rec domain.ExternalRecord) SaveRecordOutcomesParams {
 	candidates := rec.Candidates
 	if candidates == nil {
 		candidates = []uuid.UUID{}
 	}
-	return r.q.SaveRecordOutcome(ctx, SaveRecordOutcomeParams{
+	return SaveRecordOutcomesParams{
 		UserID: rec.UserID, ID: rec.ID, BatchID: rec.BatchID, State: string(rec.State),
 		TransactionID: uuid.NullUUID{UUID: rec.TransactionID, Valid: rec.TransactionID != uuid.Nil}, Candidates: candidates,
+	}
+}
+
+func saveOutcomes(ctx context.Context, q *Queries, recs []domain.ExternalRecord) error {
+	params := make([]SaveRecordOutcomesParams, len(recs))
+	for i, rec := range recs {
+		params[i] = outcome(rec)
+	}
+	var first error
+	q.SaveRecordOutcomes(ctx, params).Exec(func(_ int, err error) {
+		if err != nil && first == nil {
+			first = err
+		}
 	})
+	return first
+}
+
+func (r *Repository) SaveOutcomes(ctx context.Context, recs []domain.ExternalRecord) error {
+	if len(recs) == 0 {
+		return nil
+	}
+	return pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error { return saveOutcomes(ctx, r.q.WithTx(tx), recs) })
 }
 
 func (r *Repository) InsertBatch(ctx context.Context, b domain.Batch) (domain.Batch, error) {
@@ -143,10 +200,7 @@ func (r *Repository) Records(ctx context.Context, userID int64, batchID uuid.UUI
 func (r *Repository) ResolveRecord(ctx context.Context, rec domain.ExternalRecord) error {
 	return pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
 		q := r.q.WithTx(tx)
-		if err := q.SaveRecordOutcome(ctx, SaveRecordOutcomeParams{
-			UserID: rec.UserID, ID: rec.ID, BatchID: rec.BatchID, State: string(rec.State),
-			TransactionID: uuid.NullUUID{UUID: rec.TransactionID, Valid: rec.TransactionID != uuid.Nil}, Candidates: []uuid.UUID{},
-		}); err != nil {
+		if err := saveOutcomes(ctx, q, []domain.ExternalRecord{rec}); err != nil {
 			return err
 		}
 		return q.MoveReviewCount(ctx, MoveReviewCountParams{UserID: rec.UserID, ID: rec.BatchID, State: string(rec.State)})

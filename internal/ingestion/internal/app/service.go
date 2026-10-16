@@ -30,17 +30,24 @@ type Repository interface {
 	// CompleteBatch stores the counts and the file balance and marks the batch complete.
 	CompleteBatch(ctx context.Context, b domain.Batch) (domain.Batch, error)
 	Batch(ctx context.Context, userID int64, id uuid.UUID) (domain.Batch, error)
-	// ClaimRecord inserts the record in state received, or returns the record that already
-	// has its deduplication key with existed true (I10).
-	ClaimRecord(ctx context.Context, r domain.ExternalRecord) (rec domain.ExternalRecord, existed bool, err error)
-	// SaveOutcome stores the record's batch, state, transaction and candidates.
-	SaveOutcome(ctx context.Context, r domain.ExternalRecord) error
+	// ClaimRecords inserts the records in state received in one database transaction; a
+	// record whose deduplication key exists comes back as stored, with Existed (I10).
+	ClaimRecords(ctx context.Context, rs []domain.ExternalRecord) ([]Claim, error)
+	// SaveOutcomes stores each record's batch, state, transaction and candidates in one
+	// database transaction.
+	SaveOutcomes(ctx context.Context, rs []domain.ExternalRecord) error
 	Record(ctx context.Context, userID int64, id uuid.UUID) (domain.ExternalRecord, error)
 	Records(ctx context.Context, userID int64, batchID uuid.UUID, state domain.RecordState, p page.Request[RecordKey]) ([]domain.ExternalRecord, *RecordKey, error)
 	// ResolveRecord stores a reviewed record and moves it out of its batch's needs_review count.
 	ResolveRecord(ctx context.Context, r domain.ExternalRecord) error
 	// LockAccountImports serializes the imports of one account until unlock runs.
 	LockAccountImports(ctx context.Context, accountID uuid.UUID) (unlock func(), err error)
+}
+
+// Claim is a record of the file as stored, and whether an earlier import had stored it.
+type Claim struct {
+	Record  domain.ExternalRecord
+	Existed bool
 }
 
 type Service struct {

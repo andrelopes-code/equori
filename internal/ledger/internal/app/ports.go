@@ -232,6 +232,8 @@ type Repository interface {
 	Transaction(ctx context.Context, userID int64, id uuid.UUID) (domain.Transaction, error)
 	LockTransaction(ctx context.Context, userID int64, id uuid.UUID) (domain.Transaction, error)
 	InsertTransaction(ctx context.Context, t domain.Transaction) (domain.Transaction, error)
+	// InsertTransactionRows writes a validated, billed transaction without reading it back.
+	InsertTransactionRows(ctx context.Context, t domain.Transaction) error
 	ReplaceTransaction(ctx context.Context, prev, next domain.Transaction, reason string) error
 	VoidTransaction(ctx context.Context, t domain.Transaction) error
 	ListTransactions(ctx context.Context, q TransactionQuery) ([]domain.Transaction, error)
@@ -287,7 +289,11 @@ type Repository interface {
 
 	// TransactionByExternalRecord returns ErrNotFound when no transaction carries the record.
 	TransactionByExternalRecord(ctx context.Context, userID int64, recordID uuid.UUID) (uuid.UUID, error)
-	MatchCandidates(ctx context.Context, userID int64, accountID uuid.UUID, amount int64, from, to time.Time) ([]uuid.UUID, error)
+	// TransactionsByExternalRecords maps each record id that a transaction carries to it.
+	TransactionsByExternalRecords(ctx context.Context, userID int64, recordIDs []uuid.UUID) (map[uuid.UUID]uuid.UUID, error)
+	// LockTransactionLink locks the transaction and returns its external record and whether it is voided.
+	LockTransactionLink(ctx context.Context, userID int64, txID uuid.UUID) (recordID uuid.UUID, voided bool, err error)
+	UnlinkedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]UnlinkedPosting, error)
 	// LinkExternalRecord returns ErrAlreadyMatched when another transaction carries the record.
 	LinkExternalRecord(ctx context.Context, userID int64, txID, recordID uuid.UUID) error
 	ClearPendingPostings(ctx context.Context, userID int64, txID, accountID uuid.UUID) error
