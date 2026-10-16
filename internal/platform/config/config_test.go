@@ -26,16 +26,22 @@ func TestLoad(t *testing.T) {
 				"EQUORI_LOG_LEVEL":        "debug",
 				"EQUORI_INSECURE_COOKIES": "true",
 				"EQUORI_TIMEZONE":         "UTC",
+				"EQUORI_API_DOCS":         "true",
 			},
 			want: Config{
 				DatabaseURL: "postgres://x", HTTPAddr: "127.0.0.1:9000", LogLevel: slog.LevelDebug,
-				TimeZone: time.UTC, InsecureCookies: true,
+				TimeZone: time.UTC, InsecureCookies: true, APIDocs: true,
 			},
 		},
 		{name: "missing database url", env: map[string]string{}, wantErr: true},
 		{
 			name:    "invalid insecure cookies",
 			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_INSECURE_COOKIES": "maybe"},
+			wantErr: true,
+		},
+		{
+			name:    "invalid api docs",
+			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_API_DOCS": "maybe"},
 			wantErr: true,
 		},
 		{

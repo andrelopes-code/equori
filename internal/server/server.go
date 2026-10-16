@@ -18,6 +18,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/ingestion"
 	"github.com/andrelopes-code/equori/internal/ledger"
 	"github.com/andrelopes-code/equori/internal/marketdata"
+	"github.com/andrelopes-code/equori/internal/platform/apidoc"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
@@ -31,6 +32,8 @@ type Config struct {
 	Clock *clock.Clock
 	// Web holds the built single-page application; nil answers 404 outside /api/.
 	Web fs.FS
+	// APIDocs registers GET /docs and GET /openapi.yaml.
+	APIDocs bool
 }
 
 type App struct {
@@ -61,6 +64,9 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 
 	mux := http.NewServeMux()
 	mux.Handle("GET /healthz", httpserver.Health(pool))
+	if cfg.APIDocs {
+		apidoc.Register(mux, api.Contract)
+	}
 	identityModule.RegisterRoutes(mux)
 	ledgerModule.RegisterRoutes(mux)
 	reportingModule.RegisterRoutes(mux)

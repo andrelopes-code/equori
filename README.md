@@ -31,6 +31,7 @@ docker compose exec app /equori user create --email you@example.com --admin
 | `EQUORI_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
 | `EQUORI_TIMEZONE` | `UTC` | IANA time zone for "today" and month boundaries, e.g. `America/Sao_Paulo` |
 | `EQUORI_INSECURE_COOKIES` | `false` | `true` drops the `Secure` cookie attribute; required to log in over plain HTTP from another host |
+| `EQUORI_API_DOCS` | `false` | `true` serves the API reference at `/docs` and the contract at `/openapi.yaml`, both without a session |
 | `POSTGRES_PASSWORD` | `equori` | Database password used by `compose.yaml` |
 
 Data lives in the `pgdata` Docker volume. Back it up with:
@@ -50,10 +51,17 @@ Requirements: Go 1.27, Node.js 24 with Corepack enabled (`corepack enable`), Doc
 ```sh
 make hooks    # pre-commit runs make check
 make db-up    # local Postgres on 127.0.0.1:54329 (EQUORI_DEV_DB_PORT)
-make dev      # run the app
+make dev      # run the app; API reference at http://localhost:8080/docs
 make web-dev  # Vite dev server for the web interface, proxying /api to make dev
 make gen      # regenerate sqlc and oapi-codegen output
 make check    # format, tidy and codegen checks, lint, web checks, test (starts Postgres)
+```
+
+`dev.env` holds the development environment that `make dev` uses. Loaded into a shell, it lets any subcommand run against the local database:
+
+```sh
+set -a; . ./dev.env; set +a
+go run ./cmd/equori user create --email you@example.com --admin
 ```
 
 ## License

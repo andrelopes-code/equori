@@ -70,7 +70,7 @@ func serve() error {
 	defer pool.Close()
 
 	clk := clock.New(cfg.TimeZone, time.Now)
-	app, err := server.New(pool, server.Config{SecureCookies: !cfg.InsecureCookies, Clock: &clk, Web: web.Dist()}, log)
+	app, err := server.New(pool, server.Config{SecureCookies: !cfg.InsecureCookies, Clock: &clk, APIDocs: cfg.APIDocs, Web: web.Dist()}, log)
 	if err != nil {
 		return err
 	}

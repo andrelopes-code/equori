@@ -3,7 +3,6 @@ TOOLS := $(BIN)/.tools
 WEB_DEPS := web/node_modules/.installed
 
 export EQUORI_DEV_DB_PORT ?= 54329
-DEV_DATABASE_URL := postgres://equori:equori@127.0.0.1:$(EQUORI_DEV_DB_PORT)/equori?sslmode=disable
 # Tests create and drop one database per test on this server.
 export EQUORI_TEST_DATABASE_URL ?= postgres://equori:equori@127.0.0.1:$(EQUORI_DEV_DB_PORT)/postgres?sslmode=disable
 
@@ -46,7 +45,7 @@ build: web-build
 	CGO_ENABLED=0 go build -trimpath -o $(BIN)/equori ./cmd/equori
 
 dev: db-up
-	EQUORI_DATABASE_URL=$(DEV_DATABASE_URL) go run ./cmd/equori
+	set -a && . ./dev.env && set +a && go run ./cmd/equori
 
 db-up:
 	docker compose -f compose.yaml -f compose.dev.yaml up -d --wait db

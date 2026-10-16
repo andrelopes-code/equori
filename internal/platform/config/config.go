@@ -17,6 +17,8 @@ type Config struct {
 	TimeZone *time.Location
 	// InsecureCookies drops the Secure cookie attribute for plain-HTTP LAN deployments (ADR 003).
 	InsecureCookies bool
+	// APIDocs serves the API reference at /docs and the contract at /openapi.yaml without a session.
+	APIDocs bool
 }
 
 func Load(getenv func(string) string) (Config, error) {
@@ -46,6 +48,13 @@ func Load(getenv func(string) string) (Config, error) {
 			return Config{}, fmt.Errorf("EQUORI_INSECURE_COOKIES: %w", err)
 		}
 		cfg.InsecureCookies = b
+	}
+	if v := getenv("EQUORI_API_DOCS"); v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			return Config{}, fmt.Errorf("EQUORI_API_DOCS: %w", err)
+		}
+		cfg.APIDocs = b
 	}
 	return cfg, nil
 }

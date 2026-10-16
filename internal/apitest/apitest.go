@@ -53,6 +53,11 @@ func Web(fsys fs.FS) Option {
 	return func(c *server.Config) { c.Web = fsys }
 }
 
+// APIDocs serves the API reference at /docs and the contract at /openapi.yaml.
+func APIDocs() Option {
+	return func(c *server.Config) { c.APIDocs = true }
+}
+
 // New starts the application and logs in owner@example.com as Client.
 func New(t testing.TB, opts ...Option) *Harness {
 	t.Helper()
