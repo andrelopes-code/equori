@@ -41,7 +41,7 @@
 
 `amount` is the negated sum of the category postings: an expense of 45.90 has amount −45.90, as on the bank statement. A rule has 1–20 conditions, all of which must hold, and 1–10 actions.
 
-**Actions:** `set_category` (`category_id`: an `income` or `expense` account), `set_payee` (`payee_id`), `add_tags` (`tags`: 1–10 names matching `^[a-z0-9][a-z0-9-]{0,59}$`), `split` (`parts`: 2–10, each with `category_id` and exactly one of `percent` in basis points 1–9999, `amount` as `Money`, or `remainder: true`; exactly one remainder part). A rule has at most one of `set_category` and `split`. A split computes each `percent` part rounded half away from zero to the minor unit, then fixed parts; the remainder part receives the rest, so parts always sum to the total.
+**Actions:** `set_category` (`category_id`: an `income` or `expense` account), `set_payee` (`payee_id`), `add_tags` (`tags`: 1–10 names matching `^[a-z0-9][a-z0-9-]{0,59}$`), `split` (`parts`: 2–10, each with `category_id` and exactly one of `percent` in basis points 1–9999, `amount` as `Money`, or `remainder: true`; exactly one remainder part). A rule has at most one of `set_category` and `split`. A split computes each `percent` part rounded toward zero to the minor unit, then fixed parts; the remainder part receives the rest, so parts always sum to the total.
 
 ## Scenarios (added to chapter 6 as section 6.13 "Classification")
 
