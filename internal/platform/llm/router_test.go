@@ -336,6 +336,44 @@ func TestClientLogs(t *testing.T) {
 	}
 }
 
+func TestClientMalformedOutput(t *testing.T) {
+	parts := func(texts ...string) []llm.Part {
+		var ps []llm.Part
+		for _, s := range texts {
+			ps = append(ps, llm.Part{Text: s})
+		}
+		return ps
+	}
+	tests := []struct {
+		name    string
+		schema  json.RawMessage
+		parts   []llm.Part
+		finish  llm.FinishReason
+		wantErr error
+	}{
+		{"valid json", json.RawMessage(`{"type":"object"}`), parts(`{"a":1}`), llm.FinishStop, nil},
+		{"json split over parts", json.RawMessage(`{"type":"object"}`), parts(`{"a":`, `1}`), llm.FinishStop, nil},
+		{"truncated json", json.RawMessage(`{"type":"object"}`), parts(`{"a":`), llm.FinishLength, llm.ErrMalformedOutput},
+		{"free text is not checked", nil, parts(`{"a":`), llm.FinishStop, nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp := llm.Response{Message: llm.Message{Role: llm.RoleModel, Parts: tt.parts}, FinishReason: tt.finish}
+			a := llmtest.New("a", llmtest.Step{Model: "m1", Response: resp})
+			f := newFixture(a)
+			req := prompt()
+			req.Schema = tt.schema
+			_, err := f.router.Client(target("a/m1"), target("a/m2")).Generate(context.Background(), req)
+			if !errors.Is(err, tt.wantErr) {
+				t.Fatalf("err = %v, want %v", err, tt.wantErr)
+			}
+			if got := len(a.Requests()); got != 1 {
+				t.Fatalf("calls = %d, want 1", got)
+			}
+		})
+	}
+}
+
 func TestRouterProviders(t *testing.T) {
 	f := newFixture(llmtest.New("b"), llmtest.New("a"))
 	if got, want := f.router.Providers(), []string{"a", "b"}; !slices.Equal(got, want) {

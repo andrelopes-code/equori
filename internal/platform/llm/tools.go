@@ -1,0 +1,72 @@
+package llm
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"slices"
+)
+
+// ToolHandler executes one tool call; args follow the tool's Parameters schema.
+type ToolHandler func(ctx context.Context, args json.RawMessage) (json.RawMessage, error)
+
+// RunTools calls the model until it answers without a tool call, running each requested
+// tool with its handler. It returns the final response and the whole conversation, which
+// keeps every signature for a later turn. A handler error goes back to the model as an
+// error result; only a context error stops the loop.
+func RunTools(ctx context.Context, client *Client, req Request, handlers map[string]ToolHandler, maxSteps int) (Response, []Message, error) {
+	history := slices.Clone(req.Messages)
+	for range maxSteps {
+		req.Messages = history
+		resp, err := client.Generate(ctx, req)
+		if err != nil {
+			return Response{}, history, err
+		}
+		history = append(history, resp.Message)
+		var results []Part
+		for _, p := range resp.Message.Parts {
+			if p.ToolCall == nil {
+				continue
+			}
+			result, err := runTool(ctx, handlers, *p.ToolCall)
+			if err != nil {
+				return Response{}, history, err
+			}
+			results = append(results, Part{ToolResult: &result})
+		}
+		if len(results) == 0 {
+			return resp, history, nil
+		}
+		history = append(history, Message{Role: RoleTool, Parts: results})
+	}
+	return Response{}, history, ErrTooManySteps
+}
+
+func runTool(ctx context.Context, handlers map[string]ToolHandler, call ToolCall) (ToolResult, error) {
+	result := ToolResult{CallID: call.ID, Name: call.Name}
+	h, ok := handlers[call.Name]
+	if !ok {
+		result.Content, result.IsError = errorContent("unknown tool "+call.Name), true
+		return result, nil
+	}
+	out, err := h(ctx, call.Args)
+	if err != nil {
+		if ctx.Err() != nil || isContextError(err) {
+			return ToolResult{}, fmt.Errorf("run tool %s: %w", call.Name, err)
+		}
+		result.Content, result.IsError = errorContent(err.Error()), true
+		return result, nil
+	}
+	result.Content = out
+	return result, nil
+}
+
+func isContextError(err error) bool {
+	return errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)
+}
+
+func errorContent(msg string) json.RawMessage {
+	b, _ := json.Marshal(map[string]string{"error": msg})
+	return b
+}

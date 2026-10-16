@@ -2,6 +2,7 @@ package llm
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -77,6 +78,9 @@ func (c *Client) Generate(ctx context.Context, req Request) (Response, error) {
 			resp.Target = t
 			r.log.Info("llm call", "provider", t.Provider, "model", t.Model, "outcome", "ok", "duration", elapsed,
 				"input_tokens", resp.Usage.InputTokens, "output_tokens", resp.Usage.OutputTokens)
+			if req.Schema != nil && !json.Valid([]byte(resp.Text())) {
+				return Response{}, fmt.Errorf("generate with %s: %w", t, ErrMalformedOutput)
+			}
 			return resp, nil
 		}
 		if ctx.Err() != nil {
