@@ -35,6 +35,10 @@ type Repository interface {
 	ClaimRecord(ctx context.Context, r domain.ExternalRecord) (rec domain.ExternalRecord, existed bool, err error)
 	// SaveOutcome stores the record's batch, state, transaction and candidates.
 	SaveOutcome(ctx context.Context, r domain.ExternalRecord) error
+	Record(ctx context.Context, userID int64, id uuid.UUID) (domain.ExternalRecord, error)
+	Records(ctx context.Context, userID int64, batchID uuid.UUID, state domain.RecordState, p page.Request[RecordKey]) ([]domain.ExternalRecord, *RecordKey, error)
+	// ResolveRecord stores a reviewed record and moves it out of its batch's needs_review count.
+	ResolveRecord(ctx context.Context, r domain.ExternalRecord) error
 	// LockAccountImports serializes the imports of one account until unlock runs.
 	LockAccountImports(ctx context.Context, accountID uuid.UUID) (unlock func(), err error)
 }

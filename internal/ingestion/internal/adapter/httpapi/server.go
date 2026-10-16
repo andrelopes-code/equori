@@ -54,8 +54,13 @@ func toProblem(err error) (problem.Details, bool) {
 		d.Errors = []problem.FieldError{{Field: fe.Field, Message: fe.Message}}
 		return d, true
 	}
-	if errors.Is(err, app.ErrNotFound) {
+	switch {
+	case errors.Is(err, app.ErrNotFound):
 		return problem.New(http.StatusNotFound, "not_found", "resource not found"), true
+	case errors.Is(err, app.ErrRecordResolved):
+		return problem.New(http.StatusConflict, "record_resolved", err.Error()), true
+	case errors.Is(err, app.ErrAlreadyMatched):
+		return problem.New(http.StatusConflict, "already_matched", err.Error()), true
 	}
 	return problem.Details{}, false
 }

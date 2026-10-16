@@ -8,7 +8,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
+	"github.com/andrelopes-code/equori/internal/ingestion/internal/app"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/domain"
+	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 
 func toRecord(row IngestionExternalRecord) (domain.ExternalRecord, error) {
@@ -106,4 +108,47 @@ func (r *Repository) LockAccountImports(ctx context.Context, accountID uuid.UUID
 		_ = q.UnlockAccountImports(context.WithoutCancel(ctx), accountID.String())
 		conn.Release()
 	}, nil
+}
+
+func (r *Repository) Record(ctx context.Context, userID int64, id uuid.UUID) (domain.ExternalRecord, error) {
+	row, err := r.q.GetRecord(ctx, GetRecordParams{UserID: userID, ID: id})
+	if err != nil {
+		return domain.ExternalRecord{}, notFound(err)
+	}
+	return toRecord(row)
+}
+
+func (r *Repository) Records(ctx context.Context, userID int64, batchID uuid.UUID, state domain.RecordState, p page.Request[app.RecordKey]) ([]domain.ExternalRecord, *app.RecordKey, error) {
+	params := ListBatchRecordsParams{UserID: userID, BatchID: batchID, State: optional(string(state)), RowLimit: int32(p.Limit + 1)} //nolint:gosec // limit is at most page.MaxLimit
+	if p.After != nil {
+		params.AfterID = uuid.NullUUID{UUID: p.After.ID, Valid: true}
+	}
+	rows, err := r.q.ListBatchRecords(ctx, params)
+	if err != nil {
+		return nil, nil, err
+	}
+	kept, more := page.Trim(rows, p.Limit)
+	out := make([]domain.ExternalRecord, len(kept))
+	for i, row := range kept {
+		if out[i], err = toRecord(row); err != nil {
+			return nil, nil, err
+		}
+	}
+	if !more {
+		return out, nil, nil
+	}
+	return out, &app.RecordKey{ID: kept[len(kept)-1].ID}, nil
+}
+
+func (r *Repository) ResolveRecord(ctx context.Context, rec domain.ExternalRecord) error {
+	return pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
+		q := r.q.WithTx(tx)
+		if err := q.SaveRecordOutcome(ctx, SaveRecordOutcomeParams{
+			UserID: rec.UserID, ID: rec.ID, BatchID: rec.BatchID, State: string(rec.State),
+			TransactionID: uuid.NullUUID{UUID: rec.TransactionID, Valid: rec.TransactionID != uuid.Nil}, Candidates: []uuid.UUID{},
+		}); err != nil {
+			return err
+		}
+		return q.MoveReviewCount(ctx, MoveReviewCountParams{UserID: rec.UserID, ID: rec.BatchID, State: string(rec.State)})
+	})
 }

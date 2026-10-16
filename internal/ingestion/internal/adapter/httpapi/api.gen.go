@@ -100,6 +100,33 @@ func (e CsvProfileDelimiter) Valid() bool {
 	}
 }
 
+// Defines values for ExternalRecordState.
+const (
+	ExternalRecordStateCreated     ExternalRecordState = "created"
+	ExternalRecordStateDiscarded   ExternalRecordState = "discarded"
+	ExternalRecordStateMatched     ExternalRecordState = "matched"
+	ExternalRecordStateNeedsReview ExternalRecordState = "needs_review"
+	ExternalRecordStateReceived    ExternalRecordState = "received"
+)
+
+// Valid indicates whether the value is a known member of the ExternalRecordState enum.
+func (e ExternalRecordState) Valid() bool {
+	switch e {
+	case ExternalRecordStateCreated:
+		return true
+	case ExternalRecordStateDiscarded:
+		return true
+	case ExternalRecordStateMatched:
+		return true
+	case ExternalRecordStateNeedsReview:
+		return true
+	case ExternalRecordStateReceived:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ImportBalanceStatus.
 const (
 	None     ImportBalanceStatus = "none"
@@ -139,6 +166,27 @@ func (e ImportBatchSource) Valid() bool {
 	}
 }
 
+// Defines values for RecordResolutionAction.
+const (
+	Create  RecordResolutionAction = "create"
+	Discard RecordResolutionAction = "discard"
+	Match   RecordResolutionAction = "match"
+)
+
+// Valid indicates whether the value is a known member of the RecordResolutionAction enum.
+func (e RecordResolutionAction) Valid() bool {
+	switch e {
+	case Create:
+		return true
+	case Discard:
+		return true
+	case Match:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ImportFileMultipartBodyFormat.
 const (
 	ImportFileMultipartBodyFormatCsv ImportFileMultipartBodyFormat = "csv"
@@ -151,6 +199,33 @@ func (e ImportFileMultipartBodyFormat) Valid() bool {
 	case ImportFileMultipartBodyFormatCsv:
 		return true
 	case ImportFileMultipartBodyFormatOfx:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListBatchRecordsParamsState.
+const (
+	ListBatchRecordsParamsStateCreated     ListBatchRecordsParamsState = "created"
+	ListBatchRecordsParamsStateDiscarded   ListBatchRecordsParamsState = "discarded"
+	ListBatchRecordsParamsStateMatched     ListBatchRecordsParamsState = "matched"
+	ListBatchRecordsParamsStateNeedsReview ListBatchRecordsParamsState = "needs_review"
+	ListBatchRecordsParamsStateReceived    ListBatchRecordsParamsState = "received"
+)
+
+// Valid indicates whether the value is a known member of the ListBatchRecordsParamsState enum.
+func (e ListBatchRecordsParamsState) Valid() bool {
+	switch e {
+	case ListBatchRecordsParamsStateCreated:
+		return true
+	case ListBatchRecordsParamsStateDiscarded:
+		return true
+	case ListBatchRecordsParamsStateMatched:
+		return true
+	case ListBatchRecordsParamsStateNeedsReview:
+		return true
+	case ListBatchRecordsParamsStateReceived:
 		return true
 	default:
 		return false
@@ -185,6 +260,33 @@ type CsvProfileDecimalSeparator string
 
 // CsvProfileDelimiter defines model for CsvProfile.Delimiter.
 type CsvProfileDelimiter string
+
+// ExternalRecord defines model for ExternalRecord.
+type ExternalRecord struct {
+	AccountId openapi_types.UUID `json:"account_id"`
+	Amount    Money              `json:"amount"`
+	BatchId   openapi_types.UUID `json:"batch_id"`
+
+	// Candidates Transactions the record may confirm, while it needs review.
+	Candidates    []openapi_types.UUID `json:"candidates"`
+	Date          openapi_types.Date   `json:"date"`
+	Description   string               `json:"description"`
+	ExternalId    *string              `json:"external_id,omitempty"`
+	Id            openapi_types.UUID   `json:"id"`
+	State         ExternalRecordState  `json:"state"`
+	TransactionId *openapi_types.UUID  `json:"transaction_id,omitempty"`
+}
+
+// ExternalRecordState defines model for ExternalRecord.State.
+type ExternalRecordState string
+
+// ExternalRecordList defines model for ExternalRecordList.
+type ExternalRecordList struct {
+	Items []ExternalRecord `json:"items"`
+
+	// NextCursor Absent on the last page.
+	NextCursor *string `json:"next_cursor,omitempty"`
+}
 
 // FieldError defines model for FieldError.
 type FieldError struct {
@@ -257,7 +359,8 @@ type Problem struct {
 	// too_many_attempts, unauthenticated, forbidden, not_found, validation_failed, internal_error,
 	// server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
 	// account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
-	// already_reconciled, difference_remains, method_not_allowed, unsupported_media_type.
+	// already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
+	// record_resolved, already_matched.
 	Code      string        `json:"code"`
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`
@@ -266,6 +369,17 @@ type Problem struct {
 	Title     string        `json:"title"`
 	Type      string        `json:"type"`
 }
+
+// RecordResolution defines model for RecordResolution.
+type RecordResolution struct {
+	Action RecordResolutionAction `json:"action"`
+
+	// TransactionId Required for match; one of the record's candidates.
+	TransactionId *openapi_types.UUID `json:"transaction_id,omitempty"`
+}
+
+// RecordResolutionAction defines model for RecordResolution.Action.
+type RecordResolutionAction string
 
 // Cursor defines model for Cursor.
 type Cursor = string
@@ -291,11 +405,24 @@ type ListImportBatchesParams struct {
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
+// ListBatchRecordsParams defines parameters for ListBatchRecords.
+type ListBatchRecordsParams struct {
+	State  *ListBatchRecordsParamsState `form:"state,omitempty" json:"state,omitempty"`
+	Limit  *Limit                       `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor                      `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// ListBatchRecordsParamsState defines parameters for ListBatchRecords.
+type ListBatchRecordsParamsState string
+
 // SaveCsvProfileJSONRequestBody defines body for SaveCsvProfile for application/json ContentType.
 type SaveCsvProfileJSONRequestBody = CsvProfile
 
 // ImportFileMultipartRequestBody defines body for ImportFile for multipart/form-data ContentType.
 type ImportFileMultipartRequestBody ImportFileMultipartBody
+
+// ResolveExternalRecordJSONRequestBody defines body for ResolveExternalRecord for application/json ContentType.
+type ResolveExternalRecordJSONRequestBody = RecordResolution
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -308,12 +435,18 @@ type ServerInterface interface {
 	// ImportFile Import an OFX or CSV statement into a balance account.
 	// (POST /accounts/{id}/imports)
 	ImportFile(w http.ResponseWriter, r *http.Request, id ID)
+	// ResolveExternalRecord Resolve a record that needs review.
+	// (POST /external-records/{id}/resolve)
+	ResolveExternalRecord(w http.ResponseWriter, r *http.Request, id ID)
 	// ListImportBatches Import batches, newest first.
 	// (GET /import-batches)
 	ListImportBatches(w http.ResponseWriter, r *http.Request, params ListImportBatchesParams)
 	// GetImportBatch One import batch with its counts.
 	// (GET /import-batches/{id})
 	GetImportBatch(w http.ResponseWriter, r *http.Request, id ID)
+	// ListBatchRecords The external records of a batch, in file order.
+	// (GET /import-batches/{id}/records)
+	ListBatchRecords(w http.ResponseWriter, r *http.Request, id ID, params ListBatchRecordsParams)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -403,6 +536,32 @@ func (siw *ServerInterfaceWrapper) ImportFile(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
+// ResolveExternalRecord operation middleware
+func (siw *ServerInterfaceWrapper) ResolveExternalRecord(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ResolveExternalRecord(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListImportBatches operation middleware
 func (siw *ServerInterfaceWrapper) ListImportBatches(w http.ResponseWriter, r *http.Request) {
 
@@ -466,6 +625,74 @@ func (siw *ServerInterfaceWrapper) GetImportBatch(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetImportBatch(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListBatchRecords operation middleware
+func (siw *ServerInterfaceWrapper) ListBatchRecords(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListBatchRecordsParams
+
+	// ------------- Optional query parameter "state" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "state", r.URL.Query(), &params.State, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "state"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "state", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListBatchRecords(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -600,6 +827,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/accounts/{id}/csv-profile", wrapper.SaveCsvProfile)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/imports", wrapper.ImportFile)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/import-batches/{id}", wrapper.GetImportBatch)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/import-batches/{id}/records", wrapper.ListBatchRecords)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/external-records/{id}/resolve", wrapper.ResolveExternalRecord)
 
 	return m
 }
@@ -816,6 +1045,87 @@ func (response ImportFile422ApplicationProblemPlusJSONResponse) VisitImportFileR
 	return err
 }
 
+type ResolveExternalRecordRequestObject struct {
+	Id   ID `json:"id"`
+	Body *ResolveExternalRecordJSONRequestBody
+}
+
+type ResolveExternalRecordResponseObject interface {
+	VisitResolveExternalRecordResponse(w http.ResponseWriter) error
+}
+
+type ResolveExternalRecord200JSONResponse ExternalRecord
+
+func (response ResolveExternalRecord200JSONResponse) VisitResolveExternalRecordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveExternalRecord401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ResolveExternalRecord401ApplicationProblemPlusJSONResponse) VisitResolveExternalRecordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveExternalRecord404ApplicationProblemPlusJSONResponse Problem
+
+func (response ResolveExternalRecord404ApplicationProblemPlusJSONResponse) VisitResolveExternalRecordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveExternalRecord409ApplicationProblemPlusJSONResponse Problem
+
+func (response ResolveExternalRecord409ApplicationProblemPlusJSONResponse) VisitResolveExternalRecordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ResolveExternalRecord422ApplicationProblemPlusJSONResponse Problem
+
+func (response ResolveExternalRecord422ApplicationProblemPlusJSONResponse) VisitResolveExternalRecordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListImportBatchesRequestObject struct {
 	Params ListImportBatchesParams
 }
@@ -906,6 +1216,59 @@ func (response GetImportBatch404ApplicationProblemPlusJSONResponse) VisitGetImpo
 	return err
 }
 
+type ListBatchRecordsRequestObject struct {
+	Id     ID `json:"id"`
+	Params ListBatchRecordsParams
+}
+
+type ListBatchRecordsResponseObject interface {
+	VisitListBatchRecordsResponse(w http.ResponseWriter) error
+}
+
+type ListBatchRecords200JSONResponse ExternalRecordList
+
+func (response ListBatchRecords200JSONResponse) VisitListBatchRecordsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListBatchRecords401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListBatchRecords401ApplicationProblemPlusJSONResponse) VisitListBatchRecordsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListBatchRecords404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListBatchRecords404ApplicationProblemPlusJSONResponse) VisitListBatchRecordsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// GetCsvProfile How the CSV files of the account are read.
@@ -917,12 +1280,18 @@ type StrictServerInterface interface {
 	// ImportFile Import an OFX or CSV statement into a balance account.
 	// (POST /accounts/{id}/imports)
 	ImportFile(ctx context.Context, request ImportFileRequestObject) (ImportFileResponseObject, error)
+	// ResolveExternalRecord Resolve a record that needs review.
+	// (POST /external-records/{id}/resolve)
+	ResolveExternalRecord(ctx context.Context, request ResolveExternalRecordRequestObject) (ResolveExternalRecordResponseObject, error)
 	// ListImportBatches Import batches, newest first.
 	// (GET /import-batches)
 	ListImportBatches(ctx context.Context, request ListImportBatchesRequestObject) (ListImportBatchesResponseObject, error)
 	// GetImportBatch One import batch with its counts.
 	// (GET /import-batches/{id})
 	GetImportBatch(ctx context.Context, request GetImportBatchRequestObject) (GetImportBatchResponseObject, error)
+	// ListBatchRecords The external records of a batch, in file order.
+	// (GET /import-batches/{id}/records)
+	ListBatchRecords(ctx context.Context, request ListBatchRecordsRequestObject) (ListBatchRecordsResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -1056,6 +1425,39 @@ func (sh *strictHandler) ImportFile(w http.ResponseWriter, r *http.Request, id I
 	}
 }
 
+// ResolveExternalRecord operation middleware
+func (sh *strictHandler) ResolveExternalRecord(w http.ResponseWriter, r *http.Request, id ID) {
+	var request ResolveExternalRecordRequestObject
+
+	request.Id = id
+
+	var body ResolveExternalRecordJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ResolveExternalRecord(ctx, request.(ResolveExternalRecordRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ResolveExternalRecord")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ResolveExternalRecordResponseObject); ok {
+		if err := validResponse.VisitResolveExternalRecordResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListImportBatches operation middleware
 func (sh *strictHandler) ListImportBatches(w http.ResponseWriter, r *http.Request, params ListImportBatchesParams) {
 	var request ListImportBatchesRequestObject
@@ -1101,6 +1503,33 @@ func (sh *strictHandler) GetImportBatch(w http.ResponseWriter, r *http.Request, 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetImportBatchResponseObject); ok {
 		if err := validResponse.VisitGetImportBatchResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListBatchRecords operation middleware
+func (sh *strictHandler) ListBatchRecords(w http.ResponseWriter, r *http.Request, id ID, params ListBatchRecordsParams) {
+	var request ListBatchRecordsRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListBatchRecords(ctx, request.(ListBatchRecordsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListBatchRecords")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListBatchRecordsResponseObject); ok {
+		if err := validResponse.VisitListBatchRecordsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

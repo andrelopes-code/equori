@@ -1036,7 +1036,8 @@ type Problem struct {
 	// too_many_attempts, unauthenticated, forbidden, not_found, validation_failed, internal_error,
 	// server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
 	// account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
-	// already_reconciled, difference_remains, method_not_allowed, unsupported_media_type.
+	// already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
+	// record_resolved, already_matched.
 	Code      string        `json:"code"`
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`

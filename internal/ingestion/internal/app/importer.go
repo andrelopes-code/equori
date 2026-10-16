@@ -217,6 +217,8 @@ func (s *Service) decide(ctx context.Context, rec *domain.ExternalRecord, line L
 	return nil
 }
 
+func currencyOf(b domain.Batch) money.Currency { return money.Currency(b.Currency) }
+
 func truncate(s string) string {
 	if utf8.RuneCountInString(s) <= maxDescription {
 		return s

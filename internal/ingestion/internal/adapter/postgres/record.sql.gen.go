@@ -12,6 +12,36 @@ import (
 	"github.com/google/uuid"
 )
 
+const getRecord = `-- name: GetRecord :one
+SELECT id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates FROM ingestion_external_record WHERE user_id = $1 AND id = $2
+`
+
+type GetRecordParams struct {
+	UserID int64
+	ID     uuid.UUID
+}
+
+func (q *Queries) GetRecord(ctx context.Context, arg GetRecordParams) (IngestionExternalRecord, error) {
+	row := q.db.QueryRow(ctx, getRecord, arg.UserID, arg.ID)
+	var i IngestionExternalRecord
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.BatchID,
+		&i.AccountID,
+		&i.ExternalID,
+		&i.DedupKey,
+		&i.Raw,
+		&i.BookedOn,
+		&i.Amount,
+		&i.Description,
+		&i.State,
+		&i.TransactionID,
+		&i.Candidates,
+	)
+	return i, err
+}
+
 const getRecordByKey = `-- name: GetRecordByKey :one
 SELECT id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates FROM ingestion_external_record WHERE user_id = $1 AND dedup_key = $2
 `
@@ -90,6 +120,84 @@ func (q *Queries) InsertRecord(ctx context.Context, arg InsertRecordParams) (Ing
 		&i.Candidates,
 	)
 	return i, err
+}
+
+const listBatchRecords = `-- name: ListBatchRecords :many
+SELECT id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates FROM ingestion_external_record
+WHERE user_id = $1 AND batch_id = $2
+  AND ($3::text IS NULL OR state = $3::text)
+  AND ($4::uuid IS NULL OR id > $4::uuid)
+ORDER BY id
+LIMIT $5
+`
+
+type ListBatchRecordsParams struct {
+	UserID   int64
+	BatchID  uuid.UUID
+	State    *string
+	AfterID  uuid.NullUUID
+	RowLimit int32
+}
+
+func (q *Queries) ListBatchRecords(ctx context.Context, arg ListBatchRecordsParams) ([]IngestionExternalRecord, error) {
+	rows, err := q.db.Query(ctx, listBatchRecords,
+		arg.UserID,
+		arg.BatchID,
+		arg.State,
+		arg.AfterID,
+		arg.RowLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []IngestionExternalRecord
+	for rows.Next() {
+		var i IngestionExternalRecord
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.BatchID,
+			&i.AccountID,
+			&i.ExternalID,
+			&i.DedupKey,
+			&i.Raw,
+			&i.BookedOn,
+			&i.Amount,
+			&i.Description,
+			&i.State,
+			&i.TransactionID,
+			&i.Candidates,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const moveReviewCount = `-- name: MoveReviewCount :exec
+UPDATE ingestion_batch SET
+    needs_review = needs_review - 1,
+    matched = matched + ($1::text = 'matched')::int,
+    created = created + ($1::text = 'created')::int,
+    discarded = discarded + ($1::text = 'discarded')::int
+WHERE user_id = $2 AND id = $3
+`
+
+type MoveReviewCountParams struct {
+	State  string
+	UserID int64
+	ID     uuid.UUID
+}
+
+// A resolved record leaves needs_review for the state the owner chose.
+func (q *Queries) MoveReviewCount(ctx context.Context, arg MoveReviewCountParams) error {
+	_, err := q.db.Exec(ctx, moveReviewCount, arg.State, arg.UserID, arg.ID)
+	return err
 }
 
 const saveRecordOutcome = `-- name: SaveRecordOutcome :exec

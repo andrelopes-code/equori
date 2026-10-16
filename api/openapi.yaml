@@ -1400,6 +1400,62 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /import-batches/{id}/records:
+    get:
+      tags: [ingestion]
+      operationId: listBatchRecords
+      summary: The external records of a batch, in file order.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - name: state
+          in: query
+          schema:
+            type: string
+            enum: [received, matched, created, needs_review, discarded]
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalRecordList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /external-records/{id}/resolve:
+    post:
+      tags: [ingestion]
+      operationId: resolveExternalRecord
+      summary: Resolve a record that needs review.
+      description: |
+        match links the record to one of its candidates and clears that posting; create records a
+        transaction against an uncategorized account; discard leaves the line out of the ledger.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordResolution"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalRecord"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
 security:
   - sessionCookie: []
 components:
@@ -1445,6 +1501,63 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
   schemas:
+    RecordResolution:
+      type: object
+      additionalProperties: false
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [match, create, discard]
+        transaction_id:
+          type: string
+          format: uuid
+          description: Required for match; one of the record's candidates.
+    ExternalRecord:
+      type: object
+      required: [id, batch_id, account_id, date, amount, description, state, candidates]
+      properties:
+        id:
+          type: string
+          format: uuid
+        batch_id:
+          type: string
+          format: uuid
+        account_id:
+          type: string
+          format: uuid
+        external_id:
+          type: string
+        date:
+          type: string
+          format: date
+        amount:
+          $ref: "#/components/schemas/Money"
+        description:
+          type: string
+        state:
+          type: string
+          enum: [received, matched, created, needs_review, discarded]
+        transaction_id:
+          type: string
+          format: uuid
+        candidates:
+          type: array
+          description: Transactions the record may confirm, while it needs review.
+          items:
+            type: string
+            format: uuid
+    ExternalRecordList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExternalRecord"
+        next_cursor:
+          type: string
+          description: Absent on the last page.
     CsvProfile:
       type: object
       additionalProperties: false
@@ -2536,7 +2649,8 @@ components:
             too_many_attempts, unauthenticated, forbidden, not_found, validation_failed, internal_error,
             server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
             account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
-            already_reconciled, difference_remains, method_not_allowed, unsupported_media_type.
+            already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
+            record_resolved, already_matched.
         request_id:
           type: string
         errors:
