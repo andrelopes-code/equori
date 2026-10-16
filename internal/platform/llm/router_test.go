@@ -355,6 +355,8 @@ func TestClientMalformedOutput(t *testing.T) {
 		{"json split over parts", json.RawMessage(`{"type":"object"}`), parts(`{"a":`, `1}`), llm.FinishStop, nil},
 		{"truncated json", json.RawMessage(`{"type":"object"}`), parts(`{"a":`), llm.FinishLength, llm.ErrMalformedOutput},
 		{"free text is not checked", nil, parts(`{"a":`), llm.FinishStop, nil},
+		{"tool call step is not checked", json.RawMessage(`{"type":"object"}`), []llm.Part{{ToolCall: &llm.ToolCall{ID: "c1", Name: "balance"}}}, llm.FinishToolCalls, nil},
+		{"blocked answer is not checked", json.RawMessage(`{"type":"object"}`), nil, llm.FinishBlocked, nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
