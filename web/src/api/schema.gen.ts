@@ -787,6 +787,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/source-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Categories aggregators assigned to imported lines, by name (P6 amendment A41).
+         * @description count is the number of imported lines that carried the category.
+         */
+        get: operations["listSourceCategories"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/source-categories/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set the category of lines that carry the source category and no rule decides.
+         * @description category_id null clears it. The mapping applies to lines imported afterwards (method source, F5).
+         */
+        put: operations["mapSourceCategory"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/categorization-statistics": {
         parameters: {
             query?: never;
@@ -1028,10 +1068,262 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/integrations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Aggregator integrations, by name. */
+        get: operations["listIntegrations"];
+        put?: never;
+        /**
+         * Store the credentials of an aggregator application (P6 amendment A34).
+         * @description The provider validates the credentials before they are stored, sealed under
+         *     EQUORI_SECRET_KEY (ADR 008); no response returns them. 409 integration_unavailable
+         *     without the key; 422 provider_unauthorized when the provider rejects them; 502
+         *     provider_unavailable when it does not answer.
+         */
+        post: operations["createIntegration"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Return an integration, without its credentials. */
+        get: operations["getIntegration"];
+        put?: never;
+        post?: never;
+        /** Delete an integration without connections (409 integration_in_use otherwise). */
+        delete: operations["deleteIntegration"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations/{id}/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace the credentials of an integration after the provider validates them. */
+        put: operations["updateIntegrationCredentials"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Connections with their external accounts, by name. */
+        get: operations["listConnections"];
+        put?: never;
+        /**
+         * Connect an aggregator item and list its accounts (P6 amendments A34, A35).
+         * @description item_id is the item of the integration's application (Meu Pluggy: one item per bank).
+         *     The name defaults to the item's connector name. Every external account starts pending.
+         */
+        post: operations["createConnection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/connections/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Return a connection with its external accounts. */
+        get: operations["getConnection"];
+        put?: never;
+        post?: never;
+        /** Delete a connection and its mappings; imported records and batches stay. */
+        delete: operations["deleteConnection"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/connections/{id}/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sync every mapped account of the connection now (P6 amendment A43).
+         * @description One import batch per mapped account. An item that needs its owner in Meu Pluggy
+         *     (LOGIN_ERROR, OUTDATED, WAITING_USER_INPUT) is not synced: batches is empty and the
+         *     connection shows the status. A sync of an account waits for any other sync or import
+         *     of it. A failure is stored in the connection's last_error.
+         */
+        post: operations["syncConnection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/connections/{id}/accounts/{external_account_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Map an external account to a ledger account, or ignore it (P6 amendment A35).
+         * @description account_id is a leaf balance account of the external account's currency and a compatible
+         *     kind (CHECKING_ACCOUNT to checking, SAVINGS_ACCOUNT to savings or reserve, CREDIT_CARD to
+         *     credit_card) that no other external account feeds; sync_from is the first date to import.
+         *     Only mapped accounts sync.
+         */
+        put: operations["mapExternalAccount"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        SourceCategory: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            provider: "pluggy";
+            external_id: string;
+            name: string;
+            count: number;
+            /**
+             * Format: uuid
+             * @description Absent while unmapped.
+             */
+            category_id?: string;
+        };
+        SourceCategoryList: {
+            items: components["schemas"]["SourceCategory"][];
+            /** @description Absent on the last page. */
+            next_cursor?: string;
+        };
+        SourceCategoryMapping: {
+            /** Format: uuid */
+            category_id: string | null;
+        };
+        IntegrationInput: {
+            /** @enum {string} */
+            provider: "pluggy";
+            name: string;
+            client_id: string;
+            client_secret: string;
+        };
+        IntegrationCredentials: {
+            client_id: string;
+            client_secret: string;
+        };
+        Integration: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            provider: "pluggy";
+            name: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        IntegrationList: {
+            items: components["schemas"]["Integration"][];
+            /** @description Absent on the last page. */
+            next_cursor?: string;
+        };
+        ConnectionInput: {
+            /** Format: uuid */
+            integration_id: string;
+            item_id: string;
+            name?: string;
+        };
+        Connection: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            integration_id: string;
+            item_id: string;
+            name: string;
+            /** @description The item status the provider reported (Pluggy UPDATED, LOGIN_ERROR, OUTDATED, ...). */
+            provider_status: string;
+            /** Format: date-time */
+            last_item_update_at?: string;
+            /** Format: date-time */
+            last_synced_at?: string;
+            last_error?: string;
+            /** Format: date-time */
+            created_at: string;
+            accounts: components["schemas"]["ExternalAccount"][];
+        };
+        SyncResult: {
+            connection: components["schemas"]["Connection"];
+            batches: components["schemas"]["ImportBatch"][];
+        };
+        ConnectionList: {
+            items: components["schemas"]["Connection"][];
+            /** @description Absent on the last page. */
+            next_cursor?: string;
+        };
+        ExternalAccount: {
+            /** Format: uuid */
+            id: string;
+            type: string;
+            subtype: string;
+            name: string;
+            /** @description Last four digits of the account number; the full number is never stored. */
+            number_last4?: string;
+            currency: string;
+            /** @enum {string} */
+            state: "pending" | "mapped" | "ignored";
+            /** Format: uuid */
+            account_id?: string;
+            /** Format: date */
+            sync_from?: string;
+            /** Format: date */
+            last_synced_on?: string;
+        };
+        /** @description account_id with sync_from maps the account; ignored true leaves it out of syncs. */
+        AccountMappingInput: {
+            /** Format: uuid */
+            account_id?: string;
+            /** Format: date */
+            sync_from?: string;
+            ignored?: boolean;
+        };
         RecordResolution: {
             /** @enum {string} */
             action: "match" | "create" | "discard";
@@ -1054,11 +1346,13 @@ export interface components {
             amount: components["schemas"]["Money"];
             description: string;
             /** @enum {string} */
-            state: "received" | "matched" | "created" | "needs_review" | "discarded";
+            state: "received" | "matched" | "created" | "needs_review" | "discarded" | "withdrawn";
             /** Format: uuid */
             transaction_id?: string;
             /** @description Transactions the record may confirm, while it needs review. */
             candidates: string[];
+            /** @description A change the aggregator reported that the ledger did not take (P6 amendment A36). */
+            unapplied_change?: string;
         };
         ExternalRecordList: {
             items: components["schemas"]["ExternalRecord"][];
@@ -1085,14 +1379,21 @@ export interface components {
              */
             amount_sign?: "as_is" | "inverted";
         };
+        /** @description One file import, or one sync of a mapped account (source open_finance). */
         ImportBatch: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
             account_id: string;
             /** @enum {string} */
-            source: "ofx" | "csv";
-            file_name: string;
+            source: "ofx" | "csv" | "open_finance";
+            /** @description Absent for a sync. */
+            file_name?: string;
+            /**
+             * Format: uuid
+             * @description The mapped account a sync read; absent for files and after its connection is deleted.
+             */
+            external_account_id?: string;
             /** Format: date */
             period_from?: string;
             /** Format: date */
@@ -1104,7 +1405,11 @@ export interface components {
             /** Format: date-time */
             completed_at?: string;
         };
-        /** @description Records of the file by outcome; received is the number of lines read. */
+        /**
+         * @description Records of the batch by outcome; received is the number of lines read. updated counts
+         *     stored lines an aggregator changed (status, bill or amount); withdrawn counts stored
+         *     lines it stopped returning (P6 amendments A36, A38).
+         */
         ImportCounts: {
             received: number;
             ignored: number;
@@ -1112,6 +1417,8 @@ export interface components {
             created: number;
             needs_review: number;
             discarded: number;
+            updated: number;
+            withdrawn: number;
         };
         /** @description The balance the file reports and what became of it (chapter 3, F4). */
         ImportBalance: {
@@ -1764,7 +2071,8 @@ export interface components {
              *     server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
              *     account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
              *     already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
-             *     record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous.
+             *     record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
+             *     integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use.
              */
             code: string;
             request_id?: string;
@@ -3373,6 +3681,59 @@ export interface operations {
             404: components["responses"]["Problem"];
         };
     };
+    listSourceCategories: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceCategoryList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    mapSourceCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourceCategoryMapping"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceCategory"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
     getCategorizationStatistics: {
         parameters: {
             query: {
@@ -3832,7 +4193,7 @@ export interface operations {
     listBatchRecords: {
         parameters: {
             query?: {
-                state?: "received" | "matched" | "created" | "needs_review" | "discarded";
+                state?: "received" | "matched" | "created" | "needs_review" | "discarded" | "withdrawn";
                 limit?: components["parameters"]["Limit"];
                 cursor?: components["parameters"]["Cursor"];
             };
@@ -3879,6 +4240,301 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExternalRecord"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    listIntegrations: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    createIntegration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntegrationInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            201: {
+                headers: {
+                    /** @description Path of the created record. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Integration"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            502: components["responses"]["Problem"];
+        };
+    };
+    getIntegration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Integration"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    deleteIntegration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    updateIntegrationCredentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntegrationCredentials"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Integration"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            502: components["responses"]["Problem"];
+        };
+    };
+    listConnections: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    createConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConnectionInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            201: {
+                headers: {
+                    /** @description Path of the created record. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Connection"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            502: components["responses"]["Problem"];
+        };
+    };
+    getConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Connection"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    deleteConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    syncConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncResult"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            502: components["responses"]["Problem"];
+        };
+    };
+    mapExternalAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+                external_account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountMappingInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExternalAccount"];
                 };
             };
             401: components["responses"]["Problem"];
