@@ -79,3 +79,32 @@ func TestLoadNamedTimeZone(t *testing.T) {
 		t.Fatalf("TimeZone = %s", cfg.TimeZone)
 	}
 }
+
+// ADR 008: integration keys are 32 bytes of standard base64.
+func TestLoadSecretKeys(t *testing.T) {
+	current := "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE="
+	previous := "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI="
+	base := func(kv ...string) func(string) string {
+		env := map[string]string{"EQUORI_DATABASE_URL": "postgres://x"}
+		for i := 0; i < len(kv); i += 2 {
+			env[kv[i]] = kv[i+1]
+		}
+		return func(k string) string { return env[k] }
+	}
+	got, err := Load(base("EQUORI_SECRET_KEY", current, "EQUORI_SECRET_KEY_PREVIOUS", previous))
+	if err != nil || len(got.SecretKey) != 32 || got.SecretKey[0] != 1 || len(got.PreviousSecretKey) != 32 || got.PreviousSecretKey[0] != 2 {
+		t.Fatalf("keys = %x, %x, %v", got.SecretKey, got.PreviousSecretKey, err)
+	}
+	if got, err := Load(base()); err != nil || got.SecretKey != "" {
+		t.Fatalf("without keys = %+v, %v", got, err)
+	}
+	for name, getenv := range map[string]func(string) string{
+		"short key":                base("EQUORI_SECRET_KEY", "AQEB"),
+		"not base64":               base("EQUORI_SECRET_KEY", "not base64!"),
+		"previous without current": base("EQUORI_SECRET_KEY_PREVIOUS", previous),
+	} {
+		if _, err := Load(getenv); err == nil {
+			t.Errorf("%s: accepted", name)
+		}
+	}
+}

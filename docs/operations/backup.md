@@ -15,6 +15,8 @@ The application keeps running. The dump is consistent: `pg_dump` reads one snaps
 The dump contains password hashes, session tokens and every financial record. Store it
 where only the owner can read it.
 
+The dump does not contain `EQUORI_SECRET_KEY` (ADR 008). Keep the key apart from the dump: a restore without it keeps every ledger fact and loses only the stored integration credentials, which the owner enters again.
+
 ## Restore
 
 Restore replaces the instance's data with the dump:

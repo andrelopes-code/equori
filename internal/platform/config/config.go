@@ -2,6 +2,7 @@
 package config
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -19,6 +20,9 @@ type Config struct {
 	InsecureCookies bool
 	// APIDocs serves the API reference at /docs and the contract at /openapi.yaml without a session.
 	APIDocs bool
+	// SecretKey and PreviousSecretKey seal integration credentials (ADR 008): 32 raw bytes,
+	// empty when unset. Without SecretKey integrations are unavailable.
+	SecretKey, PreviousSecretKey string
 }
 
 func Load(getenv func(string) string) (Config, error) {
@@ -56,5 +60,26 @@ func Load(getenv func(string) string) (Config, error) {
 		}
 		cfg.APIDocs = b
 	}
+	if cfg.SecretKey, err = secretKey(getenv, "EQUORI_SECRET_KEY"); err != nil {
+		return Config{}, err
+	}
+	if cfg.PreviousSecretKey, err = secretKey(getenv, "EQUORI_SECRET_KEY_PREVIOUS"); err != nil {
+		return Config{}, err
+	}
+	if cfg.PreviousSecretKey != "" && cfg.SecretKey == "" {
+		return Config{}, errors.New("EQUORI_SECRET_KEY_PREVIOUS is set without EQUORI_SECRET_KEY")
+	}
 	return cfg, nil
+}
+
+func secretKey(getenv func(string) string, name string) (string, error) {
+	v := getenv(name)
+	if v == "" {
+		return "", nil
+	}
+	k, err := base64.StdEncoding.DecodeString(v)
+	if err != nil || len(k) != 32 {
+		return "", fmt.Errorf("%s must be 32 bytes in standard base64", name)
+	}
+	return string(k), nil
 }
