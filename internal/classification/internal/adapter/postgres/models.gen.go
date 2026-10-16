@@ -46,3 +46,16 @@ type ClassificationRule struct {
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 }
+
+type ClassificationSuggestion struct {
+	ID                    uuid.UUID
+	UserID                int64
+	Fingerprint           string
+	Conditions            []byte
+	Actions               []byte
+	ExampleTransactionIds []uuid.UUID
+	State                 string
+	RuleID                uuid.NullUUID
+	CreatedAt             time.Time
+	DecidedAt             *time.Time
+}

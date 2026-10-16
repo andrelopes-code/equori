@@ -76,6 +76,16 @@ type Repository interface {
 	// the key, and the key of the last one when more may follow.
 	PendingCategorizations(ctx context.Context, userID int64, after *PendingKey, limit int) ([]uuid.UUID, *PendingKey, error)
 	CountMethods(ctx context.Context, userID int64, from, to time.Time) (map[string]int, error)
+
+	// CorrectedExamples returns up to limit corrected, non-voided transactions with the
+	// match key and category, oldest first.
+	CorrectedExamples(ctx context.Context, userID int64, matchKey string, categoryID uuid.UUID, limit int) ([]uuid.UUID, error)
+	// UpsertSuggestion inserts s as pending, or replaces the examples of a pending
+	// suggestion with the same fingerprint; a decided suggestion is left unchanged.
+	UpsertSuggestion(ctx context.Context, s Suggestion) error
+	ListSuggestions(ctx context.Context, userID int64, state string, p page.Request[SuggestionKey]) ([]Suggestion, *SuggestionKey, error)
+	LockSuggestion(ctx context.Context, userID int64, id uuid.UUID) (Suggestion, error)
+	DecideSuggestion(ctx context.Context, userID int64, id uuid.UUID, state string, ruleID uuid.UUID) (Suggestion, error)
 }
 
 // Account is a ledger account as classification reads it.

@@ -360,8 +360,12 @@ func TestMatchKey(t *testing.T) {
 		t.Errorf("without payee = %q", got)
 	}
 	category := id()
-	conditions, actions := SuggestedRule(uuid.Nil, "PADARIA SÃO JOÃO", category)
-	if _, err := NewRule(Rule{Name: "r", Conditions: conditions, Actions: actions}); err != nil || conditions[0].Text[0] != "padaria sao joao" {
+	conditions, actions := SuggestedRule(MatchKey(uuid.Nil, "PADARIA SÃO JOÃO"), category)
+	if _, err := NewRule(Rule{Name: "r", Conditions: conditions, Actions: actions}); err != nil || conditions[0].Field != FieldRawDescription || conditions[0].Text[0] != "padaria sao joao" {
 		t.Errorf("suggested rule = %+v, %+v: %v", conditions, actions, err)
+	}
+	conditions, _ = SuggestedRule(MatchKey(payee, "IFD*IFOOD"), category)
+	if conditions[0].Field != FieldPayee || conditions[0].IDs[0] != payee {
+		t.Errorf("suggested rule with payee = %+v", conditions)
 	}
 }

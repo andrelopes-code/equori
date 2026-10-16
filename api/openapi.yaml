@@ -1444,6 +1444,82 @@ paths:
           $ref: "#/components/responses/Problem"
         "401":
           $ref: "#/components/responses/Problem"
+  /rule-suggestions:
+    get:
+      tags: [classification]
+      operationId: listRuleSuggestions
+      summary: Rules suggested from repeated manual corrections (P5 amendment A24).
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+        - name: state
+          in: query
+          schema:
+            type: string
+            enum: [pending, accepted, dismissed]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleSuggestionPage"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /rule-suggestions/{id}/accept:
+    post:
+      tags: [classification]
+      operationId: acceptRuleSuggestion
+      summary: Create the suggested rule at the last priority.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcceptSuggestionInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleSuggestion"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /rule-suggestions/{id}/dismiss:
+    post:
+      tags: [classification]
+      operationId: dismissRuleSuggestion
+      summary: Dismiss a suggestion; it is not proposed again.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleSuggestion"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
   /rules/{id}:
     get:
       tags: [classification]
@@ -3147,6 +3223,57 @@ components:
           type: integer
         uncategorized:
           type: integer
+    AcceptSuggestionInput:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+    RuleSuggestion:
+      type: object
+      required: [id, state, conditions, actions, example_transaction_ids, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        state:
+          type: string
+          enum: [pending, accepted, dismissed]
+        conditions:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuleCondition"
+        actions:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuleAction"
+        example_transaction_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        rule_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        decided_at:
+          type: string
+          format: date-time
+    RuleSuggestionPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuleSuggestion"
+        next_cursor:
+          type: string
     CategorizeInput:
       type: object
       additionalProperties: false
@@ -3244,7 +3371,7 @@ components:
             server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
             account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
             already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
-            record_resolved, already_matched, not_categorizable.
+            record_resolved, already_matched, not_categorizable, suggestion_closed.
         request_id:
           type: string
         errors:

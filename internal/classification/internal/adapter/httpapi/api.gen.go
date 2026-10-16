@@ -195,6 +195,53 @@ func (e RuleConditionOperator) Valid() bool {
 	}
 }
 
+// Defines values for RuleSuggestionState.
+const (
+	RuleSuggestionStateAccepted  RuleSuggestionState = "accepted"
+	RuleSuggestionStateDismissed RuleSuggestionState = "dismissed"
+	RuleSuggestionStatePending   RuleSuggestionState = "pending"
+)
+
+// Valid indicates whether the value is a known member of the RuleSuggestionState enum.
+func (e RuleSuggestionState) Valid() bool {
+	switch e {
+	case RuleSuggestionStateAccepted:
+		return true
+	case RuleSuggestionStateDismissed:
+		return true
+	case RuleSuggestionStatePending:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ListRuleSuggestionsParamsState.
+const (
+	ListRuleSuggestionsParamsStateAccepted  ListRuleSuggestionsParamsState = "accepted"
+	ListRuleSuggestionsParamsStateDismissed ListRuleSuggestionsParamsState = "dismissed"
+	ListRuleSuggestionsParamsStatePending   ListRuleSuggestionsParamsState = "pending"
+)
+
+// Valid indicates whether the value is a known member of the ListRuleSuggestionsParamsState enum.
+func (e ListRuleSuggestionsParamsState) Valid() bool {
+	switch e {
+	case ListRuleSuggestionsParamsStateAccepted:
+		return true
+	case ListRuleSuggestionsParamsStateDismissed:
+		return true
+	case ListRuleSuggestionsParamsStatePending:
+		return true
+	default:
+		return false
+	}
+}
+
+// AcceptSuggestionInput defines model for AcceptSuggestionInput.
+type AcceptSuggestionInput struct {
+	Name string `json:"name"`
+}
+
 // Categorization defines model for Categorization.
 type Categorization struct {
 	DecidedAt time.Time `json:"decided_at"`
@@ -269,7 +316,7 @@ type Problem struct {
 	// server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
 	// account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
 	// already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
-	// record_resolved, already_matched, not_categorizable.
+	// record_resolved, already_matched, not_categorizable, suggestion_closed.
 	Code      string        `json:"code"`
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`
@@ -354,6 +401,27 @@ type RuleSplitPart struct {
 	Remainder  *bool              `json:"remainder,omitempty"`
 }
 
+// RuleSuggestion defines model for RuleSuggestion.
+type RuleSuggestion struct {
+	Actions               []RuleAction         `json:"actions"`
+	Conditions            []RuleCondition      `json:"conditions"`
+	CreatedAt             time.Time            `json:"created_at"`
+	DecidedAt             *time.Time           `json:"decided_at,omitempty"`
+	ExampleTransactionIds []openapi_types.UUID `json:"example_transaction_ids"`
+	Id                    openapi_types.UUID   `json:"id"`
+	RuleId                *openapi_types.UUID  `json:"rule_id,omitempty"`
+	State                 RuleSuggestionState  `json:"state"`
+}
+
+// RuleSuggestionState defines model for RuleSuggestion.State.
+type RuleSuggestionState string
+
+// RuleSuggestionPage defines model for RuleSuggestionPage.
+type RuleSuggestionPage struct {
+	Items      []RuleSuggestion `json:"items"`
+	NextCursor *string          `json:"next_cursor,omitempty"`
+}
+
 // Cursor defines model for Cursor.
 type Cursor = string
 
@@ -375,6 +443,16 @@ type ListPayeeAliasesParams struct {
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
+// ListRuleSuggestionsParams defines parameters for ListRuleSuggestions.
+type ListRuleSuggestionsParams struct {
+	Limit  *Limit                          `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor                         `form:"cursor,omitempty" json:"cursor,omitempty"`
+	State  *ListRuleSuggestionsParamsState `form:"state,omitempty" json:"state,omitempty"`
+}
+
+// ListRuleSuggestionsParamsState defines parameters for ListRuleSuggestions.
+type ListRuleSuggestionsParamsState string
+
 // ListRulesParams defines parameters for ListRules.
 type ListRulesParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
@@ -386,6 +464,9 @@ type CreatePayeeAliasJSONRequestBody = PayeeAliasInput
 
 // ChangePayeeAliasJSONRequestBody defines body for ChangePayeeAlias for application/json ContentType.
 type ChangePayeeAliasJSONRequestBody = PayeeAliasInput
+
+// AcceptRuleSuggestionJSONRequestBody defines body for AcceptRuleSuggestion for application/json ContentType.
+type AcceptRuleSuggestionJSONRequestBody = AcceptSuggestionInput
 
 // CreateRuleJSONRequestBody defines body for CreateRule for application/json ContentType.
 type CreateRuleJSONRequestBody = RuleInput
@@ -416,6 +497,15 @@ type ServerInterface interface {
 	// ChangePayeeAlias Replace a payee alias.
 	// (PUT /payee-aliases/{id})
 	ChangePayeeAlias(w http.ResponseWriter, r *http.Request, id ID)
+	// ListRuleSuggestions Rules suggested from repeated manual corrections (P5 amendment A24).
+	// (GET /rule-suggestions)
+	ListRuleSuggestions(w http.ResponseWriter, r *http.Request, params ListRuleSuggestionsParams)
+	// AcceptRuleSuggestion Create the suggested rule at the last priority.
+	// (POST /rule-suggestions/{id}/accept)
+	AcceptRuleSuggestion(w http.ResponseWriter, r *http.Request, id ID)
+	// DismissRuleSuggestion Dismiss a suggestion; it is not proposed again.
+	// (POST /rule-suggestions/{id}/dismiss)
+	DismissRuleSuggestion(w http.ResponseWriter, r *http.Request, id ID)
 	// ListRules Categorization rules by priority.
 	// (GET /rules)
 	ListRules(w http.ResponseWriter, r *http.Request, params ListRulesParams)
@@ -626,6 +716,117 @@ func (siw *ServerInterfaceWrapper) ChangePayeeAlias(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ChangePayeeAlias(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListRuleSuggestions operation middleware
+func (siw *ServerInterfaceWrapper) ListRuleSuggestions(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListRuleSuggestionsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "state" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "state", r.URL.Query(), &params.State, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "state"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "state", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListRuleSuggestions(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AcceptRuleSuggestion operation middleware
+func (siw *ServerInterfaceWrapper) AcceptRuleSuggestion(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AcceptRuleSuggestion(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DismissRuleSuggestion operation middleware
+func (siw *ServerInterfaceWrapper) DismissRuleSuggestion(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DismissRuleSuggestion(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -953,6 +1154,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/rules/run", wrapper.RunRules)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions/{id}/categorization", wrapper.GetCategorization)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/categorization-statistics", wrapper.GetCategorizationStatistics)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/rule-suggestions", wrapper.ListRuleSuggestions)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/rule-suggestions/{id}/accept", wrapper.AcceptRuleSuggestion)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/rule-suggestions/{id}/dismiss", wrapper.DismissRuleSuggestion)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/rules/{id}", wrapper.DeleteRule)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/rules/{id}", wrapper.GetRule)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/rules/{id}", wrapper.ChangeRule)
@@ -1350,6 +1554,233 @@ func (response ChangePayeeAlias422ApplicationProblemPlusJSONResponse) VisitChang
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRuleSuggestionsRequestObject struct {
+	Params ListRuleSuggestionsParams
+}
+
+type ListRuleSuggestionsResponseObject interface {
+	VisitListRuleSuggestionsResponse(w http.ResponseWriter) error
+}
+
+type ListRuleSuggestions200JSONResponse RuleSuggestionPage
+
+func (response ListRuleSuggestions200JSONResponse) VisitListRuleSuggestionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRuleSuggestions400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListRuleSuggestions400ApplicationProblemPlusJSONResponse) VisitListRuleSuggestionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListRuleSuggestions401ApplicationProblemPlusJSONResponse Problem
+
+func (response ListRuleSuggestions401ApplicationProblemPlusJSONResponse) VisitListRuleSuggestionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptRuleSuggestionRequestObject struct {
+	Id   ID `json:"id"`
+	Body *AcceptRuleSuggestionJSONRequestBody
+}
+
+type AcceptRuleSuggestionResponseObject interface {
+	VisitAcceptRuleSuggestionResponse(w http.ResponseWriter) error
+}
+
+type AcceptRuleSuggestion200JSONResponse RuleSuggestion
+
+func (response AcceptRuleSuggestion200JSONResponse) VisitAcceptRuleSuggestionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptRuleSuggestion400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response AcceptRuleSuggestion400ApplicationProblemPlusJSONResponse) VisitAcceptRuleSuggestionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptRuleSuggestion401ApplicationProblemPlusJSONResponse Problem
+
+func (response AcceptRuleSuggestion401ApplicationProblemPlusJSONResponse) VisitAcceptRuleSuggestionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptRuleSuggestion404ApplicationProblemPlusJSONResponse Problem
+
+func (response AcceptRuleSuggestion404ApplicationProblemPlusJSONResponse) VisitAcceptRuleSuggestionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptRuleSuggestion409ApplicationProblemPlusJSONResponse Problem
+
+func (response AcceptRuleSuggestion409ApplicationProblemPlusJSONResponse) VisitAcceptRuleSuggestionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptRuleSuggestion422ApplicationProblemPlusJSONResponse Problem
+
+func (response AcceptRuleSuggestion422ApplicationProblemPlusJSONResponse) VisitAcceptRuleSuggestionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DismissRuleSuggestionRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type DismissRuleSuggestionResponseObject interface {
+	VisitDismissRuleSuggestionResponse(w http.ResponseWriter) error
+}
+
+type DismissRuleSuggestion200JSONResponse RuleSuggestion
+
+func (response DismissRuleSuggestion200JSONResponse) VisitDismissRuleSuggestionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DismissRuleSuggestion400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DismissRuleSuggestion400ApplicationProblemPlusJSONResponse) VisitDismissRuleSuggestionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DismissRuleSuggestion401ApplicationProblemPlusJSONResponse Problem
+
+func (response DismissRuleSuggestion401ApplicationProblemPlusJSONResponse) VisitDismissRuleSuggestionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DismissRuleSuggestion404ApplicationProblemPlusJSONResponse Problem
+
+func (response DismissRuleSuggestion404ApplicationProblemPlusJSONResponse) VisitDismissRuleSuggestionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DismissRuleSuggestion409ApplicationProblemPlusJSONResponse Problem
+
+func (response DismissRuleSuggestion409ApplicationProblemPlusJSONResponse) VisitDismissRuleSuggestionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -1878,6 +2309,15 @@ type StrictServerInterface interface {
 	// ChangePayeeAlias Replace a payee alias.
 	// (PUT /payee-aliases/{id})
 	ChangePayeeAlias(ctx context.Context, request ChangePayeeAliasRequestObject) (ChangePayeeAliasResponseObject, error)
+	// ListRuleSuggestions Rules suggested from repeated manual corrections (P5 amendment A24).
+	// (GET /rule-suggestions)
+	ListRuleSuggestions(ctx context.Context, request ListRuleSuggestionsRequestObject) (ListRuleSuggestionsResponseObject, error)
+	// AcceptRuleSuggestion Create the suggested rule at the last priority.
+	// (POST /rule-suggestions/{id}/accept)
+	AcceptRuleSuggestion(ctx context.Context, request AcceptRuleSuggestionRequestObject) (AcceptRuleSuggestionResponseObject, error)
+	// DismissRuleSuggestion Dismiss a suggestion; it is not proposed again.
+	// (POST /rule-suggestions/{id}/dismiss)
+	DismissRuleSuggestion(ctx context.Context, request DismissRuleSuggestionRequestObject) (DismissRuleSuggestionResponseObject, error)
 	// ListRules Categorization rules by priority.
 	// (GET /rules)
 	ListRules(ctx context.Context, request ListRulesRequestObject) (ListRulesResponseObject, error)
@@ -2104,6 +2544,91 @@ func (sh *strictHandler) ChangePayeeAlias(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ChangePayeeAliasResponseObject); ok {
 		if err := validResponse.VisitChangePayeeAliasResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListRuleSuggestions operation middleware
+func (sh *strictHandler) ListRuleSuggestions(w http.ResponseWriter, r *http.Request, params ListRuleSuggestionsParams) {
+	var request ListRuleSuggestionsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListRuleSuggestions(ctx, request.(ListRuleSuggestionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListRuleSuggestions")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListRuleSuggestionsResponseObject); ok {
+		if err := validResponse.VisitListRuleSuggestionsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AcceptRuleSuggestion operation middleware
+func (sh *strictHandler) AcceptRuleSuggestion(w http.ResponseWriter, r *http.Request, id ID) {
+	var request AcceptRuleSuggestionRequestObject
+
+	request.Id = id
+
+	var body AcceptRuleSuggestionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AcceptRuleSuggestion(ctx, request.(AcceptRuleSuggestionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AcceptRuleSuggestion")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AcceptRuleSuggestionResponseObject); ok {
+		if err := validResponse.VisitAcceptRuleSuggestionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DismissRuleSuggestion operation middleware
+func (sh *strictHandler) DismissRuleSuggestion(w http.ResponseWriter, r *http.Request, id ID) {
+	var request DismissRuleSuggestionRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DismissRuleSuggestion(ctx, request.(DismissRuleSuggestionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DismissRuleSuggestion")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DismissRuleSuggestionResponseObject); ok {
+		if err := validResponse.VisitDismissRuleSuggestionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

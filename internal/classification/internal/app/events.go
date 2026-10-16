@@ -137,6 +137,3 @@ func (s *Service) describeCorrection(ctx context.Context, rec *Record) error {
 	}
 	return nil
 }
-
-// suggest is completed by rule suggestions (P5 amendment A24).
-func (s *Service) suggest(context.Context, Record) error { return nil }
