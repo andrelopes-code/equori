@@ -456,7 +456,7 @@ func (r *Repository) VoidTransaction(ctx context.Context, t domain.Transaction) 
 func (r *Repository) ListTransactions(ctx context.Context, q app.TransactionQuery) ([]domain.Transaction, error) {
 	params := ListTransactionsParams{
 		UserID: q.UserID, AccountID: nullUUID(q.AccountID), PayeeID: nullUUID(q.PayeeID), Tag: nullString(q.Tag),
-		FromDate: q.From, ToDate: q.To, RowLimit: int32(q.Limit), //nolint:gosec // limit is at most page.MaxLimit + 1.
+		FromDate: q.From, ToDate: q.To, Uncategorized: q.Uncategorized, RowLimit: int32(q.Limit), //nolint:gosec // limit is at most page.MaxLimit + 1.
 	}
 	if q.After != nil {
 		params.AfterDate = &q.After.Date

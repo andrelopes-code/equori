@@ -51,6 +51,17 @@ type ImportedPosting = app.ImportedPosting
 // ImportedRecord is a statement line and the external record it comes from.
 type ImportedRecord = app.ImportedRecord
 
+// ImportDecision is Classification's decision for an imported line (P5 amendment A19).
+type ImportDecision = app.ImportDecision
+
+// Facts that Classification reads (P5 amendments A17, A23, A26).
+type (
+	TransactionFacts = app.TransactionFacts
+	FactPosting      = app.FactPosting
+	AccountFact      = app.AccountFact
+	PayeeClass       = app.PayeeClass
+)
+
 // Match links an external record to the transaction it confirms.
 type Match = app.Match
 
@@ -143,6 +154,26 @@ func (m *Module) ClearMatched(ctx context.Context, userID int64, recordID, txID,
 // item i (ErrNotFound, ErrVersionConflict, ErrNotCategorizable, ErrVoided, ErrValidation).
 func (m *Module) Categorize(ctx context.Context, userID int64, cs []Categorization) (errs []error, err error) {
 	return m.svc.Categorize(ctx, userID, cs)
+}
+
+// TransactionFacts returns the facts of the user's transactions among ids in the order of
+// ids; unknown ids are omitted.
+func (m *Module) TransactionFacts(ctx context.Context, userID int64, ids []uuid.UUID) ([]TransactionFacts, error) {
+	return m.svc.TransactionFacts(ctx, userID, ids)
+}
+
+func (m *Module) AccountFacts(ctx context.Context, userID int64) ([]AccountFact, error) {
+	return m.svc.AccountFacts(ctx, userID)
+}
+
+// MissingPayees returns the ids that are not payees of the user.
+func (m *Module) MissingPayees(ctx context.Context, userID int64, ids []uuid.UUID) ([]uuid.UUID, error) {
+	return m.svc.MissingPayees(ctx, userID, ids)
+}
+
+// LatestPayeeCategories implements the payee history of P5 amendment A23.
+func (m *Module) LatestPayeeCategories(ctx context.Context, userID int64, payees []uuid.UUID) (map[PayeeClass]uuid.UUID, error) {
+	return m.svc.LatestPayeeCategories(ctx, userID, payees)
 }
 
 func (m *Module) AssertBalance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, amount money.Money) error {

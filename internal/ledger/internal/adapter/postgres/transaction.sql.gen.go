@@ -398,21 +398,29 @@ WHERE t.user_id = $1
       WHERE tt.transaction_id = t.id AND g.name = $4::text))
   AND ($5::date IS NULL OR t.date >= $5::date)
   AND ($6::date IS NULL OR t.date <= $6::date)
-  AND ($7::date IS NULL OR (t.date, t.id) < ($7::date, $8::uuid))
+  -- P5 amendment A17: every category posting is on an uncategorized system account.
+  AND (NOT $7::boolean OR (
+      EXISTS (SELECT 1 FROM ledger_posting p JOIN ledger_account a ON a.id = p.account_id
+              WHERE p.transaction_id = t.id AND a.system_role IN ('uncategorized_expense', 'uncategorized_income'))
+      AND NOT EXISTS (SELECT 1 FROM ledger_posting p JOIN ledger_account a ON a.id = p.account_id
+              WHERE p.transaction_id = t.id AND a.account_class IN ('income', 'expense')
+                AND a.system_role IS DISTINCT FROM 'uncategorized_expense' AND a.system_role IS DISTINCT FROM 'uncategorized_income')))
+  AND ($8::date IS NULL OR (t.date, t.id) < ($8::date, $9::uuid))
 ORDER BY t.date DESC, t.id DESC
-LIMIT $9
+LIMIT $10
 `
 
 type ListTransactionsParams struct {
-	UserID    int64
-	AccountID uuid.NullUUID
-	PayeeID   uuid.NullUUID
-	Tag       *string
-	FromDate  *time.Time
-	ToDate    *time.Time
-	AfterDate *time.Time
-	AfterID   uuid.NullUUID
-	RowLimit  int32
+	UserID        int64
+	AccountID     uuid.NullUUID
+	PayeeID       uuid.NullUUID
+	Tag           *string
+	FromDate      *time.Time
+	ToDate        *time.Time
+	Uncategorized bool
+	AfterDate     *time.Time
+	AfterID       uuid.NullUUID
+	RowLimit      int32
 }
 
 func (q *Queries) ListTransactions(ctx context.Context, arg ListTransactionsParams) ([]LedgerTransaction, error) {
@@ -423,6 +431,7 @@ func (q *Queries) ListTransactions(ctx context.Context, arg ListTransactionsPara
 		arg.Tag,
 		arg.FromDate,
 		arg.ToDate,
+		arg.Uncategorized,
 		arg.AfterDate,
 		arg.AfterID,
 		arg.RowLimit,

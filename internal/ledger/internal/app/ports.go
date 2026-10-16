@@ -199,8 +199,10 @@ type TransactionQuery struct {
 	PayeeID   uuid.UUID
 	Tag       string
 	From, To  *time.Time
-	After     *TransactionCursor
-	Limit     int
+	// Uncategorized keeps only transactions in category state uncategorized.
+	Uncategorized bool
+	After         *TransactionCursor
+	Limit         int
 }
 
 // Repository returns ErrNotFound for missing rows. Publish is valid only inside InTx.
@@ -238,6 +240,12 @@ type Repository interface {
 	// ReplaceCategoryPostings stores next, which differs from prev only in its category
 	// postings, payee, tags and version; other postings keep their rows.
 	ReplaceCategoryPostings(ctx context.Context, prev, next domain.Transaction, reason string) error
+	TransactionsByIDs(ctx context.Context, userID int64, ids []uuid.UUID) ([]domain.Transaction, error)
+	// RawDescriptions returns the version 1 description of the given transactions that have later versions.
+	RawDescriptions(ctx context.Context, userID int64, ids []uuid.UUID) (map[uuid.UUID]string, error)
+	AllAccounts(ctx context.Context, userID int64) ([]domain.Account, error)
+	ExistingPayees(ctx context.Context, userID int64, ids []uuid.UUID) (map[uuid.UUID]struct{}, error)
+	LatestPayeeCategories(ctx context.Context, userID int64, payees []uuid.UUID) (map[PayeeClass]uuid.UUID, error)
 	VoidTransaction(ctx context.Context, t domain.Transaction) error
 	ListTransactions(ctx context.Context, q TransactionQuery) ([]domain.Transaction, error)
 	Versions(ctx context.Context, userID int64, id uuid.UUID) ([]Version, error)

@@ -1305,6 +1305,9 @@ type ListTransactionsParams struct {
 	Tag       *string             `form:"tag,omitempty" json:"tag,omitempty"`
 	From      *openapi_types.Date `form:"from,omitempty" json:"from,omitempty"`
 	To        *openapi_types.Date `form:"to,omitempty" json:"to,omitempty"`
+
+	// Uncategorized When true, only transactions whose category postings are all uncategorized (P5 amendment A17).
+	Uncategorized *bool `form:"uncategorized,omitempty" json:"uncategorized,omitempty"`
 }
 
 // ListAttachmentsParams defines parameters for ListAttachments.
@@ -2719,6 +2722,19 @@ func (siw *ServerInterfaceWrapper) ListTransactions(w http.ResponseWriter, r *ht
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "uncategorized" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "uncategorized", r.URL.Query(), &params.Uncategorized, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "uncategorized"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "uncategorized", Err: err})
 		}
 		return
 	}

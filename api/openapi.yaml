@@ -385,6 +385,11 @@ paths:
           schema:
             type: string
             format: date
+        - name: uncategorized
+          in: query
+          description: When true, only transactions whose category postings are all uncategorized (P5 amendment A17).
+          schema:
+            type: boolean
       responses:
         "200":
           description: OK.

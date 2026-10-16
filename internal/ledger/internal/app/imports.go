@@ -28,6 +28,16 @@ type ImportedPosting struct {
 type ImportedRecord struct {
 	RecordID uuid.UUID
 	Posting  ImportedPosting
+	Decision *ImportDecision // nil: no payee, tags or category
+}
+
+// ImportDecision is what Classification decided for a line before it is recorded (P5
+// amendment A19). Without parts, the other side is the uncategorized account.
+type ImportDecision struct {
+	PayeeID uuid.UUID
+	AddTags []string
+	Parts   []domain.CategoryPart
+	Cause   Cause
 }
 
 // LineError names the line of a batch that a ledger rule rejected.
@@ -65,10 +75,16 @@ func (s *Service) RecordImportedBatch(ctx context.Context, userID int64, recs []
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		recordIDs := make([]uuid.UUID, len(recs))
 		lineAccounts := make([]uuid.UUID, 0, 1)
+		var categories []uuid.UUID
 		for i, rec := range recs {
 			recordIDs[i] = rec.RecordID
 			if !slices.Contains(lineAccounts, rec.Posting.AccountID) {
 				lineAccounts = append(lineAccounts, rec.Posting.AccountID)
+			}
+			if rec.Decision != nil {
+				for _, p := range rec.Decision.Parts {
+					categories = append(categories, p.AccountID)
+				}
 			}
 		}
 		existing, err := r.TransactionsByExternalRecords(ctx, userID, recordIDs)
@@ -87,7 +103,7 @@ func (s *Service) RecordImportedBatch(ctx context.Context, userID int64, recs []
 		if err != nil {
 			return err
 		}
-		accounts, err := r.Accounts(ctx, userID, append(lineAccounts, expense.ID, income.ID))
+		accounts, err := r.Accounts(ctx, userID, slices.Concat(lineAccounts, categories, []uuid.UUID{expense.ID, income.ID}))
 		if err != nil {
 			return err
 		}
@@ -105,15 +121,7 @@ func (s *Service) RecordImportedBatch(ctx context.Context, userID int64, recs []
 			if err := leaf[rec.Posting.AccountID]; err != nil {
 				return &LineError{Index: i, Err: err}
 			}
-			other := income
-			if rec.Posting.Amount.IsNegative() {
-				other = expense
-			}
-			t, err := domain.NewTransaction(domain.Transaction{
-				ID: uuid.Must(uuid.NewV7()), UserID: userID, Date: rec.Posting.Date, Description: rec.Posting.Description,
-				BalancingCurrency: settings.BaseCurrency, Origin: domain.OriginImport, ExternalRecordID: rec.RecordID,
-				Postings: []domain.Posting{{AccountID: rec.Posting.AccountID, Amount: rec.Posting.Amount}, {AccountID: other.ID, Amount: rec.Posting.Amount.Neg()}},
-			}, accounts)
+			t, err := domain.NewTransaction(importedTransaction(userID, settings.BaseCurrency, rec, expense, income), accounts)
 			if err != nil {
 				return &LineError{Index: i, Err: err}
 			}
@@ -126,10 +134,11 @@ func (s *Service) RecordImportedBatch(ctx context.Context, userID int64, recs []
 			if err := r.InsertTransactionRows(ctx, t); err != nil {
 				return err
 			}
-			if err := r.Publish(ctx, outbox.Event{
-				Type: EventTransactionRecorded, UserID: userID, AggregateID: t.ID.String(),
-				Payload: newTransactionEvent(t, accounts),
-			}); err != nil {
+			event := newTransactionEvent(t, accounts)
+			if rec.Decision != nil && rec.Decision.Cause.Method != "" {
+				event.Cause = &rec.Decision.Cause
+			}
+			if err := r.Publish(ctx, outbox.Event{Type: EventTransactionRecorded, UserID: userID, AggregateID: t.ID.String(), Payload: event}); err != nil {
 				return err
 			}
 			ids[i] = t.ID
@@ -137,6 +146,30 @@ func (s *Service) RecordImportedBatch(ctx context.Context, userID int64, recs []
 		return nil
 	})
 	return ids, err
+}
+
+// importedTransaction books rec against the decided category parts, or against the
+// uncategorized account of its sign (P4 amendment A14).
+func importedTransaction(userID int64, base money.Currency, rec ImportedRecord, expense, income domain.Account) domain.Transaction {
+	t := domain.Transaction{
+		ID: uuid.Must(uuid.NewV7()), UserID: userID, Date: rec.Posting.Date, Description: rec.Posting.Description,
+		BalancingCurrency: base, Origin: domain.OriginImport, ExternalRecordID: rec.RecordID,
+		Postings: []domain.Posting{{AccountID: rec.Posting.AccountID, Amount: rec.Posting.Amount}},
+	}
+	if d := rec.Decision; d != nil {
+		t.PayeeID, t.Tags = d.PayeeID, d.AddTags
+		for _, p := range d.Parts {
+			t.Postings = append(t.Postings, domain.Posting{AccountID: p.AccountID, Amount: p.Amount})
+		}
+	}
+	if len(t.Postings) == 1 {
+		other := income
+		if rec.Posting.Amount.IsNegative() {
+			other = expense
+		}
+		t.Postings = append(t.Postings, domain.Posting{AccountID: other.ID, Amount: rec.Posting.Amount.Neg()})
+	}
+	return t
 }
 
 // ImportCurrency returns the currency of an account that can hold statement lines: a leaf

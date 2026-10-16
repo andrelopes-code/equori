@@ -90,6 +90,13 @@ WHERE t.user_id = @user_id
       WHERE tt.transaction_id = t.id AND g.name = sqlc.narg(tag)::text))
   AND (sqlc.narg(from_date)::date IS NULL OR t.date >= sqlc.narg(from_date)::date)
   AND (sqlc.narg(to_date)::date IS NULL OR t.date <= sqlc.narg(to_date)::date)
+  -- P5 amendment A17: every category posting is on an uncategorized system account.
+  AND (NOT @uncategorized::boolean OR (
+      EXISTS (SELECT 1 FROM ledger_posting p JOIN ledger_account a ON a.id = p.account_id
+              WHERE p.transaction_id = t.id AND a.system_role IN ('uncategorized_expense', 'uncategorized_income'))
+      AND NOT EXISTS (SELECT 1 FROM ledger_posting p JOIN ledger_account a ON a.id = p.account_id
+              WHERE p.transaction_id = t.id AND a.account_class IN ('income', 'expense')
+                AND a.system_role IS DISTINCT FROM 'uncategorized_expense' AND a.system_role IS DISTINCT FROM 'uncategorized_income')))
   AND (sqlc.narg(after_date)::date IS NULL OR (t.date, t.id) < (sqlc.narg(after_date)::date, sqlc.narg(after_id)::uuid))
 ORDER BY t.date DESC, t.id DESC
 LIMIT @row_limit;
