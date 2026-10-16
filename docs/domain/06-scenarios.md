@@ -345,7 +345,39 @@ In the cash view, a payment is distributed over the categories of the statement 
 
 When a 230 KB PDF receipt is attached to the S05 supermarket transaction and the same file to another transaction, the file content is stored once and both transactions list it. A 12 MiB file is rejected (limit 10 MiB).
 
-## 6.11 Coverage
+## 6.11 Import
+
+Import scenarios of phase P4 (chapter 3, F4). Nubank checking and Itaú Visa are the accounts of 6.1.
+
+### S32 OFX import with a match (F4)
+
+The Nubank checking OFX file of October has three lines and `LEDGERBAL` 2,834.10 on 2026-10-31. The owner had entered −45.90 on 2026-10-04.
+
+| Line | Outcome |
+|---|---|
+| −45.90 on 2026-10-05 | Matches the manual entry (within 3 days, same amount); its posting becomes `cleared` |
+| −120.00 on 2026-10-12 | Nubank checking −120.00; Uncategorized expense +120.00 |
+| +3,000.00 on 2026-10-15 | Nubank checking +3,000.00; Uncategorized income −3,000.00 |
+
+The file balance is asserted and the account is reconciled at 2026-10-31. Batch: received 3, matched 1, created 2.
+
+### S33 Repeated file (SC2)
+
+Importing the S32 file again: received 3, ignored 3, nothing created or matched.
+
+### S34 Identical lines without an id
+
+A CSV line "07/10/2026; −8,50; Padaria" appears twice in a file: two transactions. Importing the file again creates none; a later file with the line three times creates one.
+
+### S35 Ambiguous match
+
+Manual entries of −50.00 on 2026-10-09 and 2026-10-10 and an OFX line of −50.00 on 2026-10-10: the record waits for review with both candidates. Resolving it as a match to the 2026-10-10 entry links that transaction.
+
+### S36 Card statement file
+
+An OFX credit card statement for Itaú Visa: −230.00 on 2026-10-14 is a `charge` and +230.00 on 2026-10-20 a `credit`, both billed on statement 2026-11.
+
+## 6.12 Coverage
 
 | Transaction kind | Scenarios |
 |---|---|
@@ -377,3 +409,5 @@ When a 230 KB PDF receipt is attached to the S05 supermarket transaction and the
 | M27 | S29 |
 | M28 | S02 |
 | M29 | S31 |
+
+The import flow (F4) is covered by S32–S36.

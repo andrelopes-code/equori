@@ -439,7 +439,11 @@ classDiagram
 
 | Rule | Statement |
 |---|---|
-| Deduplication key | Source external id when the source provides a stable one (Pluggy transaction id, OFX FITID); otherwise a hash of account, date, amount, normalized description and the ordinal of identical records in the same batch. |
+| Deduplication key | SHA-256 of the account, the source and the source external id when the source provides a stable one (Pluggy transaction id, OFX FITID, a CSV id column); otherwise of the account, date, amount, normalized description (lowercase, trimmed, inner spaces collapsed) and the ordinal of identical records in the same file. Line keys leave the source out, so a line seen in a CSV export and in an OFX file without FITID is one record. |
+| Ledger link | A created or matched transaction stores the external record id, unique per user (P4 amendment A11). |
+| Matching | Ingestion reads the account's postings whose transaction is not voided and carries no external record, and keeps those with the record's amount within ±3 days; one candidate is matched, several go to review. |
+| CSV profile | Per account: delimiter, header rows, date column and layout, an amount column or debit and credit columns, decimal separator, description and id columns, amount sign (P4 amendment A13). |
+| Encoding | Bytes that are not valid UTF-8 are read as Windows-1252 (P4 amendment A15). |
 | States | `received`, `ignored` (duplicate), `matched`, `created`, `needs_review`, `discarded` (owner decision). |
 | Credentials | Stored encrypted; the encryption ADR precedes the first integration (ADR 003, "Not covered"). |
 

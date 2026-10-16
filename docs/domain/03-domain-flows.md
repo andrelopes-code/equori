@@ -169,11 +169,11 @@ flowchart LR
 | Event | Data | Rules |
 |---|---|---|
 | `ImportBatchStarted` / `ImportBatchCompleted` | batch, source, account, period, counts | One batch per file or sync run. Counts: received, ignored, matched, created. |
-| `ExternalRecordReceived` | batch, raw payload, external id, deduplication key | The raw payload is stored unchanged. |
-| `ExternalRecordIgnored` | record, existing record | Same deduplication key already received (SC2). |
-| `ExternalRecordMatched` | record, transaction | An existing transaction on the same account, with the same amount, within a date window (default ±3 days) and not yet matched. The posting status becomes `cleared`. Ambiguous candidates go to review. |
-| `TransactionRecorded` (from import) | as in F1, source = import | The account posting comes from the record; the other side starts as the "Uncategorized" category and goes through F5. Pending card authorizations are recorded as `pending`. |
-| `BalanceAsserted` | account, date, amount, source | Created when the source reports a balance (OFX ledger balance, aggregator balance). Starts F6. |
+| `ExternalRecordReceived` | batch, raw payload, external id, deduplication key | The raw payload is stored unchanged, once per deduplication key (I10). A record an interrupted import left `received` is processed again by the next import that carries it (P4 amendment A12). |
+| `ExternalRecordIgnored` | record, existing record | Same deduplication key already received and processed (SC2); counted on the batch, not stored. |
+| `ExternalRecordMatched` | record, transaction | An existing transaction on the same account, with the same amount, within a date window (default ±3 days) and not yet matched. The posting status becomes `cleared`. Ingestion chooses among the account's unlinked postings (5.7, Matcher); a candidate taken by an earlier line of the same file is excluded (I07). Ambiguous candidates go to review, where the owner matches, creates or discards (`ResolveMatch`). |
+| `TransactionRecorded` (from import) | as in F1, source = import | The account posting comes from the record; the other side is the system account `uncategorized_expense` for a negative amount and `uncategorized_income` for a positive one, and goes through F5. On a card account a negative amount is a `charge` and a positive one a `credit`, billed by T04 (P4 amendment A14). The transaction carries the external record id, so a repeated call returns it instead of a duplicate (A11). Pending card authorizations are recorded as `pending`. |
+| `BalanceAsserted` | account, date, amount, source | Created when the source reports a balance (OFX ledger balance, aggregator balance). Starts F6. A balance the ledger rejects (a future date, a date before the last reconciliation) is reported on the batch as skipped with the reason; the import still completes. |
 
 ## 3.7 F5 Categorization
 

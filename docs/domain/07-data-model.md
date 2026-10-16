@@ -122,7 +122,7 @@ erDiagram
 | `ledger_credit_limit` | `account_id`, `effective_from`, `amount` | `UNIQUE (account_id, effective_from)` |
 | `ledger_payee` | `id`, `user_id`, `name` | `UNIQUE (user_id, lower(name))` |
 | `ledger_tag`, `ledger_transaction_tag` | `id`, `user_id`, `name`; `transaction_id`, `tag_id` | `UNIQUE (user_id, lower(name))` |
-| `ledger_transaction` | `void_reason`, `created_at`, `updated_at` | `version >= 1` |
+| `ledger_transaction` | `void_reason`, `external_record_id`, `created_at`, `updated_at` | `version >= 1`; `UNIQUE (user_id, external_record_id)` (P4 amendment A11) |
 | `ledger_transaction_version` | `transaction_id`, `version`, `snapshot jsonb` (transaction and postings as they were), `reason`, `replaced_at` | `PRIMARY KEY (transaction_id, version)`; insert-only |
 | `ledger_posting` | `memo` | `booked_on` equals the transaction date and `voided` equals the transaction's void state, both copied by triggers so balance sums read one partial index (N06); `card_role` and `statement_id` both set or both null; installment columns all set or all null; `installment_number BETWEEN 1 AND installment_count` |
 | `ledger_link` | `id`, `user_id`, `from_transaction_id`, `to_transaction_id`, `link_type` | `UNIQUE (from_transaction_id, to_transaction_id, link_type)`; no self-link |
@@ -171,8 +171,9 @@ erDiagram
 | `classification_categorization` | `transaction_id`, `user_id`, `method`, `rule_id`, `decided_at` | `PRIMARY KEY (transaction_id)` (SC5) |
 | `ingestion_connection` | `id`, `user_id`, `provider`, `external_item_id`, `credential_ciphertext bytea`, `status`, `last_sync_at` | Encryption per future ADR |
 | `ingestion_account_mapping` | `connection_id`, `external_account_id`, `account_id` | `UNIQUE (connection_id, external_account_id)` |
-| `ingestion_batch` | `id`, `user_id`, `source`, `connection_id`, `account_id`, `period daterange`, `received`, `ignored`, `matched`, `created`, `started_at`, `completed_at` | |
-| `ingestion_external_record` | `id`, `user_id`, `batch_id`, `account_id`, `external_id`, `dedup_key`, `raw jsonb`, `booked_on`, `settled_on`, `amount`, `description`, `installment_number`, `installment_count`, `statement_hint`, `source_category`, `balance_after`, `state`, `transaction_id` | `UNIQUE (user_id, dedup_key)` (I10); `UNIQUE (transaction_id) WHERE transaction_id IS NOT NULL` (I07) |
+| `ingestion_csv_profile` | `account_id`, `user_id`, `delimiter`, `header_rows`, `date_column`, `date_layout`, `amount_column`, `debit_column`, `credit_column`, `decimal_separator`, `description_column`, `id_column`, `amount_sign` | One amount layout: `amount_column` or (`debit_column`, `credit_column`) |
+| `ingestion_batch` | `id`, `user_id`, `source`, `connection_id`, `account_id`, `file_name`, `currency`, `period_from`, `period_to`, `received`, `ignored`, `matched`, `created`, `needs_review`, `discarded`, `balance_date`, `balance_amount`, `balance_status`, `balance_reason`, `started_at`, `completed_at` | `connection_id` arrives with P6 |
+| `ingestion_external_record` | `id`, `user_id`, `batch_id`, `account_id`, `external_id`, `dedup_key`, `raw jsonb`, `booked_on`, `amount`, `description`, `state`, `transaction_id`, `candidates uuid[]` | `UNIQUE (user_id, dedup_key)` (I10); `UNIQUE (user_id, transaction_id) WHERE transaction_id IS NOT NULL` (I07); `transaction_id` set exactly in states `matched` and `created`. Duplicates are counted on their batch, never stored. Aggregator fields (`settled_on`, installments, statement hint, source category, balance after) arrive with P6. |
 
 ## 7.4 Market data, Portfolio, Reporting and infrastructure
 

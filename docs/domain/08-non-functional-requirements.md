@@ -70,4 +70,4 @@ Every requirement has a measurable criterion and a verification method. Performa
 |---|---|
 | N24 | Container images for linux/amd64 and linux/arm64; PostgreSQL 18. |
 | N25 | Browsers: the last two major versions of Chrome, Firefox, Safari and Edge. |
-| N26 | Limits: 500 postings per transaction; 420 installments per plan; 10 MiB per attachment; 1 MiB per request body except attachment upload. |
+| N26 | Limits: 500 postings per transaction; 420 installments per plan; 10 MiB per attachment and per imported file; 1 MiB per request body except attachment upload and file import (11 MiB). |
