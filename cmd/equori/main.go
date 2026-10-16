@@ -20,6 +20,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/postgres"
 	"github.com/andrelopes-code/equori/internal/server"
+	"github.com/andrelopes-code/equori/web"
 )
 
 // version is set at build time with -ldflags "-X main.version=...".
@@ -69,7 +70,7 @@ func serve() error {
 	defer pool.Close()
 
 	clk := clock.New(cfg.TimeZone, time.Now)
-	app, err := server.New(pool, server.Config{SecureCookies: !cfg.InsecureCookies, Clock: &clk}, log)
+	app, err := server.New(pool, server.Config{SecureCookies: !cfg.InsecureCookies, Clock: &clk, Web: web.Dist()}, log)
 	if err != nil {
 		return err
 	}

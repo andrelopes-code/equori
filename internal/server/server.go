@@ -3,6 +3,7 @@
 package server
 
 import (
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"time"
@@ -20,6 +21,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
+	"github.com/andrelopes-code/equori/internal/platform/spa"
 	"github.com/andrelopes-code/equori/internal/reporting"
 )
 
@@ -27,6 +29,8 @@ type Config struct {
 	SecureCookies bool
 	// Clock defaults to the current time in UTC when nil.
 	Clock *clock.Clock
+	// Web holds the built single-page application; nil answers 404 outside /api/.
+	Web fs.FS
 }
 
 type App struct {
@@ -64,6 +68,8 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	classificationModule.RegisterRoutes(mux)
 	marketdataModule.RegisterRoutes(mux, log)
 	mux.Handle("/api/", httpserver.NotFound())
+	// Method-less: "GET /" overlaps "/api/" without either being more specific, and ServeMux panics.
+	mux.Handle("/", spa.Handler(cfg.Web))
 
 	return &App{
 		Handler: httpserver.Middleware(identityModule.RequireSession(validator.Middleware(mux)), log,

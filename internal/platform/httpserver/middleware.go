@@ -39,7 +39,7 @@ func Middleware(h http.Handler, log *slog.Logger, limits ...BodyLimit) http.Hand
 }
 
 // securityHeaders are set before the handler runs, so every response carries them,
-// including problems written by the middleware itself (ADR 007, C9).
+// including problems written by the middleware itself (ADR 007, C9; ADR 008).
 func securityHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h := w.Header()
@@ -48,6 +48,8 @@ func securityHeaders(next http.Handler) http.Handler {
 		if strings.HasPrefix(r.URL.Path, "/api/") {
 			h.Set("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
 			h.Set("Cache-Control", "no-store")
+		} else {
+			h.Set("Content-Security-Policy", "default-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
 		}
 		next.ServeHTTP(w, r)
 	})

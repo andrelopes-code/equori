@@ -39,7 +39,7 @@ flowchart LR
 | P7 Planning | Schedules, recurrence engine with business days, occurrences, subscriptions, budgets, goals, projections, committed amounts | S27–S29 | Scenarios pass |
 | P8 Currencies and investments | Prices and feeds; multi-currency postings with weights; foreign purchases; exchanges; trades; investment income; Portfolio derived tables | S16, S17, S21, S22 | Scenarios pass; D1 data complete |
 | P9 Reporting and export | Accrual and cash views; net worth; statement analytics; export and import round trip | S30 | SC6; N13 |
-| Web interface | Separate track once the P2 API contract is stable: SPA embedded in the binary (ADR 002) | — | SC4, N21, N22 |
+| Web interface | Separate track once the P2 API contract is stable: SPA embedded in the binary (ADR 008) | — | SC4, N21, N22 |
 
 ## 9.3 Next step
 

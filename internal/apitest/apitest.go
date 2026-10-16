@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/json/v2"
 	"io"
+	"io/fs"
 	"log/slog"
 	"mime/multipart"
 	"net/http"
@@ -45,6 +46,11 @@ func Today(date string) Option {
 	}
 	clk := clock.New(time.UTC, func() time.Time { return d.Add(12 * time.Hour) })
 	return func(c *server.Config) { c.Clock = &clk }
+}
+
+// Web serves fsys as the single-page application outside /api/.
+func Web(fsys fs.FS) Option {
+	return func(c *server.Config) { c.Web = fsys }
 }
 
 // New starts the application and logs in owner@example.com as Client.

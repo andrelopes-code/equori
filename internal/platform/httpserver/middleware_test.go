@@ -133,10 +133,16 @@ func TestNotFound(t *testing.T) {
 	}
 }
 
-// ADR 007, C9.
+// ADR 007, C9; ADR 008 for non-API responses.
 func TestMiddlewareSetsSecurityHeaders(t *testing.T) {
 	common := map[string]string{"X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer"}
-	api := map[string]string{"Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'", "Cache-Control": "no-store"}
+	byKind := map[bool]map[string]string{
+		true: {"Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'", "Cache-Control": "no-store"},
+		false: {
+			"Content-Security-Policy": "default-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
+			"Cache-Control":           "",
+		},
+	}
 	ok := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte("ok")) })
 	failing := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		problem.Write(w, problem.New(http.StatusConflict, "conflict", "conflict"))
@@ -162,8 +168,8 @@ func TestMiddlewareSetsSecurityHeaders(t *testing.T) {
 					t.Errorf("%s = %q, want %q", k, got, v)
 				}
 			}
-			for k, v := range api {
-				if got, want := rec.Header().Get(k), map[bool]string{true: v}[tc.api]; got != want {
+			for k, want := range byKind[tc.api] {
+				if got := rec.Header().Get(k); got != want {
 					t.Errorf("%s = %q, want %q", k, got, want)
 				}
 			}
