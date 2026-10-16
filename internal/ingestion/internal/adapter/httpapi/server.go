@@ -49,6 +49,11 @@ func toProblem(err error) (problem.Details, bool) {
 		d.Errors = []problem.FieldError{{Field: pe.field, Message: pe.message}}
 		return d, true
 	}
+	if fe, ok := errors.AsType[*domain.FieldError](err); ok {
+		d := problem.New(http.StatusUnprocessableEntity, "validation_failed", fe.Error())
+		d.Errors = []problem.FieldError{{Field: fe.Field, Message: fe.Message}}
+		return d, true
+	}
 	if errors.Is(err, app.ErrNotFound) {
 		return problem.New(http.StatusNotFound, "not_found", "resource not found"), true
 	}

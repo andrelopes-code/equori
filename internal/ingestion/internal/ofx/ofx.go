@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -146,7 +145,7 @@ func (p *parser) record(leaves map[string]string) (domain.NormalizedRecord, erro
 	if err != nil {
 		return domain.NormalizedRecord{}, fmt.Errorf("DTPOSTED: %w", err)
 	}
-	amount, err := minorUnits(leaves["TRNAMT"], p.scale)
+	amount, err := amount(leaves["TRNAMT"], p.scale)
 	if err != nil {
 		return domain.NormalizedRecord{}, fmt.Errorf("TRNAMT: %w", err)
 	}
@@ -162,7 +161,7 @@ func (p *parser) ledgerBalance(leaves map[string]string) (*domain.Balance, error
 	if err != nil {
 		return nil, fmt.Errorf("DTASOF: %w", err)
 	}
-	amount, err := minorUnits(leaves["BALAMT"], p.scale)
+	amount, err := amount(leaves["BALAMT"], p.scale)
 	if err != nil {
 		return nil, fmt.Errorf("BALAMT: %w", err)
 	}
@@ -182,27 +181,7 @@ func date(s string) (time.Time, error) {
 	return d, nil
 }
 
-// minorUnits converts an OFX amount ("-45.90", "-45,90", "+3000") to minor units.
-func minorUnits(s string, scale int) (int64, error) {
-	if s == "" {
-		return 0, errors.New("missing")
-	}
-	sign := int64(1)
-	switch s[0] {
-	case '-':
-		sign, s = -1, s[1:]
-	case '+':
-		s = s[1:]
-	}
-	whole, frac, _ := strings.Cut(strings.Replace(s, ",", ".", 1), ".")
-	frac = strings.TrimRight(frac, "0")
-	if whole == "" || len(frac) > scale || strings.ContainsAny(whole+frac, ".,") {
-		return 0, fmt.Errorf("%q is not an amount with at most %d decimals", s, scale)
-	}
-	frac += strings.Repeat("0", scale-len(frac))
-	n, err := strconv.ParseInt(whole+frac, 10, 64)
-	if err != nil {
-		return 0, fmt.Errorf("%q is not an amount", s)
-	}
-	return sign * n, nil
+// amount converts an OFX amount ("-45.90", "-45,90", "+3000"); OFX has no thousands separator.
+func amount(s string, scale int) (int64, error) {
+	return domain.MinorUnits(strings.Replace(s, ",", ".", 1), '.', scale)
 }

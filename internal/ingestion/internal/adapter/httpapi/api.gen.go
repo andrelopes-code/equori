@@ -18,6 +18,87 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for CsvProfileAmountSign.
+const (
+	AsIs     CsvProfileAmountSign = "as_is"
+	Inverted CsvProfileAmountSign = "inverted"
+)
+
+// Valid indicates whether the value is a known member of the CsvProfileAmountSign enum.
+func (e CsvProfileAmountSign) Valid() bool {
+	switch e {
+	case AsIs:
+		return true
+	case Inverted:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CsvProfileDateLayout.
+const (
+	DDMMYYYY CsvProfileDateLayout = "DD/MM/YYYY"
+	MMDDYYYY CsvProfileDateLayout = "MM/DD/YYYY"
+	YYYYMMDD CsvProfileDateLayout = "YYYY-MM-DD"
+)
+
+// Valid indicates whether the value is a known member of the CsvProfileDateLayout enum.
+func (e CsvProfileDateLayout) Valid() bool {
+	switch e {
+	case DDMMYYYY:
+		return true
+	case MMDDYYYY:
+		return true
+	case YYYYMMDD:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CsvProfileDecimalSeparator.
+const (
+	Dot   CsvProfileDecimalSeparator = "."
+	Empty CsvProfileDecimalSeparator = ","
+)
+
+// Valid indicates whether the value is a known member of the CsvProfileDecimalSeparator enum.
+func (e CsvProfileDecimalSeparator) Valid() bool {
+	switch e {
+	case Dot:
+		return true
+	case Empty:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CsvProfileDelimiter.
+const (
+	Comma     CsvProfileDelimiter = "comma"
+	Pipe      CsvProfileDelimiter = "pipe"
+	Semicolon CsvProfileDelimiter = "semicolon"
+	Tab       CsvProfileDelimiter = "tab"
+)
+
+// Valid indicates whether the value is a known member of the CsvProfileDelimiter enum.
+func (e CsvProfileDelimiter) Valid() bool {
+	switch e {
+	case Comma:
+		return true
+	case Pipe:
+		return true
+	case Semicolon:
+		return true
+	case Tab:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ImportBalanceStatus.
 const (
 	None     ImportBalanceStatus = "none"
@@ -56,6 +137,35 @@ func (e ImportBatchSource) Valid() bool {
 		return false
 	}
 }
+
+// CsvProfile defines model for CsvProfile.
+type CsvProfile struct {
+	AmountColumn *string `json:"amount_column,omitempty"`
+
+	// AmountSign inverted flips the sign of every amount, for exports that list card charges as positive.
+	AmountSign        *CsvProfileAmountSign      `json:"amount_sign,omitempty"`
+	CreditColumn      *string                    `json:"credit_column,omitempty"`
+	DateColumn        string                     `json:"date_column"`
+	DateLayout        CsvProfileDateLayout       `json:"date_layout"`
+	DebitColumn       *string                    `json:"debit_column,omitempty"`
+	DecimalSeparator  CsvProfileDecimalSeparator `json:"decimal_separator"`
+	Delimiter         *CsvProfileDelimiter       `json:"delimiter,omitempty"`
+	DescriptionColumn string                     `json:"description_column"`
+	HeaderRows        *int                       `json:"header_rows,omitempty"`
+	IdColumn          *string                    `json:"id_column,omitempty"`
+}
+
+// CsvProfileAmountSign inverted flips the sign of every amount, for exports that list card charges as positive.
+type CsvProfileAmountSign string
+
+// CsvProfileDateLayout defines model for CsvProfile.DateLayout.
+type CsvProfileDateLayout string
+
+// CsvProfileDecimalSeparator defines model for CsvProfile.DecimalSeparator.
+type CsvProfileDecimalSeparator string
+
+// CsvProfileDelimiter defines model for CsvProfile.Delimiter.
+type CsvProfileDelimiter string
 
 // FieldError defines model for FieldError.
 type FieldError struct {
@@ -141,6 +251,9 @@ type Problem struct {
 // Cursor defines model for Cursor.
 type Cursor = string
 
+// ID defines model for ID.
+type ID = openapi_types.UUID
+
 // Limit defines model for Limit.
 type Limit = int
 
@@ -150,8 +263,17 @@ type ListImportBatchesParams struct {
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
+// SaveCsvProfileJSONRequestBody defines body for SaveCsvProfile for application/json ContentType.
+type SaveCsvProfileJSONRequestBody = CsvProfile
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// GetCsvProfile How the CSV files of the account are read.
+	// (GET /accounts/{id}/csv-profile)
+	GetCsvProfile(w http.ResponseWriter, r *http.Request, id ID)
+	// SaveCsvProfile Set how the CSV files of the account are read (P4 amendment A13).
+	// (PUT /accounts/{id}/csv-profile)
+	SaveCsvProfile(w http.ResponseWriter, r *http.Request, id ID)
 	// ListImportBatches Import batches, newest first.
 	// (GET /import-batches)
 	ListImportBatches(w http.ResponseWriter, r *http.Request, params ListImportBatchesParams)
@@ -165,6 +287,58 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// GetCsvProfile operation middleware
+func (siw *ServerInterfaceWrapper) GetCsvProfile(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCsvProfile(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SaveCsvProfile operation middleware
+func (siw *ServerInterfaceWrapper) SaveCsvProfile(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SaveCsvProfile(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // ListImportBatches operation middleware
 func (siw *ServerInterfaceWrapper) ListImportBatches(w http.ResponseWriter, r *http.Request) {
@@ -333,11 +507,132 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	}
 
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/import-batches", wrapper.ListImportBatches)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/csv-profile", wrapper.GetCsvProfile)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/accounts/{id}/csv-profile", wrapper.SaveCsvProfile)
 
 	return m
 }
 
 type ProblemApplicationProblemPlusJSONResponse Problem
+
+type GetCsvProfileRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type GetCsvProfileResponseObject interface {
+	VisitGetCsvProfileResponse(w http.ResponseWriter) error
+}
+
+type GetCsvProfile200JSONResponse CsvProfile
+
+func (response GetCsvProfile200JSONResponse) VisitGetCsvProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCsvProfile401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetCsvProfile401ApplicationProblemPlusJSONResponse) VisitGetCsvProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCsvProfile404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetCsvProfile404ApplicationProblemPlusJSONResponse) VisitGetCsvProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveCsvProfileRequestObject struct {
+	Id   ID `json:"id"`
+	Body *SaveCsvProfileJSONRequestBody
+}
+
+type SaveCsvProfileResponseObject interface {
+	VisitSaveCsvProfileResponse(w http.ResponseWriter) error
+}
+
+type SaveCsvProfile200JSONResponse CsvProfile
+
+func (response SaveCsvProfile200JSONResponse) VisitSaveCsvProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveCsvProfile401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SaveCsvProfile401ApplicationProblemPlusJSONResponse) VisitSaveCsvProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveCsvProfile404ApplicationProblemPlusJSONResponse Problem
+
+func (response SaveCsvProfile404ApplicationProblemPlusJSONResponse) VisitSaveCsvProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveCsvProfile422ApplicationProblemPlusJSONResponse Problem
+
+func (response SaveCsvProfile422ApplicationProblemPlusJSONResponse) VisitSaveCsvProfileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
 
 type ListImportBatchesRequestObject struct {
 	Params ListImportBatchesParams
@@ -379,6 +674,12 @@ func (response ListImportBatches401ApplicationProblemPlusJSONResponse) VisitList
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// GetCsvProfile How the CSV files of the account are read.
+	// (GET /accounts/{id}/csv-profile)
+	GetCsvProfile(ctx context.Context, request GetCsvProfileRequestObject) (GetCsvProfileResponseObject, error)
+	// SaveCsvProfile Set how the CSV files of the account are read (P4 amendment A13).
+	// (PUT /accounts/{id}/csv-profile)
+	SaveCsvProfile(ctx context.Context, request SaveCsvProfileRequestObject) (SaveCsvProfileResponseObject, error)
 	// ListImportBatches Import batches, newest first.
 	// (GET /import-batches)
 	ListImportBatches(ctx context.Context, request ListImportBatchesRequestObject) (ListImportBatchesResponseObject, error)
@@ -421,6 +722,65 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// GetCsvProfile operation middleware
+func (sh *strictHandler) GetCsvProfile(w http.ResponseWriter, r *http.Request, id ID) {
+	var request GetCsvProfileRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCsvProfile(ctx, request.(GetCsvProfileRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCsvProfile")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCsvProfileResponseObject); ok {
+		if err := validResponse.VisitGetCsvProfileResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SaveCsvProfile operation middleware
+func (sh *strictHandler) SaveCsvProfile(w http.ResponseWriter, r *http.Request, id ID) {
+	var request SaveCsvProfileRequestObject
+
+	request.Id = id
+
+	var body SaveCsvProfileJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SaveCsvProfile(ctx, request.(SaveCsvProfileRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SaveCsvProfile")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SaveCsvProfileResponseObject); ok {
+		if err := validResponse.VisitSaveCsvProfileResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // ListImportBatches operation middleware

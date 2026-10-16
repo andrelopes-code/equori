@@ -32,3 +32,20 @@ type IngestionBatch struct {
 	StartedAt     time.Time
 	CompletedAt   *time.Time
 }
+
+type IngestionCsvProfile struct {
+	UserID            int64
+	AccountID         uuid.UUID
+	Delimiter         string
+	HeaderRows        int32
+	DateColumn        string
+	DateLayout        string
+	AmountColumn      *string
+	DebitColumn       *string
+	CreditColumn      *string
+	DecimalSeparator  string
+	DescriptionColumn string
+	IDColumn          *string
+	AmountSign        string
+	UpdatedAt         time.Time
+}

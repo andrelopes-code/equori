@@ -1290,6 +1290,52 @@ paths:
                 $ref: "#/components/schemas/ImportBatchList"
         "401":
           $ref: "#/components/responses/Problem"
+  /accounts/{id}/csv-profile:
+    get:
+      tags: [ingestion]
+      operationId: getCsvProfile
+      summary: How the CSV files of the account are read.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CsvProfile"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    put:
+      tags: [ingestion]
+      operationId: saveCsvProfile
+      summary: Set how the CSV files of the account are read (P4 amendment A13).
+      description: |
+        Columns are header names, or 1-based positions when header_rows is 0. Set amount_column, or
+        debit_column and credit_column. Defaults: delimiter comma, header_rows 1, amount_sign as_is.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CsvProfile"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CsvProfile"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
 security:
   - sessionCookie: []
 components:
@@ -1335,6 +1381,52 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
   schemas:
+    CsvProfile:
+      type: object
+      additionalProperties: false
+      required: [date_column, date_layout, decimal_separator, description_column]
+      properties:
+        delimiter:
+          type: string
+          enum: [comma, semicolon, tab, pipe]
+        header_rows:
+          type: integer
+          minimum: 0
+          maximum: 10
+        date_column:
+          type: string
+          minLength: 1
+          maxLength: 100
+        date_layout:
+          type: string
+          enum: [DD/MM/YYYY, YYYY-MM-DD, MM/DD/YYYY]
+        amount_column:
+          type: string
+          minLength: 1
+          maxLength: 100
+        debit_column:
+          type: string
+          minLength: 1
+          maxLength: 100
+        credit_column:
+          type: string
+          minLength: 1
+          maxLength: 100
+        decimal_separator:
+          type: string
+          enum: [",", "."]
+        description_column:
+          type: string
+          minLength: 1
+          maxLength: 100
+        id_column:
+          type: string
+          minLength: 1
+          maxLength: 100
+        amount_sign:
+          type: string
+          enum: [as_is, inverted]
+          description: inverted flips the sign of every amount, for exports that list card charges as positive.
     ImportBatch:
       type: object
       required: [id, account_id, source, file_name, counts, balance, started_at]

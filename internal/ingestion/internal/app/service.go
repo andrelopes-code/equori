@@ -22,6 +22,9 @@ type BatchKey struct {
 // Repository returns ErrNotFound for missing rows.
 type Repository interface {
 	ListBatches(ctx context.Context, userID int64, p page.Request[BatchKey]) ([]domain.Batch, *BatchKey, error)
+	Profile(ctx context.Context, userID int64, accountID uuid.UUID) (domain.Profile, error)
+	// SaveProfile returns ErrNotFound when the account does not belong to the user.
+	SaveProfile(ctx context.Context, p domain.Profile) (domain.Profile, error)
 }
 
 type Service struct {
