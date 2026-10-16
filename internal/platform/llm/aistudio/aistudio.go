@@ -44,12 +44,15 @@ func (p *Provider) Generate(ctx context.Context, model string, req llm.Request) 
 	httpReq.Header.Set("x-goog-api-key", p.apiKey)
 	resp, err := p.client.Do(httpReq)
 	if err != nil {
-		return llm.Response{}, fmt.Errorf("aistudio %s: %w", model, err)
+		if ctx.Err() != nil {
+			return llm.Response{}, fmt.Errorf("aistudio %s: %w", model, ctx.Err())
+		}
+		return llm.Response{}, fmt.Errorf("aistudio %s: %w: %w", model, llm.ErrTransient, err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		_, _ = io.Copy(io.Discard, resp.Body)
-		return llm.Response{}, fmt.Errorf("aistudio %s: status %d: %w", model, resp.StatusCode, llm.ErrInvalidRequest)
+		errBody, _ := io.ReadAll(io.LimitReader(resp.Body, 64<<10))
+		return llm.Response{}, statusError(model, resp.StatusCode, errBody)
 	}
 	var wire generateResponse
 	if err := json.NewDecoder(resp.Body).Decode(&wire); err != nil {
