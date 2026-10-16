@@ -12,10 +12,35 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/oapi-codegen/runtime"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
+
+// Defines values for CategorizationMethod.
+const (
+	CategorizationMethodHistory CategorizationMethod = "history"
+	CategorizationMethodManual  CategorizationMethod = "manual"
+	CategorizationMethodRule    CategorizationMethod = "rule"
+	CategorizationMethodSource  CategorizationMethod = "source"
+)
+
+// Valid indicates whether the value is a known member of the CategorizationMethod enum.
+func (e CategorizationMethod) Valid() bool {
+	switch e {
+	case CategorizationMethodHistory:
+		return true
+	case CategorizationMethodManual:
+		return true
+	case CategorizationMethodRule:
+		return true
+	case CategorizationMethodSource:
+		return true
+	default:
+		return false
+	}
+}
 
 // Defines values for PayeeAliasMatchType.
 const (
@@ -91,43 +116,43 @@ func (e RuleActionType) Valid() bool {
 
 // Defines values for RuleConditionField.
 const (
-	AbsoluteAmount RuleConditionField = "absolute_amount"
-	Account        RuleConditionField = "account"
-	AccountKind    RuleConditionField = "account_kind"
-	Amount         RuleConditionField = "amount"
-	DayOfMonth     RuleConditionField = "day_of_month"
-	Description    RuleConditionField = "description"
-	Installment    RuleConditionField = "installment"
-	Payee          RuleConditionField = "payee"
-	RawDescription RuleConditionField = "raw_description"
-	Source         RuleConditionField = "source"
-	Weekday        RuleConditionField = "weekday"
+	RuleConditionFieldAbsoluteAmount RuleConditionField = "absolute_amount"
+	RuleConditionFieldAccount        RuleConditionField = "account"
+	RuleConditionFieldAccountKind    RuleConditionField = "account_kind"
+	RuleConditionFieldAmount         RuleConditionField = "amount"
+	RuleConditionFieldDayOfMonth     RuleConditionField = "day_of_month"
+	RuleConditionFieldDescription    RuleConditionField = "description"
+	RuleConditionFieldInstallment    RuleConditionField = "installment"
+	RuleConditionFieldPayee          RuleConditionField = "payee"
+	RuleConditionFieldRawDescription RuleConditionField = "raw_description"
+	RuleConditionFieldSource         RuleConditionField = "source"
+	RuleConditionFieldWeekday        RuleConditionField = "weekday"
 )
 
 // Valid indicates whether the value is a known member of the RuleConditionField enum.
 func (e RuleConditionField) Valid() bool {
 	switch e {
-	case AbsoluteAmount:
+	case RuleConditionFieldAbsoluteAmount:
 		return true
-	case Account:
+	case RuleConditionFieldAccount:
 		return true
-	case AccountKind:
+	case RuleConditionFieldAccountKind:
 		return true
-	case Amount:
+	case RuleConditionFieldAmount:
 		return true
-	case DayOfMonth:
+	case RuleConditionFieldDayOfMonth:
 		return true
-	case Description:
+	case RuleConditionFieldDescription:
 		return true
-	case Installment:
+	case RuleConditionFieldInstallment:
 		return true
-	case Payee:
+	case RuleConditionFieldPayee:
 		return true
-	case RawDescription:
+	case RuleConditionFieldRawDescription:
 		return true
-	case Source:
+	case RuleConditionFieldSource:
 		return true
-	case Weekday:
+	case RuleConditionFieldWeekday:
 		return true
 	default:
 		return false
@@ -168,6 +193,31 @@ func (e RuleConditionOperator) Valid() bool {
 	default:
 		return false
 	}
+}
+
+// Categorization defines model for Categorization.
+type Categorization struct {
+	DecidedAt time.Time `json:"decided_at"`
+
+	// Method Null while the transaction is uncategorized.
+	Method        *CategorizationMethod `json:"method"`
+	RuleId        *openapi_types.UUID   `json:"rule_id,omitempty"`
+	TransactionId openapi_types.UUID    `json:"transaction_id"`
+}
+
+// CategorizationMethod Null while the transaction is uncategorized.
+type CategorizationMethod string
+
+// CategorizationStatistics defines model for CategorizationStatistics.
+type CategorizationStatistics struct {
+	From          openapi_types.Date `json:"from"`
+	History       int                `json:"history"`
+	Manual        int                `json:"manual"`
+	Rule          int                `json:"rule"`
+	Source        int                `json:"source"`
+	To            openapi_types.Date `json:"to"`
+	Total         int                `json:"total"`
+	Uncategorized int                `json:"uncategorized"`
 }
 
 // FieldError defines model for FieldError.
@@ -290,6 +340,12 @@ type RulePage struct {
 	NextCursor *string `json:"next_cursor,omitempty"`
 }
 
+// RuleRun defines model for RuleRun.
+type RuleRun struct {
+	Categorized int `json:"categorized"`
+	Examined    int `json:"examined"`
+}
+
 // RuleSplitPart Exactly one of percent (basis points), amount and remainder.
 type RuleSplitPart struct {
 	Amount     *Money             `json:"amount,omitempty"`
@@ -306,6 +362,12 @@ type ID = openapi_types.UUID
 
 // Limit defines model for Limit.
 type Limit = int
+
+// GetCategorizationStatisticsParams defines parameters for GetCategorizationStatistics.
+type GetCategorizationStatisticsParams struct {
+	From openapi_types.Date `form:"from" json:"from"`
+	To   openapi_types.Date `form:"to" json:"to"`
+}
 
 // ListPayeeAliasesParams defines parameters for ListPayeeAliases.
 type ListPayeeAliasesParams struct {
@@ -336,6 +398,9 @@ type ChangeRuleJSONRequestBody = RuleInput
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// GetCategorizationStatistics Transactions dated in [from, to] by categorization method (SC5).
+	// (GET /categorization-statistics)
+	GetCategorizationStatistics(w http.ResponseWriter, r *http.Request, params GetCategorizationStatisticsParams)
 	// ListPayeeAliases Payee aliases, oldest first.
 	// (GET /payee-aliases)
 	ListPayeeAliases(w http.ResponseWriter, r *http.Request, params ListPayeeAliasesParams)
@@ -360,6 +425,9 @@ type ServerInterface interface {
 	// ReorderRules Give every rule a new priority, in the order listed.
 	// (POST /rules/reorder)
 	ReorderRules(w http.ResponseWriter, r *http.Request)
+	// RunRules Run categorization (F5) on every uncategorized transaction.
+	// (POST /rules/run)
+	RunRules(w http.ResponseWriter, r *http.Request)
 	// DeleteRule Delete a rule; categorizations it decided keep the method rule.
 	// (DELETE /rules/{id})
 	DeleteRule(w http.ResponseWriter, r *http.Request, id ID)
@@ -369,6 +437,9 @@ type ServerInterface interface {
 	// ChangeRule Replace a rule; its priority does not change.
 	// (PUT /rules/{id})
 	ChangeRule(w http.ResponseWriter, r *http.Request, id ID)
+	// GetCategorization How the categories of a transaction were decided (P5 amendment A20).
+	// (GET /transactions/{id}/categorization)
+	GetCategorization(w http.ResponseWriter, r *http.Request, id ID)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -379,6 +450,52 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// GetCategorizationStatistics operation middleware
+func (siw *ServerInterfaceWrapper) GetCategorizationStatistics(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetCategorizationStatisticsParams
+
+	// ------------- Required query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCategorizationStatistics(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // ListPayeeAliases operation middleware
 func (siw *ServerInterfaceWrapper) ListPayeeAliases(w http.ResponseWriter, r *http.Request) {
@@ -592,6 +709,20 @@ func (siw *ServerInterfaceWrapper) ReorderRules(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
+// RunRules operation middleware
+func (siw *ServerInterfaceWrapper) RunRules(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RunRules(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // DeleteRule operation middleware
 func (siw *ServerInterfaceWrapper) DeleteRule(w http.ResponseWriter, r *http.Request) {
 
@@ -661,6 +792,32 @@ func (siw *ServerInterfaceWrapper) ChangeRule(w http.ResponseWriter, r *http.Req
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ChangeRule(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCategorization operation middleware
+func (siw *ServerInterfaceWrapper) GetCategorization(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCategorization(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -793,6 +950,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/rules", wrapper.ListRules)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/rules", wrapper.CreateRule)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/rules/reorder", wrapper.ReorderRules)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/rules/run", wrapper.RunRules)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions/{id}/categorization", wrapper.GetCategorization)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/categorization-statistics", wrapper.GetCategorizationStatistics)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/rules/{id}", wrapper.DeleteRule)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/rules/{id}", wrapper.GetRule)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/rules/{id}", wrapper.ChangeRule)
@@ -806,6 +966,58 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 }
 
 type ProblemApplicationProblemPlusJSONResponse Problem
+
+type GetCategorizationStatisticsRequestObject struct {
+	Params GetCategorizationStatisticsParams
+}
+
+type GetCategorizationStatisticsResponseObject interface {
+	VisitGetCategorizationStatisticsResponse(w http.ResponseWriter) error
+}
+
+type GetCategorizationStatistics200JSONResponse CategorizationStatistics
+
+func (response GetCategorizationStatistics200JSONResponse) VisitGetCategorizationStatisticsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCategorizationStatistics400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetCategorizationStatistics400ApplicationProblemPlusJSONResponse) VisitGetCategorizationStatisticsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCategorizationStatistics401ApplicationProblemPlusJSONResponse Problem
+
+func (response GetCategorizationStatistics401ApplicationProblemPlusJSONResponse) VisitGetCategorizationStatisticsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
 
 type ListPayeeAliasesRequestObject struct {
 	Params ListPayeeAliasesParams
@@ -1336,6 +1548,43 @@ func (response ReorderRules422ApplicationProblemPlusJSONResponse) VisitReorderRu
 	return err
 }
 
+type RunRulesRequestObject struct {
+}
+
+type RunRulesResponseObject interface {
+	VisitRunRulesResponse(w http.ResponseWriter) error
+}
+
+type RunRules200JSONResponse RuleRun
+
+func (response RunRules200JSONResponse) VisitRunRulesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RunRules401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RunRules401ApplicationProblemPlusJSONResponse) VisitRunRulesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type DeleteRuleRequestObject struct {
 	Id ID `json:"id"`
 }
@@ -1543,8 +1792,77 @@ func (response ChangeRule422ApplicationProblemPlusJSONResponse) VisitChangeRuleR
 	return err
 }
 
+type GetCategorizationRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type GetCategorizationResponseObject interface {
+	VisitGetCategorizationResponse(w http.ResponseWriter) error
+}
+
+type GetCategorization200JSONResponse Categorization
+
+func (response GetCategorization200JSONResponse) VisitGetCategorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCategorization400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetCategorization400ApplicationProblemPlusJSONResponse) VisitGetCategorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCategorization401ApplicationProblemPlusJSONResponse Problem
+
+func (response GetCategorization401ApplicationProblemPlusJSONResponse) VisitGetCategorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCategorization404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetCategorization404ApplicationProblemPlusJSONResponse) VisitGetCategorizationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// GetCategorizationStatistics Transactions dated in [from, to] by categorization method (SC5).
+	// (GET /categorization-statistics)
+	GetCategorizationStatistics(ctx context.Context, request GetCategorizationStatisticsRequestObject) (GetCategorizationStatisticsResponseObject, error)
 	// ListPayeeAliases Payee aliases, oldest first.
 	// (GET /payee-aliases)
 	ListPayeeAliases(ctx context.Context, request ListPayeeAliasesRequestObject) (ListPayeeAliasesResponseObject, error)
@@ -1569,6 +1887,9 @@ type StrictServerInterface interface {
 	// ReorderRules Give every rule a new priority, in the order listed.
 	// (POST /rules/reorder)
 	ReorderRules(ctx context.Context, request ReorderRulesRequestObject) (ReorderRulesResponseObject, error)
+	// RunRules Run categorization (F5) on every uncategorized transaction.
+	// (POST /rules/run)
+	RunRules(ctx context.Context, request RunRulesRequestObject) (RunRulesResponseObject, error)
 	// DeleteRule Delete a rule; categorizations it decided keep the method rule.
 	// (DELETE /rules/{id})
 	DeleteRule(ctx context.Context, request DeleteRuleRequestObject) (DeleteRuleResponseObject, error)
@@ -1578,6 +1899,9 @@ type StrictServerInterface interface {
 	// ChangeRule Replace a rule; its priority does not change.
 	// (PUT /rules/{id})
 	ChangeRule(ctx context.Context, request ChangeRuleRequestObject) (ChangeRuleResponseObject, error)
+	// GetCategorization How the categories of a transaction were decided (P5 amendment A20).
+	// (GET /transactions/{id}/categorization)
+	GetCategorization(ctx context.Context, request GetCategorizationRequestObject) (GetCategorizationResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -1617,6 +1941,32 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// GetCategorizationStatistics operation middleware
+func (sh *strictHandler) GetCategorizationStatistics(w http.ResponseWriter, r *http.Request, params GetCategorizationStatisticsParams) {
+	var request GetCategorizationStatisticsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCategorizationStatistics(ctx, request.(GetCategorizationStatisticsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCategorizationStatistics")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCategorizationStatisticsResponseObject); ok {
+		if err := validResponse.VisitGetCategorizationStatisticsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // ListPayeeAliases operation middleware
@@ -1849,6 +2199,30 @@ func (sh *strictHandler) ReorderRules(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// RunRules operation middleware
+func (sh *strictHandler) RunRules(w http.ResponseWriter, r *http.Request) {
+	var request RunRulesRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RunRules(ctx, request.(RunRulesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RunRules")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RunRulesResponseObject); ok {
+		if err := validResponse.VisitRunRulesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // DeleteRule operation middleware
 func (sh *strictHandler) DeleteRule(w http.ResponseWriter, r *http.Request, id ID) {
 	var request DeleteRuleRequestObject
@@ -1927,6 +2301,32 @@ func (sh *strictHandler) ChangeRule(w http.ResponseWriter, r *http.Request, id I
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ChangeRuleResponseObject); ok {
 		if err := validResponse.VisitChangeRuleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCategorization operation middleware
+func (sh *strictHandler) GetCategorization(w http.ResponseWriter, r *http.Request, id ID) {
+	var request GetCategorizationRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCategorization(ctx, request.(GetCategorizationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCategorization")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCategorizationResponseObject); ok {
+		if err := validResponse.VisitGetCategorizationResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

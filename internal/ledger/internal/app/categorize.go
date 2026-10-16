@@ -92,7 +92,9 @@ func (s *Service) categorize(ctx context.Context, r Repository, userID int64, c 
 		return nil, err
 	}
 	event := newTransactionEvent(next, accounts, prev)
-	event.Cause = &c.Cause
+	if c.Cause.Method != "" {
+		event.Cause = &c.Cause
+	}
 	return nil, r.Publish(ctx, outbox.Event{Type: EventTransactionCategorized, UserID: userID, AggregateID: next.ID.String(), Payload: event})
 }
 

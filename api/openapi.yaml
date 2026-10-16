@@ -1381,6 +1381,69 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /rules/run:
+    post:
+      tags: [classification]
+      operationId: runRules
+      summary: Run categorization (F5) on every uncategorized transaction.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleRun"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /transactions/{id}/categorization:
+    get:
+      tags: [classification]
+      operationId: getCategorization
+      summary: How the categories of a transaction were decided (P5 amendment A20).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Categorization"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /categorization-statistics:
+    get:
+      tags: [classification]
+      operationId: getCategorizationStatistics
+      summary: Transactions dated in [from, to] by categorization method (SC5).
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategorizationStatistics"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
   /rules/{id}:
     get:
       tags: [classification]
@@ -3036,6 +3099,54 @@ components:
             $ref: "#/components/schemas/PayeeAlias"
         next_cursor:
           type: string
+    RuleRun:
+      type: object
+      required: [examined, categorized]
+      properties:
+        examined:
+          type: integer
+        categorized:
+          type: integer
+    Categorization:
+      type: object
+      required: [transaction_id, method, decided_at]
+      properties:
+        transaction_id:
+          type: string
+          format: uuid
+        method:
+          type: string
+          nullable: true
+          enum: [rule, source, history, manual]
+          description: Null while the transaction is uncategorized.
+        rule_id:
+          type: string
+          format: uuid
+        decided_at:
+          type: string
+          format: date-time
+    CategorizationStatistics:
+      type: object
+      required: [from, to, total, rule, source, history, manual, uncategorized]
+      properties:
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        total:
+          type: integer
+        rule:
+          type: integer
+        source:
+          type: integer
+        history:
+          type: integer
+        manual:
+          type: integer
+        uncategorized:
+          type: integer
     CategorizeInput:
       type: object
       additionalProperties: false

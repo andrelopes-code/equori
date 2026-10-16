@@ -52,7 +52,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	marketdataModule := marketdata.New(pool)
 	ledgerModule := ledger.New(pool, dispatcher, marketdataModule, clk, log)
 	reportingModule := reporting.New(pool, dispatcher, log)
-	classificationModule := classification.New(pool, ledgerModule, log)
+	classificationModule := classification.New(pool, dispatcher, ledgerModule, log)
 	ingestionModule := ingestion.New(pool, ledgerModule, log)
 
 	mux := http.NewServeMux()

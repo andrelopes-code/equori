@@ -18,6 +18,20 @@ var (
 	ErrAliasExists = errors.New("an alias with this pattern and match type exists")
 )
 
+// Categorization methods (SC5).
+const (
+	MethodRule    = domain.MethodRule
+	MethodHistory = domain.MethodHistory
+	MethodSource  = "source"
+	MethodManual  = "manual"
+)
+
+// PendingKey orders uncategorized records for RunRules.
+type PendingKey struct {
+	Date time.Time
+	ID   uuid.UUID
+}
+
 // RuleKey and AliasKey are the cursors of the rule and alias lists.
 type RuleKey struct {
 	Priority int `json:"rp"`
@@ -50,6 +64,18 @@ type Repository interface {
 	InsertAlias(ctx context.Context, userID int64, a domain.Alias) (domain.Alias, error)
 	UpdateAlias(ctx context.Context, userID int64, a domain.Alias) (domain.Alias, error)
 	DeleteAlias(ctx context.Context, userID int64, id uuid.UUID) error
+
+	Categorization(ctx context.Context, userID int64, transactionID uuid.UUID) (Record, error)
+	// UpsertCategorization writes rec unless the stored row has the same or a higher
+	// version or is voided, and reports whether it wrote.
+	UpsertCategorization(ctx context.Context, rec Record) (bool, error)
+	MarkVoided(ctx context.Context, rec Record) error
+	// DeleteCategorization removes the row of a transaction that lost its category postings at version.
+	DeleteCategorization(ctx context.Context, userID int64, transactionID uuid.UUID, version int) error
+	// PendingCategorizations returns up to limit uncategorized, non-voided transactions after
+	// the key, and the key of the last one when more may follow.
+	PendingCategorizations(ctx context.Context, userID int64, after *PendingKey, limit int) ([]uuid.UUID, *PendingKey, error)
+	CountMethods(ctx context.Context, userID int64, from, to time.Time) (map[string]int, error)
 }
 
 // Account is a ledger account as classification reads it.
@@ -61,14 +87,60 @@ type Account struct {
 	ClosedOn                *time.Time
 }
 
-func (a Account) isCategory() bool {
-	return (a.Class == "income" || a.Class == "expense") && a.SystemRole != "uncategorized_expense" && a.SystemRole != "uncategorized_income"
+func (a Account) isCategory() bool { return isCategory(a.Class) }
+
+func (a Account) isUncategorized() bool { return isUncategorized(a.SystemRole) }
+
+func isCategory(class string) bool { return class == "income" || class == "expense" }
+
+func isUncategorized(role string) bool {
+	return role == "uncategorized_expense" || role == "uncategorized_income"
 }
 
 func (a Account) isBalance() bool { return a.Class == "asset" || a.Class == "liability" }
+
+// FactPosting is a posting with the account attributes rules read.
+type FactPosting struct {
+	AccountID               uuid.UUID
+	Class, Kind, SystemRole string
+	Amount                  money.Money
+	Installment             bool
+}
+
+func (p FactPosting) isCategory() bool { return isCategory(p.Class) }
+
+func (p FactPosting) isUncategorized() bool { return isUncategorized(p.SystemRole) }
+
+// TransactionFacts describes a ledger transaction (P5 amendments A17, A26).
+type TransactionFacts struct {
+	ID                          uuid.UUID
+	Version                     int
+	Date                        time.Time
+	Description, RawDescription string
+	PayeeID                     uuid.UUID
+	Origin                      string
+	Voided                      bool
+	CategoryState               string
+	Postings                    []FactPosting
+}
+
+// Categorization asks the ledger to categorize one transaction (P5 amendment A18).
+type Categorization struct {
+	TransactionID   uuid.UUID
+	ExpectedVersion int
+	Parts           []domain.Allocation // nil keeps the category postings
+	PayeeID         *uuid.UUID
+	AddTags         []string
+	Method          string
+	RuleID          uuid.UUID
+}
 
 // Ledger is the part of the ledger module that classification uses.
 type Ledger interface {
 	AccountFacts(ctx context.Context, userID int64) ([]Account, error)
 	MissingPayees(ctx context.Context, userID int64, ids []uuid.UUID) ([]uuid.UUID, error)
+	TransactionFacts(ctx context.Context, userID int64, ids []uuid.UUID) ([]TransactionFacts, error)
+	LatestPayeeCategories(ctx context.Context, userID int64, payees []uuid.UUID) (map[domain.HistoryKey]uuid.UUID, error)
+	// Categorize returns the error of each item; err applies none.
+	Categorize(ctx context.Context, userID int64, cs []Categorization) (errs []error, err error)
 }

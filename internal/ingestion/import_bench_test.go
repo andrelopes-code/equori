@@ -22,11 +22,11 @@ func BenchmarkImport(b *testing.B) {
 	run := 0
 	for b.Loop() {
 		run++
-		lines := make([]ofxLine, 1000)
+		lines := make([]apitest.OFXLine, 1000)
 		for i := range lines {
-			lines[i] = ofxLine{fmt.Sprintf("202610%02d", 1+i%28), fmt.Sprintf("-%d.%02d", (1000+i)/100, (1000+i)%100), fmt.Sprintf("r%d-%d", run, i), "Compra"}
+			lines[i] = apitest.OFXLine{Date: fmt.Sprintf("202610%02d", 1+i%28), Amount: fmt.Sprintf("-%d.%02d", (1000+i)/100, (1000+i)%100), FITID: fmt.Sprintf("r%d-%d", run, i), Name: "Compra"}
 		}
-		if r := importFile(h, checking, "ofx", "bench.ofx", ofxFile("", lines...)); r.Status != http.StatusCreated {
+		if r := h.Import(checking, "ofx", "bench.ofx", apitest.OFX("", lines...)); r.Status != http.StatusCreated {
 			b.Fatalf("import status %d: %s", r.Status, r.Body)
 		}
 	}

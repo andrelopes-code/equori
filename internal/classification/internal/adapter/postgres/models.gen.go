@@ -10,6 +10,20 @@ import (
 	"github.com/google/uuid"
 )
 
+type ClassificationCategorization struct {
+	TransactionID      uuid.UUID
+	UserID             int64
+	TransactionVersion int32
+	TransactionDate    time.Time
+	Method             *string
+	RuleID             uuid.NullUUID
+	Corrected          bool
+	MatchKey           *string
+	CategoryID         uuid.NullUUID
+	Voided             bool
+	DecidedAt          time.Time
+}
+
 type ClassificationPayeeAlias struct {
 	ID        uuid.UUID
 	UserID    int64

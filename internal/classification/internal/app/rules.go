@@ -102,12 +102,12 @@ func (s *Service) checkRule(ctx context.Context, userID int64, r domain.Rule) (d
 	for i, a := range r.Actions {
 		field := fmt.Sprintf("actions[%d]", i)
 		if a.Type == domain.ActionSetCategory {
-			if c, ok := accounts[a.CategoryID]; !ok || !c.isCategory() {
+			if c, ok := accounts[a.CategoryID]; !ok || !c.isCategory() || c.isUncategorized() {
 				return domain.Rule{}, invalidRef(field+".category_id", "must be an income or expense category")
 			}
 		}
 		for j, p := range a.Parts {
-			if c, ok := accounts[p.CategoryID]; !ok || !c.isCategory() {
+			if c, ok := accounts[p.CategoryID]; !ok || !c.isCategory() || c.isUncategorized() {
 				return domain.Rule{}, invalidRef(fmt.Sprintf("%s.parts[%d].category_id", field, j), "must be an income or expense category")
 			}
 		}

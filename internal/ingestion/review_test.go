@@ -38,7 +38,7 @@ func ambiguous(t *testing.T) (h *apitest.Harness, batch string, record recordVie
 	food := h.Account("Food", "expense", "", nil)
 	first = h.Record("2026-10-09", apitest.Posting(checking, -5000), apitest.Posting(food, 5000))
 	second = h.Record("2026-10-10", apitest.Posting(checking, -5000), apitest.Posting(food, 5000))
-	b := mustImport(t, h, checking, "ofx", "a.ofx", ofxFile("", ofxLine{"20261010", "-50.00", "p1", "PIX"}))
+	b := mustImport(t, h, checking, "ofx", "a.ofx", apitest.OFX("", apitest.OFXLine{Date: "20261010", Amount: "-50.00", FITID: "p1", Name: "PIX"}))
 	if got := counts(b); got != "received 1 ignored 0 matched 0 created 0 review 1" {
 		t.Fatalf("import: %s", got)
 	}

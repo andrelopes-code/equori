@@ -24,34 +24,9 @@ type batchView struct {
 	} `json:"balance"`
 }
 
-// ofxLine is one STMTTRN: date YYYYMMDD, amount as written, FITID (empty for none), name.
-type ofxLine struct{ date, amount, fitid, name string }
-
-func ofxFile(balance string, lines ...ofxLine) []byte {
-	var b strings.Builder
-	b.WriteString("OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\nCHARSET:1252\n\n<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><CURDEF>BRL\n<BANKTRANLIST><DTSTART>20261001<DTEND>20261031\n")
-	for _, l := range lines {
-		fmt.Fprintf(&b, "<STMTTRN><TRNTYPE>OTHER<DTPOSTED>%s<TRNAMT>%s", l.date, l.amount)
-		if l.fitid != "" {
-			fmt.Fprintf(&b, "<FITID>%s", l.fitid)
-		}
-		fmt.Fprintf(&b, "<NAME>%s</STMTTRN>\n", l.name)
-	}
-	b.WriteString("</BANKTRANLIST>")
-	if balance != "" {
-		b.WriteString(balance)
-	}
-	b.WriteString("</STMTRS></STMTTRNRS></BANKMSGSRSV1></OFX>\n")
-	return []byte(b.String())
-}
-
-func importFile(h *apitest.Harness, account, format, name string, content []byte) apitest.Response {
-	return h.UploadWith("/api/v1/accounts/"+account+"/imports", map[string]string{"format": format}, name, content)
-}
-
 func mustImport(t *testing.T, h *apitest.Harness, account, format, name string, content []byte) batchView {
 	t.Helper()
-	r := importFile(h, account, format, name, content)
+	r := h.Import(account, format, name, content)
 	if r.Status != http.StatusCreated {
 		t.Fatalf("import status %d: %s", r.Status, r.Body)
 	}
@@ -85,8 +60,8 @@ func TestImportOFX(t *testing.T) {
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
 	manual := h.Record("2026-10-04", apitest.Posting(checking, -4590), apitest.Posting(food, 4590))
-	file := ofxFile("<LEDGERBAL><BALAMT>2834.10<DTASOF>20261031</LEDGERBAL>",
-		ofxLine{"20261005", "-45.90", "a1", "Pão de Açúcar"}, ofxLine{"20261012", "-120.00", "a2", "Farmácia"}, ofxLine{"20261015", "3000.00", "a3", "Salário"})
+	file := apitest.OFX("<LEDGERBAL><BALAMT>2834.10<DTASOF>20261031</LEDGERBAL>",
+		apitest.OFXLine{Date: "20261005", Amount: "-45.90", FITID: "a1", Name: "Pão de Açúcar"}, apitest.OFXLine{Date: "20261012", Amount: "-120.00", FITID: "a2", Name: "Farmácia"}, apitest.OFXLine{Date: "20261015", Amount: "3000.00", FITID: "a3", Name: "Salário"})
 
 	b := mustImport(t, h, checking, "ofx", "outubro.ofx", file)
 	if got := counts(b); got != "received 3 ignored 0 matched 1 created 2 review 0" || b.Balance.Status != "recorded" {
@@ -140,7 +115,7 @@ func TestImportCSVWithIdenticalLines(t *testing.T) {
 func TestImportResumesAnInterruptedRecord(t *testing.T) {
 	h := apitest.New(t, apitest.Today("2026-11-05"))
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
-	file := ofxFile("", ofxLine{"20261012", "-120.00", "a2", "Farmácia"})
+	file := apitest.OFX("", apitest.OFXLine{Date: "20261012", Amount: "-120.00", FITID: "a2", Name: "Farmácia"})
 	mustImport(t, h, checking, "ofx", "a.ofx", file)
 	if _, err := h.Pool.Exec(t.Context(), `UPDATE ingestion_external_record SET state = 'received', transaction_id = NULL`); err != nil {
 		t.Fatal(err)
@@ -159,7 +134,7 @@ func TestImportResumesAnInterruptedMatch(t *testing.T) {
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
 	h.Record("2026-10-12", apitest.Posting(checking, -12000), apitest.Posting(food, 12000))
-	file := ofxFile("", ofxLine{"20261012", "-120.00", "a2", "Farmácia"})
+	file := apitest.OFX("", apitest.OFXLine{Date: "20261012", Amount: "-120.00", FITID: "a2", Name: "Farmácia"})
 	mustImport(t, h, checking, "ofx", "a.ofx", file)
 	if _, err := h.Pool.Exec(t.Context(), `UPDATE ingestion_external_record SET state = 'received', transaction_id = NULL`); err != nil {
 		t.Fatal(err)
@@ -177,7 +152,7 @@ func TestImportNeverLinksOneTransactionTwice(t *testing.T) {
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
 	h.Record("2026-10-12", apitest.Posting(checking, -12000), apitest.Posting(food, 12000))
-	b := mustImport(t, h, checking, "ofx", "a.ofx", ofxFile("", ofxLine{"20261012", "-120.00", "x1", "Farmácia"}, ofxLine{"20261012", "-120.00", "x2", "Farmácia"}))
+	b := mustImport(t, h, checking, "ofx", "a.ofx", apitest.OFX("", apitest.OFXLine{Date: "20261012", Amount: "-120.00", FITID: "x1", Name: "Farmácia"}, apitest.OFXLine{Date: "20261012", Amount: "-120.00", FITID: "x2", Name: "Farmácia"}))
 	if got := counts(b); got != "received 2 ignored 0 matched 1 created 1 review 0" {
 		t.Fatalf("import: %s", got)
 	}
@@ -187,7 +162,7 @@ func TestImportNeverLinksOneTransactionTwice(t *testing.T) {
 func TestImportSkipsAFutureBalance(t *testing.T) {
 	h := apitest.New(t, apitest.Today("2026-11-05"))
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
-	b := mustImport(t, h, checking, "ofx", "a.ofx", ofxFile("<LEDGERBAL><BALAMT>-120.00<DTASOF>20261130</LEDGERBAL>", ofxLine{"20261012", "-120.00", "a2", "Farmácia"}))
+	b := mustImport(t, h, checking, "ofx", "a.ofx", apitest.OFX("<LEDGERBAL><BALAMT>-120.00<DTASOF>20261130</LEDGERBAL>", apitest.OFXLine{Date: "20261012", Amount: "-120.00", FITID: "a2", Name: "Farmácia"}))
 	if b.Balance.Status != "skipped" || b.Balance.Reason == "" || b.Counts.Created != 1 {
 		t.Fatalf("batch = %+v", b)
 	}
@@ -198,10 +173,10 @@ func TestImportRejectsBadRequests(t *testing.T) {
 	h := apitest.New(t, apitest.Today("2026-11-05"))
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
-	h.ExpectProblem(importFile(h, checking, "ofx", "a.ofx", []byte("<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><STMTTRN><DTPOSTED>20261005<TRNAMT>x")), http.StatusUnprocessableEntity, "validation_failed", "file")
-	h.ExpectProblem(importFile(h, checking, "csv", "a.csv", []byte("Data,Valor\n")), http.StatusUnprocessableEntity, "validation_failed", "format")
-	h.ExpectProblem(importFile(h, checking, "qif", "a.qif", []byte("!Type:Bank")), http.StatusUnprocessableEntity, "validation_failed", "format")
-	h.ExpectProblem(importFile(h, food, "ofx", "a.ofx", ofxFile("")), http.StatusUnprocessableEntity, "validation_failed", "account_id")
+	h.ExpectProblem(h.Import(checking, "ofx", "a.ofx", []byte("<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><STMTTRN><DTPOSTED>20261005<TRNAMT>x")), http.StatusUnprocessableEntity, "validation_failed", "file")
+	h.ExpectProblem(h.Import(checking, "csv", "a.csv", []byte("Data,Valor\n")), http.StatusUnprocessableEntity, "validation_failed", "format")
+	h.ExpectProblem(h.Import(checking, "qif", "a.qif", []byte("!Type:Bank")), http.StatusUnprocessableEntity, "validation_failed", "format")
+	h.ExpectProblem(h.Import(food, "ofx", "a.ofx", apitest.OFX("")), http.StatusUnprocessableEntity, "validation_failed", "account_id")
 	var list struct {
 		Items []any `json:"items"`
 	}
@@ -210,6 +185,6 @@ func TestImportRejectsBadRequests(t *testing.T) {
 		t.Fatalf("rejected files left batches: %v", list.Items)
 	}
 	other := h.Login("other@example.com")
-	h.ExpectProblem(h.UploadAs(other, "/api/v1/accounts/"+checking+"/imports", map[string]string{"format": "ofx"}, "a.ofx", ofxFile("")),
+	h.ExpectProblem(h.UploadAs(other, "/api/v1/accounts/"+checking+"/imports", map[string]string{"format": "ofx"}, "a.ofx", apitest.OFX("")),
 		http.StatusNotFound, "not_found", "")
 }
