@@ -192,6 +192,36 @@ func (q *Queries) InsertExternalAccount(ctx context.Context, arg InsertExternalA
 	return i, err
 }
 
+const listAllConnections = `-- name: ListAllConnections :many
+SELECT id, user_id FROM ingestion_connection ORDER BY user_id, id
+`
+
+type ListAllConnectionsRow struct {
+	ID     uuid.UUID
+	UserID int64
+}
+
+// The scheduler checks every user's connections (A43); each sync then filters by its user.
+func (q *Queries) ListAllConnections(ctx context.Context) ([]ListAllConnectionsRow, error) {
+	rows, err := q.db.Query(ctx, listAllConnections)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListAllConnectionsRow
+	for rows.Next() {
+		var i ListAllConnectionsRow
+		if err := rows.Scan(&i.ID, &i.UserID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listConnections = `-- name: ListConnections :many
 SELECT id, user_id, integration_id, external_item_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at FROM ingestion_connection
 WHERE user_id = $1
@@ -268,26 +298,26 @@ func (q *Queries) MarkAccountSynced(ctx context.Context, arg MarkAccountSyncedPa
 	return err
 }
 
-const markConnectionSynced = `-- name: MarkConnectionSynced :exec
-UPDATE ingestion_connection SET provider_status = coalesce($1, provider_status),
-    last_item_update_at = coalesce($2, last_item_update_at),
-    last_synced_at = CASE WHEN $3::text IS NULL THEN now() ELSE last_synced_at END,
-    last_error = $3
-WHERE user_id = $4 AND id = $5
+const saveConnectionState = `-- name: SaveConnectionState :exec
+UPDATE ingestion_connection SET provider_status = $1, last_item_update_at = $2,
+    last_synced_at = $3, last_error = $4
+WHERE user_id = $5 AND id = $6
 `
 
-type MarkConnectionSyncedParams struct {
-	ProviderStatus   *string
+type SaveConnectionStateParams struct {
+	ProviderStatus   string
 	LastItemUpdateAt *time.Time
+	LastSyncedAt     *time.Time
 	LastError        *string
 	UserID           int64
 	ID               uuid.UUID
 }
 
-func (q *Queries) MarkConnectionSynced(ctx context.Context, arg MarkConnectionSyncedParams) error {
-	_, err := q.db.Exec(ctx, markConnectionSynced,
+func (q *Queries) SaveConnectionState(ctx context.Context, arg SaveConnectionStateParams) error {
+	_, err := q.db.Exec(ctx, saveConnectionState,
 		arg.ProviderStatus,
 		arg.LastItemUpdateAt,
+		arg.LastSyncedAt,
 		arg.LastError,
 		arg.UserID,
 		arg.ID,

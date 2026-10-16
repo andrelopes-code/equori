@@ -100,3 +100,15 @@ func (s *Server) MapExternalAccount(ctx context.Context, req MapExternalAccountR
 	}
 	return MapExternalAccount200JSONResponse(toExternalAccountAPI(a)), nil
 }
+
+func (s *Server) SyncConnection(ctx context.Context, req SyncConnectionRequestObject) (SyncConnectionResponseObject, error) {
+	c, batches, err := s.svc.SyncConnection(ctx, auth.MustUserID(ctx), req.Id)
+	if err != nil {
+		return nil, err
+	}
+	out := SyncConnection200JSONResponse{Connection: toConnectionAPI(c), Batches: make([]ImportBatch, len(batches))}
+	for i, b := range batches {
+		out.Batches[i] = toBatchAPI(b)
+	}
+	return out, nil
+}

@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
+	"github.com/andrelopes-code/equori/internal/ingestion/internal/app"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/domain"
 )
 
@@ -79,9 +80,21 @@ func (r *Repository) MarkAccountSynced(ctx context.Context, a domain.ExternalAcc
 	return r.q.MarkAccountSynced(ctx, params)
 }
 
-func (r *Repository) MarkConnectionSynced(ctx context.Context, c domain.Connection) error {
-	return r.q.MarkConnectionSynced(ctx, MarkConnectionSyncedParams{
-		UserID: c.UserID, ID: c.ID, ProviderStatus: optional(c.ProviderStatus), LastItemUpdateAt: c.LastItemUpdateAt,
-		LastError: optional(c.LastError),
+func (r *Repository) SaveConnectionState(ctx context.Context, c domain.Connection) error {
+	return r.q.SaveConnectionState(ctx, SaveConnectionStateParams{
+		UserID: c.UserID, ID: c.ID, ProviderStatus: c.ProviderStatus, LastItemUpdateAt: c.LastItemUpdateAt,
+		LastSyncedAt: c.LastSyncedAt, LastError: optional(c.LastError),
 	})
+}
+
+func (r *Repository) AllConnections(ctx context.Context) ([]app.ConnectionRef, error) {
+	rows, err := r.q.ListAllConnections(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]app.ConnectionRef, len(rows))
+	for i, row := range rows {
+		out[i] = app.ConnectionRef{UserID: row.UserID, ID: row.ID}
+	}
+	return out, nil
 }

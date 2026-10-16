@@ -34,6 +34,7 @@ type Server struct {
 	requests     map[string]int
 	failStatus   int
 	failCount    int
+	failing      map[string]int // account id → status of its transaction requests
 	next         string
 	pageSize     int
 }
@@ -43,7 +44,7 @@ func New(t testing.TB, clientID, secret string) *Server {
 		first: clientID, secrets: map[string]string{clientID: secret}, keys: map[string]string{},
 		items: map[string]pluggy.Item{}, owners: map[string]string{},
 		accounts: map[string][]pluggy.Account{}, transactions: map[string][]pluggy.Transaction{},
-		bills: map[string][]pluggy.Bill{}, requests: map[string]int{}, pageSize: 500,
+		bills: map[string][]pluggy.Bill{}, requests: map[string]int{}, failing: map[string]int{}, pageSize: 500,
 	}
 	s.srv = httptest.NewServer(http.HandlerFunc(s.serve))
 	t.Cleanup(s.srv.Close)
@@ -122,6 +123,14 @@ func (s *Server) FailNext(status, n int) {
 	s.failStatus, s.failCount = status, n
 }
 
+// FailTransactions answers the transaction requests of an account with status until it is
+// called again with 0.
+func (s *Server) FailTransactions(accountID string, status int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.failing[accountID] = status
+}
+
 // RevokeKeys invalidates every API key issued so far.
 func (s *Server) RevokeKeys() {
 	s.mu.Lock()
@@ -197,6 +206,10 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) transactionPage(w http.ResponseWriter, q url.Values) {
+	if status := s.failing[q.Get("accountId")]; status != 0 {
+		w.WriteHeader(status)
+		return
+	}
 	var match []pluggy.Transaction
 	for _, t := range s.transactions[q.Get("accountId")] {
 		day := t.Date[:min(10, len(t.Date))]

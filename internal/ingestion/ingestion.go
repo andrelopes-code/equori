@@ -32,6 +32,7 @@ import (
 type Module struct {
 	http *httpapi.Server
 	svc  *app.Service
+	log  *slog.Logger
 }
 
 type Config struct {
@@ -44,7 +45,7 @@ type Config struct {
 }
 
 func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, c *classification.Module, cfg Config, log *slog.Logger) (*Module, error) {
-	in := app.Integrations{Today: cfg.Clock.Today}
+	in := app.Integrations{Now: cfg.Clock.Now, Today: cfg.Clock.Today}
 	if cfg.SecretKey != "" {
 		var previous []byte
 		if cfg.PreviousSecretKey != "" {
@@ -64,13 +65,39 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, c 
 	}
 	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l, c}, in)
 	dispatcher.Subscribe("ingestion", ledger.EventTransactionsPaired, followPairing)
-	return &Module{http: httpapi.NewServer(svc, log), svc: svc}, nil
+	return &Module{http: httpapi.NewServer(svc, log), svc: svc, log: log}, nil
 }
 
 // SyncConnection syncs every mapped account of a connection now (P6 amendment A36).
 func (m *Module) SyncConnection(ctx context.Context, userID int64, connectionID uuid.UUID) error {
-	_, err := m.svc.SyncConnection(ctx, userID, connectionID)
+	_, _, err := m.svc.SyncConnection(ctx, userID, connectionID)
 	return err
+}
+
+// Tick syncs the connections whose item has new data and logs each failure by equori ids
+// only (P6 amendments A43, A44).
+func (m *Module) Tick(ctx context.Context) {
+	failures, err := m.svc.Tick(ctx)
+	for _, f := range failures {
+		m.log.Warn("sync failed", "user_id", f.UserID, "connection_id", f.ConnectionID.String(), "error", f.Err.Error())
+	}
+	if err != nil && ctx.Err() == nil {
+		m.log.Error("sync tick failed", "error", err.Error())
+	}
+}
+
+// RunScheduler ticks now and then every interval until ctx ends.
+func (m *Module) RunScheduler(ctx context.Context, interval time.Duration) {
+	t := time.NewTicker(interval)
+	defer t.Stop()
+	for {
+		m.Tick(ctx)
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+		}
+	}
 }
 
 // RotateSecrets reseals every stored credential under the current key (ADR 008 K4) and

@@ -84,6 +84,26 @@ func (p pluggyPort) Item(ctx context.Context, id uuid.UUID, c domain.Credentials
 	return out, err
 }
 
+func (p pluggyPort) ItemState(ctx context.Context, id uuid.UUID, c domain.Credentials, itemID string) (string, *time.Time, error) {
+	var (
+		status string
+		at     *time.Time
+	)
+	err := p.session(ctx, id, c, func(s *pluggy.Session) error {
+		it, err := s.Item(ctx, itemID)
+		if err != nil {
+			return err
+		}
+		status = it.Status
+		at, err = updatedAt(it)
+		return err
+	})
+	if errors.Is(err, app.ErrItemNotFound) {
+		return "", nil, fmt.Errorf("%w: the item is gone", app.ErrProviderUnavailable)
+	}
+	return status, at, err
+}
+
 func updatedAt(it pluggy.Item) (*time.Time, error) {
 	if it.LastUpdatedAt == nil {
 		return nil, nil

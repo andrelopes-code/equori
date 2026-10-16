@@ -74,9 +74,16 @@ type Repository interface {
 	WithdrawRecords(ctx context.Context, userID int64, ids []uuid.UUID) error
 	// MarkAccountSynced stores the account's last synced date and asserted balance.
 	MarkAccountSynced(ctx context.Context, a domain.ExternalAccount) error
-	// MarkConnectionSynced stores the item status and the sync outcome: last_synced_at is set
-	// when LastError is empty.
-	MarkConnectionSynced(ctx context.Context, c domain.Connection) error
+	// SaveConnectionState stores the connection's provider status, item update, last sync and error.
+	SaveConnectionState(ctx context.Context, c domain.Connection) error
+	// AllConnections lists every user's connections, for the scheduler.
+	AllConnections(ctx context.Context) ([]ConnectionRef, error)
+}
+
+// ConnectionRef names a connection and its owner.
+type ConnectionRef struct {
+	UserID int64
+	ID     uuid.UUID
 }
 
 // Claim is a record of the file as stored, and whether an earlier import had stored it.
@@ -91,6 +98,7 @@ type Service struct {
 	// box is nil without EQUORI_SECRET_KEY: integrations are unavailable (ADR 008 K2).
 	box   Sealer
 	agg   Aggregator
+	now   func() time.Time
 	today func() time.Time
 }
 
@@ -98,12 +106,12 @@ type Service struct {
 type Integrations struct {
 	Box        Sealer
 	Aggregator Aggregator
-	// Today is the instance's current date (ADR 005).
-	Today func() time.Time
+	// Now and Today are the instance's clock (ADR 005).
+	Now, Today func() time.Time
 }
 
 func NewService(repo Repository, ledger Ledger, in Integrations) *Service {
-	return &Service{repo: repo, ledger: ledger, box: in.Box, agg: in.Aggregator, today: in.Today}
+	return &Service{repo: repo, ledger: ledger, box: in.Box, agg: in.Aggregator, now: in.Now, today: in.Today}
 }
 
 // FollowPairing points the records that a ledger pairing moved to the kept transaction

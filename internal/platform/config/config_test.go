@@ -16,7 +16,7 @@ func TestLoad(t *testing.T) {
 		{
 			name: "defaults",
 			env:  map[string]string{"EQUORI_DATABASE_URL": "postgres://x"},
-			want: Config{DatabaseURL: "postgres://x", HTTPAddr: ":8080", LogLevel: slog.LevelInfo, TimeZone: time.UTC, PluggyURL: "https://api.pluggy.ai"},
+			want: Config{DatabaseURL: "postgres://x", HTTPAddr: ":8080", LogLevel: slog.LevelInfo, TimeZone: time.UTC, PluggyURL: "https://api.pluggy.ai", SyncInterval: time.Hour},
 		},
 		{
 			name: "explicit values",
@@ -28,10 +28,12 @@ func TestLoad(t *testing.T) {
 				"EQUORI_TIMEZONE":         "UTC",
 				"EQUORI_API_DOCS":         "true",
 				"EQUORI_PLUGGY_URL":       "http://127.0.0.1:9100",
+				"EQUORI_SYNC_INTERVAL":    "15m",
 			},
 			want: Config{
 				DatabaseURL: "postgres://x", HTTPAddr: "127.0.0.1:9000", LogLevel: slog.LevelDebug,
 				TimeZone: time.UTC, InsecureCookies: true, APIDocs: true, PluggyURL: "http://127.0.0.1:9100",
+				SyncInterval: 15 * time.Minute,
 			},
 		},
 		{name: "missing database url", env: map[string]string{}, wantErr: true},
@@ -43,6 +45,16 @@ func TestLoad(t *testing.T) {
 		{
 			name:    "invalid api docs",
 			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_API_DOCS": "maybe"},
+			wantErr: true,
+		},
+		{
+			name:    "invalid sync interval",
+			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_SYNC_INTERVAL": "soon"},
+			wantErr: true,
+		},
+		{
+			name:    "sync interval under a minute",
+			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_SYNC_INTERVAL": "30s"},
 			wantErr: true,
 		},
 		{

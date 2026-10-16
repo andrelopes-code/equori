@@ -36,9 +36,11 @@ UPDATE ingestion_external_account SET last_synced_on = @last_synced_on,
     balance_on = sqlc.narg(balance_on), balance_amount = sqlc.narg(balance_amount)
 WHERE user_id = @user_id AND id = @id;
 
--- name: MarkConnectionSynced :exec
-UPDATE ingestion_connection SET provider_status = coalesce(sqlc.narg(provider_status), provider_status),
-    last_item_update_at = coalesce(sqlc.narg(last_item_update_at), last_item_update_at),
-    last_synced_at = CASE WHEN sqlc.narg(last_error)::text IS NULL THEN now() ELSE last_synced_at END,
-    last_error = sqlc.narg(last_error)
+-- name: SaveConnectionState :exec
+UPDATE ingestion_connection SET provider_status = @provider_status, last_item_update_at = sqlc.narg(last_item_update_at),
+    last_synced_at = sqlc.narg(last_synced_at), last_error = sqlc.narg(last_error)
 WHERE user_id = @user_id AND id = @id;
+
+-- name: ListAllConnections :many
+-- The scheduler checks every user's connections (A43); each sync then filters by its user.
+SELECT id, user_id FROM ingestion_connection ORDER BY user_id, id;

@@ -25,6 +25,8 @@ type Config struct {
 	SecretKey, PreviousSecretKey string
 	// PluggyURL is the base URL of the Pluggy API, the only address Pluggy requests go to (N17).
 	PluggyURL string
+	// SyncInterval is how often the scheduler checks connections for new data (P6 A43).
+	SyncInterval time.Duration
 }
 
 func Load(getenv func(string) string) (Config, error) {
@@ -35,6 +37,18 @@ func Load(getenv func(string) string) (Config, error) {
 	}
 	if cfg.PluggyURL == "" {
 		cfg.PluggyURL = "https://api.pluggy.ai"
+	}
+	cfg.SyncInterval = time.Hour
+	if v := getenv("EQUORI_SYNC_INTERVAL"); v != "" {
+		d, err := time.ParseDuration(v)
+		if err != nil {
+			return Config{}, fmt.Errorf("EQUORI_SYNC_INTERVAL: %w", err)
+		}
+		// Pluggy allows 360 requests per minute; a sync of one account takes several.
+		if d < time.Minute {
+			return Config{}, errors.New("EQUORI_SYNC_INTERVAL must be at least 1m")
+		}
+		cfg.SyncInterval = d
 	}
 	if cfg.DatabaseURL == "" {
 		return Config{}, errors.New("EQUORI_DATABASE_URL is not set")

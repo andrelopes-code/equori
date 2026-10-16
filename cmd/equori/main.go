@@ -79,11 +79,19 @@ func serve() error {
 		return err
 	}
 
-	// The dispatcher must stop before the pool closes.
+	// The dispatcher and the scheduler must stop before the pool closes.
 	dispatcherDone := make(chan error, 1)
 	go func() { dispatcherDone <- app.Dispatcher.Run(ctx) }()
+	schedulerDone := make(chan struct{})
+	go func() {
+		defer close(schedulerDone)
+		if cfg.SecretKey != "" {
+			app.Ingestion.RunScheduler(ctx, cfg.SyncInterval)
+		}
+	}()
 	defer func() {
 		stop()
+		<-schedulerDone
 		if err := <-dispatcherDone; err != nil {
 			log.Error("outbox dispatcher stopped", "error", err)
 		}

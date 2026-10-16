@@ -549,6 +549,12 @@ type RecordResolution struct {
 // RecordResolutionAction defines model for RecordResolution.Action.
 type RecordResolutionAction string
 
+// SyncResult defines model for SyncResult.
+type SyncResult struct {
+	Batches    []ImportBatch `json:"batches"`
+	Connection Connection    `json:"connection"`
+}
+
 // Cursor defines model for Cursor.
 type Cursor = string
 
@@ -642,6 +648,9 @@ type ServerInterface interface {
 	// MapExternalAccount Map an external account to a ledger account, or ignore it (P6 amendment A35).
 	// (PUT /connections/{id}/accounts/{external_account_id})
 	MapExternalAccount(w http.ResponseWriter, r *http.Request, id ID, externalAccountId openapi_types.UUID)
+	// SyncConnection Sync every mapped account of the connection now (P6 amendment A43).
+	// (POST /connections/{id}/sync)
+	SyncConnection(w http.ResponseWriter, r *http.Request, id ID)
 	// ResolveExternalRecord Resolve a record that needs review.
 	// (POST /external-records/{id}/resolve)
 	ResolveExternalRecord(w http.ResponseWriter, r *http.Request, id ID)
@@ -896,6 +905,32 @@ func (siw *ServerInterfaceWrapper) MapExternalAccount(w http.ResponseWriter, r *
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.MapExternalAccount(w, r, id, externalAccountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SyncConnection operation middleware
+func (siw *ServerInterfaceWrapper) SyncConnection(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SyncConnection(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1345,6 +1380,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/connections", wrapper.CreateConnection)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/connections/{id}", wrapper.DeleteConnection)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/connections/{id}", wrapper.GetConnection)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/connections/{id}/sync", wrapper.SyncConnection)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/connections/{id}/accounts/{external_account_id}", wrapper.MapExternalAccount)
 
 	return m
@@ -1908,6 +1944,100 @@ func (response MapExternalAccount422ApplicationProblemPlusJSONResponse) VisitMap
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SyncConnectionRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type SyncConnectionResponseObject interface {
+	VisitSyncConnectionResponse(w http.ResponseWriter) error
+}
+
+type SyncConnection200JSONResponse SyncResult
+
+func (response SyncConnection200JSONResponse) VisitSyncConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SyncConnection401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SyncConnection401ApplicationProblemPlusJSONResponse) VisitSyncConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SyncConnection404ApplicationProblemPlusJSONResponse Problem
+
+func (response SyncConnection404ApplicationProblemPlusJSONResponse) VisitSyncConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SyncConnection409ApplicationProblemPlusJSONResponse Problem
+
+func (response SyncConnection409ApplicationProblemPlusJSONResponse) VisitSyncConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SyncConnection422ApplicationProblemPlusJSONResponse Problem
+
+func (response SyncConnection422ApplicationProblemPlusJSONResponse) VisitSyncConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SyncConnection502ApplicationProblemPlusJSONResponse Problem
+
+func (response SyncConnection502ApplicationProblemPlusJSONResponse) VisitSyncConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(502)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -2525,6 +2655,9 @@ type StrictServerInterface interface {
 	// MapExternalAccount Map an external account to a ledger account, or ignore it (P6 amendment A35).
 	// (PUT /connections/{id}/accounts/{external_account_id})
 	MapExternalAccount(ctx context.Context, request MapExternalAccountRequestObject) (MapExternalAccountResponseObject, error)
+	// SyncConnection Sync every mapped account of the connection now (P6 amendment A43).
+	// (POST /connections/{id}/sync)
+	SyncConnection(ctx context.Context, request SyncConnectionRequestObject) (SyncConnectionResponseObject, error)
 	// ResolveExternalRecord Resolve a record that needs review.
 	// (POST /external-records/{id}/resolve)
 	ResolveExternalRecord(ctx context.Context, request ResolveExternalRecordRequestObject) (ResolveExternalRecordResponseObject, error)
@@ -2821,6 +2954,32 @@ func (sh *strictHandler) MapExternalAccount(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(MapExternalAccountResponseObject); ok {
 		if err := validResponse.VisitMapExternalAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SyncConnection operation middleware
+func (sh *strictHandler) SyncConnection(w http.ResponseWriter, r *http.Request, id ID) {
+	var request SyncConnectionRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SyncConnection(ctx, request.(SyncConnectionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SyncConnection")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SyncConnectionResponseObject); ok {
+		if err := validResponse.VisitSyncConnectionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

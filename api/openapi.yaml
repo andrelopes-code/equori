@@ -2110,6 +2110,35 @@ paths:
           $ref: "#/components/responses/Problem"
         "409":
           $ref: "#/components/responses/Problem"
+  /connections/{id}/sync:
+    post:
+      tags: [ingestion]
+      operationId: syncConnection
+      summary: Sync every mapped account of the connection now (P6 amendment A43).
+      description: |
+        One import batch per mapped account. An item that needs its owner in Meu Pluggy
+        (LOGIN_ERROR, OUTDATED, WAITING_USER_INPUT) is not synced: batches is empty and the
+        connection shows the status. A sync of an account waits for any other sync or import
+        of it. A failure is stored in the connection's last_error.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncResult"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "502":
+          $ref: "#/components/responses/Problem"
   /connections/{id}/accounts/{external_account_id}:
     put:
       tags: [ingestion]
@@ -2301,6 +2330,16 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ExternalAccount"
+    SyncResult:
+      type: object
+      required: [connection, batches]
+      properties:
+        connection:
+          $ref: "#/components/schemas/Connection"
+        batches:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportBatch"
     ConnectionList:
       type: object
       required: [items]
