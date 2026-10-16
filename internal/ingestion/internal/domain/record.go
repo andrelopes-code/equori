@@ -9,6 +9,24 @@ type NormalizedRecord struct {
 	Amount      int64 // minor units, from the account's point of view: negative leaves the account
 	Description string
 	Raw         map[string]string // the source fields, stored unchanged
+
+	// Aggregator fields (P6 amendments A36, A39, A40, A41).
+	Pending      bool       // the source has not settled it yet
+	DueDate      *time.Time // due date of the card bill the line belongs to
+	Installment  *Installment
+	Category     *SourceCategory
+	BalanceAfter *int64
+}
+
+// Installment places a card line in an installment purchase.
+type Installment struct {
+	Number, Count int
+	PurchaseDate  time.Time
+}
+
+// SourceCategory is the category the source assigned to a line.
+type SourceCategory struct {
+	ID, Name string
 }
 
 // Balance is the balance a file reports at the end of a date.
