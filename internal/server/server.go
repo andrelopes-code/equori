@@ -12,6 +12,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/andrelopes-code/equori/internal/classification"
 	"github.com/andrelopes-code/equori/internal/identity"
 	"github.com/andrelopes-code/equori/internal/ingestion"
 	"github.com/andrelopes-code/equori/internal/ledger"
@@ -51,6 +52,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	marketdataModule := marketdata.New(pool)
 	ledgerModule := ledger.New(pool, dispatcher, marketdataModule, clk, log)
 	reportingModule := reporting.New(pool, dispatcher, log)
+	classificationModule := classification.New(pool, ledgerModule, log)
 	ingestionModule := ingestion.New(pool, ledgerModule, log)
 
 	mux := http.NewServeMux()
@@ -59,6 +61,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	ledgerModule.RegisterRoutes(mux)
 	reportingModule.RegisterRoutes(mux)
 	ingestionModule.RegisterRoutes(mux)
+	classificationModule.RegisterRoutes(mux)
 	marketdataModule.RegisterRoutes(mux, log)
 	mux.Handle("/api/", httpserver.NotFound())
 

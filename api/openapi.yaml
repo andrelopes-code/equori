@@ -18,6 +18,8 @@ tags:
     description: Instruments and business-day calendars.
   - name: ingestion
     description: File imports, external records and their review.
+  - name: classification
+    description: Categorization rules, payee aliases, suggestions and categorization methods.
 paths:
   /session:
     post:
@@ -1304,6 +1306,248 @@ paths:
               schema:
                 type: string
                 format: binary
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /rules:
+    get:
+      tags: [classification]
+      operationId: listRules
+      summary: Categorization rules by priority.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RulePage"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [classification]
+      operationId: createRule
+      summary: Create a rule at the last priority.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuleInput"
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rule"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /rules/reorder:
+    post:
+      tags: [classification]
+      operationId: reorderRules
+      summary: Give every rule a new priority, in the order listed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuleOrder"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /rules/{id}:
+    get:
+      tags: [classification]
+      operationId: getRule
+      summary: One rule.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rule"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    put:
+      tags: [classification]
+      operationId: changeRule
+      summary: Replace a rule; its priority does not change.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuleInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rule"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [classification]
+      operationId: deleteRule
+      summary: Delete a rule; categorizations it decided keep the method rule.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted.
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /payee-aliases:
+    get:
+      tags: [classification]
+      operationId: listPayeeAliases
+      summary: Payee aliases, oldest first.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayeeAliasPage"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [classification]
+      operationId: createPayeeAlias
+      summary: Map raw descriptions to a payee (P5 amendment A22).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PayeeAliasInput"
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayeeAlias"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /payee-aliases/{id}:
+    get:
+      tags: [classification]
+      operationId: getPayeeAlias
+      summary: One payee alias.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayeeAlias"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    put:
+      tags: [classification]
+      operationId: changePayeeAlias
+      summary: Replace a payee alias.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PayeeAliasInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayeeAlias"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [classification]
+      operationId: deletePayeeAlias
+      summary: Delete a payee alias.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted.
+        "400":
+          $ref: "#/components/responses/Problem"
         "401":
           $ref: "#/components/responses/Problem"
         "404":
@@ -2613,6 +2857,183 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Transaction"
+        next_cursor:
+          type: string
+    RuleCondition:
+      type: object
+      additionalProperties: false
+      required: [field, operator, value]
+      description: The value type depends on the field (P5 amendment A21); between and in_list take an array.
+      properties:
+        field:
+          type: string
+          enum: [description, raw_description, payee, amount, absolute_amount, account, account_kind, source, weekday, day_of_month, installment]
+        operator:
+          type: string
+          enum: [equals, contains, starts_with, regex, between, greater_than, less_than, in_list]
+        value: {}
+    RuleSplitPart:
+      type: object
+      additionalProperties: false
+      required: [category_id]
+      description: Exactly one of percent (basis points), amount and remainder.
+      properties:
+        category_id:
+          type: string
+          format: uuid
+        percent:
+          type: integer
+          minimum: 1
+          maximum: 9999
+        amount:
+          $ref: "#/components/schemas/Money"
+        remainder:
+          type: boolean
+    RuleAction:
+      type: object
+      additionalProperties: false
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [set_category, set_payee, add_tags, split]
+        category_id:
+          type: string
+          format: uuid
+        payee_id:
+          type: string
+          format: uuid
+        tags:
+          type: array
+          minItems: 1
+          maxItems: 10
+          items:
+            type: string
+            pattern: "^[a-z0-9][a-z0-9-]{0,59}$"
+        parts:
+          type: array
+          minItems: 2
+          maxItems: 10
+          items:
+            $ref: "#/components/schemas/RuleSplitPart"
+    RuleInput:
+      type: object
+      additionalProperties: false
+      required: [name, conditions, actions]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        enabled:
+          type: boolean
+          default: true
+        stop_processing:
+          type: boolean
+          default: false
+        conditions:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/RuleCondition"
+        actions:
+          type: array
+          minItems: 1
+          maxItems: 10
+          items:
+            $ref: "#/components/schemas/RuleAction"
+    Rule:
+      type: object
+      required: [id, name, priority, enabled, stop_processing, conditions, actions]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        priority:
+          type: integer
+        enabled:
+          type: boolean
+        stop_processing:
+          type: boolean
+        conditions:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuleCondition"
+        actions:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuleAction"
+    RulePage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Rule"
+        next_cursor:
+          type: string
+    RuleList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Rule"
+    RuleOrder:
+      type: object
+      additionalProperties: false
+      required: [rule_ids]
+      properties:
+        rule_ids:
+          type: array
+          minItems: 1
+          maxItems: 500
+          items:
+            type: string
+            format: uuid
+    PayeeAliasInput:
+      type: object
+      additionalProperties: false
+      required: [pattern, match_type, payee_id]
+      properties:
+        pattern:
+          type: string
+          minLength: 1
+          maxLength: 200
+        match_type:
+          type: string
+          enum: [equals, starts_with, contains, regex]
+        payee_id:
+          type: string
+          format: uuid
+    PayeeAlias:
+      type: object
+      required: [id, pattern, match_type, payee_id]
+      properties:
+        id:
+          type: string
+          format: uuid
+        pattern:
+          type: string
+        match_type:
+          type: string
+          enum: [equals, starts_with, contains, regex]
+        payee_id:
+          type: string
+          format: uuid
+    PayeeAliasPage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PayeeAlias"
         next_cursor:
           type: string
     CategorizeInput:
