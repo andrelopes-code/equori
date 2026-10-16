@@ -153,4 +153,14 @@ type Ledger interface {
 	LatestPayeeCategories(ctx context.Context, userID int64, payees []uuid.UUID) (map[domain.HistoryKey]uuid.UUID, error)
 	// Categorize returns the error of each item; err applies none.
 	Categorize(ctx context.Context, userID int64, cs []Categorization) (errs []error, err error)
+	// Transfer reports false when the ledger refused the transfer for a business rule.
+	Transfer(ctx context.Context, userID int64, t TransferRequest) (applied bool, err error)
+}
+
+// TransferRequest asks the ledger to turn a transaction into a transfer (P5b amendment A31).
+type TransferRequest struct {
+	TransactionID   uuid.UUID
+	ExpectedVersion int
+	AccountID       uuid.UUID
+	RuleID          uuid.UUID
 }

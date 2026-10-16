@@ -49,7 +49,14 @@ const (
 	ActionSetPayee    ActionType = "set_payee"
 	ActionAddTags     ActionType = "add_tags"
 	ActionSplit       ActionType = "split"
+	// ActionTransfer and ActionMarkReimbursable replace the category side with a posting on
+	// another of the owner's accounts (P5b amendment A31).
+	ActionTransfer         ActionType = "transfer"
+	ActionMarkReimbursable ActionType = "mark_reimbursable"
 )
+
+// categoryActions decide the category; a rule has at most one of them.
+var categoryActions = []ActionType{ActionSetCategory, ActionSplit, ActionTransfer, ActionMarkReimbursable}
 
 const (
 	MethodRule    = "rule"
@@ -101,6 +108,7 @@ type Action struct {
 	Type       ActionType
 	CategoryID uuid.UUID
 	PayeeID    uuid.UUID
+	AccountID  uuid.UUID
 	Tags       []string
 	Parts      []Part
 }
@@ -138,10 +146,14 @@ func NewRule(r Rule) (Rule, error) {
 		return Rule{}, invalid("actions", fmt.Sprintf("must have 1 to %d actions", maxActions))
 	}
 	seen := map[ActionType]bool{}
+	deciders := 0
 	for i, a := range r.Actions {
 		field := fmt.Sprintf("actions[%d]", i)
-		if seen[a.Type] || (a.Type == ActionSplit && seen[ActionSetCategory]) || (a.Type == ActionSetCategory && seen[ActionSplit]) {
-			return Rule{}, invalid(field+".type", "repeats an action or combines set_category with split")
+		if slices.Contains(categoryActions, a.Type) {
+			deciders++
+		}
+		if seen[a.Type] || deciders > 1 {
+			return Rule{}, invalid(field+".type", "repeats an action or combines two of set_category, split, transfer and mark_reimbursable")
 		}
 		seen[a.Type] = true
 		checked, err := checkAction(field, a)
@@ -275,6 +287,10 @@ func checkAction(field string, a Action) (Action, error) {
 		}
 	case ActionSplit:
 		return a, checkParts(field+".parts", a.Parts)
+	case ActionTransfer, ActionMarkReimbursable:
+		if a.AccountID == uuid.Nil {
+			return Action{}, invalid(field+".account_id", "is required")
+		}
 	default:
 		return Action{}, invalid(field+".type", "is not a known action")
 	}

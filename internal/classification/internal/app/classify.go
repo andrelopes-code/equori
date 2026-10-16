@@ -26,13 +26,17 @@ func (s *Service) catalog(ctx context.Context, userID int64) (domain.Catalog, ma
 	if err != nil {
 		return domain.Catalog{}, nil, err
 	}
-	categories := map[uuid.UUID]domain.Category{}
+	categories, balances := map[uuid.UUID]domain.Category{}, map[uuid.UUID]domain.Category{}
 	for id, a := range accounts {
-		if a.isCategory() && !a.isUncategorized() {
-			categories[id] = domain.Category{Class: a.Class, Instrument: a.Instrument, OpenedOn: a.OpenedOn, ClosedOn: a.ClosedOn}
+		c := domain.Category{Class: a.Class, Instrument: a.Instrument, OpenedOn: a.OpenedOn, ClosedOn: a.ClosedOn}
+		switch {
+		case a.isCategory() && !a.isUncategorized():
+			categories[id] = c
+		case a.isBalance():
+			balances[id] = c
 		}
 	}
-	return domain.Catalog{Rules: rules, Aliases: aliases, Categories: categories}, accounts, nil
+	return domain.Catalog{Rules: rules, Aliases: aliases, Categories: categories, Accounts: balances}, accounts, nil
 }
 
 // decideAll decides every subject; payee history is loaded once for the payees that rules
@@ -87,20 +91,30 @@ func (s *Service) classify(ctx context.Context, userID int64, ids []uuid.UUID) (
 		return 0, err
 	}
 	var cs []Categorization
+	n := 0
 	for i, d := range decisions {
-		if d.Method == "" && d.PayeeID == uuid.Nil && len(d.AddTags) == 0 {
-			continue
+		switch {
+		case d.TransferTo != uuid.Nil:
+			applied, err := s.ledger.Transfer(ctx, userID, TransferRequest{
+				TransactionID: targets[i].ID, ExpectedVersion: targets[i].Version, AccountID: d.TransferTo, RuleID: d.RuleID,
+			})
+			if err != nil {
+				return n, err
+			}
+			if applied {
+				n++
+			}
+		case d.Method != "" || d.PayeeID != uuid.Nil || len(d.AddTags) > 0:
+			cs = append(cs, categorization(targets[i].ID, targets[i].Version, d))
 		}
-		cs = append(cs, categorization(targets[i].ID, targets[i].Version, d))
 	}
 	if len(cs) == 0 {
-		return 0, nil
+		return n, nil
 	}
 	errs, err := s.ledger.Categorize(ctx, userID, cs)
 	if err != nil {
-		return 0, err
+		return n, err
 	}
-	n := 0
 	for i, e := range errs {
 		if e == nil && cs[i].Method != "" {
 			n++

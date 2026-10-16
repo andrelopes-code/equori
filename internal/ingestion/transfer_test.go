@@ -1,9 +1,7 @@
 package ingestion_test
 
 import (
-	"fmt"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 
@@ -13,17 +11,6 @@ import (
 	"github.com/andrelopes-code/equori/internal/ledger"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
-
-// cardOFX returns an OFX credit card statement for November 2026.
-func cardOFX(lines ...apitest.OFXLine) []byte {
-	var b strings.Builder
-	b.WriteString("OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\n\n<OFX><CREDITCARDMSGSRSV1><CCSTMTTRNRS><CCSTMTRS><CURDEF>BRL\n<BANKTRANLIST><DTSTART>20261104<DTEND>20261203\n")
-	for _, l := range lines {
-		fmt.Fprintf(&b, "<STMTTRN><TRNTYPE>CREDIT<DTPOSTED>%s<TRNAMT>%s<FITID>%s<MEMO>%s</STMTTRN>\n", l.Date, l.Amount, l.FITID, l.Name)
-	}
-	b.WriteString("</BANKTRANLIST></CCSTMTRS></CCSTMTTRNRS></CREDITCARDMSGSRSV1></OFX>\n")
-	return []byte(b.String())
-}
 
 type paymentSetup struct {
 	h              *apitest.Harness
@@ -100,7 +87,7 @@ func TestCheckingFirstTransfer(t *testing.T) {
 	if v := s.h.Transaction(id.String()); len(v.Postings) != 2 || cardRole(v, s.card) != "payment 2026-11" || v.Version != 1 {
 		t.Fatalf("transfer = %+v", v)
 	}
-	b := mustImport(t, s.h, s.card, "ofx", "fatura.ofx", cardOFX(apitest.OFXLine{Date: "20261111", Amount: "1500.00", FITID: "p1", Name: "PAGAMENTO RECEBIDO"}))
+	b := mustImport(t, s.h, s.card, "ofx", "fatura.ofx", apitest.CardOFX(apitest.OFXLine{Date: "20261111", Amount: "1500.00", FITID: "p1", Name: "PAGAMENTO RECEBIDO"}))
 	if got := counts(b); got != "received 1 ignored 0 matched 1 created 0 review 0" {
 		t.Fatalf("card import: %s", got)
 	}
@@ -115,7 +102,7 @@ func TestCheckingFirstTransfer(t *testing.T) {
 // S46: the card line came first; the checking line completes its transaction (A30).
 func TestCardFirstTransfer(t *testing.T) {
 	s := newPaymentSetup(t)
-	b := mustImport(t, s.h, s.card, "ofx", "fatura.ofx", cardOFX(apitest.OFXLine{Date: "20261111", Amount: "1500.00", FITID: "p1", Name: "PAGAMENTO RECEBIDO"}))
+	b := mustImport(t, s.h, s.card, "ofx", "fatura.ofx", apitest.CardOFX(apitest.OFXLine{Date: "20261111", Amount: "1500.00", FITID: "p1", Name: "PAGAMENTO RECEBIDO"}))
 	created := records(t, s.h, b.ID, "created")
 	if len(created) != 1 {
 		t.Fatalf("created = %+v", created)
@@ -140,7 +127,7 @@ func TestCardFirstTransfer(t *testing.T) {
 func TestPairedImportsStayPaired(t *testing.T) {
 	s := newPaymentSetup(t)
 	checkingFile := apitest.OFX("", apitest.OFXLine{Date: "20261110", Amount: "-1500.00", FITID: "c1", Name: "PAGAMENTO FATURA ITAU"})
-	cardFile := cardOFX(apitest.OFXLine{Date: "20261111", Amount: "1500.00", FITID: "p1", Name: "PAGAMENTO RECEBIDO"})
+	cardFile := apitest.CardOFX(apitest.OFXLine{Date: "20261111", Amount: "1500.00", FITID: "p1", Name: "PAGAMENTO RECEBIDO"})
 	checkingBatch := mustImport(t, s.h, s.checking, "ofx", "nubank.ofx", checkingFile)
 	cardBatch := mustImport(t, s.h, s.card, "ofx", "fatura.ofx", cardFile)
 	checkingTx := records(t, s.h, checkingBatch.ID, "created")[0].TransactionID
@@ -177,7 +164,7 @@ func TestPairedImportsStayPaired(t *testing.T) {
 // to pair (P5b amendment A30); it never adds a second card posting.
 func TestTransferLineWithSeveralCandidates(t *testing.T) {
 	s := newPaymentSetup(t)
-	mustImport(t, s.h, s.card, "ofx", "fatura.ofx", cardOFX(
+	mustImport(t, s.h, s.card, "ofx", "fatura.ofx", apitest.CardOFX(
 		apitest.OFXLine{Date: "20261109", Amount: "1500.00", FITID: "p1", Name: "PAGAMENTO RECEBIDO"},
 		apitest.OFXLine{Date: "20261111", Amount: "1500.00", FITID: "p2", Name: "PAGAMENTO RECEBIDO"}))
 

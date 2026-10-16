@@ -92,10 +92,12 @@ func (e PayeeAliasInputMatchType) Valid() bool {
 
 // Defines values for RuleActionType.
 const (
-	AddTags     RuleActionType = "add_tags"
-	SetCategory RuleActionType = "set_category"
-	SetPayee    RuleActionType = "set_payee"
-	Split       RuleActionType = "split"
+	AddTags          RuleActionType = "add_tags"
+	MarkReimbursable RuleActionType = "mark_reimbursable"
+	SetCategory      RuleActionType = "set_category"
+	SetPayee         RuleActionType = "set_payee"
+	Split            RuleActionType = "split"
+	Transfer         RuleActionType = "transfer"
 )
 
 // Valid indicates whether the value is a known member of the RuleActionType enum.
@@ -103,11 +105,15 @@ func (e RuleActionType) Valid() bool {
 	switch e {
 	case AddTags:
 		return true
+	case MarkReimbursable:
+		return true
 	case SetCategory:
 		return true
 	case SetPayee:
 		return true
 	case Split:
+		return true
+	case Transfer:
 		return true
 	default:
 		return false
@@ -339,6 +345,8 @@ type Rule struct {
 
 // RuleAction defines model for RuleAction.
 type RuleAction struct {
+	// AccountId Target of transfer (an asset or liability account) and mark_reimbursable (a receivable), P5b amendment A31.
+	AccountId  *openapi_types.UUID `json:"account_id,omitempty"`
 	CategoryId *openapi_types.UUID `json:"category_id,omitempty"`
 	Parts      *[]RuleSplitPart    `json:"parts,omitempty"`
 	PayeeId    *openapi_types.UUID `json:"payee_id,omitempty"`

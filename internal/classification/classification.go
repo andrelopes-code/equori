@@ -5,6 +5,7 @@ package classification
 import (
 	"context"
 	"encoding/json/v2"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -84,7 +85,9 @@ func (m *Module) DecideImport(ctx context.Context, userID int64, lines []ImportL
 		if d == nil {
 			continue
 		}
-		out[i] = &ledger.ImportDecision{PayeeID: d.PayeeID, AddTags: d.AddTags, Cause: ledger.Cause{Method: d.Method, RuleID: d.RuleID}}
+		out[i] = &ledger.ImportDecision{
+			PayeeID: d.PayeeID, AddTags: d.AddTags, TransferTo: d.TransferTo, Cause: ledger.Cause{Method: d.Method, RuleID: d.RuleID},
+		}
 		for _, a := range d.Parts {
 			out[i].Parts = append(out[i].Parts, ledger.CategoryPart{AccountID: a.CategoryID, Amount: a.Amount})
 		}
@@ -146,6 +149,22 @@ func (p ledgerPort) Categorize(ctx context.Context, userID int64, cs []app.Categ
 		}
 	}
 	return p.l.Categorize(ctx, userID, items)
+}
+
+func (p ledgerPort) Transfer(ctx context.Context, userID int64, t app.TransferRequest) (bool, error) {
+	_, err := p.l.Transfer(ctx, userID, ledger.TransferRequest{
+		TransactionID: t.TransactionID, ExpectedVersion: t.ExpectedVersion, AccountID: t.AccountID,
+		Cause: ledger.Cause{Method: app.MethodRule, RuleID: t.RuleID},
+	})
+	for _, refused := range []error{
+		ledger.ErrNotFound, ledger.ErrValidation, ledger.ErrVersionConflict, ledger.ErrVoided,
+		ledger.ErrReconciled, ledger.ErrNotCategorizable, ledger.ErrPairingAmbiguous,
+	} {
+		if errors.Is(err, refused) {
+			return false, nil
+		}
+	}
+	return err == nil, err
 }
 
 func (p ledgerPort) MissingPayees(ctx context.Context, userID int64, ids []uuid.UUID) ([]uuid.UUID, error) {

@@ -40,6 +40,9 @@ func toActionAPI(d domain.ActionDoc) RuleAction {
 	if d.PayeeID != uuid.Nil {
 		out.PayeeId = &d.PayeeID
 	}
+	if d.AccountID != uuid.Nil {
+		out.AccountId = &d.AccountID
+	}
 	if d.Tags != nil {
 		out.Tags = &d.Tags
 	}
@@ -76,6 +79,9 @@ func fromRuleInput(in RuleInput) (domain.Rule, error) {
 		}
 		if a.PayeeId != nil {
 			d.PayeeID = *a.PayeeId
+		}
+		if a.AccountId != nil {
+			d.AccountID = *a.AccountId
 		}
 		if a.Tags != nil {
 			d.Tags = *a.Tags

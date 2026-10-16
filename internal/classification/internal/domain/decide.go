@@ -20,7 +20,9 @@ type Catalog struct {
 	Rules      []Rule
 	Aliases    []Alias
 	Categories map[uuid.UUID]Category
-	History    map[HistoryKey]uuid.UUID
+	// Accounts are the asset and liability accounts that transfers may target.
+	Accounts map[uuid.UUID]Category
+	History  map[HistoryKey]uuid.UUID
 }
 
 // Decision is the outcome of F5 for one subject. Method is empty when no category was
@@ -29,8 +31,10 @@ type Decision struct {
 	PayeeID uuid.UUID
 	AddTags []string
 	Parts   []Allocation
-	Method  string
-	RuleID  uuid.UUID
+	// TransferTo replaces the category side with a posting on this account (P5b A31).
+	TransferTo uuid.UUID
+	Method     string
+	RuleID     uuid.UUID
 }
 
 // Payee is the payee the subject has after the decision.
@@ -56,12 +60,12 @@ func Decide(s Subject, c Catalog) Decision {
 		if !r.matches(subj) {
 			continue
 		}
-		parts, ok := r.allocation(total, c.Categories, s)
+		parts, transfer, ok := r.allocation(total, c, s)
 		if !ok {
 			continue
 		}
-		if parts != nil && !categoryDecided {
-			d.Parts, d.Method, d.RuleID, categoryDecided = parts, MethodRule, r.ID, true
+		if (parts != nil || transfer != uuid.Nil) && !categoryDecided {
+			d.Parts, d.TransferTo, d.Method, d.RuleID, categoryDecided = parts, transfer, MethodRule, r.ID, true
 		}
 		for _, a := range r.Actions {
 			switch a.Type {
@@ -89,16 +93,24 @@ func Decide(s Subject, c Catalog) Decision {
 	return d
 }
 
-// allocation returns the category postings of r's category action, nil without one, and
-// false when the action cannot apply to s.
-func (r Rule) allocation(total money.Money, categories map[uuid.UUID]Category, s Subject) ([]Allocation, bool) {
+// allocation returns the category postings or the transfer target of r's category action,
+// neither without one, and false when the action cannot apply to s.
+func (r Rule) allocation(total money.Money, c Catalog, s Subject) ([]Allocation, uuid.UUID, bool) {
 	for _, a := range r.Actions {
 		switch a.Type {
 		case ActionSetCategory:
-			return Allocate(total, []Part{{CategoryID: a.CategoryID, Remainder: true}}, categories, s.Date)
+			parts, ok := Allocate(total, []Part{{CategoryID: a.CategoryID, Remainder: true}}, c.Categories, s.Date)
+			return parts, uuid.Nil, ok
 		case ActionSplit:
-			return Allocate(total, a.Parts, categories, s.Date)
+			parts, ok := Allocate(total, a.Parts, c.Categories, s.Date)
+			return parts, uuid.Nil, ok
+		case ActionTransfer, ActionMarkReimbursable:
+			target, ok := c.Accounts[a.AccountID]
+			if !ok || !target.usable(total.Currency(), s.Date) || slices.Contains(s.Accounts, a.AccountID) {
+				return nil, uuid.Nil, false
+			}
+			return nil, a.AccountID, true
 		}
 	}
-	return nil, true
+	return nil, uuid.Nil, true
 }

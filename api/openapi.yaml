@@ -3065,10 +3065,14 @@ components:
       properties:
         type:
           type: string
-          enum: [set_category, set_payee, add_tags, split]
+          enum: [set_category, set_payee, add_tags, split, transfer, mark_reimbursable]
         category_id:
           type: string
           format: uuid
+        account_id:
+          type: string
+          format: uuid
+          description: Target of transfer (an asset or liability account) and mark_reimbursable (a receivable), P5b amendment A31.
         payee_id:
           type: string
           format: uuid

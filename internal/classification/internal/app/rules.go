@@ -111,6 +111,15 @@ func (s *Service) checkRule(ctx context.Context, userID int64, r domain.Rule) (d
 				return domain.Rule{}, invalidRef(fmt.Sprintf("%s.parts[%d].category_id", field, j), "must be an income or expense category")
 			}
 		}
+		if a.Type == domain.ActionTransfer || a.Type == domain.ActionMarkReimbursable {
+			t, ok := accounts[a.AccountID]
+			switch {
+			case !ok || !t.isBalance():
+				return domain.Rule{}, invalidRef(field+".account_id", "must be an asset or liability account")
+			case a.Type == domain.ActionMarkReimbursable && t.Kind != "receivable":
+				return domain.Rule{}, invalidRef(field+".account_id", "must be a receivable account")
+			}
+		}
 		if a.Type == domain.ActionSetPayee {
 			payees = append(payees, a.PayeeID)
 			payeeFields[a.PayeeID] = field + ".payee_id"
