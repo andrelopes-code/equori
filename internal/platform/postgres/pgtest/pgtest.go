@@ -4,15 +4,21 @@ package pgtest
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
 	"io"
+	"io/fs"
 	"log/slog"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/andrelopes-code/equori/db"
 	"github.com/andrelopes-code/equori/internal/platform/postgres"
 )
 
@@ -22,35 +28,116 @@ const envURL = "EQUORI_TEST_DATABASE_URL"
 // migrations and drops the database when the test ends.
 func New(t testing.TB) *pgxpool.Pool {
 	t.Helper()
-	pool := Empty(t)
-	if err := postgres.Migrate(context.Background(), pool, slog.New(slog.NewTextHandler(io.Discard, nil))); err != nil {
-		t.Fatalf("migrate: %v", err)
-	}
-	return pool
+	return create(t, template(t))
 }
 
-// Empty creates a database without migrations, for example as a restore target, and
-// drops it when the test ends.
-func Empty(t testing.TB) *pgxpool.Pool {
+// templates holds, per process, the migrated database every New copies: copying a database
+// takes milliseconds, migrating one takes seconds.
+var templates struct {
+	once sync.Once
+	name string
+	err  error
+}
+
+// template returns the name of a database migrated to the embedded migrations. Its name
+// carries a digest of the migrations, so test processes share it and a changed migration
+// gets a new one; an advisory lock makes one process build it.
+func template(t testing.TB) string {
 	t.Helper()
+	templates.once.Do(func() { templates.name, templates.err = buildTemplate() })
+	if templates.err != nil {
+		t.Fatalf("template database: %v", templates.err)
+	}
+	return templates.name
+}
+
+func buildTemplate() (string, error) {
+	sum := sha256.New()
+	if err := fs.WalkDir(db.Migrations, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		b, err := db.Migrations.ReadFile(path)
+		sum.Write([]byte(path))
+		sum.Write(b)
+		return err
+	}); err != nil {
+		return "", err
+	}
+	name := "template_" + hex.EncodeToString(sum.Sum(nil))[:16]
+	ctx := context.Background()
+	admin, err := connectAdmin(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer admin.Close(ctx)
+	if _, err := admin.Exec(ctx, "SELECT pg_advisory_lock(hashtextextended($1, 0))", name); err != nil {
+		return "", err
+	}
+	defer admin.Exec(ctx, "SELECT pg_advisory_unlock(hashtextextended($1, 0))", name) //nolint:errcheck // the session ends next
+	var ready bool
+	if err := admin.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = $1 AND datistemplate)", name).Scan(&ready); err != nil || ready {
+		return name, err
+	}
+	if _, err := admin.Exec(ctx, "DROP DATABASE IF EXISTS "+name); err != nil {
+		return "", err
+	}
+	if _, err := admin.Exec(ctx, "CREATE DATABASE "+name); err != nil {
+		return "", err
+	}
+	cfg, err := pgxpool.ParseConfig(os.Getenv(envURL))
+	if err != nil {
+		return "", err
+	}
+	cfg.ConnConfig.Database = name
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
+	if err != nil {
+		return "", err
+	}
+	err = postgres.Migrate(ctx, pool, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	pool.Close()
+	if err != nil {
+		return "", fmt.Errorf("migrate: %w", err)
+	}
+	// Marked last: a database left by an interrupted build is not a template and is rebuilt.
+	_, err = admin.Exec(ctx, "ALTER DATABASE "+name+" WITH IS_TEMPLATE true")
+	return name, err
+}
+
+func connectAdmin(ctx context.Context) (*pgx.Conn, error) {
 	adminURL := os.Getenv(envURL)
 	if adminURL == "" {
-		t.Fatalf("%s is not set; run tests with make test", envURL)
+		return nil, fmt.Errorf("%s is not set; run tests with make test", envURL)
 	}
-	ctx := context.Background()
-
 	cfg, err := pgx.ParseConfig(adminURL)
 	if err != nil {
-		t.Fatalf("parse %s: %v", envURL, err)
+		return nil, fmt.Errorf("parse %s: %w", envURL, err)
 	}
-	admin, err := pgx.ConnectConfig(ctx, cfg)
+	return pgx.ConnectConfig(ctx, cfg)
+}
+
+func Empty(t testing.TB) *pgxpool.Pool {
+	t.Helper()
+	return create(t, "")
+}
+
+// create makes a database for the test, copied from template when it is not empty, and
+// drops it at the end of the test.
+func create(t testing.TB, template string) *pgxpool.Pool {
+	t.Helper()
+	ctx := context.Background()
+	admin, err := connectAdmin(ctx)
 	if err != nil {
-		t.Fatalf("connect admin: %v", err)
+		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = admin.Close(context.Background()) })
 
 	name := "test_" + strings.ToLower(rand.Text())
-	if _, err := admin.Exec(ctx, "CREATE DATABASE "+name); err != nil {
+	stmt := "CREATE DATABASE " + name
+	if template != "" {
+		stmt += " TEMPLATE " + template
+	}
+	if _, err := admin.Exec(ctx, stmt); err != nil {
 		t.Fatalf("create database: %v", err)
 	}
 	t.Cleanup(func() {
@@ -60,7 +147,7 @@ func Empty(t testing.TB) *pgxpool.Pool {
 		}
 	})
 
-	poolCfg, err := pgxpool.ParseConfig(adminURL)
+	poolCfg, err := pgxpool.ParseConfig(os.Getenv(envURL))
 	if err != nil {
 		t.Fatal(err)
 	}
