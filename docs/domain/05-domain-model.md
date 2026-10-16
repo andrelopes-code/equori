@@ -374,11 +374,23 @@ classDiagram
 
 | Rule | Statement |
 |---|---|
-| Condition fields | description, raw description, payee, amount, absolute amount, account, account kind, source, transaction date weekday, day of month, installment present. |
-| Operators | equals, contains, starts with, regex (RE2), between, greater than, less than, in list. All conditions of a rule must hold. |
-| Actions | set category, set payee, add tags, split by fixed amounts or percentages, mark as transfer to account, mark reimbursable to counterparty. |
-| Order | Rules run by ascending priority; the first matching rule with `stopProcessing` ends evaluation. |
-| Precedence | Manual categorization > rule > source category > payee history (F5). |
+| Condition fields | description, raw description (the description of version 1), payee, amount (the negated sum of the category postings: an expense is negative), absolute amount, account (a balance-sheet account of the transaction), account kind, source (transaction origin), transaction date weekday, day of month, installment present. |
+| Operators | equals, contains, starts with, regex (RE2), between, greater than, less than, in list, per field as in the table below. All conditions of a rule must hold. |
+| Text | Text operators compare normalized text: Unicode lowercase, Latin letters U+00C0–U+017F without diacritics, inner whitespace collapsed, trimmed (`São João` equals `SAO JOAO`). `regex` applies to the original text (P5 amendment A26). |
+| Actions | set category, set payee, add tags, split by percentages (basis points, rounded toward zero), fixed amounts and one remainder part. A rule has at most one of set category and split. Mark as transfer to account and mark reimbursable to counterparty arrive with phase P5b (P5 amendment A25). |
+| Order | Rules run by ascending priority. The first matching rule that sets a category or split decides the category, the first that sets a payee decides the payee, tags accumulate; a matching rule with `stopProcessing` ends evaluation. A rule whose action cannot apply (category closed on the date, another currency, fixed parts above the total) is skipped (P5 amendment A21). |
+| Payee aliases | Applied to the raw description of a transaction without payee, before rules. Order: equals, starts with, contains, regex; within a type the longer pattern first, then the older alias (A22). |
+| Payee history | Without a rule category and with a payee, the category of the most recent non-voided transaction of that payee whose only category posting is categorized and of the same class (A23). |
+| Precedence | Manual categorization > rule > source category > payee history (F5). Automatic categorization acts only on transactions whose category postings are all uncategorized (A17). |
+
+| Condition field | Operators | Value |
+|---|---|---|
+| description, raw description | equals, contains, starts with, regex, in list | text up to 200 characters, or a list of up to 100 |
+| payee, account | equals, in list | id or list of ids |
+| amount, absolute amount | equals, greater than, less than, between | `Money`, or two for between; holds only in the same currency |
+| account kind, source, weekday | equals, in list | enumerated value or list |
+| day of month | equals, greater than, less than, between, in list | 1–31 |
+| installment present | equals | boolean |
 
 ## 5.5 Ingestion
 

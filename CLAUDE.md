@@ -21,7 +21,7 @@ Tools are pinned in `tools/go.mod` and built into `bin/`. Do not install tools g
 ```
 cmd/equori/            composition root only: config, wiring, start
 internal/platform/     infrastructure without business rules
-internal/<module>/     one business module (see ADR 002): identity, ledger, marketdata, reporting
+internal/<module>/     one business module (see ADR 002): identity, ledger, marketdata, reporting, ingestion, classification
 internal/server/       composition of every module: HTTP handler and outbox dispatcher
 internal/apitest/      HTTP test harness over internal/server
 db/migrations/         goose SQL migrations, embedded

@@ -165,10 +165,10 @@ erDiagram
 | `planning_occurrence` | `id`, `user_id`, `schedule_id`, `sequence`, `expected_on`, `expected_amount`, `state`, `transaction_id`, `moved_from` | `UNIQUE (schedule_id, sequence)`; `UNIQUE (transaction_id) WHERE transaction_id IS NOT NULL` (I07) |
 | `planning_budget`, `planning_budget_amount` | `id`, `user_id`, `category_account_id`, `period_type`, `rollover`; `budget_id`, `effective_from`, `amount` | Category account class `expense` or `income` |
 | `planning_goal`, `planning_goal_account` | `id`, `user_id`, `name`, `target`, `currency`, `due_on`; `goal_id`, `account_id` | |
-| `classification_rule` | `id`, `user_id`, `name`, `priority`, `enabled`, `stop_processing`, `conditions jsonb`, `actions jsonb`, `schema_version` | `UNIQUE (user_id, priority)` |
-| `classification_payee_alias` | `id`, `user_id`, `pattern`, `match_type`, `payee_id` | |
-| `classification_suggestion` | `id`, `user_id`, `conditions jsonb`, `actions jsonb`, `example_transaction_ids uuid[]`, `state`, `rule_id` | |
-| `classification_categorization` | `transaction_id`, `user_id`, `method`, `rule_id`, `decided_at` | `PRIMARY KEY (transaction_id)` (SC5) |
+| `classification_rule` | `id`, `user_id`, `name`, `priority`, `enabled`, `stop_processing`, `conditions jsonb`, `actions jsonb`, `schema_version` | `UNIQUE (user_id, priority)`, deferrable for reordering |
+| `classification_payee_alias` | `id`, `user_id`, `pattern`, `match_type`, `payee_id` | `UNIQUE (user_id, match_type, pattern)` |
+| `classification_suggestion` | `id`, `user_id`, `fingerprint`, `conditions jsonb`, `actions jsonb`, `example_transaction_ids uuid[]`, `state`, `rule_id`, `created_at`, `decided_at` | `UNIQUE (user_id, fingerprint)` (P5 amendment A24); `rule_id` only when `accepted` |
+| `classification_categorization` | `transaction_id`, `user_id`, `transaction_version`, `transaction_date`, `method`, `rule_id`, `corrected`, `match_key`, `category_id`, `voided`, `decided_at` | `PRIMARY KEY (transaction_id)` (SC5); `method` NULL while uncategorized; a row changes only for a higher `transaction_version` (P5 amendment A20) |
 | `ingestion_connection` | `id`, `user_id`, `provider`, `external_item_id`, `credential_ciphertext bytea`, `status`, `last_sync_at` | Encryption per future ADR |
 | `ingestion_account_mapping` | `connection_id`, `external_account_id`, `account_id` | `UNIQUE (connection_id, external_account_id)` |
 | `ingestion_csv_profile` | `account_id`, `user_id`, `delimiter`, `header_rows`, `date_column`, `date_layout`, `amount_column`, `debit_column`, `credit_column`, `decimal_separator`, `description_column`, `id_column`, `amount_sign` | One amount layout: `amount_column` or (`debit_column`, `credit_column`) |

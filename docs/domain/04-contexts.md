@@ -71,7 +71,7 @@ flowchart TB
 | Invariants | I01–I06, I08–I09 (chapter 3). |
 | Commands | `RecordTransaction`, `CorrectTransaction`, `VoidTransaction`, `RecordCardPurchase`, `PayStatement`, `FinanceStatement`, `RefundPurchase`, `CancelInstallments`, `AnticipateInstallments`, `ChangeBillingCycleRule`, `AssertBalance`, `Reconcile`, `RecordYield`, `AdjustBalance`, `Categorize`, `AttachFile`, account and payee management. |
 | Queries | Balance at a date, balance series, statements, postings by account and period, transaction by id, installment plans. |
-| Events published | `TransactionRecorded`, `TransactionCorrected`, `TransactionVoided`, `StatementClosed`, `StatementOverdue`, `BalanceAsserted`, `DifferenceFound`, `AccountReconciled`, `AccountOpened`, `AccountClosed`. |
+| Events published | `TransactionRecorded`, `TransactionCorrected`, `TransactionCategorized`, `TransactionVoided`, `StatementClosed`, `StatementOverdue`, `BalanceAsserted`, `DifferenceFound`, `AccountReconciled`, `AccountOpened`, `AccountClosed`. |
 
 Card statements and installment plans stay in Ledger: recording a card purchase creates postings and their statement assignments in one database transaction (I03), which a context boundary would split.
 
@@ -80,10 +80,10 @@ Card statements and installment plans stay in Ledger: recording a card purchase 
 | Item | Content |
 |---|---|
 | Responsibility | Categorization rules, rule suggestions, payee aliases (raw name → payee), categorization method statistics (SC5). |
-| Reacts to | `TransactionRecorded`, `TransactionCorrected` (manual changes feed suggestions). |
-| Commands | `CreateRule`, `ChangeRule`, `ReorderRules`, `RunRules`, `AcceptSuggestion`, `MapPayeeAlias`. |
-| Events published | `TransactionNeedsReview`, `RuleSuggested`. |
-| Calls | Ledger `Categorize`. |
+| Reacts to | `TransactionRecorded`, `TransactionCorrected`, `TransactionCategorized`, `TransactionVoided` (categorization records, manual changes feed suggestions). |
+| Commands | `CreateRule`, `ChangeRule`, `ReorderRules`, `RunRules`, `AcceptSuggestion`, `DismissSuggestion`, `MapPayeeAlias`, `DecideImport` (called by Ingestion, P5 amendment A19). |
+| Events published | `RuleSuggested`. Transactions that need review are the uncategorized ones (`GET /transactions?uncategorized=true`). |
+| Calls | Ledger `Categorize` and the Ledger reads it decides from (transaction facts, accounts, payees, payee history). |
 
 ### 4.3.3 Ingestion
 
@@ -93,7 +93,7 @@ Card statements and installment plans stay in Ledger: recording a card purchase 
 | Invariants | I07 (external record side), I10. |
 | Commands | `ImportFile`, `SyncConnection`, `ConnectAggregator`, `ResolveMatch`. |
 | Events published | `ImportBatchCompleted`, `ExternalRecordNeedsReview`. |
-| Calls | Ledger `RecordTransaction`, `RecordCardPurchase`, `AssertBalance`, match commands. |
+| Calls | Ledger `RecordTransaction`, `RecordCardPurchase`, `AssertBalance`, match commands; Classification `DecideImport` before recording created lines. |
 
 ### 4.3.4 Planning
 

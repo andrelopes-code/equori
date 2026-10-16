@@ -195,9 +195,9 @@ flowchart LR
 
 | Event | Data | Rules |
 |---|---|---|
-| `TransactionCategorized` | transaction, category postings, method | Method: `rule`, `source`, `history`, `manual` (SC5). A manual categorization is never overwritten by a rule. |
+| `TransactionCategorized` | transaction, category postings, method | Method: `rule`, `source`, `history`, `manual` (SC5). Automatic categorization acts only on transactions whose category postings are all uncategorized, so a manual categorization is never overwritten by a rule (P5 amendment A17). Imported lines are decided before the Ledger records them (A19); other transactions are decided after `TransactionRecorded`. The Ledger publishes it as `ledger.transaction_categorized.v1` with the cause of the decision, and Classification records the method of each transaction from the Ledger events, by transaction version (A20). |
 | `TransactionNeedsReview` | transaction, reason | Reasons: no category, ambiguous match, possible duplicate, unknown payee. |
-| `RuleSuggested` | conditions, actions, example transactions | Proposed after the same manual correction is made twice for similar transactions. |
+| `RuleSuggested` | conditions, actions, example transactions | Proposed when two transactions with the same match key (the payee, or the normalized raw description without a payee) are corrected manually to the same single category; one suggestion per match key and category ever exists (P5 amendment A24). |
 | `RuleCreated` / `RuleChanged` | rule, priority | Rules can run on existing uncategorized transactions on request. |
 
 ## 3.8 F6 Reconciliation and yield
