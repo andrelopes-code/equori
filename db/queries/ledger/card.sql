@@ -107,3 +107,6 @@ SELECT * FROM ledger_dispute WHERE user_id = $1 AND id = $2 FOR UPDATE;
 UPDATE ledger_dispute SET resolved_on = @resolved_on, outcome = @outcome, refund_transaction_id = sqlc.narg(refund_transaction_id)
 WHERE id = @id
 RETURNING *;
+
+-- name: GetStatementByDueDate :one
+SELECT reference_month FROM ledger_statement WHERE user_id = @user_id AND account_id = @account_id AND due_date = @due_date;

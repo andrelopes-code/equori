@@ -107,6 +107,17 @@ func TestDBProtectsReconciledPostings(t *testing.T) {
 	requireViolation(t, err, checkViolation, "reconciled")
 	_, err = f.pool.Exec(t.Context(), `DELETE FROM ledger_posting WHERE transaction_id = $1`, id)
 	requireViolation(t, err, checkViolation, "reconciled")
+	_, err = f.pool.Exec(t.Context(), `UPDATE ledger_posting SET status = 'cleared' WHERE transaction_id = $1`, id)
+	requireViolation(t, err, checkViolation, "reconciled")
+	_, err = f.pool.Exec(t.Context(), `UPDATE ledger_posting SET memo = 'changed', external_record_id = gen_random_uuid() WHERE transaction_id = $1 AND position = 0`, id)
+	requireViolation(t, err, checkViolation, "reconciled")
+
+	// P6 A38: the link to an external record may change on a reconciled posting.
+	for _, link := range []string{"gen_random_uuid()", "NULL"} {
+		if _, err := f.pool.Exec(t.Context(), `UPDATE ledger_posting SET external_record_id = `+link+` WHERE transaction_id = $1 AND position = 0`, id); err != nil {
+			t.Fatalf("relinking a reconciled posting to %s: %v", link, err)
+		}
+	}
 
 	if _, err := f.pool.Exec(t.Context(), `UPDATE ledger_transaction SET voided_at = now() WHERE id = $1`, id); err != nil {
 		t.Fatalf("voiding a transaction with reconciled postings: %v", err)

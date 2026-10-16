@@ -22,6 +22,10 @@ type ImportedPosting struct {
 	Date        time.Time
 	Amount      money.Money
 	Description string
+	// Pending: the institution has not settled the line; the posting stays pending (P6 A36).
+	Pending bool
+	// DueDate of the card bill the line belongs to: the posting is billed on that bill (A39).
+	DueDate *time.Time
 }
 
 // ImportedRecord is a statement line and the external record it comes from.
@@ -141,7 +145,15 @@ func (s *Service) RecordImportedBatch(ctx context.Context, userID int64, recs []
 					rec.Decision = &undecided
 				}
 			}
-			t, err := domain.NewTransaction(importedTransaction(userID, settings.BaseCurrency, rec, expense, income), accounts)
+			draft := importedTransaction(userID, settings.BaseCurrency, rec, expense, income)
+			if rec.Posting.DueDate != nil && accounts[rec.Posting.AccountID].Kind == domain.KindCreditCard {
+				ref, err := s.statementDue(ctx, r, userID, rec.Posting.AccountID, *rec.Posting.DueDate)
+				if err != nil {
+					return err
+				}
+				draft.Postings[0].Statement = &ref
+			}
+			t, err := domain.NewTransaction(draft, accounts)
 			if err != nil {
 				return &LineError{Index: i, Err: err}
 			}
@@ -175,6 +187,9 @@ func importedTransaction(userID int64, base money.Currency, rec ImportedRecord, 
 		ID: uuid.Must(uuid.NewV7()), UserID: userID, Date: rec.Posting.Date, Description: rec.Posting.Description,
 		BalancingCurrency: base, Origin: domain.OriginImport,
 		Postings: []domain.Posting{{AccountID: rec.Posting.AccountID, Amount: rec.Posting.Amount, ExternalRecordID: rec.RecordID}},
+	}
+	if rec.Posting.Pending {
+		t.Postings[0].Status = domain.StatusPending
 	}
 	if d := rec.Decision; d != nil {
 		t.PayeeID, t.Tags = d.PayeeID, d.AddTags
@@ -283,6 +298,70 @@ type PostingLink struct {
 // Match links an external record to the transaction it confirms.
 type Match struct {
 	RecordID, TransactionID, AccountID uuid.UUID
+	// KeepPending links a line the institution has not settled without clearing the posting.
+	KeepPending bool
+}
+
+// statementDue is the statement of a card bill: the one due on the bill's due date, else
+// the reference month of that date (P6 amendment A39).
+func (s *Service) statementDue(ctx context.Context, r Repository, userID int64, card uuid.UUID, due time.Time) (domain.ReferenceMonth, error) {
+	ref, err := r.StatementByDueDate(ctx, userID, card, due)
+	if errors.Is(err, ErrNotFound) {
+		return domain.MonthOf(due), nil
+	}
+	return ref, err
+}
+
+// ImportedPostingState is the posting an external record confirms.
+type ImportedPostingState struct {
+	ID, AccountID uuid.UUID
+	Status        domain.PostingStatus
+	CardRole      string
+}
+
+// ImportedUpdate is what an aggregator now reports about a recorded line (P6 amendment A36).
+type ImportedUpdate struct {
+	Pending bool
+	DueDate *time.Time
+}
+
+// UpdateImportedPosting clears the posting of a line the aggregator reports posted and
+// bills a card posting on the statement of its bill. A reconciled posting is ErrReconciled
+// and stays as it is; a record no posting carries is ErrNotFound.
+func (s *Service) UpdateImportedPosting(ctx context.Context, userID int64, recordID uuid.UUID, u ImportedUpdate) error {
+	return s.repo.InTx(ctx, func(r Repository) error {
+		p, err := r.LockImportedPosting(ctx, userID, recordID)
+		if err != nil {
+			return err
+		}
+		if p.Status == domain.StatusReconciled {
+			return domain.ErrReconciled
+		}
+		status := p.Status
+		if !u.Pending {
+			status = domain.StatusCleared
+		}
+		var statementID uuid.UUID
+		if u.DueDate != nil && p.CardRole != "" {
+			ref, err := s.statementDue(ctx, r, userID, p.AccountID, *u.DueDate)
+			if err != nil {
+				return err
+			}
+			rules, err := r.BillingRules(ctx, userID, p.AccountID)
+			if err != nil {
+				return err
+			}
+			if statementID, err = s.ensureStatement(ctx, r, userID, p.AccountID, ref, rules); err != nil {
+				return err
+			}
+		}
+		return r.SettleImportedPosting(ctx, userID, p.ID, status, statementID)
+	})
+}
+
+// ReleaseRecord unlinks an external record from its posting; the transaction stays (P6 A38).
+func (s *Service) ReleaseRecord(ctx context.Context, userID int64, recordID uuid.UUID) error {
+	return s.repo.ReleaseExternalRecord(ctx, userID, recordID)
 }
 
 // ClearMatched links one record; a transaction carrying another record is ErrAlreadyMatched.
@@ -319,6 +398,9 @@ func (s *Service) ClearMatchedBatch(ctx context.Context, userID int64, ms []Matc
 			}
 			if err := r.LinkExternalRecord(ctx, userID, links[free].PostingID, m.RecordID); err != nil {
 				return err
+			}
+			if m.KeepPending {
+				continue
 			}
 			if err := r.ClearPendingPostings(ctx, userID, m.TransactionID, m.AccountID); err != nil {
 				return err

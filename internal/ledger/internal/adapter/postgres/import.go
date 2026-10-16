@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
+	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
 )
 
 func (r *Repository) TransactionByExternalRecord(ctx context.Context, userID int64, recordID uuid.UUID) (uuid.UUID, error) {
@@ -29,6 +30,34 @@ func (r *Repository) LinkExternalRecord(ctx context.Context, userID int64, posti
 		return app.ErrAlreadyMatched
 	}
 	return err
+}
+
+func (r *Repository) LockImportedPosting(ctx context.Context, userID int64, recordID uuid.UUID) (app.ImportedPostingState, error) {
+	row, err := r.q.LockImportedPosting(ctx, LockImportedPostingParams{UserID: userID, ExternalRecordID: nullUUID(recordID)})
+	if err != nil {
+		return app.ImportedPostingState{}, notFound(err)
+	}
+	p := app.ImportedPostingState{ID: row.ID, AccountID: row.AccountID, Status: domain.PostingStatus(row.Status)}
+	if row.CardRole != nil {
+		p.CardRole = *row.CardRole
+	}
+	return p, nil
+}
+
+func (r *Repository) SettleImportedPosting(ctx context.Context, userID int64, postingID uuid.UUID, status domain.PostingStatus, statementID uuid.UUID) error {
+	return r.q.SettleImportedPosting(ctx, SettleImportedPostingParams{UserID: userID, ID: postingID, Status: string(status), StatementID: nullUUID(statementID)})
+}
+
+func (r *Repository) ReleaseExternalRecord(ctx context.Context, userID int64, recordID uuid.UUID) error {
+	return r.q.ReleaseExternalRecord(ctx, ReleaseExternalRecordParams{UserID: userID, ExternalRecordID: nullUUID(recordID)})
+}
+
+func (r *Repository) StatementByDueDate(ctx context.Context, userID int64, accountID uuid.UUID, due time.Time) (domain.ReferenceMonth, error) {
+	first, err := r.q.GetStatementByDueDate(ctx, GetStatementByDueDateParams{UserID: userID, AccountID: accountID, DueDate: due})
+	if err != nil {
+		return domain.ReferenceMonth{}, notFound(err)
+	}
+	return domain.MonthOf(first), nil
 }
 
 func (r *Repository) ClearPendingPostings(ctx context.Context, userID int64, txID, accountID uuid.UUID) error {

@@ -17,6 +17,7 @@ func toRecordAPI(r domain.ExternalRecord, currency string) ExternalRecord {
 		Id: r.ID, BatchId: r.BatchID, AccountId: r.AccountID, Date: openapi_types.Date{Time: r.Date},
 		Amount: Money{Amount: r.Amount, Currency: currency}, Description: r.Description,
 		State: ExternalRecordState(r.State), ExternalId: ref(r.ExternalID), Candidates: make([]openapi_types.UUID, len(r.Candidates)),
+		UnappliedChange: ref(r.UnappliedChange),
 	}
 	copy(out.Candidates, r.Candidates)
 	if r.TransactionID != uuid.Nil {

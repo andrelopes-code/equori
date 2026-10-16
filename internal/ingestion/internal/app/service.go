@@ -64,6 +64,19 @@ type Repository interface {
 	// SaveMapping returns a *domain.FieldError on account_id when another external account
 	// feeds the ledger account.
 	SaveMapping(ctx context.Context, a domain.ExternalAccount) (domain.ExternalAccount, error)
+
+	// UpdateRecordFacts stores what an aggregator now reports about stored records.
+	UpdateRecordFacts(ctx context.Context, recs []domain.ExternalRecord) error
+	// SyncedRecords lists the account's aggregator records booked in [from, to] that are
+	// neither withdrawn nor discarded.
+	SyncedRecords(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]domain.ExternalRecord, error)
+	// WithdrawRecords marks records withdrawn and takes them out of their batches' review counts.
+	WithdrawRecords(ctx context.Context, userID int64, ids []uuid.UUID) error
+	// MarkAccountSynced stores the account's last synced date and asserted balance.
+	MarkAccountSynced(ctx context.Context, a domain.ExternalAccount) error
+	// MarkConnectionSynced stores the item status and the sync outcome: last_synced_at is set
+	// when LastError is empty.
+	MarkConnectionSynced(ctx context.Context, c domain.Connection) error
 }
 
 // Claim is a record of the file as stored, and whether an earlier import had stored it.
@@ -76,12 +89,21 @@ type Service struct {
 	repo   Repository
 	ledger Ledger
 	// box is nil without EQUORI_SECRET_KEY: integrations are unavailable (ADR 008 K2).
-	box Sealer
-	agg Aggregator
+	box   Sealer
+	agg   Aggregator
+	today func() time.Time
 }
 
-func NewService(repo Repository, ledger Ledger, box Sealer, agg Aggregator) *Service {
-	return &Service{repo: repo, ledger: ledger, box: box, agg: agg}
+// Integrations are what aggregator integrations need; the zero value leaves them unavailable.
+type Integrations struct {
+	Box        Sealer
+	Aggregator Aggregator
+	// Today is the instance's current date (ADR 005).
+	Today func() time.Time
+}
+
+func NewService(repo Repository, ledger Ledger, in Integrations) *Service {
+	return &Service{repo: repo, ledger: ledger, box: in.Box, agg: in.Aggregator, today: in.Today}
 }
 
 // FollowPairing points the records that a ledger pairing moved to the kept transaction

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json/v2"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -18,11 +19,34 @@ func toRecord(row IngestionExternalRecord) (domain.ExternalRecord, error) {
 	if err := json.Unmarshal(row.Raw, &raw); err != nil {
 		return domain.ExternalRecord{}, err
 	}
-	return domain.ExternalRecord{
+	rec := domain.ExternalRecord{
 		ID: row.ID, UserID: row.UserID, BatchID: row.BatchID, AccountID: row.AccountID, ExternalID: value(row.ExternalID),
 		DedupKey: row.DedupKey, Raw: raw, Date: row.BookedOn, Amount: row.Amount, Description: row.Description,
 		State: domain.RecordState(row.State), TransactionID: row.TransactionID.UUID, Candidates: row.Candidates,
-	}, nil
+		ExternalStatus: value(row.ExternalStatus), DueDate: row.DueDate, CategoryID: value(row.CategoryID),
+		BalanceAfter: row.BalanceAfter, UnappliedChange: value(row.UnappliedChange),
+	}
+	if row.InstallmentNumber != nil && row.InstallmentCount != nil {
+		rec.Installment = &domain.Installment{Number: int(*row.InstallmentNumber), Count: int(*row.InstallmentCount)}
+	}
+	return rec, nil
+}
+
+// facts are the aggregator columns of a record.
+type facts struct {
+	status, category *string
+	number, count    *int32
+	dueDate          *time.Time
+	balanceAfter     *int64
+}
+
+func factsOf(rec domain.ExternalRecord) facts {
+	f := facts{status: optional(rec.ExternalStatus), category: optional(rec.CategoryID), dueDate: rec.DueDate, balanceAfter: rec.BalanceAfter}
+	if i := rec.Installment; i != nil {
+		n, c := int32(i.Number), int32(i.Count) //nolint:gosec // at most 420 installments (ledger rule)
+		f.number, f.count = &n, &c
+	}
+	return f
 }
 
 // ClaimRecords inserts the file's records in one pipelined round trip; keys that exist come
@@ -38,9 +62,12 @@ func (r *Repository) ClaimRecords(ctx context.Context, recs []domain.ExternalRec
 		if err != nil {
 			return nil, err
 		}
+		f := factsOf(rec)
 		params[i] = InsertRecordsParams{
 			UserID: rec.UserID, BatchID: rec.BatchID, AccountID: rec.AccountID, ExternalID: optional(rec.ExternalID),
 			DedupKey: rec.DedupKey, Raw: raw, BookedOn: rec.Date, Amount: rec.Amount, Description: rec.Description,
+			ExternalStatus: f.status, DueDate: f.dueDate, InstallmentNumber: f.number, InstallmentCount: f.count,
+			CategoryID: f.category, BalanceAfter: f.balanceAfter,
 		}
 	}
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
@@ -116,7 +143,7 @@ func (r *Repository) SaveOutcomes(ctx context.Context, recs []domain.ExternalRec
 func (r *Repository) InsertBatch(ctx context.Context, b domain.Batch) (domain.Batch, error) {
 	row, err := r.q.InsertBatch(ctx, InsertBatchParams{
 		UserID: b.UserID, AccountID: b.AccountID, Source: string(b.Source), FileName: optional(b.FileName),
-		Currency: b.Currency, PeriodFrom: b.PeriodFrom, PeriodTo: b.PeriodTo,
+		Currency: b.Currency, PeriodFrom: b.PeriodFrom, PeriodTo: b.PeriodTo, ExternalAccountID: nullable(b.ExternalAccountID),
 	})
 	if err != nil {
 		return domain.Batch{}, notFound(err)
@@ -129,6 +156,7 @@ func (r *Repository) CompleteBatch(ctx context.Context, b domain.Batch) (domain.
 	params := CompleteBatchParams{
 		UserID: b.UserID, ID: b.ID, Received: int32(c.Received), Ignored: int32(c.Ignored), Matched: int32(c.Matched), //nolint:gosec // line counts of a 10 MiB file
 		Created: int32(c.Created), NeedsReview: int32(c.NeedsReview), Discarded: int32(c.Discarded), //nolint:gosec // line counts of a 10 MiB file
+		Updated: int32(c.Updated), Withdrawn: int32(c.Withdrawn), //nolint:gosec // line counts of one account window
 		BalanceStatus: string(b.Balance.Status), BalanceReason: optional(b.Balance.Reason), BalanceDate: b.Balance.Date,
 	}
 	if b.Balance.Date != nil {

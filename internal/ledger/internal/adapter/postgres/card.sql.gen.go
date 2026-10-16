@@ -151,6 +151,23 @@ func (q *Queries) GetStatement(ctx context.Context, arg GetStatementParams) (Led
 	return i, err
 }
 
+const getStatementByDueDate = `-- name: GetStatementByDueDate :one
+SELECT reference_month FROM ledger_statement WHERE user_id = $1 AND account_id = $2 AND due_date = $3
+`
+
+type GetStatementByDueDateParams struct {
+	UserID    int64
+	AccountID uuid.UUID
+	DueDate   time.Time
+}
+
+func (q *Queries) GetStatementByDueDate(ctx context.Context, arg GetStatementByDueDateParams) (time.Time, error) {
+	row := q.db.QueryRow(ctx, getStatementByDueDate, arg.UserID, arg.AccountID, arg.DueDate)
+	var reference_month time.Time
+	err := row.Scan(&reference_month)
+	return reference_month, err
+}
+
 const getSystemAccount = `-- name: GetSystemAccount :one
 SELECT id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at FROM ledger_account WHERE user_id = $1 AND system_role = $2
 `

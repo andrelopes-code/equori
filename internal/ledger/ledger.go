@@ -52,6 +52,8 @@ type ImportedPosting = app.ImportedPosting
 
 type ImportTarget = app.ImportTarget
 
+type ImportedUpdate = app.ImportedUpdate
+
 // ImportedRecord is a statement line and the external record it comes from.
 type ImportedRecord = app.ImportedRecord
 
@@ -193,6 +195,23 @@ func (m *Module) LatestPayeeCategories(ctx context.Context, userID int64, payees
 // pairing it with the imported other side when one exists.
 func (m *Module) Transfer(ctx context.Context, userID int64, r TransferRequest) (TransferResult, error) {
 	return m.svc.Transfer(ctx, userID, r)
+}
+
+// AssertSyncedBalance records an aggregator's balance; it never records yield (P6 A42).
+func (m *Module) AssertSyncedBalance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, amount money.Money) error {
+	_, err := m.svc.AssertBalance(ctx, userID, accountID, date, amount, app.SourceOpenFinance)
+	return err
+}
+
+// UpdateImportedPosting applies an aggregator's later report on a recorded line (P6 A36);
+// a reconciled posting is ErrReconciled.
+func (m *Module) UpdateImportedPosting(ctx context.Context, userID int64, recordID uuid.UUID, u ImportedUpdate) error {
+	return m.svc.UpdateImportedPosting(ctx, userID, recordID, u)
+}
+
+// ReleaseRecord unlinks a withdrawn record from its posting (P6 A38).
+func (m *Module) ReleaseRecord(ctx context.Context, userID int64, recordID uuid.UUID) error {
+	return m.svc.ReleaseRecord(ctx, userID, recordID)
 }
 
 func (m *Module) AssertBalance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, amount money.Money) error {

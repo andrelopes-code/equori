@@ -188,3 +188,72 @@ func (q *Queries) LockAccountPostingLinks(ctx context.Context, arg LockAccountPo
 	}
 	return items, nil
 }
+
+const lockImportedPosting = `-- name: LockImportedPosting :one
+SELECT id, account_id, status, card_role FROM ledger_posting
+WHERE user_id = $1 AND external_record_id = $2
+FOR UPDATE
+`
+
+type LockImportedPostingParams struct {
+	UserID           int64
+	ExternalRecordID uuid.NullUUID
+}
+
+type LockImportedPostingRow struct {
+	ID        uuid.UUID
+	AccountID uuid.UUID
+	Status    string
+	CardRole  *string
+}
+
+// The posting an external record confirms (P6 amendment A36).
+func (q *Queries) LockImportedPosting(ctx context.Context, arg LockImportedPostingParams) (LockImportedPostingRow, error) {
+	row := q.db.QueryRow(ctx, lockImportedPosting, arg.UserID, arg.ExternalRecordID)
+	var i LockImportedPostingRow
+	err := row.Scan(
+		&i.ID,
+		&i.AccountID,
+		&i.Status,
+		&i.CardRole,
+	)
+	return i, err
+}
+
+const releaseExternalRecord = `-- name: ReleaseExternalRecord :exec
+UPDATE ledger_posting SET external_record_id = NULL
+WHERE user_id = $1 AND external_record_id = $2
+`
+
+type ReleaseExternalRecordParams struct {
+	UserID           int64
+	ExternalRecordID uuid.NullUUID
+}
+
+// A38: the posting stays; a line with another id may confirm it again.
+func (q *Queries) ReleaseExternalRecord(ctx context.Context, arg ReleaseExternalRecordParams) error {
+	_, err := q.db.Exec(ctx, releaseExternalRecord, arg.UserID, arg.ExternalRecordID)
+	return err
+}
+
+const settleImportedPosting = `-- name: SettleImportedPosting :exec
+UPDATE ledger_posting SET status = $1, statement_id = coalesce($2, statement_id)
+WHERE user_id = $3 AND id = $4
+`
+
+type SettleImportedPostingParams struct {
+	Status      string
+	StatementID uuid.NullUUID
+	UserID      int64
+	ID          uuid.UUID
+}
+
+func (q *Queries) SettleImportedPosting(ctx context.Context, arg SettleImportedPostingParams) error {
+	_, err := q.db.Exec(ctx, settleImportedPosting,
+		arg.Status,
+		arg.StatementID,
+		arg.UserID,
+		arg.ID,
+	)
+	return err
+}

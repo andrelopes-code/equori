@@ -309,6 +309,13 @@ type Repository interface {
 	// LinkExternalRecord returns ErrAlreadyMatched when another posting carries the record.
 	LinkExternalRecord(ctx context.Context, userID int64, postingID, recordID uuid.UUID) error
 	ClearPendingPostings(ctx context.Context, userID int64, txID, accountID uuid.UUID) error
+	// LockImportedPosting returns the posting an external record confirms; ErrNotFound when none.
+	LockImportedPosting(ctx context.Context, userID int64, recordID uuid.UUID) (ImportedPostingState, error)
+	// SettleImportedPosting sets the posting's status and, when statementID is not nil, its statement.
+	SettleImportedPosting(ctx context.Context, userID int64, postingID uuid.UUID, status domain.PostingStatus, statementID uuid.UUID) error
+	ReleaseExternalRecord(ctx context.Context, userID int64, recordID uuid.UUID) error
+	// StatementByDueDate returns the card statement due on the date; ErrNotFound when none.
+	StatementByDueDate(ctx context.Context, userID int64, accountID uuid.UUID, due time.Time) (domain.ReferenceMonth, error)
 	// PairingCandidates returns the ids that pair with a transfer, by date then id (P5b amendment A29).
 	PairingCandidates(ctx context.Context, q PairingQuery) ([]uuid.UUID, error)
 	// ClearRecordLinks removes the record links of a transaction's postings.

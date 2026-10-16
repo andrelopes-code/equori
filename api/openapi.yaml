@@ -1859,7 +1859,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [received, matched, created, needs_review, discarded]
+            enum: [received, matched, created, needs_review, discarded, withdrawn]
         - $ref: "#/components/parameters/Limit"
         - $ref: "#/components/parameters/Cursor"
       responses:
@@ -2391,7 +2391,7 @@ components:
           type: string
         state:
           type: string
-          enum: [received, matched, created, needs_review, discarded]
+          enum: [received, matched, created, needs_review, discarded, withdrawn]
         transaction_id:
           type: string
           format: uuid
@@ -2401,6 +2401,9 @@ components:
           items:
             type: string
             format: uuid
+        unapplied_change:
+          type: string
+          description: A change the aggregator reported that the ledger did not take (P6 amendment A36).
     ExternalRecordList:
       type: object
       required: [items]
@@ -2460,7 +2463,8 @@ components:
           description: inverted flips the sign of every amount, for exports that list card charges as positive.
     ImportBatch:
       type: object
-      required: [id, account_id, source, file_name, counts, balance, started_at]
+      description: One file import, or one sync of a mapped account (source open_finance).
+      required: [id, account_id, source, counts, balance, started_at]
       properties:
         id:
           type: string
@@ -2470,9 +2474,14 @@ components:
           format: uuid
         source:
           type: string
-          enum: [ofx, csv]
+          enum: [ofx, csv, open_finance]
         file_name:
           type: string
+          description: Absent for a sync.
+        external_account_id:
+          type: string
+          format: uuid
+          description: The mapped account a sync read; absent for files and after its connection is deleted.
         period_from:
           type: string
           format: date
@@ -2491,8 +2500,11 @@ components:
           format: date-time
     ImportCounts:
       type: object
-      description: Records of the file by outcome; received is the number of lines read.
-      required: [received, ignored, matched, created, needs_review, discarded]
+      description: |
+        Records of the batch by outcome; received is the number of lines read. updated counts
+        stored lines an aggregator changed (status, bill or amount); withdrawn counts stored
+        lines it stopped returning (P6 amendments A36, A38).
+      required: [received, ignored, matched, created, needs_review, discarded, updated, withdrawn]
       properties:
         received:
           type: integer
@@ -2505,6 +2517,10 @@ components:
         needs_review:
           type: integer
         discarded:
+          type: integer
+        updated:
+          type: integer
+        withdrawn:
           type: integer
     ImportBalance:
       type: object

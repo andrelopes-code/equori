@@ -71,7 +71,12 @@ func (s *Service) AssertBalance(ctx context.Context, userID int64, accountID uui
 		if err != nil {
 			return err
 		}
-		outcome := domain.DecideAssertion(amount.Amount(), settled, a.YieldMode)
+		mode := a.YieldMode
+		if source == SourceOpenFinance {
+			// P6 A42: yield arrives as feed lines; a line the feed lacks today is not yield.
+			mode = domain.YieldNone
+		}
+		outcome := domain.DecideAssertion(amount.Amount(), settled, mode)
 		if outcome.Resolution == domain.ResolutionYield && start == nil {
 			outcome = domain.AssertionOutcome{Difference: outcome.Difference}
 		}

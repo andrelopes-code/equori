@@ -34,3 +34,18 @@ JOIN ledger_transaction t ON t.id = p.transaction_id
 WHERE p.user_id = $1 AND p.transaction_id = $2 AND p.account_id = $3
 ORDER BY p.position
 FOR UPDATE OF p, t;
+
+-- name: LockImportedPosting :one
+-- The posting an external record confirms (P6 amendment A36).
+SELECT id, account_id, status, card_role FROM ledger_posting
+WHERE user_id = @user_id AND external_record_id = @external_record_id
+FOR UPDATE;
+
+-- name: SettleImportedPosting :exec
+UPDATE ledger_posting SET status = @status, statement_id = coalesce(sqlc.narg(statement_id), statement_id)
+WHERE user_id = @user_id AND id = @id;
+
+-- name: ReleaseExternalRecord :exec
+-- A38: the posting stays; a line with another id may confirm it again.
+UPDATE ledger_posting SET external_record_id = NULL
+WHERE user_id = @user_id AND external_record_id = @external_record_id;

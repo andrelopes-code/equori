@@ -5,6 +5,7 @@ import (
 	"encoding/json/v2"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -20,6 +21,7 @@ var (
 	ErrProviderUnauthorized   = errors.New("the provider rejected the credentials")
 	ErrProviderUnavailable    = errors.New("the provider did not answer")
 	ErrItemNotFound           = errors.New("the provider has no such item for these credentials")
+	ErrAccountGone            = errors.New("the provider no longer lists a mapped account")
 )
 
 // UnauthorizedError names the request field whose credentials the provider rejected.
@@ -44,6 +46,9 @@ type Aggregator interface {
 	Verify(ctx context.Context, integrationID uuid.UUID, c domain.Credentials) error
 	// Item returns the item as an unsaved connection with its accounts.
 	Item(ctx context.Context, integrationID uuid.UUID, c domain.Credentials, itemID string) (domain.Connection, error)
+	// ReadAccount returns an account of the item with its lines dated in [from, to], in minor
+	// units of scale; ErrAccountGone when the item no longer lists the account.
+	ReadAccount(ctx context.Context, integrationID uuid.UUID, c domain.Credentials, itemID, accountID string, from, to time.Time, scale int) (domain.AccountRead, error)
 	Forget(integrationID uuid.UUID)
 }
 

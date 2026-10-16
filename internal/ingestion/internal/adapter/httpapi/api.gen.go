@@ -128,6 +128,7 @@ const (
 	ExternalRecordStateMatched     ExternalRecordState = "matched"
 	ExternalRecordStateNeedsReview ExternalRecordState = "needs_review"
 	ExternalRecordStateReceived    ExternalRecordState = "received"
+	ExternalRecordStateWithdrawn   ExternalRecordState = "withdrawn"
 )
 
 // Valid indicates whether the value is a known member of the ExternalRecordState enum.
@@ -142,6 +143,8 @@ func (e ExternalRecordState) Valid() bool {
 	case ExternalRecordStateNeedsReview:
 		return true
 	case ExternalRecordStateReceived:
+		return true
+	case ExternalRecordStateWithdrawn:
 		return true
 	default:
 		return false
@@ -171,8 +174,9 @@ func (e ImportBalanceStatus) Valid() bool {
 
 // Defines values for ImportBatchSource.
 const (
-	ImportBatchSourceCsv ImportBatchSource = "csv"
-	ImportBatchSourceOfx ImportBatchSource = "ofx"
+	ImportBatchSourceCsv         ImportBatchSource = "csv"
+	ImportBatchSourceOfx         ImportBatchSource = "ofx"
+	ImportBatchSourceOpenFinance ImportBatchSource = "open_finance"
 )
 
 // Valid indicates whether the value is a known member of the ImportBatchSource enum.
@@ -181,6 +185,8 @@ func (e ImportBatchSource) Valid() bool {
 	case ImportBatchSourceCsv:
 		return true
 	case ImportBatchSourceOfx:
+		return true
+	case ImportBatchSourceOpenFinance:
 		return true
 	default:
 		return false
@@ -263,6 +269,7 @@ const (
 	ListBatchRecordsParamsStateMatched     ListBatchRecordsParamsState = "matched"
 	ListBatchRecordsParamsStateNeedsReview ListBatchRecordsParamsState = "needs_review"
 	ListBatchRecordsParamsStateReceived    ListBatchRecordsParamsState = "received"
+	ListBatchRecordsParamsStateWithdrawn   ListBatchRecordsParamsState = "withdrawn"
 )
 
 // Valid indicates whether the value is a known member of the ListBatchRecordsParamsState enum.
@@ -277,6 +284,8 @@ func (e ListBatchRecordsParamsState) Valid() bool {
 	case ListBatchRecordsParamsStateNeedsReview:
 		return true
 	case ListBatchRecordsParamsStateReceived:
+		return true
+	case ListBatchRecordsParamsStateWithdrawn:
 		return true
 	default:
 		return false
@@ -383,6 +392,9 @@ type ExternalRecord struct {
 	Id            openapi_types.UUID   `json:"id"`
 	State         ExternalRecordState  `json:"state"`
 	TransactionId *openapi_types.UUID  `json:"transaction_id,omitempty"`
+
+	// UnappliedChange A change the aggregator reported that the ledger did not take (P6 amendment A36).
+	UnappliedChange *string `json:"unapplied_change,omitempty"`
 }
 
 // ExternalRecordState defines model for ExternalRecord.State.
@@ -413,7 +425,7 @@ type ImportBalance struct {
 // ImportBalanceStatus defines model for ImportBalance.Status.
 type ImportBalanceStatus string
 
-// ImportBatch defines model for ImportBatch.
+// ImportBatch One file import, or one sync of a mapped account (source open_finance).
 type ImportBatch struct {
 	AccountId openapi_types.UUID `json:"account_id"`
 
@@ -421,9 +433,16 @@ type ImportBatch struct {
 	Balance     ImportBalance `json:"balance"`
 	CompletedAt *time.Time    `json:"completed_at,omitempty"`
 
-	// Counts Records of the file by outcome; received is the number of lines read.
-	Counts     ImportCounts        `json:"counts"`
-	FileName   string              `json:"file_name"`
+	// Counts Records of the batch by outcome; received is the number of lines read. updated counts
+	// stored lines an aggregator changed (status, bill or amount); withdrawn counts stored
+	// lines it stopped returning (P6 amendments A36, A38).
+	Counts ImportCounts `json:"counts"`
+
+	// ExternalAccountId The mapped account a sync read; absent for files and after its connection is deleted.
+	ExternalAccountId *openapi_types.UUID `json:"external_account_id,omitempty"`
+
+	// FileName Absent for a sync.
+	FileName   *string             `json:"file_name,omitempty"`
 	Id         openapi_types.UUID  `json:"id"`
 	PeriodFrom *openapi_types.Date `json:"period_from,omitempty"`
 	PeriodTo   *openapi_types.Date `json:"period_to,omitempty"`
@@ -442,7 +461,9 @@ type ImportBatchList struct {
 	NextCursor *string `json:"next_cursor,omitempty"`
 }
 
-// ImportCounts Records of the file by outcome; received is the number of lines read.
+// ImportCounts Records of the batch by outcome; received is the number of lines read. updated counts
+// stored lines an aggregator changed (status, bill or amount); withdrawn counts stored
+// lines it stopped returning (P6 amendments A36, A38).
 type ImportCounts struct {
 	Created     int `json:"created"`
 	Discarded   int `json:"discarded"`
@@ -450,6 +471,8 @@ type ImportCounts struct {
 	Matched     int `json:"matched"`
 	NeedsReview int `json:"needs_review"`
 	Received    int `json:"received"`
+	Updated     int `json:"updated"`
+	Withdrawn   int `json:"withdrawn"`
 }
 
 // Integration defines model for Integration.

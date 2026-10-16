@@ -22,6 +22,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/domain"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/pluggy"
 	"github.com/andrelopes-code/equori/internal/ledger"
+	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
@@ -39,14 +40,11 @@ type Config struct {
 	SecretKey, PreviousSecretKey string
 	// PluggyURL is the only address Pluggy requests go to (N17).
 	PluggyURL string
-	Now       func() time.Time
+	Clock     clock.Clock
 }
 
 func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, c *classification.Module, cfg Config, log *slog.Logger) (*Module, error) {
-	var (
-		box app.Sealer
-		agg app.Aggregator
-	)
+	in := app.Integrations{Today: cfg.Clock.Today}
 	if cfg.SecretKey != "" {
 		var previous []byte
 		if cfg.PreviousSecretKey != "" {
@@ -58,15 +56,21 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, c 
 		}
 		// A redirect would leave the configured address (N17).
 		hc := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-		client, err := pluggy.NewClient(cfg.PluggyURL, hc, cfg.Now)
+		client, err := pluggy.NewClient(cfg.PluggyURL, hc, cfg.Clock.Now)
 		if err != nil {
 			return nil, err
 		}
-		box, agg = b, pluggyPort{sessions: pluggy.NewSessions(client)}
+		in.Box, in.Aggregator = b, pluggyPort{sessions: pluggy.NewSessions(client), loc: cfg.Clock.Location()}
 	}
-	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l, c}, box, agg)
+	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l, c}, in)
 	dispatcher.Subscribe("ingestion", ledger.EventTransactionsPaired, followPairing)
 	return &Module{http: httpapi.NewServer(svc, log), svc: svc}, nil
+}
+
+// SyncConnection syncs every mapped account of a connection now (P6 amendment A36).
+func (m *Module) SyncConnection(ctx context.Context, userID int64, connectionID uuid.UUID) error {
+	_, err := m.svc.SyncConnection(ctx, userID, connectionID)
+	return err
 }
 
 // RotateSecrets reseals every stored credential under the current key (ADR 008 K4) and
@@ -79,7 +83,7 @@ func followPairing(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
 	if err := json.Unmarshal(e.Payload, &p); err != nil {
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
-	return app.NewService(postgres.NewTxRepository(tx), nil, nil, nil).FollowPairing(ctx, e.UserID, p.Kept, p.RecordIDs)
+	return app.NewService(postgres.NewTxRepository(tx), nil, app.Integrations{}).FollowPairing(ctx, e.UserID, p.Kept, p.RecordIDs)
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
@@ -105,13 +109,15 @@ func (p ledgerPort) translate(err error) error {
 		return app.ErrNotFound
 	case errors.Is(err, ledger.ErrAlreadyMatched):
 		return app.ErrAlreadyMatched
+	case errors.Is(err, ledger.ErrReconciled):
+		return app.ErrReconciled
 	}
 	return err
 }
 
 func (p ledgerPort) posting(l app.Line) (ledger.ImportedPosting, error) {
 	amount, err := money.New(l.Amount, l.Currency)
-	return ledger.ImportedPosting{AccountID: l.AccountID, Date: l.Date, Amount: amount, Description: l.Description}, err
+	return ledger.ImportedPosting{AccountID: l.AccountID, Date: l.Date, Amount: amount, Description: l.Description, Pending: l.Pending, DueDate: l.DueDate}, err
 }
 
 func (p ledgerPort) ImportTarget(ctx context.Context, userID int64, accountID uuid.UUID) (domain.ImportTarget, error) {
@@ -164,20 +170,38 @@ func (p ledgerPort) UnlinkedPostings(ctx context.Context, userID int64, accountI
 func (p ledgerPort) ClearMatched(ctx context.Context, userID int64, ms []app.Match) ([]int, error) {
 	matches := make([]ledger.Match, len(ms))
 	for i, m := range ms {
-		matches[i] = ledger.Match{RecordID: m.RecordID, TransactionID: m.TransactionID, AccountID: m.AccountID}
+		matches[i] = ledger.Match{RecordID: m.RecordID, TransactionID: m.TransactionID, AccountID: m.AccountID, KeepPending: m.Pending}
 	}
 	conflicts, err := p.l.ClearMatchedBatch(ctx, userID, matches)
 	return conflicts, p.translate(err)
 }
 
 func (p ledgerPort) AssertBalance(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Balance, c money.Currency) error {
+	return p.assert(ctx, userID, accountID, b, c, p.l.AssertBalance)
+}
+
+func (p ledgerPort) AssertSyncedBalance(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Balance, c money.Currency) error {
+	return p.assert(ctx, userID, accountID, b, c, p.l.AssertSyncedBalance)
+}
+
+type assertFunc func(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, amount money.Money) error
+
+func (p ledgerPort) assert(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Balance, c money.Currency, assert assertFunc) error {
 	amount, err := money.New(b.Amount, c)
 	if err != nil {
 		return err
 	}
-	err = p.l.AssertBalance(ctx, userID, accountID, b.Date, amount)
+	err = assert(ctx, userID, accountID, b.Date, amount)
 	if errors.Is(err, ledger.ErrAlreadyReconciled) || errors.Is(err, ledger.ErrValidation) {
 		return fmt.Errorf("%w: %w", app.ErrBalanceRejected, err)
 	}
 	return p.translate(err)
+}
+
+func (p ledgerPort) UpdateImportedPosting(ctx context.Context, userID int64, recordID uuid.UUID, pending bool, dueDate *time.Time) error {
+	return p.translate(p.l.UpdateImportedPosting(ctx, userID, recordID, ledger.ImportedUpdate{Pending: pending, DueDate: dueDate}))
+}
+
+func (p ledgerPort) ReleaseRecord(ctx context.Context, userID int64, recordID uuid.UUID) error {
+	return p.translate(p.l.ReleaseRecord(ctx, userID, recordID))
 }

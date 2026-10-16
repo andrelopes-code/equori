@@ -90,10 +90,12 @@ func listPage[K any](limit *int, cursor *string) (page.Request[K], error) {
 
 func toBatchAPI(b domain.Batch) ImportBatch {
 	out := ImportBatch{
-		Id: b.ID, AccountId: b.AccountID, Source: ImportBatchSource(b.Source), FileName: b.FileName,
+		Id: b.ID, AccountId: b.AccountID, Source: ImportBatchSource(b.Source), FileName: ref(b.FileName),
+		ExternalAccountId: b.ExternalAccountID,
 		Counts: ImportCounts{
 			Received: b.Counts.Received, Ignored: b.Counts.Ignored, Matched: b.Counts.Matched,
 			Created: b.Counts.Created, NeedsReview: b.Counts.NeedsReview, Discarded: b.Counts.Discarded,
+			Updated: b.Counts.Updated, Withdrawn: b.Counts.Withdrawn,
 		},
 		Balance:   ImportBalance{Status: ImportBalanceStatus(b.Balance.Status)},
 		StartedAt: b.StartedAt, CompletedAt: b.CompletedAt,

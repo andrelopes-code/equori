@@ -30,3 +30,15 @@ DELETE FROM ingestion_connection WHERE user_id = $1 AND id = $2;
 UPDATE ingestion_external_account SET account_id = sqlc.narg(account_id), sync_from = sqlc.narg(sync_from), ignored = @ignored
 WHERE user_id = @user_id AND connection_id = @connection_id AND id = @id
 RETURNING *;
+
+-- name: MarkAccountSynced :exec
+UPDATE ingestion_external_account SET last_synced_on = @last_synced_on,
+    balance_on = sqlc.narg(balance_on), balance_amount = sqlc.narg(balance_amount)
+WHERE user_id = @user_id AND id = @id;
+
+-- name: MarkConnectionSynced :exec
+UPDATE ingestion_connection SET provider_status = coalesce(sqlc.narg(provider_status), provider_status),
+    last_item_update_at = coalesce(sqlc.narg(last_item_update_at), last_item_update_at),
+    last_synced_at = CASE WHEN sqlc.narg(last_error)::text IS NULL THEN now() ELSE last_synced_at END,
+    last_error = sqlc.narg(last_error)
+WHERE user_id = @user_id AND id = @id;

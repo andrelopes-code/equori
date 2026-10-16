@@ -28,6 +28,9 @@ func toExternalAccount(row IngestionExternalAccount) domain.ExternalAccount {
 	if row.AccountID.Valid {
 		a.AccountID, a.SyncFrom = &row.AccountID.UUID, row.SyncFrom
 	}
+	if row.BalanceOn != nil && row.BalanceAmount != nil {
+		a.Balance = &domain.Balance{Date: *row.BalanceOn, Amount: *row.BalanceAmount}
+	}
 	return a
 }
 

@@ -7,12 +7,13 @@ package postgres
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
 
 const getRecord = `-- name: GetRecord :one
-SELECT id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates FROM ingestion_external_record WHERE user_id = $1 AND id = $2
+SELECT id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change FROM ingestion_external_record WHERE user_id = $1 AND id = $2
 `
 
 type GetRecordParams struct {
@@ -37,12 +38,19 @@ func (q *Queries) GetRecord(ctx context.Context, arg GetRecordParams) (Ingestion
 		&i.State,
 		&i.TransactionID,
 		&i.Candidates,
+		&i.ExternalStatus,
+		&i.DueDate,
+		&i.InstallmentNumber,
+		&i.InstallmentCount,
+		&i.CategoryID,
+		&i.BalanceAfter,
+		&i.UnappliedChange,
 	)
 	return i, err
 }
 
 const listBatchRecords = `-- name: ListBatchRecords :many
-SELECT id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates FROM ingestion_external_record
+SELECT id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change FROM ingestion_external_record
 WHERE user_id = $1 AND batch_id = $2
   AND ($3::text IS NULL OR state = $3::text)
   AND ($4::uuid IS NULL OR id > $4::uuid)
@@ -87,6 +95,13 @@ func (q *Queries) ListBatchRecords(ctx context.Context, arg ListBatchRecordsPara
 			&i.State,
 			&i.TransactionID,
 			&i.Candidates,
+			&i.ExternalStatus,
+			&i.DueDate,
+			&i.InstallmentNumber,
+			&i.InstallmentCount,
+			&i.CategoryID,
+			&i.BalanceAfter,
+			&i.UnappliedChange,
 		); err != nil {
 			return nil, err
 		}
@@ -99,7 +114,7 @@ func (q *Queries) ListBatchRecords(ctx context.Context, arg ListBatchRecordsPara
 }
 
 const listRecordsByKeys = `-- name: ListRecordsByKeys :many
-SELECT id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates FROM ingestion_external_record WHERE user_id = $1 AND dedup_key = ANY($2::bytea[])
+SELECT id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change FROM ingestion_external_record WHERE user_id = $1 AND dedup_key = ANY($2::bytea[])
 `
 
 type ListRecordsByKeysParams struct {
@@ -130,6 +145,74 @@ func (q *Queries) ListRecordsByKeys(ctx context.Context, arg ListRecordsByKeysPa
 			&i.State,
 			&i.TransactionID,
 			&i.Candidates,
+			&i.ExternalStatus,
+			&i.DueDate,
+			&i.InstallmentNumber,
+			&i.InstallmentCount,
+			&i.CategoryID,
+			&i.BalanceAfter,
+			&i.UnappliedChange,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSyncedRecords = `-- name: ListSyncedRecords :many
+SELECT id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change FROM ingestion_external_record
+WHERE user_id = $1 AND account_id = $2 AND external_status IS NOT NULL
+  AND booked_on BETWEEN $3::date AND $4::date
+  AND state NOT IN ('withdrawn', 'discarded')
+`
+
+type ListSyncedRecordsParams struct {
+	UserID    int64
+	AccountID uuid.UUID
+	FromDate  time.Time
+	ToDate    time.Time
+}
+
+// The aggregator lines of an account booked in a window that a sync may find withdrawn (A38).
+func (q *Queries) ListSyncedRecords(ctx context.Context, arg ListSyncedRecordsParams) ([]IngestionExternalRecord, error) {
+	rows, err := q.db.Query(ctx, listSyncedRecords,
+		arg.UserID,
+		arg.AccountID,
+		arg.FromDate,
+		arg.ToDate,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []IngestionExternalRecord
+	for rows.Next() {
+		var i IngestionExternalRecord
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.BatchID,
+			&i.AccountID,
+			&i.ExternalID,
+			&i.DedupKey,
+			&i.Raw,
+			&i.BookedOn,
+			&i.Amount,
+			&i.Description,
+			&i.State,
+			&i.TransactionID,
+			&i.Candidates,
+			&i.ExternalStatus,
+			&i.DueDate,
+			&i.InstallmentNumber,
+			&i.InstallmentCount,
+			&i.CategoryID,
+			&i.BalanceAfter,
+			&i.UnappliedChange,
 		); err != nil {
 			return nil, err
 		}
@@ -176,5 +259,37 @@ type MoveReviewCountParams struct {
 // A resolved record leaves needs_review for the state the owner chose.
 func (q *Queries) MoveReviewCount(ctx context.Context, arg MoveReviewCountParams) error {
 	_, err := q.db.Exec(ctx, moveReviewCount, arg.State, arg.UserID, arg.ID)
+	return err
+}
+
+const withdrawRecords = `-- name: WithdrawRecords :exec
+UPDATE ingestion_external_record SET state = 'withdrawn', transaction_id = NULL, candidates = '{}'
+WHERE user_id = $1 AND id = ANY($2::uuid[])
+`
+
+type WithdrawRecordsParams struct {
+	UserID    int64
+	RecordIds []uuid.UUID
+}
+
+func (q *Queries) WithdrawRecords(ctx context.Context, arg WithdrawRecordsParams) error {
+	_, err := q.db.Exec(ctx, withdrawRecords, arg.UserID, arg.RecordIds)
+	return err
+}
+
+const withdrawReviewCounts = `-- name: WithdrawReviewCounts :exec
+UPDATE ingestion_batch b SET needs_review = b.needs_review - w.n
+FROM (SELECT batch_id, count(*)::int AS n FROM ingestion_external_record
+      WHERE user_id = $1 AND id = ANY($2::uuid[]) AND state = 'needs_review' GROUP BY batch_id) w
+WHERE b.user_id = $1 AND b.id = w.batch_id
+`
+
+type WithdrawReviewCountsParams struct {
+	UserID    int64
+	RecordIds []uuid.UUID
+}
+
+func (q *Queries) WithdrawReviewCounts(ctx context.Context, arg WithdrawReviewCountsParams) error {
+	_, err := q.db.Exec(ctx, withdrawReviewCounts, arg.UserID, arg.RecordIds)
 	return err
 }

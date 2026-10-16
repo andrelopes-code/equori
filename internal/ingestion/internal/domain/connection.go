@@ -68,6 +68,31 @@ type ExternalAccount struct {
 	SyncFrom     *time.Time
 	Ignored      bool
 	LastSyncedOn *time.Time
+	// Balance is the last balance a sync asserted for the account (A42).
+	Balance *Balance
+}
+
+// SyncWindow is the period a sync reads: from the mapping's start date on the first sync,
+// then from 30 days before the last synced date, through today (A36).
+func (a ExternalAccount) SyncWindow(today time.Time) (from, to time.Time) {
+	from = *a.SyncFrom
+	if a.LastSyncedOn != nil {
+		if f := a.LastSyncedOn.AddDate(0, 0, -30); f.After(from) {
+			from = f
+		}
+	}
+	return from, today
+}
+
+// AccountRead is one account of an item as an aggregator reports it for a window.
+type AccountRead struct {
+	ItemStatus    string
+	ItemUpdatedAt *time.Time
+	// Balance is the bank balance at the date of the item's last update; nil for cards.
+	Balance *Balance
+	Records []NormalizedRecord
+	// Seen holds the id of every line returned, recorded or not.
+	Seen []string
 }
 
 func (a ExternalAccount) State() MappingState {

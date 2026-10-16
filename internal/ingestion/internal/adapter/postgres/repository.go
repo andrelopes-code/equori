@@ -35,9 +35,13 @@ func toBatch(row IngestionBatch) domain.Batch {
 		Counts: domain.Counts{
 			Received: int(row.Received), Ignored: int(row.Ignored), Matched: int(row.Matched),
 			Created: int(row.Created), NeedsReview: int(row.NeedsReview), Discarded: int(row.Discarded),
+			Updated: int(row.Updated), Withdrawn: int(row.Withdrawn),
 		},
 		Balance:   domain.FileBalance{Status: domain.BalanceStatus(row.BalanceStatus), Date: row.BalanceDate},
 		StartedAt: row.StartedAt, CompletedAt: row.CompletedAt,
+	}
+	if row.ExternalAccountID.Valid {
+		b.ExternalAccountID = &row.ExternalAccountID.UUID
 	}
 	if row.BalanceAmount != nil {
 		b.Balance.Amount = *row.BalanceAmount

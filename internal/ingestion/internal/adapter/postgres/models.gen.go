@@ -32,6 +32,8 @@ type IngestionBatch struct {
 	StartedAt         time.Time
 	CompletedAt       *time.Time
 	ExternalAccountID uuid.NullUUID
+	Updated           int32
+	Withdrawn         int32
 }
 
 type IngestionConnection struct {
@@ -78,22 +80,31 @@ type IngestionExternalAccount struct {
 	SyncFrom          *time.Time
 	Ignored           bool
 	LastSyncedOn      *time.Time
+	BalanceOn         *time.Time
+	BalanceAmount     *int64
 }
 
 type IngestionExternalRecord struct {
-	ID            uuid.UUID
-	UserID        int64
-	BatchID       uuid.UUID
-	AccountID     uuid.UUID
-	ExternalID    *string
-	DedupKey      []byte
-	Raw           []byte
-	BookedOn      time.Time
-	Amount        int64
-	Description   string
-	State         string
-	TransactionID uuid.NullUUID
-	Candidates    []uuid.UUID
+	ID                uuid.UUID
+	UserID            int64
+	BatchID           uuid.UUID
+	AccountID         uuid.UUID
+	ExternalID        *string
+	DedupKey          []byte
+	Raw               []byte
+	BookedOn          time.Time
+	Amount            int64
+	Description       string
+	State             string
+	TransactionID     uuid.NullUUID
+	Candidates        []uuid.UUID
+	ExternalStatus    *string
+	DueDate           *time.Time
+	InstallmentNumber *int32
+	InstallmentCount  *int32
+	CategoryID        *string
+	BalanceAfter      *int64
+	UnappliedChange   *string
 }
 
 type IngestionIntegration struct {

@@ -30,7 +30,7 @@ func (q *Queries) DeleteConnection(ctx context.Context, arg DeleteConnectionPara
 }
 
 const externalAccountsOf = `-- name: ExternalAccountsOf :many
-SELECT id, user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on FROM ingestion_external_account
+SELECT id, user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount FROM ingestion_external_account
 WHERE user_id = $1 AND connection_id = ANY($2::uuid[])
 ORDER BY connection_id, id
 `
@@ -63,6 +63,8 @@ func (q *Queries) ExternalAccountsOf(ctx context.Context, arg ExternalAccountsOf
 			&i.SyncFrom,
 			&i.Ignored,
 			&i.LastSyncedOn,
+			&i.BalanceOn,
+			&i.BalanceAmount,
 		); err != nil {
 			return nil, err
 		}
@@ -144,7 +146,7 @@ func (q *Queries) InsertConnection(ctx context.Context, arg InsertConnectionPara
 const insertExternalAccount = `-- name: InsertExternalAccount :one
 INSERT INTO ingestion_external_account (user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on
+RETURNING id, user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount
 `
 
 type InsertExternalAccountParams struct {
@@ -184,6 +186,8 @@ func (q *Queries) InsertExternalAccount(ctx context.Context, arg InsertExternalA
 		&i.SyncFrom,
 		&i.Ignored,
 		&i.LastSyncedOn,
+		&i.BalanceOn,
+		&i.BalanceAmount,
 	)
 	return i, err
 }
@@ -239,10 +243,62 @@ func (q *Queries) ListConnections(ctx context.Context, arg ListConnectionsParams
 	return items, nil
 }
 
+const markAccountSynced = `-- name: MarkAccountSynced :exec
+UPDATE ingestion_external_account SET last_synced_on = $1,
+    balance_on = $2, balance_amount = $3
+WHERE user_id = $4 AND id = $5
+`
+
+type MarkAccountSyncedParams struct {
+	LastSyncedOn  *time.Time
+	BalanceOn     *time.Time
+	BalanceAmount *int64
+	UserID        int64
+	ID            uuid.UUID
+}
+
+func (q *Queries) MarkAccountSynced(ctx context.Context, arg MarkAccountSyncedParams) error {
+	_, err := q.db.Exec(ctx, markAccountSynced,
+		arg.LastSyncedOn,
+		arg.BalanceOn,
+		arg.BalanceAmount,
+		arg.UserID,
+		arg.ID,
+	)
+	return err
+}
+
+const markConnectionSynced = `-- name: MarkConnectionSynced :exec
+UPDATE ingestion_connection SET provider_status = coalesce($1, provider_status),
+    last_item_update_at = coalesce($2, last_item_update_at),
+    last_synced_at = CASE WHEN $3::text IS NULL THEN now() ELSE last_synced_at END,
+    last_error = $3
+WHERE user_id = $4 AND id = $5
+`
+
+type MarkConnectionSyncedParams struct {
+	ProviderStatus   *string
+	LastItemUpdateAt *time.Time
+	LastError        *string
+	UserID           int64
+	ID               uuid.UUID
+}
+
+func (q *Queries) MarkConnectionSynced(ctx context.Context, arg MarkConnectionSyncedParams) error {
+	_, err := q.db.Exec(ctx, markConnectionSynced,
+		arg.ProviderStatus,
+		arg.LastItemUpdateAt,
+		arg.LastError,
+		arg.UserID,
+		arg.ID,
+	)
+	return err
+}
+
 const saveMapping = `-- name: SaveMapping :one
 UPDATE ingestion_external_account SET account_id = $1, sync_from = $2, ignored = $3
 WHERE user_id = $4 AND connection_id = $5 AND id = $6
-RETURNING id, user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on
+RETURNING id, user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount
 `
 
 type SaveMappingParams struct {
@@ -278,6 +334,8 @@ func (q *Queries) SaveMapping(ctx context.Context, arg SaveMappingParams) (Inges
 		&i.SyncFrom,
 		&i.Ignored,
 		&i.LastSyncedOn,
+		&i.BalanceOn,
+		&i.BalanceAmount,
 	)
 	return i, err
 }

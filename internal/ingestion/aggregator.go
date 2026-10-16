@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,6 +18,8 @@ import (
 // integration (A45).
 type pluggyPort struct {
 	sessions *pluggy.Sessions
+	// loc is the instance time zone: dates of instants that are not midnight UTC (A37).
+	loc *time.Location
 }
 
 func (p pluggyPort) translate(err error) error {
@@ -67,12 +70,8 @@ func (p pluggyPort) Item(ctx context.Context, id uuid.UUID, c domain.Credentials
 			return err
 		}
 		out = domain.Connection{Name: it.Connector.Name, ProviderStatus: it.Status}
-		if it.LastUpdatedAt != nil {
-			at, err := time.Parse(time.RFC3339Nano, *it.LastUpdatedAt)
-			if err != nil {
-				return errors.New("pluggy GET /items/{id}: lastUpdatedAt is not an RFC 3339 instant")
-			}
-			out.LastItemUpdateAt = &at
+		if out.LastItemUpdateAt, err = updatedAt(it); err != nil {
+			return err
 		}
 		for _, a := range accounts {
 			out.Accounts = append(out.Accounts, domain.ExternalAccount{
@@ -82,5 +81,75 @@ func (p pluggyPort) Item(ctx context.Context, id uuid.UUID, c domain.Credentials
 		}
 		return nil
 	})
+	return out, err
+}
+
+func updatedAt(it pluggy.Item) (*time.Time, error) {
+	if it.LastUpdatedAt == nil {
+		return nil, nil
+	}
+	at, err := time.Parse(time.RFC3339Nano, *it.LastUpdatedAt)
+	if err != nil {
+		return nil, errors.New("pluggy GET /items/{id}: lastUpdatedAt is not an RFC 3339 instant")
+	}
+	return &at, nil
+}
+
+func (p pluggyPort) ReadAccount(ctx context.Context, id uuid.UUID, c domain.Credentials, itemID, accountID string, from, to time.Time, scale int) (domain.AccountRead, error) {
+	var out domain.AccountRead
+	err := p.session(ctx, id, c, func(s *pluggy.Session) error {
+		it, err := s.Item(ctx, itemID)
+		if err != nil {
+			return err
+		}
+		accounts, err := s.Accounts(ctx, itemID)
+		if err != nil {
+			return err
+		}
+		i := slices.IndexFunc(accounts, func(a pluggy.Account) bool { return a.ID == accountID })
+		if i < 0 {
+			return app.ErrAccountGone
+		}
+		a := accounts[i]
+		bills := map[string]pluggy.Bill{}
+		if a.Subtype == pluggy.SubtypeCard {
+			// Bills come from Open Finance connections only; without them lines bill by the cycle.
+			bs, err := s.Bills(ctx, a.ID)
+			if err != nil && !errors.Is(err, pluggy.ErrNotFound) {
+				return err
+			}
+			for _, b := range bs {
+				bills[b.ID] = b
+			}
+		}
+		ts, err := s.Transactions(ctx, a.ID, from, to)
+		if err != nil {
+			return err
+		}
+		out = domain.AccountRead{ItemStatus: it.Status}
+		if out.ItemUpdatedAt, err = updatedAt(it); err != nil {
+			return err
+		}
+		if a.Subtype != pluggy.SubtypeCard && out.ItemUpdatedAt != nil {
+			// A42: the balance holds at the item's last update.
+			if amount, err := pluggy.Minor(a.Balance, scale); err == nil {
+				l := out.ItemUpdatedAt.In(p.loc)
+				out.Balance = &domain.Balance{Date: time.Date(l.Year(), l.Month(), l.Day(), 0, 0, 0, 0, time.UTC), Amount: amount}
+			}
+		}
+		for _, t := range ts {
+			out.Seen = append(out.Seen, t.ID)
+			r, ok, err := pluggy.Normalize(t, a, bills, scale, p.loc)
+			// A line whose amount or date cannot be read is left out (A37); the balance
+			// assertion then reports the difference.
+			if err == nil && ok {
+				out.Records = append(out.Records, r)
+			}
+		}
+		return nil
+	})
+	if errors.Is(err, app.ErrItemNotFound) {
+		return out, fmt.Errorf("%w: the item is gone", app.ErrProviderUnavailable)
+	}
 	return out, err
 }

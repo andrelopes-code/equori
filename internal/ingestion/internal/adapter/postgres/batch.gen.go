@@ -19,10 +19,13 @@ var (
 )
 
 const insertRecords = `-- name: InsertRecords :batchone
-INSERT INTO ingestion_external_record (user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+INSERT INTO ingestion_external_record (user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description,
+    external_status, due_date, installment_number, installment_count, category_id, balance_after)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,
+    $10, $11, $12, $13,
+    $14, $15)
 ON CONFLICT (user_id, dedup_key) DO NOTHING
-RETURNING id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates
+RETURNING id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change
 `
 
 type InsertRecordsBatchResults struct {
@@ -32,15 +35,21 @@ type InsertRecordsBatchResults struct {
 }
 
 type InsertRecordsParams struct {
-	UserID      int64
-	BatchID     uuid.UUID
-	AccountID   uuid.UUID
-	ExternalID  *string
-	DedupKey    []byte
-	Raw         []byte
-	BookedOn    time.Time
-	Amount      int64
-	Description string
+	UserID            int64
+	BatchID           uuid.UUID
+	AccountID         uuid.UUID
+	ExternalID        *string
+	DedupKey          []byte
+	Raw               []byte
+	BookedOn          time.Time
+	Amount            int64
+	Description       string
+	ExternalStatus    *string
+	DueDate           *time.Time
+	InstallmentNumber *int32
+	InstallmentCount  *int32
+	CategoryID        *string
+	BalanceAfter      *int64
 }
 
 // A row comes back only for a new key; a conflict is pgx.ErrNoRows for that item.
@@ -57,6 +66,12 @@ func (q *Queries) InsertRecords(ctx context.Context, arg []InsertRecordsParams) 
 			a.BookedOn,
 			a.Amount,
 			a.Description,
+			a.ExternalStatus,
+			a.DueDate,
+			a.InstallmentNumber,
+			a.InstallmentCount,
+			a.CategoryID,
+			a.BalanceAfter,
 		}
 		batch.Queue(insertRecords, vals...)
 	}
@@ -89,6 +104,13 @@ func (b *InsertRecordsBatchResults) QueryRow(f func(int, IngestionExternalRecord
 			&i.State,
 			&i.TransactionID,
 			&i.Candidates,
+			&i.ExternalStatus,
+			&i.DueDate,
+			&i.InstallmentNumber,
+			&i.InstallmentCount,
+			&i.CategoryID,
+			&i.BalanceAfter,
+			&i.UnappliedChange,
 		)
 		if f != nil {
 			f(t, i, err)
@@ -156,6 +178,77 @@ func (b *SaveRecordOutcomesBatchResults) Exec(f func(int, error)) {
 }
 
 func (b *SaveRecordOutcomesBatchResults) Close() error {
+	b.closed = true
+	return b.br.Close()
+}
+
+const updateRecordFacts = `-- name: UpdateRecordFacts :batchexec
+UPDATE ingestion_external_record SET
+    raw = $1, external_status = $2, due_date = $3,
+    installment_number = $4, installment_count = $5,
+    category_id = $6, balance_after = $7,
+    unapplied_change = $8
+WHERE user_id = $9 AND id = $10
+`
+
+type UpdateRecordFactsBatchResults struct {
+	br     pgx.BatchResults
+	tot    int
+	closed bool
+}
+
+type UpdateRecordFactsParams struct {
+	Raw               []byte
+	ExternalStatus    *string
+	DueDate           *time.Time
+	InstallmentNumber *int32
+	InstallmentCount  *int32
+	CategoryID        *string
+	BalanceAfter      *int64
+	UnappliedChange   *string
+	UserID            int64
+	ID                uuid.UUID
+}
+
+// P6 A36: the aggregator changed a stored line.
+func (q *Queries) UpdateRecordFacts(ctx context.Context, arg []UpdateRecordFactsParams) *UpdateRecordFactsBatchResults {
+	batch := &pgx.Batch{}
+	for _, a := range arg {
+		vals := []interface{}{
+			a.Raw,
+			a.ExternalStatus,
+			a.DueDate,
+			a.InstallmentNumber,
+			a.InstallmentCount,
+			a.CategoryID,
+			a.BalanceAfter,
+			a.UnappliedChange,
+			a.UserID,
+			a.ID,
+		}
+		batch.Queue(updateRecordFacts, vals...)
+	}
+	br := q.db.SendBatch(ctx, batch)
+	return &UpdateRecordFactsBatchResults{br, len(arg), false}
+}
+
+func (b *UpdateRecordFactsBatchResults) Exec(f func(int, error)) {
+	defer b.br.Close()
+	for t := 0; t < b.tot; t++ {
+		if b.closed {
+			if f != nil {
+				f(t, ErrBatchAlreadyClosed)
+			}
+			continue
+		}
+		_, err := b.br.Exec()
+		if f != nil {
+			f(t, err)
+		}
+	}
+}
+
+func (b *UpdateRecordFactsBatchResults) Close() error {
 	b.closed = true
 	return b.br.Close()
 }

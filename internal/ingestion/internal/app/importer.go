@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -29,6 +30,8 @@ var (
 	ErrLineRejected = errors.New("the ledger rejected the line")
 	// ErrBalanceRejected wraps a ledger rule that refused the file balance.
 	ErrBalanceRejected = errors.New("the ledger rejected the balance")
+	// ErrReconciled: the posting is reconciled and keeps its state.
+	ErrReconciled = errors.New("the posting is reconciled")
 )
 
 // Line is a statement line as the ledger receives it.
@@ -38,6 +41,8 @@ type Line struct {
 	Date        time.Time
 	Amount      int64
 	Description string
+	Pending     bool       // the aggregator has not settled it (P6 A36)
+	DueDate     *time.Time // due date of the card bill it belongs to (A39)
 }
 
 // NewLine is a line to record as a transaction for its external record.
@@ -46,9 +51,11 @@ type NewLine struct {
 	Line     Line
 }
 
-// Match links an external record to the transaction it confirms.
+// Match links an external record to the transaction it confirms; a pending line leaves the
+// posting pending.
 type Match struct {
 	RecordID, TransactionID, AccountID uuid.UUID
+	Pending                            bool
 }
 
 // RejectedLine is a line of a ledger batch that a ledger rule refused; it matches
@@ -79,6 +86,14 @@ type Ledger interface {
 	// already carries another record.
 	ClearMatched(ctx context.Context, userID int64, ms []Match) (conflicts []int, err error)
 	AssertBalance(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Balance, c money.Currency) error
+	// AssertSyncedBalance records an aggregator balance without yield (P6 A42); a refused
+	// assertion wraps ErrBalanceRejected.
+	AssertSyncedBalance(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Balance, c money.Currency) error
+	// UpdateImportedPosting applies a later report on a recorded line (A36): ErrReconciled
+	// leaves the posting as it is; ErrNotFound when no posting carries the record.
+	UpdateImportedPosting(ctx context.Context, userID int64, recordID uuid.UUID, pending bool, dueDate *time.Time) error
+	// ReleaseRecord unlinks a withdrawn record from its posting (A38).
+	ReleaseRecord(ctx context.Context, userID int64, recordID uuid.UUID) error
 }
 
 type ImportFile struct {
@@ -168,10 +183,14 @@ func (s *Service) read(ctx context.Context, f ImportFile, currency money.Currenc
 	return st, nil
 }
 
-// importRecords deduplicates, matches and creates the lines of one file with a constant
+// importRecords deduplicates, matches and creates the lines of one batch with a constant
 // number of ledger commits, so that a 1,000-line file stays within N07. A record that a
-// previous import left received is processed again (P4 amendment A12).
+// previous import left received is processed again (P4 amendment A12). In a sync, a stored
+// line the aggregator changed is updated (P6 A36), a withdrawn line returned again is
+// processed again (A38), and a line the ledger refuses waits for review instead of failing
+// the batch.
 func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, currency money.Currency, lines []domain.NormalizedRecord) error {
+	sync := batch.Source == domain.SourceOpenFinance
 	ordinals := domain.Ordinals{}
 	claims := make([]domain.ExternalRecord, len(lines))
 	for i, r := range lines {
@@ -180,12 +199,22 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 			DedupKey: domain.DedupKey(batch.AccountID, batch.Source, r, ordinals.Next(r)), Raw: r.Raw,
 			Date: r.Date, Amount: r.Amount, Description: r.Description, State: domain.StateReceived,
 		}
+		if sync {
+			withFacts(&claims[i], r)
+		}
 	}
 	claimed, err := s.repo.ClaimRecords(ctx, claims)
 	if err != nil {
 		return err
 	}
 	batch.Counts.Received = len(lines)
+	for i := range claimed {
+		if rec := &claimed[i].Record; claimed[i].Existed && rec.State == domain.StateWithdrawn {
+			withFacts(rec, lines[i])
+			rec.Date, rec.Amount, rec.State, rec.TransactionID, rec.Candidates = lines[i].Date, lines[i].Amount, domain.StateReceived, uuid.Nil, nil
+			claimed[i].Existed = false
+		}
+	}
 
 	postings, err := s.unlinked(ctx, batch, claimed)
 	if err != nil {
@@ -193,21 +222,32 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 	}
 	var (
 		pending []*domain.ExternalRecord
+		updated []domain.ExternalRecord
 		creates []NewLine
 		created []*domain.ExternalRecord
 		matches []Match
 		matched []*domain.ExternalRecord
-		taken   = map[uuid.UUID]bool{} // transactions matched by an earlier line of this file (I07)
+		taken   = map[uuid.UUID]bool{} // transactions matched by an earlier line of this batch (I07)
 	)
 	for i := range claimed {
 		rec := &claimed[i].Record
 		if claimed[i].Existed && rec.State != domain.StateReceived {
-			batch.Counts.Ignored++
+			changed, err := s.update(ctx, sync, rec, lines[i])
+			if err != nil {
+				return err
+			}
+			if changed {
+				batch.Counts.Updated++
+				updated = append(updated, *rec)
+			} else {
+				batch.Counts.Ignored++
+			}
 			continue
 		}
 		rec.BatchID = batch.ID
 		pending = append(pending, rec)
-		line := Line{AccountID: rec.AccountID, Currency: currency, Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description)}
+		r := lines[i]
+		line := Line{AccountID: rec.AccountID, Currency: currency, Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description), Pending: r.Pending, DueDate: r.DueDate}
 		if claimed[i].Existed {
 			done, err := s.resume(ctx, rec)
 			if err != nil {
@@ -223,7 +263,8 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 			creates, created = append(creates, NewLine{RecordID: rec.ID, Line: line}), append(created, rec)
 		case 1:
 			taken[candidates[0]] = true
-			matches, matched = append(matches, Match{RecordID: rec.ID, TransactionID: candidates[0], AccountID: rec.AccountID}), append(matched, rec)
+			matches = append(matches, Match{RecordID: rec.ID, TransactionID: candidates[0], AccountID: rec.AccountID, Pending: r.Pending})
+			matched = append(matched, rec)
 		default:
 			rec.State, rec.Candidates = domain.StateNeedsReview, candidates
 		}
@@ -239,16 +280,8 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 			rec.State, rec.TransactionID, rec.Candidates = domain.StateNeedsReview, uuid.Nil, []uuid.UUID{matches[i].TransactionID}
 		}
 	}
-	ids, err := s.ledger.RecordImported(ctx, batch.UserID, creates)
-	if rejected, ok := errors.AsType[*RejectedLine](err); ok {
-		rec := created[rejected.Index]
-		return fileError(fmt.Sprintf("line dated %s for %d: %v", rec.Date.Format(time.DateOnly), rec.Amount, rejected.Reason))
-	}
-	if err != nil {
+	if err := s.create(ctx, batch.UserID, sync, creates, created); err != nil {
 		return err
-	}
-	for i, rec := range created {
-		rec.State, rec.TransactionID = domain.StateCreated, ids[i]
 	}
 
 	outcomes := make([]domain.ExternalRecord, len(pending))
@@ -256,7 +289,84 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 		batch.Counts.Count(rec.State)
 		outcomes[i] = *rec
 	}
+	if err := s.repo.UpdateRecordFacts(ctx, updated); err != nil {
+		return err
+	}
 	return s.repo.SaveOutcomes(ctx, outcomes)
+}
+
+// create records the transactions of new lines. A line the ledger refuses fails a file
+// import; in a sync it waits for review and the other lines are created.
+func (s *Service) create(ctx context.Context, userID int64, sync bool, creates []NewLine, created []*domain.ExternalRecord) error {
+	for {
+		ids, err := s.ledger.RecordImported(ctx, userID, creates)
+		rejected, ok := errors.AsType[*RejectedLine](err)
+		switch {
+		case ok && sync:
+			created[rejected.Index].State = domain.StateNeedsReview
+			creates, created = slices.Delete(creates, rejected.Index, rejected.Index+1), slices.Delete(created, rejected.Index, rejected.Index+1)
+			continue
+		case ok:
+			rec := created[rejected.Index]
+			return fileError(fmt.Sprintf("line dated %s for %d: %v", rec.Date.Format(time.DateOnly), rec.Amount, rejected.Reason))
+		case err != nil:
+			return err
+		}
+		for i, rec := range created {
+			rec.State, rec.TransactionID = domain.StateCreated, ids[i]
+		}
+		return nil
+	}
+}
+
+// withFacts copies what an aggregator reports about a line onto its record.
+func withFacts(rec *domain.ExternalRecord, r domain.NormalizedRecord) {
+	rec.ExternalStatus, rec.DueDate, rec.Installment, rec.BalanceAfter, rec.Raw = domain.ExternalStatusOf(r), r.DueDate, r.Installment, r.BalanceAfter, r.Raw
+	rec.CategoryID = ""
+	if r.Category != nil {
+		rec.CategoryID = r.Category.ID
+	}
+}
+
+// update applies an aggregator's change to a stored line that the ledger recorded (P6 A36):
+// a posted line clears its posting, a bill moves a card posting to the bill's statement.
+// A reconciled posting and an amount change stay out of the ledger and are described on
+// the record. It reports whether the aggregator changed the line.
+func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRecord, r domain.NormalizedRecord) (bool, error) {
+	if !sync || (rec.State != domain.StateMatched && rec.State != domain.StateCreated) {
+		return false, nil
+	}
+	settled := rec.ExternalStatus != domain.ExternalStatusOf(r) || !sameDate(rec.DueDate, r.DueDate)
+	if !settled && rec.Amount == r.Amount {
+		return false, nil
+	}
+	var notes []string
+	if settled {
+		err := s.ledger.UpdateImportedPosting(ctx, rec.UserID, rec.ID, r.Pending, r.DueDate)
+		switch {
+		case errors.Is(err, ErrReconciled):
+			notes = append(notes, "the provider reports the line "+strings.ToLower(domain.ExternalStatusOf(r))+billNote(r.DueDate)+"; the posting is reconciled and keeps its status and statement")
+		case err != nil && !errors.Is(err, ErrNotFound):
+			return false, err
+		}
+	}
+	if rec.Amount != r.Amount {
+		notes = append(notes, fmt.Sprintf("the provider reports %d minor units; the ledger keeps %d", r.Amount, rec.Amount))
+	}
+	withFacts(rec, r)
+	rec.UnappliedChange = strings.Join(notes, "; ")
+	return true, nil
+}
+
+func billNote(due *time.Time) string {
+	if due == nil {
+		return ""
+	}
+	return " on the bill due " + due.Format(time.DateOnly)
+}
+
+func sameDate(a, b *time.Time) bool {
+	return (a == nil) == (b == nil) && (a == nil || a.Equal(*b))
 }
 
 // unlinked reads, in one query, the postings the new lines of the file may confirm.

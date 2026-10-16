@@ -66,7 +66,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	reportingModule := reporting.New(pool, dispatcher, log)
 	classificationModule := classification.New(pool, dispatcher, ledgerModule, log)
 	ingestionModule, err := ingestion.New(pool, dispatcher, ledgerModule, classificationModule, ingestion.Config{
-		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, PluggyURL: cfg.PluggyURL, Now: clk.Now,
+		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, PluggyURL: cfg.PluggyURL, Clock: clk,
 	}, log)
 	if err != nil {
 		return nil, err

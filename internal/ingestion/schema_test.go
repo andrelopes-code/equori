@@ -40,6 +40,8 @@ func TestSchemaInvariants(t *testing.T) {
 		{"profile with an amount column and debit and credit columns", exec(`INSERT INTO ingestion_csv_profile
 			(user_id, account_id, date_column, date_layout, amount_column, debit_column, credit_column, decimal_separator, description_column)
 			VALUES ($1, $2, 'Data', 'DD/MM/YYYY', 'Valor', 'Débito', 'Crédito', ',', 'Descrição')`, uid, checking)},
+		{"an installment within its count", exec(`INSERT INTO ingestion_external_record (user_id, batch_id, account_id, dedup_key, raw, booked_on, amount, description, installment_number, installment_count)
+			VALUES ($1, $2, $3, $4, '{}', '2026-10-01', -100, 'x', 7, 6)`, uid, batch, checking, append(make([]byte, 31), 9))},
 		{"profile without amount columns", exec(`INSERT INTO ingestion_csv_profile
 			(user_id, account_id, date_column, date_layout, decimal_separator, description_column)
 			VALUES ($1, $2, 'Data', 'DD/MM/YYYY', ',', 'Descrição')`, uid, checking)},
