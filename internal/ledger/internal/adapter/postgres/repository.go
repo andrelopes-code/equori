@@ -307,6 +307,7 @@ func (r *Repository) InsertTransaction(ctx context.Context, t domain.Transaction
 	_, err := r.q.InsertTransaction(ctx, InsertTransactionParams{
 		ID: t.ID, UserID: t.UserID, Date: t.Date, Description: t.Description, PayeeID: nullUUID(t.PayeeID),
 		BalancingCurrency: string(t.BalancingCurrency), Origin: string(t.Origin), Version: int32(t.Version), //nolint:gosec // version is a small positive counter.
+		ExternalRecordID: nullUUID(t.ExternalRecordID),
 	})
 	if err != nil {
 		return domain.Transaction{}, referenceError(err)

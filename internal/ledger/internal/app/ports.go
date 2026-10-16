@@ -289,6 +289,13 @@ type Repository interface {
 	// DeleteAttachment deletes the blob too when no other attachment references it.
 	DeleteAttachment(ctx context.Context, userID int64, id uuid.UUID) error
 
+	// TransactionByExternalRecord returns ErrNotFound when no transaction carries the record.
+	TransactionByExternalRecord(ctx context.Context, userID int64, recordID uuid.UUID) (uuid.UUID, error)
+	MatchCandidates(ctx context.Context, userID int64, accountID uuid.UUID, amount int64, from, to time.Time) ([]uuid.UUID, error)
+	// LinkExternalRecord returns ErrAlreadyMatched when another transaction carries the record.
+	LinkExternalRecord(ctx context.Context, userID int64, txID, recordID uuid.UUID) error
+	ClearPendingPostings(ctx context.Context, userID int64, txID, accountID uuid.UUID) error
+
 	// BalanceAt sums the postings of the account and its descendants up to and including date.
 	BalanceAt(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis Basis) (int64, error)
 }

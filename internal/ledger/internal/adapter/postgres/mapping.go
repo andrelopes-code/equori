@@ -93,6 +93,7 @@ func toTransaction(row LedgerTransaction) domain.Transaction {
 		ID: row.ID, UserID: row.UserID, Date: row.Date, Description: row.Description, PayeeID: row.PayeeID.UUID,
 		BalancingCurrency: money.Currency(row.BalancingCurrency), Origin: domain.Origin(row.Origin),
 		Version: int(row.Version), VoidedAt: row.VoidedAt, VoidReason: deref(row.VoidReason),
+		ExternalRecordID: row.ExternalRecordID.UUID,
 	}
 }
 

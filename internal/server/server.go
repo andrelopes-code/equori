@@ -31,6 +31,7 @@ type App struct {
 	Handler    http.Handler
 	Dispatcher *outbox.Dispatcher
 	Identity   *identity.Module
+	Ledger     *ledger.Module
 	Reporting  *reporting.Module
 }
 
@@ -62,6 +63,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		Handler:    httpserver.Middleware(identityModule.RequireSession(validator.Middleware(mux)), log, ledgerModule.BodyLimits()...),
 		Dispatcher: dispatcher,
 		Identity:   identityModule,
+		Ledger:     ledgerModule,
 		Reporting:  reportingModule,
 	}, nil
 }

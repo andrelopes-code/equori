@@ -92,6 +92,16 @@ func (h *Harness) Login(email string) *http.Client {
 	return c
 }
 
+// OwnerID is the user ID of the harness client's account.
+func (h *Harness) OwnerID() int64 {
+	h.t.Helper()
+	var id int64
+	if err := h.Pool.QueryRow(h.t.Context(), `SELECT id FROM identity_user WHERE email = 'owner@example.com'`).Scan(&id); err != nil {
+		h.t.Fatal(err)
+	}
+	return id
+}
+
 // Dispatch delivers every pending outbox event, as the dispatcher goroutine does in production.
 func (h *Harness) Dispatch() {
 	h.t.Helper()

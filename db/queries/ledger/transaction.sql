@@ -2,8 +2,8 @@
 SELECT count(*) FROM ledger_transaction WHERE user_id = $1;
 
 -- name: InsertTransaction :one
-INSERT INTO ledger_transaction (id, user_id, date, description, payee_id, balancing_currency, origin, version)
-VALUES (@id, @user_id, @date, @description, sqlc.narg(payee_id), @balancing_currency, @origin, @version)
+INSERT INTO ledger_transaction (id, user_id, date, description, payee_id, balancing_currency, origin, version, external_record_id)
+VALUES (@id, @user_id, @date, @description, sqlc.narg(payee_id), @balancing_currency, @origin, @version, sqlc.narg(external_record_id))
 RETURNING *;
 
 -- name: UpdateTransaction :exec

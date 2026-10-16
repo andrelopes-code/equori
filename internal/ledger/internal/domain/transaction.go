@@ -95,6 +95,7 @@ type Transaction struct {
 	Version           int
 	VoidedAt          *time.Time
 	VoidReason        string
+	ExternalRecordID  uuid.UUID // the import record it was created from or matched to (P4 amendment A11)
 	Postings          []Posting
 	Tags              []string
 	Links             []Link
