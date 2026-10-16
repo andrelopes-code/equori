@@ -41,7 +41,7 @@ type statementView struct {
 	Reconciled bool   `json:"reconciled"`
 }
 
-func statements(t *testing.T, h *apitest.Harness, card string) map[string]statementView {
+func statements(t testing.TB, h *apitest.Harness, card string) map[string]statementView {
 	t.Helper()
 	var out struct {
 		Items []statementView `json:"items"`

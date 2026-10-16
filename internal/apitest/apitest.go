@@ -27,7 +27,7 @@ import (
 const Password = "correct horse battery"
 
 type Harness struct {
-	t      *testing.T
+	t      testing.TB
 	Pool   *pgxpool.Pool
 	App    *server.App
 	server *httptest.Server
@@ -48,7 +48,7 @@ func Today(date string) Option {
 }
 
 // New starts the application and logs in owner@example.com as Client.
-func New(t *testing.T, opts ...Option) *Harness {
+func New(t testing.TB, opts ...Option) *Harness {
 	t.Helper()
 	out := io.Discard
 	if os.Getenv("EQUORI_TEST_LOG") == "1" {
@@ -72,7 +72,7 @@ func New(t *testing.T, opts ...Option) *Harness {
 }
 
 // T returns the test the harness reports to.
-func (h *Harness) T() *testing.T { return h.t }
+func (h *Harness) T() testing.TB { return h.t }
 
 // Login creates the user, runs the outbox so the ledger provisions it, and returns a client with its session.
 func (h *Harness) Login(email string) *http.Client {
@@ -116,7 +116,7 @@ type Response struct {
 	Body   []byte
 }
 
-func (r Response) Decode(t *testing.T, v any) {
+func (r Response) Decode(t testing.TB, v any) {
 	t.Helper()
 	if err := json.Unmarshal(r.Body, v); err != nil {
 		t.Fatalf("decode %s: %v", r.Body, err)

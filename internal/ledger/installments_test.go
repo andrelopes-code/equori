@@ -12,7 +12,7 @@ type purchaseResult struct {
 	PlanID      string                  `json:"plan_id"`
 }
 
-func installmentPurchase(t *testing.T, h *apitest.Harness, body map[string]any) purchaseResult {
+func installmentPurchase(t testing.TB, h *apitest.Harness, body map[string]any) purchaseResult {
 	t.Helper()
 	var out purchaseResult
 	h.MustDo(http.MethodPost, "/api/v1/installment-purchases", body, http.StatusCreated, &out)
