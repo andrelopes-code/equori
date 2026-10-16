@@ -5,6 +5,7 @@ import (
 	"encoding/json/v2"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/platform/page"
@@ -352,11 +353,73 @@ func (r *Repository) ReplaceTransaction(ctx context.Context, prev, next domain.T
 	return r.writeChildren(ctx, next)
 }
 
+// ReplaceCategoryPostings deletes the postings of prev absent from next and inserts the
+// postings of next without an id after the highest position left.
+func (r *Repository) ReplaceCategoryPostings(ctx context.Context, prev, next domain.Transaction, reason string) error {
+	snapshot, err := json.Marshal(toSnapshot(prev))
+	if err != nil {
+		return err
+	}
+	if err := r.q.InsertVersion(ctx, InsertVersionParams{
+		TransactionID: prev.ID, Version: int32(prev.Version), Snapshot: snapshot, Reason: reason, //nolint:gosec // version is a small positive counter.
+	}); err != nil {
+		return err
+	}
+	var removed []uuid.UUID
+	for _, p := range prev.Postings {
+		if !slices.ContainsFunc(next.Postings, func(n domain.Posting) bool { return n.ID == p.ID }) {
+			removed = append(removed, p.ID)
+		}
+	}
+	if err := r.q.DeletePostingsByID(ctx, DeletePostingsByIDParams{TransactionID: prev.ID, Ids: removed}); err != nil {
+		return err
+	}
+	position, err := r.q.NextPostingPosition(ctx, prev.ID)
+	if err != nil {
+		return err
+	}
+	var added []domain.Posting
+	for _, p := range next.Postings {
+		if p.ID == uuid.Nil {
+			added = append(added, p)
+		}
+	}
+	if err := r.insertPostings(ctx, next, added, position); err != nil {
+		return err
+	}
+	if err := r.q.UpdateTransaction(ctx, UpdateTransactionParams{
+		UserID: next.UserID, ID: next.ID, Date: next.Date, Description: next.Description, PayeeID: nullUUID(next.PayeeID),
+		BalancingCurrency: string(next.BalancingCurrency), Origin: string(next.Origin), Version: int32(next.Version), //nolint:gosec // version is a small positive counter.
+	}); err != nil {
+		return referenceError(err)
+	}
+	if err := r.q.DeleteTransactionTags(ctx, prev.ID); err != nil {
+		return err
+	}
+	return r.writeTags(ctx, next)
+}
+
 func (r *Repository) writeChildren(ctx context.Context, t domain.Transaction) error {
-	postings := make([]InsertPostingsParams, len(t.Postings))
-	for i, p := range t.Postings {
+	if err := r.insertPostings(ctx, t, t.Postings, 0); err != nil {
+		return err
+	}
+	if err := r.writeTags(ctx, t); err != nil {
+		return err
+	}
+	for _, l := range t.Links {
+		if err := r.q.InsertLink(ctx, InsertLinkParams{UserID: t.UserID, FromTransactionID: t.ID, ToTransactionID: l.Target, LinkType: string(l.Type)}); err != nil {
+			return referenceError(err)
+		}
+	}
+	return nil
+}
+
+// insertPostings writes ps of t at positions from first on.
+func (r *Repository) insertPostings(ctx context.Context, t domain.Transaction, ps []domain.Posting, first int16) error {
+	postings := make([]InsertPostingsParams, len(ps))
+	for i, p := range ps {
 		postings[i] = InsertPostingsParams{
-			UserID: t.UserID, TransactionID: t.ID, AccountID: p.AccountID, Position: int16(i), //nolint:gosec // at most 500 postings (domain.MaxPostings).
+			UserID: t.UserID, TransactionID: t.ID, AccountID: p.AccountID, Position: first + int16(i), //nolint:gosec // at most 500 postings (domain.MaxPostings).
 			Amount: p.Amount.Amount(), Weight: p.Weight.Amount(), BookedOn: t.Date, SettledOn: p.SettledOn,
 			Status: string(p.Status), OriginalAmount: originalAmount(p.Original), OriginalInstrument: originalInstrument(p.Original),
 			Memo: nullString(p.Memo), StatementID: nullUUID(p.StatementID), CardRole: nullString(p.CardRole),
@@ -370,9 +433,10 @@ func (r *Repository) writeChildren(ctx context.Context, t domain.Transaction) er
 			postingErr = err
 		}
 	})
-	if postingErr != nil {
-		return referenceError(postingErr)
-	}
+	return referenceError(postingErr)
+}
+
+func (r *Repository) writeTags(ctx context.Context, t domain.Transaction) error {
 	for _, tag := range t.Tags {
 		tagID, err := r.q.UpsertTag(ctx, UpsertTagParams{UserID: t.UserID, Name: tag})
 		if err != nil {
@@ -380,11 +444,6 @@ func (r *Repository) writeChildren(ctx context.Context, t domain.Transaction) er
 		}
 		if err := r.q.InsertTransactionTag(ctx, InsertTransactionTagParams{UserID: t.UserID, TransactionID: t.ID, TagID: tagID}); err != nil {
 			return err
-		}
-	}
-	for _, l := range t.Links {
-		if err := r.q.InsertLink(ctx, InsertLinkParams{UserID: t.UserID, FromTransactionID: t.ID, ToTransactionID: l.Target, LinkType: string(l.Type)}); err != nil {
-			return referenceError(err)
 		}
 	}
 	return nil

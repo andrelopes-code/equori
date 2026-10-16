@@ -235,6 +235,9 @@ type Repository interface {
 	// InsertTransactionRows writes a validated, billed transaction without reading it back.
 	InsertTransactionRows(ctx context.Context, t domain.Transaction) error
 	ReplaceTransaction(ctx context.Context, prev, next domain.Transaction, reason string) error
+	// ReplaceCategoryPostings stores next, which differs from prev only in its category
+	// postings, payee, tags and version; other postings keep their rows.
+	ReplaceCategoryPostings(ctx context.Context, prev, next domain.Transaction, reason string) error
 	VoidTransaction(ctx context.Context, t domain.Transaction) error
 	ListTransactions(ctx context.Context, q TransactionQuery) ([]domain.Transaction, error)
 	Versions(ctx context.Context, userID int64, id uuid.UUID) ([]Version, error)

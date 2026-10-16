@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -266,6 +267,33 @@ func (s *Server) VoidTransaction(ctx context.Context, req VoidTransactionRequest
 		return nil, err
 	}
 	return VoidTransaction200JSONResponse(toTransactionAPI(t)), nil
+}
+
+func (s *Server) CategorizeTransaction(ctx context.Context, req CategorizeTransactionRequestObject) (CategorizeTransactionResponseObject, error) {
+	userID := auth.MustUserID(ctx)
+	c := app.Categorization{
+		TransactionID: req.Id, ExpectedVersion: req.Body.ExpectedVersion, PayeeID: req.Body.PayeeId,
+		Parts: make([]domain.CategoryPart, len(req.Body.Parts)), Cause: app.Cause{Method: app.MethodManual},
+	}
+	for i, p := range req.Body.Parts {
+		amount, err := fromMoneyAPI(fmt.Sprintf("parts[%d].amount", i), p.Amount)
+		if err != nil {
+			return nil, err
+		}
+		c.Parts[i] = domain.CategoryPart{AccountID: p.AccountId, Amount: amount}
+	}
+	errs, err := s.svc.Categorize(ctx, userID, []app.Categorization{c})
+	if err != nil {
+		return nil, err
+	}
+	if errs[0] != nil {
+		return nil, errs[0]
+	}
+	t, err := s.svc.Transaction(ctx, userID, req.Id)
+	if err != nil {
+		return nil, err
+	}
+	return CategorizeTransaction200JSONResponse(toTransactionAPI(t)), nil
 }
 
 func (s *Server) ListTransactionVersions(ctx context.Context, req ListTransactionVersionsRequestObject) (ListTransactionVersionsResponseObject, error) {

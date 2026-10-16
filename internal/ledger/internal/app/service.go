@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"maps"
 	"slices"
 	"strconv"
 	"time"
@@ -240,12 +241,27 @@ func (s *Service) CloseAccount(ctx context.Context, userID int64, id uuid.UUID, 
 	})
 }
 
-// TransactionEvent is the payload of the three transaction events (ADR 006, chapter 4).
+// TransactionEvent is the payload of the transaction events (ADR 006, chapter 4).
 type TransactionEvent struct {
 	TransactionID uuid.UUID   `json:"transaction_id"`
 	Date          string      `json:"date"`
 	PreviousDate  string      `json:"previous_date,omitempty"`
 	AccountIDs    []uuid.UUID `json:"account_ids"`
+	Version       int         `json:"version"`
+	Origin        string      `json:"origin"`
+	CategoryState string      `json:"category_state"`
+	// CategoriesChanged is set on corrections that change the category postings.
+	CategoriesChanged bool   `json:"categories_changed,omitempty"`
+	Cause             *Cause `json:"cause,omitempty"`
+}
+
+// newTransactionEvent describes t; accounts holds every account of t, and AccountIDs also
+// covers the accounts of the earlier versions given.
+func newTransactionEvent(t domain.Transaction, accounts map[uuid.UUID]domain.Account, earlier ...domain.Transaction) TransactionEvent {
+	return TransactionEvent{
+		TransactionID: t.ID, Date: t.Date.Format(time.DateOnly), AccountIDs: accountIDs(append(earlier, t)...),
+		Version: t.Version, Origin: string(t.Origin), CategoryState: string(t.CategoryState(accounts)),
+	}
 }
 
 func accountIDs(ts ...domain.Transaction) []uuid.UUID {
@@ -274,7 +290,7 @@ func (s *Service) RecordTransaction(ctx context.Context, userID int64, t domain.
 func (s *Service) insert(ctx context.Context, r Repository, t domain.Transaction) (domain.Transaction, error) {
 	t.ID = uuid.Must(uuid.NewV7())
 	t.Version = 0
-	valid, err := s.validate(ctx, r, t)
+	valid, accounts, err := s.validate(ctx, r, t)
 	if err != nil {
 		return domain.Transaction{}, err
 	}
@@ -287,7 +303,7 @@ func (s *Service) insert(ctx context.Context, r Repository, t domain.Transaction
 	}
 	return created, r.Publish(ctx, outbox.Event{
 		Type: EventTransactionRecorded, UserID: t.UserID, AggregateID: created.ID.String(),
-		Payload: TransactionEvent{TransactionID: created.ID, Date: created.Date.Format(time.DateOnly), AccountIDs: accountIDs(created)},
+		Payload: newTransactionEvent(created, accounts),
 	})
 }
 
@@ -311,6 +327,9 @@ func (s *Service) CorrectTransaction(ctx context.Context, userID int64, id uuid.
 		if err != nil {
 			return err
 		}
+		if err := s.addAccounts(ctx, r, userID, accounts, prev); err != nil {
+			return err
+		}
 		if corrected, err = prev.Correct(next, expectedVersion, accounts); err != nil {
 			return err
 		}
@@ -322,10 +341,12 @@ func (s *Service) CorrectTransaction(ctx context.Context, userID int64, id uuid.
 		}
 		return r.Publish(ctx, outbox.Event{
 			Type: EventTransactionCorrected, UserID: userID, AggregateID: id.String(),
-			Payload: TransactionEvent{
-				TransactionID: id, Date: corrected.Date.Format(time.DateOnly),
-				PreviousDate: prev.Date.Format(time.DateOnly), AccountIDs: accountIDs(prev, corrected),
-			},
+			Payload: func() TransactionEvent {
+				e := newTransactionEvent(corrected, accounts, prev)
+				e.PreviousDate = prev.Date.Format(time.DateOnly)
+				e.CategoriesChanged = domain.CategoriesChanged(prev, corrected, accounts)
+				return e
+			}(),
 		})
 	})
 	return corrected, err
@@ -344,9 +365,13 @@ func (s *Service) VoidTransaction(ctx context.Context, userID int64, id uuid.UUI
 		if err := r.VoidTransaction(ctx, voided); err != nil {
 			return err
 		}
+		accounts, err := r.Accounts(ctx, userID, postingAccounts(prev))
+		if err != nil {
+			return err
+		}
 		return r.Publish(ctx, outbox.Event{
 			Type: EventTransactionVoided, UserID: userID, AggregateID: id.String(),
-			Payload: TransactionEvent{TransactionID: id, Date: prev.Date.Format(time.DateOnly), AccountIDs: accountIDs(prev)},
+			Payload: newTransactionEvent(voided, accounts),
 		})
 	})
 }
@@ -379,19 +404,39 @@ func (s *Service) ListTransactions(ctx context.Context, q TransactionQuery) ([]d
 }
 
 // validate applies settings defaults and checks references before the domain rules.
-func (s *Service) validate(ctx context.Context, r Repository, t domain.Transaction) (domain.Transaction, error) {
+func (s *Service) validate(ctx context.Context, r Repository, t domain.Transaction) (domain.Transaction, map[uuid.UUID]domain.Account, error) {
 	if t.BalancingCurrency == "" {
 		settings, err := r.Settings(ctx, t.UserID)
 		if err != nil {
-			return domain.Transaction{}, err
+			return domain.Transaction{}, nil, err
 		}
 		t.BalancingCurrency = settings.BaseCurrency
 	}
 	accounts, err := s.references(ctx, r, t)
 	if err != nil {
-		return domain.Transaction{}, err
+		return domain.Transaction{}, nil, err
 	}
-	return domain.NewTransaction(t, accounts)
+	valid, err := domain.NewTransaction(t, accounts)
+	return valid, accounts, err
+}
+
+// addAccounts loads into accounts the accounts of ts it does not hold yet.
+func (s *Service) addAccounts(ctx context.Context, r Repository, userID int64, accounts map[uuid.UUID]domain.Account, ts ...domain.Transaction) error {
+	var missing []uuid.UUID
+	for _, id := range postingAccounts(ts...) {
+		if _, ok := accounts[id]; !ok {
+			missing = append(missing, id)
+		}
+	}
+	if len(missing) == 0 {
+		return nil
+	}
+	more, err := r.Accounts(ctx, userID, missing)
+	if err != nil {
+		return err
+	}
+	maps.Copy(accounts, more)
+	return nil
 }
 
 // references loads the accounts of t and checks its payee and link targets.

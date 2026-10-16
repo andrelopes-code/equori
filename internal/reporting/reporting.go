@@ -26,7 +26,7 @@ type Module struct {
 
 func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, log *slog.Logger) *Module {
 	svc := app.NewService(postgres.NewRepository(pool))
-	for _, eventType := range []string{ledger.EventTransactionRecorded, ledger.EventTransactionCorrected, ledger.EventTransactionVoided} {
+	for _, eventType := range []string{ledger.EventTransactionRecorded, ledger.EventTransactionCorrected, ledger.EventTransactionCategorized, ledger.EventTransactionVoided} {
 		dispatcher.Subscribe("reporting-series", eventType, rebuildSeries)
 	}
 	return &Module{svc: svc, http: httpapi.NewServer(svc, log)}

@@ -93,3 +93,9 @@ WHERE t.user_id = @user_id
   AND (sqlc.narg(after_date)::date IS NULL OR (t.date, t.id) < (sqlc.narg(after_date)::date, sqlc.narg(after_id)::uuid))
 ORDER BY t.date DESC, t.id DESC
 LIMIT @row_limit;
+
+-- name: DeletePostingsByID :exec
+DELETE FROM ledger_posting WHERE transaction_id = @transaction_id AND id = ANY(@ids::uuid[]);
+
+-- name: NextPostingPosition :one
+SELECT (coalesce(max(position), -1) + 1)::smallint FROM ledger_posting WHERE transaction_id = $1;

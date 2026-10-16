@@ -41,6 +41,20 @@ func (q *Queries) DeletePostings(ctx context.Context, transactionID uuid.UUID) e
 	return err
 }
 
+const deletePostingsByID = `-- name: DeletePostingsByID :exec
+DELETE FROM ledger_posting WHERE transaction_id = $1 AND id = ANY($2::uuid[])
+`
+
+type DeletePostingsByIDParams struct {
+	TransactionID uuid.UUID
+	Ids           []uuid.UUID
+}
+
+func (q *Queries) DeletePostingsByID(ctx context.Context, arg DeletePostingsByIDParams) error {
+	_, err := q.db.Exec(ctx, deletePostingsByID, arg.TransactionID, arg.Ids)
+	return err
+}
+
 const deleteTransactionTags = `-- name: DeleteTransactionTags :exec
 DELETE FROM ledger_transaction_tag WHERE transaction_id = $1
 `
@@ -481,6 +495,17 @@ func (q *Queries) ListVersions(ctx context.Context, arg ListVersionsParams) ([]L
 		return nil, err
 	}
 	return items, nil
+}
+
+const nextPostingPosition = `-- name: NextPostingPosition :one
+SELECT (coalesce(max(position), -1) + 1)::smallint FROM ledger_posting WHERE transaction_id = $1
+`
+
+func (q *Queries) NextPostingPosition(ctx context.Context, transactionID uuid.UUID) (int16, error) {
+	row := q.db.QueryRow(ctx, nextPostingPosition, transactionID)
+	var column_1 int16
+	err := row.Scan(&column_1)
+	return column_1, err
 }
 
 const updateTransaction = `-- name: UpdateTransaction :exec

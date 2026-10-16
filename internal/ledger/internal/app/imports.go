@@ -128,7 +128,7 @@ func (s *Service) RecordImportedBatch(ctx context.Context, userID int64, recs []
 			}
 			if err := r.Publish(ctx, outbox.Event{
 				Type: EventTransactionRecorded, UserID: userID, AggregateID: t.ID.String(),
-				Payload: TransactionEvent{TransactionID: t.ID, Date: t.Date.Format(time.DateOnly), AccountIDs: accountIDs(t)},
+				Payload: newTransactionEvent(t, accounts),
 			}); err != nil {
 				return err
 			}

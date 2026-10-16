@@ -42,6 +42,8 @@ func toProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusConflict, "version_conflict", "the transaction changed since the expected version; reload it"), true
 	case errors.Is(err, domain.ErrVoided):
 		return problem.New(http.StatusConflict, "transaction_voided", "the transaction is voided"), true
+	case errors.Is(err, domain.ErrNotCategorizable):
+		return problem.New(http.StatusUnprocessableEntity, "not_categorizable", err.Error()), true
 	case errors.Is(err, domain.ErrReconciled):
 		return problem.New(http.StatusConflict, "posting_reconciled", "the transaction has reconciled postings"), true
 	case errors.Is(err, app.ErrDifferenceRemains):

@@ -33,6 +33,8 @@ const (
 	EventTransactionRecorded  = app.EventTransactionRecorded
 	EventTransactionCorrected = app.EventTransactionCorrected
 	EventTransactionVoided    = app.EventTransactionVoided
+	// EventTransactionCategorized follows Categorize (P5 amendment A18).
+	EventTransactionCategorized = app.EventTransactionCategorized
 )
 
 // TransactionEvent is the payload of the transaction events.
@@ -52,6 +54,15 @@ type ImportedRecord = app.ImportedRecord
 // Match links an external record to the transaction it confirms.
 type Match = app.Match
 
+// CategoryPart is one category posting of a categorization, signed like the posting.
+type CategoryPart = domain.CategoryPart
+
+// Cause names who decided a categorization; the categorized event carries it.
+type Cause = app.Cause
+
+// Categorization changes the category side of one transaction (P5 amendment A18).
+type Categorization = app.Categorization
+
 // LineError names the line of a batch that a ledger rule rejected.
 type LineError = app.LineError
 
@@ -62,6 +73,8 @@ var (
 	ErrVoided            = domain.ErrVoided
 	ErrAlreadyReconciled = domain.ErrAlreadyReconciled
 	ErrAlreadyMatched    = app.ErrAlreadyMatched
+	ErrVersionConflict   = domain.ErrVersionConflict
+	ErrNotCategorizable  = domain.ErrNotCategorizable
 )
 
 // Calendar is the part of marketdata the ledger uses to shift due dates.
@@ -126,6 +139,12 @@ func (m *Module) ClearMatched(ctx context.Context, userID int64, recordID, txID,
 }
 
 // AssertBalance records a balance reported by an imported file (source import, F6).
+// Categorize applies each item in one database transaction; errs[i] is the domain error of
+// item i (ErrNotFound, ErrVersionConflict, ErrNotCategorizable, ErrVoided, ErrValidation).
+func (m *Module) Categorize(ctx context.Context, userID int64, cs []Categorization) (errs []error, err error) {
+	return m.svc.Categorize(ctx, userID, cs)
+}
+
 func (m *Module) AssertBalance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, amount money.Money) error {
 	_, err := m.svc.AssertBalance(ctx, userID, accountID, date, amount, app.SourceImport)
 	return err
