@@ -21,15 +21,16 @@ lint: $(TOOLS)
 	$(BIN)/golangci-lint run
 
 # Each module's adapter/httpapi holds an oapi-codegen.yaml selecting its tag from api/openapi.yaml.
-gen: $(TOOLS)
+gen: $(TOOLS) $(WEB_DEPS)
 	$(BIN)/sqlc generate
 	for cfg in $$(find internal -name oapi-codegen.yaml); do \
 		(cd $$(dirname $$cfg) && $(BIN)/oapi-codegen -config oapi-codegen.yaml $(CURDIR)/api/openapi.yaml) || exit 1; \
 	done
+	cd web && pnpm exec openapi-typescript ../api/openapi.yaml -o src/api/schema.gen.ts
 
 gen-check: gen
-	git diff --exit-code -- '*.gen.go'
-	test -z "$$(git ls-files --others --exclude-standard -- '*.gen.go')"
+	git diff --exit-code -- '*.gen.go' '*.gen.ts'
+	test -z "$$(git ls-files --others --exclude-standard -- '*.gen.go' '*.gen.ts')"
 
 tidy-check:
 	go mod tidy -diff
@@ -74,6 +75,7 @@ web-check: web-build
 	cd web && pnpm typecheck
 	cd web && pnpm lint
 	cd web && pnpm format:check
+	cd web && pnpm test
 
 web-dev: $(WEB_DEPS)
 	cd web && pnpm dev
