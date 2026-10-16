@@ -58,6 +58,7 @@ Everything is in English: identifiers, files, packages, comments, log messages, 
 - No global mutable state. Dependencies are passed through constructors.
 - Tests sit next to the code, table-driven. Postgres adapters are tested against a real database from `pgtest.New(t)`, not mocks.
 - HTTP errors are RFC 9457 problems written with `internal/platform/problem` (ADR 004).
+- Language model calls go through `internal/platform/llm` (ADR 009); each module declares its chain in code.
 - Handlers get the user with `auth.MustUserID(ctx)` (`internal/platform/auth`) and pass it to `app` explicitly. Every `/api/` route is authenticated by `identity.RequireSession`; only login is exempt.
 - `*.gen.go` files are generated; never edit them. A new module adds an entry to `sqlc.yaml`, `db/queries/<module>/`, a tag in `api/openapi.yaml` and `adapter/httpapi/oapi-codegen.yaml`.
 - Every business table has `user_id`; every query on it filters by `user_id` (ADR 003).

@@ -27,16 +27,25 @@ type Config struct {
 	PluggyURL string
 	// SyncInterval is how often the scheduler checks connections for new data (P6 A43).
 	SyncInterval time.Duration
+	// GeminiAPIKey enables the Gemini API provider (ADR 009); empty leaves it unregistered.
+	GeminiAPIKey string
+	// GeminiURL is the base URL of the Gemini API, the only address Gemini requests go to (N17).
+	GeminiURL string
 }
 
 func Load(getenv func(string) string) (Config, error) {
 	cfg := Config{
-		DatabaseURL: getenv("EQUORI_DATABASE_URL"),
-		HTTPAddr:    getenv("EQUORI_HTTP_ADDR"),
-		PluggyURL:   getenv("EQUORI_PLUGGY_URL"),
+		DatabaseURL:  getenv("EQUORI_DATABASE_URL"),
+		HTTPAddr:     getenv("EQUORI_HTTP_ADDR"),
+		PluggyURL:    getenv("EQUORI_PLUGGY_URL"),
+		GeminiAPIKey: getenv("EQUORI_GEMINI_API_KEY"),
+		GeminiURL:    getenv("EQUORI_GEMINI_URL"),
 	}
 	if cfg.PluggyURL == "" {
 		cfg.PluggyURL = "https://api.pluggy.ai"
+	}
+	if cfg.GeminiURL == "" {
+		cfg.GeminiURL = "https://generativelanguage.googleapis.com"
 	}
 	cfg.SyncInterval = time.Hour
 	if v := getenv("EQUORI_SYNC_INTERVAL"); v != "" {

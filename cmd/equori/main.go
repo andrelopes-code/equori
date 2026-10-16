@@ -18,6 +18,8 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/config"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
+	"github.com/andrelopes-code/equori/internal/platform/llm"
+	"github.com/andrelopes-code/equori/internal/platform/llm/aistudio"
 	"github.com/andrelopes-code/equori/internal/platform/postgres"
 	"github.com/andrelopes-code/equori/internal/server"
 	"github.com/andrelopes-code/equori/web"
@@ -72,7 +74,9 @@ func serve() error {
 	defer pool.Close()
 
 	clk := clock.New(cfg.TimeZone, time.Now)
-	scfg := serverConfig(cfg, &clk)
+	router := llmRouter(cfg, &clk, log)
+	log.Info("llm providers", "providers", router.Providers())
+	scfg := serverConfig(cfg, &clk, router)
 	scfg.Web = web.Dist()
 	app, err := server.New(pool, scfg, log)
 	if err != nil {
@@ -123,11 +127,21 @@ func reportingCommand(args []string) error {
 	return app.Reporting.RebuildAll(ctx)
 }
 
-func serverConfig(cfg config.Config, clk *clock.Clock) server.Config {
+func serverConfig(cfg config.Config, clk *clock.Clock, router *llm.Router) server.Config {
 	return server.Config{
 		SecureCookies: !cfg.InsecureCookies, Clock: clk, APIDocs: cfg.APIDocs,
 		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, PluggyURL: cfg.PluggyURL,
+		LLM: router,
 	}
+}
+
+// llmRouter registers the language model providers whose credentials are configured.
+func llmRouter(cfg config.Config, clk *clock.Clock, log *slog.Logger) *llm.Router {
+	var providers []llm.Provider
+	if cfg.GeminiAPIKey != "" {
+		providers = append(providers, aistudio.New(cfg.GeminiURL, cfg.GeminiAPIKey, &http.Client{Timeout: 2 * time.Minute}))
+	}
+	return llm.NewRouter(clk, log, providers...)
 }
 
 func setup() (config.Config, *slog.Logger, error) {

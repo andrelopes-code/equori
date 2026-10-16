@@ -29,7 +29,7 @@ func secretsCommand(args []string) error {
 		return err
 	}
 	defer pool.Close()
-	app, err := server.New(pool, serverConfig(cfg, nil), log)
+	app, err := server.New(pool, serverConfig(cfg, nil, nil), log)
 	if err != nil {
 		return err
 	}

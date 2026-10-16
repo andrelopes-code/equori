@@ -21,6 +21,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/apidoc"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
+	"github.com/andrelopes-code/equori/internal/platform/llm"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 	"github.com/andrelopes-code/equori/internal/platform/spa"
 	"github.com/andrelopes-code/equori/internal/reporting"
@@ -38,6 +39,8 @@ type Config struct {
 	// empty when unset.
 	SecretKey, PreviousSecretKey string
 	PluggyURL                    string
+	// LLM routes language model calls (ADR 009); modules take clients from it.
+	LLM *llm.Router
 }
 
 type App struct {
