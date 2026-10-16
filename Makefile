@@ -45,7 +45,7 @@ build: web-build
 	CGO_ENABLED=0 go build -trimpath -o $(BIN)/equori ./cmd/equori
 
 dev: db-up
-	set -a && . ./dev.env && set +a && go run ./cmd/equori
+	set -a && . ./dev.env && { [ ! -f .env ] || . ./.env; } && set +a && go run ./cmd/equori
 
 db-up:
 	docker compose -f compose.yaml -f compose.dev.yaml up -d --wait db
