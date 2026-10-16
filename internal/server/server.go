@@ -34,6 +34,10 @@ type Config struct {
 	Web fs.FS
 	// APIDocs registers GET /docs and GET /openapi.yaml.
 	APIDocs bool
+	// SecretKey and PreviousSecretKey seal integration credentials (ADR 008): 32 raw bytes,
+	// empty when unset.
+	SecretKey, PreviousSecretKey string
+	PluggyURL                    string
 }
 
 type App struct {
@@ -42,6 +46,7 @@ type App struct {
 	Identity   *identity.Module
 	Ledger     *ledger.Module
 	Reporting  *reporting.Module
+	Ingestion  *ingestion.Module
 }
 
 // New registers every module's routes and outbox subscriptions; the caller runs Dispatcher.
@@ -60,7 +65,12 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	ledgerModule := ledger.New(pool, dispatcher, marketdataModule, clk, log)
 	reportingModule := reporting.New(pool, dispatcher, log)
 	classificationModule := classification.New(pool, dispatcher, ledgerModule, log)
-	ingestionModule := ingestion.New(pool, dispatcher, ledgerModule, classificationModule, log)
+	ingestionModule, err := ingestion.New(pool, dispatcher, ledgerModule, classificationModule, ingestion.Config{
+		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, PluggyURL: cfg.PluggyURL, Now: clk.Now,
+	}, log)
+	if err != nil {
+		return nil, err
+	}
 
 	mux := http.NewServeMux()
 	mux.Handle("GET /healthz", httpserver.Health(pool))
@@ -84,5 +94,6 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		Identity:   identityModule,
 		Ledger:     ledgerModule,
 		Reporting:  reportingModule,
+		Ingestion:  ingestionModule,
 	}, nil
 }

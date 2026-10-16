@@ -11,26 +11,40 @@ import (
 )
 
 type IngestionBatch struct {
-	ID            uuid.UUID
-	UserID        int64
-	AccountID     uuid.UUID
-	Source        string
-	FileName      string
-	Currency      string
-	PeriodFrom    *time.Time
-	PeriodTo      *time.Time
-	Received      int32
-	Ignored       int32
-	Matched       int32
-	Created       int32
-	NeedsReview   int32
-	Discarded     int32
-	BalanceDate   *time.Time
-	BalanceAmount *int64
-	BalanceStatus string
-	BalanceReason *string
-	StartedAt     time.Time
-	CompletedAt   *time.Time
+	ID                uuid.UUID
+	UserID            int64
+	AccountID         uuid.UUID
+	Source            string
+	FileName          *string
+	Currency          string
+	PeriodFrom        *time.Time
+	PeriodTo          *time.Time
+	Received          int32
+	Ignored           int32
+	Matched           int32
+	Created           int32
+	NeedsReview       int32
+	Discarded         int32
+	BalanceDate       *time.Time
+	BalanceAmount     *int64
+	BalanceStatus     string
+	BalanceReason     *string
+	StartedAt         time.Time
+	CompletedAt       *time.Time
+	ExternalAccountID uuid.NullUUID
+}
+
+type IngestionConnection struct {
+	ID               uuid.UUID
+	UserID           int64
+	IntegrationID    uuid.UUID
+	ExternalItemID   string
+	Name             string
+	ProviderStatus   string
+	LastItemUpdateAt *time.Time
+	LastSyncedAt     *time.Time
+	LastError        *string
+	CreatedAt        time.Time
 }
 
 type IngestionCsvProfile struct {
@@ -50,6 +64,22 @@ type IngestionCsvProfile struct {
 	UpdatedAt         time.Time
 }
 
+type IngestionExternalAccount struct {
+	ID                uuid.UUID
+	UserID            int64
+	ConnectionID      uuid.UUID
+	ExternalAccountID string
+	Type              string
+	Subtype           string
+	Name              string
+	NumberLast4       *string
+	Currency          string
+	AccountID         uuid.NullUUID
+	SyncFrom          *time.Time
+	Ignored           bool
+	LastSyncedOn      *time.Time
+}
+
 type IngestionExternalRecord struct {
 	ID            uuid.UUID
 	UserID        int64
@@ -64,4 +94,13 @@ type IngestionExternalRecord struct {
 	State         string
 	TransactionID uuid.NullUUID
 	Candidates    []uuid.UUID
+}
+
+type IngestionIntegration struct {
+	ID                   uuid.UUID
+	UserID               int64
+	Provider             string
+	Name                 string
+	CredentialCiphertext []byte
+	UpdatedAt            time.Time
 }

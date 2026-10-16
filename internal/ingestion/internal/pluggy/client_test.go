@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -122,5 +123,26 @@ func TestClientRefusesForeignCursor(t *testing.T) {
 	}
 	if _, err := s.Transactions(t.Context(), "acc-1", time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC), time.Date(2026, 11, 12, 0, 0, 0, 0, time.UTC)); err == nil {
 		t.Fatal("foreign cursor followed")
+	}
+}
+
+// A44: a transport error names the endpoint, not the URL with its item or account id.
+func TestClientErrorsCarryNoIdentifiers(t *testing.T) {
+	srv := pluggytest.New(t, "client-id", "client-secret")
+	srv.AddItem(pluggy.Item{ID: "item-7c1e", Status: pluggy.StatusUpdated})
+	clk := &fakeClock{now: time.Date(2026, 11, 12, 12, 0, 0, 0, time.UTC)}
+	c, _ := newClient(t, srv, clk)
+	s, err := c.Session(t.Context(), "client-id", "client-secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	_, err = s.Item(ctx, "item-7c1e")
+	if err == nil || strings.Contains(err.Error(), "item-7c1e") || !errors.Is(err, context.Canceled) {
+		t.Fatalf("err = %v", err)
+	}
+	if _, err := s.Accounts(ctx, "item-7c1e"); err == nil || strings.Contains(err.Error(), "item-7c1e") {
+		t.Fatalf("accounts err = %v", err)
 	}
 }

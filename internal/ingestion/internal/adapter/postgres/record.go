@@ -115,7 +115,7 @@ func (r *Repository) SaveOutcomes(ctx context.Context, recs []domain.ExternalRec
 
 func (r *Repository) InsertBatch(ctx context.Context, b domain.Batch) (domain.Batch, error) {
 	row, err := r.q.InsertBatch(ctx, InsertBatchParams{
-		UserID: b.UserID, AccountID: b.AccountID, Source: string(b.Source), FileName: b.FileName,
+		UserID: b.UserID, AccountID: b.AccountID, Source: string(b.Source), FileName: optional(b.FileName),
 		Currency: b.Currency, PeriodFrom: b.PeriodFrom, PeriodTo: b.PeriodTo,
 	})
 	if err != nil {

@@ -49,6 +49,11 @@ func toProblem(err error) (problem.Details, bool) {
 		d.Errors = []problem.FieldError{{Field: pe.field, Message: pe.message}}
 		return d, true
 	}
+	if ue, ok := errors.AsType[*app.UnauthorizedError](err); ok {
+		d := problem.New(http.StatusUnprocessableEntity, "provider_unauthorized", ue.Error())
+		d.Errors = []problem.FieldError{{Field: ue.Field, Message: "rejected by the provider"}}
+		return d, true
+	}
 	if fe, ok := errors.AsType[*domain.FieldError](err); ok {
 		d := problem.New(http.StatusUnprocessableEntity, "validation_failed", fe.Error())
 		d.Errors = []problem.FieldError{{Field: fe.Field, Message: fe.Message}}
@@ -61,6 +66,13 @@ func toProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusConflict, "record_resolved", err.Error()), true
 	case errors.Is(err, app.ErrAlreadyMatched):
 		return problem.New(http.StatusConflict, "already_matched", err.Error()), true
+	case errors.Is(err, app.ErrIntegrationUnavailable):
+		return problem.New(http.StatusConflict, "integration_unavailable", err.Error()), true
+	case errors.Is(err, app.ErrIntegrationInUse):
+		return problem.New(http.StatusConflict, "integration_in_use", "delete the integration's connections first"), true
+	case errors.Is(err, app.ErrProviderUnavailable):
+		// The cause stays out of the response: it may name the provider's address.
+		return problem.New(http.StatusBadGateway, "provider_unavailable", app.ErrProviderUnavailable.Error()), true
 	}
 	return problem.Details{}, false
 }

@@ -136,6 +136,10 @@ func (c *Client) send(ctx context.Context, method, target, apiKey string, body [
 		req.Header.Set("X-API-KEY", apiKey)
 	}
 	resp, err := c.hc.Do(req)
+	if ue, ok := errors.AsType[*url.Error](err); ok {
+		// The URL carries item and account ids (A44); the label names the endpoint instead.
+		err = ue.Err
+	}
 	if err != nil {
 		return 0, 0, nil, err
 	}

@@ -227,17 +227,23 @@ func (s *Service) completePairing(ctx context.Context, r Repository, userID int6
 	return c.ID, false, s.saveTransfer(ctx, r, c, next, accounts, rec.Decision.Cause)
 }
 
-// ImportCurrency returns the currency of an account that can hold statement lines: a leaf
-// balance account, like a balance assertion's (P3 amendment A9).
-func (s *Service) ImportCurrency(ctx context.Context, userID int64, accountID uuid.UUID) (money.Currency, error) {
+// ImportTarget is an account that can hold statement lines.
+type ImportTarget struct {
+	Currency money.Currency
+	Kind     string
+}
+
+// ImportTarget returns the currency and kind of an account that can hold statement lines: a
+// leaf balance account, like a balance assertion's (P3 amendment A9).
+func (s *Service) ImportTarget(ctx context.Context, userID int64, accountID uuid.UUID) (ImportTarget, error) {
 	a, err := s.repo.Account(ctx, userID, accountID)
 	if err != nil {
-		return "", err
+		return ImportTarget{}, err
 	}
 	if err := checkLeafBalance(ctx, s.repo, a); err != nil {
-		return "", err
+		return ImportTarget{}, err
 	}
-	return a.Instrument, nil
+	return ImportTarget{Currency: a.Instrument, Kind: string(a.Kind)}, nil
 }
 
 // LinkedTransaction returns the transaction carrying the external record and whether the

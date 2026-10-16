@@ -16,7 +16,7 @@ func TestLoad(t *testing.T) {
 		{
 			name: "defaults",
 			env:  map[string]string{"EQUORI_DATABASE_URL": "postgres://x"},
-			want: Config{DatabaseURL: "postgres://x", HTTPAddr: ":8080", LogLevel: slog.LevelInfo, TimeZone: time.UTC},
+			want: Config{DatabaseURL: "postgres://x", HTTPAddr: ":8080", LogLevel: slog.LevelInfo, TimeZone: time.UTC, PluggyURL: "https://api.pluggy.ai"},
 		},
 		{
 			name: "explicit values",
@@ -27,10 +27,11 @@ func TestLoad(t *testing.T) {
 				"EQUORI_INSECURE_COOKIES": "true",
 				"EQUORI_TIMEZONE":         "UTC",
 				"EQUORI_API_DOCS":         "true",
+				"EQUORI_PLUGGY_URL":       "http://127.0.0.1:9100",
 			},
 			want: Config{
 				DatabaseURL: "postgres://x", HTTPAddr: "127.0.0.1:9000", LogLevel: slog.LevelDebug,
-				TimeZone: time.UTC, InsecureCookies: true, APIDocs: true,
+				TimeZone: time.UTC, InsecureCookies: true, APIDocs: true, PluggyURL: "http://127.0.0.1:9100",
 			},
 		},
 		{name: "missing database url", env: map[string]string{}, wantErr: true},

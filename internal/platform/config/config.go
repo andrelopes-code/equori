@@ -23,12 +23,18 @@ type Config struct {
 	// SecretKey and PreviousSecretKey seal integration credentials (ADR 008): 32 raw bytes,
 	// empty when unset. Without SecretKey integrations are unavailable.
 	SecretKey, PreviousSecretKey string
+	// PluggyURL is the base URL of the Pluggy API, the only address Pluggy requests go to (N17).
+	PluggyURL string
 }
 
 func Load(getenv func(string) string) (Config, error) {
 	cfg := Config{
 		DatabaseURL: getenv("EQUORI_DATABASE_URL"),
 		HTTPAddr:    getenv("EQUORI_HTTP_ADDR"),
+		PluggyURL:   getenv("EQUORI_PLUGGY_URL"),
+	}
+	if cfg.PluggyURL == "" {
+		cfg.PluggyURL = "https://api.pluggy.ai"
 	}
 	if cfg.DatabaseURL == "" {
 		return Config{}, errors.New("EQUORI_DATABASE_URL is not set")

@@ -100,6 +100,27 @@ func (e CsvProfileDelimiter) Valid() bool {
 	}
 }
 
+// Defines values for ExternalAccountState.
+const (
+	Ignored ExternalAccountState = "ignored"
+	Mapped  ExternalAccountState = "mapped"
+	Pending ExternalAccountState = "pending"
+)
+
+// Valid indicates whether the value is a known member of the ExternalAccountState enum.
+func (e ExternalAccountState) Valid() bool {
+	switch e {
+	case Ignored:
+		return true
+	case Mapped:
+		return true
+	case Pending:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ExternalRecordState.
 const (
 	ExternalRecordStateCreated     ExternalRecordState = "created"
@@ -160,6 +181,36 @@ func (e ImportBatchSource) Valid() bool {
 	case ImportBatchSourceCsv:
 		return true
 	case ImportBatchSourceOfx:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for IntegrationProvider.
+const (
+	IntegrationProviderPluggy IntegrationProvider = "pluggy"
+)
+
+// Valid indicates whether the value is a known member of the IntegrationProvider enum.
+func (e IntegrationProvider) Valid() bool {
+	switch e {
+	case IntegrationProviderPluggy:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for IntegrationInputProvider.
+const (
+	IntegrationInputProviderPluggy IntegrationInputProvider = "pluggy"
+)
+
+// Valid indicates whether the value is a known member of the IntegrationInputProvider enum.
+func (e IntegrationInputProvider) Valid() bool {
+	switch e {
+	case IntegrationInputProviderPluggy:
 		return true
 	default:
 		return false
@@ -232,6 +283,44 @@ func (e ListBatchRecordsParamsState) Valid() bool {
 	}
 }
 
+// AccountMappingInput account_id with sync_from maps the account; ignored true leaves it out of syncs.
+type AccountMappingInput struct {
+	AccountId *openapi_types.UUID `json:"account_id,omitempty"`
+	Ignored   *bool               `json:"ignored,omitempty"`
+	SyncFrom  *openapi_types.Date `json:"sync_from,omitempty"`
+}
+
+// Connection defines model for Connection.
+type Connection struct {
+	Accounts         []ExternalAccount  `json:"accounts"`
+	CreatedAt        time.Time          `json:"created_at"`
+	Id               openapi_types.UUID `json:"id"`
+	IntegrationId    openapi_types.UUID `json:"integration_id"`
+	ItemId           string             `json:"item_id"`
+	LastError        *string            `json:"last_error,omitempty"`
+	LastItemUpdateAt *time.Time         `json:"last_item_update_at,omitempty"`
+	LastSyncedAt     *time.Time         `json:"last_synced_at,omitempty"`
+	Name             string             `json:"name"`
+
+	// ProviderStatus The item status the provider reported (Pluggy UPDATED, LOGIN_ERROR, OUTDATED, ...).
+	ProviderStatus string `json:"provider_status"`
+}
+
+// ConnectionInput defines model for ConnectionInput.
+type ConnectionInput struct {
+	IntegrationId openapi_types.UUID `json:"integration_id"`
+	ItemId        string             `json:"item_id"`
+	Name          *string            `json:"name,omitempty"`
+}
+
+// ConnectionList defines model for ConnectionList.
+type ConnectionList struct {
+	Items []Connection `json:"items"`
+
+	// NextCursor Absent on the last page.
+	NextCursor *string `json:"next_cursor,omitempty"`
+}
+
 // CsvProfile defines model for CsvProfile.
 type CsvProfile struct {
 	AmountColumn *string `json:"amount_column,omitempty"`
@@ -260,6 +349,25 @@ type CsvProfileDecimalSeparator string
 
 // CsvProfileDelimiter defines model for CsvProfile.Delimiter.
 type CsvProfileDelimiter string
+
+// ExternalAccount defines model for ExternalAccount.
+type ExternalAccount struct {
+	AccountId    *openapi_types.UUID `json:"account_id,omitempty"`
+	Currency     string              `json:"currency"`
+	Id           openapi_types.UUID  `json:"id"`
+	LastSyncedOn *openapi_types.Date `json:"last_synced_on,omitempty"`
+	Name         string              `json:"name"`
+
+	// NumberLast4 Last four digits of the account number; the full number is never stored.
+	NumberLast4 *string              `json:"number_last4,omitempty"`
+	State       ExternalAccountState `json:"state"`
+	Subtype     string               `json:"subtype"`
+	SyncFrom    *openapi_types.Date  `json:"sync_from,omitempty"`
+	Type        string               `json:"type"`
+}
+
+// ExternalAccountState defines model for ExternalAccount.State.
+type ExternalAccountState string
 
 // ExternalRecord defines model for ExternalRecord.
 type ExternalRecord struct {
@@ -344,6 +452,42 @@ type ImportCounts struct {
 	Received    int `json:"received"`
 }
 
+// Integration defines model for Integration.
+type Integration struct {
+	Id        openapi_types.UUID  `json:"id"`
+	Name      string              `json:"name"`
+	Provider  IntegrationProvider `json:"provider"`
+	UpdatedAt time.Time           `json:"updated_at"`
+}
+
+// IntegrationProvider defines model for Integration.Provider.
+type IntegrationProvider string
+
+// IntegrationCredentials defines model for IntegrationCredentials.
+type IntegrationCredentials struct {
+	ClientId     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+}
+
+// IntegrationInput defines model for IntegrationInput.
+type IntegrationInput struct {
+	ClientId     string                   `json:"client_id"`
+	ClientSecret string                   `json:"client_secret"`
+	Name         string                   `json:"name"`
+	Provider     IntegrationInputProvider `json:"provider"`
+}
+
+// IntegrationInputProvider defines model for IntegrationInput.Provider.
+type IntegrationInputProvider string
+
+// IntegrationList defines model for IntegrationList.
+type IntegrationList struct {
+	Items []Integration `json:"items"`
+
+	// NextCursor Absent on the last page.
+	NextCursor *string `json:"next_cursor,omitempty"`
+}
+
 // Money defines model for Money.
 type Money struct {
 	// Amount Integer minor units (ADR 005).
@@ -360,7 +504,8 @@ type Problem struct {
 	// server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
 	// account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
 	// already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
-	// record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous.
+	// record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
+	// integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use.
 	Code      string        `json:"code"`
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`
@@ -399,6 +544,12 @@ type ImportFileMultipartBody struct {
 // ImportFileMultipartBodyFormat defines parameters for ImportFile.
 type ImportFileMultipartBodyFormat string
 
+// ListConnectionsParams defines parameters for ListConnections.
+type ListConnectionsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
 // ListImportBatchesParams defines parameters for ListImportBatches.
 type ListImportBatchesParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
@@ -415,14 +566,32 @@ type ListBatchRecordsParams struct {
 // ListBatchRecordsParamsState defines parameters for ListBatchRecords.
 type ListBatchRecordsParamsState string
 
+// ListIntegrationsParams defines parameters for ListIntegrations.
+type ListIntegrationsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
 // SaveCsvProfileJSONRequestBody defines body for SaveCsvProfile for application/json ContentType.
 type SaveCsvProfileJSONRequestBody = CsvProfile
 
 // ImportFileMultipartRequestBody defines body for ImportFile for multipart/form-data ContentType.
 type ImportFileMultipartRequestBody ImportFileMultipartBody
 
+// CreateConnectionJSONRequestBody defines body for CreateConnection for application/json ContentType.
+type CreateConnectionJSONRequestBody = ConnectionInput
+
+// MapExternalAccountJSONRequestBody defines body for MapExternalAccount for application/json ContentType.
+type MapExternalAccountJSONRequestBody = AccountMappingInput
+
 // ResolveExternalRecordJSONRequestBody defines body for ResolveExternalRecord for application/json ContentType.
 type ResolveExternalRecordJSONRequestBody = RecordResolution
+
+// CreateIntegrationJSONRequestBody defines body for CreateIntegration for application/json ContentType.
+type CreateIntegrationJSONRequestBody = IntegrationInput
+
+// UpdateIntegrationCredentialsJSONRequestBody defines body for UpdateIntegrationCredentials for application/json ContentType.
+type UpdateIntegrationCredentialsJSONRequestBody = IntegrationCredentials
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -435,6 +604,21 @@ type ServerInterface interface {
 	// ImportFile Import an OFX or CSV statement into a balance account.
 	// (POST /accounts/{id}/imports)
 	ImportFile(w http.ResponseWriter, r *http.Request, id ID)
+	// ListConnections Connections with their external accounts, by name.
+	// (GET /connections)
+	ListConnections(w http.ResponseWriter, r *http.Request, params ListConnectionsParams)
+	// CreateConnection Connect an aggregator item and list its accounts (P6 amendments A34, A35).
+	// (POST /connections)
+	CreateConnection(w http.ResponseWriter, r *http.Request)
+	// DeleteConnection Delete a connection and its mappings; imported records and batches stay.
+	// (DELETE /connections/{id})
+	DeleteConnection(w http.ResponseWriter, r *http.Request, id ID)
+	// GetConnection Return a connection with its external accounts.
+	// (GET /connections/{id})
+	GetConnection(w http.ResponseWriter, r *http.Request, id ID)
+	// MapExternalAccount Map an external account to a ledger account, or ignore it (P6 amendment A35).
+	// (PUT /connections/{id}/accounts/{external_account_id})
+	MapExternalAccount(w http.ResponseWriter, r *http.Request, id ID, externalAccountId openapi_types.UUID)
 	// ResolveExternalRecord Resolve a record that needs review.
 	// (POST /external-records/{id}/resolve)
 	ResolveExternalRecord(w http.ResponseWriter, r *http.Request, id ID)
@@ -447,6 +631,21 @@ type ServerInterface interface {
 	// ListBatchRecords The external records of a batch, in file order.
 	// (GET /import-batches/{id}/records)
 	ListBatchRecords(w http.ResponseWriter, r *http.Request, id ID, params ListBatchRecordsParams)
+	// ListIntegrations Aggregator integrations, by name.
+	// (GET /integrations)
+	ListIntegrations(w http.ResponseWriter, r *http.Request, params ListIntegrationsParams)
+	// CreateIntegration Store the credentials of an aggregator application (P6 amendment A34).
+	// (POST /integrations)
+	CreateIntegration(w http.ResponseWriter, r *http.Request)
+	// DeleteIntegration Delete an integration without connections (409 integration_in_use otherwise).
+	// (DELETE /integrations/{id})
+	DeleteIntegration(w http.ResponseWriter, r *http.Request, id ID)
+	// GetIntegration Return an integration, without its credentials.
+	// (GET /integrations/{id})
+	GetIntegration(w http.ResponseWriter, r *http.Request, id ID)
+	// UpdateIntegrationCredentials Replace the credentials of an integration after the provider validates them.
+	// (PUT /integrations/{id}/credentials)
+	UpdateIntegrationCredentials(w http.ResponseWriter, r *http.Request, id ID)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -527,6 +726,153 @@ func (siw *ServerInterfaceWrapper) ImportFile(w http.ResponseWriter, r *http.Req
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ImportFile(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListConnections operation middleware
+func (siw *ServerInterfaceWrapper) ListConnections(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListConnectionsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListConnections(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateConnection operation middleware
+func (siw *ServerInterfaceWrapper) CreateConnection(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateConnection(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteConnection operation middleware
+func (siw *ServerInterfaceWrapper) DeleteConnection(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteConnection(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetConnection operation middleware
+func (siw *ServerInterfaceWrapper) GetConnection(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetConnection(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// MapExternalAccount operation middleware
+func (siw *ServerInterfaceWrapper) MapExternalAccount(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "external_account_id" -------------
+	var externalAccountId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "external_account_id", r.PathValue("external_account_id"), &externalAccountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "external_account_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.MapExternalAccount(w, r, id, externalAccountId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -702,6 +1048,144 @@ func (siw *ServerInterfaceWrapper) ListBatchRecords(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
+// ListIntegrations operation middleware
+func (siw *ServerInterfaceWrapper) ListIntegrations(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListIntegrationsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListIntegrations(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateIntegration operation middleware
+func (siw *ServerInterfaceWrapper) CreateIntegration(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateIntegration(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteIntegration operation middleware
+func (siw *ServerInterfaceWrapper) DeleteIntegration(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteIntegration(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetIntegration operation middleware
+func (siw *ServerInterfaceWrapper) GetIntegration(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetIntegration(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateIntegrationCredentials operation middleware
+func (siw *ServerInterfaceWrapper) UpdateIntegrationCredentials(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateIntegrationCredentials(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -829,6 +1313,16 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/import-batches/{id}", wrapper.GetImportBatch)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/import-batches/{id}/records", wrapper.ListBatchRecords)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/external-records/{id}/resolve", wrapper.ResolveExternalRecord)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/integrations", wrapper.ListIntegrations)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/integrations", wrapper.CreateIntegration)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/integrations/{id}", wrapper.DeleteIntegration)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/integrations/{id}", wrapper.GetIntegration)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/integrations/{id}/credentials", wrapper.UpdateIntegrationCredentials)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/connections", wrapper.ListConnections)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/connections", wrapper.CreateConnection)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/connections/{id}", wrapper.DeleteConnection)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/connections/{id}", wrapper.GetConnection)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/connections/{id}/accounts/{external_account_id}", wrapper.MapExternalAccount)
 
 	return m
 }
@@ -1034,6 +1528,356 @@ func (response ImportFile413ApplicationProblemPlusJSONResponse) VisitImportFileR
 type ImportFile422ApplicationProblemPlusJSONResponse Problem
 
 func (response ImportFile422ApplicationProblemPlusJSONResponse) VisitImportFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListConnectionsRequestObject struct {
+	Params ListConnectionsParams
+}
+
+type ListConnectionsResponseObject interface {
+	VisitListConnectionsResponse(w http.ResponseWriter) error
+}
+
+type ListConnections200JSONResponse ConnectionList
+
+func (response ListConnections200JSONResponse) VisitListConnectionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListConnections401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListConnections401ApplicationProblemPlusJSONResponse) VisitListConnectionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListConnections409ApplicationProblemPlusJSONResponse Problem
+
+func (response ListConnections409ApplicationProblemPlusJSONResponse) VisitListConnectionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateConnectionRequestObject struct {
+	Body *CreateConnectionJSONRequestBody
+}
+
+type CreateConnectionResponseObject interface {
+	VisitCreateConnectionResponse(w http.ResponseWriter) error
+}
+
+type CreateConnection201ResponseHeaders struct {
+	Location *string
+}
+
+type CreateConnection201JSONResponse struct {
+	Body    Connection
+	Headers CreateConnection201ResponseHeaders
+}
+
+func (response CreateConnection201JSONResponse) VisitCreateConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateConnection401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateConnection401ApplicationProblemPlusJSONResponse) VisitCreateConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateConnection409ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateConnection409ApplicationProblemPlusJSONResponse) VisitCreateConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateConnection422ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateConnection422ApplicationProblemPlusJSONResponse) VisitCreateConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateConnection502ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateConnection502ApplicationProblemPlusJSONResponse) VisitCreateConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(502)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteConnectionRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type DeleteConnectionResponseObject interface {
+	VisitDeleteConnectionResponse(w http.ResponseWriter) error
+}
+
+type DeleteConnection204Response struct {
+}
+
+func (response DeleteConnection204Response) VisitDeleteConnectionResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteConnection401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteConnection401ApplicationProblemPlusJSONResponse) VisitDeleteConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteConnection404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteConnection404ApplicationProblemPlusJSONResponse) VisitDeleteConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteConnection409ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteConnection409ApplicationProblemPlusJSONResponse) VisitDeleteConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetConnectionRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type GetConnectionResponseObject interface {
+	VisitGetConnectionResponse(w http.ResponseWriter) error
+}
+
+type GetConnection200JSONResponse Connection
+
+func (response GetConnection200JSONResponse) VisitGetConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetConnection401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetConnection401ApplicationProblemPlusJSONResponse) VisitGetConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetConnection404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetConnection404ApplicationProblemPlusJSONResponse) VisitGetConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetConnection409ApplicationProblemPlusJSONResponse Problem
+
+func (response GetConnection409ApplicationProblemPlusJSONResponse) VisitGetConnectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MapExternalAccountRequestObject struct {
+	Id                ID                 `json:"id"`
+	ExternalAccountId openapi_types.UUID `json:"external_account_id"`
+	Body              *MapExternalAccountJSONRequestBody
+}
+
+type MapExternalAccountResponseObject interface {
+	VisitMapExternalAccountResponse(w http.ResponseWriter) error
+}
+
+type MapExternalAccount200JSONResponse ExternalAccount
+
+func (response MapExternalAccount200JSONResponse) VisitMapExternalAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MapExternalAccount401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response MapExternalAccount401ApplicationProblemPlusJSONResponse) VisitMapExternalAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MapExternalAccount404ApplicationProblemPlusJSONResponse Problem
+
+func (response MapExternalAccount404ApplicationProblemPlusJSONResponse) VisitMapExternalAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MapExternalAccount409ApplicationProblemPlusJSONResponse Problem
+
+func (response MapExternalAccount409ApplicationProblemPlusJSONResponse) VisitMapExternalAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MapExternalAccount422ApplicationProblemPlusJSONResponse Problem
+
+func (response MapExternalAccount422ApplicationProblemPlusJSONResponse) VisitMapExternalAccountResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -1269,6 +2113,369 @@ func (response ListBatchRecords404ApplicationProblemPlusJSONResponse) VisitListB
 	return err
 }
 
+type ListIntegrationsRequestObject struct {
+	Params ListIntegrationsParams
+}
+
+type ListIntegrationsResponseObject interface {
+	VisitListIntegrationsResponse(w http.ResponseWriter) error
+}
+
+type ListIntegrations200JSONResponse IntegrationList
+
+func (response ListIntegrations200JSONResponse) VisitListIntegrationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListIntegrations401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListIntegrations401ApplicationProblemPlusJSONResponse) VisitListIntegrationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListIntegrations409ApplicationProblemPlusJSONResponse Problem
+
+func (response ListIntegrations409ApplicationProblemPlusJSONResponse) VisitListIntegrationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateIntegrationRequestObject struct {
+	Body *CreateIntegrationJSONRequestBody
+}
+
+type CreateIntegrationResponseObject interface {
+	VisitCreateIntegrationResponse(w http.ResponseWriter) error
+}
+
+type CreateIntegration201ResponseHeaders struct {
+	Location *string
+}
+
+type CreateIntegration201JSONResponse struct {
+	Body    Integration
+	Headers CreateIntegration201ResponseHeaders
+}
+
+func (response CreateIntegration201JSONResponse) VisitCreateIntegrationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateIntegration401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateIntegration401ApplicationProblemPlusJSONResponse) VisitCreateIntegrationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateIntegration409ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateIntegration409ApplicationProblemPlusJSONResponse) VisitCreateIntegrationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateIntegration422ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateIntegration422ApplicationProblemPlusJSONResponse) VisitCreateIntegrationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateIntegration502ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateIntegration502ApplicationProblemPlusJSONResponse) VisitCreateIntegrationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(502)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteIntegrationRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type DeleteIntegrationResponseObject interface {
+	VisitDeleteIntegrationResponse(w http.ResponseWriter) error
+}
+
+type DeleteIntegration204Response struct {
+}
+
+func (response DeleteIntegration204Response) VisitDeleteIntegrationResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteIntegration401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteIntegration401ApplicationProblemPlusJSONResponse) VisitDeleteIntegrationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteIntegration404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteIntegration404ApplicationProblemPlusJSONResponse) VisitDeleteIntegrationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteIntegration409ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteIntegration409ApplicationProblemPlusJSONResponse) VisitDeleteIntegrationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetIntegrationRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type GetIntegrationResponseObject interface {
+	VisitGetIntegrationResponse(w http.ResponseWriter) error
+}
+
+type GetIntegration200JSONResponse Integration
+
+func (response GetIntegration200JSONResponse) VisitGetIntegrationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetIntegration401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetIntegration401ApplicationProblemPlusJSONResponse) VisitGetIntegrationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetIntegration404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetIntegration404ApplicationProblemPlusJSONResponse) VisitGetIntegrationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetIntegration409ApplicationProblemPlusJSONResponse Problem
+
+func (response GetIntegration409ApplicationProblemPlusJSONResponse) VisitGetIntegrationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateIntegrationCredentialsRequestObject struct {
+	Id   ID `json:"id"`
+	Body *UpdateIntegrationCredentialsJSONRequestBody
+}
+
+type UpdateIntegrationCredentialsResponseObject interface {
+	VisitUpdateIntegrationCredentialsResponse(w http.ResponseWriter) error
+}
+
+type UpdateIntegrationCredentials200JSONResponse Integration
+
+func (response UpdateIntegrationCredentials200JSONResponse) VisitUpdateIntegrationCredentialsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateIntegrationCredentials401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateIntegrationCredentials401ApplicationProblemPlusJSONResponse) VisitUpdateIntegrationCredentialsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateIntegrationCredentials404ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateIntegrationCredentials404ApplicationProblemPlusJSONResponse) VisitUpdateIntegrationCredentialsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateIntegrationCredentials409ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateIntegrationCredentials409ApplicationProblemPlusJSONResponse) VisitUpdateIntegrationCredentialsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateIntegrationCredentials422ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateIntegrationCredentials422ApplicationProblemPlusJSONResponse) VisitUpdateIntegrationCredentialsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateIntegrationCredentials502ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateIntegrationCredentials502ApplicationProblemPlusJSONResponse) VisitUpdateIntegrationCredentialsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(502)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// GetCsvProfile How the CSV files of the account are read.
@@ -1280,6 +2487,21 @@ type StrictServerInterface interface {
 	// ImportFile Import an OFX or CSV statement into a balance account.
 	// (POST /accounts/{id}/imports)
 	ImportFile(ctx context.Context, request ImportFileRequestObject) (ImportFileResponseObject, error)
+	// ListConnections Connections with their external accounts, by name.
+	// (GET /connections)
+	ListConnections(ctx context.Context, request ListConnectionsRequestObject) (ListConnectionsResponseObject, error)
+	// CreateConnection Connect an aggregator item and list its accounts (P6 amendments A34, A35).
+	// (POST /connections)
+	CreateConnection(ctx context.Context, request CreateConnectionRequestObject) (CreateConnectionResponseObject, error)
+	// DeleteConnection Delete a connection and its mappings; imported records and batches stay.
+	// (DELETE /connections/{id})
+	DeleteConnection(ctx context.Context, request DeleteConnectionRequestObject) (DeleteConnectionResponseObject, error)
+	// GetConnection Return a connection with its external accounts.
+	// (GET /connections/{id})
+	GetConnection(ctx context.Context, request GetConnectionRequestObject) (GetConnectionResponseObject, error)
+	// MapExternalAccount Map an external account to a ledger account, or ignore it (P6 amendment A35).
+	// (PUT /connections/{id}/accounts/{external_account_id})
+	MapExternalAccount(ctx context.Context, request MapExternalAccountRequestObject) (MapExternalAccountResponseObject, error)
 	// ResolveExternalRecord Resolve a record that needs review.
 	// (POST /external-records/{id}/resolve)
 	ResolveExternalRecord(ctx context.Context, request ResolveExternalRecordRequestObject) (ResolveExternalRecordResponseObject, error)
@@ -1292,6 +2514,21 @@ type StrictServerInterface interface {
 	// ListBatchRecords The external records of a batch, in file order.
 	// (GET /import-batches/{id}/records)
 	ListBatchRecords(ctx context.Context, request ListBatchRecordsRequestObject) (ListBatchRecordsResponseObject, error)
+	// ListIntegrations Aggregator integrations, by name.
+	// (GET /integrations)
+	ListIntegrations(ctx context.Context, request ListIntegrationsRequestObject) (ListIntegrationsResponseObject, error)
+	// CreateIntegration Store the credentials of an aggregator application (P6 amendment A34).
+	// (POST /integrations)
+	CreateIntegration(ctx context.Context, request CreateIntegrationRequestObject) (CreateIntegrationResponseObject, error)
+	// DeleteIntegration Delete an integration without connections (409 integration_in_use otherwise).
+	// (DELETE /integrations/{id})
+	DeleteIntegration(ctx context.Context, request DeleteIntegrationRequestObject) (DeleteIntegrationResponseObject, error)
+	// GetIntegration Return an integration, without its credentials.
+	// (GET /integrations/{id})
+	GetIntegration(ctx context.Context, request GetIntegrationRequestObject) (GetIntegrationResponseObject, error)
+	// UpdateIntegrationCredentials Replace the credentials of an integration after the provider validates them.
+	// (PUT /integrations/{id}/credentials)
+	UpdateIntegrationCredentials(ctx context.Context, request UpdateIntegrationCredentialsRequestObject) (UpdateIntegrationCredentialsResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -1425,6 +2662,149 @@ func (sh *strictHandler) ImportFile(w http.ResponseWriter, r *http.Request, id I
 	}
 }
 
+// ListConnections operation middleware
+func (sh *strictHandler) ListConnections(w http.ResponseWriter, r *http.Request, params ListConnectionsParams) {
+	var request ListConnectionsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListConnections(ctx, request.(ListConnectionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListConnections")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListConnectionsResponseObject); ok {
+		if err := validResponse.VisitListConnectionsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateConnection operation middleware
+func (sh *strictHandler) CreateConnection(w http.ResponseWriter, r *http.Request) {
+	var request CreateConnectionRequestObject
+
+	var body CreateConnectionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateConnection(ctx, request.(CreateConnectionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateConnection")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateConnectionResponseObject); ok {
+		if err := validResponse.VisitCreateConnectionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteConnection operation middleware
+func (sh *strictHandler) DeleteConnection(w http.ResponseWriter, r *http.Request, id ID) {
+	var request DeleteConnectionRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteConnection(ctx, request.(DeleteConnectionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteConnection")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteConnectionResponseObject); ok {
+		if err := validResponse.VisitDeleteConnectionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetConnection operation middleware
+func (sh *strictHandler) GetConnection(w http.ResponseWriter, r *http.Request, id ID) {
+	var request GetConnectionRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetConnection(ctx, request.(GetConnectionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetConnection")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetConnectionResponseObject); ok {
+		if err := validResponse.VisitGetConnectionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// MapExternalAccount operation middleware
+func (sh *strictHandler) MapExternalAccount(w http.ResponseWriter, r *http.Request, id ID, externalAccountId openapi_types.UUID) {
+	var request MapExternalAccountRequestObject
+
+	request.Id = id
+	request.ExternalAccountId = externalAccountId
+
+	var body MapExternalAccountJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.MapExternalAccount(ctx, request.(MapExternalAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "MapExternalAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(MapExternalAccountResponseObject); ok {
+		if err := validResponse.VisitMapExternalAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ResolveExternalRecord operation middleware
 func (sh *strictHandler) ResolveExternalRecord(w http.ResponseWriter, r *http.Request, id ID) {
 	var request ResolveExternalRecordRequestObject
@@ -1530,6 +2910,148 @@ func (sh *strictHandler) ListBatchRecords(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListBatchRecordsResponseObject); ok {
 		if err := validResponse.VisitListBatchRecordsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListIntegrations operation middleware
+func (sh *strictHandler) ListIntegrations(w http.ResponseWriter, r *http.Request, params ListIntegrationsParams) {
+	var request ListIntegrationsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListIntegrations(ctx, request.(ListIntegrationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListIntegrations")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListIntegrationsResponseObject); ok {
+		if err := validResponse.VisitListIntegrationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateIntegration operation middleware
+func (sh *strictHandler) CreateIntegration(w http.ResponseWriter, r *http.Request) {
+	var request CreateIntegrationRequestObject
+
+	var body CreateIntegrationJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateIntegration(ctx, request.(CreateIntegrationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateIntegration")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateIntegrationResponseObject); ok {
+		if err := validResponse.VisitCreateIntegrationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteIntegration operation middleware
+func (sh *strictHandler) DeleteIntegration(w http.ResponseWriter, r *http.Request, id ID) {
+	var request DeleteIntegrationRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteIntegration(ctx, request.(DeleteIntegrationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteIntegration")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteIntegrationResponseObject); ok {
+		if err := validResponse.VisitDeleteIntegrationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetIntegration operation middleware
+func (sh *strictHandler) GetIntegration(w http.ResponseWriter, r *http.Request, id ID) {
+	var request GetIntegrationRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetIntegration(ctx, request.(GetIntegrationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetIntegration")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetIntegrationResponseObject); ok {
+		if err := validResponse.VisitGetIntegrationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateIntegrationCredentials operation middleware
+func (sh *strictHandler) UpdateIntegrationCredentials(w http.ResponseWriter, r *http.Request, id ID) {
+	var request UpdateIntegrationCredentialsRequestObject
+
+	request.Id = id
+
+	var body UpdateIntegrationCredentialsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateIntegrationCredentials(ctx, request.(UpdateIntegrationCredentialsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateIntegrationCredentials")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateIntegrationCredentialsResponseObject); ok {
+		if err := validResponse.VisitUpdateIntegrationCredentialsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

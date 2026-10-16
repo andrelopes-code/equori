@@ -44,6 +44,26 @@ type Repository interface {
 	ResolveRecord(ctx context.Context, r domain.ExternalRecord) error
 	// LockAccountImports serializes the imports of one account until unlock runs.
 	LockAccountImports(ctx context.Context, accountID uuid.UUID) (unlock func(), err error)
+
+	// InsertIntegration returns a *domain.FieldError on name when the user already has the name.
+	InsertIntegration(ctx context.Context, i domain.Integration) (domain.Integration, error)
+	Integration(ctx context.Context, userID int64, id uuid.UUID) (domain.Integration, error)
+	ListIntegrations(ctx context.Context, userID int64, p page.Request[NameKey]) ([]domain.Integration, *NameKey, error)
+	UpdateCredentials(ctx context.Context, userID int64, id uuid.UUID, sealed []byte) (domain.Integration, error)
+	// DeleteIntegration returns ErrIntegrationInUse while a connection uses the integration.
+	DeleteIntegration(ctx context.Context, userID int64, id uuid.UUID) error
+	// ResealCredentials replaces, in one database transaction, every user's sealed
+	// credentials for which reseal returns a value, and returns how many it replaced.
+	ResealCredentials(ctx context.Context, reseal func(userID int64, id uuid.UUID, sealed []byte) ([]byte, error)) (int, error)
+	// InsertConnection stores the connection and its accounts in one database transaction; a
+	// *domain.FieldError on item_id when the integration already connects the item.
+	InsertConnection(ctx context.Context, c domain.Connection) (domain.Connection, error)
+	Connection(ctx context.Context, userID int64, id uuid.UUID) (domain.Connection, error)
+	ListConnections(ctx context.Context, userID int64, p page.Request[NameKey]) ([]domain.Connection, *NameKey, error)
+	DeleteConnection(ctx context.Context, userID int64, id uuid.UUID) error
+	// SaveMapping returns a *domain.FieldError on account_id when another external account
+	// feeds the ledger account.
+	SaveMapping(ctx context.Context, a domain.ExternalAccount) (domain.ExternalAccount, error)
 }
 
 // Claim is a record of the file as stored, and whether an earlier import had stored it.
@@ -55,10 +75,13 @@ type Claim struct {
 type Service struct {
 	repo   Repository
 	ledger Ledger
+	// box is nil without EQUORI_SECRET_KEY: integrations are unavailable (ADR 008 K2).
+	box Sealer
+	agg Aggregator
 }
 
-func NewService(repo Repository, ledger Ledger) *Service {
-	return &Service{repo: repo, ledger: ledger}
+func NewService(repo Repository, ledger Ledger, box Sealer, agg Aggregator) *Service {
+	return &Service{repo: repo, ledger: ledger, box: box, agg: agg}
 }
 
 // FollowPairing points the records that a ledger pairing moved to the kept transaction

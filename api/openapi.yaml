@@ -17,7 +17,7 @@ tags:
   - name: marketdata
     description: Instruments and business-day calendars.
   - name: ingestion
-    description: File imports, external records and their review.
+    description: File imports, aggregator integrations and connections, external records and their review.
   - name: classification
     description: Categorization rules, payee aliases, suggestions and categorization methods.
 paths:
@@ -1904,6 +1904,251 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /integrations:
+    get:
+      tags: [ingestion]
+      operationId: listIntegrations
+      summary: Aggregator integrations, by name.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntegrationList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [ingestion]
+      operationId: createIntegration
+      summary: Store the credentials of an aggregator application (P6 amendment A34).
+      description: |
+        The provider validates the credentials before they are stored, sealed under
+        EQUORI_SECRET_KEY (ADR 008); no response returns them. 409 integration_unavailable
+        without the key; 422 provider_unauthorized when the provider rejects them; 502
+        provider_unavailable when it does not answer.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IntegrationInput"
+      responses:
+        "201":
+          description: OK.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Integration"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "502":
+          $ref: "#/components/responses/Problem"
+  /integrations/{id}:
+    get:
+      tags: [ingestion]
+      operationId: getIntegration
+      summary: Return an integration, without its credentials.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Integration"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [ingestion]
+      operationId: deleteIntegration
+      summary: Delete an integration without connections (409 integration_in_use otherwise).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+  /integrations/{id}/credentials:
+    put:
+      tags: [ingestion]
+      operationId: updateIntegrationCredentials
+      summary: Replace the credentials of an integration after the provider validates them.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IntegrationCredentials"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Integration"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "502":
+          $ref: "#/components/responses/Problem"
+  /connections:
+    get:
+      tags: [ingestion]
+      operationId: listConnections
+      summary: Connections with their external accounts, by name.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [ingestion]
+      operationId: createConnection
+      summary: Connect an aggregator item and list its accounts (P6 amendments A34, A35).
+      description: |
+        item_id is the item of the integration's application (Meu Pluggy: one item per bank).
+        The name defaults to the item's connector name. Every external account starts pending.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConnectionInput"
+      responses:
+        "201":
+          description: OK.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Connection"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "502":
+          $ref: "#/components/responses/Problem"
+  /connections/{id}:
+    get:
+      tags: [ingestion]
+      operationId: getConnection
+      summary: Return a connection with its external accounts.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Connection"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [ingestion]
+      operationId: deleteConnection
+      summary: Delete a connection and its mappings; imported records and batches stay.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+  /connections/{id}/accounts/{external_account_id}:
+    put:
+      tags: [ingestion]
+      operationId: mapExternalAccount
+      summary: Map an external account to a ledger account, or ignore it (P6 amendment A35).
+      description: |
+        account_id is a leaf balance account of the external account's currency and a compatible
+        kind (CHECKING_ACCOUNT to checking, SAVINGS_ACCOUNT to savings or reserve, CREDIT_CARD to
+        credit_card) that no other external account feeds; sync_from is the first date to import.
+        Only mapped accounts sync.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - name: external_account_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountMappingInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalAccount"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
 security:
   - sessionCookie: []
 components:
@@ -1949,6 +2194,167 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
   schemas:
+    IntegrationInput:
+      type: object
+      additionalProperties: false
+      required: [provider, name, client_id, client_secret]
+      properties:
+        provider:
+          type: string
+          enum: [pluggy]
+        name:
+          type: string
+          minLength: 1
+          maxLength: 60
+        client_id:
+          type: string
+          minLength: 1
+          maxLength: 200
+        client_secret:
+          type: string
+          minLength: 1
+          maxLength: 200
+    IntegrationCredentials:
+      type: object
+      additionalProperties: false
+      required: [client_id, client_secret]
+      properties:
+        client_id:
+          type: string
+          minLength: 1
+          maxLength: 200
+        client_secret:
+          type: string
+          minLength: 1
+          maxLength: 200
+    Integration:
+      type: object
+      required: [id, provider, name, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        provider:
+          type: string
+          enum: [pluggy]
+        name:
+          type: string
+        updated_at:
+          type: string
+          format: date-time
+    IntegrationList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Integration"
+        next_cursor:
+          type: string
+          description: Absent on the last page.
+    ConnectionInput:
+      type: object
+      additionalProperties: false
+      required: [integration_id, item_id]
+      properties:
+        integration_id:
+          type: string
+          format: uuid
+        item_id:
+          type: string
+          minLength: 1
+          maxLength: 100
+        name:
+          type: string
+          minLength: 1
+          maxLength: 60
+    Connection:
+      type: object
+      required: [id, integration_id, item_id, name, provider_status, created_at, accounts]
+      properties:
+        id:
+          type: string
+          format: uuid
+        integration_id:
+          type: string
+          format: uuid
+        item_id:
+          type: string
+        name:
+          type: string
+        provider_status:
+          type: string
+          description: The item status the provider reported (Pluggy UPDATED, LOGIN_ERROR, OUTDATED, ...).
+        last_item_update_at:
+          type: string
+          format: date-time
+        last_synced_at:
+          type: string
+          format: date-time
+        last_error:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        accounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExternalAccount"
+    ConnectionList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Connection"
+        next_cursor:
+          type: string
+          description: Absent on the last page.
+    ExternalAccount:
+      type: object
+      required: [id, type, subtype, name, currency, state]
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        subtype:
+          type: string
+        name:
+          type: string
+        number_last4:
+          type: string
+          description: Last four digits of the account number; the full number is never stored.
+        currency:
+          type: string
+        state:
+          type: string
+          enum: [pending, mapped, ignored]
+        account_id:
+          type: string
+          format: uuid
+        sync_from:
+          type: string
+          format: date
+        last_synced_on:
+          type: string
+          format: date
+    AccountMappingInput:
+      type: object
+      additionalProperties: false
+      description: account_id with sync_from maps the account; ignored true leaves it out of syncs.
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        sync_from:
+          type: string
+          format: date
+        ignored:
+          type: boolean
     RecordResolution:
       type: object
       additionalProperties: false
@@ -3430,7 +3836,8 @@ components:
             server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
             account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
             already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
-            record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous.
+            record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
+            integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use.
         request_id:
           type: string
         errors:

@@ -14,6 +14,8 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -33,6 +35,28 @@ type Harness struct {
 	App    *server.App
 	server *httptest.Server
 	Client *http.Client
+	log    *slog.Logger
+	logs   *logBuffer
+	// handler is what the test server runs; Restart swaps it while server goroutines read it.
+	handler atomic.Pointer[http.Handler]
+}
+
+// logBuffer keeps every log line of the test, for assertions on what is never logged.
+type logBuffer struct {
+	mu  sync.Mutex
+	buf bytes.Buffer
+}
+
+func (b *logBuffer) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.Write(p)
+}
+
+func (b *logBuffer) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.String()
 }
 
 // Option changes the application the harness starts.
@@ -58,29 +82,58 @@ func APIDocs() Option {
 	return func(c *server.Config) { c.APIDocs = true }
 }
 
+// SecretKey is the integration key Pluggy sets (32 bytes).
+const SecretKey = "equori-test-secret-key-32-bytes!" //nolint:gosec // G101: a fixed key for test databases only
+
+// Pluggy sends Pluggy requests to url and enables integrations with SecretKey.
+func Pluggy(url string) Option {
+	return func(c *server.Config) { c.PluggyURL, c.SecretKey = url, SecretKey }
+}
+
+// SecretKeys replaces the integration keys; pass it after Pluggy.
+func SecretKeys(current, previous string) Option {
+	return func(c *server.Config) { c.SecretKey, c.PreviousSecretKey = current, previous }
+}
+
 // New starts the application and logs in owner@example.com as Client.
 func New(t testing.TB, opts ...Option) *Harness {
 	t.Helper()
-	out := io.Discard
+	logs := &logBuffer{}
+	var out io.Writer = logs
 	if os.Getenv("EQUORI_TEST_LOG") == "1" {
-		out = os.Stderr
+		out = io.MultiWriter(logs, os.Stderr)
 	}
-	log := slog.New(slog.NewTextHandler(out, nil))
-	pool := pgtest.New(t)
+	h := &Harness{t: t, Pool: pgtest.New(t), logs: logs, log: slog.New(slog.NewTextHandler(out, &slog.HandlerOptions{Level: slog.LevelDebug}))}
+	h.server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { (*h.handler.Load()).ServeHTTP(w, r) }))
+	t.Cleanup(h.server.Close)
+	h.start(opts)
+	h.Client = h.Login("owner@example.com")
+	return h
+}
+
+func (h *Harness) start(opts []Option) {
+	h.t.Helper()
 	cfg := server.Config{}
 	for _, o := range opts {
 		o(&cfg)
 	}
-	app, err := server.New(pool, cfg, log)
+	app, err := server.New(h.Pool, cfg, h.log)
 	if err != nil {
-		t.Fatal(err)
+		h.t.Fatal(err)
 	}
-	srv := httptest.NewServer(app.Handler)
-	t.Cleanup(srv.Close)
-	h := &Harness{t: t, Pool: pool, App: app, server: srv}
-	h.Client = h.Login("owner@example.com")
-	return h
+	h.App = app
+	h.handler.Store(&app.Handler)
 }
+
+// Restart replaces the application on the same database and address, as a restart with
+// another configuration does; sessions stay valid.
+func (h *Harness) Restart(opts ...Option) {
+	h.t.Helper()
+	h.start(opts)
+}
+
+// Logs returns every log line written so far, at debug level and above.
+func (h *Harness) Logs() string { return h.logs.String() }
 
 // T returns the test the harness reports to.
 func (h *Harness) T() testing.TB { return h.t }

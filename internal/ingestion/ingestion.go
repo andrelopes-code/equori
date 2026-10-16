@@ -20,21 +20,58 @@ import (
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/adapter/postgres"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/app"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/domain"
+	"github.com/andrelopes-code/equori/internal/ingestion/internal/pluggy"
 	"github.com/andrelopes-code/equori/internal/ledger"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
+	"github.com/andrelopes-code/equori/internal/platform/secret"
 )
 
 type Module struct {
 	http *httpapi.Server
+	svc  *app.Service
 }
 
-func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, c *classification.Module, log *slog.Logger) *Module {
-	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l, c})
-	dispatcher.Subscribe("ingestion", ledger.EventTransactionsPaired, followPairing)
-	return &Module{http: httpapi.NewServer(svc, log)}
+type Config struct {
+	// SecretKey and PreviousSecretKey are 32 raw bytes each (ADR 008); without SecretKey
+	// integrations are unavailable.
+	SecretKey, PreviousSecretKey string
+	// PluggyURL is the only address Pluggy requests go to (N17).
+	PluggyURL string
+	Now       func() time.Time
 }
+
+func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, c *classification.Module, cfg Config, log *slog.Logger) (*Module, error) {
+	var (
+		box app.Sealer
+		agg app.Aggregator
+	)
+	if cfg.SecretKey != "" {
+		var previous []byte
+		if cfg.PreviousSecretKey != "" {
+			previous = []byte(cfg.PreviousSecretKey)
+		}
+		b, err := secret.New([]byte(cfg.SecretKey), previous)
+		if err != nil {
+			return nil, err
+		}
+		// A redirect would leave the configured address (N17).
+		hc := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+		client, err := pluggy.NewClient(cfg.PluggyURL, hc, cfg.Now)
+		if err != nil {
+			return nil, err
+		}
+		box, agg = b, pluggyPort{sessions: pluggy.NewSessions(client)}
+	}
+	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l, c}, box, agg)
+	dispatcher.Subscribe("ingestion", ledger.EventTransactionsPaired, followPairing)
+	return &Module{http: httpapi.NewServer(svc, log), svc: svc}, nil
+}
+
+// RotateSecrets reseals every stored credential under the current key (ADR 008 K4) and
+// returns how many changed.
+func (m *Module) RotateSecrets(ctx context.Context) (int, error) { return m.svc.RotateSecrets(ctx) }
 
 // followPairing runs in the dispatcher's transaction, so the records move with the delivery.
 func followPairing(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
@@ -42,7 +79,7 @@ func followPairing(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
 	if err := json.Unmarshal(e.Payload, &p); err != nil {
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
-	return app.NewService(postgres.NewTxRepository(tx), nil).FollowPairing(ctx, e.UserID, p.Kept, p.RecordIDs)
+	return app.NewService(postgres.NewTxRepository(tx), nil, nil, nil).FollowPairing(ctx, e.UserID, p.Kept, p.RecordIDs)
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
@@ -77,12 +114,12 @@ func (p ledgerPort) posting(l app.Line) (ledger.ImportedPosting, error) {
 	return ledger.ImportedPosting{AccountID: l.AccountID, Date: l.Date, Amount: amount, Description: l.Description}, err
 }
 
-func (p ledgerPort) ImportCurrency(ctx context.Context, userID int64, accountID uuid.UUID) (money.Currency, error) {
-	c, err := p.l.ImportCurrency(ctx, userID, accountID)
+func (p ledgerPort) ImportTarget(ctx context.Context, userID int64, accountID uuid.UUID) (domain.ImportTarget, error) {
+	t, err := p.l.ImportTarget(ctx, userID, accountID)
 	if errors.Is(err, ledger.ErrValidation) {
-		return "", &domain.FieldError{Field: "account_id", Message: "must be a balance account without sub-accounts"}
+		return domain.ImportTarget{}, &domain.FieldError{Field: "account_id", Message: "must be a balance account without sub-accounts"}
 	}
-	return c, p.translate(err)
+	return domain.ImportTarget{Currency: t.Currency, Kind: t.Kind}, p.translate(err)
 }
 
 func (p ledgerPort) LinkedTransaction(ctx context.Context, userID int64, recordID uuid.UUID) (uuid.UUID, bool, error) {

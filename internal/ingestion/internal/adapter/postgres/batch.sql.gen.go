@@ -19,7 +19,7 @@ UPDATE ingestion_batch SET
     balance_date = $7, balance_amount = $8,
     balance_status = $9, balance_reason = $10, completed_at = now()
 WHERE user_id = $11 AND id = $12
-RETURNING id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at
+RETURNING id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id
 `
 
 type CompleteBatchParams struct {
@@ -74,12 +74,13 @@ func (q *Queries) CompleteBatch(ctx context.Context, arg CompleteBatchParams) (I
 		&i.BalanceReason,
 		&i.StartedAt,
 		&i.CompletedAt,
+		&i.ExternalAccountID,
 	)
 	return i, err
 }
 
 const getBatch = `-- name: GetBatch :one
-SELECT id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at FROM ingestion_batch WHERE user_id = $1 AND id = $2
+SELECT id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id FROM ingestion_batch WHERE user_id = $1 AND id = $2
 `
 
 type GetBatchParams struct {
@@ -111,6 +112,7 @@ func (q *Queries) GetBatch(ctx context.Context, arg GetBatchParams) (IngestionBa
 		&i.BalanceReason,
 		&i.StartedAt,
 		&i.CompletedAt,
+		&i.ExternalAccountID,
 	)
 	return i, err
 }
@@ -118,14 +120,14 @@ func (q *Queries) GetBatch(ctx context.Context, arg GetBatchParams) (IngestionBa
 const insertBatch = `-- name: InsertBatch :one
 INSERT INTO ingestion_batch (user_id, account_id, source, file_name, currency, period_from, period_to)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at
+RETURNING id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id
 `
 
 type InsertBatchParams struct {
 	UserID     int64
 	AccountID  uuid.UUID
 	Source     string
-	FileName   string
+	FileName   *string
 	Currency   string
 	PeriodFrom *time.Time
 	PeriodTo   *time.Time
@@ -163,12 +165,13 @@ func (q *Queries) InsertBatch(ctx context.Context, arg InsertBatchParams) (Inges
 		&i.BalanceReason,
 		&i.StartedAt,
 		&i.CompletedAt,
+		&i.ExternalAccountID,
 	)
 	return i, err
 }
 
 const listBatches = `-- name: ListBatches :many
-SELECT id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at FROM ingestion_batch
+SELECT id, user_id, account_id, source, file_name, currency, period_from, period_to, received, ignored, matched, created, needs_review, discarded, balance_date, balance_amount, balance_status, balance_reason, started_at, completed_at, external_account_id FROM ingestion_batch
 WHERE user_id = $1
   AND ($2::timestamptz IS NULL OR (started_at, id) < ($2::timestamptz, $3::uuid))
 ORDER BY started_at DESC, id DESC
@@ -217,6 +220,7 @@ func (q *Queries) ListBatches(ctx context.Context, arg ListBatchesParams) ([]Ing
 			&i.BalanceReason,
 			&i.StartedAt,
 			&i.CompletedAt,
+			&i.ExternalAccountID,
 		); err != nil {
 			return nil, err
 		}

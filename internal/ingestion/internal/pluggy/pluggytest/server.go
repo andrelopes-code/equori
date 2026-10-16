@@ -16,16 +16,18 @@ import (
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/pluggy"
 )
 
-// Server holds items, accounts, bills and transactions in memory.
+// Server holds applications, items, accounts, bills and transactions in memory. An
+// application sees only its own items, as in Pluggy.
 type Server struct {
 	srv *httptest.Server
 
 	mu           sync.Mutex
-	clientID     string
-	secret       string
-	keys         map[string]bool
+	first        string
+	secrets      map[string]string // client id → secret
+	keys         map[string]string // API key → client id
 	issued       int
 	items        map[string]pluggy.Item
+	owners       map[string]string // item id → client id
 	accounts     map[string][]pluggy.Account
 	transactions map[string][]pluggy.Transaction
 	bills        map[string][]pluggy.Bill
@@ -38,7 +40,8 @@ type Server struct {
 
 func New(t testing.TB, clientID, secret string) *Server {
 	s := &Server{
-		clientID: clientID, secret: secret, keys: map[string]bool{}, items: map[string]pluggy.Item{},
+		first: clientID, secrets: map[string]string{clientID: secret}, keys: map[string]string{},
+		items: map[string]pluggy.Item{}, owners: map[string]string{},
 		accounts: map[string][]pluggy.Account{}, transactions: map[string][]pluggy.Transaction{},
 		bills: map[string][]pluggy.Bill{}, requests: map[string]int{}, pageSize: 500,
 	}
@@ -50,18 +53,22 @@ func New(t testing.TB, clientID, secret string) *Server {
 func (s *Server) URL() string              { return s.srv.URL }
 func (s *Server) HTTPClient() *http.Client { return s.srv.Client() }
 
-// SetCredentials replaces the application credentials the server accepts.
+// SetCredentials adds an application or replaces its secret.
 func (s *Server) SetCredentials(clientID, secret string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.clientID, s.secret = clientID, secret
+	s.secrets[clientID] = secret
 }
 
-// AddItem adds or replaces an item.
-func (s *Server) AddItem(it pluggy.Item) {
+// AddItem adds or replaces an item of the application New created.
+func (s *Server) AddItem(it pluggy.Item) { s.AddItemTo(s.first, it) }
+
+// AddItemTo adds or replaces an item of an application.
+func (s *Server) AddItemTo(clientID string, it pluggy.Item) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.items[it.ID] = it
+	s.owners[it.ID] = clientID
 }
 
 func (s *Server) AddAccount(itemID string, a pluggy.Account) {
@@ -153,25 +160,27 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 			ClientID     string `json:"clientId"`
 			ClientSecret string `json:"clientSecret"`
 		}
-		if err := json.UnmarshalRead(r.Body, &in); err != nil || in.ClientID != s.clientID || in.ClientSecret != s.secret {
+		if err := json.UnmarshalRead(r.Body, &in); err != nil || in.ClientSecret == "" || s.secrets[in.ClientID] != in.ClientSecret {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 		s.issued++
 		key := "key-" + strconv.Itoa(s.issued)
-		s.keys[key] = true
+		s.keys[key] = in.ClientID
 		write(w, map[string]string{"apiKey": key})
 		return
 	}
-	if !s.keys[r.Header.Get("X-API-KEY")] {
+	app, ok := s.keys[r.Header.Get("X-API-KEY")]
+	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 	q := r.URL.Query()
 	switch {
 	case strings.HasPrefix(r.URL.Path, "/items/"):
-		it, ok := s.items[strings.TrimPrefix(r.URL.Path, "/items/")]
-		if !ok {
+		id := strings.TrimPrefix(r.URL.Path, "/items/")
+		it, ok := s.items[id]
+		if !ok || s.owners[id] != app {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}

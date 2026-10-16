@@ -50,6 +50,8 @@ type Module struct {
 // ImportedPosting is one statement line of a balance account, normalized by Ingestion.
 type ImportedPosting = app.ImportedPosting
 
+type ImportTarget = app.ImportTarget
+
 // ImportedRecord is a statement line and the external record it comes from.
 type ImportedRecord = app.ImportedRecord
 
@@ -122,10 +124,10 @@ func (m *Module) RecordImported(ctx context.Context, userID int64, recordID uuid
 	return m.svc.RecordImported(ctx, userID, recordID, p)
 }
 
-// ImportCurrency returns the currency of an account that can hold statement lines; an
-// account that cannot is an ErrValidation.
-func (m *Module) ImportCurrency(ctx context.Context, userID int64, accountID uuid.UUID) (money.Currency, error) {
-	return m.svc.ImportCurrency(ctx, userID, accountID)
+// ImportTarget returns the currency and kind of an account that can hold statement lines;
+// an account that cannot is an ErrValidation.
+func (m *Module) ImportTarget(ctx context.Context, userID int64, accountID uuid.UUID) (ImportTarget, error) {
+	return m.svc.ImportTarget(ctx, userID, accountID)
 }
 
 // LinkedTransaction returns the transaction carrying an external record and whether the

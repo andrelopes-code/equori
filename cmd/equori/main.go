@@ -39,12 +39,14 @@ func main() {
 		err = userCommand(os.Args[2:])
 	case "reporting":
 		err = reportingCommand(os.Args[2:])
+	case "secrets":
+		err = secretsCommand(os.Args[2:])
 	case "healthcheck":
 		os.Exit(healthcheck())
 	case "version":
 		fmt.Println(buildVersion())
 	default:
-		fmt.Fprintf(os.Stderr, "unknown command %q; available: serve, user, reporting, healthcheck, version\n", cmd)
+		fmt.Fprintf(os.Stderr, "unknown command %q; available: serve, user, reporting, secrets, healthcheck, version\n", cmd)
 		os.Exit(2)
 	}
 	if err != nil {
@@ -70,7 +72,9 @@ func serve() error {
 	defer pool.Close()
 
 	clk := clock.New(cfg.TimeZone, time.Now)
-	app, err := server.New(pool, server.Config{SecureCookies: !cfg.InsecureCookies, Clock: &clk, APIDocs: cfg.APIDocs, Web: web.Dist()}, log)
+	scfg := serverConfig(cfg, &clk)
+	scfg.Web = web.Dist()
+	app, err := server.New(pool, scfg, log)
 	if err != nil {
 		return err
 	}
@@ -109,6 +113,13 @@ func reportingCommand(args []string) error {
 		return err
 	}
 	return app.Reporting.RebuildAll(ctx)
+}
+
+func serverConfig(cfg config.Config, clk *clock.Clock) server.Config {
+	return server.Config{
+		SecureCookies: !cfg.InsecureCookies, Clock: clk, APIDocs: cfg.APIDocs,
+		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, PluggyURL: cfg.PluggyURL,
+	}
 }
 
 func setup() (config.Config, *slog.Logger, error) {

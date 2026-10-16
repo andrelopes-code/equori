@@ -64,9 +64,9 @@ func (e *RejectedLine) Is(target error) bool { return target == ErrLineRejected 
 // Ledger is the part of package ledger an import uses; the module root adapts it. Each call
 // is one database transaction of the ledger (ADR 002).
 type Ledger interface {
-	// ImportCurrency returns ErrNotFound for an unknown account and a *domain.FieldError on
+	// ImportTarget returns ErrNotFound for an unknown account and a *domain.FieldError on
 	// account_id for an account that cannot hold statement lines.
-	ImportCurrency(ctx context.Context, userID int64, accountID uuid.UUID) (money.Currency, error)
+	ImportTarget(ctx context.Context, userID int64, accountID uuid.UUID) (domain.ImportTarget, error)
 	// LinkedTransaction returns ErrNotFound when no transaction carries the record.
 	LinkedTransaction(ctx context.Context, userID int64, recordID uuid.UUID) (txID uuid.UUID, imported bool, err error)
 	// UnlinkedPostings lists the account's postings in [from, to] that no external record
@@ -105,10 +105,11 @@ func (s *Service) Import(ctx context.Context, f ImportFile) (domain.Batch, error
 	case len(f.Content) > MaxFileBytes:
 		return domain.Batch{}, fileError("must be at most 10 MiB")
 	}
-	currency, err := s.ledger.ImportCurrency(ctx, f.UserID, f.AccountID)
+	target, err := s.ledger.ImportTarget(ctx, f.UserID, f.AccountID)
 	if err != nil {
 		return domain.Batch{}, err
 	}
+	currency := target.Currency
 	st, err := s.read(ctx, f, currency)
 	if err != nil {
 		return domain.Batch{}, err
