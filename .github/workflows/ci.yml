@@ -19,6 +19,11 @@ jobs:
           cache-dependency-path: |
             go.sum
             tools/go.sum
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: web/.node-version
+      # pnpm comes from Corepack, pinned by packageManager in web/package.json.
+      - run: corepack enable
       - run: make check
       - run: make vuln
 
