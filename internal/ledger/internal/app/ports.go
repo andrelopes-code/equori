@@ -309,6 +309,10 @@ type Repository interface {
 	// LinkExternalRecord returns ErrAlreadyMatched when another posting carries the record.
 	LinkExternalRecord(ctx context.Context, userID int64, postingID, recordID uuid.UUID) error
 	ClearPendingPostings(ctx context.Context, userID int64, txID, accountID uuid.UUID) error
+	// PairingCandidates returns the ids that pair with a transfer, by date then id (P5b amendment A29).
+	PairingCandidates(ctx context.Context, q PairingQuery) ([]uuid.UUID, error)
+	// ClearRecordLinks removes the record links of a transaction's postings.
+	ClearRecordLinks(ctx context.Context, userID int64, txID uuid.UUID) error
 
 	// BalanceAt sums the postings of the account and its descendants up to and including date.
 	BalanceAt(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis Basis) (int64, error)

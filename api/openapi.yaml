@@ -532,6 +532,36 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /transactions/{id}/transfer:
+    post:
+      tags: [ledger]
+      operationId: transferTransaction
+      summary: Replace the category side with a posting on another of the owner's accounts, pairing with its imported other side (P5b amendments A28, A29).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransferResult"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /transactions/{id}/versions:
     get:
       tags: [ledger]
@@ -3274,6 +3304,31 @@ components:
             $ref: "#/components/schemas/RuleSuggestion"
         next_cursor:
           type: string
+    TransferInput:
+      type: object
+      additionalProperties: false
+      required: [expected_version, account_id]
+      properties:
+        expected_version:
+          type: integer
+          minimum: 1
+        account_id:
+          type: string
+          format: uuid
+        pair_with:
+          type: string
+          format: uuid
+          description: The pairing candidate to use when there are several.
+    TransferResult:
+      type: object
+      required: [transaction]
+      properties:
+        transaction:
+          $ref: "#/components/schemas/Transaction"
+        voided_transaction_id:
+          type: string
+          format: uuid
+          description: The paired transaction that was voided.
     CategorizeInput:
       type: object
       additionalProperties: false
@@ -3371,7 +3426,7 @@ components:
             server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
             account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
             already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
-            record_resolved, already_matched, not_categorizable, suggestion_closed.
+            record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous.
         request_id:
           type: string
         errors:

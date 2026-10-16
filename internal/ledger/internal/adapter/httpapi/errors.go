@@ -42,6 +42,8 @@ func toProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusConflict, "version_conflict", "the transaction changed since the expected version; reload it"), true
 	case errors.Is(err, domain.ErrVoided):
 		return problem.New(http.StatusConflict, "transaction_voided", "the transaction is voided"), true
+	case errors.Is(err, app.ErrPairingAmbiguous):
+		return problem.New(http.StatusConflict, "pairing_ambiguous", "several imported transactions can pair with this one; name one in pair_with"), true
 	case errors.Is(err, domain.ErrNotCategorizable):
 		return problem.New(http.StatusUnprocessableEntity, "not_categorizable", err.Error()), true
 	case errors.Is(err, domain.ErrReconciled):

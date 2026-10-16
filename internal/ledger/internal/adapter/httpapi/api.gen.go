@@ -1050,7 +1050,7 @@ type Problem struct {
 	// server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
 	// account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
 	// already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
-	// record_resolved, already_matched, not_categorizable, suggestion_closed.
+	// record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous.
 	Code      string        `json:"code"`
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`
@@ -1225,6 +1225,23 @@ type TransactionVersionList struct {
 	Items []TransactionVersion `json:"items"`
 }
 
+// TransferInput defines model for TransferInput.
+type TransferInput struct {
+	AccountId       openapi_types.UUID `json:"account_id"`
+	ExpectedVersion int                `json:"expected_version"`
+
+	// PairWith The pairing candidate to use when there are several.
+	PairWith *openapi_types.UUID `json:"pair_with,omitempty"`
+}
+
+// TransferResult defines model for TransferResult.
+type TransferResult struct {
+	Transaction Transaction `json:"transaction"`
+
+	// VoidedTransactionId The paired transaction that was voided.
+	VoidedTransactionId *openapi_types.UUID `json:"voided_transaction_id,omitempty"`
+}
+
 // UnlockInput defines model for UnlockInput.
 type UnlockInput struct {
 	From openapi_types.Date `json:"from"`
@@ -1396,6 +1413,9 @@ type OpenDisputeJSONRequestBody = DisputeInput
 // RefundTransactionJSONRequestBody defines body for RefundTransaction for application/json ContentType.
 type RefundTransactionJSONRequestBody = RefundInput
 
+// TransferTransactionJSONRequestBody defines body for TransferTransaction for application/json ContentType.
+type TransferTransactionJSONRequestBody = TransferInput
+
 // VoidTransactionJSONRequestBody defines body for VoidTransaction for application/json ContentType.
 type VoidTransactionJSONRequestBody = VoidInput
 
@@ -1536,6 +1556,9 @@ type ServerInterface interface {
 	// RefundTransaction Refund all or part of a card purchase.
 	// (POST /transactions/{id}/refunds)
 	RefundTransaction(w http.ResponseWriter, r *http.Request, id ID)
+	// TransferTransaction Replace the category side with a posting on another of the owner's accounts, pairing with its imported other side (P5b amendments A28, A29).
+	// (POST /transactions/{id}/transfer)
+	TransferTransaction(w http.ResponseWriter, r *http.Request, id ID)
 	// ListTransactionVersions Previous versions of a transaction.
 	// (GET /transactions/{id}/versions)
 	ListTransactionVersions(w http.ResponseWriter, r *http.Request, id ID)
@@ -2975,6 +2998,32 @@ func (siw *ServerInterfaceWrapper) RefundTransaction(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// TransferTransaction operation middleware
+func (siw *ServerInterfaceWrapper) TransferTransaction(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.TransferTransaction(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListTransactionVersions operation middleware
 func (siw *ServerInterfaceWrapper) ListTransactionVersions(w http.ResponseWriter, r *http.Request) {
 
@@ -3166,6 +3215,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/transactions/{id}", wrapper.CorrectTransaction)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/void", wrapper.VoidTransaction)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/categorize", wrapper.CategorizeTransaction)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/transfer", wrapper.TransferTransaction)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions/{id}/versions", wrapper.ListTransactionVersions)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/billing-cycle-rules", wrapper.ListBillingCycleRules)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/billing-cycle-rules", wrapper.CreateBillingCycleRule)
@@ -6038,6 +6088,101 @@ func (response RefundTransaction422ApplicationProblemPlusJSONResponse) VisitRefu
 	return err
 }
 
+type TransferTransactionRequestObject struct {
+	Id   ID `json:"id"`
+	Body *TransferTransactionJSONRequestBody
+}
+
+type TransferTransactionResponseObject interface {
+	VisitTransferTransactionResponse(w http.ResponseWriter) error
+}
+
+type TransferTransaction200JSONResponse TransferResult
+
+func (response TransferTransaction200JSONResponse) VisitTransferTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TransferTransaction400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response TransferTransaction400ApplicationProblemPlusJSONResponse) VisitTransferTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TransferTransaction401ApplicationProblemPlusJSONResponse Problem
+
+func (response TransferTransaction401ApplicationProblemPlusJSONResponse) VisitTransferTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TransferTransaction404ApplicationProblemPlusJSONResponse Problem
+
+func (response TransferTransaction404ApplicationProblemPlusJSONResponse) VisitTransferTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TransferTransaction409ApplicationProblemPlusJSONResponse Problem
+
+func (response TransferTransaction409ApplicationProblemPlusJSONResponse) VisitTransferTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type TransferTransaction422ApplicationProblemPlusJSONResponse Problem
+
+func (response TransferTransaction422ApplicationProblemPlusJSONResponse) VisitTransferTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListTransactionVersionsRequestObject struct {
 	Id ID `json:"id"`
 }
@@ -6308,6 +6453,9 @@ type StrictServerInterface interface {
 	// RefundTransaction Refund all or part of a card purchase.
 	// (POST /transactions/{id}/refunds)
 	RefundTransaction(ctx context.Context, request RefundTransactionRequestObject) (RefundTransactionResponseObject, error)
+	// TransferTransaction Replace the category side with a posting on another of the owner's accounts, pairing with its imported other side (P5b amendments A28, A29).
+	// (POST /transactions/{id}/transfer)
+	TransferTransaction(ctx context.Context, request TransferTransactionRequestObject) (TransferTransactionResponseObject, error)
 	// ListTransactionVersions Previous versions of a transaction.
 	// (GET /transactions/{id}/versions)
 	ListTransactionVersions(ctx context.Context, request ListTransactionVersionsRequestObject) (ListTransactionVersionsResponseObject, error)
@@ -7684,6 +7832,39 @@ func (sh *strictHandler) RefundTransaction(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RefundTransactionResponseObject); ok {
 		if err := validResponse.VisitRefundTransactionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// TransferTransaction operation middleware
+func (sh *strictHandler) TransferTransaction(w http.ResponseWriter, r *http.Request, id ID) {
+	var request TransferTransactionRequestObject
+
+	request.Id = id
+
+	var body TransferTransactionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.TransferTransaction(ctx, request.(TransferTransactionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "TransferTransaction")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(TransferTransactionResponseObject); ok {
+		if err := validResponse.VisitTransferTransactionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

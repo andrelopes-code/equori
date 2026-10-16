@@ -53,3 +53,14 @@ func (r *Repository) LockAccountPostingLinks(ctx context.Context, userID int64, 
 		return app.PostingLink{PostingID: row.ID, RecordID: row.ExternalRecordID.UUID, Voided: row.Voided}
 	}), err
 }
+
+func (r *Repository) PairingCandidates(ctx context.Context, q app.PairingQuery) ([]uuid.UUID, error) {
+	return r.q.PairingCandidates(ctx, PairingCandidatesParams{
+		UserID: q.UserID, TransactionID: q.TransactionID, AccountID: q.AccountID, Amount: q.Amount,
+		FromDate: q.From, ToDate: q.To, ExcludedAccounts: q.ExcludedAccounts,
+	})
+}
+
+func (r *Repository) ClearRecordLinks(ctx context.Context, userID int64, txID uuid.UUID) error {
+	return r.q.ClearRecordLinks(ctx, ClearRecordLinksParams{UserID: userID, TransactionID: txID})
+}

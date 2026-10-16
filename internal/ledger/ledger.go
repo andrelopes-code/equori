@@ -35,6 +35,8 @@ const (
 	EventTransactionVoided    = app.EventTransactionVoided
 	// EventTransactionCategorized follows Categorize (P5 amendment A18).
 	EventTransactionCategorized = app.EventTransactionCategorized
+	// EventTransactionsPaired follows a Transfer that pairs two transactions (P5b amendment A29).
+	EventTransactionsPaired = app.EventTransactionsPaired
 )
 
 // TransactionEvent is the payload of the transaction events.
@@ -74,6 +76,13 @@ type Cause = app.Cause
 // Categorization changes the category side of one transaction (P5 amendment A18).
 type Categorization = app.Categorization
 
+// TransferRequest and TransferResult describe Transfer (P5b amendments A28, A29).
+type (
+	TransferRequest = app.TransferRequest
+	TransferResult  = app.TransferResult
+	PairedEvent     = app.PairedEvent
+)
+
 // LineError names the line of a batch that a ledger rule rejected.
 type LineError = app.LineError
 
@@ -86,6 +95,8 @@ var (
 	ErrAlreadyMatched    = app.ErrAlreadyMatched
 	ErrVersionConflict   = domain.ErrVersionConflict
 	ErrNotCategorizable  = domain.ErrNotCategorizable
+	ErrPairingAmbiguous  = app.ErrPairingAmbiguous
+	ErrReconciled        = domain.ErrReconciled
 )
 
 // Calendar is the part of marketdata the ledger uses to shift due dates.
@@ -174,6 +185,12 @@ func (m *Module) MissingPayees(ctx context.Context, userID int64, ids []uuid.UUI
 // LatestPayeeCategories implements the payee history of P5 amendment A23.
 func (m *Module) LatestPayeeCategories(ctx context.Context, userID int64, payees []uuid.UUID) (map[PayeeClass]uuid.UUID, error) {
 	return m.svc.LatestPayeeCategories(ctx, userID, payees)
+}
+
+// Transfer replaces the category side of a transaction with a posting on another account,
+// pairing it with the imported other side when one exists.
+func (m *Module) Transfer(ctx context.Context, userID int64, r TransferRequest) (TransferResult, error) {
+	return m.svc.Transfer(ctx, userID, r)
 }
 
 func (m *Module) AssertBalance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, amount money.Money) error {

@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/google/uuid"
+
 	"github.com/andrelopes-code/equori/internal/platform/page"
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
@@ -295,6 +297,29 @@ func (s *Server) CategorizeTransaction(ctx context.Context, req CategorizeTransa
 		return nil, err
 	}
 	return CategorizeTransaction200JSONResponse(toTransactionAPI(t)), nil
+}
+
+func (s *Server) TransferTransaction(ctx context.Context, req TransferTransactionRequestObject) (TransferTransactionResponseObject, error) {
+	userID := auth.MustUserID(ctx)
+	in := app.TransferRequest{
+		TransactionID: req.Id, ExpectedVersion: req.Body.ExpectedVersion, AccountID: req.Body.AccountId, Cause: app.Cause{Method: app.MethodManual},
+	}
+	if req.Body.PairWith != nil {
+		in.PairWith = *req.Body.PairWith
+	}
+	res, err := s.svc.Transfer(ctx, userID, in)
+	if err != nil {
+		return nil, err
+	}
+	t, err := s.svc.Transaction(ctx, userID, res.Kept)
+	if err != nil {
+		return nil, err
+	}
+	out := TransferTransaction200JSONResponse{Transaction: toTransactionAPI(t)}
+	if res.Voided != uuid.Nil {
+		out.VoidedTransactionId = &res.Voided
+	}
+	return out, nil
 }
 
 func (s *Server) ListTransactionVersions(ctx context.Context, req ListTransactionVersionsRequestObject) (ListTransactionVersionsResponseObject, error) {
