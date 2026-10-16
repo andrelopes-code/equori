@@ -7,6 +7,8 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/andrelopes-code/equori/internal/platform/page"
+
 	"github.com/google/uuid"
 )
 
@@ -66,7 +68,7 @@ func (s *Service) Attach(ctx context.Context, userID int64, transactionID uuid.U
 	return created, err
 }
 
-func (s *Service) Attachments(ctx context.Context, userID int64, transactionID uuid.UUID, p Page[AttachmentKey]) ([]Attachment, *AttachmentKey, error) {
+func (s *Service) Attachments(ctx context.Context, userID int64, transactionID uuid.UUID, p page.Request[AttachmentKey]) ([]Attachment, *AttachmentKey, error) {
 	if _, err := s.repo.Transaction(ctx, userID, transactionID); err != nil {
 		return nil, nil, err
 	}

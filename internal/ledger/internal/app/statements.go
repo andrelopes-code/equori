@@ -3,6 +3,8 @@ package app
 import (
 	"context"
 
+	"github.com/andrelopes-code/equori/internal/platform/page"
+
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
@@ -11,7 +13,7 @@ import (
 // Statements lists a card's statements within [from, to]; nil bounds are open. Pages are
 // cut in memory: each summary carries the unpaid amount of the previous statement, so
 // every statement of the card is summarized anyway. A zero Limit returns every statement.
-func (s *Service) Statements(ctx context.Context, userID int64, accountID uuid.UUID, from, to *domain.ReferenceMonth, p Page[StatementKey]) ([]StatementView, *StatementKey, domain.Account, error) {
+func (s *Service) Statements(ctx context.Context, userID int64, accountID uuid.UUID, from, to *domain.ReferenceMonth, p page.Request[StatementKey]) ([]StatementView, *StatementKey, domain.Account, error) {
 	a, err := s.card(ctx, userID, accountID)
 	if err != nil {
 		return nil, nil, domain.Account{}, err
@@ -41,7 +43,7 @@ func (s *Service) Statement(ctx context.Context, userID int64, id uuid.UUID) (St
 	if err != nil {
 		return StatementView{}, domain.Account{}, nil, err
 	}
-	views, _, a, err := s.Statements(ctx, userID, accountID, nil, nil, Page[StatementKey]{})
+	views, _, a, err := s.Statements(ctx, userID, accountID, nil, nil, page.Request[StatementKey]{})
 	if err != nil {
 		return StatementView{}, domain.Account{}, nil, err
 	}

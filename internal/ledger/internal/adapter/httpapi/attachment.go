@@ -10,6 +10,8 @@ import (
 	"mime/multipart"
 	"net/http"
 
+	"github.com/andrelopes-code/equori/internal/platform/page"
+
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
 	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
@@ -69,7 +71,7 @@ func (s *Server) ListAttachments(ctx context.Context, req ListAttachmentsRequest
 	for i, a := range as {
 		out.Items[i] = toAttachmentAPI(a)
 	}
-	out.NextCursor, err = nextCursor(next)
+	out.NextCursor, err = page.Next(next)
 	return ListAttachments200JSONResponse(out), err
 }
 

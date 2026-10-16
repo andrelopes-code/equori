@@ -17,6 +17,12 @@ var (
 	ErrInvalidCursor = errors.New("invalid cursor")
 )
 
+// Request asks for at most Limit rows after the row whose sort key is After.
+type Request[K any] struct {
+	After *K
+	Limit int
+}
+
 // Limit returns DefaultLimit when requested is nil.
 func Limit(requested *int) (int, error) {
 	if requested == nil {
@@ -55,4 +61,34 @@ func Trim[T any](rows []T, limit int) (items []T, hasMore bool) {
 		return rows[:limit], true
 	}
 	return rows, false
+}
+
+// Read parses the limit and cursor parameters of a list request; it returns ErrInvalidLimit
+// or ErrInvalidCursor.
+func Read[K any](limit *int, cursor *string) (Request[K], error) {
+	n, err := Limit(limit)
+	if err != nil {
+		return Request[K]{}, err
+	}
+	r := Request[K]{Limit: n}
+	if cursor != nil {
+		var k K
+		if err := DecodeCursor(*cursor, &k); err != nil {
+			return Request[K]{}, err
+		}
+		r.After = &k
+	}
+	return r, nil
+}
+
+// Next encodes the key of the last row of a page; nil on the last page.
+func Next[K any](k *K) (*string, error) {
+	if k == nil {
+		return nil, nil
+	}
+	c, err := EncodeCursor(k)
+	if err != nil {
+		return nil, err
+	}
+	return &c, nil
 }

@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/andrelopes-code/equori/internal/platform/page"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -93,7 +95,7 @@ func (r *Repository) InsertInstitution(ctx context.Context, i app.Institution) (
 	return toInstitution(row), nil
 }
 
-func (r *Repository) ListInstitutions(ctx context.Context, userID int64, p app.Page[app.InstitutionKey]) ([]app.Institution, *app.InstitutionKey, error) {
+func (r *Repository) ListInstitutions(ctx context.Context, userID int64, p page.Request[app.InstitutionKey]) ([]app.Institution, *app.InstitutionKey, error) {
 	params := ListInstitutionsParams{UserID: userID, RowLimit: rowLimit(p.Limit)}
 	if p.After != nil {
 		params.AfterName, params.AfterID = &p.After.Name, nullUUID(p.After.ID)
@@ -128,7 +130,7 @@ func (r *Repository) Payee(ctx context.Context, userID int64, id uuid.UUID) (app
 	return toPayee(row), nil
 }
 
-func (r *Repository) ListPayees(ctx context.Context, userID int64, p app.Page[app.PayeeKey]) ([]app.Payee, *app.PayeeKey, error) {
+func (r *Repository) ListPayees(ctx context.Context, userID int64, p page.Request[app.PayeeKey]) ([]app.Payee, *app.PayeeKey, error) {
 	params := ListPayeesParams{UserID: userID, RowLimit: rowLimit(p.Limit)}
 	if p.After != nil {
 		params.AfterName, params.AfterID = &p.After.Name, nullUUID(p.After.ID)
@@ -145,7 +147,7 @@ func (r *Repository) ListPayees(ctx context.Context, userID int64, p app.Page[ap
 	return items, next, nil
 }
 
-func (r *Repository) ListTags(ctx context.Context, userID int64, p app.Page[app.TagKey]) ([]string, *app.TagKey, error) {
+func (r *Repository) ListTags(ctx context.Context, userID int64, p page.Request[app.TagKey]) ([]string, *app.TagKey, error) {
 	params := ListTagsParams{UserID: userID, RowLimit: rowLimit(p.Limit)}
 	if p.After != nil {
 		params.AfterName = &p.After.Name
@@ -178,7 +180,7 @@ func (r *Repository) Accounts(ctx context.Context, userID int64, ids []uuid.UUID
 	return out, nil
 }
 
-func (r *Repository) ListAccounts(ctx context.Context, userID int64, p app.Page[app.AccountKey]) ([]domain.Account, *app.AccountKey, error) {
+func (r *Repository) ListAccounts(ctx context.Context, userID int64, p page.Request[app.AccountKey]) ([]domain.Account, *app.AccountKey, error) {
 	params := ListAccountsParams{UserID: userID, RowLimit: rowLimit(p.Limit)}
 	if p.After != nil {
 		params.AfterClass, params.AfterName, params.AfterID = &p.After.Class, &p.After.Name, nullUUID(p.After.ID)

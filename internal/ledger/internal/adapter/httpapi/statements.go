@@ -3,6 +3,8 @@ package httpapi
 import (
 	"context"
 
+	"github.com/andrelopes-code/equori/internal/platform/page"
+
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
@@ -54,7 +56,7 @@ func (s *Server) ListStatements(ctx context.Context, req ListStatementsRequestOb
 	for i, v := range views {
 		out.Items[i] = toStatementAPI(v, a.Instrument)
 	}
-	out.NextCursor, err = nextCursor(next)
+	out.NextCursor, err = page.Next(next)
 	return out, err
 }
 

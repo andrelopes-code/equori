@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/andrelopes-code/equori/internal/platform/page"
+
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
 	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
@@ -65,7 +67,7 @@ func (s *Server) ListInstitutions(ctx context.Context, req ListInstitutionsReque
 	for i, r := range rows {
 		out.Items[i] = toInstitutionAPI(r)
 	}
-	out.NextCursor, err = nextCursor(next)
+	out.NextCursor, err = page.Next(next)
 	return out, err
 }
 
@@ -90,7 +92,7 @@ func (s *Server) ListPayees(ctx context.Context, req ListPayeesRequestObject) (L
 	for i, r := range rows {
 		out.Items[i] = toPayeeAPI(r)
 	}
-	out.NextCursor, err = nextCursor(next)
+	out.NextCursor, err = page.Next(next)
 	return out, err
 }
 
@@ -112,7 +114,7 @@ func (s *Server) ListTags(ctx context.Context, req ListTagsRequestObject) (ListT
 		return nil, err
 	}
 	out := ListTags200JSONResponse{Items: append([]string{}, tags...)}
-	out.NextCursor, err = nextCursor(next)
+	out.NextCursor, err = page.Next(next)
 	return out, err
 }
 
@@ -129,7 +131,7 @@ func (s *Server) ListAccounts(ctx context.Context, req ListAccountsRequestObject
 	for i, r := range rows {
 		out.Items[i] = toAccountAPI(r)
 	}
-	out.NextCursor, err = nextCursor(next)
+	out.NextCursor, err = page.Next(next)
 	return out, err
 }
 
@@ -215,7 +217,7 @@ func (s *Server) ListTransactions(ctx context.Context, req ListTransactionsReque
 	for i, t := range rows {
 		out.Items[i] = toTransactionAPI(t)
 	}
-	out.NextCursor, err = nextCursor(next)
+	out.NextCursor, err = page.Next(next)
 	return out, err
 }
 

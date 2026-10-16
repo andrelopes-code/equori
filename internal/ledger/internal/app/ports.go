@@ -6,6 +6,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/andrelopes-code/equori/internal/platform/page"
+
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
@@ -154,12 +156,6 @@ type Balance struct {
 	Amount    money.Money
 }
 
-// Page asks for at most Limit rows after the row whose sort key is After (ADR 005, section 4).
-type Page[K any] struct {
-	After *K
-	Limit int
-}
-
 // Cursor keys. Member names differ between lists, so a cursor decodes only for the list
 // that produced it (strict decoding in platform/page).
 type (
@@ -219,15 +215,15 @@ type Repository interface {
 
 	InsertInstitution(ctx context.Context, i Institution) (Institution, error)
 	// List methods return the page and the key of its last row when more rows follow.
-	ListInstitutions(ctx context.Context, userID int64, p Page[InstitutionKey]) ([]Institution, *InstitutionKey, error)
+	ListInstitutions(ctx context.Context, userID int64, p page.Request[InstitutionKey]) ([]Institution, *InstitutionKey, error)
 	InsertPayee(ctx context.Context, p Payee) (Payee, error)
 	Payee(ctx context.Context, userID int64, id uuid.UUID) (Payee, error)
-	ListPayees(ctx context.Context, userID int64, p Page[PayeeKey]) ([]Payee, *PayeeKey, error)
-	ListTags(ctx context.Context, userID int64, p Page[TagKey]) ([]string, *TagKey, error)
+	ListPayees(ctx context.Context, userID int64, p page.Request[PayeeKey]) ([]Payee, *PayeeKey, error)
+	ListTags(ctx context.Context, userID int64, p page.Request[TagKey]) ([]string, *TagKey, error)
 
 	Account(ctx context.Context, userID int64, id uuid.UUID) (domain.Account, error)
 	Accounts(ctx context.Context, userID int64, ids []uuid.UUID) (map[uuid.UUID]domain.Account, error)
-	ListAccounts(ctx context.Context, userID int64, p Page[AccountKey]) ([]domain.Account, *AccountKey, error)
+	ListAccounts(ctx context.Context, userID int64, p page.Request[AccountKey]) ([]domain.Account, *AccountKey, error)
 	InsertAccount(ctx context.Context, a domain.Account) (domain.Account, error)
 	UpdateAccount(ctx context.Context, a domain.Account) (domain.Account, error)
 	AccountHasChildren(ctx context.Context, userID int64, id uuid.UUID) (bool, error)
@@ -270,7 +266,7 @@ type Repository interface {
 	BalanceAssertion(ctx context.Context, userID int64, id uuid.UUID) (BalanceAssertion, error)
 	// BalanceAssertions returns the account's assertions, latest date first.
 	BalanceAssertions(ctx context.Context, userID int64, accountID uuid.UUID) ([]BalanceAssertion, error)
-	BalanceAssertionPage(ctx context.Context, userID int64, accountID uuid.UUID, p Page[AssertionKey]) ([]BalanceAssertion, *AssertionKey, error)
+	BalanceAssertionPage(ctx context.Context, userID int64, accountID uuid.UUID, p page.Request[AssertionKey]) ([]BalanceAssertion, *AssertionKey, error)
 	LastReconciledOn(ctx context.Context, userID int64, accountID uuid.UUID) (*time.Time, error)
 	FirstSettledOn(ctx context.Context, userID int64, accountID uuid.UUID) (*time.Time, error)
 	// InsertReconciliation returns domain.ErrAlreadyReconciled for an assertion or statement reconciled before.
@@ -284,7 +280,7 @@ type Repository interface {
 
 	// InsertAttachment stores the content unless the user already has a blob with the same hash.
 	InsertAttachment(ctx context.Context, a Attachment, content []byte) (Attachment, error)
-	Attachments(ctx context.Context, userID int64, transactionID uuid.UUID, p Page[AttachmentKey]) ([]Attachment, *AttachmentKey, error)
+	Attachments(ctx context.Context, userID int64, transactionID uuid.UUID, p page.Request[AttachmentKey]) ([]Attachment, *AttachmentKey, error)
 	AttachmentContent(ctx context.Context, userID int64, id uuid.UUID) (AttachmentContent, error)
 	// DeleteAttachment deletes the blob too when no other attachment references it.
 	DeleteAttachment(ctx context.Context, userID int64, id uuid.UUID) error

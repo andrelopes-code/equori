@@ -16,6 +16,8 @@ tags:
     description: Derived views over the ledger.
   - name: marketdata
     description: Instruments and business-day calendars.
+  - name: ingestion
+    description: File imports, external records and their review.
 paths:
   /session:
     post:
@@ -1271,6 +1273,23 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /import-batches:
+    get:
+      tags: [ingestion]
+      operationId: listImportBatches
+      summary: Import batches, newest first.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportBatchList"
+        "401":
+          $ref: "#/components/responses/Problem"
 security:
   - sessionCookie: []
 components:
@@ -1316,6 +1335,80 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
   schemas:
+    ImportBatch:
+      type: object
+      required: [id, account_id, source, file_name, counts, balance, started_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        account_id:
+          type: string
+          format: uuid
+        source:
+          type: string
+          enum: [ofx, csv]
+        file_name:
+          type: string
+        period_from:
+          type: string
+          format: date
+        period_to:
+          type: string
+          format: date
+        counts:
+          $ref: "#/components/schemas/ImportCounts"
+        balance:
+          $ref: "#/components/schemas/ImportBalance"
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+    ImportCounts:
+      type: object
+      description: Records of the file by outcome; received is the number of lines read.
+      required: [received, ignored, matched, created, needs_review, discarded]
+      properties:
+        received:
+          type: integer
+        ignored:
+          type: integer
+        matched:
+          type: integer
+        created:
+          type: integer
+        needs_review:
+          type: integer
+        discarded:
+          type: integer
+    ImportBalance:
+      type: object
+      description: The balance the file reports and what became of it (chapter 3, F4).
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [none, recorded, skipped]
+        date:
+          type: string
+          format: date
+        amount:
+          $ref: "#/components/schemas/Money"
+        reason:
+          type: string
+    ImportBatchList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportBatch"
+        next_cursor:
+          type: string
+          description: Absent on the last page.
     Attachment:
       type: object
       required: [id, transaction_id, file_name, media_type, size, sha256, created_at]

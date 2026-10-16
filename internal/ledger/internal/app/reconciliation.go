@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/andrelopes-code/equori/internal/platform/page"
+
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
@@ -236,7 +238,7 @@ func (s *Service) ReconcileStatement(ctx context.Context, userID int64, statemen
 	})
 }
 
-func (s *Service) BalanceAssertions(ctx context.Context, userID int64, accountID uuid.UUID, p Page[AssertionKey]) ([]BalanceAssertion, *AssertionKey, error) {
+func (s *Service) BalanceAssertions(ctx context.Context, userID int64, accountID uuid.UUID, p page.Request[AssertionKey]) ([]BalanceAssertion, *AssertionKey, error) {
 	if _, err := s.repo.Account(ctx, userID, accountID); err != nil {
 		return nil, nil, err
 	}

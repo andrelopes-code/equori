@@ -5,6 +5,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/andrelopes-code/equori/internal/platform/page"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -49,7 +51,7 @@ func (r *Repository) BalanceAssertion(ctx context.Context, userID int64, id uuid
 	}, row.Reconciled), nil
 }
 
-func (r *Repository) BalanceAssertionPage(ctx context.Context, userID int64, accountID uuid.UUID, p app.Page[app.AssertionKey]) ([]app.BalanceAssertion, *app.AssertionKey, error) {
+func (r *Repository) BalanceAssertionPage(ctx context.Context, userID int64, accountID uuid.UUID, p page.Request[app.AssertionKey]) ([]app.BalanceAssertion, *app.AssertionKey, error) {
 	params := ListBalanceAssertionPageParams{UserID: userID, AccountID: accountID, RowLimit: rowLimit(p.Limit)}
 	if p.After != nil {
 		params.AfterDate, params.AfterID = &p.After.Date, nullUUID(p.After.ID)

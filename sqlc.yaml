@@ -51,6 +51,13 @@ sql:
         out: internal/ledger/internal/adapter/postgres
   - engine: postgresql
     schema: db/migrations
+    queries: db/queries/ingestion
+    gen:
+      go:
+        <<: *go
+        out: internal/ingestion/internal/adapter/postgres
+  - engine: postgresql
+    schema: db/migrations
     queries: db/queries/reporting
     gen:
       go:

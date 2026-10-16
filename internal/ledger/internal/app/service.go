@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/andrelopes-code/equori/internal/platform/page"
+
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
@@ -94,7 +96,7 @@ func (s *Service) CreateInstitution(ctx context.Context, userID int64, name, cod
 	return s.repo.InsertInstitution(ctx, Institution{UserID: userID, Name: name, Code: code})
 }
 
-func (s *Service) ListInstitutions(ctx context.Context, userID int64, p Page[InstitutionKey]) ([]Institution, *InstitutionKey, error) {
+func (s *Service) ListInstitutions(ctx context.Context, userID int64, p page.Request[InstitutionKey]) ([]Institution, *InstitutionKey, error) {
 	return s.repo.ListInstitutions(ctx, userID, p)
 }
 
@@ -105,11 +107,11 @@ func (s *Service) CreatePayee(ctx context.Context, userID int64, name string) (P
 	return s.repo.InsertPayee(ctx, Payee{UserID: userID, Name: name})
 }
 
-func (s *Service) ListPayees(ctx context.Context, userID int64, p Page[PayeeKey]) ([]Payee, *PayeeKey, error) {
+func (s *Service) ListPayees(ctx context.Context, userID int64, p page.Request[PayeeKey]) ([]Payee, *PayeeKey, error) {
 	return s.repo.ListPayees(ctx, userID, p)
 }
 
-func (s *Service) ListTags(ctx context.Context, userID int64, p Page[TagKey]) ([]string, *TagKey, error) {
+func (s *Service) ListTags(ctx context.Context, userID int64, p page.Request[TagKey]) ([]string, *TagKey, error) {
 	return s.repo.ListTags(ctx, userID, p)
 }
 
@@ -206,7 +208,7 @@ func (s *Service) Account(ctx context.Context, userID int64, id uuid.UUID) (doma
 	return s.repo.Account(ctx, userID, id)
 }
 
-func (s *Service) ListAccounts(ctx context.Context, userID int64, p Page[AccountKey]) ([]domain.Account, *AccountKey, error) {
+func (s *Service) ListAccounts(ctx context.Context, userID int64, p page.Request[AccountKey]) ([]domain.Account, *AccountKey, error) {
 	return s.repo.ListAccounts(ctx, userID, p)
 }
 

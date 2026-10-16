@@ -3,6 +3,8 @@ package postgres
 import (
 	"context"
 
+	"github.com/andrelopes-code/equori/internal/platform/page"
+
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
@@ -25,7 +27,7 @@ func (r *Repository) InsertAttachment(ctx context.Context, a app.Attachment, con
 	}, nil
 }
 
-func (r *Repository) Attachments(ctx context.Context, userID int64, transactionID uuid.UUID, p app.Page[app.AttachmentKey]) ([]app.Attachment, *app.AttachmentKey, error) {
+func (r *Repository) Attachments(ctx context.Context, userID int64, transactionID uuid.UUID, p page.Request[app.AttachmentKey]) ([]app.Attachment, *app.AttachmentKey, error) {
 	params := ListAttachmentsParams{UserID: userID, TransactionID: transactionID, RowLimit: rowLimit(p.Limit)}
 	if p.After != nil {
 		params.AfterCreated, params.AfterID = &p.After.CreatedAt, nullUUID(p.After.ID)

@@ -72,3 +72,28 @@ func TestTrim(t *testing.T) {
 		t.Fatalf("Trim(2 rows, 2) = %v, %v", items, more)
 	}
 }
+
+func TestReadAndNext(t *testing.T) {
+	type key struct {
+		N string `json:"n"`
+	}
+	next, err := Next(&key{N: "b"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, err := Read[key](nil, next)
+	if err != nil || r.Limit != DefaultLimit || r.After == nil || r.After.N != "b" {
+		t.Fatalf("Read = %+v, %v", r, err)
+	}
+	zero := 0
+	if _, err := Read[key](&zero, nil); !errors.Is(err, ErrInvalidLimit) {
+		t.Fatalf("limit 0: %v", err)
+	}
+	other := "eyJ4IjoxfQ" // {"x":1}
+	if _, err := Read[key](nil, &other); !errors.Is(err, ErrInvalidCursor) {
+		t.Fatalf("foreign cursor: %v", err)
+	}
+	if last, err := Next[key](nil); last != nil || err != nil {
+		t.Fatalf("Next(nil) = %v, %v", last, err)
+	}
+}
