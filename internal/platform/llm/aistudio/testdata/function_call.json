@@ -1,0 +1,1 @@
+{"candidates":[{"content":{"role":"model","parts":[{"functionCall":{"id":"c1","name":"balance","args":{"account":"x"}},"thoughtSignature":"c2ln"}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":20,"candidatesTokenCount":4}}
