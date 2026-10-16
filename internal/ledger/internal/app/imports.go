@@ -127,13 +127,18 @@ func (s *Service) RecordImportedBatch(ctx context.Context, userID int64, recs []
 				return &LineError{Index: i, Err: err}
 			}
 			if d := rec.Decision; d != nil && d.TransferTo != uuid.Nil {
-				id, err := s.completePairing(ctx, r, userID, rec)
+				id, transfer, err := s.completePairing(ctx, r, userID, rec)
 				if err != nil {
 					return err
 				}
 				if id != uuid.Nil {
 					ids[i] = id
 					continue
+				}
+				if !transfer {
+					undecided := *d
+					undecided.TransferTo = uuid.Nil
+					rec.Decision = &undecided
 				}
 			}
 			t, err := domain.NewTransaction(importedTransaction(userID, settings.BaseCurrency, rec, expense, income), accounts)
@@ -191,9 +196,10 @@ func importedTransaction(userID int64, base money.Currency, rec ImportedRecord, 
 }
 
 // completePairing turns the one pairing candidate of a line decided as a transfer into the
-// transfer, with the line's posting confirming its record (P5b amendment A30). It returns
-// uuid.Nil when the line must be created: no candidate, several, or one that cannot change.
-func (s *Service) completePairing(ctx context.Context, r Repository, userID int64, rec ImportedRecord) (uuid.UUID, error) {
+// transfer, with the line's posting confirming its record (P5b amendment A30), and returns
+// its id. Otherwise the line is created: as the transfer when no candidate exists
+// (transfer true), uncategorized when several exist or the one cannot change.
+func (s *Service) completePairing(ctx context.Context, r Repository, userID int64, rec ImportedRecord) (id uuid.UUID, transfer bool, err error) {
 	line := rec.Posting
 	ids, err := r.PairingCandidates(ctx, PairingQuery{
 		UserID: userID, AccountID: rec.Decision.TransferTo, Amount: line.Amount.Neg().Amount(),
@@ -201,24 +207,24 @@ func (s *Service) completePairing(ctx context.Context, r Repository, userID int6
 		ExcludedAccounts: []uuid.UUID{line.AccountID},
 	})
 	if err != nil || len(ids) != 1 {
-		return uuid.Nil, err
+		return uuid.Nil, len(ids) == 0, err
 	}
 	c, err := r.LockTransaction(ctx, userID, ids[0])
 	if err != nil {
-		return uuid.Nil, err
+		return uuid.Nil, false, err
 	}
 	target, accounts, err := s.transferAccounts(ctx, r, userID, line.AccountID, c)
 	if err != nil {
-		return uuid.Nil, err
+		return uuid.Nil, false, err
 	}
 	next, err := c.Transfer(c.Version, target, rec.RecordID, accounts)
 	if errors.Is(err, domain.ErrReconciled) || errors.Is(err, domain.ErrValidation) {
-		return uuid.Nil, nil
+		return uuid.Nil, false, nil
 	}
 	if err != nil {
-		return uuid.Nil, err
+		return uuid.Nil, false, err
 	}
-	return c.ID, s.saveTransfer(ctx, r, c, next, accounts, rec.Decision.Cause)
+	return c.ID, false, s.saveTransfer(ctx, r, c, next, accounts, rec.Decision.Cause)
 }
 
 // ImportCurrency returns the currency of an account that can hold statement lines: a leaf

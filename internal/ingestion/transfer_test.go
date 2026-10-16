@@ -172,3 +172,18 @@ func TestPairedImportsStayPaired(t *testing.T) {
 		t.Fatalf("statement status = %s", st)
 	}
 }
+
+// A line decided as a transfer with several candidates stays uncategorized for the owner
+// to pair (P5b amendment A30); it never adds a second card posting.
+func TestTransferLineWithSeveralCandidates(t *testing.T) {
+	s := newPaymentSetup(t)
+	mustImport(t, s.h, s.card, "ofx", "fatura.ofx", cardOFX(
+		apitest.OFXLine{Date: "20261109", Amount: "1500.00", FITID: "p1", Name: "PAGAMENTO RECEBIDO"},
+		apitest.OFXLine{Date: "20261111", Amount: "1500.00", FITID: "p2", Name: "PAGAMENTO RECEBIDO"}))
+
+	id := s.recordTransfer(t, "2026-11-10")
+	v := s.h.Transaction(id.String())
+	if got := postingAmounts(v); len(v.Postings) != 2 || got[s.checking] != -150000 || got[s.card] != 0 {
+		t.Fatalf("transaction = %+v", v)
+	}
+}
