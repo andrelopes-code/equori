@@ -41,7 +41,7 @@ func (q *Queries) ExistingPayees(ctx context.Context, arg ExistingPayeesParams) 
 }
 
 const getTransactionsByIDs = `-- name: GetTransactionsByIDs :many
-SELECT id, user_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at, external_record_id FROM ledger_transaction WHERE user_id = $1 AND id = ANY($2::uuid[])
+SELECT id, user_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at FROM ledger_transaction WHERE user_id = $1 AND id = ANY($2::uuid[])
 `
 
 type GetTransactionsByIDsParams struct {
@@ -71,7 +71,6 @@ func (q *Queries) GetTransactionsByIDs(ctx context.Context, arg GetTransactionsB
 			&i.VoidReason,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.ExternalRecordID,
 		); err != nil {
 			return nil, err
 		}

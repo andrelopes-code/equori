@@ -141,3 +141,56 @@ func TestUnlinkedPostingsAndClearMatched(t *testing.T) {
 		t.Fatalf("after the match, unlinked = %v", got)
 	}
 }
+
+// P5b amendment A27: record links live on postings and survive corrections.
+func TestRecordLinksFollowPostings(t *testing.T) {
+	c := newCardSetup(t, "2026-11-12")
+	h, uid := c.h, c.h.OwnerID()
+	ctx := t.Context()
+	savings := h.Account("Savings", "asset", "savings", nil)
+	linkedAccount := func(record uuid.UUID) string {
+		t.Helper()
+		var account string
+		if err := h.Pool.QueryRow(ctx, `SELECT account_id FROM ledger_posting WHERE external_record_id = $1`, record).Scan(&account); err != nil {
+			t.Fatal(err)
+		}
+		return account
+	}
+
+	record := uuid.New()
+	id, err := h.App.Ledger.RecordImported(ctx, uid, record, imported(t, c.checking, "2026-10-05", -12000))
+	if err != nil {
+		t.Fatal(err)
+	}
+	correct := func(version int, postings ...map[string]any) apitest.Response {
+		return h.Do(http.MethodPut, "/api/v1/transactions/"+id.String(), map[string]any{
+			"date": "2026-10-05", "description": "Statement line", "expected_version": version, "reason": "edit", "postings": postings,
+		})
+	}
+	if r := correct(1, apitest.Posting(c.food, 12000), apitest.Posting(c.checking, -12000)); r.Status != http.StatusOK {
+		t.Fatalf("correction status %d: %s", r.Status, r.Body)
+	}
+	if got := linkedAccount(record); got != c.checking {
+		t.Fatalf("record on %s after correction, want checking", got)
+	}
+	h.ExpectProblem(correct(2, apitest.Posting(c.food, 12000), apitest.Posting(savings, -12000)), http.StatusUnprocessableEntity, "validation_failed", "postings")
+	if got := linkedAccount(record); got != c.checking {
+		t.Fatalf("record on %s after a rejected correction", got)
+	}
+
+	transfer := h.Record("2026-10-06", apitest.Posting(c.checking, -5000), apitest.Posting(savings, 5000))
+	txID := uuid.MustParse(transfer)
+	first, second := uuid.New(), uuid.New()
+	if err := h.App.Ledger.ClearMatched(ctx, uid, first, txID, uuid.MustParse(c.checking)); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.App.Ledger.ClearMatched(ctx, uid, second, txID, uuid.MustParse(savings)); err != nil {
+		t.Fatalf("second side of a transfer: %v", err)
+	}
+	if linkedAccount(first) != c.checking || linkedAccount(second) != savings {
+		t.Fatal("transfer sides not linked to their accounts")
+	}
+	if _, err := h.Pool.Exec(ctx, `UPDATE ledger_posting SET external_record_id = $1 WHERE transaction_id = $2 AND account_id = $3`, record, txID, savings); err == nil {
+		t.Fatal("database accepted one record on two postings")
+	}
+}

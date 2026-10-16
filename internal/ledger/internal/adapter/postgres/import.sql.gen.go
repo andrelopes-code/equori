@@ -29,7 +29,7 @@ func (q *Queries) ClearPendingPostings(ctx context.Context, arg ClearPendingPost
 }
 
 const getTransactionIDByExternalRecord = `-- name: GetTransactionIDByExternalRecord :one
-SELECT id FROM ledger_transaction WHERE user_id = $1 AND external_record_id = $2
+SELECT transaction_id FROM ledger_posting WHERE user_id = $1 AND external_record_id = $2
 `
 
 type GetTransactionIDByExternalRecordParams struct {
@@ -39,36 +39,13 @@ type GetTransactionIDByExternalRecordParams struct {
 
 func (q *Queries) GetTransactionIDByExternalRecord(ctx context.Context, arg GetTransactionIDByExternalRecordParams) (uuid.UUID, error) {
 	row := q.db.QueryRow(ctx, getTransactionIDByExternalRecord, arg.UserID, arg.ExternalRecordID)
-	var id uuid.UUID
-	err := row.Scan(&id)
-	return id, err
-}
-
-const getTransactionLinkForUpdate = `-- name: GetTransactionLinkForUpdate :one
-SELECT external_record_id, (voided_at IS NOT NULL)::boolean AS voided FROM ledger_transaction
-WHERE user_id = $1 AND id = $2
-FOR UPDATE
-`
-
-type GetTransactionLinkForUpdateParams struct {
-	UserID int64
-	ID     uuid.UUID
-}
-
-type GetTransactionLinkForUpdateRow struct {
-	ExternalRecordID uuid.NullUUID
-	Voided           bool
-}
-
-func (q *Queries) GetTransactionLinkForUpdate(ctx context.Context, arg GetTransactionLinkForUpdateParams) (GetTransactionLinkForUpdateRow, error) {
-	row := q.db.QueryRow(ctx, getTransactionLinkForUpdate, arg.UserID, arg.ID)
-	var i GetTransactionLinkForUpdateRow
-	err := row.Scan(&i.ExternalRecordID, &i.Voided)
-	return i, err
+	var transaction_id uuid.UUID
+	err := row.Scan(&transaction_id)
+	return transaction_id, err
 }
 
 const linkExternalRecord = `-- name: LinkExternalRecord :exec
-UPDATE ledger_transaction SET external_record_id = $1, updated_at = now()
+UPDATE ledger_posting SET external_record_id = $1
 WHERE user_id = $2 AND id = $3
 `
 
@@ -84,7 +61,7 @@ func (q *Queries) LinkExternalRecord(ctx context.Context, arg LinkExternalRecord
 }
 
 const listTransactionsByExternalRecords = `-- name: ListTransactionsByExternalRecords :many
-SELECT external_record_id, id FROM ledger_transaction
+SELECT external_record_id::uuid AS external_record_id, transaction_id FROM ledger_posting
 WHERE user_id = $1 AND external_record_id = ANY($2::uuid[])
 `
 
@@ -94,8 +71,8 @@ type ListTransactionsByExternalRecordsParams struct {
 }
 
 type ListTransactionsByExternalRecordsRow struct {
-	ExternalRecordID uuid.NullUUID
-	ID               uuid.UUID
+	ExternalRecordID uuid.UUID
+	TransactionID    uuid.UUID
 }
 
 func (q *Queries) ListTransactionsByExternalRecords(ctx context.Context, arg ListTransactionsByExternalRecordsParams) ([]ListTransactionsByExternalRecordsRow, error) {
@@ -107,7 +84,7 @@ func (q *Queries) ListTransactionsByExternalRecords(ctx context.Context, arg Lis
 	var items []ListTransactionsByExternalRecordsRow
 	for rows.Next() {
 		var i ListTransactionsByExternalRecordsRow
-		if err := rows.Scan(&i.ExternalRecordID, &i.ID); err != nil {
+		if err := rows.Scan(&i.ExternalRecordID, &i.TransactionID); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -119,13 +96,15 @@ func (q *Queries) ListTransactionsByExternalRecords(ctx context.Context, arg Lis
 }
 
 const listUnlinkedPostings = `-- name: ListUnlinkedPostings :many
-SELECT t.id AS transaction_id, p.booked_on, p.amount
-FROM ledger_posting p
-JOIN ledger_transaction t ON t.id = p.transaction_id
-WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided
-  AND t.external_record_id IS NULL
-  AND p.booked_on BETWEEN $3::date AND $4::date
-ORDER BY p.booked_on, t.id
+SELECT u.transaction_id, u.booked_on, u.amount FROM (
+    SELECT DISTINCT ON (p.transaction_id) p.transaction_id, p.booked_on, p.amount
+    FROM ledger_posting p
+    WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided
+      AND p.external_record_id IS NULL
+      AND p.booked_on BETWEEN $3::date AND $4::date
+    ORDER BY p.transaction_id, p.position
+) u
+ORDER BY u.booked_on, u.transaction_id
 `
 
 type ListUnlinkedPostingsParams struct {
@@ -141,8 +120,8 @@ type ListUnlinkedPostingsRow struct {
 	Amount        int64
 }
 
-// Postings of the account in the window whose transaction carries no external record and
-// is not voided: what statement lines may confirm (I07).
+// The first unlinked posting of each non-voided transaction on the account in the window:
+// what statement lines may confirm (I07, P5b amendment A27).
 func (q *Queries) ListUnlinkedPostings(ctx context.Context, arg ListUnlinkedPostingsParams) ([]ListUnlinkedPostingsRow, error) {
 	rows, err := q.db.Query(ctx, listUnlinkedPostings,
 		arg.UserID,
@@ -158,6 +137,48 @@ func (q *Queries) ListUnlinkedPostings(ctx context.Context, arg ListUnlinkedPost
 	for rows.Next() {
 		var i ListUnlinkedPostingsRow
 		if err := rows.Scan(&i.TransactionID, &i.BookedOn, &i.Amount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const lockAccountPostingLinks = `-- name: LockAccountPostingLinks :many
+SELECT p.id, p.external_record_id, (t.voided_at IS NOT NULL)::boolean AS voided
+FROM ledger_posting p
+JOIN ledger_transaction t ON t.id = p.transaction_id
+WHERE p.user_id = $1 AND p.transaction_id = $2 AND p.account_id = $3
+ORDER BY p.position
+FOR UPDATE OF p, t
+`
+
+type LockAccountPostingLinksParams struct {
+	UserID        int64
+	TransactionID uuid.UUID
+	AccountID     uuid.UUID
+}
+
+type LockAccountPostingLinksRow struct {
+	ID               uuid.UUID
+	ExternalRecordID uuid.NullUUID
+	Voided           bool
+}
+
+// The transaction's postings on the account, locked with the transaction, in position order.
+func (q *Queries) LockAccountPostingLinks(ctx context.Context, arg LockAccountPostingLinksParams) ([]LockAccountPostingLinksRow, error) {
+	rows, err := q.db.Query(ctx, lockAccountPostingLinks, arg.UserID, arg.TransactionID, arg.AccountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []LockAccountPostingLinksRow
+	for rows.Next() {
+		var i LockAccountPostingLinksRow
+		if err := rows.Scan(&i.ID, &i.ExternalRecordID, &i.Voided); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

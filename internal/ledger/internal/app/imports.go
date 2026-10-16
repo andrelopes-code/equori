@@ -153,8 +153,8 @@ func (s *Service) RecordImportedBatch(ctx context.Context, userID int64, recs []
 func importedTransaction(userID int64, base money.Currency, rec ImportedRecord, expense, income domain.Account) domain.Transaction {
 	t := domain.Transaction{
 		ID: uuid.Must(uuid.NewV7()), UserID: userID, Date: rec.Posting.Date, Description: rec.Posting.Description,
-		BalancingCurrency: base, Origin: domain.OriginImport, ExternalRecordID: rec.RecordID,
-		Postings: []domain.Posting{{AccountID: rec.Posting.AccountID, Amount: rec.Posting.Amount}},
+		BalancingCurrency: base, Origin: domain.OriginImport,
+		Postings: []domain.Posting{{AccountID: rec.Posting.AccountID, Amount: rec.Posting.Amount, ExternalRecordID: rec.RecordID}},
 	}
 	if d := rec.Decision; d != nil {
 		t.PayeeID, t.Tags = d.PayeeID, d.AddTags
@@ -213,6 +213,12 @@ func (s *Service) UnlinkedPostings(ctx context.Context, userID int64, accountID 
 	return s.repo.UnlinkedPostings(ctx, userID, accountID, from, to)
 }
 
+// PostingLink is a posting on an account and the external record that confirms it.
+type PostingLink struct {
+	PostingID, RecordID uuid.UUID
+	Voided              bool
+}
+
 // Match links an external record to the transaction it confirms.
 type Match struct {
 	RecordID, TransactionID, AccountID uuid.UUID
@@ -238,18 +244,19 @@ func (s *Service) ClearMatchedBatch(ctx context.Context, userID int64, ms []Matc
 	}
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		for i, m := range ms {
-			linked, voided, err := r.LockTransactionLink(ctx, userID, m.TransactionID)
+			links, err := r.LockAccountPostingLinks(ctx, userID, m.TransactionID, m.AccountID)
 			if err != nil {
 				return err
 			}
-			switch {
-			case linked == m.RecordID:
+			if slices.ContainsFunc(links, func(l PostingLink) bool { return l.RecordID == m.RecordID }) {
 				continue
-			case linked != uuid.Nil || voided:
+			}
+			free := slices.IndexFunc(links, func(l PostingLink) bool { return l.RecordID == uuid.Nil })
+			if free < 0 || links[free].Voided {
 				conflicts = append(conflicts, i)
 				continue
 			}
-			if err := r.LinkExternalRecord(ctx, userID, m.TransactionID, m.RecordID); err != nil {
+			if err := r.LinkExternalRecord(ctx, userID, links[free].PostingID, m.RecordID); err != nil {
 				return err
 			}
 			if err := r.ClearPendingPostings(ctx, userID, m.TransactionID, m.AccountID); err != nil {

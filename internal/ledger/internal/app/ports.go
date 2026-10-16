@@ -302,11 +302,12 @@ type Repository interface {
 	TransactionByExternalRecord(ctx context.Context, userID int64, recordID uuid.UUID) (uuid.UUID, error)
 	// TransactionsByExternalRecords maps each record id that a transaction carries to it.
 	TransactionsByExternalRecords(ctx context.Context, userID int64, recordIDs []uuid.UUID) (map[uuid.UUID]uuid.UUID, error)
-	// LockTransactionLink locks the transaction and returns its external record and whether it is voided.
-	LockTransactionLink(ctx context.Context, userID int64, txID uuid.UUID) (recordID uuid.UUID, voided bool, err error)
+	// LockAccountPostingLinks locks the transaction and its postings on the account and
+	// returns them in position order.
+	LockAccountPostingLinks(ctx context.Context, userID int64, txID, accountID uuid.UUID) ([]PostingLink, error)
 	UnlinkedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]UnlinkedPosting, error)
-	// LinkExternalRecord returns ErrAlreadyMatched when another transaction carries the record.
-	LinkExternalRecord(ctx context.Context, userID int64, txID, recordID uuid.UUID) error
+	// LinkExternalRecord returns ErrAlreadyMatched when another posting carries the record.
+	LinkExternalRecord(ctx context.Context, userID int64, postingID, recordID uuid.UUID) error
 	ClearPendingPostings(ctx context.Context, userID int64, txID, accountID uuid.UUID) error
 
 	// BalanceAt sums the postings of the account and its descendants up to and including date.

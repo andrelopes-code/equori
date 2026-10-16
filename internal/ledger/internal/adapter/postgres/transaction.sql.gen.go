@@ -65,7 +65,7 @@ func (q *Queries) DeleteTransactionTags(ctx context.Context, transactionID uuid.
 }
 
 const getTransaction = `-- name: GetTransaction :one
-SELECT id, user_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at, external_record_id FROM ledger_transaction WHERE user_id = $1 AND id = $2
+SELECT id, user_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at FROM ledger_transaction WHERE user_id = $1 AND id = $2
 `
 
 type GetTransactionParams struct {
@@ -89,13 +89,12 @@ func (q *Queries) GetTransaction(ctx context.Context, arg GetTransactionParams) 
 		&i.VoidReason,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.ExternalRecordID,
 	)
 	return i, err
 }
 
 const getTransactionForUpdate = `-- name: GetTransactionForUpdate :one
-SELECT id, user_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at, external_record_id FROM ledger_transaction WHERE user_id = $1 AND id = $2 FOR UPDATE
+SELECT id, user_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at FROM ledger_transaction WHERE user_id = $1 AND id = $2 FOR UPDATE
 `
 
 type GetTransactionForUpdateParams struct {
@@ -119,7 +118,6 @@ func (q *Queries) GetTransactionForUpdate(ctx context.Context, arg GetTransactio
 		&i.VoidReason,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.ExternalRecordID,
 	)
 	return i, err
 }
@@ -146,9 +144,9 @@ func (q *Queries) InsertLink(ctx context.Context, arg InsertLinkParams) error {
 }
 
 const insertTransaction = `-- name: InsertTransaction :one
-INSERT INTO ledger_transaction (id, user_id, date, description, payee_id, balancing_currency, origin, version, external_record_id)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-RETURNING id, user_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at, external_record_id
+INSERT INTO ledger_transaction (id, user_id, date, description, payee_id, balancing_currency, origin, version)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+RETURNING id, user_id, date, description, payee_id, balancing_currency, origin, version, voided_at, void_reason, created_at, updated_at
 `
 
 type InsertTransactionParams struct {
@@ -160,7 +158,6 @@ type InsertTransactionParams struct {
 	BalancingCurrency string
 	Origin            string
 	Version           int32
-	ExternalRecordID  uuid.NullUUID
 }
 
 func (q *Queries) InsertTransaction(ctx context.Context, arg InsertTransactionParams) (LedgerTransaction, error) {
@@ -173,7 +170,6 @@ func (q *Queries) InsertTransaction(ctx context.Context, arg InsertTransactionPa
 		arg.BalancingCurrency,
 		arg.Origin,
 		arg.Version,
-		arg.ExternalRecordID,
 	)
 	var i LedgerTransaction
 	err := row.Scan(
@@ -189,7 +185,6 @@ func (q *Queries) InsertTransaction(ctx context.Context, arg InsertTransactionPa
 		&i.VoidReason,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.ExternalRecordID,
 	)
 	return i, err
 }
@@ -267,7 +262,7 @@ func (q *Queries) ListLinksFrom(ctx context.Context, arg ListLinksFromParams) ([
 }
 
 const listPostings = `-- name: ListPostings :many
-SELECT p.id, p.user_id, p.transaction_id, p.account_id, p.position, p.amount, p.weight, p.booked_on, p.settled_on, p.status, p.original_amount, p.original_instrument, p.memo, p.voided, p.statement_id, p.card_role, p.installment_plan_id, p.installment_number, p.installment_count, a.instrument AS account_instrument, t.balancing_currency, s.reference_month AS statement_reference
+SELECT p.id, p.user_id, p.transaction_id, p.account_id, p.position, p.amount, p.weight, p.booked_on, p.settled_on, p.status, p.original_amount, p.original_instrument, p.memo, p.voided, p.statement_id, p.card_role, p.installment_plan_id, p.installment_number, p.installment_count, p.external_record_id, a.instrument AS account_instrument, t.balancing_currency, s.reference_month AS statement_reference
 FROM ledger_posting p
 JOIN ledger_account a ON a.id = p.account_id
 JOIN ledger_transaction t ON t.id = p.transaction_id
@@ -301,6 +296,7 @@ type ListPostingsRow struct {
 	InstallmentPlanID  uuid.NullUUID
 	InstallmentNumber  *int16
 	InstallmentCount   *int16
+	ExternalRecordID   uuid.NullUUID
 	AccountInstrument  string
 	BalancingCurrency  string
 	StatementReference *time.Time
@@ -335,6 +331,7 @@ func (q *Queries) ListPostings(ctx context.Context, arg ListPostingsParams) ([]L
 			&i.InstallmentPlanID,
 			&i.InstallmentNumber,
 			&i.InstallmentCount,
+			&i.ExternalRecordID,
 			&i.AccountInstrument,
 			&i.BalancingCurrency,
 			&i.StatementReference,
@@ -388,7 +385,7 @@ func (q *Queries) ListTransactionTags(ctx context.Context, arg ListTransactionTa
 }
 
 const listTransactions = `-- name: ListTransactions :many
-SELECT t.id, t.user_id, t.date, t.description, t.payee_id, t.balancing_currency, t.origin, t.version, t.voided_at, t.void_reason, t.created_at, t.updated_at, t.external_record_id FROM ledger_transaction t
+SELECT t.id, t.user_id, t.date, t.description, t.payee_id, t.balancing_currency, t.origin, t.version, t.voided_at, t.void_reason, t.created_at, t.updated_at FROM ledger_transaction t
 WHERE t.user_id = $1
   AND ($2::uuid IS NULL OR EXISTS (
       SELECT 1 FROM ledger_posting p WHERE p.transaction_id = t.id AND p.account_id = $2::uuid))
@@ -456,7 +453,6 @@ func (q *Queries) ListTransactions(ctx context.Context, arg ListTransactionsPara
 			&i.VoidReason,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.ExternalRecordID,
 		); err != nil {
 			return nil, err
 		}

@@ -75,6 +75,8 @@ type Posting struct {
 	StatementID uuid.UUID
 	CardRole    string
 	Installment *InstallmentRef
+	// ExternalRecordID is the imported record this posting confirms (P5b amendment A27).
+	ExternalRecordID uuid.UUID
 }
 
 // InstallmentRef places a card posting in an installment plan ("3/12").
@@ -95,7 +97,6 @@ type Transaction struct {
 	Version           int
 	VoidedAt          *time.Time
 	VoidReason        string
-	ExternalRecordID  uuid.UUID // the import record it was created from or matched to (P4 amendment A11)
 	Postings          []Posting
 	Tags              []string
 	Links             []Link
@@ -247,10 +248,32 @@ func (t Transaction) Correct(next Transaction, expectedVersion int, accounts map
 	next.ID = t.ID
 	next.UserID = t.UserID
 	next.Version = t.Version + 1
+	postings, err := keepRecordLinks(t.Postings, next.Postings)
+	if err != nil {
+		return Transaction{}, err
+	}
+	next.Postings = postings
 	if next.Origin == "" {
 		next.Origin = t.Origin
 	}
 	return NewTransaction(next, accounts)
+}
+
+// keepRecordLinks moves each record link of prev to the first posting of next on the same
+// account (P5b amendment A27).
+func keepRecordLinks(prev, next []Posting) ([]Posting, error) {
+	next = slices.Clone(next)
+	for _, p := range prev {
+		if p.ExternalRecordID == uuid.Nil {
+			continue
+		}
+		i := slices.IndexFunc(next, func(n Posting) bool { return n.AccountID == p.AccountID && n.ExternalRecordID == uuid.Nil })
+		if i < 0 {
+			return nil, invalid("postings", "must keep a posting on account "+p.AccountID.String()+", which an imported record confirms")
+		}
+		next[i].ExternalRecordID = p.ExternalRecordID
+	}
+	return next, nil
 }
 
 func (t Transaction) Void(at time.Time, reason string) (Transaction, error) {

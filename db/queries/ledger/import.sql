@@ -1,19 +1,21 @@
 -- name: GetTransactionIDByExternalRecord :one
-SELECT id FROM ledger_transaction WHERE user_id = $1 AND external_record_id = $2;
+SELECT transaction_id FROM ledger_posting WHERE user_id = $1 AND external_record_id = $2;
 
 -- name: ListUnlinkedPostings :many
--- Postings of the account in the window whose transaction carries no external record and
--- is not voided: what statement lines may confirm (I07).
-SELECT t.id AS transaction_id, p.booked_on, p.amount
-FROM ledger_posting p
-JOIN ledger_transaction t ON t.id = p.transaction_id
-WHERE p.user_id = @user_id AND p.account_id = @account_id AND NOT p.voided
-  AND t.external_record_id IS NULL
-  AND p.booked_on BETWEEN @from_date::date AND @to_date::date
-ORDER BY p.booked_on, t.id;
+-- The first unlinked posting of each non-voided transaction on the account in the window:
+-- what statement lines may confirm (I07, P5b amendment A27).
+SELECT u.transaction_id, u.booked_on, u.amount FROM (
+    SELECT DISTINCT ON (p.transaction_id) p.transaction_id, p.booked_on, p.amount
+    FROM ledger_posting p
+    WHERE p.user_id = @user_id AND p.account_id = @account_id AND NOT p.voided
+      AND p.external_record_id IS NULL
+      AND p.booked_on BETWEEN @from_date::date AND @to_date::date
+    ORDER BY p.transaction_id, p.position
+) u
+ORDER BY u.booked_on, u.transaction_id;
 
 -- name: LinkExternalRecord :exec
-UPDATE ledger_transaction SET external_record_id = @external_record_id, updated_at = now()
+UPDATE ledger_posting SET external_record_id = @external_record_id
 WHERE user_id = @user_id AND id = @id;
 
 -- name: ClearPendingPostings :exec
@@ -21,10 +23,14 @@ UPDATE ledger_posting SET status = 'cleared'
 WHERE user_id = @user_id AND transaction_id = @transaction_id AND account_id = @account_id AND status = 'pending';
 
 -- name: ListTransactionsByExternalRecords :many
-SELECT external_record_id, id FROM ledger_transaction
+SELECT external_record_id::uuid AS external_record_id, transaction_id FROM ledger_posting
 WHERE user_id = @user_id AND external_record_id = ANY(@record_ids::uuid[]);
 
--- name: GetTransactionLinkForUpdate :one
-SELECT external_record_id, (voided_at IS NOT NULL)::boolean AS voided FROM ledger_transaction
-WHERE user_id = $1 AND id = $2
-FOR UPDATE;
+-- name: LockAccountPostingLinks :many
+-- The transaction's postings on the account, locked with the transaction, in position order.
+SELECT p.id, p.external_record_id, (t.voided_at IS NOT NULL)::boolean AS voided
+FROM ledger_posting p
+JOIN ledger_transaction t ON t.id = p.transaction_id
+WHERE p.user_id = $1 AND p.transaction_id = $2 AND p.account_id = $3
+ORDER BY p.position
+FOR UPDATE OF p, t;

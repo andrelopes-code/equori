@@ -2,8 +2,8 @@
 SELECT count(*) FROM ledger_transaction WHERE user_id = $1;
 
 -- name: InsertTransaction :one
-INSERT INTO ledger_transaction (id, user_id, date, description, payee_id, balancing_currency, origin, version, external_record_id)
-VALUES (@id, @user_id, @date, @description, sqlc.narg(payee_id), @balancing_currency, @origin, @version, sqlc.narg(external_record_id))
+INSERT INTO ledger_transaction (id, user_id, date, description, payee_id, balancing_currency, origin, version)
+VALUES (@id, @user_id, @date, @description, sqlc.narg(payee_id), @balancing_currency, @origin, @version)
 RETURNING *;
 
 -- name: UpdateTransaction :exec
@@ -27,12 +27,12 @@ SELECT * FROM ledger_transaction WHERE user_id = $1 AND id = $2 FOR UPDATE;
 INSERT INTO ledger_posting (
     user_id, transaction_id, account_id, position, amount, weight, booked_on, settled_on,
     status, original_amount, original_instrument, memo,
-    statement_id, card_role, installment_plan_id, installment_number, installment_count
+    statement_id, card_role, installment_plan_id, installment_number, installment_count, external_record_id
 ) VALUES (
     @user_id, @transaction_id, @account_id, @position, @amount, @weight, @booked_on, sqlc.narg(settled_on),
     @status, sqlc.narg(original_amount), sqlc.narg(original_instrument), sqlc.narg(memo),
     sqlc.narg(statement_id), sqlc.narg(card_role), sqlc.narg(installment_plan_id),
-    sqlc.narg(installment_number), sqlc.narg(installment_count)
+    sqlc.narg(installment_number), sqlc.narg(installment_count), sqlc.narg(external_record_id)
 );
 
 -- name: DeletePostings :exec

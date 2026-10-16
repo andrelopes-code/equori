@@ -317,7 +317,6 @@ func (r *Repository) InsertTransactionRows(ctx context.Context, t domain.Transac
 	_, err := r.q.InsertTransaction(ctx, InsertTransactionParams{
 		ID: t.ID, UserID: t.UserID, Date: t.Date, Description: t.Description, PayeeID: nullUUID(t.PayeeID),
 		BalancingCurrency: string(t.BalancingCurrency), Origin: string(t.Origin), Version: int32(t.Version), //nolint:gosec // version is a small positive counter.
-		ExternalRecordID: nullUUID(t.ExternalRecordID),
 	})
 	if err != nil {
 		return referenceError(err)
@@ -424,7 +423,7 @@ func (r *Repository) insertPostings(ctx context.Context, t domain.Transaction, p
 			Status: string(p.Status), OriginalAmount: originalAmount(p.Original), OriginalInstrument: originalInstrument(p.Original),
 			Memo: nullString(p.Memo), StatementID: nullUUID(p.StatementID), CardRole: nullString(p.CardRole),
 			InstallmentPlanID: installmentPlan(p.Installment), InstallmentNumber: installmentNumber(p.Installment),
-			InstallmentCount: installmentCount(p.Installment),
+			InstallmentCount: installmentCount(p.Installment), ExternalRecordID: nullUUID(p.ExternalRecordID),
 		}
 	}
 	var postingErr error

@@ -22,12 +22,12 @@ const insertPostings = `-- name: InsertPostings :batchexec
 INSERT INTO ledger_posting (
     user_id, transaction_id, account_id, position, amount, weight, booked_on, settled_on,
     status, original_amount, original_instrument, memo,
-    statement_id, card_role, installment_plan_id, installment_number, installment_count
+    statement_id, card_role, installment_plan_id, installment_number, installment_count, external_record_id
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8,
     $9, $10, $11, $12,
     $13, $14, $15,
-    $16, $17
+    $16, $17, $18
 )
 `
 
@@ -55,6 +55,7 @@ type InsertPostingsParams struct {
 	InstallmentPlanID  uuid.NullUUID
 	InstallmentNumber  *int16
 	InstallmentCount   *int16
+	ExternalRecordID   uuid.NullUUID
 }
 
 // One round trip for all postings of a transaction.
@@ -79,6 +80,7 @@ func (q *Queries) InsertPostings(ctx context.Context, arg []InsertPostingsParams
 			a.InstallmentPlanID,
 			a.InstallmentNumber,
 			a.InstallmentCount,
+			a.ExternalRecordID,
 		}
 		batch.Queue(insertPostings, vals...)
 	}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log/slog"
+	"math"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
@@ -27,6 +28,11 @@ func Open(ctx context.Context, url string) (*pgxpool.Pool, error) {
 }
 
 func Migrate(ctx context.Context, pool *pgxpool.Pool, log *slog.Logger) error {
+	return MigrateTo(ctx, pool, math.MaxInt64, log)
+}
+
+// MigrateTo applies the migrations up to version; tests of data migrations stop before theirs.
+func MigrateTo(ctx context.Context, pool *pgxpool.Pool, version int64, log *slog.Logger) error {
 	dir, err := fs.Sub(db.Migrations, "migrations")
 	if err != nil {
 		return err
@@ -38,7 +44,7 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool, log *slog.Logger) error {
 	if err != nil {
 		return fmt.Errorf("create migration provider: %w", err)
 	}
-	results, err := provider.Up(ctx)
+	results, err := provider.UpTo(ctx, version)
 	if err != nil {
 		return fmt.Errorf("apply migrations: %w", err)
 	}

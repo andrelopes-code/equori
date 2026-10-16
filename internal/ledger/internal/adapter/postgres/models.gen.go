@@ -154,7 +154,6 @@ type LedgerTransaction struct {
 	VoidReason        *string
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
-	ExternalRecordID  uuid.NullUUID
 }
 
 type LedgerTransactionVersion struct {

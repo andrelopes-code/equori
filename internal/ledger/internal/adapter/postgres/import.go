@@ -23,8 +23,8 @@ func (r *Repository) UnlinkedPostings(ctx context.Context, userID int64, account
 	}), err
 }
 
-func (r *Repository) LinkExternalRecord(ctx context.Context, userID int64, txID, recordID uuid.UUID) error {
-	err := r.q.LinkExternalRecord(ctx, LinkExternalRecordParams{UserID: userID, ID: txID, ExternalRecordID: nullUUID(recordID)})
+func (r *Repository) LinkExternalRecord(ctx context.Context, userID int64, postingID, recordID uuid.UUID) error {
+	err := r.q.LinkExternalRecord(ctx, LinkExternalRecordParams{UserID: userID, ID: postingID, ExternalRecordID: nullUUID(recordID)})
 	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == uniqueViolation {
 		return app.ErrAlreadyMatched
 	}
@@ -42,15 +42,14 @@ func (r *Repository) TransactionsByExternalRecords(ctx context.Context, userID i
 	}
 	out := make(map[uuid.UUID]uuid.UUID, len(rows))
 	for _, row := range rows {
-		out[row.ExternalRecordID.UUID] = row.ID
+		out[row.ExternalRecordID] = row.TransactionID
 	}
 	return out, nil
 }
 
-func (r *Repository) LockTransactionLink(ctx context.Context, userID int64, txID uuid.UUID) (uuid.UUID, bool, error) {
-	row, err := r.q.GetTransactionLinkForUpdate(ctx, GetTransactionLinkForUpdateParams{UserID: userID, ID: txID})
-	if err != nil {
-		return uuid.Nil, false, notFound(err)
-	}
-	return row.ExternalRecordID.UUID, row.Voided, nil
+func (r *Repository) LockAccountPostingLinks(ctx context.Context, userID int64, txID, accountID uuid.UUID) ([]app.PostingLink, error) {
+	rows, err := r.q.LockAccountPostingLinks(ctx, LockAccountPostingLinksParams{UserID: userID, TransactionID: txID, AccountID: accountID})
+	return mapAll(rows, func(row LockAccountPostingLinksRow) app.PostingLink {
+		return app.PostingLink{PostingID: row.ID, RecordID: row.ExternalRecordID.UUID, Voided: row.Voided}
+	}), err
 }
