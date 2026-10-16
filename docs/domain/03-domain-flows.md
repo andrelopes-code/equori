@@ -173,7 +173,11 @@ flowchart LR
 | `ExternalRecordIgnored` | record, existing record | Same deduplication key already received and processed (SC2); counted on the batch, not stored. |
 | `ExternalRecordMatched` | record, transaction | An existing transaction on the same account, with the same amount, within a date window (default ±3 days) and not yet matched. The posting status becomes `cleared`. Ingestion chooses among the account's postings that no record confirms (5.7, Matcher); a record confirms one posting, on its own account, so one transfer carries the record of each side (P5b amendment A27); a candidate taken by an earlier line of the same file is excluded (I07). Ambiguous candidates go to review, where the owner matches, creates or discards (`ResolveMatch`). |
 | `TransactionRecorded` (from import) | as in F1, source = import | The account posting comes from the record; the other side is the system account `uncategorized_expense` for a negative amount and `uncategorized_income` for a positive one, and goes through F5. On a card account a negative amount is a `charge` and a positive one a `credit`, billed by T04 (P4 amendment A14). The transaction carries the external record id, so a repeated call returns it instead of a duplicate (A11). Pending card authorizations are recorded as `pending`. |
-| `BalanceAsserted` | account, date, amount, source | Created when the source reports a balance (OFX ledger balance, aggregator balance). Starts F6. A balance the ledger rejects (a future date, a date before the last reconciliation) is reported on the batch as skipped with the reason; the import still completes. |
+| `BalanceAsserted` | account, date, amount, source | Created when the source reports a balance (OFX ledger balance, aggregator balance). Starts F6. A balance the ledger rejects (a future date, a date before the last reconciliation) is reported on the batch as skipped with the reason; the import still completes. An aggregator balance holds at the date of the item's last update, is asserted again only when it changes, and never records yield (P6 amendment A42). |
+| `SyncConnection` | connection | Aggregator syncs (P6 amendments A34–A43): one batch with source `open_finance` per mapped external account; the window starts at the mapping's start date, then 30 days before the last synced date, and ends today; the deduplication key is the aggregator's line id. A scheduler syncs connections whose item has new data; an item that needs its owner (`LOGIN_ERROR`, `OUTDATED`, `WAITING_USER_INPUT`) is not synced. A line the ledger refuses waits for review. |
+| `ExternalRecordUpdated` | record, status, bill | A stored aggregator line whose status, bill or amount changed (A36): a posted line clears its posting; a card line with a bill moves to the statement due on the bill's due date, else to that date's month (A39). A reconciled posting and an amount change stay out of the ledger and are described on the record. |
+| `ExternalRecordWithdrawn` | record | An aggregator line missing from a later window that covers its date (A38): its posting is released and its transaction stays, so the line returned with a new id confirms it again. |
+| `InstallmentLineReceived` | record, installment k of n | A card line of an installment purchase (A40): the first line seen creates the ledger installment purchase from the statement k − 1 months before the line's; the others confirm their installments. A line of another amount, or of a reversed purchase, waits for review. |
 
 ## 3.7 F5 Categorization
 
@@ -181,7 +185,7 @@ flowchart LR
 flowchart LR
   E1[TransactionRecorded]:::event --> P1{{Apply rules<br/>by priority}}:::policy
   P1 -- rule matched --> E2[TransactionCategorized]:::event
-  P1 -- no rule --> P2{{Use source category<br/>or payee history}}:::policy
+  P1 -- no rule --> P2{{Use mapped source category,<br/>then payee history}}:::policy
   P2 -- found --> E2
   P2 -- none --> E3[TransactionNeedsReview]:::event
   O[Owner]:::actor --> C1[CategorizeTransaction]:::command --> E2

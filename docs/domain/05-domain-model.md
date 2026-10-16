@@ -397,19 +397,32 @@ classDiagram
 ```mermaid
 classDiagram
   direction LR
-  class Connection {
+  class Integration {
     <<aggregate>>
     id
     provider
-    externalItemId
-    credentialRef
-    status
-    lastSyncAt
+    name
+    sealedCredentials
   }
-  class AccountMapping {
-    <<value>>
+  class Connection {
+    <<aggregate>>
+    id
+    integration
+    externalItemId
+    providerStatus
+    lastItemUpdateAt
+    lastSyncedAt
+    lastError
+  }
+  class ExternalAccount {
+    <<entity>>
     externalAccountId
-    ledgerAccount
+    type, subtype, name
+    numberLast4
+    currency
+    mapping: ledgerAccount, syncFrom | ignored
+    lastSyncedOn
+    lastAssertedBalance
   }
   class ImportBatch {
     <<aggregate>>
@@ -444,7 +457,8 @@ classDiagram
     category
     balanceAfter
   }
-  Connection *-- AccountMapping
+  Integration "1" --> "*" Connection
+  Connection *-- ExternalAccount
   ImportBatch "1" --> "*" ExternalRecord
   ExternalRecord *-- NormalizedRecord
 ```
@@ -456,8 +470,12 @@ classDiagram
 | Matching | Ingestion reads the account's postings whose transaction is not voided and carries no external record, and keeps those with the record's amount within ±3 days; one candidate is matched, several go to review. |
 | CSV profile | Per account: delimiter, header rows, date column and layout, an amount column or debit and credit columns, decimal separator, description and id columns, amount sign (P4 amendment A13). |
 | Encoding | Bytes that are not valid UTF-8 are read as Windows-1252 (P4 amendment A15). |
-| States | `received`, `ignored` (duplicate), `matched`, `created`, `needs_review`, `discarded` (owner decision). |
-| Credentials | Stored encrypted; the encryption ADR precedes the first integration (ADR 003, "Not covered"). |
+| States | `received`, `ignored` (duplicate), `matched`, `created`, `needs_review`, `discarded` (owner decision), `withdrawn` (the aggregator stopped returning the line; P6 amendment A38). |
+| Credentials | An integration holds one aggregator application's client id and secret, sealed with AES-256-GCM under `EQUORI_SECRET_KEY` and bound to its row (ADR 008); a user may hold several (P6 amendment A34). An integration with connections cannot be deleted. |
+| Account mapping | An external account maps to one leaf balance account of its currency and a compatible kind (`CHECKING_ACCOUNT` to checking, `SAVINGS_ACCOUNT` to savings or reserve, `CREDIT_CARD` to credit_card) from a start date, or is ignored; one ledger account takes one external account (A35). Only the last four digits of the number are stored. |
+| Aggregator facts | An aggregator record keeps the line's status (`PENDING`, `POSTED`), bill due date, installment, category and balance after, to detect later changes (A36), and describes a change the ledger did not take (`unapplied_change`). |
+| Installment plan key | A card installment line belongs to the plan keyed by card, purchase date, installment count and description without the installment mark (A40). |
+| Isolation | Integrations, connections, mappings and API keys belong to one user; the same item may be connected by two users (A45). |
 
 ## 5.6 Portfolio and market data
 

@@ -410,7 +410,7 @@ An OFX credit card statement for Itaú Visa: −230.00 on 2026-10-14 is a `charg
 | M28 | S02 |
 | M29 | S31 |
 
-The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44; transfers from imports by S45–S50.
+The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44; transfers from imports by S45–S50; aggregator sync by S51–S59.
 
 ## 6.13 Classification
 
@@ -475,3 +475,43 @@ Rule "description contains `hotel`" → mark reimbursable to Receivable Employer
 ### S50 Transfer without counterpart
 
 `POST /transactions/{id}/transfer` to Savings on an imported checking line −500.00 without candidates gives checking −500.00, Savings +500.00; the transaction has no category postings left.
+
+## 6.15 Aggregator sync
+
+A fake Pluggy server serves the data; the clock is 2026-11-12. The owner's item Nubank has a checking account, a credit card and a savings account.
+
+### S51 Credentials, item and mapping
+
+The owner stores Pluggy credentials, which Pluggy validates (`POST /auth`), adds item "Nubank" and maps its checking account to Nubank checking from 2026-10-01 and its card to Itaú Visa; the savings account stays ignored.
+
+### S52 First sync of a bank account (SC2)
+
+The first sync of Nubank checking with the S32 lines (−45.90 matching a manual entry, −120.00, +3,000.00) and balance 2,834.10 creates one batch (received 3, matched 1, created 2) and an assertion that reconciles the account. Repeated syncs create no transaction and no assertion.
+
+### S53 Pending card charge posted on its bill
+
+A card line +230.00 `PENDING` without a bill becomes a `charge` of −230.00 with a `pending` posting billed by the cycle. The next sync returns it `POSTED` with a bill due 2026-12-10: the posting turns `cleared` on statement 2026-12 and the batch counts it as updated.
+
+### S54 Installments from the aggregator
+
+A card line 3/6 of 100.00 (purchase 2026-08-14, bill due 2026-11-10) creates an installment plan of six 100.00 installments, first statement 2026-09, and confirms installment 3; a later line 4/6 confirms installment 4 without a new transaction. The plan is the same whether the bank returns every installment at once, one a month or only the current one.
+
+### S55 Line returned with a new id
+
+A line returned with a new id after its old id disappeared confirms the existing transaction, also when the assertion of the first sync reconciled it; there is one transaction and the old record is `withdrawn`.
+
+### S56 Source category
+
+Pluggy category "Food Delivery" mapped to Food › Delivery categorizes a line without a matching rule; its method is `source`. A rule still wins over the mapped category.
+
+### S57 Blocked item and rejected credentials
+
+An item in `LOGIN_ERROR` is not synced; the connection reports the status and no batch is created. Wrong credentials return 422 `provider_unauthorized` on `client_secret` and store nothing.
+
+### S58 Two users
+
+Two users with their own credentials and items sync on the same scheduler tick: each ledger receives only its own lines, and neither user can read, map or sync the other's connection (404). The same item id may be connected by both.
+
+### S59 Two integrations of one user
+
+One user holds two integrations, "Meu Pluggy 1" with five items and "Meu Pluggy 2" with three; each connection syncs with its own integration's API key, and a wrong secret on one integration leaves the other syncing.

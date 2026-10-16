@@ -89,11 +89,11 @@ Card statements and installment plans stay in Ledger: recording a card purchase 
 
 | Item | Content |
 |---|---|
-| Responsibility | Sources, aggregator connections and their credentials, import batches, external records, deduplication keys, matching candidates, review queue for ambiguous matches. |
+| Responsibility | Sources, aggregator integrations (credentials sealed per ADR 008) and connections, external accounts and their mapping, import batches, external records, deduplication keys, matching candidates, review queue, the sync scheduler, installment plan keys of aggregator lines. |
 | Invariants | I07 (external record side), I10. |
-| Commands | `ImportFile`, `SyncConnection`, `ConnectAggregator`, `ResolveMatch`. |
+| Commands | `ImportFile`, `CreateIntegration`, `CreateConnection`, `MapExternalAccount`, `SyncConnection`, `ResolveMatch`, `RotateSecrets`. |
 | Events published | `ImportBatchCompleted`, `ExternalRecordNeedsReview`. |
-| Calls | Ledger `RecordTransaction`, `RecordCardPurchase`, `AssertBalance`, match commands; Classification `DecideImport` before recording created lines. |
+| Calls | Ledger `RecordImported`, `ClearMatched`, `AssertBalance`, `AssertSyncedBalance`, `UpdateImportedPosting`, `ReleaseRecord`, `RecordImportedInstallment`, `LinkInstallment`; Classification `DecideImport` before recording created lines, with the line's source category. Pluggy through an anti-corruption layer, at the configured base URL only (N17). |
 
 ### 4.3.4 Planning
 

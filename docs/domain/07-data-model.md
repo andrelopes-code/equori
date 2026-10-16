@@ -150,9 +150,11 @@ erDiagram
   classification_categorization ||--|| ledger_transaction : describes
   classification_payee_alias }o--|| ledger_payee : maps
   classification_suggestion }o--o| classification_rule : "accepted as"
+  classification_source_category }o--o| ledger_account : "maps to"
 
-  ingestion_connection ||--o{ ingestion_account_mapping : maps
-  ingestion_account_mapping }o--|| ledger_account : "to"
+  ingestion_integration ||--o{ ingestion_connection : reads
+  ingestion_connection ||--o{ ingestion_external_account : lists
+  ingestion_external_account }o--o| ledger_account : "maps to"
   ingestion_batch ||--o{ ingestion_external_record : contains
   ingestion_external_record }o--o| ledger_transaction : "matched or created"
 ```
@@ -168,12 +170,15 @@ erDiagram
 | `classification_rule` | `id`, `user_id`, `name`, `priority`, `enabled`, `stop_processing`, `conditions jsonb`, `actions jsonb`, `schema_version` | `UNIQUE (user_id, priority)`, deferrable for reordering |
 | `classification_payee_alias` | `id`, `user_id`, `pattern`, `match_type`, `payee_id` | `UNIQUE (user_id, match_type, pattern)` |
 | `classification_suggestion` | `id`, `user_id`, `fingerprint`, `conditions jsonb`, `actions jsonb`, `example_transaction_ids uuid[]`, `state`, `rule_id`, `created_at`, `decided_at` | `UNIQUE (user_id, fingerprint)` (P5 amendment A24); `rule_id` only when `accepted` |
+| `classification_source_category` | `id`, `user_id`, `provider`, `external_id`, `name`, `seen_count`, `category_id` | `UNIQUE (user_id, provider, external_id)`; `category_id` is an account of the same user (P6 A41) |
 | `classification_categorization` | `transaction_id`, `user_id`, `transaction_version`, `transaction_date`, `method`, `rule_id`, `corrected`, `match_key`, `category_id`, `voided`, `decided_at` | `PRIMARY KEY (transaction_id)` (SC5); `method` NULL while uncategorized; a row changes only for a higher `transaction_version` (P5 amendment A20) |
-| `ingestion_connection` | `id`, `user_id`, `provider`, `external_item_id`, `credential_ciphertext bytea`, `status`, `last_sync_at` | Encryption per future ADR |
-| `ingestion_account_mapping` | `connection_id`, `external_account_id`, `account_id` | `UNIQUE (connection_id, external_account_id)` |
+| `ingestion_integration` | `id`, `user_id`, `provider`, `name`, `credential_ciphertext bytea`, `updated_at` | `UNIQUE (user_id, name)`; ciphertext sealed per ADR 008 with table, user and id as associated data (P6 A33, A34) |
+| `ingestion_connection` | `id`, `user_id`, `integration_id`, `external_item_id`, `name`, `provider_status`, `last_item_update_at`, `last_synced_at`, `last_error`, `created_at` | `UNIQUE (user_id, integration_id, external_item_id)`; the integration is `ON DELETE RESTRICT` |
+| `ingestion_external_account` | `id`, `user_id`, `connection_id`, `external_account_id`, `type`, `subtype`, `name`, `number_last4`, `currency`, `account_id`, `sync_from`, `ignored`, `last_synced_on`, `balance_on`, `balance_amount` | `UNIQUE (connection_id, external_account_id)`; `UNIQUE (user_id, account_id)` (one feed per ledger account); a mapped account has `sync_from`; an ignored one has no account (A35) |
+| `ingestion_installment_plan` | `user_id`, `account_id`, `plan_key`, `plan_id` | Primary key `(user_id, plan_key)`; `plan_id` references `ledger_installment_plan` (A40) |
 | `ingestion_csv_profile` | `account_id`, `user_id`, `delimiter`, `header_rows`, `date_column`, `date_layout`, `amount_column`, `debit_column`, `credit_column`, `decimal_separator`, `description_column`, `id_column`, `amount_sign` | One amount layout: `amount_column` or (`debit_column`, `credit_column`) |
-| `ingestion_batch` | `id`, `user_id`, `source`, `connection_id`, `account_id`, `file_name`, `currency`, `period_from`, `period_to`, `received`, `ignored`, `matched`, `created`, `needs_review`, `discarded`, `balance_date`, `balance_amount`, `balance_status`, `balance_reason`, `started_at`, `completed_at` | `connection_id` arrives with P6 |
-| `ingestion_external_record` | `id`, `user_id`, `batch_id`, `account_id`, `external_id`, `dedup_key`, `raw jsonb`, `booked_on`, `amount`, `description`, `state`, `transaction_id`, `candidates uuid[]` | `UNIQUE (user_id, dedup_key)` (I10); `UNIQUE (user_id, transaction_id, account_id) WHERE transaction_id IS NOT NULL` (I07, P5b amendment A27); `transaction_id` follows `ledger.transactions_paired.v1` (A32); `transaction_id` set exactly in states `matched` and `created`. Duplicates are counted on their batch, never stored. Aggregator fields (`settled_on`, installments, statement hint, source category, balance after) arrive with P6. |
+| `ingestion_batch` | `id`, `user_id`, `source`, `external_account_id`, `account_id`, `file_name`, `currency`, `period_from`, `period_to`, `received`, `ignored`, `matched`, `created`, `needs_review`, `discarded`, `updated`, `withdrawn`, `balance_date`, `balance_amount`, `balance_status`, `balance_reason`, `started_at`, `completed_at` | Source `ofx`, `csv` or `open_finance`; a file batch has a file name and no external account, a sync the reverse (A36) |
+| `ingestion_external_record` | `id`, `user_id`, `batch_id`, `account_id`, `external_id`, `dedup_key`, `raw jsonb`, `booked_on`, `amount`, `description`, `state`, `transaction_id`, `candidates uuid[]` | `UNIQUE (user_id, dedup_key)` (I10); `UNIQUE (user_id, transaction_id, account_id) WHERE transaction_id IS NOT NULL` (I07, P5b amendment A27); `transaction_id` follows `ledger.transactions_paired.v1` (A32); `transaction_id` set exactly in states `matched` and `created`. Duplicates are counted on their batch, never stored. Aggregator columns: `external_status`, `due_date`, `installment_number`, `installment_count`, `category_id`, `balance_after`, `unapplied_change`; state `withdrawn` (A36, A38); installment lines are exempt from the I07 index, one record per posting still holds. |
 
 ## 7.4 Market data, Portfolio, Reporting and infrastructure
 
@@ -212,7 +217,7 @@ erDiagram
 | I01 Weights sum to zero | Deferred constraint trigger on `ledger_posting`, checked at commit per touched transaction, ignoring voided transactions. |
 | I02 At least two postings | Same trigger. |
 | I03, I04 Statement only on card postings | Trigger: `statement_id` set if and only if the account kind is `credit_card`, and the statement belongs to the same account. |
-| I05 Immutable postings | Trigger rejects `UPDATE` and `DELETE` of a posting whose status is `reconciled`, except the void copy; an explicit unlock (P3) sets `equori.unlock_reconciled`. Corrections of such transactions go through new transactions. |
+| I05 Immutable postings | Trigger rejects `UPDATE` and `DELETE` of a posting whose status is `reconciled`, except the void copy and a change of its external record link (P6 A38); an explicit unlock (P3) sets `equori.unlock_reconciled`. Corrections of such transactions go through new transactions. |
 | I06 Refund ceiling | Domain check inside the database transaction that locks the origin plan row (`SELECT ... FOR UPDATE`). |
 | I07 One match per occurrence and record | Partial unique indexes (7.3); `ledger_posting.external_record_id` unique per user: a record confirms one posting (P5b amendment A27). |
 | I08 No overlapping versions | `UNIQUE (subject_id, effective_from)` and the "latest effective_from" rule; exclusion constraint for pause periods. |

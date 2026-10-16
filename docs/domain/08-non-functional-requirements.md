@@ -44,9 +44,9 @@ Every requirement has a measurable criterion and a verification method. Performa
 | ID | Requirement | Verification |
 |---|---|---|
 | N14 | Authentication and session rules of ADR 003. | Identity tests |
-| N15 | Aggregator credentials are encrypted at rest with a key outside the database (ADR before the first integration). | ADR and test |
-| N16 | Logs never contain passwords, session tokens, credentials or full account numbers. | Log tests on login, import and sync |
-| N17 | No telemetry. The application contacts only configured integrations and price feeds. | Network allowlist test in the container |
+| N15 | Aggregator credentials are encrypted at rest with a key outside the database (ADR 008). | `internal/platform/secret` tests; `TestConnectItemAndMapAccounts` (no credential in clear in the database); `TestCredentialsBoundToTheirRow`; `TestSecretRotation` |
+| N16 | Logs never contain passwords, session tokens, credentials or full account numbers. | Log tests on login and import; P6 log captures with no client secret, API key, item id or account number (`TestConnectItemAndMapAccounts`, `TestIntegrationCredentials`, `TestTwoIntegrations`, `TestTickWithTwoIntegrations`); `TestClientErrorsCarryNoIdentifiers` |
+| N17 | No telemetry. The application contacts only configured integrations and price feeds. | `TestClientRefusesForeignCursor` (Pluggy requests stay on the configured base URL); network allowlist test in the container |
 | N18 | Dependencies scanned on every CI run and updated weekly. | `govulncheck`, Dependabot |
 
 ## 8.6 Auditability
