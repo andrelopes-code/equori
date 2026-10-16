@@ -173,7 +173,7 @@ erDiagram
 | `ingestion_account_mapping` | `connection_id`, `external_account_id`, `account_id` | `UNIQUE (connection_id, external_account_id)` |
 | `ingestion_csv_profile` | `account_id`, `user_id`, `delimiter`, `header_rows`, `date_column`, `date_layout`, `amount_column`, `debit_column`, `credit_column`, `decimal_separator`, `description_column`, `id_column`, `amount_sign` | One amount layout: `amount_column` or (`debit_column`, `credit_column`) |
 | `ingestion_batch` | `id`, `user_id`, `source`, `connection_id`, `account_id`, `file_name`, `currency`, `period_from`, `period_to`, `received`, `ignored`, `matched`, `created`, `needs_review`, `discarded`, `balance_date`, `balance_amount`, `balance_status`, `balance_reason`, `started_at`, `completed_at` | `connection_id` arrives with P6 |
-| `ingestion_external_record` | `id`, `user_id`, `batch_id`, `account_id`, `external_id`, `dedup_key`, `raw jsonb`, `booked_on`, `amount`, `description`, `state`, `transaction_id`, `candidates uuid[]` | `UNIQUE (user_id, dedup_key)` (I10); `UNIQUE (user_id, transaction_id) WHERE transaction_id IS NOT NULL` (I07); `transaction_id` set exactly in states `matched` and `created`. Duplicates are counted on their batch, never stored. Aggregator fields (`settled_on`, installments, statement hint, source category, balance after) arrive with P6. |
+| `ingestion_external_record` | `id`, `user_id`, `batch_id`, `account_id`, `external_id`, `dedup_key`, `raw jsonb`, `booked_on`, `amount`, `description`, `state`, `transaction_id`, `candidates uuid[]` | `UNIQUE (user_id, dedup_key)` (I10); `UNIQUE (user_id, transaction_id, account_id) WHERE transaction_id IS NOT NULL` (I07, P5b amendment A27); `transaction_id` follows `ledger.transactions_paired.v1` (A32); `transaction_id` set exactly in states `matched` and `created`. Duplicates are counted on their batch, never stored. Aggregator fields (`settled_on`, installments, statement hint, source category, balance after) arrive with P6. |
 
 ## 7.4 Market data, Portfolio, Reporting and infrastructure
 
@@ -214,7 +214,7 @@ erDiagram
 | I03, I04 Statement only on card postings | Trigger: `statement_id` set if and only if the account kind is `credit_card`, and the statement belongs to the same account. |
 | I05 Immutable postings | Trigger rejects `UPDATE` and `DELETE` of a posting whose status is `reconciled`, except the void copy; an explicit unlock (P3) sets `equori.unlock_reconciled`. Corrections of such transactions go through new transactions. |
 | I06 Refund ceiling | Domain check inside the database transaction that locks the origin plan row (`SELECT ... FOR UPDATE`). |
-| I07 One match per occurrence and record | Partial unique indexes (7.3). |
+| I07 One match per occurrence and record | Partial unique indexes (7.3); `ledger_posting.external_record_id` unique per user: a record confirms one posting (P5b amendment A27). |
 | I08 No overlapping versions | `UNIQUE (subject_id, effective_from)` and the "latest effective_from" rule; exclusion constraint for pause periods. |
 | I09 Account open on the date | Trigger compares `booked_on` with `opened_on` and `closed_on`. |
 | I10 Unique deduplication key | `UNIQUE (user_id, dedup_key)`. |
