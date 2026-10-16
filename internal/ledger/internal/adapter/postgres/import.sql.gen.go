@@ -28,6 +28,27 @@ func (q *Queries) ClearPendingPostings(ctx context.Context, arg ClearPendingPost
 	return err
 }
 
+const getRecordPosting = `-- name: GetRecordPosting :one
+SELECT transaction_id, installment_plan_id FROM ledger_posting WHERE user_id = $1 AND external_record_id = $2
+`
+
+type GetRecordPostingParams struct {
+	UserID           int64
+	ExternalRecordID uuid.NullUUID
+}
+
+type GetRecordPostingRow struct {
+	TransactionID     uuid.UUID
+	InstallmentPlanID uuid.NullUUID
+}
+
+func (q *Queries) GetRecordPosting(ctx context.Context, arg GetRecordPostingParams) (GetRecordPostingRow, error) {
+	row := q.db.QueryRow(ctx, getRecordPosting, arg.UserID, arg.ExternalRecordID)
+	var i GetRecordPostingRow
+	err := row.Scan(&i.TransactionID, &i.InstallmentPlanID)
+	return i, err
+}
+
 const getTransactionIDByExternalRecord = `-- name: GetTransactionIDByExternalRecord :one
 SELECT transaction_id FROM ledger_posting WHERE user_id = $1 AND external_record_id = $2
 `

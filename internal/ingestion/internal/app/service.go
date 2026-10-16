@@ -76,6 +76,9 @@ type Repository interface {
 	MarkAccountSynced(ctx context.Context, a domain.ExternalAccount) error
 	// SaveConnectionState stores the connection's provider status, item update, last sync and error.
 	SaveConnectionState(ctx context.Context, c domain.Connection) error
+	// InstallmentPlans returns the ledger plans of the keys that have one, by key.
+	InstallmentPlans(ctx context.Context, userID int64, keys [][]byte) (map[string]uuid.UUID, error)
+	SaveInstallmentPlan(ctx context.Context, userID int64, accountID uuid.UUID, key []byte, planID uuid.UUID) error
 	// AllConnections lists every user's connections, for the scheduler.
 	AllConnections(ctx context.Context) ([]ConnectionRef, error)
 }

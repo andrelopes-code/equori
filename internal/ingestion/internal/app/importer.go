@@ -32,6 +32,8 @@ var (
 	ErrBalanceRejected = errors.New("the ledger rejected the balance")
 	// ErrReconciled: the posting is reconciled and keeps its state.
 	ErrReconciled = errors.New("the posting is reconciled")
+	// ErrInstallmentRefused: the ledger cannot place the line in its installment purchase.
+	ErrInstallmentRefused = errors.New("the ledger refused the installment line")
 )
 
 // Line is a statement line as the ledger receives it.
@@ -94,6 +96,20 @@ type Ledger interface {
 	UpdateImportedPosting(ctx context.Context, userID int64, recordID uuid.UUID, pending bool, dueDate *time.Time) error
 	// ReleaseRecord unlinks a withdrawn record from its posting (A38).
 	ReleaseRecord(ctx context.Context, userID int64, recordID uuid.UUID) error
+	// RecordInstallment creates the installment purchase of the first line seen of it and
+	// returns its transaction and plan (A40); a refused line wraps ErrInstallmentRefused.
+	RecordInstallment(ctx context.Context, userID int64, l InstallmentLine) (txID, planID uuid.UUID, err error)
+	// LinkInstallment links a line to installment number of a plan and returns its
+	// transaction; ErrInstallmentRefused when the installment is gone, reversed, of another
+	// amount or confirmed by another line.
+	LinkInstallment(ctx context.Context, userID int64, recordID, planID uuid.UUID, number int, l Line) (uuid.UUID, error)
+}
+
+// InstallmentLine is an aggregator card line that belongs to an installment purchase.
+type InstallmentLine struct {
+	RecordID    uuid.UUID
+	Line        Line
+	Installment domain.Installment
 }
 
 type ImportFile struct {
@@ -228,6 +244,7 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 		matches []Match
 		matched []*domain.ExternalRecord
 		taken   = map[uuid.UUID]bool{} // transactions matched by an earlier line of this batch (I07)
+		parts   []InstallmentLine
 	)
 	for i := range claimed {
 		rec := &claimed[i].Record
@@ -248,6 +265,11 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 		pending = append(pending, rec)
 		r := lines[i]
 		line := Line{AccountID: rec.AccountID, Currency: currency, Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description), Pending: r.Pending, DueDate: r.DueDate}
+		if sync && r.Installment != nil && r.Amount < 0 {
+			// A40: the line goes to its installment purchase; a resumed one finds its own link.
+			parts = append(parts, InstallmentLine{RecordID: rec.ID, Line: line, Installment: *r.Installment})
+			continue
+		}
 		if claimed[i].Existed {
 			done, err := s.resume(ctx, rec)
 			if err != nil {
@@ -281,6 +303,9 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 		}
 	}
 	if err := s.create(ctx, batch.UserID, sync, creates, created); err != nil {
+		return err
+	}
+	if err := s.installments(ctx, batch, parts, pending); err != nil {
 		return err
 	}
 

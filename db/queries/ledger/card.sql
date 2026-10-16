@@ -110,3 +110,15 @@ RETURNING *;
 
 -- name: GetStatementByDueDate :one
 SELECT reference_month FROM ledger_statement WHERE user_id = @user_id AND account_id = @account_id AND due_date = @due_date;
+
+-- name: LockPlanInstallment :one
+-- P6 A40: installment k of a plan and whether the purchase was voided, refunded or cancelled.
+SELECT p.id, p.amount, p.external_record_id, p.transaction_id,
+    (t.voided_at IS NOT NULL OR EXISTS (
+        SELECT 1 FROM ledger_link l WHERE l.user_id = t.user_id AND l.to_transaction_id = t.id
+          AND l.link_type IN ('refund_of', 'cancellation_of'))) AS reversed
+FROM ledger_installment_plan pl
+JOIN ledger_posting p ON p.installment_plan_id = pl.id AND p.installment_number = @number AND p.card_role = 'charge'
+JOIN ledger_transaction t ON t.id = p.transaction_id
+WHERE pl.user_id = @user_id AND pl.id = @plan_id
+FOR UPDATE OF p;

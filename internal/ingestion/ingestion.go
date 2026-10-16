@@ -229,6 +229,41 @@ func (p ledgerPort) UpdateImportedPosting(ctx context.Context, userID int64, rec
 	return p.translate(p.l.UpdateImportedPosting(ctx, userID, recordID, ledger.ImportedUpdate{Pending: pending, DueDate: dueDate}))
 }
 
+func (p ledgerPort) RecordInstallment(ctx context.Context, userID int64, l app.InstallmentLine) (uuid.UUID, uuid.UUID, error) {
+	posting, err := p.posting(l.Line)
+	if err != nil {
+		return uuid.Nil, uuid.Nil, err
+	}
+	decisions, err := p.c.DecideImport(ctx, userID, []classification.ImportLine{{AccountID: posting.AccountID, Date: posting.Date, Amount: posting.Amount, Description: posting.Description}})
+	if err != nil {
+		return uuid.Nil, uuid.Nil, err
+	}
+	txID, planID, err := p.l.RecordImportedInstallment(ctx, userID, ledger.ImportedInstallment{
+		RecordID: l.RecordID, CardAccountID: posting.AccountID, PurchaseDate: l.Installment.PurchaseDate, LineDate: posting.Date,
+		DueDate: l.Line.DueDate, Description: posting.Description, Number: l.Installment.Number, Count: l.Installment.Count,
+		Amount: posting.Amount.Neg(), Decision: decisions[0],
+	})
+	return txID, planID, p.installmentError(err)
+}
+
+func (p ledgerPort) LinkInstallment(ctx context.Context, userID int64, recordID, planID uuid.UUID, number int, l app.Line) (uuid.UUID, error) {
+	posting, err := p.posting(l)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	txID, err := p.l.LinkInstallment(ctx, userID, recordID, planID, number, posting.Amount.Neg())
+	return txID, p.installmentError(err)
+}
+
+func (p ledgerPort) installmentError(err error) error {
+	for _, refused := range []error{ledger.ErrInstallmentUnavailable, ledger.ErrAmountMismatch, ledger.ErrAlreadyMatched, ledger.ErrValidation} {
+		if errors.Is(err, refused) {
+			return fmt.Errorf("%w: %w", app.ErrInstallmentRefused, err)
+		}
+	}
+	return p.translate(err)
+}
+
 func (p ledgerPort) ReleaseRecord(ctx context.Context, userID int64, recordID uuid.UUID) error {
 	return p.translate(p.l.ReleaseRecord(ctx, userID, recordID))
 }

@@ -22,6 +22,10 @@ type InstallmentPurchaseInput struct {
 	Interest       *money.Money
 	FirstStatement *domain.ReferenceMonth
 	Amounts        []money.Money // issuer amounts, overriding the DM3 split
+	Origin         domain.Origin // manual when empty
+	// Record links an external record to installment RecordNumber (P6 A40).
+	Record       uuid.UUID
+	RecordNumber int
 }
 
 const maxInstallments = 420
@@ -74,13 +78,18 @@ func (s *Service) InstallmentPurchase(ctx context.Context, userID int64, in Inst
 		}
 		for k, part := range parts {
 			ref := domain.InstallmentStatement(first, k+1)
-			postings = append(postings, domain.Posting{
+			p := domain.Posting{
 				AccountID: card.ID, Amount: part.Neg(), CardRole: domain.RoleCharge, Statement: &ref,
 				Installment: &domain.InstallmentRef{PlanID: planID, Number: k + 1, Count: in.Count},
-			})
+			}
+			if k+1 == in.RecordNumber {
+				p.ExternalRecordID = in.Record
+			}
+			postings = append(postings, p)
 		}
 		created, err = s.insert(ctx, r, domain.Transaction{
 			UserID: userID, Date: in.Date, Description: in.Description, PayeeID: in.PayeeID, Tags: in.Tags, Postings: postings,
+			Origin: in.Origin,
 		})
 		if err != nil {
 			return err

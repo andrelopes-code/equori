@@ -314,6 +314,11 @@ type Repository interface {
 	// SettleImportedPosting sets the posting's status and, when statementID is not nil, its statement.
 	SettleImportedPosting(ctx context.Context, userID int64, postingID uuid.UUID, status domain.PostingStatus, statementID uuid.UUID) error
 	ReleaseExternalRecord(ctx context.Context, userID int64, recordID uuid.UUID) error
+	// RecordPosting returns the transaction and the installment plan of the posting an
+	// external record confirms; ErrNotFound when none.
+	RecordPosting(ctx context.Context, userID int64, recordID uuid.UUID) (txID, planID uuid.UUID, err error)
+	// LockPlanInstallment returns installment number of the plan; ErrNotFound when none.
+	LockPlanInstallment(ctx context.Context, userID int64, planID uuid.UUID, number int) (PlanInstallmentState, error)
 	// StatementByDueDate returns the card statement due on the date; ErrNotFound when none.
 	StatementByDueDate(ctx context.Context, userID int64, accountID uuid.UUID, due time.Time) (domain.ReferenceMonth, error)
 	// PairingCandidates returns the ids that pair with a transfer, by date then id (P5b amendment A29).

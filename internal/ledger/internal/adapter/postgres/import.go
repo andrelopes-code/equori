@@ -52,6 +52,25 @@ func (r *Repository) ReleaseExternalRecord(ctx context.Context, userID int64, re
 	return r.q.ReleaseExternalRecord(ctx, ReleaseExternalRecordParams{UserID: userID, ExternalRecordID: nullUUID(recordID)})
 }
 
+func (r *Repository) RecordPosting(ctx context.Context, userID int64, recordID uuid.UUID) (uuid.UUID, uuid.UUID, error) {
+	row, err := r.q.GetRecordPosting(ctx, GetRecordPostingParams{UserID: userID, ExternalRecordID: nullUUID(recordID)})
+	if err != nil {
+		return uuid.Nil, uuid.Nil, notFound(err)
+	}
+	return row.TransactionID, row.InstallmentPlanID.UUID, nil
+}
+
+func (r *Repository) LockPlanInstallment(ctx context.Context, userID int64, planID uuid.UUID, number int) (app.PlanInstallmentState, error) {
+	row, err := r.q.LockPlanInstallment(ctx, LockPlanInstallmentParams{UserID: userID, PlanID: planID, Number: installmentNumber(&domain.InstallmentRef{Number: number})})
+	if err != nil {
+		return app.PlanInstallmentState{}, notFound(err)
+	}
+	return app.PlanInstallmentState{
+		PostingID: row.ID, TransactionID: row.TransactionID, Amount: row.Amount,
+		RecordID: row.ExternalRecordID.UUID, Reversed: row.Reversed != nil && *row.Reversed,
+	}, nil
+}
+
 func (r *Repository) StatementByDueDate(ctx context.Context, userID int64, accountID uuid.UUID, due time.Time) (domain.ReferenceMonth, error) {
 	first, err := r.q.GetStatementByDueDate(ctx, GetStatementByDueDateParams{UserID: userID, AccountID: accountID, DueDate: due})
 	if err != nil {

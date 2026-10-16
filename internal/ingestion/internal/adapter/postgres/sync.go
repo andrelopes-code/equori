@@ -98,3 +98,19 @@ func (r *Repository) AllConnections(ctx context.Context) ([]app.ConnectionRef, e
 	}
 	return out, nil
 }
+
+func (r *Repository) InstallmentPlans(ctx context.Context, userID int64, keys [][]byte) (map[string]uuid.UUID, error) {
+	rows, err := r.q.ListInstallmentPlans(ctx, ListInstallmentPlansParams{UserID: userID, Keys: keys})
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]uuid.UUID, len(rows))
+	for _, row := range rows {
+		out[string(row.PlanKey)] = row.PlanID
+	}
+	return out, nil
+}
+
+func (r *Repository) SaveInstallmentPlan(ctx context.Context, userID int64, accountID uuid.UUID, key []byte, planID uuid.UUID) error {
+	return r.q.SaveInstallmentPlan(ctx, SaveInstallmentPlanParams{UserID: userID, AccountID: accountID, PlanKey: key, PlanID: planID})
+}

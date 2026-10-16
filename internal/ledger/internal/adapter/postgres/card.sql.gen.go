@@ -714,6 +714,46 @@ func (q *Queries) ListStatements(ctx context.Context, arg ListStatementsParams) 
 	return items, nil
 }
 
+const lockPlanInstallment = `-- name: LockPlanInstallment :one
+SELECT p.id, p.amount, p.external_record_id, p.transaction_id,
+    (t.voided_at IS NOT NULL OR EXISTS (
+        SELECT 1 FROM ledger_link l WHERE l.user_id = t.user_id AND l.to_transaction_id = t.id
+          AND l.link_type IN ('refund_of', 'cancellation_of'))) AS reversed
+FROM ledger_installment_plan pl
+JOIN ledger_posting p ON p.installment_plan_id = pl.id AND p.installment_number = $1 AND p.card_role = 'charge'
+JOIN ledger_transaction t ON t.id = p.transaction_id
+WHERE pl.user_id = $2 AND pl.id = $3
+FOR UPDATE OF p
+`
+
+type LockPlanInstallmentParams struct {
+	Number *int16
+	UserID int64
+	PlanID uuid.UUID
+}
+
+type LockPlanInstallmentRow struct {
+	ID               uuid.UUID
+	Amount           int64
+	ExternalRecordID uuid.NullUUID
+	TransactionID    uuid.UUID
+	Reversed         *bool
+}
+
+// P6 A40: installment k of a plan and whether the purchase was voided, refunded or cancelled.
+func (q *Queries) LockPlanInstallment(ctx context.Context, arg LockPlanInstallmentParams) (LockPlanInstallmentRow, error) {
+	row := q.db.QueryRow(ctx, lockPlanInstallment, arg.Number, arg.UserID, arg.PlanID)
+	var i LockPlanInstallmentRow
+	err := row.Scan(
+		&i.ID,
+		&i.Amount,
+		&i.ExternalRecordID,
+		&i.TransactionID,
+		&i.Reversed,
+	)
+	return i, err
+}
+
 const refundedTotal = `-- name: RefundedTotal :one
 SELECT coalesce(sum(p.amount), 0)::bigint
 FROM ledger_link l

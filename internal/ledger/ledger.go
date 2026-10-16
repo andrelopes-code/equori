@@ -54,6 +54,8 @@ type ImportTarget = app.ImportTarget
 
 type ImportedUpdate = app.ImportedUpdate
 
+type ImportedInstallment = app.ImportedInstallment
+
 // ImportedRecord is a statement line and the external record it comes from.
 type ImportedRecord = app.ImportedRecord
 
@@ -96,11 +98,14 @@ var (
 	ErrValidation        = domain.ErrValidation
 	ErrVoided            = domain.ErrVoided
 	ErrAlreadyReconciled = domain.ErrAlreadyReconciled
-	ErrAlreadyMatched    = app.ErrAlreadyMatched
-	ErrVersionConflict   = domain.ErrVersionConflict
-	ErrNotCategorizable  = domain.ErrNotCategorizable
-	ErrPairingAmbiguous  = app.ErrPairingAmbiguous
-	ErrReconciled        = domain.ErrReconciled
+	// ErrInstallmentUnavailable and ErrAmountMismatch refuse a line for an installment (P6 A40).
+	ErrInstallmentUnavailable = app.ErrInstallmentUnavailable
+	ErrAmountMismatch         = app.ErrAmountMismatch
+	ErrAlreadyMatched         = app.ErrAlreadyMatched
+	ErrVersionConflict        = domain.ErrVersionConflict
+	ErrNotCategorizable       = domain.ErrNotCategorizable
+	ErrPairingAmbiguous       = app.ErrPairingAmbiguous
+	ErrReconciled             = domain.ErrReconciled
 )
 
 // Calendar is the part of marketdata the ledger uses to shift due dates.
@@ -207,6 +212,16 @@ func (m *Module) AssertSyncedBalance(ctx context.Context, userID int64, accountI
 // a reconciled posting is ErrReconciled.
 func (m *Module) UpdateImportedPosting(ctx context.Context, userID int64, recordID uuid.UUID, u ImportedUpdate) error {
 	return m.svc.UpdateImportedPosting(ctx, userID, recordID, u)
+}
+
+// RecordImportedInstallment creates the installment purchase of an aggregator line (P6 A40).
+func (m *Module) RecordImportedInstallment(ctx context.Context, userID int64, in ImportedInstallment) (txID, planID uuid.UUID, err error) {
+	return m.svc.RecordImportedInstallment(ctx, userID, in)
+}
+
+// LinkInstallment links an aggregator line to installment number of a plan (P6 A40).
+func (m *Module) LinkInstallment(ctx context.Context, userID int64, recordID, planID uuid.UUID, number int, amount money.Money) (uuid.UUID, error) {
+	return m.svc.LinkInstallment(ctx, userID, recordID, planID, number, amount)
 }
 
 // ReleaseRecord unlinks a withdrawn record from its posting (P6 A38).

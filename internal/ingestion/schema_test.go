@@ -117,6 +117,8 @@ func TestConnectionSchemaInvariants(t *testing.T) {
 		{"ADR 003: a mapping stays within its user", external("acc-5", otherAccount, "2026-10-01", false)},
 		{"a file batch has a file name", batch("ofx", "", nil)},
 		{"an aggregator batch has no file name", batch("open_finance", "sync.json", nil)},
+		{"A40: an installment key names a ledger plan", exec(`INSERT INTO ingestion_installment_plan (user_id, account_id, plan_key, plan_id)
+			VALUES ($1, $2, $3, uuidv7())`, uid, checking, make([]byte, 32))},
 		{"a file batch has no external account", exec(`INSERT INTO ingestion_batch (user_id, account_id, source, file_name, currency, external_account_id)
 			SELECT $1, $2, 'ofx', 'a.ofx', 'BRL', id FROM ingestion_external_account WHERE external_account_id = 'acc-1'`, uid, checking)},
 	}

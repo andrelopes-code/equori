@@ -49,3 +49,6 @@ WHERE user_id = @user_id AND id = @id;
 -- A38: the posting stays; a line with another id may confirm it again.
 UPDATE ledger_posting SET external_record_id = NULL
 WHERE user_id = @user_id AND external_record_id = @external_record_id;
+
+-- name: GetRecordPosting :one
+SELECT transaction_id, installment_plan_id FROM ledger_posting WHERE user_id = $1 AND external_record_id = $2;
