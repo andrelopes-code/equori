@@ -63,6 +63,8 @@ func toProblem(err error) (problem.Details, bool) {
 	switch {
 	case errors.Is(err, app.ErrNotFound):
 		return problem.New(http.StatusNotFound, "not_found", "resource not found"), true
+	case errors.Is(err, app.ErrMixedInstruments):
+		return problem.New(http.StatusUnprocessableEntity, "mixed_instruments", err.Error()), true
 	case errors.Is(err, app.ErrPriceMissing):
 		return problem.New(http.StatusUnprocessableEntity, "price_missing", err.Error()), true
 	case errors.Is(err, app.ErrOccurrenceClosed):

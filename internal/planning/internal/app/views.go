@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"time"
 
@@ -84,6 +85,9 @@ func (s *Service) Project(ctx context.Context, userID int64, accountID uuid.UUID
 		return 0
 	})
 	openingBalance, err := s.ledger.Balance(ctx, userID, accountID, today)
+	if errors.Is(err, ErrMixedInstruments) {
+		return Projection{}, &CurrencyError{Field: "id"}
+	}
 	if err != nil {
 		return Projection{}, err
 	}

@@ -33,8 +33,12 @@ type CurrencyError struct{ Field string }
 func (e *CurrencyError) Error() string { return e.Field + ": " + ErrCurrencyUnsupported.Error() }
 func (e *CurrencyError) Unwrap() error { return ErrCurrencyUnsupported }
 
-// ErrPriceMissing: no stored price values an amount in the requested currency (P8 A61).
-var ErrPriceMissing = errors.New("price missing")
+var (
+	// ErrPriceMissing: no stored price values an amount in the requested currency (P8 A61).
+	ErrPriceMissing = errors.New("price missing")
+	// ErrMixedInstruments: the account's sub-accounts hold several instruments (P8 A63).
+	ErrMixedInstruments = errors.New("the account and its sub-accounts hold more than one instrument")
+)
 
 type Price struct {
 	Instrument, Quote money.Currency

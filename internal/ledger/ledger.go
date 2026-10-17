@@ -116,6 +116,7 @@ var (
 	ErrNotCategorizable       = domain.ErrNotCategorizable
 	ErrPairingAmbiguous       = app.ErrPairingAmbiguous
 	ErrReconciled             = domain.ErrReconciled
+	ErrMixedInstruments       = app.ErrMixedInstruments
 )
 
 // Calendar is the part of marketdata the ledger uses to shift due dates.

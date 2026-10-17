@@ -123,7 +123,11 @@ func (p ledgerPort) CategoryTotal(ctx context.Context, userID int64, categoryID 
 }
 
 func (p ledgerPort) Balance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time) (money.Money, error) {
-	return p.l.Balance(ctx, userID, accountID, date)
+	m, err := p.l.Balance(ctx, userID, accountID, date)
+	if errors.Is(err, ledger.ErrMixedInstruments) {
+		return money.Money{}, fmt.Errorf("%w: %w", app.ErrMixedInstruments, err)
+	}
+	return m, err
 }
 
 type pricesPort struct{ md *marketdata.Module }

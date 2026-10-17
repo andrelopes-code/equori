@@ -130,3 +130,37 @@ func TestS67GoalInForeignCurrency(t *testing.T) {
 		t.Fatalf("goal = %+v", g)
 	}
 }
+
+// Final review: a parent whose children hold several instruments has no single balance.
+func TestMixedParentInGoalsAndProjections(t *testing.T) {
+	f := newFixture(t, "2026-11-01")
+	h := f.h
+	h.MustDo(http.MethodPost, "/api/v1/instruments", map[string]any{"code": "MXRF11", "type": "fii", "scale": 0, "name": "MXRF11", "quote_currency": "BRL"}, http.StatusCreated, nil)
+	xp := h.Account("XP", "asset", "brokerage", nil)
+	h.Account("XP cash", "asset", "brokerage", map[string]any{"parent_id": xp})
+
+	var g struct {
+		ID string `json:"id"`
+	}
+	h.MustDo(http.MethodPost, "/api/v1/goals", map[string]any{"name": "Broker", "target": apitest.BRL(100), "due_on": "2027-06-30", "account_ids": []string{xp}}, http.StatusCreated, &g)
+	h.Account("XP MXRF11", "asset", "brokerage", map[string]any{"parent_id": xp, "currency": "MXRF11"})
+
+	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/goals", map[string]any{"name": "Mixed", "target": apitest.BRL(100), "due_on": "2027-06-30", "account_ids": []string{xp}}),
+		http.StatusUnprocessableEntity, "currency_unsupported", "account_ids")
+	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/goals/"+g.ID, nil), http.StatusUnprocessableEntity, "mixed_instruments", "")
+	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/accounts/"+xp+"/projection?to=2026-12-31", nil), http.StatusUnprocessableEntity, "currency_unsupported", "id")
+	var list struct {
+		Items []struct {
+			Name string `json:"name"`
+		} `json:"items"`
+	}
+	r := h.Do(http.MethodGet, "/api/v1/goals", nil)
+	if r.Status != http.StatusUnprocessableEntity {
+		r.Decode(t, &list)
+		for _, it := range list.Items {
+			if it.Name == "Mixed" {
+				t.Fatalf("a refused goal was stored: %+v", list.Items)
+			}
+		}
+	}
+}

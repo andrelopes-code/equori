@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -38,6 +39,14 @@ func (s *Service) CreateGoal(ctx context.Context, userID int64, name string, tar
 		a, ok := byID[id]
 		if !ok || (a.Class != "asset" && a.Class != "liability") {
 			return GoalView{}, &domain.FieldError{Field: "account_ids", Message: "must be balance accounts of the user", Err: domain.ErrValidation}
+		}
+	}
+	today := s.clk.Today()
+	for _, id := range accounts {
+		if _, err := s.ledger.Balance(ctx, userID, id, today); errors.Is(err, ErrMixedInstruments) {
+			return GoalView{}, &CurrencyError{Field: "account_ids"}
+		} else if err != nil {
+			return GoalView{}, err
 		}
 	}
 	var created domain.Goal
