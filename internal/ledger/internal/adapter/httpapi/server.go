@@ -227,7 +227,7 @@ func (s *Server) ListTransactions(ctx context.Context, req ListTransactionsReque
 	}
 	q := app.TransactionQuery{
 		UserID: auth.MustUserID(ctx), AccountID: optUUID(req.Params.AccountId), PayeeID: optUUID(req.Params.PayeeId),
-		Tag: optString(req.Params.Tag), From: optDate(req.Params.From), To: optDate(req.Params.To), Limit: p.Limit, After: p.After,
+		Tag: optString(req.Params.Tag), Q: optString(req.Params.Q), From: optDate(req.Params.From), To: optDate(req.Params.To), Limit: p.Limit, After: p.After,
 		Uncategorized: req.Params.Uncategorized != nil && *req.Params.Uncategorized,
 	}
 	rows, next, err := s.svc.ListTransactions(ctx, q)

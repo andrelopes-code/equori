@@ -405,6 +405,13 @@ paths:
           description: When true, only transactions whose category postings are all uncategorized (P5 amendment A17).
           schema:
             type: boolean
+        - name: q
+          in: query
+          description: Case-insensitive substring of description, payee name or posting memo.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
       responses:
         "200":
           description: OK.

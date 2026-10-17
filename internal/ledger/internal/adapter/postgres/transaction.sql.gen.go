@@ -402,9 +402,15 @@ WHERE t.user_id = $1
       AND NOT EXISTS (SELECT 1 FROM ledger_posting p JOIN ledger_account a ON a.id = p.account_id
               WHERE p.transaction_id = t.id AND a.account_class IN ('income', 'expense')
                 AND a.system_role IS DISTINCT FROM 'uncategorized_expense' AND a.system_role IS DISTINCT FROM 'uncategorized_income')))
-  AND ($8::date IS NULL OR (t.date, t.id) < ($8::date, $9::uuid))
+  AND ($8::text IS NULL OR
+       strpos(lower(t.description), lower($8::text)) > 0 OR
+       EXISTS (SELECT 1 FROM ledger_payee y WHERE y.user_id = $1 AND y.id = t.payee_id
+               AND strpos(lower(y.name), lower($8::text)) > 0) OR
+       EXISTS (SELECT 1 FROM ledger_posting p WHERE p.transaction_id = t.id
+               AND strpos(lower(coalesce(p.memo, '')), lower($8::text)) > 0))
+  AND ($9::date IS NULL OR (t.date, t.id) < ($9::date, $10::uuid))
 ORDER BY t.date DESC, t.id DESC
-LIMIT $10
+LIMIT $11
 `
 
 type ListTransactionsParams struct {
@@ -415,6 +421,7 @@ type ListTransactionsParams struct {
 	FromDate      *time.Time
 	ToDate        *time.Time
 	Uncategorized bool
+	Q             *string
 	AfterDate     *time.Time
 	AfterID       uuid.NullUUID
 	RowLimit      int32
@@ -429,6 +436,7 @@ func (q *Queries) ListTransactions(ctx context.Context, arg ListTransactionsPara
 		arg.FromDate,
 		arg.ToDate,
 		arg.Uncategorized,
+		arg.Q,
 		arg.AfterDate,
 		arg.AfterID,
 		arg.RowLimit,

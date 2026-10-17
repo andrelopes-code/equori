@@ -97,6 +97,12 @@ WHERE t.user_id = @user_id
       AND NOT EXISTS (SELECT 1 FROM ledger_posting p JOIN ledger_account a ON a.id = p.account_id
               WHERE p.transaction_id = t.id AND a.account_class IN ('income', 'expense')
                 AND a.system_role IS DISTINCT FROM 'uncategorized_expense' AND a.system_role IS DISTINCT FROM 'uncategorized_income')))
+  AND (sqlc.narg(q)::text IS NULL OR
+       strpos(lower(t.description), lower(sqlc.narg(q)::text)) > 0 OR
+       EXISTS (SELECT 1 FROM ledger_payee y WHERE y.user_id = @user_id AND y.id = t.payee_id
+               AND strpos(lower(y.name), lower(sqlc.narg(q)::text)) > 0) OR
+       EXISTS (SELECT 1 FROM ledger_posting p WHERE p.transaction_id = t.id
+               AND strpos(lower(coalesce(p.memo, '')), lower(sqlc.narg(q)::text)) > 0))
   AND (sqlc.narg(after_date)::date IS NULL OR (t.date, t.id) < (sqlc.narg(after_date)::date, sqlc.narg(after_id)::uuid))
 ORDER BY t.date DESC, t.id DESC
 LIMIT @row_limit;

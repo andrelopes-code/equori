@@ -1548,6 +1548,9 @@ type ListTransactionsParams struct {
 
 	// Uncategorized When true, only transactions whose category postings are all uncategorized (P5 amendment A17).
 	Uncategorized *bool `form:"uncategorized,omitempty" json:"uncategorized,omitempty"`
+
+	// Q Case-insensitive substring of description, payee name or posting memo.
+	Q *string `form:"q,omitempty" json:"q,omitempty"`
 }
 
 // ListAttachmentsParams defines parameters for ListAttachments.
@@ -3074,6 +3077,19 @@ func (siw *ServerInterfaceWrapper) ListTransactions(w http.ResponseWriter, r *ht
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "uncategorized"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "uncategorized", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "q" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "q", r.URL.Query(), &params.Q, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "q"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
 		}
 		return
 	}

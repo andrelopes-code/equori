@@ -236,7 +236,9 @@ type TransactionQuery struct {
 	AccountID uuid.UUID
 	PayeeID   uuid.UUID
 	Tag       string
-	From, To  *time.Time
+	// Q is a case-insensitive substring of description, payee name or posting memo; empty disables the filter.
+	Q        string
+	From, To *time.Time
 	// Uncategorized keeps only transactions in category state uncategorized.
 	Uncategorized bool
 	After         *TransactionCursor
