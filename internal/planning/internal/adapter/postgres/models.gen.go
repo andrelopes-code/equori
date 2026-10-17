@@ -10,6 +10,23 @@ import (
 	"github.com/google/uuid"
 )
 
+type PlanningBudget struct {
+	ID                uuid.UUID
+	UserID            int64
+	CategoryAccountID uuid.UUID
+	PeriodType        string
+	Rollover          bool
+	Currency          string
+	CreatedAt         time.Time
+}
+
+type PlanningBudgetAmount struct {
+	UserID        int64
+	BudgetID      uuid.UUID
+	EffectiveFrom time.Time
+	Amount        int64
+}
+
 type PlanningOccurrence struct {
 	ID             uuid.UUID
 	UserID         int64

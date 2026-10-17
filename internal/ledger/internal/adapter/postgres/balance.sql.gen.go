@@ -63,3 +63,36 @@ func (q *Queries) BalanceSettledAt(ctx context.Context, arg BalanceSettledAtPara
 	err := row.Scan(&column_1)
 	return column_1, err
 }
+
+const categoryTotal = `-- name: CategoryTotal :one
+WITH RECURSIVE tree AS (
+    SELECT a.id FROM ledger_account a WHERE a.user_id = $3 AND a.id = $4
+    UNION ALL
+    SELECT c.id FROM ledger_account c JOIN tree ON c.parent_id = tree.id WHERE c.user_id = $3
+)
+SELECT coalesce(sum(p.weight), 0)::bigint
+FROM ledger_posting p
+WHERE p.account_id IN (SELECT id FROM tree)
+  AND NOT p.voided
+  AND p.booked_on >= $1 AND p.booked_on < $2
+`
+
+type CategoryTotalParams struct {
+	FromDate  time.Time
+	ToDate    time.Time
+	UserID    int64
+	AccountID uuid.UUID
+}
+
+// P7 amendment A54: weights of the non-voided postings of a category subtree booked in [from, to).
+func (q *Queries) CategoryTotal(ctx context.Context, arg CategoryTotalParams) (int64, error) {
+	row := q.db.QueryRow(ctx, categoryTotal,
+		arg.FromDate,
+		arg.ToDate,
+		arg.UserID,
+		arg.AccountID,
+	)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
+}

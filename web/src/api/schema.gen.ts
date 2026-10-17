@@ -1389,6 +1389,78 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/budgets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Budgets in creation order. */
+        get: operations["listBudgets"];
+        put?: never;
+        /** Create the monthly budget of a category (P7 amendment A54; 409 budget_exists when it has one). */
+        post: operations["createBudget"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/budgets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A budget with its amounts by month. */
+        get: operations["getBudget"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/budgets/{id}/amounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set the amount from a month on, after the latest one (T09). */
+        post: operations["addBudgetAmount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/budgets/{id}/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Planned, carried, spent and available amounts of a month, accrual view (P7 amendment A54).
+         * @description Spending of an income category is reported as a positive amount.
+         */
+        get: operations["getBudgetProgress"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/occurrences/{id}/unrealize": {
         parameters: {
             query?: never;
@@ -1516,6 +1588,42 @@ export interface components {
              * @description The generated date of a moved occurrence.
              */
             moved_from?: string;
+        };
+        BudgetAmount: {
+            effective_from: string;
+            amount: components["schemas"]["Money"];
+        };
+        BudgetInput: {
+            /** Format: uuid */
+            category_id: string;
+            amount: components["schemas"]["Money"];
+            effective_from: string;
+            rollover: boolean;
+        };
+        Budget: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            category_id: string;
+            rollover: boolean;
+            /** @description Versions by month. */
+            amounts: components["schemas"]["BudgetAmount"][];
+        };
+        BudgetPage: {
+            items: components["schemas"]["Budget"][];
+            /** @description Absent on the last page. */
+            next_cursor?: string;
+        };
+        /**
+         * @description carried is the previous month's available amount when rollover is set, else zero; available is
+         *     planned + carried - spent, negative when overspent.
+         */
+        BudgetProgress: {
+            month: string;
+            planned: components["schemas"]["Money"];
+            carried: components["schemas"]["Money"];
+            spent: components["schemas"]["Money"];
+            available: components["schemas"]["Money"];
         };
         SkipInput: {
             reason?: string;
@@ -2398,7 +2506,8 @@ export interface components {
              *     already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
              *     record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
              *     integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
-             *     currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended.
+             *     currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
+             *     budget_exists.
              */
             code: string;
             request_id?: string;
@@ -5156,6 +5265,143 @@ export interface operations {
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
+        };
+    };
+    listBudgets: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetPage"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+        };
+    };
+    createBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BudgetInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    /** @description Path of the created record. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Budget"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Budget"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    addBudgetAmount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BudgetAmount"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Budget"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getBudgetProgress: {
+        parameters: {
+            query: {
+                month: string;
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetProgress"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     unrealizeOccurrence: {

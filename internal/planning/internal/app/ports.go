@@ -47,6 +47,9 @@ type Ledger interface {
 	BaseCurrency(ctx context.Context, userID int64) (money.Currency, error)
 	// TransactionFacts returns the user's transactions among ids; unknown ids are omitted.
 	TransactionFacts(ctx context.Context, userID int64, ids []uuid.UUID) ([]domain.Transaction, error)
+	// CategoryTotal sums the postings of a category subtree booked in [from, to), in minor
+	// units of the base currency.
+	CategoryTotal(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (int64, error)
 }
 
 // Calendar returns the holiday dates of a calendar in a year.
@@ -101,4 +104,11 @@ type Repository interface {
 	// InsertPause returns ErrPauseOverlap when the pause overlaps another one.
 	InsertPause(ctx context.Context, userID int64, scheduleID uuid.UUID, p domain.Pause) error
 	SetEndsOn(ctx context.Context, userID int64, id uuid.UUID, d time.Time) error
+
+	// InsertBudget stores b with its amounts; ErrBudgetExists when the category has one.
+	InsertBudget(ctx context.Context, userID int64, b domain.Budget) (domain.Budget, error)
+	InsertBudgetAmount(ctx context.Context, userID int64, budgetID uuid.UUID, a domain.BudgetAmount) error
+	Budget(ctx context.Context, userID int64, id uuid.UUID) (domain.Budget, error)
+	LockBudget(ctx context.Context, userID int64, id uuid.UUID) (domain.Budget, error)
+	ListBudgets(ctx context.Context, userID int64, p page.Request[IDKey]) ([]domain.Budget, *IDKey, error)
 }

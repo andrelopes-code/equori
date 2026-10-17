@@ -149,6 +149,47 @@ func (e ScheduleKind) Valid() bool {
 	}
 }
 
+// Budget defines model for Budget.
+type Budget struct {
+	// Amounts Versions by month.
+	Amounts    []BudgetAmount     `json:"amounts"`
+	CategoryId openapi_types.UUID `json:"category_id"`
+	Id         openapi_types.UUID `json:"id"`
+	Rollover   bool               `json:"rollover"`
+}
+
+// BudgetAmount defines model for BudgetAmount.
+type BudgetAmount struct {
+	Amount        Money  `json:"amount"`
+	EffectiveFrom string `json:"effective_from"`
+}
+
+// BudgetInput defines model for BudgetInput.
+type BudgetInput struct {
+	Amount        Money              `json:"amount"`
+	CategoryId    openapi_types.UUID `json:"category_id"`
+	EffectiveFrom string             `json:"effective_from"`
+	Rollover      bool               `json:"rollover"`
+}
+
+// BudgetPage defines model for BudgetPage.
+type BudgetPage struct {
+	Items []Budget `json:"items"`
+
+	// NextCursor Absent on the last page.
+	NextCursor *string `json:"next_cursor,omitempty"`
+}
+
+// BudgetProgress carried is the previous month's available amount when rollover is set, else zero; available is
+// planned + carried - spent, negative when overspent.
+type BudgetProgress struct {
+	Available Money  `json:"available"`
+	Carried   Money  `json:"carried"`
+	Month     string `json:"month"`
+	Planned   Money  `json:"planned"`
+	Spent     Money  `json:"spent"`
+}
+
 // EndInput defines model for EndInput.
 type EndInput struct {
 	From openapi_types.Date `json:"from"`
@@ -207,7 +248,8 @@ type Problem struct {
 	// already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
 	// record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
 	// integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
-	// currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended.
+	// currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
+	// budget_exists.
 	Code      string        `json:"code"`
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`
@@ -334,6 +376,17 @@ type ID = openapi_types.UUID
 // Limit defines model for Limit.
 type Limit = int
 
+// ListBudgetsParams defines parameters for ListBudgets.
+type ListBudgetsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// GetBudgetProgressParams defines parameters for GetBudgetProgress.
+type GetBudgetProgressParams struct {
+	Month string `form:"month" json:"month"`
+}
+
 // ListOccurrencesParams defines parameters for ListOccurrences.
 type ListOccurrencesParams struct {
 	From       openapi_types.Date  `form:"from" json:"from"`
@@ -347,6 +400,12 @@ type ListSchedulesParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
+
+// CreateBudgetJSONRequestBody defines body for CreateBudget for application/json ContentType.
+type CreateBudgetJSONRequestBody = BudgetInput
+
+// AddBudgetAmountJSONRequestBody defines body for AddBudgetAmount for application/json ContentType.
+type AddBudgetAmountJSONRequestBody = BudgetAmount
 
 // MoveOccurrenceJSONRequestBody defines body for MoveOccurrence for application/json ContentType.
 type MoveOccurrenceJSONRequestBody = MoveInput
@@ -371,6 +430,21 @@ type ChangeScheduleTermsJSONRequestBody = TermsInput
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// ListBudgets Budgets in creation order.
+	// (GET /budgets)
+	ListBudgets(w http.ResponseWriter, r *http.Request, params ListBudgetsParams)
+	// CreateBudget Create the monthly budget of a category (P7 amendment A54; 409 budget_exists when it has one).
+	// (POST /budgets)
+	CreateBudget(w http.ResponseWriter, r *http.Request)
+	// GetBudget A budget with its amounts by month.
+	// (GET /budgets/{id})
+	GetBudget(w http.ResponseWriter, r *http.Request, id ID)
+	// AddBudgetAmount Set the amount from a month on, after the latest one (T09).
+	// (POST /budgets/{id}/amounts)
+	AddBudgetAmount(w http.ResponseWriter, r *http.Request, id ID)
+	// GetBudgetProgress Planned, carried, spent and available amounts of a month, accrual view (P7 amendment A54).
+	// (GET /budgets/{id}/progress)
+	GetBudgetProgress(w http.ResponseWriter, r *http.Request, id ID, params GetBudgetProgressParams)
 	// ListOccurrences Occurrences with expected date in [from, to], at most 366 days, by date.
 	// (GET /occurrences)
 	ListOccurrences(w http.ResponseWriter, r *http.Request, params ListOccurrencesParams)
@@ -414,6 +488,160 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// ListBudgets operation middleware
+func (siw *ServerInterfaceWrapper) ListBudgets(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListBudgetsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListBudgets(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateBudget operation middleware
+func (siw *ServerInterfaceWrapper) CreateBudget(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateBudget(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetBudget operation middleware
+func (siw *ServerInterfaceWrapper) GetBudget(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetBudget(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AddBudgetAmount operation middleware
+func (siw *ServerInterfaceWrapper) AddBudgetAmount(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddBudgetAmount(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetBudgetProgress operation middleware
+func (siw *ServerInterfaceWrapper) GetBudgetProgress(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetBudgetProgressParams
+
+	// ------------- Required query parameter "month" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "month", r.URL.Query(), &params.Month, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "month"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "month", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetBudgetProgress(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // ListOccurrences operation middleware
 func (siw *ServerInterfaceWrapper) ListOccurrences(w http.ResponseWriter, r *http.Request) {
@@ -885,12 +1113,373 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/schedules/{id}/terms", wrapper.ChangeScheduleTerms)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/schedules/{id}/pauses", wrapper.PauseSchedule)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/schedules/{id}/end", wrapper.EndSchedule)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/budgets", wrapper.ListBudgets)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/budgets", wrapper.CreateBudget)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/budgets/{id}", wrapper.GetBudget)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/budgets/{id}/amounts", wrapper.AddBudgetAmount)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/budgets/{id}/progress", wrapper.GetBudgetProgress)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/occurrences/{id}/unrealize", wrapper.UnrealizeOccurrence)
 
 	return m
 }
 
 type ProblemApplicationProblemPlusJSONResponse Problem
+
+type ListBudgetsRequestObject struct {
+	Params ListBudgetsParams
+}
+
+type ListBudgetsResponseObject interface {
+	VisitListBudgetsResponse(w http.ResponseWriter) error
+}
+
+type ListBudgets200JSONResponse BudgetPage
+
+func (response ListBudgets200JSONResponse) VisitListBudgetsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListBudgets400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListBudgets400ApplicationProblemPlusJSONResponse) VisitListBudgetsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListBudgets401ApplicationProblemPlusJSONResponse Problem
+
+func (response ListBudgets401ApplicationProblemPlusJSONResponse) VisitListBudgetsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBudgetRequestObject struct {
+	Body *CreateBudgetJSONRequestBody
+}
+
+type CreateBudgetResponseObject interface {
+	VisitCreateBudgetResponse(w http.ResponseWriter) error
+}
+
+type CreateBudget201ResponseHeaders struct {
+	Location *string
+}
+
+type CreateBudget201JSONResponse struct {
+	Body    Budget
+	Headers CreateBudget201ResponseHeaders
+}
+
+func (response CreateBudget201JSONResponse) VisitCreateBudgetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBudget400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateBudget400ApplicationProblemPlusJSONResponse) VisitCreateBudgetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBudget401ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateBudget401ApplicationProblemPlusJSONResponse) VisitCreateBudgetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBudget409ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateBudget409ApplicationProblemPlusJSONResponse) VisitCreateBudgetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateBudget422ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateBudget422ApplicationProblemPlusJSONResponse) VisitCreateBudgetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetBudgetRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type GetBudgetResponseObject interface {
+	VisitGetBudgetResponse(w http.ResponseWriter) error
+}
+
+type GetBudget200JSONResponse Budget
+
+func (response GetBudget200JSONResponse) VisitGetBudgetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetBudget401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetBudget401ApplicationProblemPlusJSONResponse) VisitGetBudgetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetBudget404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetBudget404ApplicationProblemPlusJSONResponse) VisitGetBudgetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddBudgetAmountRequestObject struct {
+	Id   ID `json:"id"`
+	Body *AddBudgetAmountJSONRequestBody
+}
+
+type AddBudgetAmountResponseObject interface {
+	VisitAddBudgetAmountResponse(w http.ResponseWriter) error
+}
+
+type AddBudgetAmount201JSONResponse Budget
+
+func (response AddBudgetAmount201JSONResponse) VisitAddBudgetAmountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddBudgetAmount400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response AddBudgetAmount400ApplicationProblemPlusJSONResponse) VisitAddBudgetAmountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddBudgetAmount401ApplicationProblemPlusJSONResponse Problem
+
+func (response AddBudgetAmount401ApplicationProblemPlusJSONResponse) VisitAddBudgetAmountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddBudgetAmount404ApplicationProblemPlusJSONResponse Problem
+
+func (response AddBudgetAmount404ApplicationProblemPlusJSONResponse) VisitAddBudgetAmountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddBudgetAmount422ApplicationProblemPlusJSONResponse Problem
+
+func (response AddBudgetAmount422ApplicationProblemPlusJSONResponse) VisitAddBudgetAmountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetBudgetProgressRequestObject struct {
+	Id     ID `json:"id"`
+	Params GetBudgetProgressParams
+}
+
+type GetBudgetProgressResponseObject interface {
+	VisitGetBudgetProgressResponse(w http.ResponseWriter) error
+}
+
+type GetBudgetProgress200JSONResponse BudgetProgress
+
+func (response GetBudgetProgress200JSONResponse) VisitGetBudgetProgressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetBudgetProgress400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetBudgetProgress400ApplicationProblemPlusJSONResponse) VisitGetBudgetProgressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetBudgetProgress401ApplicationProblemPlusJSONResponse Problem
+
+func (response GetBudgetProgress401ApplicationProblemPlusJSONResponse) VisitGetBudgetProgressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetBudgetProgress404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetBudgetProgress404ApplicationProblemPlusJSONResponse) VisitGetBudgetProgressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetBudgetProgress422ApplicationProblemPlusJSONResponse Problem
+
+func (response GetBudgetProgress422ApplicationProblemPlusJSONResponse) VisitGetBudgetProgressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
 
 type ListOccurrencesRequestObject struct {
 	Params ListOccurrencesParams
@@ -1734,6 +2323,21 @@ func (response ChangeScheduleTerms422ApplicationProblemPlusJSONResponse) VisitCh
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// ListBudgets Budgets in creation order.
+	// (GET /budgets)
+	ListBudgets(ctx context.Context, request ListBudgetsRequestObject) (ListBudgetsResponseObject, error)
+	// CreateBudget Create the monthly budget of a category (P7 amendment A54; 409 budget_exists when it has one).
+	// (POST /budgets)
+	CreateBudget(ctx context.Context, request CreateBudgetRequestObject) (CreateBudgetResponseObject, error)
+	// GetBudget A budget with its amounts by month.
+	// (GET /budgets/{id})
+	GetBudget(ctx context.Context, request GetBudgetRequestObject) (GetBudgetResponseObject, error)
+	// AddBudgetAmount Set the amount from a month on, after the latest one (T09).
+	// (POST /budgets/{id}/amounts)
+	AddBudgetAmount(ctx context.Context, request AddBudgetAmountRequestObject) (AddBudgetAmountResponseObject, error)
+	// GetBudgetProgress Planned, carried, spent and available amounts of a month, accrual view (P7 amendment A54).
+	// (GET /budgets/{id}/progress)
+	GetBudgetProgress(ctx context.Context, request GetBudgetProgressRequestObject) (GetBudgetProgressResponseObject, error)
 	// ListOccurrences Occurrences with expected date in [from, to], at most 366 days, by date.
 	// (GET /occurrences)
 	ListOccurrences(ctx context.Context, request ListOccurrencesRequestObject) (ListOccurrencesResponseObject, error)
@@ -1806,6 +2410,149 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// ListBudgets operation middleware
+func (sh *strictHandler) ListBudgets(w http.ResponseWriter, r *http.Request, params ListBudgetsParams) {
+	var request ListBudgetsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListBudgets(ctx, request.(ListBudgetsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListBudgets")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListBudgetsResponseObject); ok {
+		if err := validResponse.VisitListBudgetsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateBudget operation middleware
+func (sh *strictHandler) CreateBudget(w http.ResponseWriter, r *http.Request) {
+	var request CreateBudgetRequestObject
+
+	var body CreateBudgetJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateBudget(ctx, request.(CreateBudgetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateBudget")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateBudgetResponseObject); ok {
+		if err := validResponse.VisitCreateBudgetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetBudget operation middleware
+func (sh *strictHandler) GetBudget(w http.ResponseWriter, r *http.Request, id ID) {
+	var request GetBudgetRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetBudget(ctx, request.(GetBudgetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetBudget")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetBudgetResponseObject); ok {
+		if err := validResponse.VisitGetBudgetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AddBudgetAmount operation middleware
+func (sh *strictHandler) AddBudgetAmount(w http.ResponseWriter, r *http.Request, id ID) {
+	var request AddBudgetAmountRequestObject
+
+	request.Id = id
+
+	var body AddBudgetAmountJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AddBudgetAmount(ctx, request.(AddBudgetAmountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AddBudgetAmount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AddBudgetAmountResponseObject); ok {
+		if err := validResponse.VisitAddBudgetAmountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetBudgetProgress operation middleware
+func (sh *strictHandler) GetBudgetProgress(w http.ResponseWriter, r *http.Request, id ID, params GetBudgetProgressParams) {
+	var request GetBudgetProgressRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetBudgetProgress(ctx, request.(GetBudgetProgressRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetBudgetProgress")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetBudgetProgressResponseObject); ok {
+		if err := validResponse.VisitGetBudgetProgressResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // ListOccurrences operation middleware

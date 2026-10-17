@@ -182,6 +182,12 @@ func (m *Module) TransactionFacts(ctx context.Context, userID int64, ids []uuid.
 	return m.svc.TransactionFacts(ctx, userID, ids)
 }
 
+// CategoryTotal sums the postings of a category subtree booked in [from, to), in the base
+// currency (P7 amendment A54).
+func (m *Module) CategoryTotal(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (money.Money, error) {
+	return m.svc.CategoryTotal(ctx, userID, categoryID, from, to)
+}
+
 // BaseCurrency returns the user's base currency, as GET /settings reads it.
 func (m *Module) BaseCurrency(ctx context.Context, userID int64) (money.Currency, error) {
 	s, err := m.svc.Settings(ctx, userID)

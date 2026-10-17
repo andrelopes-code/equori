@@ -328,4 +328,7 @@ type Repository interface {
 
 	// BalanceAt sums the postings of the account and its descendants up to and including date.
 	BalanceAt(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis Basis) (int64, error)
+	// CategoryTotal sums the weights of the non-voided postings of the account and its
+	// descendants booked in [from, to).
+	CategoryTotal(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) (int64, error)
 }

@@ -33,3 +33,20 @@ func (s *Service) BalanceAt(ctx context.Context, userID int64, accountID uuid.UU
 	}
 	return Balance{AccountID: accountID, Date: date, Basis: basis, Amount: amount}, nil
 }
+
+// CategoryTotal returns the weights of the postings of a category subtree booked in
+// [from, to), in the user's base currency (P7 amendment A54).
+func (s *Service) CategoryTotal(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (money.Money, error) {
+	settings, err := s.repo.Settings(ctx, userID)
+	if err != nil {
+		return money.Money{}, err
+	}
+	if _, err := s.repo.Account(ctx, userID, categoryID); err != nil {
+		return money.Money{}, err
+	}
+	total, err := s.repo.CategoryTotal(ctx, userID, categoryID, from, to)
+	if err != nil {
+		return money.Money{}, err
+	}
+	return money.New(total, settings.BaseCurrency)
+}

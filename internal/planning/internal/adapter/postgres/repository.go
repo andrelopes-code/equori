@@ -173,20 +173,32 @@ func (r *Repository) LockSchedule(ctx context.Context, userID int64, id uuid.UUI
 	return r.one(ctx, row, err)
 }
 
-func (r *Repository) ListSchedules(ctx context.Context, userID int64, p page.Request[app.IDKey]) ([]domain.Schedule, *app.IDKey, error) {
-	arg := ListSchedulesParams{UserID: userID, RowLimit: int32(p.Limit + 1)} //nolint:gosec // limit is at most page.MaxLimit
+// keyset returns the cursor and the row limit of a page, one row more than asked so the
+// page knows whether another follows.
+func keyset(p page.Request[app.IDKey]) (uuid.NullUUID, int32) {
+	var after uuid.NullUUID
 	if p.After != nil {
-		arg.AfterID = nullUUID(p.After.ID)
+		after = nullUUID(p.After.ID)
 	}
-	rows, err := r.q.ListSchedules(ctx, arg)
+	return after, int32(p.Limit + 1) //nolint:gosec // limit is at most page.MaxLimit
+}
+
+// trim cuts rows to the page and returns the key of its last row when another page follows.
+func trim[R any](rows []R, limit int, id func(R) uuid.UUID) ([]R, *app.IDKey) {
+	if len(rows) <= limit {
+		return rows, nil
+	}
+	rows = rows[:limit]
+	return rows, &app.IDKey{ID: id(rows[len(rows)-1])}
+}
+
+func (r *Repository) ListSchedules(ctx context.Context, userID int64, p page.Request[app.IDKey]) ([]domain.Schedule, *app.IDKey, error) {
+	after, limit := keyset(p)
+	rows, err := r.q.ListSchedules(ctx, ListSchedulesParams{UserID: userID, AfterID: after, RowLimit: limit})
 	if err != nil {
 		return nil, nil, fmt.Errorf("list schedules: %w", err)
 	}
-	var next *app.IDKey
-	if len(rows) > p.Limit {
-		rows = rows[:p.Limit]
-		next = &app.IDKey{ID: rows[len(rows)-1].ID}
-	}
+	rows, next := trim(rows, p.Limit, func(s PlanningSchedule) uuid.UUID { return s.ID })
 	out, err := r.complete(ctx, rows)
 	return out, next, err
 }
@@ -364,4 +376,85 @@ func (r *Repository) InsertPause(ctx context.Context, userID int64, scheduleID u
 
 func (r *Repository) SetEndsOn(ctx context.Context, userID int64, id uuid.UUID, d time.Time) error {
 	return r.q.SetEndsOn(ctx, SetEndsOnParams{UserID: userID, ID: id, EndsOn: &d})
+}
+
+const uniqueViolation = "23505"
+
+func (r *Repository) InsertBudget(ctx context.Context, userID int64, b domain.Budget) (domain.Budget, error) {
+	row, err := r.q.InsertBudget(ctx, InsertBudgetParams{UserID: userID, CategoryAccountID: b.CategoryID, Rollover: b.Rollover, Currency: string(b.Currency)})
+	if pe, ok := errors.AsType[*pgconn.PgError](err); ok && pe.Code == uniqueViolation {
+		return domain.Budget{}, app.ErrBudgetExists
+	}
+	if err != nil {
+		return domain.Budget{}, fmt.Errorf("insert budget: %w", err)
+	}
+	for _, a := range b.Amounts {
+		if err := r.InsertBudgetAmount(ctx, userID, row.ID, a); err != nil {
+			return domain.Budget{}, err
+		}
+	}
+	return r.oneBudget(ctx, row, nil)
+}
+
+func (r *Repository) InsertBudgetAmount(ctx context.Context, userID int64, budgetID uuid.UUID, a domain.BudgetAmount) error {
+	err := r.q.InsertBudgetAmount(ctx, InsertBudgetAmountParams{UserID: userID, BudgetID: budgetID, EffectiveFrom: a.EffectiveFrom, Amount: a.Amount})
+	if err != nil {
+		return fmt.Errorf("insert budget amount: %w", err)
+	}
+	return nil
+}
+
+func (r *Repository) completeBudgets(ctx context.Context, rows []PlanningBudget) ([]domain.Budget, error) {
+	if len(rows) == 0 {
+		return nil, nil
+	}
+	ids := make([]uuid.UUID, len(rows))
+	out := make([]domain.Budget, len(rows))
+	byID := make(map[uuid.UUID]*domain.Budget, len(rows))
+	for i, row := range rows {
+		ids[i] = row.ID
+		out[i] = domain.Budget{ID: row.ID, CategoryID: row.CategoryAccountID, Rollover: row.Rollover, Currency: money.Currency(row.Currency)}
+		byID[row.ID] = &out[i]
+	}
+	amounts, err := r.q.ListBudgetAmounts(ctx, ids)
+	if err != nil {
+		return nil, fmt.Errorf("list budget amounts: %w", err)
+	}
+	for _, a := range amounts {
+		b := byID[a.BudgetID]
+		b.Amounts = append(b.Amounts, domain.BudgetAmount{EffectiveFrom: a.EffectiveFrom, Amount: a.Amount})
+	}
+	return out, nil
+}
+
+func (r *Repository) oneBudget(ctx context.Context, row PlanningBudget, err error) (domain.Budget, error) {
+	if err != nil {
+		return domain.Budget{}, notFound(err)
+	}
+	out, err := r.completeBudgets(ctx, []PlanningBudget{row})
+	if err != nil {
+		return domain.Budget{}, err
+	}
+	return out[0], nil
+}
+
+func (r *Repository) Budget(ctx context.Context, userID int64, id uuid.UUID) (domain.Budget, error) {
+	row, err := r.q.GetBudget(ctx, GetBudgetParams{UserID: userID, ID: id})
+	return r.oneBudget(ctx, row, err)
+}
+
+func (r *Repository) LockBudget(ctx context.Context, userID int64, id uuid.UUID) (domain.Budget, error) {
+	row, err := r.q.LockBudget(ctx, LockBudgetParams{UserID: userID, ID: id})
+	return r.oneBudget(ctx, row, err)
+}
+
+func (r *Repository) ListBudgets(ctx context.Context, userID int64, p page.Request[app.IDKey]) ([]domain.Budget, *app.IDKey, error) {
+	after, limit := keyset(p)
+	rows, err := r.q.ListBudgets(ctx, ListBudgetsParams{UserID: userID, AfterID: after, RowLimit: limit})
+	if err != nil {
+		return nil, nil, fmt.Errorf("list budgets: %w", err)
+	}
+	rows, next := trim(rows, p.Limit, func(b PlanningBudget) uuid.UUID { return b.ID })
+	out, err := r.completeBudgets(ctx, rows)
+	return out, next, err
 }

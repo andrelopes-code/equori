@@ -511,6 +511,10 @@ func (r *Repository) BalanceAt(ctx context.Context, userID int64, accountID uuid
 	return r.q.BalanceBookedAt(ctx, BalanceBookedAtParams{UserID: userID, AccountID: accountID, OnDate: date})
 }
 
+func (r *Repository) CategoryTotal(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) (int64, error) {
+	return r.q.CategoryTotal(ctx, CategoryTotalParams{UserID: userID, AccountID: accountID, FromDate: from, ToDate: to})
+}
+
 func (r *Repository) InsertBillingRule(ctx context.Context, userID int64, accountID uuid.UUID, rule domain.BillingCycleRule) (domain.BillingCycleRule, error) {
 	row, err := r.q.InsertBillingRule(ctx, InsertBillingRuleParams{
 		UserID: userID, AccountID: accountID, EffectiveFrom: rule.EffectiveFrom.FirstDay(),
