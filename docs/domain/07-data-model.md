@@ -161,12 +161,12 @@ erDiagram
 
 | Table | Columns | Constraints |
 |---|---|---|
-| `planning_schedule` | `id`, `user_id`, `kind`, `template jsonb`, `match_tolerance_bp`, `grace_days`, `ends_on`, `created_at`, `updated_at` | `template` validated by the domain against a versioned schema |
-| `planning_schedule_terms` | `schedule_id`, `effective_from`, `frequency`, `interval`, `day_of_month`, `weekday`, `ordinal`, `business_day_ordinal`, `adjustment`, `calendar`, `until`, `count`, `amount` | `UNIQUE (schedule_id, effective_from)`; exactly one monthly selector |
-| `planning_schedule_pause` | `schedule_id`, `period daterange` | `EXCLUDE USING gist (schedule_id WITH =, period WITH &&)` |
-| `planning_occurrence` | `id`, `user_id`, `schedule_id`, `sequence`, `expected_on`, `expected_amount`, `state`, `transaction_id`, `moved_from` | `UNIQUE (schedule_id, sequence)`; `UNIQUE (transaction_id) WHERE transaction_id IS NOT NULL` (I07) |
-| `planning_budget`, `planning_budget_amount` | `id`, `user_id`, `category_account_id`, `period_type`, `rollover`; `budget_id`, `effective_from`, `amount` | Category account class `expense` or `income` |
-| `planning_goal`, `planning_goal_account` | `id`, `user_id`, `name`, `target`, `currency`, `due_on`; `goal_id`, `account_id` | |
+| `planning_schedule` | `id`, `user_id`, `kind`, `account_id`, `counterpart_id`, `payee_id`, `description`, `currency`, `match_tolerance_bp`, `grace_days`, `ends_on`, `generated_until`, `created_at`, `updated_at` | Template accounts and payee by composite foreign keys (P7 amendment A46); `account_id <> counterpart_id`; tolerance 0–10000, grace 0–31 |
+| `planning_schedule_terms` | `user_id`, `schedule_id`, `effective_from`, `frequency`, `interval`, `day_of_month`, `weekday`, `ordinal`, `business_day_ordinal`, `adjustment`, `calendar`, `start`, `until`, `count`, `amount` | `PRIMARY KEY (schedule_id, effective_from)` (I08); exactly one monthly selector, none otherwise; `weekday` and `ordinal` together |
+| `planning_schedule_pause` | `user_id`, `schedule_id`, `period daterange` | `EXCLUDE USING gist (schedule_id WITH =, period WITH &&)`, extension `btree_gist` |
+| `planning_occurrence` | `id`, `user_id`, `schedule_id`, `sequence`, `expected_on`, `expected_amount`, `state`, `transaction_id`, `realized_by`, `moved_from`, `skip_reason` | `UNIQUE (schedule_id, sequence)`; `UNIQUE (user_id, transaction_id) WHERE transaction_id IS NOT NULL` (I07); state `expected`, `realized` or `skipped`, overdue derived (A50); `transaction_id` and `realized_by` set exactly when realized |
+| `planning_budget`, `planning_budget_amount` | `id`, `user_id`, `category_account_id`, `period_type`, `rollover`, `currency`; `budget_id`, `effective_from`, `amount` | `UNIQUE (user_id, category_account_id)`; category class `expense` or `income`, checked by the domain; amounts from the first day of a month, `PRIMARY KEY (budget_id, effective_from)` (A54) |
+| `planning_goal`, `planning_goal_account` | `id`, `user_id`, `name`, `target`, `currency`, `due_on`, `created_at`; `user_id`, `goal_id`, `account_id` | `UNIQUE (user_id, name)`; `target > 0`; accounts by composite foreign key (A55) |
 | `classification_rule` | `id`, `user_id`, `name`, `priority`, `enabled`, `stop_processing`, `conditions jsonb`, `actions jsonb`, `schema_version` | `UNIQUE (user_id, priority)`, deferrable for reordering |
 | `classification_payee_alias` | `id`, `user_id`, `pattern`, `match_type`, `payee_id` | `UNIQUE (user_id, match_type, pattern)` |
 | `classification_suggestion` | `id`, `user_id`, `fingerprint`, `conditions jsonb`, `actions jsonb`, `example_transaction_ids uuid[]`, `state`, `rule_id`, `created_at`, `decided_at` | `UNIQUE (user_id, fingerprint)` (P5 amendment A24); `rule_id` only when `accepted` |

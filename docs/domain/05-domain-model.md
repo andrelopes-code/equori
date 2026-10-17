@@ -321,11 +321,12 @@ classDiagram
 
 | Rule | Statement |
 |---|---|
-| Recurrence | `frequency` ∈ daily, weekly, monthly, yearly; `interval` ≥ 1. Monthly selectors, exactly one: `dayOfMonth` (1–31, or −1 for last day, T02), `weekday` + `ordinal` (2nd Tuesday, last Friday), `businessDayOrdinal` (5th business day, −1 for last). `adjustment` for non-business days: `none`, `following`, `preceding`, `modified_following`. End: `until` or `count` or neither. |
-| Template | Accounts, payee, category postings and description of the transaction to expect; amounts come from the terms. |
-| Occurrence identity | `(schedule, sequence)`; sequence numbers never change when terms change, so realized and skipped occurrences stay attached. |
-| Terms change | Effective-dated (T09): expected occurrences after the date are regenerated; realized occurrences never change. |
-| Budget | Amount per category and period (monthly by default), effective-dated. `rollover`: unspent amount carries to the next period when true. Spending is read from Ledger postings in the category subtree, accrual view by default. |
+| Recurrence | `frequency` ∈ daily, weekly, monthly, yearly; `interval` ≥ 1. `daily` counts days from `start`, `weekly` keeps the weekday of `start`, `yearly` the month and day of `start`. Monthly selectors, exactly one: `dayOfMonth` (1–31, or −1 for last day, T02), `weekday` + `ordinal` (2nd Tuesday, last Friday), `businessDayOrdinal` (1–23, −1 for last). A missing Nth weekday or Nth business day resolves to the last one of the month. `adjustment` for non-business days, after the selector and never for `businessDayOrdinal`: `none` (default), `following`, `preceding`, `modified_following`; business days follow calendar `br_banking`. End: `until` (inclusive) or `count` or neither; both apply to the unadjusted dates (P7 amendment A48). |
+| Template | One balance account, one counterpart (a category, or a balance account for `transfer` and `savings`), an optional payee and a description; amounts come from the terms (A46). |
+| Occurrence identity | `(schedule, sequence)`; sequences count the dates of the schedule from 1 and never change when terms change, so realized, skipped and moved occurrences stay attached (A49). |
+| Terms change | Effective-dated (T09) after the latest version: each version produces the dates of its rule up to the next version's date and continues the sequence; expected occurrences after the date that were not moved are regenerated; realized occurrences never change (A49, A52). |
+| Budget | One per category, monthly, effective-dated amounts. Spent = postings in the category subtree booked in the month (accrual view), positive for income categories; available = planned + carried − spent; carried = the previous month's available when `rollover` is true, possibly negative (A54). |
+| Goal | Current = sum of the booked balances of its balance accounts today; remaining = max(target − current, 0); progress in basis points, rounded down, within [0, 10000] (A55). |
 
 ## 5.4 Classification
 

@@ -36,11 +36,11 @@ flowchart LR
 | P5 Classification | Rules, payee aliases, payee history, suggestions, categorization method statistics, Ledger `Categorize` | S37–S44 | SC5; N07 with rules |
 | P5b Transfers from imports | Rule actions "mark as transfer to account" and "mark reimbursable to counterparty"; pairing an imported card payment with the checking debit that paid it (P4 amendment A14); external record links per posting (I07) | S45–S50 | A card payment imported from both files counts once in every order; SC2 holds after pairing |
 | P6 Ingestion: Pluggy | Credential encryption (ADR 008); integrations, several per user; Meu Pluggy connections; account mapping; scheduled and manual sync; updated and withdrawn lines; statement hints and installments from the aggregator; source categories; per-user isolation | S51–S59 | S51–S59 pass against a fake Pluggy; N15–N17 tests pass; sync of a real account reconciles (SC1, owner check per `docs/operations/pluggy.md`) |
-| P7 Planning | Schedules, recurrence engine with business days, occurrences, subscriptions, budgets, goals, projections, committed amounts | S27–S29 | Scenarios pass |
+| P7 Planning | Schedules, recurrence engine with business days, occurrences, subscriptions, budgets, goals, projections, committed amounts | S27–S29, S60–S63 | Scenarios pass; I07 (occurrence side) and I08 for schedule terms rejected by schema tests |
 | P8 Currencies and investments | Prices and feeds; multi-currency postings with weights; foreign purchases; exchanges; trades; investment income; Portfolio derived tables | S16, S17, S21, S22 | Scenarios pass; D1 data complete |
 | P9 Reporting and export | Accrual and cash views; net worth; statement analytics; export and import round trip | S30 | SC6; N13 |
 | Web interface | Separate track once the P2 API contract is stable: SPA embedded in the binary (ADR 008) | — | SC4, N21, N22 |
 
 ## 9.3 Next step
 
-P1 to P6 are delivered; the SC1 check of P6 waits for the owner (`docs/operations/pluggy.md`, section 5). Next: P7, then P8. The web interface track resumes after P8; until then it holds the embedded shell and the typed client only.
+P1 to P7 are delivered; the SC1 check of P6 waits for the owner (`docs/operations/pluggy.md`, section 5). Next: P8. The web interface track resumes after P8; until then it holds the embedded shell and the typed client only.

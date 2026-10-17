@@ -410,7 +410,7 @@ An OFX credit card statement for Itaú Visa: −230.00 on 2026-10-14 is a `charg
 | M28 | S02 |
 | M29 | S31 |
 
-The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44; transfers from imports by S45–S50; aggregator sync by S51–S59.
+The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44; transfers from imports by S45–S50; aggregator sync by S51–S59; schedules (F7) by S27–S29 and the planning views by S60–S63.
 
 ## 6.13 Classification
 
@@ -515,3 +515,24 @@ Two users with their own credentials and items sync on the same scheduler tick: 
 ### S59 Two integrations of one user
 
 One user holds two integrations, "Meu Pluggy 1" with five items and "Meu Pluggy 2" with three; each connection syncs with its own integration's API key, and a wrong secret on one integration leaves the other syncing.
+
+## 6.16 Planning views
+
+Planning scenarios of phase P7 (chapter 3, F7; chapter 5, 5.3). The clock is 2026-11-01 unless a scenario says otherwise; Landlord is a payee. S27 to S29 are tested as `TestS27MonthlyRent`, `TestS28Day31Dates` and `TestS29SubscriptionWithPriceChangeAndPause`; S27 realizes its 2026-11 occurrence with a PIX of −2,100.00 to Landlord on 2026-11-05.
+
+### S60 Budget with rollover
+
+Budget Food 1,800.00 from 2026-10 with rollover; October spends 1,500.00 (Supermarket 1,000.00, Restaurant 500.00), November 2,300.00; 2,000.00 is effective from 2026-12. October: planned 1,800.00, carried 0.00, available 300.00. November: planned 1,800.00, carried 300.00, available −200.00. December: planned 2,000.00, carried −200.00, spent 0.00, available 1,800.00.
+
+### S61 Goal progress
+
+Goal "Emergency" of 30,000.00 due 2027-06-30 over Emergency fund, whose balance is 10,083.41: current 10,083.41, remaining 19,916.59, progress 3361 basis points.
+
+### S62 Projection
+
+Nubank checking holds 5,000.00 on 2026-11-01, with the rent of S27 and a salary of 5,000.00 on the 5th business day of each month. The projection to 2026-12-31 has the points 2026-11-05 −2,100.00 (2,900.00), 2026-11-09 +5,000.00 (7,900.00; 2026-11-02 is a holiday), 2026-12-07 −2,100.00 (5,800.00) and 2026-12-07 +5,000.00 (10,800.00); the closing balance is 10,800.00.
+
+### S63 Committed amount
+
+With the laptop of S06, the rent of S27, the streaming of S29 and the salary of S62, `GET /commitments?month=2026-12` returns installments 333.33, occurrences 2,139.90 (rent 2,100.00, streaming 39.90) and total 2,473.23; the salary is not counted.
+

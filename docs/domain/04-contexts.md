@@ -101,10 +101,10 @@ Card statements and installment plans stay in Ledger: recording a card purchase 
 |---|---|
 | Responsibility | Schedules, recurrence rules, occurrences, subscriptions, budgets, goals, projections, committed amounts. |
 | Invariants | I07 (occurrence side), I08 for schedule terms. |
-| Reacts to | `TransactionRecorded`, `TransactionVoided` (realize or release occurrences). |
-| Commands | `CreateSchedule`, `ChangeScheduleTerms`, `PauseSchedule`, `EndSchedule`, `SkipOccurrence`, `MoveOccurrence`, `SetBudget`, `SetGoal`. |
-| Events published | `OccurrenceOverdue`, `BudgetExceeded`. |
-| Calls | Ledger queries (balances, open statements, unbilled installments) for projections. |
+| Reacts to | `TransactionRecorded`, `TransactionCorrected`, `TransactionCategorized`, `TransactionVoided` (realize or release occurrences, P7 amendment A51). |
+| Commands | `CreateSchedule`, `ChangeScheduleTerms`, `PauseSchedule`, `EndSchedule`, `SkipOccurrence`, `MoveOccurrence`, `RealizeOccurrence`, `UnrealizeOccurrence`, `SetBudget`, `SetGoal`. |
+| Events published | None in P7: `OccurrenceOverdue` and `BudgetExceeded` wait for a consumer; overdue is derived on read (A50). |
+| Calls | Ledger `AccountFacts`, `TransactionFacts`, `MissingPayees`, `BaseCurrency`, `Balance` (projections, goals), `CategoryTotal` (budgets), `Commitment` (committed amounts, A54–A57); Market data holidays of `br_banking`. |
 
 ### 4.3.5 Portfolio
 
