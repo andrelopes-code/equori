@@ -20,6 +20,8 @@ const catalogs: Record<Locale, Catalog> = {
 
 type Vars = Record<string, string | number>;
 
+export type TFunction = (key: MessageKey, vars?: Vars) => string;
+
 interface I18n {
   locale: Locale;
   setLocale: (locale: Locale) => void;
@@ -46,7 +48,7 @@ export function I18nProvider({
   return <I18nContext value={value}>{children}</I18nContext>;
 }
 
-export function useT(): (key: MessageKey, vars?: Vars) => string {
+export function useT(): TFunction {
   const { locale } = useContext(I18nContext);
   return useCallback(
     (key, vars) => {
