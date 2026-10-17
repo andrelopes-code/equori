@@ -338,7 +338,8 @@ type Problem struct {
 	// account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
 	// already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
 	// record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
-	// integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use.
+	// integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
+	// currency_unsupported.
 	Code      string        `json:"code"`
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`

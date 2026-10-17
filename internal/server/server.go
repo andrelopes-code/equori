@@ -18,6 +18,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/ingestion"
 	"github.com/andrelopes-code/equori/internal/ledger"
 	"github.com/andrelopes-code/equori/internal/marketdata"
+	"github.com/andrelopes-code/equori/internal/planning"
 	"github.com/andrelopes-code/equori/internal/platform/apidoc"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
@@ -50,6 +51,7 @@ type App struct {
 	Ledger     *ledger.Module
 	Reporting  *reporting.Module
 	Ingestion  *ingestion.Module
+	Planning   *planning.Module
 }
 
 // New registers every module's routes and outbox subscriptions; the caller runs Dispatcher.
@@ -74,6 +76,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
+	planningModule := planning.New(pool, dispatcher, ledgerModule, marketdataModule, clk, log)
 
 	mux := http.NewServeMux()
 	mux.Handle("GET /healthz", httpserver.Health(pool))
@@ -85,6 +88,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	reportingModule.RegisterRoutes(mux)
 	ingestionModule.RegisterRoutes(mux)
 	classificationModule.RegisterRoutes(mux)
+	planningModule.RegisterRoutes(mux)
 	marketdataModule.RegisterRoutes(mux, log)
 	mux.Handle("/api/", httpserver.NotFound())
 	// Method-less: "GET /" overlaps "/api/" without either being more specific, and ServeMux panics.
@@ -98,5 +102,6 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		Ledger:     ledgerModule,
 		Reporting:  reportingModule,
 		Ingestion:  ingestionModule,
+		Planning:   planningModule,
 	}, nil
 }

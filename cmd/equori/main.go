@@ -93,9 +93,16 @@ func serve() error {
 			app.Ingestion.RunScheduler(ctx, cfg.SyncInterval)
 		}
 	}()
+	// P7 amendment A53: the occurrence horizon moves with the clock.
+	planningDone := make(chan struct{})
+	go func() {
+		defer close(planningDone)
+		app.Planning.RunScheduler(ctx, time.Hour)
+	}()
 	defer func() {
 		stop()
 		<-schedulerDone
+		<-planningDone
 		if err := <-dispatcherDone; err != nil {
 			log.Error("outbox dispatcher stopped", "error", err)
 		}

@@ -1213,10 +1213,180 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/schedules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Schedules in creation order. */
+        get: operations["listSchedules"];
+        put?: never;
+        /**
+         * Create a schedule and generate its occurrences up to today + 12 months (P7 amendments A46-A49).
+         * @description Money leaves account_id for every kind except income. The counterpart is an expense category for bill
+         *     and subscription, an income category for income, and another balance account for transfer and savings.
+         *     Both accounts are in the base currency (422 currency_unsupported otherwise).
+         */
+        post: operations["createSchedule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/schedules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A schedule with its terms versions and pauses. */
+        get: operations["getSchedule"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/occurrences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Occurrences with expected date in [from, to], at most 366 days, by date.
+         * @description State overdue is derived from expected and the schedule's grace days (P7 amendment A50).
+         */
+        get: operations["listOccurrences"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @enum {string} */
+        ScheduleKind: "bill" | "income" | "subscription" | "transfer" | "savings";
+        /**
+         * @description A monthly rule takes exactly one of day_of_month, weekday with ordinal, business_day_ordinal; -1 means
+         *     the last one. Business days follow calendar br_banking. until is inclusive (P7 amendment A48).
+         */
+        Recurrence: {
+            /** @enum {string} */
+            frequency: "daily" | "weekly" | "monthly" | "yearly";
+            interval: number;
+            day_of_month?: number;
+            /** @enum {string} */
+            weekday?: "sunday" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday";
+            ordinal?: number;
+            business_day_ordinal?: number;
+            /**
+             * @default none
+             * @enum {string}
+             */
+            adjustment: "none" | "following" | "preceding" | "modified_following";
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            until?: string;
+            count?: number;
+        };
+        ScheduleInput: {
+            kind: components["schemas"]["ScheduleKind"];
+            /** Format: uuid */
+            account_id: string;
+            /** Format: uuid */
+            counterpart_id: string;
+            /** Format: uuid */
+            payee_id?: string;
+            description: string;
+            amount: components["schemas"]["Money"];
+            recurrence: components["schemas"]["Recurrence"];
+            /** @default 1000 */
+            match_tolerance_bp: number;
+            /** @default 3 */
+            grace_days: number;
+        };
+        ScheduleTerms: {
+            /** Format: date */
+            effective_from: string;
+            amount: components["schemas"]["Money"];
+            recurrence: components["schemas"]["Recurrence"];
+        };
+        SchedulePause: {
+            /** Format: date */
+            from: string;
+            /**
+             * Format: date
+             * @description Inclusive.
+             */
+            to: string;
+        };
+        Schedule: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["ScheduleKind"];
+            /** Format: uuid */
+            account_id: string;
+            /** Format: uuid */
+            counterpart_id: string;
+            /** Format: uuid */
+            payee_id?: string;
+            description: string;
+            match_tolerance_bp: number;
+            grace_days: number;
+            /**
+             * Format: date
+             * @description No occurrence on or after this date; absent while the schedule has no end.
+             */
+            ends_on?: string;
+            /** @description Versions by effective date. */
+            terms: components["schemas"]["ScheduleTerms"][];
+            pauses: components["schemas"]["SchedulePause"][];
+        };
+        SchedulePage: {
+            items: components["schemas"]["Schedule"][];
+            /** @description Absent on the last page. */
+            next_cursor?: string;
+        };
+        /** @enum {string} */
+        OccurrenceState: "expected" | "overdue" | "realized" | "skipped";
+        Occurrence: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            schedule_id: string;
+            sequence: number;
+            /** Format: date */
+            expected_on: string;
+            expected_amount: components["schemas"]["Money"];
+            state: components["schemas"]["OccurrenceState"];
+            /**
+             * Format: uuid
+             * @description Present when realized.
+             */
+            transaction_id?: string;
+            /**
+             * Format: date
+             * @description The generated date of a moved occurrence.
+             */
+            moved_from?: string;
+        };
+        OccurrenceList: {
+            items: components["schemas"]["Occurrence"][];
+        };
         SourceCategory: {
             /** Format: uuid */
             id: string;
@@ -2072,7 +2242,8 @@ export interface components {
              *     account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
              *     already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
              *     record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
-             *     integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use.
+             *     integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
+             *     currency_unsupported.
              */
             code: string;
             request_id?: string;
@@ -4540,6 +4711,112 @@ export interface operations {
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    listSchedules: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchedulePage"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+        };
+    };
+    createSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduleInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    /** @description Path of the created record. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Schedule"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Schedule"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    listOccurrences: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                schedule_id?: string;
+                state?: components["schemas"]["OccurrenceState"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OccurrenceList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };
     };

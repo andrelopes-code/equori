@@ -20,6 +20,8 @@ tags:
     description: File imports, aggregator integrations and connections, external records and their review.
   - name: classification
     description: Categorization rules, payee aliases, suggestions and categorization methods.
+  - name: planning
+    description: Schedules and their occurrences, budgets, goals, projections and committed amounts.
 paths:
   /session:
     post:
@@ -2223,6 +2225,118 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /schedules:
+    get:
+      tags: [planning]
+      operationId: listSchedules
+      summary: Schedules in creation order.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchedulePage"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [planning]
+      operationId: createSchedule
+      summary: Create a schedule and generate its occurrences up to today + 12 months (P7 amendments A46-A49).
+      description: |
+        Money leaves account_id for every kind except income. The counterpart is an expense category for bill
+        and subscription, an income category for income, and another balance account for transfer and savings.
+        Both accounts are in the base currency (422 currency_unsupported otherwise).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduleInput"
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /schedules/{id}:
+    get:
+      tags: [planning]
+      operationId: getSchedule
+      summary: A schedule with its terms versions and pauses.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /occurrences:
+    get:
+      tags: [planning]
+      operationId: listOccurrences
+      summary: Occurrences with expected date in [from, to], at most 366 days, by date.
+      description: State overdue is derived from expected and the schedule's grace days (P7 amendment A50).
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: schedule_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: state
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/OccurrenceState"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OccurrenceList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
 security:
   - sessionCookie: []
 components:
@@ -2268,6 +2382,195 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
   schemas:
+    ScheduleKind:
+      type: string
+      enum: [bill, income, subscription, transfer, savings]
+    Recurrence:
+      type: object
+      additionalProperties: false
+      required: [frequency, interval, start]
+      description: |
+        A monthly rule takes exactly one of day_of_month, weekday with ordinal, business_day_ordinal; -1 means
+        the last one. Business days follow calendar br_banking. until is inclusive (P7 amendment A48).
+      properties:
+        frequency:
+          type: string
+          enum: [daily, weekly, monthly, yearly]
+        interval:
+          type: integer
+          minimum: 1
+          maximum: 120
+        day_of_month:
+          type: integer
+          minimum: -1
+          maximum: 31
+        weekday:
+          type: string
+          enum: [sunday, monday, tuesday, wednesday, thursday, friday, saturday]
+        ordinal:
+          type: integer
+          minimum: -1
+          maximum: 5
+        business_day_ordinal:
+          type: integer
+          minimum: -1
+          maximum: 23
+        adjustment:
+          type: string
+          enum: [none, following, preceding, modified_following]
+          default: none
+        start:
+          type: string
+          format: date
+        until:
+          type: string
+          format: date
+        count:
+          type: integer
+          minimum: 1
+          maximum: 10000
+    ScheduleInput:
+      type: object
+      additionalProperties: false
+      required: [kind, account_id, counterpart_id, description, amount, recurrence]
+      properties:
+        kind:
+          $ref: "#/components/schemas/ScheduleKind"
+        account_id:
+          type: string
+          format: uuid
+        counterpart_id:
+          type: string
+          format: uuid
+        payee_id:
+          type: string
+          format: uuid
+        description:
+          type: string
+          minLength: 1
+          maxLength: 200
+        amount:
+          $ref: "#/components/schemas/Money"
+        recurrence:
+          $ref: "#/components/schemas/Recurrence"
+        match_tolerance_bp:
+          type: integer
+          minimum: 0
+          maximum: 10000
+          default: 1000
+        grace_days:
+          type: integer
+          minimum: 0
+          maximum: 31
+          default: 3
+    ScheduleTerms:
+      type: object
+      required: [effective_from, amount, recurrence]
+      properties:
+        effective_from:
+          type: string
+          format: date
+        amount:
+          $ref: "#/components/schemas/Money"
+        recurrence:
+          $ref: "#/components/schemas/Recurrence"
+    SchedulePause:
+      type: object
+      required: [from, to]
+      properties:
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+          description: Inclusive.
+    Schedule:
+      type: object
+      required: [id, kind, account_id, counterpart_id, description, match_tolerance_bp, grace_days, terms, pauses]
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          $ref: "#/components/schemas/ScheduleKind"
+        account_id:
+          type: string
+          format: uuid
+        counterpart_id:
+          type: string
+          format: uuid
+        payee_id:
+          type: string
+          format: uuid
+        description:
+          type: string
+        match_tolerance_bp:
+          type: integer
+        grace_days:
+          type: integer
+        ends_on:
+          type: string
+          format: date
+          description: No occurrence on or after this date; absent while the schedule has no end.
+        terms:
+          type: array
+          description: Versions by effective date.
+          items:
+            $ref: "#/components/schemas/ScheduleTerms"
+        pauses:
+          type: array
+          items:
+            $ref: "#/components/schemas/SchedulePause"
+    SchedulePage:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Schedule"
+        next_cursor:
+          type: string
+          description: Absent on the last page.
+    OccurrenceState:
+      type: string
+      enum: [expected, overdue, realized, skipped]
+    Occurrence:
+      type: object
+      required: [id, schedule_id, sequence, expected_on, expected_amount, state]
+      properties:
+        id:
+          type: string
+          format: uuid
+        schedule_id:
+          type: string
+          format: uuid
+        sequence:
+          type: integer
+        expected_on:
+          type: string
+          format: date
+        expected_amount:
+          $ref: "#/components/schemas/Money"
+        state:
+          $ref: "#/components/schemas/OccurrenceState"
+        transaction_id:
+          type: string
+          format: uuid
+          description: Present when realized.
+        moved_from:
+          type: string
+          format: date
+          description: The generated date of a moved occurrence.
+    OccurrenceList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Occurrence"
     SourceCategory:
       type: object
       required: [id, provider, external_id, name, count]
@@ -3977,7 +4280,8 @@ components:
             account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
             already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
             record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
-            integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use.
+            integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
+            currency_unsupported.
         request_id:
           type: string
         errors:

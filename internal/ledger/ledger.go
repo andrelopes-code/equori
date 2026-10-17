@@ -182,6 +182,12 @@ func (m *Module) TransactionFacts(ctx context.Context, userID int64, ids []uuid.
 	return m.svc.TransactionFacts(ctx, userID, ids)
 }
 
+// BaseCurrency returns the user's base currency, as GET /settings reads it.
+func (m *Module) BaseCurrency(ctx context.Context, userID int64) (money.Currency, error) {
+	s, err := m.svc.Settings(ctx, userID)
+	return s.BaseCurrency, err
+}
+
 func (m *Module) AccountFacts(ctx context.Context, userID int64) ([]AccountFact, error) {
 	return m.svc.AccountFacts(ctx, userID)
 }
