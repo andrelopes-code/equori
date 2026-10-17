@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -96,8 +97,8 @@ func toTransaction(row LedgerTransaction) domain.Transaction {
 	}
 }
 
-func toPosting(row ListPostingsRow) (domain.Posting, error) {
-	amount, err := money.New(row.Amount, money.Currency(row.AccountInstrument))
+func (r *Repository) toPosting(ctx context.Context, row ListPostingsRow) (domain.Posting, error) {
+	amount, err := app.AmountOf(ctx, r.ins, row.Amount, money.Currency(row.AccountInstrument))
 	if err != nil {
 		return domain.Posting{}, fmt.Errorf("posting %s amount: %w", row.ID, err)
 	}
@@ -188,7 +189,7 @@ func toSnapshot(t domain.Transaction) snapshot {
 	return s
 }
 
-func (s snapshot) transaction() (domain.Transaction, error) {
+func (s snapshot) transaction(ctx context.Context, ins app.Instruments) (domain.Transaction, error) {
 	d, err := time.Parse(time.DateOnly, s.Date)
 	if err != nil {
 		return domain.Transaction{}, err
@@ -201,7 +202,7 @@ func (s snapshot) transaction() (domain.Transaction, error) {
 		t.Links = append(t.Links, domain.Link{Type: domain.LinkType(l.Type), Target: l.Target})
 	}
 	for _, sp := range s.Postings {
-		amount, err := money.New(sp.Amount, money.Currency(sp.Currency))
+		amount, err := app.AmountOf(ctx, ins, sp.Amount, money.Currency(sp.Currency))
 		if err != nil {
 			return domain.Transaction{}, err
 		}

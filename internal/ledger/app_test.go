@@ -38,7 +38,8 @@ func newLedgerFixture(t testing.TB) ledgerFixture {
 	d := outbox.NewDispatcher(pool, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	cal := calendarAdapter{marketdata.New(pool)}
 	New(pool, d, cal.cal, clock.New(time.UTC, time.Now), slog.New(slog.NewTextHandler(io.Discard, nil)))
-	f := ledgerFixture{pool: pool, dispatcher: d, svc: app.NewService(postgres.NewRepository(pool), clock.New(time.UTC, time.Now), cal)}
+	ins := &instruments{md: cal.cal, cache: map[money.Currency]app.Instrument{}}
+	f := ledgerFixture{pool: pool, dispatcher: d, svc: app.NewService(postgres.NewRepository(pool, ins), clock.New(time.UTC, time.Now), cal, ins)}
 	f.userID = provisionedUser(t, pool, d)
 	f.checking = f.createAccount(t, domain.Account{Name: "Nubank checking", Class: domain.ClassAsset, Kind: domain.KindChecking})
 	f.food = f.createAccount(t, domain.Account{Name: "Food", Class: domain.ClassExpense})

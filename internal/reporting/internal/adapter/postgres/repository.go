@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -26,12 +25,18 @@ type Repository struct {
 
 func NewRepository(db db) *Repository { return &Repository{db: db, q: New(db)} }
 
+// AccountCurrency is the instrument of the account and its sub-accounts (P8 amendment A63).
 func (r *Repository) AccountCurrency(ctx context.Context, userID int64, accountID uuid.UUID) (string, error) {
-	c, err := r.q.AccountCurrency(ctx, AccountCurrencyParams{UserID: userID, ID: accountID})
-	if errors.Is(err, pgx.ErrNoRows) {
+	cs, err := r.q.TreeInstruments(ctx, TreeInstrumentsParams{UserID: userID, AccountID: accountID})
+	switch {
+	case err != nil:
+		return "", err
+	case len(cs) == 0:
 		return "", app.ErrNotFound
+	case len(cs) > 1:
+		return "", app.ErrMixedInstruments
 	}
-	return c, err
+	return cs[0], nil
 }
 
 // Rebuild runs in one database transaction (a savepoint inside a caller's transaction),

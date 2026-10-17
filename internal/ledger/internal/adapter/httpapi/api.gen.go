@@ -610,9 +610,11 @@ func (e GetAccountBalanceParamsBasis) Valid() bool {
 
 // Account defines model for Account.
 type Account struct {
-	Card          *CardSummary        `json:"card,omitempty"`
-	Class         AccountClass        `json:"class"`
-	ClosedOn      *openapi_types.Date `json:"closed_on,omitempty"`
+	Card     *CardSummary        `json:"card,omitempty"`
+	Class    AccountClass        `json:"class"`
+	ClosedOn *openapi_types.Date `json:"closed_on,omitempty"`
+
+	// Currency Instrument of the account; a security only for a child of a brokerage account (P8 amendment A63).
 	Currency      string              `json:"currency"`
 	Id            openapi_types.UUID  `json:"id"`
 	InstitutionId *openapi_types.UUID `json:"institution_id,omitempty"`
@@ -635,7 +637,9 @@ type AccountClass string
 
 // AccountInput defines model for AccountInput.
 type AccountInput struct {
-	Class         AccountClass           `json:"class"`
+	Class AccountClass `json:"class"`
+
+	// Currency Instrument of the account; a security only for a child of a brokerage account (P8 amendment A63).
 	Currency      string                 `json:"currency"`
 	InstitutionId *openapi_types.UUID    `json:"institution_id,omitempty"`
 	Kind          *AccountInputKind      `json:"kind,omitempty"`
@@ -1055,7 +1059,7 @@ type Problem struct {
 	// record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
 	// integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
 	// currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
-	// budget_exists, instrument_exists.
+	// budget_exists, instrument_exists, mixed_instruments.
 	Code      string        `json:"code"`
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`
@@ -3537,6 +3541,20 @@ func (response GetAccountBalance404ApplicationProblemPlusJSONResponse) VisitGetA
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAccountBalance422ApplicationProblemPlusJSONResponse Problem
+
+func (response GetAccountBalance422ApplicationProblemPlusJSONResponse) VisitGetAccountBalanceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
 	_, err := buf.WriteTo(w)
 	return err
 }

@@ -58,6 +58,8 @@ func toProblem(err error) (problem.Details, bool) {
 		return d, true
 	case errors.Is(err, app.ErrNotFound):
 		return problem.New(http.StatusNotFound, "not_found", "account not found"), true
+	case errors.Is(err, app.ErrMixedInstruments):
+		return problem.New(http.StatusUnprocessableEntity, "mixed_instruments", err.Error()), true
 	}
 	return problem.Details{}, false
 }

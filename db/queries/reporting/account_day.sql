@@ -1,5 +1,10 @@
--- name: AccountCurrency :one
-SELECT instrument FROM ledger_account WHERE user_id = $1 AND id = $2;
+-- name: TreeInstruments :many
+WITH RECURSIVE tree AS (
+    SELECT a.id, a.instrument FROM ledger_account a WHERE a.user_id = @user_id AND a.id = @account_id
+    UNION ALL
+    SELECT c.id, c.instrument FROM ledger_account c JOIN tree ON c.parent_id = tree.id WHERE c.user_id = @user_id
+)
+SELECT DISTINCT instrument FROM tree ORDER BY instrument;
 
 -- name: ListAllAccounts :many
 SELECT user_id, id FROM ledger_account ORDER BY user_id, id;

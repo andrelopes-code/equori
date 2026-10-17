@@ -212,6 +212,11 @@ func checkPosting(i int, p Posting, t Transaction, accounts map[uuid.UUID]Accoun
 	default:
 		return Posting{}, invalid(field("status"), "must be pending, cleared or reconciled")
 	}
+	if o := p.Original; o != nil {
+		if _, err := money.ParseCurrency(string(o.Currency())); err != nil || o.Currency() == a.Instrument || o.IsZero() || o.IsNegative() != p.Amount.IsNegative() {
+			return Posting{}, invalid(field("original"), "must be a non-zero amount of another currency with the sign of the amount")
+		}
+	}
 	if p.SettledOn != nil && p.SettledOn.Before(t.Date) {
 		return Posting{}, invalid(field("settled_on"), "must not be before the transaction date")
 	}

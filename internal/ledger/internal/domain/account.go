@@ -128,6 +128,9 @@ type Account struct {
 	ClosedOn       *time.Time
 	YieldMode      YieldMode
 	SystemRole     SystemRole
+	// QuoteCurrency is the currency a security is quoted in; set by the application
+	// from Market data, empty for a currency account (P8 amendment A63).
+	QuoteCurrency money.Currency
 }
 
 const maxNameLength = 120
@@ -149,8 +152,8 @@ func NewAccount(a Account) (Account, error) {
 	case a.IsBalance() && !slices.Contains(kinds, a.Kind):
 		return Account{}, invalid("kind", "is not allowed for class "+string(a.Class))
 	}
-	if _, err := money.ParseCurrency(string(a.Instrument)); err != nil {
-		return Account{}, invalid("instrument", "must be a supported currency")
+	if a.HoldsSecurity() && (a.Class != ClassAsset || a.Kind != KindBrokerage || a.ParentID == uuid.Nil) {
+		return Account{}, invalid("currency", "a security is held only by a brokerage account that is a child of a brokerage account")
 	}
 	if a.OpenedOn.IsZero() {
 		return Account{}, invalid("opened_on", "is required")
@@ -174,6 +177,12 @@ func NewAccount(a Account) (Account, error) {
 	return a, nil
 }
 
+// HoldsSecurity reports whether the instrument is not a currency (P8 amendment A63).
+func (a Account) HoldsSecurity() bool {
+	_, err := money.ParseCurrency(string(a.Instrument))
+	return err != nil
+}
+
 // IsBalance reports whether the account holds money the user has or owes (chapter 2).
 func (a Account) IsBalance() bool { return a.Class == ClassAsset || a.Class == ClassLiability }
 
@@ -190,7 +199,9 @@ func ValidateParent(child, parent Account) error {
 		return &FieldError{Field: "parent_id", Message: "unknown account", Err: ErrUnknownAccount}
 	case child.Class != parent.Class:
 		return invalid("parent_id", "must have the same class")
-	case child.Instrument != parent.Instrument:
+	case child.HoldsSecurity() && (parent.Kind != KindBrokerage || parent.HoldsSecurity() || parent.Instrument != child.QuoteCurrency):
+		return invalid("currency", "a security is held by a child of a brokerage account in its quote currency")
+	case !child.HoldsSecurity() && child.Instrument != parent.Instrument:
 		return invalid("parent_id", "must use the same currency, so the parent balance is a sum of one currency")
 	case child.IsBalance() && child.InstitutionID != parent.InstitutionID:
 		return invalid("parent_id", "must be at the same institution")

@@ -33,10 +33,11 @@ type Service struct {
 	repo  Repository
 	clock Clock
 	cal   Calendar
+	ins   Instruments
 }
 
-func NewService(repo Repository, clock Clock, cal Calendar) *Service {
-	return &Service{repo: repo, clock: clock, cal: cal}
+func NewService(repo Repository, clock Clock, cal Calendar, ins Instruments) *Service {
+	return &Service{repo: repo, clock: clock, cal: cal, ins: ins}
 }
 
 // Provision creates the settings and system accounts of a new user. It is idempotent.
@@ -126,6 +127,9 @@ func (s *Service) CreateAccount(ctx context.Context, userID int64, a domain.Acco
 		a.OpenedOn = earliestDate
 	}
 	a.SystemRole = ""
+	if err := s.describeInstrument(ctx, &a); err != nil {
+		return domain.Account{}, err
+	}
 	a, err := domain.NewAccount(a)
 	if err != nil {
 		return domain.Account{}, err
@@ -169,6 +173,9 @@ func (s *Service) UpdateAccount(ctx context.Context, userID int64, id uuid.UUID,
 		}
 		if p.YieldMode != nil {
 			a.YieldMode = *p.YieldMode
+		}
+		if err := s.describeInstrument(ctx, &a); err != nil {
+			return err
 		}
 		if a, err = domain.NewAccount(a); err != nil {
 			return err

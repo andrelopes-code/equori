@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -109,7 +110,10 @@ func fromAccountInput(in AccountInput) domain.Account {
 	return a
 }
 
-func fromTransactionInput(in TransactionInput) (domain.Transaction, error) {
+// amountOf builds an amount of any instrument; the module resolves security scales.
+type amountOf func(ctx context.Context, units int64, code money.Currency) (money.Money, error)
+
+func fromTransactionInput(ctx context.Context, in TransactionInput, amounts amountOf) (domain.Transaction, error) {
 	t := domain.Transaction{
 		Date: dateOf(in.Date), Description: optString(in.Description), PayeeID: optUUID(in.PayeeId),
 	}
@@ -123,9 +127,9 @@ func fromTransactionInput(in TransactionInput) (domain.Transaction, error) {
 	}
 	for i, p := range in.Postings {
 		field := func(name string) string { return fmt.Sprintf("postings[%d].%s", i, name) }
-		amount, err := fromMoneyAPI(field("amount"), p.Amount)
+		amount, err := amounts(ctx, p.Amount.Amount, money.Currency(p.Amount.Currency))
 		if err != nil {
-			return domain.Transaction{}, err
+			return domain.Transaction{}, &domain.FieldError{Field: field("amount"), Message: err.Error(), Err: domain.ErrValidation}
 		}
 		posting := domain.Posting{
 			AccountID: p.AccountId, Amount: amount, SettledOn: optDate(p.SettledOn), Memo: optString(p.Memo),

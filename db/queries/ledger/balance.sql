@@ -49,3 +49,11 @@ WHERE p.account_id IN (SELECT id FROM tree)
   AND p.booked_on >= @from_date AND p.booked_on < @to_date
 GROUP BY 1
 ORDER BY 1;
+
+-- name: TreeInstruments :many
+WITH RECURSIVE tree AS (
+    SELECT a.id, a.instrument FROM ledger_account a WHERE a.user_id = @user_id AND a.id = @account_id
+    UNION ALL
+    SELECT c.id, c.instrument FROM ledger_account c JOIN tree ON c.parent_id = tree.id WHERE c.user_id = @user_id
+)
+SELECT DISTINCT instrument FROM tree ORDER BY instrument;

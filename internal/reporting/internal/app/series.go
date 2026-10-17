@@ -14,6 +14,8 @@ const MaxSeriesDays = 3660
 var (
 	ErrNotFound     = errors.New("not found")
 	ErrInvalidRange = errors.New("invalid date range")
+	// ErrMixedInstruments: the account's sub-accounts hold more than one instrument (P8 A63).
+	ErrMixedInstruments = errors.New("the account and its sub-accounts hold more than one instrument")
 )
 
 type Basis string

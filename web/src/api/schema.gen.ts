@@ -2439,6 +2439,7 @@ export interface components {
             class: components["schemas"]["AccountClass"];
             /** @enum {string} */
             kind?: "checking" | "savings" | "cash" | "wallet" | "benefit" | "reserve" | "brokerage" | "receivable" | "credit_card" | "loan" | "payable";
+            /** @description Instrument of the account; a security only for a child of a brokerage account (P8 amendment A63). */
             currency: string;
             /** Format: uuid */
             parent_id?: string;
@@ -2763,7 +2764,7 @@ export interface components {
              *     record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
              *     integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
              *     currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
-             *     budget_exists, instrument_exists.
+             *     budget_exists, instrument_exists, mixed_instruments.
              */
             code: string;
             request_id?: string;
@@ -3201,6 +3202,7 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     listTransactions: {
@@ -3459,6 +3461,7 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     listHolidays: {

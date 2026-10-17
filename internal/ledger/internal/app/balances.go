@@ -23,11 +23,18 @@ func (s *Service) BalanceAt(ctx context.Context, userID int64, accountID uuid.UU
 	if err != nil {
 		return Balance{}, err
 	}
+	instruments, err := s.repo.TreeInstruments(ctx, userID, accountID)
+	if err != nil {
+		return Balance{}, err
+	}
+	if len(instruments) > 1 {
+		return Balance{}, ErrMixedInstruments
+	}
 	total, err := s.repo.BalanceAt(ctx, userID, accountID, date, basis)
 	if err != nil {
 		return Balance{}, err
 	}
-	amount, err := money.New(total, a.Instrument)
+	amount, err := s.AmountOf(ctx, total, a.Instrument)
 	if err != nil {
 		return Balance{}, err
 	}

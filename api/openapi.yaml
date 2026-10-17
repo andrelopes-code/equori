@@ -357,6 +357,8 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /transactions:
     get:
       tags: [ledger]
@@ -624,6 +626,8 @@ paths:
         "401":
           $ref: "#/components/responses/Problem"
         "404":
+          $ref: "#/components/responses/Problem"
+        "422":
           $ref: "#/components/responses/Problem"
   /calendars/{name}/holidays:
     get:
@@ -4564,7 +4568,8 @@ components:
           enum: [checking, savings, cash, wallet, benefit, reserve, brokerage, receivable, credit_card, loan, payable]
         currency:
           type: string
-          pattern: "^[A-Z]{3}$"
+          description: Instrument of the account; a security only for a child of a brokerage account (P8 amendment A63).
+          pattern: "^[A-Z0-9.]{2,20}$"
         parent_id:
           type: string
           format: uuid
@@ -5228,7 +5233,7 @@ components:
             record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
             integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
             currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
-            budget_exists, instrument_exists.
+            budget_exists, instrument_exists, mixed_instruments.
         request_id:
           type: string
         errors:

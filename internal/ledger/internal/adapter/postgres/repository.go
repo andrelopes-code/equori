@@ -35,13 +35,15 @@ type db interface {
 }
 
 type Repository struct {
-	db db
-	q  *Queries
-	tx pgx.Tx
+	db  db
+	q   *Queries
+	tx  pgx.Tx
+	ins app.Instruments
 }
 
-func NewRepository(db db) *Repository {
-	r := &Repository{db: db, q: New(db)}
+// NewRepository reads amounts of securities with the scales of ins; nil serves currencies only.
+func NewRepository(db db, ins app.Instruments) *Repository {
+	r := &Repository{db: db, q: New(db), ins: ins}
 	if tx, ok := db.(pgx.Tx); ok {
 		r.tx = tx
 	}
@@ -50,7 +52,7 @@ func NewRepository(db db) *Repository {
 
 func (r *Repository) InTx(ctx context.Context, fn func(app.Repository) error) error {
 	return pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
-		return fn(&Repository{db: tx, q: r.q.WithTx(tx), tx: tx})
+		return fn(&Repository{db: tx, q: r.q.WithTx(tx), tx: tx, ins: r.ins})
 	})
 }
 
@@ -280,7 +282,7 @@ func (r *Repository) completeAll(ctx context.Context, userID int64, rows []Ledge
 		return nil, err
 	}
 	for _, p := range postings {
-		posting, err := toPosting(p)
+		posting, err := r.toPosting(ctx, p)
 		if err != nil {
 			return nil, err
 		}
@@ -479,7 +481,7 @@ func (r *Repository) Versions(ctx context.Context, userID int64, id uuid.UUID) (
 		if err := json.Unmarshal(row.Snapshot, &s); err != nil {
 			return nil, fmt.Errorf("decode version %d of %s: %w", row.Version, id, err)
 		}
-		t, err := s.transaction()
+		t, err := s.transaction(ctx, r.ins)
 		if err != nil {
 			return nil, err
 		}
@@ -502,6 +504,15 @@ func referenceError(err error) error {
 		return &domain.FieldError{Field: "reference", Message: "unknown reference: " + pgErr.ConstraintName, Err: domain.ErrUnknownAccount}
 	}
 	return err
+}
+
+func (r *Repository) TreeInstruments(ctx context.Context, userID int64, accountID uuid.UUID) ([]money.Currency, error) {
+	rows, err := r.q.TreeInstruments(ctx, TreeInstrumentsParams{UserID: userID, AccountID: accountID})
+	out := make([]money.Currency, len(rows))
+	for i, c := range rows {
+		out[i] = money.Currency(c)
+	}
+	return out, err
 }
 
 func (r *Repository) BalanceAt(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis app.Basis) (int64, error) {

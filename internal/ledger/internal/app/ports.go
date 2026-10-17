@@ -25,12 +25,27 @@ var (
 	ErrDisputeOpen        = errors.New("the transaction already has an open dispute")
 	ErrDisputeResolved    = errors.New("the dispute is already resolved")
 	ErrDifferenceRemains  = errors.New("the settled balance still differs from the assertion")
+	ErrUnknownInstrument  = errors.New("unknown instrument")
+	ErrMixedInstruments   = errors.New("the account and its sub-accounts hold more than one instrument")
 )
 
 // Clock is satisfied by platform/clock.Clock.
 type Clock interface {
 	Now() time.Time
 	Today() time.Time
+}
+
+// Instruments reads the instruments of Market data (P8 amendment A63).
+type Instruments interface {
+	Instrument(ctx context.Context, code money.Currency) (Instrument, error)
+}
+
+// Instrument is what Ledger needs of a Market data instrument; QuoteCurrency is empty
+// for a currency.
+type Instrument struct {
+	Code          money.Currency
+	Scale         int
+	QuoteCurrency money.Currency
 }
 
 // Calendar shifts due dates to business days (marketdata, P2 amendment A2).
@@ -328,6 +343,7 @@ type Repository interface {
 
 	// BalanceAt sums the postings of the account and its descendants up to and including date.
 	BalanceAt(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis Basis) (int64, error)
+	TreeInstruments(ctx context.Context, userID int64, accountID uuid.UUID) ([]money.Currency, error)
 	// CategoryTotal sums the weights of the non-voided postings of the account and its
 	// descendants booked in [from, to).
 	CategoryTotal(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) (int64, error)

@@ -149,3 +149,37 @@ func (q *Queries) CategoryTotal(ctx context.Context, arg CategoryTotalParams) (i
 	err := row.Scan(&column_1)
 	return column_1, err
 }
+
+const treeInstruments = `-- name: TreeInstruments :many
+WITH RECURSIVE tree AS (
+    SELECT a.id, a.instrument FROM ledger_account a WHERE a.user_id = $1 AND a.id = $2
+    UNION ALL
+    SELECT c.id, c.instrument FROM ledger_account c JOIN tree ON c.parent_id = tree.id WHERE c.user_id = $1
+)
+SELECT DISTINCT instrument FROM tree ORDER BY instrument
+`
+
+type TreeInstrumentsParams struct {
+	UserID    int64
+	AccountID uuid.UUID
+}
+
+func (q *Queries) TreeInstruments(ctx context.Context, arg TreeInstrumentsParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, treeInstruments, arg.UserID, arg.AccountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var instrument string
+		if err := rows.Scan(&instrument); err != nil {
+			return nil, err
+		}
+		items = append(items, instrument)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

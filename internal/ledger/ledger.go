@@ -5,9 +5,11 @@ package ledger
 import (
 	"context"
 	"encoding/json/v2"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -109,18 +111,50 @@ var (
 )
 
 // Calendar is the part of marketdata the ledger uses to shift due dates.
-type Calendar interface {
+// MarketData is satisfied by *marketdata.Module: business days and instruments.
+type MarketData interface {
 	Adjust(ctx context.Context, name string, d time.Time, a marketdata.Adjustment) (time.Time, error)
+	Instrument(ctx context.Context, code string) (marketdata.Instrument, error)
 }
 
-type calendarAdapter struct{ cal Calendar }
+type calendarAdapter struct{ cal MarketData }
 
 func (c calendarAdapter) Adjust(ctx context.Context, name string, d time.Time, adjustment string) (time.Time, error) {
 	return c.cal.Adjust(ctx, name, d, marketdata.Adjustment(adjustment))
 }
 
-func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, cal Calendar, clk clock.Clock, log *slog.Logger) *Module {
-	svc := app.NewService(postgres.NewRepository(pool), clk, calendarAdapter{cal})
+// instruments caches Market data instruments for the module's lifetime: code, type,
+// scale and quote currency are immutable (P8 amendment A59).
+type instruments struct {
+	md    MarketData
+	mu    sync.Mutex
+	cache map[money.Currency]app.Instrument
+}
+
+func (c *instruments) Instrument(ctx context.Context, code money.Currency) (app.Instrument, error) {
+	c.mu.Lock()
+	in, ok := c.cache[code]
+	c.mu.Unlock()
+	if ok {
+		return in, nil
+	}
+	m, err := c.md.Instrument(ctx, string(code))
+	if errors.Is(err, marketdata.ErrUnknownInstrument) {
+		return app.Instrument{}, app.ErrUnknownInstrument
+	}
+	if err != nil {
+		return app.Instrument{}, err
+	}
+	in = app.Instrument{Code: m.Code, Scale: m.Scale, QuoteCurrency: m.QuoteCurrency}
+	c.mu.Lock()
+	c.cache[code] = in
+	c.mu.Unlock()
+	return in, nil
+}
+
+func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, md MarketData, clk clock.Clock, log *slog.Logger) *Module {
+	ins := &instruments{md: md, cache: map[money.Currency]app.Instrument{}}
+	svc := app.NewService(postgres.NewRepository(pool, ins), clk, calendarAdapter{md}, ins)
 	dispatcher.Subscribe("ledger-provisioning", "identity.user_created.v1", provision)
 	return &Module{http: httpapi.NewServer(svc, log), svc: svc}
 }
@@ -282,6 +316,6 @@ func provision(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
 	if err := json.Unmarshal(e.Payload, &p); err != nil {
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
-	svc := app.NewService(postgres.NewRepository(tx), clock.New(time.UTC, time.Now), nil)
+	svc := app.NewService(postgres.NewRepository(tx, nil), clock.New(time.UTC, time.Now), nil, nil)
 	return svc.Provision(ctx, p.UserID, DefaultBaseCurrency)
 }

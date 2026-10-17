@@ -54,6 +54,8 @@ func toProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusConflict, "already_reconciled", err.Error()), true
 	case errors.Is(err, app.ErrNonZeroBalance), errors.Is(err, app.ErrPostingsAfterClose):
 		return problem.New(http.StatusConflict, "account_not_empty", err.Error()), true
+	case errors.Is(err, app.ErrMixedInstruments):
+		return problem.New(http.StatusUnprocessableEntity, "mixed_instruments", err.Error()), true
 	case errors.Is(err, app.ErrSettingsLocked):
 		return problem.New(http.StatusConflict, "settings_locked", err.Error()), true
 	case errors.Is(err, app.ErrStatementNotClosed):

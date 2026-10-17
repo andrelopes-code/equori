@@ -73,7 +73,7 @@ type Problem struct {
 	// record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
 	// integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
 	// currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
-	// budget_exists, instrument_exists.
+	// budget_exists, instrument_exists, mixed_instruments.
 	Code      string        `json:"code"`
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`
@@ -371,6 +371,20 @@ func (response GetBalanceSeries404ApplicationProblemPlusJSONResponse) VisitGetBa
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetBalanceSeries422ApplicationProblemPlusJSONResponse Problem
+
+func (response GetBalanceSeries422ApplicationProblemPlusJSONResponse) VisitGetBalanceSeriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
 	_, err := buf.WriteTo(w)
 	return err
 }

@@ -226,7 +226,7 @@ func (s *Server) ListTransactions(ctx context.Context, req ListTransactionsReque
 }
 
 func (s *Server) CreateTransaction(ctx context.Context, req CreateTransactionRequestObject) (CreateTransactionResponseObject, error) {
-	in, err := fromTransactionInput(*req.Body)
+	in, err := fromTransactionInput(ctx, *req.Body, s.svc.AmountOf)
 	if err != nil {
 		return nil, err
 	}
@@ -247,9 +247,9 @@ func (s *Server) GetTransaction(ctx context.Context, req GetTransactionRequestOb
 
 func (s *Server) CorrectTransaction(ctx context.Context, req CorrectTransactionRequestObject) (CorrectTransactionResponseObject, error) {
 	b := req.Body
-	in, err := fromTransactionInput(TransactionInput{
+	in, err := fromTransactionInput(ctx, TransactionInput{
 		Date: b.Date, Description: b.Description, PayeeId: b.PayeeId, Tags: b.Tags, Links: b.Links, Postings: b.Postings,
-	})
+	}, s.svc.AmountOf)
 	if err != nil {
 		return nil, err
 	}

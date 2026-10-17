@@ -22,7 +22,7 @@ func TestNewAccount(t *testing.T) {
 		{name: "liability with asset kind", in: Account{Name: "X", Class: ClassLiability, Kind: KindCash}, wantField: "kind"},
 		{name: "unknown class", in: Account{Name: "X", Class: "other"}, wantField: "class"},
 		{name: "empty name", in: Account{Name: "  ", Class: ClassExpense}, wantField: "name"},
-		{name: "unknown currency", in: Account{Name: "X", Class: ClassExpense, Instrument: "XYZ"}, wantField: "instrument"},
+		{name: "unknown currency", in: Account{Name: "X", Class: ClassExpense, Instrument: "XYZ"}, wantField: "currency"},
 		{name: "closed before opened", in: Account{Name: "X", Class: ClassExpense, OpenedOn: day("2026-02-01"), ClosedOn: ptr(day("2026-01-31"))}, wantField: "closed_on"},
 		{name: "system role of other class", in: Account{Name: "X", Class: ClassExpense, SystemRole: RoleYield}, wantField: "system_role"},
 	}
