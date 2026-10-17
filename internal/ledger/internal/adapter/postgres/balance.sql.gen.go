@@ -150,6 +150,58 @@ func (q *Queries) CategoryTotal(ctx context.Context, arg CategoryTotalParams) (i
 	return column_1, err
 }
 
+const treeBalancesByInstrument = `-- name: TreeBalancesByInstrument :many
+WITH RECURSIVE tree AS (
+    SELECT a.id, a.instrument FROM ledger_account a WHERE a.user_id = $3 AND a.id = $4
+    UNION ALL
+    SELECT c.id, c.instrument FROM ledger_account c JOIN tree ON c.parent_id = tree.id WHERE c.user_id = $3
+)
+SELECT tree.instrument, coalesce(sum(p.amount), 0)::bigint AS total
+FROM tree
+LEFT JOIN ledger_posting p ON p.account_id = tree.id AND NOT p.voided
+    AND CASE WHEN $1::boolean THEN coalesce(p.settled_on, p.booked_on) ELSE p.booked_on END <= $2
+GROUP BY tree.instrument
+ORDER BY tree.instrument
+`
+
+type TreeBalancesByInstrumentParams struct {
+	Settled   bool
+	OnDate    *time.Time
+	UserID    int64
+	AccountID uuid.UUID
+}
+
+type TreeBalancesByInstrumentRow struct {
+	Instrument string
+	Total      int64
+}
+
+// P8 amendment A65: the balance of each instrument held in the account and its sub-accounts.
+func (q *Queries) TreeBalancesByInstrument(ctx context.Context, arg TreeBalancesByInstrumentParams) ([]TreeBalancesByInstrumentRow, error) {
+	rows, err := q.db.Query(ctx, treeBalancesByInstrument,
+		arg.Settled,
+		arg.OnDate,
+		arg.UserID,
+		arg.AccountID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []TreeBalancesByInstrumentRow
+	for rows.Next() {
+		var i TreeBalancesByInstrumentRow
+		if err := rows.Scan(&i.Instrument, &i.Total); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const treeInstruments = `-- name: TreeInstruments :many
 WITH RECURSIVE tree AS (
     SELECT a.id, a.instrument FROM ledger_account a WHERE a.user_id = $1 AND a.id = $2

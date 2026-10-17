@@ -13,6 +13,8 @@ var (
 	ErrVersionConflict  = errors.New("version conflict")
 	ErrVoided           = errors.New("transaction is voided")
 	ErrReconciled       = errors.New("transaction has reconciled postings")
+	// ErrCurrencyUnsupported: the operation does not take an account of this currency (P8 A66, A67).
+	ErrCurrencyUnsupported = errors.New("currency unsupported")
 )
 
 // FieldError names the input field that broke a rule; Err is the sentinel callers match.

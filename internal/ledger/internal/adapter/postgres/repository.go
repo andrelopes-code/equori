@@ -515,6 +515,15 @@ func (r *Repository) TreeInstruments(ctx context.Context, userID int64, accountI
 	return out, err
 }
 
+func (r *Repository) TreeBalancesByInstrument(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis app.Basis) (map[money.Currency]int64, error) {
+	rows, err := r.q.TreeBalancesByInstrument(ctx, TreeBalancesByInstrumentParams{UserID: userID, AccountID: accountID, Settled: basis == app.BasisSettled, OnDate: &date})
+	out := make(map[money.Currency]int64, len(rows))
+	for _, row := range rows {
+		out[money.Currency(row.Instrument)] = row.Total
+	}
+	return out, err
+}
+
 func (r *Repository) BalanceAt(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis app.Basis) (int64, error) {
 	if basis == app.BasisSettled {
 		return r.q.BalanceSettledAt(ctx, BalanceSettledAtParams{UserID: userID, AccountID: accountID, OnDate: &date})

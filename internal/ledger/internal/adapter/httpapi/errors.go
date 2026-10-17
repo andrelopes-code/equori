@@ -28,8 +28,13 @@ func toProblem(err error) (problem.Details, bool) {
 	}
 	if fe, ok := errors.AsType[*domain.FieldError](err); ok {
 		code := "validation_failed"
-		if errors.Is(err, domain.ErrUnknownAccount) {
+		switch {
+		case errors.Is(err, domain.ErrUnknownAccount):
 			code = "invalid_account"
+		case errors.Is(err, domain.ErrCurrencyUnsupported):
+			code = "currency_unsupported"
+		case errors.Is(err, app.ErrPriceMissing):
+			code = "price_missing"
 		}
 		d := problem.New(http.StatusUnprocessableEntity, code, fe.Error())
 		d.Errors = []problem.FieldError{{Field: fe.Field, Message: fe.Message}}

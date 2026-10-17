@@ -27,6 +27,7 @@ var (
 	ErrDifferenceRemains  = errors.New("the settled balance still differs from the assertion")
 	ErrUnknownInstrument  = errors.New("unknown instrument")
 	ErrMixedInstruments   = errors.New("the account and its sub-accounts hold more than one instrument")
+	ErrPriceMissing       = errors.New("price missing")
 )
 
 // Clock is satisfied by platform/clock.Clock.
@@ -46,6 +47,24 @@ type Instrument struct {
 	Code          money.Currency
 	Scale         int
 	QuoteCurrency money.Currency
+}
+
+// Prices converts amounts with stored prices (Market data, P8 amendment A61); it returns
+// an error wrapping ErrPriceMissing when no path exists.
+type Prices interface {
+	Convert(ctx context.Context, q money.Money, to money.Currency, date time.Time) (Conversion, error)
+}
+
+type Conversion struct {
+	Value  money.Money
+	Prices []Price
+}
+
+type Price struct {
+	Instrument, Quote money.Currency
+	Date              time.Time
+	Value             money.Rate
+	Source            string
 }
 
 // Calendar shifts due dates to business days (marketdata, P2 amendment A2).
@@ -344,6 +363,7 @@ type Repository interface {
 	// BalanceAt sums the postings of the account and its descendants up to and including date.
 	BalanceAt(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis Basis) (int64, error)
 	TreeInstruments(ctx context.Context, userID int64, accountID uuid.UUID) ([]money.Currency, error)
+	TreeBalancesByInstrument(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis Basis) (map[money.Currency]int64, error)
 	// CategoryTotal sums the weights of the non-voided postings of the account and its
 	// descendants booked in [from, to).
 	CategoryTotal(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) (int64, error)

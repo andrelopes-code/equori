@@ -485,6 +485,30 @@ func (e PostingInputStatus) Valid() bool {
 	}
 }
 
+// Defines values for PriceSource.
+const (
+	PriceSourceB3Cotahist PriceSource = "b3_cotahist"
+	PriceSourceBcbPtax    PriceSource = "bcb_ptax"
+	PriceSourceCsv        PriceSource = "csv"
+	PriceSourceManual     PriceSource = "manual"
+)
+
+// Valid indicates whether the value is a known member of the PriceSource enum.
+func (e PriceSource) Valid() bool {
+	switch e {
+	case PriceSourceB3Cotahist:
+		return true
+	case PriceSourceBcbPtax:
+		return true
+	case PriceSourceCsv:
+		return true
+	case PriceSourceManual:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for StatementDetailStatus.
 const (
 	StatementDetailStatusClosed        StatementDetailStatus = "closed"
@@ -733,6 +757,12 @@ type Balance struct {
 	Balance   Money              `json:"balance"`
 	Basis     BalanceBasis       `json:"basis"`
 	Date      openapi_types.Date `json:"date"`
+
+	// Prices Prices used for value (B05).
+	Prices *[]Price `json:"prices,omitempty"`
+
+	// Value The balance valued in value_in; with several instruments in the sub-accounts, balance equals value.
+	Value *Money `json:"value,omitempty"`
 }
 
 // BalanceBasis defines model for Balance.Basis.
@@ -901,10 +931,46 @@ type DisputeResolution struct {
 // DisputeResolutionOutcome defines model for DisputeResolution.Outcome.
 type DisputeResolutionOutcome string
 
+// ExchangeInput defines model for ExchangeInput.
+type ExchangeInput struct {
+	Date        openapi_types.Date `json:"date"`
+	Description *string            `json:"description,omitempty"`
+	Fee         *Money             `json:"fee,omitempty"`
+
+	// FeeCategoryId Default the system account fees.
+	FeeCategoryId *openapi_types.UUID `json:"fee_category_id,omitempty"`
+	FromAccountId openapi_types.UUID  `json:"from_account_id"`
+	FromAmount    Money               `json:"from_amount"`
+	ToAccountId   openapi_types.UUID  `json:"to_account_id"`
+	ToAmount      Money               `json:"to_amount"`
+}
+
 // FieldError defines model for FieldError.
 type FieldError struct {
 	Field   string `json:"field"`
 	Message string `json:"message"`
+}
+
+// ForeignPurchaseInput defines model for ForeignPurchaseInput.
+type ForeignPurchaseInput struct {
+	AccountId   openapi_types.UUID `json:"account_id"`
+	CategoryId  openapi_types.UUID `json:"category_id"`
+	Date        openapi_types.Date `json:"date"`
+	Description *string            `json:"description,omitempty"`
+
+	// IofCategoryId Default the system account taxes.
+	IofCategoryId *openapi_types.UUID `json:"iof_category_id,omitempty"`
+
+	// IofRateBp Default 350.
+	IofRateBp *int                `json:"iof_rate_bp,omitempty"`
+	Original  Money               `json:"original"`
+	PayeeId   *openapi_types.UUID `json:"payee_id,omitempty"`
+
+	// Rate Positive exact decimal with at most 12 decimals (ADR 005).
+	//
+	// Example: 5.4830
+	Rate      Rate    `json:"rate"`
+	Statement *string `json:"statement,omitempty"`
 }
 
 // Installment defines model for Installment.
@@ -1049,6 +1115,22 @@ type PostingInputCardRole string
 // PostingInputStatus defines model for PostingInput.Status.
 type PostingInputStatus string
 
+// Price defines model for Price.
+type Price struct {
+	Date            openapi_types.Date `json:"date"`
+	Instrument      string             `json:"instrument"`
+	QuoteInstrument string             `json:"quote_instrument"`
+	Source          PriceSource        `json:"source"`
+
+	// Value Positive exact decimal with at most 12 decimals (ADR 005).
+	//
+	// Example: 5.4830
+	Value Rate `json:"value"`
+}
+
+// PriceSource defines model for Price.Source.
+type PriceSource string
+
 // Problem defines model for Problem.
 type Problem struct {
 	// Code Stable error identifier. Values: invalid_request, request_too_large, invalid_credentials,
@@ -1059,7 +1141,7 @@ type Problem struct {
 	// record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
 	// integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
 	// currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
-	// budget_exists, instrument_exists, mixed_instruments.
+	// budget_exists, instrument_exists, mixed_instruments, price_missing.
 	Code      string        `json:"code"`
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`
@@ -1068,6 +1150,11 @@ type Problem struct {
 	Title     string        `json:"title"`
 	Type      string        `json:"type"`
 }
+
+// Rate Positive exact decimal with at most 12 decimals (ADR 005).
+//
+// Example: 5.4830
+type Rate = string
 
 // ReconciliationStatus defines model for ReconciliationStatus.
 type ReconciliationStatus struct {
@@ -1280,6 +1367,9 @@ type ListAccountsParams struct {
 type GetAccountBalanceParams struct {
 	Date  openapi_types.Date            `form:"date" json:"date"`
 	Basis *GetAccountBalanceParamsBasis `form:"basis,omitempty" json:"basis,omitempty"`
+
+	// ValueIn Currency to value the balance in with stored prices (P8 amendment A65).
+	ValueIn *string `form:"value_in,omitempty" json:"value_in,omitempty"`
 }
 
 // GetAccountBalanceParamsBasis defines parameters for GetAccountBalance.
@@ -1376,6 +1466,12 @@ type ResolveBalanceAssertionJSONRequestBody = AssertionResolutionInput
 
 // ResolveDisputeJSONRequestBody defines body for ResolveDispute for application/json ContentType.
 type ResolveDisputeJSONRequestBody = DisputeResolution
+
+// ExchangeCurrencyJSONRequestBody defines body for ExchangeCurrency for application/json ContentType.
+type ExchangeCurrencyJSONRequestBody = ExchangeInput
+
+// RecordForeignPurchaseJSONRequestBody defines body for RecordForeignPurchase for application/json ContentType.
+type RecordForeignPurchaseJSONRequestBody = ForeignPurchaseInput
 
 // AnticipateInstallmentsJSONRequestBody defines body for AnticipateInstallments for application/json ContentType.
 type AnticipateInstallmentsJSONRequestBody = AnticipationInput
@@ -1496,6 +1592,12 @@ type ServerInterface interface {
 	// ResolveDispute Resolve a dispute; a won dispute refunds the remaining charged amount.
 	// (POST /disputes/{id}/resolve)
 	ResolveDispute(w http.ResponseWriter, r *http.Request, id ID)
+	// ExchangeCurrency Exchange money between own accounts in two currencies, one of them the base currency (P8 amendment A67).
+	// (POST /exchanges)
+	ExchangeCurrency(w http.ResponseWriter, r *http.Request)
+	// RecordForeignPurchase Record a purchase charged in another currency, with IOF (P8 amendment A66).
+	// (POST /foreign-purchases)
+	RecordForeignPurchase(w http.ResponseWriter, r *http.Request)
 	// AnticipateInstallments Pay future installments early.
 	// (POST /installment-plans/{id}/anticipation)
 	AnticipateInstallments(w http.ResponseWriter, r *http.Request, id ID)
@@ -1737,6 +1839,19 @@ func (siw *ServerInterfaceWrapper) GetAccountBalance(w http.ResponseWriter, r *h
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "basis"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "basis", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "value_in" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "value_in", r.URL.Query(), &params.ValueIn, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "value_in"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "value_in", Err: err})
 		}
 		return
 	}
@@ -2285,6 +2400,34 @@ func (siw *ServerInterfaceWrapper) ResolveDispute(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ResolveDispute(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ExchangeCurrency operation middleware
+func (siw *ServerInterfaceWrapper) ExchangeCurrency(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ExchangeCurrency(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RecordForeignPurchase operation middleware
+func (siw *ServerInterfaceWrapper) RecordForeignPurchase(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RecordForeignPurchase(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3220,6 +3363,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/balance", wrapper.GetAccountBalance)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions", wrapper.ListTransactions)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions", wrapper.CreateTransaction)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/foreign-purchases", wrapper.RecordForeignPurchase)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/exchanges", wrapper.ExchangeCurrency)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions/{id}", wrapper.GetTransaction)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/transactions/{id}", wrapper.CorrectTransaction)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/void", wrapper.VoidTransaction)
@@ -4648,6 +4793,158 @@ func (response ResolveDispute409ApplicationProblemPlusJSONResponse) VisitResolve
 type ResolveDispute422ApplicationProblemPlusJSONResponse Problem
 
 func (response ResolveDispute422ApplicationProblemPlusJSONResponse) VisitResolveDisputeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ExchangeCurrencyRequestObject struct {
+	Body *ExchangeCurrencyJSONRequestBody
+}
+
+type ExchangeCurrencyResponseObject interface {
+	VisitExchangeCurrencyResponse(w http.ResponseWriter) error
+}
+
+type ExchangeCurrency201ResponseHeaders struct {
+	Location *string
+}
+
+type ExchangeCurrency201JSONResponse struct {
+	Body    Transaction
+	Headers ExchangeCurrency201ResponseHeaders
+}
+
+func (response ExchangeCurrency201JSONResponse) VisitExchangeCurrencyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ExchangeCurrency400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ExchangeCurrency400ApplicationProblemPlusJSONResponse) VisitExchangeCurrencyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ExchangeCurrency401ApplicationProblemPlusJSONResponse Problem
+
+func (response ExchangeCurrency401ApplicationProblemPlusJSONResponse) VisitExchangeCurrencyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ExchangeCurrency422ApplicationProblemPlusJSONResponse Problem
+
+func (response ExchangeCurrency422ApplicationProblemPlusJSONResponse) VisitExchangeCurrencyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordForeignPurchaseRequestObject struct {
+	Body *RecordForeignPurchaseJSONRequestBody
+}
+
+type RecordForeignPurchaseResponseObject interface {
+	VisitRecordForeignPurchaseResponse(w http.ResponseWriter) error
+}
+
+type RecordForeignPurchase201ResponseHeaders struct {
+	Location *string
+}
+
+type RecordForeignPurchase201JSONResponse struct {
+	Body    Transaction
+	Headers RecordForeignPurchase201ResponseHeaders
+}
+
+func (response RecordForeignPurchase201JSONResponse) VisitRecordForeignPurchaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordForeignPurchase400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RecordForeignPurchase400ApplicationProblemPlusJSONResponse) VisitRecordForeignPurchaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordForeignPurchase401ApplicationProblemPlusJSONResponse Problem
+
+func (response RecordForeignPurchase401ApplicationProblemPlusJSONResponse) VisitRecordForeignPurchaseResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordForeignPurchase422ApplicationProblemPlusJSONResponse Problem
+
+func (response RecordForeignPurchase422ApplicationProblemPlusJSONResponse) VisitRecordForeignPurchaseResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -6407,6 +6704,12 @@ type StrictServerInterface interface {
 	// ResolveDispute Resolve a dispute; a won dispute refunds the remaining charged amount.
 	// (POST /disputes/{id}/resolve)
 	ResolveDispute(ctx context.Context, request ResolveDisputeRequestObject) (ResolveDisputeResponseObject, error)
+	// ExchangeCurrency Exchange money between own accounts in two currencies, one of them the base currency (P8 amendment A67).
+	// (POST /exchanges)
+	ExchangeCurrency(ctx context.Context, request ExchangeCurrencyRequestObject) (ExchangeCurrencyResponseObject, error)
+	// RecordForeignPurchase Record a purchase charged in another currency, with IOF (P8 amendment A66).
+	// (POST /foreign-purchases)
+	RecordForeignPurchase(ctx context.Context, request RecordForeignPurchaseRequestObject) (RecordForeignPurchaseResponseObject, error)
 	// AnticipateInstallments Pay future installments early.
 	// (POST /installment-plans/{id}/anticipation)
 	AnticipateInstallments(ctx context.Context, request AnticipateInstallmentsRequestObject) (AnticipateInstallmentsResponseObject, error)
@@ -7163,6 +7466,68 @@ func (sh *strictHandler) ResolveDispute(w http.ResponseWriter, r *http.Request, 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ResolveDisputeResponseObject); ok {
 		if err := validResponse.VisitResolveDisputeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ExchangeCurrency operation middleware
+func (sh *strictHandler) ExchangeCurrency(w http.ResponseWriter, r *http.Request) {
+	var request ExchangeCurrencyRequestObject
+
+	var body ExchangeCurrencyJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ExchangeCurrency(ctx, request.(ExchangeCurrencyRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ExchangeCurrency")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ExchangeCurrencyResponseObject); ok {
+		if err := validResponse.VisitExchangeCurrencyResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RecordForeignPurchase operation middleware
+func (sh *strictHandler) RecordForeignPurchase(w http.ResponseWriter, r *http.Request) {
+	var request RecordForeignPurchaseRequestObject
+
+	var body RecordForeignPurchaseJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RecordForeignPurchase(ctx, request.(RecordForeignPurchaseRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RecordForeignPurchase")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RecordForeignPurchaseResponseObject); ok {
+		if err := validResponse.VisitRecordForeignPurchaseResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

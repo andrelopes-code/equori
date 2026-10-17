@@ -30,14 +30,15 @@ const (
 var earliestDate = time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)
 
 type Service struct {
-	repo  Repository
-	clock Clock
-	cal   Calendar
-	ins   Instruments
+	repo   Repository
+	clock  Clock
+	cal    Calendar
+	ins    Instruments
+	prices Prices
 }
 
-func NewService(repo Repository, clock Clock, cal Calendar, ins Instruments) *Service {
-	return &Service{repo: repo, clock: clock, cal: cal, ins: ins}
+func NewService(repo Repository, clock Clock, cal Calendar, ins Instruments, prices Prices) *Service {
+	return &Service{repo: repo, clock: clock, cal: cal, ins: ins, prices: prices}
 }
 
 // Provision creates the settings and system accounts of a new user. It is idempotent.

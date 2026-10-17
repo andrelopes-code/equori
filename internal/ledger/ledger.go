@@ -115,6 +115,24 @@ var (
 type MarketData interface {
 	Adjust(ctx context.Context, name string, d time.Time, a marketdata.Adjustment) (time.Time, error)
 	Instrument(ctx context.Context, code string) (marketdata.Instrument, error)
+	Convert(ctx context.Context, q money.Money, to money.Currency, date time.Time) (marketdata.Conversion, error)
+}
+
+type pricesAdapter struct{ md MarketData }
+
+func (p pricesAdapter) Convert(ctx context.Context, q money.Money, to money.Currency, date time.Time) (app.Conversion, error) {
+	c, err := p.md.Convert(ctx, q, to, date)
+	if errors.Is(err, marketdata.ErrPriceMissing) {
+		return app.Conversion{}, fmt.Errorf("%w: %w", app.ErrPriceMissing, err)
+	}
+	if err != nil {
+		return app.Conversion{}, err
+	}
+	out := app.Conversion{Value: c.Value, Prices: make([]app.Price, len(c.Prices))}
+	for i, x := range c.Prices {
+		out.Prices[i] = app.Price{Instrument: x.Instrument, Quote: x.Quote, Date: x.Date, Value: x.Value, Source: x.Source}
+	}
+	return out, nil
 }
 
 type calendarAdapter struct{ cal MarketData }
@@ -154,7 +172,7 @@ func (c *instruments) Instrument(ctx context.Context, code money.Currency) (app.
 
 func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, md MarketData, clk clock.Clock, log *slog.Logger) *Module {
 	ins := &instruments{md: md, cache: map[money.Currency]app.Instrument{}}
-	svc := app.NewService(postgres.NewRepository(pool, ins), clk, calendarAdapter{md}, ins)
+	svc := app.NewService(postgres.NewRepository(pool, ins), clk, calendarAdapter{md}, ins, pricesAdapter{md})
 	dispatcher.Subscribe("ledger-provisioning", "identity.user_created.v1", provision)
 	return &Module{http: httpapi.NewServer(svc, log), svc: svc}
 }
@@ -316,6 +334,6 @@ func provision(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
 	if err := json.Unmarshal(e.Payload, &p); err != nil {
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
-	svc := app.NewService(postgres.NewRepository(tx, nil), clock.New(time.UTC, time.Now), nil, nil)
+	svc := app.NewService(postgres.NewRepository(tx, nil), clock.New(time.UTC, time.Now), nil, nil, nil)
 	return svc.Provision(ctx, p.UserID, DefaultBaseCurrency)
 }

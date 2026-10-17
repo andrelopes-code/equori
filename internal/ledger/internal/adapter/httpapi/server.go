@@ -194,6 +194,23 @@ func (s *Server) GetAccountBalance(ctx context.Context, req GetAccountBalanceReq
 	if req.Params.Basis != nil {
 		basis = app.Basis(*req.Params.Basis)
 	}
+	if req.Params.ValueIn != nil {
+		b, c, err := s.svc.ValuedBalance(ctx, auth.MustUserID(ctx), req.Id, dateOf(req.Params.Date), basis, money.Currency(*req.Params.ValueIn))
+		if err != nil {
+			return nil, err
+		}
+		value, prices := toMoneyAPI(c.Value), make([]Price, len(c.Prices))
+		for i, p := range c.Prices {
+			prices[i] = Price{
+				Instrument: string(p.Instrument), QuoteInstrument: string(p.Quote), Date: apiDate(p.Date),
+				Value: p.Value.Reduced().String(), Source: PriceSource(p.Source),
+			}
+		}
+		return GetAccountBalance200JSONResponse{
+			AccountId: b.AccountID, Date: apiDate(b.Date), Basis: BalanceBasis(b.Basis), Balance: toMoneyAPI(b.Amount),
+			Value: &value, Prices: &prices,
+		}, nil
+	}
 	b, err := s.svc.BalanceAt(ctx, auth.MustUserID(ctx), req.Id, dateOf(req.Params.Date), basis)
 	if err != nil {
 		return nil, err

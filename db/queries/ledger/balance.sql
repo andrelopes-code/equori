@@ -57,3 +57,17 @@ WITH RECURSIVE tree AS (
     SELECT c.id, c.instrument FROM ledger_account c JOIN tree ON c.parent_id = tree.id WHERE c.user_id = @user_id
 )
 SELECT DISTINCT instrument FROM tree ORDER BY instrument;
+
+-- name: TreeBalancesByInstrument :many
+-- P8 amendment A65: the balance of each instrument held in the account and its sub-accounts.
+WITH RECURSIVE tree AS (
+    SELECT a.id, a.instrument FROM ledger_account a WHERE a.user_id = @user_id AND a.id = @account_id
+    UNION ALL
+    SELECT c.id, c.instrument FROM ledger_account c JOIN tree ON c.parent_id = tree.id WHERE c.user_id = @user_id
+)
+SELECT tree.instrument, coalesce(sum(p.amount), 0)::bigint AS total
+FROM tree
+LEFT JOIN ledger_posting p ON p.account_id = tree.id AND NOT p.voided
+    AND CASE WHEN @settled::boolean THEN coalesce(p.settled_on, p.booked_on) ELSE p.booked_on END <= @on_date
+GROUP BY tree.instrument
+ORDER BY tree.instrument;

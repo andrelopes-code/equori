@@ -198,6 +198,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/foreign-purchases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a purchase charged in another currency, with IOF (P8 amendment A66). */
+        post: operations["recordForeignPurchase"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/exchanges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Exchange money between own accounts in two currencies, one of them the base currency (P8 amendment A67). */
+        post: operations["exchangeCurrency"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/transactions/{id}": {
         parameters: {
             query?: never;
@@ -2484,6 +2518,48 @@ export interface components {
             /** @enum {string} */
             basis: "booked" | "settled";
             balance: components["schemas"]["Money"];
+            /** @description The balance valued in value_in; with several instruments in the sub-accounts, balance equals value. */
+            value?: components["schemas"]["Money"];
+            /** @description Prices used for value (B05). */
+            prices?: components["schemas"]["Price"][];
+        };
+        ForeignPurchaseInput: {
+            /** Format: uuid */
+            account_id: string;
+            /** Format: uuid */
+            category_id: string;
+            /** Format: date */
+            date: string;
+            description?: string;
+            /** Format: uuid */
+            payee_id?: string;
+            original: components["schemas"]["Money"];
+            rate: components["schemas"]["Rate"];
+            /** @description Default 350. */
+            iof_rate_bp?: number;
+            /**
+             * Format: uuid
+             * @description Default the system account taxes.
+             */
+            iof_category_id?: string;
+            statement?: string;
+        };
+        ExchangeInput: {
+            /** Format: uuid */
+            from_account_id: string;
+            /** Format: uuid */
+            to_account_id: string;
+            /** Format: date */
+            date: string;
+            description?: string;
+            from_amount: components["schemas"]["Money"];
+            to_amount: components["schemas"]["Money"];
+            fee?: components["schemas"]["Money"];
+            /**
+             * Format: uuid
+             * @description Default the system account fees.
+             */
+            fee_category_id?: string;
         };
         PostingInput: {
             /** Format: uuid */
@@ -2764,7 +2840,7 @@ export interface components {
              *     record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
              *     integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
              *     currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
-             *     budget_exists, instrument_exists, mixed_instruments.
+             *     budget_exists, instrument_exists, mixed_instruments, price_missing.
              */
             code: string;
             request_id?: string;
@@ -3181,6 +3257,8 @@ export interface operations {
             query: {
                 date: string;
                 basis?: "booked" | "settled";
+                /** @description Currency to value the balance in with stored prices (P8 amendment A65). */
+                value_in?: string;
             };
             header?: never;
             path: {
@@ -3261,6 +3339,64 @@ export interface operations {
                     "application/json": components["schemas"]["Transaction"];
                 };
             };
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    recordForeignPurchase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForeignPurchaseInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    /** @description Path of the created record. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transaction"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    exchangeCurrency: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExchangeInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    /** @description Path of the created record. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transaction"];
+                };
+            };
+            400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };
