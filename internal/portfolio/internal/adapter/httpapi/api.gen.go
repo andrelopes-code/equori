@@ -166,10 +166,8 @@ type Money struct {
 type Position struct {
 	AccountId openapi_types.UUID `json:"account_id"`
 
-	// AverageCost Positive exact decimal with at most 12 decimals (ADR 005).
-	//
-	// Example: 5.4830
-	AverageCost Rate   `json:"average_cost"`
+	// AverageCost Cost basis per unit; absent unless quantity and cost basis are positive.
+	AverageCost *Rate  `json:"average_cost,omitempty"`
 	CostBasis   Money  `json:"cost_basis"`
 	Instrument  string `json:"instrument"`
 

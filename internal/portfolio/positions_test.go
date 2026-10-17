@@ -49,3 +49,17 @@ func TestPositionsFollowLedgerChanges(t *testing.T) {
 	}
 	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/realized-results?year=1800", nil), http.StatusBadRequest, "invalid_request", "")
 }
+
+// Final review: a holding below zero is listed without an average cost instead of failing.
+func TestNegativeHoldingHasNoAverageCost(t *testing.T) {
+	f := newFixture(t)
+	f.trade(t, "buy", "2026-10-05", 150, "10.05", 490)
+	f.h.Record("2026-10-06",
+		map[string]any{"account_id": f.mxrf11, "amount": units(-200, "MXRF11"), "weight": map[string]any{"amount": -100000, "currency": "BRL"}},
+		map[string]any{"account_id": f.cash, "amount": map[string]any{"amount": 100000, "currency": "BRL"}},
+	)
+	ps := f.positions(t, "2026-10-10")
+	if len(ps) != 1 || ps[0].Quantity["amount"] != float64(-50) || ps[0].CostBasis["amount"] != float64(51240) || ps[0].AverageCost != "" {
+		t.Fatalf("positions = %+v", ps)
+	}
+}

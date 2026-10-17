@@ -45,7 +45,10 @@ func (s *Server) ListPositions(ctx context.Context, req ListPositionsRequestObje
 	for i, p := range ps {
 		items[i] = Position{
 			AccountId: p.AccountID, Instrument: string(p.Instrument), Quantity: toMoney(p.Quantity), CostBasis: toMoney(p.CostBasis),
-			AverageCost: p.AverageCost.String(),
+		}
+		if p.AverageCost != nil {
+			avg := p.AverageCost.String()
+			items[i].AverageCost = &avg
 		}
 		if p.MarketValue != nil {
 			v := toMoney(*p.MarketValue)

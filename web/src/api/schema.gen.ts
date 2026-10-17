@@ -2700,7 +2700,8 @@ export interface components {
             instrument: string;
             quantity: components["schemas"]["Money"];
             cost_basis: components["schemas"]["Money"];
-            average_cost: components["schemas"]["Rate"];
+            /** @description Cost basis per unit; absent unless quantity and cost basis are positive. */
+            average_cost?: components["schemas"]["Rate"];
             /** @description Quantity valued in the base currency; absent without a price. */
             market_value?: components["schemas"]["Money"];
             prices?: components["schemas"]["Price"][];

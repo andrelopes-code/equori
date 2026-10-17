@@ -4981,7 +4981,7 @@ components:
           $ref: "#/components/schemas/Money"
     Position:
       type: object
-      required: [account_id, instrument, quantity, cost_basis, average_cost]
+      required: [account_id, instrument, quantity, cost_basis]
       properties:
         account_id:
           type: string
@@ -4993,7 +4993,9 @@ components:
         cost_basis:
           $ref: "#/components/schemas/Money"
         average_cost:
-          $ref: "#/components/schemas/Rate"
+          description: Cost basis per unit; absent unless quantity and cost basis are positive.
+          allOf:
+            - $ref: "#/components/schemas/Rate"
         market_value:
           description: Quantity valued in the base currency; absent without a price.
           allOf:

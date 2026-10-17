@@ -108,7 +108,7 @@ type Position struct {
 	AccountID           uuid.UUID
 	Instrument          money.Currency
 	Quantity, CostBasis money.Money
-	AverageCost         money.Rate
+	AverageCost         *money.Rate
 	MarketValue         *money.Money
 	Prices              []Price
 }
@@ -133,8 +133,12 @@ func (s *Service) Positions(ctx context.Context, userID int64, date time.Time) (
 		if p.CostBasis, err = money.New(row.CostBasis, base); err != nil {
 			return nil, err
 		}
-		if p.AverageCost, err = money.Quotient(p.CostBasis, p.Quantity, averageCostDecimals); err != nil {
-			return nil, err
+		if row.Quantity > 0 && row.CostBasis > 0 {
+			avg, err := money.Quotient(p.CostBasis, p.Quantity, averageCostDecimals)
+			if err != nil {
+				return nil, err
+			}
+			p.AverageCost = &avg
 		}
 		value, prices, err := s.md.Convert(ctx, p.Quantity, base, date)
 		switch {
