@@ -21,6 +21,10 @@ var (
 	ErrOccurrenceClosed = errors.New("the occurrence is not in a state that allows this change")
 	// ErrTransactionInUse refuses a transaction that realizes another occurrence (I07).
 	ErrTransactionInUse = errors.New("the transaction realizes another occurrence")
+	// ErrPauseOverlap refuses a pause that overlaps another pause of the schedule (A52).
+	ErrPauseOverlap = errors.New("the pause overlaps another pause of the schedule")
+	// ErrScheduleEnded refuses a change dated on or after the schedule's end (A52).
+	ErrScheduleEnded = errors.New("the schedule ends before this date")
 )
 
 // CurrencyError names the field whose account is outside the base currency.
@@ -87,4 +91,14 @@ type Repository interface {
 	// state changed meanwhile.
 	Realize(ctx context.Context, userID int64, id, txID uuid.UUID, by string) (domain.Occurrence, error)
 	Release(ctx context.Context, userID int64, id uuid.UUID) (domain.Occurrence, error)
+	// Skip and Move change an expected occurrence; ErrOccurrenceClosed otherwise.
+	Skip(ctx context.Context, userID int64, id uuid.UUID, reason string) (domain.Occurrence, error)
+	Move(ctx context.Context, userID int64, id uuid.UUID, date time.Time) (domain.Occurrence, error)
+	// DeleteExpected removes expected occurrences with expected date in [from, to]; moved ones
+	// only with includeMoved.
+	DeleteExpected(ctx context.Context, userID int64, scheduleID uuid.UUID, from, to time.Time, includeMoved bool) error
+	InsertTerms(ctx context.Context, userID int64, scheduleID uuid.UUID, t domain.Terms) error
+	// InsertPause returns ErrPauseOverlap when the pause overlaps another one.
+	InsertPause(ctx context.Context, userID int64, scheduleID uuid.UUID, p domain.Pause) error
+	SetEndsOn(ctx context.Context, userID int64, id uuid.UUID, d time.Time) error
 }

@@ -12,6 +12,33 @@ import (
 	"github.com/google/uuid"
 )
 
+const deleteExpected = `-- name: DeleteExpected :exec
+DELETE FROM planning_occurrence
+WHERE user_id = $1 AND schedule_id = $2 AND state = 'expected'
+  AND expected_on BETWEEN $3 AND $4 AND ($5::boolean OR moved_from IS NULL)
+`
+
+type DeleteExpectedParams struct {
+	UserID       int64
+	ScheduleID   uuid.UUID
+	FromDate     time.Time
+	ToDate       time.Time
+	IncludeMoved bool
+}
+
+// Removes the expected occurrences with expected date in [from, to]; moved ones only when
+// include_moved is set.
+func (q *Queries) DeleteExpected(ctx context.Context, arg DeleteExpectedParams) error {
+	_, err := q.db.Exec(ctx, deleteExpected,
+		arg.UserID,
+		arg.ScheduleID,
+		arg.FromDate,
+		arg.ToDate,
+		arg.IncludeMoved,
+	)
+	return err
+}
+
 const expectedOccurrences = `-- name: ExpectedOccurrences :many
 SELECT id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason FROM planning_occurrence
 WHERE user_id = $1 AND schedule_id = ANY($2::uuid[]) AND state = 'expected'
@@ -75,6 +102,38 @@ type LockOccurrenceParams struct {
 
 func (q *Queries) LockOccurrence(ctx context.Context, arg LockOccurrenceParams) (PlanningOccurrence, error) {
 	row := q.db.QueryRow(ctx, lockOccurrence, arg.UserID, arg.ID)
+	var i PlanningOccurrence
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.ScheduleID,
+		&i.Sequence,
+		&i.ExpectedOn,
+		&i.ExpectedAmount,
+		&i.State,
+		&i.TransactionID,
+		&i.RealizedBy,
+		&i.MovedFrom,
+		&i.SkipReason,
+	)
+	return i, err
+}
+
+const moveOccurrence = `-- name: MoveOccurrence :one
+UPDATE planning_occurrence SET moved_from = coalesce(moved_from, expected_on), expected_on = $1
+WHERE user_id = $2 AND id = $3 AND state = 'expected'
+RETURNING id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason
+`
+
+type MoveOccurrenceParams struct {
+	ExpectedOn time.Time
+	UserID     int64
+	ID         uuid.UUID
+}
+
+// moved_from keeps the generated date across several moves (P7 amendment A52).
+func (q *Queries) MoveOccurrence(ctx context.Context, arg MoveOccurrenceParams) (PlanningOccurrence, error) {
+	row := q.db.QueryRow(ctx, moveOccurrence, arg.ExpectedOn, arg.UserID, arg.ID)
 	var i PlanningOccurrence
 	err := row.Scan(
 		&i.ID,
@@ -232,4 +291,35 @@ func (q *Queries) SchedulesTouching(ctx context.Context, arg SchedulesTouchingPa
 		return nil, err
 	}
 	return items, nil
+}
+
+const skipOccurrence = `-- name: SkipOccurrence :one
+UPDATE planning_occurrence SET state = 'skipped', skip_reason = $1
+WHERE user_id = $2 AND id = $3 AND state = 'expected'
+RETURNING id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason
+`
+
+type SkipOccurrenceParams struct {
+	SkipReason *string
+	UserID     int64
+	ID         uuid.UUID
+}
+
+func (q *Queries) SkipOccurrence(ctx context.Context, arg SkipOccurrenceParams) (PlanningOccurrence, error) {
+	row := q.db.QueryRow(ctx, skipOccurrence, arg.SkipReason, arg.UserID, arg.ID)
+	var i PlanningOccurrence
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.ScheduleID,
+		&i.Sequence,
+		&i.ExpectedOn,
+		&i.ExpectedAmount,
+		&i.State,
+		&i.TransactionID,
+		&i.RealizedBy,
+		&i.MovedFrom,
+		&i.SkipReason,
+	)
+	return i, err
 }

@@ -67,6 +67,10 @@ func toProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusConflict, "occurrence_closed", err.Error()), true
 	case errors.Is(err, app.ErrTransactionInUse):
 		return problem.New(http.StatusConflict, "transaction_in_use", err.Error()), true
+	case errors.Is(err, app.ErrPauseOverlap):
+		return problem.New(http.StatusConflict, "pause_overlap", err.Error()), true
+	case errors.Is(err, app.ErrScheduleEnded):
+		return problem.New(http.StatusConflict, "schedule_ended", err.Error()), true
 	}
 	return problem.Details{}, false
 }

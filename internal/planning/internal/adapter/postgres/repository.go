@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andrelopes-code/equori/internal/planning/internal/app"
@@ -314,4 +315,53 @@ func (r *Repository) Release(ctx context.Context, userID int64, id uuid.UUID) (d
 		return domain.Occurrence{}, closed(err)
 	}
 	return toOccurrence(row), nil
+}
+
+const exclusionViolation = "23P01"
+
+func (r *Repository) Skip(ctx context.Context, userID int64, id uuid.UUID, reason string) (domain.Occurrence, error) {
+	var p *string
+	if reason != "" {
+		p = &reason
+	}
+	row, err := r.q.SkipOccurrence(ctx, SkipOccurrenceParams{UserID: userID, ID: id, SkipReason: p})
+	if err != nil {
+		return domain.Occurrence{}, closed(err)
+	}
+	return toOccurrence(row), nil
+}
+
+func (r *Repository) Move(ctx context.Context, userID int64, id uuid.UUID, date time.Time) (domain.Occurrence, error) {
+	row, err := r.q.MoveOccurrence(ctx, MoveOccurrenceParams{UserID: userID, ID: id, ExpectedOn: date})
+	if err != nil {
+		return domain.Occurrence{}, closed(err)
+	}
+	return toOccurrence(row), nil
+}
+
+func (r *Repository) DeleteExpected(ctx context.Context, userID int64, scheduleID uuid.UUID, from, to time.Time, includeMoved bool) error {
+	err := r.q.DeleteExpected(ctx, DeleteExpectedParams{UserID: userID, ScheduleID: scheduleID, FromDate: from, ToDate: to, IncludeMoved: includeMoved})
+	if err != nil {
+		return fmt.Errorf("delete expected occurrences: %w", err)
+	}
+	return nil
+}
+
+func (r *Repository) InsertTerms(ctx context.Context, userID int64, scheduleID uuid.UUID, t domain.Terms) error {
+	return r.insertTerms(ctx, userID, scheduleID, t)
+}
+
+func (r *Repository) InsertPause(ctx context.Context, userID int64, scheduleID uuid.UUID, p domain.Pause) error {
+	err := r.q.InsertPause(ctx, InsertPauseParams{UserID: userID, ScheduleID: scheduleID, FromDate: p.From, ToDate: p.To})
+	if pe, ok := errors.AsType[*pgconn.PgError](err); ok && pe.Code == exclusionViolation {
+		return app.ErrPauseOverlap
+	}
+	if err != nil {
+		return fmt.Errorf("insert pause: %w", err)
+	}
+	return nil
+}
+
+func (r *Repository) SetEndsOn(ctx context.Context, userID int64, id uuid.UUID, d time.Time) error {
+	return r.q.SetEndsOn(ctx, SetEndsOnParams{UserID: userID, ID: id, EndsOn: &d})
 }

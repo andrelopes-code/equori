@@ -26,3 +26,21 @@ RETURNING *;
 UPDATE planning_occurrence SET state = 'expected', transaction_id = NULL, realized_by = NULL
 WHERE user_id = @user_id AND id = @id AND state = 'realized'
 RETURNING *;
+
+-- name: SkipOccurrence :one
+UPDATE planning_occurrence SET state = 'skipped', skip_reason = sqlc.narg(skip_reason)
+WHERE user_id = @user_id AND id = @id AND state = 'expected'
+RETURNING *;
+
+-- name: MoveOccurrence :one
+-- moved_from keeps the generated date across several moves (P7 amendment A52).
+UPDATE planning_occurrence SET moved_from = coalesce(moved_from, expected_on), expected_on = @expected_on
+WHERE user_id = @user_id AND id = @id AND state = 'expected'
+RETURNING *;
+
+-- name: DeleteExpected :exec
+-- Removes the expected occurrences with expected date in [from, to]; moved ones only when
+-- include_moved is set.
+DELETE FROM planning_occurrence
+WHERE user_id = @user_id AND schedule_id = @schedule_id AND state = 'expected'
+  AND expected_on BETWEEN @from_date AND @to_date AND (@include_moved::boolean OR moved_from IS NULL);

@@ -54,3 +54,6 @@ SELECT * FROM planning_occurrence
 WHERE user_id = @user_id AND expected_on BETWEEN @from_date AND @to_date
   AND (sqlc.narg(schedule_id)::uuid IS NULL OR schedule_id = sqlc.narg(schedule_id)::uuid)
 ORDER BY expected_on, schedule_id, sequence;
+
+-- name: SetEndsOn :exec
+UPDATE planning_schedule SET ends_on = @ends_on, updated_at = now() WHERE user_id = @user_id AND id = @id;

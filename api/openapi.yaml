@@ -2370,6 +2370,155 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /occurrences/{id}/skip:
+    post:
+      tags: [planning]
+      operationId: skipOccurrence
+      summary: Skip an expected occurrence (T03; 409 occurrence_closed otherwise).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SkipInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Occurrence"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+  /occurrences/{id}/move:
+    post:
+      tags: [planning]
+      operationId: moveOccurrence
+      summary: Move an expected occurrence to another date; terms changes never regenerate it (P7 amendment A52).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MoveInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Occurrence"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+  /schedules/{id}/terms:
+    post:
+      tags: [planning]
+      operationId: changeScheduleTerms
+      summary: Add a terms version effective from a date after the latest one (T09; P7 amendments A49, A52).
+      description: |
+        Without recurrence the previous rule is kept, start included. Expected occurrences from the date on that
+        were not moved are regenerated; realized, skipped and moved ones stay. 409 schedule_ended on or after ends_on.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TermsInput"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /schedules/{id}/pauses:
+    post:
+      tags: [planning]
+      operationId: pauseSchedule
+      summary: Suppress the dates in [from, to] (P7 amendment A52).
+      description: 409 pause_overlap when it overlaps another pause; 409 schedule_ended on or after ends_on.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SchedulePause"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /schedules/{id}/end:
+    post:
+      tags: [planning]
+      operationId: endSchedule
+      summary: Produce no occurrence on or after a date; expected ones are removed, realized ones stay (P7 amendment A52).
+      description: 409 schedule_ended when the schedule already ends on or before the date.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EndInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Schedule"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
   /occurrences/{id}/unrealize:
     post:
       tags: [planning]
@@ -2529,6 +2678,7 @@ components:
           $ref: "#/components/schemas/Recurrence"
     SchedulePause:
       type: object
+      additionalProperties: false
       required: [from, to]
       properties:
         from:
@@ -2616,6 +2766,42 @@ components:
           type: string
           format: date
           description: The generated date of a moved occurrence.
+    SkipInput:
+      type: object
+      additionalProperties: false
+      properties:
+        reason:
+          type: string
+          maxLength: 200
+    MoveInput:
+      type: object
+      additionalProperties: false
+      required: [date]
+      properties:
+        date:
+          type: string
+          format: date
+    TermsInput:
+      type: object
+      additionalProperties: false
+      required: [effective_from]
+      description: At least one of amount and recurrence.
+      properties:
+        effective_from:
+          type: string
+          format: date
+        amount:
+          $ref: "#/components/schemas/Money"
+        recurrence:
+          $ref: "#/components/schemas/Recurrence"
+    EndInput:
+      type: object
+      additionalProperties: false
+      required: [from]
+      properties:
+        from:
+          type: string
+          format: date
     RealizeInput:
       type: object
       additionalProperties: false
@@ -4342,7 +4528,7 @@ components:
             already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
             record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
             integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
-            currency_unsupported, occurrence_closed, transaction_in_use.
+            currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended.
         request_id:
           type: string
         errors:

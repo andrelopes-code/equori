@@ -460,6 +460,21 @@ func (q *Queries) SchedulesOfUser(ctx context.Context, userID int64) ([]Planning
 	return items, nil
 }
 
+const setEndsOn = `-- name: SetEndsOn :exec
+UPDATE planning_schedule SET ends_on = $1, updated_at = now() WHERE user_id = $2 AND id = $3
+`
+
+type SetEndsOnParams struct {
+	EndsOn *time.Time
+	UserID int64
+	ID     uuid.UUID
+}
+
+func (q *Queries) SetEndsOn(ctx context.Context, arg SetEndsOnParams) error {
+	_, err := q.db.Exec(ctx, setEndsOn, arg.EndsOn, arg.UserID, arg.ID)
+	return err
+}
+
 const setGeneratedUntil = `-- name: SetGeneratedUntil :exec
 UPDATE planning_schedule SET generated_until = $1, updated_at = now() WHERE user_id = $2 AND id = $3
 `

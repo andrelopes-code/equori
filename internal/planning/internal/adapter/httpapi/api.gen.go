@@ -149,6 +149,11 @@ func (e ScheduleKind) Valid() bool {
 	}
 }
 
+// EndInput defines model for EndInput.
+type EndInput struct {
+	From openapi_types.Date `json:"from"`
+}
+
 // FieldError defines model for FieldError.
 type FieldError struct {
 	Field   string `json:"field"`
@@ -162,6 +167,11 @@ type Money struct {
 
 	// Currency Example: BRL
 	Currency string `json:"currency"`
+}
+
+// MoveInput defines model for MoveInput.
+type MoveInput struct {
+	Date openapi_types.Date `json:"date"`
 }
 
 // Occurrence defines model for Occurrence.
@@ -197,7 +207,7 @@ type Problem struct {
 	// already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
 	// record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
 	// integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
-	// currency_unsupported, occurrence_closed, transaction_in_use.
+	// currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended.
 	Code      string        `json:"code"`
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`
@@ -300,6 +310,21 @@ type ScheduleTerms struct {
 	Recurrence Recurrence `json:"recurrence"`
 }
 
+// SkipInput defines model for SkipInput.
+type SkipInput struct {
+	Reason *string `json:"reason,omitempty"`
+}
+
+// TermsInput At least one of amount and recurrence.
+type TermsInput struct {
+	Amount        *Money             `json:"amount,omitempty"`
+	EffectiveFrom openapi_types.Date `json:"effective_from"`
+
+	// Recurrence A monthly rule takes exactly one of day_of_month, weekday with ordinal, business_day_ordinal; -1 means
+	// the last one. Business days follow calendar br_banking. until is inclusive (P7 amendment A48).
+	Recurrence *Recurrence `json:"recurrence,omitempty"`
+}
+
 // Cursor defines model for Cursor.
 type Cursor = string
 
@@ -323,20 +348,41 @@ type ListSchedulesParams struct {
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
+// MoveOccurrenceJSONRequestBody defines body for MoveOccurrence for application/json ContentType.
+type MoveOccurrenceJSONRequestBody = MoveInput
+
 // RealizeOccurrenceJSONRequestBody defines body for RealizeOccurrence for application/json ContentType.
 type RealizeOccurrenceJSONRequestBody = RealizeInput
 
+// SkipOccurrenceJSONRequestBody defines body for SkipOccurrence for application/json ContentType.
+type SkipOccurrenceJSONRequestBody = SkipInput
+
 // CreateScheduleJSONRequestBody defines body for CreateSchedule for application/json ContentType.
 type CreateScheduleJSONRequestBody = ScheduleInput
+
+// EndScheduleJSONRequestBody defines body for EndSchedule for application/json ContentType.
+type EndScheduleJSONRequestBody = EndInput
+
+// PauseScheduleJSONRequestBody defines body for PauseSchedule for application/json ContentType.
+type PauseScheduleJSONRequestBody = SchedulePause
+
+// ChangeScheduleTermsJSONRequestBody defines body for ChangeScheduleTerms for application/json ContentType.
+type ChangeScheduleTermsJSONRequestBody = TermsInput
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// ListOccurrences Occurrences with expected date in [from, to], at most 366 days, by date.
 	// (GET /occurrences)
 	ListOccurrences(w http.ResponseWriter, r *http.Request, params ListOccurrencesParams)
+	// MoveOccurrence Move an expected occurrence to another date; terms changes never regenerate it (P7 amendment A52).
+	// (POST /occurrences/{id}/move)
+	MoveOccurrence(w http.ResponseWriter, r *http.Request, id ID)
 	// RealizeOccurrence Link a transaction to an expected occurrence; ledger changes never release it (P7 amendment A51).
 	// (POST /occurrences/{id}/realize)
 	RealizeOccurrence(w http.ResponseWriter, r *http.Request, id ID)
+	// SkipOccurrence Skip an expected occurrence (T03; 409 occurrence_closed otherwise).
+	// (POST /occurrences/{id}/skip)
+	SkipOccurrence(w http.ResponseWriter, r *http.Request, id ID)
 	// UnrealizeOccurrence Release a realized occurrence (409 occurrence_closed when it is not realized).
 	// (POST /occurrences/{id}/unrealize)
 	UnrealizeOccurrence(w http.ResponseWriter, r *http.Request, id ID)
@@ -349,6 +395,15 @@ type ServerInterface interface {
 	// GetSchedule A schedule with its terms versions and pauses.
 	// (GET /schedules/{id})
 	GetSchedule(w http.ResponseWriter, r *http.Request, id ID)
+	// EndSchedule Produce no occurrence on or after a date; expected ones are removed, realized ones stay (P7 amendment A52).
+	// (POST /schedules/{id}/end)
+	EndSchedule(w http.ResponseWriter, r *http.Request, id ID)
+	// PauseSchedule Suppress the dates in [from, to] (P7 amendment A52).
+	// (POST /schedules/{id}/pauses)
+	PauseSchedule(w http.ResponseWriter, r *http.Request, id ID)
+	// ChangeScheduleTerms Add a terms version effective from a date after the latest one (T09; P7 amendments A49, A52).
+	// (POST /schedules/{id}/terms)
+	ChangeScheduleTerms(w http.ResponseWriter, r *http.Request, id ID)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -432,6 +487,32 @@ func (siw *ServerInterfaceWrapper) ListOccurrences(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
+// MoveOccurrence operation middleware
+func (siw *ServerInterfaceWrapper) MoveOccurrence(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.MoveOccurrence(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // RealizeOccurrence operation middleware
 func (siw *ServerInterfaceWrapper) RealizeOccurrence(w http.ResponseWriter, r *http.Request) {
 
@@ -449,6 +530,32 @@ func (siw *ServerInterfaceWrapper) RealizeOccurrence(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RealizeOccurrence(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SkipOccurrence operation middleware
+func (siw *ServerInterfaceWrapper) SkipOccurrence(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SkipOccurrence(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -561,6 +668,84 @@ func (siw *ServerInterfaceWrapper) GetSchedule(w http.ResponseWriter, r *http.Re
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetSchedule(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// EndSchedule operation middleware
+func (siw *ServerInterfaceWrapper) EndSchedule(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.EndSchedule(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PauseSchedule operation middleware
+func (siw *ServerInterfaceWrapper) PauseSchedule(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PauseSchedule(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ChangeScheduleTerms operation middleware
+func (siw *ServerInterfaceWrapper) ChangeScheduleTerms(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ChangeScheduleTerms(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -695,6 +880,11 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/schedules/{id}", wrapper.GetSchedule)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/occurrences", wrapper.ListOccurrences)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/occurrences/{id}/realize", wrapper.RealizeOccurrence)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/occurrences/{id}/skip", wrapper.SkipOccurrence)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/occurrences/{id}/move", wrapper.MoveOccurrence)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/schedules/{id}/terms", wrapper.ChangeScheduleTerms)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/schedules/{id}/pauses", wrapper.PauseSchedule)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/schedules/{id}/end", wrapper.EndSchedule)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/occurrences/{id}/unrealize", wrapper.UnrealizeOccurrence)
 
 	return m
@@ -764,6 +954,87 @@ func (response ListOccurrences422ApplicationProblemPlusJSONResponse) VisitListOc
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MoveOccurrenceRequestObject struct {
+	Id   ID `json:"id"`
+	Body *MoveOccurrenceJSONRequestBody
+}
+
+type MoveOccurrenceResponseObject interface {
+	VisitMoveOccurrenceResponse(w http.ResponseWriter) error
+}
+
+type MoveOccurrence200JSONResponse Occurrence
+
+func (response MoveOccurrence200JSONResponse) VisitMoveOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MoveOccurrence400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response MoveOccurrence400ApplicationProblemPlusJSONResponse) VisitMoveOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MoveOccurrence401ApplicationProblemPlusJSONResponse Problem
+
+func (response MoveOccurrence401ApplicationProblemPlusJSONResponse) VisitMoveOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MoveOccurrence404ApplicationProblemPlusJSONResponse Problem
+
+func (response MoveOccurrence404ApplicationProblemPlusJSONResponse) VisitMoveOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MoveOccurrence409ApplicationProblemPlusJSONResponse Problem
+
+func (response MoveOccurrence409ApplicationProblemPlusJSONResponse) VisitMoveOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -859,6 +1130,87 @@ func (response RealizeOccurrence422ApplicationProblemPlusJSONResponse) VisitReal
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SkipOccurrenceRequestObject struct {
+	Id   ID `json:"id"`
+	Body *SkipOccurrenceJSONRequestBody
+}
+
+type SkipOccurrenceResponseObject interface {
+	VisitSkipOccurrenceResponse(w http.ResponseWriter) error
+}
+
+type SkipOccurrence200JSONResponse Occurrence
+
+func (response SkipOccurrence200JSONResponse) VisitSkipOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SkipOccurrence400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SkipOccurrence400ApplicationProblemPlusJSONResponse) VisitSkipOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SkipOccurrence401ApplicationProblemPlusJSONResponse Problem
+
+func (response SkipOccurrence401ApplicationProblemPlusJSONResponse) VisitSkipOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SkipOccurrence404ApplicationProblemPlusJSONResponse Problem
+
+func (response SkipOccurrence404ApplicationProblemPlusJSONResponse) VisitSkipOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SkipOccurrence409ApplicationProblemPlusJSONResponse Problem
+
+func (response SkipOccurrence409ApplicationProblemPlusJSONResponse) VisitSkipOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -1109,14 +1461,291 @@ func (response GetSchedule404ApplicationProblemPlusJSONResponse) VisitGetSchedul
 	return err
 }
 
+type EndScheduleRequestObject struct {
+	Id   ID `json:"id"`
+	Body *EndScheduleJSONRequestBody
+}
+
+type EndScheduleResponseObject interface {
+	VisitEndScheduleResponse(w http.ResponseWriter) error
+}
+
+type EndSchedule200JSONResponse Schedule
+
+func (response EndSchedule200JSONResponse) VisitEndScheduleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EndSchedule400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response EndSchedule400ApplicationProblemPlusJSONResponse) VisitEndScheduleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EndSchedule401ApplicationProblemPlusJSONResponse Problem
+
+func (response EndSchedule401ApplicationProblemPlusJSONResponse) VisitEndScheduleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EndSchedule404ApplicationProblemPlusJSONResponse Problem
+
+func (response EndSchedule404ApplicationProblemPlusJSONResponse) VisitEndScheduleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EndSchedule409ApplicationProblemPlusJSONResponse Problem
+
+func (response EndSchedule409ApplicationProblemPlusJSONResponse) VisitEndScheduleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PauseScheduleRequestObject struct {
+	Id   ID `json:"id"`
+	Body *PauseScheduleJSONRequestBody
+}
+
+type PauseScheduleResponseObject interface {
+	VisitPauseScheduleResponse(w http.ResponseWriter) error
+}
+
+type PauseSchedule201JSONResponse Schedule
+
+func (response PauseSchedule201JSONResponse) VisitPauseScheduleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PauseSchedule400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response PauseSchedule400ApplicationProblemPlusJSONResponse) VisitPauseScheduleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PauseSchedule401ApplicationProblemPlusJSONResponse Problem
+
+func (response PauseSchedule401ApplicationProblemPlusJSONResponse) VisitPauseScheduleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PauseSchedule404ApplicationProblemPlusJSONResponse Problem
+
+func (response PauseSchedule404ApplicationProblemPlusJSONResponse) VisitPauseScheduleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PauseSchedule409ApplicationProblemPlusJSONResponse Problem
+
+func (response PauseSchedule409ApplicationProblemPlusJSONResponse) VisitPauseScheduleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PauseSchedule422ApplicationProblemPlusJSONResponse Problem
+
+func (response PauseSchedule422ApplicationProblemPlusJSONResponse) VisitPauseScheduleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ChangeScheduleTermsRequestObject struct {
+	Id   ID `json:"id"`
+	Body *ChangeScheduleTermsJSONRequestBody
+}
+
+type ChangeScheduleTermsResponseObject interface {
+	VisitChangeScheduleTermsResponse(w http.ResponseWriter) error
+}
+
+type ChangeScheduleTerms201JSONResponse Schedule
+
+func (response ChangeScheduleTerms201JSONResponse) VisitChangeScheduleTermsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ChangeScheduleTerms400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ChangeScheduleTerms400ApplicationProblemPlusJSONResponse) VisitChangeScheduleTermsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ChangeScheduleTerms401ApplicationProblemPlusJSONResponse Problem
+
+func (response ChangeScheduleTerms401ApplicationProblemPlusJSONResponse) VisitChangeScheduleTermsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ChangeScheduleTerms404ApplicationProblemPlusJSONResponse Problem
+
+func (response ChangeScheduleTerms404ApplicationProblemPlusJSONResponse) VisitChangeScheduleTermsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ChangeScheduleTerms409ApplicationProblemPlusJSONResponse Problem
+
+func (response ChangeScheduleTerms409ApplicationProblemPlusJSONResponse) VisitChangeScheduleTermsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ChangeScheduleTerms422ApplicationProblemPlusJSONResponse Problem
+
+func (response ChangeScheduleTerms422ApplicationProblemPlusJSONResponse) VisitChangeScheduleTermsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// ListOccurrences Occurrences with expected date in [from, to], at most 366 days, by date.
 	// (GET /occurrences)
 	ListOccurrences(ctx context.Context, request ListOccurrencesRequestObject) (ListOccurrencesResponseObject, error)
+	// MoveOccurrence Move an expected occurrence to another date; terms changes never regenerate it (P7 amendment A52).
+	// (POST /occurrences/{id}/move)
+	MoveOccurrence(ctx context.Context, request MoveOccurrenceRequestObject) (MoveOccurrenceResponseObject, error)
 	// RealizeOccurrence Link a transaction to an expected occurrence; ledger changes never release it (P7 amendment A51).
 	// (POST /occurrences/{id}/realize)
 	RealizeOccurrence(ctx context.Context, request RealizeOccurrenceRequestObject) (RealizeOccurrenceResponseObject, error)
+	// SkipOccurrence Skip an expected occurrence (T03; 409 occurrence_closed otherwise).
+	// (POST /occurrences/{id}/skip)
+	SkipOccurrence(ctx context.Context, request SkipOccurrenceRequestObject) (SkipOccurrenceResponseObject, error)
 	// UnrealizeOccurrence Release a realized occurrence (409 occurrence_closed when it is not realized).
 	// (POST /occurrences/{id}/unrealize)
 	UnrealizeOccurrence(ctx context.Context, request UnrealizeOccurrenceRequestObject) (UnrealizeOccurrenceResponseObject, error)
@@ -1129,6 +1758,15 @@ type StrictServerInterface interface {
 	// GetSchedule A schedule with its terms versions and pauses.
 	// (GET /schedules/{id})
 	GetSchedule(ctx context.Context, request GetScheduleRequestObject) (GetScheduleResponseObject, error)
+	// EndSchedule Produce no occurrence on or after a date; expected ones are removed, realized ones stay (P7 amendment A52).
+	// (POST /schedules/{id}/end)
+	EndSchedule(ctx context.Context, request EndScheduleRequestObject) (EndScheduleResponseObject, error)
+	// PauseSchedule Suppress the dates in [from, to] (P7 amendment A52).
+	// (POST /schedules/{id}/pauses)
+	PauseSchedule(ctx context.Context, request PauseScheduleRequestObject) (PauseScheduleResponseObject, error)
+	// ChangeScheduleTerms Add a terms version effective from a date after the latest one (T09; P7 amendments A49, A52).
+	// (POST /schedules/{id}/terms)
+	ChangeScheduleTerms(ctx context.Context, request ChangeScheduleTermsRequestObject) (ChangeScheduleTermsResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -1196,6 +1834,39 @@ func (sh *strictHandler) ListOccurrences(w http.ResponseWriter, r *http.Request,
 	}
 }
 
+// MoveOccurrence operation middleware
+func (sh *strictHandler) MoveOccurrence(w http.ResponseWriter, r *http.Request, id ID) {
+	var request MoveOccurrenceRequestObject
+
+	request.Id = id
+
+	var body MoveOccurrenceJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.MoveOccurrence(ctx, request.(MoveOccurrenceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "MoveOccurrence")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(MoveOccurrenceResponseObject); ok {
+		if err := validResponse.VisitMoveOccurrenceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // RealizeOccurrence operation middleware
 func (sh *strictHandler) RealizeOccurrence(w http.ResponseWriter, r *http.Request, id ID) {
 	var request RealizeOccurrenceRequestObject
@@ -1222,6 +1893,39 @@ func (sh *strictHandler) RealizeOccurrence(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RealizeOccurrenceResponseObject); ok {
 		if err := validResponse.VisitRealizeOccurrenceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SkipOccurrence operation middleware
+func (sh *strictHandler) SkipOccurrence(w http.ResponseWriter, r *http.Request, id ID) {
+	var request SkipOccurrenceRequestObject
+
+	request.Id = id
+
+	var body SkipOccurrenceJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SkipOccurrence(ctx, request.(SkipOccurrenceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SkipOccurrence")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SkipOccurrenceResponseObject); ok {
+		if err := validResponse.VisitSkipOccurrenceResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1331,6 +2035,105 @@ func (sh *strictHandler) GetSchedule(w http.ResponseWriter, r *http.Request, id 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetScheduleResponseObject); ok {
 		if err := validResponse.VisitGetScheduleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// EndSchedule operation middleware
+func (sh *strictHandler) EndSchedule(w http.ResponseWriter, r *http.Request, id ID) {
+	var request EndScheduleRequestObject
+
+	request.Id = id
+
+	var body EndScheduleJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.EndSchedule(ctx, request.(EndScheduleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "EndSchedule")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(EndScheduleResponseObject); ok {
+		if err := validResponse.VisitEndScheduleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PauseSchedule operation middleware
+func (sh *strictHandler) PauseSchedule(w http.ResponseWriter, r *http.Request, id ID) {
+	var request PauseScheduleRequestObject
+
+	request.Id = id
+
+	var body PauseScheduleJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PauseSchedule(ctx, request.(PauseScheduleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PauseSchedule")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PauseScheduleResponseObject); ok {
+		if err := validResponse.VisitPauseScheduleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ChangeScheduleTerms operation middleware
+func (sh *strictHandler) ChangeScheduleTerms(w http.ResponseWriter, r *http.Request, id ID) {
+	var request ChangeScheduleTermsRequestObject
+
+	request.Id = id
+
+	var body ChangeScheduleTermsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ChangeScheduleTerms(ctx, request.(ChangeScheduleTermsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ChangeScheduleTerms")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ChangeScheduleTermsResponseObject); ok {
+		if err := validResponse.VisitChangeScheduleTermsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
