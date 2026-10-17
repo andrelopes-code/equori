@@ -26,10 +26,12 @@ gen: $(TOOLS) $(WEB_DEPS)
 		(cd $$(dirname $$cfg) && $(BIN)/oapi-codegen -config oapi-codegen.yaml $(CURDIR)/api/openapi.yaml) || exit 1; \
 	done
 	cd web && pnpm exec openapi-typescript ../api/openapi.yaml -o src/api/schema.gen.ts
+	tmp=$$(mktemp -d) && (cd web && pnpm exec slotted-build-theme src/theme/equori.theme.ts --out $$tmp) \
+		&& cp $$tmp/equori.css web/src/theme/equori.gen.css && rm -rf $$tmp
 
 gen-check: gen
-	git diff --exit-code -- '*.gen.go' '*.gen.ts'
-	test -z "$$(git ls-files --others --exclude-standard -- '*.gen.go' '*.gen.ts')"
+	git diff --exit-code -- '*.gen.go' '*.gen.ts' '*.gen.css'
+	test -z "$$(git ls-files --others --exclude-standard -- '*.gen.go' '*.gen.ts' '*.gen.css')"
 
 tidy-check:
 	go mod tidy -diff

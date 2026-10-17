@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format:check": "prettier --check .",
-    "test": "vitest run"
+    "test": "vitest run && node --test src/theme/equori.theme.test.ts"
   },
   "dependencies": {
     "@slotted/core": "0.1.0-beta.2",
