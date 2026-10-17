@@ -144,9 +144,9 @@ func (q *Queries) InsertSchedule(ctx context.Context, arg InsertScheduleParams) 
 
 const insertTerms = `-- name: InsertTerms :exec
 INSERT INTO planning_schedule_terms (user_id, schedule_id, effective_from, frequency, interval, day_of_month, weekday, ordinal,
-    business_day_ordinal, adjustment, calendar, start, until, count, amount)
+    business_day_ordinal, adjustment, calendar, start, until, count, amount, first_sequence)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8,
-    $9, $10, $11, $12, $13, $14, $15)
+    $9, $10, $11, $12, $13, $14, $15, $16)
 `
 
 type InsertTermsParams struct {
@@ -165,6 +165,7 @@ type InsertTermsParams struct {
 	Until              *time.Time
 	Count              *int32
 	Amount             int64
+	FirstSequence      *int32
 }
 
 func (q *Queries) InsertTerms(ctx context.Context, arg InsertTermsParams) error {
@@ -184,12 +185,13 @@ func (q *Queries) InsertTerms(ctx context.Context, arg InsertTermsParams) error 
 		arg.Until,
 		arg.Count,
 		arg.Amount,
+		arg.FirstSequence,
 	)
 	return err
 }
 
 const listOccurrences = `-- name: ListOccurrences :many
-SELECT id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason FROM planning_occurrence
+SELECT id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id FROM planning_occurrence
 WHERE user_id = $1 AND expected_on BETWEEN $2 AND $3
   AND ($4::uuid IS NULL OR schedule_id = $4::uuid)
 ORDER BY expected_on, schedule_id, sequence
@@ -228,6 +230,7 @@ func (q *Queries) ListOccurrences(ctx context.Context, arg ListOccurrencesParams
 			&i.RealizedBy,
 			&i.MovedFrom,
 			&i.SkipReason,
+			&i.DeclinedTransactionID,
 		); err != nil {
 			return nil, err
 		}
@@ -241,8 +244,13 @@ func (q *Queries) ListOccurrences(ctx context.Context, arg ListOccurrencesParams
 
 const listPauses = `-- name: ListPauses :many
 SELECT schedule_id, lower(period)::date AS from_date, (upper(period) - 1)::date AS to_date
-FROM planning_schedule_pause WHERE schedule_id = ANY($1::uuid[]) ORDER BY schedule_id, lower(period)
+FROM planning_schedule_pause WHERE user_id = $1 AND schedule_id = ANY($2::uuid[]) ORDER BY schedule_id, lower(period)
 `
+
+type ListPausesParams struct {
+	UserID      int64
+	ScheduleIds []uuid.UUID
+}
 
 type ListPausesRow struct {
 	ScheduleID uuid.UUID
@@ -250,8 +258,8 @@ type ListPausesRow struct {
 	ToDate     time.Time
 }
 
-func (q *Queries) ListPauses(ctx context.Context, scheduleIds []uuid.UUID) ([]ListPausesRow, error) {
-	rows, err := q.db.Query(ctx, listPauses, scheduleIds)
+func (q *Queries) ListPauses(ctx context.Context, arg ListPausesParams) ([]ListPausesRow, error) {
+	rows, err := q.db.Query(ctx, listPauses, arg.UserID, arg.ScheduleIds)
 	if err != nil {
 		return nil, err
 	}
@@ -319,11 +327,16 @@ func (q *Queries) ListSchedules(ctx context.Context, arg ListSchedulesParams) ([
 }
 
 const listTerms = `-- name: ListTerms :many
-SELECT user_id, schedule_id, effective_from, frequency, interval, day_of_month, weekday, ordinal, business_day_ordinal, adjustment, calendar, start, until, count, amount FROM planning_schedule_terms WHERE schedule_id = ANY($1::uuid[]) ORDER BY schedule_id, effective_from
+SELECT user_id, schedule_id, effective_from, frequency, interval, day_of_month, weekday, ordinal, business_day_ordinal, adjustment, calendar, start, until, count, amount, first_sequence FROM planning_schedule_terms WHERE user_id = $1 AND schedule_id = ANY($2::uuid[]) ORDER BY schedule_id, effective_from
 `
 
-func (q *Queries) ListTerms(ctx context.Context, scheduleIds []uuid.UUID) ([]PlanningScheduleTerm, error) {
-	rows, err := q.db.Query(ctx, listTerms, scheduleIds)
+type ListTermsParams struct {
+	UserID      int64
+	ScheduleIds []uuid.UUID
+}
+
+func (q *Queries) ListTerms(ctx context.Context, arg ListTermsParams) ([]PlanningScheduleTerm, error) {
+	rows, err := q.db.Query(ctx, listTerms, arg.UserID, arg.ScheduleIds)
 	if err != nil {
 		return nil, err
 	}
@@ -347,6 +360,7 @@ func (q *Queries) ListTerms(ctx context.Context, scheduleIds []uuid.UUID) ([]Pla
 			&i.Until,
 			&i.Count,
 			&i.Amount,
+			&i.FirstSequence,
 		); err != nil {
 			return nil, err
 		}

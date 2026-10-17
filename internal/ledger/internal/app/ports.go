@@ -331,4 +331,6 @@ type Repository interface {
 	// CategoryTotal sums the weights of the non-voided postings of the account and its
 	// descendants booked in [from, to).
 	CategoryTotal(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) (int64, error)
+	// CategoryMonthlyTotals returns CategoryTotal by first day of month, months without postings omitted.
+	CategoryMonthlyTotals(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) (map[time.Time]int64, error)
 }

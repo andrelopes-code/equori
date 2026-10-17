@@ -27,6 +27,9 @@ type Occurrence struct {
 	RealizedBy     string    // auto or manual while realized
 	MovedFrom      *time.Time
 	SkipReason     string
+	// DeclinedTransactionID is the transaction the owner released from the occurrence; it no
+	// longer realizes it automatically (P7 amendment A51).
+	DeclinedTransactionID uuid.UUID
 }
 
 // Shown returns the state the API reads on today.

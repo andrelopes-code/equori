@@ -64,6 +64,59 @@ func (q *Queries) BalanceSettledAt(ctx context.Context, arg BalanceSettledAtPara
 	return column_1, err
 }
 
+const categoryMonthlyTotals = `-- name: CategoryMonthlyTotals :many
+WITH RECURSIVE tree AS (
+    SELECT a.id FROM ledger_account a WHERE a.user_id = $3 AND a.id = $4
+    UNION ALL
+    SELECT c.id FROM ledger_account c JOIN tree ON c.parent_id = tree.id WHERE c.user_id = $3
+)
+SELECT date_trunc('month', p.booked_on)::date AS month, sum(p.weight)::bigint AS total
+FROM ledger_posting p
+WHERE p.account_id IN (SELECT id FROM tree)
+  AND NOT p.voided
+  AND p.booked_on >= $1 AND p.booked_on < $2
+GROUP BY 1
+ORDER BY 1
+`
+
+type CategoryMonthlyTotalsParams struct {
+	FromDate  time.Time
+	ToDate    time.Time
+	UserID    int64
+	AccountID uuid.UUID
+}
+
+type CategoryMonthlyTotalsRow struct {
+	Month time.Time
+	Total int64
+}
+
+// CategoryTotal grouped by month in one query (P7 final review).
+func (q *Queries) CategoryMonthlyTotals(ctx context.Context, arg CategoryMonthlyTotalsParams) ([]CategoryMonthlyTotalsRow, error) {
+	rows, err := q.db.Query(ctx, categoryMonthlyTotals,
+		arg.FromDate,
+		arg.ToDate,
+		arg.UserID,
+		arg.AccountID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CategoryMonthlyTotalsRow
+	for rows.Next() {
+		var i CategoryMonthlyTotalsRow
+		if err := rows.Scan(&i.Month, &i.Total); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const categoryTotal = `-- name: CategoryTotal :one
 WITH RECURSIVE tree AS (
     SELECT a.id FROM ledger_account a WHERE a.user_id = $3 AND a.id = $4

@@ -50,6 +50,8 @@ type Ledger interface {
 	// CategoryTotal sums the postings of a category subtree booked in [from, to), in minor
 	// units of the base currency.
 	CategoryTotal(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (int64, error)
+	// CategoryMonthlyTotals is CategoryTotal for each month in [from, to), keyed by its first day.
+	CategoryMonthlyTotals(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (map[time.Time]int64, error)
 	// Balance is the booked balance of an account at the end of date, in its minor units.
 	Balance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time) (int64, error)
 	// Commitment sums the installments of a card billed on the statement of month while it is open.
@@ -97,13 +99,16 @@ type Repository interface {
 	// Realize and Release change an expected or realized occurrence; ErrOccurrenceClosed when its
 	// state changed meanwhile.
 	Realize(ctx context.Context, userID int64, id, txID uuid.UUID, by string) (domain.Occurrence, error)
-	Release(ctx context.Context, userID int64, id uuid.UUID) (domain.Occurrence, error)
+	// Release with decline also records the transaction as declined by the occurrence.
+	Release(ctx context.Context, userID int64, id uuid.UUID, decline bool) (domain.Occurrence, error)
 	// Skip and Move change an expected occurrence; ErrOccurrenceClosed otherwise.
 	Skip(ctx context.Context, userID int64, id uuid.UUID, reason string) (domain.Occurrence, error)
 	Move(ctx context.Context, userID int64, id uuid.UUID, date time.Time) (domain.Occurrence, error)
 	// DeleteExpected removes expected occurrences with expected date in [from, to]; moved ones
-	// only with includeMoved.
-	DeleteExpected(ctx context.Context, userID int64, scheduleID uuid.UUID, from, to time.Time, includeMoved bool) error
+	// only with includeMoved. It returns the dates removed.
+	DeleteExpected(ctx context.Context, userID int64, scheduleID uuid.UUID, from, to time.Time, includeMoved bool) ([]time.Time, error)
+	// KeptOccurrences returns the realized, skipped and moved occurrences generated on or after from.
+	KeptOccurrences(ctx context.Context, userID int64, scheduleID uuid.UUID, from time.Time) ([]domain.Occurrence, error)
 	InsertTerms(ctx context.Context, userID int64, scheduleID uuid.UUID, t domain.Terms) error
 	// InsertPause returns ErrPauseOverlap when the pause overlaps another one.
 	InsertPause(ctx context.Context, userID int64, scheduleID uuid.UUID, p domain.Pause) error

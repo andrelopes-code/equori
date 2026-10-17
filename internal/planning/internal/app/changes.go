@@ -103,14 +103,75 @@ func (s *Service) ChangeTerms(ctx context.Context, userID int64, id uuid.UUID, e
 		if err := sch.Validate(); err != nil {
 			return err
 		}
-		if err := repo.InsertTerms(ctx, userID, sch.ID, next); err != nil {
+		first, err := s.firstSequence(ctx, repo, userID, *sch)
+		if err != nil {
 			return err
 		}
-		if err := repo.DeleteExpected(ctx, userID, sch.ID, effectiveFrom, lastDate, false); err != nil {
+		sch.Terms[len(sch.Terms)-1].FirstSequence = first
+		if err := repo.InsertTerms(ctx, userID, sch.ID, sch.Terms[len(sch.Terms)-1]); err != nil {
 			return err
 		}
-		return s.regenerate(ctx, repo, userID, *sch, effectiveFrom)
+		removed, err := repo.DeleteExpected(ctx, userID, sch.ID, effectiveFrom, lastDate, false)
+		if err != nil {
+			return err
+		}
+		// Regenerate only where occurrences existed: from today, or from the earliest date
+		// removed when it is earlier, never before the effective date.
+		from := s.clk.Today()
+		for _, d := range removed {
+			if d.Before(from) {
+				from = d
+			}
+		}
+		if from.Before(effectiveFrom) {
+			from = effectiveFrom
+		}
+		return s.regenerate(ctx, repo, userID, *sch, from)
 	})
+}
+
+// firstSequence returns the first sequence of the latest terms version of sch: 0 to continue
+// after the earlier versions, unless a kept occurrence holds one of the sequences the version
+// would take for another date; then the version starts after the highest kept sequence.
+func (s *Service) firstSequence(ctx context.Context, repo Repository, userID int64, sch domain.Schedule) (int, error) {
+	latest := sch.Terms[len(sch.Terms)-1]
+	kept, err := repo.KeptOccurrences(ctx, userID, sch.ID, latest.EffectiveFrom)
+	if err != nil || len(kept) == 0 {
+		return 0, err
+	}
+	until := sch.GeneratedUntil
+	for _, o := range kept {
+		if g := generated(o); g.After(until) {
+			until = g
+		}
+	}
+	days, err := s.days(ctx, sch.Terms[0].Rule.Start, until)
+	if err != nil {
+		return 0, err
+	}
+	dates := map[int]time.Time{}
+	for _, p := range sch.Planned(latest.EffectiveFrom, until, days) {
+		dates[p.Sequence] = p.Date
+	}
+	highest, covered := 0, true
+	for _, o := range kept {
+		highest = max(highest, o.Sequence)
+		if d, ok := dates[o.Sequence]; ok && !d.Equal(generated(o)) {
+			covered = false
+		}
+	}
+	if covered {
+		return 0, nil
+	}
+	return highest + 1, nil
+}
+
+// generated is the date the schedule produced for o, before any move.
+func generated(o domain.Occurrence) time.Time {
+	if o.MovedFrom != nil {
+		return *o.MovedFrom
+	}
+	return o.ExpectedOn
 }
 
 // Pause suppresses the dates in [from, to]; its expected occurrences, moved ones included, go.
@@ -125,7 +186,8 @@ func (s *Service) Pause(ctx context.Context, userID int64, id uuid.UUID, from, t
 		if err := repo.InsertPause(ctx, userID, sch.ID, domain.Pause{From: from, To: to}); err != nil {
 			return err
 		}
-		return repo.DeleteExpected(ctx, userID, sch.ID, from, to, true)
+		_, err := repo.DeleteExpected(ctx, userID, sch.ID, from, to, true)
+		return err
 	})
 }
 
@@ -138,7 +200,8 @@ func (s *Service) End(ctx context.Context, userID int64, id uuid.UUID, from time
 		if err := repo.SetEndsOn(ctx, userID, sch.ID, from); err != nil {
 			return err
 		}
-		return repo.DeleteExpected(ctx, userID, sch.ID, from, lastDate, true)
+		_, err := repo.DeleteExpected(ctx, userID, sch.ID, from, lastDate, true)
+		return err
 	})
 }
 

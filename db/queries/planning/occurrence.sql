@@ -23,7 +23,8 @@ WHERE user_id = @user_id AND id = @id AND state = 'expected'
 RETURNING *;
 
 -- name: ReleaseOccurrence :one
-UPDATE planning_occurrence SET state = 'expected', transaction_id = NULL, realized_by = NULL
+UPDATE planning_occurrence SET state = 'expected', transaction_id = NULL, realized_by = NULL,
+    declined_transaction_id = CASE WHEN @decline::boolean THEN transaction_id ELSE declined_transaction_id END
 WHERE user_id = @user_id AND id = @id AND state = 'realized'
 RETURNING *;
 
@@ -38,9 +39,17 @@ UPDATE planning_occurrence SET moved_from = coalesce(moved_from, expected_on), e
 WHERE user_id = @user_id AND id = @id AND state = 'expected'
 RETURNING *;
 
--- name: DeleteExpected :exec
+-- name: DeleteExpected :many
 -- Removes the expected occurrences with expected date in [from, to]; moved ones only when
--- include_moved is set.
+-- include_moved is set. Returns the dates removed.
 DELETE FROM planning_occurrence
 WHERE user_id = @user_id AND schedule_id = @schedule_id AND state = 'expected'
-  AND expected_on BETWEEN @from_date AND @to_date AND (@include_moved::boolean OR moved_from IS NULL);
+  AND expected_on BETWEEN @from_date AND @to_date AND (@include_moved::boolean OR moved_from IS NULL)
+RETURNING expected_on;
+
+-- name: KeptOccurrences :many
+-- Occurrences a terms change keeps from a date on: realized, skipped or moved (A52).
+SELECT * FROM planning_occurrence
+WHERE user_id = @user_id AND schedule_id = @schedule_id AND coalesce(moved_from, expected_on) >= @from_date
+  AND (state <> 'expected' OR moved_from IS NOT NULL)
+ORDER BY sequence;

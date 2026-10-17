@@ -195,6 +195,11 @@ func (m *Module) Commitment(ctx context.Context, userID int64, accountID uuid.UU
 	return m.svc.Commitment(ctx, userID, accountID, domain.MonthOf(month))
 }
 
+// CategoryMonthlyTotals is CategoryTotal for each month in [from, to), keyed by its first day.
+func (m *Module) CategoryMonthlyTotals(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (map[time.Time]money.Money, error) {
+	return m.svc.CategoryMonthlyTotals(ctx, userID, categoryID, from, to)
+}
+
 // CategoryTotal sums the postings of a category subtree booked in [from, to), in the base
 // currency (P7 amendment A54).
 func (m *Module) CategoryTotal(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (money.Money, error) {

@@ -38,17 +38,18 @@ type PlanningGoal struct {
 }
 
 type PlanningOccurrence struct {
-	ID             uuid.UUID
-	UserID         int64
-	ScheduleID     uuid.UUID
-	Sequence       int32
-	ExpectedOn     time.Time
-	ExpectedAmount int64
-	State          string
-	TransactionID  uuid.NullUUID
-	RealizedBy     *string
-	MovedFrom      *time.Time
-	SkipReason     *string
+	ID                    uuid.UUID
+	UserID                int64
+	ScheduleID            uuid.UUID
+	Sequence              int32
+	ExpectedOn            time.Time
+	ExpectedAmount        int64
+	State                 string
+	TransactionID         uuid.NullUUID
+	RealizedBy            *string
+	MovedFrom             *time.Time
+	SkipReason            *string
+	DeclinedTransactionID uuid.NullUUID
 }
 
 type PlanningSchedule struct {
@@ -84,4 +85,5 @@ type PlanningScheduleTerm struct {
 	Until              *time.Time
 	Count              *int32
 	Amount             int64
+	FirstSequence      *int32
 }

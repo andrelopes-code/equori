@@ -17,4 +17,4 @@ ORDER BY id
 LIMIT @row_limit;
 
 -- name: ListGoalAccounts :many
-SELECT goal_id, account_id FROM planning_goal_account WHERE goal_id = ANY(@goal_ids::uuid[]) ORDER BY goal_id, account_id;
+SELECT goal_id, account_id FROM planning_goal_account WHERE user_id = @user_id AND goal_id = ANY(@goal_ids::uuid[]) ORDER BY goal_id, account_id;

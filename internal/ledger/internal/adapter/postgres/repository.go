@@ -515,6 +515,18 @@ func (r *Repository) CategoryTotal(ctx context.Context, userID int64, accountID 
 	return r.q.CategoryTotal(ctx, CategoryTotalParams{UserID: userID, AccountID: accountID, FromDate: from, ToDate: to})
 }
 
+func (r *Repository) CategoryMonthlyTotals(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) (map[time.Time]int64, error) {
+	rows, err := r.q.CategoryMonthlyTotals(ctx, CategoryMonthlyTotalsParams{UserID: userID, AccountID: accountID, FromDate: from, ToDate: to})
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[time.Time]int64, len(rows))
+	for _, row := range rows {
+		out[row.Month] = row.Total
+	}
+	return out, nil
+}
+
 func (r *Repository) InsertBillingRule(ctx context.Context, userID int64, accountID uuid.UUID, rule domain.BillingCycleRule) (domain.BillingCycleRule, error) {
 	row, err := r.q.InsertBillingRule(ctx, InsertBillingRuleParams{
 		UserID: userID, AccountID: accountID, EffectiveFrom: rule.EffectiveFrom.FirstDay(),

@@ -63,13 +63,9 @@ func (s *Service) CreateSchedule(ctx context.Context, userID int64, in ScheduleI
 	if err := s.checkAccounts(ctx, userID, sch); err != nil {
 		return domain.Schedule{}, err
 	}
-	// Ruling of Task 2: occurrences start at the later of start and today; earlier dates keep
-	// their sequence numbers but are not generated.
-	first := in.Rule.Start
-	if today := s.clk.Today(); today.After(first) {
-		first = today
-	}
-	sch.GeneratedUntil = first.AddDate(0, 0, -1)
+	// Occurrences are generated from today; the rule produces no date before its start, except
+	// one a preceding adjustment moves (Task 2 ruling).
+	sch.GeneratedUntil = s.clk.Today().AddDate(0, 0, -1)
 	var created domain.Schedule
 	err := s.repo.InTx(ctx, func(repo Repository) error {
 		var err error

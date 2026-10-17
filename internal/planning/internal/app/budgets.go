@@ -111,12 +111,30 @@ func (s *Service) BudgetProgress(ctx context.Context, userID int64, id uuid.UUID
 	if err != nil {
 		return domain.Progress{}, "", err
 	}
-	spent := func(m time.Time) (int64, error) {
-		total, err := s.ledger.CategoryTotal(ctx, userID, b.CategoryID, m, m.AddDate(0, 1, 0))
-		if category.Class == "income" {
-			total = -total
+	month = domain.MonthOf(month)
+	if month.After(s.horizon()) {
+		return domain.Progress{}, "", &domain.FieldError{Field: "month", Message: "must be at most today + 12 months", Err: domain.ErrValidation}
+	}
+	sign := int64(1)
+	if category.Class == "income" {
+		sign = -1
+	}
+	// One ledger query per request: the months of a rollover budget at once, or the month alone.
+	var totals map[time.Time]int64
+	if b.Rollover && len(b.Amounts) > 0 && !b.Amounts[0].EffectiveFrom.After(month) {
+		if totals, err = s.ledger.CategoryMonthlyTotals(ctx, userID, b.CategoryID, b.Amounts[0].EffectiveFrom, month.AddDate(0, 1, 0)); err != nil {
+			return domain.Progress{}, "", err
 		}
-		return total, err
+	}
+	spent := func(m time.Time) (int64, error) {
+		if totals != nil {
+			return sign * totals[m], nil
+		}
+		if !m.Equal(month) {
+			return 0, nil
+		}
+		total, err := s.ledger.CategoryTotal(ctx, userID, b.CategoryID, m, m.AddDate(0, 1, 0))
+		return sign * total, err
 	}
 	p, ok, err := b.Progress(month, spent)
 	if err != nil {

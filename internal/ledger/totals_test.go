@@ -49,3 +49,24 @@ func TestCategoryTotal(t *testing.T) {
 		})
 	}
 }
+
+// CategoryMonthlyTotals groups the same sums by month in one query (P7 final review).
+func TestCategoryMonthlyTotals(t *testing.T) {
+	h := apitest.New(t)
+	checking := h.Account("Nubank checking", "asset", "checking", nil)
+	food := h.Account("Food", "expense", "", nil)
+	market := h.Account("Supermarket", "expense", "", map[string]any{"parent_id": food})
+	h.Record("2026-09-30", apitest.Posting(checking, -100), apitest.Posting(market, 100))
+	h.Record("2026-10-01", apitest.Posting(checking, -2000), apitest.Posting(food, 2000))
+	h.Record("2026-10-31", apitest.Posting(checking, -300), apitest.Posting(market, 300))
+	h.Record("2026-12-15", apitest.Posting(checking, -700), apitest.Posting(market, 700))
+	got, err := h.App.Ledger.CategoryMonthlyTotals(t.Context(), h.OwnerID(), uuid.MustParse(food),
+		time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC), time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatal(err)
+	}
+	oct, dec := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC), time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC)
+	if len(got) != 2 || got[oct].Amount() != 2300 || got[dec].Amount() != 700 {
+		t.Fatalf("CategoryMonthlyTotals = %v", got)
+	}
+}

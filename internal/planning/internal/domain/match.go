@@ -46,7 +46,7 @@ type Candidate struct {
 // Fits applies the criteria of A51 except the state of the occurrence.
 func Fits(t Transaction, c Candidate) bool {
 	s, o := c.Schedule, c.Occurrence
-	if t.Voided || absDays(t.Date, o.ExpectedOn) > MatchWindowDays {
+	if t.Voided || t.ID == o.DeclinedTransactionID || absDays(t.Date, o.ExpectedOn) > MatchWindowDays {
 		return false
 	}
 	if s.PayeeID != uuid.Nil && t.PayeeID != s.PayeeID {

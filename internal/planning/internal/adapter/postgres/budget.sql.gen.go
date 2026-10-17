@@ -92,11 +92,16 @@ func (q *Queries) InsertBudgetAmount(ctx context.Context, arg InsertBudgetAmount
 }
 
 const listBudgetAmounts = `-- name: ListBudgetAmounts :many
-SELECT user_id, budget_id, effective_from, amount FROM planning_budget_amount WHERE budget_id = ANY($1::uuid[]) ORDER BY budget_id, effective_from
+SELECT user_id, budget_id, effective_from, amount FROM planning_budget_amount WHERE user_id = $1 AND budget_id = ANY($2::uuid[]) ORDER BY budget_id, effective_from
 `
 
-func (q *Queries) ListBudgetAmounts(ctx context.Context, budgetIds []uuid.UUID) ([]PlanningBudgetAmount, error) {
-	rows, err := q.db.Query(ctx, listBudgetAmounts, budgetIds)
+type ListBudgetAmountsParams struct {
+	UserID    int64
+	BudgetIds []uuid.UUID
+}
+
+func (q *Queries) ListBudgetAmounts(ctx context.Context, arg ListBudgetAmountsParams) ([]PlanningBudgetAmount, error) {
+	rows, err := q.db.Query(ctx, listBudgetAmounts, arg.UserID, arg.BudgetIds)
 	if err != nil {
 		return nil, err
 	}

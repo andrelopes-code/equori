@@ -26,6 +26,9 @@ type Terms struct {
 	EffectiveFrom time.Time
 	Rule          Rule
 	Amount        int64 // minor units of the schedule currency, positive
+	// FirstSequence, when set, is the sequence of the version's first date; otherwise the
+	// version continues after the earlier versions (A49).
+	FirstSequence int
 }
 
 // Pause suppresses the dates in [From, To] (P7 amendment A52).
@@ -100,9 +103,18 @@ func (s Schedule) Planned(from, to time.Time, days BusinessDays) []Planned {
 				upper = next
 			}
 		}
-		for _, d := range t.Rule.Dates(t.EffectiveFrom, upper, days) {
+		// The first version starts at the rule's start, whose date a preceding adjustment may
+		// move before it.
+		lower := t.EffectiveFrom
+		if i == 0 {
+			lower = time.Time{}
+		}
+		for j, d := range t.Rule.Dates(lower, upper, days) {
 			seq := d.Sequence
-			if i > 0 {
+			switch {
+			case i > 0 && j == 0 && t.FirstSequence > 0:
+				seq = t.FirstSequence
+			case i > 0:
 				seq = last + 1
 			}
 			last = seq

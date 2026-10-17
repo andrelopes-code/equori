@@ -88,16 +88,21 @@ func (q *Queries) InsertGoalAccounts(ctx context.Context, arg InsertGoalAccounts
 }
 
 const listGoalAccounts = `-- name: ListGoalAccounts :many
-SELECT goal_id, account_id FROM planning_goal_account WHERE goal_id = ANY($1::uuid[]) ORDER BY goal_id, account_id
+SELECT goal_id, account_id FROM planning_goal_account WHERE user_id = $1 AND goal_id = ANY($2::uuid[]) ORDER BY goal_id, account_id
 `
+
+type ListGoalAccountsParams struct {
+	UserID  int64
+	GoalIds []uuid.UUID
+}
 
 type ListGoalAccountsRow struct {
 	GoalID    uuid.UUID
 	AccountID uuid.UUID
 }
 
-func (q *Queries) ListGoalAccounts(ctx context.Context, goalIds []uuid.UUID) ([]ListGoalAccountsRow, error) {
-	rows, err := q.db.Query(ctx, listGoalAccounts, goalIds)
+func (q *Queries) ListGoalAccounts(ctx context.Context, arg ListGoalAccountsParams) ([]ListGoalAccountsRow, error) {
+	rows, err := q.db.Query(ctx, listGoalAccounts, arg.UserID, arg.GoalIds)
 	if err != nil {
 		return nil, err
 	}

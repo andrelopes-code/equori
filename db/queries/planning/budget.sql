@@ -17,7 +17,7 @@ ORDER BY id
 LIMIT @row_limit;
 
 -- name: ListBudgetAmounts :many
-SELECT * FROM planning_budget_amount WHERE budget_id = ANY(@budget_ids::uuid[]) ORDER BY budget_id, effective_from;
+SELECT * FROM planning_budget_amount WHERE user_id = @user_id AND budget_id = ANY(@budget_ids::uuid[]) ORDER BY budget_id, effective_from;
 
 -- name: LockBudget :one
 SELECT * FROM planning_budget WHERE user_id = @user_id AND id = @id FOR UPDATE;

@@ -50,3 +50,25 @@ func (s *Service) CategoryTotal(ctx context.Context, userID int64, categoryID uu
 	}
 	return money.New(total, settings.BaseCurrency)
 }
+
+// CategoryMonthlyTotals is CategoryTotal for each month in [from, to), keyed by its first day.
+func (s *Service) CategoryMonthlyTotals(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (map[time.Time]money.Money, error) {
+	settings, err := s.repo.Settings(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := s.repo.Account(ctx, userID, categoryID); err != nil {
+		return nil, err
+	}
+	totals, err := s.repo.CategoryMonthlyTotals(ctx, userID, categoryID, from, to)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[time.Time]money.Money, len(totals))
+	for m, total := range totals {
+		if out[m], err = money.New(total, settings.BaseCurrency); err != nil {
+			return nil, err
+		}
+	}
+	return out, nil
+}

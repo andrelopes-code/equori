@@ -5,9 +5,9 @@ RETURNING *;
 
 -- name: InsertTerms :exec
 INSERT INTO planning_schedule_terms (user_id, schedule_id, effective_from, frequency, interval, day_of_month, weekday, ordinal,
-    business_day_ordinal, adjustment, calendar, start, until, count, amount)
+    business_day_ordinal, adjustment, calendar, start, until, count, amount, first_sequence)
 VALUES (@user_id, @schedule_id, @effective_from, @frequency, @interval, sqlc.narg(day_of_month), sqlc.narg(weekday), sqlc.narg(ordinal),
-    sqlc.narg(business_day_ordinal), @adjustment, @calendar, @start, sqlc.narg(until), sqlc.narg(count), @amount);
+    sqlc.narg(business_day_ordinal), @adjustment, @calendar, @start, sqlc.narg(until), sqlc.narg(count), @amount, sqlc.narg(first_sequence));
 
 -- name: GetSchedule :one
 SELECT * FROM planning_schedule WHERE user_id = @user_id AND id = @id;
@@ -25,14 +25,14 @@ LIMIT @row_limit;
 SELECT * FROM planning_schedule WHERE user_id = @user_id ORDER BY id;
 
 -- name: ListTerms :many
-SELECT * FROM planning_schedule_terms WHERE schedule_id = ANY(@schedule_ids::uuid[]) ORDER BY schedule_id, effective_from;
+SELECT * FROM planning_schedule_terms WHERE user_id = @user_id AND schedule_id = ANY(@schedule_ids::uuid[]) ORDER BY schedule_id, effective_from;
 
 -- name: InsertPause :exec
 INSERT INTO planning_schedule_pause (user_id, schedule_id, period) VALUES (@user_id, @schedule_id, daterange(@from_date::date, @to_date::date, '[]'));
 
 -- name: ListPauses :many
 SELECT schedule_id, lower(period)::date AS from_date, (upper(period) - 1)::date AS to_date
-FROM planning_schedule_pause WHERE schedule_id = ANY(@schedule_ids::uuid[]) ORDER BY schedule_id, lower(period);
+FROM planning_schedule_pause WHERE user_id = @user_id AND schedule_id = ANY(@schedule_ids::uuid[]) ORDER BY schedule_id, lower(period);
 
 -- name: SetGeneratedUntil :exec
 UPDATE planning_schedule SET generated_until = @generated_until, updated_at = now() WHERE user_id = @user_id AND id = @id;

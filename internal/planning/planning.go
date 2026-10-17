@@ -131,6 +131,15 @@ func (p ledgerPort) Commitment(ctx context.Context, userID int64, cardID uuid.UU
 	return m.Amount(), err
 }
 
+func (p ledgerPort) CategoryMonthlyTotals(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (map[time.Time]int64, error) {
+	ms, err := p.l.CategoryMonthlyTotals(ctx, userID, categoryID, from, to)
+	out := make(map[time.Time]int64, len(ms))
+	for m, v := range ms {
+		out[m] = v.Amount()
+	}
+	return out, err
+}
+
 type calendarPort struct{ md *marketdata.Module }
 
 func (c calendarPort) Holidays(ctx context.Context, name string, year int) ([]time.Time, error) {

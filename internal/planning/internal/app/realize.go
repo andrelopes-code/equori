@@ -45,7 +45,7 @@ func (s *Service) HandleTransaction(ctx context.Context, e TransactionChanged) e
 		if !t.Voided {
 			return nil
 		}
-		_, err = s.repo.Release(ctx, e.UserID, current.ID)
+		_, err = s.repo.Release(ctx, e.UserID, current.ID, false)
 		return err
 	}
 	var best domain.Candidate
@@ -74,7 +74,7 @@ func (s *Service) HandleTransaction(ctx context.Context, e TransactionChanged) e
 		if found && best.Occurrence.ID == current.ID {
 			return nil
 		}
-		if _, err := s.repo.Release(ctx, e.UserID, current.ID); err != nil {
+		if _, err := s.repo.Release(ctx, e.UserID, current.ID, false); err != nil {
 			return err
 		}
 	}
@@ -123,7 +123,8 @@ func (s *Service) Realize(ctx context.Context, userID int64, id, txID uuid.UUID)
 	return out, err
 }
 
-// Unrealize releases a realized occurrence.
+// Unrealize releases a realized occurrence; its transaction no longer realizes it automatically
+// (final review of P7).
 func (s *Service) Unrealize(ctx context.Context, userID int64, id uuid.UUID) (OccurrenceView, error) {
 	var out OccurrenceView
 	err := s.repo.InTx(ctx, func(repo Repository) error {
@@ -138,7 +139,7 @@ func (s *Service) Unrealize(ctx context.Context, userID int64, id uuid.UUID) (Oc
 		if err != nil {
 			return err
 		}
-		released, err := repo.Release(ctx, userID, id)
+		released, err := repo.Release(ctx, userID, id, true)
 		out = s.view(released, sch)
 		return err
 	})

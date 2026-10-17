@@ -91,7 +91,7 @@ func (r *Repository) insertTerms(ctx context.Context, userID int64, scheduleID u
 		UserID: userID, ScheduleID: scheduleID, EffectiveFrom: t.EffectiveFrom, Frequency: string(rule.Frequency),
 		Interval: int32(rule.Interval), DayOfMonth: intPtr(rule.DayOfMonth), Weekday: weekday, Ordinal: intPtr(rule.Ordinal), //nolint:gosec // interval is at most 120 (contract)
 		BusinessDayOrdinal: intPtr(rule.BusinessDayOrdinal), Adjustment: rule.Adjustment, Calendar: "br_banking",
-		Start: rule.Start, Until: rule.Until, Count: intPtr(rule.Count), Amount: t.Amount,
+		Start: rule.Start, Until: rule.Until, Count: intPtr(rule.Count), Amount: t.Amount, FirstSequence: intPtr(t.FirstSequence),
 	})
 	if err != nil {
 		return fmt.Errorf("insert schedule terms: %w", err)
@@ -117,7 +117,7 @@ func toTerms(row PlanningScheduleTerm) domain.Terms {
 		w := time.Weekday(*row.Weekday)
 		rule.Weekday = &w
 	}
-	return domain.Terms{EffectiveFrom: row.EffectiveFrom, Rule: rule, Amount: row.Amount}
+	return domain.Terms{EffectiveFrom: row.EffectiveFrom, Rule: rule, Amount: row.Amount, FirstSequence: fromPtr(row.FirstSequence)}
 }
 
 // complete loads the terms and pauses of schedules.
@@ -133,7 +133,7 @@ func (r *Repository) complete(ctx context.Context, rows []PlanningSchedule) ([]d
 		out[i] = toSchedule(row)
 		byID[row.ID] = &out[i]
 	}
-	terms, err := r.q.ListTerms(ctx, ids)
+	terms, err := r.q.ListTerms(ctx, ListTermsParams{UserID: rows[0].UserID, ScheduleIds: ids})
 	if err != nil {
 		return nil, fmt.Errorf("list schedule terms: %w", err)
 	}
@@ -141,7 +141,7 @@ func (r *Repository) complete(ctx context.Context, rows []PlanningSchedule) ([]d
 		s := byID[t.ScheduleID]
 		s.Terms = append(s.Terms, toTerms(t))
 	}
-	pauses, err := r.q.ListPauses(ctx, ids)
+	pauses, err := r.q.ListPauses(ctx, ListPausesParams{UserID: rows[0].UserID, ScheduleIds: ids})
 	if err != nil {
 		return nil, fmt.Errorf("list schedule pauses: %w", err)
 	}
@@ -247,6 +247,7 @@ func toOccurrence(row PlanningOccurrence) domain.Occurrence {
 	o := domain.Occurrence{
 		ID: row.ID, ScheduleID: row.ScheduleID, Sequence: int(row.Sequence), ExpectedOn: row.ExpectedOn,
 		Amount: row.ExpectedAmount, State: domain.State(row.State), TransactionID: row.TransactionID.UUID, MovedFrom: row.MovedFrom,
+		DeclinedTransactionID: row.DeclinedTransactionID.UUID,
 	}
 	if row.RealizedBy != nil {
 		o.RealizedBy = *row.RealizedBy
@@ -321,8 +322,8 @@ func (r *Repository) Realize(ctx context.Context, userID int64, id, txID uuid.UU
 	return toOccurrence(row), nil
 }
 
-func (r *Repository) Release(ctx context.Context, userID int64, id uuid.UUID) (domain.Occurrence, error) {
-	row, err := r.q.ReleaseOccurrence(ctx, ReleaseOccurrenceParams{UserID: userID, ID: id})
+func (r *Repository) Release(ctx context.Context, userID int64, id uuid.UUID, decline bool) (domain.Occurrence, error) {
+	row, err := r.q.ReleaseOccurrence(ctx, ReleaseOccurrenceParams{UserID: userID, ID: id, Decline: decline})
 	if err != nil {
 		return domain.Occurrence{}, closed(err)
 	}
@@ -351,12 +352,24 @@ func (r *Repository) Move(ctx context.Context, userID int64, id uuid.UUID, date 
 	return toOccurrence(row), nil
 }
 
-func (r *Repository) DeleteExpected(ctx context.Context, userID int64, scheduleID uuid.UUID, from, to time.Time, includeMoved bool) error {
-	err := r.q.DeleteExpected(ctx, DeleteExpectedParams{UserID: userID, ScheduleID: scheduleID, FromDate: from, ToDate: to, IncludeMoved: includeMoved})
+func (r *Repository) DeleteExpected(ctx context.Context, userID int64, scheduleID uuid.UUID, from, to time.Time, includeMoved bool) ([]time.Time, error) {
+	removed, err := r.q.DeleteExpected(ctx, DeleteExpectedParams{UserID: userID, ScheduleID: scheduleID, FromDate: from, ToDate: to, IncludeMoved: includeMoved})
 	if err != nil {
-		return fmt.Errorf("delete expected occurrences: %w", err)
+		return nil, fmt.Errorf("delete expected occurrences: %w", err)
 	}
-	return nil
+	return removed, nil
+}
+
+func (r *Repository) KeptOccurrences(ctx context.Context, userID int64, scheduleID uuid.UUID, from time.Time) ([]domain.Occurrence, error) {
+	rows, err := r.q.KeptOccurrences(ctx, KeptOccurrencesParams{UserID: userID, ScheduleID: scheduleID, FromDate: &from})
+	if err != nil {
+		return nil, fmt.Errorf("list kept occurrences: %w", err)
+	}
+	out := make([]domain.Occurrence, len(rows))
+	for i, row := range rows {
+		out[i] = toOccurrence(row)
+	}
+	return out, nil
 }
 
 func (r *Repository) InsertTerms(ctx context.Context, userID int64, scheduleID uuid.UUID, t domain.Terms) error {
@@ -416,7 +429,7 @@ func (r *Repository) completeBudgets(ctx context.Context, rows []PlanningBudget)
 		out[i] = domain.Budget{ID: row.ID, CategoryID: row.CategoryAccountID, Rollover: row.Rollover, Currency: money.Currency(row.Currency)}
 		byID[row.ID] = &out[i]
 	}
-	amounts, err := r.q.ListBudgetAmounts(ctx, ids)
+	amounts, err := r.q.ListBudgetAmounts(ctx, ListBudgetAmountsParams{UserID: rows[0].UserID, BudgetIds: ids})
 	if err != nil {
 		return nil, fmt.Errorf("list budget amounts: %w", err)
 	}
@@ -485,7 +498,7 @@ func (r *Repository) completeGoals(ctx context.Context, rows []PlanningGoal) ([]
 		out[i] = domain.Goal{ID: row.ID, Name: row.Name, Target: row.Target, Currency: money.Currency(row.Currency), DueOn: row.DueOn}
 		byID[row.ID] = &out[i]
 	}
-	accounts, err := r.q.ListGoalAccounts(ctx, ids)
+	accounts, err := r.q.ListGoalAccounts(ctx, ListGoalAccountsParams{UserID: rows[0].UserID, GoalIds: ids})
 	if err != nil {
 		return nil, fmt.Errorf("list goal accounts: %w", err)
 	}
