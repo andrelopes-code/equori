@@ -47,9 +47,10 @@ func (m *Module) RunFeeds(ctx context.Context, interval time.Duration) {
 	}
 }
 
-// TickFeeds fetches each enabled feed from the day after its latest price, never
-// earlier than today − 30 days, to today. A failure ends that feed's run and is logged;
-// the next tick fetches the same days again.
+// TickFeeds fetches each enabled feed from the day after its latest price (per currency
+// for bcb_ptax), never earlier than today − 30 days, to today. A failure is logged and
+// ends the run of that b3_cotahist day or bcb_ptax currency; the next tick fetches the
+// same days again.
 func (m *Module) TickFeeds(ctx context.Context) {
 	if m.feeds.PTAX {
 		m.tickPTAX(ctx)
@@ -79,13 +80,16 @@ func (m *Module) tickPTAX(ctx context.Context) {
 		if from.After(today) {
 			continue
 		}
+		// Each currency has its own window, so a failure ends only that currency's run.
 		quotes, err := src.Fetch(ctx, c.Code, from, today)
+		if errors.Is(err, feed.ErrNoData) {
+			continue
+		}
 		if err == nil {
 			err = m.storeQuotes(ctx, domain.SourceBCBPTAX, quotes)
 		}
 		if err != nil {
 			m.logFeed(ctx, err, "source", domain.SourceBCBPTAX, "instrument", c.Code)
-			return
 		}
 	}
 }

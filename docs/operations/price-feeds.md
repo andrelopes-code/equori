@@ -28,9 +28,10 @@ A currency the BCB does not quote returns an empty answer and stores nothing.
 
 The feeds run at start and every 6 hours. Each run fetches from the day after the latest
 price of the source (per currency for `bcb_ptax`) to today, never earlier than today − 30
-days. A day without a file (404) is skipped. Any other failure ends that feed's run and
-writes one `price feed` log line with the source and the day or currency; the next run
-fetches the same days again.
+days. A day or currency without data (404) is skipped. Any other failure writes one
+`price feed` log line with the source and the day or currency; for `b3_cotahist` it ends
+the run, for `bcb_ptax` it ends that currency only. The next run fetches the same days
+again.
 
 An instrument defined after its feed has run receives prices from the next new day on.
 Earlier prices enter through `POST /prices/import`.
