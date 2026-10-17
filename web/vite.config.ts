@@ -13,6 +13,8 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["src/testing/setup.ts"],
+    // @slotted/react ships a CommonJS react-dom shim that needs the Vite transform.
+    server: { deps: { inline: [/@slotted\//] } },
     exclude: [...configDefaults.exclude, "src/theme/equori.theme.test.ts"],
   },
   build: {

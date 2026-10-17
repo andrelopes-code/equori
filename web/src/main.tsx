@@ -5,10 +5,13 @@ import "@/theme/equori.gen.css";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-import { App } from "@/app";
+import { AppProviders } from "@/app/providers";
+import { AppRouterProvider, newRouter } from "@/app/router";
 import { applyScheme, readScheme } from "@/theme/scheme";
 
 applyScheme(readScheme());
+
+const router = newRouter();
 
 const root = document.getElementById("root");
 if (root === null) {
@@ -17,6 +20,8 @@ if (root === null) {
 
 createRoot(root).render(
   <StrictMode>
-    <App />
+    <AppProviders>
+      <AppRouterProvider router={router} />
+    </AppProviders>
   </StrictMode>,
 );

@@ -1,0 +1,85 @@
+@layer app {
+  .bar {
+    position: sticky;
+    inset-block-end: 0;
+    padding-block-end: env(safe-area-inset-bottom);
+    background: var(--slotted-surface-raised);
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  .list {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .item {
+    display: flex;
+    justify-content: center;
+  }
+
+  .control {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--slotted-space-1);
+    inline-size: 100%;
+    min-block-size: var(--slotted-target-min);
+    padding: var(--slotted-space-2);
+    border: 0;
+    border-radius: var(--slotted-radius-md);
+    background: transparent;
+    color: var(--slotted-text-muted);
+    font: inherit;
+    font-size: var(--slotted-font-size-xs);
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      background-color var(--slotted-duration-short)
+        var(--slotted-easing-standard),
+      color var(--slotted-duration-short) var(--slotted-easing-standard);
+  }
+
+  .control:hover {
+    color: var(--slotted-text);
+  }
+
+  .control[aria-current="page"] {
+    color: var(--slotted-tone-accent-text);
+    font-weight: var(--slotted-font-weight-semibold);
+  }
+
+  .control[data-emphasized] {
+    background: var(--slotted-tone-accent-surface);
+    color: var(--slotted-text);
+  }
+
+  .control:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  .label {
+    max-inline-size: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @media (forced-colors: active) {
+    .control[aria-current="page"] {
+      outline: var(--slotted-border-width-thin) solid currentColor;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .control {
+      transition: none;
+    }
+  }
+}
