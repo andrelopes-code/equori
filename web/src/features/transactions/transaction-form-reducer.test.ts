@@ -353,6 +353,7 @@ describe("advanced mode", () => {
       key: "3",
       id: savings,
       currency: "USD",
+      scale: () => 2,
     });
     state = formReducer(state, { type: "postingAmount", key: "3", amount: 5 });
     state = formReducer(state, { type: "postingMemo", key: "3", memo: "fx" });
@@ -382,6 +383,7 @@ describe("advanced mode", () => {
       key: "2",
       id: "",
       currency: "BRL",
+      scale: () => 2,
     });
     expect(canSave(noAccount)).toBe(false);
     expect(canSave({ ...balanced, date: "" })).toBe(false);
@@ -417,5 +419,36 @@ describe("advanced mode", () => {
     const stored = formReducer(named, { type: "payeeCreated", id: payee });
     expect(stored.payeeId).toBe(payee);
     expect(stored.payeeName).toBe("Feira");
+  });
+
+  it("clears the amount when the new account's currency has another scale", () => {
+    const scale = (code: string) => (code === "JPY" ? 0 : 2);
+    const state = formReducer(filled({}), {
+      type: "advanced",
+      currencyOf: brl,
+    });
+    const jpy = formReducer(state, {
+      type: "postingAccount",
+      key: "2",
+      id: savings,
+      currency: "JPY",
+      scale,
+    });
+    expect(jpy.postings?.[1]).toEqual({
+      key: "2",
+      accountId: savings,
+      amount: null,
+      currency: "JPY",
+      memo: "",
+    });
+    const usd = formReducer(state, {
+      type: "postingAccount",
+      key: "2",
+      id: savings,
+      currency: "USD",
+      scale,
+    });
+    expect(usd.postings?.[1]?.amount).toBe(12000);
+    expect(usd.postings?.[1]?.currency).toBe("USD");
   });
 });

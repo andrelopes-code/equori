@@ -661,4 +661,104 @@ describe("new transaction", () => {
     await screen.findAllByText(label["transactions.new.saved"]);
     expect(captured.transactions).toHaveLength(1);
   });
+
+  it("restores a split draft with its lines and remainder", async () => {
+    const { fetch } = newApi();
+    const user = userEvent.setup();
+    const first = await renderApp("/transactions/new", { fetch });
+    await user.type(
+      await screen.findByRole("spinbutton", {
+        name: label["transactions.new.amount"],
+      }),
+      "10000",
+    );
+    await pick(user, label["transactions.new.account"], "Itau");
+    await pick(user, label["transactions.new.category"], "Mercado");
+    await user.click(
+      screen.getByRole("button", { name: label["transactions.new.split"] }),
+    );
+    await user.type(
+      screen.getByRole("spinbutton", { name: "Valor da categoria 1" }),
+      "6000",
+    );
+    first.unmount();
+    await renderApp("/transactions/new", { fetch });
+    expect(
+      await screen.findByRole("combobox", { name: "Categoria 1" }),
+    ).toHaveValue("Mercado");
+    expect(
+      screen.getByRole<HTMLInputElement>("spinbutton", {
+        name: "Valor da categoria 1",
+      }).value,
+    ).toMatch(/^R\$\s*60,00$/);
+    expect(screen.getByText(/^R\$\s*40,00$/)).toBeInTheDocument();
+  });
+
+  it("restores an advanced draft with its postings and imbalance", async () => {
+    const { fetch } = newApi();
+    const user = userEvent.setup();
+    const first = await renderApp("/transactions/new", { fetch });
+    await user.type(
+      await screen.findByRole("spinbutton", {
+        name: label["transactions.new.amount"],
+      }),
+      "12000",
+    );
+    await pick(user, label["transactions.new.account"], "Itau");
+    await pick(user, label["transactions.new.category"], "Mercado");
+    await user.click(
+      screen.getByRole("button", { name: label["transactions.new.advanced"] }),
+    );
+    const second = screen.getByRole("spinbutton", {
+      name: "Valor do lançamento 2",
+    });
+    await user.clear(second);
+    await user.type(second, "13000");
+    first.unmount();
+    await renderApp("/transactions/new", { fetch });
+    expect(
+      await screen.findByRole("combobox", { name: "Conta do lançamento 2" }),
+    ).toHaveValue("Mercado");
+    expect(
+      screen.getByRole<HTMLInputElement>("spinbutton", {
+        name: "Valor do lançamento 2",
+      }).value,
+    ).toMatch(/^R\$\s*130,00$/);
+    expect(screen.getByText(/^R\$\s*10,00$/)).toBeInTheDocument();
+  });
+
+  it.each([
+    ["split", { split: [{}], postings: null }],
+    ["postings", { split: null, postings: [{ key: 1, amount: "x" }] }],
+    [
+      "amount",
+      {
+        split: [{ key: "1", categoryId: "", amount: 1.5 }],
+        postings: null,
+      },
+    ],
+  ])("opens a blank form for a malformed %s draft", async (_name, lines) => {
+    sessionStorage.setItem(
+      "equori.draft.transaction-new",
+      JSON.stringify({
+        mode: "expense",
+        amount: 10000,
+        accountId: checkingID,
+        counterId: foodID,
+        date: "2026-10-17",
+        description: "",
+        tags: [],
+        ...lines,
+      }),
+    );
+    const { fetch } = newApi();
+    await renderApp("/transactions/new", { fetch });
+    const amount = await screen.findByRole<HTMLInputElement>("spinbutton", {
+      name: label["transactions.new.amount"],
+    });
+    expect(amount.value).toBe("");
+    expect(
+      screen.getByRole("combobox", { name: label["transactions.new.account"] }),
+    ).toHaveValue("");
+  });
 });

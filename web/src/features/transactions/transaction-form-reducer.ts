@@ -51,7 +51,13 @@ export type FormAction =
   | { type: "splitRemove"; key: string }
   | { type: "advanced"; currencyOf: (accountId: string) => string }
   | { type: "postingAdd"; currency: string }
-  | { type: "postingAccount"; key: string; id: string; currency: string }
+  | {
+      type: "postingAccount";
+      key: string;
+      id: string;
+      currency: string;
+      scale: (code: string) => number;
+    }
   | { type: "postingAmount"; key: string; amount: number | null }
   | { type: "postingMemo"; key: string; memo: string }
   | { type: "postingRemove"; key: string }
@@ -221,14 +227,21 @@ export function formReducer(state: FormState, action: FormAction): FormState {
           },
         ],
       };
-    case "postingAccount":
+    case "postingAccount": {
+      const previous = state.postings?.find((l) => l.key === action.key);
+      // A minor-unit integer is only meaningful at the scale it was typed in.
+      const rescaled =
+        previous !== undefined &&
+        action.scale(previous.currency) !== action.scale(action.currency);
       return {
         ...state,
         postings: mapLine(state.postings, action.key, {
           accountId: action.id,
           currency: action.currency,
+          ...(rescaled ? { amount: null } : {}),
         }),
       };
+    }
     case "postingAmount":
       return {
         ...state,

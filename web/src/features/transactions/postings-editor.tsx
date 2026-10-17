@@ -57,6 +57,7 @@ export function PostingsEditor({
                       key: line.key,
                       id,
                       currency: id === "" ? baseCurrency : currencyOf(id),
+                      scale,
                     });
                   }}
                 />

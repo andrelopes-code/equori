@@ -3,6 +3,34 @@ import type { FormState } from "@/features/transactions/transaction-form-reducer
 const draftKey = "equori.draft.transaction-new";
 const modes = ["expense", "income", "transfer"];
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isAmount(value: unknown): boolean {
+  return value === null || Number.isSafeInteger(value);
+}
+
+function isSplitLine(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.key === "string" &&
+    typeof value.categoryId === "string" &&
+    isAmount(value.amount)
+  );
+}
+
+function isPostingLine(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.key === "string" &&
+    typeof value.accountId === "string" &&
+    isAmount(value.amount) &&
+    typeof value.currency === "string" &&
+    typeof value.memo === "string"
+  );
+}
+
 function isDraft(value: unknown): value is FormState {
   if (typeof value !== "object" || value === null) return false;
   const v = value as Record<string, unknown>;
@@ -15,8 +43,10 @@ function isDraft(value: unknown): value is FormState {
     typeof v.date === "string" &&
     typeof v.description === "string" &&
     Array.isArray(v.tags) &&
-    (v.split === null || Array.isArray(v.split)) &&
-    (v.postings === null || Array.isArray(v.postings))
+    (v.split === null ||
+      (Array.isArray(v.split) && v.split.every(isSplitLine))) &&
+    (v.postings === null ||
+      (Array.isArray(v.postings) && v.postings.every(isPostingLine)))
   );
 }
 
