@@ -1,3 +1,6 @@
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
+
 import js from "@eslint/js";
 import { defineConfig } from "eslint/config";
 import react from "eslint-plugin-react";
@@ -25,6 +28,42 @@ const apiClient = {
 // Flat-config rule options replace instead of merging: every block below
 // restates the full option list for its files.
 const restrict = ({ patterns, paths = [] }) => ["error", { patterns, paths }];
+
+// One block per feature directory: a feature may import its own deep paths
+// (O2), so its O2 regex excludes itself.
+const featuresDir = join(import.meta.dirname, "src", "features");
+const featureNames = (() => {
+  try {
+    return readdirSync(featuresDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name);
+  } catch {
+    return [];
+  }
+})();
+
+const featureBlocks = featureNames.flatMap((name) => {
+  const otherFeatureInternals = {
+    ...featureInternals,
+    regex: `^@/features/(?!${name}/)[^/]+/.+`,
+  };
+  const patterns = [relativeImport, otherFeatureInternals, appFromFeature];
+  return [
+    {
+      files: [`src/features/${name}/**`],
+      rules: {
+        "no-restricted-imports": restrict({
+          patterns,
+          paths: name === "session" ? [] : [apiClient],
+        }),
+      },
+    },
+    {
+      files: [`src/features/${name}/api.ts`],
+      rules: { "no-restricted-imports": restrict({ patterns }) },
+    },
+  ];
+});
 
 export default defineConfig(
   { ignores: ["dist", "**/*.gen.ts"] },
@@ -71,6 +110,7 @@ export default defineConfig(
       }),
     },
   },
+  ...featureBlocks,
   {
     files: ["src/app/providers.tsx", "src/api/**", "src/testing/**"],
     rules: {

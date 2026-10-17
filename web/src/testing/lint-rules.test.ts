@@ -7,6 +7,7 @@ const filePaths = [
   "src/features/accounts/api.ts",
   "src/features/accounts/home-page.tsx",
   "src/features/accounts/x.ts",
+  "src/app/x.tsx",
   "src/ui/x.tsx",
   "src/ui/y.tsx",
 ];
@@ -33,6 +34,18 @@ const rows = [
     name: "O2 deep import of another feature",
     filePath: "src/features/accounts/x.ts",
     code: importFromAccounts("@/features/transactions/api"),
+    rule: "no-restricted-imports",
+  },
+  {
+    name: "O2 deep import of the own feature",
+    filePath: "src/features/accounts/x.ts",
+    code: importFromAccounts("@/features/accounts/api"),
+    rule: undefined,
+  },
+  {
+    name: "O2 deep import of a feature from the app",
+    filePath: "src/app/x.tsx",
+    code: importFromAccounts("@/features/accounts/api"),
     rule: "no-restricted-imports",
   },
   {
