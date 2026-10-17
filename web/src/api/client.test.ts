@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 
-import { newClient } from "./client";
+import { newClient } from "@/api/client";
 
 test("sends requests under /api/v1 of the origin with same-origin credentials", async () => {
   const requests: Request[] = [];

@@ -1,6 +1,6 @@
 import createClient, { type Client } from "openapi-fetch";
 
-import type { paths } from "./schema.gen";
+import type { paths } from "@/api/schema.gen";
 
 // The session cookie (ADR 003) travels only with same-origin credentials; the client holds no token.
 export function newClient(

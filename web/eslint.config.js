@@ -15,5 +15,20 @@ export default defineConfig(
       },
     },
   },
+  {
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              regex: "^\\.{1,2}/",
+              message: "Import modules of src/ through the @/ alias.",
+            },
+          ],
+        },
+      ],
+    },
+  },
   { files: ["**/*.js"], extends: [tseslint.configs.disableTypeChecked] },
 );

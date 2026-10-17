@@ -17,6 +17,7 @@ The web interface is the only client of equori (`docs/domain/01-vision.md`: no n
 | W10 | A tree without `index.html` answers 404 outside `/api/`. The API is unaffected. |
 | W11 | Files under `assets/` carry Vite content hashes and return `Cache-Control: public, max-age=31536000, immutable`. `index.html` returns `Cache-Control: no-cache`. |
 | W12 | Responses outside `/api/` carry `Content-Security-Policy: default-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'`, in addition to the headers C9 of ADR 007 sets on every response. |
+| W13 | Modules of `web/src` import each other through the alias `@/`, which maps to `web/src/`. The `paths` entry of `web/tsconfig.json` is its only definition; Vite and Vitest read it through `resolve.tsconfigPaths`. ESLint `no-restricted-imports` rejects every import that starts with `./` or `../`. |
 
 ## Consequences
 
