@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import type { MessageKey } from "@/i18n/catalog.en";
-import { HomeIcon, ListIcon, WalletIcon } from "@/ui/icons";
+import { IconGlyph } from "@/ui/icon-glyph";
 
 interface Destination {
   key: "home" | "transactions" | "accounts";
@@ -11,17 +11,17 @@ interface Destination {
 }
 
 export const destinations: readonly Destination[] = [
-  { key: "home", to: "/", label: "nav.home", icon: <HomeIcon /> },
+  { key: "home", to: "/", label: "nav.home", icon: <IconGlyph name="home" /> },
   {
     key: "transactions",
     to: "/transactions",
     label: "nav.transactions",
-    icon: <ListIcon />,
+    icon: <IconGlyph name="list" />,
   },
   {
     key: "accounts",
     to: "/accounts",
     label: "nav.accounts",
-    icon: <WalletIcon />,
+    icon: <IconGlyph name="wallet" />,
   },
 ];

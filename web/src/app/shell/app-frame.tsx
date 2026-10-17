@@ -13,7 +13,7 @@ import { MoreSheet } from "@/app/shell/more-sheet";
 import { SideNav } from "@/app/shell/side-nav";
 import { useT } from "@/i18n/i18n-provider";
 import { BottomBar } from "@/ui/bottom-bar";
-import { MoreIcon, PlusIcon } from "@/ui/icons";
+import { IconGlyph } from "@/ui/icon-glyph";
 import { useViewport } from "@/ui/use-viewport";
 
 export function AppFrame() {
@@ -71,7 +71,7 @@ export function AppFrame() {
               {
                 key: "new",
                 label: t("nav.new"),
-                icon: <PlusIcon />,
+                icon: <IconGlyph name="plus" />,
                 to: "/transactions/new",
                 emphasized: true,
               },
@@ -84,7 +84,7 @@ export function AppFrame() {
               {
                 key: "more",
                 label: t("nav.more"),
-                icon: <MoreIcon />,
+                icon: <IconGlyph name="more" />,
                 onPress: () => {
                   setMoreOpen(true);
                 },

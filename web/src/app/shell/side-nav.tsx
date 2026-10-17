@@ -12,7 +12,8 @@ import type { MouseEvent } from "react";
 
 import { destinations } from "@/app/shell/destinations";
 import { useT } from "@/i18n/i18n-provider";
-import { MoreIcon } from "@/ui/icons";
+import { bestMatch } from "@/ui/best-match";
+import { IconGlyph } from "@/ui/icon-glyph";
 
 // A plain primary-button click navigates in-page; modified clicks keep the browser's link behaviour.
 function isPlainClick(event: MouseEvent): boolean {
@@ -33,10 +34,11 @@ export function SideNav({
   const t = useT();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const current =
-    destinations.find((d) =>
-      d.to === "/" ? pathname === "/" : pathname.startsWith(d.to),
-    )?.key ?? null;
+  const currentPath = bestMatch(
+    pathname,
+    destinations.map((d) => d.to),
+  );
+  const current = destinations.find((d) => d.to === currentPath)?.key ?? null;
   return (
     <SideNavigation value={current} mode={mode}>
       <SideNavigationList>
@@ -58,7 +60,7 @@ export function SideNav({
         <SideNavigationItem value="more">
           <SideNavigationLink onClick={onMore}>
             <SideNavigationIcon>
-              <MoreIcon />
+              <IconGlyph name="more" />
             </SideNavigationIcon>
             <SideNavigationLabel>{t("nav.more")}</SideNavigationLabel>
           </SideNavigationLink>

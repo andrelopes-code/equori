@@ -38,6 +38,7 @@ async function renderBar(path: string) {
       leaf("/"),
       leaf("/transactions"),
       leaf("/transactions/new"),
+      leaf("/transactions/$id"),
       leaf("/accounts"),
     ]),
     history: createMemoryHistory({ initialEntries: [path] }),
@@ -60,6 +61,24 @@ describe("BottomBar", () => {
     expect(screen.getByRole("link", { name: "Home" })).not.toHaveAttribute(
       "aria-current",
     );
+  });
+
+  it("marks only New current on the new transaction route", async () => {
+    await renderBar("/transactions/new");
+    const current = screen
+      .getAllByRole("link")
+      .filter((link) => link.getAttribute("aria-current") === "page")
+      .map((link) => link.textContent);
+    expect(current).toEqual(["New"]);
+  });
+
+  it("marks Transactions current on a transaction detail route", async () => {
+    await renderBar("/transactions/abc");
+    const current = screen
+      .getAllByRole("link")
+      .filter((link) => link.getAttribute("aria-current") === "page")
+      .map((link) => link.textContent);
+    expect(current).toEqual(["Transactions"]);
   });
 
   it("leaves the centre item without aria-current on another route", async () => {

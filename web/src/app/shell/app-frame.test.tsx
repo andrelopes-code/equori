@@ -90,6 +90,16 @@ describe("AppFrame routing", () => {
     expect(router.state.location.pathname).toBe("/accounts");
   });
 
+  it("marks Transactions current on a transaction detail route", async () => {
+    await renderApp("/transactions/abc", { width: 1280, fetch: newFetch() });
+    expect(
+      screen.getByRole("link", { name: catalogEn["nav.transactions"] }),
+    ).toHaveAttribute("aria-current", "page");
+    expect(
+      screen.getByRole("link", { name: catalogEn["nav.home"] }),
+    ).not.toHaveAttribute("aria-current");
+  });
+
   it("opens settings from the more sheet", async () => {
     const user = userEvent.setup();
     const { router } = await renderApp("/", { width: 360, fetch: newFetch() });
