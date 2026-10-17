@@ -1,10 +1,11 @@
+import "@/app/app.css";
+import "@slotted/react/styles.css";
+import "@/theme/equori.gen.css";
+
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import { App } from "@/app";
-import "@/app/app.css";
-import "@slotted/react/styles.css";
-import "@/theme/equori.gen.css";
 import { applyScheme, readScheme } from "@/theme/scheme";
 
 applyScheme(readScheme());
