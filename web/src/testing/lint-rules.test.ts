@@ -10,6 +10,8 @@ const filePaths = [
   "src/app/x.tsx",
   "src/ui/x.tsx",
   "src/ui/y.tsx",
+  "src/ui/z.tsx",
+  "src/ui/w.test.tsx",
 ];
 
 // ESLint defaults to the working directory; Vitest runs from web/, which holds eslint.config.js.
@@ -77,6 +79,18 @@ const rows = [
     filePath: "src/ui/x.tsx",
     code: "export const X = () => <p>Hello</p>;\n",
     rule: "react/jsx-no-literals",
+  },
+  {
+    name: "O1 two components in one file",
+    filePath: "src/ui/z.tsx",
+    code: "function A() { return null; }\nexport function B() { return <A />; }\n",
+    rule: "react/no-multi-comp",
+  },
+  {
+    name: "O1 two components in a test file",
+    filePath: "src/ui/w.test.tsx",
+    code: "function A() { return null; }\nexport function B() { return <A />; }\n",
+    rule: undefined,
   },
   {
     name: "hook called inside a condition",

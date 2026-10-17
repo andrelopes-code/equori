@@ -1,8 +1,9 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 import { useT } from "@/i18n/i18n-provider";
 import { bestMatch } from "@/ui/best-match";
+import { BarControl } from "@/ui/bar-control";
 import styles from "@/ui/bottom-bar.module.css";
 
 export interface BottomBarItem {
@@ -45,45 +46,5 @@ export function BottomBar({ items }: { items: FiveItems }) {
         ))}
       </ul>
     </nav>
-  );
-}
-
-function BarControl({
-  item,
-  current,
-}: {
-  item: BottomBarItem;
-  current: boolean;
-}) {
-  const emphasis = item.emphasized === true ? { "data-emphasized": "" } : {};
-  const content = (
-    <>
-      {item.icon}
-      <span className={styles.label}>{item.label}</span>
-    </>
-  );
-  if (item.to !== undefined) {
-    return (
-      <Link
-        to={item.to}
-        className={styles.control}
-        // Link marks only exact paths; aria-current below covers nested routes.
-        activeOptions={{ exact: true }}
-        aria-current={current ? "page" : undefined}
-        {...emphasis}
-      >
-        {content}
-      </Link>
-    );
-  }
-  return (
-    <button
-      type="button"
-      className={styles.control}
-      onClick={item.onPress}
-      {...emphasis}
-    >
-      {content}
-    </button>
   );
 }

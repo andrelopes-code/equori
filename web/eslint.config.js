@@ -139,6 +139,7 @@ export default defineConfig(
         "error",
         { noStrings: true, ignoreProps: true },
       ],
+      "react/no-multi-comp": ["error", { ignoreStateless: false }],
     },
   },
   { files: ["**/*.js"], extends: [tseslint.configs.disableTypeChecked] },

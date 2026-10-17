@@ -67,7 +67,7 @@ web/src/
 
 | ID | Rule | Gate |
 |---|---|---|
-| O1 | One component per file; the file is named after the component in kebab-case. | review |
+| O1 | One component per file; the file is named after the component in kebab-case. | ESLint `react/no-multi-comp` |
 | O2 | A feature imports another feature only through its `index.ts`. | ESLint `no-restricted-imports` |
 | O3 | `@/api/client` is imported only by `features/*/api.ts`, `features/session` and `app/providers.tsx`. | ESLint override by glob |
 | O4 | `features/*` never imports `@/app/*`. | ESLint |
