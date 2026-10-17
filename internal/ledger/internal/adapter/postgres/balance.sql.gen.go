@@ -12,6 +12,86 @@ import (
 	"github.com/google/uuid"
 )
 
+const accountBalancesBookedAt = `-- name: AccountBalancesBookedAt :many
+SELECT a.id, a.instrument, coalesce(sum(p.amount), 0)::bigint AS total
+FROM ledger_account a
+LEFT JOIN ledger_posting p ON p.account_id = a.id AND NOT p.voided AND p.booked_on <= $1
+WHERE a.user_id = $2 AND a.account_class IN ('asset', 'liability')
+GROUP BY a.id
+ORDER BY a.name, a.id
+`
+
+type AccountBalancesBookedAtParams struct {
+	OnDate time.Time
+	UserID int64
+}
+
+type AccountBalancesBookedAtRow struct {
+	ID         uuid.UUID
+	Instrument string
+	Total      int64
+}
+
+func (q *Queries) AccountBalancesBookedAt(ctx context.Context, arg AccountBalancesBookedAtParams) ([]AccountBalancesBookedAtRow, error) {
+	rows, err := q.db.Query(ctx, accountBalancesBookedAt, arg.OnDate, arg.UserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AccountBalancesBookedAtRow
+	for rows.Next() {
+		var i AccountBalancesBookedAtRow
+		if err := rows.Scan(&i.ID, &i.Instrument, &i.Total); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const accountBalancesSettledAt = `-- name: AccountBalancesSettledAt :many
+SELECT a.id, a.instrument, coalesce(sum(p.amount), 0)::bigint AS total
+FROM ledger_account a
+LEFT JOIN ledger_posting p ON p.account_id = a.id AND NOT p.voided AND coalesce(p.settled_on, p.booked_on) <= $1
+WHERE a.user_id = $2 AND a.account_class IN ('asset', 'liability')
+GROUP BY a.id
+ORDER BY a.name, a.id
+`
+
+type AccountBalancesSettledAtParams struct {
+	OnDate *time.Time
+	UserID int64
+}
+
+type AccountBalancesSettledAtRow struct {
+	ID         uuid.UUID
+	Instrument string
+	Total      int64
+}
+
+func (q *Queries) AccountBalancesSettledAt(ctx context.Context, arg AccountBalancesSettledAtParams) ([]AccountBalancesSettledAtRow, error) {
+	rows, err := q.db.Query(ctx, accountBalancesSettledAt, arg.OnDate, arg.UserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AccountBalancesSettledAtRow
+	for rows.Next() {
+		var i AccountBalancesSettledAtRow
+		if err := rows.Scan(&i.ID, &i.Instrument, &i.Total); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const balanceBookedAt = `-- name: BalanceBookedAt :one
 WITH RECURSIVE tree AS (
     SELECT a.id FROM ledger_account a WHERE a.user_id = $2 AND a.id = $3

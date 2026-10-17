@@ -368,6 +368,35 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /balances:
+    get:
+      tags: [ledger]
+      operationId: listBalances
+      summary: Balance of every balance-sheet account at the end of a date, ordered by account name then id.
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: basis
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [booked, settled]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BalanceList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
   /transactions:
     get:
       tags: [ledger]
@@ -4870,6 +4899,14 @@ components:
           description: Prices used for value (B05).
           items:
             $ref: "#/components/schemas/Price"
+    BalanceList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Balance"
     TradeSide:
       type: string
       enum: [buy, sell]

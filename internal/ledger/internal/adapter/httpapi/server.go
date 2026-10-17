@@ -220,6 +220,22 @@ func (s *Server) GetAccountBalance(ctx context.Context, req GetAccountBalanceReq
 	}, nil
 }
 
+func (s *Server) ListBalances(ctx context.Context, req ListBalancesRequestObject) (ListBalancesResponseObject, error) {
+	basis := app.BasisBooked
+	if req.Params.Basis != nil {
+		basis = app.Basis(*req.Params.Basis)
+	}
+	balances, err := s.svc.BalancesAt(ctx, auth.MustUserID(ctx), dateOf(req.Params.Date), basis)
+	if err != nil {
+		return nil, err
+	}
+	out := ListBalances200JSONResponse{Items: make([]Balance, len(balances))}
+	for i, b := range balances {
+		out.Items[i] = Balance{AccountId: b.AccountID, Date: apiDate(b.Date), Basis: BalanceBasis(b.Basis), Balance: toMoneyAPI(b.Amount)}
+	}
+	return out, nil
+}
+
 func (s *Server) ListTransactions(ctx context.Context, req ListTransactionsRequestObject) (ListTransactionsResponseObject, error) {
 	p, err := listPage[app.TransactionCursor](req.Params.Limit, req.Params.Cursor)
 	if err != nil {

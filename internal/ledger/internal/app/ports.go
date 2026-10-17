@@ -187,6 +187,13 @@ const (
 	BasisSettled Basis = "settled"
 )
 
+// AccountTotal is the sum of the postings of one account in its own instrument.
+type AccountTotal struct {
+	AccountID  uuid.UUID
+	Instrument money.Currency
+	Total      int64
+}
+
 type Balance struct {
 	AccountID uuid.UUID
 	Date      time.Time
@@ -368,6 +375,9 @@ type Repository interface {
 
 	// BalanceAt sums the postings of the account and its descendants up to and including date.
 	BalanceAt(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis Basis) (int64, error)
+	// BalancesAt sums the postings of each asset and liability account up to and including
+	// date, ordered by account name then id.
+	BalancesAt(ctx context.Context, userID int64, date time.Time, basis Basis) ([]AccountTotal, error)
 	TreeInstruments(ctx context.Context, userID int64, accountID uuid.UUID) ([]money.Currency, error)
 	SecurityPostings(ctx context.Context, userID int64, accountIDs []uuid.UUID) ([]HoldingPosting, error)
 	SecurityTrades(ctx context.Context, userID int64, accountIDs []uuid.UUID) ([]TradeFact, error)

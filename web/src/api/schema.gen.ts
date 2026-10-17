@@ -180,6 +180,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/balances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Balance of every balance-sheet account at the end of a date, ordered by account name then id. */
+        get: operations["listBalances"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/transactions": {
         parameters: {
             query?: never;
@@ -2613,6 +2630,9 @@ export interface components {
             /** @description Prices used for value (B05). */
             prices?: components["schemas"]["Price"][];
         };
+        BalanceList: {
+            items: components["schemas"]["Balance"][];
+        };
         /** @enum {string} */
         TradeSide: "buy" | "sell";
         TradeInput: {
@@ -3506,6 +3526,31 @@ export interface operations {
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    listBalances: {
+        parameters: {
+            query: {
+                date: string;
+                basis?: "booked" | "settled";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BalanceList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
         };
     };
     listTransactions: {

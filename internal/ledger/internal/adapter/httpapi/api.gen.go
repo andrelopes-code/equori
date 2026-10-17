@@ -674,6 +674,24 @@ func (e GetAccountBalanceParamsBasis) Valid() bool {
 	}
 }
 
+// Defines values for ListBalancesParamsBasis.
+const (
+	ListBalancesParamsBasisBooked  ListBalancesParamsBasis = "booked"
+	ListBalancesParamsBasisSettled ListBalancesParamsBasis = "settled"
+)
+
+// Valid indicates whether the value is a known member of the ListBalancesParamsBasis enum.
+func (e ListBalancesParamsBasis) Valid() bool {
+	switch e {
+	case ListBalancesParamsBasisBooked:
+		return true
+	case ListBalancesParamsBasisSettled:
+		return true
+	default:
+		return false
+	}
+}
+
 // Account defines model for Account.
 type Account struct {
 	Card     *CardSummary        `json:"card,omitempty"`
@@ -840,6 +858,11 @@ type BalanceAssertionList struct {
 
 	// NextCursor Absent on the last page.
 	NextCursor *string `json:"next_cursor,omitempty"`
+}
+
+// BalanceList defines model for BalanceList.
+type BalanceList struct {
+	Items []Balance `json:"items"`
 }
 
 // BillingCycleRule defines model for BillingCycleRule.
@@ -1518,6 +1541,15 @@ type ListStatementsParams struct {
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
+// ListBalancesParams defines parameters for ListBalances.
+type ListBalancesParams struct {
+	Date  openapi_types.Date       `form:"date" json:"date"`
+	Basis *ListBalancesParamsBasis `form:"basis,omitempty" json:"basis,omitempty"`
+}
+
+// ListBalancesParamsBasis defines parameters for ListBalances.
+type ListBalancesParamsBasis string
+
 // ListInstitutionsParams defines parameters for ListInstitutions.
 type ListInstitutionsParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
@@ -1722,6 +1754,9 @@ type ServerInterface interface {
 	// ResolveBalanceAssertion Resolve the open difference of an assertion and reconcile the account.
 	// (POST /balance-assertions/{id}/resolve)
 	ResolveBalanceAssertion(w http.ResponseWriter, r *http.Request, id ID)
+	// ListBalances Balance of every balance-sheet account at the end of a date, ordered by account name then id.
+	// (GET /balances)
+	ListBalances(w http.ResponseWriter, r *http.Request, params ListBalancesParams)
 	// ResolveDispute Resolve a dispute; a won dispute refunds the remaining charged amount.
 	// (POST /disputes/{id}/resolve)
 	ResolveDispute(w http.ResponseWriter, r *http.Request, id ID)
@@ -2513,6 +2548,52 @@ func (siw *ServerInterfaceWrapper) ResolveBalanceAssertion(w http.ResponseWriter
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ResolveBalanceAssertion(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListBalances operation middleware
+func (siw *ServerInterfaceWrapper) ListBalances(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListBalancesParams
+
+	// ------------- Required query parameter "date" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "date", r.URL.Query(), &params.Date, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "date"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "date", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "basis" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "basis", r.URL.Query(), &params.Basis, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "basis"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "basis", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListBalances(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3541,6 +3622,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/accounts/{id}", wrapper.UpdateAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/close", wrapper.CloseAccount)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/balance", wrapper.GetAccountBalance)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/balances", wrapper.ListBalances)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions", wrapper.ListTransactions)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions", wrapper.CreateTransaction)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/foreign-purchases", wrapper.RecordForeignPurchase)
@@ -4901,6 +4983,58 @@ func (response ResolveBalanceAssertion422ApplicationProblemPlusJSONResponse) Vis
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListBalancesRequestObject struct {
+	Params ListBalancesParams
+}
+
+type ListBalancesResponseObject interface {
+	VisitListBalancesResponse(w http.ResponseWriter) error
+}
+
+type ListBalances200JSONResponse BalanceList
+
+func (response ListBalances200JSONResponse) VisitListBalancesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListBalances400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListBalances400ApplicationProblemPlusJSONResponse) VisitListBalancesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListBalances401ApplicationProblemPlusJSONResponse Problem
+
+func (response ListBalances401ApplicationProblemPlusJSONResponse) VisitListBalancesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -7049,6 +7183,9 @@ type StrictServerInterface interface {
 	// ResolveBalanceAssertion Resolve the open difference of an assertion and reconcile the account.
 	// (POST /balance-assertions/{id}/resolve)
 	ResolveBalanceAssertion(ctx context.Context, request ResolveBalanceAssertionRequestObject) (ResolveBalanceAssertionResponseObject, error)
+	// ListBalances Balance of every balance-sheet account at the end of a date, ordered by account name then id.
+	// (GET /balances)
+	ListBalances(ctx context.Context, request ListBalancesRequestObject) (ListBalancesResponseObject, error)
 	// ResolveDispute Resolve a dispute; a won dispute refunds the remaining charged amount.
 	// (POST /disputes/{id}/resolve)
 	ResolveDispute(ctx context.Context, request ResolveDisputeRequestObject) (ResolveDisputeResponseObject, error)
@@ -7787,6 +7924,32 @@ func (sh *strictHandler) ResolveBalanceAssertion(w http.ResponseWriter, r *http.
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ResolveBalanceAssertionResponseObject); ok {
 		if err := validResponse.VisitResolveBalanceAssertionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListBalances operation middleware
+func (sh *strictHandler) ListBalances(w http.ResponseWriter, r *http.Request, params ListBalancesParams) {
+	var request ListBalancesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListBalances(ctx, request.(ListBalancesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListBalances")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListBalancesResponseObject); ok {
+		if err := validResponse.VisitListBalancesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

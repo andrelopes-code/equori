@@ -655,6 +655,19 @@ func (r *Repository) BalanceAt(ctx context.Context, userID int64, accountID uuid
 	return r.q.BalanceBookedAt(ctx, BalanceBookedAtParams{UserID: userID, AccountID: accountID, OnDate: date})
 }
 
+func (r *Repository) BalancesAt(ctx context.Context, userID int64, date time.Time, basis app.Basis) ([]app.AccountTotal, error) {
+	if basis == app.BasisSettled {
+		rows, err := r.q.AccountBalancesSettledAt(ctx, AccountBalancesSettledAtParams{UserID: userID, OnDate: &date})
+		return mapAll(rows, func(row AccountBalancesSettledAtRow) app.AccountTotal {
+			return app.AccountTotal{AccountID: row.ID, Instrument: money.Currency(row.Instrument), Total: row.Total}
+		}), err
+	}
+	rows, err := r.q.AccountBalancesBookedAt(ctx, AccountBalancesBookedAtParams{UserID: userID, OnDate: date})
+	return mapAll(rows, func(row AccountBalancesBookedAtRow) app.AccountTotal {
+		return app.AccountTotal{AccountID: row.ID, Instrument: money.Currency(row.Instrument), Total: row.Total}
+	}), err
+}
+
 func (r *Repository) CategoryTotal(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) (int64, error) {
 	return r.q.CategoryTotal(ctx, CategoryTotalParams{UserID: userID, AccountID: accountID, FromDate: from, ToDate: to})
 }

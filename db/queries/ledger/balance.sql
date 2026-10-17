@@ -22,6 +22,22 @@ WHERE p.account_id IN (SELECT id FROM tree)
   AND NOT p.voided
   AND coalesce(p.settled_on, p.booked_on) <= @on_date;
 
+-- name: AccountBalancesBookedAt :many
+SELECT a.id, a.instrument, coalesce(sum(p.amount), 0)::bigint AS total
+FROM ledger_account a
+LEFT JOIN ledger_posting p ON p.account_id = a.id AND NOT p.voided AND p.booked_on <= @on_date
+WHERE a.user_id = @user_id AND a.account_class IN ('asset', 'liability')
+GROUP BY a.id
+ORDER BY a.name, a.id;
+
+-- name: AccountBalancesSettledAt :many
+SELECT a.id, a.instrument, coalesce(sum(p.amount), 0)::bigint AS total
+FROM ledger_account a
+LEFT JOIN ledger_posting p ON p.account_id = a.id AND NOT p.voided AND coalesce(p.settled_on, p.booked_on) <= @on_date
+WHERE a.user_id = @user_id AND a.account_class IN ('asset', 'liability')
+GROUP BY a.id
+ORDER BY a.name, a.id;
+
 -- name: CategoryTotal :one
 -- P7 amendment A54: weights of the non-voided postings of a category subtree booked in [from, to).
 WITH RECURSIVE tree AS (
