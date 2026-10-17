@@ -87,6 +87,8 @@ export const catalogPtBR: Catalog = {
   "transactions.new.postingRemove": "Remover lançamento {n}",
   "transactions.new.imbalance": "Diferença",
   "transactions.new.quick": "Entrada rápida",
+  "transactions.new.failed":
+    "Não foi possível salvar a transação. Tente novamente.",
   "common.retry": "Tentar novamente",
   "common.error.title": "Não foi possível carregar o conteúdo",
   "problem.invalid_credentials": "E-mail ou senha incorretos.",

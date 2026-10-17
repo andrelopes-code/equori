@@ -1,9 +1,10 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import { parseISODate, toISODate } from "@slotted/core/date";
 import { DatePicker } from "@slotted/react/date-picker";
 import type { Entity } from "@slotted/react/entity-picker";
-import { Field, FieldLabel } from "@slotted/react/field";
+import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { Form, FormActions } from "@slotted/react/form";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { TagsInput } from "@slotted/react/tags-input";
@@ -31,6 +32,7 @@ import {
   initialForm,
 } from "@/features/transactions/transaction-form-reducer";
 import type {
+  FormAction,
   FormState,
   Mode,
 } from "@/features/transactions/transaction-form-reducer";
@@ -44,6 +46,14 @@ const newPayeeID = "new-payee";
 
 function isMode(value: string): value is Mode {
   return value === "expense" || value === "income" || value === "transfer";
+}
+
+// A 422 field error attaches to the form fields below; any other field, or none, reads as a form-level message.
+const mappedFields = ["postings", "amount", "date", "description"];
+
+interface SaveError {
+  fields: Record<string, string>;
+  message?: string;
 }
 
 // A form with nothing typed stores no draft.
@@ -79,13 +89,19 @@ export function NewTransactionForm({
     useSearch({ strict: false }),
   ).account_id;
   const create = useCreateTransaction();
-  const [problem, setProblem] = useState<ProblemError | null>(null);
-  const [state, dispatch] = useReducer(formReducer, undefined, () => {
+  const [saveError, setSaveError] = useState<SaveError | null>(null);
+  const [state, rawDispatch] = useReducer(formReducer, undefined, () => {
     const start = loadDraft() ?? initialForm(today);
     return preselected === undefined
       ? start
       : { ...start, accountId: preselected };
   });
+
+  // Editing the form dismisses the last save error.
+  const dispatch = (action: FormAction) => {
+    setSaveError(null);
+    rawDispatch(action);
+  };
 
   useKeyboardInset(phone);
   useEffect(() => {
@@ -111,32 +127,49 @@ export function NewTransactionForm({
     id: p.id,
     label: p.name,
   }));
-  if (state.payeeName !== undefined) {
-    payeeEntities.push({ id: newPayeeID, label: state.payeeName });
+  if (
+    state.payeeName !== undefined &&
+    !payees.some((p) => p.id === state.payeeId)
+  ) {
+    payeeEntities.push({
+      id: state.payeeId ?? newPayeeID,
+      label: state.payeeName,
+    });
   }
 
   const currencyOf = (id: string) =>
     accounts.find((a) => a.id === id)?.currency ?? baseCurrency;
   const currency = currencyOf(state.accountId);
-  const fields = problem === null ? {} : fieldErrors(problem.problem);
-  const amountError =
-    problem === null
-      ? undefined
-      : (fields.postings ??
-        fields.amount ??
-        problemMessage(problem.problem, t));
+  const amountError = saveError?.fields.postings ?? saveError?.fields.amount;
 
   const save = async (another: boolean) => {
-    if (!canSave(state)) return;
-    setProblem(null);
+    if (!canSave(state) || create.isPending) return;
+    setSaveError(null);
     try {
-      await create.mutateAsync({ state, currencyOf });
+      await create.mutateAsync({
+        state,
+        currencyOf,
+        onPayeeCreated: (id) => {
+          rawDispatch({ type: "payeeCreated", id });
+        },
+      });
     } catch (error) {
       if (error instanceof ProblemError) {
-        setProblem(error);
-        return;
+        const all = fieldErrors(error.problem);
+        const fields = Object.fromEntries(
+          Object.entries(all).filter(([field]) => mappedFields.includes(field)),
+        );
+        const unmapped =
+          Object.keys(all).length === 0 ||
+          Object.keys(all).length !== Object.keys(fields).length;
+        setSaveError({
+          fields,
+          ...(unmapped ? { message: problemMessage(error.problem, t) } : {}),
+        });
+      } else {
+        setSaveError({ fields: {}, message: t("transactions.new.failed") });
       }
-      throw error;
+      return;
     }
     toast.show({ title: t("transactions.new.saved") });
     clearDraft();
@@ -151,7 +184,11 @@ export function NewTransactionForm({
   const transfer = state.mode === "transfer";
 
   return (
-    <Form className={styles.form} summary="none" onSubmit={() => save(false)}>
+    <Form
+      className={phone ? [styles.form, styles.phone].join(" ") : styles.form}
+      summary="none"
+      onSubmit={() => save(false)}
+    >
       {state.postings === null ? (
         <>
           <SegmentedControl
@@ -236,7 +273,7 @@ export function NewTransactionForm({
           error={amountError}
         />
       )}
-      <Field>
+      <Field invalid={saveError?.fields.date !== undefined}>
         <FieldLabel>{t("transactions.new.date")}</FieldLabel>
         <DatePicker
           value={date}
@@ -247,6 +284,9 @@ export function NewTransactionForm({
             });
           }}
         />
+        {saveError?.fields.date !== undefined && (
+          <FieldError>{saveError.fields.date}</FieldError>
+        )}
       </Field>
       <EntityField
         label={t("transactions.filter.payee")}
@@ -264,7 +304,7 @@ export function NewTransactionForm({
           dispatch(id === "" ? { type: "payee" } : { type: "payee", id });
         }}
       />
-      <Field>
+      <Field invalid={saveError?.fields.description !== undefined}>
         <FieldLabel>{t("transactions.new.description")}</FieldLabel>
         <TextField
           value={state.description}
@@ -272,6 +312,9 @@ export function NewTransactionForm({
             dispatch({ type: "description", description });
           }}
         />
+        {saveError?.fields.description !== undefined && (
+          <FieldError>{saveError.fields.description}</FieldError>
+        )}
       </Field>
       <Field>
         <FieldLabel>{t("transactions.new.tags")}</FieldLabel>
@@ -293,6 +336,13 @@ export function NewTransactionForm({
         >
           {t("transactions.new.advanced")}
         </Button>
+      )}
+      {saveError?.message !== undefined && (
+        <Alert tone="danger" role="alert">
+          <AlertContent>
+            <AlertDescription>{saveError.message}</AlertDescription>
+          </AlertContent>
+        </Alert>
       )}
       <FormActions {...(phone ? { "data-pinned": "true" } : {})}>
         <Button

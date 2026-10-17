@@ -11,6 +11,11 @@
     background: var(--slotted-surface);
   }
 
+  .phone {
+    min-block-size: 100dvh;
+    align-content: start;
+  }
+
   .editor {
     display: grid;
     gap: var(--slotted-space-3);

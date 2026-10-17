@@ -411,4 +411,11 @@ describe("advanced mode", () => {
     });
     expect(formReducer(state, { type: "quick" }).postings).toBeNull();
   });
+
+  it("keeps the typed name next to the id of a payee that was stored", () => {
+    const named = formReducer(filled({}), { type: "payee", name: "Feira" });
+    const stored = formReducer(named, { type: "payeeCreated", id: payee });
+    expect(stored.payeeId).toBe(payee);
+    expect(stored.payeeName).toBe("Feira");
+  });
 });

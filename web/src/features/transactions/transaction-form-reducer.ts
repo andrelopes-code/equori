@@ -41,6 +41,7 @@ export type FormAction =
   | { type: "counter"; id: string }
   | { type: "date"; date: string }
   | { type: "payee"; id?: string; name?: string }
+  | { type: "payeeCreated"; id: string }
   | { type: "description"; description: string }
   | { type: "tags"; tags: string[] }
   | { type: "split" }
@@ -167,6 +168,8 @@ export function formReducer(state: FormState, action: FormAction): FormState {
       else if (action.name !== undefined) next.payeeName = action.name;
       return next;
     }
+    case "payeeCreated":
+      return { ...state, payeeId: action.id };
     case "description":
       return { ...state, description: action.description };
     case "tags":

@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -540,5 +540,125 @@ describe("new transaction", () => {
     expect(
       screen.getByRole("button", { name: label["transactions.new.save"] }),
     ).toBeEnabled();
+  });
+
+  async function fillQuick(user: ReturnType<typeof userEvent.setup>) {
+    await user.type(
+      await screen.findByRole("spinbutton", {
+        name: label["transactions.new.amount"],
+      }),
+      "5000",
+    );
+    await pick(user, label["transactions.new.account"], "Itau");
+    await pick(user, label["transactions.new.category"], "Mercado");
+  }
+
+  it("reuses a created payee when the transaction request is retried", async () => {
+    let calls = 0;
+    const { fetch, captured } = newApi(() => {
+      calls += 1;
+      return calls === 1
+        ? problem(500, "internal_error")
+        : json(201, { id: "t-1" });
+    });
+    const user = userEvent.setup();
+    await renderApp("/transactions/new", { fetch });
+    await fillQuick(user);
+    await user.type(
+      screen.getByRole("combobox", {
+        name: label["transactions.filter.payee"],
+      }),
+      "Feira",
+    );
+    await user.click(await screen.findByRole("option", { name: /Feira/ }));
+    const save = screen.getByRole("button", {
+      name: label["transactions.new.save"],
+    });
+    await user.click(save);
+    await waitFor(() => {
+      expect(captured.transactions).toHaveLength(1);
+    });
+    await waitFor(() => {
+      expect(save).toBeEnabled();
+    });
+    await user.click(save);
+    await waitFor(() => {
+      expect(captured.transactions).toHaveLength(2);
+    });
+    expect(captured.payees).toEqual([{ name: "Feira" }]);
+    expect(captured.transactions[1]).toMatchObject({ payee_id: newPayeeID });
+  });
+
+  it("attaches a mapped field error to its field, shows others form-level and clears on edit", async () => {
+    let body: unknown = {
+      errors: [{ field: "description", message: "Description too long" }],
+    };
+    const { fetch } = newApi(() =>
+      problem(422, "validation_failed", body as Record<string, unknown>),
+    );
+    const user = userEvent.setup();
+    await renderApp("/transactions/new", { fetch });
+    await fillQuick(user);
+    const save = screen.getByRole("button", {
+      name: label["transactions.new.save"],
+    });
+    await user.click(save);
+    expect(await screen.findByText("Description too long")).toBeInTheDocument();
+    expect(screen.queryByText(label["problem.validation_failed"])).toBeNull();
+    await user.type(
+      screen.getByRole("textbox", {
+        name: label["transactions.new.description"],
+      }),
+      "x",
+    );
+    expect(screen.queryByText("Description too long")).toBeNull();
+    body = { errors: [{ field: "tags[0]", message: "Tag invalid" }] };
+    await user.click(save);
+    expect(
+      await screen.findByText(label["problem.validation_failed"]),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Tag invalid")).toBeNull();
+  });
+
+  it("shows a form-level error when the request fails without a problem", async () => {
+    const { fetch } = newApi(() => {
+      throw new TypeError("network down");
+    });
+    const user = userEvent.setup();
+    await renderApp("/transactions/new", { fetch });
+    await fillQuick(user);
+    await user.click(
+      screen.getByRole("button", { name: label["transactions.new.save"] }),
+    );
+    expect(
+      await screen.findByText(label["transactions.new.failed"]),
+    ).toBeInTheDocument();
+  });
+
+  it("ignores a second submit while the save is pending", async () => {
+    let release: (response: Response) => void = () => undefined;
+    const { fetch, captured } = newApi(
+      () =>
+        new Promise<Response>((resolve) => {
+          release = resolve;
+        }) as unknown as Response,
+    );
+    const user = userEvent.setup();
+    await renderApp("/transactions/new", { fetch });
+    await fillQuick(user);
+    const save = screen.getByRole("button", {
+      name: label["transactions.new.save"],
+    });
+    const form = save.closest("form");
+    if (form === null) throw new Error("form not found");
+    await user.click(save);
+    await waitFor(() => {
+      expect(captured.transactions).toHaveLength(1);
+    });
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+    release(json(201, { id: "t-1" }));
+    await screen.findAllByText(label["transactions.new.saved"]);
+    expect(captured.transactions).toHaveLength(1);
   });
 });

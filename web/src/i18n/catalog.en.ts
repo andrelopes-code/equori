@@ -85,6 +85,7 @@ export const catalogEn = {
   "transactions.new.postingRemove": "Remove posting {n}",
   "transactions.new.imbalance": "Imbalance",
   "transactions.new.quick": "Quick entry",
+  "transactions.new.failed": "The transaction could not be saved. Try again.",
   "common.retry": "Try again",
   "common.error.title": "The content could not be loaded",
   "problem.invalid_credentials": "The email or password is incorrect.",

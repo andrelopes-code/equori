@@ -105,7 +105,7 @@ export function transactionMutated(
     balanceKeys.all,
     ...accountIds.flatMap((id) => [
       accountKeys.detail(id),
-      ["accounts", "balance", id] as const,
+      accountKeys.balances(id),
     ]),
   ];
   return Promise.all(
@@ -116,6 +116,8 @@ export function transactionMutated(
 export interface CreateTransactionRequest {
   state: FormState;
   currencyOf: (accountId: string) => string;
+  // Called as soon as a typed payee is stored, so a retry reuses it instead of posting the name again.
+  onPayeeCreated?: (id: string) => void;
 }
 
 // A payee typed but not yet stored is created first, so the transaction carries its id.
@@ -123,13 +125,18 @@ export function useCreateTransaction() {
   const api = useApi();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ state, currencyOf }: CreateTransactionRequest) => {
+    mutationFn: async ({
+      state,
+      currencyOf,
+      onPayeeCreated,
+    }: CreateTransactionRequest) => {
       let payeeId = state.payeeId;
       if (payeeId === undefined && state.payeeName?.trim()) {
         const payee = await unwrap(
           await api.POST("/payees", { body: { name: state.payeeName.trim() } }),
         );
         payeeId = payee.id;
+        onPayeeCreated?.(payee.id);
         await queryClient.invalidateQueries({
           queryKey: payeesQuery(api).queryKey,
         });

@@ -10,6 +10,7 @@ export const accountKeys = {
   all: ["accounts"] as const,
   list: ["accounts", "list"] as const,
   detail: (id: string) => ["accounts", "detail", id] as const,
+  balances: (id: string) => ["accounts", "balance", id] as const,
   balance: (id: string, basis: Basis) =>
     ["accounts", "balance", id, basis] as const,
   series: (id: string) => ["accounts", "series", id] as const,
