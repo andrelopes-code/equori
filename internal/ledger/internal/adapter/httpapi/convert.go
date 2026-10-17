@@ -174,6 +174,16 @@ func toTransactionAPI(t domain.Transaction) Transaction {
 	for _, l := range t.Links {
 		out.Links = append(out.Links, Link{Type: LinkType(l.Type), Target: l.Target})
 	}
+	if tr := t.Trade; tr != nil {
+		out.Trade = &Trade{
+			AccountId: tr.AccountID, CashAccountId: tr.CashAccountID, Side: TradeSide(tr.Side), Quantity: toMoneyAPI(tr.Quantity),
+			UnitPrice: tr.UnitPrice.String(), Gross: toMoneyAPI(tr.Gross), Fees: toMoneyAPI(tr.Fees), Taxes: toMoneyAPI(tr.Taxes),
+		}
+		if tr.Cost != nil {
+			cost := toMoneyAPI(*tr.Cost)
+			out.Trade.Cost = &cost
+		}
+	}
 	for _, p := range t.Postings {
 		ap := Posting{
 			Id: p.ID, AccountId: p.AccountID, Amount: toMoneyAPI(p.Amount), Weight: toMoneyAPI(p.Weight),

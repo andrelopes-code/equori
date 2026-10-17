@@ -59,6 +59,10 @@ func toProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusConflict, "already_reconciled", err.Error()), true
 	case errors.Is(err, app.ErrNonZeroBalance), errors.Is(err, app.ErrPostingsAfterClose):
 		return problem.New(http.StatusConflict, "account_not_empty", err.Error()), true
+	case errors.Is(err, app.ErrLaterSaleExists):
+		return problem.New(http.StatusConflict, "later_sale_exists", err.Error()), true
+	case errors.Is(err, app.ErrInvestmentTransaction):
+		return problem.New(http.StatusConflict, "investment_transaction", err.Error()), true
 	case errors.Is(err, app.ErrMixedInstruments):
 		return problem.New(http.StatusUnprocessableEntity, "mixed_instruments", err.Error()), true
 	case errors.Is(err, app.ErrSettingsLocked):

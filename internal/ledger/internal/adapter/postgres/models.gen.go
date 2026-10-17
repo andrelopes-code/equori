@@ -141,6 +141,21 @@ type LedgerStatement struct {
 	CreatedAt        time.Time
 }
 
+type LedgerTrade struct {
+	TransactionID uuid.UUID
+	UserID        int64
+	AccountID     uuid.UUID
+	CashAccountID uuid.UUID
+	Side          string
+	Quantity      int64
+	UnitPrice     pgtype.Numeric
+	Gross         int64
+	Fees          int64
+	Taxes         int64
+	Cost          *int64
+	Currency      string
+}
+
 type LedgerTransaction struct {
 	ID                uuid.UUID
 	UserID            int64

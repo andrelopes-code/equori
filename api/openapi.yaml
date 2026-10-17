@@ -498,6 +498,37 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /trades:
+    post:
+      tags: [ledger]
+      operationId: recordTrade
+      summary: Buy or sell a security for cash of the same brokerage at average cost (P8 amendment A68).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TradeInput"
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /transactions/{id}:
     get:
       tags: [ledger]
@@ -4723,6 +4754,68 @@ components:
           description: Prices used for value (B05).
           items:
             $ref: "#/components/schemas/Price"
+    TradeSide:
+      type: string
+      enum: [buy, sell]
+    TradeInput:
+      type: object
+      additionalProperties: false
+      required: [account_id, cash_account_id, side, date, quantity, unit_price]
+      properties:
+        account_id:
+          type: string
+          format: uuid
+          description: The account holding the security.
+        cash_account_id:
+          type: string
+          format: uuid
+          description: A cash account of the same brokerage, in the base currency.
+        side:
+          $ref: "#/components/schemas/TradeSide"
+        date:
+          type: string
+          format: date
+        quantity:
+          $ref: "#/components/schemas/Money"
+        unit_price:
+          $ref: "#/components/schemas/Rate"
+        fees:
+          $ref: "#/components/schemas/Money"
+        taxes:
+          $ref: "#/components/schemas/Money"
+        taxes_category_id:
+          type: string
+          format: uuid
+          description: Default the system account taxes.
+        description:
+          type: string
+          maxLength: 500
+    Trade:
+      type: object
+      required: [account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes]
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        cash_account_id:
+          type: string
+          format: uuid
+        side:
+          $ref: "#/components/schemas/TradeSide"
+        quantity:
+          $ref: "#/components/schemas/Money"
+        unit_price:
+          $ref: "#/components/schemas/Rate"
+        gross:
+          $ref: "#/components/schemas/Money"
+        fees:
+          $ref: "#/components/schemas/Money"
+        taxes:
+          $ref: "#/components/schemas/Money"
+        cost:
+          description: Cost basis removed by a sale at average cost.
+          allOf:
+            - $ref: "#/components/schemas/Money"
     ForeignPurchaseInput:
       type: object
       additionalProperties: false
@@ -4951,6 +5044,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Link"
+        trade:
+          $ref: "#/components/schemas/Trade"
         postings:
           type: array
           items:
@@ -5370,7 +5465,8 @@ components:
             record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
             integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
             currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
-            budget_exists, instrument_exists, mixed_instruments, price_missing.
+            budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
+            investment_transaction.
         request_id:
           type: string
         errors:

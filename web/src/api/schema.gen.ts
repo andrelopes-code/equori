@@ -232,6 +232,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/trades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Buy or sell a security for cash of the same brokerage at average cost (P8 amendment A68). */
+        post: operations["recordTrade"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/transactions/{id}": {
         parameters: {
             query?: never;
@@ -2523,6 +2540,47 @@ export interface components {
             /** @description Prices used for value (B05). */
             prices?: components["schemas"]["Price"][];
         };
+        /** @enum {string} */
+        TradeSide: "buy" | "sell";
+        TradeInput: {
+            /**
+             * Format: uuid
+             * @description The account holding the security.
+             */
+            account_id: string;
+            /**
+             * Format: uuid
+             * @description A cash account of the same brokerage, in the base currency.
+             */
+            cash_account_id: string;
+            side: components["schemas"]["TradeSide"];
+            /** Format: date */
+            date: string;
+            quantity: components["schemas"]["Money"];
+            unit_price: components["schemas"]["Rate"];
+            fees?: components["schemas"]["Money"];
+            taxes?: components["schemas"]["Money"];
+            /**
+             * Format: uuid
+             * @description Default the system account taxes.
+             */
+            taxes_category_id?: string;
+            description?: string;
+        };
+        Trade: {
+            /** Format: uuid */
+            account_id: string;
+            /** Format: uuid */
+            cash_account_id: string;
+            side: components["schemas"]["TradeSide"];
+            quantity: components["schemas"]["Money"];
+            unit_price: components["schemas"]["Rate"];
+            gross: components["schemas"]["Money"];
+            fees: components["schemas"]["Money"];
+            taxes: components["schemas"]["Money"];
+            /** @description Cost basis removed by a sale at average cost. */
+            cost?: components["schemas"]["Money"];
+        };
         ForeignPurchaseInput: {
             /** Format: uuid */
             account_id: string;
@@ -2636,6 +2694,7 @@ export interface components {
             void_reason?: string;
             tags: string[];
             links: components["schemas"]["Link"][];
+            trade?: components["schemas"]["Trade"];
             postings: components["schemas"]["Posting"][];
         };
         TransactionPage: {
@@ -2840,7 +2899,8 @@ export interface components {
              *     record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
              *     integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
              *     currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
-             *     budget_exists, instrument_exists, mixed_instruments, price_missing.
+             *     budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
+             *     investment_transaction.
              */
             code: string;
             request_id?: string;
@@ -3398,6 +3458,36 @@ export interface operations {
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    recordTrade: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TradeInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    /** @description Path of the created record. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transaction"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };
     };

@@ -18,6 +18,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
+	platformpg "github.com/andrelopes-code/equori/internal/platform/postgres"
 )
 
 // SQLSTATE codes mapped to domain errors.
@@ -305,6 +306,17 @@ func (r *Repository) completeAll(ctx context.Context, userID int64, rows []Ledge
 		t := byID[l.FromTransactionID]
 		t.Links = append(t.Links, domain.Link{Type: domain.LinkType(l.LinkType), Target: l.ToTransactionID})
 	}
+	trades, err := r.q.ListTrades(ctx, ListTradesParams{UserID: userID, TransactionIds: ids})
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range trades {
+		trade, err := r.toTrade(ctx, row, byID[row.TransactionID])
+		if err != nil {
+			return nil, err
+		}
+		byID[row.TransactionID].Trade = &trade
+	}
 	return out, nil
 }
 
@@ -323,7 +335,67 @@ func (r *Repository) InsertTransactionRows(ctx context.Context, t domain.Transac
 	if err != nil {
 		return referenceError(err)
 	}
-	return r.writeChildren(ctx, t)
+	if err := r.writeChildren(ctx, t); err != nil {
+		return err
+	}
+	if tr := t.Trade; tr != nil {
+		var cost *int64
+		if tr.Cost != nil {
+			c := tr.Cost.Amount()
+			cost = &c
+		}
+		return r.q.InsertTrade(ctx, InsertTradeParams{
+			TransactionID: t.ID, UserID: t.UserID, AccountID: tr.AccountID, CashAccountID: tr.CashAccountID, Side: string(tr.Side),
+			Quantity: tr.Quantity.Amount(), UnitPrice: platformpg.NumericOf(tr.UnitPrice), Gross: tr.Gross.Amount(),
+			Fees: tr.Fees.Amount(), Taxes: tr.Taxes.Amount(), Cost: cost, Currency: string(tr.Gross.Currency()),
+		})
+	}
+	return nil
+}
+
+func (r *Repository) toTrade(ctx context.Context, row LedgerTrade, t *domain.Transaction) (domain.Trade, error) {
+	var instrument money.Currency
+	for _, p := range t.Postings {
+		if p.AccountID == row.AccountID {
+			instrument = p.Amount.Currency()
+		}
+	}
+	quantity, err := app.AmountOf(ctx, r.ins, row.Quantity, instrument)
+	if err != nil {
+		return domain.Trade{}, fmt.Errorf("trade %s quantity: %w", row.TransactionID, err)
+	}
+	price, err := platformpg.RateOf(row.UnitPrice)
+	if err != nil {
+		return domain.Trade{}, err
+	}
+	cur := money.Currency(row.Currency)
+	amounts := make([]money.Money, 3)
+	for i, v := range []int64{row.Gross, row.Fees, row.Taxes} {
+		if amounts[i], err = money.New(v, cur); err != nil {
+			return domain.Trade{}, err
+		}
+	}
+	trade := domain.Trade{
+		AccountID: row.AccountID, CashAccountID: row.CashAccountID, Side: domain.Side(row.Side), Quantity: quantity, UnitPrice: price,
+		Gross: amounts[0], Fees: amounts[1], Taxes: amounts[2],
+	}
+	if row.Cost != nil {
+		cost, err := money.New(*row.Cost, cur)
+		if err != nil {
+			return domain.Trade{}, err
+		}
+		trade.Cost = &cost
+	}
+	return trade, nil
+}
+
+func (r *Repository) Holding(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time) (int64, int64, error) {
+	row, err := r.q.Holding(ctx, HoldingParams{UserID: userID, AccountID: accountID, OnDate: date})
+	return row.Quantity, row.CostBasis, err
+}
+
+func (r *Repository) LaterSaleExists(ctx context.Context, userID int64, accountIDs []uuid.UUID, date time.Time, exclude uuid.UUID) (bool, error) {
+	return r.q.LaterSaleExists(ctx, LaterSaleExistsParams{UserID: userID, AccountIds: accountIDs, OnDate: date, Exclude: exclude})
 }
 
 func (r *Repository) ReplaceTransaction(ctx context.Context, prev, next domain.Transaction, reason string) error {

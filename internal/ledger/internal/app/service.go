@@ -302,6 +302,9 @@ func (s *Service) insert(ctx context.Context, r Repository, t domain.Transaction
 	if err != nil {
 		return domain.Transaction{}, err
 	}
+	if err := checkLaterSales(ctx, r, t.UserID, valid.Date, valid.Postings, valid.ID); err != nil {
+		return domain.Transaction{}, err
+	}
 	if err := s.bill(ctx, r, &valid); err != nil {
 		return domain.Transaction{}, err
 	}
@@ -327,6 +330,12 @@ func (s *Service) CorrectTransaction(ctx context.Context, userID int64, id uuid.
 				return validationError("transaction_id", "installment transactions change through refunds, cancellation or anticipation")
 			}
 		}
+		if prev.Trade != nil {
+			return ErrInvestmentTransaction
+		}
+		if err := checkLaterSales(ctx, r, userID, prev.Date, prev.Postings, id); err != nil {
+			return err
+		}
 		next.ID, next.UserID = id, userID
 		if next.BalancingCurrency == "" {
 			next.BalancingCurrency = prev.BalancingCurrency
@@ -339,6 +348,9 @@ func (s *Service) CorrectTransaction(ctx context.Context, userID int64, id uuid.
 			return err
 		}
 		if corrected, err = prev.Correct(next, expectedVersion, accounts); err != nil {
+			return err
+		}
+		if err := checkLaterSales(ctx, r, userID, corrected.Date, corrected.Postings, id); err != nil {
 			return err
 		}
 		if err := s.bill(ctx, r, &corrected); err != nil {
@@ -364,6 +376,9 @@ func (s *Service) VoidTransaction(ctx context.Context, userID int64, id uuid.UUI
 	return s.repo.InTx(ctx, func(r Repository) error {
 		prev, err := r.LockTransaction(ctx, userID, id)
 		if err != nil {
+			return err
+		}
+		if err := checkLaterSales(ctx, r, userID, prev.Date, prev.Postings, id); err != nil {
 			return err
 		}
 		voided, err := prev.Void(s.clock.Now(), reason)

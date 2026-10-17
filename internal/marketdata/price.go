@@ -4,15 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/big"
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/adapter/postgres"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/money"
+	platformpg "github.com/andrelopes-code/equori/internal/platform/postgres"
 )
 
 // RecordPrices stores ps in one transaction; an existing (instrument, quote, date,
@@ -91,7 +90,7 @@ func (m *Module) upsert(ctx context.Context, ps []Price) error {
 			}
 			if err := q.UpsertPrice(ctx, postgres.UpsertPriceParams{
 				Instrument: string(p.Instrument), QuoteInstrument: string(p.Quote), Date: p.Date,
-				Value: toNumeric(p.Value), Source: p.Source, Priority: priority,
+				Value: platformpg.NumericOf(p.Value), Source: p.Source, Priority: priority,
 			}); err != nil {
 				return fmt.Errorf("record price: %w", err)
 			}
@@ -129,36 +128,9 @@ func (m *Module) ListPrices(ctx context.Context, instrument, quote money.Currenc
 }
 
 func toPrice(r postgres.MarketdataPrice) (Price, error) {
-	v, err := fromNumeric(r.Value)
+	v, err := platformpg.RateOf(r.Value)
 	if err != nil {
 		return Price{}, err
 	}
 	return Price{Instrument: money.Currency(r.Instrument), Quote: money.Currency(r.QuoteInstrument), Date: r.Date, Value: v, Source: r.Source}, nil
-}
-
-func toNumeric(r money.Rate) pgtype.Numeric {
-	return pgtype.Numeric{Int: big.NewInt(r.Mantissa()), Exp: -int32(r.Scale()), Valid: true} //nolint:gosec // G115: a rate scale is 0–12
-}
-
-// fromNumeric drops trailing zeros: numeric(30,12) stores 5.5 as 5.500000000000.
-func fromNumeric(n pgtype.Numeric) (money.Rate, error) {
-	if !n.Valid || n.NaN || n.Int == nil {
-		return money.Rate{}, fmt.Errorf("read rate: %w", money.ErrInvalidRate)
-	}
-	m, exp := new(big.Int).Set(n.Int), n.Exp
-	ten := big.NewInt(10)
-	for ; exp > 0; exp-- {
-		m.Mul(m, ten)
-	}
-	for mod := new(big.Int); exp < 0; exp++ {
-		q, r := new(big.Int).QuoRem(m, ten, mod)
-		if r.Sign() != 0 {
-			break
-		}
-		m = q
-	}
-	if !m.IsInt64() {
-		return money.Rate{}, fmt.Errorf("read rate %s: %w", m, money.ErrInvalidRate)
-	}
-	return money.NewRate(m.Int64(), int(-exp))
 }

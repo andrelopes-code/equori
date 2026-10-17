@@ -178,3 +178,19 @@ func TestDBBookedOnFollowsDate(t *testing.T) {
 		t.Fatalf("postings with new booked_on = %d, %v; want 2", n, err)
 	}
 }
+
+func TestDBRejectsSaleWithoutCost(t *testing.T) {
+	f := newSchemaFixture(t)
+	ctx := t.Context()
+	cash, other := f.checking, f.food
+	id, err := f.recordTx(t, f.userID, "2026-10-20", postingRow{cash, 100}, postingRow{other, -100})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = f.pool.Exec(ctx, `INSERT INTO ledger_trade (transaction_id, user_id, account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, currency)
+		VALUES ($1, $2, $3, $4, 'sell', 1, 1, 100, 0, 0, 'BRL')`, id, f.userID, other, cash)
+	requireViolation(t, err, checkViolation, "")
+	_, err = f.pool.Exec(ctx, `INSERT INTO ledger_trade (transaction_id, user_id, account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, currency)
+		VALUES ($1, $2, $3, $4, 'buy', 1, 1, 100, 0, 5, 'BRL')`, id, f.userID, other, cash)
+	requireViolation(t, err, checkViolation, "")
+}

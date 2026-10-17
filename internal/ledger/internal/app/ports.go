@@ -28,6 +28,10 @@ var (
 	ErrUnknownInstrument  = errors.New("unknown instrument")
 	ErrMixedInstruments   = errors.New("the account and its sub-accounts hold more than one instrument")
 	ErrPriceMissing       = errors.New("price missing")
+	// ErrLaterSaleExists: the change would alter the cost of a recorded sale (P8 A69).
+	ErrLaterSaleExists = errors.New("a later sale of the security exists")
+	// ErrInvestmentTransaction: trades and income are voided and recorded again (P8 A69).
+	ErrInvestmentTransaction = errors.New("a trade or income transaction is not corrected; void it and record it again")
 )
 
 // Clock is satisfied by platform/clock.Clock.
@@ -363,6 +367,8 @@ type Repository interface {
 	// BalanceAt sums the postings of the account and its descendants up to and including date.
 	BalanceAt(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis Basis) (int64, error)
 	TreeInstruments(ctx context.Context, userID int64, accountID uuid.UUID) ([]money.Currency, error)
+	Holding(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time) (quantity, costBasis int64, err error)
+	LaterSaleExists(ctx context.Context, userID int64, accountIDs []uuid.UUID, date time.Time, exclude uuid.UUID) (bool, error)
 	TreeBalancesByInstrument(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis Basis) (map[money.Currency]int64, error)
 	// CategoryTotal sums the weights of the non-voided postings of the account and its
 	// descendants booked in [from, to).

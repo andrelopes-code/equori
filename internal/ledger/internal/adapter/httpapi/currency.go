@@ -64,3 +64,38 @@ func (s *Server) ExchangeCurrency(ctx context.Context, req ExchangeCurrencyReque
 	}
 	return ExchangeCurrency201JSONResponse{Body: toTransactionAPI(t), Headers: ExchangeCurrency201ResponseHeaders{Location: location("/transactions/", t.ID)}}, nil
 }
+
+func (s *Server) RecordTrade(ctx context.Context, req RecordTradeRequestObject) (RecordTradeResponseObject, error) {
+	b := req.Body
+	quantity, err := s.svc.AmountOf(ctx, b.Quantity.Amount, money.Currency(b.Quantity.Currency))
+	if err != nil {
+		return nil, &domain.FieldError{Field: "quantity", Message: err.Error(), Err: domain.ErrValidation}
+	}
+	price, err := money.ParseRate(b.UnitPrice)
+	if err != nil {
+		return nil, &domain.FieldError{Field: "unit_price", Message: "must be a positive decimal with at most 12 decimals", Err: domain.ErrValidation}
+	}
+	o := domain.TradeOrder{
+		AccountID: b.AccountId, CashAccountID: b.CashAccountId, TaxesCategoryID: optUUID(b.TaxesCategoryId), Side: domain.Side(b.Side),
+		Date: dateOf(b.Date), Quantity: quantity, UnitPrice: price, Description: optString(b.Description),
+	}
+	if b.Fees != nil {
+		fees, err := fromMoneyAPI("fees", *b.Fees)
+		if err != nil {
+			return nil, err
+		}
+		o.Fees = &fees
+	}
+	if b.Taxes != nil {
+		taxes, err := fromMoneyAPI("taxes", *b.Taxes)
+		if err != nil {
+			return nil, err
+		}
+		o.Taxes = &taxes
+	}
+	t, err := s.svc.RecordTrade(ctx, auth.MustUserID(ctx), o)
+	if err != nil {
+		return nil, err
+	}
+	return RecordTrade201JSONResponse{Body: toTransactionAPI(t), Headers: RecordTrade201ResponseHeaders{Location: location("/transactions/", t.ID)}}, nil
+}

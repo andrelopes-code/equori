@@ -590,6 +590,24 @@ func (e StatementSummaryStatus) Valid() bool {
 	}
 }
 
+// Defines values for TradeSide.
+const (
+	Buy  TradeSide = "buy"
+	Sell TradeSide = "sell"
+)
+
+// Valid indicates whether the value is a known member of the TradeSide enum.
+func (e TradeSide) Valid() bool {
+	switch e {
+	case Buy:
+		return true
+	case Sell:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for TransactionOrigin.
 const (
 	TransactionOriginImport   TransactionOrigin = "import"
@@ -1141,7 +1159,8 @@ type Problem struct {
 	// record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
 	// integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
 	// currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
-	// budget_exists, instrument_exists, mixed_instruments, price_missing.
+	// budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
+	// investment_transaction.
 	Code      string        `json:"code"`
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`
@@ -1273,6 +1292,51 @@ type TagList struct {
 	NextCursor *string `json:"next_cursor,omitempty"`
 }
 
+// Trade defines model for Trade.
+type Trade struct {
+	AccountId     openapi_types.UUID `json:"account_id"`
+	CashAccountId openapi_types.UUID `json:"cash_account_id"`
+
+	// Cost Cost basis removed by a sale at average cost.
+	Cost     *Money    `json:"cost,omitempty"`
+	Fees     Money     `json:"fees"`
+	Gross    Money     `json:"gross"`
+	Quantity Money     `json:"quantity"`
+	Side     TradeSide `json:"side"`
+	Taxes    Money     `json:"taxes"`
+
+	// UnitPrice Positive exact decimal with at most 12 decimals (ADR 005).
+	//
+	// Example: 5.4830
+	UnitPrice Rate `json:"unit_price"`
+}
+
+// TradeInput defines model for TradeInput.
+type TradeInput struct {
+	// AccountId The account holding the security.
+	AccountId openapi_types.UUID `json:"account_id"`
+
+	// CashAccountId A cash account of the same brokerage, in the base currency.
+	CashAccountId openapi_types.UUID `json:"cash_account_id"`
+	Date          openapi_types.Date `json:"date"`
+	Description   *string            `json:"description,omitempty"`
+	Fees          *Money             `json:"fees,omitempty"`
+	Quantity      Money              `json:"quantity"`
+	Side          TradeSide          `json:"side"`
+	Taxes         *Money             `json:"taxes,omitempty"`
+
+	// TaxesCategoryId Default the system account taxes.
+	TaxesCategoryId *openapi_types.UUID `json:"taxes_category_id,omitempty"`
+
+	// UnitPrice Positive exact decimal with at most 12 decimals (ADR 005).
+	//
+	// Example: 5.4830
+	UnitPrice Rate `json:"unit_price"`
+}
+
+// TradeSide defines model for TradeSide.
+type TradeSide string
+
 // Transaction defines model for Transaction.
 type Transaction struct {
 	BalancingCurrency string              `json:"balancing_currency"`
@@ -1284,6 +1348,7 @@ type Transaction struct {
 	PayeeId           *openapi_types.UUID `json:"payee_id,omitempty"`
 	Postings          []Posting           `json:"postings"`
 	Tags              []string            `json:"tags"`
+	Trade             *Trade              `json:"trade,omitempty"`
 	Version           int                 `json:"version"`
 	VoidReason        *string             `json:"void_reason,omitempty"`
 	VoidedAt          *time.Time          `json:"voided_at,omitempty"`
@@ -1500,6 +1565,9 @@ type PayStatementJSONRequestBody = StatementPaymentInput
 // ReconcileStatementJSONRequestBody defines body for ReconcileStatement for application/json ContentType.
 type ReconcileStatementJSONRequestBody = StatementReconciliationInput
 
+// RecordTradeJSONRequestBody defines body for RecordTrade for application/json ContentType.
+type RecordTradeJSONRequestBody = TradeInput
+
 // CreateTransactionJSONRequestBody defines body for CreateTransaction for application/json ContentType.
 type CreateTransactionJSONRequestBody = TransactionInput
 
@@ -1640,6 +1708,9 @@ type ServerInterface interface {
 	// ListTags List tags in use.
 	// (GET /tags)
 	ListTags(w http.ResponseWriter, r *http.Request, params ListTagsParams)
+	// RecordTrade Buy or sell a security for cash of the same brokerage at average cost (P8 amendment A68).
+	// (POST /trades)
+	RecordTrade(w http.ResponseWriter, r *http.Request)
 	// ListTransactions List transactions, newest first.
 	// (GET /transactions)
 	ListTransactions(w http.ResponseWriter, r *http.Request, params ListTransactionsParams)
@@ -2801,6 +2872,20 @@ func (siw *ServerInterfaceWrapper) ListTags(w http.ResponseWriter, r *http.Reque
 	handler.ServeHTTP(w, r)
 }
 
+// RecordTrade operation middleware
+func (siw *ServerInterfaceWrapper) RecordTrade(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RecordTrade(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListTransactions operation middleware
 func (siw *ServerInterfaceWrapper) ListTransactions(w http.ResponseWriter, r *http.Request) {
 
@@ -3365,6 +3450,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions", wrapper.CreateTransaction)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/foreign-purchases", wrapper.RecordForeignPurchase)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/exchanges", wrapper.ExchangeCurrency)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/trades", wrapper.RecordTrade)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions/{id}", wrapper.GetTransaction)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/transactions/{id}", wrapper.CorrectTransaction)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/void", wrapper.VoidTransaction)
@@ -5774,6 +5860,96 @@ func (response ListTags401ApplicationProblemPlusJSONResponse) VisitListTagsRespo
 	return err
 }
 
+type RecordTradeRequestObject struct {
+	Body *RecordTradeJSONRequestBody
+}
+
+type RecordTradeResponseObject interface {
+	VisitRecordTradeResponse(w http.ResponseWriter) error
+}
+
+type RecordTrade201ResponseHeaders struct {
+	Location *string
+}
+
+type RecordTrade201JSONResponse struct {
+	Body    Transaction
+	Headers RecordTrade201ResponseHeaders
+}
+
+func (response RecordTrade201JSONResponse) VisitRecordTradeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordTrade400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RecordTrade400ApplicationProblemPlusJSONResponse) VisitRecordTradeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordTrade401ApplicationProblemPlusJSONResponse Problem
+
+func (response RecordTrade401ApplicationProblemPlusJSONResponse) VisitRecordTradeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordTrade409ApplicationProblemPlusJSONResponse Problem
+
+func (response RecordTrade409ApplicationProblemPlusJSONResponse) VisitRecordTradeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordTrade422ApplicationProblemPlusJSONResponse Problem
+
+func (response RecordTrade422ApplicationProblemPlusJSONResponse) VisitRecordTradeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListTransactionsRequestObject struct {
 	Params ListTransactionsParams
 }
@@ -6752,6 +6928,9 @@ type StrictServerInterface interface {
 	// ListTags List tags in use.
 	// (GET /tags)
 	ListTags(ctx context.Context, request ListTagsRequestObject) (ListTagsResponseObject, error)
+	// RecordTrade Buy or sell a security for cash of the same brokerage at average cost (P8 amendment A68).
+	// (POST /trades)
+	RecordTrade(ctx context.Context, request RecordTradeRequestObject) (RecordTradeResponseObject, error)
 	// ListTransactions List transactions, newest first.
 	// (GET /transactions)
 	ListTransactions(ctx context.Context, request ListTransactionsRequestObject) (ListTransactionsResponseObject, error)
@@ -7945,6 +8124,37 @@ func (sh *strictHandler) ListTags(w http.ResponseWriter, r *http.Request, params
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListTagsResponseObject); ok {
 		if err := validResponse.VisitListTagsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RecordTrade operation middleware
+func (sh *strictHandler) RecordTrade(w http.ResponseWriter, r *http.Request) {
+	var request RecordTradeRequestObject
+
+	var body RecordTradeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RecordTrade(ctx, request.(RecordTradeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RecordTrade")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RecordTradeResponseObject); ok {
+		if err := validResponse.VisitRecordTradeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
