@@ -106,3 +106,62 @@ func TestCurrencies(t *testing.T) {
 		}
 	}
 }
+
+func TestNewOf(t *testing.T) {
+	tests := []struct {
+		name   string
+		amount int64
+		code   Currency
+		scale  int
+		want   error
+	}{
+		{name: "security", amount: 150, code: "MXRF11", scale: 0},
+		{name: "crypto", amount: 123456789, code: "BTC", scale: 8},
+		{name: "currency keeps its scale", amount: 100, code: "BRL", scale: 2},
+		{name: "scale above 12", amount: 1, code: "X1", scale: 13, want: ErrInvalidInstrument},
+		{name: "negative scale", amount: 1, code: "X1", scale: -1, want: ErrInvalidInstrument},
+		{name: "lowercase code", amount: 1, code: "mx", scale: 0, want: ErrInvalidInstrument},
+		{name: "one letter code", amount: 1, code: "M", scale: 0, want: ErrInvalidInstrument},
+		{name: "currency with another scale", amount: 1, code: "BRL", scale: 0, want: ErrInvalidInstrument},
+		{name: "above max", amount: MaxAmount + 1, code: "MXRF11", scale: 0, want: ErrOutOfRange},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m, err := NewOf(tt.amount, tt.code, tt.scale)
+			if !errors.Is(err, tt.want) {
+				t.Fatalf("err = %v, want %v", err, tt.want)
+			}
+			if err == nil && (m.Amount() != tt.amount || m.Currency() != tt.code || m.Scale() != tt.scale) {
+				t.Fatalf("got %v scale %d", m, m.Scale())
+			}
+		})
+	}
+}
+
+func TestInstrumentArithmeticKeepsScale(t *testing.T) {
+	a, _ := NewOf(150, "MXRF11", 0)
+	b, _ := NewOf(50, "MXRF11", 0)
+	got, err := a.Sub(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want, _ := NewOf(100, "MXRF11", 0); got != want {
+		t.Fatalf("got %v", got)
+	}
+	if sum, err := a.Add(b); err != nil || sum.Scale() != 0 || sum.Amount() != 200 {
+		t.Fatalf("sum = %v, %v", sum, err)
+	}
+	if n := a.Neg(); n.Scale() != 0 || n.Amount() != -150 {
+		t.Fatalf("neg = %v", n)
+	}
+	if brl := mustNew(t, 1, "BRL"); brl.Scale() != 2 {
+		t.Fatalf("BRL scale = %d", brl.Scale())
+	}
+	btc, _ := NewOf(123456789, "BTC", 8)
+	if got := btc.String(); got != "BTC 1.23456789" {
+		t.Fatalf("String = %q", got)
+	}
+	if got := a.String(); got != "MXRF11 150" {
+		t.Fatalf("String = %q", got)
+	}
+}

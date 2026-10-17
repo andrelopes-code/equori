@@ -42,12 +42,13 @@ func (r *Repository) InTx(ctx context.Context, fn func(app.Repository) error) er
 
 Package `internal/platform/money` (stdlib only) is the shared kernel for amounts.
 
-- `money.Money`: `int64` amount in minor units + `money.Currency` (ISO 4217). Fields are unexported; values are built with `money.New`.
-- Supported currencies and their minor units are listed in `money`. An unlisted code is rejected.
+- `money.Money`: `int64` amount in units scaled by the instrument scale, the instrument code (`money.Currency`) and the scale; it is the `Quantity` of chapter 5, 5.1 (P8 amendment A58). Fields are unexported; `money.New` builds currency amounts, `money.NewOf` amounts of any instrument (code `^[A-Z0-9.]{2,20}$`, scale 0–12).
+- Supported currencies and their minor units are listed in `money`. `money.New` rejects an unlisted code; `money.NewOf` rejects a listed currency with another scale.
 - `|amount| ≤ 2^53 − 1` (`money.MaxAmount`). The bound keeps amounts exact as JSON numbers in JavaScript and makes `int64` overflow impossible in `Add`/`Sub`.
-- Arithmetic across currencies returns `money.ErrCurrencyMismatch`. Conversion between currencies is a domain operation with an explicit rate, never implicit.
-- Database: `bigint` amount + `char(3)` currency (ADR 001).
-- API: `{"amount": 1234, "currency": "BRL"}` — integer minor units. Clients format for display.
+- Arithmetic across instruments returns `money.ErrCurrencyMismatch`. Conversion is a domain operation with explicit rates, never implicit: `money.Convert` multiplies by each `money.Leg` exactly and rounds half to even once.
+- `money.Rate`: a positive exact decimal, `int64` mantissa and 0–12 decimals. Database: `numeric(30,12)`. API: a decimal string, `"5.4830"`.
+- Database: `bigint` amount; the instrument comes from the row's account or currency column (ADR 001).
+- API: `{"amount": 1234, "currency": "BRL"}` — integer units of the instrument scale; `currency` carries any instrument code (`{"amount": 150, "currency": "MXRF11"}`). Clients format for display.
 
 ## 3. Dates and time zone
 
