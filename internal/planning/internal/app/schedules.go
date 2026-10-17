@@ -16,11 +16,12 @@ type Service struct {
 	repo   Repository
 	ledger Ledger
 	cal    Calendar
+	prices Prices
 	clk    clock.Clock
 }
 
-func NewService(repo Repository, l Ledger, cal Calendar, clk clock.Clock) *Service {
-	return &Service{repo: repo, ledger: l, cal: cal, clk: clk}
+func NewService(repo Repository, l Ledger, cal Calendar, prices Prices, clk clock.Clock) *Service {
+	return &Service{repo: repo, ledger: l, cal: cal, prices: prices, clk: clk}
 }
 
 // WithRepository returns the service on another repository, as outbox handlers need.
@@ -80,15 +81,10 @@ func (s *Service) CreateSchedule(ctx context.Context, userID int64, in ScheduleI
 	return s.repo.Schedule(ctx, userID, created.ID)
 }
 
-// checkAccounts applies the counterpart rule of P7 amendment A46 and the currency rule of A47.
+// checkAccounts applies the counterpart rule of P7 amendment A46 and the currency rule of
+// P8 amendment A72: the amount is in the currency of account_id, and a transfer or savings
+// counterpart holds that currency too.
 func (s *Service) checkAccounts(ctx context.Context, userID int64, sch domain.Schedule) error {
-	base, err := s.ledger.BaseCurrency(ctx, userID)
-	if err != nil {
-		return err
-	}
-	if sch.Currency != base {
-		return &domain.FieldError{Field: "amount.currency", Message: "must be the base currency " + string(base), Err: domain.ErrValidation}
-	}
 	facts, err := s.ledger.AccountFacts(ctx, userID)
 	if err != nil {
 		return err
@@ -102,8 +98,11 @@ func (s *Service) checkAccounts(ctx context.Context, userID int64, sch domain.Sc
 	if !ok || !balance(account) {
 		return &domain.FieldError{Field: "account_id", Message: "must be a balance account of the user", Err: domain.ErrValidation}
 	}
-	if account.Instrument != base {
+	if _, err := money.ParseCurrency(string(account.Instrument)); err != nil {
 		return &CurrencyError{Field: "account_id"}
+	}
+	if sch.Currency != account.Instrument {
+		return &domain.FieldError{Field: "amount.currency", Message: "must be the currency of account_id " + string(account.Instrument), Err: domain.ErrValidation}
 	}
 	counterpart, ok := accounts[sch.CounterpartID]
 	var fits bool
@@ -118,7 +117,7 @@ func (s *Service) checkAccounts(ctx context.Context, userID int64, sch domain.Sc
 	if !ok || !fits {
 		return &domain.FieldError{Field: "counterpart_id", Message: "does not fit kind " + string(sch.Kind), Err: domain.ErrValidation}
 	}
-	if counterpart.Instrument != base {
+	if (sch.Kind == domain.Transfer || sch.Kind == domain.Savings) && counterpart.Instrument != account.Instrument {
 		return &CurrencyError{Field: "counterpart_id"}
 	}
 	if sch.PayeeID != uuid.Nil {

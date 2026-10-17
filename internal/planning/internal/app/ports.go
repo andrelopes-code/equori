@@ -15,8 +15,8 @@ import (
 
 var (
 	ErrNotFound = errors.New("not found")
-	// ErrCurrencyUnsupported refuses an account outside the base currency (P7 amendment A47).
-	ErrCurrencyUnsupported = errors.New("only the base currency is supported")
+	// ErrCurrencyUnsupported refuses an account whose instrument the operation cannot take (P8 amendment A72).
+	ErrCurrencyUnsupported = errors.New("the account's instrument is not supported here")
 	// ErrOccurrenceClosed refuses a change to an occurrence in another state (A51, A52).
 	ErrOccurrenceClosed = errors.New("the occurrence is not in a state that allows this change")
 	// ErrTransactionInUse refuses a transaction that realizes another occurrence (I07).
@@ -27,11 +27,27 @@ var (
 	ErrScheduleEnded = errors.New("the schedule ends before this date")
 )
 
-// CurrencyError names the field whose account is outside the base currency.
+// CurrencyError names the field whose account has an unsupported instrument.
 type CurrencyError struct{ Field string }
 
 func (e *CurrencyError) Error() string { return e.Field + ": " + ErrCurrencyUnsupported.Error() }
 func (e *CurrencyError) Unwrap() error { return ErrCurrencyUnsupported }
+
+// ErrPriceMissing: no stored price values an amount in the requested currency (P8 A61).
+var ErrPriceMissing = errors.New("price missing")
+
+type Price struct {
+	Instrument, Quote money.Currency
+	Date              time.Time
+	Value             money.Rate
+	Source            string
+}
+
+// Prices values amounts with stored prices (Market data); Convert returns an error
+// wrapping ErrPriceMissing when no price path exists.
+type Prices interface {
+	Convert(ctx context.Context, q money.Money, to money.Currency, date time.Time) (money.Money, []Price, error)
+}
 
 // Account is the part of a ledger account Planning checks.
 type Account struct {
@@ -52,8 +68,8 @@ type Ledger interface {
 	CategoryTotal(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (int64, error)
 	// CategoryMonthlyTotals is CategoryTotal for each month in [from, to), keyed by its first day.
 	CategoryMonthlyTotals(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (map[time.Time]int64, error)
-	// Balance is the booked balance of an account at the end of date, in its minor units.
-	Balance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time) (int64, error)
+	// Balance is the booked balance of an account at the end of date, in its instrument.
+	Balance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time) (money.Money, error)
 	// Commitment sums the installments of a card billed on the statement of month while it is open.
 	Commitment(ctx context.Context, userID int64, cardID uuid.UUID, month time.Time) (int64, error)
 }

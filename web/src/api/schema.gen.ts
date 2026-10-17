@@ -1899,8 +1899,9 @@ export interface components {
             account_ids: string[];
         };
         /**
-         * @description current is the sum of the booked balances of the accounts today; remaining is max(target - current, 0);
-         *     progress_bp is current / target in basis points, rounded down, between 0 and 10000.
+         * @description current is the sum of the booked balances of the accounts today, valued in the target currency with
+         *     stored prices (P8 amendment A72); remaining is max(target - current, 0); progress_bp is current / target
+         *     in basis points, rounded down, between 0 and 10000.
          */
         Goal: {
             /** Format: uuid */
@@ -1913,6 +1914,8 @@ export interface components {
             current: components["schemas"]["Money"];
             remaining: components["schemas"]["Money"];
             progress_bp: number;
+            /** @description Prices that value accounts in another currency (P8 amendment A72). */
+            prices?: components["schemas"]["Price"][];
         };
         GoalPage: {
             items: components["schemas"]["Goal"][];
@@ -1945,6 +1948,8 @@ export interface components {
             installments: components["schemas"]["Money"];
             occurrences: components["schemas"]["Money"];
             total: components["schemas"]["Money"];
+            /** @description Prices that value occurrences in another currency at today (P8 amendment A72). */
+            prices?: components["schemas"]["Price"][];
         };
         SkipInput: {
             reason?: string;

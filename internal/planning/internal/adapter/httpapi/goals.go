@@ -12,7 +12,7 @@ func toGoalAPI(g app.GoalView) Goal {
 	return Goal{
 		Id: g.ID, Name: g.Name, Target: toMoneyAPI(g.Target, g.Currency), DueOn: apiDate(g.DueOn), AccountIds: g.AccountIDs,
 		Current: toMoneyAPI(g.Progress.Current, g.Currency), Remaining: toMoneyAPI(g.Progress.Remaining, g.Currency),
-		ProgressBp: g.Progress.ProgressBP,
+		ProgressBp: g.Progress.ProgressBP, Prices: toPricesAPI(g.Prices),
 	}
 }
 

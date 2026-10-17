@@ -63,6 +63,8 @@ func toProblem(err error) (problem.Details, bool) {
 	switch {
 	case errors.Is(err, app.ErrNotFound):
 		return problem.New(http.StatusNotFound, "not_found", "resource not found"), true
+	case errors.Is(err, app.ErrPriceMissing):
+		return problem.New(http.StatusUnprocessableEntity, "price_missing", err.Error()), true
 	case errors.Is(err, app.ErrOccurrenceClosed):
 		return problem.New(http.StatusConflict, "occurrence_closed", err.Error()), true
 	case errors.Is(err, app.ErrTransactionInUse):
@@ -86,6 +88,20 @@ func listPage[K any](limit *int, cursor *string) (page.Request[K], error) {
 		return r, &paramError{field: "cursor", message: "is not a cursor of this list"}
 	}
 	return r, err
+}
+
+func toPricesAPI(ps []app.Price) *[]Price {
+	if len(ps) == 0 {
+		return nil
+	}
+	out := make([]Price, len(ps))
+	for i, p := range ps {
+		out[i] = Price{
+			Instrument: string(p.Instrument), QuoteInstrument: string(p.Quote), Date: apiDate(p.Date),
+			Value: p.Value.Reduced().String(), Source: PriceSource(p.Source),
+		}
+	}
+	return &out
 }
 
 func toMoneyAPI(amount int64, c money.Currency) Money {

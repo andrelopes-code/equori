@@ -36,6 +36,6 @@ func (s *Server) GetCommitted(ctx context.Context, req GetCommittedRequestObject
 	}
 	return GetCommitted200JSONResponse{
 		Month: c.Month.Format(monthLayout), Installments: toMoneyAPI(c.Installments, c.Currency),
-		Occurrences: toMoneyAPI(c.Occurrences, c.Currency), Total: toMoneyAPI(c.Total, c.Currency),
+		Occurrences: toMoneyAPI(c.Occurrences, c.Currency), Total: toMoneyAPI(c.Total, c.Currency), Prices: toPricesAPI(c.Prices),
 	}, nil
 }

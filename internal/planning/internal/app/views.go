@@ -83,14 +83,15 @@ func (s *Service) Project(ctx context.Context, userID int64, accountID uuid.UUID
 		}
 		return 0
 	})
-	opening, err := s.ledger.Balance(ctx, userID, accountID, today)
+	openingBalance, err := s.ledger.Balance(ctx, userID, accountID, today)
 	if err != nil {
 		return Projection{}, err
 	}
-	closing, err := s.ledger.Balance(ctx, userID, accountID, to)
+	closingBalance, err := s.ledger.Balance(ctx, userID, accountID, to)
 	if err != nil {
 		return Projection{}, err
 	}
+	opening, closing := openingBalance.Amount(), closingBalance.Amount()
 	running := opening
 	for j := range points {
 		running += points[j].Amount
@@ -104,6 +105,7 @@ type Committed struct {
 	Month                            time.Time
 	Installments, Occurrences, Total int64
 	Currency                         money.Currency
+	Prices                           []Price
 }
 
 // committedKinds are the schedule kinds a committed amount counts (A57).
@@ -135,18 +137,34 @@ func (s *Service) Committed(ctx context.Context, userID int64, month time.Time) 
 	if err != nil {
 		return Committed{}, err
 	}
-	kinds := make(map[uuid.UUID]domain.Kind, len(schedules))
+	byID := make(map[uuid.UUID]domain.Schedule, len(schedules))
 	for _, sch := range schedules {
-		kinds[sch.ID] = sch.Kind
+		byID[sch.ID] = sch
 	}
 	os, err := s.repo.Occurrences(ctx, userID, month, month.AddDate(0, 1, -1), uuid.Nil)
 	if err != nil {
 		return Committed{}, err
 	}
+	today := s.clk.Today()
 	for _, o := range os {
-		if o.State == domain.Expected && committedKinds[kinds[o.ScheduleID]] {
-			out.Occurrences += o.Amount
+		sch := byID[o.ScheduleID]
+		if o.State != domain.Expected || !committedKinds[sch.Kind] {
+			continue
 		}
+		amount := o.Amount
+		if sch.Currency != base {
+			// P8 amendment A72: valued in the base currency at today's prices.
+			m, err := money.New(o.Amount, sch.Currency)
+			if err != nil {
+				return Committed{}, err
+			}
+			v, used, err := s.prices.Convert(ctx, m, base, today)
+			if err != nil {
+				return Committed{}, err
+			}
+			amount, out.Prices = v.Amount(), append(out.Prices, used...)
+		}
+		out.Occurrences += amount
 	}
 	out.Total = out.Installments + out.Occurrences
 	return out, nil

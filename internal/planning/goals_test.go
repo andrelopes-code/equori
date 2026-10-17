@@ -76,7 +76,13 @@ func TestGoalErrors(t *testing.T) {
 	f.h.ExpectProblem(post(body(100)), http.StatusBadRequest, "invalid_request", "account_ids")
 	f.h.ExpectProblem(post(body(0, f.savings)), http.StatusUnprocessableEntity, "validation_failed", "target")
 	wise := f.h.Account("Wise", "asset", "checking", map[string]any{"currency": "USD"})
-	f.h.ExpectProblem(post(body(100, wise)), http.StatusUnprocessableEntity, "currency_unsupported", "account_ids")
+	f.h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "USD", "quote_instrument": "BRL", "date": "2026-11-10", "value": "5.5"}, http.StatusCreated, nil)
+	dollars := body(100, wise)
+	dollars["name"] = "Dollars"
+	f.h.MustDo(http.MethodPost, "/api/v1/goals", dollars, http.StatusCreated, nil)
+	f.h.Record("2026-11-01", apitest.Posting(f.savings, 100), apitest.Posting(f.salary, -100))
+	f.h.ExpectProblem(post(map[string]any{"name": "Euro", "target": map[string]any{"amount": 100, "currency": "EUR"}, "due_on": "2027-06-30", "account_ids": []string{f.savings}}),
+		http.StatusUnprocessableEntity, "price_missing", "")
 	f.goal("Goal", 100, f.savings)
 	f.h.ExpectProblem(post(body(100, f.savings)), http.StatusUnprocessableEntity, "validation_failed", "name")
 	other := f.h.Login("other@example.com")

@@ -15,6 +15,7 @@ import (
 type GoalView struct {
 	domain.Goal
 	Progress domain.GoalProgress
+	Prices   []Price
 }
 
 func (s *Service) CreateGoal(ctx context.Context, userID int64, name string, target money.Money, dueOn time.Time, accounts []uuid.UUID) (GoalView, error) {
@@ -22,12 +23,8 @@ func (s *Service) CreateGoal(ctx context.Context, userID int64, name string, tar
 	if err := g.Validate(); err != nil {
 		return GoalView{}, err
 	}
-	base, err := s.ledger.BaseCurrency(ctx, userID)
-	if err != nil {
-		return GoalView{}, err
-	}
-	if g.Currency != base {
-		return GoalView{}, &domain.FieldError{Field: "target.currency", Message: "must be the base currency " + string(base), Err: domain.ErrValidation}
+	if _, err := money.ParseCurrency(string(g.Currency)); err != nil {
+		return GoalView{}, &domain.FieldError{Field: "target.currency", Message: "must be a currency", Err: domain.ErrValidation}
 	}
 	facts, err := s.ledger.AccountFacts(ctx, userID)
 	if err != nil {
@@ -42,9 +39,6 @@ func (s *Service) CreateGoal(ctx context.Context, userID int64, name string, tar
 		if !ok || (a.Class != "asset" && a.Class != "liability") {
 			return GoalView{}, &domain.FieldError{Field: "account_ids", Message: "must be balance accounts of the user", Err: domain.ErrValidation}
 		}
-		if a.Instrument != base {
-			return GoalView{}, &CurrencyError{Field: "account_ids"}
-		}
 	}
 	var created domain.Goal
 	err = s.repo.InTx(ctx, func(repo Repository) error {
@@ -58,17 +52,30 @@ func (s *Service) CreateGoal(ctx context.Context, userID int64, name string, tar
 	return s.measure(ctx, userID, created)
 }
 
-// measure sums the booked balances of the goal's accounts today (A55).
+// measure sums the booked balances of the goal's accounts today, each valued in the
+// goal currency with stored prices (A55, P8 amendment A72).
 func (s *Service) measure(ctx context.Context, userID int64, g domain.Goal) (GoalView, error) {
+	today := s.clk.Today()
 	var current int64
+	var prices []Price
 	for _, id := range g.AccountIDs {
-		b, err := s.ledger.Balance(ctx, userID, id, s.clk.Today())
+		b, err := s.ledger.Balance(ctx, userID, id, today)
 		if err != nil {
 			return GoalView{}, err
 		}
-		current += b
+		if b.IsZero() {
+			continue
+		}
+		if b.Currency() != g.Currency {
+			var used []Price
+			if b, used, err = s.prices.Convert(ctx, b, g.Currency, today); err != nil {
+				return GoalView{}, err
+			}
+			prices = append(prices, used...)
+		}
+		current += b.Amount()
 	}
-	return GoalView{Goal: g, Progress: g.Measure(current)}, nil
+	return GoalView{Goal: g, Progress: g.Measure(current), Prices: prices}, nil
 }
 
 func (s *Service) Goal(ctx context.Context, userID int64, id uuid.UUID) (GoalView, error) {

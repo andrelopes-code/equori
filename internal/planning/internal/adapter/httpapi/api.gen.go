@@ -41,6 +41,30 @@ func (e OccurrenceState) Valid() bool {
 	}
 }
 
+// Defines values for PriceSource.
+const (
+	B3Cotahist PriceSource = "b3_cotahist"
+	BcbPtax    PriceSource = "bcb_ptax"
+	Csv        PriceSource = "csv"
+	Manual     PriceSource = "manual"
+)
+
+// Valid indicates whether the value is a known member of the PriceSource enum.
+func (e PriceSource) Valid() bool {
+	switch e {
+	case B3Cotahist:
+		return true
+	case BcbPtax:
+		return true
+	case Csv:
+		return true
+	case Manual:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for RecurrenceAdjustment.
 const (
 	Following         RecurrenceAdjustment = "following"
@@ -195,7 +219,10 @@ type Committed struct {
 	Installments Money  `json:"installments"`
 	Month        string `json:"month"`
 	Occurrences  Money  `json:"occurrences"`
-	Total        Money  `json:"total"`
+
+	// Prices Prices that value occurrences in another currency at today (P8 amendment A72).
+	Prices *[]Price `json:"prices,omitempty"`
+	Total  Money    `json:"total"`
 }
 
 // EndInput defines model for EndInput.
@@ -209,17 +236,21 @@ type FieldError struct {
 	Message string `json:"message"`
 }
 
-// Goal current is the sum of the booked balances of the accounts today; remaining is max(target - current, 0);
-// progress_bp is current / target in basis points, rounded down, between 0 and 10000.
+// Goal current is the sum of the booked balances of the accounts today, valued in the target currency with
+// stored prices (P8 amendment A72); remaining is max(target - current, 0); progress_bp is current / target
+// in basis points, rounded down, between 0 and 10000.
 type Goal struct {
 	AccountIds []openapi_types.UUID `json:"account_ids"`
 	Current    Money                `json:"current"`
 	DueOn      openapi_types.Date   `json:"due_on"`
 	Id         openapi_types.UUID   `json:"id"`
 	Name       string               `json:"name"`
-	ProgressBp int                  `json:"progress_bp"`
-	Remaining  Money                `json:"remaining"`
-	Target     Money                `json:"target"`
+
+	// Prices Prices that value accounts in another currency (P8 amendment A72).
+	Prices     *[]Price `json:"prices,omitempty"`
+	ProgressBp int      `json:"progress_bp"`
+	Remaining  Money    `json:"remaining"`
+	Target     Money    `json:"target"`
 }
 
 // GoalInput defines model for GoalInput.
@@ -278,6 +309,22 @@ type OccurrenceList struct {
 // OccurrenceState defines model for OccurrenceState.
 type OccurrenceState string
 
+// Price defines model for Price.
+type Price struct {
+	Date            openapi_types.Date `json:"date"`
+	Instrument      string             `json:"instrument"`
+	QuoteInstrument string             `json:"quote_instrument"`
+	Source          PriceSource        `json:"source"`
+
+	// Value Positive exact decimal with at most 12 decimals (ADR 005).
+	//
+	// Example: 5.4830
+	Value Rate `json:"value"`
+}
+
+// PriceSource defines model for Price.Source.
+type PriceSource string
+
 // Problem defines model for Problem.
 type Problem struct {
 	// Code Stable error identifier. Values: invalid_request, request_too_large, invalid_credentials,
@@ -317,6 +364,11 @@ type ProjectionPoint struct {
 	OccurrenceId openapi_types.UUID `json:"occurrence_id"`
 	ScheduleId   openapi_types.UUID `json:"schedule_id"`
 }
+
+// Rate Positive exact decimal with at most 12 decimals (ADR 005).
+//
+// Example: 5.4830
+type Rate = string
 
 // RealizeInput defines model for RealizeInput.
 type RealizeInput struct {

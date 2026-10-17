@@ -5,6 +5,7 @@ package planning
 import (
 	"context"
 	"encoding/json/v2"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -35,7 +36,7 @@ type Module struct {
 const consumer = "planning"
 
 func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, md *marketdata.Module, clk clock.Clock, log *slog.Logger) *Module {
-	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l}, calendarPort{md}, clk)
+	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l}, calendarPort{md}, pricesPort{md}, clk)
 	m := &Module{http: httpapi.NewServer(svc, log), svc: svc, log: log}
 	// P7 amendment A51: every change of a transaction can change the occurrence it realizes.
 	for _, t := range []string{ledger.EventTransactionRecorded, ledger.EventTransactionCorrected, ledger.EventTransactionCategorized, ledger.EventTransactionVoided} {
@@ -121,9 +122,25 @@ func (p ledgerPort) CategoryTotal(ctx context.Context, userID int64, categoryID 
 	return m.Amount(), err
 }
 
-func (p ledgerPort) Balance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time) (int64, error) {
-	m, err := p.l.Balance(ctx, userID, accountID, date)
-	return m.Amount(), err
+func (p ledgerPort) Balance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time) (money.Money, error) {
+	return p.l.Balance(ctx, userID, accountID, date)
+}
+
+type pricesPort struct{ md *marketdata.Module }
+
+func (p pricesPort) Convert(ctx context.Context, q money.Money, to money.Currency, date time.Time) (money.Money, []app.Price, error) {
+	c, err := p.md.Convert(ctx, q, to, date)
+	if errors.Is(err, marketdata.ErrPriceMissing) {
+		return money.Money{}, nil, fmt.Errorf("%w: %w", app.ErrPriceMissing, err)
+	}
+	if err != nil {
+		return money.Money{}, nil, err
+	}
+	prices := make([]app.Price, len(c.Prices))
+	for i, x := range c.Prices {
+		prices[i] = app.Price{Instrument: x.Instrument, Quote: x.Quote, Date: x.Date, Value: x.Value, Source: x.Source}
+	}
+	return c.Value, prices, nil
 }
 
 func (p ledgerPort) Commitment(ctx context.Context, userID int64, cardID uuid.UUID, month time.Time) (int64, error) {

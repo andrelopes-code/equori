@@ -3475,8 +3475,9 @@ components:
       type: object
       required: [id, name, target, due_on, account_ids, current, remaining, progress_bp]
       description: |
-        current is the sum of the booked balances of the accounts today; remaining is max(target - current, 0);
-        progress_bp is current / target in basis points, rounded down, between 0 and 10000.
+        current is the sum of the booked balances of the accounts today, valued in the target currency with
+        stored prices (P8 amendment A72); remaining is max(target - current, 0); progress_bp is current / target
+        in basis points, rounded down, between 0 and 10000.
       properties:
         id:
           type: string
@@ -3499,6 +3500,11 @@ components:
           $ref: "#/components/schemas/Money"
         progress_bp:
           type: integer
+        prices:
+          type: array
+          description: Prices that value accounts in another currency (P8 amendment A72).
+          items:
+            $ref: "#/components/schemas/Price"
     GoalPage:
       type: object
       required: [items]
@@ -3560,6 +3566,11 @@ components:
           $ref: "#/components/schemas/Money"
         total:
           $ref: "#/components/schemas/Money"
+        prices:
+          type: array
+          description: Prices that value occurrences in another currency at today (P8 amendment A72).
+          items:
+            $ref: "#/components/schemas/Price"
     SkipInput:
       type: object
       additionalProperties: false

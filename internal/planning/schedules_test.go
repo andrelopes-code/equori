@@ -201,15 +201,15 @@ func TestScheduleValidation(t *testing.T) {
 	f.h.MustDo(http.MethodPost, "/api/v1/schedules", transfer, http.StatusCreated, nil)
 }
 
-// A47: P7 schedules are in the base currency.
-func TestScheduleCurrencyUnsupported(t *testing.T) {
+// P8 amendment A72: the amount is in the currency of account_id.
+func TestScheduleAmountInAccountCurrency(t *testing.T) {
 	f := newFixture(t, "2026-11-01")
 	wise := f.h.Account("Wise", "asset", "checking", map[string]any{"currency": "USD"})
 	r := f.h.Do(http.MethodPost, "/api/v1/schedules", map[string]any{
 		"kind": "bill", "account_id": wise, "counterpart_id": f.rent, "description": "x",
 		"amount": apitest.BRL(100), "recurrence": monthly("2026-11-01", 5, ""),
 	})
-	f.h.ExpectProblem(r, http.StatusUnprocessableEntity, "currency_unsupported", "account_id")
+	f.h.ExpectProblem(r, http.StatusUnprocessableEntity, "validation_failed", "amount.currency")
 }
 
 func TestScheduleOfAnotherUser(t *testing.T) {
