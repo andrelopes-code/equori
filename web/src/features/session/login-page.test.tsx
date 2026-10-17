@@ -69,16 +69,36 @@ describe("login", () => {
     expect(state.bodies).toEqual(['{"email":"a@b.c","password":"pw"}']);
   });
 
-  it("drops an external redirect target after signing in", async () => {
-    const { fetch } = sessionApi({ loggedIn: false });
-    const { router } = await renderApp("/login?redirect=%2F%2Fevil.example", {
-      fetch,
-    });
-    await signIn("a@b.c", "pw");
-    await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/");
-    });
-  });
+  it.each([
+    {
+      name: "scheme-relative URL",
+      redirect: "%2F%2Fevil.example",
+      landing: "/",
+    },
+    { name: "backslash", redirect: "%2F%5Cevil.example", landing: "/" },
+    {
+      name: "tab between slashes",
+      redirect: "%2F%09%2Fevil.example",
+      landing: "/",
+    },
+    {
+      name: "local path",
+      redirect: "%2Ftransactions",
+      landing: "/transactions",
+    },
+  ])(
+    "lands on $landing after signing in with a $name redirect",
+    async ({ redirect, landing }) => {
+      const { fetch } = sessionApi({ loggedIn: false });
+      const { router } = await renderApp(`/login?redirect=${redirect}`, {
+        fetch,
+      });
+      await signIn("a@b.c", "pw");
+      await waitFor(() => {
+        expect(router.state.location.pathname).toBe(landing);
+      });
+    },
+  );
 
   it("shows invalid credentials in an alert and keeps focus on the password", async () => {
     const { fetch } = sessionApi({

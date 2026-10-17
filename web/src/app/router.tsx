@@ -29,9 +29,10 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
   component: Outlet,
 });
 
-// A leading "//" or "/\\" is a scheme-relative URL to another origin.
+// Rejects "//" and "/\\" (scheme-relative URLs) and control characters, which browsers strip: "/\t/evil" becomes "//evil".
 function isLocalPath(path: string): boolean {
-  return /^\/(?![/\\])/.test(path);
+  // eslint-disable-next-line no-control-regex -- the control characters are the subject of the check.
+  return /^\/(?![/\\])/.test(path) && !/[\u0000-\u001f\u007f]/.test(path);
 }
 
 const loginRoute = createRoute({
