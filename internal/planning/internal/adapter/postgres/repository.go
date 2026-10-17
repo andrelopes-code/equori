@@ -316,6 +316,10 @@ func closed(err error) error {
 
 func (r *Repository) Realize(ctx context.Context, userID int64, id, txID uuid.UUID, by string) (domain.Occurrence, error) {
 	row, err := r.q.RealizeOccurrence(ctx, RealizeOccurrenceParams{UserID: userID, ID: id, TransactionID: nullUUID(txID), RealizedBy: &by})
+	// I07: another realization of the transaction committed after this one checked for it.
+	if pe, ok := errors.AsType[*pgconn.PgError](err); ok && pe.Code == uniqueViolation {
+		return domain.Occurrence{}, app.ErrTransactionInUse
+	}
 	if err != nil {
 		return domain.Occurrence{}, closed(err)
 	}

@@ -133,3 +133,22 @@ func TestChangesConflicts(t *testing.T) {
 		t.Errorf("a tick after the end generated %+v", later)
 	}
 }
+
+// A52: a move cannot put an occurrence where the schedule produces none: inside a pause
+// (422 on date) or on or after the end (409 schedule_ended).
+func TestMoveRespectsPausesAndEnd(t *testing.T) {
+	f := newFixture(t, "2026-11-01")
+	id := f.rentSchedule()
+	f.h.MustDo(http.MethodPost, "/api/v1/schedules/"+id+"/pauses", map[string]string{"from": "2027-02-01", "to": "2027-03-31"}, http.StatusCreated, nil)
+	f.h.MustDo(http.MethodPost, "/api/v1/schedules/"+id+"/end", map[string]string{"from": "2027-06-01"}, http.StatusOK, nil)
+	jan := f.occurrence(id, 3)
+
+	move := func(date string) apitest.Response {
+		return f.h.Do(http.MethodPost, "/api/v1/occurrences/"+jan.ID+"/move", map[string]string{"date": date})
+	}
+	f.h.ExpectProblem(move("2027-02-15"), http.StatusUnprocessableEntity, "validation_failed", "date")
+	f.h.ExpectProblem(move("2027-06-01"), http.StatusConflict, "schedule_ended", "")
+	if r := move("2027-01-31"); r.Status != http.StatusOK {
+		t.Fatalf("move before the pause: %d %s", r.Status, r.Body)
+	}
+}

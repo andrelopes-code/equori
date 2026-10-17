@@ -1,8 +1,10 @@
 package planning_test
 
 import (
+	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
 )
@@ -163,4 +165,44 @@ func TestRealizeOccurrenceOfAnotherUser(t *testing.T) {
 	if r.Status != http.StatusNotFound {
 		t.Fatalf("status = %d, want 404", r.Status)
 	}
+}
+
+// I07 under concurrency: a manual realization racing the automatic one for the same
+// transaction is refused with 409 transaction_in_use, not a database error.
+func TestManualRealizationRacingAutomaticIs409(t *testing.T) {
+	f := newFixture(t, "2026-11-01")
+	id := f.rentSchedule()
+	misc := f.h.Account("Misc", "expense", "", nil)
+	tx := f.pay("2026-11-05", 210000, misc, f.landlord)
+	november, december := f.occurrence(id, 1), f.occurrence(id, 2)
+
+	ctx := t.Context()
+	auto, err := f.h.Pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = auto.Rollback(ctx) }()
+	if _, err := auto.Exec(ctx, `UPDATE planning_occurrence SET state = 'realized', transaction_id = $1, realized_by = 'auto' WHERE id = $2`, tx, november.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	done := make(chan apitest.Response, 1)
+	go func() {
+		done <- f.h.Do(http.MethodPost, "/api/v1/occurrences/"+december.ID+"/realize", map[string]any{"transaction_id": tx})
+	}()
+	waiting, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	for {
+		var n int
+		if err := f.h.Pool.QueryRow(waiting, `SELECT count(*) FROM pg_locks WHERE NOT granted`).Scan(&n); err != nil {
+			t.Fatalf("the manual realization never waited: %v", err)
+		}
+		if n > 0 {
+			break
+		}
+	}
+	if err := auto.Commit(ctx); err != nil {
+		t.Fatal(err)
+	}
+	f.h.ExpectProblem(<-done, http.StatusConflict, "transaction_in_use", "")
 }

@@ -118,7 +118,7 @@ func (s Schedule) Planned(from, to time.Time, days BusinessDays) []Planned {
 				seq = last + 1
 			}
 			last = seq
-			if d.Date.Before(from) || s.paused(d.Date) || (s.EndsOn != nil && !d.Date.Before(*s.EndsOn)) {
+			if d.Date.Before(from) || s.Paused(d.Date) || (s.EndsOn != nil && !d.Date.Before(*s.EndsOn)) {
 				continue
 			}
 			out = append(out, Planned{Sequence: seq, Date: d.Date, Amount: t.Amount})
@@ -127,7 +127,8 @@ func (s Schedule) Planned(from, to time.Time, days BusinessDays) []Planned {
 	return out
 }
 
-func (s Schedule) paused(d time.Time) bool {
+// Paused reports whether d falls inside a pause of the schedule (A52).
+func (s Schedule) Paused(d time.Time) bool {
 	for _, p := range s.Pauses {
 		if !d.Before(p.From) && !d.After(p.To) {
 			return true

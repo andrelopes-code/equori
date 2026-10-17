@@ -15,7 +15,7 @@ var lastDate = time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC)
 
 // changeOccurrence applies change to an occurrence of the user and returns it as read.
 func (s *Service) changeOccurrence(ctx context.Context, userID int64, id uuid.UUID,
-	change func(Repository) (domain.Occurrence, error),
+	change func(Repository, domain.Occurrence, domain.Schedule) (domain.Occurrence, error),
 ) (OccurrenceView, error) {
 	var out OccurrenceView
 	err := s.repo.InTx(ctx, func(repo Repository) error {
@@ -27,7 +27,7 @@ func (s *Service) changeOccurrence(ctx context.Context, userID int64, id uuid.UU
 		if err != nil {
 			return err
 		}
-		changed, err := change(repo)
+		changed, err := change(repo, o, sch)
 		out = s.view(changed, sch)
 		return err
 	})
@@ -36,14 +36,23 @@ func (s *Service) changeOccurrence(ctx context.Context, userID int64, id uuid.UU
 
 // Skip skips an expected occurrence (T03).
 func (s *Service) Skip(ctx context.Context, userID int64, id uuid.UUID, reason string) (OccurrenceView, error) {
-	return s.changeOccurrence(ctx, userID, id, func(repo Repository) (domain.Occurrence, error) {
+	return s.changeOccurrence(ctx, userID, id, func(repo Repository, _ domain.Occurrence, _ domain.Schedule) (domain.Occurrence, error) {
 		return repo.Skip(ctx, userID, id, reason)
 	})
 }
 
 // Move moves an expected occurrence; it keeps its sequence and is never regenerated (A52).
+// The new date is one the schedule produces dates on: outside its pauses and before its end.
 func (s *Service) Move(ctx context.Context, userID int64, id uuid.UUID, date time.Time) (OccurrenceView, error) {
-	return s.changeOccurrence(ctx, userID, id, func(repo Repository) (domain.Occurrence, error) {
+	return s.changeOccurrence(ctx, userID, id, func(repo Repository, o domain.Occurrence, sch domain.Schedule) (domain.Occurrence, error) {
+		switch {
+		case o.State != domain.Expected:
+			return domain.Occurrence{}, ErrOccurrenceClosed
+		case endsBefore(sch, date):
+			return domain.Occurrence{}, ErrScheduleEnded
+		case sch.Paused(date):
+			return domain.Occurrence{}, &domain.FieldError{Field: "date", Message: "falls inside a pause of the schedule", Err: domain.ErrValidation}
+		}
 		return repo.Move(ctx, userID, id, date)
 	})
 }
