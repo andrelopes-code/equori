@@ -1,0 +1,8 @@
+minimumReleaseAgeExclude:
+  - "@slotted/core@0.1.0-beta.2"
+  - "@slotted/react@0.1.0-beta.2"
+  - "@slotted/theme@0.1.0-beta.2"
+  - "@slotted/themes@0.1.0-beta.2"
+peerDependencyRules:
+  allowedVersions:
+    eslint-plugin-react>eslint: "10"

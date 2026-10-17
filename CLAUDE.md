@@ -12,7 +12,7 @@ Decisions: `docs/adr/`. Read the relevant ADR before changing what it covers.
 | `make db-up` / `make dev` | Start local Postgres on `127.0.0.1:54329`, run the app on `:8080` |
 | `make web-dev` | Vite dev server for `web/`, proxying `/api` to `make dev` |
 | `make web-check` | Build `web/`, then typecheck, ESLint and Prettier check |
-| `make gen` | Regenerate sqlc and oapi-codegen output after editing `db/queries`, `db/migrations` or `api/openapi.yaml` |
+| `make gen` | Regenerate sqlc and oapi-codegen output after editing `db/queries`, `db/migrations` or `api/openapi.yaml`; also compiles the theme |
 | `make vuln` | govulncheck |
 | `make hooks` | Enable the pre-commit hook (`make check`) |
 
@@ -93,3 +93,40 @@ Write a comment only when it carries information the code cannot: a non-obvious 
 Conventional Commits 1.0: `<type>(<scope>): <summary>`, imperative, lowercase, no trailing period, summary at most 72 characters. Types: `feat`, `fix`, `refactor`, `perf`, `test`, `docs`, `build`, `ci`, `chore`. Scope is the module, `platform`, `api`, `web` or `deps`. A breaking change uses `!` after the scope and a `BREAKING CHANGE:` footer. The body explains what changed and why, wrapped at 72 columns.
 
 Commits, pull requests, tags and release notes never mention AI tools or assistants: no `Co-Authored-By` trailers, no "generated with" footers, no tool names. `.claude/settings.json` sets empty attribution.
+
+## Slotted UI (@slotted/react)
+
+Before writing or changing UI, read `web/node_modules/@slotted/react/dist/docs/index.md`, then the file of each family you use. These files match the installed version: prefer them over prior knowledge of the library.
+
+- Import components from `@slotted/react` or the family subpath that each file's Import section shows.
+- Load `@slotted/react/styles.css` and `@slotted/themes/default.css` once, at the application entry.
+- Set `data-slotted-theme="default"` on `<html>`. `data-slotted-scheme` (`light`, `dark`, `high-contrast`) and `data-slotted-density` (`comfortable`, `compact`, `dense`) apply to any element and its descendants.
+- Change a family's appearance through its props (`size`, `variant`, `tone` where it has them), not with CSS that targets its parts.
+- Application CSS uses `var(--slotted-*)` tokens for color, spacing and radius, inside a layer declared after the library's: `@layer slotted, app;`.
+- To render a family as another element, such as a router link or a trigger, pass `render`.
+- In CSS and tests, select a family by `[data-ui="<family>"]` and its parts by `[data-part="<part>"]`.
+
+#### Tasks
+
+Read the skill before the task:
+
+- Compose or change a screen — a list, a record, a form, an overview: `web/node_modules/@slotted/react/dist/docs/skills/compose-screen/SKILL.md`
+- Show what a screen draws while it waits, and its empty and error states: `web/node_modules/@slotted/react/dist/docs/skills/waiting-states/SKILL.md`
+- Review a screen against the guidelines, or fix what a review found: `web/node_modules/@slotted/react/dist/docs/skills/review-screen/SKILL.md`
+- Write a component or element that no family draws: `web/node_modules/@slotted/react/dist/docs/skills/build-own-element/SKILL.md`
+- Change the brand colour, the scheme, the density or a control's shape: `web/node_modules/@slotted/react/dist/docs/skills/theme-app/SKILL.md`
+
+## web/
+
+File names under `web/src` are kebab-case (O1). This is the only exception to the snake_case rule of Naming.
+
+| ID | Rule | Gate |
+|---|---|---|
+| O1 | One component per file; the file is named after the component in kebab-case. | review |
+| O2 | A feature imports another feature only through its `index.ts`. | ESLint `no-restricted-imports` |
+| O3 | `@/api/client` is imported only by `features/*/api.ts`, `features/session` and `app/providers.tsx`. | ESLint override by glob |
+| O4 | `features/*` never imports `@/app/*`. | ESLint |
+| O5 | App CSS lives in co-located `*.module.css` inside `@layer app`, reads only `var(--slotted-*)` and never targets `[data-ui]` or `[data-part]`. | review, theme-app "Done" rule |
+| O6 | JSX contains no user-visible literal text; text comes from `useT()`. | `react/jsx-no-literals` |
+| O7 | Money travels as an integer plus an instrument code. Integer-text conversion is string manipulation with the instrument scale, never floating-point division. | Money type, tests of `format.ts` |
+| O8 | `*.gen.*` files are never edited by hand. | existing convention |
