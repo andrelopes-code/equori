@@ -248,6 +248,29 @@ func TestSyncCardChargeIsPostedOnTheBill(t *testing.T) {
 	}
 }
 
+// Deferred P6 minor: a pending charge whose id disappears and comes back posted under a new
+// id with a bill matches its transaction and moves it to the bill's statement, as S53 does
+// for an unchanged id.
+func TestSyncCardChargePostedUnderANewID(t *testing.T) {
+	f := newSyncFixture(t)
+	card := f.h.Card("Nubank card", 3, 10, "next")
+	f.mapTo(pluggy.SubtypeCard, card)
+	f.line(pluggy.SubtypeCard, cardLine("card-1", "2026-11-02", "230.00", "PENDING", nil))
+	f.sync()
+	_, tx := f.recordOf("card-1")
+
+	f.p.RemoveTransaction(nubankItem+"-card", "card-1")
+	f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-dec", DueDate: "2026-12-10T00:00:00.000Z", TotalAmount: "230.00"})
+	f.line(pluggy.SubtypeCard, cardLine("card-1b", "2026-11-02", "230.00", "POSTED", new("bill-dec")))
+	f.sync()
+	if state, matched := f.recordOf("card-1b"); state != "matched" || matched != tx {
+		t.Fatalf("new record = %s on %s, want matched on %s", state, matched, tx)
+	}
+	if p := f.cardPosting(tx, card); p.Status != "cleared" || p.Statement != "2026-12" || p.Amount.Amount != -23000 {
+		t.Fatalf("posted posting = %+v", p)
+	}
+}
+
 // P6 Review Focus 3: a posted update for a reconciled posting changes nothing in the ledger
 // and records the difference on the record.
 func TestSyncUpdateOfAReconciledPosting(t *testing.T) {

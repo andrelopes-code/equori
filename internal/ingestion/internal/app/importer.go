@@ -301,6 +301,10 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 		rec.State, rec.TransactionID = domain.StateMatched, matches[i].TransactionID
 		if slices.Contains(conflicts, i) {
 			rec.State, rec.TransactionID, rec.Candidates = domain.StateNeedsReview, uuid.Nil, []uuid.UUID{matches[i].TransactionID}
+			continue
+		}
+		if err := s.billMatched(ctx, rec, matches[i].Pending); err != nil {
+			return err
 		}
 	}
 	if err := s.create(ctx, batch.UserID, sync, creates, created); err != nil {
@@ -382,6 +386,23 @@ func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRec
 	withFacts(rec, r)
 	rec.UnappliedChange = strings.Join(notes, "; ")
 	return true, nil
+}
+
+// billMatched moves a matched card posting to the statement of the line's bill, as update
+// does for a line that keeps its id (P6 A36): a pending charge may come back posted under a
+// new id with its bill.
+func (s *Service) billMatched(ctx context.Context, rec *domain.ExternalRecord, pending bool) error {
+	if rec.DueDate == nil {
+		return nil
+	}
+	err := s.ledger.UpdateImportedPosting(ctx, rec.UserID, rec.ID, pending, rec.DueDate)
+	switch {
+	case errors.Is(err, ErrReconciled):
+		rec.UnappliedChange = "the provider reports the line" + billNote(rec.DueDate) + "; the posting is reconciled and keeps its status and statement"
+	case err != nil && !errors.Is(err, ErrNotFound):
+		return err
+	}
+	return nil
 }
 
 func billNote(due *time.Time) string {
