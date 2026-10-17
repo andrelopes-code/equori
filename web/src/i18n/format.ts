@@ -42,13 +42,18 @@ export function parseAmount(
   locale: Locale,
 ): number | null {
   const [group, decimal] = locale === "pt-BR" ? [".", ","] : [",", "."];
-  const t = text.trim().split(group).join("");
-  const m = new RegExp(`^(-?)(\\d+)(?:\\${decimal}(\\d*))?$`).exec(t);
+  const g = `\\${group}`;
+  const d = `\\${decimal}`;
+  const m = new RegExp(
+    `^(-?)(\\d{1,3}(?:${g}\\d{3})+|\\d+)(?:${d}(\\d*))?$`,
+  ).exec(text.trim());
   if (m === null) return null;
   const frac = m[3] ?? "";
   if (frac.length > scale) return null;
-  const n = Number(`${m[1] ?? ""}${m[2] ?? ""}${frac.padEnd(scale, "0")}`);
-  return Number.isSafeInteger(n) ? n : null;
+  const int = (m[2] ?? "").split(group).join("");
+  const n = Number(`${m[1] ?? ""}${int}${frac.padEnd(scale, "0")}`);
+  if (!Number.isSafeInteger(n)) return null;
+  return n === 0 ? 0 : n;
 }
 
 export function formatDate(iso: string, locale: Locale): string {

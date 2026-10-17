@@ -45,12 +45,26 @@ describe("parseAmount", () => {
     ["1,234", 2, "pt-BR", null],
     ["12a", 2, "en", null],
     ["99999999999999999", 2, "en", null],
+    ["12,34", 2, "en", null],
+    ["12.34", 2, "pt-BR", null],
+    ["1,2.3", 2, "pt-BR", null],
+    ["1.2,3", 2, "en", null],
+    ["1,234,567.89", 2, "en", 123456789],
+    ["1.234", 2, "en", null],
+    ["12", 0, "en", 12],
+    ["12.5", 0, "en", null],
   ] as const)(
     "parses %j at scale %d in %s as %s",
     (text, scale, locale, want) => {
       expect(parseAmount(text, scale, locale)).toBe(want);
     },
   );
+});
+
+describe("parseAmount negative zero", () => {
+  it("returns 0, not -0", () => {
+    expect(Object.is(parseAmount("-0", 2, "en"), 0)).toBe(true);
+  });
 });
 
 describe("formatDate", () => {
