@@ -1,0 +1,13 @@
+@layer app {
+  .voided {
+    text-decoration: line-through;
+  }
+
+  .category {
+    color: var(--slotted-text-subtle);
+  }
+
+  .sentinel {
+    block-size: 1px;
+  }
+}

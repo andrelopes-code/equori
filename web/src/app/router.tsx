@@ -20,6 +20,10 @@ import { useSessionExpiry } from "@/app/providers";
 import { AppFrame } from "@/app/shell/app-frame";
 import { HomePage } from "@/features/accounts";
 import { LoginPage, meQuery } from "@/features/session";
+import {
+  TransactionsPage,
+  validateTransactionSearch,
+} from "@/features/transactions";
 
 export interface RouterContext {
   queryClient: QueryClient;
@@ -82,11 +86,18 @@ const homeRoute = createRoute({
   component: HomePage,
 });
 
+const transactionsRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "transactions",
+  validateSearch: validateTransactionSearch,
+  component: TransactionsPage,
+});
+
 export const routeTree = rootRoute.addChildren([
   loginRoute,
   authedRoute.addChildren([
     homeRoute,
-    screen("transactions"),
+    transactionsRoute,
     screen("transactions/new"),
     screen("transactions/$id"),
     screen("transactions/$id/correct"),

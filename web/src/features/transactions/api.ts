@@ -3,22 +3,15 @@ import type { Client } from "openapi-fetch";
 
 import { unwrap } from "@/api/problem";
 import type { paths } from "@/api/schema.gen";
+import type { TransactionSearch } from "@/features/transactions/search";
 
-export interface TransactionSearch {
-  account_id?: string;
-  payee_id?: string;
-  tag?: string;
-  from?: string;
-  to?: string;
-  uncategorized?: boolean;
-  q?: string;
+export interface TransactionQuery extends TransactionSearch {
   limit?: number;
 }
 
 export const transactionKeys = {
   all: ["transactions"] as const,
-  list: (search: TransactionSearch) =>
-    ["transactions", "list", search] as const,
+  list: (search: TransactionQuery) => ["transactions", "list", search] as const,
   detail: (id: string) => ["transactions", "detail", id] as const,
   versions: (id: string) => ["transactions", "versions", id] as const,
 };
@@ -28,7 +21,7 @@ const countLimit = 200;
 
 export function transactionsInfiniteQuery(
   api: Client<paths>,
-  search: TransactionSearch,
+  search: TransactionQuery,
 ) {
   return infiniteQueryOptions({
     queryKey: transactionKeys.list(search),
