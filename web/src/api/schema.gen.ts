@@ -318,6 +318,80 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/instruments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Instruments of the instance in code order. */
+        get: operations["listInstruments"];
+        put?: never;
+        /** Define a security for the whole instance (P8 amendment A59). */
+        post: operations["defineInstrument"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instruments/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One instrument. */
+        get: operations["getInstrument"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The chosen price of each date with prices in [from, to], at most 366 days (P8 amendment A60). */
+        get: operations["listPrices"];
+        put?: never;
+        /** Record a manual price; a manual price of the same date is replaced. */
+        post: operations["recordPrice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prices/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record the prices of a CSV file as source csv, all or nothing.
+         * @description Header `instrument,quote_instrument,date,value`, at most 10,000 lines. A rejected line returns
+         *     422 with field `line N`, N counting the header as line 1.
+         */
+        post: operations["importPrices"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/{id}/billing-cycle-rules": {
         parameters: {
             query?: never;
@@ -2246,6 +2320,57 @@ export interface components {
         HolidayList: {
             items: components["schemas"]["Holiday"][];
         };
+        /** @enum {string} */
+        InstrumentType: "currency" | "stock" | "fii" | "etf" | "bdr" | "fixed_income" | "fund" | "crypto";
+        Instrument: {
+            code: string;
+            type: components["schemas"]["InstrumentType"];
+            scale: number;
+            name: string;
+            /** @description Absent for currencies. */
+            quote_currency?: string;
+            /** @enum {string} */
+            exchange?: "B3";
+        };
+        InstrumentInput: {
+            code: string;
+            type: components["schemas"]["InstrumentType"];
+            scale: number;
+            name: string;
+            quote_currency: string;
+            /** @enum {string} */
+            exchange?: "B3";
+        };
+        InstrumentList: {
+            items: components["schemas"]["Instrument"][];
+        };
+        /**
+         * @description Positive exact decimal with at most 12 decimals (ADR 005).
+         * @example 5.4830
+         */
+        Rate: string;
+        Price: {
+            instrument: string;
+            quote_instrument: string;
+            /** Format: date */
+            date: string;
+            value: components["schemas"]["Rate"];
+            /** @enum {string} */
+            source: "manual" | "csv" | "bcb_ptax" | "b3_cotahist";
+        };
+        PriceInput: {
+            instrument: string;
+            quote_instrument: string;
+            /** Format: date */
+            date: string;
+            value: components["schemas"]["Rate"];
+        };
+        PriceList: {
+            items: components["schemas"]["Price"][];
+        };
+        PriceImport: {
+            recorded: number;
+        };
         Holiday: {
             /** Format: date */
             date: string;
@@ -2264,10 +2389,13 @@ export interface components {
         Money: {
             /**
              * Format: int64
-             * @description Integer minor units (ADR 005).
+             * @description Integer units of the instrument scale (ADR 005).
              */
             amount: number;
-            /** @example BRL */
+            /**
+             * @description Instrument code; a currency or a security (P8 amendment A58).
+             * @example BRL
+             */
             currency: string;
         };
         Settings: {
@@ -2635,7 +2763,7 @@ export interface components {
              *     record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
              *     integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
              *     currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
-             *     budget_exists.
+             *     budget_exists, instrument_exists.
              */
             code: string;
             request_id?: string;
@@ -3358,6 +3486,170 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+        };
+    };
+    listInstruments: {
+        parameters: {
+            query?: {
+                type?: components["schemas"]["InstrumentType"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstrumentList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+        };
+    };
+    defineInstrument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstrumentInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    /** @description Path of the created record. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Instrument"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getInstrument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Instrument"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    listPrices: {
+        parameters: {
+            query: {
+                instrument: string;
+                quote_instrument: string;
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    recordPrice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PriceInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Price"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    importPrices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceImport"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            413: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     listBillingCycleRules: {

@@ -656,6 +656,178 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /instruments:
+    get:
+      tags: [marketdata]
+      operationId: listInstruments
+      summary: Instruments of the instance in code order.
+      parameters:
+        - name: type
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/InstrumentType"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstrumentList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [marketdata]
+      operationId: defineInstrument
+      summary: Define a security for the whole instance (P8 amendment A59).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstrumentInput"
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instrument"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /instruments/{code}:
+    get:
+      tags: [marketdata]
+      operationId: getInstrument
+      summary: One instrument.
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instrument"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /prices:
+    get:
+      tags: [marketdata]
+      operationId: listPrices
+      summary: The chosen price of each date with prices in [from, to], at most 366 days (P8 amendment A60).
+      parameters:
+        - name: instrument
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: quote_instrument
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PriceList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [marketdata]
+      operationId: recordPrice
+      summary: Record a manual price; a manual price of the same date is replaced.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PriceInput"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Price"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /prices/import:
+    post:
+      tags: [marketdata]
+      operationId: importPrices
+      summary: Record the prices of a CSV file as source csv, all or nothing.
+      description: |
+        Header `instrument,quote_instrument,date,value`, at most 10,000 lines. A rejected line returns
+        422 with field `line N`, N counting the header as line 1.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PriceImport"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "413":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /accounts/{id}/billing-cycle-rules:
     get:
       tags: [ledger]
@@ -4148,6 +4320,108 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Holiday"
+    InstrumentType:
+      type: string
+      enum: [currency, stock, fii, etf, bdr, fixed_income, fund, crypto]
+    Instrument:
+      type: object
+      additionalProperties: false
+      required: [code, type, scale, name]
+      properties:
+        code:
+          type: string
+        type:
+          $ref: "#/components/schemas/InstrumentType"
+        scale:
+          type: integer
+        name:
+          type: string
+        quote_currency:
+          type: string
+          description: Absent for currencies.
+        exchange:
+          type: string
+          enum: [B3]
+    InstrumentInput:
+      type: object
+      additionalProperties: false
+      required: [code, type, scale, name, quote_currency]
+      properties:
+        code:
+          type: string
+          pattern: "^[A-Z0-9.]{2,20}$"
+        type:
+          $ref: "#/components/schemas/InstrumentType"
+        scale:
+          type: integer
+          minimum: 0
+          maximum: 12
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        quote_currency:
+          type: string
+        exchange:
+          type: string
+          enum: [B3]
+    InstrumentList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Instrument"
+    Rate:
+      type: string
+      description: Positive exact decimal with at most 12 decimals (ADR 005).
+      example: "5.4830"
+    Price:
+      type: object
+      additionalProperties: false
+      required: [instrument, quote_instrument, date, value, source]
+      properties:
+        instrument:
+          type: string
+        quote_instrument:
+          type: string
+        date:
+          type: string
+          format: date
+        value:
+          $ref: "#/components/schemas/Rate"
+        source:
+          type: string
+          enum: [manual, csv, bcb_ptax, b3_cotahist]
+    PriceInput:
+      type: object
+      additionalProperties: false
+      required: [instrument, quote_instrument, date, value]
+      properties:
+        instrument:
+          type: string
+        quote_instrument:
+          type: string
+        date:
+          type: string
+          format: date
+        value:
+          $ref: "#/components/schemas/Rate"
+    PriceList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Price"
+    PriceImport:
+      type: object
+      required: [recorded]
+      properties:
+        recorded:
+          type: integer
     Holiday:
       type: object
       required: [date, name, source]
@@ -4186,11 +4460,12 @@ components:
         amount:
           type: integer
           format: int64
-          description: Integer minor units (ADR 005).
+          description: Integer units of the instrument scale (ADR 005).
         currency:
           type: string
           example: BRL
-          pattern: "^[A-Z]{3}$"
+          description: Instrument code; a currency or a security (P8 amendment A58).
+          pattern: "^[A-Z0-9.]{2,20}$"
     Settings:
       type: object
       additionalProperties: false
@@ -4953,7 +5228,7 @@ components:
             record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
             integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
             currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
-            budget_exists.
+            budget_exists, instrument_exists.
         request_id:
           type: string
         errors:

@@ -55,3 +55,15 @@ func TestNewRate(t *testing.T) {
 		}
 	}
 }
+
+func TestRateReduced(t *testing.T) {
+	for in, want := range map[string]string{"5.5000": "5.5", "10.00": "10", "0.0050": "0.005", "9.36": "9.36"} {
+		r, err := ParseRate(in)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := r.Reduced().String(); got != want {
+			t.Errorf("Reduced(%s) = %s, want %s", in, got, want)
+		}
+	}
+}

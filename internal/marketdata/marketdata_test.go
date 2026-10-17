@@ -20,7 +20,7 @@ func TestCurrenciesMatchMoneyPackage(t *testing.T) {
 		t.Fatalf("instrument currencies = %d, money currencies = %d", len(rows), len(money.Currencies()))
 	}
 	for _, r := range rows {
-		c, err := money.ParseCurrency(r.Code)
+		c, err := money.ParseCurrency(string(r.Code))
 		if err != nil {
 			t.Fatalf("instrument %s unknown to money: %v", r.Code, err)
 		}

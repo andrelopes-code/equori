@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"mime/multipart"
 	"net/http"
 
 	"github.com/oapi-codegen/runtime"
@@ -29,6 +30,96 @@ func (e HolidaySource) Valid() bool {
 	case Instance:
 		return true
 	case Rule:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for InstrumentExchange.
+const (
+	InstrumentExchangeB3 InstrumentExchange = "B3"
+)
+
+// Valid indicates whether the value is a known member of the InstrumentExchange enum.
+func (e InstrumentExchange) Valid() bool {
+	switch e {
+	case InstrumentExchangeB3:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for InstrumentInputExchange.
+const (
+	InstrumentInputExchangeB3 InstrumentInputExchange = "B3"
+)
+
+// Valid indicates whether the value is a known member of the InstrumentInputExchange enum.
+func (e InstrumentInputExchange) Valid() bool {
+	switch e {
+	case InstrumentInputExchangeB3:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for InstrumentType.
+const (
+	Bdr         InstrumentType = "bdr"
+	Crypto      InstrumentType = "crypto"
+	Currency    InstrumentType = "currency"
+	Etf         InstrumentType = "etf"
+	Fii         InstrumentType = "fii"
+	FixedIncome InstrumentType = "fixed_income"
+	Fund        InstrumentType = "fund"
+	Stock       InstrumentType = "stock"
+)
+
+// Valid indicates whether the value is a known member of the InstrumentType enum.
+func (e InstrumentType) Valid() bool {
+	switch e {
+	case Bdr:
+		return true
+	case Crypto:
+		return true
+	case Currency:
+		return true
+	case Etf:
+		return true
+	case Fii:
+		return true
+	case FixedIncome:
+		return true
+	case Fund:
+		return true
+	case Stock:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PriceSource.
+const (
+	B3Cotahist PriceSource = "b3_cotahist"
+	BcbPtax    PriceSource = "bcb_ptax"
+	Csv        PriceSource = "csv"
+	Manual     PriceSource = "manual"
+)
+
+// Valid indicates whether the value is a known member of the PriceSource enum.
+func (e PriceSource) Valid() bool {
+	switch e {
+	case B3Cotahist:
+		return true
+	case BcbPtax:
+		return true
+	case Csv:
+		return true
+	case Manual:
 		return true
 	default:
 		return false
@@ -56,6 +147,80 @@ type HolidayList struct {
 	Items []Holiday `json:"items"`
 }
 
+// Instrument defines model for Instrument.
+type Instrument struct {
+	Code     string              `json:"code"`
+	Exchange *InstrumentExchange `json:"exchange,omitempty"`
+	Name     string              `json:"name"`
+
+	// QuoteCurrency Absent for currencies.
+	QuoteCurrency *string        `json:"quote_currency,omitempty"`
+	Scale         int            `json:"scale"`
+	Type          InstrumentType `json:"type"`
+}
+
+// InstrumentExchange defines model for Instrument.Exchange.
+type InstrumentExchange string
+
+// InstrumentInput defines model for InstrumentInput.
+type InstrumentInput struct {
+	Code          string                   `json:"code"`
+	Exchange      *InstrumentInputExchange `json:"exchange,omitempty"`
+	Name          string                   `json:"name"`
+	QuoteCurrency string                   `json:"quote_currency"`
+	Scale         int                      `json:"scale"`
+	Type          InstrumentType           `json:"type"`
+}
+
+// InstrumentInputExchange defines model for InstrumentInput.Exchange.
+type InstrumentInputExchange string
+
+// InstrumentList defines model for InstrumentList.
+type InstrumentList struct {
+	Items []Instrument `json:"items"`
+}
+
+// InstrumentType defines model for InstrumentType.
+type InstrumentType string
+
+// Price defines model for Price.
+type Price struct {
+	Date            openapi_types.Date `json:"date"`
+	Instrument      string             `json:"instrument"`
+	QuoteInstrument string             `json:"quote_instrument"`
+	Source          PriceSource        `json:"source"`
+
+	// Value Positive exact decimal with at most 12 decimals (ADR 005).
+	//
+	// Example: 5.4830
+	Value Rate `json:"value"`
+}
+
+// PriceSource defines model for Price.Source.
+type PriceSource string
+
+// PriceImport defines model for PriceImport.
+type PriceImport struct {
+	Recorded int `json:"recorded"`
+}
+
+// PriceInput defines model for PriceInput.
+type PriceInput struct {
+	Date            openapi_types.Date `json:"date"`
+	Instrument      string             `json:"instrument"`
+	QuoteInstrument string             `json:"quote_instrument"`
+
+	// Value Positive exact decimal with at most 12 decimals (ADR 005).
+	//
+	// Example: 5.4830
+	Value Rate `json:"value"`
+}
+
+// PriceList defines model for PriceList.
+type PriceList struct {
+	Items []Price `json:"items"`
+}
+
 // Problem defines model for Problem.
 type Problem struct {
 	// Code Stable error identifier. Values: invalid_request, request_too_large, invalid_credentials,
@@ -66,7 +231,7 @@ type Problem struct {
 	// record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
 	// integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
 	// currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
-	// budget_exists.
+	// budget_exists, instrument_exists.
 	Code      string        `json:"code"`
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`
@@ -76,16 +241,66 @@ type Problem struct {
 	Type      string        `json:"type"`
 }
 
+// Rate Positive exact decimal with at most 12 decimals (ADR 005).
+//
+// Example: 5.4830
+type Rate = string
+
 // ListHolidaysParams defines parameters for ListHolidays.
 type ListHolidaysParams struct {
 	Year int `form:"year" json:"year"`
 }
+
+// ListInstrumentsParams defines parameters for ListInstruments.
+type ListInstrumentsParams struct {
+	Type *InstrumentType `form:"type,omitempty" json:"type,omitempty"`
+}
+
+// ListPricesParams defines parameters for ListPrices.
+type ListPricesParams struct {
+	Instrument      string             `form:"instrument" json:"instrument"`
+	QuoteInstrument string             `form:"quote_instrument" json:"quote_instrument"`
+	From            openapi_types.Date `form:"from" json:"from"`
+	To              openapi_types.Date `form:"to" json:"to"`
+}
+
+// ImportPricesMultipartBody defines parameters for ImportPrices.
+type ImportPricesMultipartBody struct {
+	File openapi_types.File `json:"file"`
+}
+
+// DefineInstrumentJSONRequestBody defines body for DefineInstrument for application/json ContentType.
+type DefineInstrumentJSONRequestBody = InstrumentInput
+
+// RecordPriceJSONRequestBody defines body for RecordPrice for application/json ContentType.
+type RecordPriceJSONRequestBody = PriceInput
+
+// ImportPricesMultipartRequestBody defines body for ImportPrices for multipart/form-data ContentType.
+type ImportPricesMultipartRequestBody ImportPricesMultipartBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// ListHolidays Non-business days of a calendar in a year, weekends excluded.
 	// (GET /calendars/{name}/holidays)
 	ListHolidays(w http.ResponseWriter, r *http.Request, name string, params ListHolidaysParams)
+	// ListInstruments Instruments of the instance in code order.
+	// (GET /instruments)
+	ListInstruments(w http.ResponseWriter, r *http.Request, params ListInstrumentsParams)
+	// DefineInstrument Define a security for the whole instance (P8 amendment A59).
+	// (POST /instruments)
+	DefineInstrument(w http.ResponseWriter, r *http.Request)
+	// GetInstrument One instrument.
+	// (GET /instruments/{code})
+	GetInstrument(w http.ResponseWriter, r *http.Request, code string)
+	// ListPrices The chosen price of each date with prices in [from, to], at most 366 days (P8 amendment A60).
+	// (GET /prices)
+	ListPrices(w http.ResponseWriter, r *http.Request, params ListPricesParams)
+	// RecordPrice Record a manual price; a manual price of the same date is replaced.
+	// (POST /prices)
+	RecordPrice(w http.ResponseWriter, r *http.Request)
+	// ImportPrices Record the prices of a CSV file as source csv, all or nothing.
+	// (POST /prices/import)
+	ImportPrices(w http.ResponseWriter, r *http.Request)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -130,6 +345,179 @@ func (siw *ServerInterfaceWrapper) ListHolidays(w http.ResponseWriter, r *http.R
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListHolidays(w, r, name, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListInstruments operation middleware
+func (siw *ServerInterfaceWrapper) ListInstruments(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListInstrumentsParams
+
+	// ------------- Optional query parameter "type" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "type", r.URL.Query(), &params.Type, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "type"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "type", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListInstruments(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DefineInstrument operation middleware
+func (siw *ServerInterfaceWrapper) DefineInstrument(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DefineInstrument(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetInstrument operation middleware
+func (siw *ServerInterfaceWrapper) GetInstrument(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "code" -------------
+	var code string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "code", r.PathValue("code"), &code, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "code", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetInstrument(w, r, code)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListPrices operation middleware
+func (siw *ServerInterfaceWrapper) ListPrices(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListPricesParams
+
+	// ------------- Required query parameter "instrument" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "instrument", r.URL.Query(), &params.Instrument, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "instrument"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "instrument", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "quote_instrument" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "quote_instrument", r.URL.Query(), &params.QuoteInstrument, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "quote_instrument"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "quote_instrument", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListPrices(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RecordPrice operation middleware
+func (siw *ServerInterfaceWrapper) RecordPrice(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RecordPrice(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ImportPrices operation middleware
+func (siw *ServerInterfaceWrapper) ImportPrices(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ImportPrices(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -260,6 +648,12 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	}
 
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/calendars/{name}/holidays", wrapper.ListHolidays)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instruments", wrapper.ListInstruments)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/instruments", wrapper.DefineInstrument)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instruments/{code}", wrapper.GetInstrument)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/prices", wrapper.ListPrices)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/prices", wrapper.RecordPrice)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/prices/import", wrapper.ImportPrices)
 
 	return m
 }
@@ -333,11 +727,435 @@ func (response ListHolidays404ApplicationProblemPlusJSONResponse) VisitListHolid
 	return err
 }
 
+type ListInstrumentsRequestObject struct {
+	Params ListInstrumentsParams
+}
+
+type ListInstrumentsResponseObject interface {
+	VisitListInstrumentsResponse(w http.ResponseWriter) error
+}
+
+type ListInstruments200JSONResponse InstrumentList
+
+func (response ListInstruments200JSONResponse) VisitListInstrumentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListInstruments400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListInstruments400ApplicationProblemPlusJSONResponse) VisitListInstrumentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListInstruments401ApplicationProblemPlusJSONResponse Problem
+
+func (response ListInstruments401ApplicationProblemPlusJSONResponse) VisitListInstrumentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DefineInstrumentRequestObject struct {
+	Body *DefineInstrumentJSONRequestBody
+}
+
+type DefineInstrumentResponseObject interface {
+	VisitDefineInstrumentResponse(w http.ResponseWriter) error
+}
+
+type DefineInstrument201ResponseHeaders struct {
+	Location *string
+}
+
+type DefineInstrument201JSONResponse struct {
+	Body    Instrument
+	Headers DefineInstrument201ResponseHeaders
+}
+
+func (response DefineInstrument201JSONResponse) VisitDefineInstrumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DefineInstrument400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DefineInstrument400ApplicationProblemPlusJSONResponse) VisitDefineInstrumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DefineInstrument401ApplicationProblemPlusJSONResponse Problem
+
+func (response DefineInstrument401ApplicationProblemPlusJSONResponse) VisitDefineInstrumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DefineInstrument409ApplicationProblemPlusJSONResponse Problem
+
+func (response DefineInstrument409ApplicationProblemPlusJSONResponse) VisitDefineInstrumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DefineInstrument422ApplicationProblemPlusJSONResponse Problem
+
+func (response DefineInstrument422ApplicationProblemPlusJSONResponse) VisitDefineInstrumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetInstrumentRequestObject struct {
+	Code string `json:"code"`
+}
+
+type GetInstrumentResponseObject interface {
+	VisitGetInstrumentResponse(w http.ResponseWriter) error
+}
+
+type GetInstrument200JSONResponse Instrument
+
+func (response GetInstrument200JSONResponse) VisitGetInstrumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetInstrument401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetInstrument401ApplicationProblemPlusJSONResponse) VisitGetInstrumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetInstrument404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetInstrument404ApplicationProblemPlusJSONResponse) VisitGetInstrumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListPricesRequestObject struct {
+	Params ListPricesParams
+}
+
+type ListPricesResponseObject interface {
+	VisitListPricesResponse(w http.ResponseWriter) error
+}
+
+type ListPrices200JSONResponse PriceList
+
+func (response ListPrices200JSONResponse) VisitListPricesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListPrices400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListPrices400ApplicationProblemPlusJSONResponse) VisitListPricesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListPrices401ApplicationProblemPlusJSONResponse Problem
+
+func (response ListPrices401ApplicationProblemPlusJSONResponse) VisitListPricesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListPrices422ApplicationProblemPlusJSONResponse Problem
+
+func (response ListPrices422ApplicationProblemPlusJSONResponse) VisitListPricesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordPriceRequestObject struct {
+	Body *RecordPriceJSONRequestBody
+}
+
+type RecordPriceResponseObject interface {
+	VisitRecordPriceResponse(w http.ResponseWriter) error
+}
+
+type RecordPrice201JSONResponse Price
+
+func (response RecordPrice201JSONResponse) VisitRecordPriceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordPrice400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RecordPrice400ApplicationProblemPlusJSONResponse) VisitRecordPriceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordPrice401ApplicationProblemPlusJSONResponse Problem
+
+func (response RecordPrice401ApplicationProblemPlusJSONResponse) VisitRecordPriceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordPrice422ApplicationProblemPlusJSONResponse Problem
+
+func (response RecordPrice422ApplicationProblemPlusJSONResponse) VisitRecordPriceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportPricesRequestObject struct {
+	Body *multipart.Reader
+}
+
+type ImportPricesResponseObject interface {
+	VisitImportPricesResponse(w http.ResponseWriter) error
+}
+
+type ImportPrices200JSONResponse PriceImport
+
+func (response ImportPrices200JSONResponse) VisitImportPricesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportPrices400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ImportPrices400ApplicationProblemPlusJSONResponse) VisitImportPricesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportPrices401ApplicationProblemPlusJSONResponse Problem
+
+func (response ImportPrices401ApplicationProblemPlusJSONResponse) VisitImportPricesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportPrices413ApplicationProblemPlusJSONResponse Problem
+
+func (response ImportPrices413ApplicationProblemPlusJSONResponse) VisitImportPricesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportPrices422ApplicationProblemPlusJSONResponse Problem
+
+func (response ImportPrices422ApplicationProblemPlusJSONResponse) VisitImportPricesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// ListHolidays Non-business days of a calendar in a year, weekends excluded.
 	// (GET /calendars/{name}/holidays)
 	ListHolidays(ctx context.Context, request ListHolidaysRequestObject) (ListHolidaysResponseObject, error)
+	// ListInstruments Instruments of the instance in code order.
+	// (GET /instruments)
+	ListInstruments(ctx context.Context, request ListInstrumentsRequestObject) (ListInstrumentsResponseObject, error)
+	// DefineInstrument Define a security for the whole instance (P8 amendment A59).
+	// (POST /instruments)
+	DefineInstrument(ctx context.Context, request DefineInstrumentRequestObject) (DefineInstrumentResponseObject, error)
+	// GetInstrument One instrument.
+	// (GET /instruments/{code})
+	GetInstrument(ctx context.Context, request GetInstrumentRequestObject) (GetInstrumentResponseObject, error)
+	// ListPrices The chosen price of each date with prices in [from, to], at most 366 days (P8 amendment A60).
+	// (GET /prices)
+	ListPrices(ctx context.Context, request ListPricesRequestObject) (ListPricesResponseObject, error)
+	// RecordPrice Record a manual price; a manual price of the same date is replaced.
+	// (POST /prices)
+	RecordPrice(ctx context.Context, request RecordPriceRequestObject) (RecordPriceResponseObject, error)
+	// ImportPrices Record the prices of a CSV file as source csv, all or nothing.
+	// (POST /prices/import)
+	ImportPrices(ctx context.Context, request ImportPricesRequestObject) (ImportPricesResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -399,6 +1217,177 @@ func (sh *strictHandler) ListHolidays(w http.ResponseWriter, r *http.Request, na
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListHolidaysResponseObject); ok {
 		if err := validResponse.VisitListHolidaysResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListInstruments operation middleware
+func (sh *strictHandler) ListInstruments(w http.ResponseWriter, r *http.Request, params ListInstrumentsParams) {
+	var request ListInstrumentsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListInstruments(ctx, request.(ListInstrumentsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListInstruments")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListInstrumentsResponseObject); ok {
+		if err := validResponse.VisitListInstrumentsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DefineInstrument operation middleware
+func (sh *strictHandler) DefineInstrument(w http.ResponseWriter, r *http.Request) {
+	var request DefineInstrumentRequestObject
+
+	var body DefineInstrumentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DefineInstrument(ctx, request.(DefineInstrumentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DefineInstrument")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DefineInstrumentResponseObject); ok {
+		if err := validResponse.VisitDefineInstrumentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetInstrument operation middleware
+func (sh *strictHandler) GetInstrument(w http.ResponseWriter, r *http.Request, code string) {
+	var request GetInstrumentRequestObject
+
+	request.Code = code
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetInstrument(ctx, request.(GetInstrumentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetInstrument")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetInstrumentResponseObject); ok {
+		if err := validResponse.VisitGetInstrumentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListPrices operation middleware
+func (sh *strictHandler) ListPrices(w http.ResponseWriter, r *http.Request, params ListPricesParams) {
+	var request ListPricesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListPrices(ctx, request.(ListPricesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListPrices")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListPricesResponseObject); ok {
+		if err := validResponse.VisitListPricesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RecordPrice operation middleware
+func (sh *strictHandler) RecordPrice(w http.ResponseWriter, r *http.Request) {
+	var request RecordPriceRequestObject
+
+	var body RecordPriceJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RecordPrice(ctx, request.(RecordPriceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RecordPrice")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RecordPriceResponseObject); ok {
+		if err := validResponse.VisitRecordPriceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ImportPrices operation middleware
+func (sh *strictHandler) ImportPrices(w http.ResponseWriter, r *http.Request) {
+	var request ImportPricesRequestObject
+
+	if reader, err := r.MultipartReader(); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
+		return
+	} else {
+		request.Body = reader
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ImportPrices(ctx, request.(ImportPricesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ImportPrices")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ImportPricesResponseObject); ok {
+		if err := validResponse.VisitImportPricesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

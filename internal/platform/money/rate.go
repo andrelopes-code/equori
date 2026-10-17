@@ -53,3 +53,12 @@ func (r Rate) String() string {
 	cut := len(digits) - int(r.scale)
 	return digits[:cut] + "." + digits[cut:]
 }
+
+// Reduced drops trailing zero decimals: 5.5000 becomes 5.5, the form a stored rate reads back as.
+func (r Rate) Reduced() Rate {
+	for r.scale > 0 && r.mantissa%10 == 0 {
+		r.mantissa /= 10
+		r.scale--
+	}
+	return r
+}

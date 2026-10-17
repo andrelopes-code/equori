@@ -6,6 +6,8 @@ package postgres
 
 import (
 	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type MarketdataHoliday struct {
@@ -19,4 +21,16 @@ type MarketdataInstrument struct {
 	InstrumentType string
 	Scale          int16
 	Name           string
+	QuoteCurrency  *string
+	Exchange       *string
+}
+
+type MarketdataPrice struct {
+	Instrument      string
+	QuoteInstrument string
+	Date            time.Time
+	Value           pgtype.Numeric
+	Source          string
+	Priority        int16
+	RecordedAt      time.Time
 }

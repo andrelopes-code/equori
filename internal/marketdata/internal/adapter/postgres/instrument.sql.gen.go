@@ -10,7 +10,7 @@ import (
 )
 
 const getInstrument = `-- name: GetInstrument :one
-SELECT code, instrument_type, scale, name FROM marketdata_instrument WHERE code = $1
+SELECT code, instrument_type, scale, name, quote_currency, exchange FROM marketdata_instrument WHERE code = $1
 `
 
 func (q *Queries) GetInstrument(ctx context.Context, code string) (MarketdataInstrument, error) {
@@ -21,12 +21,75 @@ func (q *Queries) GetInstrument(ctx context.Context, code string) (MarketdataIns
 		&i.InstrumentType,
 		&i.Scale,
 		&i.Name,
+		&i.QuoteCurrency,
+		&i.Exchange,
 	)
 	return i, err
 }
 
+const insertInstrument = `-- name: InsertInstrument :execrows
+INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, exchange)
+VALUES ($1, $2, $3, $4, $5, $6)
+ON CONFLICT (code) DO NOTHING
+`
+
+type InsertInstrumentParams struct {
+	Code           string
+	InstrumentType string
+	Scale          int16
+	Name           string
+	QuoteCurrency  *string
+	Exchange       *string
+}
+
+func (q *Queries) InsertInstrument(ctx context.Context, arg InsertInstrumentParams) (int64, error) {
+	result, err := q.db.Exec(ctx, insertInstrument,
+		arg.Code,
+		arg.InstrumentType,
+		arg.Scale,
+		arg.Name,
+		arg.QuoteCurrency,
+		arg.Exchange,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const listInstruments = `-- name: ListInstruments :many
+SELECT code, instrument_type, scale, name, quote_currency, exchange FROM marketdata_instrument ORDER BY code
+`
+
+func (q *Queries) ListInstruments(ctx context.Context) ([]MarketdataInstrument, error) {
+	rows, err := q.db.Query(ctx, listInstruments)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MarketdataInstrument
+	for rows.Next() {
+		var i MarketdataInstrument
+		if err := rows.Scan(
+			&i.Code,
+			&i.InstrumentType,
+			&i.Scale,
+			&i.Name,
+			&i.QuoteCurrency,
+			&i.Exchange,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listInstrumentsByType = `-- name: ListInstrumentsByType :many
-SELECT code, instrument_type, scale, name FROM marketdata_instrument WHERE instrument_type = $1 ORDER BY code
+SELECT code, instrument_type, scale, name, quote_currency, exchange FROM marketdata_instrument WHERE instrument_type = $1 ORDER BY code
 `
 
 func (q *Queries) ListInstrumentsByType(ctx context.Context, instrumentType string) ([]MarketdataInstrument, error) {
@@ -43,6 +106,8 @@ func (q *Queries) ListInstrumentsByType(ctx context.Context, instrumentType stri
 			&i.InstrumentType,
 			&i.Scale,
 			&i.Name,
+			&i.QuoteCurrency,
+			&i.Exchange,
 		); err != nil {
 			return nil, err
 		}
