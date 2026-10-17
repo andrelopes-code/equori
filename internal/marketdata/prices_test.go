@@ -77,6 +77,9 @@ func TestRecordPriceValidation(t *testing.T) {
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/prices", price("quote_instrument", "USD")), http.StatusUnprocessableEntity, "validation_failed", "quote_instrument")
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/prices", price("value", "0")), http.StatusUnprocessableEntity, "validation_failed", "value")
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/prices", price("value", "5.4e1")), http.StatusUnprocessableEntity, "validation_failed", "value")
+	// numeric(30,12) holds at most 18 integer digits.
+	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/prices", price("value", "1000000000000000000")), http.StatusUnprocessableEntity, "validation_failed", "value")
+	h.MustDo(http.MethodPost, "/api/v1/prices", price("value", "999999999999999999"), http.StatusCreated, nil)
 	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/prices", price("quote_instrument", "MXRF11")), http.StatusUnprocessableEntity, "validation_failed", "quote_instrument")
 

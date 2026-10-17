@@ -74,8 +74,8 @@ func (m *Module) validatePrice(ctx context.Context, p Price, checked map[money.C
 	if !ok || quote.Type != domain.TypeCurrency || p.Quote == p.Instrument {
 		return &domain.FieldError{Field: "quote_instrument", Message: "must be a currency other than the instrument"}
 	}
-	if p.Value.Mantissa() <= 0 {
-		return &domain.FieldError{Field: "value", Message: "must be positive"}
+	if !domain.StorableRate(p.Value) {
+		return &domain.FieldError{Field: "value", Message: "must be positive with at most 18 integer digits"}
 	}
 	return nil
 }

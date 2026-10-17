@@ -78,6 +78,15 @@ func ParsePriceCSV(content []byte) ([]Price, error) {
 	}
 }
 
+// maxIntegerPart bounds a rate stored as numeric(30,12): 18 integer digits.
+const maxIntegerPart = 1_000_000_000_000_000_000
+
+// StorableRate reports whether r is positive and fits numeric(30,12). Only a rate without
+// decimals can reach 18 integer digits in an int64 mantissa.
+func StorableRate(r money.Rate) bool {
+	return r.Mantissa() > 0 && (r.Scale() > 0 || r.Mantissa() < maxIntegerPart)
+}
+
 // ValidRange checks a GET /prices range.
 func ValidRange(from, to time.Time) error {
 	if to.Before(from) {

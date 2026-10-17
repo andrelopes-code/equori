@@ -140,6 +140,29 @@ func TestLaterSaleLocksEarlierPostings(t *testing.T) {
 	h.MustDo(http.MethodPost, "/api/v1/transactions/"+buy.ID+"/void", map[string]string{"reason": "typo"}, http.StatusOK, nil)
 }
 
+// A69: correcting a generic posting on a security account dated before a sale is refused,
+// both when the correction keeps the date and when it moves the posting past the sale.
+func TestCorrectionBeforeASaleIsRefused(t *testing.T) {
+	f := newInvestFixture(t)
+	h := f.h
+	f.trade(t, "buy", "2026-10-05", 150, "10.05", 490)
+	var bonus tradeTx
+	h.MustDo(http.MethodPost, "/api/v1/transactions", map[string]any{"date": "2026-10-10", "description": "bonus", "postings": []map[string]any{
+		{"account_id": f.mxrf11, "amount": units(1, "MXRF11"), "weight": apitest.BRL(1000)},
+		apitest.Posting(f.cash, -1000),
+	}}, http.StatusCreated, &bonus)
+	f.trade(t, "sell", "2026-10-20", 50, "10.80", 210)
+
+	correction := func(date string, quantity int64) map[string]any {
+		return map[string]any{"expected_version": bonus.Version, "date": date, "description": "bonus", "reason": "typo", "postings": []map[string]any{
+			{"account_id": f.mxrf11, "amount": units(quantity, "MXRF11"), "weight": apitest.BRL(1000)},
+			apitest.Posting(f.cash, -1000),
+		}}
+	}
+	h.ExpectProblem(h.Do(http.MethodPut, "/api/v1/transactions/"+bonus.ID, correction("2026-10-10", 2)), http.StatusConflict, "later_sale_exists", "")
+	h.ExpectProblem(h.Do(http.MethodPut, "/api/v1/transactions/"+bonus.ID, correction("2026-10-25", 1)), http.StatusConflict, "later_sale_exists", "")
+}
+
 // A69 under concurrency: a change to a security account waits for the account row that a
 // sale of that account locks, then sees the sale and is refused.
 func TestSecurityPostingsWaitForTheAccountLock(t *testing.T) {

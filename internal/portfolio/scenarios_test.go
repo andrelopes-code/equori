@@ -103,7 +103,7 @@ func (f fixture) results(t *testing.T, year string) []resultOut {
 
 func TestS64PositionAndRealizedResult(t *testing.T) {
 	f := newFixture(t)
-	f.trade(t, "buy", "2026-10-05", 150, "10.05", 490)
+	buy := f.trade(t, "buy", "2026-10-05", 150, "10.05", 490)
 	sale := f.trade(t, "sell", "2026-10-20", 50, "10.80", 210)
 	f.h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "MXRF11", "quote_instrument": "BRL", "date": "2026-10-29", "value": "9.36"}, http.StatusCreated, nil)
 
@@ -116,6 +116,12 @@ func TestS64PositionAndRealizedResult(t *testing.T) {
 		p.AverageCost != "10.0827" || p.MarketValue["amount"] != float64(93600) || len(p.Prices) != 1 || p.Prices[0].Value != "9.36" {
 		t.Fatalf("position = %+v", p)
 	}
+
+	// Review Focus 1: refused changes before the sale leave its realized result as it was.
+	f.h.ExpectProblem(f.h.Do(http.MethodPost, "/api/v1/trades", map[string]any{
+		"account_id": f.mxrf11, "cash_account_id": f.cash, "side": "buy", "date": "2026-10-15", "quantity": units(10, "MXRF11"), "unit_price": "10",
+	}), http.StatusConflict, "later_sale_exists", "")
+	f.h.ExpectProblem(f.h.Do(http.MethodPost, "/api/v1/transactions/"+buy+"/void", map[string]string{"reason": "typo"}), http.StatusConflict, "later_sale_exists", "")
 
 	rs := f.results(t, "2026")
 	if len(rs) != 1 || rs[0].TransactionID != sale || rs[0].Month != "2026-10" || rs[0].Result["amount"] != float64(3377) ||
