@@ -313,11 +313,13 @@ flowchart LR
 
 | Event | Data | Rules |
 |---|---|---|
-| `ForeignPurchaseRecorded` | transaction, original amount, rate, IOF | Card posting in BRL on the statement; expense in BRL; original amount and the rate kept as a price on the posting. IOF is a separate expense posting (M11). |
-| `CurrencyExchanged` | transaction, rate | Postings in two instruments; balanced per instrument through the stored rate; spread and fees are expense postings (M12). |
-| `TradeRecorded` | transaction, security, quantity, unit price, fees, taxes | Buy: cash posting negative, security posting positive with cost. Sell: realized gain or loss computed from average cost and posted as income or expense (D1). |
-| `InvestmentIncomeRecorded` | transaction, security, type, gross, withheld | Types: dividend (exempt), JCP (15% withheld), interest, coupon, amortization. Gross to income, withheld to tax expense (D1). |
-| `PriceRecorded` | instrument, quote instrument, date, value, source | Prices are facts; several sources per day allowed; one is chosen by source priority. |
+| `ForeignPurchaseRecorded` | transaction, original amount, rate, IOF | `POST /foreign-purchases` on an account in the base currency: amount = original × rate, IOF = amount × `iof_rate_bp` ÷ 10000 (default 350) on its own expense posting; the account and category postings keep the original amount, so the rate is amount ÷ original (M11, P8 amendment A66). |
+| `CurrencyExchanged` | transaction, rate | `POST /exchanges` between accounts of two currencies, one of them the base currency: the foreign side's weight is the base amount without the fee; the fee is a base-currency expense posting (M12, A67). |
+| `TradeRecorded` | transaction, security, quantity, unit price, fees, taxes | `POST /trades`. Buy: cash −(gross + fees); security +quantity with weight gross + fees. Sell: cost = weight sum × quantity ÷ held quantity (half to even; the whole weight sum for a full sale); result = gross − fees − cost to realized gains or losses; taxes withheld to an expense posting. A change dated on or before a recorded sale of the account is refused (D1, A68, A69). |
+| `InvestmentIncomeRecorded` | transaction, security, type, gross, withheld | `POST /investment-income`. Types: dividend (exempt), JCP (15% withheld by default), interest, coupon. Gross to the income category, withheld to tax expense (D1, A70). Amortization is not recorded in P8. |
+| `PriceRecorded` | instrument, quote instrument, date, value, source | Prices are facts; several sources per day allowed; the chosen one has the lowest priority: `manual` 1, `csv` 2, `bcb_ptax` and `b3_cotahist` 3 (A60). |
+
+These events are `ledger.transaction_recorded.v1` with a `trade` or `investment_income` detail on the transaction; `PriceRecorded` is not published (no consumer reads prices through the outbox).
 
 ## 3.12 Invariants found in this chapter
 

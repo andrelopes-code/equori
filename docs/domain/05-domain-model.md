@@ -9,13 +9,13 @@ This chapter defines, per context, the aggregates (consistency boundaries), thei
 | Value object | Definition | Rules |
 |---|---|---|
 | `Money` | Amount of a currency in integer minor units (`platform/money`, ADR 005). | \|amount\| ≤ 2^53 − 1. Arithmetic only within one currency. |
-| `Quantity` | Amount of any instrument as an integer of units scaled by the instrument's `scale` (number of decimals). | BRL scale 2; JPY 0; MXRF11 scale 0; Bitcoin scale 8; fund shares scale 6. `Money` is the `Quantity` of a currency. |
+| `Quantity` | Amount of any instrument as an integer of units scaled by the instrument's `scale` (number of decimals). | BRL scale 2; JPY 0; MXRF11 scale 0; Bitcoin scale 8; fund shares scale 6. `Money` is the `Quantity` of a currency. In code, `money.Money` carries the instrument code and scale and represents both (P8 amendment A58). |
 | `InstrumentCode` | Identifier of an instrument: ISO 4217 for currencies, exchange ticker or registry code for securities. | Unique per instance. |
 | `AccountingDate` | Calendar day (ADR 005). | No time component. |
 | `Period` | Half-open interval of accounting dates `[from, to)`. | `from < to`. |
 | `ReferenceMonth` | Year and month identifying a statement or a budget period. | `2026-11`. |
 | `Effective[T]` | A value of type T with a validity start date (T09). | Versions of the same subject never overlap (I08). |
-| `Rate` | Exact decimal ratio, stored as an integer mantissa and a scale. | Used for prices and interest rates. Conversion to `Money` rounds half to even, once, at the end. |
+| `Rate` | Exact decimal ratio, stored as an integer mantissa and a scale. | Used for prices and interest rates. Positive, at most 12 decimals. Conversion to `Money` rounds half to even, once, at the end, also across two rates. |
 | `InstallmentNumber` | Pair `k / N`. | 1 ≤ k ≤ N ≤ 420. |
 
 ## 5.2 Ledger
@@ -167,7 +167,7 @@ classDiagram
 |---|---|
 | `accountClass` | `asset`, `liability`, `equity`, `income`, `expense`. Immutable. |
 | `kind` | Required for `asset` and `liability`, absent otherwise. Allowed pairs in the table below. Immutable after the first posting. |
-| `instrument` | One per account. Immutable after the first posting. A brokerage account holding several securities is a parent account with one child per instrument (cash child plus one child per security). |
+| `instrument` | One per account. Immutable after the first posting. A brokerage account holding several securities is a parent account with one child per instrument (cash child plus one child per security). A security is held only by a `brokerage` child whose parent is a `brokerage` account in the security's quote currency; a parent whose children hold more than one instrument has a balance only valued in a currency (P8 amendment A63). |
 | `parent` | Same user, same class. Balance accounts: same institution. A parent of a balance account has no postings of its own; its balance is the sum of its children. Categories form a tree of any depth. |
 | `openedOn`, `closedOn` | Postings only between them (I09). Closing requires a zero balance. |
 | `yieldMode` | `none`, `auto` (F6). Default `auto` for kind `reserve`, `none` otherwise. |
@@ -193,7 +193,7 @@ classDiagram
 | `settledOn` | Date the institution settled the posting, when it differs from the transaction date (debit purchase on Saturday, settled on Monday). Balances can be computed by transaction date (default) or by settlement date (the institution's view, used in reconciliation). |
 | `statement` | Required on card account postings, forbidden on others (I03, I04). |
 | `installment`, `installmentPlan` | Set together, only on card postings that belong to a plan. |
-| `originalAmount` | Amount in the currency of the original charge when it differs from the account instrument (foreign purchase on a BRL card, M11). Informational; the rate is `amount / originalAmount`. |
+| `originalAmount` | Amount in the currency of the original charge when it differs from the account instrument (foreign purchase on a BRL card, M11). Informational; the rate is `amount / originalAmount`. A currency other than the account instrument, non-zero, with the sign of the amount (P8 amendment A64). |
 | Correction | A correction creates version n+1 of the same transaction and keeps version n in history. Allowed while no posting of the transaction is `reconciled` (I05). Otherwise the change is a new transaction linked `correction_of`. |
 | Void | Sets `voidedAt`; the transaction stops counting in every balance. Same restrictions as correction. |
 | Origin | `manual`, `import`, `schedule`, `system` (yield, adjustment, revolving). Informational. |
@@ -483,7 +483,7 @@ classDiagram
 | Aggregate | Fields | Rules |
 |---|---|---|
 | `Instrument` (Market data) | code, type, scale, name, currency of quotation, exchange, tax class | Tax class drives D1: `stock`, `fii`, `etf`, `bdr`, `fixed_income`, `fund`, `crypto`, `currency`. |
-| `Price` (Market data) | instrument, quote instrument, date, value: `Rate`, source | One chosen price per instrument, quote and date by source priority. |
+| `Price` (Market data) | instrument, quote instrument, date, value: `Rate`, source | Instance-wide. One chosen price per instrument, quote and date: the lowest priority (`manual` 1, `csv` 2, `bcb_ptax` and `b3_cotahist` 3), then the latest recorded. The price at a date is the chosen price of the latest date on or before it (P8 amendment A60). |
 | `Holiday` (Market data) | calendar, date, name | Calendars: `br_national` (default), user-defined. |
 | `Position` (Portfolio, derived) | account, instrument, date, quantity, cost basis | Rebuilt from Ledger postings. Average cost = cost basis ÷ quantity; buys add cost including fees; sells reduce cost at average cost (Receita Federal method). |
 | `RealizedResult` (Portfolio, derived) | sale transaction, instrument, quantity, cost, proceeds, result, tax class, month | Input for monthly tax rules (exemptions, day trade) in a later feature (D1). |

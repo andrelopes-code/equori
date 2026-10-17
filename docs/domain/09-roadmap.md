@@ -37,10 +37,10 @@ flowchart LR
 | P5b Transfers from imports | Rule actions "mark as transfer to account" and "mark reimbursable to counterparty"; pairing an imported card payment with the checking debit that paid it (P4 amendment A14); external record links per posting (I07) | S45–S50 | A card payment imported from both files counts once in every order; SC2 holds after pairing |
 | P6 Ingestion: Pluggy | Credential encryption (ADR 008); integrations, several per user; Meu Pluggy connections; account mapping; scheduled and manual sync; updated and withdrawn lines; statement hints and installments from the aggregator; source categories; per-user isolation | S51–S59 | S51–S59 pass against a fake Pluggy; N15–N17 tests pass; sync of a real account reconciles (SC1, owner check per `docs/operations/pluggy.md`) |
 | P7 Planning | Schedules, recurrence engine with business days, occurrences, subscriptions, budgets, goals, projections, committed amounts | S27–S29, S60–S63 | Scenarios pass; I07 (occurrence side) and I08 for schedule terms rejected by schema tests |
-| P8 Currencies and investments | Prices and feeds; multi-currency postings with weights; foreign purchases; exchanges; trades; investment income; Portfolio derived tables | S16, S17, S21, S22 | Scenarios pass; D1 data complete |
+| P8 Currencies and investments | Securities as instruments; prices with the BCB PTAX and B3 COTAHIST feeds; conversion and valued balances; foreign purchases; exchanges; trades at average cost; investment income; Portfolio derived tables; planning in any currency (amendments A58–A72 of `docs/superpowers/plans/2026-10-17-p8-currencies-investments.md`) | S16, S17, S21, S22, S64–S67 | Scenarios pass; D1 data complete |
 | P9 Reporting and export | Accrual and cash views; net worth; statement analytics; export and import round trip | S30 | SC6; N13 |
 | Web interface | Separate track once the P2 API contract is stable: SPA embedded in the binary (ADR 008) | — | SC4, N21, N22 |
 
 ## 9.3 Next step
 
-P1 to P7 are delivered; the SC1 check of P6 waits for the owner (`docs/operations/pluggy.md`, section 5). Next: P8. The web interface track resumes after P8; until then it holds the embedded shell and the typed client only.
+P1 to P8 are delivered; the SC1 check of P6 waits for the owner (`docs/operations/pluggy.md`, section 5). Next: the web interface track resumes, then P9.

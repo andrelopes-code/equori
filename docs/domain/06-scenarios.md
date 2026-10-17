@@ -410,7 +410,7 @@ An OFX credit card statement for Itaú Visa: −230.00 on 2026-10-14 is a `charg
 | M28 | S02 |
 | M29 | S31 |
 
-The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44; transfers from imports by S45–S50; aggregator sync by S51–S59; schedules (F7) by S27–S29 and the planning views by S60–S63.
+The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44; transfers from imports by S45–S50; aggregator sync by S51–S59; schedules (F7) by S27–S29 and the planning views by S60–S63; currencies and investments (F9) by S16, S17, S21, S22 and S64–S67.
 
 ## 6.13 Classification
 
@@ -535,4 +535,24 @@ Nubank checking holds 5,000.00 on 2026-11-01, with the rent of S27 and a salary 
 ### S63 Committed amount
 
 With the laptop of S06, the rent of S27, the streaming of S29 and the salary of S62, `GET /commitments?month=2026-12` returns installments 333.33, occurrences 2,139.90 (rent 2,100.00, streaming 39.90) and total 2,473.23; the salary is not counted.
+
+## 6.17 Prices and positions
+
+Scenarios of phase P8 (chapter 3, F9; chapter 5, 5.6). The clock is 2026-11-01 unless a scenario says otherwise; S21 buys on 2026-10-05 and sells on 2026-10-20, S22 is dated 2026-10-26. S16, S17, S21 and S22 are tested as `TestS16ForeignPurchase` (`POST /foreign-purchases`, IOF 350 bp on Taxes › IOF), `TestS17CurrencyExchange` (`POST /exchanges` on 2026-10-14), `TestS21PurchaseAndSale` (`POST /trades`) and `TestS22InvestmentIncome` (`POST /investment-income`, the JCP without `withheld`). In S17, a `manual` USD/BRL price of 5.5000 and a `bcb_ptax` price of 5.4950 on 2026-10-30 give the valued balance of Wise USD on 2026-11-01: 5,500.00 with the manual price.
+
+### S64 Position and realized result
+
+After S21, a `b3_cotahist` price of MXRF11 of 9.36 on 2026-10-29: `GET /positions?date=2026-11-01` returns XP MXRF11 with quantity 100, cost basis 1,008.27, average cost 10.0827, price 9.36 and market value 936.00; `GET /realized-results?year=2026` returns one result of 33.77 in 2026-10.
+
+### S65 Income events
+
+After S22, `GET /income-events?year=2026` returns the dividend of 10.00, `exempt`, withheld 0.00, and the JCP of 45.00, `exclusive`, withheld 6.75.
+
+### S66 Committed amount in another currency
+
+A subscription of 9.99 USD per month on Wise USD, Subscriptions, from 2026-12-10, with USD/BRL 5.5000 on 2026-10-30: `GET /commitments?month=2026-12` counts it as 54.94 (54.945 rounded half to even) and lists the price.
+
+### S67 Goal in another currency
+
+Goal "Trip" of 2,000.00 USD over Wise USD (1,000.00 USD) and Nubank checking (2,750.00 BRL) with USD/BRL 5.5000: current 1,500.00 USD, remaining 500.00 USD, progress 7500 basis points.
 

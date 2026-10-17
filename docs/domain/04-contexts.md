@@ -69,7 +69,7 @@ flowchart TB
 |---|---|
 | Responsibility | Accounts of every class, transactions, postings, links, card statements, billing cycle rules, installment plans, balance assertions, reconciliation, payees, tags, attachments. |
 | Invariants | I01–I06, I08–I09 (chapter 3). |
-| Commands | `RecordTransaction`, `CorrectTransaction`, `VoidTransaction`, `RecordCardPurchase`, `PayStatement`, `FinanceStatement`, `RefundPurchase`, `CancelInstallments`, `AnticipateInstallments`, `ChangeBillingCycleRule`, `AssertBalance`, `Reconcile`, `RecordYield`, `AdjustBalance`, `Categorize`, `AttachFile`, account and payee management. |
+| Commands | `RecordTransaction`, `CorrectTransaction`, `VoidTransaction`, `RecordCardPurchase`, `PayStatement`, `FinanceStatement`, `RefundPurchase`, `CancelInstallments`, `AnticipateInstallments`, `ChangeBillingCycleRule`, `AssertBalance`, `Reconcile`, `RecordYield`, `AdjustBalance`, `Categorize`, `AttachFile`, `RecordForeignPurchase`, `ExchangeCurrency`, `RecordTrade`, `RecordInvestmentIncome` (P8 amendments A66–A70), account and payee management. |
 | Queries | Balance at a date, balance series, statements, postings by account and period, transaction by id, installment plans. |
 | Events published | `TransactionRecorded`, `TransactionCorrected`, `TransactionCategorized`, `TransactionVoided`, `StatementClosed`, `StatementOverdue`, `BalanceAsserted`, `DifferenceFound`, `AccountReconciled`, `AccountOpened`, `AccountClosed`. |
 
@@ -104,26 +104,26 @@ Card statements and installment plans stay in Ledger: recording a card purchase 
 | Reacts to | `TransactionRecorded`, `TransactionCorrected`, `TransactionCategorized`, `TransactionVoided` (realize or release occurrences, P7 amendment A51). |
 | Commands | `CreateSchedule`, `ChangeScheduleTerms`, `PauseSchedule`, `EndSchedule`, `SkipOccurrence`, `MoveOccurrence`, `RealizeOccurrence`, `UnrealizeOccurrence`, `SetBudget`, `SetGoal`. |
 | Events published | None in P7: `OccurrenceOverdue` and `BudgetExceeded` wait for a consumer; overdue is derived on read (A50). |
-| Calls | Ledger `AccountFacts`, `TransactionFacts`, `MissingPayees`, `BaseCurrency`, `Balance` (projections, goals), `CategoryTotal` (budgets), `Commitment` (committed amounts, A54–A57); Market data holidays of `br_banking`. |
+| Calls | Ledger `AccountFacts`, `TransactionFacts`, `MissingPayees`, `BaseCurrency`, `Balance` (projections, goals), `CategoryTotal` (budgets), `Commitment` (committed amounts, A54–A57); Market data holidays of `br_banking` and `Convert` (committed amounts and goals in another currency, P8 amendment A72). |
 
 ### 4.3.5 Portfolio
 
 | Item | Content |
 |---|---|
-| Responsibility | Positions, lots and average cost by Receita Federal rules, realized gains, investment income by tax type, data for the annual declaration (D1). |
-| Reacts to | `TransactionRecorded`, `TransactionCorrected`, `TransactionVoided` on brokerage accounts. |
-| Queries | Positions at a date, cost basis, realized gains by month, income by tax type. |
-| Calls | Market data prices. |
+| Responsibility | Positions and average cost by Receita Federal rules, realized results, investment income by tax treatment, data for the annual declaration (D1). |
+| Reacts to | `TransactionRecorded`, `TransactionCorrected`, `TransactionVoided` whose accounts include a child of a brokerage account: the brokerage is rebuilt (P8 amendment A71). |
+| Queries | `GET /positions?date=` (quantity, cost basis, average cost, market value), `GET /realized-results?year=`, `GET /income-events?year=`. |
+| Calls | Ledger `AccountFacts`, `InvestmentFacts`, `BaseCurrency`; Market data `Instrument` (scale, tax class) and `Convert` (market value). |
 
-Trades and investment income are Ledger transactions. Portfolio derives everything else from them, so a correction in Ledger recomputes positions.
+Trades and investment income are Ledger transactions. Portfolio derives everything else from them, so a correction or a void in Ledger rebuilds positions.
 
 ### 4.3.6 Market data
 
 | Item | Content |
 |---|---|
-| Responsibility | Instruments (currencies, securities), prices and exchange rates with source and date, business-day calendars. |
-| Commands | `DefineInstrument`, `RecordPrice`, `ImportPrices`, `DefineHoliday`. |
-| Queries | Instrument by code, price at a date, business days in a range. |
+| Responsibility | Instruments (currencies, securities), prices with source and date, conversion between instruments, business-day calendars. |
+| Commands | `DefineInstrument` (`POST /instruments`, A59), `RecordPrice` (`POST /prices`), `ImportPrices` (`POST /prices/import`), `DefineHoliday`; the feeds `bcb_ptax` and `b3_cotahist` when named in `EQUORI_PRICE_FEEDS` (A62, `docs/operations/price-feeds.md`). |
+| Queries | Instrument by code, chosen price of each date (`GET /prices`), price on or before a date, `Convert` by direct, inverse or BRL path with the prices used (A61), business days in a range. |
 
 ### 4.3.7 Reporting
 

@@ -184,15 +184,17 @@ erDiagram
 
 | Table | Columns | Constraints |
 |---|---|---|
-| `marketdata_instrument` | `code` PK, `instrument_type`, `scale`, `name`, `quote_currency`, `exchange`, `tax_class` | Instance-wide reference data; `scale BETWEEN 0 AND 12` |
-| `marketdata_price` | `instrument`, `quote_instrument`, `date`, `value numeric(30,12)`, `source`, `priority` | `UNIQUE (instrument, quote_instrument, date, source)` |
+| `marketdata_instrument` | `code` PK, `instrument_type` (the tax class of 5.6), `scale`, `name`, `quote_currency`, `exchange` | Instance-wide reference data; `scale BETWEEN 0 AND 12`; `quote_currency` set for securities only; `exchange IN ('B3')` |
+| `marketdata_price` | `instrument`, `quote_instrument`, `date`, `value numeric(30,12)`, `source`, `priority`, `recorded_at` | `PRIMARY KEY (instrument, quote_instrument, date, source)`; `value > 0`; priority fixed by source (P8 amendment A60) |
 | `marketdata_holiday` | `calendar`, `date`, `name` | `PRIMARY KEY (calendar, date)` |
-| `portfolio_position_day` | `user_id`, `account_id`, `date`, `quantity`, `cost_basis` | Derived; rebuilt from postings |
-| `portfolio_realized_result` | `user_id`, `transaction_id`, `instrument`, `quantity`, `cost`, `proceeds`, `result`, `tax_class`, `month` | Derived |
-| `portfolio_income_event` | `user_id`, `transaction_id`, `instrument`, `income_type`, `gross`, `withheld` | Derived |
+| `ledger_trade` | `transaction_id` PK, `user_id`, `account_id`, `cash_account_id`, `side`, `quantity`, `unit_price numeric(30,12)`, `gross`, `fees`, `taxes`, `cost`, `currency` | D1 detail of a trade (A68); `cost` set for sales only; `taxes` 0 on purchases |
+| `ledger_investment_income` | `transaction_id` PK, `user_id`, `account_id`, `cash_account_id`, `income_type`, `gross`, `withheld`, `currency` | D1 detail of an income (A70); `withheld < gross` |
+| `portfolio_position_day` | `user_id`, `account_id`, `instrument`, `date`, `quantity`, `cost_basis` | Derived; one row per security account and date with postings; rebuilt per brokerage (A71) |
+| `portfolio_realized_result` | `user_id`, `transaction_id` PK, `account_id`, `instrument`, `date`, `month`, `quantity`, `cost`, `proceeds`, `result`, `tax_class`, `currency` | Derived; `result = proceeds − cost` |
+| `portfolio_income_event` | `user_id`, `transaction_id` PK, `account_id`, `instrument`, `date`, `income_type`, `tax_treatment`, `gross`, `withheld`, `currency` | Derived; `tax_treatment IN ('exempt', 'exclusive')` |
 | `reporting_account_day` | `user_id`, `account_id`, `date`, `delta_booked`, `delta_settled`, `balance_booked`, `balance_settled` | Derived daily balance series (B02, B08); rebuilt per account from the first changed date |
 | `outbox_event` | ADR 006 | |
-| `<module>_processed_event` | `event_id`, `processed_at` | `PRIMARY KEY (event_id)` |
+| `<module>_processed_event` | `event_id`, `processed_at` | `PRIMARY KEY (event_id)`; Portfolio keeps none, its rebuild is idempotent |
 
 ## 7.5 Indexes
 
