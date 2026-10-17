@@ -182,6 +182,13 @@ func (m *Module) TransactionFacts(ctx context.Context, userID int64, ids []uuid.
 	return m.svc.TransactionFacts(ctx, userID, ids)
 }
 
+// Balance returns the booked balance of an account at the end of date, as GET
+// /accounts/{id}/balance reads it.
+func (m *Module) Balance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time) (money.Money, error) {
+	b, err := m.svc.BalanceAt(ctx, userID, accountID, date, app.BasisBooked)
+	return b.Amount, err
+}
+
 // CategoryTotal sums the postings of a category subtree booked in [from, to), in the base
 // currency (P7 amendment A54).
 func (m *Module) CategoryTotal(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (money.Money, error) {

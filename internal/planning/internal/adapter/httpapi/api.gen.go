@@ -201,6 +201,35 @@ type FieldError struct {
 	Message string `json:"message"`
 }
 
+// Goal current is the sum of the booked balances of the accounts today; remaining is max(target - current, 0);
+// progress_bp is current / target in basis points, rounded down, between 0 and 10000.
+type Goal struct {
+	AccountIds []openapi_types.UUID `json:"account_ids"`
+	Current    Money                `json:"current"`
+	DueOn      openapi_types.Date   `json:"due_on"`
+	Id         openapi_types.UUID   `json:"id"`
+	Name       string               `json:"name"`
+	ProgressBp int                  `json:"progress_bp"`
+	Remaining  Money                `json:"remaining"`
+	Target     Money                `json:"target"`
+}
+
+// GoalInput defines model for GoalInput.
+type GoalInput struct {
+	AccountIds []openapi_types.UUID `json:"account_ids"`
+	DueOn      openapi_types.Date   `json:"due_on"`
+	Name       string               `json:"name"`
+	Target     Money                `json:"target"`
+}
+
+// GoalPage defines model for GoalPage.
+type GoalPage struct {
+	Items []Goal `json:"items"`
+
+	// NextCursor Absent on the last page.
+	NextCursor *string `json:"next_cursor,omitempty"`
+}
+
 // Money defines model for Money.
 type Money struct {
 	// Amount Integer minor units (ADR 005).
@@ -387,6 +416,12 @@ type GetBudgetProgressParams struct {
 	Month string `form:"month" json:"month"`
 }
 
+// ListGoalsParams defines parameters for ListGoals.
+type ListGoalsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
 // ListOccurrencesParams defines parameters for ListOccurrences.
 type ListOccurrencesParams struct {
 	From       openapi_types.Date  `form:"from" json:"from"`
@@ -406,6 +441,9 @@ type CreateBudgetJSONRequestBody = BudgetInput
 
 // AddBudgetAmountJSONRequestBody defines body for AddBudgetAmount for application/json ContentType.
 type AddBudgetAmountJSONRequestBody = BudgetAmount
+
+// CreateGoalJSONRequestBody defines body for CreateGoal for application/json ContentType.
+type CreateGoalJSONRequestBody = GoalInput
 
 // MoveOccurrenceJSONRequestBody defines body for MoveOccurrence for application/json ContentType.
 type MoveOccurrenceJSONRequestBody = MoveInput
@@ -445,6 +483,15 @@ type ServerInterface interface {
 	// GetBudgetProgress Planned, carried, spent and available amounts of a month, accrual view (P7 amendment A54).
 	// (GET /budgets/{id}/progress)
 	GetBudgetProgress(w http.ResponseWriter, r *http.Request, id ID, params GetBudgetProgressParams)
+	// ListGoals Goals in creation order, with their progress today.
+	// (GET /goals)
+	ListGoals(w http.ResponseWriter, r *http.Request, params ListGoalsParams)
+	// CreateGoal Create a target balance over balance accounts by a date (P7 amendment A55).
+	// (POST /goals)
+	CreateGoal(w http.ResponseWriter, r *http.Request)
+	// GetGoal A goal with its progress today.
+	// (GET /goals/{id})
+	GetGoal(w http.ResponseWriter, r *http.Request, id ID)
 	// ListOccurrences Occurrences with expected date in [from, to], at most 366 days, by date.
 	// (GET /occurrences)
 	ListOccurrences(w http.ResponseWriter, r *http.Request, params ListOccurrencesParams)
@@ -634,6 +681,92 @@ func (siw *ServerInterfaceWrapper) GetBudgetProgress(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetBudgetProgress(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListGoals operation middleware
+func (siw *ServerInterfaceWrapper) ListGoals(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListGoalsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListGoals(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateGoal operation middleware
+func (siw *ServerInterfaceWrapper) CreateGoal(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateGoal(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetGoal operation middleware
+func (siw *ServerInterfaceWrapper) GetGoal(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetGoal(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1118,6 +1251,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/budgets/{id}", wrapper.GetBudget)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/budgets/{id}/amounts", wrapper.AddBudgetAmount)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/budgets/{id}/progress", wrapper.GetBudgetProgress)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/goals", wrapper.ListGoals)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/goals", wrapper.CreateGoal)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/goals/{id}", wrapper.GetGoal)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/occurrences/{id}/unrealize", wrapper.UnrealizeOccurrence)
 
 	return m
@@ -1477,6 +1613,186 @@ func (response GetBudgetProgress422ApplicationProblemPlusJSONResponse) VisitGetB
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListGoalsRequestObject struct {
+	Params ListGoalsParams
+}
+
+type ListGoalsResponseObject interface {
+	VisitListGoalsResponse(w http.ResponseWriter) error
+}
+
+type ListGoals200JSONResponse GoalPage
+
+func (response ListGoals200JSONResponse) VisitListGoalsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListGoals400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListGoals400ApplicationProblemPlusJSONResponse) VisitListGoalsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListGoals401ApplicationProblemPlusJSONResponse Problem
+
+func (response ListGoals401ApplicationProblemPlusJSONResponse) VisitListGoalsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateGoalRequestObject struct {
+	Body *CreateGoalJSONRequestBody
+}
+
+type CreateGoalResponseObject interface {
+	VisitCreateGoalResponse(w http.ResponseWriter) error
+}
+
+type CreateGoal201ResponseHeaders struct {
+	Location *string
+}
+
+type CreateGoal201JSONResponse struct {
+	Body    Goal
+	Headers CreateGoal201ResponseHeaders
+}
+
+func (response CreateGoal201JSONResponse) VisitCreateGoalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateGoal400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateGoal400ApplicationProblemPlusJSONResponse) VisitCreateGoalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateGoal401ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateGoal401ApplicationProblemPlusJSONResponse) VisitCreateGoalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateGoal422ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateGoal422ApplicationProblemPlusJSONResponse) VisitCreateGoalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetGoalRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type GetGoalResponseObject interface {
+	VisitGetGoalResponse(w http.ResponseWriter) error
+}
+
+type GetGoal200JSONResponse Goal
+
+func (response GetGoal200JSONResponse) VisitGetGoalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetGoal401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetGoal401ApplicationProblemPlusJSONResponse) VisitGetGoalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetGoal404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetGoal404ApplicationProblemPlusJSONResponse) VisitGetGoalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -2338,6 +2654,15 @@ type StrictServerInterface interface {
 	// GetBudgetProgress Planned, carried, spent and available amounts of a month, accrual view (P7 amendment A54).
 	// (GET /budgets/{id}/progress)
 	GetBudgetProgress(ctx context.Context, request GetBudgetProgressRequestObject) (GetBudgetProgressResponseObject, error)
+	// ListGoals Goals in creation order, with their progress today.
+	// (GET /goals)
+	ListGoals(ctx context.Context, request ListGoalsRequestObject) (ListGoalsResponseObject, error)
+	// CreateGoal Create a target balance over balance accounts by a date (P7 amendment A55).
+	// (POST /goals)
+	CreateGoal(ctx context.Context, request CreateGoalRequestObject) (CreateGoalResponseObject, error)
+	// GetGoal A goal with its progress today.
+	// (GET /goals/{id})
+	GetGoal(ctx context.Context, request GetGoalRequestObject) (GetGoalResponseObject, error)
 	// ListOccurrences Occurrences with expected date in [from, to], at most 366 days, by date.
 	// (GET /occurrences)
 	ListOccurrences(ctx context.Context, request ListOccurrencesRequestObject) (ListOccurrencesResponseObject, error)
@@ -2548,6 +2873,89 @@ func (sh *strictHandler) GetBudgetProgress(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetBudgetProgressResponseObject); ok {
 		if err := validResponse.VisitGetBudgetProgressResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListGoals operation middleware
+func (sh *strictHandler) ListGoals(w http.ResponseWriter, r *http.Request, params ListGoalsParams) {
+	var request ListGoalsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListGoals(ctx, request.(ListGoalsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListGoals")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListGoalsResponseObject); ok {
+		if err := validResponse.VisitListGoalsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateGoal operation middleware
+func (sh *strictHandler) CreateGoal(w http.ResponseWriter, r *http.Request) {
+	var request CreateGoalRequestObject
+
+	var body CreateGoalJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateGoal(ctx, request.(CreateGoalRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateGoal")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateGoalResponseObject); ok {
+		if err := validResponse.VisitCreateGoalResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetGoal operation middleware
+func (sh *strictHandler) GetGoal(w http.ResponseWriter, r *http.Request, id ID) {
+	var request GetGoalRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetGoal(ctx, request.(GetGoalRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetGoal")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetGoalResponseObject); ok {
+		if err := validResponse.VisitGetGoalResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

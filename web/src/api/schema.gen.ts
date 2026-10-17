@@ -1461,6 +1461,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/goals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Goals in creation order, with their progress today. */
+        get: operations["listGoals"];
+        put?: never;
+        /** Create a target balance over balance accounts by a date (P7 amendment A55). */
+        post: operations["createGoal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/goals/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A goal with its progress today. */
+        get: operations["getGoal"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/occurrences/{id}/unrealize": {
         parameters: {
             query?: never;
@@ -1624,6 +1659,34 @@ export interface components {
             carried: components["schemas"]["Money"];
             spent: components["schemas"]["Money"];
             available: components["schemas"]["Money"];
+        };
+        GoalInput: {
+            name: string;
+            target: components["schemas"]["Money"];
+            /** Format: date */
+            due_on: string;
+            account_ids: string[];
+        };
+        /**
+         * @description current is the sum of the booked balances of the accounts today; remaining is max(target - current, 0);
+         *     progress_bp is current / target in basis points, rounded down, between 0 and 10000.
+         */
+        Goal: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            target: components["schemas"]["Money"];
+            /** Format: date */
+            due_on: string;
+            account_ids: string[];
+            current: components["schemas"]["Money"];
+            remaining: components["schemas"]["Money"];
+            progress_bp: number;
+        };
+        GoalPage: {
+            items: components["schemas"]["Goal"][];
+            /** @description Absent on the last page. */
+            next_cursor?: string;
         };
         SkipInput: {
             reason?: string;
@@ -5402,6 +5465,84 @@ export interface operations {
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    listGoals: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalPage"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+        };
+    };
+    createGoal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoalInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    /** @description Path of the created record. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Goal"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getGoal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Goal"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
         };
     };
     unrealizeOccurrence: {

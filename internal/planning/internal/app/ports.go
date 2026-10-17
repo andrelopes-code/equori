@@ -50,6 +50,8 @@ type Ledger interface {
 	// CategoryTotal sums the postings of a category subtree booked in [from, to), in minor
 	// units of the base currency.
 	CategoryTotal(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (int64, error)
+	// Balance is the booked balance of an account at the end of date, in its minor units.
+	Balance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time) (int64, error)
 }
 
 // Calendar returns the holiday dates of a calendar in a year.
@@ -111,4 +113,9 @@ type Repository interface {
 	Budget(ctx context.Context, userID int64, id uuid.UUID) (domain.Budget, error)
 	LockBudget(ctx context.Context, userID int64, id uuid.UUID) (domain.Budget, error)
 	ListBudgets(ctx context.Context, userID int64, p page.Request[IDKey]) ([]domain.Budget, *IDKey, error)
+
+	// InsertGoal stores g with its accounts; a used name is a field error on name.
+	InsertGoal(ctx context.Context, userID int64, g domain.Goal) (domain.Goal, error)
+	Goal(ctx context.Context, userID int64, id uuid.UUID) (domain.Goal, error)
+	ListGoals(ctx context.Context, userID int64, p page.Request[IDKey]) ([]domain.Goal, *IDKey, error)
 }

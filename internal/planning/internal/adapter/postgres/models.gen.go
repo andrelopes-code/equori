@@ -27,6 +27,16 @@ type PlanningBudgetAmount struct {
 	Amount        int64
 }
 
+type PlanningGoal struct {
+	ID        uuid.UUID
+	UserID    int64
+	Name      string
+	Target    int64
+	Currency  string
+	DueOn     time.Time
+	CreatedAt time.Time
+}
+
 type PlanningOccurrence struct {
 	ID             uuid.UUID
 	UserID         int64
