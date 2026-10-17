@@ -1,8 +1,10 @@
 package ledger_test
 
 import (
+	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
 )
@@ -136,4 +138,68 @@ func TestLaterSaleLocksEarlierPostings(t *testing.T) {
 	}
 	h.MustDo(http.MethodPost, "/api/v1/transactions/"+sell.ID+"/void", map[string]string{"reason": "wrong"}, http.StatusOK, nil)
 	h.MustDo(http.MethodPost, "/api/v1/transactions/"+buy.ID+"/void", map[string]string{"reason": "typo"}, http.StatusOK, nil)
+}
+
+// A69 under concurrency: a change to a security account waits for the account row that a
+// sale of that account locks, then sees the sale and is refused.
+func TestSecurityPostingsWaitForTheAccountLock(t *testing.T) {
+	f := newInvestFixture(t)
+	f.trade(t, "buy", "2026-10-05", 150, "10.05", 490)
+	ctx := t.Context()
+	tx, err := f.h.Pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	// A sale in flight: it holds the account row and commits after the change has started.
+	user := f.h.OwnerID()
+	var sale string
+	steps := []func() error{
+		func() error {
+			_, err := tx.Exec(ctx, `SELECT id FROM ledger_account WHERE id = $1 FOR UPDATE`, f.mxrf11)
+			return err
+		},
+		func() error {
+			return tx.QueryRow(ctx, `INSERT INTO ledger_transaction (user_id, date, description, balancing_currency, origin)
+				VALUES ($1, '2026-10-20', 'sale', 'BRL', 'manual') RETURNING id`, user).Scan(&sale)
+		},
+		func() error {
+			_, err := tx.Exec(ctx, `INSERT INTO ledger_posting (user_id, transaction_id, account_id, position, amount, weight, booked_on, status)
+				VALUES ($1, $2, $3, 0, 1008, 1008, '2026-10-20', 'cleared'), ($1, $2, $4, 1, -1, -1008, '2026-10-20', 'cleared')`, user, sale, f.cash, f.mxrf11)
+			return err
+		},
+		func() error {
+			_, err := tx.Exec(ctx, `INSERT INTO ledger_trade (transaction_id, user_id, account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, cost, currency)
+				VALUES ($1, $2, $3, $4, 'sell', 1, 10.08, 1008, 0, 0, 1008, 'BRL')`, sale, user, f.mxrf11, f.cash)
+			return err
+		},
+	}
+	for _, step := range steps {
+		if err := step(); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	done := make(chan apitest.Response, 1)
+	go func() {
+		done <- f.h.Do(http.MethodPost, "/api/v1/transactions", map[string]any{"date": "2026-10-10", "description": "bonus", "postings": []map[string]any{
+			{"account_id": f.mxrf11, "amount": units(1, "MXRF11"), "weight": apitest.BRL(1000)},
+			apitest.Posting(f.cash, -1000),
+		}})
+	}()
+	waiting, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	for {
+		var n int
+		if err := f.h.Pool.QueryRow(waiting, `SELECT count(*) FROM pg_locks WHERE NOT granted`).Scan(&n); err != nil {
+			t.Fatalf("the change never waited for the account lock: %v", err)
+		}
+		if n > 0 {
+			break
+		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatal(err)
+	}
+	f.h.ExpectProblem(<-done, http.StatusConflict, "later_sale_exists", "")
 }

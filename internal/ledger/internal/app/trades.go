@@ -1,7 +1,9 @@
 package app
 
 import (
+	"bytes"
 	"context"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -139,8 +141,8 @@ func (s *Service) tradeAccounts(ctx context.Context, r Repository, userID int64,
 	return accts, nil
 }
 
-// checkLaterSales rejects a change to postings of accounts dated on or before a
-// non-voided sale of one of them other than exclude (P8 amendment A69).
+// checkLaterSales locks the security accounts of postings and rejects a change dated on
+// or before a non-voided sale of one of them other than exclude (P8 amendment A69).
 func checkLaterSales(ctx context.Context, r Repository, userID int64, date time.Time, postings []domain.Posting, exclude uuid.UUID) error {
 	ids := make([]uuid.UUID, 0, len(postings))
 	for _, p := range postings {
@@ -150,6 +152,14 @@ func checkLaterSales(ctx context.Context, r Repository, userID int64, date time.
 	}
 	if len(ids) == 0 {
 		return nil
+	}
+	// A sale locks its account before reading the holding; locking here, in id order,
+	// makes a concurrent change wait for that sale and then see it.
+	slices.SortFunc(ids, func(a, b uuid.UUID) int { return bytes.Compare(a[:], b[:]) })
+	for _, id := range slices.Compact(ids) {
+		if _, err := r.LockAccount(ctx, userID, id); err != nil {
+			return err
+		}
 	}
 	later, err := r.LaterSaleExists(ctx, userID, ids, date, exclude)
 	if err != nil {
