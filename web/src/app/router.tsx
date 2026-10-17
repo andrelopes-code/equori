@@ -6,14 +6,19 @@ import {
   createRoute,
   createRouter,
   Outlet,
+  redirect,
 } from "@tanstack/react-router";
 import type { RouterHistory } from "@tanstack/react-router";
 import type { Client } from "openapi-fetch";
+import { useEffect } from "react";
 
 import { useApi } from "@/api/api-context";
 import type { paths } from "@/api/schema.gen";
+import { ProblemError } from "@/api/problem";
 import { Placeholder } from "@/app/placeholder";
+import { useSessionExpiry } from "@/app/providers";
 import { AppFrame } from "@/app/shell/app-frame";
+import { LoginPage, meQuery } from "@/features/session";
 
 export interface RouterContext {
   queryClient: QueryClient;
@@ -24,19 +29,41 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
   component: Outlet,
 });
 
+// A leading "//" or "/\\" is a scheme-relative URL to another origin.
+function isLocalPath(path: string): boolean {
+  return /^\/(?![/\\])/.test(path);
+}
+
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/login",
-  validateSearch: (search): { redirect?: string } =>
-    typeof search.redirect === "string" && search.redirect.startsWith("/")
-      ? { redirect: search.redirect }
-      : {},
-  component: Placeholder,
+  // The key is returned as undefined, not omitted: the router keeps raw keys the validator leaves out.
+  validateSearch: (search): { redirect: string | undefined } => ({
+    redirect:
+      typeof search.redirect === "string" && isLocalPath(search.redirect)
+        ? search.redirect
+        : undefined,
+  }),
+  component: LoginPage,
 });
 
 const authedRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: "_authed",
+  beforeLoad: async ({ context, location }) => {
+    try {
+      await context.queryClient.query({
+        ...meQuery(context.api),
+        staleTime: "static",
+      });
+    } catch (error) {
+      if (error instanceof ProblemError && error.status === 401) {
+        // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirects are thrown objects.
+        throw redirect({ to: "/login", search: { redirect: location.href } });
+      }
+      throw error;
+    }
+  },
   component: AppFrame,
 });
 
@@ -82,5 +109,16 @@ declare module "@tanstack/react-router" {
 export function AppRouterProvider({ router }: { router: AppRouter }) {
   const api = useApi();
   const queryClient = useQueryClient();
+  const expiry = useSessionExpiry();
+  useEffect(
+    () =>
+      expiry.install(() => {
+        queryClient.clear();
+        const { pathname, href } = router.state.location;
+        if (pathname === "/login") return;
+        void router.navigate({ to: "/login", search: { redirect: href } });
+      }),
+    [expiry, queryClient, router],
+  );
   return <RouterProvider router={router} context={{ api, queryClient }} />;
 }

@@ -9,6 +9,7 @@ import {
 } from "@slotted/react/action-sheet";
 import { useState } from "react";
 
+import { useLogout } from "@/features/session";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import type { Locale } from "@/i18n/locale";
 import { useScheme } from "@/theme/scheme";
@@ -28,6 +29,7 @@ export function MoreSheet({
 }) {
   const t = useT();
   const navigate = useNavigate();
+  const logout = useLogout();
   const [, setScheme] = useScheme();
   const [, setLocale] = useAppLocale();
   const [level, setLevel] = useState<Level>("root");
@@ -77,7 +79,7 @@ export function MoreSheet({
               >
                 {t("more.language")}
               </ActionSheetItem>
-              <ActionSheetItem value="logout" tone="danger">
+              <ActionSheetItem value="logout" tone="danger" onSelect={logout}>
                 {t("more.logout")}
               </ActionSheetItem>
             </>

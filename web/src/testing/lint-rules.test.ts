@@ -95,14 +95,21 @@ const rows = [
   },
 ];
 
+// The first row builds the TypeScript program for the whole project, which outgrows the 5 s default.
+const lintTimeoutMs = 30_000;
+
 describe("lint rules", () => {
-  it.each(rows)("$name", async ({ filePath, code, rule }) => {
-    const [result] = await eslint.lintText(code, { filePath });
-    const ruleIDs = (result?.messages ?? []).map((m) => m.ruleId);
-    if (rule === undefined) {
-      expect(ruleIDs).toEqual([]);
-    } else {
-      expect(ruleIDs[0]).toBe(rule);
-    }
-  });
+  it.each(rows)(
+    "$name",
+    async ({ filePath, code, rule }) => {
+      const [result] = await eslint.lintText(code, { filePath });
+      const ruleIDs = (result?.messages ?? []).map((m) => m.ruleId);
+      if (rule === undefined) {
+        expect(ruleIDs).toEqual([]);
+      } else {
+        expect(ruleIDs[0]).toBe(rule);
+      }
+    },
+    lintTimeoutMs,
+  );
 });
