@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { validateTransactionSearch } from "@/features/transactions/search";
+import {
+  patchSearch,
+  validateTransactionSearch,
+} from "@/features/transactions/search";
 
 describe("validateTransactionSearch", () => {
   it("drops invalid search params", () => {
@@ -56,5 +59,22 @@ describe("validateTransactionSearch", () => {
       uncategorized: true,
     });
     expect(validateTransactionSearch({ uncategorized: false })).toEqual({});
+  });
+});
+
+describe("patchSearch", () => {
+  it("sets a key, replaces one and drops a key patched with undefined or empty text", () => {
+    const base = { tag: "viagem", q: "mercado" };
+    expect(patchSearch(base, { from: "2026-10-01" })).toEqual({
+      tag: "viagem",
+      q: "mercado",
+      from: "2026-10-01",
+    });
+    expect(patchSearch(base, { tag: "casa" })).toEqual({
+      tag: "casa",
+      q: "mercado",
+    });
+    expect(patchSearch(base, { q: undefined })).toEqual({ tag: "viagem" });
+    expect(patchSearch(base, { tag: " " })).toEqual({ q: "mercado" });
   });
 });

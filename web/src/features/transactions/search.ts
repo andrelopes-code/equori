@@ -60,3 +60,11 @@ export function validateTransactionSearch(
     ...(q === undefined ? {} : { q }),
   };
 }
+
+// A patch value that fails validation (empty text, undefined) removes the filter.
+export function patchSearch(
+  search: TransactionSearch,
+  patch: Record<string, unknown>,
+): TransactionSearch {
+  return validateTransactionSearch({ ...search, ...patch });
+}

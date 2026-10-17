@@ -57,3 +57,29 @@ export function uncategorizedCountQuery(api: Client<paths>) {
     },
   });
 }
+
+// Every tag in use, following the cursor to the last page.
+export function tagsQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: [...transactionKeys.all, "tags"] as const,
+    queryFn: async () => {
+      const tags: string[] = [];
+      let cursor: string | undefined;
+      do {
+        const page = await unwrap(
+          await api.GET("/tags", {
+            params: {
+              query: {
+                limit: countLimit,
+                ...(cursor === undefined ? {} : { cursor }),
+              },
+            },
+          }),
+        );
+        tags.push(...page.items);
+        cursor = page.next_cursor;
+      } while (cursor !== undefined);
+      return tags;
+    },
+  });
+}

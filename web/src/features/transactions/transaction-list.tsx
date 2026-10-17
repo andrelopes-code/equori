@@ -15,15 +15,16 @@ import {
   ResultStateContent,
   ResultStateTitle,
 } from "@slotted/react/result-state";
-import { Skeleton, SkeletonRegion } from "@slotted/react/skeleton";
+import { SkeletonRegion } from "@slotted/react/skeleton";
 import { useEffect, useMemo, useRef } from "react";
 import type { ReactNode } from "react";
 
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { accountsQuery } from "@/features/accounts";
-import { instrumentsQuery, useScale } from "@/features/setup";
+import { instrumentsQuery, payeesQuery, useScale } from "@/features/setup";
 import { transactionsInfiniteQuery } from "@/features/transactions/api";
+import { PlaceholderRows } from "@/features/transactions/placeholder-rows";
 import { rowAmount } from "@/features/transactions/row-amount";
 import type { TransactionSearch } from "@/features/transactions/search";
 import styles from "@/features/transactions/transaction-list.module.css";
@@ -39,21 +40,6 @@ type Transaction = components["schemas"]["Transaction"];
 
 const placeholderRows = 5;
 const prefetchMargin = "200px";
-
-function PlaceholderRows({ count }: { count: number }) {
-  return Array.from({ length: count }, (_, i) => (
-    <ListItem key={i}>
-      <ListItemBody>
-        <ListItemLabel>
-          <Skeleton shape="text" inlineSize="60%" />
-        </ListItemLabel>
-        <ListItemDescription>
-          <Skeleton shape="text" inlineSize="40%" />
-        </ListItemDescription>
-      </ListItemBody>
-    </ListItem>
-  ));
-}
 
 function names(
   tx: Transaction,
@@ -99,11 +85,17 @@ export function TransactionList({
   const spaLink = useSpaLink();
   const accounts = useQuery(accountsQuery(api));
   const instruments = useQuery(instrumentsQuery(api));
+  // Payee names refine the row labels but never block the list.
+  const payees = useQuery(payeesQuery(api));
   const transactions = useInfiniteQuery(
     transactionsInfiniteQuery(api, {
       ...search,
       ...(limit === undefined ? {} : { limit }),
     }),
+  );
+  const payeeNames = useMemo(
+    () => new Map(payees.data?.map((p) => [p.id, p.name])),
+    [payees.data],
   );
   const accountsById = useMemo(
     () => new Map(accounts.data?.map((a) => [a.id, a])),
@@ -111,14 +103,26 @@ export function TransactionList({
   );
 
   const sentinel = useRef<HTMLDivElement>(null);
-  const { hasNextPage, isFetchingNextPage, fetchNextPage } = transactions;
+  const {
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    fetchNextPage,
+  } = transactions;
   const ready =
     accounts.data !== undefined &&
     transactions.data !== undefined &&
     scale !== null;
   useEffect(() => {
     const node = sentinel.current;
-    if (!infinite || !ready || !hasNextPage || isFetchingNextPage || !node) {
+    if (
+      !infinite ||
+      !ready ||
+      !hasNextPage ||
+      isFetchingNextPage ||
+      isFetchNextPageError ||
+      !node
+    ) {
       return;
     }
     const observer = new IntersectionObserver(
@@ -133,9 +137,20 @@ export function TransactionList({
     return () => {
       observer.disconnect();
     };
-  }, [infinite, ready, hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [
+    infinite,
+    ready,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    fetchNextPage,
+  ]);
 
-  const failed = accounts.error ?? instruments.error ?? transactions.error;
+  // A failed next page keeps the loaded rows; the list end offers the retry.
+  const failed =
+    accounts.error ??
+    instruments.error ??
+    (isFetchNextPageError ? null : transactions.error);
   if (failed) {
     return (
       <QueryError
@@ -183,7 +198,9 @@ export function TransactionList({
     const categories = names(tx, accountsById, ["income", "expense"]).join(
       ", ",
     );
-    const label = tx.description || categories;
+    const payee =
+      tx.payee_id === undefined ? undefined : payeeNames.get(tx.payee_id);
+    const label = payee ?? (tx.description || categories);
     const categorySuffix = ` · ${categories}`;
     const second = [
       ...(infinite ? [] : [formatDate(tx.date, locale)]),
@@ -203,7 +220,7 @@ export function TransactionList({
               className={tx.voided_at === undefined ? "" : styles.voided}
             >
               {label === "" ? t("transactions.untitled") : label}
-              {tx.description !== "" && categories !== "" && (
+              {label !== categories && categories !== "" && (
                 <span className={styles.category}>{categorySuffix}</span>
               )}
             </ListItemLabel>
@@ -233,7 +250,7 @@ export function TransactionList({
               <ListSection
                 key={date}
                 label={formatDate(date, locale)}
-                level="3"
+                level="2"
                 sticky
               >
                 {items.map(renderRow)}
@@ -242,7 +259,15 @@ export function TransactionList({
           : rows.map(renderRow)}
         {isFetchingNextPage && <PlaceholderRows count={placeholderRows} />}
       </List>
-      {infinite && hasNextPage && (
+      {isFetchNextPageError && (
+        <QueryError
+          error={transactions.error}
+          onRetry={() => {
+            void fetchNextPage();
+          }}
+        />
+      )}
+      {infinite && hasNextPage && !isFetchNextPageError && (
         <div ref={sentinel} className={styles.sentinel} aria-hidden="true" />
       )}
     </>

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { components } from "@/api/schema.gen";
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { writeLocale } from "@/i18n/locale";
-import { fakeApi, json } from "@/testing/fake-api";
+import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 
 type Account = components["schemas"]["Account"];
@@ -14,6 +14,13 @@ type Transaction = components["schemas"]["Transaction"];
 const checkingID = "11111111-1111-4111-8111-111111111111";
 const foodID = "22222222-2222-4222-8222-222222222222";
 const travelID = "33333333-3333-4333-8333-333333333333";
+const bakeryID = "44444444-4444-4444-8444-444444444444";
+const marketID = "55555555-5555-4555-8555-555555555555";
+
+const payees = [
+  { id: bakeryID, name: "Padaria" },
+  { id: marketID, name: "Mercado Central" },
+];
 
 const accounts: Account[] = [
   {
@@ -81,6 +88,8 @@ function listApi(opts: Options = {}) {
         items: [{ code: "BRL", type: "currency", scale: 2, name: "Real" }],
       }),
     "GET /api/v1/accounts": () => json(200, { items: accounts }),
+    "GET /api/v1/payees": () => json(200, { items: payees }),
+    "GET /api/v1/tags": () => json(200, { items: ["casa", "viagem"] }),
     "GET /api/v1/transactions": (req) => {
       const params = new URL(req.url).searchParams;
       requests.push(params);
@@ -152,7 +161,7 @@ describe("transactions list", () => {
   it("groups rows under day headers, newest day first", async () => {
     const { fetch } = listApi();
     await renderApp("/transactions", { fetch });
-    const days = await screen.findAllByRole("heading", { level: 3 });
+    const days = await screen.findAllByRole("heading", { level: 2 });
     expect(days.map((d) => d.textContent)).toEqual([
       "16/10/2026",
       "15/10/2026",
@@ -180,7 +189,7 @@ describe("transactions list", () => {
     expect(requests).toHaveLength(2);
     expect(requests[1]?.get("cursor")).toBe("cursor-2");
     expect(
-      screen.getAllByRole("heading", { level: 3 }).map((d) => d.textContent),
+      screen.getAllByRole("heading", { level: 2 }).map((d) => d.textContent),
     ).toEqual(["16/10/2026", "15/10/2026", "14/10/2026"]);
   });
 
@@ -215,6 +224,51 @@ describe("transactions list", () => {
   });
 });
 
+describe("transactions rows and paging", () => {
+  it("shows the payee name instead of the description, then the category", async () => {
+    const { fetch } = listApi({
+      respond: () =>
+        json(200, {
+          items: [transaction(5, "2026-10-16", { payee_id: bakeryID })],
+        }),
+    });
+    await renderApp("/transactions", { fetch, width: 360 });
+    const row = (await screen.findByText(/^Padaria/)).closest("li");
+    if (row === null) throw new Error("row not found");
+    expect(within(row).getByText(/^Padaria/).textContent).toBe(
+      "Padaria · Mercado",
+    );
+    expect(within(row).getByText("Itaú")).toBeInTheDocument();
+    expect(screen.queryByText(/Compra 5/)).toBeNull();
+  });
+
+  it("keeps the loaded rows and offers a retry when the next page fails", async () => {
+    const user = userEvent.setup();
+    let fail = true;
+    const { fetch, requests } = listApi({
+      respond: (params) => {
+        if (params.get("cursor") !== "cursor-2") return json(200, firstPage);
+        return fail ? problem(500, "internal_error") : json(200, secondPage);
+      },
+    });
+    await renderApp("/transactions", { fetch });
+    await screen.findByText("Compra 3");
+    await scrollToSentinel();
+    const retry = await screen.findByRole("button", {
+      name: catalogPtBR["common.retry"],
+    });
+    expect(screen.getByText("Compra 3")).toBeInTheDocument();
+    fail = false;
+    await user.click(retry);
+    expect(await screen.findByText("Compra 4")).toBeInTheDocument();
+    expect(requests.at(-1)?.get("cursor")).toBe("cursor-2");
+    expect(screen.getByText("Compra 1")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: catalogPtBR["common.retry"] }),
+    ).toBeNull();
+  });
+});
+
 describe("transactions search", () => {
   it("navigates to ?q= and requests with q", async () => {
     const user = userEvent.setup();
@@ -233,6 +287,43 @@ describe("transactions search", () => {
     expect(router.state.location.href).toBe("/transactions?q=mercado");
     await waitFor(() => {
       expect(requests.at(-1)?.get("q")).toBe("mercado");
+    });
+  });
+
+  it("keeps focus in the search field after submitting", async () => {
+    const user = userEvent.setup();
+    const { fetch } = listApi();
+    const { router } = await renderApp("/transactions", { fetch });
+    await screen.findByText("Compra 1");
+    const field = screen.getByRole("searchbox", {
+      name: catalogPtBR["transactions.search"],
+    });
+    await user.type(field, "mercado{Enter}");
+    await waitFor(() => {
+      expect(router.state.location.search).toEqual({ q: "mercado" });
+    });
+    expect(
+      screen.getByRole("searchbox", {
+        name: catalogPtBR["transactions.search"],
+      }),
+    ).toBe(field);
+    expect(field).toHaveFocus();
+  });
+
+  it("clears the field when the search tag is removed", async () => {
+    const user = userEvent.setup();
+    const { fetch } = listApi();
+    await renderApp("/transactions?q=mercado", { fetch });
+    const field = await screen.findByRole("searchbox", {
+      name: catalogPtBR["transactions.search"],
+    });
+    expect(field).toHaveValue("mercado");
+    const tags = screen.getByRole("toolbar", {
+      name: catalogPtBR["transactions.filters.active"],
+    });
+    await user.click(within(tags).getByRole("button", { name: /mercado/ }));
+    await waitFor(() => {
+      expect(field).toHaveValue("");
     });
   });
 
@@ -304,6 +395,51 @@ describe("transactions filters", () => {
       expect(router.state.location.href).toBe("/transactions");
     });
     expect(screen.queryByText("Conta: Itaú")).toBeNull();
+  });
+
+  it("filters by payee and tag from the pickers and names the payee in its tag", async () => {
+    const user = userEvent.setup();
+    const { fetch, requests } = listApi();
+    const { router } = await renderApp("/transactions", { fetch });
+    await screen.findByText("Compra 1");
+    await user.click(
+      screen.getByRole("combobox", {
+        name: catalogPtBR["transactions.filter.payee"],
+      }),
+    );
+    await user.click(await screen.findByRole("option", { name: "Padaria" }));
+    await waitFor(() => {
+      expect(router.state.location.search).toEqual({ payee_id: bakeryID });
+    });
+    await user.click(
+      screen.getByRole("combobox", {
+        name: catalogPtBR["transactions.filter.tag"],
+      }),
+    );
+    await user.click(await screen.findByRole("option", { name: "casa" }));
+    await waitFor(() => {
+      expect(router.state.location.search).toEqual({
+        payee_id: bakeryID,
+        tag: "casa",
+      });
+    });
+    await waitFor(() => {
+      expect(requests.at(-1)?.get("payee_id")).toBe(bakeryID);
+      expect(requests.at(-1)?.get("tag")).toBe("casa");
+    });
+    const tags = screen.getByRole("toolbar", {
+      name: catalogPtBR["transactions.filters.active"],
+    });
+    expect(within(tags).getByText("Beneficiário: Padaria")).toBeInTheDocument();
+    expect(within(tags).getByText("Tag: casa")).toBeInTheDocument();
+  });
+
+  it("names the payee in the tag of a payee filter loaded from the URL", async () => {
+    const { fetch } = listApi();
+    await renderApp(`/transactions?payee_id=${marketID}`, { fetch });
+    expect(
+      await screen.findByText("Beneficiário: Mercado Central"),
+    ).toBeInTheDocument();
   });
 
   it("places the filter controls in the page header on desktop, without a drawer trigger", async () => {
