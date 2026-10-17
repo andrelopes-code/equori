@@ -4,7 +4,10 @@ import { ProblemError } from "@/api/problem";
 
 const maxRetries = 2;
 
-export function newQueryClient(onUnauthenticated: () => void): QueryClient {
+export function newQueryClient(
+  onUnauthenticated: () => void,
+  retryDelay?: number,
+): QueryClient {
   const onError = (error: Error) => {
     if (error instanceof ProblemError && error.status === 401) {
       onUnauthenticated();
@@ -15,6 +18,7 @@ export function newQueryClient(onUnauthenticated: () => void): QueryClient {
     mutationCache: new MutationCache({ onError }),
     defaultOptions: {
       queries: {
+        ...(retryDelay === undefined ? {} : { retryDelay }),
         retry: (count, error) =>
           !(error instanceof ProblemError && error.status < 500) &&
           count < maxRetries,

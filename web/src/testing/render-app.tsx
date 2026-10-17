@@ -14,7 +14,11 @@ export async function renderApp(
   setViewport(opts.width ?? 1280);
   const router = newRouter(createMemoryHistory({ initialEntries: [path] }));
   const result = render(
-    <AppProviders fetchImpl={opts.fetch} today={opts.today ?? "2026-10-17"}>
+    <AppProviders
+      fetchImpl={opts.fetch}
+      today={opts.today ?? "2026-10-17"}
+      retryDelay={0}
+    >
       <AppRouterProvider router={router} />
     </AppProviders>,
   );

@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -78,6 +78,8 @@ function transaction(n: number): Transaction {
 }
 
 interface Options {
+  instruments?: () => Promise<Response>;
+  recent?: () => Promise<Response>;
   balances?: () => Response | Promise<Response>;
   uncategorizedNext?: string;
 }
@@ -88,6 +90,7 @@ function homeApi(opts: Options = {}) {
     "GET /api/v1/me": () => json(200, { id: 1, email: "a@b.c", role: "admin" }),
     "GET /api/v1/settings": () => json(200, { base_currency: "BRL" }),
     "GET /api/v1/instruments": () =>
+      opts.instruments?.() ??
       json(200, {
         items: [
           { code: "BRL", type: "currency", scale: 2, name: "Real" },
@@ -109,7 +112,10 @@ function homeApi(opts: Options = {}) {
             : { next_cursor: opts.uncategorizedNext }),
         });
       }
-      return json(200, { items: [1, 2, 3, 4, 5].map(transaction) });
+      return (
+        opts.recent?.() ??
+        json(200, { items: [1, 2, 3, 4, 5].map(transaction) })
+      );
     },
   });
   return { fetch, calls };
@@ -198,6 +204,57 @@ describe("home waiting states", () => {
     });
   });
 
+  it("keeps placeholders and formats no amount until the instrument scales load", async () => {
+    let release: (response: Response) => void = () => undefined;
+    const pending = new Promise<Response>((resolve) => {
+      release = resolve;
+    });
+    const { fetch, calls } = homeApi({ instruments: () => pending });
+    const { container } = await renderApp("/", { fetch });
+    const region = screen.getByRole("region", {
+      name: catalogPtBR["home.balances"],
+    });
+    await waitFor(() => {
+      expect(calls.balances).toBe(1);
+    });
+    await screen.findByRole("link", {
+      name: catalogPtBR["home.uncategorized"].replace("{count}", "3"),
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(region).toHaveAttribute("aria-busy", "true");
+    expect(
+      container.querySelectorAll('[data-ui="skeleton"]').length,
+    ).toBeGreaterThan(0);
+    expect(container.textContent).not.toContain("R$");
+    release(
+      json(200, {
+        items: [{ code: "BRL", type: "currency", scale: 2, name: "Real" }],
+      }),
+    );
+    expect(await within(region).findByText("R$ 1.734,56")).toBeInTheDocument();
+  });
+
+  it("marks the recent list busy while its transactions load", async () => {
+    let release: (response: Response) => void = () => undefined;
+    const pending = new Promise<Response>((resolve) => {
+      release = resolve;
+    });
+    const { fetch } = homeApi({ recent: () => pending });
+    await renderApp("/", { fetch });
+    const recent = screen.getByRole("region", {
+      name: catalogPtBR["home.recent"],
+    });
+    expect(recent.querySelector('[data-part="region"]')).toHaveAttribute(
+      "aria-busy",
+      "true",
+    );
+    release(json(200, { items: [1, 2, 3, 4, 5].map(transaction) }));
+    expect(await within(recent).findAllByRole("listitem")).toHaveLength(5);
+    expect(recent.querySelector('[aria-busy="true"]')).toBeNull();
+  });
+
   it("shows a result-state with a retry that requests the balances again", async () => {
     const { fetch, calls } = homeApi({
       balances: () => problem(500, "internal_error"),
@@ -206,7 +263,7 @@ describe("home waiting states", () => {
     const retry = await screen.findByRole(
       "button",
       { name: catalogPtBR["common.retry"] },
-      { timeout: 8000 },
+      { timeout: 3000 },
     );
     expect(container.querySelector('[data-ui="result-state"]')).not.toBeNull();
     const before = calls.balances;
@@ -215,7 +272,7 @@ describe("home waiting states", () => {
       () => {
         expect(calls.balances).toBeGreaterThan(before);
       },
-      { timeout: 8000 },
+      { timeout: 3000 },
     );
   }, 20000);
 });

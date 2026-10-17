@@ -15,14 +15,14 @@ import {
   ResultStateContent,
   ResultStateTitle,
 } from "@slotted/react/result-state";
-import { Skeleton } from "@slotted/react/skeleton";
+import { Skeleton, SkeletonRegion } from "@slotted/react/skeleton";
 import { useEffect, useMemo, useRef } from "react";
 import type { ReactNode } from "react";
 
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { accountsQuery } from "@/features/accounts";
-import { useScale } from "@/features/setup";
+import { instrumentsQuery, useScale } from "@/features/setup";
 import { transactionsInfiniteQuery } from "@/features/transactions/api";
 import { rowAmount } from "@/features/transactions/row-amount";
 import type { TransactionSearch } from "@/features/transactions/search";
@@ -98,6 +98,7 @@ export function TransactionList({
   const scale = useScale();
   const spaLink = useSpaLink();
   const accounts = useQuery(accountsQuery(api));
+  const instruments = useQuery(instrumentsQuery(api));
   const transactions = useInfiniteQuery(
     transactionsInfiniteQuery(api, {
       ...search,
@@ -111,7 +112,10 @@ export function TransactionList({
 
   const sentinel = useRef<HTMLDivElement>(null);
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = transactions;
-  const ready = accounts.data !== undefined && transactions.data !== undefined;
+  const ready =
+    accounts.data !== undefined &&
+    transactions.data !== undefined &&
+    scale !== null;
   useEffect(() => {
     const node = sentinel.current;
     if (!infinite || !ready || !hasNextPage || isFetchingNextPage || !node) {
@@ -131,23 +135,30 @@ export function TransactionList({
     };
   }, [infinite, ready, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const failed = accounts.error ?? transactions.error;
+  const failed = accounts.error ?? instruments.error ?? transactions.error;
   if (failed) {
     return (
       <QueryError
         error={failed}
         onRetry={() => {
           void accounts.refetch();
+          void instruments.refetch();
           void transactions.refetch();
         }}
       />
     );
   }
-  if (accounts.data === undefined || transactions.data === undefined) {
+  if (
+    accounts.data === undefined ||
+    transactions.data === undefined ||
+    scale === null
+  ) {
     return (
-      <List aria-busy="true" aria-label={t("transactions.list")} loading>
-        <PlaceholderRows count={Math.min(limit ?? 50, placeholderRows)} />
-      </List>
+      <SkeletonRegion>
+        <List aria-label={t("transactions.list")} aria-hidden="true">
+          <PlaceholderRows count={Math.min(limit ?? 50, placeholderRows)} />
+        </List>
+      </SkeletonRegion>
     );
   }
 

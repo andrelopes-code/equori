@@ -44,7 +44,7 @@ import { accountsQuery, balancesQuery } from "@/features/accounts/api";
 import { groupBalances } from "@/features/accounts/balance-groups";
 import type { Group } from "@/features/accounts/balance-groups";
 import styles from "@/features/accounts/home-page.module.css";
-import { settingsQuery, useScale } from "@/features/setup";
+import { instrumentsQuery, settingsQuery, useScale } from "@/features/setup";
 import {
   TransactionList,
   uncategorizedCountQuery,
@@ -106,14 +106,16 @@ function Balances() {
   const accounts = useQuery(accountsQuery(api));
   const balances = useQuery(balancesQuery(api, today, "booked"));
   const settings = useQuery(settingsQuery(api));
+  const instruments = useQuery(instrumentsQuery(api));
+  const queries = [accounts, balances, settings, instruments];
 
-  const failed = [accounts, balances, settings].find((q) => q.isError);
+  const failed = queries.find((q) => q.isError);
   if (failed?.error) {
     return (
       <QueryError
         error={failed.error}
         onRetry={() => {
-          for (const query of [accounts, balances, settings]) {
+          for (const query of queries) {
             if (query.isError) void query.refetch();
           }
         }}
@@ -123,7 +125,8 @@ function Balances() {
   if (
     accounts.data === undefined ||
     balances.data === undefined ||
-    settings.data === undefined
+    settings.data === undefined ||
+    scale === null
   ) {
     return <BalancesPlaceholder />;
   }
@@ -217,6 +220,7 @@ export function HomePage() {
     useQuery(accountsQuery(api)),
     useQuery(balancesQuery(api, today, "booked")),
     useQuery(settingsQuery(api)),
+    useQuery(instrumentsQuery(api)),
   ].some((q) => q.data === undefined && !q.isError);
   return (
     <Page width="wide">

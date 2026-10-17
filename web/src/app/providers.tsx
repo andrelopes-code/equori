@@ -57,15 +57,19 @@ function SlottedLocale({ children }: { children: ReactNode }) {
 export function AppProviders({
   fetchImpl,
   today,
+  retryDelay,
   children,
 }: {
+  retryDelay?: number | undefined;
   fetchImpl?: typeof fetch | undefined;
   today?: string | undefined;
   children: ReactNode;
 }) {
   const [client] = useState(() => newClient(location.origin, fetchImpl));
   const [expiry] = useState(newSessionExpiry);
-  const [queryClient] = useState(() => newQueryClient(expiry.trigger));
+  const [queryClient] = useState(() =>
+    newQueryClient(expiry.trigger, retryDelay),
+  );
   const [locale] = useState(readLocale);
   return (
     <TodayProvider {...(today === undefined ? {} : { today })}>
