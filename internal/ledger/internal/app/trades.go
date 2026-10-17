@@ -41,7 +41,7 @@ func (s *Service) RecordTrade(ctx context.Context, userID int64, o domain.TradeO
 		if h.CostBasis, err = money.New(basis, base); err != nil {
 			return err
 		}
-		accts, err := s.tradeAccounts(ctx, r, userID, o.TaxesCategoryID)
+		accts, err := s.tradeAccounts(ctx, r, userID, o.TaxesCategoryID, "taxes_category_id")
 		if err != nil {
 			return err
 		}
@@ -51,6 +51,42 @@ func (s *Service) RecordTrade(ctx context.Context, userID int64, o domain.TradeO
 		}
 		created, err = s.insert(ctx, r, domain.Transaction{
 			UserID: userID, Date: o.Date, Description: o.Description, BalancingCurrency: base, Postings: postings, Trade: &trade,
+		})
+		return err
+	})
+	return created, err
+}
+
+// RecordIncome records M18: income paid on a security into cash of the same brokerage
+// (P8 amendment A70).
+func (s *Service) RecordIncome(ctx context.Context, userID int64, o domain.IncomeOrder) (domain.Transaction, error) {
+	var created domain.Transaction
+	err := s.repo.InTx(ctx, func(r Repository) error {
+		base, err := baseCurrency(ctx, r, userID)
+		if err != nil {
+			return err
+		}
+		if _, _, err := s.brokerageAccounts(ctx, r, userID, o.AccountID, o.CashAccountID, base); err != nil {
+			return err
+		}
+		category, err := loadAccount(ctx, r, userID, o.CategoryID, "category_id")
+		if err != nil {
+			return err
+		}
+		if category.Class != domain.ClassIncome {
+			return fieldErr("category_id", "must be an income category", domain.ErrValidation)
+		}
+		accts, err := s.tradeAccounts(ctx, r, userID, o.WithheldCategoryID, "withheld_category_id")
+		if err != nil {
+			return err
+		}
+		o.WithheldCategoryID = accts.Taxes
+		postings, income, err := domain.BuildIncome(o)
+		if err != nil {
+			return err
+		}
+		created, err = s.insert(ctx, r, domain.Transaction{
+			UserID: userID, Date: o.Date, Description: o.Description, BalancingCurrency: base, Postings: postings, Income: &income,
 		})
 		return err
 	})
@@ -80,7 +116,9 @@ func (s *Service) brokerageAccounts(ctx context.Context, r Repository, userID in
 	return security, cash, nil
 }
 
-func (s *Service) tradeAccounts(ctx context.Context, r Repository, userID int64, taxesCategory uuid.UUID) (domain.TradeAccounts, error) {
+// tradeAccounts returns the result and tax accounts; taxesCategory, named field in the
+// request, replaces the system account taxes.
+func (s *Service) tradeAccounts(ctx context.Context, r Repository, userID int64, taxesCategory uuid.UUID, field string) (domain.TradeAccounts, error) {
 	var accts domain.TradeAccounts
 	for _, x := range []struct {
 		role domain.SystemRole
@@ -93,7 +131,7 @@ func (s *Service) tradeAccounts(ctx context.Context, r Repository, userID int64,
 		*x.id = a.ID
 	}
 	if taxesCategory != uuid.Nil {
-		if err := s.expenseCategory(ctx, r, userID, taxesCategory, "taxes_category_id"); err != nil {
+		if err := s.expenseCategory(ctx, r, userID, taxesCategory, field); err != nil {
 			return domain.TradeAccounts{}, err
 		}
 		accts.Taxes = taxesCategory

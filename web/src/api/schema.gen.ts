@@ -249,6 +249,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/investment-income": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record income paid on a security into cash of the same brokerage (P8 amendment A70). */
+        post: operations["recordInvestmentIncome"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/transactions/{id}": {
         parameters: {
             query?: never;
@@ -2581,6 +2598,46 @@ export interface components {
             /** @description Cost basis removed by a sale at average cost. */
             cost?: components["schemas"]["Money"];
         };
+        /** @enum {string} */
+        IncomeType: "dividend" | "jcp" | "interest" | "coupon";
+        InvestmentIncomeInput: {
+            /**
+             * Format: uuid
+             * @description The account holding the security that pays.
+             */
+            account_id: string;
+            /**
+             * Format: uuid
+             * @description A cash account of the same brokerage, in the base currency.
+             */
+            cash_account_id: string;
+            income_type: components["schemas"]["IncomeType"];
+            /** Format: date */
+            date: string;
+            gross: components["schemas"]["Money"];
+            /** @description Default 0, and 15 % of gross for jcp. */
+            withheld?: components["schemas"]["Money"];
+            /**
+             * Format: uuid
+             * @description Income category of the gross amount.
+             */
+            category_id: string;
+            /**
+             * Format: uuid
+             * @description Default the system account taxes.
+             */
+            withheld_category_id?: string;
+            description?: string;
+        };
+        InvestmentIncome: {
+            /** Format: uuid */
+            account_id: string;
+            /** Format: uuid */
+            cash_account_id: string;
+            income_type: components["schemas"]["IncomeType"];
+            gross: components["schemas"]["Money"];
+            withheld: components["schemas"]["Money"];
+        };
         ForeignPurchaseInput: {
             /** Format: uuid */
             account_id: string;
@@ -2694,6 +2751,7 @@ export interface components {
             void_reason?: string;
             tags: string[];
             links: components["schemas"]["Link"][];
+            investment_income?: components["schemas"]["InvestmentIncome"];
             trade?: components["schemas"]["Trade"];
             postings: components["schemas"]["Posting"][];
         };
@@ -3488,6 +3546,35 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    recordInvestmentIncome: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvestmentIncomeInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    /** @description Path of the created record. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transaction"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };
     };

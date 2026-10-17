@@ -111,6 +111,17 @@ type LedgerInstitution struct {
 	Code   *string
 }
 
+type LedgerInvestmentIncome struct {
+	TransactionID uuid.UUID
+	UserID        int64
+	AccountID     uuid.UUID
+	CashAccountID uuid.UUID
+	IncomeType    string
+	Gross         int64
+	Withheld      int64
+	Currency      string
+}
+
 type LedgerLink struct {
 	ID                uuid.UUID
 	UserID            int64

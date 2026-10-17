@@ -20,3 +20,10 @@ SELECT EXISTS (
       AND t.voided_at IS NULL AND t.date >= @on_date AND tr.transaction_id <> @exclude
 );
 
+
+-- name: InsertInvestmentIncome :exec
+INSERT INTO ledger_investment_income (transaction_id, user_id, account_id, cash_account_id, income_type, gross, withheld, currency)
+VALUES (@transaction_id, @user_id, @account_id, @cash_account_id, @income_type, @gross, @withheld, @currency);
+
+-- name: ListInvestmentIncome :many
+SELECT * FROM ledger_investment_income WHERE user_id = @user_id AND transaction_id = ANY(@transaction_ids::uuid[]);

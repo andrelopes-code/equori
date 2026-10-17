@@ -38,6 +38,36 @@ func (q *Queries) Holding(ctx context.Context, arg HoldingParams) (HoldingRow, e
 	return i, err
 }
 
+const insertInvestmentIncome = `-- name: InsertInvestmentIncome :exec
+INSERT INTO ledger_investment_income (transaction_id, user_id, account_id, cash_account_id, income_type, gross, withheld, currency)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+`
+
+type InsertInvestmentIncomeParams struct {
+	TransactionID uuid.UUID
+	UserID        int64
+	AccountID     uuid.UUID
+	CashAccountID uuid.UUID
+	IncomeType    string
+	Gross         int64
+	Withheld      int64
+	Currency      string
+}
+
+func (q *Queries) InsertInvestmentIncome(ctx context.Context, arg InsertInvestmentIncomeParams) error {
+	_, err := q.db.Exec(ctx, insertInvestmentIncome,
+		arg.TransactionID,
+		arg.UserID,
+		arg.AccountID,
+		arg.CashAccountID,
+		arg.IncomeType,
+		arg.Gross,
+		arg.Withheld,
+		arg.Currency,
+	)
+	return err
+}
+
 const insertTrade = `-- name: InsertTrade :exec
 INSERT INTO ledger_trade (transaction_id, user_id, account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, cost, currency)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
@@ -103,6 +133,44 @@ func (q *Queries) LaterSaleExists(ctx context.Context, arg LaterSaleExistsParams
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
+}
+
+const listInvestmentIncome = `-- name: ListInvestmentIncome :many
+SELECT transaction_id, user_id, account_id, cash_account_id, income_type, gross, withheld, currency FROM ledger_investment_income WHERE user_id = $1 AND transaction_id = ANY($2::uuid[])
+`
+
+type ListInvestmentIncomeParams struct {
+	UserID         int64
+	TransactionIds []uuid.UUID
+}
+
+func (q *Queries) ListInvestmentIncome(ctx context.Context, arg ListInvestmentIncomeParams) ([]LedgerInvestmentIncome, error) {
+	rows, err := q.db.Query(ctx, listInvestmentIncome, arg.UserID, arg.TransactionIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []LedgerInvestmentIncome
+	for rows.Next() {
+		var i LedgerInvestmentIncome
+		if err := rows.Scan(
+			&i.TransactionID,
+			&i.UserID,
+			&i.AccountID,
+			&i.CashAccountID,
+			&i.IncomeType,
+			&i.Gross,
+			&i.Withheld,
+			&i.Currency,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listTrades = `-- name: ListTrades :many

@@ -317,6 +317,24 @@ func (r *Repository) completeAll(ctx context.Context, userID int64, rows []Ledge
 		}
 		byID[row.TransactionID].Trade = &trade
 	}
+	incomes, err := r.q.ListInvestmentIncome(ctx, ListInvestmentIncomeParams{UserID: userID, TransactionIds: ids})
+	if err != nil {
+		return nil, err
+	}
+	for _, row := range incomes {
+		cur := money.Currency(row.Currency)
+		gross, err := money.New(row.Gross, cur)
+		if err != nil {
+			return nil, err
+		}
+		withheld, err := money.New(row.Withheld, cur)
+		if err != nil {
+			return nil, err
+		}
+		byID[row.TransactionID].Income = &domain.Income{
+			AccountID: row.AccountID, CashAccountID: row.CashAccountID, Type: domain.IncomeType(row.IncomeType), Gross: gross, Withheld: withheld,
+		}
+	}
 	return out, nil
 }
 
@@ -337,6 +355,12 @@ func (r *Repository) InsertTransactionRows(ctx context.Context, t domain.Transac
 	}
 	if err := r.writeChildren(ctx, t); err != nil {
 		return err
+	}
+	if in := t.Income; in != nil {
+		return r.q.InsertInvestmentIncome(ctx, InsertInvestmentIncomeParams{
+			TransactionID: t.ID, UserID: t.UserID, AccountID: in.AccountID, CashAccountID: in.CashAccountID, IncomeType: string(in.Type),
+			Gross: in.Gross.Amount(), Withheld: in.Withheld.Amount(), Currency: string(in.Gross.Currency()),
+		})
 	}
 	if tr := t.Trade; tr != nil {
 		var cost *int64

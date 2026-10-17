@@ -99,3 +99,27 @@ func (s *Server) RecordTrade(ctx context.Context, req RecordTradeRequestObject) 
 	}
 	return RecordTrade201JSONResponse{Body: toTransactionAPI(t), Headers: RecordTrade201ResponseHeaders{Location: location("/transactions/", t.ID)}}, nil
 }
+
+func (s *Server) RecordInvestmentIncome(ctx context.Context, req RecordInvestmentIncomeRequestObject) (RecordInvestmentIncomeResponseObject, error) {
+	b := req.Body
+	gross, err := fromMoneyAPI("gross", b.Gross)
+	if err != nil {
+		return nil, err
+	}
+	o := domain.IncomeOrder{
+		AccountID: b.AccountId, CashAccountID: b.CashAccountId, CategoryID: b.CategoryId, WithheldCategoryID: optUUID(b.WithheldCategoryId),
+		Type: domain.IncomeType(b.IncomeType), Date: dateOf(b.Date), Gross: gross, Description: optString(b.Description),
+	}
+	if b.Withheld != nil {
+		withheld, err := fromMoneyAPI("withheld", *b.Withheld)
+		if err != nil {
+			return nil, err
+		}
+		o.Withheld = &withheld
+	}
+	t, err := s.svc.RecordIncome(ctx, auth.MustUserID(ctx), o)
+	if err != nil {
+		return nil, err
+	}
+	return RecordInvestmentIncome201JSONResponse{Body: toTransactionAPI(t), Headers: RecordInvestmentIncome201ResponseHeaders{Location: location("/transactions/", t.ID)}}, nil
+}

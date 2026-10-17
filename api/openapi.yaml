@@ -529,6 +529,35 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /investment-income:
+    post:
+      tags: [ledger]
+      operationId: recordInvestmentIncome
+      summary: Record income paid on a security into cash of the same brokerage (P8 amendment A70).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvestmentIncomeInput"
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /transactions/{id}:
     get:
       tags: [ledger]
@@ -4816,6 +4845,60 @@ components:
           description: Cost basis removed by a sale at average cost.
           allOf:
             - $ref: "#/components/schemas/Money"
+    IncomeType:
+      type: string
+      enum: [dividend, jcp, interest, coupon]
+    InvestmentIncomeInput:
+      type: object
+      additionalProperties: false
+      required: [account_id, cash_account_id, income_type, date, gross, category_id]
+      properties:
+        account_id:
+          type: string
+          format: uuid
+          description: The account holding the security that pays.
+        cash_account_id:
+          type: string
+          format: uuid
+          description: A cash account of the same brokerage, in the base currency.
+        income_type:
+          $ref: "#/components/schemas/IncomeType"
+        date:
+          type: string
+          format: date
+        gross:
+          $ref: "#/components/schemas/Money"
+        withheld:
+          description: Default 0, and 15 % of gross for jcp.
+          allOf:
+            - $ref: "#/components/schemas/Money"
+        category_id:
+          type: string
+          format: uuid
+          description: Income category of the gross amount.
+        withheld_category_id:
+          type: string
+          format: uuid
+          description: Default the system account taxes.
+        description:
+          type: string
+          maxLength: 500
+    InvestmentIncome:
+      type: object
+      required: [account_id, cash_account_id, income_type, gross, withheld]
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        cash_account_id:
+          type: string
+          format: uuid
+        income_type:
+          $ref: "#/components/schemas/IncomeType"
+        gross:
+          $ref: "#/components/schemas/Money"
+        withheld:
+          $ref: "#/components/schemas/Money"
     ForeignPurchaseInput:
       type: object
       additionalProperties: false
@@ -5044,6 +5127,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Link"
+        investment_income:
+          $ref: "#/components/schemas/InvestmentIncome"
         trade:
           $ref: "#/components/schemas/Trade"
         postings:

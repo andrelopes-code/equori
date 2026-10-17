@@ -371,6 +371,30 @@ func (e DisputeResolutionOutcome) Valid() bool {
 	}
 }
 
+// Defines values for IncomeType.
+const (
+	Coupon   IncomeType = "coupon"
+	Dividend IncomeType = "dividend"
+	Interest IncomeType = "interest"
+	Jcp      IncomeType = "jcp"
+)
+
+// Valid indicates whether the value is a known member of the IncomeType enum.
+func (e IncomeType) Valid() bool {
+	switch e {
+	case Coupon:
+		return true
+	case Dividend:
+		return true
+	case Interest:
+		return true
+	case Jcp:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for LinkType.
 const (
 	AnticipationOf  LinkType = "anticipation_of"
@@ -991,6 +1015,9 @@ type ForeignPurchaseInput struct {
 	Statement *string `json:"statement,omitempty"`
 }
 
+// IncomeType defines model for IncomeType.
+type IncomeType string
+
 // Installment defines model for Installment.
 type Installment struct {
 	Count  int                `json:"count"`
@@ -1037,6 +1064,37 @@ type InstitutionList struct {
 
 	// NextCursor Absent on the last page.
 	NextCursor *string `json:"next_cursor,omitempty"`
+}
+
+// InvestmentIncome defines model for InvestmentIncome.
+type InvestmentIncome struct {
+	AccountId     openapi_types.UUID `json:"account_id"`
+	CashAccountId openapi_types.UUID `json:"cash_account_id"`
+	Gross         Money              `json:"gross"`
+	IncomeType    IncomeType         `json:"income_type"`
+	Withheld      Money              `json:"withheld"`
+}
+
+// InvestmentIncomeInput defines model for InvestmentIncomeInput.
+type InvestmentIncomeInput struct {
+	// AccountId The account holding the security that pays.
+	AccountId openapi_types.UUID `json:"account_id"`
+
+	// CashAccountId A cash account of the same brokerage, in the base currency.
+	CashAccountId openapi_types.UUID `json:"cash_account_id"`
+
+	// CategoryId Income category of the gross amount.
+	CategoryId  openapi_types.UUID `json:"category_id"`
+	Date        openapi_types.Date `json:"date"`
+	Description *string            `json:"description,omitempty"`
+	Gross       Money              `json:"gross"`
+	IncomeType  IncomeType         `json:"income_type"`
+
+	// Withheld Default 0, and 15 % of gross for jcp.
+	Withheld *Money `json:"withheld,omitempty"`
+
+	// WithheldCategoryId Default the system account taxes.
+	WithheldCategoryId *openapi_types.UUID `json:"withheld_category_id,omitempty"`
 }
 
 // Link defines model for Link.
@@ -1343,6 +1401,7 @@ type Transaction struct {
 	Date              openapi_types.Date  `json:"date"`
 	Description       string              `json:"description"`
 	Id                openapi_types.UUID  `json:"id"`
+	InvestmentIncome  *InvestmentIncome   `json:"investment_income,omitempty"`
 	Links             []Link              `json:"links"`
 	Origin            TransactionOrigin   `json:"origin"`
 	PayeeId           *openapi_types.UUID `json:"payee_id,omitempty"`
@@ -1550,6 +1609,9 @@ type CreateInstallmentPurchaseJSONRequestBody = InstallmentPurchaseInput
 // CreateInstitutionJSONRequestBody defines body for CreateInstitution for application/json ContentType.
 type CreateInstitutionJSONRequestBody = InstitutionInput
 
+// RecordInvestmentIncomeJSONRequestBody defines body for RecordInvestmentIncome for application/json ContentType.
+type RecordInvestmentIncomeJSONRequestBody = InvestmentIncomeInput
+
 // CreatePayeeJSONRequestBody defines body for CreatePayee for application/json ContentType.
 type CreatePayeeJSONRequestBody = PayeeInput
 
@@ -1681,6 +1743,9 @@ type ServerInterface interface {
 	// CreateInstitution Create an institution.
 	// (POST /institutions)
 	CreateInstitution(w http.ResponseWriter, r *http.Request)
+	// RecordInvestmentIncome Record income paid on a security into cash of the same brokerage (P8 amendment A70).
+	// (POST /investment-income)
+	RecordInvestmentIncome(w http.ResponseWriter, r *http.Request)
 	// ListPayees List payees.
 	// (GET /payees)
 	ListPayees(w http.ResponseWriter, r *http.Request, params ListPayeesParams)
@@ -2634,6 +2699,20 @@ func (siw *ServerInterfaceWrapper) CreateInstitution(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// RecordInvestmentIncome operation middleware
+func (siw *ServerInterfaceWrapper) RecordInvestmentIncome(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RecordInvestmentIncome(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListPayees operation middleware
 func (siw *ServerInterfaceWrapper) ListPayees(w http.ResponseWriter, r *http.Request) {
 
@@ -3451,6 +3530,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/foreign-purchases", wrapper.RecordForeignPurchase)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/exchanges", wrapper.ExchangeCurrency)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/trades", wrapper.RecordTrade)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/investment-income", wrapper.RecordInvestmentIncome)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions/{id}", wrapper.GetTransaction)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/transactions/{id}", wrapper.CorrectTransaction)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/void", wrapper.VoidTransaction)
@@ -5338,6 +5418,82 @@ func (response CreateInstitution422ApplicationProblemPlusJSONResponse) VisitCrea
 	return err
 }
 
+type RecordInvestmentIncomeRequestObject struct {
+	Body *RecordInvestmentIncomeJSONRequestBody
+}
+
+type RecordInvestmentIncomeResponseObject interface {
+	VisitRecordInvestmentIncomeResponse(w http.ResponseWriter) error
+}
+
+type RecordInvestmentIncome201ResponseHeaders struct {
+	Location *string
+}
+
+type RecordInvestmentIncome201JSONResponse struct {
+	Body    Transaction
+	Headers RecordInvestmentIncome201ResponseHeaders
+}
+
+func (response RecordInvestmentIncome201JSONResponse) VisitRecordInvestmentIncomeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.Location != nil {
+		w.Header().Set("Location", fmt.Sprint(*response.Headers.Location))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordInvestmentIncome400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RecordInvestmentIncome400ApplicationProblemPlusJSONResponse) VisitRecordInvestmentIncomeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordInvestmentIncome401ApplicationProblemPlusJSONResponse Problem
+
+func (response RecordInvestmentIncome401ApplicationProblemPlusJSONResponse) VisitRecordInvestmentIncomeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RecordInvestmentIncome422ApplicationProblemPlusJSONResponse Problem
+
+func (response RecordInvestmentIncome422ApplicationProblemPlusJSONResponse) VisitRecordInvestmentIncomeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListPayeesRequestObject struct {
 	Params ListPayeesParams
 }
@@ -6901,6 +7057,9 @@ type StrictServerInterface interface {
 	// CreateInstitution Create an institution.
 	// (POST /institutions)
 	CreateInstitution(ctx context.Context, request CreateInstitutionRequestObject) (CreateInstitutionResponseObject, error)
+	// RecordInvestmentIncome Record income paid on a security into cash of the same brokerage (P8 amendment A70).
+	// (POST /investment-income)
+	RecordInvestmentIncome(ctx context.Context, request RecordInvestmentIncomeRequestObject) (RecordInvestmentIncomeResponseObject, error)
 	// ListPayees List payees.
 	// (GET /payees)
 	ListPayees(ctx context.Context, request ListPayeesRequestObject) (ListPayeesResponseObject, error)
@@ -7861,6 +8020,37 @@ func (sh *strictHandler) CreateInstitution(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CreateInstitutionResponseObject); ok {
 		if err := validResponse.VisitCreateInstitutionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RecordInvestmentIncome operation middleware
+func (sh *strictHandler) RecordInvestmentIncome(w http.ResponseWriter, r *http.Request) {
+	var request RecordInvestmentIncomeRequestObject
+
+	var body RecordInvestmentIncomeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RecordInvestmentIncome(ctx, request.(RecordInvestmentIncomeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RecordInvestmentIncome")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RecordInvestmentIncomeResponseObject); ok {
+		if err := validResponse.VisitRecordInvestmentIncomeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

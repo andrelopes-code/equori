@@ -330,7 +330,7 @@ func (s *Service) CorrectTransaction(ctx context.Context, userID int64, id uuid.
 				return validationError("transaction_id", "installment transactions change through refunds, cancellation or anticipation")
 			}
 		}
-		if prev.Trade != nil {
+		if prev.Trade != nil || prev.Income != nil {
 			return ErrInvestmentTransaction
 		}
 		if err := checkLaterSales(ctx, r, userID, prev.Date, prev.Postings, id); err != nil {

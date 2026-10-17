@@ -100,8 +100,9 @@ type Transaction struct {
 	Postings          []Posting
 	Tags              []string
 	Links             []Link
-	// Trade is the D1 detail of a trade transaction (P8 amendment A68).
-	Trade *Trade
+	// Trade and Income are the D1 detail of a trade or income transaction (P8 A68, A70).
+	Trade  *Trade
+	Income *Income
 }
 
 // NewTransaction validates t against the accounts its postings reference and returns
