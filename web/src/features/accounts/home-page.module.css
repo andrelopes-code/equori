@@ -1,0 +1,19 @@
+@layer app {
+  .stack {
+    display: grid;
+    gap: var(--slotted-space-6);
+  }
+
+  .groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+    gap: var(--slotted-space-4);
+    align-items: start;
+  }
+
+  .group {
+    display: grid;
+    gap: var(--slotted-space-2);
+    min-inline-size: 0;
+  }
+}

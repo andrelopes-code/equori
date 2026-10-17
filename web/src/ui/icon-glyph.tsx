@@ -9,6 +9,7 @@ const GLYPHS = {
     "M17 14h.01",
   ],
   more: ["M5 12h.01M12 12h.01M19 12h.01"],
+  transfer: ["M4 8h16M16 4l4 4-4 4", "M20 16H4M8 12l-4 4 4 4"],
 } as const;
 
 export type IconGlyphName = keyof typeof GLYPHS;

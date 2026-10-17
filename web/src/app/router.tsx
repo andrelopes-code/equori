@@ -18,6 +18,7 @@ import { ProblemError } from "@/api/problem";
 import { Placeholder } from "@/app/placeholder";
 import { useSessionExpiry } from "@/app/providers";
 import { AppFrame } from "@/app/shell/app-frame";
+import { HomePage } from "@/features/accounts";
 import { LoginPage, meQuery } from "@/features/session";
 
 export interface RouterContext {
@@ -75,10 +76,16 @@ const screen = <P extends string>(path: P) =>
     component: Placeholder,
   });
 
+const homeRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "/",
+  component: HomePage,
+});
+
 export const routeTree = rootRoute.addChildren([
   loginRoute,
   authedRoute.addChildren([
-    screen("/"),
+    homeRoute,
     screen("transactions"),
     screen("transactions/new"),
     screen("transactions/$id"),

@@ -1,11 +1,11 @@
 import { ESLint } from "eslint";
 import { describe, expect, it } from "vitest";
 
-// The rows lint paths that do not exist on disk. The project service needs
+// The rows lint paths that do not exist on disk (a real file is linted by its own tsconfig entry). The project service needs
 // each one listed to type-check it against tsconfig.json.
 const filePaths = [
-  "src/features/accounts/api.ts",
-  "src/features/accounts/home-page.tsx",
+  "src/features/sample/api.ts",
+  "src/features/accounts/screen.tsx",
   "src/features/accounts/x.ts",
   "src/app/x.tsx",
   "src/ui/x.tsx",
@@ -56,13 +56,13 @@ const rows = [
   },
   {
     name: "O3 client in a screen",
-    filePath: "src/features/accounts/home-page.tsx",
+    filePath: "src/features/accounts/screen.tsx",
     code: importFromAccounts("@/api/client"),
     rule: "no-restricted-imports",
   },
   {
     name: "O3 client in api.ts",
-    filePath: "src/features/accounts/api.ts",
+    filePath: "src/features/sample/api.ts",
     code: importFromAccounts("@/api/client"),
     rule: undefined,
   },
