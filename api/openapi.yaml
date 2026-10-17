@@ -2708,6 +2708,60 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /accounts/{id}/projection:
+    get:
+      tags: [planning]
+      operationId: getProjection
+      summary: Projected balance of a balance account to a date after today, at most today + 12 months (P7 amendment A56).
+      description: |
+        opening is the booked balance today. Each point is an expected occurrence on the account, an overdue one
+        dated today, ordered by date then amount. closing is the booked balance at to plus every point.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Projection"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /commitments:
+    get:
+      tags: [planning]
+      operationId: getCommitted
+      summary: Installments and expected bills, subscriptions and savings committed in a month (P7 amendment A57).
+      parameters:
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9]{4}-[0-9]{2}$"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Committed"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /occurrences/{id}/unrealize:
     post:
       tags: [planning]
@@ -3086,6 +3140,56 @@ components:
         next_cursor:
           type: string
           description: Absent on the last page.
+    ProjectionPoint:
+      type: object
+      required: [date, occurrence_id, schedule_id, amount, balance]
+      properties:
+        date:
+          type: string
+          format: date
+        occurrence_id:
+          type: string
+          format: uuid
+        schedule_id:
+          type: string
+          format: uuid
+        amount:
+          $ref: "#/components/schemas/Money"
+        balance:
+          $ref: "#/components/schemas/Money"
+    Projection:
+      type: object
+      required: [account_id, from, to, opening, closing, points]
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        opening:
+          $ref: "#/components/schemas/Money"
+        closing:
+          $ref: "#/components/schemas/Money"
+        points:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectionPoint"
+    Committed:
+      type: object
+      required: [month, installments, occurrences, total]
+      properties:
+        month:
+          type: string
+        installments:
+          $ref: "#/components/schemas/Money"
+        occurrences:
+          $ref: "#/components/schemas/Money"
+        total:
+          $ref: "#/components/schemas/Money"
     SkipInput:
       type: object
       additionalProperties: false

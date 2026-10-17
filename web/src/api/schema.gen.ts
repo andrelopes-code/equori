@@ -1496,6 +1496,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/{id}/projection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Projected balance of a balance account to a date after today, at most today + 12 months (P7 amendment A56).
+         * @description opening is the booked balance today. Each point is an expected occurrence on the account, an overdue one
+         *     dated today, ordered by date then amount. closing is the booked balance at to plus every point.
+         */
+        get: operations["getProjection"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/commitments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Installments and expected bills, subscriptions and savings committed in a month (P7 amendment A57). */
+        get: operations["getCommitted"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/occurrences/{id}/unrealize": {
         parameters: {
             query?: never;
@@ -1687,6 +1725,33 @@ export interface components {
             items: components["schemas"]["Goal"][];
             /** @description Absent on the last page. */
             next_cursor?: string;
+        };
+        ProjectionPoint: {
+            /** Format: date */
+            date: string;
+            /** Format: uuid */
+            occurrence_id: string;
+            /** Format: uuid */
+            schedule_id: string;
+            amount: components["schemas"]["Money"];
+            balance: components["schemas"]["Money"];
+        };
+        Projection: {
+            /** Format: uuid */
+            account_id: string;
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            opening: components["schemas"]["Money"];
+            closing: components["schemas"]["Money"];
+            points: components["schemas"]["ProjectionPoint"][];
+        };
+        Committed: {
+            month: string;
+            installments: components["schemas"]["Money"];
+            occurrences: components["schemas"]["Money"];
+            total: components["schemas"]["Money"];
         };
         SkipInput: {
             reason?: string;
@@ -5543,6 +5608,58 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+        };
+    };
+    getProjection: {
+        parameters: {
+            query: {
+                to: string;
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Projection"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getCommitted: {
+        parameters: {
+            query: {
+                month: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Committed"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     unrealizeOccurrence: {

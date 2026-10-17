@@ -189,6 +189,12 @@ func (m *Module) Balance(ctx context.Context, userID int64, accountID uuid.UUID,
 	return b.Amount, err
 }
 
+// Commitment is the sum of installments billed on the statement of month while it is open
+// (P2; P7 amendment A57).
+func (m *Module) Commitment(ctx context.Context, userID int64, accountID uuid.UUID, month time.Time) (money.Money, error) {
+	return m.svc.Commitment(ctx, userID, accountID, domain.MonthOf(month))
+}
+
 // CategoryTotal sums the postings of a category subtree booked in [from, to), in the base
 // currency (P7 amendment A54).
 func (m *Module) CategoryTotal(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (money.Money, error) {

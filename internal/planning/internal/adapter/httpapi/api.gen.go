@@ -190,6 +190,14 @@ type BudgetProgress struct {
 	Spent     Money  `json:"spent"`
 }
 
+// Committed defines model for Committed.
+type Committed struct {
+	Installments Money  `json:"installments"`
+	Month        string `json:"month"`
+	Occurrences  Money  `json:"occurrences"`
+	Total        Money  `json:"total"`
+}
+
 // EndInput defines model for EndInput.
 type EndInput struct {
 	From openapi_types.Date `json:"from"`
@@ -286,6 +294,25 @@ type Problem struct {
 	Status    int           `json:"status"`
 	Title     string        `json:"title"`
 	Type      string        `json:"type"`
+}
+
+// Projection defines model for Projection.
+type Projection struct {
+	AccountId openapi_types.UUID `json:"account_id"`
+	Closing   Money              `json:"closing"`
+	From      openapi_types.Date `json:"from"`
+	Opening   Money              `json:"opening"`
+	Points    []ProjectionPoint  `json:"points"`
+	To        openapi_types.Date `json:"to"`
+}
+
+// ProjectionPoint defines model for ProjectionPoint.
+type ProjectionPoint struct {
+	Amount       Money              `json:"amount"`
+	Balance      Money              `json:"balance"`
+	Date         openapi_types.Date `json:"date"`
+	OccurrenceId openapi_types.UUID `json:"occurrence_id"`
+	ScheduleId   openapi_types.UUID `json:"schedule_id"`
 }
 
 // RealizeInput defines model for RealizeInput.
@@ -405,6 +432,11 @@ type ID = openapi_types.UUID
 // Limit defines model for Limit.
 type Limit = int
 
+// GetProjectionParams defines parameters for GetProjection.
+type GetProjectionParams struct {
+	To openapi_types.Date `form:"to" json:"to"`
+}
+
 // ListBudgetsParams defines parameters for ListBudgets.
 type ListBudgetsParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
@@ -413,6 +445,11 @@ type ListBudgetsParams struct {
 
 // GetBudgetProgressParams defines parameters for GetBudgetProgress.
 type GetBudgetProgressParams struct {
+	Month string `form:"month" json:"month"`
+}
+
+// GetCommittedParams defines parameters for GetCommitted.
+type GetCommittedParams struct {
 	Month string `form:"month" json:"month"`
 }
 
@@ -468,6 +505,9 @@ type ChangeScheduleTermsJSONRequestBody = TermsInput
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// GetProjection Projected balance of a balance account to a date after today, at most today + 12 months (P7 amendment A56).
+	// (GET /accounts/{id}/projection)
+	GetProjection(w http.ResponseWriter, r *http.Request, id ID, params GetProjectionParams)
 	// ListBudgets Budgets in creation order.
 	// (GET /budgets)
 	ListBudgets(w http.ResponseWriter, r *http.Request, params ListBudgetsParams)
@@ -483,6 +523,9 @@ type ServerInterface interface {
 	// GetBudgetProgress Planned, carried, spent and available amounts of a month, accrual view (P7 amendment A54).
 	// (GET /budgets/{id}/progress)
 	GetBudgetProgress(w http.ResponseWriter, r *http.Request, id ID, params GetBudgetProgressParams)
+	// GetCommitted Installments and expected bills, subscriptions and savings committed in a month (P7 amendment A57).
+	// (GET /commitments)
+	GetCommitted(w http.ResponseWriter, r *http.Request, params GetCommittedParams)
 	// ListGoals Goals in creation order, with their progress today.
 	// (GET /goals)
 	ListGoals(w http.ResponseWriter, r *http.Request, params ListGoalsParams)
@@ -535,6 +578,48 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// GetProjection operation middleware
+func (siw *ServerInterfaceWrapper) GetProjection(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetProjectionParams
+
+	// ------------- Required query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetProjection(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // ListBudgets operation middleware
 func (siw *ServerInterfaceWrapper) ListBudgets(w http.ResponseWriter, r *http.Request) {
@@ -681,6 +766,39 @@ func (siw *ServerInterfaceWrapper) GetBudgetProgress(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetBudgetProgress(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCommitted operation middleware
+func (siw *ServerInterfaceWrapper) GetCommitted(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetCommittedParams
+
+	// ------------- Required query parameter "month" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "month", r.URL.Query(), &params.Month, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "month"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "month", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCommitted(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1254,12 +1372,81 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/goals", wrapper.ListGoals)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/goals", wrapper.CreateGoal)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/goals/{id}", wrapper.GetGoal)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/projection", wrapper.GetProjection)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/commitments", wrapper.GetCommitted)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/occurrences/{id}/unrealize", wrapper.UnrealizeOccurrence)
 
 	return m
 }
 
 type ProblemApplicationProblemPlusJSONResponse Problem
+
+type GetProjectionRequestObject struct {
+	Id     ID `json:"id"`
+	Params GetProjectionParams
+}
+
+type GetProjectionResponseObject interface {
+	VisitGetProjectionResponse(w http.ResponseWriter) error
+}
+
+type GetProjection200JSONResponse Projection
+
+func (response GetProjection200JSONResponse) VisitGetProjectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetProjection400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetProjection400ApplicationProblemPlusJSONResponse) VisitGetProjectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetProjection401ApplicationProblemPlusJSONResponse Problem
+
+func (response GetProjection401ApplicationProblemPlusJSONResponse) VisitGetProjectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetProjection422ApplicationProblemPlusJSONResponse Problem
+
+func (response GetProjection422ApplicationProblemPlusJSONResponse) VisitGetProjectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
 
 type ListBudgetsRequestObject struct {
 	Params ListBudgetsParams
@@ -1606,6 +1793,72 @@ func (response GetBudgetProgress404ApplicationProblemPlusJSONResponse) VisitGetB
 type GetBudgetProgress422ApplicationProblemPlusJSONResponse Problem
 
 func (response GetBudgetProgress422ApplicationProblemPlusJSONResponse) VisitGetBudgetProgressResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCommittedRequestObject struct {
+	Params GetCommittedParams
+}
+
+type GetCommittedResponseObject interface {
+	VisitGetCommittedResponse(w http.ResponseWriter) error
+}
+
+type GetCommitted200JSONResponse Committed
+
+func (response GetCommitted200JSONResponse) VisitGetCommittedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCommitted400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetCommitted400ApplicationProblemPlusJSONResponse) VisitGetCommittedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCommitted401ApplicationProblemPlusJSONResponse Problem
+
+func (response GetCommitted401ApplicationProblemPlusJSONResponse) VisitGetCommittedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCommitted422ApplicationProblemPlusJSONResponse Problem
+
+func (response GetCommitted422ApplicationProblemPlusJSONResponse) VisitGetCommittedResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2639,6 +2892,9 @@ func (response ChangeScheduleTerms422ApplicationProblemPlusJSONResponse) VisitCh
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// GetProjection Projected balance of a balance account to a date after today, at most today + 12 months (P7 amendment A56).
+	// (GET /accounts/{id}/projection)
+	GetProjection(ctx context.Context, request GetProjectionRequestObject) (GetProjectionResponseObject, error)
 	// ListBudgets Budgets in creation order.
 	// (GET /budgets)
 	ListBudgets(ctx context.Context, request ListBudgetsRequestObject) (ListBudgetsResponseObject, error)
@@ -2654,6 +2910,9 @@ type StrictServerInterface interface {
 	// GetBudgetProgress Planned, carried, spent and available amounts of a month, accrual view (P7 amendment A54).
 	// (GET /budgets/{id}/progress)
 	GetBudgetProgress(ctx context.Context, request GetBudgetProgressRequestObject) (GetBudgetProgressResponseObject, error)
+	// GetCommitted Installments and expected bills, subscriptions and savings committed in a month (P7 amendment A57).
+	// (GET /commitments)
+	GetCommitted(ctx context.Context, request GetCommittedRequestObject) (GetCommittedResponseObject, error)
 	// ListGoals Goals in creation order, with their progress today.
 	// (GET /goals)
 	ListGoals(ctx context.Context, request ListGoalsRequestObject) (ListGoalsResponseObject, error)
@@ -2735,6 +2994,33 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// GetProjection operation middleware
+func (sh *strictHandler) GetProjection(w http.ResponseWriter, r *http.Request, id ID, params GetProjectionParams) {
+	var request GetProjectionRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetProjection(ctx, request.(GetProjectionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetProjection")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetProjectionResponseObject); ok {
+		if err := validResponse.VisitGetProjectionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // ListBudgets operation middleware
@@ -2873,6 +3159,32 @@ func (sh *strictHandler) GetBudgetProgress(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetBudgetProgressResponseObject); ok {
 		if err := validResponse.VisitGetBudgetProgressResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCommitted operation middleware
+func (sh *strictHandler) GetCommitted(w http.ResponseWriter, r *http.Request, params GetCommittedParams) {
+	var request GetCommittedRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCommitted(ctx, request.(GetCommittedRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCommitted")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCommittedResponseObject); ok {
+		if err := validResponse.VisitGetCommittedResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

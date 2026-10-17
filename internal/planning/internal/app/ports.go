@@ -52,6 +52,8 @@ type Ledger interface {
 	CategoryTotal(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (int64, error)
 	// Balance is the booked balance of an account at the end of date, in its minor units.
 	Balance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time) (int64, error)
+	// Commitment sums the installments of a card billed on the statement of month while it is open.
+	Commitment(ctx context.Context, userID int64, cardID uuid.UUID, month time.Time) (int64, error)
 }
 
 // Calendar returns the holiday dates of a calendar in a year.

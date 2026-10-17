@@ -126,6 +126,11 @@ func (p ledgerPort) Balance(ctx context.Context, userID int64, accountID uuid.UU
 	return m.Amount(), err
 }
 
+func (p ledgerPort) Commitment(ctx context.Context, userID int64, cardID uuid.UUID, month time.Time) (int64, error) {
+	m, err := p.l.Commitment(ctx, userID, cardID, month)
+	return m.Amount(), err
+}
+
 type calendarPort struct{ md *marketdata.Module }
 
 func (c calendarPort) Holidays(ctx context.Context, name string, year int) ([]time.Time, error) {
