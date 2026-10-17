@@ -1,0 +1,13 @@
+@layer app {
+  .form {
+    display: grid;
+    gap: var(--slotted-space-4);
+  }
+
+  .form [data-pinned="true"] {
+    position: sticky;
+    inset-block-end: var(--keyboard-inset, 0px);
+    padding-block: var(--slotted-space-3);
+    background: var(--slotted-surface);
+  }
+}

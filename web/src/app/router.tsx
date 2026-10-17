@@ -21,6 +21,7 @@ import { AppFrame } from "@/app/shell/app-frame";
 import { HomePage } from "@/features/accounts";
 import { LoginPage, meQuery } from "@/features/session";
 import {
+  NewTransactionPage,
   TransactionsPage,
   validateTransactionSearch,
 } from "@/features/transactions";
@@ -93,12 +94,22 @@ const transactionsRoute = createRoute({
   component: TransactionsPage,
 });
 
+const newTransactionRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "transactions/new",
+  validateSearch: (search): { account_id?: string } => {
+    const { account_id } = validateTransactionSearch(search);
+    return account_id === undefined ? {} : { account_id };
+  },
+  component: NewTransactionPage,
+});
+
 export const routeTree = rootRoute.addChildren([
   loginRoute,
   authedRoute.addChildren([
     homeRoute,
     transactionsRoute,
-    screen("transactions/new"),
+    newTransactionRoute,
     screen("transactions/$id"),
     screen("transactions/$id/correct"),
     screen("accounts"),

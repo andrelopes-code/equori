@@ -6,6 +6,7 @@ import {
   AppShellNav,
   AppShellNavBody,
 } from "@slotted/react/app-shell";
+import { ToastRegion } from "@slotted/react/toast";
 import { useEffect, useState } from "react";
 
 import { destinations } from "@/app/shell/destinations";
@@ -93,6 +94,7 @@ export function AppFrame() {
           />
         </AppShellFooter>
       )}
+      <ToastRegion />
       <MoreSheet open={moreOpen} onOpenChange={setMoreOpen} />
     </AppShell>
   );

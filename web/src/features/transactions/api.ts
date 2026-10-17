@@ -1,9 +1,20 @@
-import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
+import {
+  infiniteQueryOptions,
+  queryOptions,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Client } from "openapi-fetch";
 
+import { useApi } from "@/api/api-context";
 import { unwrap } from "@/api/problem";
 import type { paths } from "@/api/schema.gen";
+import { accountKeys, balanceKeys } from "@/features/accounts";
+import { payeesQuery } from "@/features/setup";
 import type { TransactionSearch } from "@/features/transactions/search";
+import { toTransactionInput } from "@/features/transactions/transaction-form-reducer";
+import type { FormState } from "@/features/transactions/transaction-form-reducer";
 
 export interface TransactionQuery extends TransactionSearch {
   limit?: number;
@@ -81,5 +92,55 @@ export function tagsQuery(api: Client<paths>) {
       } while (cursor !== undefined);
       return tags;
     },
+  });
+}
+
+// Every transaction mutation calls this: lists, balances and the touched accounts' detail and balance caches go stale together.
+export function transactionMutated(
+  queryClient: QueryClient,
+  accountIds: string[],
+): Promise<unknown> {
+  const keys = [
+    transactionKeys.all,
+    balanceKeys.all,
+    ...accountIds.flatMap((id) => [
+      accountKeys.detail(id),
+      ["accounts", "balance", id] as const,
+    ]),
+  ];
+  return Promise.all(
+    keys.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+  );
+}
+
+export interface CreateTransactionRequest {
+  state: FormState;
+  currencyOf: (accountId: string) => string;
+}
+
+// A payee typed but not yet stored is created first, so the transaction carries its id.
+export function useCreateTransaction() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ state, currencyOf }: CreateTransactionRequest) => {
+      let payeeId = state.payeeId;
+      if (payeeId === undefined && state.payeeName?.trim()) {
+        const payee = await unwrap(
+          await api.POST("/payees", { body: { name: state.payeeName.trim() } }),
+        );
+        payeeId = payee.id;
+        await queryClient.invalidateQueries({
+          queryKey: payeesQuery(api).queryKey,
+        });
+      }
+      const input = toTransactionInput(
+        { ...state, ...(payeeId === undefined ? {} : { payeeId }) },
+        currencyOf,
+      );
+      return unwrap(await api.POST("/transactions", { body: input }));
+    },
+    onSuccess: (_created, { state }) =>
+      transactionMutated(queryClient, [state.accountId, state.counterId]),
   });
 }
