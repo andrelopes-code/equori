@@ -60,8 +60,13 @@ func toProblem(err error) (problem.Details, bool) {
 	if fe, ok := errors.AsType[*domain.FieldError](err); ok {
 		return fieldProblem(http.StatusUnprocessableEntity, "validation_failed", fe.Field, fe.Message), true
 	}
-	if errors.Is(err, app.ErrNotFound) {
+	switch {
+	case errors.Is(err, app.ErrNotFound):
 		return problem.New(http.StatusNotFound, "not_found", "resource not found"), true
+	case errors.Is(err, app.ErrOccurrenceClosed):
+		return problem.New(http.StatusConflict, "occurrence_closed", err.Error()), true
+	case errors.Is(err, app.ErrTransactionInUse):
+		return problem.New(http.StatusConflict, "transaction_in_use", err.Error()), true
 	}
 	return problem.Details{}, false
 }

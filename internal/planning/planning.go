@@ -4,11 +4,14 @@ package planning
 
 import (
 	"context"
+	"encoding/json/v2"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andrelopes-code/equori/internal/ledger"
@@ -16,6 +19,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/planning/internal/adapter/httpapi"
 	"github.com/andrelopes-code/equori/internal/planning/internal/adapter/postgres"
 	"github.com/andrelopes-code/equori/internal/planning/internal/app"
+	"github.com/andrelopes-code/equori/internal/planning/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
@@ -27,9 +31,28 @@ type Module struct {
 	log  *slog.Logger
 }
 
+// consumer names the module's outbox subscriptions (ADR 006).
+const consumer = "planning"
+
 func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, md *marketdata.Module, clk clock.Clock, log *slog.Logger) *Module {
 	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l}, calendarPort{md}, clk)
-	return &Module{http: httpapi.NewServer(svc, log), svc: svc, log: log}
+	m := &Module{http: httpapi.NewServer(svc, log), svc: svc, log: log}
+	// P7 amendment A51: every change of a transaction can change the occurrence it realizes.
+	for _, t := range []string{ledger.EventTransactionRecorded, ledger.EventTransactionCorrected, ledger.EventTransactionCategorized, ledger.EventTransactionVoided} {
+		dispatcher.Subscribe(consumer, t, m.handle)
+	}
+	return m
+}
+
+// handle runs in the dispatcher's transaction, so the realization commits with the delivery.
+func (m *Module) handle(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
+	var payload ledger.TransactionEvent
+	if err := json.Unmarshal(e.Payload, &payload); err != nil {
+		return fmt.Errorf("decode %s: %w", e.Type, err)
+	}
+	return m.svc.WithRepository(postgres.NewTxRepository(tx)).HandleTransaction(ctx, app.TransactionChanged{
+		UserID: e.UserID, TransactionID: payload.TransactionID, AccountIDs: payload.AccountIDs,
+	})
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
@@ -78,6 +101,19 @@ func (p ledgerPort) MissingPayees(ctx context.Context, userID int64, ids []uuid.
 
 func (p ledgerPort) BaseCurrency(ctx context.Context, userID int64) (money.Currency, error) {
 	return p.l.BaseCurrency(ctx, userID)
+}
+
+func (p ledgerPort) TransactionFacts(ctx context.Context, userID int64, ids []uuid.UUID) ([]domain.Transaction, error) {
+	facts, err := p.l.TransactionFacts(ctx, userID, ids)
+	out := make([]domain.Transaction, len(facts))
+	for i, f := range facts {
+		t := domain.Transaction{ID: f.ID, Date: f.Date, PayeeID: f.PayeeID, Voided: f.Voided}
+		for _, fp := range f.Postings {
+			t.Postings = append(t.Postings, domain.Posting{AccountID: fp.AccountID, Amount: fp.Amount.Amount()})
+		}
+		out[i] = t
+	}
+	return out, err
 }
 
 type calendarPort struct{ md *marketdata.Module }

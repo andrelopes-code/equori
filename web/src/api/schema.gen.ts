@@ -1273,6 +1273,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/occurrences/{id}/realize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link a transaction to an expected occurrence; ledger changes never release it (P7 amendment A51).
+         * @description The transaction has a posting on the schedule's account. 409 occurrence_closed when the occurrence is not
+         *     expected; 409 transaction_in_use when the transaction realizes another occurrence.
+         */
+        post: operations["realizeOccurrence"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/occurrences/{id}/unrealize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Release a realized occurrence (409 occurrence_closed when it is not realized). */
+        post: operations["unrealizeOccurrence"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1383,6 +1421,10 @@ export interface components {
              * @description The generated date of a moved occurrence.
              */
             moved_from?: string;
+        };
+        RealizeInput: {
+            /** Format: uuid */
+            transaction_id: string;
         };
         OccurrenceList: {
             items: components["schemas"]["Occurrence"][];
@@ -2243,7 +2285,7 @@ export interface components {
              *     already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
              *     record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
              *     integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
-             *     currency_unsupported.
+             *     currency_unsupported, occurrence_closed, transaction_in_use.
              */
             code: string;
             request_id?: string;
@@ -4818,6 +4860,62 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    realizeOccurrence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RealizeInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Occurrence"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    unrealizeOccurrence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Occurrence"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
         };
     };
 }

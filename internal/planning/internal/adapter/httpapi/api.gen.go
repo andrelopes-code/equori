@@ -197,7 +197,7 @@ type Problem struct {
 	// already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
 	// record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
 	// integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
-	// currency_unsupported.
+	// currency_unsupported, occurrence_closed, transaction_in_use.
 	Code      string        `json:"code"`
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`
@@ -205,6 +205,11 @@ type Problem struct {
 	Status    int           `json:"status"`
 	Title     string        `json:"title"`
 	Type      string        `json:"type"`
+}
+
+// RealizeInput defines model for RealizeInput.
+type RealizeInput struct {
+	TransactionId openapi_types.UUID `json:"transaction_id"`
 }
 
 // Recurrence A monthly rule takes exactly one of day_of_month, weekday with ordinal, business_day_ordinal; -1 means
@@ -318,6 +323,9 @@ type ListSchedulesParams struct {
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
+// RealizeOccurrenceJSONRequestBody defines body for RealizeOccurrence for application/json ContentType.
+type RealizeOccurrenceJSONRequestBody = RealizeInput
+
 // CreateScheduleJSONRequestBody defines body for CreateSchedule for application/json ContentType.
 type CreateScheduleJSONRequestBody = ScheduleInput
 
@@ -326,6 +334,12 @@ type ServerInterface interface {
 	// ListOccurrences Occurrences with expected date in [from, to], at most 366 days, by date.
 	// (GET /occurrences)
 	ListOccurrences(w http.ResponseWriter, r *http.Request, params ListOccurrencesParams)
+	// RealizeOccurrence Link a transaction to an expected occurrence; ledger changes never release it (P7 amendment A51).
+	// (POST /occurrences/{id}/realize)
+	RealizeOccurrence(w http.ResponseWriter, r *http.Request, id ID)
+	// UnrealizeOccurrence Release a realized occurrence (409 occurrence_closed when it is not realized).
+	// (POST /occurrences/{id}/unrealize)
+	UnrealizeOccurrence(w http.ResponseWriter, r *http.Request, id ID)
 	// ListSchedules Schedules in creation order.
 	// (GET /schedules)
 	ListSchedules(w http.ResponseWriter, r *http.Request, params ListSchedulesParams)
@@ -409,6 +423,58 @@ func (siw *ServerInterfaceWrapper) ListOccurrences(w http.ResponseWriter, r *htt
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListOccurrences(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RealizeOccurrence operation middleware
+func (siw *ServerInterfaceWrapper) RealizeOccurrence(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RealizeOccurrence(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UnrealizeOccurrence operation middleware
+func (siw *ServerInterfaceWrapper) UnrealizeOccurrence(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnrealizeOccurrence(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -628,6 +694,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/schedules", wrapper.CreateSchedule)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/schedules/{id}", wrapper.GetSchedule)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/occurrences", wrapper.ListOccurrences)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/occurrences/{id}/realize", wrapper.RealizeOccurrence)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/occurrences/{id}/unrealize", wrapper.UnrealizeOccurrence)
 
 	return m
 }
@@ -696,6 +764,167 @@ func (response ListOccurrences422ApplicationProblemPlusJSONResponse) VisitListOc
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RealizeOccurrenceRequestObject struct {
+	Id   ID `json:"id"`
+	Body *RealizeOccurrenceJSONRequestBody
+}
+
+type RealizeOccurrenceResponseObject interface {
+	VisitRealizeOccurrenceResponse(w http.ResponseWriter) error
+}
+
+type RealizeOccurrence200JSONResponse Occurrence
+
+func (response RealizeOccurrence200JSONResponse) VisitRealizeOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RealizeOccurrence400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RealizeOccurrence400ApplicationProblemPlusJSONResponse) VisitRealizeOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RealizeOccurrence401ApplicationProblemPlusJSONResponse Problem
+
+func (response RealizeOccurrence401ApplicationProblemPlusJSONResponse) VisitRealizeOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RealizeOccurrence404ApplicationProblemPlusJSONResponse Problem
+
+func (response RealizeOccurrence404ApplicationProblemPlusJSONResponse) VisitRealizeOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RealizeOccurrence409ApplicationProblemPlusJSONResponse Problem
+
+func (response RealizeOccurrence409ApplicationProblemPlusJSONResponse) VisitRealizeOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RealizeOccurrence422ApplicationProblemPlusJSONResponse Problem
+
+func (response RealizeOccurrence422ApplicationProblemPlusJSONResponse) VisitRealizeOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnrealizeOccurrenceRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type UnrealizeOccurrenceResponseObject interface {
+	VisitUnrealizeOccurrenceResponse(w http.ResponseWriter) error
+}
+
+type UnrealizeOccurrence200JSONResponse Occurrence
+
+func (response UnrealizeOccurrence200JSONResponse) VisitUnrealizeOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnrealizeOccurrence401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UnrealizeOccurrence401ApplicationProblemPlusJSONResponse) VisitUnrealizeOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnrealizeOccurrence404ApplicationProblemPlusJSONResponse Problem
+
+func (response UnrealizeOccurrence404ApplicationProblemPlusJSONResponse) VisitUnrealizeOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UnrealizeOccurrence409ApplicationProblemPlusJSONResponse Problem
+
+func (response UnrealizeOccurrence409ApplicationProblemPlusJSONResponse) VisitUnrealizeOccurrenceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -885,6 +1114,12 @@ type StrictServerInterface interface {
 	// ListOccurrences Occurrences with expected date in [from, to], at most 366 days, by date.
 	// (GET /occurrences)
 	ListOccurrences(ctx context.Context, request ListOccurrencesRequestObject) (ListOccurrencesResponseObject, error)
+	// RealizeOccurrence Link a transaction to an expected occurrence; ledger changes never release it (P7 amendment A51).
+	// (POST /occurrences/{id}/realize)
+	RealizeOccurrence(ctx context.Context, request RealizeOccurrenceRequestObject) (RealizeOccurrenceResponseObject, error)
+	// UnrealizeOccurrence Release a realized occurrence (409 occurrence_closed when it is not realized).
+	// (POST /occurrences/{id}/unrealize)
+	UnrealizeOccurrence(ctx context.Context, request UnrealizeOccurrenceRequestObject) (UnrealizeOccurrenceResponseObject, error)
 	// ListSchedules Schedules in creation order.
 	// (GET /schedules)
 	ListSchedules(ctx context.Context, request ListSchedulesRequestObject) (ListSchedulesResponseObject, error)
@@ -954,6 +1189,65 @@ func (sh *strictHandler) ListOccurrences(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListOccurrencesResponseObject); ok {
 		if err := validResponse.VisitListOccurrencesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RealizeOccurrence operation middleware
+func (sh *strictHandler) RealizeOccurrence(w http.ResponseWriter, r *http.Request, id ID) {
+	var request RealizeOccurrenceRequestObject
+
+	request.Id = id
+
+	var body RealizeOccurrenceJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RealizeOccurrence(ctx, request.(RealizeOccurrenceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RealizeOccurrence")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RealizeOccurrenceResponseObject); ok {
+		if err := validResponse.VisitRealizeOccurrenceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UnrealizeOccurrence operation middleware
+func (sh *strictHandler) UnrealizeOccurrence(w http.ResponseWriter, r *http.Request, id ID) {
+	var request UnrealizeOccurrenceRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UnrealizeOccurrence(ctx, request.(UnrealizeOccurrenceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnrealizeOccurrence")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UnrealizeOccurrenceResponseObject); ok {
+		if err := validResponse.VisitUnrealizeOccurrenceResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

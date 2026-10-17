@@ -255,3 +255,63 @@ func (r *Repository) Occurrences(ctx context.Context, userID int64, from, to tim
 	}
 	return out, nil
 }
+
+func (r *Repository) SchedulesTouching(ctx context.Context, userID int64, accounts []uuid.UUID) ([]domain.Schedule, error) {
+	rows, err := r.q.SchedulesTouching(ctx, SchedulesTouchingParams{UserID: userID, AccountIds: accounts})
+	if err != nil {
+		return nil, fmt.Errorf("list schedules of accounts: %w", err)
+	}
+	return r.complete(ctx, rows)
+}
+
+func (r *Repository) OccurrenceByTransaction(ctx context.Context, userID int64, txID uuid.UUID) (domain.Occurrence, error) {
+	row, err := r.q.OccurrenceByTransaction(ctx, OccurrenceByTransactionParams{UserID: userID, TransactionID: nullUUID(txID)})
+	if err != nil {
+		return domain.Occurrence{}, notFound(err)
+	}
+	return toOccurrence(row), nil
+}
+
+func (r *Repository) ExpectedOccurrences(ctx context.Context, userID int64, schedules []uuid.UUID, from, to time.Time) ([]domain.Occurrence, error) {
+	rows, err := r.q.ExpectedOccurrences(ctx, ExpectedOccurrencesParams{UserID: userID, ScheduleIds: schedules, FromDate: from, ToDate: to})
+	if err != nil {
+		return nil, fmt.Errorf("list expected occurrences: %w", err)
+	}
+	out := make([]domain.Occurrence, len(rows))
+	for i, row := range rows {
+		out[i] = toOccurrence(row)
+	}
+	return out, nil
+}
+
+func (r *Repository) LockOccurrence(ctx context.Context, userID int64, id uuid.UUID) (domain.Occurrence, error) {
+	row, err := r.q.LockOccurrence(ctx, LockOccurrenceParams{UserID: userID, ID: id})
+	if err != nil {
+		return domain.Occurrence{}, notFound(err)
+	}
+	return toOccurrence(row), nil
+}
+
+// closed reports a state change between the read and the update as ErrOccurrenceClosed.
+func closed(err error) error {
+	if errors.Is(err, pgx.ErrNoRows) {
+		return app.ErrOccurrenceClosed
+	}
+	return err
+}
+
+func (r *Repository) Realize(ctx context.Context, userID int64, id, txID uuid.UUID, by string) (domain.Occurrence, error) {
+	row, err := r.q.RealizeOccurrence(ctx, RealizeOccurrenceParams{UserID: userID, ID: id, TransactionID: nullUUID(txID), RealizedBy: &by})
+	if err != nil {
+		return domain.Occurrence{}, closed(err)
+	}
+	return toOccurrence(row), nil
+}
+
+func (r *Repository) Release(ctx context.Context, userID int64, id uuid.UUID) (domain.Occurrence, error) {
+	row, err := r.q.ReleaseOccurrence(ctx, ReleaseOccurrenceParams{UserID: userID, ID: id})
+	if err != nil {
+		return domain.Occurrence{}, closed(err)
+	}
+	return toOccurrence(row), nil
+}
