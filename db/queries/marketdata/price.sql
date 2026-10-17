@@ -15,3 +15,7 @@ SELECT DISTINCT ON (date) * FROM marketdata_price
 WHERE instrument = @instrument AND quote_instrument = @quote_instrument
   AND date BETWEEN @from_date AND @to_date
 ORDER BY date, priority, recorded_at DESC;
+
+-- name: LatestSourceDate :one
+SELECT coalesce(max(date), DATE '1970-01-01')::date AS latest FROM marketdata_price
+WHERE source = @source AND (sqlc.narg(instrument)::text IS NULL OR instrument = sqlc.narg(instrument));

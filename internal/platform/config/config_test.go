@@ -19,6 +19,8 @@ func TestLoad(t *testing.T) {
 			want: Config{
 				DatabaseURL: "postgres://x", HTTPAddr: ":8080", LogLevel: slog.LevelInfo, TimeZone: time.UTC, PluggyURL: "https://api.pluggy.ai",
 				SyncInterval: time.Hour, GeminiURL: "https://generativelanguage.googleapis.com",
+				PTAXURL:     "https://olinda.bcb.gov.br/olinda/service/PTAX/version/v1/odata",
+				COTAHISTURL: "https://bvmf.bmfbovespa.com.br/InstDados/SerHist",
 			},
 		},
 		{
@@ -34,11 +36,15 @@ func TestLoad(t *testing.T) {
 				"EQUORI_SYNC_INTERVAL":    "15m",
 				"EQUORI_GEMINI_API_KEY":   "k",
 				"EQUORI_GEMINI_URL":       "http://127.0.0.1:9200",
+				"EQUORI_PRICE_FEEDS":      "bcb_ptax, b3_cotahist",
+				"EQUORI_BCB_PTAX_URL":     "http://127.0.0.1:9300",
+				"EQUORI_B3_COTAHIST_URL":  "http://127.0.0.1:9400",
 			},
 			want: Config{
 				DatabaseURL: "postgres://x", HTTPAddr: "127.0.0.1:9000", LogLevel: slog.LevelDebug,
 				TimeZone: time.UTC, InsecureCookies: true, APIDocs: true, PluggyURL: "http://127.0.0.1:9100",
 				SyncInterval: 15 * time.Minute, GeminiAPIKey: "k", GeminiURL: "http://127.0.0.1:9200",
+				PTAXFeed: true, COTAHISTFeed: true, PTAXURL: "http://127.0.0.1:9300", COTAHISTURL: "http://127.0.0.1:9400",
 			},
 		},
 		{name: "missing database url", env: map[string]string{}, wantErr: true},
@@ -60,6 +66,11 @@ func TestLoad(t *testing.T) {
 		{
 			name:    "sync interval under a minute",
 			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_SYNC_INTERVAL": "30s"},
+			wantErr: true,
+		},
+		{
+			name:    "unknown price feed",
+			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_PRICE_FEEDS": "bcb_ptax,yahoo"},
 			wantErr: true,
 		},
 		{

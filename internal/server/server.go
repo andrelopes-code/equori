@@ -42,12 +42,16 @@ type Config struct {
 	PluggyURL                    string
 	// LLM routes language model calls (ADR 009); modules take clients from it.
 	LLM *llm.Router
+	// PTAXFeed and COTAHISTFeed enable the price feeds at their base URLs (P8 amendment A62).
+	PTAXFeed, COTAHISTFeed bool
+	PTAXURL, COTAHISTURL   string
 }
 
 type App struct {
 	Handler    http.Handler
 	Dispatcher *outbox.Dispatcher
 	Identity   *identity.Module
+	Marketdata *marketdata.Module
 	Ledger     *ledger.Module
 	Reporting  *reporting.Module
 	Ingestion  *ingestion.Module
@@ -66,7 +70,10 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		clk = *cfg.Clock
 	}
 	identityModule := identity.New(pool, identity.Config{SecureCookies: cfg.SecureCookies}, log)
-	marketdataModule := marketdata.New(pool)
+	marketdataModule := marketdata.New(pool).WithFeeds(marketdata.FeedConfig{
+		PTAX: cfg.PTAXFeed, COTAHIST: cfg.COTAHISTFeed, PTAXURL: cfg.PTAXURL, COTAHISTURL: cfg.COTAHISTURL,
+		Client: &http.Client{Timeout: time.Minute}, Clock: clk, Log: log,
+	})
 	ledgerModule := ledger.New(pool, dispatcher, marketdataModule, clk, log)
 	reportingModule := reporting.New(pool, dispatcher, log)
 	classificationModule := classification.New(pool, dispatcher, ledgerModule, log)
@@ -103,5 +110,6 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		Reporting:  reportingModule,
 		Ingestion:  ingestionModule,
 		Planning:   planningModule,
+		Marketdata: marketdataModule,
 	}, nil
 }

@@ -30,8 +30,9 @@ type (
 )
 
 type Module struct {
-	pool *pgxpool.Pool
-	q    *postgres.Queries
+	pool  *pgxpool.Pool
+	q     *postgres.Queries
+	feeds FeedConfig
 }
 
 func New(pool *pgxpool.Pool) *Module {

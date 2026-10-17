@@ -99,10 +99,17 @@ func serve() error {
 		defer close(planningDone)
 		app.Planning.RunScheduler(ctx, time.Hour)
 	}()
+	// P8 amendment A62: price feeds run at start and every 6 hours when enabled.
+	feedsDone := make(chan struct{})
+	go func() {
+		defer close(feedsDone)
+		app.Marketdata.RunFeeds(ctx, 6*time.Hour)
+	}()
 	defer func() {
 		stop()
 		<-schedulerDone
 		<-planningDone
+		<-feedsDone
 		if err := <-dispatcherDone; err != nil {
 			log.Error("outbox dispatcher stopped", "error", err)
 		}
@@ -138,7 +145,7 @@ func serverConfig(cfg config.Config, clk *clock.Clock, router *llm.Router) serve
 	return server.Config{
 		SecureCookies: !cfg.InsecureCookies, Clock: clk, APIDocs: cfg.APIDocs,
 		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, PluggyURL: cfg.PluggyURL,
-		LLM: router,
+		LLM: router, PTAXFeed: cfg.PTAXFeed, COTAHISTFeed: cfg.COTAHISTFeed, PTAXURL: cfg.PTAXURL, COTAHISTURL: cfg.COTAHISTURL,
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -31,6 +32,10 @@ type Config struct {
 	GeminiAPIKey string
 	// GeminiURL is the base URL of the Gemini API, the only address Gemini requests go to (N17).
 	GeminiURL string
+	// PTAXFeed and COTAHISTFeed enable the price feeds named in EQUORI_PRICE_FEEDS (P8 A62);
+	// PTAXURL and COTAHISTURL are the only addresses their requests go to (N17).
+	PTAXFeed, COTAHISTFeed bool
+	PTAXURL, COTAHISTURL   string
 }
 
 func Load(getenv func(string) string) (Config, error) {
@@ -40,6 +45,25 @@ func Load(getenv func(string) string) (Config, error) {
 		PluggyURL:    getenv("EQUORI_PLUGGY_URL"),
 		GeminiAPIKey: getenv("EQUORI_GEMINI_API_KEY"),
 		GeminiURL:    getenv("EQUORI_GEMINI_URL"),
+		PTAXURL:      getenv("EQUORI_BCB_PTAX_URL"),
+		COTAHISTURL:  getenv("EQUORI_B3_COTAHIST_URL"),
+	}
+	if cfg.PTAXURL == "" {
+		cfg.PTAXURL = "https://olinda.bcb.gov.br/olinda/service/PTAX/version/v1/odata"
+	}
+	if cfg.COTAHISTURL == "" {
+		cfg.COTAHISTURL = "https://bvmf.bmfbovespa.com.br/InstDados/SerHist"
+	}
+	for name := range strings.SplitSeq(getenv("EQUORI_PRICE_FEEDS"), ",") {
+		switch strings.TrimSpace(name) {
+		case "":
+		case "bcb_ptax":
+			cfg.PTAXFeed = true
+		case "b3_cotahist":
+			cfg.COTAHISTFeed = true
+		default:
+			return Config{}, fmt.Errorf("EQUORI_PRICE_FEEDS: unknown feed %q", name)
+		}
 	}
 	if cfg.PluggyURL == "" {
 		cfg.PluggyURL = "https://api.pluggy.ai"

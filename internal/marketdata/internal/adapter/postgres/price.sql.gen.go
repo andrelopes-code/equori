@@ -12,6 +12,23 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const latestSourceDate = `-- name: LatestSourceDate :one
+SELECT coalesce(max(date), DATE '1970-01-01')::date AS latest FROM marketdata_price
+WHERE source = $1 AND ($2::text IS NULL OR instrument = $2)
+`
+
+type LatestSourceDateParams struct {
+	Source     string
+	Instrument *string
+}
+
+func (q *Queries) LatestSourceDate(ctx context.Context, arg LatestSourceDateParams) (time.Time, error) {
+	row := q.db.QueryRow(ctx, latestSourceDate, arg.Source, arg.Instrument)
+	var latest time.Time
+	err := row.Scan(&latest)
+	return latest, err
+}
+
 const listChosenPrices = `-- name: ListChosenPrices :many
 SELECT DISTINCT ON (date) instrument, quote_instrument, date, value, source, priority, recorded_at FROM marketdata_price
 WHERE instrument = $1 AND quote_instrument = $2
