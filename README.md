@@ -2,7 +2,7 @@
 
 Self-hosted personal finance manager.
 
-Status: early development. No features yet.
+Status: early development. The HTTP API covers the ledger, credit cards, reconciliation, file import, classification and Pluggy synchronization; the web interface is a shell.
 
 API contract: [api/openapi.yaml](api/openapi.yaml). Security reports: [SECURITY.md](SECURITY.md).
 

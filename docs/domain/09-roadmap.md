@@ -43,4 +43,4 @@ flowchart LR
 
 ## 9.3 Next step
 
-Write the implementation plan of P1 from chapters 5 to 7, then execute it slice by slice.
+P1 to P6 are delivered; the SC1 check of P6 waits for the owner (`docs/operations/pluggy.md`, section 5). Next: P7, then P8. The web interface track resumes after P8; until then it holds the embedded shell and the typed client only.
