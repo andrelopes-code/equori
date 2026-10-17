@@ -214,3 +214,153 @@ func (q *Queries) ListTrades(ctx context.Context, arg ListTradesParams) ([]Ledge
 	}
 	return items, nil
 }
+
+const securityIncomes = `-- name: SecurityIncomes :many
+SELECT i.transaction_id, i.account_id, t.date, i.income_type, i.gross, i.withheld
+FROM ledger_investment_income i
+JOIN ledger_transaction t ON t.user_id = i.user_id AND t.id = i.transaction_id
+WHERE i.user_id = $1 AND i.account_id = ANY($2::uuid[]) AND t.voided_at IS NULL
+ORDER BY t.date, i.transaction_id
+`
+
+type SecurityIncomesParams struct {
+	UserID     int64
+	AccountIds []uuid.UUID
+}
+
+type SecurityIncomesRow struct {
+	TransactionID uuid.UUID
+	AccountID     uuid.UUID
+	Date          time.Time
+	IncomeType    string
+	Gross         int64
+	Withheld      int64
+}
+
+func (q *Queries) SecurityIncomes(ctx context.Context, arg SecurityIncomesParams) ([]SecurityIncomesRow, error) {
+	rows, err := q.db.Query(ctx, securityIncomes, arg.UserID, arg.AccountIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SecurityIncomesRow
+	for rows.Next() {
+		var i SecurityIncomesRow
+		if err := rows.Scan(
+			&i.TransactionID,
+			&i.AccountID,
+			&i.Date,
+			&i.IncomeType,
+			&i.Gross,
+			&i.Withheld,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const securityPostings = `-- name: SecurityPostings :many
+SELECT p.account_id, p.transaction_id, p.booked_on, p.amount, p.weight
+FROM ledger_posting p
+WHERE p.user_id = $1 AND p.account_id = ANY($2::uuid[]) AND NOT p.voided
+ORDER BY p.booked_on, p.transaction_id, p.position
+`
+
+type SecurityPostingsParams struct {
+	UserID     int64
+	AccountIds []uuid.UUID
+}
+
+type SecurityPostingsRow struct {
+	AccountID     uuid.UUID
+	TransactionID uuid.UUID
+	BookedOn      time.Time
+	Amount        int64
+	Weight        int64
+}
+
+func (q *Queries) SecurityPostings(ctx context.Context, arg SecurityPostingsParams) ([]SecurityPostingsRow, error) {
+	rows, err := q.db.Query(ctx, securityPostings, arg.UserID, arg.AccountIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SecurityPostingsRow
+	for rows.Next() {
+		var i SecurityPostingsRow
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.TransactionID,
+			&i.BookedOn,
+			&i.Amount,
+			&i.Weight,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const securityTrades = `-- name: SecurityTrades :many
+SELECT tr.transaction_id, tr.account_id, t.date, tr.side, tr.quantity, tr.gross, tr.fees, tr.taxes, tr.cost
+FROM ledger_trade tr
+JOIN ledger_transaction t ON t.user_id = tr.user_id AND t.id = tr.transaction_id
+WHERE tr.user_id = $1 AND tr.account_id = ANY($2::uuid[]) AND t.voided_at IS NULL
+ORDER BY t.date, tr.transaction_id
+`
+
+type SecurityTradesParams struct {
+	UserID     int64
+	AccountIds []uuid.UUID
+}
+
+type SecurityTradesRow struct {
+	TransactionID uuid.UUID
+	AccountID     uuid.UUID
+	Date          time.Time
+	Side          string
+	Quantity      int64
+	Gross         int64
+	Fees          int64
+	Taxes         int64
+	Cost          *int64
+}
+
+func (q *Queries) SecurityTrades(ctx context.Context, arg SecurityTradesParams) ([]SecurityTradesRow, error) {
+	rows, err := q.db.Query(ctx, securityTrades, arg.UserID, arg.AccountIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SecurityTradesRow
+	for rows.Next() {
+		var i SecurityTradesRow
+		if err := rows.Scan(
+			&i.TransactionID,
+			&i.AccountID,
+			&i.Date,
+			&i.Side,
+			&i.Quantity,
+			&i.Gross,
+			&i.Fees,
+			&i.Taxes,
+			&i.Cost,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

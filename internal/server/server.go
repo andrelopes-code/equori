@@ -25,6 +25,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/llm"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 	"github.com/andrelopes-code/equori/internal/platform/spa"
+	"github.com/andrelopes-code/equori/internal/portfolio"
 	"github.com/andrelopes-code/equori/internal/reporting"
 )
 
@@ -56,6 +57,7 @@ type App struct {
 	Reporting  *reporting.Module
 	Ingestion  *ingestion.Module
 	Planning   *planning.Module
+	Portfolio  *portfolio.Module
 }
 
 // New registers every module's routes and outbox subscriptions; the caller runs Dispatcher.
@@ -84,6 +86,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		return nil, err
 	}
 	planningModule := planning.New(pool, dispatcher, ledgerModule, marketdataModule, clk, log)
+	portfolioModule := portfolio.New(pool, dispatcher, ledgerModule, marketdataModule, log)
 
 	mux := http.NewServeMux()
 	mux.Handle("GET /healthz", httpserver.Health(pool))
@@ -96,6 +99,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	ingestionModule.RegisterRoutes(mux)
 	classificationModule.RegisterRoutes(mux)
 	planningModule.RegisterRoutes(mux)
+	portfolioModule.RegisterRoutes(mux)
 	marketdataModule.RegisterRoutes(mux, log)
 	mux.Handle("/api/", httpserver.NotFound())
 	// Method-less: "GET /" overlaps "/api/" without either being more specific, and ServeMux panics.
@@ -110,6 +114,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		Reporting:  reportingModule,
 		Ingestion:  ingestionModule,
 		Planning:   planningModule,
+		Portfolio:  portfolioModule,
 		Marketdata: marketdataModule,
 	}, nil
 }

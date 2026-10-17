@@ -79,7 +79,7 @@ func (s *Service) TransactionFacts(ctx context.Context, userID int64, ids []uuid
 
 // AccountFact is an account with the attributes that classification rules read.
 type AccountFact struct {
-	ID                      uuid.UUID
+	ID, ParentID            uuid.UUID
 	Class, Kind, SystemRole string
 	Instrument              money.Currency
 	OpenedOn                time.Time
@@ -94,7 +94,7 @@ func (s *Service) AccountFacts(ctx context.Context, userID int64) ([]AccountFact
 	out := make([]AccountFact, len(as))
 	for i, a := range as {
 		out[i] = AccountFact{
-			ID: a.ID, Class: string(a.Class), Kind: string(a.Kind), SystemRole: string(a.SystemRole),
+			ID: a.ID, ParentID: a.ParentID, Class: string(a.Class), Kind: string(a.Kind), SystemRole: string(a.SystemRole),
 			Instrument: a.Instrument, OpenedOn: a.OpenedOn, ClosedOn: a.ClosedOn,
 		}
 	}

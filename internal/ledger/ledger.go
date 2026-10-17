@@ -66,6 +66,14 @@ type ImportDecision = app.ImportDecision
 
 // Facts that Classification reads (P5 amendments A17, A23, A26).
 type (
+	InvestmentFacts = app.InvestmentFacts
+	SecurityFact    = app.SecurityFact
+	HoldingPosting  = app.HoldingPosting
+	TradeFact       = app.TradeFact
+	IncomeFact      = app.IncomeFact
+)
+
+type (
 	TransactionFacts = app.TransactionFacts
 	FactPosting      = app.FactPosting
 	AccountFact      = app.AccountFact
@@ -259,6 +267,12 @@ func (m *Module) CategoryTotal(ctx context.Context, userID int64, categoryID uui
 }
 
 // BaseCurrency returns the user's base currency, as GET /settings reads it.
+// InvestmentFacts returns the facts Portfolio derives from: the children of brokerageID
+// that hold a security, their postings, trades and income (P8 amendment A71).
+func (m *Module) InvestmentFacts(ctx context.Context, userID int64, brokerageID uuid.UUID) (InvestmentFacts, error) {
+	return m.svc.InvestmentFacts(ctx, userID, brokerageID)
+}
+
 func (m *Module) BaseCurrency(ctx context.Context, userID int64) (money.Currency, error) {
 	s, err := m.svc.Settings(ctx, userID)
 	return s.BaseCurrency, err

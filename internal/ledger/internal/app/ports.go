@@ -367,6 +367,9 @@ type Repository interface {
 	// BalanceAt sums the postings of the account and its descendants up to and including date.
 	BalanceAt(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis Basis) (int64, error)
 	TreeInstruments(ctx context.Context, userID int64, accountID uuid.UUID) ([]money.Currency, error)
+	SecurityPostings(ctx context.Context, userID int64, accountIDs []uuid.UUID) ([]HoldingPosting, error)
+	SecurityTrades(ctx context.Context, userID int64, accountIDs []uuid.UUID) ([]TradeFact, error)
+	SecurityIncomes(ctx context.Context, userID int64, accountIDs []uuid.UUID) ([]IncomeFact, error)
 	Holding(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time) (quantity, costBasis int64, err error)
 	LaterSaleExists(ctx context.Context, userID int64, accountIDs []uuid.UUID, date time.Time, exclude uuid.UUID) (bool, error)
 	TreeBalancesByInstrument(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis Basis) (map[money.Currency]int64, error)

@@ -413,6 +413,34 @@ func (r *Repository) toTrade(ctx context.Context, row LedgerTrade, t *domain.Tra
 	return trade, nil
 }
 
+func (r *Repository) SecurityPostings(ctx context.Context, userID int64, accountIDs []uuid.UUID) ([]app.HoldingPosting, error) {
+	rows, err := r.q.SecurityPostings(ctx, SecurityPostingsParams{UserID: userID, AccountIds: accountIDs})
+	return mapAll(rows, func(row SecurityPostingsRow) app.HoldingPosting {
+		return app.HoldingPosting{AccountID: row.AccountID, TransactionID: row.TransactionID, Date: row.BookedOn, Quantity: row.Amount, Weight: row.Weight}
+	}), err
+}
+
+func (r *Repository) SecurityTrades(ctx context.Context, userID int64, accountIDs []uuid.UUID) ([]app.TradeFact, error) {
+	rows, err := r.q.SecurityTrades(ctx, SecurityTradesParams{UserID: userID, AccountIds: accountIDs})
+	return mapAll(rows, func(row SecurityTradesRow) app.TradeFact {
+		f := app.TradeFact{
+			TransactionID: row.TransactionID, AccountID: row.AccountID, Date: row.Date, Side: row.Side,
+			Quantity: row.Quantity, Gross: row.Gross, Fees: row.Fees, Taxes: row.Taxes,
+		}
+		if row.Cost != nil {
+			f.Cost = *row.Cost
+		}
+		return f
+	}), err
+}
+
+func (r *Repository) SecurityIncomes(ctx context.Context, userID int64, accountIDs []uuid.UUID) ([]app.IncomeFact, error) {
+	rows, err := r.q.SecurityIncomes(ctx, SecurityIncomesParams{UserID: userID, AccountIds: accountIDs})
+	return mapAll(rows, func(row SecurityIncomesRow) app.IncomeFact {
+		return app.IncomeFact{TransactionID: row.TransactionID, AccountID: row.AccountID, Date: row.Date, Type: row.IncomeType, Gross: row.Gross, Withheld: row.Withheld}
+	}), err
+}
+
 func (r *Repository) Holding(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time) (int64, int64, error) {
 	row, err := r.q.Holding(ctx, HoldingParams{UserID: userID, AccountID: accountID, OnDate: date})
 	return row.Quantity, row.CostBasis, err

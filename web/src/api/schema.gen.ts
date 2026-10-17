@@ -266,6 +266,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/positions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Positions of the security accounts at the end of a date, valued with stored prices. */
+        get: operations["listPositions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/realized-results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Results of the sales of a year at average cost (D1). */
+        get: operations["listRealizedResults"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/income-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Investment income of a year by tax treatment (D1). */
+        get: operations["listIncomeEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/transactions/{id}": {
         parameters: {
             query?: never;
@@ -2638,6 +2689,55 @@ export interface components {
             gross: components["schemas"]["Money"];
             withheld: components["schemas"]["Money"];
         };
+        Position: {
+            /** Format: uuid */
+            account_id: string;
+            instrument: string;
+            quantity: components["schemas"]["Money"];
+            cost_basis: components["schemas"]["Money"];
+            average_cost: components["schemas"]["Rate"];
+            /** @description Quantity valued in the base currency; absent without a price. */
+            market_value?: components["schemas"]["Money"];
+            prices?: components["schemas"]["Price"][];
+        };
+        PositionList: {
+            items: components["schemas"]["Position"][];
+        };
+        RealizedResult: {
+            /** Format: uuid */
+            transaction_id: string;
+            /** Format: uuid */
+            account_id: string;
+            instrument: string;
+            /** Format: date */
+            date: string;
+            month: string;
+            quantity: components["schemas"]["Money"];
+            cost: components["schemas"]["Money"];
+            proceeds: components["schemas"]["Money"];
+            result: components["schemas"]["Money"];
+            tax_class: components["schemas"]["InstrumentType"];
+        };
+        RealizedResultList: {
+            items: components["schemas"]["RealizedResult"][];
+        };
+        IncomeEvent: {
+            /** Format: uuid */
+            transaction_id: string;
+            /** Format: uuid */
+            account_id: string;
+            instrument: string;
+            /** Format: date */
+            date: string;
+            income_type: components["schemas"]["IncomeType"];
+            /** @enum {string} */
+            tax_treatment: "exempt" | "exclusive";
+            gross: components["schemas"]["Money"];
+            withheld: components["schemas"]["Money"];
+        };
+        IncomeEventList: {
+            items: components["schemas"]["IncomeEvent"][];
+        };
         ForeignPurchaseInput: {
             /** Format: uuid */
             account_id: string;
@@ -2981,6 +3081,7 @@ export interface components {
         };
     };
     parameters: {
+        Year: number;
         ID: string;
         Limit: number;
         Cursor: string;
@@ -3576,6 +3677,78 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    listPositions: {
+        parameters: {
+            query: {
+                date: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PositionList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+        };
+    };
+    listRealizedResults: {
+        parameters: {
+            query: {
+                year: components["parameters"]["Year"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RealizedResultList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+        };
+    };
+    listIncomeEvents: {
+        parameters: {
+            query: {
+                year: components["parameters"]["Year"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncomeEventList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
         };
     };
     getTransaction: {

@@ -14,8 +14,10 @@ tags:
     description: Accounts, transactions and balances.
   - name: reporting
     description: Derived views over the ledger.
+  - name: portfolio
+    description: Positions, realized results and income events derived from Ledger (P8 amendment A71).
   - name: marketdata
-    description: Instruments and business-day calendars.
+    description: Instruments, prices and business-day calendars.
   - name: ingestion
     description: File imports, aggregator integrations and connections, external records and their review.
   - name: classification
@@ -557,6 +559,65 @@ paths:
         "401":
           $ref: "#/components/responses/Problem"
         "422":
+          $ref: "#/components/responses/Problem"
+  /positions:
+    get:
+      tags: [portfolio]
+      operationId: listPositions
+      summary: Positions of the security accounts at the end of a date, valued with stored prices.
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PositionList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /realized-results:
+    get:
+      tags: [portfolio]
+      operationId: listRealizedResults
+      summary: Results of the sales of a year at average cost (D1).
+      parameters:
+        - $ref: "#/components/parameters/Year"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RealizedResultList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /income-events:
+    get:
+      tags: [portfolio]
+      operationId: listIncomeEvents
+      summary: Investment income of a year by tax treatment (D1).
+      parameters:
+        - $ref: "#/components/parameters/Year"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncomeEventList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
           $ref: "#/components/responses/Problem"
   /transactions/{id}:
     get:
@@ -3092,6 +3153,14 @@ components:
       in: cookie
       name: equori_session
   parameters:
+    Year:
+      name: year
+      in: query
+      required: true
+      schema:
+        type: integer
+        minimum: 1900
+        maximum: 2200
     ID:
       name: id
       in: path
@@ -4899,6 +4968,105 @@ components:
           $ref: "#/components/schemas/Money"
         withheld:
           $ref: "#/components/schemas/Money"
+    Position:
+      type: object
+      required: [account_id, instrument, quantity, cost_basis, average_cost]
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        instrument:
+          type: string
+        quantity:
+          $ref: "#/components/schemas/Money"
+        cost_basis:
+          $ref: "#/components/schemas/Money"
+        average_cost:
+          $ref: "#/components/schemas/Rate"
+        market_value:
+          description: Quantity valued in the base currency; absent without a price.
+          allOf:
+            - $ref: "#/components/schemas/Money"
+        prices:
+          type: array
+          items:
+            $ref: "#/components/schemas/Price"
+    PositionList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Position"
+    RealizedResult:
+      type: object
+      required: [transaction_id, account_id, instrument, date, month, quantity, cost, proceeds, result, tax_class]
+      properties:
+        transaction_id:
+          type: string
+          format: uuid
+        account_id:
+          type: string
+          format: uuid
+        instrument:
+          type: string
+        date:
+          type: string
+          format: date
+        month:
+          type: string
+          pattern: "^[0-9]{4}-[0-9]{2}$"
+        quantity:
+          $ref: "#/components/schemas/Money"
+        cost:
+          $ref: "#/components/schemas/Money"
+        proceeds:
+          $ref: "#/components/schemas/Money"
+        result:
+          $ref: "#/components/schemas/Money"
+        tax_class:
+          $ref: "#/components/schemas/InstrumentType"
+    RealizedResultList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RealizedResult"
+    IncomeEvent:
+      type: object
+      required: [transaction_id, account_id, instrument, date, income_type, tax_treatment, gross, withheld]
+      properties:
+        transaction_id:
+          type: string
+          format: uuid
+        account_id:
+          type: string
+          format: uuid
+        instrument:
+          type: string
+        date:
+          type: string
+          format: date
+        income_type:
+          $ref: "#/components/schemas/IncomeType"
+        tax_treatment:
+          type: string
+          enum: [exempt, exclusive]
+        gross:
+          $ref: "#/components/schemas/Money"
+        withheld:
+          $ref: "#/components/schemas/Money"
+    IncomeEventList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/IncomeEvent"
     ForeignPurchaseInput:
       type: object
       additionalProperties: false

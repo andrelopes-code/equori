@@ -27,3 +27,23 @@ VALUES (@transaction_id, @user_id, @account_id, @cash_account_id, @income_type, 
 
 -- name: ListInvestmentIncome :many
 SELECT * FROM ledger_investment_income WHERE user_id = @user_id AND transaction_id = ANY(@transaction_ids::uuid[]);
+
+-- name: SecurityPostings :many
+SELECT p.account_id, p.transaction_id, p.booked_on, p.amount, p.weight
+FROM ledger_posting p
+WHERE p.user_id = @user_id AND p.account_id = ANY(@account_ids::uuid[]) AND NOT p.voided
+ORDER BY p.booked_on, p.transaction_id, p.position;
+
+-- name: SecurityTrades :many
+SELECT tr.transaction_id, tr.account_id, t.date, tr.side, tr.quantity, tr.gross, tr.fees, tr.taxes, tr.cost
+FROM ledger_trade tr
+JOIN ledger_transaction t ON t.user_id = tr.user_id AND t.id = tr.transaction_id
+WHERE tr.user_id = @user_id AND tr.account_id = ANY(@account_ids::uuid[]) AND t.voided_at IS NULL
+ORDER BY t.date, tr.transaction_id;
+
+-- name: SecurityIncomes :many
+SELECT i.transaction_id, i.account_id, t.date, i.income_type, i.gross, i.withheld
+FROM ledger_investment_income i
+JOIN ledger_transaction t ON t.user_id = i.user_id AND t.id = i.transaction_id
+WHERE i.user_id = @user_id AND i.account_id = ANY(@account_ids::uuid[]) AND t.voided_at IS NULL
+ORDER BY t.date, i.transaction_id;
