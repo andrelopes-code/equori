@@ -22,7 +22,9 @@ import {
 } from "@/features/transactions/draft-storage";
 import { EntityField } from "@/features/transactions/entity-field";
 import styles from "@/features/transactions/new-transaction-page.module.css";
+import { PostingsEditor } from "@/features/transactions/postings-editor";
 import { validateTransactionSearch } from "@/features/transactions/search";
+import { SplitEditor } from "@/features/transactions/split-editor";
 import {
   canSave,
   formReducer,
@@ -52,7 +54,9 @@ function isBlank(state: FormState): boolean {
     state.payeeId === undefined &&
     state.payeeName === undefined &&
     state.description === "" &&
-    state.tags.length === 0
+    state.tags.length === 0 &&
+    state.split === null &&
+    state.postings === null
   );
 }
 
@@ -102,6 +106,7 @@ export function NewTransactionForm({
     state.mode === "transfer"
       ? balanceAccounts.filter((a) => a.id !== state.accountId)
       : open.filter((a) => a.class === categoryClass).map(toEntity);
+  const allAccounts = open.map(toEntity);
   const payeeEntities: Entity[] = payees.map((p) => ({
     id: p.id,
     label: p.name,
@@ -147,50 +152,90 @@ export function NewTransactionForm({
 
   return (
     <Form className={styles.form} summary="none" onSubmit={() => save(false)}>
-      <SegmentedControl
-        aria-label={t("transactions.new.mode")}
-        value={state.mode}
-        fullWidth
-        onValueChange={(mode) => {
-          if (isMode(mode)) dispatch({ type: "mode", mode });
-        }}
-      >
-        <Segment value="expense">{t("transactions.new.expense")}</Segment>
-        <Segment value="income">{t("transactions.new.income")}</Segment>
-        <Segment value="transfer">{t("transactions.new.transfer")}</Segment>
-      </SegmentedControl>
-      <AmountField
-        label={t("transactions.new.amount")}
-        currency={currency}
-        scale={scale(currency)}
-        value={state.amount}
-        error={amountError}
-        onChange={(amount) => {
-          dispatch({ type: "amount", amount });
-        }}
-      />
-      <EntityField
-        label={t(
-          transfer ? "transactions.new.from" : "transactions.new.account",
-        )}
-        kind="account"
-        entities={balanceAccounts}
-        value={state.accountId}
-        onChange={(id) => {
-          dispatch({ type: "account", id });
-        }}
-      />
-      <EntityField
-        label={t(
-          transfer ? "transactions.new.to" : "transactions.new.category",
-        )}
-        kind={transfer ? "account" : "category"}
-        entities={counters}
-        value={state.counterId}
-        onChange={(id) => {
-          dispatch({ type: "counter", id });
-        }}
-      />
+      {state.postings === null ? (
+        <>
+          <SegmentedControl
+            aria-label={t("transactions.new.mode")}
+            value={state.mode}
+            fullWidth
+            onValueChange={(mode) => {
+              if (isMode(mode)) dispatch({ type: "mode", mode });
+            }}
+          >
+            <Segment value="expense">{t("transactions.new.expense")}</Segment>
+            <Segment value="income">{t("transactions.new.income")}</Segment>
+            <Segment value="transfer">{t("transactions.new.transfer")}</Segment>
+          </SegmentedControl>
+          <AmountField
+            label={t("transactions.new.amount")}
+            currency={currency}
+            scale={scale(currency)}
+            value={state.amount}
+            error={amountError}
+            onChange={(amount) => {
+              dispatch({ type: "amount", amount });
+            }}
+          />
+          <EntityField
+            label={t(
+              transfer ? "transactions.new.from" : "transactions.new.account",
+            )}
+            kind="account"
+            entities={balanceAccounts}
+            value={state.accountId}
+            onChange={(id) => {
+              dispatch({ type: "account", id });
+            }}
+          />
+          {state.split === null ? (
+            <>
+              <EntityField
+                label={t(
+                  transfer
+                    ? "transactions.new.to"
+                    : "transactions.new.category",
+                )}
+                kind={transfer ? "account" : "category"}
+                entities={counters}
+                value={state.counterId}
+                onChange={(id) => {
+                  dispatch({ type: "counter", id });
+                }}
+              />
+              {!transfer && (
+                <Button
+                  type="button"
+                  tone="secondary"
+                  variant="ghost"
+                  onClick={() => {
+                    dispatch({ type: "split" });
+                  }}
+                >
+                  {t("transactions.new.split")}
+                </Button>
+              )}
+            </>
+          ) : (
+            <SplitEditor
+              state={state}
+              dispatch={dispatch}
+              categories={counters}
+              currency={currency}
+              scale={scale(currency)}
+            />
+          )}
+        </>
+      ) : (
+        <PostingsEditor
+          postings={state.postings}
+          dispatch={dispatch}
+          accounts={allAccounts}
+          currencyOf={currencyOf}
+          baseCurrency={baseCurrency}
+          scale={scale}
+          error={amountError}
+        />
+      )}
       <Field>
         <FieldLabel>{t("transactions.new.date")}</FieldLabel>
         <DatePicker
@@ -237,6 +282,18 @@ export function NewTransactionForm({
           }}
         />
       </Field>
+      {state.postings === null && (
+        <Button
+          type="button"
+          tone="secondary"
+          variant="ghost"
+          onClick={() => {
+            dispatch({ type: "advanced", currencyOf });
+          }}
+        >
+          {t("transactions.new.advanced")}
+        </Button>
+      )}
       <FormActions {...(phone ? { "data-pinned": "true" } : {})}>
         <Button
           type="button"

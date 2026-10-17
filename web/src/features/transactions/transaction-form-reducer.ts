@@ -43,6 +43,18 @@ export type FormAction =
   | { type: "payee"; id?: string; name?: string }
   | { type: "description"; description: string }
   | { type: "tags"; tags: string[] }
+  | { type: "split" }
+  | { type: "splitAdd" }
+  | { type: "splitCategory"; key: string; id: string }
+  | { type: "splitAmount"; key: string; amount: number | null }
+  | { type: "splitRemove"; key: string }
+  | { type: "advanced"; currencyOf: (accountId: string) => string }
+  | { type: "postingAdd"; currency: string }
+  | { type: "postingAccount"; key: string; id: string; currency: string }
+  | { type: "postingAmount"; key: string; amount: number | null }
+  | { type: "postingMemo"; key: string; memo: string }
+  | { type: "postingRemove"; key: string }
+  | { type: "quick" }
   | { type: "next" }
   | { type: "restore"; state: FormState };
 
@@ -60,10 +72,85 @@ export function initialForm(today: string, accountId = ""): FormState {
   };
 }
 
+// A new key is one above the highest in use, which keeps the reducer pure and deterministic.
+function nextKey(lines: { key: string }[]): string {
+  return String(Math.max(0, ...lines.map((l) => Number(l.key))) + 1);
+}
+
+function mapLine<T extends { key: string }>(
+  lines: T[] | null,
+  key: string,
+  change: Partial<T>,
+): T[] | null {
+  return (
+    lines?.map((line) => (line.key === key ? { ...line, ...change } : line)) ??
+    null
+  );
+}
+
+// Amounts are integers in minor units; an empty amount counts as zero.
+export function splitRemainder(state: FormState): number {
+  const total = state.amount ?? 0;
+  return (state.split ?? []).reduce((rest, l) => rest - (l.amount ?? 0), total);
+}
+
+// Sum per currency, only the currencies that do not net to zero.
+export function postingImbalance(lines: PostingLine[]): Record<string, number> {
+  const sums: Record<string, number> = {};
+  for (const l of lines) {
+    sums[l.currency] = (sums[l.currency] ?? 0) + (l.amount ?? 0);
+  }
+  return Object.fromEntries(
+    Object.entries(sums).filter(([, sum]) => sum !== 0),
+  );
+}
+
+// The account side takes the amount for an expense or transfer and gives it for an income.
+function accountSign(state: FormState): 1 | -1 {
+  return state.mode === "income" ? 1 : -1;
+}
+
+function quickPostings(
+  state: FormState,
+  currencyOf: (accountId: string) => string,
+): PostingLine[] {
+  const sign = accountSign(state);
+  const line = (accountId: string, amount: number | null): PostingLine => ({
+    key: "",
+    accountId,
+    amount,
+    currency: currencyOf(accountId),
+    memo: "",
+  });
+  const counters =
+    state.split === null
+      ? [
+          line(
+            state.counterId,
+            state.amount === null ? null : -sign * state.amount,
+          ),
+        ]
+      : state.split.map((l) =>
+          line(l.categoryId, l.amount === null ? null : -sign * l.amount),
+        );
+  return [
+    line(state.accountId, state.amount === null ? null : sign * state.amount),
+    ...counters,
+  ].map((l, i) => ({ ...l, key: String(i + 1) }));
+}
+
 export function formReducer(state: FormState, action: FormAction): FormState {
   switch (action.type) {
     case "mode":
-      return { ...state, mode: action.mode, counterId: "" };
+      return {
+        ...state,
+        mode: action.mode,
+        counterId: "",
+        split:
+          state.split === null || action.mode === "transfer"
+            ? null
+            : state.split.map((l) => ({ ...l, categoryId: "" })),
+      };
     case "amount":
       return { ...state, amount: action.amount };
     case "account":
@@ -84,6 +171,80 @@ export function formReducer(state: FormState, action: FormAction): FormState {
       return { ...state, description: action.description };
     case "tags":
       return { ...state, tags: action.tags };
+    case "split":
+      return {
+        ...state,
+        split: [
+          { key: "1", categoryId: state.counterId, amount: null },
+          { key: "2", categoryId: "", amount: null },
+        ],
+      };
+    case "splitAdd":
+      return {
+        ...state,
+        split: [
+          ...(state.split ?? []),
+          { key: nextKey(state.split ?? []), categoryId: "", amount: null },
+        ],
+      };
+    case "splitCategory":
+      return {
+        ...state,
+        split: mapLine(state.split, action.key, { categoryId: action.id }),
+      };
+    case "splitAmount":
+      return {
+        ...state,
+        split: mapLine(state.split, action.key, { amount: action.amount }),
+      };
+    case "splitRemove":
+      return {
+        ...state,
+        split: state.split?.filter((l) => l.key !== action.key) ?? null,
+      };
+    case "advanced":
+      return { ...state, postings: quickPostings(state, action.currencyOf) };
+    case "postingAdd":
+      return {
+        ...state,
+        postings: [
+          ...(state.postings ?? []),
+          {
+            key: nextKey(state.postings ?? []),
+            accountId: "",
+            amount: null,
+            currency: action.currency,
+            memo: "",
+          },
+        ],
+      };
+    case "postingAccount":
+      return {
+        ...state,
+        postings: mapLine(state.postings, action.key, {
+          accountId: action.id,
+          currency: action.currency,
+        }),
+      };
+    case "postingAmount":
+      return {
+        ...state,
+        postings: mapLine(state.postings, action.key, {
+          amount: action.amount,
+        }),
+      };
+    case "postingMemo":
+      return {
+        ...state,
+        postings: mapLine(state.postings, action.key, { memo: action.memo }),
+      };
+    case "postingRemove":
+      return {
+        ...state,
+        postings: state.postings?.filter((l) => l.key !== action.key) ?? null,
+      };
+    case "quick":
+      return { ...state, split: null, postings: null };
     case "next":
       return {
         ...initialForm(state.date, state.accountId),
@@ -94,15 +255,37 @@ export function formReducer(state: FormState, action: FormAction): FormState {
   }
 }
 
-export function canSave(state: FormState): boolean {
+function canSaveQuick(state: FormState): boolean {
   return (
     state.amount !== null &&
     state.amount > 0 &&
     state.accountId !== "" &&
-    state.counterId !== "" &&
-    state.accountId !== state.counterId &&
-    state.date !== ""
+    state.date !== "" &&
+    (state.split === null
+      ? state.counterId !== "" && state.accountId !== state.counterId
+      : state.split.length > 0 &&
+        splitRemainder(state) === 0 &&
+        state.split.every(
+          (l) => l.categoryId !== "" && l.amount !== null && l.amount > 0,
+        ))
   );
+}
+
+function canSavePostings(lines: PostingLine[], date: string): boolean {
+  return (
+    date !== "" &&
+    lines.length >= 2 &&
+    lines.every(
+      (l) => l.accountId !== "" && l.amount !== null && l.amount !== 0,
+    ) &&
+    Object.keys(postingImbalance(lines)).length === 0
+  );
+}
+
+export function canSave(state: FormState): boolean {
+  return state.postings === null
+    ? canSaveQuick(state)
+    : canSavePostings(state.postings, state.date);
 }
 
 function posting(
@@ -116,24 +299,48 @@ function posting(
   };
 }
 
-// Expense and transfer take the amount from the account; income puts it into the account.
+function postingInputs(
+  state: FormState,
+  currencyOf: (accountId: string) => string,
+): PostingInput[] {
+  if (state.postings !== null) {
+    return state.postings.flatMap((l) => {
+      const memo = l.memo.trim();
+      return l.amount === null
+        ? []
+        : [
+            {
+              account_id: l.accountId,
+              amount: { amount: l.amount, currency: l.currency },
+              ...(memo === "" ? {} : { memo }),
+            },
+          ];
+    });
+  }
+  const total = state.amount ?? 0;
+  const sign = accountSign(state);
+  const counters =
+    state.split === null
+      ? [posting(state.counterId, -sign * total, currencyOf)]
+      : state.split.map((l) =>
+          posting(l.categoryId, -sign * (l.amount ?? 0), currencyOf),
+        );
+  return [posting(state.accountId, sign * total, currencyOf), ...counters];
+}
+
 export function toTransactionInput(
   state: FormState,
   currencyOf: (accountId: string) => string,
 ): TransactionInput {
-  if (!canSave(state) || state.amount === null) {
+  if (!canSave(state)) {
     throw new Error("build transaction input: incomplete form");
   }
-  const sign = state.mode === "income" ? 1 : -1;
   const description = state.description.trim();
   return {
     date: state.date,
     ...(description === "" ? {} : { description }),
     ...(state.payeeId === undefined ? {} : { payee_id: state.payeeId }),
     tags: state.tags,
-    postings: [
-      posting(state.accountId, sign * state.amount, currencyOf),
-      posting(state.counterId, -sign * state.amount, currencyOf),
-    ],
+    postings: postingInputs(state, currencyOf),
   };
 }

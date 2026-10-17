@@ -14,7 +14,9 @@ function isDraft(value: unknown): value is FormState {
     typeof v.counterId === "string" &&
     typeof v.date === "string" &&
     typeof v.description === "string" &&
-    Array.isArray(v.tags)
+    Array.isArray(v.tags) &&
+    (v.split === null || Array.isArray(v.split)) &&
+    (v.postings === null || Array.isArray(v.postings))
   );
 }
 

@@ -10,4 +10,33 @@
     padding-block: var(--slotted-space-3);
     background: var(--slotted-surface);
   }
+
+  .editor {
+    display: grid;
+    gap: var(--slotted-space-3);
+  }
+
+  .line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--slotted-space-3);
+    align-items: end;
+    inline-size: 100%;
+  }
+
+  .line > :not(button) {
+    flex: 1 1 10rem;
+  }
+
+  .summary {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--slotted-space-3);
+  }
+
+  .editorActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--slotted-space-3);
+  }
 }

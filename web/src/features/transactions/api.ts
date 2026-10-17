@@ -140,7 +140,10 @@ export function useCreateTransaction() {
       );
       return unwrap(await api.POST("/transactions", { body: input }));
     },
-    onSuccess: (_created, { state }) =>
-      transactionMutated(queryClient, [state.accountId, state.counterId]),
+    onSuccess: (_created, { state, currencyOf }) =>
+      transactionMutated(
+        queryClient,
+        toTransactionInput(state, currencyOf).postings.map((p) => p.account_id),
+      ),
   });
 }

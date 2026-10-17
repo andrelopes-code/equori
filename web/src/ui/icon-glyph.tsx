@@ -3,6 +3,7 @@ const GLYPHS = {
   home: ["M3 11l9-8 9 8", "M5 10v10h14V10"],
   list: ["M8 6h13M8 12h13M8 18h13", "M3 6h.01M3 12h.01M3 18h.01"],
   plus: ["M12 5v14M5 12h14"],
+  close: ["M6 6l12 12M18 6L6 18"],
   wallet: [
     "M3 7h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z",
     "M3 7l12-4v4",

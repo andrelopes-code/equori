@@ -9,6 +9,8 @@ import { renderApp } from "@/testing/render-app";
 
 const checkingID = "11111111-1111-4111-8111-111111111111";
 const foodID = "22222222-2222-4222-8222-222222222222";
+const leisureID = "77777777-7777-4777-8777-777777777777";
+const savingsID = "88888888-8888-4888-8888-888888888888";
 const payeeID = "44444444-4444-4444-8444-444444444444";
 const newPayeeID = "66666666-6666-4666-8666-666666666666";
 
@@ -21,6 +23,14 @@ const accounts = [
     currency: "BRL",
   },
   { id: foodID, name: "Mercado", class: "expense", currency: "BRL" },
+  { id: leisureID, name: "Lazer", class: "expense", currency: "BRL" },
+  {
+    id: savingsID,
+    name: "Reserva",
+    class: "asset",
+    kind: "savings",
+    currency: "BRL",
+  },
 ];
 
 const label = catalogPtBR;
@@ -355,5 +365,180 @@ describe("new transaction", () => {
       name: label["transactions.new.amount"],
     });
     expect(amount.value).toBe("");
+  });
+
+  it("splits the amount across categories and blocks save until the remainder is zero", async () => {
+    const { fetch, captured } = newApi();
+    const user = userEvent.setup();
+    await renderApp("/transactions/new", { fetch });
+    await user.type(
+      await screen.findByRole("spinbutton", {
+        name: label["transactions.new.amount"],
+      }),
+      "10000",
+    );
+    await pick(user, label["transactions.new.account"], "Itau");
+    await pick(user, label["transactions.new.category"], "Mercado");
+    await user.click(
+      screen.getByRole("button", { name: label["transactions.new.split"] }),
+    );
+    const save = screen.getByRole("button", {
+      name: label["transactions.new.save"],
+    });
+    expect(screen.getByRole("combobox", { name: "Categoria 1" })).toHaveValue(
+      "Mercado",
+    );
+    expect(screen.getByRole("combobox", { name: "Categoria 2" })).toHaveValue(
+      "",
+    );
+    expect(screen.getByText(/R\$\s*100,00/)).toBeInTheDocument();
+    expect(save).toBeDisabled();
+
+    await user.type(
+      screen.getByRole("spinbutton", { name: "Valor da categoria 1" }),
+      "6000",
+    );
+    await pick(user, "Categoria 2", "Lazer");
+    await user.type(
+      screen.getByRole("spinbutton", { name: "Valor da categoria 2" }),
+      "2500",
+    );
+    expect(screen.getByText(/R\$\s*15,00/)).toBeInTheDocument();
+    expect(save).toBeDisabled();
+
+    await user.click(
+      screen.getByRole("button", { name: label["transactions.new.splitAdd"] }),
+    );
+    await pick(user, "Categoria 3", "Mercado");
+    await user.type(
+      screen.getByRole("spinbutton", { name: "Valor da categoria 3" }),
+      "1500",
+    );
+    expect(screen.getByText(/R\$\s*0,00/)).toBeInTheDocument();
+    expect(save).toBeEnabled();
+
+    await user.click(save);
+    await waitFor(() => {
+      expect(captured.transactions).toHaveLength(1);
+    });
+    expect(captured.transactions[0]).toEqual({
+      date: "2026-10-17",
+      tags: [],
+      postings: [
+        {
+          account_id: checkingID,
+          amount: { amount: -10000, currency: "BRL" },
+        },
+        { account_id: foodID, amount: { amount: 6000, currency: "BRL" } },
+        { account_id: leisureID, amount: { amount: 2500, currency: "BRL" } },
+        { account_id: foodID, amount: { amount: 1500, currency: "BRL" } },
+      ],
+    });
+  });
+
+  it("opens the postings editor prefilled and sends the free postings with memo", async () => {
+    const { fetch, captured } = newApi();
+    const user = userEvent.setup();
+    await renderApp("/transactions/new", { fetch });
+    await user.type(
+      await screen.findByRole("spinbutton", {
+        name: label["transactions.new.amount"],
+      }),
+      "12000",
+    );
+    await pick(user, label["transactions.new.account"], "Itau");
+    await pick(user, label["transactions.new.category"], "Mercado");
+    await user.click(
+      screen.getByRole("button", { name: label["transactions.new.advanced"] }),
+    );
+    expect(
+      screen.queryByRole("spinbutton", {
+        name: label["transactions.new.amount"],
+      }),
+    ).toBeNull();
+    expect(
+      screen.getByRole("combobox", { name: "Conta do lançamento 1" }),
+    ).toHaveValue("Itau");
+    expect(
+      screen.getByRole("combobox", { name: "Conta do lançamento 2" }),
+    ).toHaveValue("Mercado");
+    expect(
+      screen.getByRole<HTMLInputElement>("spinbutton", {
+        name: "Valor do lançamento 1",
+      }).value,
+    ).toMatch(/^-R\$\s*120,00$/);
+    expect(
+      screen.getByRole<HTMLInputElement>("spinbutton", {
+        name: "Valor do lançamento 2",
+      }).value,
+    ).toMatch(/^R\$\s*120,00$/);
+
+    await user.type(
+      screen.getByRole("textbox", { name: "Observação do lançamento 2" }),
+      "feira",
+    );
+    await user.click(
+      screen.getByRole("button", { name: label["transactions.new.save"] }),
+    );
+    await waitFor(() => {
+      expect(captured.transactions).toHaveLength(1);
+    });
+    expect(captured.transactions[0]).toEqual({
+      date: "2026-10-17",
+      tags: [],
+      postings: [
+        {
+          account_id: checkingID,
+          amount: { amount: -12000, currency: "BRL" },
+        },
+        {
+          account_id: foodID,
+          amount: { amount: 12000, currency: "BRL" },
+          memo: "feira",
+        },
+      ],
+    });
+  });
+
+  it("shows the imbalance and blocks save while the postings do not balance", async () => {
+    const { fetch } = newApi();
+    const user = userEvent.setup();
+    await renderApp("/transactions/new", { fetch });
+    await user.type(
+      await screen.findByRole("spinbutton", {
+        name: label["transactions.new.amount"],
+      }),
+      "12000",
+    );
+    await pick(user, label["transactions.new.account"], "Itau");
+    await pick(user, label["transactions.new.category"], "Mercado");
+    await user.click(
+      screen.getByRole("button", { name: label["transactions.new.advanced"] }),
+    );
+    const second = screen.getByRole("spinbutton", {
+      name: "Valor do lançamento 2",
+    });
+    await user.clear(second);
+    await user.type(second, "13000");
+    expect(screen.getByText(/^R\$\s*10,00$/)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: label["transactions.new.save"] }),
+    ).toBeDisabled();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: label["transactions.new.postingAdd"],
+      }),
+    );
+    await pick(user, "Conta do lançamento 3", "Reserva");
+    const third = screen.getByRole<HTMLInputElement>("spinbutton", {
+      name: "Valor do lançamento 3",
+    });
+    await user.type(third, "-1000");
+    expect(third.value).toMatch(/^-R\$\s*10,00$/);
+    expect(screen.queryByText(/Diferença/)).toBeNull();
+    expect(
+      screen.getByRole("button", { name: label["transactions.new.save"] }),
+    ).toBeEnabled();
   });
 });
