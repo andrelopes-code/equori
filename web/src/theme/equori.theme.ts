@@ -22,6 +22,30 @@ const currentDestinationRule = `
 }
 `;
 
+// A ledger table lines up with the headings around it: no inset at its outer edges,
+// and a row's name reads at the body weight (complete frontend G4).
+const tableEdgeRule = `
+[data-ui="table"] [data-part="row"] > [data-part="cell"]:first-child,
+[data-ui="table"] [data-part="row"] > [data-part="row-header"]:first-child,
+[data-ui="table"] [data-part="row"] > [data-part="column-header"]:first-child {
+  padding-inline-start: 0;
+}
+
+[data-ui="table"] [data-part="row"] > [data-part="cell"]:last-child,
+[data-ui="table"] [data-part="row"] > [data-part="column-header"]:last-child {
+  padding-inline-end: 0;
+}
+
+[data-ui="table"] [data-part="body"] [data-part="row-header"] {
+  font-weight: var(--slotted-font-weight-regular);
+}
+
+[data-ui="table"] [data-part="column-header"] {
+  font-weight: var(--slotted-font-weight-regular);
+  color: var(--slotted-text-muted);
+}
+`;
+
 export default extendTheme(
   defaultTheme,
   {
@@ -41,7 +65,7 @@ export default extendTheme(
       "--slotted-table-surface": "transparent",
       "--slotted-table-header-surface": "transparent",
     },
-    rules: [summaryRule, currentDestinationRule],
+    rules: [summaryRule, currentDestinationRule, tableEdgeRule],
   },
   { name: "equori" },
 );

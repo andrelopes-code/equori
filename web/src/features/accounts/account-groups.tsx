@@ -7,7 +7,10 @@ import {
   TableContent,
   TableRow,
   TableRowHeader,
+  TableSummary,
 } from "@slotted/react/table";
+
+import { Text } from "@slotted/react/typography";
 
 import { AccountGroupsPlaceholder } from "@/features/accounts/account-groups-placeholder";
 import { groupLabels } from "@/features/accounts/balance-groups";
@@ -29,33 +32,52 @@ export function AccountGroups() {
   }
   return (
     <div className={styles.groups}>
-      {groups.map(({ group, items }) => (
-        <Table key={group} columns={2}>
-          <TableContent>
-            <TableCaption>{t(groupLabels[group])}</TableCaption>
-            <TableBody>
-              {items.map(({ account, balance }) => (
-                <TableRow key={account.id}>
-                  <TableRowHeader>
-                    <Link
-                      {...spaLink(`/accounts/${account.id}`)}
-                      variant="neutral"
-                      underline="hover"
-                    >
-                      {account.name}
-                    </Link>
-                  </TableRowHeader>
-                  <TableCell numeric text="nowrap">
-                    <MoneyText
-                      money={balance}
-                      scale={scale(balance.currency)}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </TableContent>
-        </Table>
+      {groups.map(({ group, items, total, excluded }) => (
+        <div key={group} className={styles.group}>
+          <Table columns={2}>
+            <TableContent>
+              <TableCaption>{t(groupLabels[group])}</TableCaption>
+              <TableBody>
+                {items.map(({ account, balance }) => (
+                  <TableRow key={account.id}>
+                    <TableRowHeader>
+                      <Link
+                        {...spaLink(`/accounts/${account.id}`)}
+                        variant="neutral"
+                        underline="hover"
+                      >
+                        {account.name}
+                      </Link>
+                    </TableRowHeader>
+                    <TableCell numeric text="nowrap">
+                      <MoneyText
+                        money={balance}
+                        scale={scale(balance.currency)}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+              {items.length > 1 && (
+                <TableSummary>
+                  <TableRow>
+                    <TableRowHeader>{t("accounts.group.total")}</TableRowHeader>
+                    <TableCell numeric text="nowrap">
+                      <MoneyText money={total} scale={scale(total.currency)} />
+                    </TableCell>
+                  </TableRow>
+                </TableSummary>
+              )}
+            </TableContent>
+          </Table>
+          {excluded > 0 && (
+            <Text size="xs" tone="muted">
+              {excluded === 1
+                ? t("home.excluded.one")
+                : t("home.excluded.other", { count: excluded })}
+            </Text>
+          )}
+        </div>
       ))}
     </div>
   );

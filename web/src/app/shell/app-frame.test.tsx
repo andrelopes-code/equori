@@ -60,7 +60,8 @@ describe("AppFrame navigation", () => {
 
   it.each([
     [768, "comfortable"],
-    [1280, "compact"],
+    // Complete frontend G1: comfortable at every width.
+    [1280, "comfortable"],
   ] as const)("shows the top bar at %d px", async (width, density) => {
     const { container } = await renderApp("/", { width, fetch: newFetch() });
     const bar = container.querySelector('[data-ui="top-navigation"]');

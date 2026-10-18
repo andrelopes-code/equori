@@ -7,9 +7,12 @@ import styles from "@/ui/figure-strip.module.css";
 // a description list of its own: one column per figure, thin rules between and under (L12).
 export function FigureStrip({
   label,
+  ruled = true,
   children,
 }: {
   label?: string;
+  // The rule under the strip; a page header draws its own.
+  ruled?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -17,6 +20,7 @@ export function FigureStrip({
       <dl
         {...(label === undefined ? {} : { "aria-label": label })}
         className={styles.strip}
+        data-ruled={ruled ? "" : undefined}
       >
         {children}
       </dl>

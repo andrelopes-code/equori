@@ -41,7 +41,8 @@ describe("router error screens", () => {
       .click(screen.getByRole("button", { name: catalogPtBR["common.retry"] }));
 
     expect(
-      await screen.findByRole("heading", { name: catalogPtBR["nav.overview"] }),
+      // Complete frontend O1: the overview is titled by its month.
+      await screen.findByRole("heading", { name: "Outubro de 2026" }),
     ).toBeInTheDocument();
     expect(meCalls).toBe(callsBeforeRetry + 1);
   });

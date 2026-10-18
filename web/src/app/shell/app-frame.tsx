@@ -5,6 +5,9 @@ import {
   AppShellFooter,
   AppShellMain,
 } from "@slotted/react/app-shell";
+import { PageDefaultsProvider } from "@slotted/react/page";
+import { PageHeaderDefaultsProvider } from "@slotted/react/page-header";
+import { SectionDefaultsProvider } from "@slotted/react/section";
 import { ToastRegion } from "@slotted/react/toast";
 import { useEffect, useState } from "react";
 
@@ -26,12 +29,14 @@ export function AppFrame() {
   const [moreOpen, setMoreOpen] = useState(false);
   useNewShortcut(useOpenAccountID());
 
+  // Complete frontend G1: comfortable at every width.
   useEffect(() => {
     document.documentElement.setAttribute(
       "data-slotted-density",
-      viewport === "desktop" ? "compact" : "comfortable",
+      "comfortable",
     );
-  }, [viewport]);
+  }, []);
+  const inset = { desktop: 9, tablet: 6, phone: 4 } as const;
 
   const [home, transactions, accounts] = destinations;
 
@@ -43,7 +48,14 @@ export function AppFrame() {
         </AppShellBanner>
       )}
       <AppShellMain>
-        <Outlet />
+        {/* Complete frontend G2, G4 and G5: plain headers, ruled sections, wider insets. */}
+        <PageDefaultsProvider inset={inset[viewport]}>
+          <PageHeaderDefaultsProvider variant="plain">
+            <SectionDefaultsProvider size="sm" divider>
+              <Outlet />
+            </SectionDefaultsProvider>
+          </PageHeaderDefaultsProvider>
+        </PageDefaultsProvider>
       </AppShellMain>
       {viewport === "phone" && home && transactions && accounts && (
         <AppShellFooter>

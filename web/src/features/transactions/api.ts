@@ -56,6 +56,34 @@ export function transactionsInfiniteQuery(
   });
 }
 
+// Every transaction of a period, following the cursor; a month of a household fits a few pages.
+export function periodTransactionsQuery(
+  api: Client<paths>,
+  from: string,
+  to: string,
+) {
+  return queryOptions({
+    queryKey: [...transactionKeys.all, "period", from, to] as const,
+    queryFn: async () => {
+      const items: components["schemas"]["Transaction"][] = [];
+      let cursor: string | undefined;
+      do {
+        const page = await unwrap(
+          await api.GET("/transactions", {
+            params: {
+              query: { from, to, limit: 200, ...(cursor ? { cursor } : {}) },
+            },
+          }),
+        );
+        items.push(...page.items);
+        // A cursor that does not move would page forever.
+        cursor = page.next_cursor === cursor ? undefined : page.next_cursor;
+      } while (cursor !== undefined);
+      return items;
+    },
+  });
+}
+
 // No count endpoint exists: one page of 200 gives the count, and a next cursor means "more than 200".
 export function uncategorizedCountQuery(api: Client<paths>) {
   return queryOptions({

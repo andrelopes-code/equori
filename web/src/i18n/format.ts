@@ -174,3 +174,38 @@ export function formatDayHeader(
   const weekday = dateParts(iso, locale, { weekday: "short" }).weekday ?? "";
   return `${weekday}, ${formatDayMonth(iso, locale)}`;
 }
+
+function capitalize(text: string): string {
+  return text.charAt(0).toLocaleUpperCase() + text.slice(1);
+}
+
+// "Outubro de 2026" / "October 2026".
+export function formatMonthTitle(month: string, locale: Locale): string {
+  return capitalize(
+    new Intl.DateTimeFormat(locale, {
+      timeZone: "UTC",
+      month: "long",
+      year: "numeric",
+    }).format(utcDate(`${month}-01`)),
+  );
+}
+
+// "Outubro" / "October".
+export function formatMonthName(month: string, locale: Locale): string {
+  return capitalize(
+    new Intl.DateTimeFormat(locale, { timeZone: "UTC", month: "long" }).format(
+      utcDate(`${month}-01`),
+    ),
+  );
+}
+
+// A change reads its sign either way: "+R$ 10,00", "−R$ 10,00".
+export function formatSigned(
+  m: { amount: number; currency: string },
+  scale: number,
+  locale: Locale,
+  options: { symbol?: boolean } = {},
+): string {
+  const text = formatMoney(m, scale, locale, options);
+  return m.amount > 0 ? `+${text}` : text;
+}

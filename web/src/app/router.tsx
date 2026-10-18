@@ -20,7 +20,8 @@ import { useSessionExpiry } from "@/app/providers";
 import { RouteError } from "@/app/route-error";
 import { RouteNotFound } from "@/app/route-not-found";
 import { AppFrame } from "@/app/shell/app-frame";
-import { AccountPage, AccountsPage, HomePage } from "@/features/accounts";
+import { AccountPage, AccountsPage } from "@/features/accounts";
+import { OverviewPage } from "@/features/overview";
 import { CardOverviewPage } from "@/features/cards";
 import { LoginPage, meQuery } from "@/features/session";
 import { SettingsPage } from "@/features/setup";
@@ -108,7 +109,12 @@ const cardRoute = createRoute({
 const homeRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "/",
-  component: HomePage,
+  validateSearch: (search): { month?: string } =>
+    typeof search.month === "string" &&
+    /^\d{4}-(0[1-9]|1[0-2])$/.test(search.month)
+      ? { month: search.month }
+      : {},
+  component: OverviewPage,
 });
 
 const transactionsRoute = createRoute({

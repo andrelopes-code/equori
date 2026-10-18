@@ -6,6 +6,9 @@ import {
   formatDayMonth,
   formatMoney,
   formatMoneyParts,
+  formatMonthName,
+  formatMonthTitle,
+  formatSigned,
   formatPlain,
   formatReferenceMonth,
   parseAmount,
@@ -169,5 +172,29 @@ describe("short dates", () => {
     ["2026-09-30", "pt-BR", "qua, 30 set"],
   ] as const)("day header of %s in %s", (iso, locale, want) => {
     expect(formatDayHeader(iso, "2026-10-16", locale, words)).toBe(want);
+  });
+});
+
+describe("month and signed formats", () => {
+  it.each([
+    ["pt-BR", "Outubro de 2026", "Outubro"],
+    ["en", "October 2026", "October"],
+  ] as const)("names the month in %s", (locale, title, name) => {
+    expect(formatMonthTitle("2026-10", locale)).toBe(title);
+    expect(formatMonthName("2026-10", locale)).toBe(name);
+  });
+
+  it("writes the sign of a change", () => {
+    expect(formatSigned({ amount: 1000, currency: "BRL" }, 2, "en")).toBe(
+      "+R$10.00",
+    );
+    expect(
+      formatSigned({ amount: -1000, currency: "BRL" }, 2, "en", {
+        symbol: false,
+      }),
+    ).toBe("\u221210.00");
+    expect(formatSigned({ amount: 0, currency: "BRL" }, 2, "en")).toBe(
+      "R$0.00",
+    );
   });
 });

@@ -94,6 +94,17 @@ function newFetch() {
     "GET /api/v1/payees": () => json(200, { items: [] }),
     "GET /api/v1/tags": () => json(200, { items: [] }),
     "GET /api/v1/institutions": () => json(200, { items: [] }),
+    "GET /api/v1/schedules": () => json(200, { items: [] }),
+    "GET /api/v1/budgets": () => json(200, { items: [] }),
+    [`GET /api/v1/accounts/${checkingID}/projection`]: () =>
+      json(200, {
+        account_id: checkingID,
+        from: "2026-10-17",
+        to: "2026-10-31",
+        opening: { amount: 123456, currency: "BRL" },
+        closing: { amount: 123456, currency: "BRL" },
+        points: [],
+      }),
     "GET /api/v1/balances": () =>
       json(200, {
         items: [
@@ -139,7 +150,7 @@ interface RouteCase {
 const routes: RouteCase[] = [
   {
     path: "/",
-    heading: catalogPtBR["nav.overview"],
+    heading: "Outubro de 2026",
     loaded: "Itaú",
     authenticated: true,
   },

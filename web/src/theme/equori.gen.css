@@ -1387,5 +1387,25 @@
     [data-ui="top-navigation"] [data-part="name"] {
       color: var(--slotted-text);
     }
+
+    [data-ui="table"] [data-part="row"] > [data-part="cell"]:first-child,
+    [data-ui="table"] [data-part="row"] > [data-part="row-header"]:first-child,
+    [data-ui="table"] [data-part="row"] > [data-part="column-header"]:first-child {
+      padding-inline-start: 0;
+    }
+
+    [data-ui="table"] [data-part="row"] > [data-part="cell"]:last-child,
+    [data-ui="table"] [data-part="row"] > [data-part="column-header"]:last-child {
+      padding-inline-end: 0;
+    }
+
+    [data-ui="table"] [data-part="body"] [data-part="row-header"] {
+      font-weight: var(--slotted-font-weight-regular);
+    }
+
+    [data-ui="table"] [data-part="column-header"] {
+      font-weight: var(--slotted-font-weight-regular);
+      color: var(--slotted-text-muted);
+    }
   }
 }

@@ -1,0 +1,43 @@
+@layer app {
+  .bar {
+    position: relative;
+    display: block;
+    inline-size: 100%;
+    min-inline-size: 4rem;
+    /* Complete frontend O6: a 2 px track; no token holds a hairline of two pixels. */
+    block-size: var(--slotted-border-width-thick);
+    background: var(--slotted-border-subtle);
+  }
+
+  .fill {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    background: var(--slotted-text);
+  }
+
+  .bar[data-tone="warning"] .fill {
+    background: var(--slotted-tone-warning-solid);
+  }
+
+  .bar[data-tone="danger"] .fill {
+    background: var(--slotted-tone-danger-solid);
+  }
+
+  .pace {
+    position: absolute;
+    inset-block-start: calc(var(--slotted-space-4) * -1);
+    block-size: calc(
+      var(--slotted-space-4) * 2 + var(--slotted-border-width-thick)
+    );
+    inline-size: var(--slotted-border-width-thin);
+    background: var(--slotted-text-muted);
+  }
+
+  @media (forced-colors: active) {
+    .fill,
+    .pace {
+      background: CanvasText;
+    }
+  }
+}

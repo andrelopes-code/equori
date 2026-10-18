@@ -13,6 +13,8 @@ const GLYPHS = {
   inflow: ["M17 7L7 17", "M17 17H7V7"],
   outflow: ["M7 17L17 7", "M7 7h10v10"],
   transfer: ["M4 8h16M16 4l4 4-4 4", "M20 16H4M8 12l-4 4 4 4"],
+  "chevron-left": ["M15 18l-6-6 6-6"],
+  "chevron-right": ["M9 18l6-6-6-6"],
 } as const;
 
 export type IconGlyphName = keyof typeof GLYPHS;

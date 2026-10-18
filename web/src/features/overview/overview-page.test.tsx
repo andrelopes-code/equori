@@ -84,72 +84,269 @@ interface Options {
   uncategorizedNext?: string;
 }
 
+const series: Record<string, [string, number][]> = {
+  "a-checking": [
+    ["2026-10-01", 100000],
+    ["2026-10-17", 123456],
+  ],
+  "a-savings": [["2026-10-01", 50000]],
+};
+
+const projections: Record<string, unknown> = {
+  "a-checking": {
+    account_id: "a-checking",
+    from: "2026-10-17",
+    to: "2026-10-31",
+    opening: { amount: 123456, currency: "BRL" },
+    closing: { amount: 61466, currency: "BRL" },
+    points: [
+      {
+        date: "2026-10-20",
+        occurrence_id: "o-net",
+        schedule_id: "s-net",
+        amount: { amount: -11990, currency: "BRL" },
+        balance: { amount: 111466, currency: "BRL" },
+      },
+      {
+        date: "2026-10-25",
+        occurrence_id: "o-card",
+        schedule_id: "s-card",
+        amount: { amount: -50000, currency: "BRL" },
+        balance: { amount: 61466, currency: "BRL" },
+      },
+    ],
+  },
+  "a-savings": {
+    account_id: "a-savings",
+    from: "2026-10-17",
+    to: "2026-10-31",
+    opening: { amount: 50000, currency: "BRL" },
+    closing: { amount: 50000, currency: "BRL" },
+    points: [],
+  },
+};
+
+function schedule(id: string, kind: string, description: string) {
+  return {
+    id,
+    kind,
+    account_id: "a-checking",
+    counterpart_id: "a-food",
+    description,
+    match_tolerance_bp: 1000,
+    grace_days: 3,
+    terms: [],
+    pauses: [],
+  };
+}
+
 function homeApi(opts: Options = {}) {
-  const calls = { balances: 0 };
-  const fetch = fakeApi({
-    "GET /api/v1/me": () => json(200, { id: 1, email: "a@b.c", role: "admin" }),
-    "GET /api/v1/settings": () => json(200, { base_currency: "BRL" }),
-    "GET /api/v1/instruments": () =>
-      opts.instruments?.() ??
-      json(200, {
-        items: [
-          { code: "BRL", type: "currency", scale: 2, name: "Real" },
-          { code: "USD", type: "currency", scale: 2, name: "Dollar" },
-        ],
-      }),
-    "GET /api/v1/accounts": () => json(200, { items: accounts }),
-    "GET /api/v1/balances": () => {
-      calls.balances += 1;
-      return opts.balances?.() ?? json(200, { items: balances });
-    },
-    "GET /api/v1/transactions": (req) => {
-      const params = new URL(req.url).searchParams;
-      if (params.get("uncategorized") === "true") {
+  const calls = { balances: 0, seriesFrom: [] as string[] };
+  const routes: Record<string, (req: Request) => Response | Promise<Response>> =
+    {
+      "GET /api/v1/me": () =>
+        json(200, { id: 1, email: "a@b.c", role: "admin" }),
+      "GET /api/v1/settings": () => json(200, { base_currency: "BRL" }),
+      "GET /api/v1/instruments": () =>
+        opts.instruments?.() ??
+        json(200, {
+          items: [
+            { code: "BRL", type: "currency", scale: 2, name: "Real" },
+            { code: "USD", type: "currency", scale: 2, name: "Dollar" },
+          ],
+        }),
+      "GET /api/v1/accounts": () => json(200, { items: accounts }),
+      "GET /api/v1/balances": () => {
+        calls.balances += 1;
+        return opts.balances?.() ?? json(200, { items: balances });
+      },
+      "GET /api/v1/reports/balances": (req) => {
+        const params = new URL(req.url).searchParams;
+        const id = params.get("account_id") ?? "";
+        calls.seriesFrom.push(params.get("from") ?? "");
         return json(200, {
-          items: [1, 2, 3].map(transaction),
-          ...(opts.uncategorizedNext === undefined
-            ? {}
-            : { next_cursor: opts.uncategorizedNext }),
+          account_id: id,
+          basis: "booked",
+          items: (series[id] ?? []).map(([date, amount]) => ({
+            date,
+            balance: { amount, currency: "BRL" },
+          })),
         });
-      }
-      return (
-        opts.recent?.() ??
-        json(200, { items: [1, 2, 3, 4, 5].map(transaction) })
-      );
-    },
-  });
+      },
+      "GET /api/v1/schedules": () =>
+        json(200, {
+          items: [
+            schedule("s-net", "subscription", "Internet fibra"),
+            schedule("s-card", "transfer", "Fatura do cartão"),
+          ],
+        }),
+      "GET /api/v1/budgets": () =>
+        json(200, {
+          items: [
+            {
+              id: "b-food",
+              category_id: "a-food",
+              rollover: false,
+              amounts: [
+                {
+                  effective_from: "2026-08",
+                  amount: { amount: 60000, currency: "BRL" },
+                },
+              ],
+            },
+          ],
+        }),
+      "GET /api/v1/budgets/b-food/progress": (req) =>
+        json(200, {
+          month: new URL(req.url).searchParams.get("month"),
+          planned: { amount: 60000, currency: "BRL" },
+          carried: { amount: 0, currency: "BRL" },
+          spent: { amount: 45000, currency: "BRL" },
+          available: { amount: 15000, currency: "BRL" },
+        }),
+      "GET /api/v1/transactions": (req) => {
+        const params = new URL(req.url).searchParams;
+        if (params.get("uncategorized") === "true") {
+          return json(200, {
+            items: [1, 2, 3].map(transaction),
+            ...(opts.uncategorizedNext === undefined
+              ? {}
+              : { next_cursor: opts.uncategorizedNext }),
+          });
+        }
+        if (params.get("from") !== null) {
+          return json(200, { items: [1, 2, 3, 4, 5].map(transaction) });
+        }
+        return (
+          opts.recent?.() ??
+          json(200, { items: [1, 2, 3, 4, 5].map(transaction) })
+        );
+      },
+    };
+  for (const [id, body] of Object.entries(projections)) {
+    routes[`GET /api/v1/accounts/${id}/projection`] = () => json(200, body);
+  }
+  const fetch = fakeApi(routes);
   return { fetch, calls };
 }
 
-// Ledger sheet decisions L12 and L17.
+const text = (node: Element | null | undefined) =>
+  node?.textContent.replace(/\u00a0/g, " ");
+
+// Complete frontend decisions O1 to O7.
+describe("overview forecast", () => {
+  it("heads the month with today, the forecast, the lowest point and the month's flows", async () => {
+    const { fetch } = homeApi();
+    await renderApp("/", { fetch });
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Outubro de 2026" }),
+    ).toBeInTheDocument();
+    const region = screen.getByRole("region", {
+      name: catalogPtBR["home.balances"],
+    });
+    await within(region).findByText(catalogPtBR["overview.today"]);
+    const items = [
+      ...region.querySelectorAll('[data-own="figure-strip"] dl > div'),
+    ];
+    expect(items.map((item) => text(item.querySelector("dt")))).toEqual([
+      catalogPtBR["overview.today"],
+      "Previsto para 31 out",
+      catalogPtBR["overview.lowest"],
+      "Outubro até agora",
+    ]);
+    expect(text(items[0]?.querySelector('[data-ui="visually-hidden"]'))).toBe(
+      "R$ 1.734,56",
+    );
+    const forecast = items[1];
+    expect(
+      forecast?.querySelector('[data-own="money-figure"]'),
+    ).toHaveAttribute("data-tone", "accent");
+    expect(text(forecast?.querySelector('[data-ui="visually-hidden"]'))).toBe(
+      "R$ 1.114,66",
+    );
+    expect(text(forecast)).toContain("\u2212R$ 619,90 em relação a hoje");
+    expect(text(items[2])).toContain("em 25 out, depois de Fatura do cartão");
+    expect(text(items[3])).toContain("SaiuR$ 150,00");
+    expect(screen.getByText("Previsão de Itaú, Reserva")).toBeInTheDocument();
+  });
+
+  it("lists the remaining occurrences and closes them with the forecast balance", async () => {
+    const { fetch } = homeApi();
+    await renderApp("/", { fetch });
+    const table = await screen.findByRole("table", {
+      name: catalogPtBR["overview.ahead"],
+    });
+    const rows = within(table)
+      .getAllByRole("row")
+      .map((row) => text(row));
+    expect(rows).toEqual([
+      "20 outInternet fibra · assinatura\u2212119,90",
+      "25 outFatura do cartão · transferência\u2212500,00",
+      "31 outSaldo previstoR$ 1.114,66R$1.114,66",
+    ]);
+  });
+
+  it("reads each budget against the month's pace", async () => {
+    const { fetch } = homeApi();
+    await renderApp("/", { fetch });
+    const table = await screen.findByRole("table", {
+      name: catalogPtBR["overview.budget"],
+    });
+    const row = within(table).getByText("Mercado").closest("tr");
+    expect(text(row)).toBe("Mercado450,00600,00150,00");
+    expect(row?.querySelector("[data-pace]")).toHaveAttribute(
+      "data-pace",
+      "ahead",
+    );
+    const bar = row?.querySelector('[data-own="budget-bar"]');
+    expect(bar?.querySelector('[data-part-own="pace"]')).not.toBeNull();
+  });
+
+  it("moves to the previous month and keeps the next month closed on the current one", async () => {
+    const user = userEvent.setup();
+    const { fetch, calls } = homeApi();
+    const { router } = await renderApp("/", { fetch });
+    const next = await screen.findByRole("button", {
+      name: catalogPtBR["overview.month.next"],
+    });
+    expect(next).toBeDisabled();
+    await user.click(
+      screen.getByRole("button", {
+        name: catalogPtBR["overview.month.previous"],
+      }),
+    );
+    expect(router.state.location.search).toEqual({ month: "2026-09" });
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: "Setembro de 2026",
+      }),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(calls.seriesFrom).toContain("2026-09-01");
+    });
+    expect(
+      screen.queryByRole("table", { name: catalogPtBR["overview.ahead"] }),
+    ).toBeNull();
+  });
+});
+
 describe("home balances", () => {
-  it("renders the group totals in a figure strip in pt-BR", async () => {
+  it("closes each account group with its total", async () => {
     const { fetch } = homeApi();
     const { container } = await renderApp("/", { fetch });
     const region = await screen.findByRole("region", {
-      name: catalogPtBR["home.balances"],
+      name: catalogPtBR["home.accounts"],
     });
-    await within(region).findByText(catalogPtBR["home.group.available"]);
-    const strip = region.querySelector('[data-own="figure-strip"]');
-    expect(
-      [...(strip?.querySelectorAll("dt") ?? [])].map((dt) => dt.textContent),
-    ).toEqual([
-      catalogPtBR["home.group.available"],
-      catalogPtBR["home.group.cards"],
-    ]);
+    const available = await within(region).findByRole("table", {
+      name: catalogPtBR["home.group.available"],
+    });
+    const total = available.querySelector("tfoot");
+    expect(text(total)).toBe(
+      `${catalogPtBR["accounts.group.total"]}R$ 1.734,56`,
+    );
     expect(container.querySelector('[data-ui="stat-card"]')).toBeNull();
     expect(container.querySelector('[data-ui="card"]')).toBeNull();
-    expect(
-      await within(region).findByText(catalogPtBR["home.group.available"]),
-    ).toBeInTheDocument();
-    expect(within(region).getByText("R$ 1.734,56")).toBeInTheDocument();
-    expect(
-      within(region).getByText(catalogPtBR["home.group.cards"]),
-    ).toBeInTheDocument();
-    expect(within(region).getByText("\u2212R$ 300,00")).toBeInTheDocument();
-    expect(
-      within(region).queryByText(catalogPtBR["home.group.loans"]),
-    ).toBeNull();
   });
 
   it("lists the accounts of each group in a table captioned by the group", async () => {
@@ -230,7 +427,7 @@ describe("home money rows", () => {
     });
     await renderApp("/", { fetch, width: 360 });
     const region = await screen.findByRole("region", {
-      name: catalogPtBR["home.balances"],
+      name: catalogPtBR["home.accounts"],
     });
     expect(
       await within(region).findByText(catalogPtBR["home.excluded.one"]),
@@ -261,6 +458,8 @@ describe("home without accounts", () => {
       "GET /api/v1/accounts": () => json(200, { items: [] }),
       "GET /api/v1/balances": () => json(200, { items: [] }),
       "GET /api/v1/transactions": () => json(200, { items: [] }),
+      "GET /api/v1/schedules": () => json(200, { items: [] }),
+      "GET /api/v1/budgets": () => json(200, { items: [] }),
     });
     await renderApp("/", { fetch });
     const region = await screen.findByRole("region", {
@@ -298,7 +497,7 @@ describe("home waiting states", () => {
     expect(
       screen.getByRole("heading", {
         level: 1,
-        name: catalogPtBR["nav.overview"],
+        name: "Outubro de 2026",
       }),
     ).toBeInTheDocument();
     release(json(200, { items: balances }));
