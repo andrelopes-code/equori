@@ -1,6 +1,7 @@
 import {
   act,
   configure,
+  getConfig,
   screen,
   waitFor,
   within,
@@ -29,14 +30,14 @@ const foodID = "22222222-2222-4222-8222-222222222222";
 
 // Mounting the Chart costs about 600 ms of synchronous work per render in jsdom and blocks the list and balance renders
 // behind it. Under a parallel run that cost triples, so the default 1 s query timeout and 5 s test timeout are CPU bound here.
-const defaults = { asyncUtilTimeout: 1000, testTimeout: 5000 };
+// vitest reads the test timeout when `it` is collected, so it is set at module level; the query timeout is read per call.
+vi.setConfig({ testTimeout: 20_000 });
+const defaultAsyncUtilTimeout = getConfig().asyncUtilTimeout;
 beforeAll(() => {
   configure({ asyncUtilTimeout: 10_000 });
-  vi.setConfig({ testTimeout: 20_000 });
 });
 afterAll(() => {
-  configure({ asyncUtilTimeout: defaults.asyncUtilTimeout });
-  vi.setConfig({ testTimeout: defaults.testTimeout });
+  configure({ asyncUtilTimeout: defaultAsyncUtilTimeout });
 });
 
 beforeEach(() => {
