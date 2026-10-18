@@ -11,6 +11,8 @@ import { useEffect, useState } from "react";
 import { destinations } from "@/app/shell/destinations";
 import { MoreSheet } from "@/app/shell/more-sheet";
 import { TopBar } from "@/app/shell/top-bar";
+import { useNewShortcut } from "@/app/shell/use-new-shortcut";
+import { useOpenAccountID } from "@/app/shell/use-open-account-id";
 import { useUncategorizedBadge } from "@/app/shell/use-uncategorized-badge";
 import { useT } from "@/i18n/i18n-provider";
 import { BottomBar } from "@/ui/bottom-bar";
@@ -22,6 +24,7 @@ export function AppFrame() {
   const viewport = useViewport();
   const badge = useUncategorizedBadge();
   const [moreOpen, setMoreOpen] = useState(false);
+  useNewShortcut(useOpenAccountID());
 
   useEffect(() => {
     document.documentElement.setAttribute(
