@@ -3,106 +3,87 @@ import { Page, PageBody } from "@slotted/react/page";
 import {
   PageHeader,
   PageHeaderHeading,
+  PageHeaderSubheading,
   PageHeaderTitle,
   PageHeaderTitleArea,
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
-import {
-  Section,
-  SectionBody,
-  SectionHeader,
-  SectionHeading,
-  SectionTitle,
-} from "@slotted/react/section";
 
 import { useApi } from "@/api/api-context";
 import {
   institutionsQuery,
   payeesQuery,
+  settingsQuery,
   useCreateInstitution,
   useCreatePayee,
 } from "@/features/setup/api";
 import { CurrencySection } from "@/features/setup/currency-section";
+import { DisplaySection } from "@/features/setup/display-section";
 import { NameSection } from "@/features/setup/name-section";
-import { OptionSelect } from "@/features/setup/option-select";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import type { Locale } from "@/i18n/locale";
-import { useScheme } from "@/theme/scheme";
-import type { Scheme } from "@/theme/scheme";
-
-const schemes: readonly Scheme[] = ["dark", "light", "system"];
-const locales: readonly Locale[] = ["en", "pt-BR"];
+import styles from "@/features/setup/settings-page.module.css";
+import { useT } from "@/i18n/i18n-provider";
 
 export function SettingsPage() {
   const t = useT();
   const api = useApi();
+  const settings = useQuery(settingsQuery(api));
   const institutions = useQuery(institutionsQuery(api));
   const payees = useQuery(payeesQuery(api));
   const createInstitution = useCreateInstitution();
   const createPayee = useCreatePayee();
-  const [scheme, setScheme] = useScheme();
-  const [locale, setLocale] = useAppLocale();
+
+  const summary =
+    settings.data !== undefined &&
+    institutions.data !== undefined &&
+    payees.data !== undefined
+      ? t("settings.summary", {
+          currency: settings.data.base_currency,
+          institutions:
+            institutions.data.length === 1
+              ? t("settings.institutions.count.one", { count: 1 })
+              : t("settings.institutions.count", {
+                  count: institutions.data.length,
+                }),
+          payees:
+            payees.data.length === 1
+              ? t("settings.payees.count.one", { count: 1 })
+              : t("settings.payees.count", { count: payees.data.length }),
+        })
+      : undefined;
 
   return (
-    <Page width="measure">
-      <PageHeader>
+    <Page width="content">
+      <PageHeader size="lg">
         <PageHeaderTitleArea>
           <PageHeaderTitleRow>
             <PageHeaderTitle>
               <PageHeaderHeading>{t("more.settings")}</PageHeaderHeading>
+              {summary !== undefined && (
+                <PageHeaderSubheading>{summary}</PageHeaderSubheading>
+              )}
             </PageHeaderTitle>
           </PageHeaderTitleRow>
         </PageHeaderTitleArea>
       </PageHeader>
       <PageBody>
-        <CurrencySection />
-        <NameSection
-          kind="institutions"
-          items={institutions.data}
-          error={institutions.error}
-          onRetry={() => void institutions.refetch()}
-          create={(name) => createInstitution.mutateAsync({ name })}
-        />
-        <NameSection
-          kind="payees"
-          items={payees.data}
-          error={payees.error}
-          onRetry={() => void payees.refetch()}
-          create={(name) => createPayee.mutateAsync({ name })}
-        />
-        <Section>
-          <SectionHeader>
-            <SectionTitle>
-              <SectionHeading>{t("settings.display.title")}</SectionHeading>
-            </SectionTitle>
-          </SectionHeader>
-          <SectionBody>
-            <OptionSelect
-              label={t("more.language")}
-              value={locale}
-              options={locales.map((l) => ({
-                value: l,
-                label: t(`locale.${l}`),
-              }))}
-              onChange={(next) => {
-                const chosen = locales.find((l) => l === next);
-                if (chosen !== undefined) setLocale(chosen);
-              }}
-            />
-            <OptionSelect
-              label={t("more.scheme")}
-              value={scheme}
-              options={schemes.map((s) => ({
-                value: s,
-                label: t(`scheme.${s}`),
-              }))}
-              onChange={(next) => {
-                const chosen = schemes.find((s) => s === next);
-                if (chosen !== undefined) setScheme(chosen);
-              }}
-            />
-          </SectionBody>
-        </Section>
+        <div className={styles.sections}>
+          <CurrencySection />
+          <NameSection
+            kind="institutions"
+            items={institutions.data}
+            error={institutions.error}
+            onRetry={() => void institutions.refetch()}
+            create={(name) => createInstitution.mutateAsync({ name })}
+          />
+          <NameSection
+            kind="payees"
+            items={payees.data}
+            error={payees.error}
+            onRetry={() => void payees.refetch()}
+            create={(name) => createPayee.mutateAsync({ name })}
+          />
+          <DisplaySection />
+        </div>
       </PageBody>
     </Page>
   );

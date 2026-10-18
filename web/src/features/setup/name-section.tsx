@@ -1,15 +1,4 @@
 import { Button } from "@slotted/react/button";
-import { List } from "@slotted/react/list";
-import {
-  ListItem,
-  ListItemBody,
-  ListItemLabel,
-} from "@slotted/react/list-item";
-import {
-  ResultState,
-  ResultStateContent,
-  ResultStateTitle,
-} from "@slotted/react/result-state";
 import {
   Section,
   SectionActions,
@@ -21,6 +10,7 @@ import {
 import { Skeleton, SkeletonRegion } from "@slotted/react/skeleton";
 import { useState } from "react";
 
+import styles from "@/features/setup/name-section.module.css";
 import { NameDialog } from "@/features/setup/name-dialog";
 import type { NamedKind } from "@/features/setup/name-dialog";
 import { useT } from "@/i18n/i18n-provider";
@@ -59,24 +49,16 @@ export function NameSection({
       </SkeletonRegion>
     );
   } else if (items.length === 0) {
-    body = (
-      <ResultState status="empty" reach="section">
-        <ResultStateContent>
-          <ResultStateTitle>{t(`settings.${kind}.empty`)}</ResultStateTitle>
-        </ResultStateContent>
-      </ResultState>
-    );
+    body = <p className={styles.empty}>{t(`settings.${kind}.empty`)}</p>;
   } else {
     body = (
-      <List aria-label={t(`settings.${kind}.title`)}>
+      <ul aria-label={t(`settings.${kind}.title`)} className={styles.list}>
         {items.map((item) => (
-          <ListItem key={item.id}>
-            <ListItemBody>
-              <ListItemLabel>{item.name}</ListItemLabel>
-            </ListItemBody>
-          </ListItem>
+          <li key={item.id} className={styles.item}>
+            {item.name}
+          </li>
         ))}
-      </List>
+      </ul>
     );
   }
 
@@ -87,9 +69,13 @@ export function NameSection({
           <SectionHeading>{t(`settings.${kind}.title`)}</SectionHeading>
         </SectionTitle>
         <SectionActions>
+          {items !== undefined && (
+            <span className={styles.count}>{items.length}</span>
+          )}
           <Button
             tone="secondary"
-            variant="outline"
+            variant="ghost"
+            size="sm"
             onClick={() => {
               setCreating(true);
             }}

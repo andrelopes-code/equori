@@ -19,6 +19,7 @@ import {
   settingsQuery,
   useUpdateSettings,
 } from "@/features/setup/api";
+import styles from "@/features/setup/currency-section.module.css";
 import { OptionSelect } from "@/features/setup/option-select";
 import { useT } from "@/i18n/i18n-provider";
 import { QueryError } from "@/ui/query-error";
@@ -70,23 +71,40 @@ export function CurrencySection() {
       </SkeletonRegion>
     );
   } else {
-    // While the check is pending the select stays disabled, so a lock is never offered as editable.
+    // While the check is pending the currency reads as locked, so a lock is never offered as editable.
     const locked =
       lockedByServer || hasTransactions.isPending
         ? true
         : hasTransactions.data === true;
+    const code = settings.data.base_currency;
+    const name = instruments.data.items.find((i) => i.code === code)?.name;
     body = (
       <>
-        <OptionSelect
-          label={t("settings.currency.label")}
-          value={settings.data.base_currency}
-          options={instruments.data.items
-            .filter((i) => i.type === "currency")
-            .map((i) => ({ value: i.code, label: i.code }))}
-          disabled={locked || update.isPending}
-          description={locked ? t("problem.settings_locked") : undefined}
-          onChange={(code) => void choose(code)}
-        />
+        {locked ? (
+          <div
+            role="group"
+            aria-label={t("settings.currency.label")}
+            className={styles.statement}
+          >
+            <p className={styles.line}>
+              <span className={styles.code}>{code}</span>
+              {name !== undefined && (
+                <span className={styles.name}>{name}</span>
+              )}
+            </p>
+            <p className={styles.note}>{t("problem.settings_locked")}</p>
+          </div>
+        ) : (
+          <OptionSelect
+            label={t("settings.currency.label")}
+            value={code}
+            options={instruments.data.items
+              .filter((i) => i.type === "currency")
+              .map((i) => ({ value: i.code, label: i.code }))}
+            disabled={update.isPending}
+            onChange={(next) => void choose(next)}
+          />
+        )}
         {error !== null && (
           <Alert tone="danger" role="alert">
             <AlertContent>

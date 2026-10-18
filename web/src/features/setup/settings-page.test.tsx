@@ -18,15 +18,22 @@ interface Named {
 }
 
 function settingsApi(
-  opts: { hasTransaction?: boolean; put?: () => Response } = {},
+  opts: {
+    hasTransaction?: boolean;
+    put?: () => Response;
+    institutions?: Named[];
+    payees?: Named[];
+  } = {},
 ) {
   const captured = {
     puts: [] as unknown[],
     institutions: [] as unknown[],
     payees: [] as unknown[],
   };
-  const institutions: Named[] = [{ id: "i-1", name: "Itaú" }];
-  const payees: Named[] = [{ id: "p-1", name: "Mercado Sol" }];
+  const institutions: Named[] = opts.institutions ?? [
+    { id: "i-1", name: "Itaú" },
+  ];
+  const payees: Named[] = opts.payees ?? [{ id: "p-1", name: "Mercado Sol" }];
   const fetch = fakeApi({
     "GET /api/v1/me": () => json(200, { id: 1, email: "a@b.c", role: "admin" }),
     "GET /api/v1/settings": () => json(200, { base_currency: "BRL" }),
@@ -65,6 +72,15 @@ function settingsApi(
   return { fetch, captured };
 }
 
+async function choose(
+  actor: ReturnType<typeof userEvent.setup>,
+  group: string,
+  option: string,
+) {
+  const radios = within(await screen.findByRole("radiogroup", { name: group }));
+  await actor.click(radios.getByRole("radio", { name: option }));
+}
+
 async function pick(
   actor: ReturnType<typeof userEvent.setup>,
   name: string,
@@ -85,7 +101,7 @@ describe("settings: base currency", () => {
     });
   });
 
-  it("locks the select and shows the reason after a 409 settings_locked", async () => {
+  it("replaces the select with the locked statement after a 409 settings_locked", async () => {
     const actor = userEvent.setup();
     const { fetch } = settingsApi({
       put: () => problem(409, "settings_locked"),
@@ -95,24 +111,22 @@ describe("settings: base currency", () => {
     expect(
       await screen.findByText(catalogEn["problem.settings_locked"]),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("combobox", {
-        name: catalogEn["settings.currency.label"],
-      }),
-    ).toBeDisabled();
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(screen.getByText("Real")).toBeInTheDocument();
   });
 
-  it("disables the select before any attempt when a transaction exists", async () => {
+  it("states the code and the name, without a select, when a transaction exists", async () => {
     const { fetch, captured } = settingsApi({ hasTransaction: true });
     await renderApp("/settings", { fetch });
     expect(
       await screen.findByText(catalogEn["problem.settings_locked"]),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("combobox", {
-        name: catalogEn["settings.currency.label"],
-      }),
-    ).toBeDisabled();
+    const statement = screen.getByRole("group", {
+      name: catalogEn["settings.currency.label"],
+    });
+    expect(within(statement).getByText("BRL")).toBeInTheDocument();
+    expect(within(statement).getByText("Real")).toBeInTheDocument();
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
     expect(captured.puts).toEqual([]);
   });
 });
@@ -169,12 +183,50 @@ describe("settings: institutions and payees", () => {
   });
 });
 
+describe("settings: header counts and empty lists", () => {
+  it("states the base currency and both counts under the title", async () => {
+    const { fetch } = settingsApi({
+      institutions: [
+        { id: "i-1", name: "Itaú" },
+        { id: "i-2", name: "Nubank" },
+      ],
+      payees: [{ id: "p-1", name: "Mercado Sol" }],
+    });
+    await renderApp("/settings", { fetch });
+    expect(
+      await screen.findByText("BRL · 2 institutions · 1 payee"),
+    ).toBeInTheDocument();
+  });
+
+  it("shows one sentence for an empty list", async () => {
+    const { fetch } = settingsApi({ institutions: [], payees: [] });
+    await renderApp("/settings", { fetch });
+    expect(
+      await screen.findByText(catalogEn["settings.institutions.empty"]),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(catalogEn["settings.payees.empty"]),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("list", { name: catalogEn["settings.payees.title"] }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("list", {
+        name: catalogEn["settings.institutions.title"],
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText("BRL · 0 institutions · 0 payees"),
+    ).toBeInTheDocument();
+  });
+});
+
 describe("settings: display", () => {
   it("switches the language, stores it and updates <html lang>", async () => {
     const actor = userEvent.setup();
     const { fetch } = settingsApi();
     await renderApp("/settings", { fetch });
-    await pick(actor, catalogEn["more.language"], catalogEn["locale.pt-BR"]);
+    await choose(actor, catalogEn["more.language"], catalogEn["locale.pt-BR"]);
     expect(
       await screen.findByRole("heading", {
         level: 1,
@@ -189,7 +241,7 @@ describe("settings: display", () => {
     const actor = userEvent.setup();
     const { fetch } = settingsApi();
     await renderApp("/settings", { fetch });
-    await pick(actor, catalogEn["more.scheme"], catalogEn["scheme.light"]);
+    await choose(actor, catalogEn["more.scheme"], catalogEn["scheme.light"]);
     await waitFor(() => {
       expect(document.documentElement).toHaveAttribute(
         "data-slotted-scheme",
@@ -201,13 +253,13 @@ describe("settings: display", () => {
 });
 
 describe("settings: layout", () => {
-  it.each([360, 1280])("keeps the measure width at %i px", async (width) => {
+  it.each([360, 1280])("keeps the content width at %i px", async (width) => {
     const { fetch } = settingsApi();
     const { container } = await renderApp("/settings", { width, fetch });
     await screen.findByText("Itaú");
     expect(container.querySelector("[data-width]")).toHaveAttribute(
       "data-width",
-      "measure",
+      "content",
     );
   });
 });
