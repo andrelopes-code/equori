@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { formatDate, formatMoney } from "@/i18n/format";
 import { writeLocale } from "@/i18n/locale";
-import { fakeApi, json } from "@/testing/fake-api";
+import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 import {
   leisureID,
@@ -182,6 +182,51 @@ describe("transaction detail", () => {
     expect(
       (await screen.findAllByText(label["transaction.categorize.done"])).length,
     ).toBeGreaterThan(0);
+  });
+
+  it("refetches on a categorize conflict and retries with the new version", async () => {
+    const bodies: { expected_version: number }[] = [];
+    let version = 3;
+    const fetch = fakeApi({
+      ...sharedRoutes,
+      [`GET /api/v1/transactions/${txID}`]: () =>
+        json(200, transactionFixture({ version })),
+      [`POST /api/v1/transactions/${txID}/categorize`]: async (req) => {
+        bodies.push((await req.json()) as { expected_version: number });
+        if (bodies.length > 1) {
+          return json(200, transactionFixture({ version: 5 }));
+        }
+        version = 4;
+        return problem(409, "version_conflict");
+      },
+    });
+    const user = userEvent.setup();
+    await renderApp(`/transactions/${txID}`, { fetch });
+    await user.click(
+      await screen.findByRole("button", {
+        name: label["transaction.actions.categorize"],
+      }),
+    );
+    const dialog = within(await screen.findByRole("dialog"));
+    await user.click(
+      await dialog.findByRole("combobox", {
+        name: label["transactions.new.splitCategory"].replace("{n}", "1"),
+      }),
+    );
+    await user.click(await screen.findByRole("option", { name: "Lazer" }));
+    const save = dialog.getByRole("button", {
+      name: label["transaction.categorize.save"],
+    });
+    await user.click(save);
+    expect(
+      await dialog.findByText(
+        label["transaction.categorize.conflict"].replace("{version}", "4"),
+      ),
+    ).toBeTruthy();
+    await user.click(save);
+    await waitFor(() => {
+      expect(bodies.map((b) => b.expected_version)).toEqual([3, 4]);
+    });
   });
 
   it("lists one timeline item per earlier version with its reason and date", async () => {

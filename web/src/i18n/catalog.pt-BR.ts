@@ -128,6 +128,10 @@ export const catalogPtBR: Catalog = {
   "transaction.correct.conflict":
     "A transação foi alterada para a versão {version} enquanto estava aberta. As edições continuam no formulário.",
   "transaction.correct.reapply": "Reaplicar minhas edições",
+  "transaction.correct.voided": "Uma transação anulada não pode ser corrigida.",
+  "transaction.correct.back": "Voltar à transação",
+  "transaction.categorize.conflict":
+    "A transação foi alterada para a versão {version}. Salve novamente para aplicar as categorias a ela.",
   "problem.invalid_credentials": "E-mail ou senha incorretos.",
   "problem.too_many_attempts": "Muitas tentativas. Tente novamente mais tarde.",
   "problem.unauthenticated": "A sessão terminou. Entre novamente.",

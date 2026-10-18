@@ -12,9 +12,15 @@ import type { Entity } from "@slotted/react/entity-picker";
 import { toast } from "@slotted/react/toast";
 import { useReducer, useState } from "react";
 
+import { useQueryClient } from "@tanstack/react-query";
+
+import { useApi } from "@/api/api-context";
 import { ProblemError, problemMessage } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
-import { useCategorizeTransaction } from "@/features/transactions/api";
+import {
+  transactionQuery,
+  useCategorizeTransaction,
+} from "@/features/transactions/api";
 import { SplitEditor } from "@/features/transactions/split-editor";
 import {
   formReducer,
@@ -75,6 +81,8 @@ export function CategorizeDialog({
 }) {
   const t = useT();
   const categorize = useCategorizeTransaction();
+  const queryClient = useQueryClient();
+  const api = useApi();
   const accountsById = new Map(accounts.map((a) => [a.id, a]));
   const [state, dispatch] = useReducer(formReducer, undefined, () =>
     initialLines(transaction, accountsById),
@@ -106,6 +114,26 @@ export function CategorizeDialog({
         })),
       });
     } catch (failure) {
+      if (
+        failure instanceof ProblemError &&
+        failure.problem.code === "version_conflict"
+      ) {
+        // The next save sends the version this refetch returns, which the page's live query also receives.
+        const fresh = await queryClient
+          .query({
+            ...transactionQuery(api, transaction.id),
+            staleTime: 0,
+          })
+          .catch(() => null);
+        setError(
+          fresh === null
+            ? problemMessage(failure.problem, t)
+            : t("transaction.categorize.conflict", {
+                version: String(fresh.version),
+              }),
+        );
+        return;
+      }
       setError(
         failure instanceof ProblemError
           ? problemMessage(failure.problem, t)

@@ -89,11 +89,13 @@ export function CorrectTransactionForm({
         });
         setConflict(true);
       } else if (error instanceof ProblemError) {
+        setConflict(false);
         setSaveError({
           fields: fieldErrors(error.problem),
           message: problemMessage(error.problem, t),
         });
       } else {
+        setConflict(false);
         setSaveError({ fields: {}, message: t("transaction.failed") });
       }
       return;

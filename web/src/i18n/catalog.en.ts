@@ -125,6 +125,10 @@ export const catalogEn = {
   "transaction.correct.conflict":
     "The transaction changed to version {version} while it was open. The edits stay in the form.",
   "transaction.correct.reapply": "Reapply my edits",
+  "transaction.correct.voided": "A voided transaction cannot be corrected.",
+  "transaction.correct.back": "Back to the transaction",
+  "transaction.categorize.conflict":
+    "The transaction changed to version {version}. Save again to apply the categories to it.",
   "problem.invalid_credentials": "The email or password is incorrect.",
   "problem.too_many_attempts": "Too many attempts. Try again later.",
   "problem.unauthenticated": "The session has ended. Sign in again.",

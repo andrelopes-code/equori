@@ -3,11 +3,13 @@ import { describe, expect, it } from "vitest";
 import {
   canSave,
   formReducer,
+  fromTransaction,
   initialForm,
   postingImbalance,
   splitRemainder,
   toTransactionInput,
 } from "@/features/transactions/transaction-form-reducer";
+import type { components } from "@/api/schema.gen";
 import type {
   FormState,
   PostingLine,
@@ -450,5 +452,44 @@ describe("advanced mode", () => {
     });
     expect(usd.postings?.[1]?.amount).toBe(12000);
     expect(usd.postings?.[1]?.currency).toBe("USD");
+  });
+});
+
+describe("fromTransaction", () => {
+  const brl = (amount: number) => ({ amount, currency: "BRL" });
+  const stored: components["schemas"]["Transaction"] = {
+    id: "t-1",
+    date: "2026-10-10",
+    description: "Weekly shop",
+    balancing_currency: "BRL",
+    origin: "manual",
+    version: 3,
+    tags: [],
+    links: [],
+    postings: [
+      {
+        id: "p1",
+        account_id: checking,
+        amount: brl(-12000),
+        weight: brl(-12000),
+        status: "cleared",
+      },
+      {
+        id: "p2",
+        account_id: food,
+        amount: brl(12000),
+        weight: brl(12000),
+        status: "pending",
+        memo: "bread",
+      },
+    ],
+  };
+  const classOf = (id: string) => (id === checking ? "asset" : "expense");
+
+  it("keeps the stored posting memo when quick entry turns advanced", () => {
+    const quick = fromTransaction(stored, classOf);
+    expect(quick.postings).toBeNull();
+    const advanced = formReducer(quick, { type: "advanced", currencyOf });
+    expect(advanced.postings?.map((l) => l.memo)).toEqual(["", "bread"]);
   });
 });

@@ -232,7 +232,7 @@ export function useCorrectTransaction() {
       const input = toCorrectionInput(
         { ...state, ...(payeeId === undefined ? {} : { payeeId }) },
         currencyOf,
-        current,
+        current.links,
       );
       return unwrap(
         await api.PUT("/transactions/{id}", {
