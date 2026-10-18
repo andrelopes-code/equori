@@ -56,6 +56,12 @@ export function MoreSheet({
           {level === "root" && (
             <>
               <ActionSheetItem
+                value="goals"
+                onSelect={() => void navigate({ to: "/goals" })}
+              >
+                {t("nav.goals")}
+              </ActionSheetItem>
+              <ActionSheetItem
                 value="settings"
                 onSelect={() => void navigate({ to: "/settings" })}
               >

@@ -155,6 +155,38 @@ describe("AppFrame routing", () => {
     });
   });
 
+  // Complete frontend G7.
+  it("lists Overview, Transactions, Goals and Accounts in the top bar", async () => {
+    await renderApp("/", { width: 1280, fetch: newFetch() });
+    const nav = screen.getByRole("navigation", {
+      name: catalogEn["nav.label"],
+    });
+    expect(
+      within(nav)
+        .getAllByRole("link")
+        .map((link) => link.textContent),
+    ).toEqual([
+      catalogEn["nav.overview"],
+      catalogEn["nav.transactions"],
+      catalogEn["nav.goals"],
+      catalogEn["nav.accounts"],
+    ]);
+  });
+
+  it("opens goals from the more sheet", async () => {
+    const user = userEvent.setup();
+    const { router } = await renderApp("/", { width: 360, fetch: newFetch() });
+    await user.click(
+      screen.getByRole("button", { name: catalogEn["nav.more"] }),
+    );
+    await user.click(
+      await screen.findByRole("menuitem", { name: catalogEn["nav.goals"] }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/goals");
+    });
+  });
+
   it("opens settings from the more sheet", async () => {
     const user = userEvent.setup();
     const { router } = await renderApp("/", { width: 360, fetch: newFetch() });

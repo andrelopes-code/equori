@@ -38,7 +38,10 @@ export function AppFrame() {
   }, []);
   const inset = { desktop: 9, tablet: 6, phone: 4 } as const;
 
-  const [home, transactions, accounts] = destinations;
+  const destination = (key: string) => destinations.find((d) => d.key === key);
+  const home = destination("home");
+  const transactions = destination("transactions");
+  const accounts = destination("accounts");
 
   return (
     <AppShell canvas="flush" messages={{ nav: t("nav.label") }}>

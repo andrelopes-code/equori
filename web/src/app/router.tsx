@@ -23,6 +23,7 @@ import { AppFrame } from "@/app/shell/app-frame";
 import { AccountPage, AccountsPage } from "@/features/accounts";
 import { OverviewPage } from "@/features/overview";
 import { CardOverviewPage } from "@/features/cards";
+import { GoalsPage } from "@/features/goals";
 import { LoginPage, meQuery } from "@/features/session";
 import { SettingsPage } from "@/features/setup";
 import {
@@ -125,6 +126,12 @@ const transactionsRoute = createRoute({
   component: TransactionsPage,
 });
 
+const goalsRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "goals",
+  component: GoalsPage,
+});
+
 const accountsRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "accounts",
@@ -161,6 +168,7 @@ export const routeTree = rootRoute.addChildren([
     newTransactionRoute,
     transactionRoute,
     correctTransactionRoute,
+    goalsRoute,
     accountsRoute,
     accountRoute,
     cardRoute,
