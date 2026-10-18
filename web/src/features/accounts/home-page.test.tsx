@@ -373,35 +373,30 @@ describe("home waiting states", () => {
   }, 20000);
 });
 
+// Ledger sheet L5 and L7: the page header holds New on a phone, the top bar from 600 px.
 describe("home new transaction action", () => {
-  it("is the bottom-bar centre item on a phone and not in the header", async () => {
+  it("is the page header action on a phone", async () => {
     const { fetch } = homeApi();
     const { container } = await renderApp("/", { fetch, width: 360 });
+    const header = container.querySelector('[data-ui="page-header"]');
+    expect(header).not.toBeNull();
     const links = await screen.findAllByRole("link", {
-      name: catalogPtBR["nav.new"],
+      name: catalogPtBR["nav.entry"],
     });
     expect(links).toHaveLength(1);
-    expect(links[0]?.closest('[data-own="bottom-bar"]')).not.toBeNull();
-    const header = container.querySelector('[data-ui="page-header"]');
-    expect(header).not.toBeNull();
-    expect(
-      within(header as HTMLElement).queryByRole("link", {
-        name: catalogPtBR["nav.new"],
-      }),
-    ).toBeNull();
+    expect(header?.contains(links[0] ?? null)).toBe(true);
+    expect(links[0]).toHaveAttribute("href", "/transactions/new");
   });
 
-  it.each([768, 1280])("is the page header action at %i px", async (width) => {
+  it.each([768, 1280])("is the top bar action at %i px", async (width) => {
     const { fetch } = homeApi();
     const { container } = await renderApp("/", { fetch, width });
-    const header = container.querySelector('[data-ui="page-header"]');
-    expect(header).not.toBeNull();
-    const link = within(header as HTMLElement).getByRole("link", {
-      name: catalogPtBR["nav.new"],
+    const links = screen.getAllByRole("link", {
+      name: new RegExp(`^${catalogPtBR["nav.entry"]}`),
     });
-    expect(link).toHaveAttribute("href", "/transactions/new");
-    expect(
-      screen.getAllByRole("link", { name: catalogPtBR["nav.new"] }),
-    ).toHaveLength(1);
+    expect(links).toHaveLength(1);
+    expect(links[0]?.closest('[data-ui="top-navigation"]')).not.toBeNull();
+    expect(links[0]).toHaveAttribute("href", "/transactions/new");
+    expect(container.querySelector('[data-ui="page-header"] a')).toBeNull();
   });
 });

@@ -92,7 +92,10 @@ function listApi(opts: Options = {}) {
     "GET /api/v1/tags": () => json(200, { items: ["casa", "viagem"] }),
     "GET /api/v1/transactions": (req) => {
       const params = new URL(req.url).searchParams;
-      requests.push(params);
+      // Ledger sheet L8: the shell counts uncategorized transactions on every route.
+      const shellCount =
+        params.get("uncategorized") === "true" && params.get("limit") === "200";
+      if (!shellCount) requests.push(params);
       if (opts.respond !== undefined) return opts.respond(params);
       return json(
         200,
@@ -454,11 +457,16 @@ describe("transactions filters", () => {
     const { fetch } = listApi();
     await renderApp("/transactions", { fetch, width: 1280 });
     await screen.findByText("Compra 1");
-    const header = document.querySelector("header");
-    if (header === null) throw new Error("no page header");
+    const header = document.querySelector('[data-ui="page-header"]');
+    if (!(header instanceof HTMLElement)) throw new Error("no page header");
     expect(within(header).queryByRole("searchbox")).toBeNull();
+    // Ledger sheet L7: from 600 px New stands in the top bar.
+    const topBar = document.querySelector('[data-ui="top-navigation"]');
+    if (!(topBar instanceof HTMLElement)) throw new Error("no top bar");
     expect(
-      within(header).getByRole("link", { name: catalogPtBR["nav.new"] }),
+      within(topBar).getByRole("link", {
+        name: new RegExp(`^${catalogPtBR["nav.entry"]}`),
+      }),
     ).toHaveAttribute("href", "/transactions/new");
     const bar = screen.getByRole("search");
     expect(

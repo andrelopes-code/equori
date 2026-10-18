@@ -188,10 +188,18 @@ export function AppRouterProvider({ router }: { router: AppRouter }) {
   useEffect(
     () =>
       expiry.install(() => {
-        queryClient.clear();
         const { pathname, href } = router.state.location;
-        if (pathname === "/login") return;
-        void router.navigate({ to: "/login", search: { redirect: href } });
+        if (pathname === "/login") {
+          queryClient.clear();
+          return;
+        }
+        // The shell's own queries refill a cache cleared while it is still mounted,
+        // so the cache is cleared once the login route has replaced it.
+        void router
+          .navigate({ to: "/login", search: { redirect: href } })
+          .then(() => {
+            queryClient.clear();
+          });
       }),
     [expiry, queryClient, router],
   );

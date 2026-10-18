@@ -1,5 +1,4 @@
 import { useRouterState } from "@tanstack/react-router";
-import type { ReactNode } from "react";
 
 import { useT } from "@/i18n/i18n-provider";
 import { bestMatch } from "@/ui/best-match";
@@ -9,17 +8,13 @@ import styles from "@/ui/bottom-bar.module.css";
 export interface BottomBarItem {
   key: string;
   label: string;
-  // A visible label shorter than the accessible name, for a label that would wrap.
-  shortLabel?: string;
-  icon: ReactNode;
   to?: string;
-  search?: Record<string, string>;
   onPress?: () => void;
-  emphasized?: boolean;
+  // A count shown after the label, in the warning tone.
+  badge?: string | undefined;
 }
 
-type FiveItems = readonly [
-  BottomBarItem,
+type FourItems = readonly [
   BottomBarItem,
   BottomBarItem,
   BottomBarItem,
@@ -27,8 +22,8 @@ type FiveItems = readonly [
 ];
 
 // Families read: app-shell, side-navigation, top-navigation, tabs, action-bar.
-// None draws a five-control bar fixed to the bottom edge of a phone.
-export function BottomBar({ items }: { items: FiveItems }) {
+// None draws a bar of text controls fixed to the bottom edge of a phone (ledger sheet L5).
+export function BottomBar({ items }: { items: FourItems }) {
   const t = useT();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const currentPath = bestMatch(

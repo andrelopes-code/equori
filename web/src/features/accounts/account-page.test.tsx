@@ -137,7 +137,10 @@ function accountApi(
       });
     },
     "GET /api/v1/transactions": (req) => {
-      transactionRequests.push(new URL(req.url).searchParams);
+      const params = new URL(req.url).searchParams;
+      // Ledger sheet L8: the shell counts uncategorized transactions on every route.
+      if (params.get("uncategorized") !== "true")
+        transactionRequests.push(params);
       return json(200, { items: [transaction] });
     },
     [`POST /api/v1/accounts/${checkingID}/close`]: async (req) => {
@@ -227,12 +230,13 @@ describe("account page", () => {
     expect(transactionRequests[0]?.get("account_id")).toBe(checkingID);
   });
 
-  it("links the new-transaction action in the page header with the account preselected", async () => {
+  // Ledger sheet L7: from 600 px the top bar holds New.
+  it("links the top bar New action with the account preselected", async () => {
     const { fetch } = accountApi();
     await renderApp(`/accounts/${checkingID}`, { fetch });
     await screen.findByText("Compra no mercado");
     const links = screen.getAllByRole("link", {
-      name: catalogPtBR["nav.new"],
+      name: new RegExp(`^${catalogPtBR["nav.entry"]}`),
     });
     expect(links).toHaveLength(1);
     expect(links[0]).toHaveAttribute(
@@ -315,7 +319,8 @@ describe("account page", () => {
     ).toBeInTheDocument();
   });
 
-  it("puts the chart in the content width and the new-transaction action in the bottom bar on a phone", async () => {
+  // Ledger sheet L5: on a phone the page header holds New.
+  it("puts the chart in the content width and the new-transaction action in the page header on a phone", async () => {
     const { fetch } = accountApi();
     const { container } = await renderApp(`/accounts/${checkingID}`, {
       fetch,
@@ -325,18 +330,16 @@ describe("account page", () => {
     await waitFor(() => {
       expect(container.querySelector('[data-ui="chart"]')).not.toBeNull();
     });
-    const nav = screen.getByRole("navigation", {
-      name: catalogPtBR["nav.label"],
+    const header = container.querySelector('[data-ui="page-header"]');
+    const action = within(header as HTMLElement).getByRole("link", {
+      name: catalogPtBR["nav.entry"],
     });
-    const centre = within(nav).getByRole("link", {
-      name: catalogPtBR["nav.new"],
-    });
-    expect(centre).toHaveAttribute(
+    expect(action).toHaveAttribute(
       "href",
       `/transactions/new?account_id=${checkingID}`,
     );
     expect(
-      screen.getAllByRole("link", { name: catalogPtBR["nav.new"] }),
+      screen.getAllByRole("link", { name: catalogPtBR["nav.entry"] }),
     ).toHaveLength(1);
   });
 
@@ -462,20 +465,19 @@ describe("account page waiting and failure states", () => {
     });
   });
 
-  it("does not preselect a closed account in the phone bottom bar", async () => {
+  it("does not preselect a closed account in the top bar", async () => {
     const closedAccounts = accounts.map((a) =>
       a.id === checkingID ? { ...a, closed_on: "2026-10-01" } : a,
     );
     const { fetch } = accountApi({ accounts: closedAccounts });
-    await renderApp(`/accounts/${checkingID}`, { fetch, width: 360 });
+    await renderApp(`/accounts/${checkingID}`, { fetch, width: 1280 });
     await screen.findByText(
       catalogPtBR["accounts.closed.on"].replace("{date}", "01/10/2026"),
     );
-    const nav = screen.getByRole("navigation", {
-      name: catalogPtBR["nav.label"],
-    });
     expect(
-      within(nav).getByRole("link", { name: catalogPtBR["nav.new"] }),
+      screen.getByRole("link", {
+        name: new RegExp(`^${catalogPtBR["nav.entry"]}`),
+      }),
     ).toHaveAttribute("href", "/transactions/new");
   });
 });

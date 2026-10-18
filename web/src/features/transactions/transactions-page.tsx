@@ -39,11 +39,15 @@ export function TransactionsPage() {
             <PageHeaderTitle>
               <PageHeaderHeading>{t("nav.transactions")}</PageHeaderHeading>
             </PageHeaderTitle>
-            {/* On a phone the bottom bar's centre control creates (spec §2). */}
-            {viewport !== "phone" && (
+            {/* Ledger sheet L5: from 600 px the top bar holds New. */}
+            {viewport === "phone" && (
               <PageHeaderActions>
-                <ButtonLink {...spaLink("/transactions/new")}>
-                  {t("nav.new")}
+                <ButtonLink
+                  {...spaLink("/transactions/new")}
+                  tone="secondary"
+                  size="sm"
+                >
+                  {t("nav.entry")}
                 </ButtonLink>
               </PageHeaderActions>
             )}
@@ -69,7 +73,11 @@ export function TransactionsPage() {
                     {t("transactions.filters.clear")}
                   </Button>
                 ) : (
-                  <ButtonLink {...spaLink("/transactions/new")}>
+                  <ButtonLink
+                    {...spaLink("/transactions/new")}
+                    tone="secondary"
+                    variant="outline"
+                  >
                     {t("nav.new")}
                   </ButtonLink>
                 )

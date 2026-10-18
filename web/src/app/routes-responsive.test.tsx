@@ -207,7 +207,8 @@ describe.each([360, 768, 1280])("routes at %i px", (width) => {
       ).toBeNull();
 
       const bar = container.querySelector('[data-own="bottom-bar"]');
-      const nav = container.querySelector('[data-ui="side-navigation"]');
+      // Ledger sheet L4 and L5: a top bar from 600 px, a bottom bar below.
+      const nav = container.querySelector('[data-ui="top-navigation"]');
       if (!authenticated) {
         expect(bar).toBeNull();
         expect(nav).toBeNull();
@@ -216,10 +217,10 @@ describe.each([360, 768, 1280])("routes at %i px", (width) => {
         expect(nav).toBeNull();
       } else {
         expect(bar).toBeNull();
-        expect(nav).toHaveAttribute(
-          "data-mode",
-          width < 1280 ? "compact" : "expanded",
-        );
+        expect(nav).not.toBeNull();
+        expect(
+          container.querySelector('[data-ui="side-navigation"]'),
+        ).toBeNull();
       }
     },
   );

@@ -43,10 +43,15 @@ export function HomePage() {
             <PageHeaderTitle>
               <PageHeaderHeading>{t("nav.home")}</PageHeaderHeading>
             </PageHeaderTitle>
-            {viewport !== "phone" && (
+            {/* Ledger sheet L5: from 600 px the top bar holds New. */}
+            {viewport === "phone" && (
               <PageHeaderActions>
-                <ButtonLink {...spaLink("/transactions/new")}>
-                  {t("nav.new")}
+                <ButtonLink
+                  {...spaLink("/transactions/new")}
+                  tone="secondary"
+                  size="sm"
+                >
+                  {t("nav.entry")}
                 </ButtonLink>
               </PageHeaderActions>
             )}

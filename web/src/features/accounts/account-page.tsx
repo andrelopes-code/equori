@@ -103,7 +103,11 @@ export function AccountPage() {
               infinite
               emptyActions={
                 open !== undefined ? (
-                  <ButtonLink {...spaLink(newTransaction)}>
+                  <ButtonLink
+                    {...spaLink(newTransaction)}
+                    tone="secondary"
+                    variant="outline"
+                  >
                     {t("nav.new")}
                   </ButtonLink>
                 ) : undefined
@@ -127,9 +131,13 @@ export function AccountPage() {
             </PageHeaderTitle>
             {open !== undefined && (
               <PageHeaderActions>
-                {viewport !== "phone" && (
-                  <ButtonLink {...spaLink(newTransaction)}>
-                    {t("nav.new")}
+                {viewport === "phone" && (
+                  <ButtonLink
+                    {...spaLink(newTransaction)}
+                    tone="secondary"
+                    size="sm"
+                  >
+                    {t("nav.entry")}
                   </ButtonLink>
                 )}
                 <AccountMenu

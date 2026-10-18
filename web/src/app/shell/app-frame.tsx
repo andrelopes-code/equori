@@ -1,28 +1,26 @@
-import { useQuery } from "@tanstack/react-query";
-import { Outlet, useRouterState } from "@tanstack/react-router";
+import { Outlet } from "@tanstack/react-router";
 import {
   AppShell,
+  AppShellBanner,
   AppShellFooter,
   AppShellMain,
-  AppShellNav,
-  AppShellNavBody,
 } from "@slotted/react/app-shell";
 import { ToastRegion } from "@slotted/react/toast";
 import { useEffect, useState } from "react";
 
-import { useApi } from "@/api/api-context";
 import { destinations } from "@/app/shell/destinations";
 import { MoreSheet } from "@/app/shell/more-sheet";
-import { SideNav } from "@/app/shell/side-nav";
-import { accountsQuery } from "@/features/accounts";
+import { TopBar } from "@/app/shell/top-bar";
+import { useUncategorizedBadge } from "@/app/shell/use-uncategorized-badge";
 import { useT } from "@/i18n/i18n-provider";
 import { BottomBar } from "@/ui/bottom-bar";
-import { IconGlyph } from "@/ui/icon-glyph";
 import { useViewport } from "@/ui/use-viewport";
 
+// Ledger sheet L4 and L5: a top bar from 600 px, a bottom bar of text below it.
 export function AppFrame() {
   const t = useT();
   const viewport = useViewport();
+  const badge = useUncategorizedBadge();
   const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
@@ -33,38 +31,13 @@ export function AppFrame() {
   }, [viewport]);
 
   const [home, transactions, accounts] = destinations;
-  // On the page of an open account the centre action opens the form with that account preselected.
-  const routeAccountID = useRouterState({
-    select: (s) => /^\/accounts\/([^/]+)$/.exec(s.location.pathname)?.[1],
-  });
-  const api = useApi();
-  const accountList = useQuery({
-    ...accountsQuery(api),
-    enabled: routeAccountID !== undefined,
-  });
-  const accountID = accountList.data?.find(
-    (a) => a.id === routeAccountID && a.closed_on === undefined,
-  )?.id;
 
   return (
-    <AppShell
-      canvas={viewport === "phone" ? "flush" : "inset"}
-      navMode="inline"
-      navOpen={viewport === "desktop"}
-      collapsedTo="rail"
-      messages={{ nav: t("nav.label") }}
-    >
+    <AppShell canvas="flush" messages={{ nav: t("nav.label") }}>
       {viewport !== "phone" && (
-        <AppShellNav>
-          <AppShellNavBody>
-            <SideNav
-              mode={viewport === "desktop" ? "expanded" : "compact"}
-              onMore={() => {
-                setMoreOpen(true);
-              }}
-            />
-          </AppShellNavBody>
-        </AppShellNav>
+        <AppShellBanner>
+          <TopBar />
+        </AppShellBanner>
       )}
       <AppShellMain>
         <Outlet />
@@ -73,39 +46,17 @@ export function AppFrame() {
         <AppShellFooter>
           <BottomBar
             items={[
-              {
-                key: home.key,
-                label: t(home.label),
-                icon: home.icon,
-                to: home.to,
-              },
+              { key: home.key, label: t(home.label), to: home.to },
               {
                 key: transactions.key,
                 label: t(transactions.label),
-                icon: transactions.icon,
                 to: transactions.to,
+                badge,
               },
-              {
-                key: "new",
-                label: t("nav.new"),
-                shortLabel: t("nav.new.short"),
-                icon: <IconGlyph name="plus" />,
-                to: "/transactions/new",
-                ...(accountID === undefined
-                  ? {}
-                  : { search: { account_id: accountID } }),
-                emphasized: true,
-              },
-              {
-                key: accounts.key,
-                label: t(accounts.label),
-                icon: accounts.icon,
-                to: accounts.to,
-              },
+              { key: accounts.key, label: t(accounts.label), to: accounts.to },
               {
                 key: "more",
                 label: t("nav.more"),
-                icon: <IconGlyph name="more" />,
                 onPress: () => {
                   setMoreOpen(true);
                 },

@@ -3,14 +3,14 @@
     position: sticky;
     inset-block-end: 0;
     padding-block-end: env(safe-area-inset-bottom);
-    background: var(--slotted-surface-raised);
+    background: var(--slotted-surface);
     border-block-start: var(--slotted-border-width-thin) solid
       var(--slotted-border-subtle);
   }
 
   .list {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     margin: 0;
     padding: 0;
     list-style: none;
@@ -23,15 +23,16 @@
 
   .control {
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: var(--slotted-space-1);
+    gap: var(--slotted-space-3);
     inline-size: 100%;
     min-block-size: var(--slotted-target-min);
     padding: var(--slotted-space-2) var(--slotted-space-1);
     border: 0;
-    border-radius: var(--slotted-radius-md);
+    /* The current control's edge sits on the bar's top rule. */
+    border-block-start: var(--slotted-border-width-thick) solid transparent;
+    border-radius: 0;
     background: transparent;
     color: var(--slotted-text-muted);
     font: inherit;
@@ -48,12 +49,8 @@
   }
 
   .control[aria-current="page"] {
-    color: var(--slotted-tone-accent-text);
-  }
-
-  .control[data-emphasized] {
-    background: var(--slotted-tone-accent-surface);
     color: var(--slotted-text);
+    border-block-start-color: var(--slotted-text);
   }
 
   .control:focus-visible {
@@ -64,7 +61,8 @@
 
   .label {
     max-inline-size: 100%;
-    font-size: calc(var(--slotted-font-size-xs) * 0.875);
+    font-size: var(--slotted-font-size-sm);
+    font-weight: var(--slotted-font-weight-medium);
     text-align: center;
     text-wrap: balance;
     hyphens: manual;
