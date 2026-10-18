@@ -9,6 +9,7 @@ import {
   redirect,
 } from "@tanstack/react-router";
 import type { RouterHistory } from "@tanstack/react-router";
+import { preloadChartEngine } from "@slotted/react/chart";
 import type { Client } from "openapi-fetch";
 import { useEffect } from "react";
 
@@ -18,7 +19,7 @@ import { ProblemError } from "@/api/problem";
 import { Placeholder } from "@/app/placeholder";
 import { useSessionExpiry } from "@/app/providers";
 import { AppFrame } from "@/app/shell/app-frame";
-import { AccountsPage, HomePage } from "@/features/accounts";
+import { AccountPage, AccountsPage, HomePage } from "@/features/accounts";
 import { LoginPage, meQuery } from "@/features/session";
 import {
   CorrectTransactionPage,
@@ -83,6 +84,13 @@ const screen = <P extends string>(path: P) =>
     component: Placeholder,
   });
 
+const accountRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "accounts/$id",
+  loader: () => preloadChartEngine(["line"]),
+  component: AccountPage,
+});
+
 const homeRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "/",
@@ -133,7 +141,7 @@ export const routeTree = rootRoute.addChildren([
     transactionRoute,
     correctTransactionRoute,
     accountsRoute,
-    screen("accounts/$id"),
+    accountRoute,
     screen("settings"),
   ]),
 ]);

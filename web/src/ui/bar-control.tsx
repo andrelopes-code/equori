@@ -21,6 +21,7 @@ export function BarControl({
     return (
       <Link
         to={item.to}
+        {...(item.search === undefined ? {} : { search: item.search })}
         className={styles.control}
         // Link marks only exact paths; aria-current below covers nested routes.
         activeOptions={{ exact: true }}

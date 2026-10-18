@@ -1,4 +1,4 @@
-import { Outlet } from "@tanstack/react-router";
+import { Outlet, useRouterState } from "@tanstack/react-router";
 import {
   AppShell,
   AppShellFooter,
@@ -30,6 +30,10 @@ export function AppFrame() {
   }, [viewport]);
 
   const [home, transactions, accounts] = destinations;
+  // On an account page the centre action opens the form with that account preselected.
+  const accountID = useRouterState({
+    select: (s) => /^\/accounts\/([^/]+)$/.exec(s.location.pathname)?.[1],
+  });
 
   return (
     <AppShell
@@ -74,6 +78,9 @@ export function AppFrame() {
                 label: t("nav.new"),
                 icon: <IconGlyph name="plus" />,
                 to: "/transactions/new",
+                ...(accountID === undefined
+                  ? {}
+                  : { search: { account_id: accountID } }),
                 emphasized: true,
               },
               {

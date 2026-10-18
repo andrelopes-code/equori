@@ -67,6 +67,41 @@ export function balancesQuery(api: Client<paths>, date: string, basis: Basis) {
   });
 }
 
+// B2 does not apply here: the account balance sums the account and its descendants.
+export function balanceQuery(
+  api: Client<paths>,
+  id: string,
+  date: string,
+  basis: Basis,
+) {
+  return queryOptions({
+    queryKey: [...accountKeys.balance(id, basis), date] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/accounts/{id}/balance", {
+          params: { path: { id }, query: { date, basis } },
+        }),
+      ),
+  });
+}
+
+export function seriesQuery(
+  api: Client<paths>,
+  id: string,
+  from: string,
+  to: string,
+) {
+  return queryOptions({
+    queryKey: [...accountKeys.series(id), from, to] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/reports/balances", {
+          params: { query: { account_id: id, from, to } },
+        }),
+      ),
+  });
+}
+
 type AccountInput = components["schemas"]["AccountInput"];
 type AccountPatch = components["schemas"]["AccountPatch"];
 

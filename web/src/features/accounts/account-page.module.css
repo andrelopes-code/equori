@@ -1,0 +1,17 @@
+@layer app {
+  .stack {
+    display: grid;
+    gap: var(--slotted-space-6);
+  }
+
+  .balances {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: var(--slotted-space-4);
+  }
+
+  .chart {
+    inline-size: 100%;
+    min-inline-size: 0;
+  }
+}

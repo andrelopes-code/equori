@@ -11,6 +11,7 @@ export interface BottomBarItem {
   label: string;
   icon: ReactNode;
   to?: string;
+  search?: Record<string, string>;
   onPress?: () => void;
   emphasized?: boolean;
 }
