@@ -3,10 +3,11 @@ import {
   ListItem,
   ListItemBody,
   ListItemContent,
-  ListItemEnd,
   ListItemLabel,
 } from "@slotted/react/list-item";
 import { Skeleton, SkeletonRegion } from "@slotted/react/skeleton";
+
+import { AmountLine } from "@/ui/amount-line";
 
 const rows = [
   { name: "9rem", amount: "6rem" },
@@ -23,12 +24,13 @@ export function AccountGroupsPlaceholder() {
             <ListItemContent>
               <ListItemBody>
                 <ListItemLabel>
-                  <Skeleton shape="text" inlineSize={name} />
+                  <AmountLine
+                    own="balance-line"
+                    title={<Skeleton shape="text" inlineSize={name} />}
+                    amount={<Skeleton shape="text" inlineSize={amount} />}
+                  />
                 </ListItemLabel>
               </ListItemBody>
-              <ListItemEnd>
-                <Skeleton shape="text" inlineSize={amount} />
-              </ListItemEnd>
             </ListItemContent>
           </ListItem>
         ))}

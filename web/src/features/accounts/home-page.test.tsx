@@ -198,6 +198,52 @@ describe("home balances", () => {
   });
 });
 
+describe("home money rows", () => {
+  it("says in words which accounts a total excludes", async () => {
+    const usd: Account = {
+      id: "a-usd",
+      name: "Wise",
+      class: "asset",
+      kind: "checking",
+      currency: "USD",
+    };
+    const fetch = fakeApi({
+      "GET /api/v1/me": () =>
+        json(200, { id: 1, email: "a@b.c", role: "admin" }),
+      "GET /api/v1/settings": () => json(200, { base_currency: "BRL" }),
+      "GET /api/v1/instruments": () =>
+        json(200, {
+          items: [
+            { code: "BRL", type: "currency", scale: 2, name: "Real" },
+            { code: "USD", type: "currency", scale: 2, name: "Dollar" },
+          ],
+        }),
+      "GET /api/v1/accounts": () => json(200, { items: [...accounts, usd] }),
+      "GET /api/v1/balances": () => json(200, { items: balances }),
+      "GET /api/v1/transactions": () => json(200, { items: [] }),
+    });
+    await renderApp("/", { fetch, width: 360 });
+    const region = await screen.findByRole("region", {
+      name: catalogPtBR["home.balances"],
+    });
+    expect(
+      await within(region).findByText(catalogPtBR["home.excluded.one"]),
+    ).toBeInTheDocument();
+  });
+
+  it("puts each account balance on the name's line at 360 px", async () => {
+    const { fetch } = homeApi();
+    await renderApp("/", { fetch, width: 360 });
+    const region = await screen.findByRole("region", {
+      name: catalogPtBR["home.accounts"],
+    });
+    const row = (await within(region).findByText("Itaú")).closest("li");
+    const line = row?.querySelector('[data-own="balance-line"]');
+    expect(line?.textContent.replace(/\u00a0/g, " ")).toBe("ItaúR$ 1.234,56");
+    expect(row?.querySelector('[data-part="end"]')).toBeNull();
+  });
+});
+
 describe("home without accounts", () => {
   it("states the empty ledger once and leads to the accounts page", async () => {
     const fetch = fakeApi({

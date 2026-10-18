@@ -7,24 +7,6 @@
     color: var(--slotted-text-subtle);
   }
 
-  .line {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--slotted-space-2);
-  }
-
-  .title {
-    min-inline-size: 0;
-    overflow-wrap: anywhere;
-  }
-
-  .amount {
-    flex: none;
-    margin-inline-start: auto;
-    font-variant-numeric: tabular-nums;
-  }
-
   .sentinel {
     block-size: 1px;
   }

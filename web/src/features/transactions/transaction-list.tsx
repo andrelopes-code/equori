@@ -33,6 +33,7 @@ import { IconGlyph } from "@/ui/icon-glyph";
 import type { IconGlyphName } from "@/ui/icon-glyph";
 import { MoneyText } from "@/ui/money-text";
 import { QueryError } from "@/ui/query-error";
+import { AmountLine } from "@/ui/amount-line";
 import { useSpaLink } from "@/ui/use-spa-link";
 
 type Account = components["schemas"]["Account"];
@@ -218,28 +219,28 @@ export function TransactionList({
           </ListItemStart>
           <ListItemBody>
             <ListItemLabel>
-              <span data-own="transaction-line" className={styles.line}>
-                <span
-                  className={[
-                    styles.title,
-                    tx.voided_at === undefined ? "" : styles.voided,
-                  ]
-                    .join(" ")
-                    .trim()}
-                >
-                  {label === "" ? t("transactions.untitled") : label}
-                  {label !== categories && categories !== "" && (
-                    <span className={styles.category}>{categorySuffix}</span>
-                  )}
-                </span>
-                <span className={styles.amount}>
+              <AmountLine
+                own="transaction-line"
+                title={
+                  <span
+                    className={
+                      tx.voided_at === undefined ? undefined : styles.voided
+                    }
+                  >
+                    {label === "" ? t("transactions.untitled") : label}
+                    {label !== categories && categories !== "" && (
+                      <span className={styles.category}>{categorySuffix}</span>
+                    )}
+                  </span>
+                }
+                amount={
                   <MoneyText
                     money={money}
                     scale={scale(money.currency)}
                     tone="flow"
                   />
-                </span>
-              </span>
+                }
+              />
             </ListItemLabel>
             <ListItemDescription>{second}</ListItemDescription>
           </ListItemBody>

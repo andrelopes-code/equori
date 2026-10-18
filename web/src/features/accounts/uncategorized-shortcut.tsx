@@ -6,7 +6,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@slotted/react/alert";
-import { ButtonLink } from "@slotted/react/button";
+import { Link } from "@slotted/react/link";
 
 import { useApi } from "@/api/api-context";
 import { uncategorizedCountQuery } from "@/features/transactions";
@@ -34,14 +34,9 @@ export function UncategorizedShortcut({
         </AlertDescription>
       </AlertContent>
       <AlertActions>
-        <ButtonLink
-          {...spaLink(uncategorizedHref)}
-          tone="accent"
-          variant="outline"
-          size="sm"
-        >
+        <Link {...spaLink(uncategorizedHref)}>
           {t("home.uncategorized.action")}
-        </ButtonLink>
+        </Link>
       </AlertActions>
     </Alert>
   );
