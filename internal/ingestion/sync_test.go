@@ -334,3 +334,116 @@ func TestSyncBalanceRecordsNoYield(t *testing.T) {
 		t.Fatalf("assertions = %d", n)
 	}
 }
+
+type assertionView struct {
+	Reconciled bool   `json:"reconciled"`
+	Date       string `json:"date"`
+	Amount     struct {
+		Amount int64 `json:"amount"`
+	} `json:"amount"`
+	Source string `json:"source"`
+}
+
+func (f syncFixture) assertions(account string) []assertionView {
+	f.h.T().Helper()
+	var out struct {
+		Items []assertionView `json:"items"`
+	}
+	f.h.MustDo(http.MethodGet, "/api/v1/accounts/"+account+"/balance-assertions", nil, http.StatusOK, &out)
+	return out.Items
+}
+
+func (f syncFixture) recordOpeningBalance(account string, amount int64) {
+	f.h.T().Helper()
+	var accounts struct {
+		Items []struct {
+			ID         string `json:"id"`
+			SystemRole string `json:"system_role"`
+		} `json:"items"`
+	}
+	f.h.MustDo(http.MethodGet, "/api/v1/accounts?limit=200", nil, http.StatusOK, &accounts)
+	for _, a := range accounts.Items {
+		if a.SystemRole == "opening_balances" {
+			f.h.Record("2026-10-31", apitest.Posting(account, amount), apitest.Posting(a.ID, -amount))
+			return
+		}
+	}
+	f.h.T().Fatal("no opening balances account")
+}
+
+func (f syncFixture) openDifference(account string) any {
+	f.h.T().Helper()
+	var out struct {
+		OpenDifference any `json:"open_difference"`
+	}
+	f.h.MustDo(http.MethodGet, "/api/v1/accounts/"+account+"/reconciliation", nil, http.StatusOK, &out)
+	return out.OpenDifference
+}
+
+// S71: a synced assertion left open by a missing opening balance is decided again by the
+// next sync, which creates no assertion (D5, A77).
+func TestS71SyncReevaluatesOpenAssertion(t *testing.T) {
+	setup := func(t *testing.T) syncFixture {
+		f := newSyncFixture(t)
+		f.line(pluggy.SubtypeChecking, bankLine("tx-1", "2026-10-05", "-45.90"))
+		f.line(pluggy.SubtypeChecking, bankLine("tx-2", "2026-10-12", "-120.00"))
+		f.line(pluggy.SubtypeChecking, bankLine("tx-3", "2026-10-15", "3000.00"))
+		f.p.SetAccountBalance(nubankItem+"-checking", "3834.10")
+		f.mapTo(pluggy.SubtypeChecking, f.checking)
+		return f
+	}
+
+	t.Run("repeated sync", func(t *testing.T) {
+		f := setup(t)
+		f.sync()
+		got := f.assertions(f.checking)
+		if len(got) != 1 || got[0].Reconciled || got[0].Source != "open_finance" || got[0].Date != "2026-11-12" || got[0].Amount.Amount != 383410 {
+			t.Fatalf("assertions after the first sync = %+v", got)
+		}
+		if f.openDifference(f.checking) == nil {
+			t.Fatal("the first sync must leave a difference open")
+		}
+
+		f.recordOpeningBalance(f.checking, 100000)
+		f.sync()
+		got = f.assertions(f.checking)
+		if len(got) != 1 || !got[0].Reconciled {
+			t.Fatalf("assertions after the second sync = %+v", got)
+		}
+		if d := f.openDifference(f.checking); d != nil {
+			t.Fatalf("open difference = %v", d)
+		}
+		if n := f.count(`SELECT count(*) FROM ledger_reconciliation WHERE account_id = $1 AND resolution = 'none' AND difference = 0`, f.checking); n != 1 {
+			t.Fatalf("reconciliations = %d", n)
+		}
+	})
+
+	t.Run("second assertion through the API", func(t *testing.T) {
+		f := setup(t)
+		f.sync()
+		body := map[string]any{"date": "2026-11-12", "amount": apitest.BRL(383410), "source": "open_finance"}
+		post := func(wantResolution string) {
+			t.Helper()
+			var out struct {
+				Resolution string `json:"resolution"`
+			}
+			f.h.MustDo(http.MethodPost, "/api/v1/accounts/"+f.checking+"/balance-assertions", body, http.StatusCreated, &out)
+			if out.Resolution != wantResolution {
+				t.Fatalf("resolution = %q, want %q", out.Resolution, wantResolution)
+			}
+		}
+		post("")
+		f.recordOpeningBalance(f.checking, 100000)
+		post("none")
+		f.sync()
+		got := f.assertions(f.checking)
+		if len(got) != 3 {
+			t.Fatalf("assertions = %+v", got)
+		}
+		for _, a := range got {
+			if !a.Reconciled {
+				t.Fatalf("assertions = %+v; all must be reconciled", got)
+			}
+		}
+	})
+}

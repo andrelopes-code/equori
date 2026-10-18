@@ -114,12 +114,17 @@ func (s *Service) syncAccount(ctx context.Context, c domain.Connection, ext doma
 	if err := s.importRecords(ctx, &batch, target.Currency, read.Records); err != nil {
 		return domain.Batch{}, err
 	}
-	if b := read.Balance; b != nil && !b.Date.After(today) && (ext.Balance == nil || *ext.Balance != *b) {
-		batch.Balance = domain.FileBalance{Status: domain.BalanceRecorded, Date: &b.Date, Amount: b.Amount}
+	if b := read.Balance; b != nil && !b.Date.After(today) {
+		// The ledger decides an open assertion of this balance again on every sync (A77).
+		if ext.Balance == nil || *ext.Balance != *b {
+			batch.Balance = domain.FileBalance{Status: domain.BalanceRecorded, Date: &b.Date, Amount: b.Amount}
+		}
 		err := s.ledger.AssertSyncedBalance(ctx, c.UserID, accountID, *b, target.Currency)
 		switch {
 		case errors.Is(err, ErrBalanceRejected):
-			batch.Balance.Status, batch.Balance.Reason = domain.BalanceSkipped, err.Error()
+			if batch.Balance.Status == domain.BalanceRecorded {
+				batch.Balance.Status, batch.Balance.Reason = domain.BalanceSkipped, err.Error()
+			}
 		case err != nil:
 			return domain.Batch{}, err
 		}

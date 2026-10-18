@@ -49,60 +49,123 @@ func (s *Service) AssertBalance(ctx context.Context, userID int64, accountID uui
 	}
 	var res AssertionResult
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		a, err := s.lockLeafBalance(ctx, r, userID, accountID)
+		a, err := s.lockAssertionTarget(ctx, r, userID, accountID, date, amount)
 		if err != nil {
 			return err
 		}
-		if amount.Currency() != a.Instrument {
-			return validationError("amount", "must be in the account currency")
-		}
-		last, err := r.LastReconciledOn(ctx, userID, accountID)
-		if err != nil {
-			return err
-		}
-		if err := domain.CheckAssertionDate(date, last); err != nil {
-			return err
-		}
-		start, err := s.yieldStart(ctx, r, userID, accountID, date)
-		if err != nil {
-			return err
-		}
-		settled, err := r.BalanceAt(ctx, userID, accountID, date, BasisSettled)
-		if err != nil {
-			return err
-		}
-		mode := a.YieldMode
-		if source == SourceOpenFinance {
-			// P6 A42: yield arrives as feed lines; a line the feed lacks today is not yield.
-			mode = domain.YieldNone
-		}
-		outcome := domain.DecideAssertion(amount.Amount(), settled, mode)
-		if outcome.Resolution == domain.ResolutionYield && start == nil {
-			outcome = domain.AssertionOutcome{Difference: outcome.Difference}
-		}
-		if res.Assertion, err = r.InsertBalanceAssertion(ctx, BalanceAssertion{
-			UserID: userID, AccountID: accountID, Date: date, Amount: amount.Amount(), Source: source,
-		}); err != nil {
-			return err
-		}
-		if res.Difference, err = money.New(outcome.Difference, a.Instrument); err != nil {
-			return err
-		}
-		if outcome.Resolution == "" {
-			return nil
-		}
-		if outcome.Resolution == domain.ResolutionYield {
-			if res.ResolutionTransactionID, err = s.recordYield(ctx, r, a, *start, date, outcome.Yield); err != nil {
-				return err
-			}
-		}
-		res.Resolution = outcome.Resolution
-		return s.reconcile(ctx, r, Reconciliation{
-			UserID: userID, AccountID: accountID, Date: date, AssertionID: res.Assertion.ID,
-			Difference: outcome.Difference, Resolution: outcome.Resolution, ResolutionTransactionID: res.ResolutionTransactionID,
-		})
+		res, err = s.decideAssertion(ctx, r, a, date, amount, source, nil)
+		return err
 	})
 	return res, err
+}
+
+// AssertSynced records an aggregator's balance and decides it. A repeated report of a
+// balance already asserted by the aggregator inserts nothing and decides the open assertions
+// of that date and amount again, because history recorded since may close the difference (A77).
+func (s *Service) AssertSynced(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, amount money.Money, reserve bool) (AssertionResult, error) {
+	if date.After(s.clock.Today()) {
+		return AssertionResult{}, validationError("date", "must not be in the future")
+	}
+	var res AssertionResult
+	err := s.repo.InTx(ctx, func(r Repository) error {
+		a, err := s.lockAssertionTarget(ctx, r, userID, accountID, date, amount)
+		if err != nil {
+			return err
+		}
+		assertions, err := r.BalanceAssertions(ctx, userID, accountID)
+		if err != nil {
+			return err
+		}
+		var repeated bool
+		for _, found := range assertions {
+			if found.Source != SourceOpenFinance || !found.Date.Equal(date) || found.Amount != amount.Amount() {
+				continue
+			}
+			repeated = true
+			if found.Reconciled {
+				if res.Assertion.ID == uuid.Nil {
+					res.Assertion = found
+				}
+				continue
+			}
+			decided, err := s.decideAssertion(ctx, r, a, date, amount, SourceOpenFinance, &found)
+			if err != nil {
+				return err
+			}
+			if res.Assertion.ID == uuid.Nil || decided.Resolution != "" {
+				res = decided
+			}
+		}
+		if repeated {
+			return nil
+		}
+		res, err = s.decideAssertion(ctx, r, a, date, amount, SourceOpenFinance, nil)
+		return err
+	})
+	return res, err
+}
+
+// lockAssertionTarget locks the account and checks that an assertion of date and amount may
+// be decided on it.
+func (s *Service) lockAssertionTarget(ctx context.Context, r Repository, userID int64, accountID uuid.UUID, date time.Time, amount money.Money) (domain.Account, error) {
+	a, err := s.lockLeafBalance(ctx, r, userID, accountID)
+	if err != nil {
+		return domain.Account{}, err
+	}
+	if amount.Currency() != a.Instrument {
+		return domain.Account{}, validationError("amount", "must be in the account currency")
+	}
+	last, err := r.LastReconciledOn(ctx, userID, accountID)
+	if err != nil {
+		return domain.Account{}, err
+	}
+	return a, domain.CheckAssertionDate(date, last)
+}
+
+// decideAssertion compares the settled balance with the asserted amount and reconciles the
+// account when they match. An existing assertion is decided again; a nil one is inserted.
+func (s *Service) decideAssertion(ctx context.Context, r Repository, a domain.Account, date time.Time, amount money.Money, source string, existing *BalanceAssertion) (AssertionResult, error) {
+	var res AssertionResult
+	start, err := s.yieldStart(ctx, r, a.UserID, a.ID, date)
+	if err != nil {
+		return res, err
+	}
+	settled, err := r.BalanceAt(ctx, a.UserID, a.ID, date, BasisSettled)
+	if err != nil {
+		return res, err
+	}
+	mode := a.YieldMode
+	if source == SourceOpenFinance {
+		// P6 A42: yield arrives as feed lines; a line the feed lacks today is not yield.
+		mode = domain.YieldNone
+	}
+	outcome := domain.DecideAssertion(amount.Amount(), settled, mode)
+	if outcome.Resolution == domain.ResolutionYield && start == nil {
+		outcome = domain.AssertionOutcome{Difference: outcome.Difference}
+	}
+	if existing != nil {
+		res.Assertion = *existing
+	} else if res.Assertion, err = r.InsertBalanceAssertion(ctx, BalanceAssertion{
+		UserID: a.UserID, AccountID: a.ID, Date: date, Amount: amount.Amount(), Source: source,
+	}); err != nil {
+		return res, err
+	}
+	if res.Difference, err = money.New(outcome.Difference, a.Instrument); err != nil {
+		return res, err
+	}
+	if outcome.Resolution == "" {
+		return res, nil
+	}
+	if outcome.Resolution == domain.ResolutionYield {
+		if res.ResolutionTransactionID, err = s.recordYield(ctx, r, a, *start, date, outcome.Yield); err != nil {
+			return res, err
+		}
+	}
+	res.Resolution = outcome.Resolution
+	return res, s.reconcile(ctx, r, Reconciliation{
+		UserID: a.UserID, AccountID: a.ID, Date: date, AssertionID: res.Assertion.ID,
+		Difference: outcome.Difference, Resolution: outcome.Resolution, ResolutionTransactionID: res.ResolutionTransactionID,
+	})
 }
 
 // ResolveAssertion settles the open difference of an assertion chosen by the owner (F6, S26).

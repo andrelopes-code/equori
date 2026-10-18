@@ -300,9 +300,10 @@ func (m *Module) Transfer(ctx context.Context, userID int64, r TransferRequest) 
 	return m.svc.Transfer(ctx, userID, r)
 }
 
-// AssertSyncedBalance records an aggregator's balance; it never records yield (P6 A42).
+// AssertSyncedBalance records an aggregator's balance, or decides the open assertion of the
+// same date and amount again; it never records yield (P6 A42, A77).
 func (m *Module) AssertSyncedBalance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, amount money.Money) error {
-	_, err := m.svc.AssertBalance(ctx, userID, accountID, date, amount, app.SourceOpenFinance)
+	_, err := m.svc.AssertSynced(ctx, userID, accountID, date, amount, false)
 	return err
 }
 
