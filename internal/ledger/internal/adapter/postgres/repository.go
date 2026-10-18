@@ -847,10 +847,43 @@ func (r *Repository) Plan(ctx context.Context, userID int64, id uuid.UUID) (doma
 	if err != nil {
 		return domain.InstallmentPlan{}, notFound(err)
 	}
+	card, err := r.Account(ctx, userID, row.AccountID)
+	if err != nil {
+		return domain.InstallmentPlan{}, err
+	}
+	principal, err := money.New(row.Principal, card.Instrument)
+	if err != nil {
+		return domain.InstallmentPlan{}, err
+	}
+	interest, err := money.New(row.Interest, card.Instrument)
+	if err != nil {
+		return domain.InstallmentPlan{}, err
+	}
 	return domain.InstallmentPlan{
 		ID: row.ID, UserID: row.UserID, AccountID: row.AccountID, OriginTransactionID: row.OriginTransactionID,
-		Kind: row.PlanKind, Count: int(row.InstallmentCount), FirstStatementID: row.FirstStatementID,
+		Kind: row.PlanKind, Count: int(row.InstallmentCount), Principal: principal, Interest: interest,
+		FirstStatementID: row.FirstStatementID,
 	}, nil
+}
+
+func (r *Repository) PlanState(ctx context.Context, userID int64, originID uuid.UUID) (cancelled, anticipated bool, err error) {
+	row, err := r.q.PlanState(ctx, PlanStateParams{UserID: userID, OriginID: originID})
+	if err != nil {
+		return false, false, err
+	}
+	return row.Cancelled, row.Anticipated, nil
+}
+
+func (r *Repository) AnticipatedReferences(ctx context.Context, userID int64, originID uuid.UUID) (map[domain.ReferenceMonth]struct{}, error) {
+	rows, err := r.q.AnticipatedReferences(ctx, AnticipatedReferencesParams{UserID: userID, OriginID: originID})
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[domain.ReferenceMonth]struct{}, len(rows))
+	for _, row := range rows {
+		out[domain.MonthOf(row)] = struct{}{}
+	}
+	return out, nil
 }
 
 func (r *Repository) PlanInstallments(ctx context.Context, userID int64, planID uuid.UUID) ([]app.PlanInstallment, error) {

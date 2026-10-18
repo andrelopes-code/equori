@@ -701,6 +701,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/installment-plans/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Schedule and state of an installment plan. */
+        get: operations["getInstallmentPlan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/installment-plans/{id}/cancellation": {
         parameters: {
             query?: never;
@@ -2324,6 +2341,37 @@ export interface components {
             outcome?: "won" | "lost";
             /** Format: uuid */
             refund_transaction_id?: string;
+        };
+        InstallmentPlan: {
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: uuid
+             * @description The purchase or financing transaction that created the plan.
+             */
+            transaction_id: string;
+            /**
+             * Format: uuid
+             * @description The card account billed by the plan.
+             */
+            account_id: string;
+            /**
+             * @description cancelled when a non-voided cancellation exists, else anticipated when a non-voided anticipation exists, else active.
+             * @enum {string}
+             */
+            status: "active" | "cancelled" | "anticipated";
+            count: number;
+            interest?: components["schemas"]["Money"];
+            /** @description Ordered by number. */
+            installments: components["schemas"]["ScheduledInstallment"][];
+        };
+        ScheduledInstallment: {
+            number: number;
+            /** @example 2026-11 */
+            statement: string;
+            amount: components["schemas"]["Money"];
+            /** @description True when a cancellation or an anticipation credited the installment on its statement. */
+            reversed: boolean;
         };
         DisputeList: {
             items: components["schemas"]["Dispute"][];
@@ -4561,6 +4609,30 @@ export interface operations {
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    getInstallmentPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstallmentPlan"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
         };
     };
     cancelInstallmentPlan: {

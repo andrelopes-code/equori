@@ -395,6 +395,27 @@ func (e IncomeType) Valid() bool {
 	}
 }
 
+// Defines values for InstallmentPlanStatus.
+const (
+	Active      InstallmentPlanStatus = "active"
+	Anticipated InstallmentPlanStatus = "anticipated"
+	Cancelled   InstallmentPlanStatus = "cancelled"
+)
+
+// Valid indicates whether the value is a known member of the InstallmentPlanStatus enum.
+func (e InstallmentPlanStatus) Valid() bool {
+	switch e {
+	case Active:
+		return true
+	case Anticipated:
+		return true
+	case Cancelled:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for LinkType.
 const (
 	AnticipationOf  LinkType = "anticipation_of"
@@ -1053,6 +1074,27 @@ type Installment struct {
 	PlanId openapi_types.UUID `json:"plan_id"`
 }
 
+// InstallmentPlan defines model for InstallmentPlan.
+type InstallmentPlan struct {
+	// AccountId The card account billed by the plan.
+	AccountId openapi_types.UUID `json:"account_id"`
+	Count     int                `json:"count"`
+	Id        openapi_types.UUID `json:"id"`
+
+	// Installments Ordered by number.
+	Installments []ScheduledInstallment `json:"installments"`
+	Interest     *Money                 `json:"interest,omitempty"`
+
+	// Status cancelled when a non-voided cancellation exists, else anticipated when a non-voided anticipation exists, else active.
+	Status InstallmentPlanStatus `json:"status"`
+
+	// TransactionId The purchase or financing transaction that created the plan.
+	TransactionId openapi_types.UUID `json:"transaction_id"`
+}
+
+// InstallmentPlanStatus cancelled when a non-voided cancellation exists, else anticipated when a non-voided anticipation exists, else active.
+type InstallmentPlanStatus string
+
 // InstallmentPurchase defines model for InstallmentPurchase.
 type InstallmentPurchase struct {
 	PlanId      openapi_types.UUID `json:"plan_id"`
@@ -1272,6 +1314,18 @@ type RefundInput struct {
 	Amount    Money              `json:"amount"`
 	Date      openapi_types.Date `json:"date"`
 	Statement *string            `json:"statement,omitempty"`
+}
+
+// ScheduledInstallment defines model for ScheduledInstallment.
+type ScheduledInstallment struct {
+	Amount Money `json:"amount"`
+	Number int   `json:"number"`
+
+	// Reversed True when a cancellation or an anticipation credited the installment on its statement.
+	Reversed bool `json:"reversed"`
+
+	// Statement Example: 2026-11
+	Statement string `json:"statement"`
 }
 
 // Settings defines model for Settings.
@@ -1771,6 +1825,9 @@ type ServerInterface interface {
 	// RecordForeignPurchase Record a purchase charged in another currency, with IOF (P8 amendment A66).
 	// (POST /foreign-purchases)
 	RecordForeignPurchase(w http.ResponseWriter, r *http.Request)
+	// GetInstallmentPlan Schedule and state of an installment plan.
+	// (GET /installment-plans/{id})
+	GetInstallmentPlan(w http.ResponseWriter, r *http.Request, id ID)
 	// AnticipateInstallments Pay future installments early.
 	// (POST /installment-plans/{id}/anticipation)
 	AnticipateInstallments(w http.ResponseWriter, r *http.Request, id ID)
@@ -2656,6 +2713,32 @@ func (siw *ServerInterfaceWrapper) RecordForeignPurchase(w http.ResponseWriter, 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RecordForeignPurchase(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetInstallmentPlan operation middleware
+func (siw *ServerInterfaceWrapper) GetInstallmentPlan(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetInstallmentPlan(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3682,6 +3765,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/statements/{id}/payments", wrapper.PayStatement)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/statements/{id}/financing", wrapper.FinanceStatement)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/refunds", wrapper.RefundTransaction)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/installment-plans/{id}", wrapper.GetInstallmentPlan)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/installment-plans/{id}/cancellation", wrapper.CancelInstallmentPlan)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/installment-plans/{id}/anticipation", wrapper.AnticipateInstallments)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions/{id}/disputes", wrapper.ListDisputes)
@@ -5303,6 +5387,58 @@ func (response RecordForeignPurchase422ApplicationProblemPlusJSONResponse) Visit
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetInstallmentPlanRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type GetInstallmentPlanResponseObject interface {
+	VisitGetInstallmentPlanResponse(w http.ResponseWriter) error
+}
+
+type GetInstallmentPlan200JSONResponse InstallmentPlan
+
+func (response GetInstallmentPlan200JSONResponse) VisitGetInstallmentPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetInstallmentPlan401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetInstallmentPlan401ApplicationProblemPlusJSONResponse) VisitGetInstallmentPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetInstallmentPlan404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetInstallmentPlan404ApplicationProblemPlusJSONResponse) VisitGetInstallmentPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -7282,6 +7418,9 @@ type StrictServerInterface interface {
 	// RecordForeignPurchase Record a purchase charged in another currency, with IOF (P8 amendment A66).
 	// (POST /foreign-purchases)
 	RecordForeignPurchase(ctx context.Context, request RecordForeignPurchaseRequestObject) (RecordForeignPurchaseResponseObject, error)
+	// GetInstallmentPlan Schedule and state of an installment plan.
+	// (GET /installment-plans/{id})
+	GetInstallmentPlan(ctx context.Context, request GetInstallmentPlanRequestObject) (GetInstallmentPlanResponseObject, error)
 	// AnticipateInstallments Pay future installments early.
 	// (POST /installment-plans/{id}/anticipation)
 	AnticipateInstallments(ctx context.Context, request AnticipateInstallmentsRequestObject) (AnticipateInstallmentsResponseObject, error)
@@ -8135,6 +8274,32 @@ func (sh *strictHandler) RecordForeignPurchase(w http.ResponseWriter, r *http.Re
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RecordForeignPurchaseResponseObject); ok {
 		if err := validResponse.VisitRecordForeignPurchaseResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetInstallmentPlan operation middleware
+func (sh *strictHandler) GetInstallmentPlan(w http.ResponseWriter, r *http.Request, id ID) {
+	var request GetInstallmentPlanRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetInstallmentPlan(ctx, request.(GetInstallmentPlanRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetInstallmentPlan")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetInstallmentPlanResponseObject); ok {
+		if err := validResponse.VisitGetInstallmentPlanResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

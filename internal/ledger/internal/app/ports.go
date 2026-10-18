@@ -313,6 +313,10 @@ type Repository interface {
 	SetStatementFinanced(ctx context.Context, statementID, planID uuid.UUID) error
 	Plan(ctx context.Context, userID int64, id uuid.UUID) (domain.InstallmentPlan, error)
 	PlanInstallments(ctx context.Context, userID int64, planID uuid.UUID) ([]PlanInstallment, error)
+	// PlanState reports whether a non-voided cancellation or anticipation of the origin purchase exists.
+	PlanState(ctx context.Context, userID int64, originID uuid.UUID) (cancelled, anticipated bool, err error)
+	// AnticipatedReferences returns the statements credited by non-voided anticipations of the origin purchase.
+	AnticipatedReferences(ctx context.Context, userID int64, originID uuid.UUID) (map[domain.ReferenceMonth]struct{}, error)
 	RefundedTotal(ctx context.Context, userID int64, originID uuid.UUID) (int64, error)
 	InsertDispute(ctx context.Context, d Dispute) (Dispute, error)
 	Disputes(ctx context.Context, userID int64, transactionID uuid.UUID) ([]Dispute, error)

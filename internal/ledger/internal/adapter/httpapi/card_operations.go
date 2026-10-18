@@ -7,6 +7,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
 	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
 func (s *Server) CreateInstallmentPurchase(ctx context.Context, req CreateInstallmentPurchaseRequestObject) (CreateInstallmentPurchaseResponseObject, error) {
@@ -132,4 +133,27 @@ func (s *Server) AnticipateInstallments(ctx context.Context, req AnticipateInsta
 		return nil, err
 	}
 	return AnticipateInstallments201JSONResponse{Body: toTransactionAPI(t), Headers: AnticipateInstallments201ResponseHeaders{Location: location("/transactions/", t.ID)}}, nil
+}
+
+func (s *Server) GetInstallmentPlan(ctx context.Context, req GetInstallmentPlanRequestObject) (GetInstallmentPlanResponseObject, error) {
+	v, err := s.svc.InstallmentPlan(ctx, auth.MustUserID(ctx), req.Id)
+	if err != nil {
+		return nil, err
+	}
+	out := GetInstallmentPlan200JSONResponse{
+		Id: v.Plan.ID, TransactionId: v.Plan.OriginTransactionID, AccountId: v.Plan.AccountID,
+		Status: InstallmentPlanStatus(v.Status), Count: v.Plan.Count, Installments: make([]ScheduledInstallment, len(v.Installments)),
+	}
+	if !v.Plan.Interest.IsZero() {
+		interest := toMoneyAPI(v.Plan.Interest)
+		out.Interest = &interest
+	}
+	for i, in := range v.Installments {
+		amount, err := money.New(in.Amount, v.Plan.Interest.Currency())
+		if err != nil {
+			return nil, err
+		}
+		out.Installments[i] = ScheduledInstallment{Number: in.Number, Statement: in.Reference.String(), Amount: toMoneyAPI(amount), Reversed: in.Reversed}
+	}
+	return out, nil
 }

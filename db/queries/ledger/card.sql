@@ -90,6 +90,23 @@ JOIN ledger_statement s ON s.id = p.statement_id
 WHERE p.user_id = $1 AND p.installment_plan_id = $2 AND NOT p.voided AND p.card_role = 'charge'
 ORDER BY p.installment_number;
 
+-- name: PlanState :one
+SELECT
+  EXISTS (SELECT 1 FROM ledger_link l JOIN ledger_transaction t ON t.id = l.from_transaction_id
+          WHERE l.user_id = @user_id AND l.to_transaction_id = @origin_id
+            AND l.link_type = 'cancellation_of' AND t.voided_at IS NULL) AS cancelled,
+  EXISTS (SELECT 1 FROM ledger_link l JOIN ledger_transaction t ON t.id = l.from_transaction_id
+          WHERE l.user_id = @user_id AND l.to_transaction_id = @origin_id
+            AND l.link_type = 'anticipation_of' AND t.voided_at IS NULL) AS anticipated;
+
+-- name: AnticipatedReferences :many
+SELECT DISTINCT s.reference_month
+FROM ledger_link l
+JOIN ledger_transaction t ON t.id = l.from_transaction_id AND t.voided_at IS NULL
+JOIN ledger_posting p ON p.transaction_id = t.id AND p.card_role = 'credit' AND NOT p.voided
+JOIN ledger_statement s ON s.id = p.statement_id
+WHERE l.user_id = @user_id AND l.to_transaction_id = @origin_id AND l.link_type = 'anticipation_of';
+
 -- name: RefundedTotal :one
 SELECT coalesce(sum(p.amount), 0)::bigint
 FROM ledger_link l

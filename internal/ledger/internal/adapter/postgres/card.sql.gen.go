@@ -12,6 +12,40 @@ import (
 	"github.com/google/uuid"
 )
 
+const anticipatedReferences = `-- name: AnticipatedReferences :many
+SELECT DISTINCT s.reference_month
+FROM ledger_link l
+JOIN ledger_transaction t ON t.id = l.from_transaction_id AND t.voided_at IS NULL
+JOIN ledger_posting p ON p.transaction_id = t.id AND p.card_role = 'credit' AND NOT p.voided
+JOIN ledger_statement s ON s.id = p.statement_id
+WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND l.link_type = 'anticipation_of'
+`
+
+type AnticipatedReferencesParams struct {
+	UserID   int64
+	OriginID uuid.UUID
+}
+
+func (q *Queries) AnticipatedReferences(ctx context.Context, arg AnticipatedReferencesParams) ([]time.Time, error) {
+	rows, err := q.db.Query(ctx, anticipatedReferences, arg.UserID, arg.OriginID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []time.Time
+	for rows.Next() {
+		var reference_month time.Time
+		if err := rows.Scan(&reference_month); err != nil {
+			return nil, err
+		}
+		items = append(items, reference_month)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const committedInstallments = `-- name: CommittedInstallments :one
 SELECT coalesce(-sum(p.amount), 0)::bigint
 FROM ledger_posting p
@@ -788,6 +822,33 @@ func (q *Queries) LockPlanInstallment(ctx context.Context, arg LockPlanInstallme
 		&i.TransactionID,
 		&i.Reversed,
 	)
+	return i, err
+}
+
+const planState = `-- name: PlanState :one
+SELECT
+  EXISTS (SELECT 1 FROM ledger_link l JOIN ledger_transaction t ON t.id = l.from_transaction_id
+          WHERE l.user_id = $1 AND l.to_transaction_id = $2
+            AND l.link_type = 'cancellation_of' AND t.voided_at IS NULL) AS cancelled,
+  EXISTS (SELECT 1 FROM ledger_link l JOIN ledger_transaction t ON t.id = l.from_transaction_id
+          WHERE l.user_id = $1 AND l.to_transaction_id = $2
+            AND l.link_type = 'anticipation_of' AND t.voided_at IS NULL) AS anticipated
+`
+
+type PlanStateParams struct {
+	UserID   int64
+	OriginID uuid.UUID
+}
+
+type PlanStateRow struct {
+	Cancelled   bool
+	Anticipated bool
+}
+
+func (q *Queries) PlanState(ctx context.Context, arg PlanStateParams) (PlanStateRow, error) {
+	row := q.db.QueryRow(ctx, planState, arg.UserID, arg.OriginID)
+	var i PlanStateRow
+	err := row.Scan(&i.Cancelled, &i.Anticipated)
 	return i, err
 }
 
