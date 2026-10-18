@@ -1,1 +1,14 @@
 @layer slotted, app;
+
+/* The shell is block-size 100% capped at 100dvh (scroll="content"): it needs a definite-height ancestor chain, or it computes to 0. */
+@layer app {
+  html,
+  body {
+    block-size: 100%;
+    margin: 0;
+  }
+
+  #root {
+    block-size: 100dvh;
+  }
+}

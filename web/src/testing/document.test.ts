@@ -6,6 +6,7 @@ const read = (relative: string): string =>
   readFileSync(new URL(relative, import.meta.url).pathname, "utf8");
 
 const html = read("../../index.html");
+const appCSS = read("../app/app.css");
 const manifest = JSON.parse(read("../../public/manifest.json")) as Record<
   string,
   unknown
@@ -50,5 +51,27 @@ describe("manifest.json", () => {
 
   it("uses the theme-color of index.html", () => {
     expect(manifest.theme_color).toBe(metaContent("theme-color"));
+  });
+});
+
+// jsdom computes no layout, so the sizing chain that lets the app shell (block-size 100%, max 100dvh) fill the viewport is asserted on the stylesheet text.
+describe("app.css document root sizing", () => {
+  function rule(selector: string): string {
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`${escaped}\\s*\\{([^}]*)\\}`).exec(appCSS)?.[1] ?? "";
+  }
+
+  it("declares the sizing inside @layer app", () => {
+    expect(appCSS).toMatch(/@layer app\s*\{/);
+  });
+
+  it("gives html and body the full block-size without a margin", () => {
+    const declarations = rule("html,\n  body");
+    expect(declarations).toMatch(/block-size:\s*100%/);
+    expect(declarations).toMatch(/margin:\s*0/);
+  });
+
+  it("gives #root the dynamic viewport height", () => {
+    expect(rule("#root")).toMatch(/block-size:\s*100dvh/);
   });
 });
