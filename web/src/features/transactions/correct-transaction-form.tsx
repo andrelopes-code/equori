@@ -2,7 +2,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
-import type { Entity } from "@slotted/react/entity-picker";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { Form, FormActions } from "@slotted/react/form";
 import { InlineMessage } from "@slotted/react/inline-message";
@@ -18,8 +17,7 @@ import {
 } from "@/features/transactions/api";
 import styles from "@/features/transactions/new-transaction-page.module.css";
 import pageStyles from "@/features/transactions/transaction-page.module.css";
-import { PostingsEditor } from "@/features/transactions/postings-editor";
-import { TransactionMetaFields } from "@/features/transactions/transaction-meta-fields";
+import { TransactionFields } from "@/features/transactions/transaction-fields";
 import {
   canSave,
   formReducer,
@@ -45,11 +43,13 @@ export function CorrectTransactionForm({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const correct = useCorrectTransaction();
-  const [state, dispatch] = useReducer(
-    formReducer,
-    transaction,
-    fromTransaction,
+  const [initial] = useState(() =>
+    fromTransaction(
+      transaction,
+      (id) => accounts.find((a) => a.id === id)?.class,
+    ),
   );
+  const [state, dispatch] = useReducer(formReducer, initial);
   const [reason, setReason] = useState("");
   const [reasonMissing, setReasonMissing] = useState(false);
   const [conflict, setConflict] = useState(false);
@@ -58,7 +58,6 @@ export function CorrectTransactionForm({
     message?: string;
   } | null>(null);
 
-  const entities: Entity[] = accounts.map((a) => ({ id: a.id, label: a.name }));
   const currencyOf = (id: string) =>
     accounts.find((a) => a.id === id)?.currency ?? baseCurrency;
 
@@ -111,30 +110,20 @@ export function CorrectTransactionForm({
         void save();
       }}
     >
-      {state.postings !== null && (
-        <PostingsEditor
-          postings={state.postings}
-          dispatch={dispatch}
-          accounts={entities}
-          currencyOf={currencyOf}
-          baseCurrency={baseCurrency}
-          scale={scale}
-          error={saveError?.fields.postings}
-          canQuick={false}
-        />
-      )}
-      <TransactionMetaFields
+      <TransactionFields
         state={state}
         dispatch={dispatch}
+        accounts={accounts}
         payees={payees}
+        baseCurrency={baseCurrency}
+        scale={scale}
+        currencyOf={currencyOf}
         errors={{
-          ...(saveError?.fields.date === undefined
-            ? {}
-            : { date: saveError.fields.date }),
-          ...(saveError?.fields.description === undefined
-            ? {}
-            : { description: saveError.fields.description }),
+          amount: saveError?.fields.postings,
+          date: saveError?.fields.date,
+          description: saveError?.fields.description,
         }}
+        canQuick={initial.postings === null}
       />
       <Field invalid={reasonMissing}>
         <FieldLabel>{t("transaction.correct.reason")}</FieldLabel>

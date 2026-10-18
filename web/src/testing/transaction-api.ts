@@ -4,6 +4,7 @@ export const txID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 export const checkingID = "11111111-1111-4111-8111-111111111111";
 export const foodID = "22222222-2222-4222-8222-222222222222";
 export const leisureID = "77777777-7777-4777-8777-777777777777";
+export const savingsID = "88888888-8888-4888-8888-888888888888";
 export const payeeID = "44444444-4444-4444-8444-444444444444";
 
 export const accounts = [
@@ -12,6 +13,13 @@ export const accounts = [
     name: "Itau",
     class: "asset",
     kind: "checking",
+    currency: "BRL",
+  },
+  {
+    id: savingsID,
+    name: "Reserva",
+    class: "asset",
+    kind: "savings",
     currency: "BRL",
   },
   { id: foodID, name: "Mercado", class: "expense", currency: "BRL" },

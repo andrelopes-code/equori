@@ -9,6 +9,8 @@ export interface SplitLine {
   key: string;
   categoryId: string;
   amount: number | null;
+  // The stored posting this line edits, when the form corrects a transaction.
+  postingId?: string;
 }
 
 export interface PostingLine {
@@ -17,6 +19,7 @@ export interface PostingLine {
   amount: number | null;
   currency: string;
   memo: string;
+  postingId?: string;
 }
 
 // Amounts are integers in minor units. counterId is the category for an expense or income and the second account for a transfer.
@@ -32,6 +35,8 @@ export interface FormState {
   tags: string[];
   split: SplitLine[] | null;
   postings: PostingLine[] | null;
+  accountPostingId?: string;
+  counterPostingId?: string;
 }
 
 export type FormAction =
@@ -122,12 +127,17 @@ function quickPostings(
   currencyOf: (accountId: string) => string,
 ): PostingLine[] {
   const sign = accountSign(state);
-  const line = (accountId: string, amount: number | null): PostingLine => ({
+  const line = (
+    accountId: string,
+    amount: number | null,
+    postingId: string | undefined,
+  ): PostingLine => ({
     key: "",
     accountId,
     amount,
     currency: currencyOf(accountId),
     memo: "",
+    ...(postingId === undefined ? {} : { postingId }),
   });
   const counters =
     state.split === null
@@ -135,13 +145,22 @@ function quickPostings(
           line(
             state.counterId,
             state.amount === null ? null : -sign * state.amount,
+            state.counterPostingId,
           ),
         ]
       : state.split.map((l) =>
-          line(l.categoryId, l.amount === null ? null : -sign * l.amount),
+          line(
+            l.categoryId,
+            l.amount === null ? null : -sign * l.amount,
+            l.postingId,
+          ),
         );
   return [
-    line(state.accountId, state.amount === null ? null : sign * state.amount),
+    line(
+      state.accountId,
+      state.amount === null ? null : sign * state.amount,
+      state.accountPostingId,
+    ),
     ...counters,
   ].map((l, i) => ({ ...l, key: String(i + 1) }));
 }
@@ -184,7 +203,14 @@ export function formReducer(state: FormState, action: FormAction): FormState {
       return {
         ...state,
         split: [
-          { key: "1", categoryId: state.counterId, amount: null },
+          {
+            key: "1",
+            categoryId: state.counterId,
+            amount: null,
+            ...(state.counterPostingId === undefined
+              ? {}
+              : { postingId: state.counterPostingId }),
+          },
           { key: "2", categoryId: "", amount: null },
         ],
       };
@@ -315,21 +341,33 @@ function posting(
   };
 }
 
-function postingInputs(
+interface PostingEntry {
+  postingId?: string;
+  input: PostingInput;
+}
+
+function entry(
+  postingId: string | undefined,
+  input: PostingInput,
+): PostingEntry {
+  return postingId === undefined ? { input } : { postingId, input };
+}
+
+function postingEntries(
   state: FormState,
   currencyOf: (accountId: string) => string,
-): PostingInput[] {
+): PostingEntry[] {
   if (state.postings !== null) {
     return state.postings.flatMap((l) => {
       const memo = l.memo.trim();
       return l.amount === null
         ? []
         : [
-            {
+            entry(l.postingId, {
               account_id: l.accountId,
               amount: { amount: l.amount, currency: l.currency },
               ...(memo === "" ? {} : { memo }),
-            },
+            }),
           ];
     });
   }
@@ -337,11 +375,25 @@ function postingInputs(
   const sign = accountSign(state);
   const counters =
     state.split === null
-      ? [posting(state.counterId, -sign * total, currencyOf)]
+      ? [
+          entry(
+            state.counterPostingId,
+            posting(state.counterId, -sign * total, currencyOf),
+          ),
+        ]
       : state.split.map((l) =>
-          posting(l.categoryId, -sign * (l.amount ?? 0), currencyOf),
+          entry(
+            l.postingId,
+            posting(l.categoryId, -sign * (l.amount ?? 0), currencyOf),
+          ),
         );
-  return [posting(state.accountId, sign * total, currencyOf), ...counters];
+  return [
+    entry(
+      state.accountPostingId,
+      posting(state.accountId, sign * total, currencyOf),
+    ),
+    ...counters,
+  ];
 }
 
 export function toTransactionInput(
@@ -357,25 +409,141 @@ export function toTransactionInput(
     ...(description === "" ? {} : { description }),
     ...(state.payeeId === undefined ? {} : { payee_id: state.payeeId }),
     tags: state.tags,
-    postings: postingInputs(state, currencyOf),
+    postings: postingEntries(state, currencyOf).map((e) => e.input),
   };
 }
 
-// A stored transaction opens as free postings: its shape (expense, income, transfer) is not stored, only its postings.
-export function fromTransaction(
-  tx: components["schemas"]["Transaction"],
-): FormState {
+type Transaction = components["schemas"]["Transaction"];
+type StoredPosting = Transaction["postings"][number];
+
+type QuickShape = Pick<
+  FormState,
+  | "mode"
+  | "amount"
+  | "accountId"
+  | "counterId"
+  | "accountPostingId"
+  | "counterPostingId"
+>;
+
+// Two postings of one currency that cancel: a balance account and a category of the matching class (expense or income), or two balance accounts (transfer).
+function quickShape(
+  postings: StoredPosting[],
+  classOf: (accountId: string) => string | undefined,
+): QuickShape | null {
+  const [a, b] = postings;
+  if (postings.length !== 2 || a === undefined || b === undefined) return null;
+  if (
+    a.amount.currency !== b.amount.currency ||
+    a.amount.amount !== -b.amount.amount ||
+    a.amount.amount === 0
+  ) {
+    return null;
+  }
+  const isBalance = (p: StoredPosting) => {
+    const c = classOf(p.account_id);
+    return c === "asset" || c === "liability";
+  };
+  const outflow = a.amount.amount < 0 ? a : b;
+  const inflow = outflow === a ? b : a;
+  if (isBalance(a) && isBalance(b)) {
+    return {
+      mode: "transfer",
+      amount: inflow.amount.amount,
+      accountId: outflow.account_id,
+      counterId: inflow.account_id,
+      accountPostingId: outflow.id,
+      counterPostingId: inflow.id,
+    };
+  }
+  const balance = isBalance(a) ? a : b;
+  const category = balance === a ? b : a;
+  const mode = balance.amount.amount < 0 ? "expense" : "income";
+  if (!isBalance(balance) || classOf(category.account_id) !== mode) return null;
   return {
+    mode,
+    amount: Math.abs(balance.amount.amount),
+    accountId: balance.account_id,
+    counterId: category.account_id,
+    accountPostingId: balance.id,
+    counterPostingId: category.id,
+  };
+}
+
+// A stored transaction opens in quick entry when it has the quick shape, otherwise as free postings.
+export function fromTransaction(
+  tx: Transaction,
+  classOf: (accountId: string) => string | undefined,
+): FormState {
+  const base: FormState = {
     ...initialForm(tx.date),
     ...(tx.payee_id === undefined ? {} : { payeeId: tx.payee_id }),
     description: tx.description,
     tags: tx.tags,
+  };
+  const quick = quickShape(tx.postings, classOf);
+  if (quick !== null) return { ...base, ...quick };
+  return {
+    ...base,
     postings: tx.postings.map((p, i) => ({
       key: String(i + 1),
       accountId: p.account_id,
       amount: p.amount.amount,
       currency: p.amount.currency,
       memo: p.memo ?? "",
+      postingId: p.id,
     })),
+  };
+}
+
+const carriedKeys = [
+  "status",
+  "settled_on",
+  "original",
+  "statement",
+  "card_role",
+] as const;
+
+// What the form does not model survives a correction while the posting still refers to the same account. The weight is a value in the balancing currency, so it survives only an unchanged amount.
+function carriedFields(
+  stored: StoredPosting,
+  next: PostingInput,
+  keepMemo: boolean,
+): Partial<PostingInput> {
+  if (stored.account_id !== next.account_id) return {};
+  const carried: Partial<PostingInput> = {};
+  for (const key of carriedKeys) {
+    const value = stored[key];
+    if (value !== undefined) Object.assign(carried, { [key]: value });
+  }
+  if (
+    stored.amount.amount === next.amount.amount &&
+    stored.amount.currency === next.amount.currency
+  ) {
+    if (stored.weight !== undefined) carried.weight = stored.weight;
+  }
+  if (keepMemo && stored.memo !== undefined) carried.memo = stored.memo;
+  return carried;
+}
+
+// The body of a correction: the form's fields over the stored transaction, so nothing the form does not model is dropped.
+export function toCorrectionInput(
+  state: FormState,
+  currencyOf: (accountId: string) => string,
+  stored: Transaction,
+): TransactionInput {
+  const input = toTransactionInput(state, currencyOf);
+  const keepMemo = state.postings === null;
+  return {
+    ...input,
+    ...(stored.links.length === 0 ? {} : { links: stored.links }),
+    postings: postingEntries(state, currencyOf).map(
+      ({ postingId, input: p }) => {
+        const source = stored.postings.find((s) => s.id === postingId);
+        return source === undefined
+          ? p
+          : { ...carriedFields(source, p, keepMemo), ...p };
+      },
+    ),
   };
 }

@@ -27,7 +27,10 @@ export function TransactionMetaFields({
   state: FormState;
   dispatch: Dispatch<FormAction>;
   payees: components["schemas"]["Payee"][];
-  errors: { date?: string; description?: string };
+  errors: {
+    date?: string | undefined;
+    description?: string | undefined;
+  };
 }) {
   const t = useT();
   const payeeEntities: Entity[] = payees.map((p) => ({

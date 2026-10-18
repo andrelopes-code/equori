@@ -13,7 +13,10 @@ import type { components, paths } from "@/api/schema.gen";
 import { accountKeys, balanceKeys } from "@/features/accounts";
 import { payeesQuery } from "@/features/setup";
 import type { TransactionSearch } from "@/features/transactions/search";
-import { toTransactionInput } from "@/features/transactions/transaction-form-reducer";
+import {
+  toCorrectionInput,
+  toTransactionInput,
+} from "@/features/transactions/transaction-form-reducer";
 import type { FormState } from "@/features/transactions/transaction-form-reducer";
 
 export interface TransactionQuery extends TransactionSearch {
@@ -226,19 +229,15 @@ export function useCorrectTransaction() {
         state,
         onPayeeCreated,
       );
-      const input = toTransactionInput(
+      const input = toCorrectionInput(
         { ...state, ...(payeeId === undefined ? {} : { payeeId }) },
         currencyOf,
+        current,
       );
       return unwrap(
         await api.PUT("/transactions/{id}", {
           params: { path: { id: current.id } },
-          body: {
-            ...input,
-            ...(current.links.length === 0 ? {} : { links: current.links }),
-            expected_version: current.version,
-            reason,
-          },
+          body: { ...input, expected_version: current.version, reason },
         }),
       );
     },
