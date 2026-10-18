@@ -68,3 +68,19 @@ export function patchSearch(
 ): TransactionSearch {
   return validateTransactionSearch({ ...search, ...patch });
 }
+
+const tokenPattern = /^[A-Za-z0-9-]{1,64}$/;
+
+// The transactions page adds the selected row (complete frontend T1); the API never sees it.
+export function validateTransactionsPageSearch(
+  raw: Record<string, unknown>,
+): TransactionSearch & { selected?: string } {
+  const selected =
+    typeof raw.selected === "string" && tokenPattern.test(raw.selected)
+      ? raw.selected
+      : undefined;
+  return {
+    ...validateTransactionSearch(raw),
+    ...(selected === undefined ? {} : { selected }),
+  };
+}

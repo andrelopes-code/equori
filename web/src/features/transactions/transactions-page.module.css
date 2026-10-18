@@ -13,6 +13,23 @@
       min-block-size: 0;
     }
 
+    .split {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      flex: 1 1 0;
+      min-block-size: 0;
+    }
+
+    /* Complete frontend T1: the pane takes 22rem beside the table. */
+    .split[data-open] {
+      grid-template-columns: minmax(0, 1fr) 24rem;
+      gap: var(--slotted-space-9);
+    }
+
+    .split[data-open] > :last-child {
+      overflow-y: auto;
+    }
+
     .listing {
       flex: 1 1 0;
       min-block-size: 0;

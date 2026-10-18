@@ -703,3 +703,240 @@ describe("transactions filter bar on a phone", () => {
     ).toBeInTheDocument();
   });
 });
+
+// Complete frontend decisions T1 to T3.
+describe("transaction pane", () => {
+  function paneApi() {
+    const categorized: unknown[] = [];
+    const base = listApi();
+    let version = 1;
+    let category = foodID;
+    const current = () =>
+      transaction(1, "2026-10-16", {
+        version,
+        postings: [
+          {
+            id: "p-1-a",
+            account_id: checkingID,
+            amount: { amount: -1000, currency: "BRL" },
+          },
+          {
+            id: "p-1-b",
+            account_id: category,
+            amount: { amount: 1000, currency: "BRL" },
+          },
+        ],
+      });
+    const fetch = fakeApi({
+      ...Object.fromEntries(
+        [
+          "GET /api/v1/me",
+          "GET /api/v1/settings",
+          "GET /api/v1/instruments",
+          "GET /api/v1/accounts",
+          "GET /api/v1/payees",
+          "GET /api/v1/tags",
+        ].map((key) => [key, (req: Request) => base.fetch(req)]),
+      ),
+      "GET /api/v1/transactions": (req) => base.fetch(req),
+      "GET /api/v1/transactions/t-1": () => json(200, current()),
+      "POST /api/v1/transactions/t-1/categorize": async (req) => {
+        const body = (await req.json()) as {
+          parts: { account_id: string }[];
+        };
+        categorized.push(body);
+        category = body.parts[0]?.account_id ?? category;
+        version += 1;
+        return json(200, current());
+      },
+    });
+    return { fetch, categorized };
+  }
+
+  it("opens the selected row beside the table instead of leaving the list", async () => {
+    const user = userEvent.setup();
+    const { fetch } = paneApi();
+    const { router } = await renderApp("/transactions", { fetch });
+    await user.click(await screen.findByRole("link", { name: "Compra 1" }));
+    expect(router.state.location.pathname).toBe("/transactions");
+    expect(router.state.location.search).toEqual({ selected: "t-1" });
+    const pane = await screen.findByRole("complementary", {
+      name: catalogPtBR["transactions.pane"],
+    });
+    expect(
+      await within(pane).findByRole("heading", { name: "Compra 1" }),
+    ).toBeInTheDocument();
+    expect(
+      within(pane).getByRole("button", { name: "Mercado", pressed: true }),
+    ).toBeInTheDocument();
+    expect(
+      within(pane).getByRole("link", {
+        name: catalogPtBR["transactions.pane.open"],
+      }),
+    ).toHaveAttribute("href", "/transactions/t-1");
+  });
+
+  it("moves the transaction to another category and undoes it from the toast", async () => {
+    const user = userEvent.setup();
+    const { fetch, categorized } = paneApi();
+    await renderApp("/transactions?selected=t-1", { fetch });
+    const pane = await screen.findByRole("complementary", {
+      name: catalogPtBR["transactions.pane"],
+    });
+    await user.click(
+      await within(pane).findByRole("button", { name: "Viagens" }),
+    );
+    await waitFor(() => {
+      expect(categorized).toHaveLength(1);
+    });
+    expect(categorized[0]).toEqual({
+      expected_version: 1,
+      parts: [
+        { account_id: travelID, amount: { amount: 1000, currency: "BRL" } },
+      ],
+    });
+    await user.click(
+      await screen.findByRole("button", {
+        name: catalogPtBR["transactions.pane.undo"],
+      }),
+    );
+    await waitFor(() => {
+      expect(categorized).toHaveLength(2);
+    });
+    expect(categorized[1]).toEqual({
+      expected_version: 2,
+      parts: [
+        { account_id: foodID, amount: { amount: 1000, currency: "BRL" } },
+      ],
+    });
+  });
+
+  it("keeps the row a link to the transaction page on a phone", async () => {
+    const user = userEvent.setup();
+    const { fetch } = paneApi();
+    const { router } = await renderApp("/transactions", { fetch, width: 360 });
+    const row = (await screen.findByText("Compra 1")).closest("a");
+    if (row === null) throw new Error("row link not found");
+    await user.click(row);
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/transactions/t-1");
+    });
+  });
+});
+
+// Complete frontend decision T4.
+describe("upcoming occurrences", () => {
+  function upcomingApi() {
+    const base = listApi();
+    const ranges: string[] = [];
+    const fetch = fakeApi({
+      ...Object.fromEntries(
+        [
+          "GET /api/v1/me",
+          "GET /api/v1/settings",
+          "GET /api/v1/instruments",
+          "GET /api/v1/accounts",
+          "GET /api/v1/payees",
+          "GET /api/v1/tags",
+          "GET /api/v1/transactions",
+        ].map((key) => [key, (req: Request) => base.fetch(req)]),
+      ),
+      "GET /api/v1/occurrences": (req) => {
+        const params = new URL(req.url).searchParams;
+        ranges.push(`${params.get("from") ?? ""}..${params.get("to") ?? ""}`);
+        return json(200, {
+          items: [
+            {
+              id: "o-1",
+              schedule_id: "s-1",
+              sequence: 3,
+              expected_on: "2026-10-20",
+              expected_amount: { amount: 11990, currency: "BRL" },
+              state: "expected",
+            },
+            {
+              id: "o-2",
+              schedule_id: "s-2",
+              sequence: 1,
+              expected_on: "2026-10-18",
+              expected_amount: { amount: 840000, currency: "BRL" },
+              state: "expected",
+            },
+            {
+              id: "o-3",
+              schedule_id: "s-1",
+              sequence: 2,
+              expected_on: "2026-10-10",
+              expected_amount: { amount: 11990, currency: "BRL" },
+              state: "realized",
+            },
+          ],
+        });
+      },
+      "GET /api/v1/schedules": () =>
+        json(200, {
+          items: [
+            {
+              id: "s-1",
+              kind: "subscription",
+              account_id: checkingID,
+              counterpart_id: foodID,
+              description: "Internet fibra",
+              match_tolerance_bp: 1000,
+              grace_days: 3,
+              terms: [],
+              pauses: [],
+            },
+            {
+              id: "s-2",
+              kind: "income",
+              account_id: checkingID,
+              counterpart_id: foodID,
+              description: "Salário",
+              match_tolerance_bp: 1000,
+              grace_days: 3,
+              terms: [],
+              pauses: [],
+            },
+          ],
+        }),
+    });
+    return { fetch, ranges };
+  }
+
+  it("lists the expected occurrences of the next 31 days above Today", async () => {
+    const { fetch, ranges } = upcomingApi();
+    await renderApp("/transactions", { fetch });
+    await screen.findByText(/^Internet fibra/);
+    expect(ranges).toEqual(["2026-10-18..2026-11-17"]);
+    const table = screen.getByRole("table", {
+      name: catalogPtBR["transactions.list"],
+    });
+    const rows = within(table)
+      .getAllByRole("row")
+      .slice(1, 4)
+      .map((row) =>
+        within(row)
+          .getAllByRole("cell")
+          .map((cell) => cell.textContent.replace(/\u00a0/g, " ")),
+      );
+    expect(rows).toEqual([
+      ["ter, 20 out", "Internet fibra · Itaú", "assinatura", "−119,90"],
+      ["dom, 18 out", "Salário · Itaú", "receita", "+8.400,00"],
+      [
+        catalogPtBR["date.today"],
+        catalogPtBR["transactions.upcoming.note"],
+        "",
+        "",
+      ],
+    ]);
+  });
+
+  it("shows no occurrence while a filter is set", async () => {
+    const { fetch, ranges } = upcomingApi();
+    await renderApp(`/transactions?account_id=${checkingID}`, { fetch });
+    await screen.findByText("Compra 1");
+    expect(ranges).toEqual([]);
+    expect(screen.queryByText(/^Internet fibra/)).toBeNull();
+  });
+});

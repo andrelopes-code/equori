@@ -25,7 +25,11 @@ import { TransactionDayList } from "@/features/transactions/transaction-day-list
 import styles from "@/features/transactions/transaction-list.module.css";
 import { transactionRow } from "@/features/transactions/transaction-row";
 import { TransactionTable } from "@/features/transactions/transaction-table";
+import { occurrencesQuery, schedulesQuery } from "@/features/planning";
+import { upcomingRows } from "@/features/transactions/upcoming-row";
+import { shiftDate } from "@/i18n/format";
 import { useT } from "@/i18n/i18n-provider";
+import { useToday } from "@/i18n/today";
 import { QueryError } from "@/ui/query-error";
 import { useViewport } from "@/ui/use-viewport";
 
@@ -37,6 +41,8 @@ export function TransactionList({
   limit,
   infinite,
   brief = false,
+  onSelect,
+  selected,
   emptyActions,
 }: {
   search: TransactionSearch;
@@ -44,6 +50,9 @@ export function TransactionList({
   infinite: boolean;
   // Drops the Category column of the table (ledger sheet L17).
   brief?: boolean;
+  // A table row opens beside the table instead of the transaction page.
+  onSelect?: (id: string) => void;
+  selected?: string;
   emptyActions?: ReactNode;
 }) {
   const t = useT();
@@ -52,6 +61,14 @@ export function TransactionList({
   const viewport = useViewport();
   const accounts = useQuery(accountsQuery(api));
   const settings = useQuery(settingsQuery(api));
+  const today = useToday();
+  // Complete frontend T4: the next 31 days of schedules stand above an unfiltered list.
+  const showUpcoming = infinite && Object.keys(search).length === 0;
+  const occurrences = useQuery({
+    ...occurrencesQuery(api, shiftDate(today, 1), shiftDate(today, 31)),
+    enabled: showUpcoming,
+  });
+  const schedules = useQuery({ ...schedulesQuery(api), enabled: showUpcoming });
   const instruments = useQuery(instrumentsQuery(api));
   // Payee names refine the row labels but never block the list.
   const payees = useQuery(payeesQuery(api));
@@ -193,6 +210,17 @@ export function TransactionList({
   const rows = pages.map((tx) =>
     transactionRow(tx, accountsById, payeeNames, search.account_id),
   );
+  const upcoming =
+    showUpcoming &&
+    occurrences.data !== undefined &&
+    schedules.data !== undefined
+      ? upcomingRows(
+          occurrences.data,
+          schedules.data,
+          new Map(accounts.data.map((a) => [a.id, a.name])),
+          today,
+        )
+      : [];
   return (
     <>
       {viewport === "desktop" ? (
@@ -203,11 +231,15 @@ export function TransactionList({
           scale={scale}
           loading={false}
           loadingMore={isFetchingNextPage}
+          upcoming={upcoming}
+          {...(onSelect === undefined ? {} : { onSelect })}
+          {...(selected === undefined ? {} : { selected })}
         />
       ) : (
         <TransactionDayList
           rows={rows}
           grouped={infinite}
+          upcoming={upcoming}
           scale={scale}
           loadingMore={isFetchingNextPage}
         />

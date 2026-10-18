@@ -209,3 +209,9 @@ export function formatSigned(
   const text = formatMoney(m, scale, locale, options);
   return m.amount > 0 ? `+${text}` : text;
 }
+
+export function shiftDate(iso: string, days: number): string {
+  return new Date(utcDate(iso).getTime() + days * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+}

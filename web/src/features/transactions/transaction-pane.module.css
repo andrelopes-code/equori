@@ -1,0 +1,25 @@
+@layer app {
+  .pane {
+    display: grid;
+    align-content: start;
+    gap: var(--slotted-space-8);
+    padding-inline-start: var(--slotted-space-9);
+    border-inline-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+    min-inline-size: 0;
+  }
+
+  .head {
+    display: grid;
+    gap: var(--slotted-space-3);
+  }
+
+  .block {
+    display: grid;
+    gap: var(--slotted-space-4);
+  }
+
+  .voided {
+    text-decoration: line-through;
+  }
+}

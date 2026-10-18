@@ -36,7 +36,7 @@
 | T1 | From 1024 px a selected row opens a detail pane of 22 rem beside the table, `?selected=<id>`; a click on the description selects instead of navigating; the pane links to the full transaction page. Below 1024 px a row opens the transaction page. |
 | T2 | Pane: weekday and date, title, amount as `MoneyFigure` `xl`; an `InlineMessage` warning for an uncategorized transaction; the expense or income categories as a `ToggleGroup` of single choice; a ruled `DescriptionList` of Account, Origin, Payee, Tags; actions Correct, Void and Open as links. |
 | T3 | Choosing a category calls `categorize` with the loaded version and shows a toast "<title> now in <category>" with an Undo action (5 s) that categorizes back to the previous category. The uncategorized count updates through query invalidation. |
-| T4 | Without filters, the expected occurrences of the next 31 days of every account stand above the table in muted text with a dashed rule, newest last, closed by a divider row "Today" in the accent tone. |
+| T4 | Without filters, the expected occurrences of the next 31 days of every account stand above the table in muted text, the farthest first like the rows under them, closed by a row "Today" in the accent tone. A phone shows them as a "Scheduled" day group. |
 
 ## R4 Cards
 

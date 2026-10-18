@@ -31,6 +31,7 @@ import {
   TransactionPage,
   TransactionsPage,
   validateTransactionSearch,
+  validateTransactionsPageSearch,
 } from "@/features/transactions";
 
 export interface RouterContext {
@@ -120,7 +121,7 @@ const homeRoute = createRoute({
 const transactionsRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "transactions",
-  validateSearch: validateTransactionSearch,
+  validateSearch: validateTransactionsPageSearch,
   component: TransactionsPage,
 });
 

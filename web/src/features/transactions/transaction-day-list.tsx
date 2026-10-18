@@ -2,6 +2,7 @@ import { List, ListSection } from "@slotted/react/list";
 import {
   ListItem,
   ListItemBody,
+  ListItemContent,
   ListItemDescription,
   ListItemLabel,
   ListItemLink,
@@ -13,7 +14,8 @@ import { PlaceholderRows } from "@/features/transactions/placeholder-rows";
 import { RowCategory } from "@/features/transactions/row-category";
 import type { TransactionRow } from "@/features/transactions/transaction-row";
 import styles from "@/features/transactions/transaction-list.module.css";
-import { formatDayHeader, formatDayMonth } from "@/i18n/format";
+import type { UpcomingRow } from "@/features/transactions/upcoming-row";
+import { formatDayHeader, formatDayMonth, formatSigned } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { AmountLine } from "@/ui/amount-line";
@@ -41,11 +43,13 @@ function groupByDate(
 export function TransactionDayList({
   rows,
   grouped,
+  upcoming = [],
   scale,
   loadingMore,
 }: {
   rows: TransactionRow[];
   grouped: boolean;
+  upcoming?: UpcomingRow[];
   scale: (currency: string) => number;
   loadingMore: boolean;
 }) {
@@ -105,6 +109,49 @@ export function TransactionDayList({
       aria-label={t("transactions.list")}
       loading={loadingMore}
     >
+      {upcoming.length > 0 && (
+        <ListSection label={t("transactions.upcoming")} level="2" sticky>
+          {upcoming.map((row) => (
+            <ListItem key={row.id}>
+              <ListItemContent>
+                <ListItemBody>
+                  <ListItemLabel>
+                    <AmountLine
+                      own="transaction-line"
+                      fullTitle={row.description}
+                      title={
+                        <span className={styles.upcoming}>
+                          {row.description}
+                        </span>
+                      }
+                      amount={
+                        <span className={styles.upcoming}>
+                          {formatSigned(
+                            row.money,
+                            scale(row.money.currency),
+                            locale,
+                          )}
+                        </span>
+                      }
+                    />
+                  </ListItemLabel>
+                  <ListItemDescription>
+                    {[
+                      formatDayHeader(row.date, today, locale, words),
+                      ...(row.kind === undefined
+                        ? []
+                        : [t(`schedule.kind.${row.kind}`)]),
+                      row.account,
+                    ]
+                      .filter((part) => part !== "")
+                      .join(separator)}
+                  </ListItemDescription>
+                </ListItemBody>
+              </ListItemContent>
+            </ListItem>
+          ))}
+        </ListSection>
+      )}
       {grouped
         ? groupByDate(rows).map(({ date, items }) => (
             <ListSection
