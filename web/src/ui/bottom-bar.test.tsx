@@ -80,11 +80,11 @@ describe("BottomBar", () => {
   it("shows the badge after its label", async () => {
     await renderBar("/");
     const link = screen.getByRole("link", { name: /^Transactions/ });
-    expect(link.querySelector('[data-ui="badge"]')).toHaveTextContent("3");
+    expect(link.querySelector('[data-own="bar-count"]')).toHaveTextContent("3");
     expect(
       screen
         .getByRole("link", { name: "Home" })
-        .querySelector('[data-ui="badge"]'),
+        .querySelector('[data-own="bar-count"]'),
     ).toBeNull();
   });
 
@@ -112,7 +112,7 @@ describe("BottomBar", () => {
     expect(active).toContain("color:");
     expect(active).toContain("border-block-start-color");
     expect(active).not.toContain("font-weight");
-    expect(label).toContain("font-size: var(--slotted-font-size-sm)");
+    expect(label).toContain("font-size: var(--slotted-font-size-xs)");
     expect(
       screen.getByRole("button", { name: "More" }).querySelector("span"),
     ).toHaveClass(styles.label ?? "label");

@@ -1,4 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { Avatar } from "@slotted/react/avatar";
 import {
   Menu,
   MenuContent,
@@ -11,7 +13,8 @@ import {
 } from "@slotted/react/menu";
 import { TopNavigationAccount } from "@slotted/react/top-navigation";
 
-import { useLogout } from "@/features/session";
+import { useApi } from "@/api/api-context";
+import { meQuery, useLogout } from "@/features/session";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import type { Locale } from "@/i18n/locale";
 import { useScheme } from "@/theme/scheme";
@@ -35,12 +38,16 @@ export function UserMenu() {
   const { logout, failed } = useLogout();
   const [scheme, setScheme] = useScheme();
   const [locale, setLocale] = useAppLocale();
+  // The session guard has loaded /me; the avatar reads that answer without asking again.
+  const { data: me } = useQuery({ ...meQuery(useApi()), staleTime: Infinity });
   return (
     <>
       <Menu>
         <MenuTrigger
           render={(props) => (
-            <TopNavigationAccount {...props} aria-label={t("nav.user")} />
+            <TopNavigationAccount {...props} aria-label={t("nav.user")}>
+              <Avatar size="xs" name={me?.email ?? t("nav.user")} />
+            </TopNavigationAccount>
           )}
         />
         <MenuContent>

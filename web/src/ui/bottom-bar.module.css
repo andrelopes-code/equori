@@ -1,5 +1,7 @@
 @layer app {
   .bar {
+    /* The shell footer is a flex row; the bar takes all of it. */
+    flex: 1 1 auto;
     position: sticky;
     inset-block-end: 0;
     padding-block-end: env(safe-area-inset-bottom);
@@ -25,7 +27,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--slotted-space-3);
+    gap: var(--slotted-space-2);
     inline-size: 100%;
     min-block-size: var(--slotted-target-min);
     padding: var(--slotted-space-2) var(--slotted-space-1);
@@ -42,6 +44,14 @@
       background-color var(--slotted-duration-short)
         var(--slotted-easing-standard),
       color var(--slotted-duration-short) var(--slotted-easing-standard);
+  }
+
+  /* Ledger sheet L8: the uncategorized count, in warning text after the label. */
+  .count {
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-medium);
+    font-variant-numeric: tabular-nums;
+    color: var(--slotted-tone-warning-text);
   }
 
   .control:hover {
@@ -61,7 +71,7 @@
 
   .label {
     max-inline-size: 100%;
-    font-size: var(--slotted-font-size-sm);
+    font-size: var(--slotted-font-size-xs);
     font-weight: var(--slotted-font-weight-medium);
     text-align: center;
     text-wrap: balance;

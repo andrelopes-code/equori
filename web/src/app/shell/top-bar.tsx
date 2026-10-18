@@ -70,7 +70,7 @@ export function TopBar() {
           tone="secondary"
           variant="outline"
           size="sm"
-          end={<Kbd>{t("nav.entry.key")}</Kbd>}
+          end={<Kbd size="xs">{t("nav.entry.key")}</Kbd>}
         >
           {t("nav.entry")}
         </ButtonLink>

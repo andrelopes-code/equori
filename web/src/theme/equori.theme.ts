@@ -10,6 +10,18 @@ const summaryRule = `
 }
 `;
 
+// The family's current edge frames the whole link; the sheet underlines it instead.
+const currentDestinationRule = `
+[data-ui="top-navigation"] [data-part="list"] [data-part="link"][data-current] {
+  box-shadow: inset 0 calc(var(--slotted-border-width-thick) * -1) 0 var(--slotted-text);
+  border-radius: 0;
+}
+
+[data-ui="top-navigation"] [data-part="name"] {
+  color: var(--slotted-text);
+}
+`;
+
 export default extendTheme(
   defaultTheme,
   {
@@ -19,7 +31,14 @@ export default extendTheme(
       warning: "#facc15",
       danger: "#f87171",
     },
-    rules: [summaryRule],
+    // Accent marks forecasts only (ledger sheet L10): destinations read muted, the
+    // current one in the full text colour over the bar's own ground, underlined.
+    components: {
+      "--slotted-top-navigation-color": "var(--slotted-text-muted)",
+      "--slotted-top-navigation-current-color": "var(--slotted-text)",
+      "--slotted-top-navigation-current-background": "transparent",
+    },
+    rules: [summaryRule, currentDestinationRule],
   },
   { name: "equori" },
 );

@@ -106,7 +106,8 @@ describe("AppFrame navigation", () => {
         });
         await waitFor(() => {
           expect(
-            link.querySelector('[data-ui="badge"]')?.textContent ?? null,
+            link.querySelector('[data-ui="badge"], [data-own="bar-count"]')
+              ?.textContent ?? null,
           ).toBe(badge);
         });
         view.unmount();

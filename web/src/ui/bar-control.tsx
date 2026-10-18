@@ -1,5 +1,4 @@
 import { Link } from "@tanstack/react-router";
-import { Badge } from "@slotted/react/badge";
 
 import styles from "@/ui/bottom-bar.module.css";
 import type { BottomBarItem } from "@/ui/bottom-bar";
@@ -15,9 +14,9 @@ export function BarControl({
     <>
       <span className={styles.label}>{item.label}</span>
       {item.badge !== undefined && (
-        <Badge tone="warning" size="sm">
+        <span data-own="bar-count" className={styles.count}>
           {item.badge}
-        </Badge>
+        </span>
       )}
     </>
   );
