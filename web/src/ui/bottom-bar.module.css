@@ -49,7 +49,6 @@
 
   .control[aria-current="page"] {
     color: var(--slotted-tone-accent-text);
-    font-weight: var(--slotted-font-weight-semibold);
   }
 
   .control[data-emphasized] {
@@ -68,8 +67,9 @@
     font-size: calc(var(--slotted-font-size-xs) * 0.875);
     text-align: center;
     text-wrap: balance;
-    hyphens: auto;
-    overflow-wrap: break-word;
+    hyphens: manual;
+    overflow-wrap: normal;
+    word-break: normal;
   }
 
   @media (forced-colors: active) {

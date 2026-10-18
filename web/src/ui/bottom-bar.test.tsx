@@ -128,7 +128,16 @@ describe("BottomBar", () => {
     const label = /\.label\s*\{[^}]*\}/.exec(css)?.[0] ?? "";
     expect(label).not.toContain("text-overflow");
     expect(label).not.toContain("nowrap");
-    expect(label).toContain("hyphens: auto");
+    for (const forbidden of ["break-all", "anywhere", "break-word"]) {
+      expect(label).not.toContain(forbidden);
+    }
+    expect(label).toContain("hyphens: manual");
+    expect(label).toContain("overflow-wrap: normal");
+    const active = /\.control\[aria-current="page"\]\s*\{[^}]*\}/.exec(
+      css,
+    )?.[0];
+    expect(active).toContain("color:");
+    expect(active).not.toContain("font-weight");
     expect(label).toContain("font-size: calc(var(--slotted-font-size-xs)");
     expect(
       screen.getByRole("button", { name: "More" }).querySelector("span"),
