@@ -61,7 +61,7 @@ PUT /api/v1/connections/<connection>/accounts/<external account> {"ignored": tru
 
 A checking account maps to kind `checking`, a savings account to `savings` or `reserve`, a
 credit card to `credit_card`, a reserved balance (`RESERVED_BALANCE`) to `reserve`. Any other
-kind for a reserved balance returns 422 `validation` on `account_id`. One ledger account takes
+kind for a reserved balance returns 422 `validation_failed` on `account_id`. One ledger account takes
 one external account. A card needs a billing cycle rule before its first sync.
 
 A reserve ledger account is not a child of the checking account whose reserved balance it
@@ -83,8 +83,8 @@ one import batch with source `open_finance` (`GET /api/v1/import-batches`):
   are the exception (section 4.1).
 - Every sync passes the balance to the ledger, also when it equals the last synced one. An
   assertion of the same date and amount that is still open is decided again against the
-  current settled balance, and reconciles when the difference is 0. No new assertion is
-  created.
+  current settled balance, and reconciles when the difference is 0. A reserved balance
+  also books yield within the bound (section 4.1). No new assertion is created.
 - A sync adds, as `pending`, every account and reserved balance that the item reports and the
   connection lacks. Existing external accounts are not changed or removed.
 - Within one connection, the mapped bank accounts sync before the reserved balances.
@@ -101,7 +101,7 @@ categorize lines that no rule decides.
 
 ### 4.1 Reserved balances
 
-`POST /api/v1/connections` and every later sync list each reserved balance of a bank account
+`POST /api/v1/connections` and every sync that reads the item list each reserved balance of a bank account
 as an external account with subtype `RESERVED_BALANCE`, the reserve's `name` as name, no
 `number_last4` and the currency of the bank account. A reserved balance without an amount in
 that currency is not listed. Mapping follows section 3:
@@ -135,9 +135,9 @@ reserve and Opening balances, as in section 5, step 3).
   posting keeps that match. Any other line follows the rules of section 4 and waits for the
   owner to classify it or to turn it into a transfer.
 - Vanished reserve: a mapped reserved balance that the item no longer reports (for example, a
-  deleted cofrinho) syncs as a batch with balance status `none`. The sync does not fail. Its
-  lines on the checking account (for example "Dinheiro retirado" of that name) stay ordinary
-  lines.
+  deleted cofrinho) syncs as a batch with balance status `none`. The sync does not fail. While
+  the mapping exists, lines naming the reserve keep booking as transfers to its account;
+  ignoring the external account stops that.
 
 ## 5. SC1 check
 
@@ -150,8 +150,9 @@ The success criterion SC1 of phase P6 is checked with one real bank account:
    `open_difference`, whose `difference` is the bank balance minus the settled balance of the
    ledger account. Record one transaction dated the day before `sync_from` with
    `POST /api/v1/transactions`: a posting of `+difference` on the account and a posting of
-   `-difference` on the system account "Opening balances". Then run the sync again: the open
-   assertion is decided again and reconciles with resolution `none`.
+   `-difference` on the system account "Opening balances". Then run the sync again while the item reports the same last update date and balance: the
+   open assertion is decided again and reconciles with resolution `none`. After a new item
+   update, the sync inserts and decides a new assertion, and the earlier one stays open.
 4. Read `GET /api/v1/accounts/<account>/balance-assertions`: the assertion of the sync, with
    source `open_finance`, has `reconciled` true.
 5. Run the sync again: the new batch has `created` 0 and `matched` 0, and no assertion is

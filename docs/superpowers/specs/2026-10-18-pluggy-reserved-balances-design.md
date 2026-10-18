@@ -48,7 +48,7 @@ Each reserved balance of a bank account is an external account of the connection
   removed. Without this rule, a connection created before this amendment never lists its reserves.
 - `PUT /connections/{id}/accounts/{external_account_id}` maps `RESERVED_BALANCE` to a leaf balance
   account of kind `reserve` and the same currency, with `sync_from`, or ignores it. Every other
-  kind is rejected with 422 `validation`, field `account_id`.
+  kind is rejected with 422 `validation_failed`, field `account_id`.
 - A mapped checking account must stay a leaf: a reserve ledger account is a top-level account or
   a child of a parent that the checking external account does not feed (A9, A35).
 
@@ -174,7 +174,7 @@ with reserved balances "Cofrinho Mercado Livre" and "Algum dinheiro".
 
 `POST /connections` for Mercado Pago lists three external accounts, all `pending`: the checking
 account and two with subtype `RESERVED_BALANCE`. Mapping "Cofrinho Mercado Livre" to the
-checking ledger account fails with 422 `validation` on `account_id`; mapping it to reserve
+checking ledger account fails with 422 `validation_failed` on `account_id`; mapping it to reserve
 "MP Cofrinho" with `sync_from` 2026-11-11 succeeds. With an opening balance of 1,002.92 dated
 2026-11-10 and the item updated on 2026-11-10, the sync creates a batch with `received` 0 and
 balance `recorded` 1,002.92 on 2026-11-10, and an assertion with source `open_finance` that
