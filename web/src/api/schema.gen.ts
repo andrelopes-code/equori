@@ -582,6 +582,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/cards/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Activate or deactivate a card. */
+        patch: operations["updateCard"];
+        trace?: never;
+    };
     "/accounts/{id}/statements": {
         parameters: {
             query?: never;
@@ -2510,6 +2527,9 @@ export interface components {
             id: string;
             active: boolean;
         };
+        CardUpdate: {
+            active: boolean;
+        };
         CardList: {
             items: components["schemas"]["Card"][];
         };
@@ -4419,6 +4439,35 @@ export interface operations {
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    updateCard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CardUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Card"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
         };
     };
     listStatements: {

@@ -19,6 +19,9 @@ INSERT INTO ledger_card (user_id, account_id, holder, last_four, virtual) VALUES
 -- name: ListCards :many
 SELECT * FROM ledger_card WHERE user_id = $1 AND account_id = $2 ORDER BY created_at, id;
 
+-- name: SetCardActive :one
+UPDATE ledger_card SET active = @active WHERE user_id = @user_id AND id = @id RETURNING *;
+
 -- name: EnsureStatement :one
 WITH inserted AS (
     INSERT INTO ledger_statement (user_id, account_id, reference_month, closing_date, due_date)

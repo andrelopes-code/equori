@@ -303,6 +303,7 @@ type Repository interface {
 	CreditLimits(ctx context.Context, userID int64, accountID uuid.UUID) ([]CreditLimit, error)
 	InsertCard(ctx context.Context, c domain.Card) (domain.Card, error)
 	Cards(ctx context.Context, userID int64, accountID uuid.UUID) ([]domain.Card, error)
+	SetCardActive(ctx context.Context, userID int64, id uuid.UUID, active bool) (domain.Card, error)
 
 	EnsureStatement(ctx context.Context, userID int64, accountID uuid.UUID, d domain.StatementDates, due time.Time) (uuid.UUID, error)
 	Statements(ctx context.Context, userID int64, accountID uuid.UUID) ([]Statement, error)

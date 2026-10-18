@@ -92,3 +92,52 @@ func TestBillingRuleUnknownCalendarIs422(t *testing.T) {
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/accounts/"+card+"/billing-cycle-rules",
 		map[string]any{"effective_from": "2026-01", "closing_day": 3, "due_day": 10, "calendar": "mars"}), http.StatusUnprocessableEntity, "validation_failed", "calendar")
 }
+
+func TestCardActivation(t *testing.T) {
+	h := apitest.New(t)
+	account := h.Account("Itaú Visa", "liability", "credit_card", nil)
+	var created struct {
+		ID     string `json:"id"`
+		Active bool   `json:"active"`
+	}
+	h.MustDo(http.MethodPost, "/api/v1/accounts/"+account+"/cards", map[string]any{"holder": "Owner", "last_four": "4021"}, http.StatusCreated, &created)
+	if !created.Active {
+		t.Fatalf("created card = %+v, want active", created)
+	}
+	path := "/api/v1/cards/" + created.ID
+
+	type cardBody struct {
+		ID       string `json:"id"`
+		Holder   string `json:"holder"`
+		LastFour string `json:"last_four"`
+		Active   bool   `json:"active"`
+	}
+	var card cardBody
+	h.MustDo(http.MethodPatch, path, map[string]any{"active": false}, http.StatusOK, &card)
+	if card != (cardBody{ID: created.ID, Holder: "Owner", LastFour: "4021", Active: false}) {
+		t.Fatalf("deactivated card = %+v", card)
+	}
+	var list struct {
+		Items []cardBody `json:"items"`
+	}
+	h.MustDo(http.MethodGet, "/api/v1/accounts/"+account+"/cards", nil, http.StatusOK, &list)
+	if len(list.Items) != 1 || list.Items[0].Active {
+		t.Fatalf("cards after deactivation = %+v", list.Items)
+	}
+
+	h.MustDo(http.MethodPatch, path, map[string]any{"active": true}, http.StatusOK, &card)
+	if !card.Active {
+		t.Fatalf("reactivated card = %+v", card)
+	}
+
+	h.ExpectProblem(h.Do(http.MethodPatch, path, map[string]any{}), http.StatusBadRequest, "invalid_request", "active")
+
+	other := h.Login("other@example.com")
+	h.ExpectProblem(h.Call(other, http.MethodPatch, path, map[string]any{"active": false}), http.StatusNotFound, "not_found", "")
+	h.MustDo(http.MethodGet, "/api/v1/accounts/"+account+"/cards", nil, http.StatusOK, &list)
+	if len(list.Items) != 1 || !list.Items[0].Active {
+		t.Fatalf("cards after other user's patch = %+v", list.Items)
+	}
+
+	h.ExpectProblem(h.Do(http.MethodPatch, "/api/v1/cards/00000000-0000-4000-8000-000000000000", map[string]any{"active": false}), http.StatusNotFound, "not_found", "")
+}

@@ -972,6 +972,11 @@ type CardSummary struct {
 	CreditLimit    *Money `json:"credit_limit,omitempty"`
 }
 
+// CardUpdate defines model for CardUpdate.
+type CardUpdate struct {
+	Active bool `json:"active"`
+}
+
 // CategorizeInput defines model for CategorizeInput.
 type CategorizeInput struct {
 	ExpectedVersion int                 `json:"expected_version"`
@@ -1724,6 +1729,9 @@ type UnlockAccountJSONRequestBody = UnlockInput
 // ResolveBalanceAssertionJSONRequestBody defines body for ResolveBalanceAssertion for application/json ContentType.
 type ResolveBalanceAssertionJSONRequestBody = AssertionResolutionInput
 
+// UpdateCardJSONRequestBody defines body for UpdateCard for application/json ContentType.
+type UpdateCardJSONRequestBody = CardUpdate
+
 // ResolveDisputeJSONRequestBody defines body for ResolveDispute for application/json ContentType.
 type ResolveDisputeJSONRequestBody = DisputeResolution
 
@@ -1858,6 +1866,9 @@ type ServerInterface interface {
 	// ListBalances Balance of every balance-sheet account at the end of a date, ordered by account name then id.
 	// (GET /balances)
 	ListBalances(w http.ResponseWriter, r *http.Request, params ListBalancesParams)
+	// UpdateCard Activate or deactivate a card.
+	// (PATCH /cards/{id})
+	UpdateCard(w http.ResponseWriter, r *http.Request, id ID)
 	// ResolveDispute Resolve a dispute; a won dispute refunds the remaining charged amount.
 	// (POST /disputes/{id}/resolve)
 	ResolveDispute(w http.ResponseWriter, r *http.Request, id ID)
@@ -2701,6 +2712,32 @@ func (siw *ServerInterfaceWrapper) ListBalances(w http.ResponseWriter, r *http.R
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListBalances(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateCard operation middleware
+func (siw *ServerInterfaceWrapper) UpdateCard(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateCard(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3800,6 +3837,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/credit-limits", wrapper.CreateCreditLimit)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/cards", wrapper.ListCards)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/cards", wrapper.CreateCard)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/cards/{id}", wrapper.UpdateCard)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/statements", wrapper.ListStatements)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statements/{id}", wrapper.GetStatement)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/installment-purchases", wrapper.CreateInstallmentPurchase)
@@ -5196,6 +5234,73 @@ func (response ListBalances401ApplicationProblemPlusJSONResponse) VisitListBalan
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCardRequestObject struct {
+	Id   ID `json:"id"`
+	Body *UpdateCardJSONRequestBody
+}
+
+type UpdateCardResponseObject interface {
+	VisitUpdateCardResponse(w http.ResponseWriter) error
+}
+
+type UpdateCard200JSONResponse Card
+
+func (response UpdateCard200JSONResponse) VisitUpdateCardResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCard400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateCard400ApplicationProblemPlusJSONResponse) VisitUpdateCardResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCard401ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateCard401ApplicationProblemPlusJSONResponse) VisitUpdateCardResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateCard404ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateCard404ApplicationProblemPlusJSONResponse) VisitUpdateCardResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -7451,6 +7556,9 @@ type StrictServerInterface interface {
 	// ListBalances Balance of every balance-sheet account at the end of a date, ordered by account name then id.
 	// (GET /balances)
 	ListBalances(ctx context.Context, request ListBalancesRequestObject) (ListBalancesResponseObject, error)
+	// UpdateCard Activate or deactivate a card.
+	// (PATCH /cards/{id})
+	UpdateCard(ctx context.Context, request UpdateCardRequestObject) (UpdateCardResponseObject, error)
 	// ResolveDispute Resolve a dispute; a won dispute refunds the remaining charged amount.
 	// (POST /disputes/{id}/resolve)
 	ResolveDispute(ctx context.Context, request ResolveDisputeRequestObject) (ResolveDisputeResponseObject, error)
@@ -8221,6 +8329,39 @@ func (sh *strictHandler) ListBalances(w http.ResponseWriter, r *http.Request, pa
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListBalancesResponseObject); ok {
 		if err := validResponse.VisitListBalancesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateCard operation middleware
+func (sh *strictHandler) UpdateCard(w http.ResponseWriter, r *http.Request, id ID) {
+	var request UpdateCardRequestObject
+
+	request.Id = id
+
+	var body UpdateCardJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateCard(ctx, request.(UpdateCardRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateCard")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateCardResponseObject); ok {
+		if err := validResponse.VisitUpdateCardResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

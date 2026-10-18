@@ -1183,6 +1183,32 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /cards/{id}:
+    patch:
+      tags: [ledger]
+      operationId: updateCard
+      summary: Activate or deactivate a card.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardUpdate"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
   /accounts/{id}/statements:
     get:
       tags: [ledger]
@@ -4633,6 +4659,13 @@ components:
               format: uuid
             active:
               type: boolean
+    CardUpdate:
+      type: object
+      additionalProperties: false
+      required: [active]
+      properties:
+        active:
+          type: boolean
     CardList:
       type: object
       required: [items]

@@ -737,6 +737,14 @@ func (r *Repository) InsertCard(ctx context.Context, c domain.Card) (domain.Card
 	return toCard(row), nil
 }
 
+func (r *Repository) SetCardActive(ctx context.Context, userID int64, id uuid.UUID, active bool) (domain.Card, error) {
+	row, err := r.q.SetCardActive(ctx, SetCardActiveParams{UserID: userID, ID: id, Active: active})
+	if err != nil {
+		return domain.Card{}, notFound(err)
+	}
+	return toCard(row), nil
+}
+
 func (r *Repository) Cards(ctx context.Context, userID int64, accountID uuid.UUID) ([]domain.Card, error) {
 	rows, err := r.q.ListCards(ctx, ListCardsParams{UserID: userID, AccountID: accountID})
 	return mapAll(rows, toCard), err

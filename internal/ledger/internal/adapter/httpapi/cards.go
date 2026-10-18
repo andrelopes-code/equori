@@ -99,3 +99,11 @@ func (s *Server) CreateCard(ctx context.Context, req CreateCardRequestObject) (C
 	}
 	return CreateCard201JSONResponse(toCardAPI(c)), nil
 }
+
+func (s *Server) UpdateCard(ctx context.Context, req UpdateCardRequestObject) (UpdateCardResponseObject, error) {
+	c, err := s.svc.SetCardActive(ctx, auth.MustUserID(ctx), req.Id, req.Body.Active)
+	if err != nil {
+		return nil, err
+	}
+	return UpdateCard200JSONResponse(toCardAPI(c)), nil
+}

@@ -110,6 +110,10 @@ func (s *Service) Cards(ctx context.Context, userID int64, accountID uuid.UUID) 
 	return s.repo.Cards(ctx, userID, accountID)
 }
 
+func (s *Service) SetCardActive(ctx context.Context, userID int64, id uuid.UUID, active bool) (domain.Card, error) {
+	return s.repo.SetCardActive(ctx, userID, id, active)
+}
+
 // CardSummary returns nil when the card has no credit limit in force today. The available
 // limit subtracts the whole debt, unbilled installments included, as issuers do.
 func (s *Service) CardSummary(ctx context.Context, userID int64, a domain.Account) (*CardSummary, error) {

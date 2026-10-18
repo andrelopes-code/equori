@@ -905,6 +905,32 @@ func (q *Queries) ResolveDispute(ctx context.Context, arg ResolveDisputeParams) 
 	return i, err
 }
 
+const setCardActive = `-- name: SetCardActive :one
+UPDATE ledger_card SET active = $1 WHERE user_id = $2 AND id = $3 RETURNING id, user_id, account_id, holder, last_four, virtual, active, created_at
+`
+
+type SetCardActiveParams struct {
+	Active bool
+	UserID int64
+	ID     uuid.UUID
+}
+
+func (q *Queries) SetCardActive(ctx context.Context, arg SetCardActiveParams) (LedgerCard, error) {
+	row := q.db.QueryRow(ctx, setCardActive, arg.Active, arg.UserID, arg.ID)
+	var i LedgerCard
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.AccountID,
+		&i.Holder,
+		&i.LastFour,
+		&i.Virtual,
+		&i.Active,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const setStatementFinanced = `-- name: SetStatementFinanced :exec
 UPDATE ledger_statement SET financed_by_plan_id = $1 WHERE id = $2
 `
