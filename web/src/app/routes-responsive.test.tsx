@@ -139,7 +139,7 @@ interface RouteCase {
 const routes: RouteCase[] = [
   {
     path: "/",
-    heading: catalogPtBR["nav.home"],
+    heading: catalogPtBR["nav.overview"],
     loaded: "Itaú",
     authenticated: true,
   },

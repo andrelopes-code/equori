@@ -6,10 +6,11 @@
     gap: var(--slotted-space-8);
   }
 
-  /* 56rem holds two columns whose rows stay wider than the list item's own 22rem step. */
-  @container (min-width: 56rem) {
+  /* Ledger sheet L17: recent transactions beside the accounts from 64rem. */
+  @container (min-width: 64rem) {
     .layout {
-      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+      column-gap: var(--slotted-space-11);
     }
 
     .full {

@@ -37,6 +37,9 @@ export default extendTheme(
       "--slotted-top-navigation-color": "var(--slotted-text-muted)",
       "--slotted-top-navigation-current-color": "var(--slotted-text)",
       "--slotted-top-navigation-current-background": "transparent",
+      // Ledger sheet L12: a table is lines on the page, not a surface over it.
+      "--slotted-table-surface": "transparent",
+      "--slotted-table-header-surface": "transparent",
     },
     rules: [summaryRule, currentDestinationRule],
   },

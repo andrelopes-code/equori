@@ -41,7 +41,7 @@ describe("router error screens", () => {
       .click(screen.getByRole("button", { name: catalogPtBR["common.retry"] }));
 
     expect(
-      await screen.findByRole("heading", { name: catalogPtBR["nav.home"] }),
+      await screen.findByRole("heading", { name: catalogPtBR["nav.overview"] }),
     ).toBeInTheDocument();
     expect(meCalls).toBe(callsBeforeRetry + 1);
   });

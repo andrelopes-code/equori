@@ -20,7 +20,6 @@ import {
 import { AccountGroups } from "@/features/accounts/account-groups";
 import { Balances } from "@/features/accounts/balances";
 import styles from "@/features/accounts/home-page.module.css";
-import { UncategorizedShortcut } from "@/features/accounts/uncategorized-shortcut";
 import { useBalanceGroups } from "@/features/accounts/use-balance-groups";
 import { TransactionList } from "@/features/transactions";
 import { useT } from "@/i18n/i18n-provider";
@@ -41,7 +40,7 @@ export function HomePage() {
         <PageHeaderTitleArea>
           <PageHeaderTitleRow>
             <PageHeaderTitle>
-              <PageHeaderHeading>{t("nav.home")}</PageHeaderHeading>
+              <PageHeaderHeading>{t("nav.overview")}</PageHeaderHeading>
             </PageHeaderTitle>
             {/* Ledger sheet L5: from 600 px the top bar holds New. */}
             {viewport === "phone" && (
@@ -61,17 +60,14 @@ export function HomePage() {
       <PageBody>
         <div className={styles.layout}>
           {/* On a phone the bottom bar already holds Transactions and Accounts, so the sections carry no door to them. */}
-          <Section aria-busy={pending} className={styles.full}>
-            <SectionHeader>
-              <SectionTitle>
-                <SectionHeading>{t("home.balances")}</SectionHeading>
-              </SectionTitle>
-            </SectionHeader>
-            <SectionBody>
-              <Balances />
-            </SectionBody>
-          </Section>
-          <UncategorizedShortcut className={styles.full} />
+          {/* Ledger sheet L12: the strip heads the page without a heading of its own. */}
+          <section
+            aria-label={t("home.balances")}
+            aria-busy={pending}
+            className={styles.full}
+          >
+            <Balances />
+          </section>
           <Section className={groups?.length === 0 ? styles.full : undefined}>
             <SectionHeader>
               <SectionTitle>

@@ -1,43 +1,24 @@
-import { Grid } from "@slotted/react/grid";
-import { SkeletonRegion } from "@slotted/react/skeleton";
-import {
-  StatCard,
-  StatCardFigure,
-  StatCardHeader,
-  StatCardLabel,
-  StatCardValue,
-} from "@slotted/react/stat-card";
+import { Skeleton, SkeletonRegion } from "@slotted/react/skeleton";
 
-// Two groups is the smallest set a ledger with a card holds; more groups grow the region.
-const groups = [0, 1];
+import { FigureStrip } from "@/ui/figure-strip";
+import { FigureStripItem } from "@/ui/figure-strip-item";
 
-export function BalancesPlaceholder({
-  columns,
-  size,
-  minItemWidth,
-}: {
-  columns: 2 | 4;
-  size: "sm" | "md";
-  minItemWidth: "xs" | "sm";
-}) {
+// Two groups is the smallest set a ledger with a card holds; more groups grow the strip.
+const groups = ["first", "second"];
+
+export function BalancesPlaceholder() {
   return (
     <SkeletonRegion>
-      <Grid
-        columns={columns}
-        gap={size === "sm" ? 3 : 4}
-        minItemWidth={minItemWidth}
-      >
-        {groups.map((n) => (
-          <StatCard key={n} size={size} loading>
-            <StatCardHeader>
-              <StatCardLabel />
-            </StatCardHeader>
-            <StatCardFigure>
-              <StatCardValue />
-            </StatCardFigure>
-          </StatCard>
+      <FigureStrip>
+        {groups.map((key) => (
+          <FigureStripItem
+            key={key}
+            label={<Skeleton shape="text" inlineSize="5rem" />}
+          >
+            <Skeleton shape="text" inlineSize="9rem" />
+          </FigureStripItem>
         ))}
-      </Grid>
+      </FigureStrip>
     </SkeletonRegion>
   );
 }

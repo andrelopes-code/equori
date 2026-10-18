@@ -181,6 +181,8 @@
     --slotted-top-navigation-color: var(--slotted-text-muted);
     --slotted-top-navigation-current-color: var(--slotted-text);
     --slotted-top-navigation-current-background: transparent;
+    --slotted-table-surface: transparent;
+    --slotted-table-header-surface: transparent;
   }
 
   [data-slotted-scheme="light"],

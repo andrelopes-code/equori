@@ -1,20 +1,24 @@
-import { List, ListSection } from "@slotted/react/list";
+import { Link } from "@slotted/react/link";
 import {
-  ListItem,
-  ListItemBody,
-  ListItemLabel,
-  ListItemLink,
-} from "@slotted/react/list-item";
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableContent,
+  TableRow,
+  TableRowHeader,
+} from "@slotted/react/table";
 
 import { AccountGroupsPlaceholder } from "@/features/accounts/account-groups-placeholder";
 import { groupLabels } from "@/features/accounts/balance-groups";
+import styles from "@/features/accounts/account-groups.module.css";
 import { useBalanceGroups } from "@/features/accounts/use-balance-groups";
 import { useT } from "@/i18n/i18n-provider";
-import { AmountLine } from "@/ui/amount-line";
 import { MoneyText } from "@/ui/money-text";
 import { useSpaLink } from "@/ui/use-spa-link";
 
-// The figures region reports a failed or empty answer; this list then draws nothing.
+// Ledger sheet L17: one table per balance group, captioned by the group.
+// The figures region reports a failed or empty answer; this region then draws nothing.
 export function AccountGroups() {
   const t = useT();
   const spaLink = useSpaLink();
@@ -24,31 +28,35 @@ export function AccountGroups() {
     return <AccountGroupsPlaceholder />;
   }
   return (
-    <List variant="ruled" aria-label={t("home.accounts")}>
+    <div className={styles.groups}>
       {groups.map(({ group, items }) => (
-        <ListSection key={group} label={t(groupLabels[group])} level="3">
-          {items.map(({ account, balance }) => (
-            <ListItem key={account.id}>
-              <ListItemLink {...spaLink(`/accounts/${account.id}`)}>
-                <ListItemBody>
-                  <ListItemLabel>
-                    <AmountLine
-                      own="balance-line"
-                      title={account.name}
-                      amount={
-                        <MoneyText
-                          money={balance}
-                          scale={scale(balance.currency)}
-                        />
-                      }
+        <Table key={group} columns={2}>
+          <TableContent>
+            <TableCaption>{t(groupLabels[group])}</TableCaption>
+            <TableBody>
+              {items.map(({ account, balance }) => (
+                <TableRow key={account.id}>
+                  <TableRowHeader>
+                    <Link
+                      {...spaLink(`/accounts/${account.id}`)}
+                      variant="neutral"
+                      underline="hover"
+                    >
+                      {account.name}
+                    </Link>
+                  </TableRowHeader>
+                  <TableCell numeric text="nowrap">
+                    <MoneyText
+                      money={balance}
+                      scale={scale(balance.currency)}
                     />
-                  </ListItemLabel>
-                </ListItemBody>
-              </ListItemLink>
-            </ListItem>
-          ))}
-        </ListSection>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </TableContent>
+        </Table>
       ))}
-    </List>
+    </div>
   );
 }

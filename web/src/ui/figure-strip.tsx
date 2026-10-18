@@ -9,12 +9,15 @@ export function FigureStrip({
   label,
   children,
 }: {
-  label: string;
+  label?: string;
   children: ReactNode;
 }) {
   return (
     <div data-own="figure-strip" className={styles.frame}>
-      <dl aria-label={label} className={styles.strip}>
+      <dl
+        {...(label === undefined ? {} : { "aria-label": label })}
+        className={styles.strip}
+      >
         {children}
       </dl>
     </div>

@@ -121,13 +121,24 @@ function homeApi(opts: Options = {}) {
   return { fetch, calls };
 }
 
+// Ledger sheet decisions L12 and L17.
 describe("home balances", () => {
-  it("renders the group headings and base-currency totals in pt-BR", async () => {
+  it("renders the group totals in a figure strip in pt-BR", async () => {
     const { fetch } = homeApi();
-    await renderApp("/", { fetch });
+    const { container } = await renderApp("/", { fetch });
     const region = await screen.findByRole("region", {
       name: catalogPtBR["home.balances"],
     });
+    await within(region).findByText(catalogPtBR["home.group.available"]);
+    const strip = region.querySelector('[data-own="figure-strip"]');
+    expect(
+      [...(strip?.querySelectorAll("dt") ?? [])].map((dt) => dt.textContent),
+    ).toEqual([
+      catalogPtBR["home.group.available"],
+      catalogPtBR["home.group.cards"],
+    ]);
+    expect(container.querySelector('[data-ui="stat-card"]')).toBeNull();
+    expect(container.querySelector('[data-ui="card"]')).toBeNull();
     expect(
       await within(region).findByText(catalogPtBR["home.group.available"]),
     ).toBeInTheDocument();
@@ -141,17 +152,17 @@ describe("home balances", () => {
     ).toBeNull();
   });
 
-  it("lists each account under its group heading with a link to the account", async () => {
+  it("lists the accounts of each group in a table captioned by the group", async () => {
     const { fetch } = homeApi();
     await renderApp("/", { fetch });
     const region = await screen.findByRole("region", {
       name: catalogPtBR["home.accounts"],
     });
-    const cards = await within(region).findByRole("heading", {
+    const cards = await within(region).findByRole("table", {
       name: catalogPtBR["home.group.cards"],
     });
-    expect(cards).toBeInTheDocument();
-    expect(within(region).getByText("\u2212R$ 300,00")).toBeInTheDocument();
+    expect(within(cards).getByText("\u2212R$ 300,00")).toBeInTheDocument();
+    expect(within(region).getAllByRole("table")).toHaveLength(2);
     expect(within(region).getByRole("link", { name: /Itaú/ })).toHaveAttribute(
       "href",
       "/accounts/a-checking",
@@ -173,28 +184,12 @@ describe("home balances", () => {
     expect(first.getByText("\u2212R$ 10,00")).toBeInTheDocument();
   });
 
-  it("shows the uncategorized count with a link to the filtered list", async () => {
+  // Ledger sheet L8: the count moved to the Transactions destination.
+  it("shows no uncategorized alert", async () => {
     const { fetch } = homeApi();
-    await renderApp("/", { fetch });
-    const title = await screen.findByText(
-      catalogPtBR["home.uncategorized"].replace("{count}", "3"),
-    );
-    const notice = title.closest('[data-ui="alert"]');
-    expect(notice).not.toBeNull();
-    const link = within(notice as HTMLElement).getByRole("link", {
-      name: catalogPtBR["home.uncategorized.action"],
-    });
-    expect(link).toHaveAttribute("href", "/transactions?uncategorized=true");
-  });
-
-  it("shows 200+ when another page of uncategorized exists", async () => {
-    const { fetch } = homeApi({ uncategorizedNext: "cursor" });
-    await renderApp("/", { fetch });
-    expect(
-      await screen.findByText(
-        catalogPtBR["home.uncategorized"].replace("{count}", "200+"),
-      ),
-    ).toBeInTheDocument();
+    const { container } = await renderApp("/", { fetch });
+    await screen.findByRole("region", { name: catalogPtBR["home.balances"] });
+    expect(container.querySelector('[data-ui="alert"]')).toBeNull();
   });
 });
 
@@ -237,10 +232,8 @@ describe("home money rows", () => {
     const region = await screen.findByRole("region", {
       name: catalogPtBR["home.accounts"],
     });
-    const row = (await within(region).findByText("Itaú")).closest("li");
-    const line = row?.querySelector('[data-own="balance-line"]');
-    expect(line?.textContent.replace(/\u00a0/g, " ")).toBe("ItaúR$ 1.234,56");
-    expect(row?.querySelector('[data-part="end"]')).toBeNull();
+    const row = (await within(region).findByText("Itaú")).closest("tr");
+    expect(row?.textContent.replace(/\u00a0/g, " ")).toBe("ItaúR$ 1.234,56");
   });
 });
 
@@ -292,7 +285,10 @@ describe("home waiting states", () => {
       container.querySelectorAll('[data-ui="skeleton"]').length,
     ).toBeGreaterThan(0);
     expect(
-      screen.getByRole("heading", { level: 1, name: catalogPtBR["nav.home"] }),
+      screen.getByRole("heading", {
+        level: 1,
+        name: catalogPtBR["nav.overview"],
+      }),
     ).toBeInTheDocument();
     release(json(200, { items: balances }));
     await waitFor(() => {
@@ -313,9 +309,6 @@ describe("home waiting states", () => {
     await waitFor(() => {
       expect(calls.balances).toBe(1);
     });
-    await screen.findByText(
-      catalogPtBR["home.uncategorized"].replace("{count}", "3"),
-    );
     await act(async () => {
       await Promise.resolve();
     });
