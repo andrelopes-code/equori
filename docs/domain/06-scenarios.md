@@ -410,7 +410,7 @@ An OFX credit card statement for Itaú Visa: −230.00 on 2026-10-14 is a `charg
 | M28 | S02 |
 | M29 | S31 |
 
-The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44; transfers from imports by S45–S50; aggregator sync by S51–S59; schedules (F7) by S27–S29 and the planning views by S60–S63; currencies and investments (F9) by S16, S17, S21, S22 and S64–S67.
+The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44; transfers from imports by S45–S50; aggregator sync by S51–S59 and S68–S71; schedules (F7) by S27–S29 and the planning views by S60–S63; currencies and investments (F9) by S16, S17, S21, S22 and S64–S67.
 
 ## 6.13 Classification
 
@@ -478,7 +478,7 @@ Rule "description contains `hotel`" → mark reimbursable to Receivable Employer
 
 ## 6.15 Aggregator sync
 
-A fake Pluggy server serves the data; the clock is 2026-11-12. The owner's item Nubank has a checking account, a credit card and a savings account.
+A fake Pluggy server serves the data; the clock is 2026-11-12. The owner's item Nubank has a checking account, a credit card and a savings account. The owner's item Mercado Pago has checking "Mercado Pago" (balance 500.05) with reserved balances "Cofrinho Mercado Livre" and "Algum dinheiro".
 
 ### S51 Credentials, item and mapping
 
@@ -515,6 +515,22 @@ Two users with their own credentials and items sync on the same scheduler tick: 
 ### S59 Two integrations of one user
 
 One user holds two integrations, "Meu Pluggy 1" with five items and "Meu Pluggy 2" with three; each connection syncs with its own integration's API key, and a wrong secret on one integration leaves the other syncing.
+
+### S68 Reserved balance mapped to a reserve
+
+`POST /connections` for Mercado Pago lists three external accounts, all `pending`: the checking account and two with subtype `RESERVED_BALANCE`. Mapping "Cofrinho Mercado Livre" to the checking ledger account fails with 422 `validation` on `account_id`; mapping it to reserve "MP Cofrinho" with `sync_from` 2026-11-11 succeeds. With an opening balance of 1,002.92 dated 2026-11-10 and the item updated on 2026-11-10, the sync creates a batch with `received` 0 and balance `recorded` 1,002.92 on 2026-11-10, and an assertion with source `open_finance` that reconciles the account. A reserved balance added to the item later appears as `pending` after the next sync. A reserved balance that the item stops reporting yields a batch with balance status `none`. Nubank, with `reservedBalances: []`, lists no reserve.
+
+### S69 Bounded reserve yield
+
+After S68, the item updated on 2026-11-11 reports 1,003.52: the difference 0.60 is within `B = floor(100292 × 3 × 1 / 3000) = 100`, so the sync records "Yield 2026-11-11 to 2026-11-11" of 0.60 against Yield and the assertion is reconciled with resolution `yield`. On 2026-11-12 it reports 1,004.53: the difference 1.01 exceeds `B = floor(100352 × 3 / 3000) = 100` and stays open; 1,004.52 (difference 1.00) is booked as yield. A reported amount below the settled balance stays open. A reserve with `yield_mode` `none` books no yield.
+
+### S70 Transfer to and from a reserved balance
+
+With "Cofrinho Mercado Livre" and "Algum dinheiro" mapped from 2026-11-11, checking lines of 2026-11-11 with `operationType` `TRANSFERENCIA_SALDO_RESERVADO`: "Dinheiro reservado Cofrinho Mercado Livre" −200.00 creates a transfer of 200.00 from Mercado Pago to MP Cofrinho; "Dinheiro retirado Algum dinheiro" +100.00 creates a transfer of 100.00 from the "Algum dinheiro" reserve to Mercado Pago. "Dinheiro retirado Aaa" +50.00, and "Dinheiro reservado Cofrinho Mercado Livre" −30.00 dated 2026-11-10, are recorded as ordinary lines.
+
+### S71 Synced assertion re-evaluated
+
+Nubank checking mapped from 2026-10-01 with the S52 lines and balance 3,834.10, without an opening balance: the first sync records an assertion with an open difference of 1,000.00. The owner records an opening balance of 1,000.00; the next sync, with the same balance, creates no assertion, and the existing one becomes `reconciled` with resolution `none`. An open synced assertion with a second assertion of the same date and amount created through `POST /accounts/{id}/balance-assertions` is reconciled by the next sync; all assertions are `reconciled`.
 
 ## 6.16 Planning views
 

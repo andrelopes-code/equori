@@ -201,7 +201,7 @@ Livre" −30.00 dated 2026-11-10, are recorded as ordinary lines.
 
 ### S71 Synced assertion re-evaluated
 
-Nubank checking mapped from 2026-11-01 with the S52 lines and balance 3,834.10, without an
+Nubank checking mapped from 2026-10-01 with the S52 lines and balance 3,834.10, without an
 opening balance: the first sync records an assertion with an open difference of 1,000.00. The
 owner records an opening balance of 1,000.00 dated 2026-10-31; the next sync, with the same
 balance, creates no assertion, and the existing one becomes `reconciled` with resolution `none`.
