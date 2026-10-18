@@ -936,6 +936,18 @@ func (r *Repository) Disputes(ctx context.Context, userID int64, transactionID u
 	return out, nil
 }
 
+func (r *Repository) LinksTo(ctx context.Context, userID int64, id uuid.UUID) ([]app.Reference, error) {
+	rows, err := r.q.ListLinksTo(ctx, ListLinksToParams{UserID: userID, ToTransactionID: id})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]app.Reference, len(rows))
+	for i, row := range rows {
+		out[i] = app.Reference{Type: domain.LinkType(row.LinkType), Source: row.FromTransactionID}
+	}
+	return out, nil
+}
+
 func (r *Repository) LockDispute(ctx context.Context, userID int64, id uuid.UUID) (app.Dispute, error) {
 	row, err := r.q.GetDisputeForUpdate(ctx, GetDisputeForUpdateParams{UserID: userID, ID: id})
 	if err != nil {

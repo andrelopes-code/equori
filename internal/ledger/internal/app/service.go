@@ -410,6 +410,20 @@ func (s *Service) Versions(ctx context.Context, userID int64, id uuid.UUID) ([]V
 	return s.repo.Versions(ctx, userID, id)
 }
 
+// Reference is an inbound link: Source is the transaction that links to another one.
+type Reference struct {
+	Type   domain.LinkType
+	Source uuid.UUID
+}
+
+// ReferencedBy returns the non-voided transactions that link to the transaction.
+func (s *Service) ReferencedBy(ctx context.Context, userID int64, id uuid.UUID) ([]Reference, error) {
+	if _, err := s.repo.Transaction(ctx, userID, id); err != nil {
+		return nil, err
+	}
+	return s.repo.LinksTo(ctx, userID, id)
+}
+
 // ListTransactions returns a page and the cursor of the next page, nil on the last page.
 func (s *Service) ListTransactions(ctx context.Context, q TransactionQuery) ([]domain.Transaction, *TransactionCursor, error) {
 	limit := q.Limit

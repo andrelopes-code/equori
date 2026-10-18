@@ -70,6 +70,12 @@ INSERT INTO ledger_link (user_id, from_transaction_id, to_transaction_id, link_t
 SELECT * FROM ledger_link WHERE user_id = $1 AND from_transaction_id = ANY(@transaction_ids::uuid[])
 ORDER BY from_transaction_id, link_type, to_transaction_id;
 
+-- name: ListLinksTo :many
+SELECT l.link_type, l.from_transaction_id FROM ledger_link l
+JOIN ledger_transaction t ON t.id = l.from_transaction_id
+WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND t.voided_at IS NULL
+ORDER BY l.link_type, l.from_transaction_id;
+
 -- name: InsertVersion :exec
 INSERT INTO ledger_transaction_version (transaction_id, version, snapshot, reason) VALUES ($1, $2, $3, $4);
 

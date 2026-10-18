@@ -5342,6 +5342,18 @@ components:
         target:
           type: string
           format: uuid
+    LinkReference:
+      type: object
+      additionalProperties: false
+      required: [type, source]
+      description: An inbound link; source is the non-voided transaction that links to this one.
+      properties:
+        type:
+          type: string
+          enum: [refund_of, reimbursement_of, cancellation_of, anticipation_of, chargeback_of, correction_of]
+        source:
+          type: string
+          format: uuid
     TransactionInput:
       type: object
       additionalProperties: false
@@ -5443,6 +5455,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Link"
+        referenced_by:
+          type: array
+          description: Set only by GET /transactions/{id}; ordered by type, then source.
+          items:
+            $ref: "#/components/schemas/LinkReference"
         investment_income:
           $ref: "#/components/schemas/InvestmentIncome"
         trade:

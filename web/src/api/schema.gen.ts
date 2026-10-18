@@ -2897,6 +2897,13 @@ export interface components {
             /** Format: uuid */
             target: string;
         };
+        /** @description An inbound link; source is the non-voided transaction that links to this one. */
+        LinkReference: {
+            /** @enum {string} */
+            type: "refund_of" | "reimbursement_of" | "cancellation_of" | "anticipation_of" | "chargeback_of" | "correction_of";
+            /** Format: uuid */
+            source: string;
+        };
         TransactionInput: {
             /** Format: date */
             date: string;
@@ -2936,6 +2943,8 @@ export interface components {
             void_reason?: string;
             tags: string[];
             links: components["schemas"]["Link"][];
+            /** @description Set only by GET /transactions/{id}; ordered by type, then source. */
+            referenced_by?: components["schemas"]["LinkReference"][];
             investment_income?: components["schemas"]["InvestmentIncome"];
             trade?: components["schemas"]["Trade"];
             postings: components["schemas"]["Posting"][];

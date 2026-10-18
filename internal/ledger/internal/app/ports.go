@@ -320,6 +320,8 @@ type Repository interface {
 	RefundedTotal(ctx context.Context, userID int64, originID uuid.UUID) (int64, error)
 	InsertDispute(ctx context.Context, d Dispute) (Dispute, error)
 	Disputes(ctx context.Context, userID int64, transactionID uuid.UUID) ([]Dispute, error)
+	// LinksTo returns the non-voided transactions that link to id, ordered by link type, then source.
+	LinksTo(ctx context.Context, userID int64, id uuid.UUID) ([]Reference, error)
 	LockDispute(ctx context.Context, userID int64, id uuid.UUID) (Dispute, error)
 	ResolveDispute(ctx context.Context, d Dispute) (Dispute, error)
 	SystemAccount(ctx context.Context, userID int64, role domain.SystemRole) (domain.Account, error)

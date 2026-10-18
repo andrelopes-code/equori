@@ -418,28 +418,58 @@ func (e InstallmentPlanStatus) Valid() bool {
 
 // Defines values for LinkType.
 const (
-	AnticipationOf  LinkType = "anticipation_of"
-	CancellationOf  LinkType = "cancellation_of"
-	ChargebackOf    LinkType = "chargeback_of"
-	CorrectionOf    LinkType = "correction_of"
-	RefundOf        LinkType = "refund_of"
-	ReimbursementOf LinkType = "reimbursement_of"
+	LinkTypeAnticipationOf  LinkType = "anticipation_of"
+	LinkTypeCancellationOf  LinkType = "cancellation_of"
+	LinkTypeChargebackOf    LinkType = "chargeback_of"
+	LinkTypeCorrectionOf    LinkType = "correction_of"
+	LinkTypeRefundOf        LinkType = "refund_of"
+	LinkTypeReimbursementOf LinkType = "reimbursement_of"
 )
 
 // Valid indicates whether the value is a known member of the LinkType enum.
 func (e LinkType) Valid() bool {
 	switch e {
-	case AnticipationOf:
+	case LinkTypeAnticipationOf:
 		return true
-	case CancellationOf:
+	case LinkTypeCancellationOf:
 		return true
-	case ChargebackOf:
+	case LinkTypeChargebackOf:
 		return true
-	case CorrectionOf:
+	case LinkTypeCorrectionOf:
 		return true
-	case RefundOf:
+	case LinkTypeRefundOf:
 		return true
-	case ReimbursementOf:
+	case LinkTypeReimbursementOf:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for LinkReferenceType.
+const (
+	LinkReferenceTypeAnticipationOf  LinkReferenceType = "anticipation_of"
+	LinkReferenceTypeCancellationOf  LinkReferenceType = "cancellation_of"
+	LinkReferenceTypeChargebackOf    LinkReferenceType = "chargeback_of"
+	LinkReferenceTypeCorrectionOf    LinkReferenceType = "correction_of"
+	LinkReferenceTypeRefundOf        LinkReferenceType = "refund_of"
+	LinkReferenceTypeReimbursementOf LinkReferenceType = "reimbursement_of"
+)
+
+// Valid indicates whether the value is a known member of the LinkReferenceType enum.
+func (e LinkReferenceType) Valid() bool {
+	switch e {
+	case LinkReferenceTypeAnticipationOf:
+		return true
+	case LinkReferenceTypeCancellationOf:
+		return true
+	case LinkReferenceTypeChargebackOf:
+		return true
+	case LinkReferenceTypeCorrectionOf:
+		return true
+	case LinkReferenceTypeRefundOf:
+		return true
+	case LinkReferenceTypeReimbursementOf:
 		return true
 	default:
 		return false
@@ -1176,6 +1206,15 @@ type Link struct {
 // LinkType defines model for Link.Type.
 type LinkType string
 
+// LinkReference An inbound link; source is the non-voided transaction that links to this one.
+type LinkReference struct {
+	Source openapi_types.UUID `json:"source"`
+	Type   LinkReferenceType  `json:"type"`
+}
+
+// LinkReferenceType defines model for LinkReference.Type.
+type LinkReferenceType string
+
 // Money defines model for Money.
 type Money struct {
 	// Amount Integer units of the instrument scale (ADR 005).
@@ -1488,11 +1527,14 @@ type Transaction struct {
 	Origin            TransactionOrigin   `json:"origin"`
 	PayeeId           *openapi_types.UUID `json:"payee_id,omitempty"`
 	Postings          []Posting           `json:"postings"`
-	Tags              []string            `json:"tags"`
-	Trade             *Trade              `json:"trade,omitempty"`
-	Version           int                 `json:"version"`
-	VoidReason        *string             `json:"void_reason,omitempty"`
-	VoidedAt          *time.Time          `json:"voided_at,omitempty"`
+
+	// ReferencedBy Set only by GET /transactions/{id}; ordered by type, then source.
+	ReferencedBy *[]LinkReference `json:"referenced_by,omitempty"`
+	Tags         []string         `json:"tags"`
+	Trade        *Trade           `json:"trade,omitempty"`
+	Version      int              `json:"version"`
+	VoidReason   *string          `json:"void_reason,omitempty"`
+	VoidedAt     *time.Time       `json:"voided_at,omitempty"`
 }
 
 // TransactionOrigin defines model for Transaction.Origin.

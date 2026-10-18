@@ -271,11 +271,22 @@ func (s *Server) CreateTransaction(ctx context.Context, req CreateTransactionReq
 }
 
 func (s *Server) GetTransaction(ctx context.Context, req GetTransactionRequestObject) (GetTransactionResponseObject, error) {
-	t, err := s.svc.Transaction(ctx, auth.MustUserID(ctx), req.Id)
+	userID := auth.MustUserID(ctx)
+	t, err := s.svc.Transaction(ctx, userID, req.Id)
 	if err != nil {
 		return nil, err
 	}
-	return GetTransaction200JSONResponse(toTransactionAPI(t)), nil
+	refs, err := s.svc.ReferencedBy(ctx, userID, req.Id)
+	if err != nil {
+		return nil, err
+	}
+	out := toTransactionAPI(t)
+	referencedBy := make([]LinkReference, len(refs))
+	for i, r := range refs {
+		referencedBy[i] = LinkReference{Type: LinkReferenceType(r.Type), Source: r.Source}
+	}
+	out.ReferencedBy = &referencedBy
+	return GetTransaction200JSONResponse(out), nil
 }
 
 func (s *Server) CorrectTransaction(ctx context.Context, req CorrectTransactionRequestObject) (CorrectTransactionResponseObject, error) {

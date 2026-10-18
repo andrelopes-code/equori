@@ -261,6 +261,43 @@ func (q *Queries) ListLinksFrom(ctx context.Context, arg ListLinksFromParams) ([
 	return items, nil
 }
 
+const listLinksTo = `-- name: ListLinksTo :many
+SELECT l.link_type, l.from_transaction_id FROM ledger_link l
+JOIN ledger_transaction t ON t.id = l.from_transaction_id
+WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND t.voided_at IS NULL
+ORDER BY l.link_type, l.from_transaction_id
+`
+
+type ListLinksToParams struct {
+	UserID          int64
+	ToTransactionID uuid.UUID
+}
+
+type ListLinksToRow struct {
+	LinkType          string
+	FromTransactionID uuid.UUID
+}
+
+func (q *Queries) ListLinksTo(ctx context.Context, arg ListLinksToParams) ([]ListLinksToRow, error) {
+	rows, err := q.db.Query(ctx, listLinksTo, arg.UserID, arg.ToTransactionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListLinksToRow
+	for rows.Next() {
+		var i ListLinksToRow
+		if err := rows.Scan(&i.LinkType, &i.FromTransactionID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPostings = `-- name: ListPostings :many
 SELECT p.id, p.user_id, p.transaction_id, p.account_id, p.position, p.amount, p.weight, p.booked_on, p.settled_on, p.status, p.original_amount, p.original_instrument, p.memo, p.voided, p.statement_id, p.card_role, p.installment_plan_id, p.installment_number, p.installment_count, p.external_record_id, a.instrument AS account_instrument, t.balancing_currency, s.reference_month AS statement_reference
 FROM ledger_posting p
