@@ -308,3 +308,32 @@ func TestUnlockReleasesWholeStatement(t *testing.T) {
 		}
 	}
 }
+
+func TestCreatedAssertionReportsReconciled(t *testing.T) {
+	r := newReserveSetup(t)
+	for _, c := range []struct {
+		name   string
+		date   string
+		amount int64
+		want   bool
+	}{
+		{"matching balance", "2026-10-15", 1000000, true},
+		{"open difference", "2026-10-16", 999000, false},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			resp := assertBalance(r.h, r.reserve, c.date, c.amount)
+			if resp.Status != http.StatusCreated {
+				t.Fatalf("status %d: %s", resp.Status, resp.Body)
+			}
+			var res struct {
+				Assertion struct {
+					Reconciled bool `json:"reconciled"`
+				} `json:"assertion"`
+			}
+			resp.Decode(t, &res)
+			if res.Assertion.Reconciled != c.want {
+				t.Fatalf("assertion.reconciled = %v, want %v: %s", res.Assertion.Reconciled, c.want, resp.Body)
+			}
+		})
+	}
+}

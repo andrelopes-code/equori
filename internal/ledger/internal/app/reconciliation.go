@@ -178,10 +178,14 @@ func (s *Service) decideAssertion(ctx context.Context, r Repository, a domain.Ac
 		}
 	}
 	res.Resolution = outcome.Resolution
-	return res, s.reconcile(ctx, r, Reconciliation{
+	if err := s.reconcile(ctx, r, Reconciliation{
 		UserID: a.UserID, AccountID: a.ID, Date: date, AssertionID: res.Assertion.ID,
 		Difference: outcome.Difference, Resolution: outcome.Resolution, ResolutionTransactionID: res.ResolutionTransactionID,
-	})
+	}); err != nil {
+		return res, err
+	}
+	res.Assertion.Reconciled = true
+	return res, nil
 }
 
 // ResolveAssertion settles the open difference of an assertion chosen by the owner (F6, S26).
