@@ -10,15 +10,9 @@ import {
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
 
-import { ActiveFilters } from "@/features/transactions/active-filters";
-import { FilterDrawer } from "@/features/transactions/filter-drawer";
-import { FilterFields } from "@/features/transactions/filter-fields";
-import { SearchForm } from "@/features/transactions/search-form";
-import {
-  patchSearch,
-  validateTransactionSearch,
-} from "@/features/transactions/search";
+import { validateTransactionSearch } from "@/features/transactions/search";
 import type { TransactionSearch } from "@/features/transactions/search";
+import { TransactionFilterBar } from "@/features/transactions/transaction-filter-bar";
 import { TransactionList } from "@/features/transactions/transaction-list";
 import styles from "@/features/transactions/transactions-page.module.css";
 import { useT } from "@/i18n/i18n-provider";
@@ -31,7 +25,6 @@ export function TransactionsPage() {
   const spaLink = useSpaLink();
   const navigate = useNavigate();
   const search = validateTransactionSearch(useSearch({ strict: false }));
-  const phone = viewport === "phone";
   const filtered = Object.keys(search).length > 0;
 
   const change = (next: TransactionSearch) => {
@@ -46,55 +39,43 @@ export function TransactionsPage() {
             <PageHeaderTitle>
               <PageHeaderHeading>{t("nav.transactions")}</PageHeaderHeading>
             </PageHeaderTitle>
-            <PageHeaderActions>
-              {phone ? (
-                <FilterDrawer search={search} onChange={change} />
-              ) : (
+            {/* On a phone the bottom bar's centre control creates (spec §2). */}
+            {viewport !== "phone" && (
+              <PageHeaderActions>
                 <ButtonLink {...spaLink("/transactions/new")}>
                   {t("nav.new")}
                 </ButtonLink>
-              )}
-            </PageHeaderActions>
-          </PageHeaderTitleRow>
-          <div className={styles.controls}>
-            <SearchForm
-              q={search.q}
-              onSubmit={(q) => {
-                change(patchSearch(search, { q }));
-              }}
-            />
-            {!phone && (
-              <div className={styles.fields}>
-                <FilterFields search={search} onChange={change} />
-              </div>
+              </PageHeaderActions>
             )}
-            <ActiveFilters search={search} onChange={change} />
-          </div>
+          </PageHeaderTitleRow>
         </PageHeaderTitleArea>
       </PageHeader>
       <PageBody>
-        <div className={styles.scroller}>
-          <TransactionList
-            search={search}
-            infinite
-            emptyActions={
-              filtered ? (
-                <Button
-                  tone="secondary"
-                  variant="outline"
-                  onClick={() => {
-                    change({});
-                  }}
-                >
-                  {t("transactions.filters.clear")}
-                </Button>
-              ) : (
-                <ButtonLink {...spaLink("/transactions/new")}>
-                  {t("nav.new")}
-                </ButtonLink>
-              )
-            }
-          />
+        <div className={styles.region}>
+          <TransactionFilterBar search={search} onChange={change} />
+          <div className={styles.listing}>
+            <TransactionList
+              search={search}
+              infinite
+              emptyActions={
+                filtered ? (
+                  <Button
+                    tone="secondary"
+                    variant="outline"
+                    onClick={() => {
+                      change({});
+                    }}
+                  >
+                    {t("transactions.filters.clear")}
+                  </Button>
+                ) : (
+                  <ButtonLink {...spaLink("/transactions/new")}>
+                    {t("nav.new")}
+                  </ButtonLink>
+                )
+              }
+            />
+          </div>
         </div>
       </PageBody>
     </Page>

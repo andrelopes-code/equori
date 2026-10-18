@@ -326,21 +326,20 @@ describe("transactions search", () => {
     expect(field).toHaveFocus();
   });
 
-  it("clears the field when the search tag is removed", async () => {
+  it("clears the search field and the URL query with the field's clear control", async () => {
     const user = userEvent.setup();
     const { fetch } = listApi();
-    await renderApp("/transactions?q=mercado", { fetch });
+    const { router } = await renderApp("/transactions?q=mercado", { fetch });
     const field = await screen.findByRole("searchbox", {
       name: catalogPtBR["transactions.search"],
     });
     expect(field).toHaveValue("mercado");
-    const tags = screen.getByRole("toolbar", {
-      name: catalogPtBR["transactions.filters.active"],
-    });
-    await user.click(within(tags).getByRole("button", { name: /mercado/ }));
+    const search = screen.getByRole("search");
+    await user.click(within(search).getByRole("button", { name: "Limpar" }));
     await waitFor(() => {
-      expect(field).toHaveValue("");
+      expect(router.state.location.href).toBe("/transactions");
     });
+    expect(field).toHaveValue("");
   });
 
   it("empties the rows and shows skeleton rows while a changed filter loads", async () => {
@@ -372,67 +371,57 @@ describe("transactions search", () => {
   });
 });
 
+// The filter bar is the filter-bar family: a pinned pill per URL filter, a
+// popover with the value picker, and a removable chip per active filter.
+async function choose(
+  user: ReturnType<typeof userEvent.setup>,
+  pill: string,
+  option: string,
+) {
+  await user.click(screen.getByRole("button", { name: pill }));
+  const popover = await screen.findByRole("dialog");
+  await user.click(within(popover).getByRole("combobox", { name: "Valor" }));
+  await user.click(await screen.findByRole("option", { name: option }));
+  await user.keyboard("{Escape}");
+  await user.click(within(popover).getByRole("button", { name: "Concluído" }));
+  await waitFor(() => {
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+}
+
 describe("transactions filters", () => {
-  it("chooses an account in the drawer on a phone, shows a removable tag and clears it", async () => {
+  it("chooses an account from the filter bar on a phone, shows a removable chip and clears it", async () => {
     const user = userEvent.setup();
     const { fetch, requests } = listApi();
     const { router } = await renderApp("/transactions", { fetch, width: 360 });
     await screen.findByText("Compra 1");
-    await user.click(
-      screen.getByRole("button", { name: catalogPtBR["transactions.filters"] }),
-    );
-    const drawer = await screen.findByRole("dialog");
-    await user.click(
-      within(drawer).getByRole("combobox", {
-        name: catalogPtBR["transactions.filter.account"],
-      }),
-    );
-    await user.click(await screen.findByRole("option", { name: "Itaú" }));
+    await choose(user, catalogPtBR["transactions.filter.account"], "Itaú");
     await waitFor(() => {
       expect(router.state.location.search).toEqual({ account_id: checkingID });
     });
     await waitFor(() => {
       expect(requests.at(-1)?.get("account_id")).toBe(checkingID);
     });
-    await user.click(
-      within(drawer).getByRole("button", {
-        name: catalogPtBR["transactions.filters.done"],
-      }),
-    );
-    await waitFor(() => {
-      expect(screen.queryByRole("dialog")).toBeNull();
-    });
-    const tags = screen.getByRole("toolbar", {
-      name: catalogPtBR["transactions.filters.active"],
-    });
-    expect(within(tags).getByText("Conta: Itaú")).toBeInTheDocument();
-    await user.click(within(tags).getByRole("button", { name: /Itaú/ }));
+    expect(
+      screen.getByRole("group", { name: /^Conta: .*Itaú$/ }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Remover Conta" }));
     await waitFor(() => {
       expect(router.state.location.href).toBe("/transactions");
     });
-    expect(screen.queryByText("Conta: Itaú")).toBeNull();
+    expect(screen.queryByRole("group", { name: /^Conta:/ })).toBeNull();
   });
 
-  it("filters by payee and tag from the pickers and names the payee in its tag", async () => {
+  it("filters by payee and tag from the bar and names the payee in its chip", async () => {
     const user = userEvent.setup();
     const { fetch, requests } = listApi();
     const { router } = await renderApp("/transactions", { fetch });
     await screen.findByText("Compra 1");
-    await user.click(
-      screen.getByRole("combobox", {
-        name: catalogPtBR["transactions.filter.payee"],
-      }),
-    );
-    await user.click(await screen.findByRole("option", { name: "Padaria" }));
+    await choose(user, catalogPtBR["transactions.filter.payee"], "Padaria");
     await waitFor(() => {
       expect(router.state.location.search).toEqual({ payee_id: bakeryID });
     });
-    await user.click(
-      screen.getByRole("combobox", {
-        name: catalogPtBR["transactions.filter.tag"],
-      }),
-    );
-    await user.click(await screen.findByRole("option", { name: "casa" }));
+    await choose(user, catalogPtBR["transactions.filter.tag"], "casa");
     await waitFor(() => {
       expect(router.state.location.search).toEqual({
         payee_id: bakeryID,
@@ -443,42 +432,55 @@ describe("transactions filters", () => {
       expect(requests.at(-1)?.get("payee_id")).toBe(bakeryID);
       expect(requests.at(-1)?.get("tag")).toBe("casa");
     });
-    const tags = screen.getByRole("toolbar", {
-      name: catalogPtBR["transactions.filters.active"],
-    });
-    expect(within(tags).getByText("Beneficiário: Padaria")).toBeInTheDocument();
-    expect(within(tags).getByText("Tag: casa")).toBeInTheDocument();
+    expect(
+      screen.getByRole("group", { name: /^Beneficiário: .*Padaria$/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("group", { name: /^Tag: .*casa$/ }),
+    ).toBeInTheDocument();
   });
 
-  it("names the payee in the tag of a payee filter loaded from the URL", async () => {
+  it("names the payee in the chip of a payee filter loaded from the URL", async () => {
     const { fetch } = listApi();
     await renderApp(`/transactions?payee_id=${marketID}`, { fetch });
     expect(
-      await screen.findByText("Beneficiário: Mercado Central"),
+      await screen.findByRole("group", {
+        name: /^Beneficiário: .*Mercado Central$/,
+      }),
     ).toBeInTheDocument();
   });
 
-  it("places the filter controls in the page header on desktop, without a drawer trigger", async () => {
+  it("holds the search and the filters in one bar above the list, and leaves the header the title and New (LP-02)", async () => {
     const { fetch } = listApi();
     await renderApp("/transactions", { fetch, width: 1280 });
     await screen.findByText("Compra 1");
-    expect(
-      screen.queryByRole("button", {
-        name: catalogPtBR["transactions.filters"],
-      }),
-    ).toBeNull();
     const header = document.querySelector("header");
     if (header === null) throw new Error("no page header");
+    expect(within(header).queryByRole("searchbox")).toBeNull();
     expect(
-      within(header).getByRole("searchbox", {
+      within(header).getByRole("link", { name: catalogPtBR["nav.new"] }),
+    ).toHaveAttribute("href", "/transactions/new");
+    const bar = screen.getByRole("search");
+    expect(
+      within(bar).getByRole("searchbox", {
         name: catalogPtBR["transactions.search"],
       }),
     ).toBeInTheDocument();
+    for (const pill of [
+      catalogPtBR["transactions.filter.account"],
+      catalogPtBR["transactions.filter.period"],
+      catalogPtBR["transactions.filter.payee"],
+      catalogPtBR["transactions.filter.tag"],
+      catalogPtBR["transactions.filter.uncategorized"],
+    ]) {
+      expect(
+        within(bar).getByRole("button", { name: pill }),
+      ).toBeInTheDocument();
+    }
+    const list = screen.getByRole("list", { name: "16/10/2026" });
     expect(
-      within(header).getByRole("combobox", {
-        name: catalogPtBR["transactions.filter.account"],
-      }),
-    ).toBeInTheDocument();
+      bar.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it("shows a no-results state with a clear-filters action when filters match nothing", async () => {

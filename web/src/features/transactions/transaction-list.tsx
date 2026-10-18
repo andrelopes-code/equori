@@ -14,7 +14,7 @@ import {
   ResultStateContent,
   ResultStateTitle,
 } from "@slotted/react/result-state";
-import { SkeletonRegion } from "@slotted/react/skeleton";
+import { Skeleton, SkeletonRegion } from "@slotted/react/skeleton";
 import { useEffect, useMemo, useRef } from "react";
 import type { ReactNode } from "react";
 
@@ -171,8 +171,23 @@ export function TransactionList({
   ) {
     return (
       <SkeletonRegion>
-        <List aria-label={t("transactions.list")} aria-hidden="true">
-          <PlaceholderRows count={Math.min(limit ?? 50, placeholderRows)} />
+        <List
+          variant="ruled"
+          aria-label={t("transactions.list")}
+          aria-hidden="true"
+        >
+          {/* The grouped list reserves its first day heading, so the rows do not move down on arrival. */}
+          {infinite ? (
+            <ListSection
+              label={<Skeleton shape="text" inlineSize="6rem" />}
+              level="2"
+              sticky
+            >
+              <PlaceholderRows count={placeholderRows} />
+            </ListSection>
+          ) : (
+            <PlaceholderRows count={Math.min(limit ?? 50, placeholderRows)} />
+          )}
         </List>
       </SkeletonRegion>
     );
@@ -206,6 +221,11 @@ export function TransactionList({
       tx.payee_id === undefined ? undefined : payeeNames.get(tx.payee_id);
     const label = payee ?? (tx.description || categories);
     const categorySuffix = ` · ${categories}`;
+    const shown = label === "" ? t("transactions.untitled") : label;
+    const title =
+      label !== categories && categories !== ""
+        ? shown + categorySuffix
+        : shown;
     const second = [
       ...(infinite ? [] : [formatDate(tx.date, locale)]),
       ...names(tx, accountsById, ["asset", "liability"]),
@@ -221,13 +241,14 @@ export function TransactionList({
             <ListItemLabel>
               <AmountLine
                 own="transaction-line"
+                fullTitle={title}
                 title={
                   <span
                     className={
                       tx.voided_at === undefined ? undefined : styles.voided
                     }
                   >
-                    {label === "" ? t("transactions.untitled") : label}
+                    {shown}
                     {label !== categories && categories !== "" && (
                       <span className={styles.category}>{categorySuffix}</span>
                     )}

@@ -7,15 +7,20 @@ import styles from "@/ui/amount-line.module.css";
 export function AmountLine({
   own,
   title,
+  fullTitle,
   amount,
 }: {
   own: string;
   title: ReactNode;
+  // LP-04: the title is cut with an ellipsis; this text keeps it whole on hover.
+  fullTitle?: string;
   amount: ReactNode;
 }) {
   return (
     <span data-own={own} className={styles.line}>
-      <span className={styles.title}>{title}</span>
+      <span className={styles.title} title={fullTitle}>
+        {title}
+      </span>
       <span className={styles.amount}>{amount}</span>
     </span>
   );

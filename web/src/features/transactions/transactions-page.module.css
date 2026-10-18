@@ -1,28 +1,24 @@
 @layer app {
-  .controls {
-    display: grid;
-    gap: var(--slotted-space-3);
-  }
-
-  .search {
+  .region {
     display: flex;
-    gap: var(--slotted-space-2);
+    flex-direction: column;
+    gap: var(--slotted-space-4);
   }
 
-  .search > :first-child {
-    flex: 1;
-    min-inline-size: 0;
-  }
+  /* LP-12: from the page's fill step (slotted-page container, 600px) the listing
+     scrolls its own rows; below it the page scrolls and the listing is as tall as its rows. */
+  @container slotted-page (width >= 600px) {
+    .region {
+      flex: 1 1 0;
+      min-block-size: 0;
+    }
 
-  .fields {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--slotted-space-3);
-    align-items: end;
-  }
-
-  .scroller {
-    block-size: 100%;
-    overflow-y: auto;
+    .listing {
+      flex: 1 1 0;
+      min-block-size: 0;
+      overflow-y: auto;
+      /* The header stands above this scroller, not over it: sticky day headers stop at its top. */
+      --slotted-page-sticky-top: 0px;
+    }
   }
 }

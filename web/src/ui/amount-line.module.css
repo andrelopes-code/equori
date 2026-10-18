@@ -8,7 +8,9 @@
 
   .title {
     min-inline-size: 0;
-    overflow-wrap: anywhere;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .amount {
