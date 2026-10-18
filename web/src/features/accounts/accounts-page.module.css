@@ -1,11 +1,137 @@
 @layer app {
-  .classes {
+  .layout {
     display: grid;
-    gap: var(--slotted-space-6);
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-11);
   }
 
-  .heading {
-    margin: 0 0 var(--slotted-space-2);
-    font-size: var(--slotted-control-font-size-md);
+  /* Accounts second pass: the balance sheet beside the index of categories from 64rem. */
+  @container (min-width: 64rem) {
+    .layout {
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: var(--slotted-space-11) var(--slotted-space-12);
+    }
+  }
+
+  .stack {
+    display: grid;
+    gap: var(--slotted-space-9);
+  }
+
+  .sheet {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: var(--slotted-font-size-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sheet th,
+  .sheet td {
+    padding: var(--slotted-space-3) var(--slotted-space-4)
+      var(--slotted-space-3) 0;
+    border-block-end: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+    font-weight: var(--slotted-font-weight-regular);
+    text-align: start;
+    vertical-align: middle;
+  }
+
+  .sheet thead th {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    border-block-end-color: var(--slotted-border-strong);
+  }
+
+  .sheet [data-numeric] {
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  .sheet td:last-child {
+    inline-size: var(--slotted-target-min);
+    padding-inline-end: 0;
+  }
+
+  /* The total closes the class on a double rule, as the ledger's totals elsewhere. */
+  .sheet tfoot th,
+  .sheet tfoot td {
+    border-block-start: calc(var(--slotted-border-width-thin) * 3) double
+      var(--slotted-border-strong);
+    border-block-end: 0;
+    font-weight: var(--slotted-font-weight-medium);
+  }
+
+  .muted {
+    color: var(--slotted-text-muted);
+  }
+
+  .name {
+    color: var(--slotted-text);
+    text-decoration: none;
+  }
+
+  /* A sub-account stands one step in under its parent. */
+  .name[data-depth="1"] {
+    padding-inline-start: var(--slotted-space-6);
+  }
+
+  .name[data-depth="2"] {
+    padding-inline-start: var(--slotted-space-9);
+  }
+
+  .name:hover {
+    text-decoration: underline;
+    text-underline-offset: var(--slotted-space-1);
+  }
+
+  .name:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  .group {
+    display: grid;
+    gap: var(--slotted-space-3);
+  }
+
+  .groupTitle {
+    margin: 0;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-medium);
+  }
+
+  .index {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    column-gap: var(--slotted-space-7);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-2);
+    min-block-size: var(--slotted-target-min);
+    border-block-end: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+    font-size: var(--slotted-font-size-sm);
+  }
+
+  .entry[data-depth="1"],
+  .entry[data-depth="2"] {
+    padding-inline-start: var(--slotted-space-5);
+    color: var(--slotted-text-muted);
+  }
+
+  .entryName {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }

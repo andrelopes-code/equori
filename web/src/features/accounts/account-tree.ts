@@ -48,3 +48,14 @@ export function buildAccountTree(
       : [{ class: accountClass, roots: roots.sort(byName) }];
   });
 }
+
+// The rows of a tree in reading order, each with its depth under the roots.
+export function flattenTree(
+  nodes: TreeNode[],
+  depth = 0,
+): { account: Account; depth: number }[] {
+  return nodes.flatMap((node) => [
+    { account: node.account, depth },
+    ...flattenTree(node.children, depth + 1),
+  ]);
+}

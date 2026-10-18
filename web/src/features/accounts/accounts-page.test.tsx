@@ -125,37 +125,83 @@ async function pick(
 }
 
 describe("accounts page", () => {
-  it("shows balance accounts with their own balance and categories without one", async () => {
+  // Accounts second pass A1: the header states the balance sheet.
+  it("states assets, liabilities and net worth in the header", async () => {
     const { fetch } = accountsApi();
-    await renderApp("/accounts", { fetch });
-    const itau = await screen.findByRole("treeitem", { name: "Itaú" });
-    expect(within(itau).getByText(/1\.234,56/)).toBeInTheDocument();
-    expect(within(itau).getByText(/500,00/)).toBeInTheDocument();
-    const food = screen.getByRole("treeitem", { name: "Mercado" });
-    expect(within(food).queryByText(/R\$/)).toBeNull();
+    await renderApp("/accounts", { fetch, width: 1280 });
     expect(
-      screen.getByRole("tree", { name: catalogPtBR["accounts.class.expense"] }),
+      await screen.findByText(
+        catalogPtBR["accounts.networth.sub"].replace("{amount}", "R$ 1.434,56"),
+      ),
     ).toBeInTheDocument();
+    const figures = screen.getByLabelText(catalogPtBR["accounts.figures"]);
+    expect(
+      [...figures.querySelectorAll("dt")].map((term) => term.textContent),
+    ).toEqual([
+      catalogPtBR["accounts.class.asset"],
+      catalogPtBR["accounts.class.liability"],
+      catalogPtBR["accounts.networth"],
+    ]);
+    expect(within(figures).getByText("R$ 1.734,56")).toBeInTheDocument();
+    expect(within(figures).getByText("R$ 300,00")).toBeInTheDocument();
+    expect(within(figures).getByText("R$ 1.434,56")).toBeInTheDocument();
   });
 
-  it("shows a card account with its balance and no link", async () => {
+  // Accounts second pass A2: balance accounts as a ledger, sub-accounts indented under
+  // their parent, liabilities as what is owed, each class closed by its total.
+  it("lists the balance accounts with kind and balance, and totals each class", async () => {
     const { fetch } = accountsApi();
-    await renderApp("/accounts", { fetch });
-    const card = await screen.findByRole("treeitem", { name: "Nubank" });
-    expect(within(card).getByText(/300,00/)).toBeInTheDocument();
-    expect(within(card).queryByRole("link")).toBeNull();
+    await renderApp("/accounts", { fetch, width: 1280 });
+    const assets = await screen.findByRole("table", {
+      name: catalogPtBR["accounts.class.asset"],
+    });
+    const rows = within(assets)
+      .getAllByRole("row")
+      .slice(1)
+      .map((row) => row.textContent.replace(/\u00a0/g, " "));
+    expect(rows).toEqual([
+      "CarteiraCarteira0,00",
+      "ItaúConta corrente1.234,56",
+      "ReservaPoupança500,00",
+      "Total1.734,56",
+    ]);
+    expect(
+      within(assets).getByRole("link", { name: "Reserva" }).closest("tr"),
+    ).toHaveAttribute("data-depth", "1");
+    expect(within(assets).getByRole("link", { name: "Itaú" })).toHaveAttribute(
+      "href",
+      "/accounts/a-checking",
+    );
+    const liabilities = screen.getByRole("table", {
+      name: catalogPtBR["accounts.class.liability"],
+    });
+    expect(
+      within(liabilities).getByRole("link", { name: "Nubank" }),
+    ).toHaveAttribute("href", "/cards/a-card");
+    expect(liabilities.querySelector("tfoot")?.textContent).toContain("300,00");
+  });
+
+  // Accounts second pass A3: categories carry no balance; they read as an index of names.
+  it("lists the categories by class without a balance", async () => {
+    const { fetch } = accountsApi();
+    await renderApp("/accounts", { fetch, width: 1280 });
+    const expenses = await screen.findByRole("list", {
+      name: catalogPtBR["accounts.class.expense"],
+    });
+    const food = within(expenses).getByRole("listitem");
+    expect(food).toHaveTextContent("Mercado");
+    expect(within(food).queryByText(/R\$/)).toBeNull();
   });
 
   it.each([360, 1280])(
-    "keeps the balance on the row and the actions in a menu at %i",
+    "keeps the actions of an account in a menu at %i",
     async (width) => {
       const { fetch } = accountsApi();
+      const user = userEvent.setup();
       await renderApp("/accounts", { fetch, width });
-      const card = await screen.findByRole("treeitem", { name: "Nubank" });
-      expect(within(card).getByText(/300,00/)).toBeInTheDocument();
-      await userEvent
-        .setup()
-        .click(within(card).getByRole("button", { name: "Ações de Nubank" }));
+      await user.click(
+        await screen.findByRole("button", { name: "Ações de Nubank" }),
+      );
       expect(
         await screen.findByRole("menuitem", {
           name: catalogPtBR["accounts.action.edit"],
