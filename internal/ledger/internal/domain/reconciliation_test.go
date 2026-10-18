@@ -38,3 +38,51 @@ func TestCheckAssertionDate(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestYieldBound(t *testing.T) {
+	tests := []struct {
+		name    string
+		settled int64
+		days    int
+		want    int64
+	}{
+		{"one day rounds down", 100292, 1, 100},
+		{"exact one day", 100000, 1, 100},
+		{"one below the next unit", 99999, 1, 99},
+		{"thirty days", 100000, 30, 3000},
+		{"three days", 102000, 3, 306},
+		{"zero days count as one", 100000, 0, 100},
+		{"zero balance", 0, 5, 0},
+		{"negative balance", -5, 5, 0},
+		{"largest balance and span", 9007199254740991, 36500, 328762772798046171},
+	}
+	for _, tt := range tests {
+		if got := YieldBound(tt.settled, tt.days); got != tt.want {
+			t.Errorf("%s: YieldBound(%d, %d) = %d, want %d", tt.name, tt.settled, tt.days, got, tt.want)
+		}
+	}
+}
+
+func TestDecideSyncedReserve(t *testing.T) {
+	tests := []struct {
+		name              string
+		asserted, settled int64
+		days              int
+		mode              YieldMode
+		want              AssertionOutcome
+	}{
+		{"within the bound", 100352, 100292, 1, YieldAuto, AssertionOutcome{Difference: 60, Resolution: ResolutionYield, Yield: 60}},
+		{"at the bound", 100392, 100292, 1, YieldAuto, AssertionOutcome{Difference: 100, Resolution: ResolutionYield, Yield: 100}},
+		{"one above the bound", 100393, 100292, 1, YieldAuto, AssertionOutcome{Difference: 101}},
+		{"below the settled balance", 100200, 100292, 1, YieldAuto, AssertionOutcome{Difference: -92}},
+		{"no previous assertion", 100352, 100292, 0, YieldAuto, AssertionOutcome{Difference: 60}},
+		{"yield mode none", 100352, 100292, 1, YieldNone, AssertionOutcome{Difference: 60}},
+		{"equal without a previous assertion", 100292, 100292, 0, YieldAuto, AssertionOutcome{Resolution: ResolutionNone}},
+		{"equal with yield mode none", 100292, 100292, 1, YieldNone, AssertionOutcome{Resolution: ResolutionNone}},
+	}
+	for _, tt := range tests {
+		if got := DecideSyncedReserve(tt.asserted, tt.settled, tt.days, tt.mode); got != tt.want {
+			t.Errorf("%s: %+v, want %+v", tt.name, got, tt.want)
+		}
+	}
+}

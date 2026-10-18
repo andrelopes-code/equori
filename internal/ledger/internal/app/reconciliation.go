@@ -53,7 +53,7 @@ func (s *Service) AssertBalance(ctx context.Context, userID int64, accountID uui
 		if err != nil {
 			return err
 		}
-		res, err = s.decideAssertion(ctx, r, a, date, amount, source, nil)
+		res, err = s.decideAssertion(ctx, r, a, date, amount, source, false, nil)
 		return err
 	})
 	return res, err
@@ -62,6 +62,8 @@ func (s *Service) AssertBalance(ctx context.Context, userID int64, accountID uui
 // AssertSynced records an aggregator's balance and decides it. A repeated report of a
 // balance already asserted by the aggregator inserts nothing and decides the open assertions
 // of that date and amount again, because history recorded since may close the difference (A77).
+// A reserve may book bounded yield (D3, A75). The result is that of the newest assertion of
+// the date and amount: the list orders by creation, newest first.
 func (s *Service) AssertSynced(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, amount money.Money, reserve bool) (AssertionResult, error) {
 	if date.After(s.clock.Today()) {
 		return AssertionResult{}, validationError("date", "must not be in the future")
@@ -81,25 +83,26 @@ func (s *Service) AssertSynced(ctx context.Context, userID int64, accountID uuid
 			if found.Source != SourceOpenFinance || !found.Date.Equal(date) || found.Amount != amount.Amount() {
 				continue
 			}
+			newest := !repeated
 			repeated = true
 			if found.Reconciled {
-				if res.Assertion.ID == uuid.Nil {
+				if newest {
 					res.Assertion = found
 				}
 				continue
 			}
-			decided, err := s.decideAssertion(ctx, r, a, date, amount, SourceOpenFinance, &found)
+			decided, err := s.decideAssertion(ctx, r, a, date, amount, SourceOpenFinance, reserve, &found)
 			if err != nil {
 				return err
 			}
-			if res.Assertion.ID == uuid.Nil || decided.Resolution != "" {
+			if newest {
 				res = decided
 			}
 		}
 		if repeated {
 			return nil
 		}
-		res, err = s.decideAssertion(ctx, r, a, date, amount, SourceOpenFinance, nil)
+		res, err = s.decideAssertion(ctx, r, a, date, amount, SourceOpenFinance, reserve, nil)
 		return err
 	})
 	return res, err
@@ -124,9 +127,14 @@ func (s *Service) lockAssertionTarget(ctx context.Context, r Repository, userID 
 
 // decideAssertion compares the settled balance with the asserted amount and reconciles the
 // account when they match. An existing assertion is decided again; a nil one is inserted.
-func (s *Service) decideAssertion(ctx context.Context, r Repository, a domain.Account, date time.Time, amount money.Money, source string, existing *BalanceAssertion) (AssertionResult, error) {
+// An aggregator's assertion books yield only when reserve is set (A75).
+func (s *Service) decideAssertion(ctx context.Context, r Repository, a domain.Account, date time.Time, amount money.Money, source string, reserve bool, existing *BalanceAssertion) (AssertionResult, error) {
 	var res AssertionResult
-	start, err := s.yieldStart(ctx, r, a.UserID, a.ID, date)
+	prev, err := s.previousAssertionDate(ctx, r, a.UserID, a.ID, date)
+	if err != nil {
+		return res, err
+	}
+	start, err := s.yieldStart(ctx, r, a, date, prev)
 	if err != nil {
 		return res, err
 	}
@@ -134,12 +142,20 @@ func (s *Service) decideAssertion(ctx context.Context, r Repository, a domain.Ac
 	if err != nil {
 		return res, err
 	}
-	mode := a.YieldMode
-	if source == SourceOpenFinance {
+	var outcome domain.AssertionOutcome
+	switch {
+	case reserve:
+		days := 0
+		if prev != nil {
+			days = int(date.Sub(*prev) / (24 * time.Hour))
+		}
+		outcome = domain.DecideSyncedReserve(amount.Amount(), settled, days, a.YieldMode)
+	case source == SourceOpenFinance:
 		// P6 A42: yield arrives as feed lines; a line the feed lacks today is not yield.
-		mode = domain.YieldNone
+		outcome = domain.DecideAssertion(amount.Amount(), settled, domain.YieldNone)
+	default:
+		outcome = domain.DecideAssertion(amount.Amount(), settled, a.YieldMode)
 	}
-	outcome := domain.DecideAssertion(amount.Amount(), settled, mode)
 	if outcome.Resolution == domain.ResolutionYield && start == nil {
 		outcome = domain.AssertionOutcome{Difference: outcome.Difference}
 	}
@@ -338,20 +354,29 @@ func checkLeafBalance(ctx context.Context, r Repository, a domain.Account) error
 	return nil
 }
 
-// yieldStart is the first day of the yield period (A10): the day after the previous
-// assertion, else the account's first settlement date; nil when the account has no history.
-func (s *Service) yieldStart(ctx context.Context, r Repository, userID int64, accountID uuid.UUID, date time.Time) (*time.Time, error) {
+// previousAssertionDate is the date of the latest assertion dated before date; nil when
+// there is none.
+func (s *Service) previousAssertionDate(ctx context.Context, r Repository, userID int64, accountID uuid.UUID, date time.Time) (*time.Time, error) {
 	assertions, err := r.BalanceAssertions(ctx, userID, accountID)
 	if err != nil {
 		return nil, err
 	}
 	for _, prev := range assertions {
 		if prev.Date.Before(date) {
-			start := prev.Date.AddDate(0, 0, 1)
-			return &start, nil
+			return &prev.Date, nil
 		}
 	}
-	first, err := r.FirstSettledOn(ctx, userID, accountID)
+	return nil, nil
+}
+
+// yieldStart is the first day of the yield period (A10): the day after the previous
+// assertion, else the account's first settlement date; nil when the account has no history.
+func (s *Service) yieldStart(ctx context.Context, r Repository, a domain.Account, date time.Time, prev *time.Time) (*time.Time, error) {
+	if prev != nil {
+		start := prev.AddDate(0, 0, 1)
+		return &start, nil
+	}
+	first, err := r.FirstSettledOn(ctx, a.UserID, a.ID)
 	if err != nil || first == nil || first.After(date) {
 		return nil, err
 	}

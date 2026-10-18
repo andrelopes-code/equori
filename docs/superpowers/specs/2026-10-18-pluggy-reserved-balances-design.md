@@ -71,7 +71,7 @@ After the D2 assertion of a mapped reserved balance, the ledger books the differ
 1. The ledger account's `yield_mode` is `auto` (the default of kind `reserve`).
 2. The account has a previous assertion dated before the new one; `days` is the number of days
    between the two dates, minimum 1.
-3. `0 < difference ≤ B`, with `B = floor(settled × 2 × days / 3000)` in minor units (2% per 30
+3. `0 < difference ≤ B`, with `B = floor(settled × 3 × days / 3000)` in minor units (3% per 30
    days), computed with `math/big`; `B` is 0 when `settled ≤ 0`.
 
 The yield is one transaction dated the assertion date: reserve `+difference`, system income
@@ -84,10 +84,12 @@ assertion, stays open for the owner (current behaviour). A bank account (`CHECKI
 Rationale: a transfer between checking and a reserve that is not booked as a transfer changes the
 reserve amount; the bound keeps such a transfer from being booked as yield.
 
-Known limit: the bound is 0.0667% per calendar day. At 140% CDI, consecutive business-day
-assertions accrue 0.0644% per day on the 2026-10 CDI (0.046% per business day, 12.3% per year).
-Above a CDI of 12.75% per year, the yield of one business day exceeds the bound of one calendar
-day, and that difference stays open. The rate is one named constant of the ledger domain.
+Known limit: the bound is 0.1% per calendar day (3% per 30 days). At 140% CDI, consecutive
+business-day assertions accrue 0.0644% per day on the 2026-10 CDI (0.046% per business day,
+12.3% per year). A bound of 2% per 30 days (0.0667% per day) leaves 140% CDI below it only
+until a CDI of 12.75% per year, so the bound is 3%, which covers 200% CDI at 15% per year. A
+transfer under 3% per 30 days of the balance that D4 does not recognize books as yield; voiding
+the transaction reverses it. The rate is one named constant of the ledger domain.
 
 ### D4 Transfers between checking and a reserved balance (A76)
 
@@ -182,9 +184,10 @@ the next sync. Nubank, with `reservedBalances: []`, lists no reserve.
 ### S69 Bounded reserve yield
 
 After S68, the item updated on 2026-11-11 reports 1,003.52: the difference 0.60 is within
-`B = floor(100292 × 2 × 1 / 3000) = 66`, so the sync records "Yield 2026-11-11 to 2026-11-11" of
+`B = floor(100292 × 3 × 1 / 3000) = 100`, so the sync records "Yield 2026-11-11 to 2026-11-11" of
 0.60 against Yield and the assertion is reconciled with resolution `yield`. On 2026-11-12 it
-reports 1,004.52: the difference 1.00 exceeds `B = 66` and stays open. A reported amount below the
+reports 1,004.53: the difference 1.01 exceeds `B = floor(100352 × 3 / 3000) = 100` and stays
+open; 1,004.52 (difference 1.00) is booked as yield. A reported amount below the
 settled balance stays open.
 
 ### S70 Transfer to and from a reserved balance

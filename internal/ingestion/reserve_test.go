@@ -3,6 +3,7 @@ package ingestion_test
 import (
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -196,4 +197,190 @@ func TestS68ReservedBalanceSync(t *testing.T) {
 	if as := f.assertions(reserve); len(as) != 1 {
 		t.Fatalf("assertions after the reserve disappeared = %+v", as)
 	}
+}
+
+// reserveAfterFirstSync is the S68 setup after the sync of 2026-11-10: a mapped reserve of
+// 1,002.92 whose assertion is reconciled.
+func reserveAfterFirstSync(t *testing.T, yieldMode string) (f syncFixture, reserve, reservedID string) {
+	t.Helper()
+	a := newAggregator(t)
+	it := pluggy.Item{ID: mercadoPagoItem, Status: pluggy.StatusUpdated, LastUpdatedAt: new("2026-11-10T15:00:00.000Z")}
+	it.Connector.Name = "Mercado Pago"
+	a.p.AddItemTo(pluggyClient, it)
+	checkingID := mercadoPagoItem + "-checking"
+	a.p.AddAccount(mercadoPagoItem, pluggy.Account{ID: checkingID, Type: "BANK", Subtype: pluggy.SubtypeChecking, Name: "Mercado Pago", Number: checkingNumber, Balance: "500.05", CurrencyCode: "BRL"})
+	a.p.AddReservedBalance(checkingID, reserved("Cofrinho Mercado Livre", "res-cofrinho", "1002.92"))
+	in := a.integrate(a.h.Client, "Meu Pluggy", pluggyClient, pluggySecret)
+	f = syncFixture{aggregator: a, conn: a.mustConnect(a.h.Client, in.ID, mercadoPagoItem)}
+	reserve = a.h.Account("MP Cofrinho", "asset", "reserve", map[string]any{"yield_mode": yieldMode})
+	a.h.Record("2026-11-10", apitest.Posting(reserve, 100292), apitest.Posting(openingBalances(f), -100292))
+	body := map[string]any{"account_id": reserve, "sync_from": "2026-11-11"}
+	if r := a.mapAccount(a.h.Client, f.conn.ID, reservedByName(f.conn, "Cofrinho Mercado Livre").ID, body); r.Status != http.StatusOK {
+		t.Fatalf("map status %d: %s", r.Status, r.Body)
+	}
+	f.sync()
+	if as := f.assertions(reserve); len(as) != 1 || !as[0].Reconciled || as[0].Date != "2026-11-10" {
+		t.Fatalf("assertions after the first sync = %+v", as)
+	}
+	return f, reserve, checkingID
+}
+
+// syncReserve reports amount for the reserve on day and syncs.
+func (f syncFixture) syncReserve(checkingID, day string, amount pluggy.Decimal) {
+	f.h.T().Helper()
+	f.p.SetReservedAmount(checkingID, "res-cofrinho", amount)
+	f.p.SetItemUpdatedAt(mercadoPagoItem, day+"T15:00:00.000Z")
+	f.sync()
+}
+
+// yieldTransactions returns the yield transactions of the account, oldest first.
+func (f syncFixture) yieldTransactions(account string) []apitest.TransactionView {
+	f.h.T().Helper()
+	rows, err := f.h.Pool.Query(f.h.T().Context(), `
+		SELECT DISTINCT t.id::text, t.date FROM ledger_transaction t
+		JOIN ledger_posting p ON p.transaction_id = t.id
+		WHERE p.account_id = $1 AND t.description LIKE 'Yield %' ORDER BY t.date`, account)
+	if err != nil {
+		f.h.T().Fatal(err)
+	}
+	defer rows.Close()
+	var out []apitest.TransactionView
+	for rows.Next() {
+		var id string
+		var date time.Time
+		if err := rows.Scan(&id, &date); err != nil {
+			f.h.T().Fatal(err)
+		}
+		out = append(out, f.h.Transaction(id))
+	}
+	if err := rows.Err(); err != nil {
+		f.h.T().Fatal(err)
+	}
+	return out
+}
+
+// reserveDifference returns the open difference of the account in minor units, and whether
+// one is open.
+func (f syncFixture) reserveDifference(account string) (int64, bool) {
+	f.h.T().Helper()
+	var out struct {
+		OpenDifference *struct {
+			Difference struct {
+				Amount int64 `json:"amount"`
+			} `json:"difference"`
+		} `json:"open_difference"`
+	}
+	f.h.MustDo(http.MethodGet, "/api/v1/accounts/"+account+"/reconciliation", nil, http.StatusOK, &out)
+	if out.OpenDifference == nil {
+		return 0, false
+	}
+	return out.OpenDifference.Difference.Amount, true
+}
+
+func wantYield(t *testing.T, f syncFixture, reserve, description string, amount int64) {
+	t.Helper()
+	ys := f.yieldTransactions(reserve)
+	if len(ys) != 1 || ys[0].Description != description || ys[0].Origin != "system" || len(ys[0].Postings) != 2 {
+		t.Fatalf("yield transactions = %+v, want one %q", ys, description)
+	}
+	for _, p := range ys[0].Postings {
+		want := -amount
+		if p.AccountID == reserve {
+			want = amount
+		}
+		if p.Amount.Amount != want {
+			t.Fatalf("posting = %+v, want %d", p, want)
+		}
+	}
+}
+
+// S69: the difference of a mapped reserve books as yield only within the bound of 3% per 30
+// days of the settled balance, for a reserve with automatic yield (D3, A75).
+func TestS69BoundedReserveYield(t *testing.T) {
+	t.Run("within and above the bound", func(t *testing.T) {
+		f, reserve, checkingID := reserveAfterFirstSync(t, "auto")
+		// B = floor(100292 * 3 * 1 / 3000) = 100.
+		f.syncReserve(checkingID, "2026-11-11", "1003.52")
+		as := f.assertions(reserve)
+		if len(as) != 2 || as[0].Date != "2026-11-11" || !as[0].Reconciled || as[0].Amount.Amount != 100352 {
+			t.Fatalf("assertions = %+v", as)
+		}
+		wantYield(t, f, reserve, "Yield 2026-11-11 to 2026-11-11", 60)
+		if _, open := f.reserveDifference(reserve); open {
+			t.Fatal("a yield leaves no open difference")
+		}
+
+		// B = floor(100352 * 3 * 1 / 3000) = 100; the difference 101 exceeds it.
+		f.syncReserve(checkingID, "2026-11-12", "1004.53")
+		as = f.assertions(reserve)
+		if len(as) != 3 || as[0].Date != "2026-11-12" || as[0].Reconciled {
+			t.Fatalf("assertions = %+v", as)
+		}
+		if d, open := f.reserveDifference(reserve); !open || d != 101 {
+			t.Fatalf("open difference = %d, %v; want 101", d, open)
+		}
+		if n := len(f.yieldTransactions(reserve)); n != 1 {
+			t.Fatalf("yield transactions = %d, want 1", n)
+		}
+	})
+
+	t.Run("difference equal to the bound", func(t *testing.T) {
+		f, reserve, checkingID := reserveAfterFirstSync(t, "auto")
+		f.syncReserve(checkingID, "2026-11-11", "1003.52")
+		f.syncReserve(checkingID, "2026-11-12", "1004.52")
+		as := f.assertions(reserve)
+		if len(as) != 3 || as[0].Date != "2026-11-12" || !as[0].Reconciled {
+			t.Fatalf("assertions = %+v", as)
+		}
+		ys := f.yieldTransactions(reserve)
+		if len(ys) != 2 || ys[1].Description != "Yield 2026-11-12 to 2026-11-12" || ys[1].Postings[0].Amount.Amount+ys[1].Postings[1].Amount.Amount != 0 {
+			t.Fatalf("yield transactions = %+v", ys)
+		}
+	})
+
+	t.Run("amount below the settled balance", func(t *testing.T) {
+		f, reserve, checkingID := reserveAfterFirstSync(t, "auto")
+		f.syncReserve(checkingID, "2026-11-11", "1002.00")
+		if d, open := f.reserveDifference(reserve); !open || d != -92 {
+			t.Fatalf("open difference = %d, %v; want -92", d, open)
+		}
+		if n := len(f.yieldTransactions(reserve)); n != 0 {
+			t.Fatalf("yield transactions = %d, want 0", n)
+		}
+	})
+
+	t.Run("yield mode none", func(t *testing.T) {
+		f, reserve, checkingID := reserveAfterFirstSync(t, "none")
+		f.syncReserve(checkingID, "2026-11-11", "1003.52")
+		if as := f.assertions(reserve); len(as) != 2 || as[0].Reconciled {
+			t.Fatalf("assertions = %+v", as)
+		}
+		if d, open := f.reserveDifference(reserve); !open || d != 60 {
+			t.Fatalf("open difference = %d, %v; want 60", d, open)
+		}
+		if n := len(f.yieldTransactions(reserve)); n != 0 {
+			t.Fatalf("yield transactions = %d, want 0", n)
+		}
+	})
+
+	// Assertions of one date and amount decide in creation order, newest first: the yield is
+	// booked once and the older assertion reconciles with resolution none.
+	t.Run("several open assertions of the sync date", func(t *testing.T) {
+		f, reserve, checkingID := reserveAfterFirstSync(t, "auto")
+		body := map[string]any{"date": "2026-11-11", "amount": apitest.BRL(100352), "source": "open_finance"}
+		f.h.MustDo(http.MethodPost, "/api/v1/accounts/"+reserve+"/balance-assertions", body, http.StatusCreated, nil)
+		f.h.MustDo(http.MethodPost, "/api/v1/accounts/"+reserve+"/balance-assertions", body, http.StatusCreated, nil)
+		f.syncReserve(checkingID, "2026-11-11", "1003.52")
+		as := f.assertions(reserve)
+		if len(as) != 3 || !as[0].Reconciled || !as[1].Reconciled || !as[2].Reconciled {
+			t.Fatalf("assertions = %+v", as)
+		}
+		wantYield(t, f, reserve, "Yield 2026-11-11 to 2026-11-11", 60)
+		if n := f.count(`SELECT count(*) FROM ledger_reconciliation WHERE account_id = $1 AND date = '2026-11-11' AND resolution = 'yield' AND difference = 60`, reserve); n != 1 {
+			t.Fatalf("yield reconciliations = %d, want 1", n)
+		}
+		if n := f.count(`SELECT count(*) FROM ledger_reconciliation WHERE account_id = $1 AND date = '2026-11-11' AND resolution = 'none' AND difference = 0`, reserve); n != 1 {
+			t.Fatalf("none reconciliations = %d, want 1", n)
+		}
+	})
 }

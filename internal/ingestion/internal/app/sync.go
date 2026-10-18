@@ -173,7 +173,11 @@ func (s *Service) syncAccount(ctx context.Context, c domain.Connection, ext doma
 		if ext.Balance == nil || *ext.Balance != *b {
 			batch.Balance = domain.FileBalance{Status: domain.BalanceRecorded, Date: &b.Date, Amount: b.Amount}
 		}
-		err := s.ledger.AssertSyncedBalance(ctx, c.UserID, accountID, *b, target.Currency)
+		assert := s.ledger.AssertSyncedBalance
+		if ext.Subtype == domain.SubtypeReservedBalance {
+			assert = s.ledger.AssertSyncedReserve
+		}
+		err := assert(ctx, c.UserID, accountID, *b, target.Currency)
 		switch {
 		case errors.Is(err, ErrBalanceRejected):
 			if batch.Balance.Status == domain.BalanceRecorded {

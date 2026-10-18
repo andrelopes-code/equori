@@ -220,6 +220,10 @@ func (p ledgerPort) AssertSyncedBalance(ctx context.Context, userID int64, accou
 	return p.assert(ctx, userID, accountID, b, c, p.l.AssertSyncedBalance)
 }
 
+func (p ledgerPort) AssertSyncedReserve(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Balance, c money.Currency) error {
+	return p.assert(ctx, userID, accountID, b, c, p.l.AssertSyncedReserve)
+}
+
 type assertFunc func(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, amount money.Money) error
 
 func (p ledgerPort) assert(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Balance, c money.Currency, assert assertFunc) error {

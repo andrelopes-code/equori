@@ -307,6 +307,13 @@ func (m *Module) AssertSyncedBalance(ctx context.Context, userID int64, accountI
 	return err
 }
 
+// AssertSyncedReserve is AssertSyncedBalance for a reserved balance: a positive difference
+// within the yield bound of an account with automatic yield is booked as yield (A75).
+func (m *Module) AssertSyncedReserve(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, amount money.Money) error {
+	_, err := m.svc.AssertSynced(ctx, userID, accountID, date, amount, true)
+	return err
+}
+
 // UpdateImportedPosting applies an aggregator's later report on a recorded line (P6 A36);
 // a reconciled posting is ErrReconciled.
 func (m *Module) UpdateImportedPosting(ctx context.Context, userID int64, recordID uuid.UUID, u ImportedUpdate) error {

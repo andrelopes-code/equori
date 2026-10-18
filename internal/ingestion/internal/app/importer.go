@@ -92,6 +92,9 @@ type Ledger interface {
 	// AssertSyncedBalance records an aggregator balance without yield (P6 A42); a refused
 	// assertion wraps ErrBalanceRejected.
 	AssertSyncedBalance(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Balance, c money.Currency) error
+	// AssertSyncedReserve is AssertSyncedBalance for a reserved balance, which books bounded
+	// yield on a positive difference (A75).
+	AssertSyncedReserve(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Balance, c money.Currency) error
 	// UpdateImportedPosting applies a later report on a recorded line (A36): ErrReconciled
 	// leaves the posting as it is; ErrNotFound when no posting carries the record.
 	UpdateImportedPosting(ctx context.Context, userID int64, recordID uuid.UUID, pending bool, dueDate *time.Time) error
