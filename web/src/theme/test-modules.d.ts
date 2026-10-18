@@ -1,6 +1,6 @@
 // Declarations for the Node-runner theme test; @types/node and a typed conformance entry are not installed.
 declare module "node:fs" {
-  export function readFileSync(path: URL, encoding: "utf8"): string;
+  export function readFileSync(path: URL | string, encoding: "utf8"): string;
 }
 
 declare module "@slotted/theme/conformance" {
