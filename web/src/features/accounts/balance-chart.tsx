@@ -32,6 +32,8 @@ export function BalanceChart({
             field: "value",
             label: t("accounts.chart.series"),
             curve: "step",
+            // Ledger sheet L10: accent marks forecasts; a realized balance is neutral.
+            tone: "neutral",
           },
         ]}
         x={{

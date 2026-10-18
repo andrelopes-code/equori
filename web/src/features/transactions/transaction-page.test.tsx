@@ -85,10 +85,15 @@ describe("transaction detail", () => {
     expect(screen.getByText("food")).toBeTruthy();
     expect(screen.getByText(label["transaction.origin.manual"])).toBeTruthy();
     expect(screen.getByText("3")).toBeTruthy();
+    // Ledger sheet L18: the amount as a figure, the postings as a table.
+    expect(document.querySelector('[data-own="money-figure"]')).not.toBeNull();
+    expect(
+      document.querySelector('[data-ui="description-list"]'),
+    ).toHaveAttribute("data-variant", "ruled");
     const postings = within(
-      screen.getByRole("list", { name: label["transactions.new.postings"] }),
+      screen.getByRole("table", { name: label["transactions.new.postings"] }),
     );
-    const rows = postings.getAllByRole("listitem");
+    const rows = postings.getAllByRole("row").slice(1);
     expect(rows).toHaveLength(2);
     const [first, second] = rows.map((row) => within(row));
     expect(first?.getByText("Itau")).toBeTruthy();

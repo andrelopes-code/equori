@@ -1,25 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
-import { SkeletonRegion } from "@slotted/react/skeleton";
-import {
-  StatCard,
-  StatCardFigure,
-  StatCardHeader,
-  StatCardLabel,
-  StatCardValue,
-} from "@slotted/react/stat-card";
+import { Skeleton, SkeletonRegion } from "@slotted/react/skeleton";
 
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
-import styles from "@/features/accounts/account-page.module.css";
 import { balanceQuery } from "@/features/accounts/api";
 import { useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { MoneyText } from "@/ui/money-text";
+import { FigureStrip } from "@/ui/figure-strip";
+import { FigureStripItem } from "@/ui/figure-strip-item";
+import { MoneyFigure } from "@/ui/money-figure";
 import { QueryError } from "@/ui/query-error";
 
 type Account = components["schemas"]["Account"];
 
+// Ledger sheet L18: the booked and settled balances as a strip of figures.
 export function AccountBalances({ account }: { account: Account }) {
   const t = useT();
   const api = useApi();
@@ -48,18 +43,16 @@ export function AccountBalances({ account }: { account: Account }) {
   ) {
     return (
       <SkeletonRegion>
-        <div className={styles.balances}>
-          {queries.map((_, n) => (
-            <StatCard key={n} loading>
-              <StatCardHeader>
-                <StatCardLabel />
-              </StatCardHeader>
-              <StatCardFigure>
-                <StatCardValue />
-              </StatCardFigure>
-            </StatCard>
+        <FigureStrip>
+          {["booked", "settled"].map((key) => (
+            <FigureStripItem
+              key={key}
+              label={<Skeleton shape="text" inlineSize="6rem" />}
+            >
+              <Skeleton shape="text" inlineSize="10rem" />
+            </FigureStripItem>
           ))}
-        </div>
+        </FigureStrip>
       </SkeletonRegion>
     );
   }
@@ -76,19 +69,16 @@ export function AccountBalances({ account }: { account: Account }) {
     },
   ];
   return (
-    <div className={styles.balances}>
+    <FigureStrip label={t("accounts.balances")}>
       {cards.map(({ key, label, balance }) => (
-        <StatCard key={key}>
-          <StatCardHeader>
-            <StatCardLabel>{label}</StatCardLabel>
-          </StatCardHeader>
-          <StatCardFigure>
-            <StatCardValue>
-              <MoneyText money={balance} scale={scale(balance.currency)} />
-            </StatCardValue>
-          </StatCardFigure>
-        </StatCard>
+        <FigureStripItem key={key} label={label}>
+          <MoneyFigure
+            money={balance}
+            scale={scale(balance.currency)}
+            size="xl"
+          />
+        </FigureStripItem>
       ))}
-    </div>
+    </FigureStrip>
   );
 }

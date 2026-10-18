@@ -153,6 +153,8 @@ export function AccountsPage() {
             <PageHeaderActions>
               {newTarget !== null && (
                 <Button
+                  tone="secondary"
+                  variant="outline"
                   onClick={() => {
                     setDialog({ type: "form", target: newTarget });
                   }}

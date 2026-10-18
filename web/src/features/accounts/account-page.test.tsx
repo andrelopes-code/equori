@@ -384,8 +384,11 @@ describe("account page waiting and failure states", () => {
     await act(async () => {
       await Promise.resolve();
     });
+    // Ledger sheet L18: the two balances wait as a strip of skeleton figures.
     expect(
-      container.querySelectorAll('[data-ui="stat-card"][aria-busy="true"]'),
+      container.querySelectorAll(
+        '[aria-busy="true"] [data-own="figure-strip"] dt',
+      ),
     ).toHaveLength(2);
     expect(
       container.querySelectorAll('[data-ui="skeleton"]').length,

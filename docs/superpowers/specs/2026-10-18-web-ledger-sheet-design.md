@@ -43,7 +43,7 @@ Each of R2–R6 gets its own spec. The specs `2026-10-18-web-cards-design.md`, `
 | L15 | Transactions list at ≥ 1024 px: `Table` (ruled), columns Date (L14), Description, Category, Amount (end-aligned, L9). Description is the transaction description followed by " · account name" in muted text when no account filter is set. An uncategorized expense or income shows "review" in warning text in the Category column. A transfer shows "Transfer" in muted text and the counter account in the description suffix. A voided transaction keeps its strikethrough. Loading more keeps the current cursor pagination. |
 | L16 | Transactions list below 1024 px: grouped by day with a day header (L14); each row is the description on the first line, "category · account" in muted `xs` text on the second, with "review" in warning text for an uncategorized one, and the amount at the row end. |
 | L17 | Overview in R1: page header "Overview"; a figure strip of the four balance groups (Available, Reserves, Cards, Loans) with captions from the current balance-groups data; below, two columns from 64 rem of content width (`1.3fr 1fr`, gap `--slotted-space-11`) and one column below: Recent transactions as a table (Date, Description, Amount) and Accounts as one table per balance group, the group name as its caption, an account per row, no summary row. |
-| L18 | Accounts page: one table per balance group with a summary row holding the group total (L11). Account page: the same table rules (L9, L13, L14); its header shows the balance as `MoneyFigure` `lg`. Transaction page: the amount as `MoneyFigure` `lg`, details as `DescriptionList` `variant="ruled"`. Settings and login keep their structure; login shows the "equori" wordmark. |
+| L18 | Accounts page: the account tree by class stays (the hierarchy needs the `tree` family); its "New account" action is `tone="secondary"` `variant="outline"`. Account page: the booked and settled balances as a figure strip of `MoneyFigure` `xl`; the balance chart series in the neutral tone; the transactions table of L15. Transaction page: the day (L14) and the amount as `MoneyFigure` `xl` head the page; details as `DescriptionList` `variant="ruled"`; postings as a table (Account, Status, Amount). Settings keeps its structure; login shows the "equori" wordmark under its title. |
 
 ## Files
 
@@ -77,7 +77,6 @@ Each of R2–R6 gets its own spec. The specs `2026-10-18-web-cards-design.md`, `
 - `sync-status.test.tsx`: latest `last_synced_at` of two connections renders; same day reads `HH:mm`; an earlier day reads the short date; no connection renders nothing.
 - `transaction-list.test.tsx`: desktop table columns and order; the date appears once per day; "review" for an uncategorized row; transfer row; base-currency amounts without symbol and a foreign one with symbol; phone day headers "Hoje" and "Ontem".
 - `home-page.test.tsx`: figure strip of four groups; no alert; one account table per group.
-- `accounts-page.test.tsx`: each group table closes with a summary row holding the group total.
 - `equori.theme.test.ts`: `themeConformance` passes with the new seeds; the compiled stylesheet contains the summary rule.
 - Existing tests that assert the side navigation, the five-control bottom bar, the money tones, the arrows or the old date strings change with this spec; each such change cites the decision ID in the commit body.
 

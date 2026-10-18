@@ -7,6 +7,7 @@ import { Page, PageBody } from "@slotted/react/page";
 import {
   PageHeader,
   PageHeaderHeading,
+  PageHeaderSubheading,
   PageHeaderTitle,
   PageHeaderTitleArea,
   PageHeaderTitleRow,
@@ -52,6 +53,7 @@ export function LoginPage() {
           <PageHeaderTitleRow>
             <PageHeaderTitle>
               <PageHeaderHeading>{t("login.title")}</PageHeaderHeading>
+              <PageHeaderSubheading>{t("app.name")}</PageHeaderSubheading>
             </PageHeaderTitle>
           </PageHeaderTitleRow>
         </PageHeaderTitleArea>

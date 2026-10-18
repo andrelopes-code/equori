@@ -1,17 +1,23 @@
 @layer app {
   .details {
     display: grid;
-    gap: var(--slotted-space-5);
+    gap: var(--slotted-space-9);
+  }
+
+  .figure {
+    display: grid;
+    gap: var(--slotted-space-2);
+  }
+
+  .memo {
+    display: block;
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-regular);
+    color: var(--slotted-text-muted);
   }
 
   .voided {
     text-decoration: line-through;
-  }
-
-  .postingEnd {
-    display: flex;
-    align-items: center;
-    gap: var(--slotted-space-3);
   }
 
   .history {

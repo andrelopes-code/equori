@@ -212,5 +212,8 @@ describe("login layout", () => {
     await findField(catalogEn["login.email"]);
     expect(container.querySelector('[data-own="bottom-bar"]')).toBeNull();
     expect(container.querySelector('[data-ui="side-navigation"]')).toBeNull();
+    // Ledger sheet L4 and L18: no top bar; the page carries the wordmark.
+    expect(container.querySelector('[data-ui="top-navigation"]')).toBeNull();
+    expect(screen.getByText(catalogEn["app.name"])).toBeInTheDocument();
   });
 });
