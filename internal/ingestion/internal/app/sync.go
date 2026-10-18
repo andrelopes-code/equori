@@ -1,9 +1,11 @@
 package app
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -67,7 +69,12 @@ func (s *Service) syncItem(ctx context.Context, c *domain.Connection, force bool
 		return nil, err
 	}
 	var batches []domain.Batch
-	for _, ext := range c.Accounts {
+	// Reserved balances sync after the other accounts, so that the transfers the lines of a
+	// bank account book come before the reserve assertion (A74).
+	ordered := slices.SortedStableFunc(slices.Values(c.Accounts), func(a, b domain.ExternalAccount) int {
+		return cmp.Compare(reserveRank(a), reserveRank(b))
+	})
+	for _, ext := range ordered {
 		if ext.State() != domain.MappingMapped {
 			continue
 		}
@@ -80,6 +87,13 @@ func (s *Service) syncItem(ctx context.Context, c *domain.Connection, force bool
 	now := s.now()
 	c.LastSyncedAt, c.LastItemUpdateAt = &now, updatedAt
 	return batches, nil
+}
+
+func reserveRank(ext domain.ExternalAccount) int {
+	if ext.Subtype == domain.SubtypeReservedBalance {
+		return 1
+	}
+	return 0
 }
 
 // addMissingAccounts stores, pending, every account and reserved balance the item reports
@@ -134,6 +148,10 @@ func (s *Service) syncAccount(ctx context.Context, c domain.Connection, ext doma
 	defer unlock()
 
 	read, err := s.agg.ReadAccount(ctx, c.IntegrationID, creds, c.ItemID, ext.ExternalID, from, to, target.Currency.MinorUnits())
+	if errors.Is(err, ErrAccountGone) && ext.Subtype == domain.SubtypeReservedBalance {
+		// A reserved balance the item stopped reporting syncs without a balance (D2).
+		read, err = domain.AccountRead{}, nil
+	}
 	if err != nil {
 		return domain.Batch{}, fmt.Errorf("account %s: %w", ext.ID, err)
 	}

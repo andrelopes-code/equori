@@ -160,7 +160,7 @@ func (p pluggyPort) ReadAccount(ctx context.Context, id uuid.UUID, c domain.Cred
 		}
 		i := slices.IndexFunc(accounts, func(a pluggy.Account) bool { return a.ID == accountID })
 		if i < 0 {
-			return app.ErrAccountGone
+			return p.readReserve(it, accounts, accountID, scale, &out)
 		}
 		a := accounts[i]
 		bills := map[string]pluggy.Bill{}
@@ -204,4 +204,42 @@ func (p pluggyPort) ReadAccount(ctx context.Context, id uuid.UUID, c domain.Cred
 		return out, fmt.Errorf("%w: the item is gone", app.ErrProviderUnavailable)
 	}
 	return out, err
+}
+
+// readReserve reads a reserved balance by its identification: no lines, and a balance of the
+// summed amounts in the parent account's currency at the item's last update (A74).
+// ErrAccountGone when no account holds it.
+func (p pluggyPort) readReserve(it pluggy.Item, accounts []pluggy.Account, identification string, scale int, out *domain.AccountRead) error {
+	for _, a := range accounts {
+		if a.BankData == nil {
+			continue
+		}
+		for _, r := range a.BankData.ReservedBalances {
+			if r.Identification != identification {
+				continue
+			}
+			var err error
+			*out = domain.AccountRead{ItemStatus: it.Status}
+			if out.ItemUpdatedAt, err = updatedAt(it); err != nil {
+				return err
+			}
+			var total int64
+			for _, x := range r.AvailableAmounts {
+				if x.CurrencyCode != a.CurrencyCode {
+					continue
+				}
+				amount, err := pluggy.Minor(x.Amount, scale)
+				if err != nil {
+					return nil
+				}
+				total += amount
+			}
+			if out.ItemUpdatedAt != nil {
+				l := out.ItemUpdatedAt.In(p.loc)
+				out.Balance = &domain.Balance{Date: time.Date(l.Year(), l.Month(), l.Day(), 0, 0, 0, 0, time.UTC), Amount: total}
+			}
+			return nil
+		}
+	}
+	return app.ErrAccountGone
 }

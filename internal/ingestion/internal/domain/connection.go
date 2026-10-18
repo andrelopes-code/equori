@@ -116,12 +116,16 @@ func LastDigits(number string) string {
 	return digits[max(0, len(digits)-4):]
 }
 
+// SubtypeReservedBalance is the subtype of an external account that is a reserved balance
+// inside a bank account (A73).
+const SubtypeReservedBalance = "RESERVED_BALANCE"
+
 // compatibleKinds lists the ledger account kinds an aggregator subtype may feed (A35).
 var compatibleKinds = map[string][]string{
-	"CHECKING_ACCOUNT": {"checking"},
-	"SAVINGS_ACCOUNT":  {"savings", "reserve"},
-	"CREDIT_CARD":      {"credit_card"},
-	"RESERVED_BALANCE": {"reserve"},
+	"CHECKING_ACCOUNT":     {"checking"},
+	"SAVINGS_ACCOUNT":      {"savings", "reserve"},
+	"CREDIT_CARD":          {"credit_card"},
+	SubtypeReservedBalance: {"reserve"},
 }
 
 // Mapping is the owner's choice for an external account: a ledger account from a start

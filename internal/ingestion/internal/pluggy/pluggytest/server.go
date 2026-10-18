@@ -119,6 +119,27 @@ func (s *Server) SetReservedAmount(accountID, identification string, amount plug
 	})
 }
 
+// RemoveReservedBalance stops reporting a reserved balance, as when the owner deletes it.
+func (s *Server) RemoveReservedBalance(accountID, identification string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.eachAccount(accountID, func(a *pluggy.Account) {
+		if a.BankData != nil {
+			a.BankData.ReservedBalances = slices.DeleteFunc(a.BankData.ReservedBalances, func(r pluggy.ReservedBalance) bool { return r.Identification == identification })
+		}
+	})
+}
+
+// SetItemUpdatedAt changes the instant an item reports as its last update.
+func (s *Server) SetItemUpdatedAt(itemID, at string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if it, ok := s.items[itemID]; ok {
+		it.LastUpdatedAt = &at
+		s.items[itemID] = it
+	}
+}
+
 func (s *Server) eachAccount(accountID string, fn func(*pluggy.Account)) {
 	for _, as := range s.accounts {
 		for i := range as {
