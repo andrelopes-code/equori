@@ -151,6 +151,10 @@ export const catalogEn = {
     "The settings cannot be changed after the first transaction.",
   "problem.mixed_instruments":
     "The account and its sub-accounts hold more than one instrument.",
+  "problem.statement_not_closed": "Only a closed statement can be financed.",
+  "problem.statement_financed": "This statement is already financed.",
+  "problem.dispute_open": "This purchase already has an open dispute.",
+  "problem.dispute_resolved": "This dispute is already resolved.",
   "accounts.title": "Accounts",
   "accounts.new": "New account",
   "accounts.empty": "No accounts yet",

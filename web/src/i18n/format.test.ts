@@ -1,9 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   formatDate,
   formatMoney,
   formatPlain,
+  formatReferenceMonth,
   parseAmount,
   todayISO,
 } from "@/i18n/format";
@@ -79,5 +80,23 @@ describe("formatDate", () => {
 describe("todayISO", () => {
   it("formats the local calendar date", () => {
     expect(todayISO(new Date(2026, 9, 7, 23, 59))).toBe("2026-10-07");
+  });
+});
+
+describe("formatReferenceMonth", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it.each([
+    ["2026-11", "pt-BR", "nov. de 2026"],
+    ["2026-11", "en", "Nov 2026"],
+  ] as const)("formats %s in %s as %s", (month, locale, want) => {
+    expect(formatReferenceMonth(month, locale)).toBe(want);
+  });
+
+  it("keeps the first month of the year west of UTC", () => {
+    vi.stubEnv("TZ", "America/Sao_Paulo");
+    expect(formatReferenceMonth("2026-01", "en")).toBe("Jan 2026");
   });
 });

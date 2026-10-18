@@ -71,3 +71,12 @@ export function todayISO(now: Date = new Date()): string {
   const day = String(now.getDate()).padStart(2, "0");
   return `${String(now.getFullYear())}-${month}-${day}`;
 }
+
+export function formatReferenceMonth(month: string, locale: Locale): string {
+  const [year = 0, m = 1] = month.split("-").map(Number);
+  return new Intl.DateTimeFormat(locale, {
+    timeZone: "UTC",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(Date.UTC(year, m - 1, 1)));
+}

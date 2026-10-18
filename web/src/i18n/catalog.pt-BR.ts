@@ -155,6 +155,11 @@ export const catalogPtBR: Catalog = {
     "As configurações não podem ser alteradas após a primeira transação.",
   "problem.mixed_instruments":
     "A conta e suas subcontas contêm mais de um instrumento.",
+  "problem.statement_not_closed":
+    "Somente uma fatura fechada pode ser parcelada.",
+  "problem.statement_financed": "Esta fatura já está parcelada.",
+  "problem.dispute_open": "Esta compra já tem uma contestação aberta.",
+  "problem.dispute_resolved": "Esta contestação já está resolvida.",
   "accounts.title": "Contas",
   "accounts.new": "Nova conta",
   "accounts.empty": "Nenhuma conta ainda",
