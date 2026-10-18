@@ -69,7 +69,7 @@ web/src/
 |---|---|---|
 | O1 | One component per file; the file is named after the component in kebab-case. | ESLint `react/no-multi-comp` |
 | O2 | A feature imports another feature only through its `index.ts`. | ESLint `no-restricted-imports` |
-| O3 | `@/api/client` is imported only by `features/*/api.ts`, `features/session` and `app/providers.tsx`. | ESLint override by glob |
+| O3 | `@/api/client` is imported only by `features/*/api.ts`, `features/session/**`, `app/providers.tsx`, `src/api/**` and `src/testing/**`. | ESLint override by glob |
 | O4 | `features/*` never imports `@/app/*`. | ESLint |
 | O5 | App CSS lives in co-located `*.module.css` inside `@layer app`, reads only `var(--slotted-*)` and never targets `[data-ui]` or `[data-part]`. | review, theme-app "Done" rule |
 | O6 | JSX contains no user-visible literal text; text comes from `useT()`. | `react/jsx-no-literals` |
