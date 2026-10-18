@@ -48,6 +48,25 @@ type Account struct {
 	Balance      Decimal     `json:"balance"`
 	CurrencyCode string      `json:"currencyCode"`
 	CreditData   *CreditData `json:"creditData"`
+	BankData     *BankData   `json:"bankData"`
+}
+
+// BankData holds what Pluggy reports only for bank accounts.
+type BankData struct {
+	ReservedBalances []ReservedBalance `json:"reservedBalances"`
+}
+
+// ReservedBalance is money set aside inside a bank account and outside its balance, such as a
+// Mercado Pago "cofrinho" (A73).
+type ReservedBalance struct {
+	Name             string           `json:"name"`
+	Identification   string           `json:"identification"`
+	AvailableAmounts []ReservedAmount `json:"availableAmounts"`
+}
+
+type ReservedAmount struct {
+	Amount       Decimal `json:"amount"`
+	CurrencyCode string  `json:"currencyCode"`
 }
 
 type CreditData struct {
@@ -98,6 +117,7 @@ const (
 	SubtypeChecking  = "CHECKING_ACCOUNT"
 	SubtypeSavings   = "SAVINGS_ACCOUNT"
 	SubtypeCard      = "CREDIT_CARD"
+	SubtypeReserve   = "RESERVED_BALANCE"
 	statusPending    = "PENDING"
 	recordDateLayout = "2006-01-02"
 )

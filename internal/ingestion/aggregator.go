@@ -73,15 +73,47 @@ func (p pluggyPort) Item(ctx context.Context, id uuid.UUID, c domain.Credentials
 		if out.LastItemUpdateAt, err = updatedAt(it); err != nil {
 			return err
 		}
-		for _, a := range accounts {
-			out.Accounts = append(out.Accounts, domain.ExternalAccount{
-				ExternalID: a.ID, Type: a.Type, Subtype: a.Subtype, Name: a.Name,
-				NumberLast4: domain.LastDigits(a.Number), Currency: a.CurrencyCode,
-			})
-		}
+		out.Accounts = externalAccounts(accounts)
 		return nil
 	})
 	return out, err
+}
+
+func (p pluggyPort) Accounts(ctx context.Context, id uuid.UUID, c domain.Credentials, itemID string) ([]domain.ExternalAccount, error) {
+	var out []domain.ExternalAccount
+	err := p.session(ctx, id, c, func(s *pluggy.Session) error {
+		accounts, err := s.Accounts(ctx, itemID)
+		out = externalAccounts(accounts)
+		return err
+	})
+	if errors.Is(err, app.ErrItemNotFound) {
+		return nil, fmt.Errorf("%w: the item is gone", app.ErrProviderUnavailable)
+	}
+	return out, err
+}
+
+// externalAccounts lists each account followed by its reserved balances that hold an amount
+// in the account's currency (A73).
+func externalAccounts(accounts []pluggy.Account) []domain.ExternalAccount {
+	var out []domain.ExternalAccount
+	for _, a := range accounts {
+		out = append(out, domain.ExternalAccount{
+			ExternalID: a.ID, Type: a.Type, Subtype: a.Subtype, Name: a.Name,
+			NumberLast4: domain.LastDigits(a.Number), Currency: a.CurrencyCode,
+		})
+		if a.BankData == nil {
+			continue
+		}
+		for _, r := range a.BankData.ReservedBalances {
+			held := slices.ContainsFunc(r.AvailableAmounts, func(x pluggy.ReservedAmount) bool { return x.CurrencyCode == a.CurrencyCode })
+			if held {
+				out = append(out, domain.ExternalAccount{
+					ExternalID: r.Identification, Type: a.Type, Subtype: pluggy.SubtypeReserve, Name: r.Name, Currency: a.CurrencyCode,
+				})
+			}
+		}
+	}
+	return out
 }
 
 func (p pluggyPort) ItemState(ctx context.Context, id uuid.UUID, c domain.Credentials, itemID string) (string, *time.Time, error) {

@@ -67,6 +67,13 @@ func (r *Repository) InsertConnection(ctx context.Context, c domain.Connection) 
 	return out, nil
 }
 
+func (r *Repository) InsertMissingExternalAccount(ctx context.Context, a domain.ExternalAccount) error {
+	return notFound(r.q.InsertMissingExternalAccount(ctx, InsertMissingExternalAccountParams{
+		UserID: a.UserID, ConnectionID: a.ConnectionID, ExternalAccountID: a.ExternalID, Type: a.Type, Subtype: a.Subtype,
+		Name: a.Name, NumberLast4: optional(a.NumberLast4), Currency: a.Currency,
+	}))
+}
+
 // withAccounts loads the external accounts of the connections in one query.
 func (r *Repository) withAccounts(ctx context.Context, userID int64, cs []domain.Connection) error {
 	ids := make([]uuid.UUID, len(cs))

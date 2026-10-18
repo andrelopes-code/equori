@@ -192,6 +192,37 @@ func (q *Queries) InsertExternalAccount(ctx context.Context, arg InsertExternalA
 	return i, err
 }
 
+const insertMissingExternalAccount = `-- name: InsertMissingExternalAccount :exec
+INSERT INTO ingestion_external_account (user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+ON CONFLICT (connection_id, external_account_id) DO NOTHING
+`
+
+type InsertMissingExternalAccountParams struct {
+	UserID            int64
+	ConnectionID      uuid.UUID
+	ExternalAccountID string
+	Type              string
+	Subtype           string
+	Name              string
+	NumberLast4       *string
+	Currency          string
+}
+
+func (q *Queries) InsertMissingExternalAccount(ctx context.Context, arg InsertMissingExternalAccountParams) error {
+	_, err := q.db.Exec(ctx, insertMissingExternalAccount,
+		arg.UserID,
+		arg.ConnectionID,
+		arg.ExternalAccountID,
+		arg.Type,
+		arg.Subtype,
+		arg.Name,
+		arg.NumberLast4,
+		arg.Currency,
+	)
+	return err
+}
+
 const listAllConnections = `-- name: ListAllConnections :many
 SELECT id, user_id FROM ingestion_connection ORDER BY user_id, id
 `

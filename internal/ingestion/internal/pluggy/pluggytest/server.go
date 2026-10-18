@@ -91,6 +91,44 @@ func (s *Server) SetAccountBalance(accountID string, balance pluggy.Decimal) {
 	}
 }
 
+// AddReservedBalance adds a reserved balance to a bank account.
+func (s *Server) AddReservedBalance(accountID string, r pluggy.ReservedBalance) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.eachAccount(accountID, func(a *pluggy.Account) {
+		if a.BankData == nil {
+			a.BankData = &pluggy.BankData{}
+		}
+		a.BankData.ReservedBalances = append(a.BankData.ReservedBalances, r)
+	})
+}
+
+// SetReservedAmount changes the first amount of a reserved balance.
+func (s *Server) SetReservedAmount(accountID, identification string, amount pluggy.Decimal) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.eachAccount(accountID, func(a *pluggy.Account) {
+		if a.BankData == nil {
+			return
+		}
+		for i := range a.BankData.ReservedBalances {
+			if r := &a.BankData.ReservedBalances[i]; r.Identification == identification && len(r.AvailableAmounts) > 0 {
+				r.AvailableAmounts[0].Amount = amount
+			}
+		}
+	})
+}
+
+func (s *Server) eachAccount(accountID string, fn func(*pluggy.Account)) {
+	for _, as := range s.accounts {
+		for i := range as {
+			if as[i].ID == accountID {
+				fn(&as[i])
+			}
+		}
+	}
+}
+
 func (s *Server) AddBill(accountID string, b pluggy.Bill) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

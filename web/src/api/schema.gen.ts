@@ -1412,7 +1412,7 @@ export interface paths {
          * Map an external account to a ledger account, or ignore it (P6 amendment A35).
          * @description account_id is a leaf balance account of the external account's currency and a compatible
          *     kind (CHECKING_ACCOUNT to checking, SAVINGS_ACCOUNT to savings or reserve, CREDIT_CARD to
-         *     credit_card) that no other external account feeds; sync_from is the first date to import.
+         *     credit_card, RESERVED_BALANCE to reserve) that no other external account feeds; sync_from is the first date to import.
          *     Only mapped accounts sync.
          */
         put: operations["mapExternalAccount"];
@@ -2078,9 +2078,16 @@ export interface components {
             /** Format: uuid */
             id: string;
             type: string;
+            /**
+             * @description CHECKING_ACCOUNT, SAVINGS_ACCOUNT, CREDIT_CARD or RESERVED_BALANCE (a reserved
+             *     balance of a bank account, outside its balance).
+             */
             subtype: string;
             name: string;
-            /** @description Last four digits of the account number; the full number is never stored. */
+            /**
+             * @description Last four digits of the account number; the full number is never stored. Absent for
+             *     RESERVED_BALANCE.
+             */
             number_last4?: string;
             currency: string;
             /** @enum {string} */

@@ -121,6 +121,7 @@ var compatibleKinds = map[string][]string{
 	"CHECKING_ACCOUNT": {"checking"},
 	"SAVINGS_ACCOUNT":  {"savings", "reserve"},
 	"CREDIT_CARD":      {"credit_card"},
+	"RESERVED_BALANCE": {"reserve"},
 }
 
 // Mapping is the owner's choice for an external account: a ledger account from a start

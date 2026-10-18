@@ -63,6 +63,9 @@ func (s *Service) syncItem(ctx context.Context, c *domain.Connection, force bool
 	if blockedStatuses[status] || (!force && c.LastSyncedAt != nil && !newer) {
 		return nil, nil
 	}
+	if err := s.addMissingAccounts(ctx, c, creds); err != nil {
+		return nil, err
+	}
 	var batches []domain.Batch
 	for _, ext := range c.Accounts {
 		if ext.State() != domain.MappingMapped {
@@ -77,6 +80,39 @@ func (s *Service) syncItem(ctx context.Context, c *domain.Connection, force bool
 	now := s.now()
 	c.LastSyncedAt, c.LastItemUpdateAt = &now, updatedAt
 	return batches, nil
+}
+
+// addMissingAccounts stores, pending, every account and reserved balance the item reports
+// that the connection lacks; stored accounts are not changed (A73).
+func (s *Service) addMissingAccounts(ctx context.Context, c *domain.Connection, creds domain.Credentials) error {
+	listed, err := s.agg.Accounts(ctx, c.IntegrationID, creds, c.ItemID)
+	if err != nil {
+		return err
+	}
+	known := make(map[string]bool, len(c.Accounts))
+	for _, ext := range c.Accounts {
+		known[ext.ExternalID] = true
+	}
+	added := false
+	for _, a := range listed {
+		if known[a.ExternalID] {
+			continue
+		}
+		a.UserID, a.ConnectionID = c.UserID, c.ID
+		if err := s.repo.InsertMissingExternalAccount(ctx, a); err != nil {
+			return err
+		}
+		added = true
+	}
+	if !added {
+		return nil
+	}
+	reloaded, err := s.repo.Connection(ctx, c.UserID, c.ID)
+	if err != nil {
+		return err
+	}
+	c.Accounts = reloaded.Accounts
+	return nil
 }
 
 // syncAccount reads one mapped account for its window and records it as one batch: lines

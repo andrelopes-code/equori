@@ -46,6 +46,8 @@ type Aggregator interface {
 	Verify(ctx context.Context, integrationID uuid.UUID, c domain.Credentials) error
 	// Item returns the item as an unsaved connection with its accounts.
 	Item(ctx context.Context, integrationID uuid.UUID, c domain.Credentials, itemID string) (domain.Connection, error)
+	// Accounts lists the item's external accounts, reserved balances included.
+	Accounts(ctx context.Context, integrationID uuid.UUID, c domain.Credentials, itemID string) ([]domain.ExternalAccount, error)
 	// ItemState returns the item's status and last update.
 	ItemState(ctx context.Context, integrationID uuid.UUID, c domain.Credentials, itemID string) (status string, updatedAt *time.Time, err error)
 	// ReadAccount returns an account of the item with its lines dated in [from, to], in minor

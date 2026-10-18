@@ -8,6 +8,11 @@ INSERT INTO ingestion_external_account (user_id, connection_id, external_account
 VALUES (@user_id, @connection_id, @external_account_id, @type, @subtype, @name, sqlc.narg(number_last4), @currency)
 RETURNING *;
 
+-- name: InsertMissingExternalAccount :exec
+INSERT INTO ingestion_external_account (user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency)
+VALUES (@user_id, @connection_id, @external_account_id, @type, @subtype, @name, sqlc.narg(number_last4), @currency)
+ON CONFLICT (connection_id, external_account_id) DO NOTHING;
+
 -- name: GetConnection :one
 SELECT * FROM ingestion_connection WHERE user_id = $1 AND id = $2;
 

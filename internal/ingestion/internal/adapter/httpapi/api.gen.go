@@ -367,12 +367,16 @@ type ExternalAccount struct {
 	LastSyncedOn *openapi_types.Date `json:"last_synced_on,omitempty"`
 	Name         string              `json:"name"`
 
-	// NumberLast4 Last four digits of the account number; the full number is never stored.
+	// NumberLast4 Last four digits of the account number; the full number is never stored. Absent for
+	// RESERVED_BALANCE.
 	NumberLast4 *string              `json:"number_last4,omitempty"`
 	State       ExternalAccountState `json:"state"`
-	Subtype     string               `json:"subtype"`
-	SyncFrom    *openapi_types.Date  `json:"sync_from,omitempty"`
-	Type        string               `json:"type"`
+
+	// Subtype CHECKING_ACCOUNT, SAVINGS_ACCOUNT, CREDIT_CARD or RESERVED_BALANCE (a reserved
+	// balance of a bank account, outside its balance).
+	Subtype  string              `json:"subtype"`
+	SyncFrom *openapi_types.Date `json:"sync_from,omitempty"`
+	Type     string              `json:"type"`
 }
 
 // ExternalAccountState defines model for ExternalAccount.State.
