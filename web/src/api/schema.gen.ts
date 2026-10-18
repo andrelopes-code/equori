@@ -742,7 +742,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Disputes of a transaction, ordered by opening date. */
+        get: operations["listDisputes"];
         put?: never;
         /** Open a dispute on a card purchase. */
         post: operations["openDispute"];
@@ -2323,6 +2324,9 @@ export interface components {
             outcome?: "won" | "lost";
             /** Format: uuid */
             refund_transaction_id?: string;
+        };
+        DisputeList: {
+            items: components["schemas"]["Dispute"][];
         };
         RefundInput: {
             /** Format: date */
@@ -4619,6 +4623,30 @@ export interface operations {
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    listDisputes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisputeList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
         };
     };
     openDispute: {

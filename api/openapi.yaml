@@ -1434,6 +1434,23 @@ paths:
         "422":
           $ref: "#/components/responses/Problem"
   /transactions/{id}/disputes:
+    get:
+      tags: [ledger]
+      operationId: listDisputes
+      summary: Disputes of a transaction, ordered by opening date.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DisputeList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
     post:
       tags: [ledger]
       operationId: openDispute
@@ -4252,6 +4269,14 @@ components:
         refund_transaction_id:
           type: string
           format: uuid
+    DisputeList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Dispute"
     RefundInput:
       type: object
       additionalProperties: false

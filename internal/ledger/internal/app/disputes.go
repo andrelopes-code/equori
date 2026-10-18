@@ -29,6 +29,14 @@ func (s *Service) OpenDispute(ctx context.Context, userID int64, transactionID u
 	return d, err
 }
 
+// Disputes lists the disputes of a transaction, oldest first.
+func (s *Service) Disputes(ctx context.Context, userID int64, transactionID uuid.UUID) ([]Dispute, error) {
+	if _, err := s.repo.Transaction(ctx, userID, transactionID); err != nil {
+		return nil, err
+	}
+	return s.repo.Disputes(ctx, userID, transactionID)
+}
+
 // ResolveDispute closes a dispute; a won dispute credits the charged amount not yet
 // refunded, linked chargeback_of the purchase (M22).
 func (s *Service) ResolveDispute(ctx context.Context, userID int64, id uuid.UUID, resolvedOn time.Time, outcome string, statement *domain.ReferenceMonth) (Dispute, error) {

@@ -477,6 +477,43 @@ func (q *Queries) ListCreditLimits(ctx context.Context, arg ListCreditLimitsPara
 	return items, nil
 }
 
+const listDisputes = `-- name: ListDisputes :many
+SELECT id, user_id, transaction_id, opened_on, resolved_on, outcome, refund_transaction_id FROM ledger_dispute WHERE user_id = $1 AND transaction_id = $2 ORDER BY opened_on, id
+`
+
+type ListDisputesParams struct {
+	UserID        int64
+	TransactionID uuid.UUID
+}
+
+func (q *Queries) ListDisputes(ctx context.Context, arg ListDisputesParams) ([]LedgerDispute, error) {
+	rows, err := q.db.Query(ctx, listDisputes, arg.UserID, arg.TransactionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []LedgerDispute
+	for rows.Next() {
+		var i LedgerDispute
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.TransactionID,
+			&i.OpenedOn,
+			&i.ResolvedOn,
+			&i.Outcome,
+			&i.RefundTransactionID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listOpenStatementsFrom = `-- name: ListOpenStatementsFrom :many
 SELECT id, user_id, account_id, reference_month, closing_date, due_date, financed_by_plan_id, created_at FROM ledger_statement
 WHERE user_id = $1 AND account_id = $2 AND reference_month >= $3 AND closing_date > $4

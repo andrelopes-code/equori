@@ -891,6 +891,18 @@ func (r *Repository) InsertDispute(ctx context.Context, d app.Dispute) (app.Disp
 	return toDispute(row), nil
 }
 
+func (r *Repository) Disputes(ctx context.Context, userID int64, transactionID uuid.UUID) ([]app.Dispute, error) {
+	rows, err := r.q.ListDisputes(ctx, ListDisputesParams{UserID: userID, TransactionID: transactionID})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]app.Dispute, len(rows))
+	for i, row := range rows {
+		out[i] = toDispute(row)
+	}
+	return out, nil
+}
+
 func (r *Repository) LockDispute(ctx context.Context, userID int64, id uuid.UUID) (app.Dispute, error) {
 	row, err := r.q.GetDisputeForUpdate(ctx, GetDisputeForUpdateParams{UserID: userID, ID: id})
 	if err != nil {

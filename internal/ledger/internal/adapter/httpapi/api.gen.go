@@ -986,6 +986,11 @@ type DisputeInput struct {
 	OpenedOn openapi_types.Date `json:"opened_on"`
 }
 
+// DisputeList defines model for DisputeList.
+type DisputeList struct {
+	Items []Dispute `json:"items"`
+}
+
 // DisputeResolution defines model for DisputeResolution.
 type DisputeResolution struct {
 	Outcome    DisputeResolutionOutcome `json:"outcome"`
@@ -1835,6 +1840,9 @@ type ServerInterface interface {
 	// CategorizeTransaction Replace the category postings of a transaction, keeping their total (P5 amendment A18).
 	// (POST /transactions/{id}/categorize)
 	CategorizeTransaction(w http.ResponseWriter, r *http.Request, id ID)
+	// ListDisputes Disputes of a transaction, ordered by opening date.
+	// (GET /transactions/{id}/disputes)
+	ListDisputes(w http.ResponseWriter, r *http.Request, id ID)
 	// OpenDispute Open a dispute on a card purchase.
 	// (POST /transactions/{id}/disputes)
 	OpenDispute(w http.ResponseWriter, r *http.Request, id ID)
@@ -3359,6 +3367,32 @@ func (siw *ServerInterfaceWrapper) CategorizeTransaction(w http.ResponseWriter, 
 	handler.ServeHTTP(w, r)
 }
 
+// ListDisputes operation middleware
+func (siw *ServerInterfaceWrapper) ListDisputes(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListDisputes(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // OpenDispute operation middleware
 func (siw *ServerInterfaceWrapper) OpenDispute(w http.ResponseWriter, r *http.Request) {
 
@@ -3650,6 +3684,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/refunds", wrapper.RefundTransaction)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/installment-plans/{id}/cancellation", wrapper.CancelInstallmentPlan)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/installment-plans/{id}/anticipation", wrapper.AnticipateInstallments)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions/{id}/disputes", wrapper.ListDisputes)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/disputes", wrapper.OpenDispute)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/disputes/{id}/resolve", wrapper.ResolveDispute)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/balance-assertions", wrapper.ListBalanceAssertions)
@@ -6732,6 +6767,58 @@ func (response CategorizeTransaction422ApplicationProblemPlusJSONResponse) Visit
 	return err
 }
 
+type ListDisputesRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type ListDisputesResponseObject interface {
+	VisitListDisputesResponse(w http.ResponseWriter) error
+}
+
+type ListDisputes200JSONResponse DisputeList
+
+func (response ListDisputes200JSONResponse) VisitListDisputesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDisputes401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListDisputes401ApplicationProblemPlusJSONResponse) VisitListDisputesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListDisputes404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListDisputes404ApplicationProblemPlusJSONResponse) VisitListDisputesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type OpenDisputeRequestObject struct {
 	Id   ID `json:"id"`
 	Body *OpenDisputeJSONRequestBody
@@ -7264,6 +7351,9 @@ type StrictServerInterface interface {
 	// CategorizeTransaction Replace the category postings of a transaction, keeping their total (P5 amendment A18).
 	// (POST /transactions/{id}/categorize)
 	CategorizeTransaction(ctx context.Context, request CategorizeTransactionRequestObject) (CategorizeTransactionResponseObject, error)
+	// ListDisputes Disputes of a transaction, ordered by opening date.
+	// (GET /transactions/{id}/disputes)
+	ListDisputes(ctx context.Context, request ListDisputesRequestObject) (ListDisputesResponseObject, error)
 	// OpenDispute Open a dispute on a card purchase.
 	// (POST /transactions/{id}/disputes)
 	OpenDispute(ctx context.Context, request OpenDisputeRequestObject) (OpenDisputeResponseObject, error)
@@ -8733,6 +8823,32 @@ func (sh *strictHandler) CategorizeTransaction(w http.ResponseWriter, r *http.Re
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CategorizeTransactionResponseObject); ok {
 		if err := validResponse.VisitCategorizeTransactionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListDisputes operation middleware
+func (sh *strictHandler) ListDisputes(w http.ResponseWriter, r *http.Request, id ID) {
+	var request ListDisputesRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListDisputes(ctx, request.(ListDisputesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListDisputes")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListDisputesResponseObject); ok {
+		if err := validResponse.VisitListDisputesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

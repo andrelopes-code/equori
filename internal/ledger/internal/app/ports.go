@@ -315,6 +315,7 @@ type Repository interface {
 	PlanInstallments(ctx context.Context, userID int64, planID uuid.UUID) ([]PlanInstallment, error)
 	RefundedTotal(ctx context.Context, userID int64, originID uuid.UUID) (int64, error)
 	InsertDispute(ctx context.Context, d Dispute) (Dispute, error)
+	Disputes(ctx context.Context, userID int64, transactionID uuid.UUID) ([]Dispute, error)
 	LockDispute(ctx context.Context, userID int64, id uuid.UUID) (Dispute, error)
 	ResolveDispute(ctx context.Context, d Dispute) (Dispute, error)
 	SystemAccount(ctx context.Context, userID int64, role domain.SystemRole) (domain.Account, error)

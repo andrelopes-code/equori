@@ -16,6 +16,18 @@ func toDisputeAPI(d app.Dispute) Dispute {
 	return out
 }
 
+func (s *Server) ListDisputes(ctx context.Context, req ListDisputesRequestObject) (ListDisputesResponseObject, error) {
+	disputes, err := s.svc.Disputes(ctx, auth.MustUserID(ctx), req.Id)
+	if err != nil {
+		return nil, err
+	}
+	out := ListDisputes200JSONResponse{Items: make([]Dispute, len(disputes))}
+	for i, d := range disputes {
+		out.Items[i] = toDisputeAPI(d)
+	}
+	return out, nil
+}
+
 func (s *Server) OpenDispute(ctx context.Context, req OpenDisputeRequestObject) (OpenDisputeResponseObject, error) {
 	d, err := s.svc.OpenDispute(ctx, auth.MustUserID(ctx), req.Id, dateOf(req.Body.OpenedOn))
 	if err != nil {

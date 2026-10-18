@@ -67,3 +67,58 @@ func TestDisputeOnNonCardTransactionIs422(t *testing.T) {
 	c.h.ExpectProblem(c.h.Do(http.MethodPost, "/api/v1/transactions/"+tx+"/disputes", map[string]any{"opened_on": "2026-11-05"}),
 		http.StatusUnprocessableEntity, "validation_failed", "transaction_id")
 }
+
+type disputeListView struct {
+	Items []struct {
+		ID                  string  `json:"id"`
+		TransactionID       string  `json:"transaction_id"`
+		OpenedOn            string  `json:"opened_on"`
+		Outcome             *string `json:"outcome"`
+		RefundTransactionID *string `json:"refund_transaction_id"`
+	} `json:"items"`
+}
+
+func listDisputes(t *testing.T, c cardSetup, tx string) disputeListView {
+	t.Helper()
+	r := c.h.Do(http.MethodGet, "/api/v1/transactions/"+tx+"/disputes", nil)
+	if r.Status != http.StatusOK {
+		t.Fatalf("list disputes status = %d, body = %s", r.Status, r.Body)
+	}
+	var out disputeListView
+	r.Decode(t, &out)
+	return out
+}
+
+// S13: the disputes of a transaction are listed with their outcome and refund.
+func TestListDisputesS13(t *testing.T) {
+	c := newCardSetup(t, "2026-12-05")
+	charge := c.purchase("2026-10-14", 19990)
+
+	if got := listDisputes(t, c, charge); got.Items == nil || len(got.Items) != 0 {
+		t.Fatalf("before any dispute items = %#v, want empty array", got.Items)
+	}
+
+	d := openDispute(t, c.h, charge)
+	open := listDisputes(t, c, charge)
+	if len(open.Items) != 1 {
+		t.Fatalf("open items = %+v", open.Items)
+	}
+	if it := open.Items[0]; it.ID != d.ID || it.TransactionID != charge || it.OpenedOn != "2026-11-05" || it.Outcome != nil || it.RefundTransactionID != nil {
+		t.Fatalf("open dispute = %+v", it)
+	}
+
+	var resolved disputeView
+	c.h.MustDo(http.MethodPost, "/api/v1/disputes/"+d.ID+"/resolve",
+		map[string]any{"resolved_on": "2026-12-02", "outcome": "won", "statement": "2026-12"}, http.StatusOK, &resolved)
+	won := listDisputes(t, c, charge)
+	if len(won.Items) != 1 {
+		t.Fatalf("won items = %+v", won.Items)
+	}
+	if it := won.Items[0]; it.Outcome == nil || *it.Outcome != "won" || it.RefundTransactionID == nil || *it.RefundTransactionID != resolved.RefundTransactionID {
+		t.Fatalf("won dispute = %+v, refund = %q", it, resolved.RefundTransactionID)
+	}
+
+	other := c.h.Login("other@example.com")
+	c.h.ExpectProblem(c.h.Call(other, http.MethodGet, "/api/v1/transactions/"+charge+"/disputes", nil), http.StatusNotFound, "not_found", "")
+	c.h.ExpectProblem(c.h.Do(http.MethodGet, "/api/v1/transactions/00000000-0000-4000-8000-000000000000/disputes", nil), http.StatusNotFound, "not_found", "")
+}

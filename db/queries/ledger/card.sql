@@ -100,6 +100,9 @@ WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND l.link_type IN ('refund_of
 -- name: InsertDispute :one
 INSERT INTO ledger_dispute (user_id, transaction_id, opened_on) VALUES ($1, $2, $3) RETURNING *;
 
+-- name: ListDisputes :many
+SELECT * FROM ledger_dispute WHERE user_id = $1 AND transaction_id = $2 ORDER BY opened_on, id;
+
 -- name: GetDisputeForUpdate :one
 SELECT * FROM ledger_dispute WHERE user_id = $1 AND id = $2 FOR UPDATE;
 
