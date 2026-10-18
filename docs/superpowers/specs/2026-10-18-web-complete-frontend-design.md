@@ -47,6 +47,8 @@ Source: the owner's review of G7: the top bar read as tabs, generic components c
 | T3 | Choosing a category calls `categorize` with the loaded version and shows a toast "<title> now in <category>" with an Undo action (5 s) that categorizes back to the previous category. The uncategorized count updates through query invalidation. |
 | T4 | Without filters, the expected occurrences of the next 31 days of every account stand above the table in muted text, the farthest first like the rows under them, closed by a row "Today" in the accent tone. A phone shows them as a "Scheduled" day group. |
 
+| T5 | Second pass (owner's review: generic screens): the filter bar is a row of the app's own: a plain search field with a "Limpar" word while it holds text, then the filters as words (Conta, Período, Beneficiário, Etiqueta, Sem categoria). A word opens a menu of choices or, for Período, a popover with two dates; an active filter reads "Conta: Itaú" with a remove control; Sem categoria toggles. |
+
 ## R4 Cards
 
 | ID | Decision |
@@ -70,6 +72,15 @@ Source: the owner's review of G7: the top bar read as tabs, generic components c
 | F1 | Create and edit forms: `Page width="content"`, `FieldGroup`s with legends for "Amount and date", "Accounts" and "Details"; Amount and Date share one row from 600 px; the actions stand in the form footer, end-aligned, the primary last. |
 | F1' | Second pass, replacing F1 after the owner's review (generic forms): the form is an entry sheet. The kind of transaction is a text switch of three words (own element, radio group); the amount is the headline figure, an own field at the 4xl step whose digits fill from the cents; the balance accounts and the categories (or the transfer's two accounts) are chips to tap, the chosen one in ink; date, payee, description and tags keep their fields. Labels stand beside the controls from 600 px. Below the sheet, the balance the entry leaves in its account reads in the accent tone; Save is drawn in ink, the secondary action as a ghost button. The header leads back to Transactions. The split and postings editors keep their pickers. |
 | F2 | Quick entry: N and the top bar "New" open a `Dialog` (desktop) or a full-screen `Drawer` (phone) with one free-text field. The text is parsed into amount, date (today, "ontem"/"yesterday", "anteontem"), account (card, cash keywords; otherwise the first checking account), category (keyword match on category names and the payee history) and description. A preview `DescriptionList` shows the parse; the categories are a `ToggleGroup`; Enter posts the transaction, closes the dialog and shows a toast with Undo (void). "More fields" opens the full form with the parse as its draft. |
+
+## Accounts and settings, second pass
+
+| ID | Decision |
+|---|---|
+| A1 | The accounts page header states the balance sheet: net worth as subheading; Assets, Liabilities (as owed) and Net worth as figures, in the base currency. |
+| A2 | Balance accounts read as a ledger table per class (account linked to its page, a card to its card page; kind; balance; actions menu), sub-accounts indented under their parent, closed by a total on a double rule. The ledger is a table of the app's own: the table family re-measures on every row menu's open. |
+| A3 | Categories carry no balance and read as an index of names in columns per class (income, expense, equity), each with its actions menu. From 64 rem the index stands beside the balance sheet. |
+| P1 | Settings: the header counts what the page holds; sections stand apart; a locked base currency reads as a statement (code and name) instead of a disabled select; institutions and payees are ruled lists in columns with their count; language and colour scheme are text switches. |
 
 ## Tests
 

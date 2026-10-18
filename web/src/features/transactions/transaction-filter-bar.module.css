@@ -1,0 +1,184 @@
+@layer app {
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: var(--slotted-space-7);
+    row-gap: var(--slotted-space-3);
+  }
+
+  .field {
+    position: relative;
+    flex: 0 0 100%;
+    min-inline-size: 0;
+  }
+
+  /* Phone: the words slide sideways under the full-width field instead of wrapping. */
+  .words {
+    display: flex;
+    flex: 0 0 100%;
+    flex-wrap: nowrap;
+    align-items: center;
+    column-gap: var(--slotted-space-7);
+    min-inline-size: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  @container slotted-page (width >= 600px) {
+    .field {
+      flex: 0 0 300px;
+    }
+
+    .words {
+      flex: 1 1 auto;
+      flex-wrap: wrap;
+      overflow-x: visible;
+    }
+  }
+
+  .input {
+    box-sizing: border-box;
+    inline-size: 100%;
+    block-size: var(--slotted-control-height-md);
+    padding-inline: var(--slotted-space-5);
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-strong);
+    border-radius: var(--slotted-control-radius);
+    background: transparent;
+    color: var(--slotted-text);
+    font: inherit;
+    font-size: var(--slotted-control-font-size-md);
+  }
+
+  .field[data-filled] .input {
+    padding-inline-end: var(--slotted-space-12);
+  }
+
+  .input::placeholder {
+    color: var(--slotted-text-muted);
+  }
+
+  .input::-webkit-search-cancel-button {
+    appearance: none;
+  }
+
+  .clear {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: var(--slotted-space-2);
+    min-inline-size: var(--slotted-target-min);
+    padding-inline: var(--slotted-space-3);
+    border: 0;
+    background: transparent;
+    color: var(--slotted-text-muted);
+    font: inherit;
+    font-size: var(--slotted-font-size-sm);
+    cursor: pointer;
+  }
+
+  .word {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+  }
+
+  .trigger,
+  .remove {
+    min-block-size: var(--slotted-target-min);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--slotted-text-muted);
+    font: inherit;
+    font-size: var(--slotted-font-size-sm);
+    cursor: pointer;
+    transition:
+      color var(--slotted-duration-short) var(--slotted-easing-standard),
+      border-color var(--slotted-duration-short) var(--slotted-easing-standard);
+  }
+
+  .trigger {
+    /* The active word stands on a rule of its own width, as the filters of the ledger index. */
+    border-block-end: var(--slotted-border-width-thin) solid transparent;
+  }
+
+  .remove {
+    min-inline-size: var(--slotted-target-min);
+  }
+
+  /* No token names the multiplication sign; it is typographic text, not an icon. */
+  .remove::before {
+    content: "\00d7";
+  }
+
+  .trigger:hover,
+  .remove:hover,
+  .clear:hover {
+    color: var(--slotted-text);
+  }
+
+  .word[data-active] .trigger,
+  .trigger[aria-pressed="true"] {
+    color: var(--slotted-text);
+    border-block-end-color: var(--slotted-text);
+  }
+
+  .input:focus-visible,
+  .trigger:focus-visible,
+  .remove:focus-visible,
+  .clear:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  .period {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-5);
+  }
+
+  .periodClear {
+    align-self: flex-start;
+    min-block-size: var(--slotted-target-min);
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--slotted-text-muted);
+    font: inherit;
+    font-size: var(--slotted-font-size-sm);
+    cursor: pointer;
+  }
+
+  .periodClear:hover {
+    color: var(--slotted-text);
+  }
+
+  .periodClear:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  @media (forced-colors: active) {
+    .trigger {
+      border-block-end-color: Canvas;
+    }
+
+    .word[data-active] .trigger,
+    .trigger[aria-pressed="true"] {
+      border-block-end-color: CanvasText;
+    }
+
+    .input {
+      border-color: CanvasText;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .trigger,
+    .remove {
+      transition: none;
+    }
+  }
+}
