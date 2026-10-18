@@ -3,8 +3,13 @@
     text-decoration: line-through;
   }
 
-  .category {
-    color: var(--slotted-text-subtle);
+  .muted {
+    color: var(--slotted-text-muted);
+  }
+
+  /* Ledger sheet L15: an uncategorized row asks for review in the warning tone. */
+  .review {
+    color: var(--slotted-tone-warning-text);
   }
 
   .sentinel {

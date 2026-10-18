@@ -169,19 +169,30 @@ describe("home balances", () => {
     );
   });
 
+  // Ledger sheet L17: Date, Description and Amount, without the Category column.
   it("renders the five recent transactions", async () => {
     const { fetch } = homeApi();
     await renderApp("/", { fetch });
     const region = await screen.findByRole("region", {
       name: catalogPtBR["home.recent"],
     });
-    const rows = await within(region).findAllByRole("listitem");
+    await within(region).findByText("Compra 1");
+    const table = within(region).getByRole("table");
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((th) => th.textContent),
+    ).toEqual([
+      catalogPtBR["transactions.column.date"],
+      catalogPtBR["transactions.column.description"],
+      catalogPtBR["transactions.column.amount"],
+    ]);
+    const rows = within(table).getAllByRole("row").slice(1);
     expect(rows).toHaveLength(5);
     const [firstRow] = rows;
     if (firstRow === undefined) throw new Error("no recent row");
-    const first = within(firstRow);
-    expect(first.getByText("Compra 1")).toBeInTheDocument();
-    expect(first.getByText("\u2212R$ 10,00")).toBeInTheDocument();
+    expect(within(firstRow).getByText("Compra 1")).toBeInTheDocument();
+    expect(within(firstRow).getByText("\u221210,00")).toBeInTheDocument();
   });
 
   // Ledger sheet L8: the count moved to the Transactions destination.
@@ -340,7 +351,8 @@ describe("home waiting states", () => {
       "true",
     );
     release(json(200, { items: [1, 2, 3, 4, 5].map(transaction) }));
-    expect(await within(recent).findAllByRole("listitem")).toHaveLength(5);
+    await within(recent).findByText("Compra 5");
+    expect(within(recent).getAllByRole("row")).toHaveLength(6);
     expect(recent.querySelector('[aria-busy="true"]')).toBeNull();
   });
 

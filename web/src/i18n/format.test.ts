@@ -6,7 +6,6 @@ import {
   formatDayMonth,
   formatMoney,
   formatMoneyParts,
-  formatWeekdayDay,
   formatPlain,
   formatReferenceMonth,
   parseAmount,
@@ -154,13 +153,6 @@ describe("formatMoneyParts", () => {
 });
 
 describe("short dates", () => {
-  it.each([
-    ["2026-10-16", "pt-BR", "sex 16"],
-    ["2026-10-16", "en", "Fri 16"],
-  ] as const)("weekday and day of %s in %s", (iso, locale, want) => {
-    expect(formatWeekdayDay(iso, locale)).toBe(want);
-  });
-
   it.each([
     ["2026-10-16", "pt-BR", "16 out"],
     ["2026-10-16", "en", "Oct 16"],

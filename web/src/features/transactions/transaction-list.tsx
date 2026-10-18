@@ -1,14 +1,6 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { List, ListSection } from "@slotted/react/list";
 import {
-  ListItem,
-  ListItemBody,
-  ListItemDescription,
-  ListItemLabel,
-  ListItemLink,
-  ListItemStart,
-} from "@slotted/react/list-item";
-import {
   ResultState,
   ResultStateActions,
   ResultStateContent,
@@ -19,72 +11,47 @@ import { useEffect, useMemo, useRef } from "react";
 import type { ReactNode } from "react";
 
 import { useApi } from "@/api/api-context";
-import type { components } from "@/api/schema.gen";
 import { accountsQuery } from "@/features/accounts";
-import { instrumentsQuery, payeesQuery, useScale } from "@/features/setup";
+import {
+  instrumentsQuery,
+  payeesQuery,
+  settingsQuery,
+  useScale,
+} from "@/features/setup";
 import { transactionsInfiniteQuery } from "@/features/transactions/api";
 import { PlaceholderRows } from "@/features/transactions/placeholder-rows";
-import { rowAmount } from "@/features/transactions/row-amount";
 import type { TransactionSearch } from "@/features/transactions/search";
+import { TransactionDayList } from "@/features/transactions/transaction-day-list";
 import styles from "@/features/transactions/transaction-list.module.css";
-import { formatDate } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { IconGlyph } from "@/ui/icon-glyph";
-import type { IconGlyphName } from "@/ui/icon-glyph";
-import { MoneyText } from "@/ui/money-text";
+import { transactionRow } from "@/features/transactions/transaction-row";
+import { TransactionTable } from "@/features/transactions/transaction-table";
+import { useT } from "@/i18n/i18n-provider";
 import { QueryError } from "@/ui/query-error";
-import { AmountLine } from "@/ui/amount-line";
-import { useSpaLink } from "@/ui/use-spa-link";
-
-type Account = components["schemas"]["Account"];
-type Transaction = components["schemas"]["Transaction"];
+import { useViewport } from "@/ui/use-viewport";
 
 const placeholderRows = 5;
 const prefetchMargin = "200px";
-
-function names(
-  tx: Transaction,
-  accountsById: Map<string, Account>,
-  classes: readonly Account["class"][],
-): string[] {
-  return tx.postings.flatMap((p) => {
-    const account = accountsById.get(p.account_id);
-    return account !== undefined && classes.includes(account.class)
-      ? [account.name]
-      : [];
-  });
-}
-
-// The API returns newest first, so equal dates are adjacent, across page boundaries too.
-function groupByDate(
-  rows: Transaction[],
-): { date: string; items: Transaction[] }[] {
-  const days: { date: string; items: Transaction[] }[] = [];
-  for (const tx of rows) {
-    const last = days.at(-1);
-    if (last?.date === tx.date) last.items.push(tx);
-    else days.push({ date: tx.date, items: [tx] });
-  }
-  return days;
-}
 
 export function TransactionList({
   search,
   limit,
   infinite,
+  brief = false,
   emptyActions,
 }: {
   search: TransactionSearch;
   limit?: number;
   infinite: boolean;
+  // Drops the Category column of the table (ledger sheet L17).
+  brief?: boolean;
   emptyActions?: ReactNode;
 }) {
   const t = useT();
-  const [locale] = useAppLocale();
   const api = useApi();
   const scale = useScale();
-  const spaLink = useSpaLink();
+  const viewport = useViewport();
   const accounts = useQuery(accountsQuery(api));
+  const settings = useQuery(settingsQuery(api));
   const instruments = useQuery(instrumentsQuery(api));
   // Payee names refine the row labels but never block the list.
   const payees = useQuery(payeesQuery(api));
@@ -169,6 +136,20 @@ export function TransactionList({
     transactions.data === undefined ||
     scale === null
   ) {
+    if (viewport === "desktop") {
+      return (
+        <SkeletonRegion>
+          <TransactionTable
+            rows={[]}
+            brief={brief}
+            baseCurrency={undefined}
+            scale={() => 0}
+            loading
+            loadingMore={false}
+          />
+        </SkeletonRegion>
+      );
+    }
     return (
       <SkeletonRegion>
         <List
@@ -193,8 +174,8 @@ export function TransactionList({
     );
   }
 
-  const rows = transactions.data.pages.flatMap((page) => page.items);
-  if (rows.length === 0) {
+  const pages = transactions.data.pages.flatMap((page) => page.items);
+  if (pages.length === 0) {
     const filtered = Object.keys(search).length > 0;
     return (
       <ResultState status={filtered ? "no-results" : "empty"} reach="section">
@@ -209,84 +190,28 @@ export function TransactionList({
       </ResultState>
     );
   }
-  const renderRow = (tx: Transaction) => {
-    const { money, transfer } = rowAmount(tx, accountsById, search.account_id);
-    // Every row carries a glyph, so the titles of transfers and of the other rows share one edge.
-    let glyph: IconGlyphName = money.amount < 0 ? "outflow" : "inflow";
-    if (transfer) glyph = "transfer";
-    const categories = names(tx, accountsById, ["income", "expense"]).join(
-      ", ",
-    );
-    const payee =
-      tx.payee_id === undefined ? undefined : payeeNames.get(tx.payee_id);
-    const label = payee ?? (tx.description || categories);
-    const categorySuffix = ` · ${categories}`;
-    const shown = label === "" ? t("transactions.untitled") : label;
-    const title =
-      label !== categories && categories !== ""
-        ? shown + categorySuffix
-        : shown;
-    const second = [
-      ...(infinite ? [] : [formatDate(tx.date, locale)]),
-      ...names(tx, accountsById, ["asset", "liability"]),
-      ...tx.tags,
-    ].join(" · ");
-    return (
-      <ListItem key={tx.id}>
-        <ListItemLink {...spaLink(`/transactions/${tx.id}`)}>
-          <ListItemStart>
-            <IconGlyph name={glyph} />
-          </ListItemStart>
-          <ListItemBody>
-            <ListItemLabel>
-              <AmountLine
-                own="transaction-line"
-                fullTitle={title}
-                title={
-                  <span
-                    className={
-                      tx.voided_at === undefined ? undefined : styles.voided
-                    }
-                  >
-                    {shown}
-                    {label !== categories && categories !== "" && (
-                      <span className={styles.category}>{categorySuffix}</span>
-                    )}
-                  </span>
-                }
-                amount={
-                  <MoneyText money={money} scale={scale(money.currency)} />
-                }
-              />
-            </ListItemLabel>
-            <ListItemDescription>{second}</ListItemDescription>
-          </ListItemBody>
-        </ListItemLink>
-      </ListItem>
-    );
-  };
-  const days = infinite ? groupByDate(rows) : [];
+  const rows = pages.map((tx) =>
+    transactionRow(tx, accountsById, payeeNames, search.account_id),
+  );
   return (
     <>
-      <List
-        variant="ruled"
-        aria-label={t("transactions.list")}
-        loading={isFetchingNextPage}
-      >
-        {infinite
-          ? days.map(({ date, items }) => (
-              <ListSection
-                key={date}
-                label={formatDate(date, locale)}
-                level="2"
-                sticky
-              >
-                {items.map(renderRow)}
-              </ListSection>
-            ))
-          : rows.map(renderRow)}
-        {isFetchingNextPage && <PlaceholderRows count={placeholderRows} />}
-      </List>
+      {viewport === "desktop" ? (
+        <TransactionTable
+          rows={rows}
+          brief={brief}
+          baseCurrency={settings.data?.base_currency}
+          scale={scale}
+          loading={false}
+          loadingMore={isFetchingNextPage}
+        />
+      ) : (
+        <TransactionDayList
+          rows={rows}
+          grouped={infinite}
+          scale={scale}
+          loadingMore={isFetchingNextPage}
+        />
+      )}
       {isFetchNextPageError && (
         <QueryError
           error={transactions.error}

@@ -152,12 +152,6 @@ function dateParts(
   return out;
 }
 
-// "sex 16" / "Fri 16": the date column of a table within one month.
-export function formatWeekdayDay(iso: string, locale: Locale): string {
-  const p = dateParts(iso, locale, { weekday: "short", day: "numeric" });
-  return `${p.weekday ?? ""} ${p.day ?? ""}`;
-}
-
 // "16 out" / "Oct 16".
 export function formatDayMonth(iso: string, locale: Locale): string {
   const p = dateParts(iso, locale, { day: "numeric", month: "short" });

@@ -91,6 +91,7 @@ export function HomePage() {
                 search={{}}
                 limit={recentLimit}
                 infinite={false}
+                brief
               />
             </SectionBody>
           </Section>

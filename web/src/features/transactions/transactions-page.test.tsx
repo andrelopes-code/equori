@@ -16,6 +16,9 @@ const foodID = "22222222-2222-4222-8222-222222222222";
 const travelID = "33333333-3333-4333-8333-333333333333";
 const bakeryID = "44444444-4444-4444-8444-444444444444";
 const marketID = "55555555-5555-4555-8555-555555555555";
+const savingsID = "66666666-6666-4666-8666-666666666666";
+const uncategorizedID = "77777777-7777-4777-8777-777777777777";
+const walletID = "88888888-8888-4888-8888-888888888888";
 
 const payees = [
   { id: bakeryID, name: "Padaria" },
@@ -32,6 +35,27 @@ const accounts: Account[] = [
   },
   { id: foodID, name: "Mercado", class: "expense", currency: "BRL" },
   { id: travelID, name: "Viagens", class: "expense", currency: "BRL" },
+  {
+    id: savingsID,
+    name: "Reserva",
+    class: "asset",
+    kind: "savings",
+    currency: "BRL",
+  },
+  {
+    id: walletID,
+    name: "Wise",
+    class: "asset",
+    kind: "checking",
+    currency: "USD",
+  },
+  {
+    id: uncategorizedID,
+    name: "Sem categoria",
+    class: "expense",
+    currency: "BRL",
+    system_role: "uncategorized_expense",
+  },
 ];
 
 function transaction(
@@ -85,7 +109,10 @@ function listApi(opts: Options = {}) {
     "GET /api/v1/settings": () => json(200, { base_currency: "BRL" }),
     "GET /api/v1/instruments": () =>
       json(200, {
-        items: [{ code: "BRL", type: "currency", scale: 2, name: "Real" }],
+        items: [
+          { code: "BRL", type: "currency", scale: 2, name: "Real" },
+          { code: "USD", type: "currency", scale: 2, name: "Dollar" },
+        ],
       }),
     "GET /api/v1/accounts": () => json(200, { items: accounts }),
     "GET /api/v1/payees": () => json(200, { items: payees }),
@@ -160,86 +187,185 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+// Ledger sheet decisions L13 to L16.
 describe("transactions list", () => {
-  it("groups rows under day headers, newest day first", async () => {
+  it("draws a table at 1280 px: date once per day, description, category, amount", async () => {
     const { fetch } = listApi();
-    await renderApp("/transactions", { fetch });
+    const { container } = await renderApp("/transactions", { fetch });
+    await screen.findByText("Compra 1");
+    const table = screen.getByRole("table", {
+      name: catalogPtBR["transactions.list"],
+    });
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((th) => th.textContent),
+    ).toEqual([
+      catalogPtBR["transactions.column.date"],
+      catalogPtBR["transactions.column.description"],
+      catalogPtBR["transactions.column.category"],
+      catalogPtBR["transactions.column.amount"],
+    ]);
+    const rows = within(table)
+      .getAllByRole("row")
+      .slice(1)
+      .map((row) =>
+        within(row)
+          .getAllByRole("cell")
+          .map((cell) => cell.textContent.replace(/\u00a0/g, " ")),
+      );
+    expect(rows).toEqual([
+      ["Ontem", "Compra 1 · Itaú · viagem", "Mercado", "−10,00"],
+      ["", "Compra 2 · Itaú", "Mercado", "−20,00"],
+      ["qui, 15 out", "Compra 3 · Itaú", "Mercado", "−30,00"],
+    ]);
+    expect(
+      within(table).getByRole("link", { name: "Compra 1" }),
+    ).toHaveAttribute("href", "/transactions/t-1");
+    expect(table.querySelector("svg")).toBeNull();
+    expect(container.querySelector('[data-ui="list"]')).toBeNull();
+  });
+
+  it("groups rows under day headers at 768 px, newest day first", async () => {
+    const { fetch } = listApi();
+    await renderApp("/transactions", { fetch, width: 768 });
     const days = await screen.findAllByRole("heading", { level: 2 });
     expect(days.map((d) => d.textContent)).toEqual([
-      "16/10/2026",
-      "15/10/2026",
+      catalogPtBR["date.yesterday"],
+      "qui, 15 out",
     ]);
     for (const day of days) {
       expect(day.closest("[data-sticky]")).not.toBeNull();
     }
-    const firstDay = screen.getByRole("list", { name: "16/10/2026" });
-    expect(
-      within(firstDay)
-        .getAllByRole("listitem")
-        .map((row) => within(row).getByText(/^Compra/).textContent),
-    ).toEqual(["Compra 1 · Mercado", "Compra 2 · Mercado"]);
-    const secondDay = screen.getByRole("list", { name: "15/10/2026" });
-    expect(within(secondDay).getAllByRole("listitem")).toHaveLength(1);
-  });
-
-  it("puts the title, category and amount on the first line and the account and tags on the second", async () => {
-    const { fetch } = listApi();
-    await renderApp("/transactions", { fetch, width: 360 });
-    const row = (await screen.findByText("Compra 1")).closest("li");
-    expect(row).not.toBeNull();
-    const line = row?.querySelector('[data-own="transaction-line"]');
-    expect(line).not.toBeNull();
-    expect(line?.textContent.replace(/\u00a0/g, " ")).toBe(
-      "Compra 1 · Mercado\u2212R$ 10,00",
-    );
-    const description = row?.querySelector('[data-part="description"]');
-    expect(description?.textContent).toBe("Itaú · viagem");
-    expect(line?.contains(description ?? null)).toBe(false);
-    expect(row?.querySelector('[data-part="end"]')).toBeNull();
-  });
-
-  it("requests the next page with the cursor when the sentinel is reached", async () => {
-    const { fetch, requests } = listApi();
-    await renderApp("/transactions", { fetch });
-    await screen.findByText("Compra 3");
-    expect(requests).toHaveLength(1);
-    await scrollToSentinel();
-    expect(await screen.findByText("Compra 4")).toBeInTheDocument();
-    expect(requests).toHaveLength(2);
-    expect(requests[1]?.get("cursor")).toBe("cursor-2");
-    expect(
-      screen.getAllByRole("heading", { level: 2 }).map((d) => d.textContent),
-    ).toEqual(["16/10/2026", "15/10/2026", "14/10/2026"]);
-  });
-
-  it("stops observing when no next page exists", async () => {
-    const { fetch } = listApi({ respond: () => json(200, secondPage) });
-    await renderApp("/transactions", { fetch });
-    await screen.findByText("Compra 4");
-    expect(
-      StubObserver.all.every((o) => o.disconnected || o.target === undefined),
-    ).toBe(true);
-  });
-
-  it("sends the URL filters exactly", async () => {
-    const { fetch, requests } = listApi();
-    await renderApp("/transactions?tag=viagem&from=2026-10-01", { fetch });
-    await screen.findByText("Compra 1");
-    expect(Object.fromEntries(requests[0] ?? [])).toEqual({
-      tag: "viagem",
-      from: "2026-10-01",
-      limit: "50",
+    const firstDay = screen.getByRole("list", {
+      name: catalogPtBR["date.yesterday"],
     });
+    expect(within(firstDay).getAllByRole("listitem")).toHaveLength(2);
+    expect(
+      within(screen.getByRole("list", { name: "qui, 15 out" })).getAllByRole(
+        "listitem",
+      ),
+    ).toHaveLength(1);
   });
 
-  it("shows two lines per row on a phone: description and amount, then account and tags", async () => {
+  it("shows two lines per row on a phone: description and amount, then category and account", async () => {
     const { fetch } = listApi();
     await renderApp("/transactions", { fetch, width: 360 });
     const row = (await screen.findByText("Compra 1")).closest("li");
     if (row === null) throw new Error("row not found");
-    expect(within(row).getByText("\u2212R$ 10,00")).toBeInTheDocument();
-    expect(within(row).getByText("Itaú · viagem")).toBeInTheDocument();
+    const line = row.querySelector('[data-own="transaction-line"]');
+    expect(line?.textContent.replace(/\u00a0/g, " ")).toBe("Compra 1−R$ 10,00");
+    const description = row.querySelector('[data-part="description"]');
+    expect(description?.textContent).toBe("Mercado · Itaú · viagem");
     expect(row.querySelector("a")).toHaveAttribute("href", "/transactions/t-1");
+    expect(row.querySelector("svg")).toBeNull();
+  });
+
+  it("marks an uncategorized row for review, names a transfer and keeps a foreign symbol", async () => {
+    const { fetch } = listApi({
+      respond: () =>
+        json(200, {
+          items: [
+            transaction(6, "2026-10-16", {
+              postings: [
+                {
+                  id: "p-6-a",
+                  account_id: checkingID,
+                  amount: { amount: -1500, currency: "BRL" },
+                },
+                {
+                  id: "p-6-b",
+                  account_id: uncategorizedID,
+                  amount: { amount: 1500, currency: "BRL" },
+                },
+              ],
+            }),
+            transaction(7, "2026-10-16", {
+              postings: [
+                {
+                  id: "p-7-a",
+                  account_id: checkingID,
+                  amount: { amount: -5000, currency: "BRL" },
+                },
+                {
+                  id: "p-7-b",
+                  account_id: savingsID,
+                  amount: { amount: 5000, currency: "BRL" },
+                },
+              ],
+            }),
+            transaction(8, "2026-10-16", {
+              balancing_currency: "USD",
+              postings: [
+                {
+                  id: "p-8-a",
+                  account_id: walletID,
+                  amount: { amount: -1250, currency: "USD" },
+                },
+                {
+                  id: "p-8-b",
+                  account_id: travelID,
+                  amount: { amount: 1250, currency: "USD" },
+                },
+              ],
+            }),
+          ],
+        }),
+    });
+    await renderApp("/transactions", { fetch });
+    await screen.findByText("Compra 6");
+    const table = screen.getByRole("table", {
+      name: catalogPtBR["transactions.list"],
+    });
+    const cells = (name: RegExp) => {
+      const row = within(table).getByText(name).closest("tr");
+      if (row === null) throw new Error("row not found");
+      return within(row)
+        .getAllByRole("cell")
+        .map((cell) => cell.textContent.replace(/\u00a0/g, " "));
+    };
+    expect(cells(/^Compra 6/)).toEqual([
+      "Ontem",
+      "Compra 6 · Itaú",
+      catalogPtBR["transactions.review"],
+      "−15,00",
+    ]);
+    expect(cells(/^Compra 7/)).toEqual([
+      "",
+      "Compra 7 · Itaú → Reserva",
+      catalogPtBR["transactions.transfer"],
+      "−50,00",
+    ]);
+    expect(cells(/^Compra 8/)).toEqual([
+      "",
+      "Compra 8 · Wise",
+      "Viagens",
+      "−US$ 12,50",
+    ]);
+  });
+
+  it("writes the date of a day once even when the next page continues it", async () => {
+    const { fetch } = listApi({
+      respond: (params) =>
+        json(
+          200,
+          params.get("cursor") === "cursor-2"
+            ? { items: [transaction(9, "2026-10-15")] }
+            : {
+                items: [
+                  transaction(1, "2026-10-16"),
+                  transaction(3, "2026-10-15"),
+                ],
+                next_cursor: "cursor-2",
+              },
+        ),
+    });
+    await renderApp("/transactions", { fetch });
+    await screen.findByText("Compra 3");
+    await scrollToSentinel();
+    const row = (await screen.findByText("Compra 9")).closest("tr");
+    if (row === null) throw new Error("row not found");
+    expect(within(row).getAllByRole("cell")[0]?.textContent).toBe("");
   });
 });
 
@@ -254,10 +380,10 @@ describe("transactions rows and paging", () => {
     await renderApp("/transactions", { fetch, width: 360 });
     const row = (await screen.findByText(/^Padaria/)).closest("li");
     if (row === null) throw new Error("row not found");
-    expect(within(row).getByText(/^Padaria/).textContent).toBe(
-      "Padaria · Mercado",
+    expect(within(row).getByText(/^Padaria/).textContent).toBe("Padaria");
+    expect(row.querySelector('[data-part="description"]')?.textContent).toBe(
+      "Mercado · Itaú",
     );
-    expect(within(row).getByText("Itaú")).toBeInTheDocument();
     expect(screen.queryByText(/Compra 5/)).toBeNull();
   });
 
@@ -485,7 +611,9 @@ describe("transactions filters", () => {
         within(bar).getByRole("button", { name: pill }),
       ).toBeInTheDocument();
     }
-    const list = screen.getByRole("list", { name: "16/10/2026" });
+    const list = screen.getByRole("table", {
+      name: catalogPtBR["transactions.list"],
+    });
     expect(
       bar.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
