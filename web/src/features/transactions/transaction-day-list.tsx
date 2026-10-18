@@ -7,6 +7,7 @@ import {
   ListItemLink,
 } from "@slotted/react/list-item";
 import { Fragment } from "react";
+import type { ReactNode } from "react";
 
 import { PlaceholderRows } from "@/features/transactions/placeholder-rows";
 import { RowCategory } from "@/features/transactions/row-category";
@@ -20,6 +21,7 @@ import { MoneyText } from "@/ui/money-text";
 import { useSpaLink } from "@/ui/use-spa-link";
 
 const placeholderRows = 5;
+const separator = " \u00b7 ";
 
 // The API returns newest first, so equal dates are adjacent, across page boundaries too.
 function groupByDate(
@@ -54,12 +56,15 @@ export function TransactionDayList({
   const words = { today: t("date.today"), yesterday: t("date.yesterday") };
   const renderRow = (row: TransactionRow) => {
     const title = row.title === "" ? t("transactions.untitled") : row.title;
-    const rest = [
+    const category =
+      row.transfer || row.uncategorized || row.category !== "" ? (
+        <RowCategory row={row} />
+      ) : null;
+    const parts: ReactNode[] = [
       ...(grouped ? [] : [formatDayMonth(row.date, locale)]),
-      row.accounts,
-      ...row.tags,
-    ].filter((part) => part !== "");
-    const category = row.transfer || row.uncategorized || row.category !== "";
+      ...(category === null ? [] : [category]),
+      ...[row.accounts, ...row.tags].filter((part) => part !== ""),
+    ];
     return (
       <ListItem key={row.id}>
         <ListItemLink {...spaLink(`/transactions/${row.id}`)}>
@@ -82,10 +87,9 @@ export function TransactionDayList({
               />
             </ListItemLabel>
             <ListItemDescription>
-              {category && <RowCategory row={row} />}
-              {rest.map((part, i) => (
+              {parts.map((part, i) => (
                 <Fragment key={String(i)}>
-                  {(category || i > 0) && " · "}
+                  {i > 0 && separator}
                   {part}
                 </Fragment>
               ))}

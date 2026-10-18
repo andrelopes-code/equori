@@ -61,7 +61,7 @@ export function Balances() {
           <MoneyFigure
             money={total}
             scale={scale(total.currency)}
-            size={viewport === "phone" ? "lg" : "xl"}
+            size={viewport === "desktop" ? "xl" : "lg"}
           />
         </FigureStripItem>
       ))}
