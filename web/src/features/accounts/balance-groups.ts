@@ -1,4 +1,5 @@
 import type { components } from "@/api/schema.gen";
+import type { MessageKey } from "@/i18n/catalog.en";
 
 type Account = components["schemas"]["Account"];
 type Balance = components["schemas"]["Balance"];
@@ -63,3 +64,10 @@ export function groupBalances(
   }
   return order.flatMap((group) => byGroup.get(group) ?? []);
 }
+
+export const groupLabels: Record<Group, MessageKey> = {
+  available: "home.group.available",
+  reserves: "home.group.reserves",
+  cards: "home.group.cards",
+  loans: "home.group.loans",
+};

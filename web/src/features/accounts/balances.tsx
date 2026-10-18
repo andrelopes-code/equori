@@ -1,14 +1,17 @@
-import { useQuery } from "@tanstack/react-query";
+import { ButtonLink } from "@slotted/react/button";
+import { Grid } from "@slotted/react/grid";
 import { List } from "@slotted/react/list";
 import {
   ListItem,
   ListItemBody,
+  ListItemContent,
+  ListItemDescription,
   ListItemEnd,
   ListItemLabel,
-  ListItemLink,
 } from "@slotted/react/list-item";
 import {
   ResultState,
+  ResultStateActions,
   ResultStateContent,
   ResultStateTitle,
 } from "@slotted/react/result-state";
@@ -21,117 +24,96 @@ import {
   StatCardValue,
 } from "@slotted/react/stat-card";
 
-import { useApi } from "@/api/api-context";
-import { accountsQuery, balancesQuery } from "@/features/accounts/api";
-import { groupBalances } from "@/features/accounts/balance-groups";
-import type { Group } from "@/features/accounts/balance-groups";
+import { groupLabels } from "@/features/accounts/balance-groups";
 import { BalancesPlaceholder } from "@/features/accounts/balances-placeholder";
-import styles from "@/features/accounts/home-page.module.css";
-import { instrumentsQuery, settingsQuery, useScale } from "@/features/setup";
-import type { MessageKey } from "@/i18n/catalog.en";
+import { useBalanceGroups } from "@/features/accounts/use-balance-groups";
 import { useT } from "@/i18n/i18n-provider";
-import { useToday } from "@/i18n/today";
 import { MoneyText } from "@/ui/money-text";
 import { QueryError } from "@/ui/query-error";
 import { useSpaLink } from "@/ui/use-spa-link";
+import { useViewport } from "@/ui/use-viewport";
 
-const groupLabels: Record<Group, MessageKey> = {
-  available: "home.group.available",
-  reserves: "home.group.reserves",
-  cards: "home.group.cards",
-  loans: "home.group.loans",
-};
-
+// The group totals: peer stat cards at the desk, one list of rows on a phone (OV-02).
 export function Balances() {
   const t = useT();
-  const api = useApi();
-  const today = useToday();
-  const scale = useScale();
   const spaLink = useSpaLink();
-  const accounts = useQuery(accountsQuery(api));
-  const balances = useQuery(balancesQuery(api, today, "booked"));
-  const settings = useQuery(settingsQuery(api));
-  const instruments = useQuery(instrumentsQuery(api));
-  const queries = [accounts, balances, settings, instruments];
-
-  const failed = queries.find((q) => q.isError);
-  if (failed?.error) {
-    return (
-      <QueryError
-        error={failed.error}
-        onRetry={() => {
-          for (const query of queries) {
-            if (query.isError) void query.refetch();
-          }
-        }}
-      />
-    );
+  const viewport = useViewport();
+  const phone = viewport === "phone";
+  // Two by two below the desk, so four groups never leave one card alone on a row.
+  const columns = viewport === "desktop" ? 4 : 2;
+  const { groups, scale, failed, retry } = useBalanceGroups();
+  if (failed) return <QueryError error={failed} onRetry={retry} />;
+  if (groups === undefined) {
+    return <BalancesPlaceholder phone={phone} columns={columns} />;
   }
-  if (
-    accounts.data === undefined ||
-    balances.data === undefined ||
-    settings.data === undefined ||
-    scale === null
-  ) {
-    return <BalancesPlaceholder />;
-  }
-  const groups = groupBalances(
-    accounts.data,
-    balances.data,
-    settings.data.base_currency,
-  );
   if (groups.length === 0) {
     return (
       <ResultState status="empty" reach="section">
         <ResultStateContent>
           <ResultStateTitle>{t("home.empty")}</ResultStateTitle>
         </ResultStateContent>
+        <ResultStateActions>
+          <ButtonLink
+            {...spaLink("/accounts")}
+            tone="secondary"
+            variant="outline"
+          >
+            {t("home.empty.action")}
+          </ButtonLink>
+        </ResultStateActions>
       </ResultState>
     );
   }
-  return (
-    <div className={styles.groups}>
-      {groups.map(({ group, items, total, excluded }) => (
-        <div key={group} className={styles.group}>
-          <StatCard>
-            <StatCardHeader>
-              <StatCardLabel>{t(groupLabels[group])}</StatCardLabel>
-            </StatCardHeader>
-            <StatCardFigure>
-              <StatCardValue>
+  if (phone) {
+    return (
+      <List variant="ruled" aria-label={t("home.balances")}>
+        {groups.map(({ group, total, excluded }) => (
+          <ListItem key={group}>
+            <ListItemContent>
+              <ListItemBody>
+                <ListItemLabel>{t(groupLabels[group])}</ListItemLabel>
+                {excluded > 0 && (
+                  <ListItemDescription>
+                    {t("home.excluded", { count: excluded })}
+                  </ListItemDescription>
+                )}
+              </ListItemBody>
+              <ListItemEnd>
                 <MoneyText
                   money={total}
                   scale={scale(total.currency)}
                   tone="balance"
                 />
-              </StatCardValue>
-              {excluded > 0 && (
-                <StatCardComparison>
-                  {t("home.excluded", { count: excluded })}
-                </StatCardComparison>
-              )}
-            </StatCardFigure>
-          </StatCard>
-          <List variant="ruled" aria-label={t(groupLabels[group])}>
-            {items.map(({ account, balance }) => (
-              <ListItem key={account.id}>
-                <ListItemLink {...spaLink(`/accounts/${account.id}`)}>
-                  <ListItemBody>
-                    <ListItemLabel>{account.name}</ListItemLabel>
-                  </ListItemBody>
-                  <ListItemEnd>
-                    <MoneyText
-                      money={balance}
-                      scale={scale(balance.currency)}
-                      tone="balance"
-                    />
-                  </ListItemEnd>
-                </ListItemLink>
-              </ListItem>
-            ))}
-          </List>
-        </div>
+              </ListItemEnd>
+            </ListItemContent>
+          </ListItem>
+        ))}
+      </List>
+    );
+  }
+  return (
+    <Grid columns={columns} gap={4} minItemWidth="sm">
+      {groups.map(({ group, total, excluded }) => (
+        <StatCard key={group}>
+          <StatCardHeader>
+            <StatCardLabel>{t(groupLabels[group])}</StatCardLabel>
+          </StatCardHeader>
+          <StatCardFigure>
+            <StatCardValue>
+              <MoneyText
+                money={total}
+                scale={scale(total.currency)}
+                tone="balance"
+              />
+            </StatCardValue>
+            {excluded > 0 && (
+              <StatCardComparison>
+                {t("home.excluded", { count: excluded })}
+              </StatCardComparison>
+            )}
+          </StatCardFigure>
+        </StatCard>
       ))}
-    </div>
+    </Grid>
   );
 }

@@ -30,6 +30,7 @@ import styles from "@/features/transactions/transaction-list.module.css";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { IconGlyph } from "@/ui/icon-glyph";
+import type { IconGlyphName } from "@/ui/icon-glyph";
 import { MoneyText } from "@/ui/money-text";
 import { QueryError } from "@/ui/query-error";
 import { useSpaLink } from "@/ui/use-spa-link";
@@ -194,6 +195,9 @@ export function TransactionList({
   }
   const renderRow = (tx: Transaction) => {
     const { money, transfer } = rowAmount(tx, accountsById, search.account_id);
+    // Every row carries a glyph, so the titles of transfers and of the other rows share one edge.
+    let glyph: IconGlyphName = money.amount < 0 ? "outflow" : "inflow";
+    if (transfer) glyph = "transfer";
     const categories = names(tx, accountsById, ["income", "expense"]).join(
       ", ",
     );
@@ -209,11 +213,9 @@ export function TransactionList({
     return (
       <ListItem key={tx.id}>
         <ListItemLink {...spaLink(`/transactions/${tx.id}`)}>
-          {transfer && (
-            <ListItemStart>
-              <IconGlyph name="transfer" />
-            </ListItemStart>
-          )}
+          <ListItemStart>
+            <IconGlyph name={glyph} />
+          </ListItemStart>
           <ListItemBody>
             <ListItemLabel>
               <span data-own="transaction-line" className={styles.line}>

@@ -9,6 +9,8 @@ import styles from "@/ui/bottom-bar.module.css";
 export interface BottomBarItem {
   key: string;
   label: string;
+  // A visible label shorter than the accessible name, for a label that would wrap.
+  shortLabel?: string;
   icon: ReactNode;
   to?: string;
   search?: Record<string, string>;

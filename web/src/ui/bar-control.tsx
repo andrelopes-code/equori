@@ -10,11 +10,14 @@ export function BarControl({
   item: BottomBarItem;
   current: boolean;
 }) {
-  const emphasis = item.emphasized === true ? { "data-emphasized": "" } : {};
+  const emphasis = {
+    ...(item.emphasized === true ? { "data-emphasized": "" } : {}),
+    ...(item.shortLabel === undefined ? {} : { "aria-label": item.label }),
+  };
   const content = (
     <>
       {item.icon}
-      <span className={styles.label}>{item.label}</span>
+      <span className={styles.label}>{item.shortLabel ?? item.label}</span>
     </>
   );
   if (item.to !== undefined) {

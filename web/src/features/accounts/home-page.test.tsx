@@ -135,10 +135,23 @@ describe("home balances", () => {
     expect(
       within(region).getByText(catalogPtBR["home.group.cards"]),
     ).toBeInTheDocument();
-    expect(within(region).getAllByText("-R$ 300,00")).toHaveLength(2);
+    expect(within(region).getByText("-R$ 300,00")).toBeInTheDocument();
     expect(
       within(region).queryByText(catalogPtBR["home.group.loans"]),
     ).toBeNull();
+  });
+
+  it("lists each account under its group heading with a link to the account", async () => {
+    const { fetch } = homeApi();
+    await renderApp("/", { fetch });
+    const region = await screen.findByRole("region", {
+      name: catalogPtBR["home.accounts"],
+    });
+    const cards = await within(region).findByRole("heading", {
+      name: catalogPtBR["home.group.cards"],
+    });
+    expect(cards).toBeInTheDocument();
+    expect(within(region).getByText("-R$ 300,00")).toBeInTheDocument();
     expect(within(region).getByRole("link", { name: /Itaú/ })).toHaveAttribute(
       "href",
       "/accounts/a-checking",
@@ -160,11 +173,16 @@ describe("home balances", () => {
     expect(first.getByText("-R$ 10,00")).toBeInTheDocument();
   });
 
-  it("shows the uncategorized count as a link to the filtered list", async () => {
+  it("shows the uncategorized count with a link to the filtered list", async () => {
     const { fetch } = homeApi();
     await renderApp("/", { fetch });
-    const link = await screen.findByRole("link", {
-      name: catalogPtBR["home.uncategorized"].replace("{count}", "3"),
+    const title = await screen.findByText(
+      catalogPtBR["home.uncategorized"].replace("{count}", "3"),
+    );
+    const notice = title.closest('[data-ui="alert"]');
+    expect(notice).not.toBeNull();
+    const link = within(notice as HTMLElement).getByRole("link", {
+      name: catalogPtBR["home.uncategorized.action"],
     });
     expect(link).toHaveAttribute("href", "/transactions?uncategorized=true");
   });
@@ -173,10 +191,42 @@ describe("home balances", () => {
     const { fetch } = homeApi({ uncategorizedNext: "cursor" });
     await renderApp("/", { fetch });
     expect(
-      await screen.findByRole("link", {
-        name: catalogPtBR["home.uncategorized"].replace("{count}", "200+"),
-      }),
+      await screen.findByText(
+        catalogPtBR["home.uncategorized"].replace("{count}", "200+"),
+      ),
     ).toBeInTheDocument();
+  });
+});
+
+describe("home without accounts", () => {
+  it("states the empty ledger once and leads to the accounts page", async () => {
+    const fetch = fakeApi({
+      "GET /api/v1/me": () =>
+        json(200, { id: 1, email: "a@b.c", role: "admin" }),
+      "GET /api/v1/settings": () => json(200, { base_currency: "BRL" }),
+      "GET /api/v1/instruments": () =>
+        json(200, {
+          items: [{ code: "BRL", type: "currency", scale: 2, name: "Real" }],
+        }),
+      "GET /api/v1/accounts": () => json(200, { items: [] }),
+      "GET /api/v1/balances": () => json(200, { items: [] }),
+      "GET /api/v1/transactions": () => json(200, { items: [] }),
+    });
+    await renderApp("/", { fetch });
+    const region = await screen.findByRole("region", {
+      name: catalogPtBR["home.balances"],
+    });
+    expect(
+      await within(region).findByText(catalogPtBR["home.empty"]),
+    ).toBeInTheDocument();
+    expect(
+      within(region).getByRole("link", {
+        name: catalogPtBR["home.empty.action"],
+      }),
+    ).toHaveAttribute("href", "/accounts");
+    expect(
+      screen.queryByRole("region", { name: catalogPtBR["home.accounts"] }),
+    ).toBeNull();
   });
 });
 
@@ -217,9 +267,9 @@ describe("home waiting states", () => {
     await waitFor(() => {
       expect(calls.balances).toBe(1);
     });
-    await screen.findByRole("link", {
-      name: catalogPtBR["home.uncategorized"].replace("{count}", "3"),
-    });
+    await screen.findByText(
+      catalogPtBR["home.uncategorized"].replace("{count}", "3"),
+    );
     await act(async () => {
       await Promise.resolve();
     });

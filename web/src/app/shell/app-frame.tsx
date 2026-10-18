@@ -88,6 +88,7 @@ export function AppFrame() {
               {
                 key: "new",
                 label: t("nav.new"),
+                shortLabel: t("nav.new.short"),
                 icon: <IconGlyph name="plus" />,
                 to: "/transactions/new",
                 ...(accountID === undefined

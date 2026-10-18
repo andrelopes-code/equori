@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { ButtonLink } from "@slotted/react/button";
 import { Page, PageBody } from "@slotted/react/page";
 import {
@@ -11,21 +10,20 @@ import {
 } from "@slotted/react/page-header";
 import {
   Section,
+  SectionActions,
   SectionBody,
   SectionHeader,
   SectionHeading,
   SectionTitle,
 } from "@slotted/react/section";
 
-import { useApi } from "@/api/api-context";
-import { accountsQuery, balancesQuery } from "@/features/accounts/api";
+import { AccountGroups } from "@/features/accounts/account-groups";
 import { Balances } from "@/features/accounts/balances";
 import styles from "@/features/accounts/home-page.module.css";
 import { UncategorizedShortcut } from "@/features/accounts/uncategorized-shortcut";
-import { instrumentsQuery, settingsQuery } from "@/features/setup";
+import { useBalanceGroups } from "@/features/accounts/use-balance-groups";
 import { TransactionList } from "@/features/transactions";
 import { useT } from "@/i18n/i18n-provider";
-import { useToday } from "@/i18n/today";
 import { useSpaLink } from "@/ui/use-spa-link";
 import { useViewport } from "@/ui/use-viewport";
 
@@ -35,14 +33,8 @@ export function HomePage() {
   const t = useT();
   const viewport = useViewport();
   const spaLink = useSpaLink();
-  const api = useApi();
-  const today = useToday();
-  const pending = [
-    useQuery(accountsQuery(api)),
-    useQuery(balancesQuery(api, today, "booked")),
-    useQuery(settingsQuery(api)),
-    useQuery(instrumentsQuery(api)),
-  ].some((q) => q.data === undefined && !q.isError);
+  const { groups, failed } = useBalanceGroups();
+  const pending = groups === undefined && failed === null;
   return (
     <Page width="wide">
       <PageHeader>
@@ -62,9 +54,9 @@ export function HomePage() {
         </PageHeaderTitleArea>
       </PageHeader>
       <PageBody>
-        <div className={styles.stack}>
-          <UncategorizedShortcut />
-          <Section aria-busy={pending}>
+        <div className={styles.layout}>
+          {/* On a phone the bottom bar already holds Transactions and Accounts, so the sections carry no door to them. */}
+          <Section aria-busy={pending} className={styles.full}>
             <SectionHeader>
               <SectionTitle>
                 <SectionHeading>{t("home.balances")}</SectionHeading>
@@ -74,11 +66,24 @@ export function HomePage() {
               <Balances />
             </SectionBody>
           </Section>
-          <Section>
+          <UncategorizedShortcut className={styles.full} />
+          <Section className={groups?.length === 0 ? styles.full : undefined}>
             <SectionHeader>
               <SectionTitle>
                 <SectionHeading>{t("home.recent")}</SectionHeading>
               </SectionTitle>
+              {viewport !== "phone" && (
+                <SectionActions>
+                  <ButtonLink
+                    {...spaLink("/transactions")}
+                    tone="secondary"
+                    variant="ghost"
+                    size="sm"
+                  >
+                    {t("home.recent.all")}
+                  </ButtonLink>
+                </SectionActions>
+              )}
             </SectionHeader>
             <SectionBody>
               <TransactionList
@@ -88,6 +93,31 @@ export function HomePage() {
               />
             </SectionBody>
           </Section>
+          {/* With no account, the figures region states it once and leads to Accounts. */}
+          {groups?.length !== 0 && (
+            <Section aria-busy={pending}>
+              <SectionHeader>
+                <SectionTitle>
+                  <SectionHeading>{t("home.accounts")}</SectionHeading>
+                </SectionTitle>
+                {viewport !== "phone" && (
+                  <SectionActions>
+                    <ButtonLink
+                      {...spaLink("/accounts")}
+                      tone="secondary"
+                      variant="ghost"
+                      size="sm"
+                    >
+                      {t("home.accounts.all")}
+                    </ButtonLink>
+                  </SectionActions>
+                )}
+              </SectionHeader>
+              <SectionBody>
+                <AccountGroups />
+              </SectionBody>
+            </Section>
+          )}
         </div>
       </PageBody>
     </Page>

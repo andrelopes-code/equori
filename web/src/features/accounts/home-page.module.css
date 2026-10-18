@@ -1,19 +1,19 @@
 @layer app {
-  .stack {
+  .layout {
+    container-type: inline-size;
     display: grid;
-    gap: var(--slotted-space-6);
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-8);
   }
 
-  .groups {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
-    gap: var(--slotted-space-4);
-    align-items: start;
-  }
+  /* 56rem holds two columns whose rows stay wider than the list item's own 22rem step. */
+  @container (min-width: 56rem) {
+    .layout {
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    }
 
-  .group {
-    display: grid;
-    gap: var(--slotted-space-2);
-    min-inline-size: 0;
+    .full {
+      grid-column: 1 / -1;
+    }
   }
 }
