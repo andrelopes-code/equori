@@ -11,7 +11,7 @@ import { useApi } from "@/api/api-context";
 import { unwrap } from "@/api/problem";
 import type { components, paths } from "@/api/schema.gen";
 import { accountKeys, balanceKeys } from "@/features/accounts";
-import { payeesQuery } from "@/features/setup";
+import { payeesQuery, setupKeys } from "@/features/setup";
 import type { TransactionSearch } from "@/features/transactions/search";
 import {
   toCorrectionInput,
@@ -98,7 +98,7 @@ export function tagsQuery(api: Client<paths>) {
   });
 }
 
-// Every transaction mutation calls this: lists, balances and the touched accounts' detail, balance and series caches go stale together.
+// Every transaction mutation calls this: lists, balances, every account cache (a parent balance sums its descendants) and the currency lock check go stale together.
 export function transactionMutated(
   queryClient: QueryClient,
   accountIds: string[],
@@ -106,6 +106,8 @@ export function transactionMutated(
   const keys = [
     transactionKeys.all,
     balanceKeys.all,
+    accountKeys.all,
+    setupKeys.hasTransactions,
     ...accountIds.flatMap((id) => [
       accountKeys.detail(id),
       accountKeys.balances(id),

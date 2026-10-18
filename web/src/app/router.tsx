@@ -17,6 +17,8 @@ import { useApi } from "@/api/api-context";
 import type { paths } from "@/api/schema.gen";
 import { ProblemError } from "@/api/problem";
 import { useSessionExpiry } from "@/app/providers";
+import { RouteError } from "@/app/route-error";
+import { RouteNotFound } from "@/app/route-not-found";
 import { AppFrame } from "@/app/shell/app-frame";
 import { AccountPage, AccountsPage, HomePage } from "@/features/accounts";
 import { LoginPage, meQuery } from "@/features/session";
@@ -86,7 +88,8 @@ const settingsRoute = createRoute({
 const accountRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "accounts/$id",
-  loader: () => preloadChartEngine(["line"]),
+  // A failed chunk load falls to the Chart error state instead of the route error screen.
+  loader: () => preloadChartEngine(["line"]).catch(() => undefined),
   component: AccountPage,
 });
 
@@ -152,6 +155,8 @@ export function newRouter(history?: RouterHistory) {
     context: {} as RouterContext,
     ...(history === undefined ? {} : { history }),
     defaultPreload: "intent",
+    defaultErrorComponent: RouteError,
+    defaultNotFoundComponent: RouteNotFound,
   });
 }
 

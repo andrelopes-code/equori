@@ -29,7 +29,7 @@ export function MoreSheet({
 }) {
   const t = useT();
   const navigate = useNavigate();
-  const logout = useLogout();
+  const { logout, failed: logoutFailed } = useLogout();
   const [, setScheme] = useScheme();
   const [, setLocale] = useAppLocale();
   const [level, setLevel] = useState<Level>("root");
@@ -79,9 +79,15 @@ export function MoreSheet({
               >
                 {t("more.language")}
               </ActionSheetItem>
-              <ActionSheetItem value="logout" tone="danger" onSelect={logout}>
+              <ActionSheetItem
+                value="logout"
+                tone="danger"
+                closeOnSelect={false}
+                onSelect={logout}
+              >
                 {t("more.logout")}
               </ActionSheetItem>
+              {logoutFailed && <p role="alert">{t("more.logoutFailed")}</p>}
             </>
           )}
           {level === "scheme" &&

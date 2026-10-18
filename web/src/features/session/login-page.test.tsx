@@ -13,7 +13,11 @@ beforeEach(() => {
   localStorage.clear();
 });
 
-function sessionApi(opts: { loggedIn: boolean; login?: () => Response }) {
+function sessionApi(opts: {
+  loggedIn: boolean;
+  login?: () => Response;
+  logout?: () => Response;
+}) {
   const state = { loggedIn: opts.loggedIn, bodies: [] as string[], logouts: 0 };
   const fetch = fakeApi({
     "GET /api/v1/me": () =>
@@ -26,7 +30,7 @@ function sessionApi(opts: { loggedIn: boolean; login?: () => Response }) {
     },
     "DELETE /api/v1/session": () => {
       state.logouts += 1;
-      return new Response(null, { status: 204 });
+      return opts.logout?.() ?? new Response(null, { status: 204 });
     },
     "GET /api/v1/settings": () => json(200, { base_currency: "BRL" }),
     "GET /api/v1/instruments": () => json(200, { items: [] }),
@@ -142,6 +146,45 @@ describe("expired session", () => {
 });
 
 describe("logout", () => {
+  const draftKey = "equori.draft.transaction-new";
+
+  async function openLogout(fetch: ReturnType<typeof sessionApi>["fetch"]) {
+    const actor = userEvent.setup();
+    const { router } = await renderApp("/", { width: 360, fetch });
+    await actor.click(
+      screen.getByRole("button", { name: catalogEn["nav.more"] }),
+    );
+    await actor.click(
+      await screen.findByRole("menuitem", { name: catalogEn["more.logout"] }),
+    );
+    return router;
+  }
+
+  it("clears the transaction draft so the next user starts blank", async () => {
+    sessionStorage.setItem(draftKey, '{"description":"previous user"}');
+    const { fetch } = sessionApi({ loggedIn: true });
+    const router = await openLogout(fetch);
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/login");
+    });
+    expect(sessionStorage.getItem(draftKey)).toBeNull();
+  });
+
+  it("reports a failed logout and keeps the session and the draft", async () => {
+    sessionStorage.setItem(draftKey, '{"description":"kept"}');
+    const { fetch, state } = sessionApi({
+      loggedIn: true,
+      logout: () => problem(500, "internal"),
+    });
+    const router = await openLogout(fetch);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      catalogEn["more.logoutFailed"],
+    );
+    expect(state.logouts).toBe(1);
+    expect(router.state.location.pathname).toBe("/");
+    expect(sessionStorage.getItem(draftKey)).toBe('{"description":"kept"}');
+  });
+
   it("ends the session from the more sheet and lands on /login", async () => {
     const actor = userEvent.setup();
     const { fetch, state } = sessionApi({ loggedIn: true });

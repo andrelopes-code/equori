@@ -730,6 +730,7 @@ describe("new transaction", () => {
   it.each([
     ["split", { split: [{}], postings: null }],
     ["postings", { split: null, postings: [{ key: 1, amount: "x" }] }],
+    ["top-level amount", { split: null, postings: null, amount: 1.5 }],
     [
       "amount",
       {

@@ -37,7 +37,7 @@ function isDraft(value: unknown): value is FormState {
   return (
     typeof v.mode === "string" &&
     modes.includes(v.mode) &&
-    (v.amount === null || typeof v.amount === "number") &&
+    isAmount(v.amount) &&
     typeof v.accountId === "string" &&
     typeof v.counterId === "string" &&
     typeof v.date === "string" &&
