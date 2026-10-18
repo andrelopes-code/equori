@@ -1,6 +1,20 @@
-import { act, screen, waitFor, within } from "@testing-library/react";
+import {
+  act,
+  configure,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 import type { components } from "@/api/schema.gen";
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
@@ -12,6 +26,18 @@ type Account = components["schemas"]["Account"];
 
 const checkingID = "11111111-1111-4111-8111-111111111111";
 const foodID = "22222222-2222-4222-8222-222222222222";
+
+// Mounting the Chart costs about 600 ms of synchronous work per render in jsdom and blocks the list and balance renders
+// behind it. Under a parallel run that cost triples, so the default 1 s query timeout and 5 s test timeout are CPU bound here.
+const defaults = { asyncUtilTimeout: 1000, testTimeout: 5000 };
+beforeAll(() => {
+  configure({ asyncUtilTimeout: 10_000 });
+  vi.setConfig({ testTimeout: 20_000 });
+});
+afterAll(() => {
+  configure({ asyncUtilTimeout: defaults.asyncUtilTimeout });
+  vi.setConfig({ testTimeout: defaults.testTimeout });
+});
 
 beforeEach(() => {
   localStorage.clear();
@@ -374,11 +400,9 @@ describe("account page waiting and failure states", () => {
             }),
     });
     await renderApp(`/accounts/${checkingID}`, { fetch });
-    const retry = await screen.findByRole(
-      "button",
-      { name: catalogPtBR["common.retry"] },
-      { timeout: 4000 },
-    );
+    const retry = await screen.findByRole("button", {
+      name: catalogPtBR["common.retry"],
+    });
     const before = balanceRequests.length;
     fail = false;
     await user.click(retry);
@@ -405,11 +429,7 @@ describe("account page waiting and failure states", () => {
             }),
     });
     await renderApp(`/accounts/${checkingID}`, { fetch });
-    const retry = await screen.findByRole(
-      "button",
-      { name: /tentar/i },
-      { timeout: 4000 },
-    );
+    const retry = await screen.findByRole("button", { name: /tentar/i });
     const before = seriesRequests.length;
     fail = false;
     await user.click(retry);
