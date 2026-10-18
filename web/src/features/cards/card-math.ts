@@ -24,5 +24,5 @@ export function anticipation(
 
 export function usedShare(debt: number, limit: number | undefined): number {
   if (limit === undefined || limit <= 0 || debt <= 0) return 0;
-  return Math.min(100, Math.round((debt * 100) / limit));
+  return Math.min(100, Math.floor((debt * 100) / limit));
 }

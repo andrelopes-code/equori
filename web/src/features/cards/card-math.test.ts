@@ -44,7 +44,9 @@ describe("usedShare", () => {
     [-5000, 500000, 0],
     [100000, 0, 0],
     [1, 3, 33],
-    [2, 3, 67],
+    [2, 3, 66],
+    [499999, 500000, 99],
+    [1, 1000, 0],
   ] as const)("usedShare(%i, %s) is %i", (debt, limit, want) => {
     expect(usedShare(debt, limit)).toBe(want);
   });
