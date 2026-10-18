@@ -1,0 +1,29 @@
+@layer app {
+  .stack {
+    display: grid;
+    gap: var(--slotted-space-6);
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--slotted-space-3);
+  }
+
+  .summary {
+    display: grid;
+    gap: var(--slotted-space-4);
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: var(--slotted-space-4);
+  }
+
+  .compact {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--slotted-space-2);
+  }
+}

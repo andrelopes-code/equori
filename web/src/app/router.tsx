@@ -21,6 +21,7 @@ import { RouteError } from "@/app/route-error";
 import { RouteNotFound } from "@/app/route-not-found";
 import { AppFrame } from "@/app/shell/app-frame";
 import { AccountPage, AccountsPage, HomePage } from "@/features/accounts";
+import { CardOverviewPage } from "@/features/cards";
 import { LoginPage, meQuery } from "@/features/session";
 import { SettingsPage } from "@/features/setup";
 import {
@@ -93,6 +94,17 @@ const accountRoute = createRoute({
   component: AccountPage,
 });
 
+const cardRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "cards/$accountId",
+  validateSearch: (search): { from?: string } =>
+    typeof search.from === "string" &&
+    /^\d{4}-(0[1-9]|1[0-2])$/.test(search.from)
+      ? { from: search.from }
+      : {},
+  component: CardOverviewPage,
+});
+
 const homeRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "/",
@@ -144,6 +156,7 @@ export const routeTree = rootRoute.addChildren([
     correctTransactionRoute,
     accountsRoute,
     accountRoute,
+    cardRoute,
     settingsRoute,
   ]),
 ]);
