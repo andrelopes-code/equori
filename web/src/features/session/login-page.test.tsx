@@ -28,6 +28,11 @@ function sessionApi(opts: { loggedIn: boolean; login?: () => Response }) {
       state.logouts += 1;
       return new Response(null, { status: 204 });
     },
+    "GET /api/v1/settings": () => json(200, { base_currency: "BRL" }),
+    "GET /api/v1/instruments": () => json(200, { items: [] }),
+    "GET /api/v1/transactions": () => json(200, { items: [] }),
+    "GET /api/v1/institutions": () => json(200, { items: [] }),
+    "GET /api/v1/payees": () => json(200, { items: [] }),
   });
   return { fetch, state };
 }
@@ -123,7 +128,10 @@ describe("expired session", () => {
     const { router } = await renderApp("/settings", { fetch });
     expect(router.state.location.pathname).toBe("/settings");
     const { queryClient, api } = router.options.context;
-    expect(queryClient.getQueryCache().getAll()).toHaveLength(1);
+    const meKey = meQuery(api).queryKey;
+    expect(
+      queryClient.getQueryCache().findAll({ queryKey: meKey }),
+    ).toHaveLength(1);
     state.loggedIn = false;
     await queryClient.query(meQuery(api)).catch(() => undefined);
     await waitFor(() => {

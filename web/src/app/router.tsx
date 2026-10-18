@@ -16,11 +16,11 @@ import { useEffect } from "react";
 import { useApi } from "@/api/api-context";
 import type { paths } from "@/api/schema.gen";
 import { ProblemError } from "@/api/problem";
-import { Placeholder } from "@/app/placeholder";
 import { useSessionExpiry } from "@/app/providers";
 import { AppFrame } from "@/app/shell/app-frame";
 import { AccountPage, AccountsPage, HomePage } from "@/features/accounts";
 import { LoginPage, meQuery } from "@/features/session";
+import { SettingsPage } from "@/features/setup";
 import {
   CorrectTransactionPage,
   NewTransactionPage,
@@ -77,12 +77,11 @@ const authedRoute = createRoute({
   component: AppFrame,
 });
 
-const screen = <P extends string>(path: P) =>
-  createRoute({
-    getParentRoute: () => authedRoute,
-    path,
-    component: Placeholder,
-  });
+const settingsRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "settings",
+  component: SettingsPage,
+});
 
 const accountRoute = createRoute({
   getParentRoute: () => authedRoute,
@@ -142,7 +141,7 @@ export const routeTree = rootRoute.addChildren([
     correctTransactionRoute,
     accountsRoute,
     accountRoute,
-    screen("settings"),
+    settingsRoute,
   ]),
 ]);
 
