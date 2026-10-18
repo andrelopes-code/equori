@@ -1,29 +1,29 @@
 @layer app {
+  .layout {
+    container-type: inline-size;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-9);
+  }
+
+  /* Complete frontend C3: the commitments beside the lines from 64rem of content width. */
+  @container (min-width: 64rem) {
+    .layout {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 24rem);
+      gap: var(--slotted-space-11) var(--slotted-space-12);
+    }
+
+    .full {
+      grid-column: 1 / -1;
+    }
+  }
+
   .stack {
     display: grid;
-    gap: var(--slotted-space-6);
+    gap: var(--slotted-space-5);
   }
 
-  .actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--slotted-space-3);
-  }
-
-  .summary {
-    display: grid;
-    gap: var(--slotted-space-4);
-  }
-
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
-    gap: var(--slotted-space-4);
-  }
-
-  .compact {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--slotted-space-2);
+  .muted {
+    color: var(--slotted-text-muted);
   }
 }

@@ -22,7 +22,7 @@ import { RouteNotFound } from "@/app/route-not-found";
 import { AppFrame } from "@/app/shell/app-frame";
 import { AccountPage, AccountsPage } from "@/features/accounts";
 import { OverviewPage } from "@/features/overview";
-import { CardOverviewPage } from "@/features/cards";
+import { CardOverviewPage, CardsPage } from "@/features/cards";
 import { GoalsPage } from "@/features/goals";
 import { LoginPage, meQuery } from "@/features/session";
 import { SettingsPage } from "@/features/setup";
@@ -95,6 +95,12 @@ const accountRoute = createRoute({
   // A failed chunk load falls to the Chart error state instead of the route error screen.
   loader: () => preloadChartEngine(["line"]).catch(() => undefined),
   component: AccountPage,
+});
+
+const cardsRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "cards",
+  component: CardsPage,
 });
 
 const cardRoute = createRoute({
@@ -171,6 +177,7 @@ export const routeTree = rootRoute.addChildren([
     goalsRoute,
     accountsRoute,
     accountRoute,
+    cardsRoute,
     cardRoute,
     settingsRoute,
   ]),

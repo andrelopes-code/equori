@@ -6,6 +6,7 @@ import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { writeLocale } from "@/i18n/locale";
 import { addMonths } from "@/features/cards/reference-months";
 import {
+  accounts,
   cardAccount,
   cardID,
   cardRoutes,
@@ -28,10 +29,6 @@ function only<T>(value: T | null | undefined): T {
 
 const base = `/api/v1/accounts/${cardID}`;
 const money = (amount: number) => ({ amount, currency: "BRL" });
-const groupName = (key: keyof typeof catalogPtBR) => ({
-  name: catalogPtBR[key],
-});
-
 function statementsRoute(items: Statement[], urls: string[] = []) {
   return {
     [`GET ${base}/statements`]: (req: Request) => {
@@ -51,103 +48,46 @@ async function renderCard(
   });
 }
 
-describe("card overview", () => {
-  it("requests the statements from twelve months back with the page limit", async () => {
-    const urls: string[] = [];
-    await renderCard(statementsRoute([statement("2026-11")], urls));
-    await screen.findByRole("group", groupName("cards.current.title"));
-    expect(urls.map((url) => new URL(url).search)).toEqual([
-      "?from=2025-10&limit=200",
-    ]);
-  });
+const text = (node: Element | null | undefined) =>
+  node?.textContent.replace(/\u00a0/g, " ");
 
-  it("shows the current statement with its dates, amount due and unpaid amount", async () => {
-    await renderCard(
-      statementsRoute([
-        statement("2026-10", { status: "paid" }),
-        statement("2026-11", {
-          amount_due: money(123456),
-          unpaid: money(100000),
-        }),
-        statement("2026-12"),
-      ]),
-    );
-    const card = await screen.findByRole(
-      "group",
-      groupName("cards.current.title"),
-    );
-    const view = within(card);
-    expect(view.getByText("nov. de 2026")).toBeInTheDocument();
+async function openMenu() {
+  const user = userEvent.setup();
+  await user.click(
+    await screen.findByRole("button", { name: catalogPtBR["cards.menu"] }),
+  );
+  return user;
+}
+
+// Complete frontend C2: the header names the statement and carries its figures.
+describe("card header", () => {
+  it("names the card, the statement month and its state, with amount, closing, due and available limit", async () => {
+    await renderCard();
     expect(
-      view.getByText(catalogPtBR["cards.status.open"]),
+      await screen.findByRole("heading", { level: 1, name: "Nubank card" }),
     ).toBeInTheDocument();
-    expect(view.getByText("03/11/2026")).toBeInTheDocument();
-    expect(view.getByText("10/11/2026")).toBeInTheDocument();
-    expect(view.getByText("R$ 1.234,56")).toBeInTheDocument();
-    expect(view.getByText("R$ 1.000,00")).toBeInTheDocument();
-  });
-
-  it("lists the later statements as upcoming and the earlier ones as past, with the status tone", async () => {
-    await renderCard(
-      statementsRoute([
-        statement("2026-08", { status: "overdue" }),
-        statement("2026-09", { status: "paid" }),
-        statement("2026-10", { status: "closed" }),
-        statement("2026-11"),
-        statement("2026-12"),
-        statement("2027-01", { amount_due: money(7000) }),
-      ]),
-    );
-    const upcoming = await screen.findByRole(
-      "list",
-      groupName("cards.group.upcoming"),
-    );
-    const upcomingRows = within(upcoming).getAllByRole("listitem");
-    expect(upcomingRows).toHaveLength(2);
-    expect(upcomingRows[0]).toHaveTextContent("dez. de 2026");
-    expect(upcomingRows[1]).toHaveTextContent("jan. de 2027");
-    expect(upcomingRows[1]).toHaveTextContent("10/01/2027");
-    expect(upcomingRows[1]).toHaveTextContent("R$ 70,00");
-    const past = screen.getByRole("list", groupName("cards.group.past"));
-    const pastRows = within(past).getAllByRole("listitem");
-    expect(pastRows.map((row) => row.textContent)).toEqual([
-      expect.stringContaining("out. de 2026"),
-      expect.stringContaining("set. de 2026"),
-      expect.stringContaining("ago. de 2026"),
+    expect(screen.getByText("Fatura de nov. de 2026")).toBeInTheDocument();
+    const figures = await screen.findByLabelText(catalogPtBR["cards.figures"]);
+    expect(
+      [...figures.querySelectorAll("dt")].map((term) => term.textContent),
+    ).toEqual([
+      catalogPtBR["cards.current.amountDue"],
+      catalogPtBR["cards.figure.closes"],
+      catalogPtBR["cards.figure.due"],
+      catalogPtBR["cards.figure.available"],
     ]);
-    const tones = pastRows.map((row) =>
-      row.querySelector('[data-ui="tag"]')?.getAttribute("data-tone"),
-    );
-    expect(tones).toEqual(["accent", "success", "danger"]);
-    expect(within(only(pastRows[0])).getByRole("link")).toHaveAttribute(
-      "href",
-      `/cards/${cardID}/statements/${statementID("2026-10")}`,
-    );
+    const figure = within(figures);
+    expect(figure.getByText("R$ 500,00")).toBeInTheDocument();
+    expect(figure.getByText("3 nov")).toBeInTheDocument();
+    expect(figure.getByText("10 nov")).toBeInTheDocument();
+    expect(figure.getByText("R$ 4.000,00")).toBeInTheDocument();
+    const tag = screen
+      .getAllByText(catalogPtBR["cards.status.open"])
+      .find((node) => node.closest('[data-ui="tag"]') !== null);
+    expect(tag).toBeDefined();
   });
 
-  it("shows the debt, the limits and the used share", async () => {
-    const { container } = await renderCard();
-    await screen.findByRole("group", groupName("cards.current.title"));
-    await waitFor(() => {
-      const stats = [...container.querySelectorAll('[data-ui="stat-card"]')];
-      expect(stats).toHaveLength(3);
-      expect(stats[0]).toHaveTextContent(
-        `${catalogPtBR["cards.stat.debt"]}R$ 1.000,00`,
-      );
-      expect(stats[1]).toHaveTextContent(
-        `${catalogPtBR["cards.stat.limit"]}R$ 5.000,00`,
-      );
-      expect(stats[2]).toHaveTextContent(
-        `${catalogPtBR["cards.stat.available"]}R$ 4.000,00`,
-      );
-    });
-    expect(screen.getByRole("progressbar")).toHaveAttribute(
-      "aria-valuenow",
-      "20",
-    );
-  });
-
-  it("renders no limit without a credit limit", async () => {
+  it("links the settings in place of the available limit without a credit limit", async () => {
     await renderCard({
       [`GET ${base}`]: () => json(200, { ...cardAccount, card: {} }),
     });
@@ -155,9 +95,205 @@ describe("card overview", () => {
       name: catalogPtBR["cards.stat.nolimit"],
     });
     expect(link).toHaveAttribute("href", `/cards/${cardID}/settings`);
-    expect(screen.getByRole("progressbar")).toHaveAttribute(
-      "aria-valuenow",
-      "0",
+  });
+
+  it("names the latest statement without an open one", async () => {
+    await renderCard(
+      statementsRoute([
+        statement("2026-09", { status: "paid" }),
+        statement("2026-10", { status: "closed" }),
+      ]),
+    );
+    expect(
+      await screen.findByText("Fatura de out. de 2026"),
+    ).toBeInTheDocument();
+    const earlier = screen.getByRole("table", {
+      name: catalogPtBR["cards.earlier"],
+    });
+    expect(within(earlier).getAllByRole("row")).toHaveLength(2);
+    expect(text(earlier)).toContain("set. de 2026");
+    expect(text(earlier)).not.toContain("out. de 2026");
+  });
+});
+
+describe("card actions", () => {
+  it("links the new purchase and, in the menu, the installment purchase and the settings", async () => {
+    await renderCard();
+    expect(
+      await screen.findByRole("link", {
+        name: catalogPtBR["cards.action.purchase"],
+      }),
+    ).toHaveAttribute("href", `/transactions/new?account_id=${cardID}`);
+    await openMenu();
+    expect(
+      await screen.findByRole("menuitem", {
+        name: catalogPtBR["cards.action.installment"],
+      }),
+    ).toHaveAttribute("href", `/cards/${cardID}/purchases/new`);
+    expect(
+      screen.getByRole("menuitem", {
+        name: catalogPtBR["cards.action.settings"],
+      }),
+    ).toHaveAttribute("href", `/cards/${cardID}/settings`);
+    expect(screen.queryByText(catalogPtBR["cards.rule.missing"])).toBeNull();
+  });
+
+  it("explains the missing billing rule and disables the installment purchase (C17)", async () => {
+    await renderCard({
+      [`GET ${base}/billing-cycle-rules`]: () => json(200, { items: [] }),
+    });
+    const message = await screen.findByText(catalogPtBR["cards.rule.missing"]);
+    expect(
+      within(
+        only(message.closest<HTMLElement>('[data-ui="inline-message"]')),
+      ).getByRole("link", {
+        name: catalogPtBR["cards.rule.link"],
+      }),
+    ).toHaveAttribute("href", `/cards/${cardID}/settings`);
+    await openMenu();
+    const item = await screen.findByRole("menuitem", {
+      name: catalogPtBR["cards.action.installment"],
+    });
+    expect(item).toHaveAttribute("aria-disabled", "true");
+    expect(item).not.toHaveAttribute("href");
+  });
+
+  it("pays the current statement while it has an unpaid amount", async () => {
+    await renderCard();
+    expect(
+      await screen.findByRole("link", {
+        name: catalogPtBR["cards.action.pay"],
+      }),
+    ).toHaveAttribute(
+      "href",
+      `/cards/${cardID}/statements/${statementID("2026-11")}/pay`,
+    );
+  });
+
+  it("pays an overdue statement before the current one", async () => {
+    await renderCard(
+      statementsRoute([
+        statement("2026-09", { status: "overdue" }),
+        statement("2026-11"),
+      ]),
+    );
+    expect(
+      await screen.findByRole("link", {
+        name: catalogPtBR["cards.action.pay"],
+      }),
+    ).toHaveAttribute(
+      "href",
+      `/cards/${cardID}/statements/${statementID("2026-09")}/pay`,
+    );
+  });
+
+  it("offers no payment when the current statement has nothing unpaid", async () => {
+    await renderCard(
+      statementsRoute([statement("2026-11", { unpaid: money(0) })]),
+    );
+    await screen.findByText("Fatura de nov. de 2026");
+    expect(
+      screen.queryByRole("link", { name: catalogPtBR["cards.action.pay"] }),
+    ).toBeNull();
+  });
+});
+
+// Complete frontend C3.
+describe("card statement", () => {
+  it("requests the statements from twelve months back with the page limit", async () => {
+    const urls: string[] = [];
+    await renderCard(statementsRoute([statement("2026-11")], urls));
+    await screen.findByText("Fatura de nov. de 2026");
+    expect(urls.map((url) => new URL(url).search)).toEqual([
+      "?from=2025-10&limit=200",
+    ]);
+  });
+
+  it("lists the charges and credits of the statement with the total and the line count", async () => {
+    await renderCard();
+    const table = await screen.findByRole("table", {
+      name: catalogPtBR["cards.lines"],
+    });
+    await within(table).findByText("Mercado");
+    const rows = within(table)
+      .getAllByRole("row")
+      .slice(1)
+      .map((row) => text(row));
+    expect(rows).toEqual([
+      "9 outEstorno loja−20,00",
+      "8 outNotebook · 2/10300,00",
+      "5 outMercado220,00",
+      "Total da fatura · 3 lançamentos500,00",
+    ]);
+  });
+
+  it("shows what the next six statements already hold, with a bar per month", async () => {
+    const urls: string[] = [];
+    await renderCard({
+      [`GET ${base}/commitments`]: (req) => {
+        const month = new URL(req.url).searchParams.get("month") ?? "";
+        urls.push(month);
+        return json(200, {
+          month,
+          amount: money(month === "2026-12" ? 45000 : 30000),
+        });
+      },
+    });
+    const table = await screen.findByRole("table", {
+      name: catalogPtBR["cards.committed"],
+    });
+    await waitFor(() => {
+      expect(text(table)).toContain("450,00");
+    });
+    const rows = within(table).getAllByRole("row").slice(1);
+    expect(rows.map((row) => text(row))).toEqual([
+      "dez. de 2026450,00",
+      "jan. de 2027300,00",
+      "fev. de 2027300,00",
+      "mar. de 2027300,00",
+      "abr. de 2027300,00",
+      "mai. de 2027300,00",
+    ]);
+    expect(
+      rows.map((row) => row.querySelector('[data-own="budget-bar"]')),
+    ).not.toContain(null);
+    expect([...urls].sort()).toEqual([
+      "2026-12",
+      "2027-01",
+      "2027-02",
+      "2027-03",
+      "2027-04",
+      "2027-05",
+    ]);
+  });
+
+  it("lists the earlier statements with due date, state tone and amount", async () => {
+    await renderCard(
+      statementsRoute([
+        statement("2026-08", { status: "overdue" }),
+        statement("2026-09", { status: "paid" }),
+        statement("2026-10", { status: "closed", amount_due: money(7000) }),
+        statement("2026-11"),
+        statement("2026-12"),
+      ]),
+    );
+    const earlier = await screen.findByRole("table", {
+      name: catalogPtBR["cards.earlier"],
+    });
+    const rows = within(earlier).getAllByRole("row").slice(1);
+    expect(rows.map((row) => text(row))).toEqual([
+      `out. de 202610/10/2026${catalogPtBR["cards.status.closed"]}70,00`,
+      `set. de 202610/09/2026${catalogPtBR["cards.status.paid"]}500,00`,
+      `ago. de 202610/08/2026${catalogPtBR["cards.status.overdue"]}500,00`,
+    ]);
+    expect(
+      rows.map((row) =>
+        row.querySelector('[data-ui="tag"]')?.getAttribute("data-tone"),
+      ),
+    ).toEqual(["accent", "success", "danger"]);
+    expect(within(only(rows[0])).getByRole("link")).toHaveAttribute(
+      "href",
+      `/cards/${cardID}/statements/${statementID("2026-10")}`,
     );
   });
 
@@ -196,144 +332,70 @@ describe("card overview", () => {
           : json(200, { items: first, next_cursor: "c2" });
       },
     });
-    const card = await screen.findByRole(
-      "group",
-      groupName("cards.current.title"),
-    );
-    expect(within(card).getByText("out. de 2026")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Fatura de out. de 2026"),
+    ).toBeInTheDocument();
     expect(urls.map((url) => new URL(url).searchParams.get("cursor"))).toEqual([
       null,
       "c2",
     ]);
   });
-
-  it("omits the current statement card without an open statement and lists every statement as past", async () => {
-    await renderCard(
-      statementsRoute([
-        statement("2026-09", { status: "paid" }),
-        statement("2026-10", { status: "closed" }),
-      ]),
-    );
-    const past = await screen.findByRole("list", groupName("cards.group.past"));
-    expect(within(past).getAllByRole("listitem")).toHaveLength(2);
-    expect(
-      screen.queryByRole("group", groupName("cards.current.title")),
-    ).toBeNull();
-    expect(
-      screen.queryByRole("list", groupName("cards.group.upcoming")),
-    ).toBeNull();
-  });
-
-  it("links the new purchase and the enabled installment purchase", async () => {
-    await renderCard();
-    expect(
-      await screen.findByRole("link", {
-        name: catalogPtBR["cards.action.purchase"],
-      }),
-    ).toHaveAttribute("href", `/transactions/new?account_id=${cardID}`);
-    expect(
-      screen.getByRole("link", {
-        name: catalogPtBR["cards.action.installment"],
-      }),
-    ).toHaveAttribute("href", `/cards/${cardID}/purchases/new`);
-    expect(screen.queryByText(catalogPtBR["cards.rule.missing"])).toBeNull();
-  });
-
-  it("explains the missing billing rule and disables the installment purchase (C17)", async () => {
-    await renderCard({
-      [`GET ${base}/billing-cycle-rules`]: () => json(200, { items: [] }),
-    });
-    const message = await screen.findByText(catalogPtBR["cards.rule.missing"]);
-    expect(
-      within(
-        only(message.closest<HTMLElement>('[data-ui="inline-message"]')),
-      ).getByRole("link", {
-        name: catalogPtBR["cards.rule.link"],
-      }),
-    ).toHaveAttribute("href", `/cards/${cardID}/settings`);
-    expect(
-      screen.getByRole("button", {
-        name: catalogPtBR["cards.action.installment"],
-      }),
-    ).toBeDisabled();
-    expect(
-      screen.queryByRole("link", {
-        name: catalogPtBR["cards.action.installment"],
-      }),
-    ).toBeNull();
-  });
-
-  it("pays the current statement while it has an unpaid amount", async () => {
-    await renderCard();
-    expect(
-      await screen.findByRole("link", {
-        name: catalogPtBR["cards.action.pay"],
-      }),
-    ).toHaveAttribute(
-      "href",
-      `/cards/${cardID}/statements/${statementID("2026-11")}/pay`,
-    );
-  });
-
-  it("pays an overdue statement before the current one", async () => {
-    await renderCard(
-      statementsRoute([
-        statement("2026-09", { status: "overdue" }),
-        statement("2026-11"),
-      ]),
-    );
-    expect(
-      await screen.findByRole("link", {
-        name: catalogPtBR["cards.action.pay"],
-      }),
-    ).toHaveAttribute(
-      "href",
-      `/cards/${cardID}/statements/${statementID("2026-09")}/pay`,
-    );
-  });
-
-  it("offers no payment when the current statement has nothing unpaid", async () => {
-    await renderCard(
-      statementsRoute([statement("2026-11", { unpaid: money(0) })]),
-    );
-    await screen.findByRole("group", groupName("cards.current.title"));
-    expect(
-      screen.queryByRole("link", { name: catalogPtBR["cards.action.pay"] }),
-    ).toBeNull();
-  });
 });
 
-describe("card overview layout", () => {
-  async function order(width: number) {
-    const { container } = await renderCard({}, width);
-    const card = await screen.findByRole(
-      "group",
-      groupName("cards.current.title"),
-    );
-    await waitFor(() => {
-      expect(container.querySelectorAll('[data-ui="stat-card"]')).toHaveLength(
-        3,
-      );
+// Complete frontend C1.
+describe("cards page", () => {
+  it("opens the card page when there is one card account", async () => {
+    const { router } = await renderApp("/cards", {
+      width: 1280,
+      fetch: fakeApi(cardRoutes()),
     });
-    const stats = [...container.querySelectorAll('[data-ui="stat-card"]')];
-    return { card, stats };
-  }
-
-  const following = (from: Node, to: Node) =>
-    (from.compareDocumentPosition(to) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
-
-  it("places the current statement before the stat-cards in one row at 360 px", async () => {
-    const { card, stats } = await order(360);
-    expect(following(card, only(stats[0]))).toBe(true);
-    expect(new Set(stats.map((stat) => stat.parentElement)).size).toBe(1);
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(`/cards/${cardID}`);
+    });
   });
 
-  it.each([768, 1280])(
-    "places the stat-cards before the current statement at %i px",
-    async (width) => {
-      const { card, stats } = await order(width);
-      expect(following(only(stats[2]), card)).toBe(true);
-      expect(new Set(stats.map((stat) => stat.parentElement)).size).toBe(1);
-    },
-  );
+  it("lists every card account when there are several", async () => {
+    const second = { ...cardAccount, id: "c2", name: "Itaú card" };
+    await renderApp("/cards", {
+      width: 1280,
+      fetch: fakeApi(
+        cardRoutes({
+          "GET /api/v1/accounts": () =>
+            json(200, { items: [...accounts, second] }),
+        }),
+      ),
+    });
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: catalogPtBR["nav.cards"],
+      }),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole("link", { name: /Nubank card/ }),
+    ).toHaveAttribute("href", `/cards/${cardID}`);
+    expect(screen.getByRole("link", { name: /Itaú card/ })).toHaveAttribute(
+      "href",
+      "/cards/c2",
+    );
+  });
+
+  it("points to the accounts without a card account", async () => {
+    await renderApp("/cards", {
+      width: 1280,
+      fetch: fakeApi(
+        cardRoutes({
+          "GET /api/v1/accounts": () => json(200, { items: accounts.slice(1) }),
+        }),
+      ),
+    });
+    expect(
+      await screen.findByText(catalogPtBR["cards.list.empty"]),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", {
+        name: catalogPtBR["cards.list.empty.action"],
+      }),
+    ).toHaveAttribute("href", "/accounts");
+  });
 });

@@ -41,7 +41,7 @@ export function AppFrame() {
   const destination = (key: string) => destinations.find((d) => d.key === key);
   const home = destination("home");
   const transactions = destination("transactions");
-  const accounts = destination("accounts");
+  const cards = destination("cards");
 
   return (
     <AppShell canvas="flush" messages={{ nav: t("nav.label") }}>
@@ -60,7 +60,7 @@ export function AppFrame() {
           </PageHeaderDefaultsProvider>
         </PageDefaultsProvider>
       </AppShellMain>
-      {viewport === "phone" && home && transactions && accounts && (
+      {viewport === "phone" && home && transactions && cards && (
         <AppShellFooter>
           <BottomBar
             items={[
@@ -71,7 +71,7 @@ export function AppFrame() {
                 to: transactions.to,
                 badge,
               },
-              { key: accounts.key, label: t(accounts.label), to: accounts.to },
+              { key: cards.key, label: t(cards.label), to: cards.to },
               {
                 key: "more",
                 label: t("nav.more"),

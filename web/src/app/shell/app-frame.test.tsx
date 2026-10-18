@@ -24,7 +24,7 @@ beforeEach(() => {
   html.removeAttribute("data-slotted-scheme");
 });
 
-// Ledger sheet decisions L4, L5, L7 and L8.
+// Ledger sheet decisions L4, L5, L7 and L8; complete frontend G7.
 describe("AppFrame navigation", () => {
   it("shows four text controls in the bottom bar at 360 px", async () => {
     const { container } = await renderApp("/", {
@@ -39,7 +39,7 @@ describe("AppFrame navigation", () => {
     ).toEqual([
       catalogEn["nav.overview"],
       catalogEn["nav.transactions"],
-      catalogEn["nav.accounts"],
+      catalogEn["nav.cards"],
       catalogEn["nav.more"],
     ]);
     expect(bar?.querySelector("svg")).toBeNull();
@@ -156,7 +156,7 @@ describe("AppFrame routing", () => {
   });
 
   // Complete frontend G7.
-  it("lists Overview, Transactions, Goals and Accounts in the top bar", async () => {
+  it("lists Overview, Transactions, Goals, Cards and Accounts in the top bar", async () => {
     await renderApp("/", { width: 1280, fetch: newFetch() });
     const nav = screen.getByRole("navigation", {
       name: catalogEn["nav.label"],
@@ -169,6 +169,7 @@ describe("AppFrame routing", () => {
       catalogEn["nav.overview"],
       catalogEn["nav.transactions"],
       catalogEn["nav.goals"],
+      catalogEn["nav.cards"],
       catalogEn["nav.accounts"],
     ]);
   });
@@ -184,6 +185,20 @@ describe("AppFrame routing", () => {
     );
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/goals");
+    });
+  });
+
+  it("opens accounts from the more sheet", async () => {
+    const user = userEvent.setup();
+    const { router } = await renderApp("/", { width: 360, fetch: newFetch() });
+    await user.click(
+      screen.getByRole("button", { name: catalogEn["nav.more"] }),
+    );
+    await user.click(
+      await screen.findByRole("menuitem", { name: catalogEn["nav.accounts"] }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/accounts");
     });
   });
 

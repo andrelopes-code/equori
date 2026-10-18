@@ -18,6 +18,8 @@ export const cardKeys = {
   creditLimits: (a: string) =>
     [...accountKeys.detail(a), "credit-limits"] as const,
   cards: (a: string) => [...accountKeys.detail(a), "cards"] as const,
+  commitment: (a: string, month: string) =>
+    [...accountKeys.detail(a), "commitment", month] as const,
   account: (a: string) => [...accountKeys.detail(a), "account"] as const,
   disputes: (t: string) => [...transactionKeys.detail(t), "disputes"] as const,
   plan: (p: string) => ["transactions", "plan", p] as const,
@@ -78,6 +80,22 @@ export function statementQuery(
       unwrap(
         await api.GET("/statements/{id}", {
           params: { path: { id: statementId } },
+        }),
+      ),
+  });
+}
+
+export function commitmentQuery(
+  api: Client<paths>,
+  accountId: string,
+  month: string,
+) {
+  return queryOptions({
+    queryKey: cardKeys.commitment(accountId, month),
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/accounts/{id}/commitments", {
+          params: { path: { id: accountId }, query: { month } },
         }),
       ),
   });

@@ -78,6 +78,52 @@ export const billingRule = {
   calendar: "br_banking",
 };
 
+export type StatementPosting = components["schemas"]["StatementPosting"];
+
+// The lines of the open statement of cardRoutes, adding up to its amount due of R$ 500,00.
+// A line carries the card account's posting: a charge is negative.
+export const statementLines: StatementPosting[] = [
+  {
+    transaction_id: "tx-1",
+    date: "2026-10-05",
+    description: "Mercado",
+    card_role: "charge",
+    amount: money(-22000),
+  },
+  {
+    transaction_id: "tx-2",
+    date: "2026-10-08",
+    description: "Notebook",
+    card_role: "charge",
+    amount: money(-30000),
+    installment: { plan_id: "plan-1", number: 2, count: 10 },
+  },
+  {
+    transaction_id: "tx-3",
+    date: "2026-10-09",
+    description: "Estorno loja",
+    card_role: "credit",
+    amount: money(2000),
+  },
+  {
+    transaction_id: "tx-4",
+    date: "2026-10-10",
+    description: "Pagamento",
+    card_role: "payment",
+    amount: money(10000),
+  },
+];
+
+// Installments not yet billed, by statement month.
+export const commitments: Record<string, number> = {
+  "2026-12": 45000,
+  "2027-01": 30000,
+  "2027-02": 30000,
+  "2027-03": 30000,
+  "2027-04": 30000,
+  "2027-05": 30000,
+};
+
 type Route = (req: Request) => Response | Promise<Response>;
 
 const base = `GET /api/v1/accounts/${cardID}`;
@@ -105,6 +151,12 @@ export function cardRoutes(
         ],
       }),
     [`${base}/billing-cycle-rules`]: () => json(200, { items: [billingRule] }),
+    [`GET /api/v1/statements/${statementID("2026-11")}`]: () =>
+      json(200, { ...statement("2026-11"), postings: statementLines }),
+    [`${base}/commitments`]: (req) => {
+      const month = new URL(req.url).searchParams.get("month") ?? "";
+      return json(200, { month, amount: money(commitments[month] ?? 0) });
+    },
     [`${base}/credit-limits`]: () =>
       json(200, {
         items: [{ effective_from: "2026-01-01", amount: money(500000) }],
