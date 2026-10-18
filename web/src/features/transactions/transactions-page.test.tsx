@@ -519,3 +519,51 @@ describe("transactions filters", () => {
     ).toHaveAttribute("href", "/transactions/new");
   });
 });
+
+describe("transactions filter bar on a phone", () => {
+  it("counts the active filters and shows their chips before the empty pills", async () => {
+    const { fetch } = listApi();
+    await renderApp(`/transactions?uncategorized=true&payee_id=${bakeryID}`, {
+      fetch,
+      width: 360,
+    });
+    await screen.findByText("Compra 1");
+    const bar = screen.getByRole("toolbar", { name: "Filtros" });
+    expect(
+      within(bar).getByRole("button", { name: "Filtros (2)" }),
+    ).toBeInTheDocument();
+    const items = [
+      ...bar.querySelectorAll('[data-part="chip"], [data-part="pill"]'),
+    ].map((el) => el.getAttribute("data-part"));
+    expect(items).toEqual(["chip", "chip", "pill", "pill", "pill"]);
+  });
+
+  it("writes the uncategorized value as a word, not as true", async () => {
+    const { fetch } = listApi();
+    await renderApp("/transactions?uncategorized=true", { fetch });
+    expect(
+      await screen.findByRole("group", { name: /^Sem categoria: .*Sim$/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("offers the uncategorized value as words in its popover", async () => {
+    const user = userEvent.setup();
+    const { fetch } = listApi();
+    await renderApp("/transactions?uncategorized=true", { fetch });
+    await user.click(await screen.findByRole("button", { name: /^é Sim$/ }));
+    const popover = await screen.findByRole("dialog");
+    expect(
+      within(popover).getByRole("combobox", { name: "Valor" }),
+    ).toHaveTextContent("Sim");
+  });
+
+  it("writes the period in the app's date format", async () => {
+    const { fetch } = listApi();
+    await renderApp("/transactions?from=2026-09-01&to=2026-10-10", { fetch });
+    expect(
+      await screen.findByRole("group", {
+        name: /^Período: .*01\/09\/2026 – 10\/10\/2026$/,
+      }),
+    ).toBeInTheDocument();
+  });
+});

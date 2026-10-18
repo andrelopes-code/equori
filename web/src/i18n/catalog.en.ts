@@ -47,6 +47,8 @@ export const catalogEn = {
   "transactions.filter.period": "Period",
   "transactions.filter.onOrAfter": "from",
   "transactions.filter.onOrBefore": "until",
+  "transactions.filter.uncategorizedYes": "Yes",
+  "transactions.filter.uncategorizedNo": "No",
   "transactions.filter.account": "Account",
   "transactions.filter.uncategorized": "Uncategorized",
   "transactions.filter.payee": "Payee",

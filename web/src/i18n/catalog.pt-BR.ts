@@ -49,6 +49,8 @@ export const catalogPtBR: Catalog = {
   "transactions.filter.period": "Período",
   "transactions.filter.onOrAfter": "a partir de",
   "transactions.filter.onOrBefore": "até",
+  "transactions.filter.uncategorizedYes": "Sim",
+  "transactions.filter.uncategorizedNo": "Não",
   "transactions.filter.account": "Conta",
   "transactions.filter.uncategorized": "Sem categoria",
   "transactions.filter.payee": "Beneficiário",
