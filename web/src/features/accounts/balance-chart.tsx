@@ -1,4 +1,5 @@
 import { Chart } from "@slotted/react/chart";
+import { VisuallyHidden } from "@slotted/react/visually-hidden";
 
 import styles from "@/features/accounts/account-page.module.css";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -46,7 +47,7 @@ export function BalanceChart({
             maximumFractionDigits: scale,
           },
         }}
-        title={t("accounts.chart.title")}
+        title={<VisuallyHidden>{t("accounts.chart.title")}</VisuallyHidden>}
         locale={locale}
         legend={false}
         loading={loading}

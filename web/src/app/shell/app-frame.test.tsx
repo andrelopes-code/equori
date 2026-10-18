@@ -37,6 +37,18 @@ describe("AppFrame navigation", () => {
     expect(html).toHaveAttribute("data-slotted-density", "comfortable");
   });
 
+  it("draws the shell edge to edge at 360 px and as cards from 768 px", async () => {
+    const phone = await renderApp("/", { width: 360, fetch: newFetch() });
+    expect(
+      phone.container.querySelector('[data-ui="app-shell"]'),
+    ).toHaveAttribute("data-canvas", "flush");
+    phone.unmount();
+    const tablet = await renderApp("/", { width: 768, fetch: newFetch() });
+    expect(
+      tablet.container.querySelector('[data-ui="app-shell"]'),
+    ).toHaveAttribute("data-canvas", "inset");
+  });
+
   it("shows the side navigation rail at 768 px", async () => {
     const { container } = await renderApp("/", {
       width: 768,

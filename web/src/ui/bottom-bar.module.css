@@ -29,13 +29,12 @@
     gap: var(--slotted-space-1);
     inline-size: 100%;
     min-block-size: var(--slotted-target-min);
-    padding: var(--slotted-space-2);
+    padding: var(--slotted-space-2) var(--slotted-space-1);
     border: 0;
     border-radius: var(--slotted-radius-md);
     background: transparent;
     color: var(--slotted-text-muted);
     font: inherit;
-    font-size: var(--slotted-font-size-xs);
     text-decoration: none;
     cursor: pointer;
     transition:
@@ -66,9 +65,11 @@
 
   .label {
     max-inline-size: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    font-size: calc(var(--slotted-font-size-xs) * 0.875);
+    text-align: center;
+    text-wrap: balance;
+    hyphens: auto;
+    overflow-wrap: break-word;
   }
 
   @media (forced-colors: active) {

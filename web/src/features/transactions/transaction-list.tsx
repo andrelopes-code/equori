@@ -4,7 +4,6 @@ import {
   ListItem,
   ListItemBody,
   ListItemDescription,
-  ListItemEnd,
   ListItemLabel,
   ListItemLink,
   ListItemStart,
@@ -216,23 +215,32 @@ export function TransactionList({
             </ListItemStart>
           )}
           <ListItemBody>
-            <ListItemLabel
-              className={tx.voided_at === undefined ? "" : styles.voided}
-            >
-              {label === "" ? t("transactions.untitled") : label}
-              {label !== categories && categories !== "" && (
-                <span className={styles.category}>{categorySuffix}</span>
-              )}
+            <ListItemLabel>
+              <span data-own="transaction-line" className={styles.line}>
+                <span
+                  className={[
+                    styles.title,
+                    tx.voided_at === undefined ? "" : styles.voided,
+                  ]
+                    .join(" ")
+                    .trim()}
+                >
+                  {label === "" ? t("transactions.untitled") : label}
+                  {label !== categories && categories !== "" && (
+                    <span className={styles.category}>{categorySuffix}</span>
+                  )}
+                </span>
+                <span className={styles.amount}>
+                  <MoneyText
+                    money={money}
+                    scale={scale(money.currency)}
+                    tone="flow"
+                  />
+                </span>
+              </span>
             </ListItemLabel>
             <ListItemDescription>{second}</ListItemDescription>
           </ListItemBody>
-          <ListItemEnd>
-            <MoneyText
-              money={money}
-              scale={scale(money.currency)}
-              tone="flow"
-            />
-          </ListItemEnd>
         </ListItemLink>
       </ListItem>
     );

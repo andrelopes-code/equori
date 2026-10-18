@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { render, screen } from "@testing-library/react";
 import {
   RouterProvider,
@@ -10,7 +11,9 @@ import { describe, expect, it } from "vitest";
 
 import { I18nProvider } from "@/i18n/i18n-provider";
 import { BottomBar } from "@/ui/bottom-bar";
+import styles from "@/ui/bottom-bar.module.css";
 
+const css = readFileSync("src/ui/bottom-bar.module.css", "utf8");
 const icon = <svg aria-hidden="true" />;
 
 const items = [
@@ -110,5 +113,25 @@ describe("BottomBar", () => {
     const bar = screen.getByRole("navigation", { name: "Main navigation" });
     expect(bar).toHaveAttribute("data-own", "bottom-bar");
     expect(bar.querySelectorAll("a, button")).toHaveLength(5);
+  });
+
+  it("sets every label in the wrapping label style", async () => {
+    await renderBar("/");
+    const labels = screen
+      .getAllByRole("link")
+      .map((link) => link.querySelector("span"));
+    expect(labels).toHaveLength(4);
+    for (const label of labels) {
+      expect(label).toHaveClass(styles.label ?? "label");
+    }
+    expect(styles.label).toBeTruthy();
+    const label = /\.label\s*\{[^}]*\}/.exec(css)?.[0] ?? "";
+    expect(label).not.toContain("text-overflow");
+    expect(label).not.toContain("nowrap");
+    expect(label).toContain("hyphens: auto");
+    expect(label).toContain("font-size: calc(var(--slotted-font-size-xs)");
+    expect(
+      screen.getByRole("button", { name: "More" }).querySelector("span"),
+    ).toHaveClass(styles.label ?? "label");
   });
 });

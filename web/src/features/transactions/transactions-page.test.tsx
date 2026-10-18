@@ -179,6 +179,22 @@ describe("transactions list", () => {
     expect(within(secondDay).getAllByRole("listitem")).toHaveLength(1);
   });
 
+  it("puts the title, category and amount on the first line and the account and tags on the second", async () => {
+    const { fetch } = listApi();
+    await renderApp("/transactions", { fetch, width: 360 });
+    const row = (await screen.findByText("Compra 1")).closest("li");
+    expect(row).not.toBeNull();
+    const line = row?.querySelector('[data-own="transaction-line"]');
+    expect(line).not.toBeNull();
+    expect(line?.textContent.replace(/\u00a0/g, " ")).toBe(
+      "Compra 1 · Mercado-R$ 10,00",
+    );
+    const description = row?.querySelector('[data-part="description"]');
+    expect(description?.textContent).toBe("Itaú · viagem");
+    expect(line?.contains(description ?? null)).toBe(false);
+    expect(row?.querySelector('[data-part="end"]')).toBeNull();
+  });
+
   it("requests the next page with the cursor when the sentinel is reached", async () => {
     const { fetch, requests } = listApi();
     await renderApp("/transactions", { fetch });

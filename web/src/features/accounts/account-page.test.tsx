@@ -184,6 +184,26 @@ describe("account page", () => {
     ]);
   });
 
+  it("names the 90-day chart once", async () => {
+    const { fetch } = accountApi();
+    const { container } = await renderApp(`/accounts/${checkingID}`, { fetch });
+    await waitFor(() => {
+      expect(container.querySelector('[data-ui="chart"]')).not.toBeNull();
+    });
+    expect(
+      screen.getAllByRole("heading", {
+        name: catalogPtBR["accounts.chart.title"],
+      }),
+    ).toHaveLength(1);
+    const captions = [
+      ...container.querySelectorAll('[data-ui="chart"] [data-part="title"]'),
+    ];
+    expect(captions).toHaveLength(1);
+    expect(
+      captions[0]?.querySelector('[data-ui="visually-hidden"]')?.textContent,
+    ).toBe(captions[0]?.textContent);
+  });
+
   it("requests the 90-day daily balance series and draws the chart", async () => {
     const { fetch, seriesRequests } = accountApi();
     const { container } = await renderApp(`/accounts/${checkingID}`, { fetch });

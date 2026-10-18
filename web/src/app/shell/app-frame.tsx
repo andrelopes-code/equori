@@ -48,6 +48,7 @@ export function AppFrame() {
 
   return (
     <AppShell
+      canvas={viewport === "phone" ? "flush" : "inset"}
       navMode="inline"
       navOpen={viewport === "desktop"}
       collapsedTo="rail"
