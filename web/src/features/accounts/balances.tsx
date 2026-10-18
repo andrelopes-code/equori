@@ -69,11 +69,7 @@ export function Balances() {
           </StatCardHeader>
           <StatCardFigure>
             <StatCardValue>
-              <MoneyText
-                money={total}
-                scale={scale(total.currency)}
-                tone="balance"
-              />
+              <MoneyText money={total} scale={scale(total.currency)} />
             </StatCardValue>
             {excluded > 0 && (
               <StatCardComparison>

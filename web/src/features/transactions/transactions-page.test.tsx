@@ -187,7 +187,7 @@ describe("transactions list", () => {
     const line = row?.querySelector('[data-own="transaction-line"]');
     expect(line).not.toBeNull();
     expect(line?.textContent.replace(/\u00a0/g, " ")).toBe(
-      "Compra 1 · Mercado-R$ 10,00",
+      "Compra 1 · Mercado\u2212R$ 10,00",
     );
     const description = row?.querySelector('[data-part="description"]');
     expect(description?.textContent).toBe("Itaú · viagem");
@@ -234,7 +234,7 @@ describe("transactions list", () => {
     await renderApp("/transactions", { fetch, width: 360 });
     const row = (await screen.findByText("Compra 1")).closest("li");
     if (row === null) throw new Error("row not found");
-    expect(within(row).getByText("-R$ 10,00")).toBeInTheDocument();
+    expect(within(row).getByText("\u2212R$ 10,00")).toBeInTheDocument();
     expect(within(row).getByText("Itaú · viagem")).toBeInTheDocument();
     expect(row.querySelector("a")).toHaveAttribute("href", "/transactions/t-1");
   });

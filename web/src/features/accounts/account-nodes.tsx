@@ -33,11 +33,7 @@ export function AccountNodes({
           ? {}
           : {
               meta: (
-                <MoneyText
-                  money={balance}
-                  scale={scale(balance.currency)}
-                  tone="balance"
-                />
+                <MoneyText money={balance} scale={scale(balance.currency)} />
               ),
             })}
         actions={

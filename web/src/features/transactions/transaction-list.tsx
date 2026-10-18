@@ -255,11 +255,7 @@ export function TransactionList({
                   </span>
                 }
                 amount={
-                  <MoneyText
-                    money={money}
-                    scale={scale(money.currency)}
-                    tone="flow"
-                  />
+                  <MoneyText money={money} scale={scale(money.currency)} />
                 }
               />
             </ListItemLabel>

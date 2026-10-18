@@ -84,11 +84,7 @@ export function AccountBalances({ account }: { account: Account }) {
           </StatCardHeader>
           <StatCardFigure>
             <StatCardValue>
-              <MoneyText
-                money={balance}
-                scale={scale(balance.currency)}
-                tone="balance"
-              />
+              <MoneyText money={balance} scale={scale(balance.currency)} />
             </StatCardValue>
           </StatCardFigure>
         </StatCard>

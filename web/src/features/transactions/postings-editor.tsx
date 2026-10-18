@@ -104,11 +104,7 @@ export function PostingsEditor({
       {imbalance.map(([currency, amount]) => (
         <div className={styles.summary} key={currency}>
           <span>{t("transactions.new.imbalance")}</span>
-          <MoneyText
-            money={{ amount, currency }}
-            scale={scale(currency)}
-            tone="balance"
-          />
+          <MoneyText money={{ amount, currency }} scale={scale(currency)} />
         </div>
       ))}
       {error !== undefined && (

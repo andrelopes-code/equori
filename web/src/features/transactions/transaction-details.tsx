@@ -39,9 +39,7 @@ export function TransactionDetails({
   const voided = transaction.voided_at !== undefined;
   const accountsById = new Map(accounts.map((a) => [a.id, a]));
   const { money } = rowAmount(transaction, accountsById);
-  const amount = (
-    <MoneyText money={money} scale={scale(money.currency)} tone="flow" />
-  );
+  const amount = <MoneyText money={money} scale={scale(money.currency)} />;
   const payee = payees.find((p) => p.id === transaction.payee_id);
   return (
     <div className={styles.details}>

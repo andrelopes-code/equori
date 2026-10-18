@@ -2,7 +2,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   formatDate,
+  formatDayHeader,
+  formatDayMonth,
   formatMoney,
+  formatMoneyParts,
+  formatWeekdayDay,
   formatPlain,
   formatReferenceMonth,
   parseAmount,
@@ -24,7 +28,9 @@ describe("formatMoney", () => {
   it.each([
     [{ amount: 123456, currency: "BRL" }, 2, "pt-BR", "R$ 1.234,56"],
     [{ amount: 123456, currency: "BRL" }, 2, "en", "R$1,234.56"],
-    [{ amount: -5, currency: "USD" }, 2, "en", "-$0.05"],
+    [{ amount: -5, currency: "USD" }, 2, "en", "\u2212$0.05"],
+    [{ amount: -64000, currency: "BRL" }, 2, "pt-BR", "\u2212R$\u00a0640,00"],
+    [{ amount: 0, currency: "BRL" }, 2, "pt-BR", "R$\u00a00,00"],
   ] as const)("formats %j at scale %d in %s", (money, scale, locale, want) => {
     expect(formatMoney(money, scale, locale)).toBe(want);
   });
@@ -98,5 +104,78 @@ describe("formatReferenceMonth", () => {
   it("keeps the first month of the year west of UTC", () => {
     vi.stubEnv("TZ", "America/Sao_Paulo");
     expect(formatReferenceMonth("2026-01", "en")).toBe("Jan 2026");
+  });
+});
+
+describe("formatMoney without symbol", () => {
+  it.each([
+    [{ amount: -64000, currency: "BRL" }, "pt-BR", "\u2212640,00"],
+    [{ amount: 123456, currency: "USD" }, "en", "1,234.56"],
+  ] as const)("formats %j in %s as %s", (money, locale, want) => {
+    expect(formatMoney(money, 2, locale, { symbol: false })).toBe(want);
+  });
+});
+
+describe("formatMoneyParts", () => {
+  it.each([
+    [
+      { amount: -5300, currency: "BRL" },
+      2,
+      "pt-BR",
+      { sign: "\u2212", symbol: "R$", integer: "53", fraction: ",00" },
+    ],
+    [
+      { amount: 123456, currency: "USD" },
+      2,
+      "en",
+      { sign: "", symbol: "$", integer: "1,234", fraction: ".56" },
+    ],
+    [
+      { amount: 1500, currency: "JPY" },
+      0,
+      "en",
+      { sign: "", symbol: "\u00a5", integer: "1,500", fraction: "" },
+    ],
+    [
+      { amount: 0, currency: "BRL" },
+      2,
+      "pt-BR",
+      { sign: "", symbol: "R$", integer: "0", fraction: ",00" },
+    ],
+    [
+      { amount: -250, currency: "PETR4" },
+      0,
+      "pt-BR",
+      { sign: "\u2212", symbol: "PETR4", integer: "250", fraction: "" },
+    ],
+  ] as const)("splits %j at scale %d in %s", (money, scale, locale, want) => {
+    expect(formatMoneyParts(money, scale, locale)).toEqual(want);
+  });
+});
+
+describe("short dates", () => {
+  it.each([
+    ["2026-10-16", "pt-BR", "sex 16"],
+    ["2026-10-16", "en", "Fri 16"],
+  ] as const)("weekday and day of %s in %s", (iso, locale, want) => {
+    expect(formatWeekdayDay(iso, locale)).toBe(want);
+  });
+
+  it.each([
+    ["2026-10-16", "pt-BR", "16 out"],
+    ["2026-10-16", "en", "Oct 16"],
+  ] as const)("day and month of %s in %s", (iso, locale, want) => {
+    expect(formatDayMonth(iso, locale)).toBe(want);
+  });
+
+  const words = { today: "Hoje", yesterday: "Ontem" };
+  it.each([
+    ["2026-10-16", "pt-BR", "Hoje"],
+    ["2026-10-15", "pt-BR", "Ontem"],
+    ["2026-10-14", "pt-BR", "qua, 14 out"],
+    ["2026-10-14", "en", "Wed, Oct 14"],
+    ["2026-09-30", "pt-BR", "qua, 30 set"],
+  ] as const)("day header of %s in %s", (iso, locale, want) => {
+    expect(formatDayHeader(iso, "2026-10-16", locale, words)).toBe(want);
   });
 });

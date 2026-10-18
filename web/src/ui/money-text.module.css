@@ -3,12 +3,4 @@
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
-
-  .positive {
-    color: var(--slotted-tone-success-text);
-  }
-
-  .danger {
-    color: var(--slotted-tone-danger-text);
-  }
 }

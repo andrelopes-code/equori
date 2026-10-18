@@ -135,7 +135,7 @@ describe("home balances", () => {
     expect(
       within(region).getByText(catalogPtBR["home.group.cards"]),
     ).toBeInTheDocument();
-    expect(within(region).getByText("-R$ 300,00")).toBeInTheDocument();
+    expect(within(region).getByText("\u2212R$ 300,00")).toBeInTheDocument();
     expect(
       within(region).queryByText(catalogPtBR["home.group.loans"]),
     ).toBeNull();
@@ -151,7 +151,7 @@ describe("home balances", () => {
       name: catalogPtBR["home.group.cards"],
     });
     expect(cards).toBeInTheDocument();
-    expect(within(region).getByText("-R$ 300,00")).toBeInTheDocument();
+    expect(within(region).getByText("\u2212R$ 300,00")).toBeInTheDocument();
     expect(within(region).getByRole("link", { name: /Itaú/ })).toHaveAttribute(
       "href",
       "/accounts/a-checking",
@@ -170,7 +170,7 @@ describe("home balances", () => {
     if (firstRow === undefined) throw new Error("no recent row");
     const first = within(firstRow);
     expect(first.getByText("Compra 1")).toBeInTheDocument();
-    expect(first.getByText("-R$ 10,00")).toBeInTheDocument();
+    expect(first.getByText("\u2212R$ 10,00")).toBeInTheDocument();
   });
 
   it("shows the uncategorized count with a link to the filtered list", async () => {

@@ -39,7 +39,6 @@ export function AccountGroups() {
                         <MoneyText
                           money={balance}
                           scale={scale(balance.currency)}
-                          tone="balance"
                         />
                       }
                     />

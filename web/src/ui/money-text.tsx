@@ -7,23 +7,21 @@ interface Money {
   currency: string;
 }
 
-// "flow" paints an inflow positive; "balance" paints a negative amount danger; without a tone the text is neutral.
+// Ledger sheet L9: every sign reads in the neutral text colour. symbol={false} drops the
+// currency symbol, for a column of base-currency amounts whose header names the value.
 export function MoneyText({
   money,
   scale,
-  tone,
+  symbol = true,
 }: {
   money: Money;
   scale: number;
-  tone?: "flow" | "balance";
+  symbol?: boolean;
 }) {
   const [locale] = useAppLocale();
-  let toneClass = "";
-  if (tone === "flow" && money.amount > 0) toneClass = styles.positive ?? "";
-  if (tone === "balance" && money.amount < 0) toneClass = styles.danger ?? "";
   return (
-    <span className={[styles.money, toneClass].join(" ").trim()}>
-      {formatMoney(money, scale, locale)}
+    <span className={styles.money}>
+      {formatMoney(money, scale, locale, { symbol })}
     </span>
   );
 }

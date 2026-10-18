@@ -84,7 +84,6 @@ export function SplitEditor({
         <MoneyText
           money={{ amount: splitRemainder(state), currency }}
           scale={scale}
-          tone="balance"
         />
       </div>
       <div className={styles.editorActions}>
