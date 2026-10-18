@@ -22,11 +22,12 @@ describe("transactionMutated", () => {
         accountKeys.detail(id),
         accountKeys.balance(id, "booked"),
         accountKeys.balance(id, "settled"),
+        [...accountKeys.series(id), "2026-07-20", "2026-10-17"],
       ]),
     ];
     const untouched = [
       accountKeys.list,
-      accountKeys.series(a),
+      [...accountKeys.series(c), "2026-07-20", "2026-10-17"],
       accountKeys.detail(c),
       accountKeys.balance(c, "booked"),
       accountKeys.balance(c, "settled"),

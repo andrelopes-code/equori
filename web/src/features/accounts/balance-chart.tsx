@@ -10,12 +10,14 @@ export function BalanceChart({
   scale,
   loading,
   error,
+  onRetry,
 }: {
   points: { date: string; value: number }[];
   currency: string;
   scale: number;
   loading: boolean;
   error: boolean;
+  onRetry: () => void;
 }) {
   const t = useT();
   const [locale] = useAppLocale();
@@ -49,6 +51,7 @@ export function BalanceChart({
         legend={false}
         loading={loading}
         error={error}
+        onRetry={onRetry}
       />
     </div>
   );

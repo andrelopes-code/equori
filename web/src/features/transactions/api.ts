@@ -98,7 +98,7 @@ export function tagsQuery(api: Client<paths>) {
   });
 }
 
-// Every transaction mutation calls this: lists, balances and the touched accounts' detail and balance caches go stale together.
+// Every transaction mutation calls this: lists, balances and the touched accounts' detail, balance and series caches go stale together.
 export function transactionMutated(
   queryClient: QueryClient,
   accountIds: string[],
@@ -109,6 +109,7 @@ export function transactionMutated(
     ...accountIds.flatMap((id) => [
       accountKeys.detail(id),
       accountKeys.balances(id),
+      accountKeys.series(id),
     ]),
   ];
   return Promise.all(

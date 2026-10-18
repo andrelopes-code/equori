@@ -121,7 +121,9 @@ export function AccountPage() {
         <PageHeaderTitleArea>
           <PageHeaderTitleRow>
             <PageHeaderTitle>
-              <PageHeaderHeading>{account?.name ?? ""}</PageHeaderHeading>
+              <PageHeaderHeading>
+                {account?.name ?? t("accounts.title")}
+              </PageHeaderHeading>
             </PageHeaderTitle>
             {open !== undefined && (
               <PageHeaderActions>

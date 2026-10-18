@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { Outlet, useRouterState } from "@tanstack/react-router";
 import {
   AppShell,
@@ -9,9 +10,11 @@ import {
 import { ToastRegion } from "@slotted/react/toast";
 import { useEffect, useState } from "react";
 
+import { useApi } from "@/api/api-context";
 import { destinations } from "@/app/shell/destinations";
 import { MoreSheet } from "@/app/shell/more-sheet";
 import { SideNav } from "@/app/shell/side-nav";
+import { accountsQuery } from "@/features/accounts";
 import { useT } from "@/i18n/i18n-provider";
 import { BottomBar } from "@/ui/bottom-bar";
 import { IconGlyph } from "@/ui/icon-glyph";
@@ -30,10 +33,18 @@ export function AppFrame() {
   }, [viewport]);
 
   const [home, transactions, accounts] = destinations;
-  // On an account page the centre action opens the form with that account preselected.
-  const accountID = useRouterState({
+  // On the page of an open account the centre action opens the form with that account preselected.
+  const routeAccountID = useRouterState({
     select: (s) => /^\/accounts\/([^/]+)$/.exec(s.location.pathname)?.[1],
   });
+  const api = useApi();
+  const accountList = useQuery({
+    ...accountsQuery(api),
+    enabled: routeAccountID !== undefined,
+  });
+  const accountID = accountList.data?.find(
+    (a) => a.id === routeAccountID && a.closed_on === undefined,
+  )?.id;
 
   return (
     <AppShell

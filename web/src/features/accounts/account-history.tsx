@@ -47,6 +47,9 @@ export function AccountHistory({ account }: { account: Account }) {
           scale={accountScale}
           loading={series.data === undefined && !series.isError}
           error={series.isError}
+          onRetry={() => {
+            void series.refetch();
+          }}
         />
       </SectionBody>
     </Section>

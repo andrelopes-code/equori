@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { SkeletonRegion } from "@slotted/react/skeleton";
 import {
   StatCard,
   StatCardFigure,
@@ -26,41 +27,68 @@ export function AccountBalances({ account }: { account: Account }) {
   const scale = useScale();
   const booked = useQuery(balanceQuery(api, account.id, today, "booked"));
   const settled = useQuery(balanceQuery(api, account.id, today, "settled"));
-  const cards = [
-    { key: "booked", label: t("accounts.balance.booked"), query: booked },
-    { key: "settled", label: t("accounts.balance.settled"), query: settled },
-  ] as const;
-  const failed = cards.find(({ query }) => query.isError)?.query;
+  const queries = [booked, settled];
+  const failed = queries.find((query) => query.isError);
   if (failed?.error) {
     return (
       <QueryError
         error={failed.error}
         onRetry={() => {
-          for (const { query } of cards) {
+          for (const query of queries) {
             if (query.isError) void query.refetch();
           }
         }}
       />
     );
   }
+  if (
+    booked.data === undefined ||
+    settled.data === undefined ||
+    scale === null
+  ) {
+    return (
+      <SkeletonRegion>
+        <div className={styles.balances}>
+          {queries.map((_, n) => (
+            <StatCard key={n} loading>
+              <StatCardHeader>
+                <StatCardLabel />
+              </StatCardHeader>
+              <StatCardFigure>
+                <StatCardValue />
+              </StatCardFigure>
+            </StatCard>
+          ))}
+        </div>
+      </SkeletonRegion>
+    );
+  }
+  const cards = [
+    {
+      key: "booked",
+      label: t("accounts.balance.booked"),
+      balance: booked.data.balance,
+    },
+    {
+      key: "settled",
+      label: t("accounts.balance.settled"),
+      balance: settled.data.balance,
+    },
+  ];
   return (
     <div className={styles.balances}>
-      {cards.map(({ key, label, query }) => (
+      {cards.map(({ key, label, balance }) => (
         <StatCard key={key}>
           <StatCardHeader>
             <StatCardLabel>{label}</StatCardLabel>
           </StatCardHeader>
           <StatCardFigure>
             <StatCardValue>
-              {query.data === undefined || scale === null ? (
-                t("accounts.loading")
-              ) : (
-                <MoneyText
-                  money={query.data.balance}
-                  scale={scale(query.data.balance.currency)}
-                  tone="balance"
-                />
-              )}
+              <MoneyText
+                money={balance}
+                scale={scale(balance.currency)}
+                tone="balance"
+              />
             </StatCardValue>
           </StatCardFigure>
         </StatCard>

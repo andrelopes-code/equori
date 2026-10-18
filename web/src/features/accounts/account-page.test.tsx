@@ -1,11 +1,11 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import type { components } from "@/api/schema.gen";
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { writeLocale } from "@/i18n/locale";
-import { fakeApi, json } from "@/testing/fake-api";
+import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 
 type Account = components["schemas"]["Account"];
@@ -61,7 +61,11 @@ const transaction = {
   ],
 };
 
-function accountApi() {
+type Route = (req: Request) => Response | Promise<Response>;
+
+function accountApi(
+  opts: { balance?: Route; series?: Route; accounts?: Account[] } = {},
+) {
   const balanceRequests: URLSearchParams[] = [];
   const seriesRequests: URLSearchParams[] = [];
   const transactionRequests: URLSearchParams[] = [];
@@ -74,11 +78,13 @@ function accountApi() {
       json(200, {
         items: [{ code: "BRL", type: "currency", scale: 2, name: "Real" }],
       }),
-    "GET /api/v1/accounts": () => json(200, { items: accounts }),
+    "GET /api/v1/accounts": () =>
+      json(200, { items: opts.accounts ?? accounts }),
     "GET /api/v1/payees": () => json(200, { items: [] }),
     [`GET /api/v1/accounts/${checkingID}/balance`]: (req) => {
       const params = new URL(req.url).searchParams;
       balanceRequests.push(params);
+      if (opts.balance !== undefined) return opts.balance(req);
       const settled = params.get("basis") === "settled";
       return json(200, {
         account_id: checkingID,
@@ -89,6 +95,7 @@ function accountApi() {
     },
     "GET /api/v1/reports/balances": (req) => {
       seriesRequests.push(new URL(req.url).searchParams);
+      if (opts.series !== undefined) return opts.series(req);
       return json(200, {
         items: [
           {
@@ -284,5 +291,150 @@ describe("account page", () => {
     expect(
       screen.getAllByRole("link", { name: catalogPtBR["nav.new"] }),
     ).toHaveLength(1);
+  });
+
+  it("shows the account list title, not an empty heading, until the account loads", async () => {
+    let release: (response: Response) => void = () => undefined;
+    const pending = new Promise<Response>((resolve) => {
+      release = resolve;
+    });
+    const { fetch } = accountApi();
+    const slow = Object.assign(
+      (input: RequestInfo | URL, init?: RequestInit) =>
+        new URL(new Request(input, init).url).pathname === "/api/v1/accounts"
+          ? pending
+          : fetch(input, init),
+      { calls: fetch.calls },
+    );
+    await renderApp(`/accounts/${checkingID}`, { fetch: slow });
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: catalogPtBR["accounts.title"],
+      }),
+    ).toBeInTheDocument();
+    release(json(200, { items: accounts }));
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Itaú" }),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("account page waiting and failure states", () => {
+  it("marks the balances busy with skeletons and no loading text while they load", async () => {
+    let release: (response: Response) => void = () => undefined;
+    const pending = new Promise<Response>((resolve) => {
+      release = resolve;
+    });
+    const { fetch } = accountApi({ balance: () => pending });
+    const { container } = await renderApp(`/accounts/${checkingID}`, {
+      fetch,
+    });
+    await screen.findByRole("heading", { level: 1, name: "Itaú" });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(
+      container.querySelectorAll('[data-ui="stat-card"][aria-busy="true"]'),
+    ).toHaveLength(2);
+    expect(
+      container.querySelectorAll('[data-ui="skeleton"]').length,
+    ).toBeGreaterThan(0);
+    expect(container.textContent).not.toContain(
+      catalogPtBR["accounts.loading"],
+    );
+    release(
+      json(200, {
+        account_id: checkingID,
+        date: "2026-10-17",
+        basis: "booked",
+        balance: { amount: 123456, currency: "BRL" },
+      }),
+    );
+    expect(await screen.findAllByText(/1\.234,56/)).not.toHaveLength(0);
+    await waitFor(() => {
+      expect(
+        container.querySelector('[data-ui="stat-card"][aria-busy="true"]'),
+      ).toBeNull();
+    });
+  });
+
+  it("offers a retry when the balance request fails", async () => {
+    const user = userEvent.setup();
+    let fail = true;
+    const { fetch, balanceRequests } = accountApi({
+      balance: () =>
+        fail
+          ? problem(500, "internal")
+          : json(200, {
+              account_id: checkingID,
+              date: "2026-10-17",
+              basis: "booked",
+              balance: { amount: 123456, currency: "BRL" },
+            }),
+    });
+    await renderApp(`/accounts/${checkingID}`, { fetch });
+    const retry = await screen.findByRole(
+      "button",
+      { name: catalogPtBR["common.retry"] },
+      { timeout: 4000 },
+    );
+    const before = balanceRequests.length;
+    fail = false;
+    await user.click(retry);
+    await waitFor(() => {
+      expect(balanceRequests.length).toBeGreaterThan(before);
+    });
+    expect(await screen.findAllByText(/1\.234,56/)).not.toHaveLength(0);
+  });
+
+  it("offers a retry in the chart when the series request fails", async () => {
+    const user = userEvent.setup();
+    let fail = true;
+    const { fetch, seriesRequests } = accountApi({
+      series: () =>
+        fail
+          ? problem(500, "internal")
+          : json(200, {
+              items: [
+                {
+                  date: "2026-10-17",
+                  balance: { amount: 123456, currency: "BRL" },
+                },
+              ],
+            }),
+    });
+    await renderApp(`/accounts/${checkingID}`, { fetch });
+    const retry = await screen.findByRole(
+      "button",
+      { name: /tentar/i },
+      { timeout: 4000 },
+    );
+    const before = seriesRequests.length;
+    fail = false;
+    await user.click(retry);
+    await waitFor(() => {
+      expect(seriesRequests.length).toBeGreaterThan(before);
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: /tentar/i })).toBeNull();
+    });
+  });
+
+  it("does not preselect a closed account in the phone bottom bar", async () => {
+    const closedAccounts = accounts.map((a) =>
+      a.id === checkingID ? { ...a, closed_on: "2026-10-01" } : a,
+    );
+    const { fetch } = accountApi({ accounts: closedAccounts });
+    await renderApp(`/accounts/${checkingID}`, { fetch, width: 360 });
+    await screen.findByText(
+      catalogPtBR["accounts.closed.on"].replace("{date}", "01/10/2026"),
+    );
+    const nav = screen.getByRole("navigation", {
+      name: catalogPtBR["nav.label"],
+    });
+    expect(
+      within(nav).getByRole("link", { name: catalogPtBR["nav.new"] }),
+    ).toHaveAttribute("href", "/transactions/new");
   });
 });
