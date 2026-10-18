@@ -1,0 +1,11 @@
+@layer app {
+  .classes {
+    display: grid;
+    gap: var(--slotted-space-6);
+  }
+
+  .heading {
+    margin: 0 0 var(--slotted-space-2);
+    font-size: var(--slotted-control-font-size-md);
+  }
+}

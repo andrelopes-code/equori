@@ -120,14 +120,14 @@ describe("login", () => {
 describe("expired session", () => {
   it("clears the cache and redirects after a 401 following login", async () => {
     const { fetch, state } = sessionApi({ loggedIn: true });
-    const { router } = await renderApp("/accounts", { fetch });
-    expect(router.state.location.pathname).toBe("/accounts");
+    const { router } = await renderApp("/settings", { fetch });
+    expect(router.state.location.pathname).toBe("/settings");
     const { queryClient, api } = router.options.context;
     expect(queryClient.getQueryCache().getAll()).toHaveLength(1);
     state.loggedIn = false;
     await queryClient.query(meQuery(api)).catch(() => undefined);
     await waitFor(() => {
-      expect(router.state.location.href).toBe("/login?redirect=%2Faccounts");
+      expect(router.state.location.href).toBe("/login?redirect=%2Fsettings");
     });
     expect(queryClient.getQueryCache().getAll()).toHaveLength(0);
   });

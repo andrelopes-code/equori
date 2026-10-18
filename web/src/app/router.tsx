@@ -18,7 +18,7 @@ import { ProblemError } from "@/api/problem";
 import { Placeholder } from "@/app/placeholder";
 import { useSessionExpiry } from "@/app/providers";
 import { AppFrame } from "@/app/shell/app-frame";
-import { HomePage } from "@/features/accounts";
+import { AccountsPage, HomePage } from "@/features/accounts";
 import { LoginPage, meQuery } from "@/features/session";
 import {
   CorrectTransactionPage,
@@ -96,6 +96,12 @@ const transactionsRoute = createRoute({
   component: TransactionsPage,
 });
 
+const accountsRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "accounts",
+  component: AccountsPage,
+});
+
 const newTransactionRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "transactions/new",
@@ -126,7 +132,7 @@ export const routeTree = rootRoute.addChildren([
     newTransactionRoute,
     transactionRoute,
     correctTransactionRoute,
-    screen("accounts"),
+    accountsRoute,
     screen("accounts/$id"),
     screen("settings"),
   ]),

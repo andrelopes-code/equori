@@ -1,6 +1,12 @@
-import { queryOptions } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import type { Client } from "openapi-fetch";
 
+import { useApi } from "@/api/api-context";
 import { unwrap } from "@/api/problem";
 import type { components, paths } from "@/api/schema.gen";
 
@@ -58,5 +64,55 @@ export function balancesQuery(api: Client<paths>, date: string, basis: Basis) {
       );
       return list.items;
     },
+  });
+}
+
+type AccountInput = components["schemas"]["AccountInput"];
+type AccountPatch = components["schemas"]["AccountPatch"];
+
+function mutated(queryClient: QueryClient): Promise<unknown> {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: accountKeys.all }),
+    queryClient.invalidateQueries({ queryKey: balanceKeys.all }),
+  ]);
+}
+
+export function useCreateAccount() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: AccountInput) =>
+      unwrap(await api.POST("/accounts", { body })),
+    onSuccess: () => mutated(queryClient),
+  });
+}
+
+export function useUpdateAccount() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: AccountPatch }) =>
+      unwrap(
+        await api.PATCH("/accounts/{id}", {
+          params: { path: { id } },
+          body: patch,
+        }),
+      ),
+    onSuccess: () => mutated(queryClient),
+  });
+}
+
+export function useCloseAccount() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, closedOn }: { id: string; closedOn: string }) =>
+      unwrap(
+        await api.POST("/accounts/{id}/close", {
+          params: { path: { id } },
+          body: { closed_on: closedOn },
+        }),
+      ),
+    onSuccess: () => mutated(queryClient),
   });
 }
