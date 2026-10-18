@@ -92,6 +92,8 @@ export function TransactionsPage() {
               <TransactionList
                 search={search}
                 infinite
+                // The open pane holds the category; its column goes to the pane.
+                brief={select !== undefined && selected !== undefined}
                 {...(select === undefined ? {} : { onSelect: select })}
                 {...(selected === undefined ? {} : { selected })}
                 emptyActions={

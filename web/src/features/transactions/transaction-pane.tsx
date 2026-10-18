@@ -10,7 +10,6 @@ import { InlineMessage } from "@slotted/react/inline-message";
 import { Inline } from "@slotted/react/inline";
 import { Link } from "@slotted/react/link";
 import { Skeleton, SkeletonRegion } from "@slotted/react/skeleton";
-import { TagToggle } from "@slotted/react/tag";
 import { toast } from "@slotted/react/toast";
 import { Heading, Text } from "@slotted/react/typography";
 
@@ -28,6 +27,7 @@ import { transactionRow } from "@/features/transactions/transaction-row";
 import { formatDayHeader } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { ChoiceChips } from "@/ui/choice-chips";
 import { MoneyFigure } from "@/ui/money-figure";
 import { QueryError } from "@/ui/query-error";
 import { useSpaLink } from "@/ui/use-spa-link";
@@ -188,19 +188,13 @@ export function TransactionPane({ id }: { id: string }) {
           <Text size="sm" tone="muted">
             {t("transactions.column.category")}
           </Text>
-          <Inline gap={3}>
-            {options.map((option) => (
-              <TagToggle
-                key={option.id}
-                variant="outline"
-                selected={option.id === current}
-                disabled={categorize.isPending}
-                onSelectedChange={() => void choose(option.id)}
-              >
-                {option.name}
-              </TagToggle>
-            ))}
-          </Inline>
+          <ChoiceChips
+            label={t("transactions.column.category")}
+            choices={options}
+            value={current ?? null}
+            disabled={categorize.isPending}
+            onChange={(id) => void choose(id)}
+          />
         </div>
       )}
       <DescriptionList variant="ruled" aria-label={t("transaction.summary")}>

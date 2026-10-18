@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  annotatedEvents,
   buildForecast,
   lowestAhead,
   mergeEvents,
@@ -143,5 +144,38 @@ describe("buildForecast", () => {
       balance: 4000,
       event: events[1],
     });
+  });
+});
+
+// Complete frontend O4: an annotation's label ends on its line, so two lines need room for the
+// later label between them.
+describe("annotatedEvents", () => {
+  const event = (date: string, amount: number) => ({
+    date,
+    amount,
+    description: date,
+    occurrenceID: date,
+    kind: "bill" as const,
+  });
+
+  it("keeps the largest occurrences at least eight days from today and from each other", () => {
+    const events = [
+      event("2026-10-20", -11990),
+      event("2026-10-25", -222620),
+      event("2026-10-26", -100000),
+      event("2026-10-30", -50000),
+      event("2026-11-05", -360000),
+    ];
+    expect(annotatedEvents(events, "2026-10-18").map((e) => e.date)).toEqual([
+      "2026-11-05",
+      "2026-10-26",
+    ]);
+  });
+
+  it("annotates at most three occurrences", () => {
+    const events = ["01", "09", "17", "25"].map((day, n) =>
+      event(`2026-11-${day}`, -1000 * (n + 1)),
+    );
+    expect(annotatedEvents(events, undefined)).toHaveLength(3);
   });
 });

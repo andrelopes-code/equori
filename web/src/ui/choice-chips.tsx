@@ -12,12 +12,14 @@ export function ChoiceChips({
   value,
   onChange,
   size = "md",
+  disabled = false,
 }: {
   label?: string;
   choices: { id: string; name: string }[];
   value: string | null;
   onChange: (id: string) => void;
   size?: "md" | "lg";
+  disabled?: boolean;
 }) {
   const field = useField();
   return (
@@ -35,6 +37,7 @@ export function ChoiceChips({
           key={choice.id}
           type="button"
           aria-pressed={choice.id === value}
+          disabled={disabled}
           className={styles.chip}
           onClick={() => {
             onChange(choice.id);

@@ -40,6 +40,11 @@
     color: var(--slotted-text-inverse);
   }
 
+  .chip:disabled {
+    cursor: progress;
+    opacity: 0.6;
+  }
+
   .chip:focus-visible {
     outline: var(--slotted-focus-ring-width) solid
       var(--slotted-focus-ring-color);

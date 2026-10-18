@@ -2,41 +2,15 @@ import { Chart } from "@slotted/react/chart";
 import type { ChartAnnotation } from "@slotted/react/chart";
 import { useMemo } from "react";
 
-import { daysBetween } from "@/features/overview/forecast";
-import type { ForecastEvent } from "@/features/overview/forecast";
+import { annotatedEvents } from "@/features/overview/forecast";
 import { ForecastTooltip } from "@/features/overview/forecast-tooltip";
 import type { Overview } from "@/features/overview/use-overview";
 import { formatPlain } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 
-const annotated = 3;
-// Two labels closer than this many days overlap at the chart's widths.
-const minGapDays = 4;
-
 // Complete frontend O4: realized in the neutral tone, forecast dashed in the accent tone,
 // a line on today and on the largest occurrences still to come.
-// The largest occurrences first, each kept only when it stands apart from today and the others.
-function spaced(
-  events: readonly ForecastEvent[],
-  today: string | undefined,
-): ForecastEvent[] {
-  const kept: ForecastEvent[] = [];
-  const taken = today === undefined ? [] : [today];
-  for (const event of [...events].sort(
-    (a, b) => Math.abs(b.amount) - Math.abs(a.amount),
-  )) {
-    if (kept.length === annotated) break;
-    if (
-      taken.some((date) => Math.abs(daysBetween(date, event.date)) < minGapDays)
-    )
-      continue;
-    kept.push(event);
-    taken.push(event.date);
-  }
-  return kept;
-}
-
 export function ForecastChart({
   overview,
   scale,
@@ -75,15 +49,16 @@ export function ForecastChart({
           },
         ]
       : []),
-    ...spaced(overview.ahead, overview.current ? today : undefined).map(
-      (event) => ({
-        kind: "line" as const,
-        axis: "x" as const,
-        value: event.date,
-        label: event.description,
-        tone: "neutral" as const,
-      }),
-    ),
+    ...annotatedEvents(
+      overview.ahead,
+      overview.current ? today : undefined,
+    ).map((event) => ({
+      kind: "line" as const,
+      axis: "x" as const,
+      value: event.date,
+      label: event.description,
+      tone: "neutral" as const,
+    })),
   ];
   return (
     <Chart

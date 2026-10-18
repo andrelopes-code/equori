@@ -814,6 +814,24 @@ describe("transaction pane", () => {
     return { fetch, categorized };
   }
 
+  // The pane holds the category, so the table gives its column to the pane.
+  it("drops the category column while the pane is open", async () => {
+    const user = userEvent.setup();
+    const { fetch } = paneApi();
+    await renderApp("/transactions", { fetch });
+    const headers = () =>
+      screen.getAllByRole("columnheader").map((header) => header.textContent);
+    await screen.findByRole("link", { name: "Compra 1" });
+    expect(headers()).toContain(catalogPtBR["transactions.column.category"]);
+    await user.click(screen.getByRole("link", { name: "Compra 1" }));
+    await screen.findByRole("complementary", {
+      name: catalogPtBR["transactions.pane"],
+    });
+    expect(headers()).not.toContain(
+      catalogPtBR["transactions.column.category"],
+    );
+  });
+
   it("opens the selected row beside the table instead of leaving the list", async () => {
     const user = userEvent.setup();
     const { fetch } = paneApi();

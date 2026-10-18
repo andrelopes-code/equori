@@ -146,3 +146,30 @@ export function lowestAhead(
   }
   return low;
 }
+
+const annotated = 3;
+// An annotation's label ends on its line; at the chart's half width a day is about 13 px, so
+// eight days hold the longest description the chart labels.
+const minGapDays = 8;
+
+// Complete frontend O4: the largest occurrences first, each kept only when it stands apart
+// from today and from the occurrences already kept.
+export function annotatedEvents(
+  events: readonly ForecastEvent[],
+  today: string | undefined,
+): ForecastEvent[] {
+  const kept: ForecastEvent[] = [];
+  const taken = today === undefined ? [] : [today];
+  for (const event of [...events].sort(
+    (a, b) => Math.abs(b.amount) - Math.abs(a.amount),
+  )) {
+    if (kept.length === annotated) break;
+    if (
+      taken.some((date) => Math.abs(daysBetween(date, event.date)) < minGapDays)
+    )
+      continue;
+    kept.push(event);
+    taken.push(event.date);
+  }
+  return kept;
+}
