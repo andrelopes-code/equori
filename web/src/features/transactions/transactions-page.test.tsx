@@ -590,10 +590,10 @@ describe("transactions filters", () => {
     const index = document.querySelector('[data-own="ledger-index"]');
     if (!(index instanceof HTMLElement)) throw new Error("no ledger index");
     expect(
-      within(index).getByRole("link", {
+      within(index).getByRole("button", {
         name: new RegExp(`^${catalogPtBR["nav.entry"]}`),
       }),
-    ).toHaveAttribute("href", "/transactions/new");
+    ).toBeInTheDocument();
     const bar = screen.getByRole("search");
     expect(
       within(bar).getByRole("searchbox", {

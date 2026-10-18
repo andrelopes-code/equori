@@ -587,12 +587,11 @@ describe("home new transaction action", () => {
   ])("is the shell's action at %i px", async (width, shell) => {
     const { fetch } = homeApi();
     const { container } = await renderApp("/", { fetch, width });
-    const links = await screen.findAllByRole("link", {
+    const controls = await screen.findAllByRole("button", {
       name: new RegExp(`^${catalogPtBR["nav.entry"]}`),
     });
-    expect(links).toHaveLength(1);
-    expect(links[0]?.closest(shell)).not.toBeNull();
-    expect(links[0]).toHaveAttribute("href", "/transactions/new");
+    expect(controls).toHaveLength(1);
+    expect(controls[0]?.closest(shell)).not.toBeNull();
     expect(container.querySelector('[data-ui="page-header"] a')).toBeNull();
   });
 });

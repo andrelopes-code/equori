@@ -9,7 +9,7 @@ import { PageDefaultsProvider } from "@slotted/react/page";
 import { PageHeaderDefaultsProvider } from "@slotted/react/page-header";
 import { SectionDefaultsProvider } from "@slotted/react/section";
 import { ToastRegion } from "@slotted/react/toast";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { destinations } from "@/app/shell/destinations";
 import { MoreSheet } from "@/app/shell/more-sheet";
@@ -17,6 +17,7 @@ import { LedgerIndex } from "@/app/shell/ledger-index";
 import { useNewShortcut } from "@/app/shell/use-new-shortcut";
 import { useOpenAccountID } from "@/app/shell/use-open-account-id";
 import { useUncategorizedBadge } from "@/app/shell/use-uncategorized-badge";
+import { QuickEntry } from "@/features/transactions";
 import { useT } from "@/i18n/i18n-provider";
 import { BottomBar } from "@/ui/bottom-bar";
 import { useViewport } from "@/ui/use-viewport";
@@ -29,7 +30,11 @@ export function AppFrame() {
   const badge = useUncategorizedBadge();
   const [moreOpen, setMoreOpen] = useState(false);
   const accountID = useOpenAccountID();
-  useNewShortcut(accountID);
+  const [entryOpen, setEntryOpen] = useState(false);
+  const openEntry = useCallback(() => {
+    setEntryOpen(true);
+  }, []);
+  useNewShortcut(openEntry);
 
   // Complete frontend G1: comfortable at every width.
   useEffect(() => {
@@ -50,7 +55,7 @@ export function AppFrame() {
       {viewport === "desktop" && (
         // The index holds its own navigation landmark beside the brand, entry and account.
         <AppShellNav render={(props) => <div {...props} />}>
-          <LedgerIndex />
+          <LedgerIndex onEntry={openEntry} />
         </AppShellNav>
       )}
       <AppShellMain>
@@ -78,10 +83,7 @@ export function AppFrame() {
               {
                 key: "entry",
                 label: t("nav.entry"),
-                to: "/transactions/new",
-                ...(accountID === undefined
-                  ? {}
-                  : { search: { account_id: accountID } }),
+                onPress: openEntry,
                 ink: true,
               },
               { key: cards.key, label: t(cards.label), to: cards.to },
@@ -98,6 +100,11 @@ export function AppFrame() {
       )}
       <ToastRegion />
       <MoreSheet open={moreOpen} onOpenChange={setMoreOpen} />
+      <QuickEntry
+        open={entryOpen}
+        onOpenChange={setEntryOpen}
+        accountId={accountID}
+      />
     </AppShell>
   );
 }

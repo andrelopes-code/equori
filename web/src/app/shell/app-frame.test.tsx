@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
-import { checkingID, sharedRoutes } from "@/testing/transaction-api";
+import { sharedRoutes } from "@/testing/transaction-api";
 import { setViewport } from "@/testing/viewport";
 
 const html = document.documentElement;
@@ -44,7 +44,7 @@ describe("AppFrame navigation", () => {
         catalogEn["nav.more"],
       ]);
       expect(controls[2]).toHaveAttribute("data-emphasis", "ink");
-      expect(controls[2]).toHaveAttribute("href", "/transactions/new");
+      expect(controls[2]?.tagName).toBe("BUTTON");
       expect(bar?.querySelector("svg")).toBeNull();
       expect(container.querySelector('[data-own="ledger-index"]')).toBeNull();
       expect(container.querySelector('[data-ui="top-navigation"]')).toBeNull();
@@ -141,19 +141,16 @@ describe("AppFrame routing", () => {
     ).not.toHaveAttribute("aria-current");
   });
 
-  it("links New to the form, with the open account preselected", async () => {
-    const fetch = fakeApi(sharedRoutes);
-    const home = await renderApp("/", { width: 1280, fetch });
+  // Complete frontend F2: the index's entry field opens the quick entry.
+  it("opens the quick entry from the index's entry field", async () => {
+    const user = userEvent.setup();
+    await renderApp("/", { width: 1280, fetch: fakeApi(sharedRoutes) });
+    await user.click(
+      screen.getByRole("button", { name: new RegExp(catalogEn["nav.entry"]) }),
+    );
     expect(
-      screen.getByRole("link", { name: new RegExp(catalogEn["nav.entry"]) }),
-    ).toHaveAttribute("href", "/transactions/new");
-    home.unmount();
-    await renderApp(`/accounts/${checkingID}`, { width: 1280, fetch });
-    await waitFor(() => {
-      expect(
-        screen.getByRole("link", { name: new RegExp(catalogEn["nav.entry"]) }),
-      ).toHaveAttribute("href", `/transactions/new?account_id=${checkingID}`);
-    });
+      await screen.findByRole("dialog", { name: catalogEn["entry.title"] }),
+    ).toBeInTheDocument();
   });
 
   // Complete frontend G7.

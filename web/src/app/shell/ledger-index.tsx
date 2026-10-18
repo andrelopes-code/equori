@@ -14,7 +14,7 @@ import { bestMatch } from "@/ui/best-match";
 // Families read: top-navigation, side-navigation, app-shell nav. Both navigations draw a
 // destination as a label with an optional badge; none writes a figure beside it, which is the
 // index's reason to exist (shell second pass S1): each destination states its number.
-export function LedgerIndex() {
+export function LedgerIndex({ onEntry }: { onEntry: () => void }) {
   const t = useT();
   const id = useId();
   const figures = useIndexFigures();
@@ -29,7 +29,7 @@ export function LedgerIndex() {
       <Link to="/" className={styles.brand}>
         {t("app.name")}
       </Link>
-      <EntryTrigger />
+      <EntryTrigger onOpen={onEntry} />
       <nav aria-label={t("nav.label")}>
         <ul className={styles.list}>
           {destinations.map((d) => {

@@ -11,6 +11,7 @@ export {
   validateTransactionsPageSearch,
 } from "@/features/transactions/search";
 export { NewTransactionPage } from "@/features/transactions/new-transaction-page";
+export { QuickEntry } from "@/features/transactions/quick-entry";
 export { TransactionList } from "@/features/transactions/transaction-list";
 export { TransactionsPage } from "@/features/transactions/transactions-page";
 export { CorrectTransactionPage } from "@/features/transactions/correct-transaction-page";

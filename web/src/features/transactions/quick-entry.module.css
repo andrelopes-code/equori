@@ -1,0 +1,182 @@
+@layer app {
+  .entry {
+    display: grid;
+    gap: 0;
+    margin: 0;
+    padding: var(--slotted-space-4) var(--slotted-space-7)
+      var(--slotted-space-6);
+  }
+
+  .entry:has(.head[data-phone]) {
+    padding: var(--slotted-space-6) var(--slotted-space-6)
+      calc(var(--slotted-space-6) + env(safe-area-inset-bottom));
+  }
+
+  .head {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-4);
+  }
+
+  /* Desktop: the field is the entry's heading in effect; the title stays for the reader. */
+  .head:not([data-phone]) {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .head[data-phone] {
+    min-block-size: var(--slotted-target-comfortable);
+    padding-block-end: var(--slotted-space-6);
+  }
+
+  .title {
+    flex: 1;
+    margin: 0;
+    font-size: var(--slotted-font-size-md);
+    font-weight: var(--slotted-font-weight-semibold);
+  }
+
+  .cancel {
+    min-block-size: var(--slotted-target-min);
+    padding-inline: var(--slotted-space-2);
+    border: 0;
+    background: transparent;
+    color: var(--slotted-text-muted);
+    font: inherit;
+    font-size: var(--slotted-font-size-sm);
+    cursor: pointer;
+  }
+
+  .line {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-5);
+    min-block-size: calc(var(--slotted-control-height-lg) * 1.5);
+    border-block-end: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  .head[data-phone] ~ .line {
+    min-block-size: var(--slotted-control-height-lg);
+    border-block-end-color: var(--slotted-text);
+  }
+
+  .field {
+    flex: 1;
+    min-inline-size: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--slotted-text);
+    font: inherit;
+    font-size: var(--slotted-font-size-xl);
+    caret-color: var(--slotted-text);
+  }
+
+  .head[data-phone] ~ .line .field {
+    font-size: var(--slotted-font-size-2xl);
+  }
+
+  .field::placeholder {
+    color: var(--slotted-text-muted);
+  }
+
+  /* The field draws no ring of its own; its rule takes the text colour while it holds focus. */
+  .line:focus-within {
+    border-block-end-color: var(--slotted-text);
+  }
+
+  .examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--slotted-space-2);
+    padding-block-start: var(--slotted-space-5);
+  }
+
+  .example {
+    min-block-size: var(--slotted-control-height-md);
+    padding-inline: var(--slotted-space-4);
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-control-radius);
+    background: transparent;
+    color: var(--slotted-text-muted);
+    font: inherit;
+    font-size: var(--slotted-font-size-sm);
+    cursor: pointer;
+  }
+
+  .preview {
+    display: grid;
+    grid-template-columns: 6rem minmax(0, 1fr);
+    gap: var(--slotted-space-3) var(--slotted-space-5);
+    margin: 0;
+    padding-block: var(--slotted-space-6) var(--slotted-space-5);
+    font-size: var(--slotted-font-size-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .preview dt {
+    color: var(--slotted-text-muted);
+  }
+
+  .preview dd {
+    margin: 0;
+    color: var(--slotted-text);
+  }
+
+  .preview dd[data-empty] {
+    color: var(--slotted-text-muted);
+  }
+
+  .foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--slotted-space-4) var(--slotted-space-5);
+    margin-block-start: var(--slotted-space-6);
+    padding-block-start: var(--slotted-space-5);
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  .note {
+    flex: 1 1 16rem;
+    margin: 0;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    line-height: var(--slotted-line-height-sm);
+  }
+
+  /* The ledger's accent is kept for what is forecast: the balance after the entry. */
+  .note[data-note="impact"] {
+    color: var(--slotted-tone-accent-text);
+  }
+
+  .note[data-note="missing"] {
+    color: var(--slotted-tone-warning-text);
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-3);
+  }
+
+  .head[data-phone] ~ .foot .actions {
+    flex: 1 1 100%;
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .cancel:focus-visible,
+  .example:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+}

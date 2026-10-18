@@ -3,6 +3,7 @@ export {
   accountsQuery,
   balanceKeys,
   balanceQuery,
+  balancesQuery,
   seriesQuery,
 } from "@/features/accounts/api";
 export { useBalanceGroups } from "@/features/accounts/use-balance-groups";

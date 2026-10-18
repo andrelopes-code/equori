@@ -231,18 +231,28 @@ describe("account page", () => {
   });
 
   // Ledger sheet L7: from 600 px the top bar holds New.
-  it("links the top bar New action with the account preselected", async () => {
+  // Complete frontend F2: the quick entry posts to the open account by default.
+  it("posts the quick entry to the open account by default", async () => {
     const { fetch } = accountApi();
-    await renderApp(`/accounts/${checkingID}`, { fetch });
+    const user = userEvent.setup();
+    await renderApp(`/accounts/${checkingID}`, { fetch, width: 1280 });
     await screen.findByText("Compra no mercado");
-    const links = screen.getAllByRole("link", {
-      name: new RegExp(`^${catalogPtBR["nav.entry"]}`),
-    });
-    expect(links).toHaveLength(1);
-    expect(links[0]).toHaveAttribute(
-      "href",
-      `/transactions/new?account_id=${checkingID}`,
+    await user.click(
+      screen.getByRole("button", {
+        name: new RegExp(`^${catalogPtBR["nav.entry"]}`),
+      }),
     );
+    const dialog = await screen.findByRole("dialog", {
+      name: catalogPtBR["entry.title"],
+    });
+    await user.type(
+      within(dialog).getByRole("textbox", { name: catalogPtBR["entry.field"] }),
+      "pão 10",
+    );
+    expect(
+      within(dialog).getByText(catalogPtBR["entry.account"], { selector: "dt" })
+        .nextElementSibling,
+    ).toHaveTextContent("Itaú");
   });
 
   it("opens the edit dialog and saves a rename", async () => {
@@ -319,8 +329,7 @@ describe("account page", () => {
     ).toBeInTheDocument();
   });
 
-  // Ledger sheet L5: on a phone the page header holds New.
-  // Shell second pass S2: on a phone New stands in the bottom bar, the open account preselected.
+  // Shell second pass S2: on a phone New stands in the bottom bar, not in the page header.
   it("puts the chart in the content width and the new-transaction action in the bottom bar on a phone", async () => {
     const { fetch } = accountApi();
     const { container } = await renderApp(`/accounts/${checkingID}`, {
@@ -332,16 +341,15 @@ describe("account page", () => {
       expect(container.querySelector('[data-ui="chart"]')).not.toBeNull();
     });
     const bar = container.querySelector('[data-own="bottom-bar"]');
-    const action = await within(bar as HTMLElement).findByRole("link", {
-      name: catalogPtBR["nav.entry"],
-    });
-    expect(action).toHaveAttribute(
-      "href",
-      `/transactions/new?account_id=${checkingID}`,
-    );
     expect(
-      screen.getAllByRole("link", { name: catalogPtBR["nav.entry"] }),
-    ).toHaveLength(1);
+      within(bar as HTMLElement).getByRole("button", {
+        name: catalogPtBR["nav.entry"],
+      }),
+    ).toBeInTheDocument();
+    const header = container.querySelector('[data-ui="page-header"]');
+    expect(
+      within(header as HTMLElement).queryByText(catalogPtBR["nav.entry"]),
+    ).toBeNull();
   });
 
   it("shows the account list title, not an empty heading, until the account loads", async () => {
@@ -469,19 +477,31 @@ describe("account page waiting and failure states", () => {
     });
   });
 
-  it("does not preselect a closed account in the top bar", async () => {
+  it("does not post the quick entry to a closed account", async () => {
     const closedAccounts = accounts.map((a) =>
       a.id === checkingID ? { ...a, closed_on: "2026-10-01" } : a,
     );
     const { fetch } = accountApi({ accounts: closedAccounts });
+    const user = userEvent.setup();
     await renderApp(`/accounts/${checkingID}`, { fetch, width: 1280 });
     await screen.findByText(
       catalogPtBR["accounts.closed.on"].replace("{date}", "01/10/2026"),
     );
-    expect(
-      screen.getByRole("link", {
+    await user.click(
+      screen.getByRole("button", {
         name: new RegExp(`^${catalogPtBR["nav.entry"]}`),
       }),
-    ).toHaveAttribute("href", "/transactions/new");
+    );
+    const dialog = await screen.findByRole("dialog", {
+      name: catalogPtBR["entry.title"],
+    });
+    await user.type(
+      within(dialog).getByRole("textbox", { name: catalogPtBR["entry.field"] }),
+      "pão 10",
+    );
+    expect(
+      within(dialog).getByText(catalogPtBR["entry.account"], { selector: "dt" })
+        .nextElementSibling,
+    ).not.toHaveTextContent("Itaú");
   });
 });

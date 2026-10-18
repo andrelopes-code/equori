@@ -1,0 +1,54 @@
+@layer app {
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--slotted-space-2);
+  }
+
+  .chips[data-size="lg"] {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .chip {
+    flex: none;
+    min-block-size: var(--slotted-control-height-sm);
+    padding-inline: var(--slotted-space-4);
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-strong);
+    border-radius: var(--slotted-control-radius);
+    background: transparent;
+    color: var(--slotted-text);
+    font: inherit;
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-medium);
+    cursor: pointer;
+  }
+
+  .chips[data-size="lg"] .chip {
+    min-block-size: var(--slotted-control-height-md);
+    font-size: var(--slotted-font-size-sm);
+  }
+
+  .chip:hover {
+    border-color: var(--slotted-text-muted);
+  }
+
+  .chip[aria-pressed="true"] {
+    border-color: var(--slotted-surface-inverse);
+    background: var(--slotted-surface-inverse);
+    color: var(--slotted-text-inverse);
+  }
+
+  .chip:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  @media (forced-colors: active) {
+    .chip[aria-pressed="true"] {
+      outline: var(--slotted-border-width-thick) solid CanvasText;
+    }
+  }
+}
