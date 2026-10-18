@@ -1,5 +1,6 @@
 import { act, render } from "@testing-library/react";
 import type { RenderResult } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { createMemoryHistory } from "@tanstack/react-router";
 
 import { AppProviders } from "@/app/providers";
@@ -26,4 +27,20 @@ export async function renderApp(
     await router.load();
   });
   return { ...result, router };
+}
+
+// Renders one component under the application's providers, without the router.
+export function renderWithProviders(
+  ui: ReactNode,
+  opts: { today?: string; fetch: typeof fetch },
+): RenderResult {
+  return render(
+    <AppProviders
+      fetchImpl={opts.fetch}
+      today={opts.today ?? "2026-10-17"}
+      retryDelay={0}
+    >
+      {ui}
+    </AppProviders>,
+  );
 }
