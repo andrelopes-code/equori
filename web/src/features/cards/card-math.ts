@@ -21,8 +21,3 @@ export function anticipation(
   const sum = amounts.reduce((total, amount) => total + amount, 0);
   return { sum, discount: sum - paid };
 }
-
-export function usedShare(debt: number, limit: number | undefined): number {
-  if (limit === undefined || limit <= 0 || debt <= 0) return 0;
-  return Math.min(100, Math.floor((debt * 100) / limit));
-}

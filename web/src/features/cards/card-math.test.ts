@@ -4,7 +4,6 @@ import {
   anticipation,
   financingInterest,
   purchaseInterest,
-  usedShare,
 } from "@/features/cards/card-math";
 
 describe("purchaseInterest", () => {
@@ -33,21 +32,5 @@ describe("anticipation", () => {
 
   it("returns zero for no installments", () => {
     expect(anticipation([], 0)).toEqual({ sum: 0, discount: 0 });
-  });
-});
-
-describe("usedShare", () => {
-  it.each([
-    [100000, 500000, 20],
-    [600000, 500000, 100],
-    [100000, undefined, 0],
-    [-5000, 500000, 0],
-    [100000, 0, 0],
-    [1, 3, 33],
-    [2, 3, 66],
-    [499999, 500000, 99],
-    [1, 1000, 0],
-  ] as const)("usedShare(%i, %s) is %i", (debt, limit, want) => {
-    expect(usedShare(debt, limit)).toBe(want);
   });
 });
