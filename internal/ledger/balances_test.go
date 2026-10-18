@@ -99,3 +99,50 @@ func TestListBalances(t *testing.T) {
 		h.ExpectProblem(h.Call(h.Client, http.MethodGet, "/api/v1/balances?date=2026-10-15&basis=x", nil), http.StatusBadRequest, "invalid_request", "basis")
 	})
 }
+
+func TestListBalancesExcludesVoidedAndSumsLiability(t *testing.T) {
+	h := apitest.New(t)
+	checking := h.Account("Checking", "asset", "checking", nil)
+	card := h.Card("Visa", 5, 12, "closing")
+	food := h.Account("Food", "expense", "", nil)
+	h.Record("2026-10-10", apitest.Posting(checking, -1000), apitest.Posting(food, 1000))
+	voided := h.Record("2026-10-11", apitest.Posting(checking, -9000), apitest.Posting(food, 9000))
+	h.MustDo(http.MethodPost, "/api/v1/transactions/"+voided+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, nil)
+	purchase := apitest.Posting(card, -5000)
+	purchase["settled_on"] = "2026-11-12"
+	h.Record("2026-10-12", purchase, apitest.Posting(food, 5000))
+
+	tests := []struct {
+		name  string
+		query string
+		want  []int64
+	}{
+		{"booked", "?date=2026-10-15", []int64{-1000, -5000}},
+		{"settled", "?date=2026-10-15&basis=settled", []int64{-1000, 0}},
+		{"settled after the due date", "?date=2026-11-12&basis=settled", []int64{-1000, -5000}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var out struct {
+				Items []struct {
+					AccountID string `json:"account_id"`
+					Balance   struct {
+						Amount int64 `json:"amount"`
+					} `json:"balance"`
+				} `json:"items"`
+			}
+			h.MustDo(http.MethodGet, "/api/v1/balances"+tt.query, nil, http.StatusOK, &out)
+			ids := make([]string, len(out.Items))
+			got := make([]int64, len(out.Items))
+			for i, it := range out.Items {
+				ids[i], got[i] = it.AccountID, it.Balance.Amount
+			}
+			if want := []string{checking, card}; !slices.Equal(ids, want) {
+				t.Fatalf("account ids = %v, want %v", ids, want)
+			}
+			if !slices.Equal(got, tt.want) {
+				t.Errorf("amounts = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
