@@ -32,11 +32,11 @@
 
 @layer slotted.theme {
   [data-slotted-theme="equori"] {
-    --slotted-seed-accent: #0d9488;
-    --slotted-seed-neutral: #64748b;
+    --slotted-seed-accent: #2dd4bf;
+    --slotted-seed-neutral: #71717a;
     --slotted-seed-success: #15803d;
     --slotted-seed-warning: #facc15;
-    --slotted-seed-danger: #dc2626;
+    --slotted-seed-danger: #f87171;
     --slotted-radius-none: 0px;
     --slotted-font-family-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
     --slotted-font-family-mono: 'Geist Mono Variable', ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -1362,6 +1362,16 @@
       --slotted-duration-short: 1ms;
       --slotted-duration-medium: 1ms;
       --slotted-duration-long: 1ms;
+    }
+  }
+}
+
+@layer slotted.theme-rules {
+  @scope ([data-slotted-theme="equori"]) to ([data-slotted-theme]:not([data-slotted-theme="equori"])) {
+    [data-ui="table"] [data-part="summary"] [data-part="row"]:first-child [data-part="cell"],
+    [data-ui="table"] [data-part="summary"] [data-part="row"]:first-child [data-part="row-header"] {
+      border-block-start: calc(var(--slotted-border-width-thin) * 3) double var(--slotted-border-strong);
+      font-weight: var(--slotted-font-weight-medium);
     }
   }
 }

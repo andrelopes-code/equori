@@ -12,3 +12,15 @@ declare module "@slotted/theme/conformance" {
     css: string;
   }): void;
 }
+
+declare module "node:test" {
+  export function test(name: string, fn: () => void): void;
+}
+
+declare module "node:assert/strict" {
+  const assert: {
+    equal(actual: unknown, expected: unknown): void;
+    ok(value: unknown, message?: string): void;
+  };
+  export default assert;
+}

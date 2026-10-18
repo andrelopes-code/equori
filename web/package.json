@@ -12,6 +12,8 @@
     "test": "vitest run && node --test src/theme/equori.theme.test.ts"
   },
   "dependencies": {
+    "@fontsource-variable/geist": "5.3.0",
+    "@fontsource-variable/geist-mono": "5.3.0",
     "@slotted/core": "0.1.0-beta.2",
     "@slotted/react": "0.1.0-beta.2",
     "@slotted/theme": "0.1.0-beta.2",
