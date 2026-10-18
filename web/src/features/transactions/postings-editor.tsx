@@ -27,6 +27,7 @@ export function PostingsEditor({
   baseCurrency,
   scale,
   error,
+  canQuick = true,
 }: {
   postings: PostingLine[];
   dispatch: Dispatch<FormAction>;
@@ -35,6 +36,7 @@ export function PostingsEditor({
   baseCurrency: string;
   scale: (code: string) => number;
   error: string | undefined;
+  canQuick?: boolean;
 }) {
   const t = useT();
   const imbalance = Object.entries(postingImbalance(postings));
@@ -125,16 +127,18 @@ export function PostingsEditor({
         >
           {t("transactions.new.postingAdd")}
         </Button>
-        <Button
-          type="button"
-          tone="secondary"
-          variant="ghost"
-          onClick={() => {
-            dispatch({ type: "quick" });
-          }}
-        >
-          {t("transactions.new.quick")}
-        </Button>
+        {canQuick && (
+          <Button
+            type="button"
+            tone="secondary"
+            variant="ghost"
+            onClick={() => {
+              dispatch({ type: "quick" });
+            }}
+          >
+            {t("transactions.new.quick")}
+          </Button>
+        )}
       </div>
     </div>
   );

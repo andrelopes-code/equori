@@ -360,3 +360,22 @@ export function toTransactionInput(
     postings: postingInputs(state, currencyOf),
   };
 }
+
+// A stored transaction opens as free postings: its shape (expense, income, transfer) is not stored, only its postings.
+export function fromTransaction(
+  tx: components["schemas"]["Transaction"],
+): FormState {
+  return {
+    ...initialForm(tx.date),
+    ...(tx.payee_id === undefined ? {} : { payeeId: tx.payee_id }),
+    description: tx.description,
+    tags: tx.tags,
+    postings: tx.postings.map((p, i) => ({
+      key: String(i + 1),
+      accountId: p.account_id,
+      amount: p.amount.amount,
+      currency: p.amount.currency,
+      memo: p.memo ?? "",
+    })),
+  };
+}

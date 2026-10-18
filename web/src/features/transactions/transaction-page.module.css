@@ -1,0 +1,28 @@
+@layer app {
+  .details {
+    display: grid;
+    gap: var(--slotted-space-5);
+  }
+
+  .voided {
+    text-decoration: line-through;
+  }
+
+  .postingEnd {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-3);
+  }
+
+  .history {
+    display: grid;
+    gap: var(--slotted-space-3);
+  }
+
+  .conflict {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--slotted-space-3);
+  }
+}

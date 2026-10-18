@@ -23,12 +23,16 @@ export function SplitEditor({
   categories,
   currency,
   scale,
+  minLines = 2,
+  canUnsplit = true,
 }: {
   state: FormState;
   dispatch: Dispatch<FormAction>;
   categories: Entity[];
   currency: string;
   scale: number;
+  minLines?: number;
+  canUnsplit?: boolean;
 }) {
   const t = useT();
   const lines = state.split ?? [];
@@ -63,7 +67,7 @@ export function SplitEditor({
                   aria-label={t("transactions.new.splitRemove", { n })}
                   tone="secondary"
                   variant="ghost"
-                  disabled={lines.length <= 2}
+                  disabled={lines.length <= minLines}
                   onClick={() => {
                     dispatch({ type: "splitRemove", key: line.key });
                   }}
@@ -94,16 +98,18 @@ export function SplitEditor({
         >
           {t("transactions.new.splitAdd")}
         </Button>
-        <Button
-          type="button"
-          tone="secondary"
-          variant="ghost"
-          onClick={() => {
-            dispatch({ type: "quick" });
-          }}
-        >
-          {t("transactions.new.unsplit")}
-        </Button>
+        {canUnsplit && (
+          <Button
+            type="button"
+            tone="secondary"
+            variant="ghost"
+            onClick={() => {
+              dispatch({ type: "quick" });
+            }}
+          >
+            {t("transactions.new.unsplit")}
+          </Button>
+        )}
       </div>
     </div>
   );

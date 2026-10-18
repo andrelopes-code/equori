@@ -9,7 +9,7 @@ import type { Client } from "openapi-fetch";
 
 import { useApi } from "@/api/api-context";
 import { unwrap } from "@/api/problem";
-import type { paths } from "@/api/schema.gen";
+import type { components, paths } from "@/api/schema.gen";
 import { accountKeys, balanceKeys } from "@/features/accounts";
 import { payeesQuery } from "@/features/setup";
 import type { TransactionSearch } from "@/features/transactions/search";
@@ -113,6 +113,26 @@ export function transactionMutated(
   );
 }
 
+type Transaction = components["schemas"]["Transaction"];
+
+// A payee typed but not yet stored is created first, so the transaction carries its id.
+async function ensurePayee(
+  api: Client<paths>,
+  queryClient: QueryClient,
+  state: FormState,
+  onPayeeCreated: ((id: string) => void) | undefined,
+): Promise<string | undefined> {
+  if (state.payeeId !== undefined || !state.payeeName?.trim()) {
+    return state.payeeId;
+  }
+  const payee = await unwrap(
+    await api.POST("/payees", { body: { name: state.payeeName.trim() } }),
+  );
+  onPayeeCreated?.(payee.id);
+  await queryClient.invalidateQueries({ queryKey: payeesQuery(api).queryKey });
+  return payee.id;
+}
+
 export interface CreateTransactionRequest {
   state: FormState;
   currencyOf: (accountId: string) => string;
@@ -130,17 +150,12 @@ export function useCreateTransaction() {
       currencyOf,
       onPayeeCreated,
     }: CreateTransactionRequest) => {
-      let payeeId = state.payeeId;
-      if (payeeId === undefined && state.payeeName?.trim()) {
-        const payee = await unwrap(
-          await api.POST("/payees", { body: { name: state.payeeName.trim() } }),
-        );
-        payeeId = payee.id;
-        onPayeeCreated?.(payee.id);
-        await queryClient.invalidateQueries({
-          queryKey: payeesQuery(api).queryKey,
-        });
-      }
+      const payeeId = await ensurePayee(
+        api,
+        queryClient,
+        state,
+        onPayeeCreated,
+      );
       const input = toTransactionInput(
         { ...state, ...(payeeId === undefined ? {} : { payeeId }) },
         currencyOf,
@@ -152,5 +167,123 @@ export function useCreateTransaction() {
         queryClient,
         toTransactionInput(state, currencyOf).postings.map((p) => p.account_id),
       ),
+  });
+}
+
+export function transactionQuery(api: Client<paths>, id: string) {
+  return queryOptions({
+    queryKey: transactionKeys.detail(id),
+    queryFn: async () =>
+      unwrap(await api.GET("/transactions/{id}", { params: { path: { id } } })),
+  });
+}
+
+export function versionsQuery(api: Client<paths>, id: string) {
+  return queryOptions({
+    queryKey: transactionKeys.versions(id),
+    queryFn: async () =>
+      (
+        await unwrap(
+          await api.GET("/transactions/{id}/versions", {
+            params: { path: { id } },
+          }),
+        )
+      ).items,
+  });
+}
+
+// The accounts of both versions go stale: a correction can move a posting off an account.
+function mutated(
+  queryClient: QueryClient,
+  previous: Transaction,
+  next: Transaction,
+): Promise<unknown> {
+  queryClient.setQueryData(transactionKeys.detail(previous.id), next);
+  const ids = [...previous.postings, ...next.postings].map((p) => p.account_id);
+  return transactionMutated(queryClient, [...new Set(ids)]);
+}
+
+export interface CorrectTransactionRequest extends CreateTransactionRequest {
+  current: Transaction;
+  reason: string;
+}
+
+// The request carries the version the user loaded; a stale one is answered with 409.
+export function useCorrectTransaction() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      current,
+      state,
+      currencyOf,
+      reason,
+      onPayeeCreated,
+    }: CorrectTransactionRequest) => {
+      const payeeId = await ensurePayee(
+        api,
+        queryClient,
+        state,
+        onPayeeCreated,
+      );
+      const input = toTransactionInput(
+        { ...state, ...(payeeId === undefined ? {} : { payeeId }) },
+        currencyOf,
+      );
+      return unwrap(
+        await api.PUT("/transactions/{id}", {
+          params: { path: { id: current.id } },
+          body: {
+            ...input,
+            ...(current.links.length === 0 ? {} : { links: current.links }),
+            expected_version: current.version,
+            reason,
+          },
+        }),
+      );
+    },
+    onSuccess: (next, { current }) => mutated(queryClient, current, next),
+  });
+}
+
+export function useVoidTransaction() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      current,
+      reason,
+    }: {
+      current: Transaction;
+      reason: string;
+    }) =>
+      unwrap(
+        await api.POST("/transactions/{id}/void", {
+          params: { path: { id: current.id } },
+          body: { reason },
+        }),
+      ),
+    onSuccess: (next, { current }) => mutated(queryClient, current, next),
+  });
+}
+
+export function useCategorizeTransaction() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      current,
+      parts,
+    }: {
+      current: Transaction;
+      parts: components["schemas"]["CategoryPart"][];
+    }) =>
+      unwrap(
+        await api.POST("/transactions/{id}/categorize", {
+          params: { path: { id: current.id } },
+          body: { expected_version: current.version, parts },
+        }),
+      ),
+    onSuccess: (next, { current }) => mutated(queryClient, current, next),
   });
 }
