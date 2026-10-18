@@ -16,6 +16,8 @@ type NormalizedRecord struct {
 	Installment  *Installment
 	Category     *SourceCategory
 	BalanceAfter *int64
+	// ReserveName is the reserved balance a bank line moves money into or out of (A76).
+	ReserveName string
 }
 
 // Installment places a card line in an installment purchase.

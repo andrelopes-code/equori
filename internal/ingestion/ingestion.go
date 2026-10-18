@@ -186,6 +186,9 @@ func (p ledgerPort) RecordImported(ctx context.Context, userID int64, lines []ap
 	}
 	for i := range recs {
 		recs[i].Decision = decisions[i]
+		if to := lines[i].Line.TransferTo; to != nil {
+			recs[i].Decision = &ledger.ImportDecision{TransferTo: *to, Cause: ledger.Cause{Method: "source"}}
+		}
 	}
 	ids, err := p.l.RecordImportedBatch(ctx, userID, recs)
 	if le, ok := errors.AsType[*ledger.LineError](err); ok {

@@ -87,3 +87,36 @@ func TestNormalize(t *testing.T) {
 		}
 	})
 }
+
+func TestNormalizeReserveTransfer(t *testing.T) {
+	checking := Account{ID: "acc-1", Type: "BANK", Subtype: SubtypeChecking, CurrencyCode: "BRL"}
+	const reserveOp = "TRANSFERENCIA_SALDO_RESERVADO"
+	for _, tc := range []struct {
+		name        string
+		operation   *string
+		description string
+		amount      Decimal
+		want        string
+	}{
+		{"money into a reserve", ptr(reserveOp), "Dinheiro reservado Cofrinho Mercado Livre", "-2000", "Cofrinho Mercado Livre"},
+		{"money out of a reserve", ptr(reserveOp), "Dinheiro retirado Algum dinheiro", "2000", "Algum dinheiro"},
+		{"reserved with a positive amount", ptr(reserveOp), "Dinheiro reservado X", "10", ""},
+		{"withdrawn with a negative amount", ptr(reserveOp), "Dinheiro retirado X", "-10", ""},
+		{"another operation type", ptr("PIX"), "Dinheiro reservado X", "-10", ""},
+		{"no operation type", nil, "Dinheiro reservado X", "-10", ""},
+		{"another description", ptr(reserveOp), "Rendimentos X", "-10", ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r, ok, err := Normalize(Transaction{
+				ID: "t1", Description: tc.description, OperationType: tc.operation, CurrencyCode: "BRL", Amount: tc.amount,
+				Date: "2026-11-11T00:00:00.000Z", Status: "POSTED",
+			}, checking, nil, 2, time.UTC)
+			if err != nil || !ok {
+				t.Fatal(ok, err)
+			}
+			if r.ReserveName != tc.want {
+				t.Fatalf("ReserveName = %q, want %q", r.ReserveName, tc.want)
+			}
+		})
+	}
+}

@@ -87,6 +87,7 @@ type Transaction struct {
 	CategoryID              *string       `json:"categoryId"`
 	Type                    string        `json:"type"`
 	Status                  string        `json:"status"`
+	OperationType           *string       `json:"operationType"`
 	CreditCardMetadata      *CardMetadata `json:"creditCardMetadata"`
 }
 

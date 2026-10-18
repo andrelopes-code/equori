@@ -3,6 +3,7 @@ package pluggy
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/domain"
@@ -41,6 +42,9 @@ func Normalize(t Transaction, a Account, bills map[string]Bill, scale int, loc *
 		// Pluggy card amounts are positive for charges; the ledger's card charges are negative.
 		r.Amount = -r.Amount
 	}
+	if !card {
+		r.ReserveName = reserveName(t, r.Amount)
+	}
 	if t.Balance != "" && !card {
 		if b, err := Minor(t.Balance, scale); err == nil {
 			r.BalanceAfter = &b
@@ -74,6 +78,30 @@ func Normalize(t Transaction, a Account, bills map[string]Bill, scale int, loc *
 	return r, true, nil
 }
 
+// operationReservedTransfer is the operation type of a line that moves money between a
+// bank account and one of its reserved balances (A76).
+const operationReservedTransfer = "TRANSFERENCIA_SALDO_RESERVADO"
+
+const (
+	reservedPrefix  = "Dinheiro reservado "
+	withdrawnPrefix = "Dinheiro retirado "
+)
+
+// reserveName returns the reserved balance a bank line moves money into (negative amount) or
+// out of (positive amount); the line carries only the reserve's name (A76).
+func reserveName(t Transaction, amount int64) string {
+	if t.OperationType == nil || *t.OperationType != operationReservedTransfer {
+		return ""
+	}
+	if name, ok := strings.CutPrefix(t.Description, reservedPrefix); ok && amount < 0 {
+		return name
+	}
+	if name, ok := strings.CutPrefix(t.Description, withdrawnPrefix); ok && amount > 0 {
+		return name
+	}
+	return ""
+}
+
 // Date reads a Pluggy date: midnight UTC is that calendar date; any other instant is the
 // date in loc (P6 amendment A37).
 func Date(s string, loc *time.Location) (time.Time, error) {
@@ -102,6 +130,9 @@ func raw(t Transaction) map[string]string {
 	}
 	if t.CategoryID != nil {
 		m["category_id"] = *t.CategoryID
+	}
+	if t.OperationType != nil {
+		m["operation_type"] = *t.OperationType
 	}
 	if c := t.CreditCardMetadata; c != nil {
 		if c.BillID != nil {

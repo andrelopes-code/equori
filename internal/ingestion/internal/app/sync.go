@@ -165,7 +165,7 @@ func (s *Service) syncAccount(ctx context.Context, c domain.Connection, ext doma
 	if err := s.withdraw(ctx, &batch, read.Seen, from, to); err != nil {
 		return domain.Batch{}, err
 	}
-	if err := s.importRecords(ctx, &batch, target.Currency, read.Records); err != nil {
+	if err := s.importRecords(ctx, &batch, target.Currency, read.Records, s.reserveTransfers(c, ext)); err != nil {
 		return domain.Batch{}, err
 	}
 	if b := read.Balance; b != nil && !b.Date.After(today) {
@@ -193,6 +193,33 @@ func (s *Service) syncAccount(ctx context.Context, c domain.Connection, ext doma
 	}
 	ext.LastSyncedOn = &today
 	return batch, s.repo.MarkAccountSynced(ctx, ext)
+}
+
+// reserveTransfers resolves the reserve a bank line moves money into or out of from the
+// reserve's name. A name held by two mapped reserves is ambiguous and resolves to none, and so
+// does a line dated before the reserve's start date (A76).
+func (s *Service) reserveTransfers(c domain.Connection, ext domain.ExternalAccount) func(domain.NormalizedRecord) *uuid.UUID {
+	if ext.Subtype == domain.SubtypeReservedBalance {
+		return nil
+	}
+	byName := map[string]domain.ExternalAccount{}
+	for _, x := range c.Accounts {
+		if x.Subtype != domain.SubtypeReservedBalance || x.State() != domain.MappingMapped {
+			continue
+		}
+		if _, dup := byName[x.Name]; dup {
+			byName[x.Name] = domain.ExternalAccount{}
+			continue
+		}
+		byName[x.Name] = x
+	}
+	return func(r domain.NormalizedRecord) *uuid.UUID {
+		reserve, ok := byName[r.ReserveName]
+		if r.ReserveName == "" || !ok || reserve.AccountID == nil || r.Date.Before(*reserve.SyncFrom) {
+			return nil
+		}
+		return reserve.AccountID
+	}
 }
 
 // withdraw marks withdrawn the account's aggregator records the window covers that the

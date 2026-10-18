@@ -1,6 +1,7 @@
 package ingestion_test
 
 import (
+	"maps"
 	"net/http"
 	"testing"
 	"time"
@@ -383,4 +384,87 @@ func TestS69BoundedReserveYield(t *testing.T) {
 			t.Fatalf("none reconciliations = %d, want 1", n)
 		}
 	})
+}
+
+func reserveLine(id, date, description string, amount pluggy.Decimal) pluggy.Transaction {
+	return pluggy.Transaction{
+		ID: id, Description: description, Amount: amount, CurrencyCode: "BRL", Date: date + "T00:00:00.000Z", Status: "POSTED",
+		OperationType: new("TRANSFERENCIA_SALDO_RESERVADO"),
+	}
+}
+
+// S70: a checking line that names exactly one mapped reserve and is dated on or after its
+// start date is booked as a transfer to the reserve; any other line follows the normal
+// pipeline (D4, A76).
+func TestS70ReserveTransfers(t *testing.T) {
+	a := newAggregator(t)
+	it := pluggy.Item{ID: mercadoPagoItem, Status: pluggy.StatusUpdated, LastUpdatedAt: new("2026-11-11T15:00:00.000Z")}
+	it.Connector.Name = "Mercado Pago"
+	a.p.AddItemTo(pluggyClient, it)
+	checkingID := mercadoPagoItem + "-checking"
+	a.p.AddAccount(mercadoPagoItem, pluggy.Account{ID: checkingID, Type: "BANK", Subtype: pluggy.SubtypeChecking, Name: "Mercado Pago", Number: checkingNumber, Balance: "500.05", CurrencyCode: "BRL"})
+	a.p.AddReservedBalance(checkingID, reserved("Cofrinho Mercado Livre", "res-cofrinho", "300.00"))
+	a.p.AddReservedBalance(checkingID, reserved("Algum dinheiro", "res-algum", "100.00"))
+	in := a.integrate(a.h.Client, "Meu Pluggy", pluggyClient, pluggySecret)
+	f := syncFixture{aggregator: a, conn: a.mustConnect(a.h.Client, in.ID, mercadoPagoItem)}
+
+	checking := a.h.Account("Mercado Pago", "asset", "checking", nil)
+	cofrinho := a.h.Account("MP Cofrinho", "asset", "reserve", nil)
+	algum := a.h.Account("MP Algum dinheiro", "asset", "reserve", nil)
+	a.h.Record("2026-10-31", apitest.Posting(checking, 100000), apitest.Posting(openingBalances(f), -100000))
+	a.h.Record("2026-11-10", apitest.Posting(cofrinho, 10000), apitest.Posting(openingBalances(f), -10000))
+	a.h.Record("2026-11-10", apitest.Posting(algum, 20000), apitest.Posting(openingBalances(f), -20000))
+	mapping := []struct{ external, ledger, from string }{
+		{externalAccount(f.conn, pluggy.SubtypeChecking).ID, checking, "2026-11-01"},
+		{reservedByName(f.conn, "Cofrinho Mercado Livre").ID, cofrinho, "2026-11-11"},
+		{reservedByName(f.conn, "Algum dinheiro").ID, algum, "2026-11-11"},
+	}
+	for _, m := range mapping {
+		if r := a.mapAccount(a.h.Client, f.conn.ID, m.external, map[string]any{"account_id": m.ledger, "sync_from": m.from}); r.Status != http.StatusOK {
+			t.Fatalf("map status %d: %s", r.Status, r.Body)
+		}
+	}
+	a.p.AddTransaction(checkingID, reserveLine("t-into", "2026-11-11", "Dinheiro reservado Cofrinho Mercado Livre", "-200.00"))
+	a.p.AddTransaction(checkingID, reserveLine("t-out", "2026-11-11", "Dinheiro retirado Algum dinheiro", "100.00"))
+	a.p.AddTransaction(checkingID, reserveLine("t-unknown", "2026-11-11", "Dinheiro retirado Aaa", "50.00"))
+	a.p.AddTransaction(checkingID, reserveLine("t-before", "2026-11-10", "Dinheiro reservado Cofrinho Mercado Livre", "-30.00"))
+
+	f.sync()
+	postings := func(externalID string) map[string]int64 {
+		t.Helper()
+		state, tx := f.recordOf(externalID)
+		if tx == "" {
+			t.Fatalf("record %s is %s without a transaction", externalID, state)
+		}
+		out := map[string]int64{}
+		for _, p := range f.h.Transaction(tx).Postings {
+			out[p.AccountID] = p.Amount.Amount
+		}
+		return out
+	}
+	for _, c := range []struct {
+		external string
+		want     map[string]int64
+	}{
+		{"t-into", map[string]int64{checking: -20000, cofrinho: 20000}},
+		{"t-out", map[string]int64{checking: 10000, algum: -10000}},
+	} {
+		if got := postings(c.external); !maps.Equal(got, c.want) {
+			t.Fatalf("postings of %s = %v, want %v", c.external, got, c.want)
+		}
+	}
+	for _, id := range []string{"t-unknown", "t-before"} {
+		got := postings(id)
+		if _, ok := got[cofrinho]; ok {
+			t.Fatalf("postings of %s = %v, want none on a reserve", id, got)
+		}
+		if _, ok := got[algum]; ok {
+			t.Fatalf("postings of %s = %v, want none on a reserve", id, got)
+		}
+	}
+
+	f.sync()
+	if b := f.batches(checking)[0]; b.Counts.Received != 4 || b.Counts.Created != 0 {
+		t.Fatalf("second sync batch = %+v, want 4 received and none created", b.Counts)
+	}
 }
