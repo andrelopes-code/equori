@@ -1,6 +1,6 @@
 import type { MessageKey } from "@/i18n/catalog.en";
 
-interface Destination {
+export interface Destination {
   key: "home" | "transactions" | "goals" | "cards" | "accounts";
   to: "/" | "/transactions" | "/goals" | "/cards" | "/accounts";
   label: MessageKey;

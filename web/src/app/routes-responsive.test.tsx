@@ -218,21 +218,19 @@ describe.each([360, 768, 1280])("routes at %i px", (width) => {
       ).toBeNull();
 
       const bar = container.querySelector('[data-own="bottom-bar"]');
-      // Ledger sheet L4 and L5: a top bar from 600 px, a bottom bar below.
-      const nav = container.querySelector('[data-ui="top-navigation"]');
+      // Shell second pass S1 and S2: the ledger index from 1024 px, a bottom bar below.
+      const index = container.querySelector('[data-own="ledger-index"]');
       if (!authenticated) {
         expect(bar).toBeNull();
-        expect(nav).toBeNull();
-      } else if (width < 768) {
+        expect(index).toBeNull();
+      } else if (width < 1024) {
         expect(bar).not.toBeNull();
-        expect(nav).toBeNull();
+        expect(index).toBeNull();
       } else {
         expect(bar).toBeNull();
-        expect(nav).not.toBeNull();
-        expect(
-          container.querySelector('[data-ui="side-navigation"]'),
-        ).toBeNull();
+        expect(index).not.toBeNull();
       }
+      expect(container.querySelector('[data-ui="top-navigation"]')).toBeNull();
     },
   );
 });

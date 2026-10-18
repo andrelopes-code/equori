@@ -12,7 +12,11 @@
 
   .list {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    /* The ink control takes its own width; the four destinations share the rest. */
+    grid-template-columns:
+      minmax(0, 1fr) minmax(0, 1fr) auto minmax(0, 1fr)
+      minmax(0, 1fr);
+    align-items: center;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -25,9 +29,10 @@
 
   .control {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    gap: var(--slotted-space-2);
+    gap: 0 var(--slotted-space-2);
     inline-size: 100%;
     min-block-size: var(--slotted-target-min);
     padding: var(--slotted-space-2) var(--slotted-space-1);
@@ -63,6 +68,17 @@
     border-block-start-color: var(--slotted-text);
   }
 
+  /* Shell second pass S2: entry is the bar's one inverse control, a block of ink. */
+  .control[data-emphasis="ink"] {
+    inline-size: auto;
+    margin-block: var(--slotted-space-2);
+    padding-inline: var(--slotted-space-4);
+    border-block-start: 0;
+    border-radius: var(--slotted-control-radius);
+    background: var(--slotted-surface-inverse);
+    color: var(--slotted-text-inverse);
+  }
+
   .control:focus-visible {
     outline: var(--slotted-focus-ring-width) solid
       var(--slotted-focus-ring-color);
@@ -78,6 +94,10 @@
     hyphens: manual;
     overflow-wrap: normal;
     word-break: normal;
+  }
+
+  .control[data-emphasis="ink"] .label {
+    font-weight: var(--slotted-font-weight-semibold);
   }
 
   @media (forced-colors: active) {

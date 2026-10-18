@@ -578,28 +578,20 @@ describe("home waiting states", () => {
 });
 
 // Ledger sheet L5 and L7: the page header holds New on a phone, the top bar from 600 px.
+// Shell second pass S2: New stands once, in the shell, never in the page header.
 describe("home new transaction action", () => {
-  it("is the page header action on a phone", async () => {
-    const { fetch } = homeApi();
-    const { container } = await renderApp("/", { fetch, width: 360 });
-    const header = container.querySelector('[data-ui="page-header"]');
-    expect(header).not.toBeNull();
-    const links = await screen.findAllByRole("link", {
-      name: catalogPtBR["nav.entry"],
-    });
-    expect(links).toHaveLength(1);
-    expect(header?.contains(links[0] ?? null)).toBe(true);
-    expect(links[0]).toHaveAttribute("href", "/transactions/new");
-  });
-
-  it.each([768, 1280])("is the top bar action at %i px", async (width) => {
+  it.each([
+    [360, '[data-own="bottom-bar"]'],
+    [768, '[data-own="bottom-bar"]'],
+    [1280, '[data-own="ledger-index"]'],
+  ])("is the shell's action at %i px", async (width, shell) => {
     const { fetch } = homeApi();
     const { container } = await renderApp("/", { fetch, width });
-    const links = screen.getAllByRole("link", {
+    const links = await screen.findAllByRole("link", {
       name: new RegExp(`^${catalogPtBR["nav.entry"]}`),
     });
     expect(links).toHaveLength(1);
-    expect(links[0]?.closest('[data-ui="top-navigation"]')).not.toBeNull();
+    expect(links[0]?.closest(shell)).not.toBeNull();
     expect(links[0]).toHaveAttribute("href", "/transactions/new");
     expect(container.querySelector('[data-ui="page-header"] a')).toBeNull();
   });

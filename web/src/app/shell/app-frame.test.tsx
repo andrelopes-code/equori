@@ -24,29 +24,33 @@ beforeEach(() => {
   html.removeAttribute("data-slotted-scheme");
 });
 
-// Ledger sheet decisions L4, L5, L7 and L8; complete frontend G7.
+// Ledger sheet decisions L5, L7 and L8; complete frontend G7; shell second pass S1 and S2.
 describe("AppFrame navigation", () => {
-  it("shows four text controls in the bottom bar at 360 px", async () => {
-    const { container } = await renderApp("/", {
-      width: 360,
-      fetch: newFetch(),
-    });
-    const bar = container.querySelector('[data-own="bottom-bar"]');
-    expect(
-      [...(bar?.querySelectorAll("a, button") ?? [])].map(
-        (control) => control.textContent,
-      ),
-    ).toEqual([
-      catalogEn["nav.overview"],
-      catalogEn["nav.transactions"],
-      catalogEn["nav.cards"],
-      catalogEn["nav.more"],
-    ]);
-    expect(bar?.querySelector("svg")).toBeNull();
-    expect(container.querySelector('[data-ui="top-navigation"]')).toBeNull();
-    expect(document.querySelector('[data-ui="side-navigation"]')).toBeNull();
-    expect(html).toHaveAttribute("data-slotted-density", "comfortable");
-  });
+  // Shell second pass S2: below 1024 px a bottom bar of five controls, New in the middle.
+  it.each([360, 768])(
+    "shows five text controls in the bottom bar at %i px",
+    async (width) => {
+      const { container } = await renderApp("/", {
+        width,
+        fetch: newFetch(),
+      });
+      const bar = container.querySelector('[data-own="bottom-bar"]');
+      const controls = [...(bar?.querySelectorAll("a, button") ?? [])];
+      expect(controls.map((control) => control.textContent)).toEqual([
+        catalogEn["nav.home"],
+        catalogEn["nav.transactions"],
+        catalogEn["nav.entry"],
+        catalogEn["nav.cards"],
+        catalogEn["nav.more"],
+      ]);
+      expect(controls[2]).toHaveAttribute("data-emphasis", "ink");
+      expect(controls[2]).toHaveAttribute("href", "/transactions/new");
+      expect(bar?.querySelector("svg")).toBeNull();
+      expect(container.querySelector('[data-own="ledger-index"]')).toBeNull();
+      expect(container.querySelector('[data-ui="top-navigation"]')).toBeNull();
+      expect(html).toHaveAttribute("data-slotted-density", "comfortable");
+    },
+  );
 
   it("draws the shell edge to edge at every width", async () => {
     for (const width of [360, 768, 1280]) {
@@ -58,20 +62,18 @@ describe("AppFrame navigation", () => {
     }
   });
 
-  it.each([
-    [768, "comfortable"],
-    // Complete frontend G1: comfortable at every width.
-    [1280, "comfortable"],
-  ] as const)("shows the top bar at %d px", async (width, density) => {
-    const { container } = await renderApp("/", { width, fetch: newFetch() });
-    const bar = container.querySelector('[data-ui="top-navigation"]');
-    expect(bar).not.toBeNull();
-    expect(container.querySelector('[data-ui="side-navigation"]')).toBeNull();
+  // Shell second pass S1: from 1024 px the destinations stand in an index beside the page.
+  it("shows the ledger index at 1280 px", async () => {
+    const { container } = await renderApp("/", {
+      width: 1280,
+      fetch: newFetch(),
+    });
+    expect(container.querySelector('[data-own="ledger-index"]')).not.toBeNull();
     expect(container.querySelector('[data-own="bottom-bar"]')).toBeNull();
-    expect(html).toHaveAttribute("data-slotted-density", density);
+    expect(container.querySelector('[data-ui="top-navigation"]')).toBeNull();
   });
 
-  it("swaps the bottom bar for the top bar without a reload", async () => {
+  it("swaps the bottom bar for the ledger index without a reload", async () => {
     const { container } = await renderApp("/", {
       width: 360,
       fetch: newFetch(),
@@ -83,9 +85,7 @@ describe("AppFrame navigation", () => {
     await waitFor(() => {
       expect(container.querySelector('[data-own="bottom-bar"]')).toBeNull();
     });
-    expect(
-      container.querySelector('[data-ui="top-navigation"]'),
-    ).not.toBeNull();
+    expect(container.querySelector('[data-own="ledger-index"]')).not.toBeNull();
   });
 
   it.each([
@@ -107,8 +107,9 @@ describe("AppFrame navigation", () => {
         });
         await waitFor(() => {
           expect(
-            link.querySelector('[data-ui="badge"], [data-own="bar-count"]')
-              ?.textContent ?? null,
+            link.querySelector(
+              '[data-own="index-count"], [data-own="bar-count"]',
+            )?.textContent ?? null,
           ).toBe(badge);
         });
         view.unmount();
@@ -118,7 +119,7 @@ describe("AppFrame navigation", () => {
 });
 
 describe("AppFrame routing", () => {
-  it("navigates from the top bar without a reload", async () => {
+  it("navigates from the ledger index without a reload", async () => {
     const user = userEvent.setup();
     const { router } = await renderApp("/", {
       width: 1280,
@@ -156,22 +157,92 @@ describe("AppFrame routing", () => {
   });
 
   // Complete frontend G7.
-  it("lists Overview, Transactions, Goals, Cards and Accounts in the top bar", async () => {
+  it("lists Overview, Transactions, Goals, Cards and Accounts in the ledger index", async () => {
     await renderApp("/", { width: 1280, fetch: newFetch() });
     const nav = screen.getByRole("navigation", {
       name: catalogEn["nav.label"],
     });
-    expect(
-      within(nav)
-        .getAllByRole("link")
-        .map((link) => link.textContent),
-    ).toEqual([
+    const links = within(nav).getAllByRole("link");
+    expect(links).toHaveLength(5);
+    [
       catalogEn["nav.overview"],
       catalogEn["nav.transactions"],
       catalogEn["nav.goals"],
       catalogEn["nav.cards"],
       catalogEn["nav.accounts"],
-    ]);
+    ].forEach((name, n) => {
+      expect(links[n]).toHaveAccessibleName(name);
+    });
+  });
+
+  it("describes each destination with its figure", async () => {
+    const money = (amount: number) => ({ amount, currency: "BRL" });
+    const fetch = fakeApi({
+      ...sharedRoutes,
+      "GET /api/v1/accounts": () =>
+        json(200, {
+          items: [
+            {
+              id: "a-1",
+              name: "Itaú",
+              class: "asset",
+              kind: "checking",
+              currency: "BRL",
+            },
+            {
+              id: "a-2",
+              name: "Reserva",
+              class: "asset",
+              kind: "reserve",
+              currency: "BRL",
+            },
+            {
+              id: "a-3",
+              name: "Nubank",
+              class: "liability",
+              kind: "credit_card",
+              currency: "BRL",
+            },
+          ],
+        }),
+      "GET /api/v1/balances": () =>
+        json(200, {
+          items: [
+            { account_id: "a-1", balance: money(605480) },
+            { account_id: "a-2", balance: money(1000000) },
+            { account_id: "a-3", balance: money(-246370) },
+          ],
+        }),
+      "GET /api/v1/goals": () =>
+        json(200, {
+          items: [
+            {
+              id: "g-1",
+              name: "Japão",
+              target: money(2500000),
+              due_on: "2027-06-30",
+              account_ids: ["a-2"],
+              current: money(1600000),
+              remaining: money(900000),
+              progress_bp: 6400,
+            },
+          ],
+        }),
+    });
+    await renderApp("/", { width: 1280, fetch });
+    const nav = screen.getByRole("navigation", {
+      name: catalogEn["nav.label"],
+    });
+    const link = (key: keyof typeof catalogEn) =>
+      within(nav).getByRole("link", { name: catalogEn[key] });
+    await waitFor(() => {
+      expect(link("nav.overview")).toHaveAccessibleDescription("R$6,054.80");
+    });
+    expect(link("nav.cards")).toHaveAccessibleDescription("R$2,463.70");
+    expect(link("nav.accounts")).toHaveAccessibleDescription("R$13,591.10");
+    await waitFor(() => {
+      expect(link("nav.goals")).toHaveAccessibleDescription("64%");
+    });
   });
 
   it("opens goals from the more sheet", async () => {

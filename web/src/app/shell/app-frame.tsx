@@ -1,9 +1,9 @@
 import { Outlet } from "@tanstack/react-router";
 import {
   AppShell,
-  AppShellBanner,
   AppShellFooter,
   AppShellMain,
+  AppShellNav,
 } from "@slotted/react/app-shell";
 import { PageDefaultsProvider } from "@slotted/react/page";
 import { PageHeaderDefaultsProvider } from "@slotted/react/page-header";
@@ -13,7 +13,7 @@ import { useEffect, useState } from "react";
 
 import { destinations } from "@/app/shell/destinations";
 import { MoreSheet } from "@/app/shell/more-sheet";
-import { TopBar } from "@/app/shell/top-bar";
+import { LedgerIndex } from "@/app/shell/ledger-index";
 import { useNewShortcut } from "@/app/shell/use-new-shortcut";
 import { useOpenAccountID } from "@/app/shell/use-open-account-id";
 import { useUncategorizedBadge } from "@/app/shell/use-uncategorized-badge";
@@ -21,13 +21,15 @@ import { useT } from "@/i18n/i18n-provider";
 import { BottomBar } from "@/ui/bottom-bar";
 import { useViewport } from "@/ui/use-viewport";
 
-// Ledger sheet L4 and L5: a top bar from 600 px, a bottom bar of text below it.
+// Shell second pass S1 and S2: the ledger index beside the page from 1024 px, a bottom bar of
+// text below it.
 export function AppFrame() {
   const t = useT();
   const viewport = useViewport();
   const badge = useUncategorizedBadge();
   const [moreOpen, setMoreOpen] = useState(false);
-  useNewShortcut(useOpenAccountID());
+  const accountID = useOpenAccountID();
+  useNewShortcut(accountID);
 
   // Complete frontend G1: comfortable at every width.
   useEffect(() => {
@@ -45,10 +47,11 @@ export function AppFrame() {
 
   return (
     <AppShell canvas="flush" messages={{ nav: t("nav.label") }}>
-      {viewport !== "phone" && (
-        <AppShellBanner>
-          <TopBar />
-        </AppShellBanner>
+      {viewport === "desktop" && (
+        // The index holds its own navigation landmark beside the brand, entry and account.
+        <AppShellNav render={(props) => <div {...props} />}>
+          <LedgerIndex />
+        </AppShellNav>
       )}
       <AppShellMain>
         {/* Complete frontend G2, G4 and G5: plain headers, ruled sections, wider insets. */}
@@ -60,16 +63,26 @@ export function AppFrame() {
           </PageHeaderDefaultsProvider>
         </PageDefaultsProvider>
       </AppShellMain>
-      {viewport === "phone" && home && transactions && cards && (
+      {viewport !== "desktop" && home && transactions && cards && (
         <AppShellFooter>
           <BottomBar
             items={[
-              { key: home.key, label: t(home.label), to: home.to },
+              // The bar's short name for the overview: five controls share 360 px.
+              { key: home.key, label: t("nav.home"), to: home.to },
               {
                 key: transactions.key,
                 label: t(transactions.label),
                 to: transactions.to,
                 badge,
+              },
+              {
+                key: "entry",
+                label: t("nav.entry"),
+                to: "/transactions/new",
+                ...(accountID === undefined
+                  ? {}
+                  : { search: { account_id: accountID } }),
+                ink: true,
               },
               { key: cards.key, label: t(cards.label), to: cards.to },
               {

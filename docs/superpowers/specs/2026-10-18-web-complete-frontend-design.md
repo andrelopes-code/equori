@@ -17,6 +17,15 @@
 | G6 | Header and toolbar actions are `size="md"`. The top bar "New" keeps `size="sm"`, `Kbd` `size="xs"`. |
 | G7 | Destinations (amends L4, L5): Overview, Transactions, Goals, Cards, Accounts. The phone bottom bar keeps four controls: Overview, Transactions, Cards, More; More lists Goals, Accounts, Settings, Colour scheme, Language, Log out. |
 
+## Shell, second pass
+
+Source: the owner's review of G7: the top bar read as tabs, generic components carried the screens. These decisions amend L4, L5, L7 and G7.
+
+| ID | Decision |
+|---|---|
+| S1 | From 1024 px the destinations stand in a ledger index beside the page, an own element: the wordmark, the entry trigger drawn as a field ("Lançar, ex.: almoço 42 ontem" with the N key), the destinations Overview, Transactions, Goals, Cards, Accounts, each with its figure as the link's description (available balance, uncategorized count in the warning tone, share saved across the base-currency goals, what the cards owe, net worth), then the sync status and the account menu. The current destination carries a rule on its left edge in the text colour. |
+| S2 | Below 1024 px a bottom bar of five text controls: Home (the overview's short name), Transactions with its count, New drawn in ink (inverse surface), Cards, More. New preselects the open account. No page header carries New. |
+
 ## R2 Overview
 
 | ID | Decision |

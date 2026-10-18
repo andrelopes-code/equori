@@ -22,6 +22,7 @@ const items = [
     to: "/transactions",
     badge: "3",
   },
+  { key: "entry", label: "New", to: "/transactions/new", ink: true },
   { key: "accounts", label: "Accounts", to: "/accounts" },
   { key: "more", label: "More", onPress: () => undefined },
 ] as const;
@@ -37,6 +38,7 @@ async function renderBar(path: string) {
       leaf("/"),
       leaf("/transactions"),
       leaf("/transactions/$id"),
+      leaf("/transactions/new"),
       leaf("/accounts"),
     ]),
     history: createMemoryHistory({ initialEntries: [path] }),
@@ -49,7 +51,8 @@ async function renderBar(path: string) {
   await screen.findByRole("navigation", { name: "Main navigation" });
 }
 
-// Ledger sheet decision L5: four text controls; L8: the count beside Transactions.
+// Ledger sheet decision L5 and shell second pass S2: five text controls, one in ink; L8: the
+// count beside Transactions.
 describe("BottomBar", () => {
   it("marks Transactions current on a transaction detail route", async () => {
     await renderBar("/transactions/abc");
@@ -69,11 +72,15 @@ describe("BottomBar", () => {
     expect(current).toEqual(["Accounts"]);
   });
 
-  it("renders four text controls in a navigation landmark", async () => {
+  it("renders five text controls in a navigation landmark, entry in ink", async () => {
     await renderBar("/");
     const bar = screen.getByRole("navigation", { name: "Main navigation" });
     expect(bar).toHaveAttribute("data-own", "bottom-bar");
-    expect(bar.querySelectorAll("a, button")).toHaveLength(4);
+    const controls = [...bar.querySelectorAll("a, button")];
+    expect(controls).toHaveLength(5);
+    expect(
+      controls.filter((control) => control.hasAttribute("data-emphasis")),
+    ).toEqual([screen.getByRole("link", { name: "New" })]);
     expect(bar.querySelector("svg")).toBeNull();
   });
 
@@ -93,7 +100,7 @@ describe("BottomBar", () => {
     const labels = screen
       .getAllByRole("link")
       .map((link) => link.querySelector("span"));
-    expect(labels).toHaveLength(3);
+    expect(labels).toHaveLength(4);
     for (const label of labels) {
       expect(label).toHaveClass(styles.label ?? "label");
     }

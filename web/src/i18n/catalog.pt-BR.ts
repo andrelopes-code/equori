@@ -12,6 +12,7 @@ export const catalogPtBR: Catalog = {
   "app.name": "equori",
   "nav.entry.key": "N",
   "nav.entry": "Lançar",
+  "nav.entry.hint": "Lançar, ex.: almoço 42 ontem",
   "nav.user": "Sua conta",
   "sync.updated": "Open Finance atualizado às {time}",
   "date.today": "Hoje",

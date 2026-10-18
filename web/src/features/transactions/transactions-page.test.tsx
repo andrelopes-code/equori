@@ -586,11 +586,11 @@ describe("transactions filters", () => {
     const header = document.querySelector('[data-ui="page-header"]');
     if (!(header instanceof HTMLElement)) throw new Error("no page header");
     expect(within(header).queryByRole("searchbox")).toBeNull();
-    // Ledger sheet L7: from 600 px New stands in the top bar.
-    const topBar = document.querySelector('[data-ui="top-navigation"]');
-    if (!(topBar instanceof HTMLElement)) throw new Error("no top bar");
+    // Shell second pass S1: from 1024 px New stands in the ledger index.
+    const index = document.querySelector('[data-own="ledger-index"]');
+    if (!(index instanceof HTMLElement)) throw new Error("no ledger index");
     expect(
-      within(topBar).getByRole("link", {
+      within(index).getByRole("link", {
         name: new RegExp(`^${catalogPtBR["nav.entry"]}`),
       }),
     ).toHaveAttribute("href", "/transactions/new");

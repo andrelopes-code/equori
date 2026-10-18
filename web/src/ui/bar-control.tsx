@@ -24,17 +24,24 @@ export function BarControl({
     return (
       <Link
         to={item.to}
+        {...(item.search === undefined ? {} : { search: item.search })}
         className={styles.control}
         // Link marks only exact paths; aria-current below covers nested routes.
         activeOptions={{ exact: true }}
         aria-current={current ? "page" : undefined}
+        {...(item.ink === true ? { "data-emphasis": "ink" } : {})}
       >
         {content}
       </Link>
     );
   }
   return (
-    <button type="button" className={styles.control} onClick={item.onPress}>
+    <button
+      type="button"
+      className={styles.control}
+      onClick={item.onPress}
+      {...(item.ink === true ? { "data-emphasis": "ink" } : {})}
+    >
       {content}
     </button>
   );

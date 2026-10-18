@@ -320,7 +320,8 @@ describe("account page", () => {
   });
 
   // Ledger sheet L5: on a phone the page header holds New.
-  it("puts the chart in the content width and the new-transaction action in the page header on a phone", async () => {
+  // Shell second pass S2: on a phone New stands in the bottom bar, the open account preselected.
+  it("puts the chart in the content width and the new-transaction action in the bottom bar on a phone", async () => {
     const { fetch } = accountApi();
     const { container } = await renderApp(`/accounts/${checkingID}`, {
       fetch,
@@ -330,8 +331,8 @@ describe("account page", () => {
     await waitFor(() => {
       expect(container.querySelector('[data-ui="chart"]')).not.toBeNull();
     });
-    const header = container.querySelector('[data-ui="page-header"]');
-    const action = within(header as HTMLElement).getByRole("link", {
+    const bar = container.querySelector('[data-own="bottom-bar"]');
+    const action = await within(bar as HTMLElement).findByRole("link", {
       name: catalogPtBR["nav.entry"],
     });
     expect(action).toHaveAttribute(

@@ -9,12 +9,16 @@ export interface BottomBarItem {
   key: string;
   label: string;
   to?: string;
+  search?: Record<string, string>;
   onPress?: () => void;
   // A count shown after the label, in the warning tone.
   badge?: string | undefined;
+  // The one control drawn in ink: the entry of a new transaction (shell second pass S2).
+  ink?: boolean;
 }
 
-type FourItems = readonly [
+type FiveItems = readonly [
+  BottomBarItem,
   BottomBarItem,
   BottomBarItem,
   BottomBarItem,
@@ -22,8 +26,9 @@ type FourItems = readonly [
 ];
 
 // Families read: app-shell, side-navigation, top-navigation, tabs, action-bar.
-// None draws a bar of text controls fixed to the bottom edge of a phone (ledger sheet L5).
-export function BottomBar({ items }: { items: FourItems }) {
+// None draws a bar of text controls fixed to the bottom edge of a phone (ledger sheet L5), nor
+// one control of the bar in ink.
+export function BottomBar({ items }: { items: FiveItems }) {
   const t = useT();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const currentPath = bestMatch(

@@ -3,7 +3,6 @@ import { ButtonLink, IconButton } from "@slotted/react/button";
 import { Page, PageBody } from "@slotted/react/page";
 import {
   PageHeader,
-  PageHeaderActions,
   PageHeaderArea,
   PageHeaderContent,
   PageHeaderHeading,
@@ -87,17 +86,6 @@ export function OverviewPage() {
                     : t("overview.scope", { accounts: names })}
               </PageHeaderSubheading>
             </PageHeaderTitle>
-            {viewport === "phone" && (
-              <PageHeaderActions>
-                <ButtonLink
-                  {...spaLink("/transactions/new")}
-                  tone="secondary"
-                  size="md"
-                >
-                  {t("nav.entry")}
-                </ButtonLink>
-              </PageHeaderActions>
-            )}
             <PageHeaderNavigation>
               <IconButton
                 aria-label={t("overview.month.previous")}

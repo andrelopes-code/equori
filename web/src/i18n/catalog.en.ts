@@ -10,6 +10,7 @@ export const catalogEn = {
   "app.name": "equori",
   "nav.entry.key": "N",
   "nav.entry": "New",
+  "nav.entry.hint": "New, e.g. lunch 42 yesterday",
   "nav.user": "Your account",
   "sync.updated": "Open Finance updated at {time}",
   "date.today": "Today",

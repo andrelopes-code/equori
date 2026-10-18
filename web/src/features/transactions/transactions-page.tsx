@@ -3,7 +3,6 @@ import { Button, ButtonLink } from "@slotted/react/button";
 import { Page, PageBody } from "@slotted/react/page";
 import {
   PageHeader,
-  PageHeaderActions,
   PageHeaderHeading,
   PageHeaderSubheading,
   PageHeaderTitle,
@@ -77,18 +76,6 @@ export function TransactionsPage() {
                 )}
               </PageHeaderSubheading>
             </PageHeaderTitle>
-            {/* Ledger sheet L5: from 600 px the top bar holds New. */}
-            {viewport === "phone" && (
-              <PageHeaderActions>
-                <ButtonLink
-                  {...spaLink("/transactions/new")}
-                  tone="secondary"
-                  size="sm"
-                >
-                  {t("nav.entry")}
-                </ButtonLink>
-              </PageHeaderActions>
-            )}
           </PageHeaderTitleRow>
         </PageHeaderTitleArea>
       </PageHeader>

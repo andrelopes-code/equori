@@ -39,14 +39,12 @@ import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { QueryError } from "@/ui/query-error";
 import { useSpaLink } from "@/ui/use-spa-link";
-import { useViewport } from "@/ui/use-viewport";
 
 type Dialog = "edit" | "close" | null;
 
 export function AccountPage() {
   const t = useT();
   const api = useApi();
-  const viewport = useViewport();
   const spaLink = useSpaLink();
   const [locale] = useAppLocale();
   const { id = "" } = useParams({ strict: false });
@@ -131,15 +129,6 @@ export function AccountPage() {
             </PageHeaderTitle>
             {open !== undefined && (
               <PageHeaderActions>
-                {viewport === "phone" && (
-                  <ButtonLink
-                    {...spaLink(newTransaction)}
-                    tone="secondary"
-                    size="sm"
-                  >
-                    {t("nav.entry")}
-                  </ButtonLink>
-                )}
                 <AccountMenu
                   name={open.name}
                   onEdit={() => {

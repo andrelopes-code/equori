@@ -11,9 +11,9 @@ import {
   MenuSeparator,
   MenuTrigger,
 } from "@slotted/react/menu";
-import { TopNavigationAccount } from "@slotted/react/top-navigation";
 
 import { useApi } from "@/api/api-context";
+import styles from "@/app/shell/ledger-index.module.css";
 import { meQuery, useLogout } from "@/features/session";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import type { Locale } from "@/i18n/locale";
@@ -31,7 +31,7 @@ function isLocale(value: string): value is Locale {
   return (locales as readonly string[]).includes(value);
 }
 
-// Ledger sheet L4: the entries of the phone's More sheet, as the banner's account menu.
+// Ledger sheet L4: the entries of the phone's More sheet, as the ledger index's account menu.
 export function UserMenu() {
   const t = useT();
   const navigate = useNavigate();
@@ -45,9 +45,17 @@ export function UserMenu() {
       <Menu>
         <MenuTrigger
           render={(props) => (
-            <TopNavigationAccount {...props} aria-label={t("nav.user")}>
+            <button
+              {...props}
+              type="button"
+              aria-label={t("nav.user")}
+              className={styles.account}
+            >
               <Avatar size="xs" name={me?.email ?? t("nav.user")} />
-            </TopNavigationAccount>
+              {me !== undefined && (
+                <span className={styles.email}>{me.email}</span>
+              )}
+            </button>
           )}
         />
         <MenuContent>
