@@ -93,9 +93,11 @@ func (p pluggyPort) Accounts(ctx context.Context, id uuid.UUID, c domain.Credent
 }
 
 // externalAccounts lists each account followed by its reserved balances that hold an amount
-// in the account's currency (A73).
+// in the account's currency (A73). A reserved balance without an identification, or with one
+// already listed, is left out: the identification is the external key of the connection.
 func externalAccounts(accounts []pluggy.Account) []domain.ExternalAccount {
 	var out []domain.ExternalAccount
+	seen := map[string]bool{}
 	for _, a := range accounts {
 		out = append(out, domain.ExternalAccount{
 			ExternalID: a.ID, Type: a.Type, Subtype: a.Subtype, Name: a.Name,
@@ -106,11 +108,13 @@ func externalAccounts(accounts []pluggy.Account) []domain.ExternalAccount {
 		}
 		for _, r := range a.BankData.ReservedBalances {
 			held := slices.ContainsFunc(r.AvailableAmounts, func(x pluggy.ReservedAmount) bool { return x.CurrencyCode == a.CurrencyCode })
-			if held {
-				out = append(out, domain.ExternalAccount{
-					ExternalID: r.Identification, Type: a.Type, Subtype: pluggy.SubtypeReserve, Name: r.Name, Currency: a.CurrencyCode,
-				})
+			if !held || r.Identification == "" || seen[r.Identification] {
+				continue
 			}
+			seen[r.Identification] = true
+			out = append(out, domain.ExternalAccount{
+				ExternalID: r.Identification, Type: a.Type, Subtype: pluggy.SubtypeReserve, Name: r.Name, Currency: a.CurrencyCode,
+			})
 		}
 	}
 	return out
@@ -223,18 +227,23 @@ func (p pluggyPort) readReserve(it pluggy.Item, accounts []pluggy.Account, ident
 			if out.ItemUpdatedAt, err = updatedAt(it); err != nil {
 				return err
 			}
-			var total int64
+			var (
+				total int64
+				held  bool
+			)
 			for _, x := range r.AvailableAmounts {
 				if x.CurrencyCode != a.CurrencyCode {
 					continue
 				}
 				amount, err := pluggy.Minor(x.Amount, scale)
 				if err != nil {
-					return nil
+					held = false
+					break
 				}
 				total += amount
+				held = true
 			}
-			if out.ItemUpdatedAt != nil {
+			if held && out.ItemUpdatedAt != nil {
 				l := out.ItemUpdatedAt.In(p.loc)
 				out.Balance = &domain.Balance{Date: time.Date(l.Year(), l.Month(), l.Day(), 0, 0, 0, 0, time.UTC), Amount: total}
 			}

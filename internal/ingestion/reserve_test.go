@@ -48,6 +48,10 @@ func TestS68ReservedBalanceMapping(t *testing.T) {
 		Name: "Dolares", Identification: "res-usd",
 		AvailableAmounts: []pluggy.ReservedAmount{{Amount: "10.00", CurrencyCode: "USD"}},
 	})
+	// A reserved balance without an identification, or repeating one already listed, is not
+	// listed: the connection would otherwise violate its external account key.
+	a.p.AddReservedBalance(checkingID, reserved("Sem identificacao", "", "5.00"))
+	a.p.AddReservedBalance(checkingID, reserved("Repetida", "res-cofrinho", "7.00"))
 	checking := a.h.Account("Mercado Pago", "asset", "checking", nil)
 	in := a.integrate(a.h.Client, "Meu Pluggy", pluggyClient, pluggySecret)
 
@@ -430,6 +434,17 @@ func TestS70ReserveTransfers(t *testing.T) {
 	a.p.AddTransaction(checkingID, reserveLine("t-before", "2026-11-10", "Dinheiro reservado Cofrinho Mercado Livre", "-30.00"))
 
 	f.sync()
+	// Reserves sync after the checking account: each reserve assertion meets its settled
+	// balance, with the transfers booked, and reconciles with no resolution.
+	for _, reserve := range []string{cofrinho, algum} {
+		as := f.assertions(reserve)
+		if len(as) != 1 || as[0].Source != "open_finance" || !as[0].Reconciled || as[0].Date != "2026-11-11" {
+			t.Fatalf("assertions of %s after the first sync = %+v", reserve, as)
+		}
+		if n := f.count(`SELECT count(*) FROM ledger_reconciliation WHERE account_id = $1 AND assertion_id IS NOT NULL AND resolution = 'none' AND difference = 0`, reserve); n != 1 {
+			t.Fatalf("reconciliations of %s with resolution none = %d, want 1", reserve, n)
+		}
+	}
 	postings := func(externalID string) map[string]int64 {
 		t.Helper()
 		state, tx := f.recordOf(externalID)
@@ -466,5 +481,75 @@ func TestS70ReserveTransfers(t *testing.T) {
 	f.sync()
 	if b := f.batches(checking)[0]; b.Counts.Received != 4 || b.Counts.Created != 0 {
 		t.Fatalf("second sync batch = %+v, want 4 received and none created", b.Counts)
+	}
+}
+
+// S70: a name held by two mapped reserves is ambiguous, so a line naming it books no
+// transfer (D4 condition 4, A76).
+func TestS70AmbiguousReserveName(t *testing.T) {
+	a := newAggregator(t)
+	it := pluggy.Item{ID: mercadoPagoItem, Status: pluggy.StatusUpdated, LastUpdatedAt: new("2026-11-11T15:00:00.000Z")}
+	it.Connector.Name = "Mercado Pago"
+	a.p.AddItemTo(pluggyClient, it)
+	checkingID := mercadoPagoItem + "-checking"
+	a.p.AddAccount(mercadoPagoItem, pluggy.Account{ID: checkingID, Type: "BANK", Subtype: pluggy.SubtypeChecking, Name: "Mercado Pago", Number: checkingNumber, Balance: "500.05", CurrencyCode: "BRL"})
+	a.p.AddReservedBalance(checkingID, reserved("Cofrinho", "res-first", "0.00"))
+	a.p.AddReservedBalance(checkingID, reserved("Cofrinho", "res-second", "0.00"))
+	in := a.integrate(a.h.Client, "Meu Pluggy", pluggyClient, pluggySecret)
+	f := syncFixture{aggregator: a, conn: a.mustConnect(a.h.Client, in.ID, mercadoPagoItem)}
+
+	checking := a.h.Account("Mercado Pago", "asset", "checking", nil)
+	first := a.h.Account("MP Cofrinho 1", "asset", "reserve", nil)
+	second := a.h.Account("MP Cofrinho 2", "asset", "reserve", nil)
+	a.h.Record("2026-10-31", apitest.Posting(checking, 100000), apitest.Posting(openingBalances(f), -100000))
+	var reserves []string
+	for _, x := range f.conn.Accounts {
+		if x.Subtype == "RESERVED_BALANCE" {
+			reserves = append(reserves, x.ID)
+		}
+	}
+	if len(reserves) != 2 {
+		t.Fatalf("reserves = %+v", f.conn.Accounts)
+	}
+	for _, m := range []struct{ external, ledger, from string }{
+		{externalAccount(f.conn, pluggy.SubtypeChecking).ID, checking, "2026-11-01"},
+		{reserves[0], first, "2026-11-11"},
+		{reserves[1], second, "2026-11-11"},
+	} {
+		if r := a.mapAccount(a.h.Client, f.conn.ID, m.external, map[string]any{"account_id": m.ledger, "sync_from": m.from}); r.Status != http.StatusOK {
+			t.Fatalf("map status %d: %s", r.Status, r.Body)
+		}
+	}
+	a.p.AddTransaction(checkingID, reserveLine("t-ambiguous", "2026-11-11", "Dinheiro reservado Cofrinho", "-50.00"))
+
+	f.sync()
+	state, tx := f.recordOf("t-ambiguous")
+	if tx == "" {
+		t.Fatalf("record is %s without a transaction", state)
+	}
+	for _, p := range f.h.Transaction(tx).Postings {
+		if p.AccountID == first || p.AccountID == second {
+			t.Fatalf("posting %+v on a reserve, want none", p)
+		}
+	}
+}
+
+// S68: a mapped reserved balance that no longer holds an amount in the parent currency is
+// read as not reported: the batch records no balance and no assertion is added (D1, D2).
+func TestS68ReserveWithoutParentCurrency(t *testing.T) {
+	f, reserve, checkingID := reserveAfterFirstSync(t, "none")
+	f.p.RemoveReservedBalance(checkingID, "res-cofrinho")
+	f.p.AddReservedBalance(checkingID, pluggy.ReservedBalance{
+		Name: "Cofrinho Mercado Livre", Identification: "res-cofrinho",
+		AvailableAmounts: []pluggy.ReservedAmount{{Amount: "10.00", CurrencyCode: "USD"}},
+	})
+	f.p.SetItemUpdatedAt(mercadoPagoItem, "2026-11-11T15:00:00.000Z")
+	f.sync()
+	got := f.batches(reserve)
+	if len(got) != 2 || got[0].Balance.Status != "none" {
+		t.Fatalf("reserve batches = %+v, want a second batch with balance none", got)
+	}
+	if as := f.assertions(reserve); len(as) != 1 {
+		t.Fatalf("assertions = %+v, want the one of the first sync", as)
 	}
 }
