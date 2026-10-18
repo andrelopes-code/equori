@@ -1,9 +1,23 @@
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import { configDefaults } from "vitest/config";
 
+// @slotted/react 0.1.0-beta.2 bundles a CommonJS copy of react-dom that calls
+// require("react"), which throws in the browser. The chunk is replaced by the
+// application's react-dom, keeping the lazy getter it exports as `t`.
+const slottedReactDOM: Plugin = {
+  name: "equori:slotted-react-dom",
+  load(id) {
+    if (/@slotted\/react\/dist\/react-dom-[\w-]+\.js$/.test(id)) {
+      return 'import * as ReactDOM from "react-dom";\nexport const t = () => ReactDOM;\n';
+    }
+    return null;
+  },
+};
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), slottedReactDOM],
+  optimizeDeps: { rolldownOptions: { plugins: [slottedReactDOM] } },
   // tsconfig.json paths are the single definition of the @/ alias.
   resolve: { tsconfigPaths: true },
   server: {
