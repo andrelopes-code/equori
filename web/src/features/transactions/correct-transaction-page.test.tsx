@@ -59,10 +59,7 @@ async function type(
   name: string,
   text: string,
 ) {
-  const field = await screen.findByRole(
-    name === label["transactions.new.amount"] ? "spinbutton" : "textbox",
-    { name },
-  );
+  const field = await screen.findByRole("textbox", { name });
   await user.clear(field);
   await user.type(field, text);
 }
@@ -158,13 +155,12 @@ describe("correct transaction", () => {
       ).getAttribute("value"),
     ).toBe("Weekly shop");
     expect(
-      screen
-        .getByRole("spinbutton", { name: label["transactions.new.amount"] })
-        .getAttribute("value")
-        ?.replace(/\s+/g, " "),
-    ).toBe("R$ 120,00");
+      screen.getByRole<HTMLInputElement>("textbox", {
+        name: label["transactions.new.amount"],
+      }).value,
+    ).toBe("120,00");
     expect(
-      screen.getByRole("combobox", {
+      screen.getByRole("group", {
         name: label["transactions.new.category"],
       }),
     ).toBeTruthy();
@@ -204,12 +200,12 @@ describe("correct transaction", () => {
     );
     await renderApp(`/transactions/${txID}/correct`, { fetch });
     expect(
-      await screen.findByRole("combobox", {
+      await screen.findByRole("group", {
         name: label["transactions.new.from"],
       }),
     ).toBeTruthy();
     expect(
-      screen.getByRole("combobox", { name: label["transactions.new.to"] }),
+      screen.getByRole("group", { name: label["transactions.new.to"] }),
     ).toBeTruthy();
   });
 
@@ -235,7 +231,7 @@ describe("correct transaction", () => {
     const { router } = await renderApp(`/transactions/${txID}/correct`, {
       fetch,
     });
-    await screen.findByRole("spinbutton", {
+    await screen.findByRole("textbox", {
       name: label["transactions.new.amount"],
     });
     await save(user);
@@ -353,11 +349,10 @@ describe("correct transaction", () => {
     );
     expect(message.closest("p")).not.toBeNull();
     expect(
-      screen
-        .getByRole("spinbutton", { name: label["transactions.new.amount"] })
-        .getAttribute("value")
-        ?.replace(/\s+/g, " "),
-    ).toBe("R$ 150,00");
+      screen.getByRole<HTMLInputElement>("textbox", {
+        name: label["transactions.new.amount"],
+      }).value,
+    ).toBe("150,00");
     await user.click(
       screen.getByRole("button", {
         name: label["transaction.correct.reapply"],

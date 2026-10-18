@@ -1,7 +1,7 @@
 @layer app {
   .form {
     display: grid;
-    gap: var(--slotted-space-4);
+    gap: var(--slotted-space-7);
   }
 
   .form [data-pinned="true"] {
@@ -9,6 +9,13 @@
     inset-block-end: var(--keyboard-inset, 0px);
     padding-block: var(--slotted-space-3);
     background: var(--slotted-surface);
+  }
+
+  /* The ledger's accent is kept for what is forecast: the balance after the entry. */
+  .impact {
+    margin: 0;
+    color: var(--slotted-tone-accent-text);
+    font-size: var(--slotted-font-size-sm);
   }
 
   .phone {

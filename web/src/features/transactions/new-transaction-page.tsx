@@ -2,7 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Page, PageBody } from "@slotted/react/page";
 import {
   PageHeader,
+  PageHeaderBack,
   PageHeaderHeading,
+  PageHeaderNav,
   PageHeaderTitle,
   PageHeaderTitleArea,
   PageHeaderTitleRow,
@@ -20,10 +22,12 @@ import { NewTransactionForm } from "@/features/transactions/new-transaction-form
 import { NewTransactionPlaceholder } from "@/features/transactions/new-transaction-placeholder";
 import { useT } from "@/i18n/i18n-provider";
 import { QueryError } from "@/ui/query-error";
+import { useSpaLink } from "@/ui/use-spa-link";
 
 export function NewTransactionPage() {
   const t = useT();
   const api = useApi();
+  const spaLink = useSpaLink();
   const accounts = useQuery(accountsQuery(api));
   const payees = useQuery(payeesQuery(api));
   const settings = useQuery(settingsQuery(api));
@@ -67,6 +71,12 @@ export function NewTransactionPage() {
     <Page width="content">
       <PageHeader>
         <PageHeaderTitleArea>
+          {/* Complete frontend G3: a form screen leads back to its module. */}
+          <PageHeaderNav>
+            <PageHeaderBack {...spaLink("/transactions")}>
+              {t("nav.transactions")}
+            </PageHeaderBack>
+          </PageHeaderNav>
           <PageHeaderTitleRow>
             <PageHeaderTitle>
               <PageHeaderHeading>{t("nav.new")}</PageHeaderHeading>

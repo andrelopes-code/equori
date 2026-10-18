@@ -24,6 +24,7 @@ import {
   fromTransaction,
 } from "@/features/transactions/transaction-form-reducer";
 import { useT } from "@/i18n/i18n-provider";
+import { InkButton } from "@/ui/ink-button";
 
 // The edits live in the reducer, which a refetch of the transaction never resets: that is the draft kept across a conflict.
 export function CorrectTransactionForm({
@@ -169,7 +170,7 @@ export function CorrectTransactionForm({
         <Button
           type="button"
           tone="secondary"
-          variant="outline"
+          variant="ghost"
           onClick={() => {
             void navigate({
               to: "/transactions/$id",
@@ -179,9 +180,12 @@ export function CorrectTransactionForm({
         >
           {t("transaction.cancel")}
         </Button>
-        <Button type="submit" disabled={!canSave(state) || correct.isPending}>
+        <InkButton
+          type="submit"
+          disabled={!canSave(state) || correct.isPending}
+        >
           {t("transaction.correct.save")}
-        </Button>
+        </InkButton>
       </FormActions>
     </Form>
   );

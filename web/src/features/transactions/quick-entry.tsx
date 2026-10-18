@@ -11,18 +11,19 @@ import { Kbd } from "@slotted/react/kbd";
 import { useRef, useState } from "react";
 
 import { useApi } from "@/api/api-context";
-import { accountsQuery, balancesQuery } from "@/features/accounts";
+import { accountsQuery } from "@/features/accounts";
 import { settingsQuery, useScale } from "@/features/setup";
-import { CategoryChips } from "@/features/transactions/category-chips";
 import { saveDraft } from "@/features/transactions/draft-storage";
 import styles from "@/features/transactions/quick-entry.module.css";
 import { parseEntry } from "@/features/transactions/quick-entry-parse";
 import { initialForm } from "@/features/transactions/transaction-form-reducer";
 import type { FormState } from "@/features/transactions/transaction-form-reducer";
+import { useBalanceAfter } from "@/features/transactions/use-balance-after";
 import { useQuickEntryPost } from "@/features/transactions/use-quick-entry-post";
 import { formatDayMonth, formatMoney } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { ChoiceChips } from "@/ui/choice-chips";
 import { InkButton } from "@/ui/ink-button";
 import { useViewport } from "@/ui/use-viewport";
 
@@ -57,10 +58,6 @@ export function QuickEntry({
   const scaleOf = useScale();
   const accounts = useQuery(accountsQuery(api));
   const settings = useQuery(settingsQuery(api));
-  const balances = useQuery({
-    ...balancesQuery(api, today, "booked"),
-    enabled: open,
-  });
   const { post, pending } = useQuickEntryPost();
 
   const base = settings.data?.base_currency ?? "";
@@ -79,6 +76,12 @@ export function QuickEntry({
       ? chosen
       : parse.categoryId;
   const account = all.find((a) => a.id === parse.accountId);
+  const impact = useBalanceAfter({
+    accountId: parse.accountId,
+    mode: parse.mode,
+    amount: parse.amount,
+    enabled: open,
+  });
   const currencyOf = (id: string) =>
     all.find((a) => a.id === id)?.currency ?? base;
   const money = (amount: number, currency = base) =>
@@ -130,27 +133,6 @@ export function QuickEntry({
         ? t("entry.today", { date: formatDayMonth(parse.date, locale) })
         : formatDayMonth(parse.date, locale);
 
-  let impact: string | null = null;
-  const balance = balances.data?.find((b) => b.account_id === parse.accountId);
-  if (parse.amount !== null && account !== undefined && balance !== undefined) {
-    const sign = parse.mode === "income" ? 1 : -1;
-    const after = balance.balance.amount + sign * parse.amount;
-    impact =
-      account.class === "liability"
-        ? t("entry.impact.owes", {
-            account: account.name,
-            amount: money(-after, balance.balance.currency),
-          })
-        : t(
-            parse.mode === "income"
-              ? "entry.impact.rises"
-              : "entry.impact.left",
-            {
-              account: account.name,
-              amount: money(after, balance.balance.currency),
-            },
-          );
-  }
   const note =
     missing && parse.amount === null
       ? "missing"
@@ -252,9 +234,9 @@ export function QuickEntry({
               {account?.name ?? empty}
             </dd>
           </dl>
-          <CategoryChips
+          <ChoiceChips
             label={t("entry.category")}
-            categories={categories}
+            choices={categories}
             value={categoryId}
             size={phone ? "lg" : "md"}
             onChange={setChosen}

@@ -1,0 +1,53 @@
+@layer app {
+  .entry {
+    display: flex;
+    align-items: baseline;
+    gap: var(--slotted-space-3);
+    padding-block-end: var(--slotted-space-2);
+    border-block-end: var(--slotted-border-width-thin) solid
+      var(--slotted-border-strong);
+    transition: border-color var(--slotted-duration-short)
+      var(--slotted-easing-standard);
+  }
+
+  .entry:focus-within {
+    border-block-end-color: var(--slotted-text);
+  }
+
+  .entry:has([aria-invalid="true"]) {
+    border-block-end-color: var(--slotted-tone-danger-text);
+  }
+
+  .symbol {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-lg);
+    font-weight: var(--slotted-font-weight-medium);
+  }
+
+  .input {
+    flex: 1;
+    min-inline-size: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--slotted-text);
+    font: inherit;
+    font-size: var(--slotted-font-size-4xl);
+    font-weight: var(--slotted-font-weight-medium);
+    line-height: var(--slotted-line-height-4xl);
+    /* The headline figure's tracking, as the prototype's figures (-0.03em); no token holds it. */
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .input::placeholder {
+    color: var(--slotted-text-muted);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .entry {
+      transition: none;
+    }
+  }
+}

@@ -25,7 +25,9 @@ import type {
   FormAction,
   FormState,
 } from "@/features/transactions/transaction-form-reducer";
+import { useBalanceAfter } from "@/features/transactions/use-balance-after";
 import { useT } from "@/i18n/i18n-provider";
+import { InkButton } from "@/ui/ink-button";
 import { useToday } from "@/i18n/today";
 import { useKeyboardInset } from "@/ui/use-keyboard-inset";
 import { useViewport } from "@/ui/use-viewport";
@@ -94,6 +96,11 @@ export function NewTransactionForm({
   const currencyOf = (id: string) =>
     accounts.find((a) => a.id === id)?.currency ?? baseCurrency;
   const amountError = saveError?.fields.postings ?? saveError?.fields.amount;
+  const impact = useBalanceAfter({
+    accountId: state.postings === null ? state.accountId : null,
+    mode: state.mode,
+    amount: state.amount,
+  });
 
   const save = async (another: boolean) => {
     if (!canSave(state) || create.isPending) return;
@@ -160,19 +167,29 @@ export function NewTransactionForm({
           </AlertContent>
         </Alert>
       )}
+      {impact !== null && (
+        <p className={styles.impact} aria-live="polite">
+          {impact}
+        </p>
+      )}
       <FormActions {...(phone ? { "data-pinned": "true" } : {})}>
         <Button
           type="button"
           tone="secondary"
-          variant="outline"
+          variant="ghost"
           disabled={!canSave(state) || create.isPending}
           onClick={() => void save(true)}
         >
           {t("transactions.new.saveAnother")}
         </Button>
-        <Button type="submit" disabled={!canSave(state) || create.isPending}>
+        <InkButton
+          type="submit"
+          block={phone}
+          size={phone ? "lg" : "md"}
+          disabled={!canSave(state) || create.isPending}
+        >
           {t("transactions.new.save")}
-        </Button>
+        </InkButton>
       </FormActions>
     </Form>
   );

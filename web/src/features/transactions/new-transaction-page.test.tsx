@@ -58,6 +58,15 @@ function newApi(
       json(200, { items: [{ id: payeeID, name: "Padaria" }] }),
     "GET /api/v1/tags": () => json(200, { items: [] }),
     "GET /api/v1/transactions": () => json(200, { items: [] }),
+    "GET /api/v1/balances": () =>
+      json(200, {
+        items: [
+          {
+            account_id: checkingID,
+            balance: { amount: 100000, currency: "BRL" },
+          },
+        ],
+      }),
     "POST /api/v1/payees": async (req) => {
       captured.payees.push(await req.json());
       return json(201, { id: newPayeeID, name: "Feira" });
@@ -70,11 +79,28 @@ function newApi(
   return { fetch, captured };
 }
 
+// The chip pressed in a group of the entry sheet, "" when none is.
+function chosen(name: string): string {
+  const group = screen.getByRole("group", { name });
+  return (
+    within(group)
+      .queryAllByRole("button")
+      .find((chip) => chip.getAttribute("aria-pressed") === "true")
+      ?.textContent ?? ""
+  );
+}
+
+// The entry sheet offers accounts and categories as chips; the split and postings editors keep pickers.
 async function pick(
   user: ReturnType<typeof userEvent.setup>,
   name: string,
   option: string,
 ) {
+  const group = screen.queryByRole("group", { name });
+  if (group !== null) {
+    await user.click(within(group).getByRole("button", { name: option }));
+    return;
+  }
   await user.click(await screen.findByRole("combobox", { name }));
   await user.click(await screen.findByRole("option", { name: option }));
 }
@@ -95,7 +121,7 @@ describe("new transaction", () => {
     const user = userEvent.setup();
     await renderApp("/transactions/new", { fetch });
     await user.type(
-      await screen.findByRole("spinbutton", {
+      await screen.findByRole("textbox", {
         name: label["transactions.new.amount"],
       }),
       "120,00",
@@ -126,7 +152,7 @@ describe("new transaction", () => {
     const user = userEvent.setup();
     await renderApp("/transactions/new", { fetch });
     await user.type(
-      await screen.findByRole("spinbutton", {
+      await screen.findByRole("textbox", {
         name: label["transactions.new.amount"],
       }),
       "5000",
@@ -143,19 +169,13 @@ describe("new transaction", () => {
     });
     await waitFor(() => {
       expect(
-        screen.getByRole("spinbutton", {
+        screen.getByRole("textbox", {
           name: label["transactions.new.amount"],
         }),
       ).toHaveValue("");
     });
-    expect(
-      screen.getByRole("combobox", { name: label["transactions.new.account"] }),
-    ).toHaveValue("Itau");
-    expect(
-      screen.getByRole("combobox", {
-        name: label["transactions.new.category"],
-      }),
-    ).toHaveValue("");
+    expect(chosen(label["transactions.new.account"])).toBe("Itau");
+    expect(chosen(label["transactions.new.category"])).toBe("");
   });
 
   it("shows a postings error next to the amount", async () => {
@@ -167,7 +187,7 @@ describe("new transaction", () => {
     const user = userEvent.setup();
     await renderApp("/transactions/new", { fetch });
     await user.type(
-      await screen.findByRole("spinbutton", {
+      await screen.findByRole("textbox", {
         name: label["transactions.new.amount"],
       }),
       "5000",
@@ -187,7 +207,7 @@ describe("new transaction", () => {
     const user = userEvent.setup();
     await renderApp("/transactions/new", { fetch });
     await user.type(
-      await screen.findByRole("spinbutton", {
+      await screen.findByRole("textbox", {
         name: label["transactions.new.amount"],
       }),
       "5000",
@@ -216,17 +236,17 @@ describe("new transaction", () => {
     const user = userEvent.setup();
     const first = await renderApp("/transactions/new", { fetch });
     await user.type(
-      await screen.findByRole("spinbutton", {
+      await screen.findByRole("textbox", {
         name: label["transactions.new.amount"],
       }),
       "5000",
     );
     first.unmount();
     await renderApp("/transactions/new", { fetch });
-    const restored = await screen.findByRole<HTMLInputElement>("spinbutton", {
+    const restored = await screen.findByRole<HTMLInputElement>("textbox", {
       name: label["transactions.new.amount"],
     });
-    expect(restored.value.replace(/\s+/g, " ").trim()).toBe("R$ 50,00");
+    expect(restored.value).toBe("50,00");
   });
 
   it("works when sessionStorage throws", async () => {
@@ -251,7 +271,7 @@ describe("new transaction", () => {
     const user = userEvent.setup();
     await renderApp("/transactions/new", { fetch });
     await user.type(
-      await screen.findByRole("spinbutton", {
+      await screen.findByRole("textbox", {
         name: label["transactions.new.amount"],
       }),
       "5000",
@@ -269,37 +289,91 @@ describe("new transaction", () => {
   it("preselects the account from the URL", async () => {
     const { fetch } = newApi();
     await renderApp(`/transactions/new?account_id=${checkingID}`, { fetch });
-    expect(
-      await screen.findByRole("combobox", {
-        name: label["transactions.new.account"],
-      }),
-    ).toHaveValue("Itau");
+    await screen.findByRole("group", {
+      name: label["transactions.new.account"],
+    });
+    expect(chosen(label["transactions.new.account"])).toBe("Itau");
   });
 
-  it("pins the submit button and opens pickers full-screen at 360", async () => {
+  // Complete frontend F1 (second pass) and G3.
+  it("states what the entry leaves in the account and leads back to the transactions", async () => {
     const { fetch } = newApi();
     const user = userEvent.setup();
+    const { container } = await renderApp("/transactions/new", {
+      fetch,
+      width: 1280,
+    });
+    await user.type(
+      await screen.findByRole("textbox", {
+        name: label["transactions.new.amount"],
+      }),
+      "5000",
+    );
+    await pick(user, label["transactions.new.account"], "Itau");
+    expect(
+      await screen.findByText("Itau fica com R$ 950,00."),
+    ).toBeInTheDocument();
+    const header = container.querySelector('[data-ui="page-header"]');
+    expect(
+      within(header as HTMLElement).getByRole("link", {
+        name: label["nav.transactions"],
+      }),
+    ).toHaveAttribute("href", "/transactions");
+  });
+
+  it("pins the submit button at 360", async () => {
+    const { fetch } = newApi();
     await renderApp("/transactions/new", { fetch, width: 360 });
     const save = await screen.findByRole("button", {
       name: label["transactions.new.save"],
     });
     expect(save.closest("[data-pinned='true']")).not.toBeNull();
-    await user.click(
-      screen.getByRole("button", { name: label["transactions.new.account"] }),
-    );
-    const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByRole("combobox")).toBeInTheDocument();
   });
 
-  it("renders the pickers inline at 1280", async () => {
+  // Complete frontend F1 (second pass): the sheet offers the accounts and categories as words to tap.
+  it("offers the balance accounts and the expense categories as chips", async () => {
     const { fetch } = newApi();
     await renderApp("/transactions/new", { fetch, width: 1280 });
+    const accountsGroup = await screen.findByRole("group", {
+      name: label["transactions.new.account"],
+    });
     expect(
-      await screen.findByRole("combobox", {
+      within(accountsGroup)
+        .getAllByRole("button")
+        .map((chip) => chip.textContent),
+    ).toEqual(["Itau", "Reserva"]);
+    expect(
+      within(
+        screen.getByRole("group", { name: label["transactions.new.category"] }),
+      )
+        .getAllByRole("button")
+        .map((chip) => chip.textContent),
+    ).toEqual(["Mercado", "Lazer"]);
+    expect(
+      screen.queryByRole("combobox", {
         name: label["transactions.new.account"],
       }),
+    ).toBeNull();
+  });
+
+  it("switches the kind of transaction with the arrow keys", async () => {
+    const { fetch } = newApi();
+    const user = userEvent.setup();
+    await renderApp("/transactions/new", { fetch, width: 1280 });
+    const expense = await screen.findByRole("radio", {
+      name: label["transactions.new.expense"],
+    });
+    expect(expense).toHaveAttribute("aria-checked", "true");
+    expense.focus();
+    await user.keyboard("{ArrowRight}");
+    const income = screen.getByRole("radio", {
+      name: label["transactions.new.income"],
+    });
+    expect(income).toHaveAttribute("aria-checked", "true");
+    expect(income).toHaveFocus();
+    expect(
+      screen.getByRole("group", { name: label["transactions.new.category"] }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("shows the title and a busy skeleton while the data loads", async () => {
@@ -312,7 +386,7 @@ describe("new transaction", () => {
       await screen.findByRole("heading", { name: label["nav.new"] }),
     ).toBeInTheDocument();
     expect(document.querySelector('[aria-busy="true"]')).not.toBeNull();
-    expect(screen.queryByRole("spinbutton")).toBeNull();
+    expect(screen.queryByRole("textbox")).toBeNull();
   });
 
   it("shows an error with retry when the accounts request fails", async () => {
@@ -334,7 +408,7 @@ describe("new transaction", () => {
     failing = false;
     await user.click(retry);
     expect(
-      await screen.findByRole("spinbutton", {
+      await screen.findByRole("textbox", {
         name: label["transactions.new.amount"],
       }),
     ).toBeInTheDocument();
@@ -346,7 +420,7 @@ describe("new transaction", () => {
     const user = userEvent.setup();
     const first = await renderApp("/transactions/new", { fetch });
     await user.type(
-      await screen.findByRole("spinbutton", {
+      await screen.findByRole("textbox", {
         name: label["transactions.new.amount"],
       }),
       "5000",
@@ -361,7 +435,7 @@ describe("new transaction", () => {
     });
     first.unmount();
     await renderApp("/transactions/new", { fetch });
-    const amount = await screen.findByRole<HTMLInputElement>("spinbutton", {
+    const amount = await screen.findByRole<HTMLInputElement>("textbox", {
       name: label["transactions.new.amount"],
     });
     expect(amount.value).toBe("");
@@ -372,7 +446,7 @@ describe("new transaction", () => {
     const user = userEvent.setup();
     await renderApp("/transactions/new", { fetch });
     await user.type(
-      await screen.findByRole("spinbutton", {
+      await screen.findByRole("textbox", {
         name: label["transactions.new.amount"],
       }),
       "10000",
@@ -441,7 +515,7 @@ describe("new transaction", () => {
     const user = userEvent.setup();
     await renderApp("/transactions/new", { fetch });
     await user.type(
-      await screen.findByRole("spinbutton", {
+      await screen.findByRole("textbox", {
         name: label["transactions.new.amount"],
       }),
       "12000",
@@ -452,7 +526,7 @@ describe("new transaction", () => {
       screen.getByRole("button", { name: label["transactions.new.advanced"] }),
     );
     expect(
-      screen.queryByRole("spinbutton", {
+      screen.queryByRole("textbox", {
         name: label["transactions.new.amount"],
       }),
     ).toBeNull();
@@ -505,7 +579,7 @@ describe("new transaction", () => {
     const user = userEvent.setup();
     await renderApp("/transactions/new", { fetch });
     await user.type(
-      await screen.findByRole("spinbutton", {
+      await screen.findByRole("textbox", {
         name: label["transactions.new.amount"],
       }),
       "12000",
@@ -544,7 +618,7 @@ describe("new transaction", () => {
 
   async function fillQuick(user: ReturnType<typeof userEvent.setup>) {
     await user.type(
-      await screen.findByRole("spinbutton", {
+      await screen.findByRole("textbox", {
         name: label["transactions.new.amount"],
       }),
       "5000",
@@ -667,7 +741,7 @@ describe("new transaction", () => {
     const user = userEvent.setup();
     const first = await renderApp("/transactions/new", { fetch });
     await user.type(
-      await screen.findByRole("spinbutton", {
+      await screen.findByRole("textbox", {
         name: label["transactions.new.amount"],
       }),
       "10000",
@@ -699,7 +773,7 @@ describe("new transaction", () => {
     const user = userEvent.setup();
     const first = await renderApp("/transactions/new", { fetch });
     await user.type(
-      await screen.findByRole("spinbutton", {
+      await screen.findByRole("textbox", {
         name: label["transactions.new.amount"],
       }),
       "12000",
@@ -754,12 +828,10 @@ describe("new transaction", () => {
     );
     const { fetch } = newApi();
     await renderApp("/transactions/new", { fetch });
-    const amount = await screen.findByRole<HTMLInputElement>("spinbutton", {
+    const amount = await screen.findByRole<HTMLInputElement>("textbox", {
       name: label["transactions.new.amount"],
     });
     expect(amount.value).toBe("");
-    expect(
-      screen.getByRole("combobox", { name: label["transactions.new.account"] }),
-    ).toHaveValue("");
+    expect(chosen(label["transactions.new.account"])).toBe("");
   });
 });

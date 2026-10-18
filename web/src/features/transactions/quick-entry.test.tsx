@@ -241,11 +241,11 @@ describe("quick entry", () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/transactions/new");
     });
-    const amount = await screen.findByRole<HTMLInputElement>("spinbutton", {
+    const amount = await screen.findByRole<HTMLInputElement>("textbox", {
       name: label["transactions.new.amount"],
     });
     await waitFor(() => {
-      expect(amount.value.replace(/\s+/g, " ").trim()).toBe("R$ 42,00");
+      expect(amount.value).toBe("42,00");
     });
   });
 

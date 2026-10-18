@@ -1,0 +1,51 @@
+@layer app {
+  .switch {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--slotted-space-7);
+  }
+
+  .option {
+    min-block-size: var(--slotted-target-min);
+    padding: 0;
+    border: 0;
+    /* The chosen word stands on a rule of its own width, as the prototype's filters. */
+    border-block-end: var(--slotted-border-width-medium) solid transparent;
+    background: transparent;
+    color: var(--slotted-text-muted);
+    font: inherit;
+    font-size: var(--slotted-font-size-md);
+    font-weight: var(--slotted-font-weight-medium);
+    cursor: pointer;
+    transition:
+      color var(--slotted-duration-short) var(--slotted-easing-standard),
+      border-color var(--slotted-duration-short) var(--slotted-easing-standard);
+  }
+
+  .option:hover {
+    color: var(--slotted-text);
+  }
+
+  .option[aria-checked="true"] {
+    color: var(--slotted-text);
+    border-block-end-color: var(--slotted-text);
+  }
+
+  .option:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  @media (forced-colors: active) {
+    .option[aria-checked="true"] {
+      border-block-end-color: CanvasText;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .option {
+      transition: none;
+    }
+  }
+}
