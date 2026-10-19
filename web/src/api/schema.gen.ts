@@ -445,6 +445,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/transactions/categorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Give several transactions one category, each item decided on its own (A78).
+         * @description Each item replaces the category postings of its transaction with one posting on category_id holding their
+         *     total, method manual. An item that fails reports its status and leaves the others applied.
+         */
+        post: operations["categorizeTransactions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/transactions/{id}/categorize": {
         parameters: {
             query?: never;
@@ -3250,6 +3271,27 @@ export interface components {
              */
             voided_transaction_id?: string;
         };
+        BulkCategorizeInput: {
+            /** Format: uuid */
+            category_id: string;
+            items: {
+                /** Format: uuid */
+                id: string;
+                expected_version: number;
+            }[];
+        };
+        BulkCategorizeResult: {
+            /** @description One result per item, in request order. */
+            results: components["schemas"]["BulkCategorizeItemResult"][];
+        };
+        BulkCategorizeItemResult: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "categorized" | "version_conflict" | "transaction_voided" | "not_categorizable" | "not_found";
+            /** @description The new version when status is categorized. */
+            version?: number;
+        };
         CategorizeInput: {
             expected_version: number;
             parts: components["schemas"]["CategoryPart"][];
@@ -4214,6 +4256,32 @@ export interface operations {
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    categorizeTransactions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkCategorizeInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkCategorizeResult"];
+                };
+            };
+            401: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };
     };

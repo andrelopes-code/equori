@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 )
 
@@ -35,8 +36,10 @@ type Categorization struct {
 	ExpectedVersion int
 	Parts           []domain.CategoryPart // nil keeps the category postings
 	PayeeID         *uuid.UUID            // nil keeps the payee
-	AddTags         []string
-	Cause           Cause
+	// WholeTo, when set, replaces Parts by one part on that category holding the category total (A78).
+	WholeTo uuid.UUID
+	AddTags []string
+	Cause   Cause
 }
 
 // Categorize applies each item in one database transaction, locking the transactions in id
@@ -84,9 +87,17 @@ func (s *Service) categorize(ctx context.Context, r Repository, userID int64, c 
 	for _, p := range c.Parts {
 		ids = append(ids, p.AccountID)
 	}
+	if c.WholeTo != uuid.Nil {
+		ids = append(ids, c.WholeTo)
+	}
 	accounts, err := r.Accounts(ctx, userID, ids)
 	if err != nil {
 		return nil, err
+	}
+	if c.WholeTo != uuid.Nil {
+		if c.Parts, err = wholeCategory(prev, accounts, c.WholeTo); err != nil {
+			return err, nil
+		}
 	}
 	next, err := prev.Categorize(domain.Categorization{ExpectedVersion: c.ExpectedVersion, Parts: c.Parts, PayeeID: c.PayeeID, AddTags: c.AddTags}, accounts)
 	if err != nil {
@@ -213,4 +224,61 @@ func (s *Service) reassign(ctx context.Context, r Repository, userID int64, id u
 	event := newTransactionEvent(next, accounts, prev)
 	event.Cause = &Cause{Method: CauseMerge}
 	return r.Publish(ctx, outbox.Event{Type: EventTransactionCategorized, UserID: userID, AggregateID: next.ID.String(), Payload: event})
+}
+
+// wholeCategory is the single part that moves every category posting of t to category.
+func wholeCategory(t domain.Transaction, accounts map[uuid.UUID]domain.Account, category uuid.UUID) ([]domain.CategoryPart, error) {
+	var total money.Money
+	found := false
+	for _, p := range t.Postings {
+		if !accounts[p.AccountID].IsCategory() {
+			continue
+		}
+		if !found {
+			total, found = p.Amount, true
+			continue
+		}
+		sum, err := total.Add(p.Amount)
+		if err != nil {
+			return nil, domain.ErrNotCategorizable
+		}
+		total = sum
+	}
+	if !found {
+		return nil, domain.ErrNotCategorizable
+	}
+	return []domain.CategoryPart{{AccountID: category, Amount: total}}, nil
+}
+
+// BulkItem is one transaction of CategorizeMany.
+type BulkItem struct {
+	ID              uuid.UUID
+	ExpectedVersion int
+}
+
+// CategorizeMany gives each transaction one posting on category for its category total
+// (A78). errs[i] is the domain error of item i.
+func (s *Service) CategorizeMany(ctx context.Context, userID int64, category uuid.UUID, items []BulkItem) ([]error, error) {
+	seen := make(map[uuid.UUID]bool, len(items))
+	for _, it := range items {
+		if seen[it.ID] {
+			return nil, &domain.FieldError{Field: "items", Message: "repeats a transaction", Err: domain.ErrValidation}
+		}
+		seen[it.ID] = true
+	}
+	a, err := s.repo.Account(ctx, userID, category)
+	if errors.Is(err, ErrNotFound) {
+		return nil, &domain.FieldError{Field: "category_id", Message: "unknown account", Err: domain.ErrValidation}
+	}
+	if err != nil {
+		return nil, err
+	}
+	if !a.IsCategory() || a.ClosedOn != nil {
+		return nil, &domain.FieldError{Field: "category_id", Message: "must be an open income or expense category", Err: domain.ErrValidation}
+	}
+	cs := make([]Categorization, len(items))
+	for i, it := range items {
+		cs[i] = Categorization{TransactionID: it.ID, ExpectedVersion: it.ExpectedVersion, WholeTo: category, Cause: Cause{Method: MethodManual}}
+	}
+	return s.Categorize(ctx, userID, cs)
 }

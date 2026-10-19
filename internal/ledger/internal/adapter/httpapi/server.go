@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -385,6 +386,46 @@ func (s *Server) CategorizeTransaction(ctx context.Context, req CategorizeTransa
 		return nil, err
 	}
 	return CategorizeTransaction200JSONResponse(toTransactionAPI(t)), nil
+}
+
+func (s *Server) CategorizeTransactions(ctx context.Context, req CategorizeTransactionsRequestObject) (CategorizeTransactionsResponseObject, error) {
+	userID := auth.MustUserID(ctx)
+	items := make([]app.BulkItem, len(req.Body.Items))
+	for i, it := range req.Body.Items {
+		items[i] = app.BulkItem{ID: it.Id, ExpectedVersion: it.ExpectedVersion}
+	}
+	errs, err := s.svc.CategorizeMany(ctx, userID, req.Body.CategoryId, items)
+	if err != nil {
+		return nil, err
+	}
+	out := CategorizeTransactions200JSONResponse{Results: make([]BulkCategorizeItemResult, len(items))}
+	for i, it := range items {
+		r := BulkCategorizeItemResult{Id: it.ID, Status: bulkStatus(errs[i])}
+		if errs[i] == nil {
+			t, err := s.svc.Transaction(ctx, userID, it.ID)
+			if err != nil {
+				return nil, err
+			}
+			r.Version = &t.Version
+		}
+		out.Results[i] = r
+	}
+	return out, nil
+}
+
+// bulkStatus names an item error by the problem code of the same failure (A78).
+func bulkStatus(err error) BulkCategorizeItemResultStatus {
+	switch {
+	case err == nil:
+		return Categorized
+	case errors.Is(err, app.ErrNotFound):
+		return NotFound
+	case errors.Is(err, domain.ErrVersionConflict):
+		return VersionConflict
+	case errors.Is(err, domain.ErrVoided):
+		return TransactionVoided
+	}
+	return NotCategorizable
 }
 
 func (s *Server) TransferTransaction(ctx context.Context, req TransferTransactionRequestObject) (TransferTransactionResponseObject, error) {

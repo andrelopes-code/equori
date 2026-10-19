@@ -335,6 +335,33 @@ func (e BillingCycleRuleDueDateAdjustment) Valid() bool {
 	}
 }
 
+// Defines values for BulkCategorizeItemResultStatus.
+const (
+	Categorized       BulkCategorizeItemResultStatus = "categorized"
+	NotCategorizable  BulkCategorizeItemResultStatus = "not_categorizable"
+	NotFound          BulkCategorizeItemResultStatus = "not_found"
+	TransactionVoided BulkCategorizeItemResultStatus = "transaction_voided"
+	VersionConflict   BulkCategorizeItemResultStatus = "version_conflict"
+)
+
+// Valid indicates whether the value is a known member of the BulkCategorizeItemResultStatus enum.
+func (e BulkCategorizeItemResultStatus) Valid() bool {
+	switch e {
+	case Categorized:
+		return true
+	case NotCategorizable:
+		return true
+	case NotFound:
+		return true
+	case TransactionVoided:
+		return true
+	case VersionConflict:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CategoryIcon.
 const (
 	CategoryIconApple          CategoryIcon = "apple"
@@ -1211,6 +1238,33 @@ type BillingCycleRuleList struct {
 	Items []BillingCycleRule `json:"items"`
 }
 
+// BulkCategorizeInput defines model for BulkCategorizeInput.
+type BulkCategorizeInput struct {
+	CategoryId openapi_types.UUID `json:"category_id"`
+	Items      []struct {
+		ExpectedVersion int                `json:"expected_version"`
+		Id              openapi_types.UUID `json:"id"`
+	} `json:"items"`
+}
+
+// BulkCategorizeItemResult defines model for BulkCategorizeItemResult.
+type BulkCategorizeItemResult struct {
+	Id     openapi_types.UUID             `json:"id"`
+	Status BulkCategorizeItemResultStatus `json:"status"`
+
+	// Version The new version when status is categorized.
+	Version *int `json:"version,omitempty"`
+}
+
+// BulkCategorizeItemResultStatus defines model for BulkCategorizeItemResult.Status.
+type BulkCategorizeItemResultStatus string
+
+// BulkCategorizeResult defines model for BulkCategorizeResult.
+type BulkCategorizeResult struct {
+	// Results One result per item, in request order.
+	Results []BulkCategorizeItemResult `json:"results"`
+}
+
 // CancellationInput defines model for CancellationInput.
 type CancellationInput struct {
 	CreditStatement *string            `json:"credit_statement,omitempty"`
@@ -2068,6 +2122,9 @@ type RecordTradeJSONRequestBody = TradeInput
 // CreateTransactionJSONRequestBody defines body for CreateTransaction for application/json ContentType.
 type CreateTransactionJSONRequestBody = TransactionInput
 
+// CategorizeTransactionsJSONRequestBody defines body for CategorizeTransactions for application/json ContentType.
+type CategorizeTransactionsJSONRequestBody = BulkCategorizeInput
+
 // CorrectTransactionJSONRequestBody defines body for CorrectTransaction for application/json ContentType.
 type CorrectTransactionJSONRequestBody = CorrectionInput
 
@@ -2238,6 +2295,9 @@ type ServerInterface interface {
 	// CreateTransaction Record a transaction.
 	// (POST /transactions)
 	CreateTransaction(w http.ResponseWriter, r *http.Request)
+	// CategorizeTransactions Give several transactions one category, each item decided on its own (A78).
+	// (POST /transactions/categorize)
+	CategorizeTransactions(w http.ResponseWriter, r *http.Request)
 	// GetTransaction Return a transaction.
 	// (GET /transactions/{id})
 	GetTransaction(w http.ResponseWriter, r *http.Request, id ID)
@@ -3777,6 +3837,20 @@ func (siw *ServerInterfaceWrapper) CreateTransaction(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// CategorizeTransactions operation middleware
+func (siw *ServerInterfaceWrapper) CategorizeTransactions(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CategorizeTransactions(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetTransaction operation middleware
 func (siw *ServerInterfaceWrapper) GetTransaction(w http.ResponseWriter, r *http.Request) {
 
@@ -4239,6 +4313,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions/{id}", wrapper.GetTransaction)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/transactions/{id}", wrapper.CorrectTransaction)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/void", wrapper.VoidTransaction)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/categorize", wrapper.CategorizeTransactions)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/categorize", wrapper.CategorizeTransaction)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/transfer", wrapper.TransferTransaction)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions/{id}/versions", wrapper.ListTransactionVersions)
@@ -7366,6 +7441,58 @@ func (response CreateTransaction422ApplicationProblemPlusJSONResponse) VisitCrea
 	return err
 }
 
+type CategorizeTransactionsRequestObject struct {
+	Body *CategorizeTransactionsJSONRequestBody
+}
+
+type CategorizeTransactionsResponseObject interface {
+	VisitCategorizeTransactionsResponse(w http.ResponseWriter) error
+}
+
+type CategorizeTransactions200JSONResponse BulkCategorizeResult
+
+func (response CategorizeTransactions200JSONResponse) VisitCategorizeTransactionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CategorizeTransactions401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CategorizeTransactions401ApplicationProblemPlusJSONResponse) VisitCategorizeTransactionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CategorizeTransactions422ApplicationProblemPlusJSONResponse Problem
+
+func (response CategorizeTransactions422ApplicationProblemPlusJSONResponse) VisitCategorizeTransactionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetTransactionRequestObject struct {
 	Id ID `json:"id"`
 }
@@ -8315,6 +8442,9 @@ type StrictServerInterface interface {
 	// CreateTransaction Record a transaction.
 	// (POST /transactions)
 	CreateTransaction(ctx context.Context, request CreateTransactionRequestObject) (CreateTransactionResponseObject, error)
+	// CategorizeTransactions Give several transactions one category, each item decided on its own (A78).
+	// (POST /transactions/categorize)
+	CategorizeTransactions(ctx context.Context, request CategorizeTransactionsRequestObject) (CategorizeTransactionsResponseObject, error)
 	// GetTransaction Return a transaction.
 	// (GET /transactions/{id})
 	GetTransaction(ctx context.Context, request GetTransactionRequestObject) (GetTransactionResponseObject, error)
@@ -9834,6 +9964,37 @@ func (sh *strictHandler) CreateTransaction(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CreateTransactionResponseObject); ok {
 		if err := validResponse.VisitCreateTransactionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CategorizeTransactions operation middleware
+func (sh *strictHandler) CategorizeTransactions(w http.ResponseWriter, r *http.Request) {
+	var request CategorizeTransactionsRequestObject
+
+	var body CategorizeTransactionsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CategorizeTransactions(ctx, request.(CategorizeTransactionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CategorizeTransactions")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CategorizeTransactionsResponseObject); ok {
+		if err := validResponse.VisitCategorizeTransactionsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

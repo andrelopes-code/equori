@@ -833,6 +833,31 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /transactions/categorize:
+    post:
+      tags: [ledger]
+      operationId: categorizeTransactions
+      summary: Give several transactions one category, each item decided on its own (A78).
+      description: |
+        Each item replaces the category postings of its transaction with one posting on category_id holding their
+        total, method manual. An item that fails reports its status and leaves the others applied.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkCategorizeInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkCategorizeResult"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /transactions/{id}/categorize:
     post:
       tags: [ledger]
@@ -6101,6 +6126,51 @@ components:
           type: string
           format: uuid
           description: The paired transaction that was voided.
+    BulkCategorizeInput:
+      type: object
+      additionalProperties: false
+      required: [category_id, items]
+      properties:
+        category_id:
+          type: string
+          format: uuid
+        items:
+          type: array
+          minItems: 1
+          maxItems: 200
+          items:
+            type: object
+            additionalProperties: false
+            required: [id, expected_version]
+            properties:
+              id:
+                type: string
+                format: uuid
+              expected_version:
+                type: integer
+                minimum: 1
+    BulkCategorizeResult:
+      type: object
+      required: [results]
+      properties:
+        results:
+          type: array
+          description: One result per item, in request order.
+          items:
+            $ref: "#/components/schemas/BulkCategorizeItemResult"
+    BulkCategorizeItemResult:
+      type: object
+      required: [id, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [categorized, version_conflict, transaction_voided, not_categorizable, not_found]
+        version:
+          type: integer
+          description: The new version when status is categorized.
     CategorizeInput:
       type: object
       additionalProperties: false
