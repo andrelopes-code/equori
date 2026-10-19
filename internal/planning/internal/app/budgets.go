@@ -146,3 +146,9 @@ func (s *Service) BudgetProgress(ctx context.Context, userID int64, id uuid.UUID
 	}
 	return p, b.Currency, nil
 }
+
+// HandleCategoriesMerged moves the budget and the schedules of from to into; when into has a
+// budget, the budget of from is dropped (A75).
+func (s *Service) HandleCategoriesMerged(ctx context.Context, userID int64, from, into uuid.UUID) error {
+	return s.repo.MergeCategory(ctx, userID, from, into)
+}

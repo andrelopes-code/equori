@@ -410,7 +410,7 @@ An OFX credit card statement for Itaú Visa: −230.00 on 2026-10-14 is a `charg
 | M28 | S02 |
 | M29 | S31 |
 
-The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44; the category tree by S72, S73 and S75 (amendments A73, A74 and A76 of `docs/superpowers/specs/2026-10-19-web-categorization-design.md`); transfers from imports by S45–S50; aggregator sync by S51–S59 and S68–S71; schedules (F7) by S27–S29 and the planning views by S60–S63; currencies and investments (F9) by S16, S17, S21, S22 and S64–S67.
+The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44; the category tree by S72–S75 (amendments A73–A76 of `docs/superpowers/specs/2026-10-19-web-categorization-design.md`); transfers from imports by S45–S50; aggregator sync by S51–S59 and S68–S71; schedules (F7) by S27–S29 and the planning views by S60–S63; currencies and investments (F9) by S16, S17, S21, S22 and S64–S67.
 
 ## 6.13 Classification
 
@@ -455,6 +455,10 @@ Moving Food under Food › Groceries returns 422 on `parent_id`; the tree is unc
 ### S73 Archived category
 
 Closing Food › Bakery on 2026-10-31 after the S42 transactions returns 200. An imported "PADARIA SAO JOAO" dated 2026-11-02 stays uncategorized although the S42 rule matches. Reopening Bakery and running rules categorizes it. Closing Uncategorized expense returns 422 `system_account` (A74).
+
+### S74 Merge categories
+
+A budget on Travel and none on Transport. Merging Travel into Transport gives the S41 Travel transaction version + 1 with a Transport posting and method `manual`; a rule with `set_category` Travel now names Transport; Travel is closed; the budget names Transport (A75).
 
 ### S75 Transactions of a category subtree
 

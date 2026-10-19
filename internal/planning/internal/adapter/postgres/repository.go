@@ -539,3 +539,13 @@ func (r *Repository) ListGoals(ctx context.Context, userID int64, p page.Request
 	out, err := r.completeGoals(ctx, rows)
 	return out, next, err
 }
+
+func (r *Repository) MergeCategory(ctx context.Context, userID int64, from, into uuid.UUID) error {
+	if err := r.q.DeleteMergedBudget(ctx, DeleteMergedBudgetParams{UserID: userID, FromID: from, IntoID: into}); err != nil {
+		return err
+	}
+	if err := r.q.MoveMergedBudget(ctx, MoveMergedBudgetParams{UserID: userID, FromID: from, IntoID: into}); err != nil {
+		return err
+	}
+	return r.q.MergeScheduleAccounts(ctx, MergeScheduleAccountsParams{UserID: userID, FromID: from, IntoID: into})
+}

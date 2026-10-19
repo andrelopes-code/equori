@@ -95,3 +95,42 @@ func TestMergeRepointsSourceCategoryAndSuggestions(t *testing.T) {
 		t.Fatalf("source category = %q, %v", mapped, err)
 	}
 }
+
+// S74: merging Travel into Transport moves the transaction, the rule and the budget (A75).
+func TestS74MergeCategories(t *testing.T) {
+	b := newBooks(t)
+	trip := b.record(t, "2026-10-14", "UBER *TRIP", "", b.travel, 2390)
+	createRule(t, b.h, "Trips", []map[string]any{contains("trip")}, []map[string]any{setCategory(b.travel)})
+	b.h.MustDo(http.MethodPost, "/api/v1/budgets", map[string]any{
+		"category_id": b.travel, "amount": apitest.BRL(50000), "effective_from": "2026-10", "rollover": false,
+	}, http.StatusCreated, nil)
+	dispatch(t, b.h)
+
+	b.mergeCategory(t, b.travel, b.transport)
+
+	if version, postings := categoryOf(t, b.h, trip); version != 2 || postings[b.transport] != 2390 || postings[b.travel] != 0 {
+		t.Fatalf("trip version %d, postings %v", version, postings)
+	}
+	if c := categorizationOf(t, b.h, trip); method(c) != "manual" {
+		t.Fatalf("trip categorization = %+v", c)
+	}
+	if got := ruleByName(t, b.h, "Trips").Actions[0]["category_id"]; got != b.transport {
+		t.Fatalf("rule category = %v", got)
+	}
+	var travel struct {
+		ClosedOn string `json:"closed_on"`
+	}
+	b.h.MustDo(http.MethodGet, "/api/v1/accounts/"+b.travel, nil, http.StatusOK, &travel)
+	if travel.ClosedOn != "2026-11-05" {
+		t.Fatalf("travel closed_on = %q", travel.ClosedOn)
+	}
+	var budgets struct {
+		Items []struct {
+			CategoryID string `json:"category_id"`
+		} `json:"items"`
+	}
+	b.h.MustDo(http.MethodGet, "/api/v1/budgets", nil, http.StatusOK, &budgets)
+	if len(budgets.Items) != 1 || budgets.Items[0].CategoryID != b.transport {
+		t.Fatalf("budgets = %+v", budgets.Items)
+	}
+}
