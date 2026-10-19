@@ -430,6 +430,7 @@ paths:
         - $ref: "#/components/parameters/Cursor"
         - name: account_id
           in: query
+          description: Transactions with a posting on the account or on one of its descendants (A76).
           schema:
             type: string
             format: uuid

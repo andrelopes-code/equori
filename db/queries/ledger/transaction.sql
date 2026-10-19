@@ -86,10 +86,16 @@ WHERE t.user_id = $1 AND v.transaction_id = $2
 ORDER BY v.version;
 
 -- name: ListTransactions :many
+-- A76: the account filter covers the account and its descendants.
+WITH RECURSIVE tree AS (
+    SELECT a.id FROM ledger_account a WHERE a.user_id = @user_id AND a.id = sqlc.narg(account_id)::uuid
+    UNION ALL
+    SELECT c.id FROM ledger_account c JOIN tree ON c.parent_id = tree.id WHERE c.user_id = @user_id
+)
 SELECT t.* FROM ledger_transaction t
 WHERE t.user_id = @user_id
   AND (sqlc.narg(account_id)::uuid IS NULL OR EXISTS (
-      SELECT 1 FROM ledger_posting p WHERE p.transaction_id = t.id AND p.account_id = sqlc.narg(account_id)::uuid))
+      SELECT 1 FROM ledger_posting p WHERE p.transaction_id = t.id AND p.account_id IN (SELECT id FROM tree)))
   AND (sqlc.narg(payee_id)::uuid IS NULL OR t.payee_id = sqlc.narg(payee_id)::uuid)
   AND (sqlc.narg(tag)::text IS NULL OR EXISTS (
       SELECT 1 FROM ledger_transaction_tag tt JOIN ledger_tag g ON g.id = tt.tag_id

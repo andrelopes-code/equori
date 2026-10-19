@@ -1676,8 +1676,10 @@ type ListTagsParams struct {
 
 // ListTransactionsParams defines parameters for ListTransactions.
 type ListTransactionsParams struct {
-	Limit     *Limit              `form:"limit,omitempty" json:"limit,omitempty"`
-	Cursor    *Cursor             `form:"cursor,omitempty" json:"cursor,omitempty"`
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// AccountId Transactions with a posting on the account or on one of its descendants (A76).
 	AccountId *openapi_types.UUID `form:"account_id,omitempty" json:"account_id,omitempty"`
 	PayeeId   *openapi_types.UUID `form:"payee_id,omitempty" json:"payee_id,omitempty"`
 	Tag       *string             `form:"tag,omitempty" json:"tag,omitempty"`

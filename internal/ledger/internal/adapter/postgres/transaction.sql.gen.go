@@ -422,10 +422,15 @@ func (q *Queries) ListTransactionTags(ctx context.Context, arg ListTransactionTa
 }
 
 const listTransactions = `-- name: ListTransactions :many
+WITH RECURSIVE tree AS (
+    SELECT a.id FROM ledger_account a WHERE a.user_id = $1 AND a.id = $2::uuid
+    UNION ALL
+    SELECT c.id FROM ledger_account c JOIN tree ON c.parent_id = tree.id WHERE c.user_id = $1
+)
 SELECT t.id, t.user_id, t.date, t.description, t.payee_id, t.balancing_currency, t.origin, t.version, t.voided_at, t.void_reason, t.created_at, t.updated_at FROM ledger_transaction t
 WHERE t.user_id = $1
   AND ($2::uuid IS NULL OR EXISTS (
-      SELECT 1 FROM ledger_posting p WHERE p.transaction_id = t.id AND p.account_id = $2::uuid))
+      SELECT 1 FROM ledger_posting p WHERE p.transaction_id = t.id AND p.account_id IN (SELECT id FROM tree)))
   AND ($3::uuid IS NULL OR t.payee_id = $3::uuid)
   AND ($4::text IS NULL OR EXISTS (
       SELECT 1 FROM ledger_transaction_tag tt JOIN ledger_tag g ON g.id = tt.tag_id
@@ -464,6 +469,7 @@ type ListTransactionsParams struct {
 	RowLimit      int32
 }
 
+// A76: the account filter covers the account and its descendants.
 func (q *Queries) ListTransactions(ctx context.Context, arg ListTransactionsParams) ([]LedgerTransaction, error) {
 	rows, err := q.db.Query(ctx, listTransactions,
 		arg.UserID,

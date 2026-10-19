@@ -3692,6 +3692,7 @@ export interface operations {
             query?: {
                 limit?: components["parameters"]["Limit"];
                 cursor?: components["parameters"]["Cursor"];
+                /** @description Transactions with a posting on the account or on one of its descendants (A76). */
                 account_id?: string;
                 payee_id?: string;
                 tag?: string;

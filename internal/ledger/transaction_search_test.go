@@ -142,3 +142,88 @@ func TestListTransactionsSearch(t *testing.T) {
 		h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/transactions?q=", nil), http.StatusBadRequest, "invalid_request", "q")
 	})
 }
+
+type transactionPage struct {
+	Items []struct {
+		ID string `json:"id"`
+	} `json:"items"`
+	NextCursor string `json:"next_cursor"`
+}
+
+func transactionIDs(t *testing.T, h *apitest.Harness, query string) []string {
+	t.Helper()
+	var ids []string
+	cursor := ""
+	for {
+		q := query
+		if cursor != "" {
+			q += "&cursor=" + url.QueryEscape(cursor)
+		}
+		var p transactionPage
+		h.MustDo(http.MethodGet, "/api/v1/transactions?"+q, nil, http.StatusOK, &p)
+		for _, it := range p.Items {
+			ids = append(ids, it.ID)
+		}
+		if p.NextCursor == "" {
+			return ids
+		}
+		cursor = p.NextCursor
+	}
+}
+
+// S75: the account filter includes the account's descendants (A76).
+func TestAccountFilterIncludesSubAccounts(t *testing.T) {
+	h := apitest.New(t)
+	checking := h.Account("Checking", "asset", "checking", nil)
+	food := h.Account("Food", "expense", "", nil)
+	groceries := h.Account("Groceries", "expense", "", map[string]any{"parent_id": food})
+	bakery := h.Account("Bakery", "expense", "", map[string]any{"parent_id": food})
+	delivery := h.Account("Delivery", "expense", "", map[string]any{"parent_id": food})
+	travel := h.Account("Travel", "expense", "", nil)
+	onDelivery := h.Record("2026-10-01", apitest.Posting(checking, -100), apitest.Posting(delivery, 100))
+	onGroceries := h.Record("2026-10-02", apitest.Posting(checking, -100), apitest.Posting(groceries, 100))
+	onBakery := h.Record("2026-10-03", apitest.Posting(checking, -100), apitest.Posting(bakery, 100))
+	onFood := h.Record("2026-10-04", apitest.Posting(checking, -100), apitest.Posting(food, 100))
+	h.Record("2026-10-05", apitest.Posting(checking, -100), apitest.Posting(travel, 100))
+
+	if got, want := transactionIDs(t, h, "account_id="+food), []string{onFood, onBakery, onGroceries, onDelivery}; !slices.Equal(got, want) {
+		t.Fatalf("food subtree = %v, want %v", got, want)
+	}
+	if got, want := transactionIDs(t, h, "account_id="+bakery), []string{onBakery}; !slices.Equal(got, want) {
+		t.Fatalf("bakery = %v, want %v", got, want)
+	}
+}
+
+// Review Focus 5: the subtree filter keeps the order and the cursor, and composes with uncategorized.
+func TestAccountFilterSubtreeWithCursorAndUncategorized(t *testing.T) {
+	h := apitest.New(t)
+	var accounts struct {
+		Items []struct {
+			ID         string `json:"id"`
+			SystemRole string `json:"system_role"`
+		} `json:"items"`
+	}
+	h.MustDo(http.MethodGet, "/api/v1/accounts?limit=200", nil, http.StatusOK, &accounts)
+	var uncategorized string
+	for _, a := range accounts.Items {
+		if a.SystemRole == "uncategorized_expense" {
+			uncategorized = a.ID
+		}
+	}
+	checking := h.Account("Checking", "asset", "checking", nil)
+	food := h.Account("Food", "expense", "", nil)
+	groceries := h.Account("Groceries", "expense", "", map[string]any{"parent_id": food})
+	var want []string
+	for _, date := range []string{"2026-10-01", "2026-10-02", "2026-10-03", "2026-10-04", "2026-10-05"} {
+		want = append(want, h.Record(date, apitest.Posting(checking, -100), apitest.Posting(groceries, 100)))
+	}
+	want = append(want, h.Record("2026-10-06", apitest.Posting(checking, -1000), apitest.Posting(groceries, 600), apitest.Posting(uncategorized, 400)))
+	slices.Reverse(want)
+
+	if got := transactionIDs(t, h, "limit=2&account_id="+food); !slices.Equal(got, want) {
+		t.Fatalf("paged subtree = %v, want %v", got, want)
+	}
+	if got := transactionIDs(t, h, "uncategorized=true&account_id="+food); len(got) != 0 {
+		t.Fatalf("uncategorized subtree = %v, want none", got)
+	}
+}
