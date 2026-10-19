@@ -448,6 +448,10 @@ After Nubank checking is reconciled with the +3,000.00 transaction of S32, the o
 
 October 2026 holds the S41 Travel transaction (manual), the S41 "UBER *EATS" transaction (rule), the S38 seed (manual) and import (history) and one uncategorized line. `GET /categorization-statistics?from=2026-10-01&to=2026-10-31` returns total 5, rule 1, history 1, manual 2, source 0, uncategorized 1.
 
+### S72 Category tree without cycle
+
+Moving Food under Food › Groceries returns 422 on `parent_id`; the tree is unchanged (A73).
+
 ## 6.14 Transfers from imports
 
 Transfer scenarios of phase P5b (chapter 3, F4 and F5). Itaú Visa closes on day 3 and is due on day 10; its statement 2026-11 holds 1,500.00 of charges.

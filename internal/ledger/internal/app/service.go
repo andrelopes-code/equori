@@ -210,6 +210,16 @@ func (s *Service) checkParent(ctx context.Context, r Repository, a domain.Accoun
 			return &domain.FieldError{Field: "parent_id", Message: "a balance account with postings cannot become a parent", Err: domain.ErrValidation}
 		}
 	}
+	if a.ID != uuid.Nil {
+		for ancestor := parent; ancestor.ParentID != uuid.Nil; {
+			if ancestor.ParentID == a.ID {
+				return &domain.FieldError{Field: "parent_id", Message: "must not be a descendant of the account", Err: domain.ErrValidation}
+			}
+			if ancestor, err = r.Account(ctx, a.UserID, ancestor.ParentID); err != nil {
+				return err
+			}
+		}
+	}
 	return domain.ValidateParent(a, parent)
 }
 

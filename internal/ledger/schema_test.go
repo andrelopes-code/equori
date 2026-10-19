@@ -87,6 +87,20 @@ const (
 	foreignKeyViolation = "23503"
 )
 
+// A73: the account tree has no cycle.
+func TestAccountTreeRejectsCycle(t *testing.T) {
+	f := newSchemaFixture(t)
+	a := f.account(t, f.userID, "expense", "", "2026-01-01")
+	b := f.account(t, f.userID, "expense", "", "2026-02-01")
+	if _, err := f.pool.Exec(t.Context(), `UPDATE ledger_account SET parent_id = $1 WHERE id = $2`, a, b); err != nil {
+		t.Fatal(err)
+	}
+	_, err := f.pool.Exec(t.Context(), `UPDATE ledger_account SET parent_id = $1 WHERE id = $2`, b, a)
+	requireViolation(t, err, checkViolation, "own ancestor")
+	_, err = f.pool.Exec(t.Context(), `UPDATE ledger_account SET parent_id = id WHERE id = $1`, a)
+	requireViolation(t, err, checkViolation, "own ancestor")
+}
+
 func TestDBAcceptsBalancedTransaction(t *testing.T) {
 	f := newSchemaFixture(t)
 	if _, err := f.recordTx(t, f.userID, "2026-03-01", postingRow{f.checking, -10000}, postingRow{f.food, 10000}); err != nil {
