@@ -513,7 +513,9 @@ describe("new transaction", () => {
         { account_id: foodID, amount: { amount: 1500, currency: "BRL" } },
       ],
     });
-  });
+    // Slotted finding "EntityPicker takes about 1 s to open in jsdom": the two picks cost
+    // 2.2 s of the test's 3.7 s alone and push it past 5 s under make check.
+  }, 20_000);
 
   it("opens the postings editor prefilled and sends the free postings with memo", async () => {
     const { fetch, captured } = newApi();
