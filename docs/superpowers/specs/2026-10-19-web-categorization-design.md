@@ -12,7 +12,7 @@ The owner keeps one category tree and changes it freely while the ledger grows: 
 
 ## Scope
 
-In scope: amendments A73–A83; the `/categories` section (category tree, review queue, rules, suggestions, source categories, payees and aliases, automation statistics); the categorization method on the transaction page; category pickers across the application.
+In scope: amendments A73–A84; the `/categories` section (category tree, review queue, rules, suggestions, source categories, payees and aliases, automation statistics); the categorization method on the transaction page; category pickers across the application.
 
 Out of scope:
 
@@ -95,17 +95,27 @@ The body is validated as `createRule` validates it; nothing is written.
 ### A82 Payee rename and merge
 
 - `PATCH /payees/{id}` `{ name }` → 200 `Payee`.
-- `POST /payees/{id}/merge` `{ into }` → 200 `Payee` (the destination). Every non-voided transaction with the source payee gets a new version with `payee_id = into` (cause `merge`, A75 rule 1); the source payee is deleted; `ledger.payees_merged.v1` publishes `{ from, into }`.
-- Classification on `ledger.payees_merged.v1`: payee aliases, `payee` conditions, `set_payee` actions, categorization match keys and suggestion fingerprints that name `from` name `into`. An alias that collides on `(match_type, pattern)` is deleted, the older one stays; colliding suggestions follow A75.
+- `POST /payees/{id}/merge` `{ into }` → 200 `Payee` (the destination); 422 on `into` for the same payee or a payee already merged. Every non-voided transaction with the source payee gets a new version with `payee_id = into` (cause `merge`); voided transactions and accounts whose counterparty is the source name the destination in place. The source payee is kept with `merged_into` set and leaves `GET /payees`, because schedules and aliases reference it until their consumers run; `ledger.payees_merged.v1` publishes `{ from, into }`.
+- Classification on `ledger.payees_merged.v1`: payee aliases, rule conditions and actions, categorization match keys and suggestion fingerprints and conditions that name `from` name `into`; colliding suggestions follow A75. Planning moves `planning_schedule.payee_id`. An alias cannot collide: its uniqueness is `(match_type, pattern)`, without the payee.
 
 ### A83 Category colour and icon
 
 - `ledger_account` gains `color smallint NULL CHECK (color BETWEEN 1 AND 8)` and `icon text NULL CHECK (icon ~ '^[a-z0-9-]{1,40}$')`.
-- `Account`, `AccountInput` and `AccountPatch` gain `color` (integer 1–8, nullable) and `icon` (string, nullable, enum `CategoryIcon`); `null` in a patch clears either.
-- `CategoryIcon` in `api/openapi.yaml` lists the curated icon keys, each the kebab-case name of a `lucide-react` icon. The slice 3 plan fixes the list, about 60 keys covering housing, food, transport, health, education, leisure, shopping, services, finance, income, family, pets and travel. The server validates against the enum.
+- `AccountInput` accepts `color` (integer 1–8) and `icon` (`CategoryIcon`) on creation; `Account` returns both when set. `PUT /accounts/{id}/appearance` `{ color, icon }`, both required and nullable, sets them, and `null` clears either: a PATCH cannot tell `null` from an absent field without a new dependency.
+- `CategoryIcon` in `api/openapi.yaml` lists 81 kebab-case names of `lucide-react` 1.52.0 icons, each checked against the package: `house`, `building-2`, `key-round`, `sofa`, `lamp`, `wrench`, `hammer`, `zap`, `droplet`, `flame`, `wifi`, `smartphone`, `tv`, `shopping-cart`, `shopping-basket`, `utensils`, `coffee`, `pizza`, `croissant`, `apple`, `wine`, `beer`, `car`, `fuel`, `bus`, `train-front`, `bike`, `plane`, `circle-parking`, `car-taxi-front`, `heart-pulse`, `pill`, `stethoscope`, `dumbbell`, `hospital`, `graduation-cap`, `book-open`, `school`, `film`, `music`, `gamepad-2`, `ticket`, `palette`, `party-popper`, `shirt`, `gift`, `shopping-bag`, `package`, `scissors`, `receipt`, `briefcase`, `laptop`, `cloud`, `globe`, `landmark`, `piggy-bank`, `wallet`, `credit-card`, `banknote`, `coins`, `percent`, `trending-up`, `chart-pie`, `hand-coins`, `file-text`, `shield`, `baby`, `users`, `heart`, `dog`, `cat`, `paw-print`, `luggage`, `map`, `hotel`, `tent`, `smile`, `sparkles`, `tag`. The request validator rejects any other value (400 `invalid_request`).
 - The web maps `color` `n` to `var(--slotted-data-n)` and `icon` to its `lucide-react` component inside the Slotted `Icon` family. `lucide-react` is a new dependency, pinned exactly; ADR 010 gains its row (approved by the owner on 2026-10-19).
 - Category mark: one own element `CategoryMark` (build-own-element) draws the icon at `size="sm"` in the category colour on a tint of that colour, in a square with `var(--slotted-control-radius)` corners. Without icon it draws the colour square alone, with no letter; without colour the icon takes `tone="muted"` on the neutral surface; with neither it draws nothing. It never uses `Avatar`.
-- A schema test inserts `color` 9 and `icon` `"Bad Icon"` and expects both rejections; an apitest posts an icon outside the enum and expects 422 on `icon`.
+- A schema test inserts `color` 9 and `icon` `"Bad Icon"` and expects both rejections; an apitest posts an icon outside the enum and expects 400 `invalid_request`.
+
+### A84 Parent setter
+
+`PUT /accounts/{id}/parent` `{ parent_id }` (required, nullable) sets the parent with the checks of A73 and A74, and `null` makes the account top level, which `PATCH /accounts/{id}` cannot express.
+
+### Implementation notes
+
+- A75: the merge moves each source posting with its amount and memo; postings that share the destination are not summed.
+- A78: the items run in one database transaction through the existing `Categorize` batch; each item error leaves the others applied.
+- A81: Classification reads today from the ledger's clock through its ledger port.
 
 ### New scenarios
 
@@ -131,7 +141,7 @@ Added to `06-scenarios.md`, section 6.13, with the categories of that section pl
 | CZ3 | `/accounts` drops the income and expense columns of A3 and shows a link to `/categories`; equity accounts keep the A3 index. |
 | CZ4 | The section header holds tabs rendered as route links (`tabs` with `render`): Categories (`/categories`), Review (`/categories/review`, uncategorized count badge), Rules (`/categories/rules`, pending suggestion count badge), Payees (`/categories/payees`), Automation (`/categories/automation`). Below 600 px the tabs scroll horizontally in one row. |
 | CZ5 | Tree (`/categories`): a `segmented-control` Expense \| Income in the search param `class`; a month in `?month=YYYY-MM`, the current month by default, with the previous and next controls of the overview (O1). The `tree` family renders the open categories of the class; each row shows the `CategoryMark` (A83), the name, the month's `subtree_total` (A77) aligned as a figure, and its share of the class total. System categories render without edit actions. Archived categories sit in a collapsed `collapsible` "Archived (n)" under the tree. |
-| CZ6 | Row actions (`menu`; `action-sheet` below 600 px): New subcategory, Rename, Move, Colour, Merge, Archive; on archived rows Reopen. Appearance replaces a separate colour action. New subcategory and Rename edit inline in the row; Enter saves, Escape cancels. Move opens a dialog with a `tree` of the same class without the row's subtree and with a "Top level" choice. Appearance opens a `popover` with the eight colour swatches and "None", and an icon grid of the `CategoryIcon` keys with a search field and "None"; the row's `CategoryMark` previews the choice. |
+| CZ6 | Row actions (`menu`; `action-sheet` below 600 px): New subcategory, Rename, Move, Colour, Merge, Archive; on archived rows Reopen. Appearance replaces a separate colour action. New subcategory and Rename edit inline in the row; Enter saves, Escape cancels. Move opens a dialog with a `tree` of the same class without the row's subtree and with a "Top level" choice, and posts A84. Appearance (A83 `PUT /accounts/{id}/appearance`) opens a `popover` with the eight colour swatches and "None", and an icon grid of the `CategoryIcon` keys with a search field and "None"; the row's `CategoryMark` previews the choice. |
 | CZ7 | Merge dialog: a destination picker (same class and instrument, open, outside the subtree). The confirmation states that every transaction of the source moves to the destination, that the subcategories move under it, and the budget outcome of A75 read from `listBudgets`: the source budget moves, or, when both have one, the source budget is deleted. |
 | CZ8 | Archive confirmation states that rules naming the category stop deciding (A74) and lists them by name (rules whose actions name the category or a descendant). After archive, a `toast` offers Undo, which calls reopen. |
 | CZ9 | Category detail at `/categories/$id`: breadcrumb of ancestors; header with name, colour, and the row actions of CZ6; the month total and a 12-month bar `chart` of monthly totals derived from `getBalanceSeries` over the last 366 days; budget progress (`getBudgetProgress`) when the category has a budget, linking to planning; "Rules that set this category" (from `listRules`, with A80 counts); mapped source categories; the transactions of the subtree (A76) as the transactions list rows. |
@@ -224,7 +234,7 @@ One vertical slice per commit; each slice passes `make check`.
 ## Verification
 
 - `make check` passes on the branch head.
-- A73–A83 each have the apitests and schema tests of their section; S72–S79 are in `06-scenarios.md`.
+- A73–A84 each have the apitests and schema tests of their section; S72–S79 are in `06-scenarios.md`.
 - `rg -n "S(3[7-9]|4[0-4]|56|7[2-9])" web/src/features/categories` lists a flow test for each scenario of the Tests table.
 - Each route of this spec renders at 360, 768 and 1280 px with no horizontal scroll.
 

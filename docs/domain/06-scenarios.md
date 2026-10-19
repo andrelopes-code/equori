@@ -410,7 +410,7 @@ An OFX credit card statement for Itaú Visa: −230.00 on 2026-10-14 is a `charg
 | M28 | S02 |
 | M29 | S31 |
 
-The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44; the category tree by S72–S75 (amendments A73–A76 of `docs/superpowers/specs/2026-10-19-web-categorization-design.md`); transfers from imports by S45–S50; aggregator sync by S51–S59 and S68–S71; schedules (F7) by S27–S29 and the planning views by S60–S63; currencies and investments (F9) by S16, S17, S21, S22 and S64–S67.
+The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44; the category tree and its tools by S72–S79 (amendments A73–A84 of `docs/superpowers/specs/2026-10-19-web-categorization-design.md`); transfers from imports by S45–S50; aggregator sync by S51–S59 and S68–S71; schedules (F7) by S27–S29 and the planning views by S60–S63; currencies and investments (F9) by S16, S17, S21, S22 and S64–S67.
 
 ## 6.13 Classification
 
@@ -463,6 +463,22 @@ A budget on Travel and none on Transport. Merging Travel into Transport gives th
 ### S75 Transactions of a category subtree
 
 `GET /transactions?account_id=<Food>` lists the S38 Delivery, S40 Groceries and S42 Bakery transactions (A76).
+
+### S76 Category totals
+
+`GET /reports/categories?from=2026-10-01&to=2026-10-31&class=expense` returns Travel total 23.90 (S41) and Food `subtree_total` equal to the totals of Food, Delivery, Groceries and Bakery summed (A77).
+
+### S77 Bulk categorization
+
+Three uncategorized transactions, one with a stale `expected_version`, posted to `POST /transactions/categorize` with one category: results `categorized`, `categorized`, `version_conflict` (A78).
+
+### S78 Rule preview
+
+With the S41 data, previewing "description contains `uber`" → Ride-hailing returns `would_categorize` with no transaction and `conflicts` with the Travel transaction (A81).
+
+### S79 Payee merge
+
+Payees "iFood" and "IFOOD SP" merged into "iFood": the S38 alias names the destination, the transactions of "IFOOD SP" get version + 1, `GET /payees` lists one of the two (A82).
 
 ## 6.14 Transfers from imports
 
