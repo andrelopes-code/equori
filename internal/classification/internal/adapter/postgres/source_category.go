@@ -67,3 +67,19 @@ func (r *Repository) MapSourceCategory(ctx context.Context, userID int64, id, ca
 	}
 	return toSourceCategory(row), nil
 }
+
+func (r *Repository) MergeCategory(ctx context.Context, userID int64, from, into uuid.UUID) error {
+	if err := r.q.DeleteMergeCollidingSuggestions(ctx, DeleteMergeCollidingSuggestionsParams{UserID: userID, FromID: from.String(), IntoID: into.String()}); err != nil {
+		return err
+	}
+	if err := r.q.MergeSuggestions(ctx, MergeSuggestionsParams{UserID: userID, FromID: from.String(), IntoID: into.String()}); err != nil {
+		return err
+	}
+	if err := r.q.MergeRuleActions(ctx, MergeRuleActionsParams{UserID: userID, FromID: from.String(), IntoID: into.String()}); err != nil {
+		return err
+	}
+	if err := r.q.MergeSourceCategories(ctx, MergeSourceCategoriesParams{UserID: userID, FromID: uuid.NullUUID{UUID: from, Valid: true}, IntoID: uuid.NullUUID{UUID: into, Valid: true}}); err != nil {
+		return err
+	}
+	return r.q.MergeCategorizations(ctx, MergeCategorizationsParams{UserID: userID, FromID: uuid.NullUUID{UUID: from, Valid: true}, IntoID: uuid.NullUUID{UUID: into, Valid: true}})
+}

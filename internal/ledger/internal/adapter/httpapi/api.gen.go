@@ -1220,6 +1220,11 @@ type LinkReference struct {
 // LinkReferenceType defines model for LinkReference.Type.
 type LinkReferenceType string
 
+// MergeAccountInput defines model for MergeAccountInput.
+type MergeAccountInput struct {
+	Into openapi_types.UUID `json:"into"`
+}
+
 // Money defines model for Money.
 type Money struct {
 	// Amount Integer units of the instrument scale (ADR 005).
@@ -1725,6 +1730,9 @@ type CloseAccountJSONRequestBody = CloseAccountInput
 // CreateCreditLimitJSONRequestBody defines body for CreateCreditLimit for application/json ContentType.
 type CreateCreditLimitJSONRequestBody = CreditLimit
 
+// MergeAccountJSONRequestBody defines body for MergeAccount for application/json ContentType.
+type MergeAccountJSONRequestBody = MergeAccountInput
+
 // UnlockAccountJSONRequestBody defines body for UnlockAccount for application/json ContentType.
 type UnlockAccountJSONRequestBody = UnlockInput
 
@@ -1847,6 +1855,9 @@ type ServerInterface interface {
 	// CreateCreditLimit Add a credit limit version.
 	// (POST /accounts/{id}/credit-limits)
 	CreateCreditLimit(w http.ResponseWriter, r *http.Request, id ID)
+	// MergeAccount Merge a category into another; returns the destination (A75).
+	// (POST /accounts/{id}/merge)
+	MergeAccount(w http.ResponseWriter, r *http.Request, id ID)
 	// GetReconciliationStatus Last reconciliation date and the open difference of the latest assertion.
 	// (GET /accounts/{id}/reconciliation)
 	GetReconciliationStatus(w http.ResponseWriter, r *http.Request, id ID)
@@ -2460,6 +2471,32 @@ func (siw *ServerInterfaceWrapper) CreateCreditLimit(w http.ResponseWriter, r *h
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateCreditLimit(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// MergeAccount operation middleware
+func (siw *ServerInterfaceWrapper) MergeAccount(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.MergeAccount(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3849,6 +3886,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/accounts/{id}", wrapper.UpdateAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/close", wrapper.CloseAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/reopen", wrapper.ReopenAccount)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/merge", wrapper.MergeAccount)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/balance", wrapper.GetAccountBalance)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/balances", wrapper.ListBalances)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions", wrapper.ListTransactions)
@@ -4827,6 +4865,73 @@ func (response CreateCreditLimit404ApplicationProblemPlusJSONResponse) VisitCrea
 type CreateCreditLimit422ApplicationProblemPlusJSONResponse Problem
 
 func (response CreateCreditLimit422ApplicationProblemPlusJSONResponse) VisitCreateCreditLimitResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MergeAccountRequestObject struct {
+	Id   ID `json:"id"`
+	Body *MergeAccountJSONRequestBody
+}
+
+type MergeAccountResponseObject interface {
+	VisitMergeAccountResponse(w http.ResponseWriter) error
+}
+
+type MergeAccount200JSONResponse Account
+
+func (response MergeAccount200JSONResponse) VisitMergeAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MergeAccount401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response MergeAccount401ApplicationProblemPlusJSONResponse) VisitMergeAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MergeAccount404ApplicationProblemPlusJSONResponse Problem
+
+func (response MergeAccount404ApplicationProblemPlusJSONResponse) VisitMergeAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MergeAccount422ApplicationProblemPlusJSONResponse Problem
+
+func (response MergeAccount422ApplicationProblemPlusJSONResponse) VisitMergeAccountResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -7633,6 +7738,9 @@ type StrictServerInterface interface {
 	// CreateCreditLimit Add a credit limit version.
 	// (POST /accounts/{id}/credit-limits)
 	CreateCreditLimit(ctx context.Context, request CreateCreditLimitRequestObject) (CreateCreditLimitResponseObject, error)
+	// MergeAccount Merge a category into another; returns the destination (A75).
+	// (POST /accounts/{id}/merge)
+	MergeAccount(ctx context.Context, request MergeAccountRequestObject) (MergeAccountResponseObject, error)
 	// GetReconciliationStatus Last reconciliation date and the open difference of the latest assertion.
 	// (GET /accounts/{id}/reconciliation)
 	GetReconciliationStatus(ctx context.Context, request GetReconciliationStatusRequestObject) (GetReconciliationStatusResponseObject, error)
@@ -8233,6 +8341,39 @@ func (sh *strictHandler) CreateCreditLimit(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CreateCreditLimitResponseObject); ok {
 		if err := validResponse.VisitCreateCreditLimitResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// MergeAccount operation middleware
+func (sh *strictHandler) MergeAccount(w http.ResponseWriter, r *http.Request, id ID) {
+	var request MergeAccountRequestObject
+
+	request.Id = id
+
+	var body MergeAccountJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.MergeAccount(ctx, request.(MergeAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "MergeAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(MergeAccountResponseObject); ok {
+		if err := validResponse.VisitMergeAccountResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -350,6 +350,35 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /accounts/{id}/merge:
+    post:
+      tags: [ledger]
+      operationId: mergeAccount
+      summary: Merge a category into another; returns the destination (A75).
+      description: |
+        Every non-voided transaction with a posting on the category gets a new version with that posting
+        on the destination; the subcategories move under the destination; the category closes today.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MergeAccountInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /accounts/{id}/balance:
     get:
       tags: [ledger]
@@ -5015,6 +5044,14 @@ components:
         yield_mode:
           type: string
           enum: [none, auto]
+    MergeAccountInput:
+      type: object
+      additionalProperties: false
+      required: [into]
+      properties:
+        into:
+          type: string
+          format: uuid
     CloseAccountInput:
       type: object
       additionalProperties: false

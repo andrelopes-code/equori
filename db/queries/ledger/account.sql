@@ -42,3 +42,10 @@ WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided;
 
 -- name: GetAccountForUpdate :one
 SELECT * FROM ledger_account WHERE user_id = $1 AND id = $2 FOR UPDATE;
+
+-- name: TransactionsWithAccount :many
+-- A75: the non-voided transactions with a posting on the account.
+SELECT DISTINCT t.id FROM ledger_transaction t
+JOIN ledger_posting p ON p.transaction_id = t.id
+WHERE t.user_id = @user_id AND p.account_id = @account_id AND t.voided_at IS NULL
+ORDER BY t.id;

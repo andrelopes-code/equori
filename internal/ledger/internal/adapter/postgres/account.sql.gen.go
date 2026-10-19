@@ -315,6 +315,39 @@ func (q *Queries) SetSystemAccountsInstrument(ctx context.Context, arg SetSystem
 	return err
 }
 
+const transactionsWithAccount = `-- name: TransactionsWithAccount :many
+SELECT DISTINCT t.id FROM ledger_transaction t
+JOIN ledger_posting p ON p.transaction_id = t.id
+WHERE t.user_id = $1 AND p.account_id = $2 AND t.voided_at IS NULL
+ORDER BY t.id
+`
+
+type TransactionsWithAccountParams struct {
+	UserID    int64
+	AccountID uuid.UUID
+}
+
+// A75: the non-voided transactions with a posting on the account.
+func (q *Queries) TransactionsWithAccount(ctx context.Context, arg TransactionsWithAccountParams) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, transactionsWithAccount, arg.UserID, arg.AccountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateAccount = `-- name: UpdateAccount :one
 UPDATE ledger_account
 SET name = $1, parent_id = $2, institution_id = $3,

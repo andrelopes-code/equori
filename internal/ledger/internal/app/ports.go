@@ -278,6 +278,8 @@ type Repository interface {
 	UpdateAccount(ctx context.Context, a domain.Account) (domain.Account, error)
 	AccountHasChildren(ctx context.Context, userID int64, id uuid.UUID) (bool, error)
 	AccountTotals(ctx context.Context, userID int64, id uuid.UUID) (AccountTotals, error)
+	// TransactionsWithAccount returns the non-voided transactions with a posting on the account.
+	TransactionsWithAccount(ctx context.Context, userID int64, accountID uuid.UUID) ([]uuid.UUID, error)
 
 	Transaction(ctx context.Context, userID int64, id uuid.UUID) (domain.Transaction, error)
 	LockTransaction(ctx context.Context, userID int64, id uuid.UUID) (domain.Transaction, error)

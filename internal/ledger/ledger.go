@@ -39,10 +39,17 @@ const (
 	EventTransactionCategorized = app.EventTransactionCategorized
 	// EventTransactionsPaired follows a Transfer that pairs two transactions (P5b amendment A29).
 	EventTransactionsPaired = app.EventTransactionsPaired
+	// EventCategoriesMerged follows MergeCategories (A75).
+	EventCategoriesMerged = app.EventCategoriesMerged
+	// CauseMerge is the cause method of the versions a merge creates.
+	CauseMerge = app.CauseMerge
 )
 
 // TransactionEvent is the payload of the transaction events.
 type TransactionEvent = app.TransactionEvent
+
+// CategoriesMerged is the payload of EventCategoriesMerged.
+type CategoriesMerged = app.CategoriesMerged
 
 type Module struct {
 	http *httpapi.Server

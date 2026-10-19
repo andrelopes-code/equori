@@ -14,8 +14,12 @@ import (
 
 const (
 	EventTransactionCategorized = "ledger.transaction_categorized.v1"
-	reasonCategorized           = "categorized"
-	MethodManual                = "manual"
+	EventCategoriesMerged       = "ledger.categories_merged.v1"
+	// CauseMerge marks the versions a merge creates; Classification keeps their method (A75).
+	CauseMerge        = "merge"
+	reasonMerged      = "merged"
+	reasonCategorized = "categorized"
+	MethodManual      = "manual"
 )
 
 // Cause says who decided a categorization; the ledger stores nothing of it and only
@@ -106,4 +110,107 @@ func postingAccounts(ts ...domain.Transaction) []uuid.UUID {
 		}
 	}
 	return ids
+}
+
+// CategoriesMerged is the payload of EventCategoriesMerged.
+type CategoriesMerged struct {
+	From uuid.UUID `json:"from"`
+	Into uuid.UUID `json:"into"`
+}
+
+// MergeCategories moves the postings and children of from to into, closes from and
+// publishes EventCategoriesMerged (A75). It returns into.
+func (s *Service) MergeCategories(ctx context.Context, userID int64, from, into uuid.UUID) (domain.Account, error) {
+	var dest domain.Account
+	err := s.repo.InTx(ctx, func(r Repository) error {
+		src, err := r.Account(ctx, userID, from)
+		if err != nil {
+			return err
+		}
+		if dest, err = r.Account(ctx, userID, into); errors.Is(err, ErrNotFound) {
+			return &domain.FieldError{Field: "into", Message: "unknown account", Err: domain.ErrUnknownAccount}
+		} else if err != nil {
+			return err
+		}
+		all, err := r.AllAccounts(ctx, userID)
+		if err != nil {
+			return err
+		}
+		if err := checkMerge(src, dest, all); err != nil {
+			return err
+		}
+		ids, err := r.TransactionsWithAccount(ctx, userID, from)
+		if err != nil {
+			return err
+		}
+		for _, id := range ids {
+			if err := s.reassign(ctx, r, userID, id, src, dest); err != nil {
+				return err
+			}
+		}
+		for _, child := range subtreeOf(src, all)[1:] {
+			if child.ParentID != src.ID {
+				continue
+			}
+			child.ParentID = dest.ID
+			if _, err := r.UpdateAccount(ctx, child); err != nil {
+				return err
+			}
+		}
+		today := s.clock.Today()
+		src.ClosedOn = &today
+		if src, err = domain.NewAccount(src); err != nil {
+			return err
+		}
+		if _, err := r.UpdateAccount(ctx, src); err != nil {
+			return err
+		}
+		return r.Publish(ctx, outbox.Event{Type: EventCategoriesMerged, UserID: userID, AggregateID: src.ID.String(), Payload: CategoriesMerged{From: src.ID, Into: dest.ID}})
+	})
+	return dest, err
+}
+
+func checkMerge(src, dest domain.Account, all []domain.Account) error {
+	invalid := func(message string) error {
+		return &domain.FieldError{Field: "into", Message: message, Err: domain.ErrValidation}
+	}
+	switch {
+	case src.SystemRole != "" || dest.SystemRole != "":
+		return ErrSystemAccount
+	case src.ID == dest.ID:
+		return invalid("must differ from the account")
+	case !src.IsCategory() || !dest.IsCategory():
+		return invalid("both accounts must be income or expense categories")
+	case src.Class != dest.Class || src.Instrument != dest.Instrument:
+		return invalid("must have the class and the currency of the account")
+	case src.ClosedOn != nil || dest.ClosedOn != nil:
+		return invalid("both accounts must be open")
+	}
+	for _, a := range subtreeOf(src, all) {
+		if a.ID == dest.ID {
+			return invalid("must not be a descendant of the account")
+		}
+	}
+	return nil
+}
+
+func (s *Service) reassign(ctx context.Context, r Repository, userID int64, id uuid.UUID, src, dest domain.Account) error {
+	prev, err := r.LockTransaction(ctx, userID, id)
+	if err != nil {
+		return err
+	}
+	next, err := prev.ReassignCategory(src.ID, dest)
+	if err != nil {
+		return err
+	}
+	accounts, err := r.Accounts(ctx, userID, postingAccounts(prev, next))
+	if err != nil {
+		return err
+	}
+	if err := r.ReplaceCategoryPostings(ctx, prev, next, reasonMerged); err != nil {
+		return err
+	}
+	event := newTransactionEvent(next, accounts, prev)
+	event.Cause = &Cause{Method: CauseMerge}
+	return r.Publish(ctx, outbox.Event{Type: EventTransactionCategorized, UserID: userID, AggregateID: next.ID.String(), Payload: event})
 }

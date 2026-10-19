@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -94,6 +95,27 @@ func (t Transaction) Categorize(c Categorization, accounts map[uuid.UUID]Account
 		return Transaction{}, err
 	}
 	t.Tags = tags
+	t.Version++
+	return t, nil
+}
+
+// ReassignCategory returns the next version of t with its postings on from moved to into,
+// keeping their amounts and memos (A75).
+func (t Transaction) ReassignCategory(from uuid.UUID, into Account) (Transaction, error) {
+	if t.VoidedAt != nil {
+		return Transaction{}, ErrVoided
+	}
+	if !into.IsOpenOn(t.Date) {
+		return Transaction{}, &FieldError{Field: "into", Message: "account is not open on " + t.Date.Format(time.DateOnly), Err: ErrAccountClosed}
+	}
+	postings := make([]Posting, len(t.Postings))
+	for i, p := range t.Postings {
+		if p.AccountID == from {
+			p.ID, p.AccountID = uuid.Nil, into.ID
+		}
+		postings[i] = p
+	}
+	t.Postings = postings
 	t.Version++
 	return t, nil
 }

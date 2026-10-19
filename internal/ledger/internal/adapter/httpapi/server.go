@@ -189,6 +189,14 @@ func (s *Server) CloseAccount(ctx context.Context, req CloseAccountRequestObject
 	return CloseAccount200JSONResponse(toAccountAPI(a)), nil
 }
 
+func (s *Server) MergeAccount(ctx context.Context, req MergeAccountRequestObject) (MergeAccountResponseObject, error) {
+	a, err := s.svc.MergeCategories(ctx, auth.MustUserID(ctx), req.Id, req.Body.Into)
+	if err != nil {
+		return nil, err
+	}
+	return MergeAccount200JSONResponse(toAccountAPI(a)), nil
+}
+
 func (s *Server) ReopenAccount(ctx context.Context, req ReopenAccountRequestObject) (ReopenAccountResponseObject, error) {
 	a, err := s.svc.ReopenAccount(ctx, auth.MustUserID(ctx), req.Id)
 	if err != nil {

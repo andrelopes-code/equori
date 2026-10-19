@@ -244,6 +244,10 @@ func (r *Repository) AccountTotals(ctx context.Context, userID int64, id uuid.UU
 	return app.AccountTotals{Total: row.Total, LastBookedOn: row.LastBookedOn}, nil
 }
 
+func (r *Repository) TransactionsWithAccount(ctx context.Context, userID int64, accountID uuid.UUID) ([]uuid.UUID, error) {
+	return r.q.TransactionsWithAccount(ctx, TransactionsWithAccountParams{UserID: userID, AccountID: accountID})
+}
+
 func (r *Repository) Transaction(ctx context.Context, userID int64, id uuid.UUID) (domain.Transaction, error) {
 	row, err := r.q.GetTransaction(ctx, GetTransactionParams{UserID: userID, ID: id})
 	if err != nil {

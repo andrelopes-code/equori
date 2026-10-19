@@ -85,6 +85,15 @@ func (s *Service) HandleEvent(ctx context.Context, e Event) error {
 	rec := Record{TransactionID: e.TransactionID, UserID: e.UserID, Version: e.Version, Date: e.Date, DecidedAt: e.OccurredAt}
 	switch {
 	case e.CategoryState == stateUncategorized:
+	case e.Cause.Method == causeMerge:
+		prev, err := s.repo.Categorization(ctx, e.UserID, e.TransactionID)
+		if errors.Is(err, ErrNotFound) {
+			return errRecordPending
+		}
+		if err != nil {
+			return err
+		}
+		rec.Method, rec.RuleID, rec.Corrected, rec.MatchKey, rec.CategoryID = prev.Method, prev.RuleID, prev.Corrected, prev.MatchKey, prev.CategoryID
 	case e.Cause.Method != "":
 		rec.Method, rec.RuleID = e.Cause.Method, e.Cause.RuleID
 		rec.Corrected = e.Cause.Method == MethodManual
@@ -101,7 +110,7 @@ func (s *Service) HandleEvent(ctx context.Context, e Event) error {
 		rec.Method = MethodManual
 		rec.Corrected = e.Type == EventCorrected
 	}
-	if rec.Corrected && (e.Cause.Method != "" || e.CategoriesChanged) {
+	if rec.Corrected && e.Cause.Method != causeMerge && (e.Cause.Method != "" || e.CategoriesChanged) {
 		if err := s.describeCorrection(ctx, &rec); err != nil {
 			return err
 		}
@@ -112,7 +121,7 @@ func (s *Service) HandleEvent(ctx context.Context, e Event) error {
 		}
 	}
 	written, err := s.repo.UpsertCategorization(ctx, rec)
-	if err != nil || !written || !rec.Corrected {
+	if err != nil || !written || !rec.Corrected || e.Cause.Method == causeMerge {
 		return err
 	}
 	return s.suggest(ctx, rec)

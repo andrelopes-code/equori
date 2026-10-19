@@ -51,7 +51,7 @@ Preconditions, each a 422 `validation_failed` on `into` unless noted: source and
 
 Effects, in one database transaction:
 
-1. Every non-voided transaction with a posting on the source gets a new version whose source postings move to the destination; postings that then share the destination sum into one. Each version publishes `ledger.transaction_categorized.v1` with cause `merge`.
+1. Every non-voided transaction with a posting on the source gets a new version whose source postings move to the destination with their amounts and memos; postings that then share the destination stay separate, so no memo is lost. Each version publishes `ledger.transaction_categorized.v1` with cause `merge`.
 2. The children of the source move under the destination.
 3. The source is closed on today's date (`platform/clock`).
 4. `ledger.categories_merged.v1` publishes `{ from, into }`.

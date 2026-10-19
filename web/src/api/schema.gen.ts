@@ -184,6 +184,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/{id}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Merge a category into another; returns the destination (A75).
+         * @description Every non-voided transaction with a posting on the category gets a new version with that posting
+         *     on the destination; the subcategories move under the destination; the category closes today.
+         */
+        post: operations["mergeAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/{id}/balance": {
         parameters: {
             query?: never;
@@ -2713,6 +2734,10 @@ export interface components {
             /** @enum {string} */
             yield_mode?: "none" | "auto";
         };
+        MergeAccountInput: {
+            /** Format: uuid */
+            into: string;
+        };
         CloseAccountInput: {
             /** Format: date */
             closed_on: string;
@@ -3616,6 +3641,35 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Account"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    mergeAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MergeAccountInput"];
+            };
+        };
         responses: {
             /** @description OK. */
             200: {

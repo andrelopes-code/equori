@@ -45,7 +45,17 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, lo
 	for _, ledgerType := range []string{ledger.EventTransactionRecorded, ledger.EventTransactionCorrected, ledger.EventTransactionCategorized, ledger.EventTransactionVoided} {
 		dispatcher.Subscribe(consumer, ledgerType, port.handle)
 	}
+	dispatcher.Subscribe(consumer, ledger.EventCategoriesMerged, port.handleMerge)
 	return &Module{http: httpapi.NewServer(svc, log), svc: svc}
+}
+
+// handleMerge follows a category merge in the dispatcher's transaction (A75).
+func (p ledgerPort) handleMerge(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
+	var payload ledger.CategoriesMerged
+	if err := json.Unmarshal(e.Payload, &payload); err != nil {
+		return fmt.Errorf("decode %s: %w", e.Type, err)
+	}
+	return app.NewService(postgres.NewTxRepository(tx), p).HandleCategoriesMerged(ctx, e.UserID, payload.From, payload.Into)
 }
 
 // handle runs in the dispatcher's transaction, so the record commits with the delivery.

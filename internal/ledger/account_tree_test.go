@@ -49,7 +49,12 @@ type categoryTree struct {
 // newCategoryTree builds Food › Bakery and Food › Delivery beside a checking account.
 func newCategoryTree(t *testing.T) categoryTree {
 	t.Helper()
-	h := apitest.New(t)
+	return newCategoryTreeWith(t)
+}
+
+func newCategoryTreeWith(t *testing.T, opts ...apitest.Option) categoryTree {
+	t.Helper()
+	h := apitest.New(t, opts...)
 	c := categoryTree{h: h}
 	var accounts struct {
 		Items []struct {

@@ -85,6 +85,9 @@ type Repository interface {
 	// MapSourceCategory sets or, with uuid.Nil, clears the owner's category.
 	MapSourceCategory(ctx context.Context, userID int64, id, categoryID uuid.UUID) (SourceCategory, error)
 
+	// MergeCategory rewrites every reference to from as into (A75).
+	MergeCategory(ctx context.Context, userID int64, from, into uuid.UUID) error
+
 	// CorrectedExamples returns up to limit corrected, non-voided transactions with the
 	// match key and category, oldest first.
 	CorrectedExamples(ctx context.Context, userID int64, matchKey string, categoryID uuid.UUID, limit int) ([]uuid.UUID, error)
