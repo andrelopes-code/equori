@@ -12,6 +12,49 @@ import (
 	"github.com/google/uuid"
 )
 
+const categorizationsByIDs = `-- name: CategorizationsByIDs :many
+SELECT transaction_id, user_id, transaction_version, transaction_date, method, rule_id, corrected, match_key, category_id, voided, decided_at FROM classification_categorization
+WHERE user_id = $1 AND transaction_id = ANY($2::uuid[]) AND NOT voided
+`
+
+type CategorizationsByIDsParams struct {
+	UserID int64
+	Ids    []uuid.UUID
+}
+
+// A79: the categorizations of several transactions.
+func (q *Queries) CategorizationsByIDs(ctx context.Context, arg CategorizationsByIDsParams) ([]ClassificationCategorization, error) {
+	rows, err := q.db.Query(ctx, categorizationsByIDs, arg.UserID, arg.Ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ClassificationCategorization
+	for rows.Next() {
+		var i ClassificationCategorization
+		if err := rows.Scan(
+			&i.TransactionID,
+			&i.UserID,
+			&i.TransactionVersion,
+			&i.TransactionDate,
+			&i.Method,
+			&i.RuleID,
+			&i.Corrected,
+			&i.MatchKey,
+			&i.CategoryID,
+			&i.Voided,
+			&i.DecidedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const countMethods = `-- name: CountMethods :many
 SELECT coalesce(method, '')::text AS method, count(*) AS n FROM classification_categorization
 WHERE user_id = $1 AND NOT voided AND transaction_date BETWEEN $2 AND $3
@@ -154,6 +197,45 @@ func (q *Queries) PendingCategorizations(ctx context.Context, arg PendingCategor
 	for rows.Next() {
 		var i PendingCategorizationsRow
 		if err := rows.Scan(&i.TransactionID, &i.TransactionDate); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const ruleUsage = `-- name: RuleUsage :many
+SELECT rule_id::uuid AS rule_id, count(*)::int AS n, max(decided_at)::timestamptz AS last_decided_at
+FROM classification_categorization
+WHERE user_id = $1 AND method = 'rule' AND NOT voided AND rule_id = ANY($2::uuid[])
+GROUP BY rule_id
+`
+
+type RuleUsageParams struct {
+	UserID int64
+	Ids    []uuid.UUID
+}
+
+type RuleUsageRow struct {
+	RuleID        uuid.UUID
+	N             int32
+	LastDecidedAt time.Time
+}
+
+// A80: how many current categorizations each rule decided, and the latest.
+func (q *Queries) RuleUsage(ctx context.Context, arg RuleUsageParams) ([]RuleUsageRow, error) {
+	rows, err := q.db.Query(ctx, ruleUsage, arg.UserID, arg.Ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []RuleUsageRow
+	for rows.Next() {
+		var i RuleUsageRow
+		if err := rows.Scan(&i.RuleID, &i.N, &i.LastDecidedAt); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

@@ -116,6 +116,9 @@ func (s *Server) ListRules(ctx context.Context, req ListRulesRequestObject) (Lis
 	for i, r := range rules {
 		out.Items[i] = toRuleAPI(r)
 	}
+	if err := s.withUsage(ctx, out.Items); err != nil {
+		return nil, err
+	}
 	out.NextCursor, err = page.Next(next)
 	return out, err
 }
@@ -137,7 +140,11 @@ func (s *Server) GetRule(ctx context.Context, req GetRuleRequestObject) (GetRule
 	if err != nil {
 		return nil, err
 	}
-	return GetRule200JSONResponse(toRuleAPI(r)), nil
+	out := []Rule{toRuleAPI(r)}
+	if err := s.withUsage(ctx, out); err != nil {
+		return nil, err
+	}
+	return GetRule200JSONResponse(out[0]), nil
 }
 
 func (s *Server) ChangeRule(ctx context.Context, req ChangeRuleRequestObject) (ChangeRuleResponseObject, error) {
@@ -150,7 +157,11 @@ func (s *Server) ChangeRule(ctx context.Context, req ChangeRuleRequestObject) (C
 	if err != nil {
 		return nil, err
 	}
-	return ChangeRule200JSONResponse(toRuleAPI(changed)), nil
+	out := []Rule{toRuleAPI(changed)}
+	if err := s.withUsage(ctx, out); err != nil {
+		return nil, err
+	}
+	return ChangeRule200JSONResponse(out[0]), nil
 }
 
 func (s *Server) DeleteRule(ctx context.Context, req DeleteRuleRequestObject) (DeleteRuleResponseObject, error) {
@@ -169,7 +180,29 @@ func (s *Server) ReorderRules(ctx context.Context, req ReorderRulesRequestObject
 	for i, r := range rules {
 		out.Items[i] = toRuleAPI(r)
 	}
+	if err := s.withUsage(ctx, out.Items); err != nil {
+		return nil, err
+	}
 	return out, nil
+}
+
+// withUsage fills the usage of each rule (A80).
+func (s *Server) withUsage(ctx context.Context, rules []Rule) error {
+	ids := make([]uuid.UUID, len(rules))
+	for i, r := range rules {
+		ids[i] = r.Id
+	}
+	usage, err := s.svc.RuleUsage(ctx, auth.MustUserID(ctx), ids)
+	if err != nil {
+		return err
+	}
+	for i := range rules {
+		if u, ok := usage[rules[i].Id]; ok {
+			last := u.Last
+			rules[i].CategorizedCount, rules[i].LastCategorizedAt = u.Count, &last
+		}
+	}
+	return nil
 }
 
 func toAliasAPI(a domain.Alias) PayeeAlias {

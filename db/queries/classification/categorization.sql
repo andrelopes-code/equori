@@ -37,3 +37,15 @@ LIMIT @row_limit;
 SELECT coalesce(method, '')::text AS method, count(*) AS n FROM classification_categorization
 WHERE user_id = @user_id AND NOT voided AND transaction_date BETWEEN @from_date AND @to_date
 GROUP BY method;
+
+-- name: CategorizationsByIDs :many
+-- A79: the categorizations of several transactions.
+SELECT * FROM classification_categorization
+WHERE user_id = @user_id AND transaction_id = ANY(@ids::uuid[]) AND NOT voided;
+
+-- name: RuleUsage :many
+-- A80: how many current categorizations each rule decided, and the latest.
+SELECT rule_id::uuid AS rule_id, count(*)::int AS n, max(decided_at)::timestamptz AS last_decided_at
+FROM classification_categorization
+WHERE user_id = @user_id AND method = 'rule' AND NOT voided AND rule_id = ANY(@ids::uuid[])
+GROUP BY rule_id;

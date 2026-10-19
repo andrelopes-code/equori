@@ -1150,6 +1150,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/categorizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * How the categories of several transactions were decided (A79).
+         * @description A transaction without a categorization record, or voided, is absent from items.
+         */
+        get: operations["listCategorizations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/source-categories": {
         parameters: {
             query?: never;
@@ -3163,6 +3183,13 @@ export interface components {
             actions: components["schemas"]["RuleAction"][];
         };
         Rule: {
+            /** @description Current, non-voided categorizations this rule decided (A80). */
+            categorized_count: number;
+            /**
+             * Format: date-time
+             * @description The latest of those decisions; absent at zero.
+             */
+            last_categorized_at?: string;
             /** Format: uuid */
             id: string;
             name: string;
@@ -3218,6 +3245,9 @@ export interface components {
             rule_id?: string;
             /** Format: date-time */
             decided_at: string;
+        };
+        CategorizationList: {
+            items: components["schemas"]["Categorization"][];
         };
         CategorizationStatistics: {
             /** Format: date */
@@ -5576,6 +5606,30 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+        };
+    };
+    listCategorizations: {
+        parameters: {
+            query: {
+                transaction_id: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategorizationList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
         };
     };
     listSourceCategories: {

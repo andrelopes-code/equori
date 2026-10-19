@@ -66,6 +66,10 @@ type Repository interface {
 	DeleteAlias(ctx context.Context, userID int64, id uuid.UUID) error
 
 	Categorization(ctx context.Context, userID int64, transactionID uuid.UUID) (Record, error)
+	// Categorizations returns the non-voided rows of the transactions among ids (A79).
+	Categorizations(ctx context.Context, userID int64, ids []uuid.UUID) ([]Record, error)
+	// RuleUsage returns, for each rule among ids with a current categorization, its count and latest decision (A80).
+	RuleUsage(ctx context.Context, userID int64, ids []uuid.UUID) (map[uuid.UUID]RuleUsage, error)
 	// UpsertCategorization writes rec unless the stored row has the same or a higher
 	// version or is voided, and reports whether it wrote.
 	UpsertCategorization(ctx context.Context, rec Record) (bool, error)

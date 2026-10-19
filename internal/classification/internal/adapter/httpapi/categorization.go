@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
+	"github.com/andrelopes-code/equori/internal/classification/internal/app"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 )
 
@@ -14,7 +15,26 @@ func (s *Server) GetCategorization(ctx context.Context, req GetCategorizationReq
 	if err != nil {
 		return nil, err
 	}
-	out := GetCategorization200JSONResponse{TransactionId: rec.TransactionID, DecidedAt: rec.DecidedAt}
+	return GetCategorization200JSONResponse(toCategorizationAPI(rec)), nil
+}
+
+func (s *Server) ListCategorizations(ctx context.Context, req ListCategorizationsRequestObject) (ListCategorizationsResponseObject, error) {
+	if n := len(req.Params.TransactionId); n == 0 || n > 200 {
+		return nil, &paramError{field: "transaction_id", message: "must have 1 to 200 ids"}
+	}
+	recs, err := s.svc.Categorizations(ctx, auth.MustUserID(ctx), req.Params.TransactionId)
+	if err != nil {
+		return nil, err
+	}
+	out := ListCategorizations200JSONResponse{Items: make([]Categorization, len(recs))}
+	for i, rec := range recs {
+		out.Items[i] = toCategorizationAPI(rec)
+	}
+	return out, nil
+}
+
+func toCategorizationAPI(rec app.Record) Categorization {
+	out := Categorization{TransactionId: rec.TransactionID, DecidedAt: rec.DecidedAt}
 	if rec.Method != "" {
 		m := CategorizationMethod(rec.Method)
 		out.Method = &m
@@ -22,7 +42,7 @@ func (s *Server) GetCategorization(ctx context.Context, req GetCategorizationReq
 	if rec.RuleID != uuid.Nil {
 		out.RuleId = &rec.RuleID
 	}
-	return out, nil
+	return out
 }
 
 func (s *Server) RunRules(ctx context.Context, _ RunRulesRequestObject) (RunRulesResponseObject, error) {

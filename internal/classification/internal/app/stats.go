@@ -29,3 +29,17 @@ func (s *Service) Statistics(ctx context.Context, userID int64, from, to time.Ti
 func (s *Service) Categorization(ctx context.Context, userID int64, transactionID uuid.UUID) (Record, error) {
 	return s.repo.Categorization(ctx, userID, transactionID)
 }
+
+// RuleUsage is how many current categorizations a rule decided and when it last did (A80).
+type RuleUsage struct {
+	Count int
+	Last  time.Time
+}
+
+func (s *Service) Categorizations(ctx context.Context, userID int64, ids []uuid.UUID) ([]Record, error) {
+	return s.repo.Categorizations(ctx, userID, ids)
+}
+
+func (s *Service) RuleUsage(ctx context.Context, userID int64, ids []uuid.UUID) (map[uuid.UUID]RuleUsage, error) {
+	return s.repo.RuleUsage(ctx, userID, ids)
+}

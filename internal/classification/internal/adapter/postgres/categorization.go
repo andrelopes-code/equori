@@ -93,3 +93,27 @@ func (r *Repository) CountMethods(ctx context.Context, userID int64, from, to ti
 	}
 	return out, nil
 }
+
+func (r *Repository) Categorizations(ctx context.Context, userID int64, ids []uuid.UUID) ([]app.Record, error) {
+	rows, err := r.q.CategorizationsByIDs(ctx, CategorizationsByIDsParams{UserID: userID, Ids: ids})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]app.Record, len(rows))
+	for i, row := range rows {
+		out[i] = toRecord(row)
+	}
+	return out, nil
+}
+
+func (r *Repository) RuleUsage(ctx context.Context, userID int64, ids []uuid.UUID) (map[uuid.UUID]app.RuleUsage, error) {
+	rows, err := r.q.RuleUsage(ctx, RuleUsageParams{UserID: userID, Ids: ids})
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[uuid.UUID]app.RuleUsage, len(rows))
+	for _, row := range rows {
+		out[row.RuleID] = app.RuleUsage{Count: int(row.N), Last: row.LastDecidedAt}
+	}
+	return out, nil
+}

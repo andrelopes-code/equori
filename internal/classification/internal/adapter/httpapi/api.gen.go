@@ -276,6 +276,11 @@ type Categorization struct {
 // CategorizationMethod Null while the transaction is uncategorized.
 type CategorizationMethod string
 
+// CategorizationList defines model for CategorizationList.
+type CategorizationList struct {
+	Items []Categorization `json:"items"`
+}
+
 // CategorizationStatistics defines model for CategorizationStatistics.
 type CategorizationStatistics struct {
 	From          openapi_types.Date `json:"from"`
@@ -355,13 +360,19 @@ type Problem struct {
 
 // Rule defines model for Rule.
 type Rule struct {
-	Actions        []RuleAction       `json:"actions"`
-	Conditions     []RuleCondition    `json:"conditions"`
-	Enabled        bool               `json:"enabled"`
-	Id             openapi_types.UUID `json:"id"`
-	Name           string             `json:"name"`
-	Priority       int                `json:"priority"`
-	StopProcessing bool               `json:"stop_processing"`
+	Actions []RuleAction `json:"actions"`
+
+	// CategorizedCount Current, non-voided categorizations this rule decided (A80).
+	CategorizedCount int                `json:"categorized_count"`
+	Conditions       []RuleCondition    `json:"conditions"`
+	Enabled          bool               `json:"enabled"`
+	Id               openapi_types.UUID `json:"id"`
+
+	// LastCategorizedAt The latest of those decisions; absent at zero.
+	LastCategorizedAt *time.Time `json:"last_categorized_at,omitempty"`
+	Name              string     `json:"name"`
+	Priority          int        `json:"priority"`
+	StopProcessing    bool       `json:"stop_processing"`
 }
 
 // RuleAction defines model for RuleAction.
@@ -493,6 +504,11 @@ type GetCategorizationStatisticsParams struct {
 	To   openapi_types.Date `form:"to" json:"to"`
 }
 
+// ListCategorizationsParams defines parameters for ListCategorizations.
+type ListCategorizationsParams struct {
+	TransactionId []openapi_types.UUID `form:"transaction_id" json:"transaction_id"`
+}
+
 // ListPayeeAliasesParams defines parameters for ListPayeeAliases.
 type ListPayeeAliasesParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
@@ -547,6 +563,9 @@ type ServerInterface interface {
 	// GetCategorizationStatistics Transactions dated in [from, to] by categorization method (SC5).
 	// (GET /categorization-statistics)
 	GetCategorizationStatistics(w http.ResponseWriter, r *http.Request, params GetCategorizationStatisticsParams)
+	// ListCategorizations How the categories of several transactions were decided (A79).
+	// (GET /categorizations)
+	ListCategorizations(w http.ResponseWriter, r *http.Request, params ListCategorizationsParams)
 	// ListPayeeAliases Payee aliases, oldest first.
 	// (GET /payee-aliases)
 	ListPayeeAliases(w http.ResponseWriter, r *http.Request, params ListPayeeAliasesParams)
@@ -649,6 +668,39 @@ func (siw *ServerInterfaceWrapper) GetCategorizationStatistics(w http.ResponseWr
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetCategorizationStatistics(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListCategorizations operation middleware
+func (siw *ServerInterfaceWrapper) ListCategorizations(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListCategorizationsParams
+
+	// ------------- Required query parameter "transaction_id" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "transaction_id", r.URL.Query(), &params.TransactionId, runtime.BindQueryParameterOptions{Type: "array", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "transaction_id"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "transaction_id", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCategorizations(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1296,6 +1348,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/rules/reorder", wrapper.ReorderRules)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/rules/run", wrapper.RunRules)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions/{id}/categorization", wrapper.GetCategorization)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/categorizations", wrapper.ListCategorizations)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/source-categories", wrapper.ListSourceCategories)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/source-categories/{id}", wrapper.MapSourceCategory)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/categorization-statistics", wrapper.GetCategorizationStatistics)
@@ -1357,6 +1410,58 @@ func (response GetCategorizationStatistics400ApplicationProblemPlusJSONResponse)
 type GetCategorizationStatistics401ApplicationProblemPlusJSONResponse Problem
 
 func (response GetCategorizationStatistics401ApplicationProblemPlusJSONResponse) VisitGetCategorizationStatisticsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCategorizationsRequestObject struct {
+	Params ListCategorizationsParams
+}
+
+type ListCategorizationsResponseObject interface {
+	VisitListCategorizationsResponse(w http.ResponseWriter) error
+}
+
+type ListCategorizations200JSONResponse CategorizationList
+
+func (response ListCategorizations200JSONResponse) VisitListCategorizationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCategorizations400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListCategorizations400ApplicationProblemPlusJSONResponse) VisitListCategorizationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCategorizations401ApplicationProblemPlusJSONResponse Problem
+
+func (response ListCategorizations401ApplicationProblemPlusJSONResponse) VisitListCategorizationsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2544,6 +2649,9 @@ type StrictServerInterface interface {
 	// GetCategorizationStatistics Transactions dated in [from, to] by categorization method (SC5).
 	// (GET /categorization-statistics)
 	GetCategorizationStatistics(ctx context.Context, request GetCategorizationStatisticsRequestObject) (GetCategorizationStatisticsResponseObject, error)
+	// ListCategorizations How the categories of several transactions were decided (A79).
+	// (GET /categorizations)
+	ListCategorizations(ctx context.Context, request ListCategorizationsRequestObject) (ListCategorizationsResponseObject, error)
 	// ListPayeeAliases Payee aliases, oldest first.
 	// (GET /payee-aliases)
 	ListPayeeAliases(ctx context.Context, request ListPayeeAliasesRequestObject) (ListPayeeAliasesResponseObject, error)
@@ -2658,6 +2766,32 @@ func (sh *strictHandler) GetCategorizationStatistics(w http.ResponseWriter, r *h
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetCategorizationStatisticsResponseObject); ok {
 		if err := validResponse.VisitGetCategorizationStatisticsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListCategorizations operation middleware
+func (sh *strictHandler) ListCategorizations(w http.ResponseWriter, r *http.Request, params ListCategorizationsParams) {
+	var request ListCategorizationsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCategorizations(ctx, request.(ListCategorizationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCategorizations")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListCategorizationsResponseObject); ok {
+		if err := validResponse.VisitListCategorizationsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
