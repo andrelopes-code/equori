@@ -90,17 +90,22 @@ function chosen(name: string): string {
   );
 }
 
-// The entry sheet offers accounts and categories as chips; the split and postings editors keep pickers.
+// The entry sheet offers accounts and categories as chips to tap.
+async function choose(
+  user: ReturnType<typeof userEvent.setup>,
+  name: string,
+  option: string,
+) {
+  const group = await screen.findByRole("group", { name });
+  await user.click(within(group).getByRole("button", { name: option }));
+}
+
+// The split and postings editors keep pickers.
 async function pick(
   user: ReturnType<typeof userEvent.setup>,
   name: string,
   option: string,
 ) {
-  const group = screen.queryByRole("group", { name });
-  if (group !== null) {
-    await user.click(within(group).getByRole("button", { name: option }));
-    return;
-  }
   await user.click(await screen.findByRole("combobox", { name }));
   await user.click(await screen.findByRole("option", { name: option }));
 }
@@ -126,8 +131,8 @@ describe("new transaction", () => {
       }),
       "120,00",
     );
-    await pick(user, label["transactions.new.account"], "Itau");
-    await pick(user, label["transactions.new.category"], "Mercado");
+    await choose(user, label["transactions.new.account"], "Itau");
+    await choose(user, label["transactions.new.category"], "Mercado");
     await user.click(
       screen.getByRole("button", { name: label["transactions.new.save"] }),
     );
@@ -157,8 +162,8 @@ describe("new transaction", () => {
       }),
       "5000",
     );
-    await pick(user, label["transactions.new.account"], "Itau");
-    await pick(user, label["transactions.new.category"], "Mercado");
+    await choose(user, label["transactions.new.account"], "Itau");
+    await choose(user, label["transactions.new.category"], "Mercado");
     await user.click(
       screen.getByRole("button", {
         name: label["transactions.new.saveAnother"],
@@ -192,8 +197,8 @@ describe("new transaction", () => {
       }),
       "5000",
     );
-    await pick(user, label["transactions.new.account"], "Itau");
-    await pick(user, label["transactions.new.category"], "Mercado");
+    await choose(user, label["transactions.new.account"], "Itau");
+    await choose(user, label["transactions.new.category"], "Mercado");
     await user.click(
       screen.getByRole("button", { name: label["transactions.new.save"] }),
     );
@@ -212,8 +217,8 @@ describe("new transaction", () => {
       }),
       "5000",
     );
-    await pick(user, label["transactions.new.account"], "Itau");
-    await pick(user, label["transactions.new.category"], "Mercado");
+    await choose(user, label["transactions.new.account"], "Itau");
+    await choose(user, label["transactions.new.category"], "Mercado");
     await user.type(
       screen.getByRole("combobox", {
         name: label["transactions.filter.payee"],
@@ -276,8 +281,8 @@ describe("new transaction", () => {
       }),
       "5000",
     );
-    await pick(user, label["transactions.new.account"], "Itau");
-    await pick(user, label["transactions.new.category"], "Mercado");
+    await choose(user, label["transactions.new.account"], "Itau");
+    await choose(user, label["transactions.new.category"], "Mercado");
     await user.click(
       screen.getByRole("button", { name: label["transactions.new.save"] }),
     );
@@ -309,7 +314,7 @@ describe("new transaction", () => {
       }),
       "5000",
     );
-    await pick(user, label["transactions.new.account"], "Itau");
+    await choose(user, label["transactions.new.account"], "Itau");
     expect(
       await screen.findByText("Itau fica com R$ 950,00."),
     ).toBeInTheDocument();
@@ -425,8 +430,8 @@ describe("new transaction", () => {
       }),
       "5000",
     );
-    await pick(user, label["transactions.new.account"], "Itau");
-    await pick(user, label["transactions.new.category"], "Mercado");
+    await choose(user, label["transactions.new.account"], "Itau");
+    await choose(user, label["transactions.new.category"], "Mercado");
     await user.click(
       screen.getByRole("button", { name: label["transactions.new.save"] }),
     );
@@ -451,8 +456,8 @@ describe("new transaction", () => {
       }),
       "10000",
     );
-    await pick(user, label["transactions.new.account"], "Itau");
-    await pick(user, label["transactions.new.category"], "Mercado");
+    await choose(user, label["transactions.new.account"], "Itau");
+    await choose(user, label["transactions.new.category"], "Mercado");
     await user.click(
       screen.getByRole("button", { name: label["transactions.new.split"] }),
     );
@@ -520,8 +525,8 @@ describe("new transaction", () => {
       }),
       "12000",
     );
-    await pick(user, label["transactions.new.account"], "Itau");
-    await pick(user, label["transactions.new.category"], "Mercado");
+    await choose(user, label["transactions.new.account"], "Itau");
+    await choose(user, label["transactions.new.category"], "Mercado");
     await user.click(
       screen.getByRole("button", { name: label["transactions.new.advanced"] }),
     );
@@ -584,8 +589,8 @@ describe("new transaction", () => {
       }),
       "12000",
     );
-    await pick(user, label["transactions.new.account"], "Itau");
-    await pick(user, label["transactions.new.category"], "Mercado");
+    await choose(user, label["transactions.new.account"], "Itau");
+    await choose(user, label["transactions.new.category"], "Mercado");
     await user.click(
       screen.getByRole("button", { name: label["transactions.new.advanced"] }),
     );
@@ -623,8 +628,8 @@ describe("new transaction", () => {
       }),
       "5000",
     );
-    await pick(user, label["transactions.new.account"], "Itau");
-    await pick(user, label["transactions.new.category"], "Mercado");
+    await choose(user, label["transactions.new.account"], "Itau");
+    await choose(user, label["transactions.new.category"], "Mercado");
   }
 
   it("reuses a created payee when the transaction request is retried", async () => {
@@ -746,8 +751,8 @@ describe("new transaction", () => {
       }),
       "10000",
     );
-    await pick(user, label["transactions.new.account"], "Itau");
-    await pick(user, label["transactions.new.category"], "Mercado");
+    await choose(user, label["transactions.new.account"], "Itau");
+    await choose(user, label["transactions.new.category"], "Mercado");
     await user.click(
       screen.getByRole("button", { name: label["transactions.new.split"] }),
     );
@@ -778,8 +783,8 @@ describe("new transaction", () => {
       }),
       "12000",
     );
-    await pick(user, label["transactions.new.account"], "Itau");
-    await pick(user, label["transactions.new.category"], "Mercado");
+    await choose(user, label["transactions.new.account"], "Itau");
+    await choose(user, label["transactions.new.category"], "Mercado");
     await user.click(
       screen.getByRole("button", { name: label["transactions.new.advanced"] }),
     );

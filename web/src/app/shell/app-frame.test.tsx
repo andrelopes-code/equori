@@ -73,6 +73,28 @@ describe("AppFrame navigation", () => {
     expect(container.querySelector('[data-ui="top-navigation"]')).toBeNull();
   });
 
+  // A narrow window closes the shell's navigation; widening it again must show the whole index.
+  it("keeps the ledger index open after the window narrows and widens again", async () => {
+    const { container } = await renderApp("/", {
+      width: 1280,
+      fetch: newFetch(),
+    });
+    act(() => {
+      setViewport(360);
+    });
+    act(() => {
+      setViewport(1280);
+    });
+    await waitFor(() => {
+      expect(
+        container.querySelector('[data-own="ledger-index"]'),
+      ).not.toBeNull();
+    });
+    expect(container.querySelector('[data-ui="app-shell"]')).toHaveAttribute(
+      "data-open",
+    );
+  });
+
   it("swaps the bottom bar for the ledger index without a reload", async () => {
     const { container } = await renderApp("/", {
       width: 360,

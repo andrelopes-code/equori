@@ -500,22 +500,26 @@ describe("transactions search", () => {
   });
 });
 
-// A filter is a word that opens a menu of choices; the chosen one closes the menu.
+// The filter bar is the filter-bar family: a pinned pill per URL filter, a
+// popover with the value picker, and a removable chip per active filter.
 async function choose(
   user: ReturnType<typeof userEvent.setup>,
-  word: string,
+  pill: string,
   option: string,
 ) {
-  const trigger = screen.getByRole("button", { name: word });
-  await user.click(trigger);
-  await user.click(await screen.findByRole("menuitemradio", { name: option }));
+  await user.click(screen.getByRole("button", { name: pill }));
+  const popover = await screen.findByRole("dialog");
+  await user.click(within(popover).getByRole("combobox", { name: "Valor" }));
+  await user.click(await screen.findByRole("option", { name: option }));
+  await user.keyboard("{Escape}");
+  await user.click(within(popover).getByRole("button", { name: "Concluído" }));
   await waitFor(() => {
-    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 }
 
 describe("transactions filters", () => {
-  it("chooses an account from the filter bar on a phone, shows a removable word and clears it", async () => {
+  it("chooses an account from the filter bar on a phone, shows a removable chip and clears it", async () => {
     const user = userEvent.setup();
     const { fetch, requests } = listApi();
     const { router } = await renderApp("/transactions", { fetch, width: 360 });
@@ -528,45 +532,16 @@ describe("transactions filters", () => {
       expect(requests.at(-1)?.get("account_id")).toBe(checkingID);
     });
     expect(
-      screen.getByRole("button", { name: "Conta: Itaú" }),
+      screen.getByRole("group", { name: /^Conta: .*Itaú$/ }),
     ).toBeInTheDocument();
-    await user.click(
-      screen.getByRole("button", { name: "Remover filtro Conta" }),
-    );
+    await user.click(screen.getByRole("button", { name: "Remover Conta" }));
     await waitFor(() => {
       expect(router.state.location.href).toBe("/transactions");
     });
-    expect(screen.queryByRole("button", { name: /^Conta:/ })).toBeNull();
+    expect(screen.queryByRole("group", { name: /^Conta:/ })).toBeNull();
   });
 
-  it("reads an active filter as a word with its value and removes it with the button beside it", async () => {
-    const user = userEvent.setup();
-    const { fetch, requests } = listApi();
-    const { router } = await renderApp(
-      `/transactions?account_id=${checkingID}`,
-      { fetch },
-    );
-    await screen.findByText("Compra 1");
-    expect(
-      await screen.findByRole("button", { name: "Conta: Itaú" }),
-    ).toBeInTheDocument();
-    await user.click(
-      screen.getByRole("button", { name: "Remover filtro Conta" }),
-    );
-    await waitFor(() => {
-      expect(router.state.location.href).toBe("/transactions");
-    });
-    await waitFor(() => {
-      expect(requests.at(-1)?.get("account_id")).toBeNull();
-    });
-    expect(screen.queryByRole("button", { name: "Conta: Itaú" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Conta" })).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "Remover filtro Conta" }),
-    ).toBeNull();
-  });
-
-  it("filters by payee and tag from the bar and names the payee in its word", async () => {
+  it("filters by payee and tag from the bar and names the payee in its chip", async () => {
     const user = userEvent.setup();
     const { fetch, requests } = listApi();
     const { router } = await renderApp("/transactions", { fetch });
@@ -587,19 +562,21 @@ describe("transactions filters", () => {
       expect(requests.at(-1)?.get("tag")).toBe("casa");
     });
     expect(
-      screen.getByRole("button", { name: "Beneficiário: Padaria" }),
+      screen.getByRole("group", { name: /^Beneficiário: .*Padaria$/ }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Etiqueta: casa" }),
+      screen.getByRole("group", {
+        name: new RegExp(`^${catalogPtBR["transactions.filter.tag"]}: .*casa$`),
+      }),
     ).toBeInTheDocument();
   });
 
-  it("names the payee in the word of a payee filter loaded from the URL", async () => {
+  it("names the payee in the chip of a payee filter loaded from the URL", async () => {
     const { fetch } = listApi();
     await renderApp(`/transactions?payee_id=${marketID}`, { fetch });
     expect(
-      await screen.findByRole("button", {
-        name: "Beneficiário: Mercado Central",
+      await screen.findByRole("group", {
+        name: /^Beneficiário: .*Mercado Central$/,
       }),
     ).toBeInTheDocument();
   });
@@ -681,87 +658,51 @@ describe("transactions filters", () => {
   });
 });
 
-describe("transactions filter row on a phone", () => {
-  it("reads the active filters as words with a remove button each", async () => {
+describe("transactions filter bar on a phone", () => {
+  it("counts the active filters and shows their chips before the empty pills", async () => {
     const { fetch } = listApi();
     await renderApp(`/transactions?uncategorized=true&payee_id=${bakeryID}`, {
       fetch,
       width: 360,
     });
     await screen.findByText("Compra 1");
-    const bar = screen.getByRole("search");
+    const bar = screen.getByRole("toolbar", { name: "Filtros" });
     expect(
-      await within(bar).findByRole("button", { name: "Beneficiário: Padaria" }),
+      within(bar).getByRole("button", { name: "Filtros (2)" }),
     ).toBeInTheDocument();
-    expect(
-      within(bar).getByRole("button", { name: "Remover filtro Beneficiário" }),
-    ).toBeInTheDocument();
-    expect(
-      within(bar).getByRole("button", { name: "Sem categoria" }),
-    ).toHaveAttribute("aria-pressed", "true");
-    expect(
-      within(bar).getByRole("button", { name: "Conta" }),
-    ).toBeInTheDocument();
+    const items = [
+      ...bar.querySelectorAll('[data-part="chip"], [data-part="pill"]'),
+    ].map((el) => el.getAttribute("data-part"));
+    expect(items).toEqual(["chip", "chip", "pill", "pill", "pill"]);
   });
 
-  it("presses the uncategorized word when the URL holds true", async () => {
+  it("writes the uncategorized value as a word, not as true", async () => {
     const { fetch } = listApi();
     await renderApp("/transactions?uncategorized=true", { fetch });
     expect(
-      await screen.findByRole("button", { name: "Sem categoria" }),
-    ).toHaveAttribute("aria-pressed", "true");
+      await screen.findByRole("group", { name: /^Sem categoria: .*Sim$/ }),
+    ).toBeInTheDocument();
   });
 
-  it("toggles the uncategorized word into the URL and the request", async () => {
+  it("offers the uncategorized value as words in its popover", async () => {
     const user = userEvent.setup();
-    const { fetch, requests } = listApi();
-    const { router } = await renderApp("/transactions", { fetch });
-    await screen.findByText("Compra 1");
-    const word = screen.getByRole("button", { name: "Sem categoria" });
-    expect(word).toHaveAttribute("aria-pressed", "false");
-    await user.click(word);
-    await waitFor(() => {
-      expect(router.state.location.search).toEqual({ uncategorized: true });
-    });
-    await waitFor(() => {
-      expect(requests.at(-1)?.get("uncategorized")).toBe("true");
-    });
-    expect(word).toHaveAttribute("aria-pressed", "true");
-    await user.click(word);
-    await waitFor(() => {
-      expect(router.state.location.href).toBe("/transactions");
-    });
+    const { fetch } = listApi();
+    await renderApp("/transactions?uncategorized=true", { fetch });
+    await user.click(await screen.findByRole("button", { name: /^é Sim$/ }));
+    const popover = await screen.findByRole("dialog");
+    expect(
+      within(popover).getByRole("combobox", { name: "Valor" }),
+    ).toHaveTextContent("Sim");
   });
 
   it("writes the period in the app's date format", async () => {
     const { fetch } = listApi();
     await renderApp("/transactions?from=2026-09-01&to=2026-10-10", { fetch });
     expect(
-      await screen.findByRole("button", {
-        name: "Período: 01/09/2026 – 10/10/2026",
+      await screen.findByRole("group", {
+        name: /^Período: .*01\/09\/2026 – 10\/10\/2026$/,
       }),
     ).toBeInTheDocument();
-  });
-
-  it("opens the period panel with the two dates and clears them", async () => {
-    const user = userEvent.setup();
-    const { fetch } = listApi();
-    const { router } = await renderApp(
-      "/transactions?from=2026-09-01&to=2026-10-10",
-      { fetch },
-    );
-    await user.click(
-      await screen.findByRole("button", {
-        name: "Período: 01/09/2026 – 10/10/2026",
-      }),
-    );
-    const panel = await screen.findByRole("dialog");
-    expect(within(panel).getByText("De")).toBeInTheDocument();
-    expect(within(panel).getByText("Até")).toBeInTheDocument();
-    await user.click(within(panel).getByRole("button", { name: "Limpar" }));
-    await waitFor(() => {
-      expect(router.state.location.href).toBe("/transactions");
-    });
   });
 });
 

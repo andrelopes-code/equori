@@ -43,7 +43,8 @@ export function AppFrame() {
       "comfortable",
     );
   }, []);
-  const inset = { desktop: 9, tablet: 6, phone: 4 } as const;
+  // Shell second pass S3: 32, 24 and 16 px; 8 px on a phone pressed the content to the edges.
+  const inset = { desktop: 9, tablet: 8, phone: 6 } as const;
 
   const destination = (key: string) => destinations.find((d) => d.key === key);
   const home = destination("home");
@@ -51,7 +52,9 @@ export function AppFrame() {
   const cards = destination("cards");
 
   return (
-    <AppShell canvas="flush" messages={{ nav: t("nav.label") }}>
+    // The shell closes its navigation when the frame narrows and keeps it closed, a rail, when
+    // it widens again; the index exists only from 1024 px, so it is held open.
+    <AppShell canvas="flush" navOpen messages={{ nav: t("nav.label") }}>
       {viewport === "desktop" && (
         // The index holds its own navigation landmark beside the brand, entry and account.
         <AppShellNav render={(props) => <div {...props} />}>
