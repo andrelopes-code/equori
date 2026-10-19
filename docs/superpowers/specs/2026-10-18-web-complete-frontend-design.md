@@ -24,7 +24,7 @@ Source: the owner's review of G7: the top bar read as tabs, generic components c
 | ID | Decision |
 |---|---|
 | S1 | From 1024 px the destinations stand in a ledger index beside the page, an own element: the wordmark, the entry trigger drawn as a field (the action "Lançar" with the N key, an example line "almoço 42 ontem" under it), the destinations Overview, Transactions, Goals, Cards, Accounts, each with its figure as the link's description (available balance, uncategorized count in the warning tone, share saved across the base-currency goals, what the cards owe, net worth), then the sync status and the account row (avatar, e-mail, "Conta e preferências"; on hover a tint of the text colour and a chevron that slides in), with no rule above them. The index fills the shell's nav region and only its list scrolls. The current destination carries a rule on its left edge in the text colour. |
-| S2 | Below 1024 px a bottom bar of five text controls: Home (the overview's short name), Transactions with its count, New drawn in ink (inverse surface), Cards, More. New preselects the open account. No page header carries New. |
+| S2 | Below 1024 px a phone tab bar of five equal columns, each a glyph over its short label (amends L5 and L13): Home, Transactions (the uncategorized count as a warning badge on the glyph's corner), New as a round control in ink rising above the row, Cards, More. The current tab takes the text colour and a soft pill behind its glyph. New opens the quick entry and posts to the open account by default. No page header carries New. |
 | S3 | Page insets: 32 px from 1024 px, 24 px from 600 px, 16 px below (amends G5). The shell's navigation is held open: left to itself it closed when the window narrowed and came back as a rail when it widened. |
 
 ## R2 Overview
@@ -50,6 +50,7 @@ Source: the owner's review of G7: the top bar read as tabs, generic components c
 | T4 | Without filters, the expected occurrences of the next 31 days of every account stand above the table in muted text, the farthest first like the rows under them, closed by a row "Today" in the accent tone. A phone shows them as a "Scheduled" day group. |
 
 | T6 | The pane offers the categories as the ink chips of the entry sheet; while it is open the table gives its Category column to the pane. |
+| T7 | The desktop table is a ledger of the app's own (amends L14, L15): each day opens with a band (the day, and its net in the base currency, voided rows, transfers and other currencies left out); columns Description, Account, Category, Amount; an uncategorized row reads "revisar" after a warning dot; scheduled rows are muted on dashed rules above the accent "Hoje" divider; the head is sticky; a row tints on hover, the selected one carries a left rule, and a click anywhere on a row selects it. |
 | T5 | Withdrawn on the owner's review: the transactions page keeps the library's filter bar, with its search field, filter chips and pills. |
 
 ## R4 Cards

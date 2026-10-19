@@ -17,11 +17,6 @@
     color: var(--slotted-text-muted);
   }
 
-  .today {
-    color: var(--slotted-tone-accent-text);
-    font-weight: var(--slotted-font-weight-medium);
-  }
-
   .sentinel {
     block-size: 1px;
   }

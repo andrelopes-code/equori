@@ -189,7 +189,7 @@ afterEach(() => {
 
 // Ledger sheet decisions L13 to L16.
 describe("transactions list", () => {
-  it("draws a table at 1280 px: date once per day, description, category, amount", async () => {
+  it("draws a table at 1280 px: a band per day, description, account, category, amount", async () => {
     const { fetch } = listApi();
     const { container } = await renderApp("/transactions", { fetch });
     await screen.findByText("Compra 1");
@@ -201,8 +201,8 @@ describe("transactions list", () => {
         .getAllByRole("columnheader")
         .map((th) => th.textContent),
     ).toEqual([
-      catalogPtBR["transactions.column.date"],
       catalogPtBR["transactions.column.description"],
+      catalogPtBR["transactions.column.account"],
       catalogPtBR["transactions.column.category"],
       catalogPtBR["transactions.column.amount"],
     ]);
@@ -215,9 +215,11 @@ describe("transactions list", () => {
           .map((cell) => cell.textContent.replace(/\u00a0/g, " ")),
       );
     expect(rows).toEqual([
-      ["Ontem", "Compra 1 · Itaú · viagem", "Mercado", "−10,00"],
-      ["", "Compra 2 · Itaú", "Mercado", "−20,00"],
-      ["qui, 15 out", "Compra 3 · Itaú", "Mercado", "−30,00"],
+      ["Ontem", "−30,00"],
+      ["Compra 1 · viagem", "Itaú", "Mercado", "−10,00"],
+      ["Compra 2", "Itaú", "Mercado", "−20,00"],
+      ["qui, 15 out", "−30,00"],
+      ["Compra 3", "Itaú", "Mercado", "−30,00"],
     ]);
     expect(
       within(table).getByRole("link", { name: "Compra 1" }),
@@ -325,23 +327,116 @@ describe("transactions list", () => {
         .map((cell) => cell.textContent.replace(/\u00a0/g, " "));
     };
     expect(cells(/^Compra 6/)).toEqual([
-      "Ontem",
-      "Compra 6 · Itaú",
+      "Compra 6",
+      "Itaú",
       catalogPtBR["transactions.review"],
       "−15,00",
     ]);
     expect(cells(/^Compra 7/)).toEqual([
-      "",
-      "Compra 7 · Itaú → Reserva",
+      "Compra 7",
+      "Itaú → Reserva",
       catalogPtBR["transactions.transfer"],
       "−50,00",
     ]);
     expect(cells(/^Compra 8/)).toEqual([
-      "",
-      "Compra 8 · Wise",
+      "Compra 8",
+      "Wise",
       "Viagens",
       "−US$ 12,50",
     ]);
+  });
+
+  it("opens each day with a band carrying the day's net in the base currency", async () => {
+    const { fetch } = listApi({
+      respond: () =>
+        json(200, {
+          items: [
+            transaction(1, "2026-10-16"),
+            transaction(2, "2026-10-16", {
+              balancing_currency: "USD",
+              postings: [
+                {
+                  id: "p-2-a",
+                  account_id: walletID,
+                  amount: { amount: -1250, currency: "USD" },
+                },
+                {
+                  id: "p-2-b",
+                  account_id: travelID,
+                  amount: { amount: 1250, currency: "USD" },
+                },
+              ],
+            }),
+            transaction(3, "2026-10-16", {
+              postings: [
+                {
+                  id: "p-3-a",
+                  account_id: checkingID,
+                  amount: { amount: -5000, currency: "BRL" },
+                },
+                {
+                  id: "p-3-b",
+                  account_id: savingsID,
+                  amount: { amount: 5000, currency: "BRL" },
+                },
+              ],
+            }),
+            transaction(4, "2026-10-15"),
+          ],
+        }),
+    });
+    await renderApp("/transactions", { fetch });
+    await screen.findByText("Compra 4");
+    const table = screen.getByRole("table", {
+      name: catalogPtBR["transactions.list"],
+    });
+    const bands = [...table.querySelectorAll('tr[data-own="day-band"]')].map(
+      (band) =>
+        [...band.querySelectorAll("td")].map((cell) =>
+          cell.textContent.replace(/\u00a0/g, " "),
+        ),
+    );
+    // The foreign-currency row and the transfer between own accounts leave the net.
+    expect(bands).toEqual([
+      ["Ontem", "−10,00"],
+      ["qui, 15 out", "−40,00"],
+    ]);
+    const first = table.querySelector('tr[data-own="day-band"]');
+    expect(first?.nextElementSibling?.textContent).toContain("Compra 1");
+  });
+
+  it("draws an uncategorized row with a dot of the warning tone before the word", async () => {
+    const { fetch } = listApi({
+      respond: () =>
+        json(200, {
+          items: [
+            transaction(6, "2026-10-16", {
+              postings: [
+                {
+                  id: "p-6-a",
+                  account_id: checkingID,
+                  amount: { amount: -1500, currency: "BRL" },
+                },
+                {
+                  id: "p-6-b",
+                  account_id: uncategorizedID,
+                  amount: { amount: 1500, currency: "BRL" },
+                },
+              ],
+            }),
+            transaction(7, "2026-10-16"),
+          ],
+        }),
+    });
+    await renderApp("/transactions", { fetch });
+    await screen.findByText("Compra 6");
+    const review = screen
+      .getByText(catalogPtBR["transactions.review"])
+      .closest("td");
+    expect(review?.querySelector('[data-own="review-dot"]')).not.toBeNull();
+    expect(review?.textContent).toBe(catalogPtBR["transactions.review"]);
+    const other = screen.getByText("Compra 7").closest("tr");
+    expect(other?.querySelector('[data-own="review-dot"]')).toBeNull();
   });
 
   it("writes the date of a day once even when the next page continues it", async () => {
@@ -365,7 +460,14 @@ describe("transactions list", () => {
     await scrollToSentinel();
     const row = (await screen.findByText("Compra 9")).closest("tr");
     if (row === null) throw new Error("row not found");
-    expect(within(row).getAllByRole("cell")[0]?.textContent).toBe("");
+    expect(screen.getAllByText("qui, 15 out")).toHaveLength(1);
+    const band = screen.getByText("qui, 15 out").closest("tr");
+    expect(band).toHaveAttribute("data-own", "day-band");
+    expect(band?.textContent.replace(/\u00a0/g, " ")).toBe(
+      "qui, 15 out−120,00",
+    );
+    expect(band?.nextElementSibling?.textContent).toContain("Compra 3");
+    expect(row.previousElementSibling?.textContent).toContain("Compra 3");
   });
 });
 
@@ -773,6 +875,30 @@ describe("transaction pane", () => {
     );
   });
 
+  it("selects the row on a click anywhere in it and marks it", async () => {
+    const user = userEvent.setup();
+    const { fetch } = paneApi();
+    const { router } = await renderApp("/transactions", { fetch });
+    const link = await screen.findByRole("link", { name: "Compra 1" });
+    const row = link.closest("tr");
+    if (row === null) throw new Error("row not found");
+    expect(row).not.toHaveAttribute("data-selected");
+    const account = within(row).getAllByRole("cell")[1];
+    if (account === undefined) throw new Error("cell not found");
+    await user.click(account);
+    expect(router.state.location.pathname).toBe("/transactions");
+    expect(router.state.location.search).toEqual({ selected: "t-1" });
+    await screen.findByRole("complementary", {
+      name: catalogPtBR["transactions.pane"],
+    });
+    expect(
+      screen.getByRole("link", { name: "Compra 1" }).closest("tr"),
+    ).toHaveAttribute("data-selected", "true");
+    expect(
+      screen.getByRole("link", { name: "Compra 2" }).closest("tr"),
+    ).not.toHaveAttribute("data-selected");
+  });
+
   it("opens the selected row beside the table instead of leaving the list", async () => {
     const user = userEvent.setup();
     const { fetch } = paneApi();
@@ -934,22 +1060,23 @@ describe("upcoming occurrences", () => {
     });
     const rows = within(table)
       .getAllByRole("row")
-      .slice(1, 4)
+      .slice(1, 7)
       .map((row) =>
         within(row)
           .getAllByRole("cell")
           .map((cell) => cell.textContent.replace(/\u00a0/g, " ")),
       );
     expect(rows).toEqual([
-      ["ter, 20 out", "Internet fibra · Itaú", "assinatura", "−119,90"],
-      ["dom, 18 out", "Salário · Itaú", "receita", "+8.400,00"],
-      [
-        catalogPtBR["date.today"],
-        catalogPtBR["transactions.upcoming.note"],
-        "",
-        "",
-      ],
+      ["ter, 20 out", "−119,90"],
+      ["Internet fibra", "Itaú", "assinatura", "−119,90"],
+      ["dom, 18 out", "+8.400,00"],
+      ["Salário", "Itaú", "receita", "+8.400,00"],
+      [catalogPtBR["date.today"] + catalogPtBR["transactions.upcoming.note"]],
+      ["Ontem", "−30,00"],
     ]);
+    const scheduled = screen.getByText(/^Internet fibra/).closest("tr");
+    expect(scheduled).toHaveAttribute("data-scheduled", "true");
+    expect(scheduled).not.toHaveAttribute("data-selectable");
   });
 
   it("shows no occurrence while a filter is set", async () => {

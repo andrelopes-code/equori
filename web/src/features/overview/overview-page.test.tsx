@@ -380,11 +380,12 @@ describe("home balances", () => {
         .getAllByRole("columnheader")
         .map((th) => th.textContent),
     ).toEqual([
-      catalogPtBR["transactions.column.date"],
       catalogPtBR["transactions.column.description"],
+      catalogPtBR["transactions.column.account"],
       catalogPtBR["transactions.column.amount"],
     ]);
-    const rows = within(table).getAllByRole("row").slice(1);
+    const [, band, ...rows] = within(table).getAllByRole("row");
+    expect(band?.textContent.replace(/\u00a0/g, " ")).toBe("Ontem\u2212150,00");
     expect(rows).toHaveLength(5);
     const [firstRow] = rows;
     if (firstRow === undefined) throw new Error("no recent row");
@@ -551,7 +552,8 @@ describe("home waiting states", () => {
     );
     release(json(200, { items: [1, 2, 3, 4, 5].map(transaction) }));
     await within(recent).findByText("Compra 5");
-    expect(within(recent).getAllByRole("row")).toHaveLength(6);
+    // The head, one day band and five rows.
+    expect(within(recent).getAllByRole("row")).toHaveLength(7);
     expect(recent.querySelector('[aria-busy="true"]')).toBeNull();
   });
 
