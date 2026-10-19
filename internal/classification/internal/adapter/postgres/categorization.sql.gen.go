@@ -207,6 +207,56 @@ func (q *Queries) PendingCategorizations(ctx context.Context, arg PendingCategor
 	return items, nil
 }
 
+const previewCandidates = `-- name: PreviewCandidates :many
+SELECT transaction_id, transaction_date FROM classification_categorization
+WHERE user_id = $1 AND NOT voided AND transaction_date BETWEEN $2::date AND $3::date
+  AND ($4::date IS NULL OR (transaction_date, transaction_id) < ($4::date, $5::uuid))
+ORDER BY transaction_date DESC, transaction_id DESC
+LIMIT $6
+`
+
+type PreviewCandidatesParams struct {
+	UserID    int64
+	FromDate  time.Time
+	ToDate    time.Time
+	AfterDate *time.Time
+	AfterID   uuid.NullUUID
+	RowLimit  int32
+}
+
+type PreviewCandidatesRow struct {
+	TransactionID   uuid.UUID
+	TransactionDate time.Time
+}
+
+// A81: the non-voided categorizable transactions dated in [from, to], newest first.
+func (q *Queries) PreviewCandidates(ctx context.Context, arg PreviewCandidatesParams) ([]PreviewCandidatesRow, error) {
+	rows, err := q.db.Query(ctx, previewCandidates,
+		arg.UserID,
+		arg.FromDate,
+		arg.ToDate,
+		arg.AfterDate,
+		arg.AfterID,
+		arg.RowLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []PreviewCandidatesRow
+	for rows.Next() {
+		var i PreviewCandidatesRow
+		if err := rows.Scan(&i.TransactionID, &i.TransactionDate); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const ruleUsage = `-- name: RuleUsage :many
 SELECT rule_id::uuid AS rule_id, count(*)::int AS n, max(decided_at)::timestamptz AS last_decided_at
 FROM classification_categorization

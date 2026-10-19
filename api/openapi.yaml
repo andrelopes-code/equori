@@ -2040,6 +2040,33 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /rules/preview:
+    post:
+      tags: [classification]
+      operationId: previewRule
+      summary: What a rule would do alone over the transactions of the last 365 days (A81).
+      description: |
+        would_categorize counts the uncategorized transactions the rule categorizes; conflicts counts the categorized
+        ones whose category postings differ from the rule's allocation. Each list holds the newest 50 ids. Nothing is written.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuleInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RulePreview"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /rules/run:
     post:
       tags: [classification]
@@ -6064,6 +6091,26 @@ components:
         decided_at:
           type: string
           format: date-time
+    RulePreview:
+      type: object
+      required: [would_categorize, conflicts]
+      properties:
+        would_categorize:
+          $ref: "#/components/schemas/RulePreviewSet"
+        conflicts:
+          $ref: "#/components/schemas/RulePreviewSet"
+    RulePreviewSet:
+      type: object
+      required: [count, transaction_ids]
+      properties:
+        count:
+          type: integer
+        transaction_ids:
+          type: array
+          maxItems: 50
+          items:
+            type: string
+            format: uuid
     CategorizationList:
       type: object
       required: [items]

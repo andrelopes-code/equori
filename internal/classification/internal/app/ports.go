@@ -70,6 +70,9 @@ type Repository interface {
 	Categorizations(ctx context.Context, userID int64, ids []uuid.UUID) ([]Record, error)
 	// RuleUsage returns, for each rule among ids with a current categorization, its count and latest decision (A80).
 	RuleUsage(ctx context.Context, userID int64, ids []uuid.UUID) (map[uuid.UUID]RuleUsage, error)
+	// PreviewCandidates returns up to limit non-voided rows dated in [from, to] before the key,
+	// newest first, and the key of the last one when more may follow (A81).
+	PreviewCandidates(ctx context.Context, userID int64, from, to time.Time, after *PendingKey, limit int) ([]uuid.UUID, *PendingKey, error)
 	// UpsertCategorization writes rec unless the stored row has the same or a higher
 	// version or is voided, and reports whether it wrote.
 	UpsertCategorization(ctx context.Context, rec Record) (bool, error)
@@ -170,6 +173,8 @@ type Ledger interface {
 	Categorize(ctx context.Context, userID int64, cs []Categorization) (errs []error, err error)
 	// Transfer reports false when the ledger refused the transfer for a business rule.
 	Transfer(ctx context.Context, userID int64, t TransferRequest) (applied bool, err error)
+	// Today is the date of the ledger's clock.
+	Today() time.Time
 }
 
 // TransferRequest asks the ledger to turn a transaction into a transfer (P5b amendment A31).

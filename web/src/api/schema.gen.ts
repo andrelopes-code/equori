@@ -1116,6 +1116,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/rules/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * What a rule would do alone over the transactions of the last 365 days (A81).
+         * @description would_categorize counts the uncategorized transactions the rule categorizes; conflicts counts the categorized
+         *     ones whose category postings differ from the rule's allocation. Each list holds the newest 50 ids. Nothing is written.
+         */
+        post: operations["previewRule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/rules/run": {
         parameters: {
             query?: never;
@@ -3245,6 +3266,14 @@ export interface components {
             rule_id?: string;
             /** Format: date-time */
             decided_at: string;
+        };
+        RulePreview: {
+            would_categorize: components["schemas"]["RulePreviewSet"];
+            conflicts: components["schemas"]["RulePreviewSet"];
+        };
+        RulePreviewSet: {
+            count: number;
+            transaction_ids: string[];
         };
         CategorizationList: {
             items: components["schemas"]["Categorization"][];
@@ -5555,6 +5584,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RuleList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    previewRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RuleInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RulePreview"];
                 };
             };
             400: components["responses"]["Problem"];

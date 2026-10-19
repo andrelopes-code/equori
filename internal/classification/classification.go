@@ -180,6 +180,8 @@ func (p ledgerPort) Transfer(ctx context.Context, userID int64, t app.TransferRe
 	return err == nil, err
 }
 
+func (p ledgerPort) Today() time.Time { return p.l.Today() }
+
 func (p ledgerPort) MissingPayees(ctx context.Context, userID int64, ids []uuid.UUID) ([]uuid.UUID, error) {
 	return p.l.MissingPayees(ctx, userID, ids)
 }

@@ -196,6 +196,9 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, md MarketData, clk c
 
 // RecordImported creates the transaction of an external record; it is idempotent by recordID
 // (P4 amendments A11, A14).
+// Today is the date of the ledger's clock (A81 previews read it).
+func (m *Module) Today() time.Time { return m.svc.Today() }
+
 func (m *Module) RecordImported(ctx context.Context, userID int64, recordID uuid.UUID, p ImportedPosting) (uuid.UUID, error) {
 	return m.svc.RecordImported(ctx, userID, recordID, p)
 }

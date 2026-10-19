@@ -117,3 +117,23 @@ func (r *Repository) RuleUsage(ctx context.Context, userID int64, ids []uuid.UUI
 	}
 	return out, nil
 }
+
+func (r *Repository) PreviewCandidates(ctx context.Context, userID int64, from, to time.Time, after *app.PendingKey, limit int) ([]uuid.UUID, *app.PendingKey, error) {
+	params := PreviewCandidatesParams{UserID: userID, FromDate: from, ToDate: to, RowLimit: int32(limit)} //nolint:gosec // a fixed page size
+	if after != nil {
+		params.AfterDate, params.AfterID = &after.Date, nullUUID(after.ID)
+	}
+	rows, err := r.q.PreviewCandidates(ctx, params)
+	if err != nil || len(rows) == 0 {
+		return nil, nil, err
+	}
+	ids := make([]uuid.UUID, len(rows))
+	for i, row := range rows {
+		ids[i] = row.TransactionID
+	}
+	if len(rows) < limit {
+		return ids, nil, nil
+	}
+	last := rows[len(rows)-1]
+	return ids, &app.PendingKey{Date: last.TransactionDate, ID: last.TransactionID}, nil
+}

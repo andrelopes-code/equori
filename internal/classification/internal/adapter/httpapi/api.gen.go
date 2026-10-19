@@ -427,6 +427,18 @@ type RulePage struct {
 	NextCursor *string `json:"next_cursor,omitempty"`
 }
 
+// RulePreview defines model for RulePreview.
+type RulePreview struct {
+	Conflicts       RulePreviewSet `json:"conflicts"`
+	WouldCategorize RulePreviewSet `json:"would_categorize"`
+}
+
+// RulePreviewSet defines model for RulePreviewSet.
+type RulePreviewSet struct {
+	Count          int                  `json:"count"`
+	TransactionIds []openapi_types.UUID `json:"transaction_ids"`
+}
+
 // RuleRun defines model for RuleRun.
 type RuleRun struct {
 	Categorized int `json:"categorized"`
@@ -549,6 +561,9 @@ type AcceptRuleSuggestionJSONRequestBody = AcceptSuggestionInput
 // CreateRuleJSONRequestBody defines body for CreateRule for application/json ContentType.
 type CreateRuleJSONRequestBody = RuleInput
 
+// PreviewRuleJSONRequestBody defines body for PreviewRule for application/json ContentType.
+type PreviewRuleJSONRequestBody = RuleInput
+
 // ReorderRulesJSONRequestBody defines body for ReorderRules for application/json ContentType.
 type ReorderRulesJSONRequestBody = RuleOrder
 
@@ -596,6 +611,9 @@ type ServerInterface interface {
 	// CreateRule Create a rule at the last priority.
 	// (POST /rules)
 	CreateRule(w http.ResponseWriter, r *http.Request)
+	// PreviewRule What a rule would do alone over the transactions of the last 365 days (A81).
+	// (POST /rules/preview)
+	PreviewRule(w http.ResponseWriter, r *http.Request)
 	// ReorderRules Give every rule a new priority, in the order listed.
 	// (POST /rules/reorder)
 	ReorderRules(w http.ResponseWriter, r *http.Request)
@@ -1019,6 +1037,20 @@ func (siw *ServerInterfaceWrapper) CreateRule(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
+// PreviewRule operation middleware
+func (siw *ServerInterfaceWrapper) PreviewRule(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PreviewRule(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ReorderRules operation middleware
 func (siw *ServerInterfaceWrapper) ReorderRules(w http.ResponseWriter, r *http.Request) {
 
@@ -1346,6 +1378,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/rules", wrapper.ListRules)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/rules", wrapper.CreateRule)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/rules/reorder", wrapper.ReorderRules)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/rules/preview", wrapper.PreviewRule)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/rules/run", wrapper.RunRules)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions/{id}/categorization", wrapper.GetCategorization)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/categorizations", wrapper.ListCategorizations)
@@ -2163,6 +2196,72 @@ func (response CreateRule422ApplicationProblemPlusJSONResponse) VisitCreateRuleR
 	return err
 }
 
+type PreviewRuleRequestObject struct {
+	Body *PreviewRuleJSONRequestBody
+}
+
+type PreviewRuleResponseObject interface {
+	VisitPreviewRuleResponse(w http.ResponseWriter) error
+}
+
+type PreviewRule200JSONResponse RulePreview
+
+func (response PreviewRule200JSONResponse) VisitPreviewRuleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreviewRule400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response PreviewRule400ApplicationProblemPlusJSONResponse) VisitPreviewRuleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreviewRule401ApplicationProblemPlusJSONResponse Problem
+
+func (response PreviewRule401ApplicationProblemPlusJSONResponse) VisitPreviewRuleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreviewRule422ApplicationProblemPlusJSONResponse Problem
+
+func (response PreviewRule422ApplicationProblemPlusJSONResponse) VisitPreviewRuleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ReorderRulesRequestObject struct {
 	Body *ReorderRulesJSONRequestBody
 }
@@ -2682,6 +2781,9 @@ type StrictServerInterface interface {
 	// CreateRule Create a rule at the last priority.
 	// (POST /rules)
 	CreateRule(ctx context.Context, request CreateRuleRequestObject) (CreateRuleResponseObject, error)
+	// PreviewRule What a rule would do alone over the transactions of the last 365 days (A81).
+	// (POST /rules/preview)
+	PreviewRule(ctx context.Context, request PreviewRuleRequestObject) (PreviewRuleResponseObject, error)
 	// ReorderRules Give every rule a new priority, in the order listed.
 	// (POST /rules/reorder)
 	ReorderRules(ctx context.Context, request ReorderRulesRequestObject) (ReorderRulesResponseObject, error)
@@ -3076,6 +3178,37 @@ func (sh *strictHandler) CreateRule(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CreateRuleResponseObject); ok {
 		if err := validResponse.VisitCreateRuleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PreviewRule operation middleware
+func (sh *strictHandler) PreviewRule(w http.ResponseWriter, r *http.Request) {
+	var request PreviewRuleRequestObject
+
+	var body PreviewRuleJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PreviewRule(ctx, request.(PreviewRuleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PreviewRule")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PreviewRuleResponseObject); ok {
+		if err := validResponse.VisitPreviewRuleResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

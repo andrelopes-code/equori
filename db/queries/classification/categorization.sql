@@ -49,3 +49,11 @@ SELECT rule_id::uuid AS rule_id, count(*)::int AS n, max(decided_at)::timestampt
 FROM classification_categorization
 WHERE user_id = @user_id AND method = 'rule' AND NOT voided AND rule_id = ANY(@ids::uuid[])
 GROUP BY rule_id;
+
+-- name: PreviewCandidates :many
+-- A81: the non-voided categorizable transactions dated in [from, to], newest first.
+SELECT transaction_id, transaction_date FROM classification_categorization
+WHERE user_id = @user_id AND NOT voided AND transaction_date BETWEEN @from_date::date AND @to_date::date
+  AND (sqlc.narg(after_date)::date IS NULL OR (transaction_date, transaction_id) < (sqlc.narg(after_date)::date, sqlc.narg(after_id)::uuid))
+ORDER BY transaction_date DESC, transaction_id DESC
+LIMIT @row_limit;

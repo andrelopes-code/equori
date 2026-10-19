@@ -135,6 +135,25 @@ func (s *Server) CreateRule(ctx context.Context, req CreateRuleRequestObject) (C
 	return CreateRule201JSONResponse{Body: toRuleAPI(created), Headers: CreateRule201ResponseHeaders{Location: location("/rules/", created.ID)}}, nil
 }
 
+func (s *Server) PreviewRule(ctx context.Context, req PreviewRuleRequestObject) (PreviewRuleResponseObject, error) {
+	r, err := fromRuleInput(*req.Body)
+	if err != nil {
+		return nil, err
+	}
+	p, err := s.svc.PreviewRule(ctx, auth.MustUserID(ctx), r)
+	if err != nil {
+		return nil, err
+	}
+	set := func(ps app.PreviewSet) RulePreviewSet {
+		ids := ps.TransactionIDs
+		if ids == nil {
+			ids = []uuid.UUID{}
+		}
+		return RulePreviewSet{Count: ps.Count, TransactionIds: ids}
+	}
+	return PreviewRule200JSONResponse{WouldCategorize: set(p.WouldCategorize), Conflicts: set(p.Conflicts)}, nil
+}
+
 func (s *Server) GetRule(ctx context.Context, req GetRuleRequestObject) (GetRuleResponseObject, error) {
 	r, err := s.svc.Rule(ctx, auth.MustUserID(ctx), req.Id)
 	if err != nil {
