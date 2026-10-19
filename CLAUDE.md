@@ -120,7 +120,7 @@ Read the skill before the task:
 
 Slotted is the owner's own library, in beta, and equori is its only consumer: the app is the test bed that calibrates it. The owner fixes the library in its own repository. A defect worked around here and not reported is a defect that stays in Slotted.
 
-A Slotted finding is any of:
+A Slotted finding is a bug to fix, an improvement to an existing family, or a new feature the library should offer. Each finding names its kind: `bug`, `improvement` or `feature`. A finding is any of:
 
 - a family that renders, behaves, measures or performs wrong (layout, state, focus, keyboard, resize, timing, a slow test caused by the family);
 - a family that lacks a prop, variant, slot or state the screen needed;
@@ -133,8 +133,8 @@ The source of the problem does not matter: a problem found during the work and a
 Rules:
 
 1. Every finding is reported to the owner in the reply of the task that met it, in a section titled `Slotted findings`. No finding is dropped because the app works around it.
-2. Each finding states: the family and part, what is wrong or missing, the evidence (screen and width, file and line in `web/`, test name and timing, or browser measurement), the workaround taken in `web/` (or "none"), and a prompt ready to paste into a session on the Slotted repository.
-3. The prompt is written in English, stands alone (it names the family, the observed behaviour, the expected behaviour, a minimal reproduction and the acceptance check), and asks for a test that fails before the fix.
+2. Each finding states: its kind, the family and part, what is wrong or missing, the evidence (screen and width, file and line in `web/`, test name and timing, or browser measurement), the workaround taken in `web/` (or "none"), and a prompt ready to paste into a session on the Slotted repository.
+3. The prompt is written in English and stands alone. For a bug it names the family, the observed behaviour, the expected behaviour and a minimal reproduction; for an improvement or a feature it names the need met in equori, the proposed API (props, parts, states, tokens) and how it composes with the existing families. Every prompt ends with the acceptance check and asks for a test that fails before the change.
 4. A workaround in `web/` carries a comment naming the finding, so it can be removed when the library ships the fix.
 5. When a new Slotted version is installed, check the findings of earlier tasks against it: remove each workaround the version makes unnecessary.
 
