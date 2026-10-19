@@ -27,6 +27,8 @@ type LedgerAccount struct {
 	SystemRole          *string
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
+	Color               *int16
+	Icon                *string
 }
 
 type LedgerAttachment struct {

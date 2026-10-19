@@ -129,7 +129,7 @@ func (q *Queries) LatestPayeeCategories(ctx context.Context, arg LatestPayeeCate
 }
 
 const listAllAccounts = `-- name: ListAllAccounts :many
-SELECT id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at FROM ledger_account WHERE user_id = $1 ORDER BY id
+SELECT id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon FROM ledger_account WHERE user_id = $1 ORDER BY id
 `
 
 func (q *Queries) ListAllAccounts(ctx context.Context, userID int64) ([]LedgerAccount, error) {
@@ -157,6 +157,8 @@ func (q *Queries) ListAllAccounts(ctx context.Context, userID int64) ([]LedgerAc
 			&i.SystemRole,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Color,
+			&i.Icon,
 		); err != nil {
 			return nil, err
 		}

@@ -191,6 +191,24 @@ func (s *Service) UpdateAccount(ctx context.Context, userID int64, id uuid.UUID,
 	return updated, err
 }
 
+// SetAppearance sets or, with zero values, clears the colour and the icon of an account (A83).
+func (s *Service) SetAppearance(ctx context.Context, userID int64, id uuid.UUID, color int, icon string) (domain.Account, error) {
+	var updated domain.Account
+	err := s.repo.InTx(ctx, func(r Repository) error {
+		a, err := r.Account(ctx, userID, id)
+		if err != nil {
+			return err
+		}
+		a.Color, a.Icon = color, icon
+		if a, err = domain.NewAccount(a); err != nil {
+			return err
+		}
+		updated, err = r.UpdateAccount(ctx, a)
+		return err
+	})
+	return updated, err
+}
+
 func (s *Service) checkParent(ctx context.Context, r Repository, a domain.Account) error {
 	if a.ParentID == uuid.Nil {
 		return nil

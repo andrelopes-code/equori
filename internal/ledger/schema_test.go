@@ -101,6 +101,15 @@ func TestAccountTreeRejectsCycle(t *testing.T) {
 	requireViolation(t, err, checkViolation, "own ancestor")
 }
 
+// A83: colour is a data slot 1-8 and icon a kebab-case key.
+func TestAccountAppearanceChecks(t *testing.T) {
+	f := newSchemaFixture(t)
+	_, err := f.pool.Exec(t.Context(), `UPDATE ledger_account SET color = 9 WHERE id = $1`, f.food)
+	requireViolation(t, err, checkViolation, "color")
+	_, err = f.pool.Exec(t.Context(), `UPDATE ledger_account SET icon = 'Bad Icon' WHERE id = $1`, f.food)
+	requireViolation(t, err, checkViolation, "icon")
+}
+
 func TestDBAcceptsBalancedTransaction(t *testing.T) {
 	f := newSchemaFixture(t)
 	if _, err := f.recordTx(t, f.userID, "2026-03-01", postingRow{f.checking, -10000}, postingRow{f.food, 10000}); err != nil {

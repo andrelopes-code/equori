@@ -1,16 +1,18 @@
 -- name: InsertAccount :one
 INSERT INTO ledger_account (
     user_id, name, account_class, kind, instrument, parent_id, institution_id,
-    counterparty_payee_id, opened_on, closed_on, yield_mode, system_role
+    counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, color, icon
 ) VALUES (
     @user_id, @name, @account_class, sqlc.narg(kind), @instrument, sqlc.narg(parent_id), sqlc.narg(institution_id),
-    sqlc.narg(counterparty_payee_id), @opened_on, sqlc.narg(closed_on), @yield_mode, sqlc.narg(system_role)
+    sqlc.narg(counterparty_payee_id), @opened_on, sqlc.narg(closed_on), @yield_mode, sqlc.narg(system_role),
+    sqlc.narg(color), sqlc.narg(icon)
 ) RETURNING *;
 
 -- name: UpdateAccount :one
 UPDATE ledger_account
 SET name = @name, parent_id = sqlc.narg(parent_id), institution_id = sqlc.narg(institution_id),
-    closed_on = sqlc.narg(closed_on), yield_mode = @yield_mode, updated_at = now()
+    closed_on = sqlc.narg(closed_on), yield_mode = @yield_mode, color = sqlc.narg(color), icon = sqlc.narg(icon),
+    updated_at = now()
 WHERE user_id = @user_id AND id = @id
 RETURNING *;
 

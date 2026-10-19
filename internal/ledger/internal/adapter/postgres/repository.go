@@ -214,6 +214,7 @@ func (r *Repository) InsertAccount(ctx context.Context, a domain.Account) (domai
 		Instrument: string(a.Instrument), ParentID: nullUUID(a.ParentID), InstitutionID: nullUUID(a.InstitutionID),
 		CounterpartyPayeeID: nullUUID(a.CounterpartyID), OpenedOn: a.OpenedOn, ClosedOn: a.ClosedOn,
 		YieldMode: string(a.YieldMode), SystemRole: nullString(string(a.SystemRole)),
+		Color: nullColor(a.Color), Icon: nullString(a.Icon),
 	})
 	if err != nil {
 		return domain.Account{}, referenceError(err)
@@ -225,6 +226,7 @@ func (r *Repository) UpdateAccount(ctx context.Context, a domain.Account) (domai
 	row, err := r.q.UpdateAccount(ctx, UpdateAccountParams{
 		UserID: a.UserID, ID: a.ID, Name: a.Name, ParentID: nullUUID(a.ParentID),
 		InstitutionID: nullUUID(a.InstitutionID), ClosedOn: a.ClosedOn, YieldMode: string(a.YieldMode),
+		Color: nullColor(a.Color), Icon: nullString(a.Icon),
 	})
 	if err != nil {
 		return domain.Account{}, referenceError(notFound(err))

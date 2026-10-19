@@ -350,6 +350,58 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /accounts/{id}/appearance:
+    put:
+      tags: [ledger]
+      operationId: setAccountAppearance
+      summary: Set or clear the colour and the icon of an account (A83).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountAppearance"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/parent:
+    put:
+      tags: [ledger]
+      operationId: setAccountParent
+      summary: Set or clear the parent of an account (A84).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountParent"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /accounts/{id}/merge:
     post:
       tags: [ledger]
@@ -5038,6 +5090,13 @@ components:
         yield_mode:
           type: string
           enum: [none, auto]
+        color:
+          type: integer
+          minimum: 1
+          maximum: 8
+          description: Data slot of the theme (--slotted-data-n), A83.
+        icon:
+          $ref: "#/components/schemas/CategoryIcon"
     Account:
       allOf:
         - $ref: "#/components/schemas/AccountInput"
@@ -5101,6 +5160,114 @@ components:
           $ref: "#/components/schemas/Money"
         subtree_total:
           $ref: "#/components/schemas/Money"
+    CategoryIcon:
+      type: string
+      description: Kebab-case name of a lucide-react icon of the curated category set (A83).
+      enum:
+        - house
+        - building-2
+        - key-round
+        - sofa
+        - lamp
+        - wrench
+        - hammer
+        - zap
+        - droplet
+        - flame
+        - wifi
+        - smartphone
+        - tv
+        - shopping-cart
+        - shopping-basket
+        - utensils
+        - coffee
+        - pizza
+        - croissant
+        - apple
+        - wine
+        - beer
+        - car
+        - fuel
+        - bus
+        - train-front
+        - bike
+        - plane
+        - circle-parking
+        - car-taxi-front
+        - heart-pulse
+        - pill
+        - stethoscope
+        - dumbbell
+        - hospital
+        - graduation-cap
+        - book-open
+        - school
+        - film
+        - music
+        - gamepad-2
+        - ticket
+        - palette
+        - party-popper
+        - shirt
+        - gift
+        - shopping-bag
+        - package
+        - scissors
+        - receipt
+        - briefcase
+        - laptop
+        - cloud
+        - globe
+        - landmark
+        - piggy-bank
+        - wallet
+        - credit-card
+        - banknote
+        - coins
+        - percent
+        - trending-up
+        - chart-pie
+        - hand-coins
+        - file-text
+        - shield
+        - baby
+        - users
+        - heart
+        - dog
+        - cat
+        - paw-print
+        - luggage
+        - map
+        - hotel
+        - tent
+        - smile
+        - sparkles
+        - tag
+    AccountAppearance:
+      type: object
+      additionalProperties: false
+      required: [color, icon]
+      description: null clears the colour or the icon.
+      properties:
+        color:
+          type: integer
+          minimum: 1
+          maximum: 8
+          nullable: true
+        icon:
+          allOf:
+            - $ref: "#/components/schemas/CategoryIcon"
+          nullable: true
+    AccountParent:
+      type: object
+      additionalProperties: false
+      required: [parent_id]
+      description: null makes the account top level (A84).
+      properties:
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
     MergeAccountInput:
       type: object
       additionalProperties: false

@@ -335,6 +335,255 @@ func (e BillingCycleRuleDueDateAdjustment) Valid() bool {
 	}
 }
 
+// Defines values for CategoryIcon.
+const (
+	CategoryIconApple          CategoryIcon = "apple"
+	CategoryIconBaby           CategoryIcon = "baby"
+	CategoryIconBanknote       CategoryIcon = "banknote"
+	CategoryIconBeer           CategoryIcon = "beer"
+	CategoryIconBike           CategoryIcon = "bike"
+	CategoryIconBookOpen       CategoryIcon = "book-open"
+	CategoryIconBriefcase      CategoryIcon = "briefcase"
+	CategoryIconBuilding2      CategoryIcon = "building-2"
+	CategoryIconBus            CategoryIcon = "bus"
+	CategoryIconCar            CategoryIcon = "car"
+	CategoryIconCarTaxiFront   CategoryIcon = "car-taxi-front"
+	CategoryIconCat            CategoryIcon = "cat"
+	CategoryIconChartPie       CategoryIcon = "chart-pie"
+	CategoryIconCircleParking  CategoryIcon = "circle-parking"
+	CategoryIconCloud          CategoryIcon = "cloud"
+	CategoryIconCoffee         CategoryIcon = "coffee"
+	CategoryIconCoins          CategoryIcon = "coins"
+	CategoryIconCreditCard     CategoryIcon = "credit-card"
+	CategoryIconCroissant      CategoryIcon = "croissant"
+	CategoryIconDog            CategoryIcon = "dog"
+	CategoryIconDroplet        CategoryIcon = "droplet"
+	CategoryIconDumbbell       CategoryIcon = "dumbbell"
+	CategoryIconFileText       CategoryIcon = "file-text"
+	CategoryIconFilm           CategoryIcon = "film"
+	CategoryIconFlame          CategoryIcon = "flame"
+	CategoryIconFuel           CategoryIcon = "fuel"
+	CategoryIconGamepad2       CategoryIcon = "gamepad-2"
+	CategoryIconGift           CategoryIcon = "gift"
+	CategoryIconGlobe          CategoryIcon = "globe"
+	CategoryIconGraduationCap  CategoryIcon = "graduation-cap"
+	CategoryIconHammer         CategoryIcon = "hammer"
+	CategoryIconHandCoins      CategoryIcon = "hand-coins"
+	CategoryIconHeart          CategoryIcon = "heart"
+	CategoryIconHeartPulse     CategoryIcon = "heart-pulse"
+	CategoryIconHospital       CategoryIcon = "hospital"
+	CategoryIconHotel          CategoryIcon = "hotel"
+	CategoryIconHouse          CategoryIcon = "house"
+	CategoryIconKeyRound       CategoryIcon = "key-round"
+	CategoryIconLamp           CategoryIcon = "lamp"
+	CategoryIconLandmark       CategoryIcon = "landmark"
+	CategoryIconLaptop         CategoryIcon = "laptop"
+	CategoryIconLuggage        CategoryIcon = "luggage"
+	CategoryIconMap            CategoryIcon = "map"
+	CategoryIconMusic          CategoryIcon = "music"
+	CategoryIconPackage        CategoryIcon = "package"
+	CategoryIconPalette        CategoryIcon = "palette"
+	CategoryIconPartyPopper    CategoryIcon = "party-popper"
+	CategoryIconPawPrint       CategoryIcon = "paw-print"
+	CategoryIconPercent        CategoryIcon = "percent"
+	CategoryIconPiggyBank      CategoryIcon = "piggy-bank"
+	CategoryIconPill           CategoryIcon = "pill"
+	CategoryIconPizza          CategoryIcon = "pizza"
+	CategoryIconPlane          CategoryIcon = "plane"
+	CategoryIconReceipt        CategoryIcon = "receipt"
+	CategoryIconSchool         CategoryIcon = "school"
+	CategoryIconScissors       CategoryIcon = "scissors"
+	CategoryIconShield         CategoryIcon = "shield"
+	CategoryIconShirt          CategoryIcon = "shirt"
+	CategoryIconShoppingBag    CategoryIcon = "shopping-bag"
+	CategoryIconShoppingBasket CategoryIcon = "shopping-basket"
+	CategoryIconShoppingCart   CategoryIcon = "shopping-cart"
+	CategoryIconSmartphone     CategoryIcon = "smartphone"
+	CategoryIconSmile          CategoryIcon = "smile"
+	CategoryIconSofa           CategoryIcon = "sofa"
+	CategoryIconSparkles       CategoryIcon = "sparkles"
+	CategoryIconStethoscope    CategoryIcon = "stethoscope"
+	CategoryIconTag            CategoryIcon = "tag"
+	CategoryIconTent           CategoryIcon = "tent"
+	CategoryIconTicket         CategoryIcon = "ticket"
+	CategoryIconTrainFront     CategoryIcon = "train-front"
+	CategoryIconTrendingUp     CategoryIcon = "trending-up"
+	CategoryIconTv             CategoryIcon = "tv"
+	CategoryIconUsers          CategoryIcon = "users"
+	CategoryIconUtensils       CategoryIcon = "utensils"
+	CategoryIconWallet         CategoryIcon = "wallet"
+	CategoryIconWifi           CategoryIcon = "wifi"
+	CategoryIconWine           CategoryIcon = "wine"
+	CategoryIconWrench         CategoryIcon = "wrench"
+	CategoryIconZap            CategoryIcon = "zap"
+)
+
+// Valid indicates whether the value is a known member of the CategoryIcon enum.
+func (e CategoryIcon) Valid() bool {
+	switch e {
+	case CategoryIconApple:
+		return true
+	case CategoryIconBaby:
+		return true
+	case CategoryIconBanknote:
+		return true
+	case CategoryIconBeer:
+		return true
+	case CategoryIconBike:
+		return true
+	case CategoryIconBookOpen:
+		return true
+	case CategoryIconBriefcase:
+		return true
+	case CategoryIconBuilding2:
+		return true
+	case CategoryIconBus:
+		return true
+	case CategoryIconCar:
+		return true
+	case CategoryIconCarTaxiFront:
+		return true
+	case CategoryIconCat:
+		return true
+	case CategoryIconChartPie:
+		return true
+	case CategoryIconCircleParking:
+		return true
+	case CategoryIconCloud:
+		return true
+	case CategoryIconCoffee:
+		return true
+	case CategoryIconCoins:
+		return true
+	case CategoryIconCreditCard:
+		return true
+	case CategoryIconCroissant:
+		return true
+	case CategoryIconDog:
+		return true
+	case CategoryIconDroplet:
+		return true
+	case CategoryIconDumbbell:
+		return true
+	case CategoryIconFileText:
+		return true
+	case CategoryIconFilm:
+		return true
+	case CategoryIconFlame:
+		return true
+	case CategoryIconFuel:
+		return true
+	case CategoryIconGamepad2:
+		return true
+	case CategoryIconGift:
+		return true
+	case CategoryIconGlobe:
+		return true
+	case CategoryIconGraduationCap:
+		return true
+	case CategoryIconHammer:
+		return true
+	case CategoryIconHandCoins:
+		return true
+	case CategoryIconHeart:
+		return true
+	case CategoryIconHeartPulse:
+		return true
+	case CategoryIconHospital:
+		return true
+	case CategoryIconHotel:
+		return true
+	case CategoryIconHouse:
+		return true
+	case CategoryIconKeyRound:
+		return true
+	case CategoryIconLamp:
+		return true
+	case CategoryIconLandmark:
+		return true
+	case CategoryIconLaptop:
+		return true
+	case CategoryIconLuggage:
+		return true
+	case CategoryIconMap:
+		return true
+	case CategoryIconMusic:
+		return true
+	case CategoryIconPackage:
+		return true
+	case CategoryIconPalette:
+		return true
+	case CategoryIconPartyPopper:
+		return true
+	case CategoryIconPawPrint:
+		return true
+	case CategoryIconPercent:
+		return true
+	case CategoryIconPiggyBank:
+		return true
+	case CategoryIconPill:
+		return true
+	case CategoryIconPizza:
+		return true
+	case CategoryIconPlane:
+		return true
+	case CategoryIconReceipt:
+		return true
+	case CategoryIconSchool:
+		return true
+	case CategoryIconScissors:
+		return true
+	case CategoryIconShield:
+		return true
+	case CategoryIconShirt:
+		return true
+	case CategoryIconShoppingBag:
+		return true
+	case CategoryIconShoppingBasket:
+		return true
+	case CategoryIconShoppingCart:
+		return true
+	case CategoryIconSmartphone:
+		return true
+	case CategoryIconSmile:
+		return true
+	case CategoryIconSofa:
+		return true
+	case CategoryIconSparkles:
+		return true
+	case CategoryIconStethoscope:
+		return true
+	case CategoryIconTag:
+		return true
+	case CategoryIconTent:
+		return true
+	case CategoryIconTicket:
+		return true
+	case CategoryIconTrainFront:
+		return true
+	case CategoryIconTrendingUp:
+		return true
+	case CategoryIconTv:
+		return true
+	case CategoryIconUsers:
+		return true
+	case CategoryIconUtensils:
+		return true
+	case CategoryIconWallet:
+		return true
+	case CategoryIconWifi:
+		return true
+	case CategoryIconWine:
+		return true
+	case CategoryIconWrench:
+		return true
+	case CategoryIconZap:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for DisputeOutcome.
 const (
 	DisputeOutcomeLost DisputeOutcome = "lost"
@@ -749,8 +998,14 @@ type Account struct {
 	Class    AccountClass        `json:"class"`
 	ClosedOn *openapi_types.Date `json:"closed_on,omitempty"`
 
+	// Color Data slot of the theme (--slotted-data-n), A83.
+	Color *int `json:"color,omitempty"`
+
 	// Currency Instrument of the account; a security only for a child of a brokerage account (P8 amendment A63).
-	Currency      string              `json:"currency"`
+	Currency string `json:"currency"`
+
+	// Icon Kebab-case name of a lucide-react icon of the curated category set (A83).
+	Icon          *CategoryIcon       `json:"icon,omitempty"`
 	Id            openapi_types.UUID  `json:"id"`
 	InstitutionId *openapi_types.UUID `json:"institution_id,omitempty"`
 	Kind          *AccountKind        `json:"kind,omitempty"`
@@ -767,6 +1022,12 @@ type AccountKind string
 // AccountYieldMode defines model for Account.YieldMode.
 type AccountYieldMode string
 
+// AccountAppearance null clears the colour or the icon.
+type AccountAppearance struct {
+	Color *int          `json:"color"`
+	Icon  *CategoryIcon `json:"icon"`
+}
+
 // AccountClass defines model for AccountClass.
 type AccountClass string
 
@@ -774,8 +1035,14 @@ type AccountClass string
 type AccountInput struct {
 	Class AccountClass `json:"class"`
 
+	// Color Data slot of the theme (--slotted-data-n), A83.
+	Color *int `json:"color,omitempty"`
+
 	// Currency Instrument of the account; a security only for a child of a brokerage account (P8 amendment A63).
-	Currency      string                 `json:"currency"`
+	Currency string `json:"currency"`
+
+	// Icon Kebab-case name of a lucide-react icon of the curated category set (A83).
+	Icon          *CategoryIcon          `json:"icon,omitempty"`
 	InstitutionId *openapi_types.UUID    `json:"institution_id,omitempty"`
 	Kind          *AccountInputKind      `json:"kind,omitempty"`
 	Name          string                 `json:"name"`
@@ -796,6 +1063,11 @@ type AccountList struct {
 
 	// NextCursor Absent on the last page.
 	NextCursor *string `json:"next_cursor,omitempty"`
+}
+
+// AccountParent null makes the account top level (A84).
+type AccountParent struct {
+	ParentId *openapi_types.UUID `json:"parent_id"`
 }
 
 // AccountPatch defines model for AccountPatch.
@@ -983,6 +1255,9 @@ type CategorizeInput struct {
 	Parts           []CategoryPart      `json:"parts"`
 	PayeeId         *openapi_types.UUID `json:"payee_id,omitempty"`
 }
+
+// CategoryIcon Kebab-case name of a lucide-react icon of the curated category set (A83).
+type CategoryIcon string
 
 // CategoryPart defines model for CategoryPart.
 type CategoryPart struct {
@@ -1715,6 +1990,9 @@ type CreateAccountJSONRequestBody = AccountInput
 // UpdateAccountJSONRequestBody defines body for UpdateAccount for application/json ContentType.
 type UpdateAccountJSONRequestBody = AccountPatch
 
+// SetAccountAppearanceJSONRequestBody defines body for SetAccountAppearance for application/json ContentType.
+type SetAccountAppearanceJSONRequestBody = AccountAppearance
+
 // CreateBalanceAssertionJSONRequestBody defines body for CreateBalanceAssertion for application/json ContentType.
 type CreateBalanceAssertionJSONRequestBody = BalanceAssertionInput
 
@@ -1732,6 +2010,9 @@ type CreateCreditLimitJSONRequestBody = CreditLimit
 
 // MergeAccountJSONRequestBody defines body for MergeAccount for application/json ContentType.
 type MergeAccountJSONRequestBody = MergeAccountInput
+
+// SetAccountParentJSONRequestBody defines body for SetAccountParent for application/json ContentType.
+type SetAccountParentJSONRequestBody = AccountParent
 
 // UnlockAccountJSONRequestBody defines body for UnlockAccount for application/json ContentType.
 type UnlockAccountJSONRequestBody = UnlockInput
@@ -1822,6 +2103,9 @@ type ServerInterface interface {
 	// UpdateAccount Rename or move an account.
 	// (PATCH /accounts/{id})
 	UpdateAccount(w http.ResponseWriter, r *http.Request, id ID)
+	// SetAccountAppearance Set or clear the colour and the icon of an account (A83).
+	// (PUT /accounts/{id}/appearance)
+	SetAccountAppearance(w http.ResponseWriter, r *http.Request, id ID)
 	// GetAccountBalance Balance of an account at the end of a date.
 	// (GET /accounts/{id}/balance)
 	GetAccountBalance(w http.ResponseWriter, r *http.Request, id ID, params GetAccountBalanceParams)
@@ -1858,6 +2142,9 @@ type ServerInterface interface {
 	// MergeAccount Merge a category into another; returns the destination (A75).
 	// (POST /accounts/{id}/merge)
 	MergeAccount(w http.ResponseWriter, r *http.Request, id ID)
+	// SetAccountParent Set or clear the parent of an account (A84).
+	// (PUT /accounts/{id}/parent)
+	SetAccountParent(w http.ResponseWriter, r *http.Request, id ID)
 	// GetReconciliationStatus Last reconciliation date and the open difference of the latest assertion.
 	// (GET /accounts/{id}/reconciliation)
 	GetReconciliationStatus(w http.ResponseWriter, r *http.Request, id ID)
@@ -2098,6 +2385,32 @@ func (siw *ServerInterfaceWrapper) UpdateAccount(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateAccount(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetAccountAppearance operation middleware
+func (siw *ServerInterfaceWrapper) SetAccountAppearance(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetAccountAppearance(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2497,6 +2810,32 @@ func (siw *ServerInterfaceWrapper) MergeAccount(w http.ResponseWriter, r *http.R
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.MergeAccount(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetAccountParent operation middleware
+func (siw *ServerInterfaceWrapper) SetAccountParent(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetAccountParent(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3886,6 +4225,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/accounts/{id}", wrapper.UpdateAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/close", wrapper.CloseAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/reopen", wrapper.ReopenAccount)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/accounts/{id}/appearance", wrapper.SetAccountAppearance)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/accounts/{id}/parent", wrapper.SetAccountParent)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/merge", wrapper.MergeAccount)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/balance", wrapper.GetAccountBalance)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/balances", wrapper.ListBalances)
@@ -4145,6 +4486,73 @@ func (response UpdateAccount404ApplicationProblemPlusJSONResponse) VisitUpdateAc
 type UpdateAccount422ApplicationProblemPlusJSONResponse Problem
 
 func (response UpdateAccount422ApplicationProblemPlusJSONResponse) VisitUpdateAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetAccountAppearanceRequestObject struct {
+	Id   ID `json:"id"`
+	Body *SetAccountAppearanceJSONRequestBody
+}
+
+type SetAccountAppearanceResponseObject interface {
+	VisitSetAccountAppearanceResponse(w http.ResponseWriter) error
+}
+
+type SetAccountAppearance200JSONResponse Account
+
+func (response SetAccountAppearance200JSONResponse) VisitSetAccountAppearanceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetAccountAppearance401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetAccountAppearance401ApplicationProblemPlusJSONResponse) VisitSetAccountAppearanceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetAccountAppearance404ApplicationProblemPlusJSONResponse Problem
+
+func (response SetAccountAppearance404ApplicationProblemPlusJSONResponse) VisitSetAccountAppearanceResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetAccountAppearance422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetAccountAppearance422ApplicationProblemPlusJSONResponse) VisitSetAccountAppearanceResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -4932,6 +5340,73 @@ func (response MergeAccount404ApplicationProblemPlusJSONResponse) VisitMergeAcco
 type MergeAccount422ApplicationProblemPlusJSONResponse Problem
 
 func (response MergeAccount422ApplicationProblemPlusJSONResponse) VisitMergeAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetAccountParentRequestObject struct {
+	Id   ID `json:"id"`
+	Body *SetAccountParentJSONRequestBody
+}
+
+type SetAccountParentResponseObject interface {
+	VisitSetAccountParentResponse(w http.ResponseWriter) error
+}
+
+type SetAccountParent200JSONResponse Account
+
+func (response SetAccountParent200JSONResponse) VisitSetAccountParentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetAccountParent401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetAccountParent401ApplicationProblemPlusJSONResponse) VisitSetAccountParentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetAccountParent404ApplicationProblemPlusJSONResponse Problem
+
+func (response SetAccountParent404ApplicationProblemPlusJSONResponse) VisitSetAccountParentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetAccountParent422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetAccountParent422ApplicationProblemPlusJSONResponse) VisitSetAccountParentResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -7705,6 +8180,9 @@ type StrictServerInterface interface {
 	// UpdateAccount Rename or move an account.
 	// (PATCH /accounts/{id})
 	UpdateAccount(ctx context.Context, request UpdateAccountRequestObject) (UpdateAccountResponseObject, error)
+	// SetAccountAppearance Set or clear the colour and the icon of an account (A83).
+	// (PUT /accounts/{id}/appearance)
+	SetAccountAppearance(ctx context.Context, request SetAccountAppearanceRequestObject) (SetAccountAppearanceResponseObject, error)
 	// GetAccountBalance Balance of an account at the end of a date.
 	// (GET /accounts/{id}/balance)
 	GetAccountBalance(ctx context.Context, request GetAccountBalanceRequestObject) (GetAccountBalanceResponseObject, error)
@@ -7741,6 +8219,9 @@ type StrictServerInterface interface {
 	// MergeAccount Merge a category into another; returns the destination (A75).
 	// (POST /accounts/{id}/merge)
 	MergeAccount(ctx context.Context, request MergeAccountRequestObject) (MergeAccountResponseObject, error)
+	// SetAccountParent Set or clear the parent of an account (A84).
+	// (PUT /accounts/{id}/parent)
+	SetAccountParent(ctx context.Context, request SetAccountParentRequestObject) (SetAccountParentResponseObject, error)
 	// GetReconciliationStatus Last reconciliation date and the open difference of the latest assertion.
 	// (GET /accounts/{id}/reconciliation)
 	GetReconciliationStatus(ctx context.Context, request GetReconciliationStatusRequestObject) (GetReconciliationStatusResponseObject, error)
@@ -8017,6 +8498,39 @@ func (sh *strictHandler) UpdateAccount(w http.ResponseWriter, r *http.Request, i
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateAccountResponseObject); ok {
 		if err := validResponse.VisitUpdateAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetAccountAppearance operation middleware
+func (sh *strictHandler) SetAccountAppearance(w http.ResponseWriter, r *http.Request, id ID) {
+	var request SetAccountAppearanceRequestObject
+
+	request.Id = id
+
+	var body SetAccountAppearanceJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetAccountAppearance(ctx, request.(SetAccountAppearanceRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetAccountAppearance")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetAccountAppearanceResponseObject); ok {
+		if err := validResponse.VisitSetAccountAppearanceResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -8374,6 +8888,39 @@ func (sh *strictHandler) MergeAccount(w http.ResponseWriter, r *http.Request, id
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(MergeAccountResponseObject); ok {
 		if err := validResponse.VisitMergeAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetAccountParent operation middleware
+func (sh *strictHandler) SetAccountParent(w http.ResponseWriter, r *http.Request, id ID) {
+	var request SetAccountParentRequestObject
+
+	request.Id = id
+
+	var body SetAccountParentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetAccountParent(ctx, request.(SetAccountParentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetAccountParent")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetAccountParentResponseObject); ok {
+		if err := validResponse.VisitSetAccountParentResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

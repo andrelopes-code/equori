@@ -184,6 +184,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/{id}/appearance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set or clear the colour and the icon of an account (A83). */
+        put: operations["setAccountAppearance"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/{id}/parent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set or clear the parent of an account (A84). */
+        put: operations["setAccountParent"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/{id}/merge": {
         parameters: {
             query?: never;
@@ -2732,6 +2766,9 @@ export interface components {
             opened_on?: string;
             /** @enum {string} */
             yield_mode?: "none" | "auto";
+            /** @description Data slot of the theme (--slotted-data-n), A83. */
+            color?: number;
+            icon?: components["schemas"]["CategoryIcon"];
         };
         Account: components["schemas"]["AccountInput"] & {
             /** Format: uuid */
@@ -2763,6 +2800,21 @@ export interface components {
             account_id: string;
             total: components["schemas"]["Money"];
             subtree_total: components["schemas"]["Money"];
+        };
+        /**
+         * @description Kebab-case name of a lucide-react icon of the curated category set (A83).
+         * @enum {string}
+         */
+        CategoryIcon: "house" | "building-2" | "key-round" | "sofa" | "lamp" | "wrench" | "hammer" | "zap" | "droplet" | "flame" | "wifi" | "smartphone" | "tv" | "shopping-cart" | "shopping-basket" | "utensils" | "coffee" | "pizza" | "croissant" | "apple" | "wine" | "beer" | "car" | "fuel" | "bus" | "train-front" | "bike" | "plane" | "circle-parking" | "car-taxi-front" | "heart-pulse" | "pill" | "stethoscope" | "dumbbell" | "hospital" | "graduation-cap" | "book-open" | "school" | "film" | "music" | "gamepad-2" | "ticket" | "palette" | "party-popper" | "shirt" | "gift" | "shopping-bag" | "package" | "scissors" | "receipt" | "briefcase" | "laptop" | "cloud" | "globe" | "landmark" | "piggy-bank" | "wallet" | "credit-card" | "banknote" | "coins" | "percent" | "trending-up" | "chart-pie" | "hand-coins" | "file-text" | "shield" | "baby" | "users" | "heart" | "dog" | "cat" | "paw-print" | "luggage" | "map" | "hotel" | "tent" | "smile" | "sparkles" | "tag";
+        /** @description null clears the colour or the icon. */
+        AccountAppearance: {
+            color: number | null;
+            icon: components["schemas"]["CategoryIcon"] | null;
+        };
+        /** @description null makes the account top level (A84). */
+        AccountParent: {
+            /** Format: uuid */
+            parent_id: string | null;
         };
         MergeAccountInput: {
             /** Format: uuid */
@@ -3671,6 +3723,64 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Account"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    setAccountAppearance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountAppearance"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Account"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    setAccountParent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountParent"];
+            };
+        };
         responses: {
             /** @description OK. */
             200: {

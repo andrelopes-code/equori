@@ -189,6 +189,34 @@ func (s *Server) CloseAccount(ctx context.Context, req CloseAccountRequestObject
 	return CloseAccount200JSONResponse(toAccountAPI(a)), nil
 }
 
+func (s *Server) SetAccountAppearance(ctx context.Context, req SetAccountAppearanceRequestObject) (SetAccountAppearanceResponseObject, error) {
+	var color int
+	var icon string
+	if req.Body.Color != nil {
+		color = *req.Body.Color
+	}
+	if req.Body.Icon != nil {
+		icon = string(*req.Body.Icon)
+	}
+	a, err := s.svc.SetAppearance(ctx, auth.MustUserID(ctx), req.Id, color, icon)
+	if err != nil {
+		return nil, err
+	}
+	return SetAccountAppearance200JSONResponse(toAccountAPI(a)), nil
+}
+
+func (s *Server) SetAccountParent(ctx context.Context, req SetAccountParentRequestObject) (SetAccountParentResponseObject, error) {
+	var parent uuid.UUID
+	if req.Body.ParentId != nil {
+		parent = *req.Body.ParentId
+	}
+	a, err := s.svc.UpdateAccount(ctx, auth.MustUserID(ctx), req.Id, app.AccountPatch{ParentID: &parent})
+	if err != nil {
+		return nil, err
+	}
+	return SetAccountParent200JSONResponse(toAccountAPI(a)), nil
+}
+
 func (s *Server) MergeAccount(ctx context.Context, req MergeAccountRequestObject) (MergeAccountResponseObject, error) {
 	a, err := s.svc.MergeCategories(ctx, auth.MustUserID(ctx), req.Id, req.Body.Into)
 	if err != nil {

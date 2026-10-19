@@ -128,6 +128,9 @@ type Account struct {
 	ClosedOn       *time.Time
 	YieldMode      YieldMode
 	SystemRole     SystemRole
+	// Color is a theme data slot 1..8 and Icon a key of the API icon set; zero values mean none (A83).
+	Color int
+	Icon  string
 	// QuoteCurrency is the currency a security is quoted in; set by the application
 	// from Market data, empty for a currency account (P8 amendment A63).
 	QuoteCurrency money.Currency
@@ -170,6 +173,9 @@ func NewAccount(a Account) (Account, error) {
 	case YieldNone, YieldAuto:
 	default:
 		return Account{}, invalid("yield_mode", "must be none or auto")
+	}
+	if a.Color < 0 || a.Color > 8 {
+		return Account{}, invalid("color", "must be 1 to 8")
 	}
 	if a.SystemRole != "" && a.SystemRole.Class() != a.Class {
 		return Account{}, invalid("system_role", "does not match the account class")

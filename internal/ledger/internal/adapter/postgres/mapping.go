@@ -85,8 +85,24 @@ func toAccount(row LedgerAccount) domain.Account {
 		Kind: domain.Kind(deref(row.Kind)), Instrument: money.Currency(row.Instrument),
 		ParentID: row.ParentID.UUID, InstitutionID: row.InstitutionID.UUID, CounterpartyID: row.CounterpartyPayeeID.UUID,
 		OpenedOn: row.OpenedOn, ClosedOn: row.ClosedOn, YieldMode: domain.YieldMode(row.YieldMode),
-		SystemRole: domain.SystemRole(deref(row.SystemRole)),
+		SystemRole: domain.SystemRole(deref(row.SystemRole)), Color: colorOf(row.Color), Icon: deref(row.Icon),
 	}
+}
+
+func colorOf(c *int16) int {
+	if c == nil {
+		return 0
+	}
+	return int(*c)
+}
+
+// nullColor stores the absent colour 0 as NULL (A83).
+func nullColor(c int) *int16 {
+	if c == 0 {
+		return nil
+	}
+	v := int16(c) //nolint:gosec // NewAccount keeps the colour in 1..8.
+	return &v
 }
 
 func toTransaction(row LedgerTransaction) domain.Transaction {

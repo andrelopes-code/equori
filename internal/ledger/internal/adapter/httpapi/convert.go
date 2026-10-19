@@ -90,6 +90,14 @@ func toAccountAPI(a domain.Account) Account {
 		k := AccountKind(a.Kind)
 		out.Kind = &k
 	}
+	if a.Color != 0 {
+		c := a.Color
+		out.Color = &c
+	}
+	if a.Icon != "" {
+		i := CategoryIcon(a.Icon)
+		out.Icon = &i
+	}
 	return out
 }
 
@@ -106,6 +114,12 @@ func fromAccountInput(in AccountInput) domain.Account {
 	}
 	if in.YieldMode != nil {
 		a.YieldMode = domain.YieldMode(*in.YieldMode)
+	}
+	if in.Color != nil {
+		a.Color = *in.Color
+	}
+	if in.Icon != nil {
+		a.Icon = string(*in.Icon)
 	}
 	return a
 }
