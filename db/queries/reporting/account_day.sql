@@ -51,3 +51,12 @@ FROM reporting_account_day r
 WHERE r.account_id IN (SELECT id FROM tree) AND r.date <= @to_date
 GROUP BY r.date
 ORDER BY r.date;
+
+-- name: CategoryTotals :many
+-- A77: every account of the class with the sum of its booked deltas in [from, to].
+SELECT a.id, a.parent_id, a.name, a.instrument, a.closed_on, coalesce(sum(r.delta_booked), 0)::bigint AS total
+FROM ledger_account a
+LEFT JOIN reporting_account_day r ON r.account_id = a.id AND r.date BETWEEN @from_date::date AND @to_date::date
+WHERE a.user_id = @user_id AND a.account_class = @account_class
+GROUP BY a.id
+ORDER BY a.name, a.id;

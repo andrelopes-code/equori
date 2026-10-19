@@ -35,6 +35,24 @@ func (e GetBalanceSeriesParamsBasis) Valid() bool {
 	}
 }
 
+// Defines values for GetCategoryTotalsParamsClass.
+const (
+	Expense GetCategoryTotalsParamsClass = "expense"
+	Income  GetCategoryTotalsParamsClass = "income"
+)
+
+// Valid indicates whether the value is a known member of the GetCategoryTotalsParamsClass enum.
+func (e GetCategoryTotalsParamsClass) Valid() bool {
+	switch e {
+	case Expense:
+		return true
+	case Income:
+		return true
+	default:
+		return false
+	}
+}
+
 // BalancePoint defines model for BalancePoint.
 type BalancePoint struct {
 	Balance Money              `json:"balance"`
@@ -44,6 +62,18 @@ type BalancePoint struct {
 // BalanceSeries defines model for BalanceSeries.
 type BalanceSeries struct {
 	Items []BalancePoint `json:"items"`
+}
+
+// CategoryTotal defines model for CategoryTotal.
+type CategoryTotal struct {
+	AccountId    openapi_types.UUID `json:"account_id"`
+	SubtreeTotal Money              `json:"subtree_total"`
+	Total        Money              `json:"total"`
+}
+
+// CategoryTotals defines model for CategoryTotals.
+type CategoryTotals struct {
+	Items []CategoryTotal `json:"items"`
 }
 
 // FieldError defines model for FieldError.
@@ -95,11 +125,24 @@ type GetBalanceSeriesParams struct {
 // GetBalanceSeriesParamsBasis defines parameters for GetBalanceSeries.
 type GetBalanceSeriesParamsBasis string
 
+// GetCategoryTotalsParams defines parameters for GetCategoryTotals.
+type GetCategoryTotalsParams struct {
+	From  openapi_types.Date           `form:"from" json:"from"`
+	To    openapi_types.Date           `form:"to" json:"to"`
+	Class GetCategoryTotalsParamsClass `form:"class" json:"class"`
+}
+
+// GetCategoryTotalsParamsClass defines parameters for GetCategoryTotals.
+type GetCategoryTotalsParamsClass string
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// GetBalanceSeries Daily balance of an account and its sub-accounts, one item per day in [from, to].
 	// (GET /reports/balances)
 	GetBalanceSeries(w http.ResponseWriter, r *http.Request, params GetBalanceSeriesParams)
+	// GetCategoryTotals Booked totals of each category of a class in [from, to], at most 366 days (A77).
+	// (GET /reports/categories)
+	GetCategoryTotals(w http.ResponseWriter, r *http.Request, params GetCategoryTotalsParams)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -174,6 +217,65 @@ func (siw *ServerInterfaceWrapper) GetBalanceSeries(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetBalanceSeries(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCategoryTotals operation middleware
+func (siw *ServerInterfaceWrapper) GetCategoryTotals(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetCategoryTotalsParams
+
+	// ------------- Required query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "class" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "class", r.URL.Query(), &params.Class, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "class"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "class", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCategoryTotals(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -304,6 +406,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	}
 
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/balances", wrapper.GetBalanceSeries)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/categories", wrapper.GetCategoryTotals)
 
 	return m
 }
@@ -390,11 +493,66 @@ func (response GetBalanceSeries422ApplicationProblemPlusJSONResponse) VisitGetBa
 	return err
 }
 
+type GetCategoryTotalsRequestObject struct {
+	Params GetCategoryTotalsParams
+}
+
+type GetCategoryTotalsResponseObject interface {
+	VisitGetCategoryTotalsResponse(w http.ResponseWriter) error
+}
+
+type GetCategoryTotals200JSONResponse CategoryTotals
+
+func (response GetCategoryTotals200JSONResponse) VisitGetCategoryTotalsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCategoryTotals400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetCategoryTotals400ApplicationProblemPlusJSONResponse) VisitGetCategoryTotalsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCategoryTotals401ApplicationProblemPlusJSONResponse Problem
+
+func (response GetCategoryTotals401ApplicationProblemPlusJSONResponse) VisitGetCategoryTotalsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// GetBalanceSeries Daily balance of an account and its sub-accounts, one item per day in [from, to].
 	// (GET /reports/balances)
 	GetBalanceSeries(ctx context.Context, request GetBalanceSeriesRequestObject) (GetBalanceSeriesResponseObject, error)
+	// GetCategoryTotals Booked totals of each category of a class in [from, to], at most 366 days (A77).
+	// (GET /reports/categories)
+	GetCategoryTotals(ctx context.Context, request GetCategoryTotalsRequestObject) (GetCategoryTotalsResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -455,6 +613,32 @@ func (sh *strictHandler) GetBalanceSeries(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetBalanceSeriesResponseObject); ok {
 		if err := validResponse.VisitGetBalanceSeriesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCategoryTotals operation middleware
+func (sh *strictHandler) GetCategoryTotals(w http.ResponseWriter, r *http.Request, params GetCategoryTotalsParams) {
+	var request GetCategoryTotalsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCategoryTotals(ctx, request.(GetCategoryTotalsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCategoryTotals")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCategoryTotalsResponseObject); ok {
+		if err := validResponse.VisitGetCategoryTotalsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

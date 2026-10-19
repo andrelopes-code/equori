@@ -12,6 +12,64 @@ import (
 	"github.com/google/uuid"
 )
 
+const categoryTotals = `-- name: CategoryTotals :many
+SELECT a.id, a.parent_id, a.name, a.instrument, a.closed_on, coalesce(sum(r.delta_booked), 0)::bigint AS total
+FROM ledger_account a
+LEFT JOIN reporting_account_day r ON r.account_id = a.id AND r.date BETWEEN $1::date AND $2::date
+WHERE a.user_id = $3 AND a.account_class = $4
+GROUP BY a.id
+ORDER BY a.name, a.id
+`
+
+type CategoryTotalsParams struct {
+	FromDate     time.Time
+	ToDate       time.Time
+	UserID       int64
+	AccountClass string
+}
+
+type CategoryTotalsRow struct {
+	ID         uuid.UUID
+	ParentID   uuid.NullUUID
+	Name       string
+	Instrument string
+	ClosedOn   *time.Time
+	Total      int64
+}
+
+// A77: every account of the class with the sum of its booked deltas in [from, to].
+func (q *Queries) CategoryTotals(ctx context.Context, arg CategoryTotalsParams) ([]CategoryTotalsRow, error) {
+	rows, err := q.db.Query(ctx, categoryTotals,
+		arg.FromDate,
+		arg.ToDate,
+		arg.UserID,
+		arg.AccountClass,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CategoryTotalsRow
+	for rows.Next() {
+		var i CategoryTotalsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ParentID,
+			&i.Name,
+			&i.Instrument,
+			&i.ClosedOn,
+			&i.Total,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const deleteAccountDaysFrom = `-- name: DeleteAccountDaysFrom :exec
 DELETE FROM reporting_account_day WHERE account_id = $1 AND date >= $2
 `

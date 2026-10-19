@@ -74,3 +74,15 @@ func (r *Repository) AllAccounts(ctx context.Context) ([]app.AccountRef, error) 
 	}
 	return out, nil
 }
+
+func (r *Repository) CategoryTotals(ctx context.Context, userID int64, class string, from, to time.Time) ([]app.CategoryRow, error) {
+	rows, err := r.q.CategoryTotals(ctx, CategoryTotalsParams{UserID: userID, AccountClass: class, FromDate: from, ToDate: to})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]app.CategoryRow, len(rows))
+	for i, row := range rows {
+		out[i] = app.CategoryRow{ID: row.ID, ParentID: row.ParentID.UUID, Instrument: row.Instrument, Closed: row.ClosedOn != nil, Total: row.Total}
+	}
+	return out, nil
+}

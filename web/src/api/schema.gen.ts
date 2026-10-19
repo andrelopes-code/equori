@@ -479,6 +479,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/reports/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Booked totals of each category of a class in [from, to], at most 366 days (A77).
+         * @description Spending of an expense category and earnings of an income category are positive. An account is listed
+         *     when it is open or when its total or the total of its subtree is not zero; items are ordered by name then id.
+         */
+        get: operations["getCategoryTotals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/calendars/{name}/holidays": {
         parameters: {
             query?: never;
@@ -2734,6 +2755,15 @@ export interface components {
             /** @enum {string} */
             yield_mode?: "none" | "auto";
         };
+        CategoryTotals: {
+            items: components["schemas"]["CategoryTotal"][];
+        };
+        CategoryTotal: {
+            /** Format: uuid */
+            account_id: string;
+            total: components["schemas"]["Money"];
+            subtree_total: components["schemas"]["Money"];
+        };
         MergeAccountInput: {
             /** Format: uuid */
             into: string;
@@ -4190,6 +4220,32 @@ export interface operations {
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    getCategoryTotals: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                class: "income" | "expense";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryTotals"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
         };
     };
     listHolidays: {

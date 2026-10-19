@@ -904,6 +904,44 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /reports/categories:
+    get:
+      tags: [reporting]
+      operationId: getCategoryTotals
+      summary: Booked totals of each category of a class in [from, to], at most 366 days (A77).
+      description: |
+        Spending of an expense category and earnings of an income category are positive. An account is listed
+        when it is open or when its total or the total of its subtree is not zero; items are ordered by name then id.
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: class
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [income, expense]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryTotals"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
   /calendars/{name}/holidays:
     get:
       tags: [marketdata]
@@ -5044,6 +5082,25 @@ components:
         yield_mode:
           type: string
           enum: [none, auto]
+    CategoryTotals:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryTotal"
+    CategoryTotal:
+      type: object
+      required: [account_id, total, subtree_total]
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        total:
+          $ref: "#/components/schemas/Money"
+        subtree_total:
+          $ref: "#/components/schemas/Money"
     MergeAccountInput:
       type: object
       additionalProperties: false

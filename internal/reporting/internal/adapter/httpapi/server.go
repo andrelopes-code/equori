@@ -49,12 +49,30 @@ func (s *Server) GetBalanceSeries(ctx context.Context, req GetBalanceSeriesReque
 	return out, nil
 }
 
+func (s *Server) GetCategoryTotals(ctx context.Context, req GetCategoryTotalsRequestObject) (GetCategoryTotalsResponseObject, error) {
+	totals, err := s.svc.CategoryTotals(ctx, auth.MustUserID(ctx), string(req.Params.Class), req.Params.From.Time, req.Params.To.Time)
+	if err != nil {
+		return nil, err
+	}
+	out := GetCategoryTotals200JSONResponse{Items: make([]CategoryTotal, len(totals))}
+	for i, t := range totals {
+		out.Items[i] = CategoryTotal{
+			AccountId: t.AccountID, Total: Money{Amount: t.Total, Currency: t.Instrument}, SubtreeTotal: Money{Amount: t.SubtreeTotal, Currency: t.Instrument},
+		}
+	}
+	return out, nil
+}
+
 // toProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).
 func toProblem(err error) (problem.Details, bool) {
 	switch {
 	case errors.Is(err, app.ErrInvalidRange):
 		d := problem.New(http.StatusBadRequest, "invalid_request", "from must not be after to, and the range must not exceed 3660 days")
 		d.Errors = []problem.FieldError{{Field: "to", Message: "must be on or after from and at most 3660 days after it"}}
+		return d, true
+	case errors.Is(err, app.ErrInvalidCategoryRange):
+		d := problem.New(http.StatusBadRequest, "invalid_request", "from must not be after to, and the period must not exceed 366 days")
+		d.Errors = []problem.FieldError{{Field: "to", Message: "must be on or after from and at most 365 days after it"}}
 		return d, true
 	case errors.Is(err, app.ErrNotFound):
 		return problem.New(http.StatusNotFound, "not_found", "account not found"), true

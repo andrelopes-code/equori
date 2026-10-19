@@ -14,6 +14,8 @@ const MaxSeriesDays = 3660
 var (
 	ErrNotFound     = errors.New("not found")
 	ErrInvalidRange = errors.New("invalid date range")
+	// ErrInvalidCategoryRange: the period of CategoryTotals is empty or longer than MaxCategoryDays (A77).
+	ErrInvalidCategoryRange = errors.New("invalid category period")
 	// ErrMixedInstruments: the account's sub-accounts hold more than one instrument (P8 A63).
 	ErrMixedInstruments = errors.New("the account and its sub-accounts hold more than one instrument")
 )
@@ -47,6 +49,8 @@ type Repository interface {
 	Rebuild(ctx context.Context, userID int64, accountID uuid.UUID, from time.Time) error
 	TreeDailyDeltas(ctx context.Context, userID int64, accountID uuid.UUID, to time.Time) ([]DayDelta, error)
 	AllAccounts(ctx context.Context) ([]AccountRef, error)
+	// CategoryTotals returns every account of the class with its own booked total in [from, to].
+	CategoryTotals(ctx context.Context, userID int64, class string, from, to time.Time) ([]CategoryRow, error)
 }
 
 type Service struct {
