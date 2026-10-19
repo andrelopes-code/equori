@@ -39,7 +39,7 @@ Each amendment lands with its OpenAPI contract, `make gen`, an apitest through `
 - `POST /accounts/{id}/close` on an `income` or `expense` account ignores the balance; postings booked after `closed_on` still reject it (409 `account_not_empty`). Asset, liability and equity accounts keep the zero-balance rule.
 - Closing closes every open descendant with the same `closed_on`, in one database transaction; a descendant with postings after `closed_on` rejects the whole operation.
 - An account with a `system_role` cannot be closed: 422 `system_account`.
-- `POST /accounts/{id}/reopen` (no body) → 200 `Account`. It clears `closed_on` of the account and of its closed ancestors and publishes `ledger.account_reopened.v1` per reopened account. A system account or an open account → 422 `validation_failed`.
+- `POST /accounts/{id}/reopen` (no body) → 200 `Account`. It clears `closed_on` of the account and of its closed ancestors and publishes `ledger.account_reopened.v1` per reopened account. A system account → 422 `system_account`; an open account → 422 `validation_failed`.
 - Invariant: an open account never has a closed parent. Creating or moving an account under a closed parent → 422 `validation_failed` on `parent_id`.
 - Classification needs no change: `Allocate` (`internal/classification/internal/domain/split.go`) already skips a category that is closed on the transaction date, so a rule naming an archived category no longer decides.
 
