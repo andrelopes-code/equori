@@ -410,7 +410,7 @@ An OFX credit card statement for Itaú Visa: −230.00 on 2026-10-14 is a `charg
 | M28 | S02 |
 | M29 | S31 |
 
-The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44; transfers from imports by S45–S50; aggregator sync by S51–S59 and S68–S71; schedules (F7) by S27–S29 and the planning views by S60–S63; currencies and investments (F9) by S16, S17, S21, S22 and S64–S67.
+The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44; the category tree by S72, S73 and S75 (amendments A73, A74 and A76 of `docs/superpowers/specs/2026-10-19-web-categorization-design.md`); transfers from imports by S45–S50; aggregator sync by S51–S59 and S68–S71; schedules (F7) by S27–S29 and the planning views by S60–S63; currencies and investments (F9) by S16, S17, S21, S22 and S64–S67.
 
 ## 6.13 Classification
 
