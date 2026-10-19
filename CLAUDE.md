@@ -116,6 +116,26 @@ Read the skill before the task:
 - Write a component or element that no family draws: `web/node_modules/@slotted/react/dist/docs/skills/build-own-element/SKILL.md`
 - Change the brand colour, the scheme, the density or a control's shape: `web/node_modules/@slotted/react/dist/docs/skills/theme-app/SKILL.md`
 
+#### Slotted feedback (mandatory)
+
+Slotted is the owner's own library, in beta, and equori is its only consumer: the app is the test bed that calibrates it. The owner fixes the library in its own repository. A defect worked around here and not reported is a defect that stays in Slotted.
+
+A Slotted finding is any of:
+
+- a family that renders, behaves, measures or performs wrong (layout, state, focus, keyboard, resize, timing, a slow test caused by the family);
+- a family that lacks a prop, variant, slot or state the screen needed;
+- an own element built because no family answered (the build-own-element comment names what the family lacks: that comment is a finding);
+- a documentation file under `dist/docs/` that is missing, wrong or misleading;
+- a token the app needed that the theme does not hold.
+
+Rules:
+
+1. Every finding is reported to the owner in the reply of the task that met it, in a section titled `Slotted findings`. No finding is dropped because the app works around it.
+2. Each finding states: the family and part, what is wrong or missing, the evidence (screen and width, file and line in `web/`, test name and timing, or browser measurement), the workaround taken in `web/` (or "none"), and a prompt ready to paste into a session on the Slotted repository.
+3. The prompt is written in English, stands alone (it names the family, the observed behaviour, the expected behaviour, a minimal reproduction and the acceptance check), and asks for a test that fails before the fix.
+4. A workaround in `web/` carries a comment naming the finding, so it can be removed when the library ships the fix.
+5. When a new Slotted version is installed, check the findings of earlier tasks against it: remove each workaround the version makes unnecessary.
+
 ## web/
 
 File names under `web/src` are kebab-case (O1). This is the only exception to the snake_case rule of Naming.
