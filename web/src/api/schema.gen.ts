@@ -155,7 +155,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Close an account with zero balance. */
+        /**
+         * Close an account and its open descendants (A74).
+         * @description Every closed account needs no postings after closed_on; an asset, liability or equity account
+         *     also needs a zero balance. A subtree holding a system account is rejected with system_account.
+         */
         post: operations["closeAccount"];
         delete?: never;
         options?: never;
@@ -3172,7 +3176,7 @@ export interface components {
              *     integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
              *     currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
              *     budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
-             *     investment_transaction.
+             *     investment_transaction, system_account.
              */
             code: string;
             request_id?: string;

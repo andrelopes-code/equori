@@ -19,6 +19,7 @@ var (
 	ErrNotFound           = errors.New("not found")
 	ErrNonZeroBalance     = errors.New("account balance is not zero")
 	ErrPostingsAfterClose = errors.New("account has postings after the closing date")
+	ErrSystemAccount      = errors.New("system accounts cannot be closed, reopened or merged")
 	ErrSettingsLocked     = errors.New("settings cannot change after the first transaction")
 	ErrStatementNotClosed = errors.New("statement has not closed yet")
 	ErrStatementFinanced  = errors.New("statement is already financed")

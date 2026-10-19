@@ -210,6 +210,9 @@ func (s *Service) checkParent(ctx context.Context, r Repository, a domain.Accoun
 			return &domain.FieldError{Field: "parent_id", Message: "a balance account with postings cannot become a parent", Err: domain.ErrValidation}
 		}
 	}
+	if a.ClosedOn == nil && parent.ClosedOn != nil {
+		return &domain.FieldError{Field: "parent_id", Message: "must be open", Err: domain.ErrValidation}
+	}
 	if a.ID != uuid.Nil {
 		for ancestor := parent; ancestor.ParentID != uuid.Nil; {
 			if ancestor.ParentID == a.ID {
@@ -231,32 +234,68 @@ func (s *Service) ListAccounts(ctx context.Context, userID int64, p page.Request
 	return s.repo.ListAccounts(ctx, userID, p)
 }
 
-// CloseAccount requires a zero balance and no postings after the closing date.
+// CloseAccount closes the account and its open descendants (A74). Every member needs no
+// postings after the closing date; a balance-sheet or equity member also needs a zero balance.
 func (s *Service) CloseAccount(ctx context.Context, userID int64, id uuid.UUID, closedOn time.Time) error {
 	return s.repo.InTx(ctx, func(r Repository) error {
-		a, err := r.Account(ctx, userID, id)
+		root, err := r.Account(ctx, userID, id)
 		if err != nil {
 			return err
 		}
-		totals, err := r.AccountTotals(ctx, userID, id)
+		all, err := r.AllAccounts(ctx, userID)
 		if err != nil {
 			return err
 		}
-		if totals.Total != 0 {
-			return ErrNonZeroBalance
+		subtree := subtreeOf(root, all)
+		var closing []domain.Account
+		for _, a := range subtree {
+			if a.SystemRole != "" {
+				return ErrSystemAccount
+			}
+			if a.ClosedOn != nil && a.ID != root.ID {
+				continue
+			}
+			totals, err := r.AccountTotals(ctx, userID, a.ID)
+			if err != nil {
+				return err
+			}
+			if a.Class != domain.ClassIncome && a.Class != domain.ClassExpense && totals.Total != 0 {
+				return ErrNonZeroBalance
+			}
+			if totals.LastBookedOn.After(closedOn) {
+				return ErrPostingsAfterClose
+			}
+			a.ClosedOn = &closedOn
+			if a, err = domain.NewAccount(a); err != nil {
+				return err
+			}
+			closing = append(closing, a)
 		}
-		if totals.LastBookedOn.After(closedOn) {
-			return ErrPostingsAfterClose
+		for _, a := range closing {
+			if _, err := r.UpdateAccount(ctx, a); err != nil {
+				return err
+			}
+			if err := r.Publish(ctx, outbox.Event{Type: EventAccountClosed, UserID: userID, AggregateID: a.ID.String(), Payload: accountEvent{a.ID}}); err != nil {
+				return err
+			}
 		}
-		a.ClosedOn = &closedOn
-		if a, err = domain.NewAccount(a); err != nil {
-			return err
-		}
-		if _, err := r.UpdateAccount(ctx, a); err != nil {
-			return err
-		}
-		return r.Publish(ctx, outbox.Event{Type: EventAccountClosed, UserID: userID, AggregateID: id.String(), Payload: accountEvent{id}})
+		return nil
 	})
+}
+
+// subtreeOf returns root followed by its descendants, parents before children.
+func subtreeOf(root domain.Account, all []domain.Account) []domain.Account {
+	children := map[uuid.UUID][]domain.Account{}
+	for _, a := range all {
+		if a.ParentID != uuid.Nil {
+			children[a.ParentID] = append(children[a.ParentID], a)
+		}
+	}
+	out := []domain.Account{root}
+	for i := 0; i < len(out); i++ {
+		out = append(out, children[out[i].ID]...)
+	}
+	return out
 }
 
 // TransactionEvent is the payload of the transaction events (ADR 006, chapter 4).

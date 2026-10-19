@@ -1332,7 +1332,7 @@ type Problem struct {
 	// integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
 	// currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
 	// budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
-	// investment_transaction.
+	// investment_transaction, system_account.
 	Code      string        `json:"code"`
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`
@@ -1833,7 +1833,7 @@ type ServerInterface interface {
 	// CreateCard Add a card.
 	// (POST /accounts/{id}/cards)
 	CreateCard(w http.ResponseWriter, r *http.Request, id ID)
-	// CloseAccount Close an account with zero balance.
+	// CloseAccount Close an account and its open descendants (A74).
 	// (POST /accounts/{id}/close)
 	CloseAccount(w http.ResponseWriter, r *http.Request, id ID)
 	// GetCommitment Installments not yet billed on the statement of a month.
@@ -7523,7 +7523,7 @@ type StrictServerInterface interface {
 	// CreateCard Add a card.
 	// (POST /accounts/{id}/cards)
 	CreateCard(ctx context.Context, request CreateCardRequestObject) (CreateCardResponseObject, error)
-	// CloseAccount Close an account with zero balance.
+	// CloseAccount Close an account and its open descendants (A74).
 	// (POST /accounts/{id}/close)
 	CloseAccount(ctx context.Context, request CloseAccountRequestObject) (CloseAccountResponseObject, error)
 	// GetCommitment Installments not yet billed on the statement of a month.
