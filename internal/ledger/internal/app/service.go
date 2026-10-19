@@ -24,6 +24,7 @@ const (
 	EventTransactionVoided    = "ledger.transaction_voided.v1"
 	EventAccountOpened        = "ledger.account_opened.v1"
 	EventAccountClosed        = "ledger.account_closed.v1"
+	EventAccountReopened      = "ledger.account_reopened.v1"
 )
 
 // earliestDate is the default opening date: accounts without a known opening date accept any posting.
@@ -281,6 +282,47 @@ func (s *Service) CloseAccount(ctx context.Context, userID int64, id uuid.UUID, 
 		}
 		return nil
 	})
+}
+
+// ReopenAccount reopens the account and its closed ancestors, so an open account never has a
+// closed parent (A74).
+func (s *Service) ReopenAccount(ctx context.Context, userID int64, id uuid.UUID) (domain.Account, error) {
+	var reopened domain.Account
+	err := s.repo.InTx(ctx, func(r Repository) error {
+		a, err := r.Account(ctx, userID, id)
+		if err != nil {
+			return err
+		}
+		if a.SystemRole != "" {
+			return ErrSystemAccount
+		}
+		if a.ClosedOn == nil {
+			return &domain.FieldError{Field: "id", Message: "account is open", Err: domain.ErrValidation}
+		}
+		for {
+			a.ClosedOn = nil
+			updated, err := r.UpdateAccount(ctx, a)
+			if err != nil {
+				return err
+			}
+			if updated.ID == id {
+				reopened = updated
+			}
+			if err := r.Publish(ctx, outbox.Event{Type: EventAccountReopened, UserID: userID, AggregateID: a.ID.String(), Payload: accountEvent{a.ID}}); err != nil {
+				return err
+			}
+			if a.ParentID == uuid.Nil {
+				return nil
+			}
+			if a, err = r.Account(ctx, userID, a.ParentID); err != nil {
+				return err
+			}
+			if a.ClosedOn == nil {
+				return nil
+			}
+		}
+	})
+	return reopened, err
 }
 
 // subtreeOf returns root followed by its descendants, parents before children.

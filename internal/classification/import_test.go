@@ -133,6 +133,37 @@ func TestImportSkipsRuleWithClosedCategory(t *testing.T) {
 	}
 }
 
+// S73: a rule naming an archived category does not decide; after reopening, running rules does (A74).
+func TestArchivedCategoryStopsRuleUntilReopened(t *testing.T) {
+	b := newBooks(t)
+	bakery := b.h.Account("Bakery", "expense", "", nil)
+	rule := createRule(t, b.h, "Bakery", []map[string]any{contains("padaria")}, []map[string]any{setCategory(bakery)})
+	b.h.MustDo(http.MethodPost, "/api/v1/accounts/"+bakery+"/close", map[string]any{"closed_on": "2026-10-31"}, http.StatusOK, nil)
+
+	tx := b.importLines(t, "s73.ofx", line("20261102", "-8.50", "s73", "PADARIA SAO JOAO"))["PADARIA SAO JOAO"]
+	if got := tx.amounts(); got[b.uncategorized] != 850 || got[bakery] != 0 {
+		t.Fatalf("imported while archived = %+v", tx)
+	}
+	dispatch(t, b.h)
+
+	b.h.MustDo(http.MethodPost, "/api/v1/accounts/"+bakery+"/reopen", nil, http.StatusOK, nil)
+	var run struct {
+		Examined    int `json:"examined"`
+		Categorized int `json:"categorized"`
+	}
+	b.h.MustDo(http.MethodPost, "/api/v1/rules/run", nil, http.StatusOK, &run)
+	if run.Examined != 1 || run.Categorized != 1 {
+		t.Fatalf("run = %+v", run)
+	}
+	dispatch(t, b.h)
+	if _, postings := categoryOf(t, b.h, tx.ID); postings[bakery] != 850 {
+		t.Fatalf("postings after reopen = %v", postings)
+	}
+	if c := categorizationOf(t, b.h, tx.ID); method(c) != "rule" || c.RuleID != rule.ID {
+		t.Fatalf("categorization = %+v", c)
+	}
+}
+
 // S44: SC5 over imports, history, a manual change and an uncategorized line.
 func TestStatisticsAfterImports(t *testing.T) {
 	b := newBooks(t)

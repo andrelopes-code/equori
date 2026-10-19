@@ -1848,6 +1848,9 @@ type ServerInterface interface {
 	// GetReconciliationStatus Last reconciliation date and the open difference of the latest assertion.
 	// (GET /accounts/{id}/reconciliation)
 	GetReconciliationStatus(w http.ResponseWriter, r *http.Request, id ID)
+	// ReopenAccount Reopen a closed account and its closed ancestors (A74).
+	// (POST /accounts/{id}/reopen)
+	ReopenAccount(w http.ResponseWriter, r *http.Request, id ID)
 	// ListStatements Statements of a card with amounts and status derived from its postings.
 	// (GET /accounts/{id}/statements)
 	ListStatements(w http.ResponseWriter, r *http.Request, id ID, params ListStatementsParams)
@@ -2481,6 +2484,32 @@ func (siw *ServerInterfaceWrapper) GetReconciliationStatus(w http.ResponseWriter
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetReconciliationStatus(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ReopenAccount operation middleware
+func (siw *ServerInterfaceWrapper) ReopenAccount(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReopenAccount(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3817,6 +3846,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}", wrapper.GetAccount)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/accounts/{id}", wrapper.UpdateAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/close", wrapper.CloseAccount)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/reopen", wrapper.ReopenAccount)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/balance", wrapper.GetAccountBalance)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/balances", wrapper.ListBalances)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions", wrapper.ListTransactions)
@@ -4854,6 +4884,72 @@ func (response GetReconciliationStatus404ApplicationProblemPlusJSONResponse) Vis
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReopenAccountRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type ReopenAccountResponseObject interface {
+	VisitReopenAccountResponse(w http.ResponseWriter) error
+}
+
+type ReopenAccount200JSONResponse Account
+
+func (response ReopenAccount200JSONResponse) VisitReopenAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReopenAccount401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ReopenAccount401ApplicationProblemPlusJSONResponse) VisitReopenAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReopenAccount404ApplicationProblemPlusJSONResponse Problem
+
+func (response ReopenAccount404ApplicationProblemPlusJSONResponse) VisitReopenAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReopenAccount422ApplicationProblemPlusJSONResponse Problem
+
+func (response ReopenAccount422ApplicationProblemPlusJSONResponse) VisitReopenAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -7538,6 +7634,9 @@ type StrictServerInterface interface {
 	// GetReconciliationStatus Last reconciliation date and the open difference of the latest assertion.
 	// (GET /accounts/{id}/reconciliation)
 	GetReconciliationStatus(ctx context.Context, request GetReconciliationStatusRequestObject) (GetReconciliationStatusResponseObject, error)
+	// ReopenAccount Reopen a closed account and its closed ancestors (A74).
+	// (POST /accounts/{id}/reopen)
+	ReopenAccount(ctx context.Context, request ReopenAccountRequestObject) (ReopenAccountResponseObject, error)
 	// ListStatements Statements of a card with amounts and status derived from its postings.
 	// (GET /accounts/{id}/statements)
 	ListStatements(ctx context.Context, request ListStatementsRequestObject) (ListStatementsResponseObject, error)
@@ -8158,6 +8257,32 @@ func (sh *strictHandler) GetReconciliationStatus(w http.ResponseWriter, r *http.
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetReconciliationStatusResponseObject); ok {
 		if err := validResponse.VisitGetReconciliationStatusResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReopenAccount operation middleware
+func (sh *strictHandler) ReopenAccount(w http.ResponseWriter, r *http.Request, id ID) {
+	var request ReopenAccountRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReopenAccount(ctx, request.(ReopenAccountRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReopenAccount")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReopenAccountResponseObject); ok {
+		if err := validResponse.VisitReopenAccountResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

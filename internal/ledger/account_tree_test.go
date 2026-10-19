@@ -157,3 +157,49 @@ func TestRenameArchivedChildOfArchivedParent(t *testing.T) {
 		t.Fatalf("bakery = %+v", out)
 	}
 }
+
+func (c categoryTree) reopen(id string) apitest.Response {
+	return c.h.Do(http.MethodPost, "/api/v1/accounts/"+id+"/reopen", nil)
+}
+
+// A74, Review Focus 4: reopening reopens the closed ancestors and leaves siblings closed.
+func TestReopenCategoryReopensAncestors(t *testing.T) {
+	c := newCategoryTree(t)
+	c.h.MustDo(http.MethodPost, "/api/v1/accounts/"+c.food+"/close", map[string]string{"closed_on": "2026-10-31"}, http.StatusOK, nil)
+
+	r := c.reopen(c.bakery)
+	if r.Status != http.StatusOK {
+		t.Fatalf("reopen status %d: %s", r.Status, r.Body)
+	}
+	var out accountView
+	r.Decode(t, &out)
+	if out.ID != c.bakery || out.ClosedOn != "" {
+		t.Fatalf("reopened bakery = %+v", out)
+	}
+	c.requireClosedOn(t, "", c.food)
+	c.requireClosedOn(t, "2026-10-31", c.delivery)
+	for id, want := range map[string]int{c.bakery: 1, c.food: 1, c.delivery: 0} {
+		if n := len(events(t, c.h, id)["ledger.account_reopened.v1"]); n != want {
+			t.Fatalf("account %s has %d account_reopened events, want %d", id, n, want)
+		}
+	}
+}
+
+func TestReopenOpenAccountIs422(t *testing.T) {
+	c := newCategoryTree(t)
+	c.h.ExpectProblem(c.reopen(c.food), http.StatusUnprocessableEntity, "validation_failed", "")
+}
+
+func TestReopenSystemAccountIs422(t *testing.T) {
+	c := newCategoryTree(t)
+	c.h.ExpectProblem(c.reopen(c.uncategorizedExpense), http.StatusUnprocessableEntity, "system_account", "")
+}
+
+func TestReopenForeignAccountIs404(t *testing.T) {
+	c := newCategoryTree(t)
+	other := c.h.Login("other@example.com")
+	var foreign idOnly
+	c.h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Food", "class": "expense", "currency": "BRL"}).Decode(t, &foreign)
+	c.h.Call(other, http.MethodPost, "/api/v1/accounts/"+foreign.ID+"/close", map[string]string{"closed_on": "2026-10-31"})
+	c.h.ExpectProblem(c.reopen(foreign.ID), http.StatusNotFound, "not_found", "")
+}

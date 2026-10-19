@@ -189,6 +189,14 @@ func (s *Server) CloseAccount(ctx context.Context, req CloseAccountRequestObject
 	return CloseAccount200JSONResponse(toAccountAPI(a)), nil
 }
 
+func (s *Server) ReopenAccount(ctx context.Context, req ReopenAccountRequestObject) (ReopenAccountResponseObject, error) {
+	a, err := s.svc.ReopenAccount(ctx, auth.MustUserID(ctx), req.Id)
+	if err != nil {
+		return nil, err
+	}
+	return ReopenAccount200JSONResponse(toAccountAPI(a)), nil
+}
+
 func (s *Server) GetAccountBalance(ctx context.Context, req GetAccountBalanceRequestObject) (GetAccountBalanceResponseObject, error) {
 	basis := app.BasisBooked
 	if req.Params.Basis != nil {
