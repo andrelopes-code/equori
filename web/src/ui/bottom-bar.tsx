@@ -1,6 +1,7 @@
 import { useRouterState } from "@tanstack/react-router";
 
 import { useT } from "@/i18n/i18n-provider";
+import type { IconGlyphName } from "@/ui/icon-glyph";
 import { bestMatch } from "@/ui/best-match";
 import { BarControl } from "@/ui/bar-control";
 import styles from "@/ui/bottom-bar.module.css";
@@ -8,6 +9,7 @@ import styles from "@/ui/bottom-bar.module.css";
 export interface BottomBarItem {
   key: string;
   label: string;
+  glyph: IconGlyphName;
   to?: string;
   search?: Record<string, string>;
   onPress?: () => void;
@@ -26,8 +28,8 @@ type FiveItems = readonly [
 ];
 
 // Families read: app-shell, side-navigation, top-navigation, tabs, action-bar.
-// None draws a bar of text controls fixed to the bottom edge of a phone (ledger sheet L5), nor
-// one control of the bar in ink.
+// None draws a phone's tab bar: a glyph over a short label per destination, the count on the
+// glyph, and the entry as a round control in ink in the middle (shell second pass S2).
 export function BottomBar({ items }: { items: FiveItems }) {
   const t = useT();
   const pathname = useRouterState({ select: (s) => s.location.pathname });

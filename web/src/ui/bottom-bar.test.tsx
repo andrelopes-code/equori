@@ -15,16 +15,23 @@ import styles from "@/ui/bottom-bar.module.css";
 
 const css = readFileSync("src/ui/bottom-bar.module.css", "utf8");
 const items = [
-  { key: "home", label: "Home", to: "/" },
+  { key: "home", label: "Home", to: "/", glyph: "home" },
   {
     key: "transactions",
     label: "Transactions",
     to: "/transactions",
     badge: "3",
+    glyph: "list",
   },
-  { key: "entry", label: "New", to: "/transactions/new", ink: true },
-  { key: "accounts", label: "Accounts", to: "/accounts" },
-  { key: "more", label: "More", onPress: () => undefined },
+  {
+    key: "entry",
+    label: "New",
+    to: "/transactions/new",
+    ink: true,
+    glyph: "plus",
+  },
+  { key: "accounts", label: "Accounts", to: "/accounts", glyph: "card" },
+  { key: "more", label: "More", onPress: () => undefined, glyph: "more" },
 ] as const;
 
 async function renderBar(path: string) {
@@ -51,15 +58,18 @@ async function renderBar(path: string) {
   await screen.findByRole("navigation", { name: "Main navigation" });
 }
 
-// Ledger sheet decision L5 and shell second pass S2: five text controls, one in ink; L8: the
-// count beside Transactions.
+// Shell second pass S2 (amending L5 and L13): five controls, a glyph over each label, the entry
+// in ink; L8: the count on the Transactions glyph.
 describe("BottomBar", () => {
   it("marks Transactions current on a transaction detail route", async () => {
     await renderBar("/transactions/abc");
     const current = screen
       .getAllByRole("link")
       .filter((link) => link.getAttribute("aria-current") === "page")
-      .map((link) => link.querySelector("span")?.textContent);
+      .map(
+        (link) =>
+          link.querySelector(`.${styles.label ?? "label"}`)?.textContent,
+      );
     expect(current).toEqual(["Transactions"]);
   });
 
@@ -68,11 +78,14 @@ describe("BottomBar", () => {
     const current = screen
       .getAllByRole("link")
       .filter((link) => link.getAttribute("aria-current") === "page")
-      .map((link) => link.textContent);
+      .map(
+        (link) =>
+          link.querySelector(`.${styles.label ?? "label"}`)?.textContent,
+      );
     expect(current).toEqual(["Accounts"]);
   });
 
-  it("renders five text controls in a navigation landmark, entry in ink", async () => {
+  it("renders five controls with a glyph each in a navigation landmark, entry in ink", async () => {
     await renderBar("/");
     const bar = screen.getByRole("navigation", { name: "Main navigation" });
     expect(bar).toHaveAttribute("data-own", "bottom-bar");
@@ -81,7 +94,12 @@ describe("BottomBar", () => {
     expect(
       controls.filter((control) => control.hasAttribute("data-emphasis")),
     ).toEqual([screen.getByRole("link", { name: "New" })]);
-    expect(bar.querySelector("svg")).toBeNull();
+    expect(bar.querySelectorAll("svg")).toHaveLength(5);
+    expect(
+      controls.map((control) =>
+        control.querySelector("svg")?.getAttribute("aria-hidden"),
+      ),
+    ).toEqual(["true", "true", "true", "true", "true"]);
   });
 
   it("shows the badge after its label", async () => {
@@ -99,7 +117,7 @@ describe("BottomBar", () => {
     await renderBar("/");
     const labels = screen
       .getAllByRole("link")
-      .map((link) => link.querySelector("span"));
+      .map((link) => link.querySelector(`.${styles.label ?? "label"}`));
     expect(labels).toHaveLength(4);
     for (const label of labels) {
       expect(label).toHaveClass(styles.label ?? "label");
@@ -117,11 +135,12 @@ describe("BottomBar", () => {
       css,
     )?.[0];
     expect(active).toContain("color:");
-    expect(active).toContain("border-block-start-color");
     expect(active).not.toContain("font-weight");
     expect(label).toContain("font-size: var(--slotted-font-size-xs)");
     expect(
-      screen.getByRole("button", { name: "More" }).querySelector("span"),
-    ).toHaveClass(styles.label ?? "label");
+      screen
+        .getByRole("button", { name: "More" })
+        .querySelector(`.${styles.label ?? "label"}`),
+    ).toBeInTheDocument();
   });
 });

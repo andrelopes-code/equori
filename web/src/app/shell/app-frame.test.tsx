@@ -45,7 +45,7 @@ describe("AppFrame navigation", () => {
       ]);
       expect(controls[2]).toHaveAttribute("data-emphasis", "ink");
       expect(controls[2]?.tagName).toBe("BUTTON");
-      expect(bar?.querySelector("svg")).toBeNull();
+      expect(bar?.querySelectorAll("svg")).toHaveLength(5);
       expect(container.querySelector('[data-own="ledger-index"]')).toBeNull();
       expect(container.querySelector('[data-ui="top-navigation"]')).toBeNull();
       expect(html).toHaveAttribute("data-slotted-density", "comfortable");
@@ -93,6 +93,16 @@ describe("AppFrame navigation", () => {
     expect(container.querySelector('[data-ui="app-shell"]')).toHaveAttribute(
       "data-open",
     );
+  });
+
+  it("lays no scrim over the page on a phone", async () => {
+    const { container } = await renderApp("/", {
+      width: 360,
+      fetch: newFetch(),
+    });
+    expect(
+      container.querySelector('[data-ui="app-shell"]'),
+    ).not.toHaveAttribute("data-open");
   });
 
   it("swaps the bottom bar for the ledger index without a reload", async () => {

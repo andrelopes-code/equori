@@ -6,17 +6,11 @@
     inset-block-end: 0;
     padding-block-end: env(safe-area-inset-bottom);
     background: var(--slotted-surface);
-    border-block-start: var(--slotted-border-width-thin) solid
-      var(--slotted-border-subtle);
   }
 
   .list {
     display: grid;
-    /* The ink control takes its own width; the four destinations share the rest. */
-    grid-template-columns:
-      minmax(0, 1fr) minmax(0, 1fr) auto minmax(0, 1fr)
-      minmax(0, 1fr);
-    align-items: center;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     margin: 0;
     padding: 0;
     list-style: none;
@@ -24,90 +18,134 @@
 
   .item {
     display: flex;
-    justify-content: center;
   }
 
+  /* One tab: the glyph over its label, the whole column a target. */
   .control {
+    position: relative;
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0 var(--slotted-space-2);
+    gap: var(--slotted-space-1);
     inline-size: 100%;
-    min-block-size: var(--slotted-target-min);
-    padding: var(--slotted-space-2) var(--slotted-space-1);
+    min-block-size: calc(
+      var(--slotted-target-comfortable) + var(--slotted-space-4)
+    );
+    padding-block: var(--slotted-space-3) var(--slotted-space-2);
     border: 0;
-    /* The current control's edge sits on the bar's top rule. */
-    border-block-start: var(--slotted-border-width-thick) solid transparent;
-    border-radius: 0;
     background: transparent;
     color: var(--slotted-text-muted);
     font: inherit;
     text-decoration: none;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: color var(--slotted-duration-short)
+      var(--slotted-easing-standard);
+  }
+
+  .glyph {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: var(--slotted-space-9);
+    block-size: var(--slotted-space-8);
+    border-radius: var(--slotted-radius-full);
     transition:
       background-color var(--slotted-duration-short)
         var(--slotted-easing-standard),
-      color var(--slotted-duration-short) var(--slotted-easing-standard);
+      transform var(--slotted-duration-short) var(--slotted-easing-standard);
   }
 
-  /* Ledger sheet L8: the uncategorized count, in warning text after the label. */
-  .count {
-    font-size: var(--slotted-font-size-xs);
-    font-weight: var(--slotted-font-weight-medium);
-    font-variant-numeric: tabular-nums;
-    color: var(--slotted-tone-warning-text);
-  }
-
-  .control:hover {
-    color: var(--slotted-text);
-  }
-
-  .control[aria-current="page"] {
-    color: var(--slotted-text);
-    border-block-start-color: var(--slotted-text);
-  }
-
-  /* Shell second pass S2: entry is the bar's one inverse control, a block of ink. */
-  .control[data-emphasis="ink"] {
-    inline-size: auto;
-    margin-block: var(--slotted-space-2);
-    padding-inline: var(--slotted-space-4);
-    border-block-start: 0;
-    border-radius: var(--slotted-control-radius);
-    background: var(--slotted-surface-inverse);
-    color: var(--slotted-text-inverse);
-  }
-
-  .control:focus-visible {
-    outline: var(--slotted-focus-ring-width) solid
-      var(--slotted-focus-ring-color);
-    outline-offset: var(--slotted-focus-ring-offset);
+  .glyph svg {
+    inline-size: var(--slotted-control-icon-size-md);
+    block-size: var(--slotted-control-icon-size-md);
   }
 
   .label {
     max-inline-size: 100%;
     font-size: var(--slotted-font-size-xs);
     font-weight: var(--slotted-font-weight-medium);
+    line-height: var(--slotted-line-height-xs);
     text-align: center;
-    text-wrap: balance;
     hyphens: manual;
     overflow-wrap: normal;
     word-break: normal;
   }
 
-  .control[data-emphasis="ink"] .label {
+  /* Ledger sheet L8: the uncategorized count sits on the glyph's corner. */
+  .count {
+    position: absolute;
+    inset-block-start: var(--slotted-space-2);
+    inset-inline-start: calc(50% + var(--slotted-space-3));
+    min-inline-size: var(--slotted-space-6);
+    padding-inline: var(--slotted-space-2);
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-tone-warning-solid);
+    color: var(--slotted-tone-warning-on-solid);
+    font-size: var(--slotted-font-size-xs);
     font-weight: var(--slotted-font-weight-semibold);
+    /* The badge holds one line at the glyph's corner; the xs line height would push it off. */
+    line-height: 1.4;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
+
+  .control:hover {
+    color: var(--slotted-text);
+  }
+
+  /* The current tab takes the text colour and a soft pill behind its glyph. */
+  .control[aria-current="page"] {
+    color: var(--slotted-text);
+  }
+
+  .control[aria-current="page"] .glyph {
+    /* A tint of the text colour; no token holds a selected-pill surface. */
+    background: color-mix(in oklab, var(--slotted-text) 12%, transparent);
+  }
+
+  .control:active .glyph {
+    transform: scale(0.94);
+  }
+
+  /* Shell second pass S2: entry is a round control in ink in the middle of the bar. */
+  .control[data-emphasis="ink"] {
+    color: var(--slotted-text);
+  }
+
+  .control[data-emphasis="ink"] .glyph {
+    inline-size: var(--slotted-space-10);
+    block-size: var(--slotted-space-10);
+    /* The circle rises above the row by its extra height, so every label keeps one baseline. */
+    margin-block-start: calc(
+      (var(--slotted-space-10) - var(--slotted-space-8)) * -1
+    );
+    background: var(--slotted-surface-inverse);
+    color: var(--slotted-text-inverse);
+    box-shadow: var(--slotted-shadow-md);
+  }
+
+  .control:focus-visible {
+    outline: none;
+  }
+
+  .control:focus-visible .glyph {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
   }
 
   @media (forced-colors: active) {
-    .control[aria-current="page"] {
-      outline: var(--slotted-border-width-thin) solid currentColor;
+    .control[aria-current="page"] .glyph {
+      outline: var(--slotted-border-width-thin) solid CanvasText;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .control {
+    .control,
+    .glyph {
       transition: none;
     }
   }

@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
 
-import styles from "@/ui/bottom-bar.module.css";
 import type { BottomBarItem } from "@/ui/bottom-bar";
+import styles from "@/ui/bottom-bar.module.css";
+import { IconGlyph } from "@/ui/icon-glyph";
 
 export function BarControl({
   item,
@@ -12,7 +13,11 @@ export function BarControl({
 }) {
   const content = (
     <>
+      <span className={styles.glyph}>
+        <IconGlyph name={item.glyph} />
+      </span>
       <span className={styles.label}>{item.label}</span>
+      {/* After the label in reading order; drawn on the glyph's corner. */}
       {item.badge !== undefined && (
         <span data-own="bar-count" className={styles.count}>
           {item.badge}
@@ -20,6 +25,7 @@ export function BarControl({
       )}
     </>
   );
+  const ink = item.ink === true ? { "data-emphasis": "ink" } : {};
   if (item.to !== undefined) {
     return (
       <Link
@@ -29,7 +35,7 @@ export function BarControl({
         // Link marks only exact paths; aria-current below covers nested routes.
         activeOptions={{ exact: true }}
         aria-current={current ? "page" : undefined}
-        {...(item.ink === true ? { "data-emphasis": "ink" } : {})}
+        {...ink}
       >
         {content}
       </Link>
@@ -40,7 +46,7 @@ export function BarControl({
       type="button"
       className={styles.control}
       onClick={item.onPress}
-      {...(item.ink === true ? { "data-emphasis": "ink" } : {})}
+      {...ink}
     >
       {content}
     </button>

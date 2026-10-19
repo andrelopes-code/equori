@@ -53,8 +53,13 @@ export function AppFrame() {
 
   return (
     // The shell closes its navigation when the frame narrows and keeps it closed, a rail, when
-    // it widens again; the index exists only from 1024 px, so it is held open.
-    <AppShell canvas="flush" navOpen messages={{ nav: t("nav.label") }}>
+    // it widens again; the index exists only from 1024 px, so it is held open there and closed
+    // below, where an open navigation would lay its scrim over the page.
+    <AppShell
+      canvas="flush"
+      navOpen={viewport === "desktop"}
+      messages={{ nav: t("nav.label") }}
+    >
       {viewport === "desktop" && (
         // The index holds its own navigation landmark beside the brand, entry and account.
         <AppShellNav render={(props) => <div {...props} />}>
@@ -76,22 +81,35 @@ export function AppFrame() {
           <BottomBar
             items={[
               // The bar's short name for the overview: five controls share 360 px.
-              { key: home.key, label: t("nav.home"), to: home.to },
+              {
+                key: home.key,
+                label: t("nav.home"),
+                to: home.to,
+                glyph: "home",
+              },
               {
                 key: transactions.key,
+                glyph: "list",
                 label: t(transactions.label),
                 to: transactions.to,
                 badge,
               },
               {
                 key: "entry",
+                glyph: "plus",
                 label: t("nav.entry"),
                 onPress: openEntry,
                 ink: true,
               },
-              { key: cards.key, label: t(cards.label), to: cards.to },
+              {
+                key: cards.key,
+                label: t(cards.label),
+                to: cards.to,
+                glyph: "card",
+              },
               {
                 key: "more",
+                glyph: "more",
                 label: t("nav.more"),
                 onPress: () => {
                   setMoreOpen(true);
