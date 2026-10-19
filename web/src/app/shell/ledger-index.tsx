@@ -30,7 +30,7 @@ export function LedgerIndex({ onEntry }: { onEntry: () => void }) {
         {t("app.name")}
       </Link>
       <EntryTrigger onOpen={onEntry} />
-      <nav aria-label={t("nav.label")}>
+      <nav aria-label={t("nav.label")} className={styles.nav}>
         <ul className={styles.list}>
           {destinations.map((d) => {
             const figure = d.key === "transactions" ? badge : figures[d.key];
@@ -65,7 +65,9 @@ export function LedgerIndex({ onEntry }: { onEntry: () => void }) {
         </ul>
       </nav>
       <div className={styles.foot}>
-        <SyncStatus />
+        <div className={styles.sync}>
+          <SyncStatus />
+        </div>
         <UserMenu />
       </div>
     </div>

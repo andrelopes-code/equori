@@ -23,7 +23,7 @@ Source: the owner's review of G7: the top bar read as tabs, generic components c
 
 | ID | Decision |
 |---|---|
-| S1 | From 1024 px the destinations stand in a ledger index beside the page, an own element: the wordmark, the entry trigger drawn as a field ("Lançar, ex.: almoço 42 ontem" with the N key), the destinations Overview, Transactions, Goals, Cards, Accounts, each with its figure as the link's description (available balance, uncategorized count in the warning tone, share saved across the base-currency goals, what the cards owe, net worth), then the sync status and the account menu. The current destination carries a rule on its left edge in the text colour. |
+| S1 | From 1024 px the destinations stand in a ledger index beside the page, an own element: the wordmark, the entry trigger drawn as a field (the action "Lançar" with the N key, an example line "almoço 42 ontem" under it), the destinations Overview, Transactions, Goals, Cards, Accounts, each with its figure as the link's description (available balance, uncategorized count in the warning tone, share saved across the base-currency goals, what the cards owe, net worth), then the sync status and the account row (avatar, e-mail, "Conta e preferências"; on hover a tint of the text colour and a chevron that slides in), with no rule above them. The index fills the shell's nav region and only its list scrolls. The current destination carries a rule on its left edge in the text colour. |
 | S2 | Below 1024 px a bottom bar of five text controls: Home (the overview's short name), Transactions with its count, New drawn in ink (inverse surface), Cards, More. New preselects the open account. No page header carries New. |
 
 ## R2 Overview

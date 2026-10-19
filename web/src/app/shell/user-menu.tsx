@@ -18,6 +18,7 @@ import { meQuery, useLogout } from "@/features/session";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import type { Locale } from "@/i18n/locale";
 import { useScheme } from "@/theme/scheme";
+import { IconGlyph } from "@/ui/icon-glyph";
 import type { Scheme } from "@/theme/scheme";
 
 const schemes: readonly Scheme[] = ["dark", "light", "system"];
@@ -51,10 +52,16 @@ export function UserMenu() {
               aria-label={t("nav.user")}
               className={styles.account}
             >
-              <Avatar size="xs" name={me?.email ?? t("nav.user")} />
-              {me !== undefined && (
-                <span className={styles.email}>{me.email}</span>
-              )}
+              <Avatar size="sm" name={me?.email ?? t("nav.user")} />
+              <span className={styles.who}>
+                {me !== undefined && (
+                  <span className={styles.email}>{me.email}</span>
+                )}
+                <span className={styles.role}>{t("nav.user.hint")}</span>
+              </span>
+              <span className={styles.chevron}>
+                <IconGlyph name="chevron-up-down" />
+              </span>
             </button>
           )}
         />

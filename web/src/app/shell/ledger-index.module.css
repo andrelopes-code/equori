@@ -1,13 +1,21 @@
 @layer app {
+  /* The shell's nav region pads itself and clips what overflows; the index fills it exactly
+     and lets only its list scroll, so the account row always stands at the bottom. */
   .index {
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    gap: var(--slotted-space-8);
-    min-block-size: 100%;
-    padding: var(--slotted-space-7) var(--slotted-space-6);
+    gap: var(--slotted-space-7);
+    block-size: 100%;
+    padding: var(--slotted-space-6) var(--slotted-space-6);
+    /* The sidebar sits on the raised surface already; a hovered row takes a tint of the text
+       colour instead, 6% for rest of hover and 10% while held open. */
+    --index-hover: color-mix(in oklab, var(--slotted-text) 6%, transparent);
+    --index-held: color-mix(in oklab, var(--slotted-text) 10%, transparent);
   }
 
   .brand {
+    align-self: flex-start;
     color: var(--slotted-text);
     font-size: var(--slotted-font-size-md);
     font-weight: var(--slotted-font-weight-semibold);
@@ -16,31 +24,55 @@
     text-decoration: none;
   }
 
+  /* Entry: a field that names the action and shows what to type. */
   .trigger {
-    display: flex;
-    align-items: center;
-    gap: var(--slotted-space-3);
-    min-block-size: var(--slotted-control-height-md);
-    padding-inline: var(--slotted-space-4) var(--slotted-space-2);
+    display: grid;
+    gap: var(--slotted-space-1);
+    inline-size: 100%;
+    padding: var(--slotted-space-3) var(--slotted-space-3)
+      var(--slotted-space-3) var(--slotted-space-4);
     border: var(--slotted-border-width-thin) solid var(--slotted-border-strong);
     border-radius: var(--slotted-control-radius);
-    color: var(--slotted-text-muted);
-    font-size: var(--slotted-font-size-sm);
-    text-decoration: none;
-    transition: border-color var(--slotted-duration-short)
-      var(--slotted-easing-standard);
+    background: transparent;
+    color: var(--slotted-text);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+    transition:
+      border-color var(--slotted-duration-short) var(--slotted-easing-standard),
+      background-color var(--slotted-duration-short)
+        var(--slotted-easing-standard);
   }
 
   .trigger:hover {
     border-color: var(--slotted-text-muted);
+    background: var(--index-hover);
   }
 
-  .hint {
-    flex: 1;
-    min-inline-size: 0;
+  .triggerHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-3);
+  }
+
+  .triggerLabel {
+    font-size: var(--slotted-font-size-sm);
+    font-weight: var(--slotted-font-weight-medium);
+  }
+
+  .triggerExample {
     overflow: hidden;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .nav {
+    flex: 1 1 auto;
+    min-block-size: 0;
+    overflow-y: auto;
   }
 
   .list {
@@ -52,14 +84,14 @@
 
   .link {
     display: flex;
+    flex-wrap: wrap;
     align-items: baseline;
     justify-content: space-between;
     gap: var(--slotted-space-4);
     min-block-size: var(--slotted-target-min);
     align-content: center;
-    flex-wrap: wrap;
     padding-block: var(--slotted-space-3);
-    padding-inline: var(--slotted-space-4) 0;
+    padding-inline: var(--slotted-space-4) var(--slotted-space-2);
     /* The current destination's rule stands on the index's left edge. */
     border-inline-start: var(--slotted-border-width-thick) solid transparent;
     color: var(--slotted-text-muted);
@@ -96,39 +128,79 @@
     font-weight: var(--slotted-font-weight-medium);
   }
 
+  /* The foot: the sync status, then the account row; no rule, the space sets it apart. */
   .foot {
     display: grid;
-    gap: var(--slotted-space-4);
-    margin-block-start: auto;
-    padding-block-start: var(--slotted-space-6);
-    border-block-start: var(--slotted-border-width-thin) solid
-      var(--slotted-border-subtle);
+    gap: var(--slotted-space-3);
+  }
+
+  .sync {
+    padding-inline: var(--slotted-space-2);
+    font-size: var(--slotted-font-size-xs);
   }
 
   .account {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     gap: var(--slotted-space-3);
-    min-block-size: var(--slotted-target-min);
-    padding: 0;
+    inline-size: 100%;
+    padding: var(--slotted-space-2);
     border: 0;
+    border-radius: var(--slotted-control-radius);
     background: transparent;
     color: var(--slotted-text-muted);
     font: inherit;
-    font-size: var(--slotted-font-size-sm);
     text-align: start;
     cursor: pointer;
+    transition:
+      background-color var(--slotted-duration-short)
+        var(--slotted-easing-standard),
+      color var(--slotted-duration-short) var(--slotted-easing-standard);
   }
 
-  .account:hover {
-    color: var(--slotted-text);
+  .who {
+    display: grid;
+    min-inline-size: 0;
   }
 
   .email {
-    min-inline-size: 0;
     overflow: hidden;
+    color: var(--slotted-text);
+    font-size: var(--slotted-font-size-sm);
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .role {
+    font-size: var(--slotted-font-size-xs);
+  }
+
+  .chevron {
+    display: inline-flex;
+    opacity: 0;
+    transform: translateX(calc(var(--slotted-space-2) * -1));
+    transition:
+      opacity var(--slotted-duration-short) var(--slotted-easing-standard),
+      transform var(--slotted-duration-medium) var(--slotted-easing-emphasized);
+  }
+
+  /* Hover and the open menu lift the row onto the raised surface and slide the chevron in. */
+  .account:hover {
+    background: var(--index-hover);
+    color: var(--slotted-text);
+  }
+
+  .account[aria-expanded="true"] {
+    background: var(--index-held);
+    color: var(--slotted-text);
+  }
+
+  .account:hover .chevron,
+  .account[aria-expanded="true"] .chevron,
+  .account:focus-visible .chevron {
+    opacity: 1;
+    transform: none;
   }
 
   .brand:focus-visible,
@@ -144,11 +216,18 @@
     .link[aria-current="page"] {
       border-inline-start-color: CanvasText;
     }
+
+    .account:hover,
+    .account[aria-expanded="true"] {
+      outline: var(--slotted-border-width-thin) solid CanvasText;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .trigger,
-    .link {
+    .link,
+    .account,
+    .chevron {
       transition: none;
     }
   }
