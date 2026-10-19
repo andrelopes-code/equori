@@ -128,6 +128,8 @@ A Slotted finding is any of:
 - a documentation file under `dist/docs/` that is missing, wrong or misleading;
 - a token the app needed that the theme does not hold.
 
+The source of the problem does not matter: a problem found during the work and a problem the owner points out are both findings once the diagnosis places its cause, in whole or in part, in anything Slotted should cover: tokens, themes, families, utilities, hooks, documentation. Diagnose first; a problem whose cause is in equori's own implementation is fixed in `web/` and is not a finding. Every finding gets its own detailed report and its own prompt; findings are never merged into one vague prompt.
+
 Rules:
 
 1. Every finding is reported to the owner in the reply of the task that met it, in a section titled `Slotted findings`. No finding is dropped because the app works around it.
