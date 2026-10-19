@@ -120,23 +120,46 @@ Read the skill before the task:
 
 Slotted is the owner's own library, in beta, and equori is its only consumer: the app is the test bed that calibrates it. The owner fixes the library in its own repository. A defect worked around here and not reported is a defect that stays in Slotted.
 
-A Slotted finding is a bug to fix, an improvement to an existing family, or a new feature the library should offer. Each finding names its kind: `bug`, `improvement` or `feature`. A finding is any of:
+A Slotted finding is a bug to fix, an improvement to something that exists, or a feature the library should offer, in any area the library covers:
 
-- a family that renders, behaves, measures or performs wrong (layout, state, focus, keyboard, resize, timing, a slow test caused by the family);
-- a family that lacks a prop, variant, slot or state the screen needed;
-- an own element built because no family answered (the build-own-element comment names what the family lacks: that comment is a finding);
-- a documentation file under `dist/docs/` that is missing, wrong or misleading;
-- a token the app needed that the theme does not hold.
+| Area | Covers |
+|---|---|
+| `family` | a component family or one of its parts: rendering, behaviour, state, focus, keyboard, resize, performance (a slow test caused by the family counts), a missing prop, variant, slot or state |
+| `token` | a theme value the app needed and the theme does not hold, or a token that resolves wrong in a scheme |
+| `utility` | a hook or helper the package exports (`useField`, formatting, date, chart engine helpers) |
+| `docs` | a family file under `dist/docs/` that is missing, wrong or misleading |
+| `guideline` | a rule under `dist/docs/guidelines/` that is wrong, missing, contradictory or produces a poor result when followed |
+| `agent` | the package's instructions for agents (`dist/docs/AGENTS.snippet.md`, `dist/docs/index.md`, `dist/docs/skills/*/SKILL.md`): a missing or unclear instruction that led an agent, here or in a subagent, to a wrong component, a wrong pattern or a wasted pass |
 
-The source of the problem does not matter: a problem found during the work and a problem the owner points out are both findings once the diagnosis places its cause, in whole or in part, in anything Slotted should cover: tokens, themes, families, utilities, hooks, documentation. Diagnose first; a problem whose cause is in equori's own implementation is fixed in `web/` and is not a finding. Every finding gets its own detailed report and its own prompt; findings are never merged into one vague prompt.
+An own element built because no family answered is a finding: the build-own-element comment names what the family lacks.
+
+The source does not matter: a problem found during the work and a problem the owner points out are both findings once the diagnosis places its cause, in whole or in part, in one of the areas above. Diagnose first; a problem whose cause is in equori's own implementation is fixed in `web/` and is not a finding. Every finding gets its own report and its own prompt; findings are never merged into one vague prompt.
 
 Rules:
 
-1. Every finding is reported to the owner in the reply of the task that met it, in a section titled `Slotted findings`. No finding is dropped because the app works around it.
-2. Each finding states: its kind, the family and part, what is wrong or missing, the evidence (screen and width, file and line in `web/`, test name and timing, or browser measurement), the workaround taken in `web/` (or "none"), and a prompt ready to paste into a session on the Slotted repository.
-3. The prompt is written in English and stands alone. For a bug it names the family, the observed behaviour, the expected behaviour and a minimal reproduction; for an improvement or a feature it names the need met in equori, the proposed API (props, parts, states, tokens) and how it composes with the existing families. Every prompt ends with the acceptance check and asks for a test that fails before the change.
-4. A workaround in `web/` carries a comment naming the finding, so it can be removed when the library ships the fix.
-5. When a new Slotted version is installed, check the findings of earlier tasks against it: remove each workaround the version makes unnecessary.
+1. Every finding is reported to the owner in the reply of the task that met it, in a section titled `Slotted findings`, numbered from 1 within the reply. No finding is dropped because the app works around it.
+2. Each finding follows the template below exactly: same fields, same order, no field omitted (write "none" when a field has nothing). The prose is written in the conversation's language; the prompt is always in English.
+3. The prompt stands alone, for a session that knows nothing of equori. For a `bug` it states the observed behaviour, the expected behaviour and a minimal reproduction; for an `improvement` or a `feature` it states the need met in equori, the proposed API (props, parts, states, tokens, rule text or instruction text) and how it composes with what exists; for `guideline` and `agent` areas it quotes the current text (file and section) and gives the replacement or addition. Every prompt ends with an `Acceptance:` line and asks for a test or check that fails before the change.
+4. A workaround in `web/` carries a comment naming the finding by its title, so it can be removed when the library ships the fix.
+5. When a new Slotted version is installed, check the findings of earlier tasks against it and remove each workaround the version makes unnecessary.
+
+Template (one block per finding):
+
+````markdown
+### N. <short title: what is wrong or missing>
+- **Kind:** bug | improvement | feature
+- **Area:** family | token | utility | docs | guideline | agent — <family and part, token name, export, or file and section>
+- **Problem:** <one or two sentences: the observed behaviour or the gap>
+- **Evidence:** <screen and width, browser measurement, test name and timing, file and line in web/, or the agent step that went wrong>
+- **Impact on equori:** <what the user sees or what the work cost>
+- **Workaround:** <file in web/ and what it does, or "none">
+
+```
+<Kind> — <area and subject>.
+<Observed/expected/repro, or need/proposed API/composition, or current text/replacement.>
+Acceptance: <the test or check that fails before the change and passes after>.
+```
+````
 
 ## web/
 
