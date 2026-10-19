@@ -43,6 +43,7 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, md
 		dispatcher.Subscribe(consumer, t, m.handle)
 	}
 	dispatcher.Subscribe(consumer, ledger.EventCategoriesMerged, m.handleMerge)
+	dispatcher.Subscribe(consumer, ledger.EventPayeesMerged, m.handlePayeeMerge)
 	return m
 }
 
@@ -64,6 +65,15 @@ func (m *Module) handleMerge(ctx context.Context, tx pgx.Tx, e outbox.Delivered)
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
 	return m.svc.WithRepository(postgres.NewTxRepository(tx)).HandleCategoriesMerged(ctx, e.UserID, payload.From, payload.Into)
+}
+
+// handlePayeeMerge follows a payee merge in the dispatcher's transaction (A82).
+func (m *Module) handlePayeeMerge(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
+	var payload ledger.PayeesMerged
+	if err := json.Unmarshal(e.Payload, &payload); err != nil {
+		return fmt.Errorf("decode %s: %w", e.Type, err)
+	}
+	return m.svc.WithRepository(postgres.NewTxRepository(tx)).HandlePayeesMerged(ctx, e.UserID, payload.From, payload.Into)
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }

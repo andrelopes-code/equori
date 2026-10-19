@@ -50,6 +50,23 @@ func (q *Queries) MergeScheduleAccounts(ctx context.Context, arg MergeScheduleAc
 	return err
 }
 
+const mergeSchedulePayee = `-- name: MergeSchedulePayee :exec
+UPDATE planning_schedule SET payee_id = $1, updated_at = now()
+WHERE user_id = $2 AND payee_id = $3
+`
+
+type MergeSchedulePayeeParams struct {
+	IntoID uuid.NullUUID
+	UserID int64
+	FromID uuid.NullUUID
+}
+
+// A82: schedules follow a payee merge.
+func (q *Queries) MergeSchedulePayee(ctx context.Context, arg MergeSchedulePayeeParams) error {
+	_, err := q.db.Exec(ctx, mergeSchedulePayee, arg.IntoID, arg.UserID, arg.FromID)
+	return err
+}
+
 const moveMergedBudget = `-- name: MoveMergedBudget :exec
 UPDATE planning_budget SET category_account_id = $1
 WHERE user_id = $2 AND category_account_id = $3

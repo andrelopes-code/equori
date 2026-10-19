@@ -126,6 +126,28 @@ func (r *Repository) InsertPayee(ctx context.Context, p app.Payee) (app.Payee, e
 	return toPayee(row), nil
 }
 
+func (r *Repository) RenamePayee(ctx context.Context, userID int64, id uuid.UUID, name string) (app.Payee, error) {
+	row, err := r.q.RenamePayee(ctx, RenamePayeeParams{UserID: userID, ID: id, Name: name})
+	if err != nil {
+		return app.Payee{}, duplicate(notFound(err), "name")
+	}
+	return toPayee(row), nil
+}
+
+func (r *Repository) TransactionsWithPayee(ctx context.Context, userID int64, payeeID uuid.UUID) ([]uuid.UUID, error) {
+	return r.q.TransactionsWithPayee(ctx, TransactionsWithPayeeParams{UserID: userID, PayeeID: nullUUID(payeeID)})
+}
+
+func (r *Repository) RetirePayee(ctx context.Context, userID int64, from, into uuid.UUID) error {
+	if err := r.q.MoveVoidedPayee(ctx, MoveVoidedPayeeParams{UserID: userID, FromID: nullUUID(from), IntoID: nullUUID(into)}); err != nil {
+		return err
+	}
+	if err := r.q.MoveCounterpartyPayee(ctx, MoveCounterpartyPayeeParams{UserID: userID, FromID: nullUUID(from), IntoID: nullUUID(into)}); err != nil {
+		return err
+	}
+	return r.q.MarkPayeeMerged(ctx, MarkPayeeMergedParams{UserID: userID, FromID: from, IntoID: nullUUID(into)})
+}
+
 func (r *Repository) Payee(ctx context.Context, userID int64, id uuid.UUID) (app.Payee, error) {
 	row, err := r.q.GetPayee(ctx, GetPayeeParams{UserID: userID, ID: id})
 	if err != nil {

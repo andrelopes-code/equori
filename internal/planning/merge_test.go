@@ -67,3 +67,22 @@ func TestMergeDropsSourceBudgetWhenBothHaveOne(t *testing.T) {
 		t.Fatalf("budgets after merge = %+v", got.Items)
 	}
 }
+
+// A82: a schedule follows a payee merge.
+func TestPayeeMergeMovesSchedulePayee(t *testing.T) {
+	f := newFixture(t, "2026-11-01")
+	var other struct {
+		ID string `json:"id"`
+	}
+	f.h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": "Imobiliaria"}, http.StatusCreated, &other)
+	schedule := f.schedule("bill", f.checking, f.rent, 210000, monthly("2026-11-01", 5, "following"), map[string]any{"payee_id": f.landlord})
+	f.h.MustDo(http.MethodPost, "/api/v1/payees/"+f.landlord+"/merge", map[string]string{"into": other.ID}, http.StatusOK, nil)
+	f.h.Dispatch()
+	var s struct {
+		PayeeID string `json:"payee_id"`
+	}
+	f.h.MustDo(http.MethodGet, "/api/v1/schedules/"+schedule, nil, http.StatusOK, &s)
+	if s.PayeeID != other.ID {
+		t.Fatalf("schedule payee = %q, want %q", s.PayeeID, other.ID)
+	}
+}

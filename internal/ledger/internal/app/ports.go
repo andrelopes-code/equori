@@ -165,6 +165,8 @@ type Payee struct {
 	ID     uuid.UUID
 	UserID int64
 	Name   string
+	// MergedInto is the payee that replaced this one (A82); zero for a live payee.
+	MergedInto uuid.UUID
 }
 
 type Version struct {
@@ -280,6 +282,13 @@ type Repository interface {
 	AccountTotals(ctx context.Context, userID int64, id uuid.UUID) (AccountTotals, error)
 	// TransactionsWithAccount returns the non-voided transactions with a posting on the account.
 	TransactionsWithAccount(ctx context.Context, userID int64, accountID uuid.UUID) ([]uuid.UUID, error)
+	// RenamePayee returns ErrValidation on name for a name in use.
+	RenamePayee(ctx context.Context, userID int64, id uuid.UUID, name string) (Payee, error)
+	// TransactionsWithPayee returns the non-voided transactions of the payee.
+	TransactionsWithPayee(ctx context.Context, userID int64, payeeID uuid.UUID) ([]uuid.UUID, error)
+	// RetirePayee moves the voided transactions and the counterparty accounts of from to into
+	// and marks from as merged (A82).
+	RetirePayee(ctx context.Context, userID int64, from, into uuid.UUID) error
 
 	Transaction(ctx context.Context, userID int64, id uuid.UUID) (domain.Transaction, error)
 	LockTransaction(ctx context.Context, userID int64, id uuid.UUID) (domain.Transaction, error)

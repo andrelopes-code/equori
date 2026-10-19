@@ -16,3 +16,8 @@ SET account_id = CASE WHEN account_id = @from_id THEN @into_id ELSE account_id E
     counterpart_id = CASE WHEN counterpart_id = @from_id THEN @into_id ELSE counterpart_id END,
     updated_at = now()
 WHERE user_id = @user_id AND (account_id = @from_id OR counterpart_id = @from_id);
+
+-- name: MergeSchedulePayee :exec
+-- A82: schedules follow a payee merge.
+UPDATE planning_schedule SET payee_id = @into_id, updated_at = now()
+WHERE user_id = @user_id AND payee_id = @from_id;

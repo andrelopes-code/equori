@@ -37,6 +37,28 @@ func (q *Queries) DeleteMergeCollidingSuggestions(ctx context.Context, arg Delet
 	return err
 }
 
+const deletePayeeMergeCollidingSuggestions = `-- name: DeletePayeeMergeCollidingSuggestions :exec
+DELETE FROM classification_suggestion d
+WHERE d.user_id = $1 AND d.id IN (
+    SELECT greatest(s.id, o.id)
+    FROM classification_suggestion s
+    JOIN classification_suggestion o
+      ON o.user_id = s.user_id AND o.fingerprint = replace(s.fingerprint, $2::text, $3::text)
+    WHERE s.user_id = $1 AND s.fingerprint LIKE 'payee:' || $2::text || ' -> %'
+)
+`
+
+type DeletePayeeMergeCollidingSuggestionsParams struct {
+	UserID int64
+	FromID string
+	IntoID string
+}
+
+func (q *Queries) DeletePayeeMergeCollidingSuggestions(ctx context.Context, arg DeletePayeeMergeCollidingSuggestionsParams) error {
+	_, err := q.db.Exec(ctx, deletePayeeMergeCollidingSuggestions, arg.UserID, arg.FromID, arg.IntoID)
+	return err
+}
+
 const mergeCategorizations = `-- name: MergeCategorizations :exec
 UPDATE classification_categorization SET category_id = $1
 WHERE user_id = $2 AND category_id = $3
@@ -50,6 +72,76 @@ type MergeCategorizationsParams struct {
 
 func (q *Queries) MergeCategorizations(ctx context.Context, arg MergeCategorizationsParams) error {
 	_, err := q.db.Exec(ctx, mergeCategorizations, arg.IntoID, arg.UserID, arg.FromID)
+	return err
+}
+
+const mergePayeeAliases = `-- name: MergePayeeAliases :exec
+
+UPDATE classification_payee_alias SET payee_id = $1::uuid
+WHERE user_id = $2 AND payee_id = $3::uuid
+`
+
+type MergePayeeAliasesParams struct {
+	IntoID uuid.UUID
+	UserID int64
+	FromID uuid.UUID
+}
+
+// A82: classification references follow a payee merge. A payee match key is "payee:<id>".
+func (q *Queries) MergePayeeAliases(ctx context.Context, arg MergePayeeAliasesParams) error {
+	_, err := q.db.Exec(ctx, mergePayeeAliases, arg.IntoID, arg.UserID, arg.FromID)
+	return err
+}
+
+const mergePayeeMatchKeys = `-- name: MergePayeeMatchKeys :exec
+UPDATE classification_categorization SET match_key = 'payee:' || $1::text
+WHERE user_id = $2 AND match_key = 'payee:' || $3::text
+`
+
+type MergePayeeMatchKeysParams struct {
+	IntoID string
+	UserID int64
+	FromID string
+}
+
+func (q *Queries) MergePayeeMatchKeys(ctx context.Context, arg MergePayeeMatchKeysParams) error {
+	_, err := q.db.Exec(ctx, mergePayeeMatchKeys, arg.IntoID, arg.UserID, arg.FromID)
+	return err
+}
+
+const mergePayeeRules = `-- name: MergePayeeRules :exec
+UPDATE classification_rule
+SET conditions = replace(conditions::text, $1::text, $2::text)::jsonb,
+    actions = replace(actions::text, $1::text, $2::text)::jsonb, updated_at = now()
+WHERE user_id = $3 AND (strpos(conditions::text, $1::text) > 0 OR strpos(actions::text, $1::text) > 0)
+`
+
+type MergePayeeRulesParams struct {
+	FromID string
+	IntoID string
+	UserID int64
+}
+
+func (q *Queries) MergePayeeRules(ctx context.Context, arg MergePayeeRulesParams) error {
+	_, err := q.db.Exec(ctx, mergePayeeRules, arg.FromID, arg.IntoID, arg.UserID)
+	return err
+}
+
+const mergePayeeSuggestions = `-- name: MergePayeeSuggestions :exec
+UPDATE classification_suggestion
+SET fingerprint = replace(fingerprint, $1::text, $2::text),
+    conditions = replace(conditions::text, $1::text, $2::text)::jsonb
+WHERE user_id = $3 AND fingerprint LIKE 'payee:' || $1::text || ' -> %'
+`
+
+type MergePayeeSuggestionsParams struct {
+	FromID string
+	IntoID string
+	UserID int64
+}
+
+func (q *Queries) MergePayeeSuggestions(ctx context.Context, arg MergePayeeSuggestionsParams) error {
+	_, err := q.db.Exec(ctx, mergePayeeSuggestions, arg.FromID, arg.IntoID, arg.UserID)
 	return err
 }
 

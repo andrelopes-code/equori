@@ -549,3 +549,7 @@ func (r *Repository) MergeCategory(ctx context.Context, userID int64, from, into
 	}
 	return r.q.MergeScheduleAccounts(ctx, MergeScheduleAccountsParams{UserID: userID, FromID: from, IntoID: into})
 }
+
+func (r *Repository) MergePayee(ctx context.Context, userID int64, from, into uuid.UUID) error {
+	return r.q.MergeSchedulePayee(ctx, MergeSchedulePayeeParams{UserID: userID, FromID: uuid.NullUUID{UUID: from, Valid: true}, IntoID: uuid.NullUUID{UUID: into, Valid: true}})
+}

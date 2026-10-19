@@ -218,6 +218,22 @@ func (s *Server) SetAccountParent(ctx context.Context, req SetAccountParentReque
 	return SetAccountParent200JSONResponse(toAccountAPI(a)), nil
 }
 
+func (s *Server) RenamePayee(ctx context.Context, req RenamePayeeRequestObject) (RenamePayeeResponseObject, error) {
+	p, err := s.svc.RenamePayee(ctx, auth.MustUserID(ctx), req.Id, req.Body.Name)
+	if err != nil {
+		return nil, err
+	}
+	return RenamePayee200JSONResponse{Id: p.ID, Name: p.Name}, nil
+}
+
+func (s *Server) MergePayee(ctx context.Context, req MergePayeeRequestObject) (MergePayeeResponseObject, error) {
+	p, err := s.svc.MergePayees(ctx, auth.MustUserID(ctx), req.Id, req.Body.Into)
+	if err != nil {
+		return nil, err
+	}
+	return MergePayee200JSONResponse{Id: p.ID, Name: p.Name}, nil
+}
+
 func (s *Server) MergeAccount(ctx context.Context, req MergeAccountRequestObject) (MergeAccountResponseObject, error) {
 	a, err := s.svc.MergeCategories(ctx, auth.MustUserID(ctx), req.Id, req.Body.Into)
 	if err != nil {

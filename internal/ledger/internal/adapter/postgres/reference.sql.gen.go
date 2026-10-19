@@ -12,7 +12,7 @@ import (
 )
 
 const getPayee = `-- name: GetPayee :one
-SELECT id, user_id, name FROM ledger_payee WHERE user_id = $1 AND id = $2
+SELECT id, user_id, name, merged_into FROM ledger_payee WHERE user_id = $1 AND id = $2
 `
 
 type GetPayeeParams struct {
@@ -23,7 +23,12 @@ type GetPayeeParams struct {
 func (q *Queries) GetPayee(ctx context.Context, arg GetPayeeParams) (LedgerPayee, error) {
 	row := q.db.QueryRow(ctx, getPayee, arg.UserID, arg.ID)
 	var i LedgerPayee
-	err := row.Scan(&i.ID, &i.UserID, &i.Name)
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.MergedInto,
+	)
 	return i, err
 }
 
@@ -61,7 +66,7 @@ func (q *Queries) InsertInstitution(ctx context.Context, arg InsertInstitutionPa
 }
 
 const insertPayee = `-- name: InsertPayee :one
-INSERT INTO ledger_payee (user_id, name) VALUES ($1, $2) RETURNING id, user_id, name
+INSERT INTO ledger_payee (user_id, name) VALUES ($1, $2) RETURNING id, user_id, name, merged_into
 `
 
 type InsertPayeeParams struct {
@@ -72,7 +77,12 @@ type InsertPayeeParams struct {
 func (q *Queries) InsertPayee(ctx context.Context, arg InsertPayeeParams) (LedgerPayee, error) {
 	row := q.db.QueryRow(ctx, insertPayee, arg.UserID, arg.Name)
 	var i LedgerPayee
-	err := row.Scan(&i.ID, &i.UserID, &i.Name)
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.MergedInto,
+	)
 	return i, err
 }
 
@@ -131,8 +141,8 @@ func (q *Queries) ListInstitutions(ctx context.Context, arg ListInstitutionsPara
 }
 
 const listPayees = `-- name: ListPayees :many
-SELECT id, user_id, name, lower(name)::text AS sort_name FROM ledger_payee
-WHERE user_id = $1
+SELECT id, user_id, name, merged_into, lower(name)::text AS sort_name FROM ledger_payee
+WHERE user_id = $1 AND merged_into IS NULL
   AND ($2::text IS NULL OR (lower(name), id) > ($2::text, $3::uuid))
 ORDER BY lower(name), id
 LIMIT $4
@@ -146,10 +156,11 @@ type ListPayeesParams struct {
 }
 
 type ListPayeesRow struct {
-	ID       uuid.UUID
-	UserID   int64
-	Name     string
-	SortName string
+	ID         uuid.UUID
+	UserID     int64
+	Name       string
+	MergedInto uuid.NullUUID
+	SortName   string
 }
 
 func (q *Queries) ListPayees(ctx context.Context, arg ListPayeesParams) ([]ListPayeesRow, error) {
@@ -170,6 +181,7 @@ func (q *Queries) ListPayees(ctx context.Context, arg ListPayeesParams) ([]ListP
 			&i.ID,
 			&i.UserID,
 			&i.Name,
+			&i.MergedInto,
 			&i.SortName,
 		); err != nil {
 			return nil, err
@@ -208,6 +220,105 @@ func (q *Queries) ListTags(ctx context.Context, arg ListTagsParams) ([]string, e
 			return nil, err
 		}
 		items = append(items, name)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const markPayeeMerged = `-- name: MarkPayeeMerged :exec
+UPDATE ledger_payee SET merged_into = $1 WHERE user_id = $2 AND id = $3
+`
+
+type MarkPayeeMergedParams struct {
+	IntoID uuid.NullUUID
+	UserID int64
+	FromID uuid.UUID
+}
+
+func (q *Queries) MarkPayeeMerged(ctx context.Context, arg MarkPayeeMergedParams) error {
+	_, err := q.db.Exec(ctx, markPayeeMerged, arg.IntoID, arg.UserID, arg.FromID)
+	return err
+}
+
+const moveCounterpartyPayee = `-- name: MoveCounterpartyPayee :exec
+UPDATE ledger_account SET counterparty_payee_id = $1, updated_at = now()
+WHERE user_id = $2 AND counterparty_payee_id = $3
+`
+
+type MoveCounterpartyPayeeParams struct {
+	IntoID uuid.NullUUID
+	UserID int64
+	FromID uuid.NullUUID
+}
+
+func (q *Queries) MoveCounterpartyPayee(ctx context.Context, arg MoveCounterpartyPayeeParams) error {
+	_, err := q.db.Exec(ctx, moveCounterpartyPayee, arg.IntoID, arg.UserID, arg.FromID)
+	return err
+}
+
+const moveVoidedPayee = `-- name: MoveVoidedPayee :exec
+UPDATE ledger_transaction SET payee_id = $1
+WHERE user_id = $2 AND payee_id = $3 AND voided_at IS NOT NULL
+`
+
+type MoveVoidedPayeeParams struct {
+	IntoID uuid.NullUUID
+	UserID int64
+	FromID uuid.NullUUID
+}
+
+func (q *Queries) MoveVoidedPayee(ctx context.Context, arg MoveVoidedPayeeParams) error {
+	_, err := q.db.Exec(ctx, moveVoidedPayee, arg.IntoID, arg.UserID, arg.FromID)
+	return err
+}
+
+const renamePayee = `-- name: RenamePayee :one
+UPDATE ledger_payee SET name = $1 WHERE user_id = $2 AND id = $3 RETURNING id, user_id, name, merged_into
+`
+
+type RenamePayeeParams struct {
+	Name   string
+	UserID int64
+	ID     uuid.UUID
+}
+
+func (q *Queries) RenamePayee(ctx context.Context, arg RenamePayeeParams) (LedgerPayee, error) {
+	row := q.db.QueryRow(ctx, renamePayee, arg.Name, arg.UserID, arg.ID)
+	var i LedgerPayee
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.MergedInto,
+	)
+	return i, err
+}
+
+const transactionsWithPayee = `-- name: TransactionsWithPayee :many
+SELECT id FROM ledger_transaction WHERE user_id = $1 AND payee_id = $2 AND voided_at IS NULL ORDER BY id
+`
+
+type TransactionsWithPayeeParams struct {
+	UserID  int64
+	PayeeID uuid.NullUUID
+}
+
+// A82: the non-voided transactions of the payee, by id.
+func (q *Queries) TransactionsWithPayee(ctx context.Context, arg TransactionsWithPayeeParams) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, transactionsWithPayee, arg.UserID, arg.PayeeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

@@ -41,6 +41,8 @@ const (
 	EventTransactionsPaired = app.EventTransactionsPaired
 	// EventCategoriesMerged follows MergeCategories (A75).
 	EventCategoriesMerged = app.EventCategoriesMerged
+	// EventPayeesMerged follows MergePayees (A82).
+	EventPayeesMerged = app.EventPayeesMerged
 	// CauseMerge is the cause method of the versions a merge creates.
 	CauseMerge = app.CauseMerge
 )
@@ -50,6 +52,9 @@ type TransactionEvent = app.TransactionEvent
 
 // CategoriesMerged is the payload of EventCategoriesMerged.
 type CategoriesMerged = app.CategoriesMerged
+
+// PayeesMerged is the payload of EventPayeesMerged.
+type PayeesMerged = app.PayeesMerged
 
 type Module struct {
 	http *httpapi.Server

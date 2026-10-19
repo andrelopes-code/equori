@@ -134,3 +134,39 @@ func TestS74MergeCategories(t *testing.T) {
 		t.Fatalf("budgets = %+v", budgets.Items)
 	}
 }
+
+// S79: merging two payees moves the alias, the rules and the payee history (A82).
+func TestS79MergePayees(t *testing.T) {
+	b := newBooks(t)
+	var ifood, upper struct {
+		ID string `json:"id"`
+	}
+	b.h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": "iFood"}, http.StatusCreated, &ifood)
+	b.h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": "IFOOD SP"}, http.StatusCreated, &upper)
+	b.h.MustDo(http.MethodPost, "/api/v1/payee-aliases", map[string]any{"pattern": "ifd*", "match_type": "starts_with", "payee_id": upper.ID}, http.StatusCreated, nil)
+	createRule(t, b.h, "Delivery", []map[string]any{{"field": "payee", "operator": "equals", "value": upper.ID}}, []map[string]any{setCategory(b.delivery)})
+	tx := b.record(t, "2026-10-01", "IFD*IFOOD", upper.ID, b.delivery, 4500)
+	dispatch(t, b.h)
+
+	b.h.MustDo(http.MethodPost, "/api/v1/payees/"+upper.ID+"/merge", map[string]string{"into": ifood.ID}, http.StatusOK, nil)
+	dispatch(t, b.h)
+
+	var aliases struct {
+		Items []struct {
+			PayeeID string `json:"payee_id"`
+		} `json:"items"`
+	}
+	b.h.MustDo(http.MethodGet, "/api/v1/payee-aliases", nil, http.StatusOK, &aliases)
+	if len(aliases.Items) != 1 || aliases.Items[0].PayeeID != ifood.ID {
+		t.Fatalf("aliases = %+v", aliases.Items)
+	}
+	if got := ruleByName(t, b.h, "Delivery").Conditions[0]["value"]; got != ifood.ID {
+		t.Fatalf("rule payee = %v", got)
+	}
+	if v := b.h.Transaction(tx); v.Version != 2 {
+		t.Fatalf("transaction version = %d", v.Version)
+	}
+	if c := categorizationOf(t, b.h, tx); method(c) != "manual" {
+		t.Fatalf("categorization = %+v", c)
+	}
+}

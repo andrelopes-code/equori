@@ -83,3 +83,20 @@ func (r *Repository) MergeCategory(ctx context.Context, userID int64, from, into
 	}
 	return r.q.MergeCategorizations(ctx, MergeCategorizationsParams{UserID: userID, FromID: uuid.NullUUID{UUID: from, Valid: true}, IntoID: uuid.NullUUID{UUID: into, Valid: true}})
 }
+
+func (r *Repository) MergePayee(ctx context.Context, userID int64, from, into uuid.UUID) error {
+	f, i := from.String(), into.String()
+	if err := r.q.MergePayeeAliases(ctx, MergePayeeAliasesParams{UserID: userID, FromID: from, IntoID: into}); err != nil {
+		return err
+	}
+	if err := r.q.DeletePayeeMergeCollidingSuggestions(ctx, DeletePayeeMergeCollidingSuggestionsParams{UserID: userID, FromID: f, IntoID: i}); err != nil {
+		return err
+	}
+	if err := r.q.MergePayeeSuggestions(ctx, MergePayeeSuggestionsParams{UserID: userID, FromID: f, IntoID: i}); err != nil {
+		return err
+	}
+	if err := r.q.MergePayeeRules(ctx, MergePayeeRulesParams{UserID: userID, FromID: f, IntoID: i}); err != nil {
+		return err
+	}
+	return r.q.MergePayeeMatchKeys(ctx, MergePayeeMatchKeysParams{UserID: userID, FromID: f, IntoID: i})
+}

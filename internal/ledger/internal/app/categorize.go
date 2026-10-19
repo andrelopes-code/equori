@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 
@@ -16,6 +18,7 @@ import (
 const (
 	EventTransactionCategorized = "ledger.transaction_categorized.v1"
 	EventCategoriesMerged       = "ledger.categories_merged.v1"
+	EventPayeesMerged           = "ledger.payees_merged.v1"
 	// CauseMerge marks the versions a merge creates; Classification keeps their method (A75).
 	CauseMerge        = "merge"
 	reasonMerged      = "merged"
@@ -281,4 +284,75 @@ func (s *Service) CategorizeMany(ctx context.Context, userID int64, category uui
 		cs[i] = Categorization{TransactionID: it.ID, ExpectedVersion: it.ExpectedVersion, WholeTo: category, Cause: Cause{Method: MethodManual}}
 	}
 	return s.Categorize(ctx, userID, cs)
+}
+
+// PayeesMerged is the payload of EventPayeesMerged.
+type PayeesMerged struct {
+	From uuid.UUID `json:"from"`
+	Into uuid.UUID `json:"into"`
+}
+
+// RenamePayee changes the name of a payee (A82).
+func (s *Service) RenamePayee(ctx context.Context, userID int64, id uuid.UUID, name string) (Payee, error) {
+	name = strings.TrimSpace(name)
+	if n := utf8.RuneCountInString(name); n == 0 || n > 120 {
+		return Payee{}, &domain.FieldError{Field: "name", Message: "must have 1 to 120 characters", Err: domain.ErrValidation}
+	}
+	return s.repo.RenamePayee(ctx, userID, id, name)
+}
+
+// MergePayees moves every transaction of from to into, a new version for each non-voided
+// one, keeps from as merged and publishes EventPayeesMerged (A82). It returns into.
+func (s *Service) MergePayees(ctx context.Context, userID int64, from, into uuid.UUID) (Payee, error) {
+	var dest Payee
+	err := s.repo.InTx(ctx, func(r Repository) error {
+		src, err := r.Payee(ctx, userID, from)
+		if err != nil {
+			return err
+		}
+		invalid := func(message string) error {
+			return &domain.FieldError{Field: "into", Message: message, Err: domain.ErrValidation}
+		}
+		if dest, err = r.Payee(ctx, userID, into); errors.Is(err, ErrNotFound) {
+			return invalid("unknown payee")
+		} else if err != nil {
+			return err
+		}
+		switch {
+		case src.ID == dest.ID:
+			return invalid("must differ from the payee")
+		case src.MergedInto != uuid.Nil || dest.MergedInto != uuid.Nil:
+			return invalid("both payees must not be merged already")
+		}
+		ids, err := r.TransactionsWithPayee(ctx, userID, from)
+		if err != nil {
+			return err
+		}
+		for _, id := range ids {
+			prev, err := r.LockTransaction(ctx, userID, id)
+			if err != nil {
+				return err
+			}
+			next := prev
+			next.PayeeID = into
+			next.Version++
+			accounts, err := r.Accounts(ctx, userID, postingAccounts(prev))
+			if err != nil {
+				return err
+			}
+			if err := r.ReplaceCategoryPostings(ctx, prev, next, reasonMerged); err != nil {
+				return err
+			}
+			event := newTransactionEvent(next, accounts, prev)
+			event.Cause = &Cause{Method: CauseMerge}
+			if err := r.Publish(ctx, outbox.Event{Type: EventTransactionCategorized, UserID: userID, AggregateID: next.ID.String(), Payload: event}); err != nil {
+				return err
+			}
+		}
+		if err := r.RetirePayee(ctx, userID, from, into); err != nil {
+			return err
+		}
+		return r.Publish(ctx, outbox.Event{Type: EventPayeesMerged, UserID: userID, AggregateID: from.String(), Payload: PayeesMerged{From: from, Into: into}})
+	})
+	return dest, err
 }

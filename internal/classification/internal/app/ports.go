@@ -94,6 +94,8 @@ type Repository interface {
 
 	// MergeCategory rewrites every reference to from as into (A75).
 	MergeCategory(ctx context.Context, userID int64, from, into uuid.UUID) error
+	// MergePayee rewrites every reference to the payee from as into (A82).
+	MergePayee(ctx context.Context, userID int64, from, into uuid.UUID) error
 
 	// CorrectedExamples returns up to limit corrected, non-voided transactions with the
 	// match key and category, oldest first.

@@ -76,7 +76,7 @@ func toInstitution(row LedgerInstitution) app.Institution {
 }
 
 func toPayee(row LedgerPayee) app.Payee {
-	return app.Payee{ID: row.ID, UserID: row.UserID, Name: row.Name}
+	return app.Payee{ID: row.ID, UserID: row.UserID, Name: row.Name, MergedInto: row.MergedInto.UUID}
 }
 
 func toAccount(row LedgerAccount) domain.Account {

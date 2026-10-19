@@ -133,9 +133,10 @@ type LedgerLink struct {
 }
 
 type LedgerPayee struct {
-	ID     uuid.UUID
-	UserID int64
-	Name   string
+	ID         uuid.UUID
+	UserID     int64
+	Name       string
+	MergedInto uuid.NullUUID
 }
 
 type LedgerSetting struct {

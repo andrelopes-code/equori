@@ -152,3 +152,8 @@ func (s *Service) BudgetProgress(ctx context.Context, userID int64, id uuid.UUID
 func (s *Service) HandleCategoriesMerged(ctx context.Context, userID int64, from, into uuid.UUID) error {
 	return s.repo.MergeCategory(ctx, userID, from, into)
 }
+
+// HandlePayeesMerged moves the schedules of from to into (A82).
+func (s *Service) HandlePayeesMerged(ctx context.Context, userID int64, from, into uuid.UUID) error {
+	return s.repo.MergePayee(ctx, userID, from, into)
+}

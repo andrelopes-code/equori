@@ -30,3 +30,35 @@ WHERE user_id = @user_id AND category_id = @from_id;
 -- name: MergeCategorizations :exec
 UPDATE classification_categorization SET category_id = @into_id
 WHERE user_id = @user_id AND category_id = @from_id;
+
+-- A82: classification references follow a payee merge. A payee match key is "payee:<id>".
+
+-- name: MergePayeeAliases :exec
+UPDATE classification_payee_alias SET payee_id = @into_id::uuid
+WHERE user_id = @user_id AND payee_id = @from_id::uuid;
+
+-- name: DeletePayeeMergeCollidingSuggestions :exec
+DELETE FROM classification_suggestion d
+WHERE d.user_id = @user_id AND d.id IN (
+    SELECT greatest(s.id, o.id)
+    FROM classification_suggestion s
+    JOIN classification_suggestion o
+      ON o.user_id = s.user_id AND o.fingerprint = replace(s.fingerprint, @from_id::text, @into_id::text)
+    WHERE s.user_id = @user_id AND s.fingerprint LIKE 'payee:' || @from_id::text || ' -> %'
+);
+
+-- name: MergePayeeSuggestions :exec
+UPDATE classification_suggestion
+SET fingerprint = replace(fingerprint, @from_id::text, @into_id::text),
+    conditions = replace(conditions::text, @from_id::text, @into_id::text)::jsonb
+WHERE user_id = @user_id AND fingerprint LIKE 'payee:' || @from_id::text || ' -> %';
+
+-- name: MergePayeeRules :exec
+UPDATE classification_rule
+SET conditions = replace(conditions::text, @from_id::text, @into_id::text)::jsonb,
+    actions = replace(actions::text, @from_id::text, @into_id::text)::jsonb, updated_at = now()
+WHERE user_id = @user_id AND (strpos(conditions::text, @from_id::text) > 0 OR strpos(actions::text, @from_id::text) > 0);
+
+-- name: MergePayeeMatchKeys :exec
+UPDATE classification_categorization SET match_key = 'payee:' || @into_id::text
+WHERE user_id = @user_id AND match_key = 'payee:' || @from_id::text;

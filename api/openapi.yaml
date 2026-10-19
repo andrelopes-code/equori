@@ -196,6 +196,61 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /payees/{id}:
+    patch:
+      tags: [ledger]
+      operationId: renamePayee
+      summary: Rename a payee (A82).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PayeeInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payee"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /payees/{id}/merge:
+    post:
+      tags: [ledger]
+      operationId: mergePayee
+      summary: Merge a payee into another; returns the destination (A82).
+      description: |
+        Every non-voided transaction of the payee gets a new version naming the destination; voided transactions and
+        counterparty accounts name it in place. The payee is kept as merged and leaves listPayees.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MergePayeeInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payee"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /tags:
     get:
       tags: [ledger]
@@ -5349,6 +5404,14 @@ components:
           type: string
           format: uuid
           nullable: true
+    MergePayeeInput:
+      type: object
+      additionalProperties: false
+      required: [into]
+      properties:
+        into:
+          type: string
+          format: uuid
     MergeAccountInput:
       type: object
       additionalProperties: false

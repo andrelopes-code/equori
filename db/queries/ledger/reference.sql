@@ -23,10 +23,28 @@ SELECT * FROM ledger_payee WHERE user_id = $1 AND id = $2;
 
 -- name: ListPayees :many
 SELECT *, lower(name)::text AS sort_name FROM ledger_payee
-WHERE user_id = @user_id
+WHERE user_id = @user_id AND merged_into IS NULL
   AND (sqlc.narg(after_name)::text IS NULL OR (lower(name), id) > (sqlc.narg(after_name)::text, sqlc.narg(after_id)::uuid))
 ORDER BY lower(name), id
 LIMIT @row_limit;
+
+-- name: RenamePayee :one
+UPDATE ledger_payee SET name = @name WHERE user_id = @user_id AND id = @id RETURNING *;
+
+-- name: MarkPayeeMerged :exec
+UPDATE ledger_payee SET merged_into = @into_id WHERE user_id = @user_id AND id = @from_id;
+
+-- name: TransactionsWithPayee :many
+-- A82: the non-voided transactions of the payee, by id.
+SELECT id FROM ledger_transaction WHERE user_id = @user_id AND payee_id = @payee_id AND voided_at IS NULL ORDER BY id;
+
+-- name: MoveVoidedPayee :exec
+UPDATE ledger_transaction SET payee_id = @into_id
+WHERE user_id = @user_id AND payee_id = @from_id AND voided_at IS NOT NULL;
+
+-- name: MoveCounterpartyPayee :exec
+UPDATE ledger_account SET counterparty_payee_id = @into_id, updated_at = now()
+WHERE user_id = @user_id AND counterparty_payee_id = @from_id;
 
 -- name: UpsertTag :one
 INSERT INTO ledger_tag (user_id, name) VALUES ($1, $2)

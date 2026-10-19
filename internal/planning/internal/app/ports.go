@@ -97,6 +97,8 @@ type ScheduleRef struct {
 type Repository interface {
 	// MergeCategory moves budgets and schedules from one category to another (A75).
 	MergeCategory(ctx context.Context, userID int64, from, into uuid.UUID) error
+	// MergePayee moves the schedules of a payee to another (A82).
+	MergePayee(ctx context.Context, userID int64, from, into uuid.UUID) error
 	InTx(ctx context.Context, fn func(Repository) error) error
 	// InsertSchedule stores s with its terms and returns it with its id.
 	InsertSchedule(ctx context.Context, userID int64, s domain.Schedule) (domain.Schedule, error)
