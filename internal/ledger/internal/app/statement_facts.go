@@ -243,3 +243,51 @@ func (s *Service) SettleReportedStatements(ctx context.Context, userID int64, ca
 	}
 	return nil
 }
+
+// RecordCardOpening opens a card that has no opening balance with the total of the bill due
+// on due, billed on that bill's statement and dated on its closing date (A93).
+func (s *Service) RecordCardOpening(ctx context.Context, userID int64, cardID uuid.UUID, due time.Time, total money.Money) error {
+	if total.IsZero() {
+		return nil
+	}
+	return s.repo.InTx(ctx, func(r Repository) error {
+		card, err := s.card(ctx, userID, cardID)
+		if err != nil {
+			return err
+		}
+		if has, err := r.HasOpeningBalance(ctx, userID, cardID); err != nil || has {
+			return err
+		}
+		ref, err := s.statementDue(ctx, r, userID, cardID, due)
+		if err != nil {
+			return err
+		}
+		rules, err := r.BillingRules(ctx, userID, cardID)
+		if err != nil {
+			return err
+		}
+		if _, err := s.ensureStatement(ctx, r, userID, cardID, ref, rules); err != nil {
+			return err
+		}
+		closing, err := r.StatementClosings(ctx, userID, cardID)
+		if err != nil {
+			return err
+		}
+		opening, err := r.SystemAccount(ctx, userID, domain.RoleOpeningBalances)
+		if err != nil {
+			return err
+		}
+		date := closing[ref].AddDate(0, 0, -1)
+		if date.Before(card.OpenedOn) {
+			date = card.OpenedOn
+		}
+		_, err = s.insert(ctx, r, domain.Transaction{
+			UserID: userID, Date: date, Description: "Opening balance " + card.Name, Origin: domain.OriginSystem,
+			Postings: []domain.Posting{
+				{AccountID: cardID, Amount: total.Neg(), Statement: &ref},
+				{AccountID: opening.ID, Amount: total},
+			},
+		})
+		return err
+	})
+}

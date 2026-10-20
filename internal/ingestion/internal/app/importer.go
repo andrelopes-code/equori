@@ -106,6 +106,9 @@ type Ledger interface {
 	UpdateImportedPosting(ctx context.Context, userID int64, recordID uuid.UUID, pending bool, dueDate *time.Time, kind string) error
 	// RecordStatementFacts records a card bill on the ledger statement due on its due date (A85).
 	RecordStatementFacts(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Bill, c money.Currency) error
+	// RecordCardOpening opens a card that has no opening balance with the total of the bill
+	// before its first synced cycle, billed on that bill's statement (A93).
+	RecordCardOpening(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Bill, c money.Currency) error
 	// SettleReportedStatements moves pending card postings off reported statements and
 	// reconciles the reported statements that match (A90, A92).
 	SettleReportedStatements(ctx context.Context, userID int64, accountID uuid.UUID) error

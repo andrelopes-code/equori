@@ -1,3 +1,11 @@
+-- name: HasOpeningBalance :one
+SELECT EXISTS (
+    SELECT 1 FROM ledger_posting c
+    JOIN ledger_transaction t ON t.id = c.transaction_id AND t.voided_at IS NULL
+    JOIN ledger_posting o ON o.transaction_id = c.transaction_id
+    JOIN ledger_account a ON a.id = o.account_id AND a.system_role = 'opening_balances'
+    WHERE c.user_id = @user_id AND c.account_id = @account_id)::bool;
+
 -- name: ListStatementClosings :many
 SELECT reference_month, closing_date FROM ledger_statement WHERE user_id = @user_id AND account_id = @account_id;
 

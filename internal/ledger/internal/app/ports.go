@@ -327,6 +327,9 @@ type Repository interface {
 
 	EnsureStatement(ctx context.Context, userID int64, accountID uuid.UUID, d domain.StatementDates, due time.Time) (uuid.UUID, error)
 	Statements(ctx context.Context, userID int64, accountID uuid.UUID) ([]Statement, error)
+	// HasOpeningBalance reports whether a transaction not voided books the account against
+	// the opening balances account.
+	HasOpeningBalance(ctx context.Context, userID int64, accountID uuid.UUID) (bool, error)
 	// StatementClosings returns the closing date of each stored statement of the card.
 	StatementClosings(ctx context.Context, userID int64, accountID uuid.UUID) (map[domain.ReferenceMonth]time.Time, error)
 	// SaveStatementFact records a fact, replacing the one of its source (A85).

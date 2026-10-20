@@ -27,6 +27,27 @@ func (q *Queries) DeleteStatementFact(ctx context.Context, arg DeleteStatementFa
 	return err
 }
 
+const hasOpeningBalance = `-- name: HasOpeningBalance :one
+SELECT EXISTS (
+    SELECT 1 FROM ledger_posting c
+    JOIN ledger_transaction t ON t.id = c.transaction_id AND t.voided_at IS NULL
+    JOIN ledger_posting o ON o.transaction_id = c.transaction_id
+    JOIN ledger_account a ON a.id = o.account_id AND a.system_role = 'opening_balances'
+    WHERE c.user_id = $1 AND c.account_id = $2)::bool
+`
+
+type HasOpeningBalanceParams struct {
+	UserID    int64
+	AccountID uuid.UUID
+}
+
+func (q *Queries) HasOpeningBalance(ctx context.Context, arg HasOpeningBalanceParams) (bool, error) {
+	row := q.db.QueryRow(ctx, hasOpeningBalance, arg.UserID, arg.AccountID)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const listPendingOnReported = `-- name: ListPendingOnReported :many
 SELECT p.id, p.statement_id::uuid AS statement_id FROM ledger_posting p
 WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided AND p.status = 'pending'

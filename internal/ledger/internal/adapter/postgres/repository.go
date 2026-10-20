@@ -831,6 +831,10 @@ func (r *Repository) Statements(ctx context.Context, userID int64, accountID uui
 	return out, nil
 }
 
+func (r *Repository) HasOpeningBalance(ctx context.Context, userID int64, accountID uuid.UUID) (bool, error) {
+	return r.q.HasOpeningBalance(ctx, HasOpeningBalanceParams{UserID: userID, AccountID: accountID})
+}
+
 func (r *Repository) StatementClosings(ctx context.Context, userID int64, accountID uuid.UUID) (map[domain.ReferenceMonth]time.Time, error) {
 	rows, err := r.q.ListStatementClosings(ctx, ListStatementClosingsParams{UserID: userID, AccountID: accountID})
 	out := make(map[domain.ReferenceMonth]time.Time, len(rows))

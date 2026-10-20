@@ -107,3 +107,51 @@ func TestReportedClosingTakesTheRuleShift(t *testing.T) {
 		t.Fatalf("statement = %+v (institution %+v)", s, s.Institution)
 	}
 }
+
+// S89 (A93): a card's first sync starts at the cycle that holds sync_from and opens the card
+// with the total of the bill before it; the second sync records no second opening.
+func TestS89CardSyncStart(t *testing.T) {
+	f := newSyncFixture(t)
+	card := f.h.Account("Nubank Gold", "liability", "credit_card", nil)
+	f.h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/billing-cycle-rules", map[string]any{
+		"effective_from": "2025-01", "due_day": 5, "closing_mode": "before_due", "closing_days_before_due": 7,
+		"closing_adjustment": "preceding",
+	}, http.StatusCreated, nil)
+	r := f.mapAccount(f.h.Client, f.conn.ID, externalAccount(f.conn, pluggy.SubtypeCard).ID, map[string]any{"account_id": card, "sync_from": "2026-07-01"})
+	if r.Status != http.StatusOK {
+		t.Fatalf("map status %d: %s", r.Status, r.Body)
+	}
+	f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-jun", DueDate: "2026-06-05T00:00:00.000Z", BillClosingDate: new("2026-05-29T00:00:00.000Z"), TotalAmount: "724.7593"})
+	f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-jul", DueDate: "2026-07-06T00:00:00.000Z", BillClosingDate: new("2026-06-28T00:00:00.000Z"), TotalAmount: "701.4808"})
+	f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-aug", DueDate: "2026-08-05T00:00:00.000Z", BillClosingDate: new("2026-07-29T00:00:00.000Z"), TotalAmount: "773.5371"})
+	f.line(pluggy.SubtypeCard, cardLine("jul-line", "2026-06-20", "50.00", "POSTED", new("bill-jul")))
+	f.line(pluggy.SubtypeCard, cardLine("youtube", "2026-06-30", "26.90", "POSTED", new("bill-aug")))
+	f.line(pluggy.SubtypeCard, cardLine("purchase", "2026-07-20", "746.64", "POSTED", new("bill-aug")))
+	paid := cardLine("payment", "2026-07-05", "-701.48", "POSTED", new("bill-aug"))
+	paid.OperationType = new("PAGAMENTO_FATURA")
+	f.line(pluggy.SubtypeCard, paid)
+	f.sync()
+
+	if n := f.count(`SELECT count(*) FROM ingestion_external_record WHERE external_id = 'jul-line'`); n != 0 {
+		t.Fatalf("a line of the bill before the start was recorded")
+	}
+	if state, _ := f.recordOf("youtube"); state != "created" {
+		t.Fatalf("youtube record = %s", state)
+	}
+	if s := f.statement(card, "2026-08"); s.Difference == nil || s.Difference.Amount != 0 {
+		t.Fatalf("2026-08 = %+v (difference %+v)", s, s.Difference)
+	}
+	if s := f.statement(card, "2026-07"); s.Institution == nil || s.Difference == nil || s.Difference.Amount != 0 {
+		t.Fatalf("2026-07 = %+v (difference %+v)", s, s.Difference)
+	}
+	openings := `SELECT count(*) FROM ledger_posting p JOIN ledger_account a ON a.id = p.account_id
+		JOIN ledger_posting c ON c.transaction_id = p.transaction_id AND c.account_id = $1
+		WHERE a.system_role = 'opening_balances'`
+	if n := f.count(openings, card); n != 1 {
+		t.Fatalf("openings = %d", n)
+	}
+	f.sync()
+	if n := f.count(openings, card); n != 1 {
+		t.Fatalf("openings after a second sync = %d", n)
+	}
+}

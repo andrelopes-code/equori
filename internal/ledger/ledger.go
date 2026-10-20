@@ -356,6 +356,11 @@ func (m *Module) RecordStatementFacts(ctx context.Context, userID int64, cardID 
 	return m.svc.RecordStatementFacts(ctx, userID, cardID, f)
 }
 
+// RecordCardOpening opens a card without an opening balance with a bill's total (A93).
+func (m *Module) RecordCardOpening(ctx context.Context, userID int64, cardID uuid.UUID, due time.Time, total money.Money) error {
+	return m.svc.RecordCardOpening(ctx, userID, cardID, due, total)
+}
+
 // SettleReportedStatements moves pending card postings off reported statements and
 // reconciles the reported statements that match (A90, A92).
 func (m *Module) SettleReportedStatements(ctx context.Context, userID int64, cardID uuid.UUID) error {

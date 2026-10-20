@@ -308,6 +308,14 @@ func (p ledgerPort) RecordStatementFacts(ctx context.Context, userID int64, acco
 	return p.translate(p.l.RecordStatementFacts(ctx, userID, accountID, f))
 }
 
+func (p ledgerPort) RecordCardOpening(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Bill, c money.Currency) error {
+	total, err := money.New(b.Total, c)
+	if err != nil {
+		return err
+	}
+	return p.translate(p.l.RecordCardOpening(ctx, userID, accountID, b.Due, total))
+}
+
 func (p ledgerPort) SettleReportedStatements(ctx context.Context, userID int64, accountID uuid.UUID) error {
 	return p.translate(p.l.SettleReportedStatements(ctx, userID, accountID))
 }
