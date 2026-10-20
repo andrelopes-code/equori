@@ -113,7 +113,10 @@ func (m Money) Sub(o Money) (Money, error) {
 func (m Money) Neg() Money { return Money{amount: -m.amount, currency: m.currency, scale: m.scale} }
 
 // String formats as "BRL -1234.56", for logs and errors only; clients format for display.
-func (m Money) String() string {
+func (m Money) String() string { return string(m.currency) + " " + m.Decimal() }
+
+// Decimal formats the amount in the instrument's scale without the code, as "-1234.56".
+func (m Money) Decimal() string {
 	units := int(m.scale)
 	sign, abs := "", m.amount
 	if abs < 0 {
@@ -121,11 +124,11 @@ func (m Money) String() string {
 	}
 	digits := strconv.FormatInt(abs, 10)
 	if units == 0 {
-		return fmt.Sprintf("%s %s%s", m.currency, sign, digits)
+		return sign + digits
 	}
 	for len(digits) <= units {
 		digits = "0" + digits
 	}
 	cut := len(digits) - units
-	return fmt.Sprintf("%s %s%s.%s", m.currency, sign, digits[:cut], digits[cut:])
+	return sign + digits[:cut] + "." + digits[cut:]
 }

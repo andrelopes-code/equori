@@ -89,6 +89,27 @@ func TestString(t *testing.T) {
 	}
 }
 
+func TestDecimal(t *testing.T) {
+	security, err := NewOf(150, "MXRF11", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		m    Money
+		want string
+	}{
+		{mustNew(t, -123456, "BRL"), "-1234.56"},
+		{mustNew(t, 5, "BRL"), "0.05"},
+		{mustNew(t, 0, "BRL"), "0.00"},
+		{security, "150"},
+	}
+	for _, tt := range tests {
+		if got := tt.m.Decimal(); got != tt.want {
+			t.Errorf("Decimal() = %q, want %q", got, tt.want)
+		}
+	}
+}
+
 func TestParseCurrency(t *testing.T) {
 	t.Parallel()
 	if c, err := ParseCurrency("JPY"); err != nil || c.MinorUnits() != 0 {
