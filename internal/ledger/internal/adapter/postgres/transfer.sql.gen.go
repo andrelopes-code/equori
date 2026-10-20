@@ -33,7 +33,7 @@ WHERE t.user_id = $1 AND t.id <> $2 AND t.voided_at IS NULL AND t.origin = 'impo
   AND EXISTS (SELECT 1 FROM ledger_posting p WHERE p.transaction_id = t.id AND p.account_id = $5 AND p.amount = $6)
   AND NOT EXISTS (SELECT 1 FROM ledger_posting p WHERE p.transaction_id = t.id AND p.account_id = ANY($7::uuid[]))
   AND EXISTS (SELECT 1 FROM ledger_posting p JOIN ledger_account a ON a.id = p.account_id
-              WHERE p.transaction_id = t.id AND a.system_role IN ('uncategorized_expense', 'uncategorized_income'))
+              WHERE p.transaction_id = t.id AND a.system_role IN ('uncategorized_expense', 'uncategorized_income', 'transfers_in_transit'))
   AND NOT EXISTS (SELECT 1 FROM ledger_posting p JOIN ledger_account a ON a.id = p.account_id
               WHERE p.transaction_id = t.id AND a.account_class IN ('income', 'expense')
                 AND a.system_role IS DISTINCT FROM 'uncategorized_expense' AND a.system_role IS DISTINCT FROM 'uncategorized_income')
@@ -50,7 +50,8 @@ type PairingCandidatesParams struct {
 	ExcludedAccounts []uuid.UUID
 }
 
-// P5b amendment A29: uncategorized imported transactions with the opposite side on the account.
+// P5b amendment A29: uncategorized imported transactions with the opposite side on the account;
+// a card payment waiting on transfers_in_transit is one too (A88).
 func (q *Queries) PairingCandidates(ctx context.Context, arg PairingCandidatesParams) ([]uuid.UUID, error) {
 	rows, err := q.db.Query(ctx, pairingCandidates,
 		arg.UserID,

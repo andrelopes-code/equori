@@ -33,7 +33,7 @@ func (r *Repository) UpdateRecordFacts(ctx context.Context, recs []domain.Extern
 		params[i] = UpdateRecordFactsParams{
 			UserID: rec.UserID, ID: rec.ID, Raw: raw, ExternalStatus: f.status, DueDate: f.dueDate,
 			InstallmentNumber: f.number, InstallmentCount: f.count, CategoryID: f.category, BalanceAfter: f.balanceAfter,
-			UnappliedChange: optional(rec.UnappliedChange),
+			LineKind: f.kind, UnappliedChange: optional(rec.UnappliedChange),
 		}
 	}
 	var first error

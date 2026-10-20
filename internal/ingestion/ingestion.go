@@ -138,13 +138,15 @@ func (p ledgerPort) translate(err error) error {
 		return app.ErrAlreadyMatched
 	case errors.Is(err, ledger.ErrReconciled):
 		return app.ErrReconciled
+	case errors.Is(err, ledger.ErrNotRetypable):
+		return app.ErrNotRetypable
 	}
 	return err
 }
 
 func (p ledgerPort) posting(l app.Line) (ledger.ImportedPosting, error) {
 	amount, err := money.New(l.Amount, l.Currency)
-	return ledger.ImportedPosting{AccountID: l.AccountID, Date: l.Date, Amount: amount, Description: l.Description, Pending: l.Pending, DueDate: l.DueDate}, err
+	return ledger.ImportedPosting{AccountID: l.AccountID, Date: l.Date, Amount: amount, Description: l.Description, Pending: l.Pending, DueDate: l.DueDate, Kind: l.Kind}, err
 }
 
 // importLine is a line as Classification decides it; aggregator lines carry Pluggy's category.
@@ -241,8 +243,8 @@ func (p ledgerPort) assert(ctx context.Context, userID int64, accountID uuid.UUI
 	return p.translate(err)
 }
 
-func (p ledgerPort) UpdateImportedPosting(ctx context.Context, userID int64, recordID uuid.UUID, pending bool, dueDate *time.Time) error {
-	return p.translate(p.l.UpdateImportedPosting(ctx, userID, recordID, ledger.ImportedUpdate{Pending: pending, DueDate: dueDate}))
+func (p ledgerPort) UpdateImportedPosting(ctx context.Context, userID int64, recordID uuid.UUID, pending bool, dueDate *time.Time, kind string) error {
+	return p.translate(p.l.UpdateImportedPosting(ctx, userID, recordID, ledger.ImportedUpdate{Pending: pending, DueDate: dueDate, Kind: kind}))
 }
 
 func (p ledgerPort) RecordInstallment(ctx context.Context, userID int64, l app.InstallmentLine) (uuid.UUID, uuid.UUID, error) {

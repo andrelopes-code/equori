@@ -56,6 +56,9 @@ func Normalize(t Transaction, a Account, bills map[string]Bill, scale int, loc *
 			r.Category.Name = *t.Category
 		}
 	}
+	if card && t.OperationType != nil {
+		r.Kind = cardKinds[*t.OperationType]
+	}
 	if m := t.CreditCardMetadata; card && m != nil {
 		if m.BillID != nil {
 			if b, found := bills[*m.BillID]; found {
@@ -77,6 +80,10 @@ func Normalize(t Transaction, a Account, bills map[string]Bill, scale int, loc *
 	}
 	return r, true, nil
 }
+
+// cardKinds are the card operation types that state a line's type (A88); any other type
+// follows the amount's sign.
+var cardKinds = map[string]string{"PAGAMENTO_FATURA": domain.KindPayment, "ESTORNO": domain.KindRefund}
 
 // operationReservedTransfer is the operation type of a line that moves money between a
 // bank account and one of its reserved balances (A76).

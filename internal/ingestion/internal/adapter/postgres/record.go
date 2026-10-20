@@ -24,7 +24,7 @@ func toRecord(row IngestionExternalRecord) (domain.ExternalRecord, error) {
 		DedupKey: row.DedupKey, Raw: raw, Date: row.BookedOn, Amount: row.Amount, Description: row.Description,
 		State: domain.RecordState(row.State), TransactionID: row.TransactionID.UUID, Candidates: row.Candidates,
 		ExternalStatus: value(row.ExternalStatus), DueDate: row.DueDate, CategoryID: value(row.CategoryID),
-		BalanceAfter: row.BalanceAfter, UnappliedChange: value(row.UnappliedChange),
+		BalanceAfter: row.BalanceAfter, LineKind: value(row.LineKind), UnappliedChange: value(row.UnappliedChange),
 	}
 	if row.InstallmentNumber != nil && row.InstallmentCount != nil {
 		rec.Installment = &domain.Installment{Number: int(*row.InstallmentNumber), Count: int(*row.InstallmentCount)}
@@ -34,14 +34,14 @@ func toRecord(row IngestionExternalRecord) (domain.ExternalRecord, error) {
 
 // facts are the aggregator columns of a record.
 type facts struct {
-	status, category *string
-	number, count    *int32
-	dueDate          *time.Time
-	balanceAfter     *int64
+	status, category, kind *string
+	number, count          *int32
+	dueDate                *time.Time
+	balanceAfter           *int64
 }
 
 func factsOf(rec domain.ExternalRecord) facts {
-	f := facts{status: optional(rec.ExternalStatus), category: optional(rec.CategoryID), dueDate: rec.DueDate, balanceAfter: rec.BalanceAfter}
+	f := facts{status: optional(rec.ExternalStatus), category: optional(rec.CategoryID), kind: optional(rec.LineKind), dueDate: rec.DueDate, balanceAfter: rec.BalanceAfter}
 	if i := rec.Installment; i != nil {
 		n, c := int32(i.Number), int32(i.Count) //nolint:gosec // at most 420 installments (ledger rule)
 		f.number, f.count = &n, &c
@@ -67,7 +67,7 @@ func (r *Repository) ClaimRecords(ctx context.Context, recs []domain.ExternalRec
 			UserID: rec.UserID, BatchID: rec.BatchID, AccountID: rec.AccountID, ExternalID: optional(rec.ExternalID),
 			DedupKey: rec.DedupKey, Raw: raw, BookedOn: rec.Date, Amount: rec.Amount, Description: rec.Description,
 			ExternalStatus: f.status, DueDate: f.dueDate, InstallmentNumber: f.number, InstallmentCount: f.count,
-			CategoryID: f.category, BalanceAfter: f.balanceAfter,
+			CategoryID: f.category, BalanceAfter: f.balanceAfter, LineKind: f.kind,
 		}
 	}
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {

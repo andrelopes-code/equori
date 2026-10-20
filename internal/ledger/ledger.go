@@ -129,6 +129,7 @@ var (
 	ErrNotCategorizable       = domain.ErrNotCategorizable
 	ErrPairingAmbiguous       = app.ErrPairingAmbiguous
 	ErrReconciled             = domain.ErrReconciled
+	ErrNotRetypable           = domain.ErrNotRetypable
 	ErrMixedInstruments       = app.ErrMixedInstruments
 )
 

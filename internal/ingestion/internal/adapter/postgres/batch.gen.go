@@ -20,12 +20,12 @@ var (
 
 const insertRecords = `-- name: InsertRecords :batchone
 INSERT INTO ingestion_external_record (user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description,
-    external_status, due_date, installment_number, installment_count, category_id, balance_after)
+    external_status, due_date, installment_number, installment_count, category_id, balance_after, line_kind)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,
     $10, $11, $12, $13,
-    $14, $15)
+    $14, $15, $16)
 ON CONFLICT (user_id, dedup_key) DO NOTHING
-RETURNING id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change
+RETURNING id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind
 `
 
 type InsertRecordsBatchResults struct {
@@ -50,6 +50,7 @@ type InsertRecordsParams struct {
 	InstallmentCount  *int32
 	CategoryID        *string
 	BalanceAfter      *int64
+	LineKind          *string
 }
 
 // A row comes back only for a new key; a conflict is pgx.ErrNoRows for that item.
@@ -72,6 +73,7 @@ func (q *Queries) InsertRecords(ctx context.Context, arg []InsertRecordsParams) 
 			a.InstallmentCount,
 			a.CategoryID,
 			a.BalanceAfter,
+			a.LineKind,
 		}
 		batch.Queue(insertRecords, vals...)
 	}
@@ -111,6 +113,7 @@ func (b *InsertRecordsBatchResults) QueryRow(f func(int, IngestionExternalRecord
 			&i.CategoryID,
 			&i.BalanceAfter,
 			&i.UnappliedChange,
+			&i.LineKind,
 		)
 		if f != nil {
 			f(t, i, err)
@@ -187,8 +190,8 @@ UPDATE ingestion_external_record SET
     raw = $1, external_status = $2, due_date = $3,
     installment_number = $4, installment_count = $5,
     category_id = $6, balance_after = $7,
-    unapplied_change = $8
-WHERE user_id = $9 AND id = $10
+    line_kind = $8, unapplied_change = $9
+WHERE user_id = $10 AND id = $11
 `
 
 type UpdateRecordFactsBatchResults struct {
@@ -205,6 +208,7 @@ type UpdateRecordFactsParams struct {
 	InstallmentCount  *int32
 	CategoryID        *string
 	BalanceAfter      *int64
+	LineKind          *string
 	UnappliedChange   *string
 	UserID            int64
 	ID                uuid.UUID
@@ -222,6 +226,7 @@ func (q *Queries) UpdateRecordFacts(ctx context.Context, arg []UpdateRecordFacts
 			a.InstallmentCount,
 			a.CategoryID,
 			a.BalanceAfter,
+			a.LineKind,
 			a.UnappliedChange,
 			a.UserID,
 			a.ID,

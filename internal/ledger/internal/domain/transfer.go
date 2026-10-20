@@ -6,8 +6,8 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
-// Transfer returns the next version of t with every category posting replaced by one
-// posting on the balance-sheet account a, for their sum (P5b amendment A28). The new posting
+// Transfer returns the next version of t with every category or transit posting (A88)
+// replaced by one posting on the balance-sheet account a, for their sum (P5b amendment A28). The new posting
 // confirms link when it is set. A card credit becomes a payment and is billed again, so it
 // must not be reconciled. accounts must hold the accounts of t and a.
 func (t Transaction) Transfer(expectedVersion int, a Account, link uuid.UUID, accounts map[uuid.UUID]Account) (Transaction, error) {
@@ -21,7 +21,7 @@ func (t Transaction) Transfer(expectedVersion int, a Account, link uuid.UUID, ac
 	var instrument money.Currency
 	var total int64
 	for _, p := range t.Postings {
-		if !accounts[p.AccountID].IsCategory() {
+		if !accounts[p.AccountID].IsReplaceable() {
 			kept = append(kept, p)
 			continue
 		}

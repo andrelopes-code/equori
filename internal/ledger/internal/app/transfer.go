@@ -131,7 +131,7 @@ func (s *Service) pairingCandidate(ctx context.Context, r Repository, t, plain d
 		From: t.Date.AddDate(0, 0, -pairingWindowDays), To: t.Date.AddDate(0, 0, pairingWindowDays),
 	}
 	for _, p := range t.Postings {
-		if !accounts[p.AccountID].IsCategory() {
+		if !accounts[p.AccountID].IsReplaceable() {
 			q.ExcludedAccounts = append(q.ExcludedAccounts, p.AccountID)
 		}
 	}
@@ -216,7 +216,7 @@ func linkOn(t domain.Transaction, accountID uuid.UUID) uuid.UUID {
 func ownAccount(t domain.Transaction, accounts map[uuid.UUID]domain.Account) uuid.UUID {
 	var own []uuid.UUID
 	for _, p := range t.Postings {
-		if !accounts[p.AccountID].IsCategory() && !slices.Contains(own, p.AccountID) {
+		if !accounts[p.AccountID].IsReplaceable() && !slices.Contains(own, p.AccountID) {
 			own = append(own, p.AccountID)
 		}
 	}

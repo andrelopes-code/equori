@@ -26,7 +26,17 @@ type ImportedPosting struct {
 	Pending bool
 	// DueDate of the card bill the line belongs to: the posting is billed on that bill (A39).
 	DueDate *time.Time
+	// Kind is the line type the source states on a card line: LineKindPayment or LineKindRefund (A88).
+	Kind string
 }
+
+// Card line types a source states (A88).
+const (
+	LineKindPayment = "payment"
+	LineKindRefund  = "refund"
+)
+
+const reasonRetyped = "retyped"
 
 // ImportedRecord is a statement line and the external record it comes from.
 type ImportedRecord struct {
@@ -112,7 +122,11 @@ func (s *Service) RecordImportedBatch(ctx context.Context, userID int64, recs []
 		if err != nil {
 			return err
 		}
-		accounts, err := r.Accounts(ctx, userID, slices.Concat(lineAccounts, categories, []uuid.UUID{expense.ID, income.ID}))
+		transit, err := r.SystemAccount(ctx, userID, domain.RoleTransfersInTransit)
+		if err != nil {
+			return err
+		}
+		accounts, err := r.Accounts(ctx, userID, slices.Concat(lineAccounts, categories, []uuid.UUID{expense.ID, income.ID, transit.ID}))
 		if err != nil {
 			return err
 		}
@@ -145,7 +159,14 @@ func (s *Service) RecordImportedBatch(ctx context.Context, userID int64, recs []
 					rec.Decision = &undecided
 				}
 			}
+			payment := rec.Posting.Kind == LineKindPayment && accounts[rec.Posting.AccountID].Kind == domain.KindCreditCard
+			if payment && (rec.Decision == nil || rec.Decision.TransferTo == uuid.Nil) {
+				rec = cardPayment(rec, transit)
+			}
 			draft := importedTransaction(userID, settings.BaseCurrency, rec, expense, income)
+			if payment {
+				draft.Postings[0].CardRole = domain.RolePayment
+			}
 			if rec.Posting.DueDate != nil && accounts[rec.Posting.AccountID].Kind == domain.KindCreditCard {
 				ref, err := s.statementDue(ctx, r, userID, rec.Posting.AccountID, *rec.Posting.DueDate)
 				if err != nil {
@@ -208,6 +229,18 @@ func importedTransaction(userID int64, base money.Currency, rec ImportedRecord, 
 		t.Postings = append(t.Postings, domain.Posting{AccountID: other.ID, Amount: rec.Posting.Amount.Neg()})
 	}
 	return t
+}
+
+// cardPayment books a card payment line against the transit account until the paying
+// account's line pairs with it; Classification's payee and tags stay, its categories do not
+// apply to a payment (A88).
+func cardPayment(rec ImportedRecord, transit domain.Account) ImportedRecord {
+	d := ImportDecision{TransferTo: transit.ID}
+	if rec.Decision != nil {
+		d.PayeeID, d.AddTags, d.Cause = rec.Decision.PayeeID, rec.Decision.AddTags, rec.Decision.Cause
+	}
+	rec.Decision = &d
+	return rec
 }
 
 // completePairing turns the one pairing candidate of a line decided as a transfer into the
@@ -323,13 +356,19 @@ type ImportedPostingState struct {
 type ImportedUpdate struct {
 	Pending bool
 	DueDate *time.Time
+	// Kind LineKindPayment turns a card credit recorded before its type was known into a
+	// payment (A88).
+	Kind string
 }
 
-// UpdateImportedPosting clears the posting of a line the aggregator reports posted and
-// bills a card posting on the statement of its bill. A reconciled posting is ErrReconciled
-// and stays as it is; a record no posting carries is ErrNotFound.
+// UpdateImportedPosting clears the posting of a line the aggregator reports posted, bills a
+// card posting on the statement of its bill and retypes a card credit the source now types
+// as a payment. A reconciled posting is ErrReconciled and stays as it is; a transaction
+// changed since its import is domain.ErrNotRetypable after the other changes; a record no
+// posting carries is ErrNotFound.
 func (s *Service) UpdateImportedPosting(ctx context.Context, userID int64, recordID uuid.UUID, u ImportedUpdate) error {
-	return s.repo.InTx(ctx, func(r Repository) error {
+	var role string
+	err := s.repo.InTx(ctx, func(r Repository) error {
 		p, err := r.LockImportedPosting(ctx, userID, recordID)
 		if err != nil {
 			return err
@@ -355,8 +394,48 @@ func (s *Service) UpdateImportedPosting(ctx context.Context, userID int64, recor
 				return err
 			}
 		}
+		role = p.CardRole
 		return r.SettleImportedPosting(ctx, userID, p.ID, status, statementID)
 	})
+	if err != nil || u.Kind != LineKindPayment || role != domain.RoleCredit {
+		return err
+	}
+	return s.repo.InTx(ctx, func(r Repository) error { return s.retypeAsPayment(ctx, r, userID, recordID) })
+}
+
+// retypeAsPayment rewrites the transaction carrying the record as a card payment against
+// the transit account (A88).
+func (s *Service) retypeAsPayment(ctx context.Context, r Repository, userID int64, recordID uuid.UUID) error {
+	id, err := r.TransactionByExternalRecord(ctx, userID, recordID)
+	if err != nil {
+		return err
+	}
+	prev, err := r.LockTransaction(ctx, userID, id)
+	if err != nil {
+		return err
+	}
+	transit, err := r.SystemAccount(ctx, userID, domain.RoleTransfersInTransit)
+	if err != nil {
+		return err
+	}
+	accounts, err := r.Accounts(ctx, userID, append(postingAccounts(prev), transit.ID))
+	if err != nil {
+		return err
+	}
+	next, err := prev.AsCardPayment(transit, accounts)
+	if err != nil {
+		return err
+	}
+	if err := s.bill(ctx, r, &next); err != nil {
+		return err
+	}
+	if err := r.ReplaceCategoryPostings(ctx, prev, next, reasonRetyped); err != nil {
+		return err
+	}
+	event := newTransactionEvent(next, accounts, prev)
+	event.PreviousDate = prev.Date.Format(time.DateOnly)
+	event.CategoriesChanged = true
+	return r.Publish(ctx, outbox.Event{Type: EventTransactionCorrected, UserID: userID, AggregateID: next.ID.String(), Payload: event})
 }
 
 // ReleaseRecord unlinks an external record from its posting; the transaction stays (P6 A38).

@@ -13,7 +13,7 @@ import (
 )
 
 const getRecord = `-- name: GetRecord :one
-SELECT id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change FROM ingestion_external_record WHERE user_id = $1 AND id = $2
+SELECT id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind FROM ingestion_external_record WHERE user_id = $1 AND id = $2
 `
 
 type GetRecordParams struct {
@@ -45,12 +45,13 @@ func (q *Queries) GetRecord(ctx context.Context, arg GetRecordParams) (Ingestion
 		&i.CategoryID,
 		&i.BalanceAfter,
 		&i.UnappliedChange,
+		&i.LineKind,
 	)
 	return i, err
 }
 
 const listBatchRecords = `-- name: ListBatchRecords :many
-SELECT id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change FROM ingestion_external_record
+SELECT id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind FROM ingestion_external_record
 WHERE user_id = $1 AND batch_id = $2
   AND ($3::text IS NULL OR state = $3::text)
   AND ($4::uuid IS NULL OR id > $4::uuid)
@@ -102,6 +103,7 @@ func (q *Queries) ListBatchRecords(ctx context.Context, arg ListBatchRecordsPara
 			&i.CategoryID,
 			&i.BalanceAfter,
 			&i.UnappliedChange,
+			&i.LineKind,
 		); err != nil {
 			return nil, err
 		}
@@ -114,7 +116,7 @@ func (q *Queries) ListBatchRecords(ctx context.Context, arg ListBatchRecordsPara
 }
 
 const listRecordsByKeys = `-- name: ListRecordsByKeys :many
-SELECT id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change FROM ingestion_external_record WHERE user_id = $1 AND dedup_key = ANY($2::bytea[])
+SELECT id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind FROM ingestion_external_record WHERE user_id = $1 AND dedup_key = ANY($2::bytea[])
 `
 
 type ListRecordsByKeysParams struct {
@@ -152,6 +154,7 @@ func (q *Queries) ListRecordsByKeys(ctx context.Context, arg ListRecordsByKeysPa
 			&i.CategoryID,
 			&i.BalanceAfter,
 			&i.UnappliedChange,
+			&i.LineKind,
 		); err != nil {
 			return nil, err
 		}
@@ -164,7 +167,7 @@ func (q *Queries) ListRecordsByKeys(ctx context.Context, arg ListRecordsByKeysPa
 }
 
 const listSyncedRecords = `-- name: ListSyncedRecords :many
-SELECT id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change FROM ingestion_external_record
+SELECT id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind FROM ingestion_external_record
 WHERE user_id = $1 AND account_id = $2 AND external_status IS NOT NULL
   AND booked_on BETWEEN $3::date AND $4::date
   AND state NOT IN ('withdrawn', 'discarded')
@@ -213,6 +216,7 @@ func (q *Queries) ListSyncedRecords(ctx context.Context, arg ListSyncedRecordsPa
 			&i.CategoryID,
 			&i.BalanceAfter,
 			&i.UnappliedChange,
+			&i.LineKind,
 		); err != nil {
 			return nil, err
 		}

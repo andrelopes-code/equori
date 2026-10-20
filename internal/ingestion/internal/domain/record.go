@@ -18,7 +18,15 @@ type NormalizedRecord struct {
 	BalanceAfter *int64
 	// ReserveName is the reserved balance a bank line moves money into or out of (A76).
 	ReserveName string
+	// Kind is the type the source states for a card line: KindPayment, KindRefund or empty (A88).
+	Kind string
 }
+
+// Card line types a source states (A88).
+const (
+	KindPayment = "payment"
+	KindRefund  = "refund"
+)
 
 // Installment places a card line in an installment purchase.
 type Installment struct {

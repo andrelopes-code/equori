@@ -32,6 +32,8 @@ var (
 	ErrBalanceRejected = errors.New("the ledger rejected the balance")
 	// ErrReconciled: the posting is reconciled and keeps its state.
 	ErrReconciled = errors.New("the posting is reconciled")
+	// ErrNotRetypable: the transaction of a line changed since its import and keeps it (A88).
+	ErrNotRetypable = errors.New("the transaction changed since its import")
 	// ErrInstallmentRefused: the ledger cannot place the line in its installment purchase.
 	ErrInstallmentRefused = errors.New("the ledger refused the installment line")
 )
@@ -47,6 +49,7 @@ type Line struct {
 	DueDate     *time.Time             // due date of the card bill it belongs to (A39)
 	Category    *domain.SourceCategory // the aggregator's category (A41)
 	TransferTo  *uuid.UUID             // the reserve the line moves money into or out of (A76)
+	Kind        string                 // the card line type the source states (A88)
 }
 
 // NewLine is a line to record as a transaction for its external record.
@@ -98,7 +101,9 @@ type Ledger interface {
 	AssertSyncedReserve(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Balance, c money.Currency) error
 	// UpdateImportedPosting applies a later report on a recorded line (A36): ErrReconciled
 	// leaves the posting as it is; ErrNotFound when no posting carries the record.
-	UpdateImportedPosting(ctx context.Context, userID int64, recordID uuid.UUID, pending bool, dueDate *time.Time) error
+	// kind KindPayment retypes a card credit as a payment; ErrNotRetypable when the
+	// transaction changed since its import.
+	UpdateImportedPosting(ctx context.Context, userID int64, recordID uuid.UUID, pending bool, dueDate *time.Time, kind string) error
 	// ReleaseRecord unlinks a withdrawn record from its posting (A38).
 	ReleaseRecord(ctx context.Context, userID int64, recordID uuid.UUID) error
 	// RecordInstallment creates the installment purchase of the first line seen of it and
@@ -269,7 +274,7 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 		rec.BatchID = batch.ID
 		pending = append(pending, rec)
 		r := lines[i]
-		line := Line{AccountID: rec.AccountID, Currency: currency, Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description), Pending: r.Pending, DueDate: r.DueDate, Category: r.Category}
+		line := Line{AccountID: rec.AccountID, Currency: currency, Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description), Pending: r.Pending, DueDate: r.DueDate, Category: r.Category, Kind: r.Kind}
 		if transferTo != nil {
 			line.TransferTo = transferTo(r)
 		}
@@ -359,6 +364,7 @@ func (s *Service) create(ctx context.Context, userID int64, sync bool, creates [
 // withFacts copies what an aggregator reports about a line onto its record.
 func withFacts(rec *domain.ExternalRecord, r domain.NormalizedRecord) {
 	rec.ExternalStatus, rec.DueDate, rec.Installment, rec.BalanceAfter, rec.Raw = domain.ExternalStatusOf(r), r.DueDate, r.Installment, r.BalanceAfter, r.Raw
+	rec.LineKind = r.Kind
 	rec.CategoryID = ""
 	if r.Category != nil {
 		rec.CategoryID = r.Category.ID
@@ -374,15 +380,18 @@ func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRec
 		return false, nil
 	}
 	settled := rec.ExternalStatus != domain.ExternalStatusOf(r) || !sameDate(rec.DueDate, r.DueDate)
-	if !settled && rec.Amount == r.Amount {
+	retype := r.Kind == domain.KindPayment && rec.LineKind != r.Kind
+	if !settled && !retype && rec.Amount == r.Amount {
 		return false, nil
 	}
 	var notes []string
-	if settled {
-		err := s.ledger.UpdateImportedPosting(ctx, rec.UserID, rec.ID, r.Pending, r.DueDate)
+	if settled || retype {
+		err := s.ledger.UpdateImportedPosting(ctx, rec.UserID, rec.ID, r.Pending, r.DueDate, r.Kind)
 		switch {
 		case errors.Is(err, ErrReconciled):
 			notes = append(notes, "the provider reports the line "+strings.ToLower(domain.ExternalStatusOf(r))+billNote(r.DueDate)+"; the posting is reconciled and keeps its status and statement")
+		case errors.Is(err, ErrNotRetypable):
+			notes = append(notes, "the provider reports the line as a card payment; the transaction changed since its import and keeps its categories")
 		case err != nil && !errors.Is(err, ErrNotFound):
 			return false, err
 		}
@@ -402,7 +411,7 @@ func (s *Service) billMatched(ctx context.Context, rec *domain.ExternalRecord, p
 	if rec.DueDate == nil {
 		return nil
 	}
-	err := s.ledger.UpdateImportedPosting(ctx, rec.UserID, rec.ID, pending, rec.DueDate)
+	err := s.ledger.UpdateImportedPosting(ctx, rec.UserID, rec.ID, pending, rec.DueDate, "")
 	switch {
 	case errors.Is(err, ErrReconciled):
 		rec.UnappliedChange = "the provider reports the line" + billNote(rec.DueDate) + "; the posting is reconciled and keeps its status and statement"
