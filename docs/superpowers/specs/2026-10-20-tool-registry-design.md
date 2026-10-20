@@ -95,10 +95,10 @@ func (m *Module) Tools() tool.Group {
 
 | Tool | Service call | Input | Output |
 |---|---|---|---|
-| `list_accounts` | `ledger` `ListAccounts` | `class` (enum, optional), `include_closed` | accounts with ID, name, class, kind, currency, parent ID and name, closed flag |
-| `get_balances` | `ledger` `BalancesAt` | `date` (optional, default today), `basis` (enum) | per account: ID, name, `Money` |
-| `search_transactions` | `ledger` `ListTransactions` | `query`, `account_id`, `payee_id`, `tag`, `from`, `to`, `uncategorized`, `limit`, `cursor` | per transaction: ID, date, description, payee name, tags, postings with account name, account class and `Money` (a posting on an `income` or `expense` account is the category); `next_cursor` |
-| `get_category_totals` | `reporting` `CategoryTotals` | `class` (enum), `from`, `to` | per category: ID, name, `Money` total and subtree total |
+| `list_accounts` | `ledger` `ListAccounts` | `class` (enum, optional), `include_closed`, `limit`, `cursor` | accounts with ID, name, class, kind, currency, parent ID and name, system role, closed flag; `next_cursor` |
+| `get_balances` | `ledger` `BalancesAt` | `date` (optional, default today), `basis` (enum), `class` (`asset`, `liability`, `equity`), `limit`, `cursor` | per asset, liability or equity account with a non-zero balance, as `GET /balances`: ID, name, class, `Money`; `next_cursor` |
+| `search_transactions` | `ledger` `ListTransactions` | `query` (also matches payee names), `account_id`, `tag`, `from`, `to`, `uncategorized`, `limit` (1 to 50; 0 or absent means 20), `cursor` | per transaction: ID, date, description, payee name, tags, postings with account name, account class and `Money` (a posting on an `income` or `expense` account is the category); `next_cursor` |
+| `get_category_totals` | `reporting` `CategoryTotals` | `class` (enum), `from`, `to`, `limit`, `cursor` | per category with postings of its own in the period, and per ancestor of one: ID, name, parent ID, `Money` total and subtree total; `next_cursor` |
 
 Descriptions state when to use the tool, the meaning of each enum value, and the limit of each filter.
 
@@ -108,9 +108,11 @@ Descriptions state when to use the tool, the meaning of each enum value, and the
 |---|---|
 | Definition: inferred schemas, enums, rejected names, types and keywords (T2 to T4) | `internal/platform/tool/*_test.go`, no database |
 | Registry: duplicate name, unknown selection, invalid arguments, unknown member, `result_too_large`, `internal_error`, `ErrNoUser`, context cancellation, log fields | `internal/platform/tool/*_test.go`, no database |
+| Pagination: `tool.Limit`, `tool.Paginate`, `tool.PageOf`, `tool.PageArgs` schema (T11) | `internal/platform/tool/page_test.go`, no database |
 | `llm` bridge: tool error reaches the model as `IsError` with its JSON content | `internal/platform/tool`, with `llm/llmtest` |
 | Exposure table and golden catalog (T14) | `internal/server/tools_test.go`, `internal/server/testdata/tools.json` |
-| Each tool: exact output for seeded data, pagination, `not_found` on an unknown ID, output valid against its output schema | `internal/ledger/tools_test.go`, `internal/reporting/tools_test.go` |
+| Schema keywords against Gemini (T4) and one `llm.RunTools` round trip | `internal/server/tools_live_test.go`, `go test -tags live`, needs `EQUORI_GEMINI_API_KEY` |
+| Each tool: exact output for seeded data, pagination, argument errors on their field, isolation between users, output valid against its output schema | `internal/ledger/tools_test.go`, `internal/reporting/tools_test.go` |
 
 `apitest.Harness.Tool(name string, args any) tool.Result` calls `App.Tools` with the owner's user ID and checks every successful output against the tool's output schema.
 

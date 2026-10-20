@@ -24,7 +24,7 @@
 
 ## Review Focus
 
-1. A tool argument with the right type but an unusable value (malformed UUID in `account_id`, `limit` 0): expected `invalid_arguments` naming the field, not `internal_error`. Pinned in Task 5.
+1. A tool argument with the right type but an unusable value (malformed UUID in `account_id`, `limit` -1 or 51): expected `invalid_arguments` naming the field, not `internal_error`. Pinned in Task 5.
 2. A user reading another user's data through a tool: expected the other user's rows to be absent. Pinned in Task 5.
 3. A tool called with `null` or empty arguments: expected the same result as `{}`. Pinned in Task 2.
 4. A closed category with zero totals: expected absence from `get_category_totals`, as in `GET /reports/category-totals`. Pinned in Task 6.
