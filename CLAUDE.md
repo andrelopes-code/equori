@@ -35,7 +35,7 @@ docs/adr/              decision records
 web/                   single-page application (Vite, React, TypeScript), embedded by web/embed.go
 ```
 
-Module internals: `<module>.go` (public API) → `internal/domain` → `internal/app` → `internal/adapter/{postgres,httpapi}`. Dependency rules are in ADR 002 and enforced by `depguard` and the compiler.
+Module internals: `<module>.go` (public API) → `internal/domain` → `internal/app` → `internal/adapter/{postgres,httpapi,toolapi}`. Dependency rules are in ADR 002 and enforced by `depguard` and the compiler.
 
 ## Language
 
@@ -61,6 +61,7 @@ Everything is in English: identifiers, files, packages, comments, log messages, 
 - Tests sit next to the code, table-driven. Postgres adapters are tested against a real database from `pgtest.New(t)`, not mocks.
 - HTTP errors are RFC 9457 problems written with `internal/platform/problem` (ADR 004).
 - Language model calls go through `internal/platform/llm` (ADR 009); each module declares its chain in code.
+- Tools for language models are declared in `adapter/toolapi` and composed in `internal/server` (ADR 012).
 - Handlers get the user with `auth.MustUserID(ctx)` (`internal/platform/auth`) and pass it to `app` explicitly. Every `/api/` route is authenticated by `identity.RequireSession`; only login is exempt.
 - `*.gen.go` files are generated; never edit them. A new module adds an entry to `sqlc.yaml`, `db/queries/<module>/`, a tag in `api/openapi.yaml` and `adapter/httpapi/oapi-codegen.yaml`.
 - Every business table has `user_id`; every query on it filters by `user_id` (ADR 003).
@@ -89,6 +90,7 @@ Write a comment only when it carries information the code cannot: a non-obvious 
 2. A test covers each acceptance criterion of the task.
 3. Schema changes come as a new goose migration; applied migrations are never edited.
 4. One vertical slice per commit.
+5. A new operation in `api/openapi.yaml` has an entry in `internal/server/tool_exposure_test.go`.
 
 ## Commits
 

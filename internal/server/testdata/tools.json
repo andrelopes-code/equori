@@ -1,0 +1,439 @@
+[
+  {
+    "name": "get_balances",
+    "description": "Returns the balance of every asset, liability and equity account at a date, by class and then account name. Accounts with a zero balance are omitted. Totals of income and expense categories come from get_category_totals.",
+    "effect": "read_only",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string",
+          "description": "balances at the end of this date; today when absent",
+          "format": "date"
+        },
+        "basis": {
+          "type": "string",
+          "description": "booked places a posting at the transaction date, settled at the institution's settlement date; booked when absent",
+          "enum": [
+            "booked",
+            "settled"
+          ]
+        },
+        "class": {
+          "type": "string",
+          "description": "keep only accounts of this class",
+          "enum": [
+            "asset",
+            "liability",
+            "equity"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "basis": {
+          "type": "string"
+        },
+        "balances": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "account_id": {
+                "type": "string"
+              },
+              "account_name": {
+                "type": "string"
+              },
+              "class": {
+                "type": "string"
+              },
+              "balance": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "account_id",
+              "account_name",
+              "class",
+              "balance"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "date",
+        "basis",
+        "balances"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "get_category_totals",
+    "description": "Totals the income or expense categories in a period, each with its own total and the total of its subtree, in category name order. Closed categories with zero totals are omitted.",
+    "effect": "read_only",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "class": {
+          "type": "string",
+          "description": "expense totals spending, income totals earnings; both are positive",
+          "enum": [
+            "income",
+            "expense"
+          ]
+        },
+        "from": {
+          "type": "string",
+          "description": "first date, inclusive",
+          "format": "date"
+        },
+        "to": {
+          "type": "string",
+          "description": "last date, inclusive; at most 366 days after from",
+          "format": "date"
+        }
+      },
+      "required": [
+        "class",
+        "from",
+        "to"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "format": "date"
+        },
+        "to": {
+          "type": "string",
+          "format": "date"
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "account_id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "parent_id": {
+                "type": "string"
+              },
+              "total": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "description": "postings on the category itself",
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "subtree_total": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "description": "postings on the category and its descendants",
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "account_id",
+              "name",
+              "total",
+              "subtree_total"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "from",
+        "to",
+        "categories"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_accounts",
+    "description": "Lists the user's accounts by class and then name, with the IDs the other tools take. Income and expense accounts are the categories of transactions; a child account carries its parent.",
+    "effect": "read_only",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "class": {
+          "type": "string",
+          "description": "keep only accounts of this class; income and expense accounts are the categories of transactions",
+          "enum": [
+            "asset",
+            "liability",
+            "equity",
+            "income",
+            "expense"
+          ]
+        },
+        "include_closed": {
+          "type": "boolean",
+          "description": "also list closed accounts"
+        }
+      },
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "accounts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "class": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "description": "kind of an asset or liability account, such as checking or credit_card"
+              },
+              "currency": {
+                "type": "string",
+                "description": "currency or instrument code of the account"
+              },
+              "parent_id": {
+                "type": "string"
+              },
+              "parent_name": {
+                "type": "string"
+              },
+              "system_role": {
+                "type": "string",
+                "description": "set on accounts the ledger creates, such as uncategorized_expense"
+              },
+              "closed": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "class",
+              "currency"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "accounts"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "search_transactions",
+    "description": "Searches the user's transactions, newest first, with their payee, tags and postings. Filters combine; narrow them instead of reading many pages.",
+    "effect": "read_only",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "case-insensitive text found in the description, the payee name or a posting memo"
+        },
+        "account_id": {
+          "type": "string",
+          "description": "keep transactions with a posting on this account; IDs come from list_accounts"
+        },
+        "payee_id": {
+          "type": "string",
+          "description": "keep transactions of this payee"
+        },
+        "tag": {
+          "type": "string",
+          "description": "keep transactions with this tag"
+        },
+        "from": {
+          "type": "string",
+          "description": "first date, inclusive",
+          "format": "date"
+        },
+        "to": {
+          "type": "string",
+          "description": "last date, inclusive",
+          "format": "date"
+        },
+        "uncategorized": {
+          "type": "boolean",
+          "description": "keep only transactions still waiting for a category"
+        },
+        "limit": {
+          "type": "integer",
+          "description": "transactions per page, 1 to 50; 20 when absent"
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor of the previous page"
+        }
+      },
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "transactions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "description": {
+                "type": "string"
+              },
+              "payee_name": {
+                "type": "string"
+              },
+              "voided": {
+                "type": "boolean"
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "postings": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "account_id": {
+                      "type": "string"
+                    },
+                    "account_name": {
+                      "type": "string"
+                    },
+                    "account_class": {
+                      "type": "string",
+                      "description": "a posting on an income or expense account is the category of the transaction"
+                    },
+                    "amount": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "description": "decimal amount in the instrument's scale, such as -1234.56"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "description": "currency or instrument code"
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "memo": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "account_id",
+                    "account_name",
+                    "account_class",
+                    "amount"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "id",
+              "date",
+              "description",
+              "postings"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "next_cursor": {
+          "type": "string",
+          "description": "present when more transactions follow; pass it as cursor"
+        }
+      },
+      "required": [
+        "transactions"
+      ],
+      "additionalProperties": false
+    }
+  }
+]
