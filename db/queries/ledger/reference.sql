@@ -21,6 +21,9 @@ INSERT INTO ledger_payee (user_id, name) VALUES ($1, $2) RETURNING *;
 -- name: GetPayee :one
 SELECT * FROM ledger_payee WHERE user_id = $1 AND id = $2;
 
+-- name: PayeeNames :many
+SELECT id, name FROM ledger_payee WHERE user_id = @user_id AND id = ANY(@ids::uuid[]);
+
 -- name: ListPayees :many
 SELECT *, lower(name)::text AS sort_name FROM ledger_payee
 WHERE user_id = @user_id AND merged_into IS NULL

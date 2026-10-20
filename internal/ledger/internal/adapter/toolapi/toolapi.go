@@ -13,7 +13,7 @@ import (
 )
 
 func Tools(svc *app.Service) []tool.Tool {
-	return []tool.Tool{listAccounts(svc), getBalances(svc)}
+	return []tool.Tool{listAccounts(svc), getBalances(svc), searchTransactions(svc)}
 }
 
 type accountClass string

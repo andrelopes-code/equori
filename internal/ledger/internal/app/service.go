@@ -118,6 +118,10 @@ func (s *Service) ListPayees(ctx context.Context, userID int64, p page.Request[P
 	return s.repo.ListPayees(ctx, userID, p)
 }
 
+func (s *Service) PayeeNames(ctx context.Context, userID int64, ids []uuid.UUID) (map[uuid.UUID]string, error) {
+	return s.repo.PayeeNames(ctx, userID, ids)
+}
+
 func (s *Service) ListTags(ctx context.Context, userID int64, p page.Request[TagKey]) ([]string, *TagKey, error) {
 	return s.repo.ListTags(ctx, userID, p)
 }

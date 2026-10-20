@@ -156,6 +156,18 @@ func (r *Repository) Payee(ctx context.Context, userID int64, id uuid.UUID) (app
 	return toPayee(row), nil
 }
 
+func (r *Repository) PayeeNames(ctx context.Context, userID int64, ids []uuid.UUID) (map[uuid.UUID]string, error) {
+	rows, err := r.q.PayeeNames(ctx, PayeeNamesParams{UserID: userID, Ids: ids})
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[uuid.UUID]string, len(rows))
+	for _, row := range rows {
+		out[row.ID] = row.Name
+	}
+	return out, nil
+}
+
 func (r *Repository) ListPayees(ctx context.Context, userID int64, p page.Request[app.PayeeKey]) ([]app.Payee, *app.PayeeKey, error) {
 	params := ListPayeesParams{UserID: userID, RowLimit: rowLimit(p.Limit)}
 	if p.After != nil {

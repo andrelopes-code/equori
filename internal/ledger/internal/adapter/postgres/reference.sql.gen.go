@@ -274,6 +274,40 @@ func (q *Queries) MoveVoidedPayee(ctx context.Context, arg MoveVoidedPayeeParams
 	return err
 }
 
+const payeeNames = `-- name: PayeeNames :many
+SELECT id, name FROM ledger_payee WHERE user_id = $1 AND id = ANY($2::uuid[])
+`
+
+type PayeeNamesParams struct {
+	UserID int64
+	Ids    []uuid.UUID
+}
+
+type PayeeNamesRow struct {
+	ID   uuid.UUID
+	Name string
+}
+
+func (q *Queries) PayeeNames(ctx context.Context, arg PayeeNamesParams) ([]PayeeNamesRow, error) {
+	rows, err := q.db.Query(ctx, payeeNames, arg.UserID, arg.Ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []PayeeNamesRow
+	for rows.Next() {
+		var i PayeeNamesRow
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const renamePayee = `-- name: RenamePayee :one
 UPDATE ledger_payee SET name = $1 WHERE user_id = $2 AND id = $3 RETURNING id, user_id, name, merged_into
 `
