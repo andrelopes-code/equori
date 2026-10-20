@@ -93,7 +93,6 @@ func TestSearchTransactionsToolArguments(t *testing.T) {
 		field string
 	}{
 		{map[string]any{"account_id": "x"}, "account_id"},
-		{map[string]any{"payee_id": "x"}, "payee_id"},
 		{map[string]any{"limit": -1}, "limit"},
 		{map[string]any{"limit": 51}, "limit"},
 		{map[string]any{"cursor": "bad"}, "cursor"},
@@ -101,6 +100,13 @@ func TestSearchTransactionsToolArguments(t *testing.T) {
 	for _, tt := range tests {
 		h.ExpectToolError(h.Tool("search_transactions", tt.args), "invalid_arguments", tt.field)
 	}
+
+	// No tool returns payee IDs, so the search takes payee names through query only.
+	search, _ := h.App.Tools.Tool("search_transactions")
+	if _, ok := search.InputSchema().Properties["payee_id"]; ok {
+		t.Error("search_transactions still takes payee_id")
+	}
+	h.ExpectToolError(h.Tool("search_transactions", map[string]any{"payee_id": "01a15a13-9fbe-78ca-88a0-21527276b813"}), "invalid_arguments", "")
 }
 
 func TestSearchTransactionsToolIsolation(t *testing.T) {

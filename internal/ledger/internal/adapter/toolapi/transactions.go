@@ -13,7 +13,6 @@ import (
 type searchTransactionsIn struct {
 	Query         string    `json:"query,omitzero" jsonschema:"case-insensitive text found in the description, the payee name or a posting memo"`
 	AccountID     string    `json:"account_id,omitzero" jsonschema:"keep transactions with a posting on this account; IDs come from list_accounts"`
-	PayeeID       string    `json:"payee_id,omitzero" jsonschema:"keep transactions of this payee"`
 	Tag           string    `json:"tag,omitzero" jsonschema:"keep transactions with this tag"`
 	From          tool.Date `json:"from,omitzero" jsonschema:"first date, inclusive"`
 	To            tool.Date `json:"to,omitzero" jsonschema:"last date, inclusive"`
@@ -105,9 +104,6 @@ func transactionQuery(userID int64, in searchTransactionsIn) (app.TransactionQue
 	q := app.TransactionQuery{UserID: userID, Tag: in.Tag, Q: in.Query, Uncategorized: in.Uncategorized}
 	var err error
 	if q.AccountID, err = optionalID(in.AccountID, "account_id"); err != nil {
-		return q, err
-	}
-	if q.PayeeID, err = optionalID(in.PayeeID, "payee_id"); err != nil {
 		return q, err
 	}
 	if q.Limit, err = tool.Limit(in.Limit); err != nil {

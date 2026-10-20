@@ -342,10 +342,6 @@
           "type": "string",
           "description": "keep transactions with a posting on this account; IDs come from list_accounts"
         },
-        "payee_id": {
-          "type": "string",
-          "description": "keep transactions of this payee"
-        },
         "tag": {
           "type": "string",
           "description": "keep transactions with this tag"
