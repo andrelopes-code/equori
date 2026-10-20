@@ -30,7 +30,9 @@ func schemaFor[T any]() (*jsonschema.Schema, *jsonschema.Resolved, error) {
 		return nil, nil, fmt.Errorf("%s is not a struct, and the schema must be an object", t)
 	}
 	types := map[reflect.Type]*jsonschema.Schema{}
-	collectTypes(t, types, map[reflect.Type]bool{})
+	if err := collectTypes(t, types, map[reflect.Type]bool{}); err != nil {
+		return nil, nil, err
+	}
 	s, err := jsonschema.For[T](&jsonschema.ForOptions{TypeSchemas: types})
 	if err != nil {
 		return nil, nil, err
@@ -53,16 +55,18 @@ func schemaFor[T any]() (*jsonschema.Schema, *jsonschema.Resolved, error) {
 	return s, r, nil
 }
 
-// collectTypes registers the schemas inference cannot derive: Date and Enumerated types.
-func collectTypes(t reflect.Type, types map[reflect.Type]*jsonschema.Schema, seen map[reflect.Type]bool) {
+// collectTypes registers the schemas inference cannot derive: Date, Enumerated types, and
+// slices, which inference makes nullable because a nil slice encodes as null. Tools encode
+// empty slices as [].
+func collectTypes(t reflect.Type, types map[reflect.Type]*jsonschema.Schema, seen map[reflect.Type]bool) error {
 	if seen[t] {
-		return
+		return nil
 	}
 	seen[t] = true
 	switch {
 	case t == dateType:
 		types[t] = &jsonschema.Schema{Type: "string", Format: "date"}
-		return
+		return nil
 	case t.Kind() == reflect.String && t.Implements(enumeratedType):
 		values := reflect.Zero(t).Interface().(Enumerated).Values()
 		enum := make([]any, len(values))
@@ -70,16 +74,28 @@ func collectTypes(t reflect.Type, types map[reflect.Type]*jsonschema.Schema, see
 			enum[i] = v
 		}
 		types[t] = &jsonschema.Schema{Type: "string", Enum: enum}
-		return
+		return nil
 	}
 	switch t.Kind() {
 	case reflect.Struct:
 		for f := range t.Fields() {
-			collectTypes(f.Type, types, seen)
+			if err := collectTypes(f.Type, types, seen); err != nil {
+				return err
+			}
 		}
-	case reflect.Slice, reflect.Array, reflect.Pointer, reflect.Map:
-		collectTypes(t.Elem(), types, seen)
+	case reflect.Slice:
+		if err := collectTypes(t.Elem(), types, seen); err != nil {
+			return err
+		}
+		items, err := jsonschema.ForType(t.Elem(), &jsonschema.ForOptions{TypeSchemas: types})
+		if err != nil {
+			return err
+		}
+		types[t] = &jsonschema.Schema{Type: "array", Items: items}
+	case reflect.Array, reflect.Pointer, reflect.Map:
+		return collectTypes(t.Elem(), types, seen)
 	}
+	return nil
 }
 
 func checkKeywords(node any, path string) error {

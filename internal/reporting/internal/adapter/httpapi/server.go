@@ -22,7 +22,7 @@ type Server struct {
 }
 
 func NewServer(svc *app.Service, log *slog.Logger) *Server {
-	return &Server{svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: toProblem}}
+	return &Server{svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: ToProblem}}
 }
 
 func (s *Server) Register(mux *http.ServeMux) {
@@ -63,8 +63,8 @@ func (s *Server) GetCategoryTotals(ctx context.Context, req GetCategoryTotalsReq
 	return out, nil
 }
 
-// toProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).
-func toProblem(err error) (problem.Details, bool) {
+// ToProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).
+func ToProblem(err error) (problem.Details, bool) {
 	switch {
 	case errors.Is(err, app.ErrInvalidRange):
 		d := problem.New(http.StatusBadRequest, "invalid_request", "from must not be after to, and the range must not exceed 3660 days")

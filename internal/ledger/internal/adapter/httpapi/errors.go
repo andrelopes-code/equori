@@ -16,8 +16,8 @@ type paramError struct{ field, message string }
 
 func (e *paramError) Error() string { return e.field + ": " + e.message }
 
-// toProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).
-func toProblem(err error) (problem.Details, bool) {
+// ToProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).
+func ToProblem(err error) (problem.Details, bool) {
 	if pe, ok := errors.AsType[*paramError](err); ok {
 		d := problem.New(http.StatusBadRequest, "invalid_request", pe.Error())
 		d.Errors = []problem.FieldError{{Field: pe.field, Message: pe.message}}

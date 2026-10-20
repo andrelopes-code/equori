@@ -18,6 +18,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/adapter/httpapi"
 	"github.com/andrelopes-code/equori/internal/ledger/internal/adapter/postgres"
+	"github.com/andrelopes-code/equori/internal/ledger/internal/adapter/toolapi"
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
 	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
 	"github.com/andrelopes-code/equori/internal/marketdata"
@@ -25,6 +26,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
+	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
 // DefaultBaseCurrency is the base currency of a new user; it can change until the first transaction.
@@ -197,6 +199,11 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, md MarketData, clk c
 	svc := app.NewService(postgres.NewRepository(pool, ins), clk, calendarAdapter{md}, ins, pricesAdapter{md})
 	dispatcher.Subscribe("ledger-provisioning", "identity.user_created.v1", provision)
 	return &Module{http: httpapi.NewServer(svc, log), svc: svc}
+}
+
+// Tools returns the ledger's tools for language models (ADR 012).
+func (m *Module) Tools() tool.Group {
+	return tool.Group{Tools: toolapi.Tools(m.svc), Errors: tool.FromProblem(httpapi.ToProblem)}
 }
 
 // RecordImported creates the transaction of an external record; it is idempotent by recordID

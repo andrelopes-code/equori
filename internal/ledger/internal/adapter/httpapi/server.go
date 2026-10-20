@@ -28,7 +28,7 @@ type Server struct {
 }
 
 func NewServer(svc *app.Service, log *slog.Logger) *Server {
-	return &Server{svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: toProblem}}
+	return &Server{svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: ToProblem}}
 }
 
 func (s *Server) Register(mux *http.ServeMux) {

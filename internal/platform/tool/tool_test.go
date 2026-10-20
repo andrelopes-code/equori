@@ -63,6 +63,19 @@ func TestNewInfersSchemas(t *testing.T) {
 	}
 }
 
+func TestNewSliceIsArray(t *testing.T) {
+	type item struct {
+		Tags []string `json:"tags"`
+	}
+	type listOut struct {
+		Items []item `json:"items"`
+	}
+	tl := New(searchSpec, func(context.Context, int64, searchIn) (listOut, error) { return listOut{}, nil })
+	assertJSON(t, tl.OutputSchema(), `{"type":"object","additionalProperties":false,"required":["items"],"properties":{
+		"items":{"type":"array","items":{"type":"object","additionalProperties":false,"required":["tags"],"properties":{
+			"tags":{"type":"array","items":{"type":"string"}}}}}}}`)
+}
+
 func TestNewRejects(t *testing.T) {
 	type withPointer struct {
 		Name *string `json:"name"`

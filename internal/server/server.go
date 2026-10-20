@@ -25,6 +25,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/llm"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 	"github.com/andrelopes-code/equori/internal/platform/spa"
+	"github.com/andrelopes-code/equori/internal/platform/tool"
 	"github.com/andrelopes-code/equori/internal/portfolio"
 	"github.com/andrelopes-code/equori/internal/reporting"
 )
@@ -54,6 +55,8 @@ type Config struct {
 type App struct {
 	Handler    http.Handler
 	Dispatcher *outbox.Dispatcher
+	// Tools holds every module's tools for language models (ADR 012).
+	Tools      *tool.Registry
 	Identity   *identity.Module
 	Marketdata *marketdata.Module
 	Ledger     *ledger.Module
@@ -90,6 +93,10 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	}
 	planningModule := planning.New(pool, dispatcher, ledgerModule, marketdataModule, clk, log)
 	portfolioModule := portfolio.New(pool, dispatcher, ledgerModule, marketdataModule, log)
+	tools, err := tool.NewRegistry(log, ledgerModule.Tools())
+	if err != nil {
+		return nil, err
+	}
 
 	mux := http.NewServeMux()
 	mux.Handle("GET /healthz", httpserver.Health(pool))
@@ -116,6 +123,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		Handler: httpserver.Middleware(identityModule.RequireSession(validator.Middleware(mux)), log,
 			append(ledgerModule.BodyLimits(), ingestionModule.BodyLimits()...)...),
 		Dispatcher: dispatcher,
+		Tools:      tools,
 		Identity:   identityModule,
 		Ledger:     ledgerModule,
 		Reporting:  reportingModule,
