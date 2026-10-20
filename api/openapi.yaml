@@ -4178,6 +4178,11 @@ components:
         last_item_update_at:
           type: string
           format: date-time
+          description: When the provider last updated the item from the institution, as of the last sync; the ledger holds the data of this update.
+        next_item_update_at:
+          type: string
+          format: date-time
+          description: When the provider will next update the item, as the last check read it (A95). The owner cannot bring it forward for a Meu Pluggy item.
         last_synced_at:
           type: string
           format: date-time

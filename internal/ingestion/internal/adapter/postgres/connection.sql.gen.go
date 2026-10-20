@@ -78,7 +78,7 @@ func (q *Queries) ExternalAccountsOf(ctx context.Context, arg ExternalAccountsOf
 }
 
 const getConnection = `-- name: GetConnection :one
-SELECT id, user_id, integration_id, external_item_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at FROM ingestion_connection WHERE user_id = $1 AND id = $2
+SELECT id, user_id, integration_id, external_item_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at FROM ingestion_connection WHERE user_id = $1 AND id = $2
 `
 
 type GetConnectionParams struct {
@@ -100,6 +100,7 @@ func (q *Queries) GetConnection(ctx context.Context, arg GetConnectionParams) (I
 		&i.LastSyncedAt,
 		&i.LastError,
 		&i.CreatedAt,
+		&i.NextItemUpdateAt,
 	)
 	return i, err
 }
@@ -107,7 +108,7 @@ func (q *Queries) GetConnection(ctx context.Context, arg GetConnectionParams) (I
 const insertConnection = `-- name: InsertConnection :one
 INSERT INTO ingestion_connection (user_id, integration_id, external_item_id, name, provider_status, last_item_update_at)
 VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, user_id, integration_id, external_item_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at
+RETURNING id, user_id, integration_id, external_item_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at
 `
 
 type InsertConnectionParams struct {
@@ -140,6 +141,7 @@ func (q *Queries) InsertConnection(ctx context.Context, arg InsertConnectionPara
 		&i.LastSyncedAt,
 		&i.LastError,
 		&i.CreatedAt,
+		&i.NextItemUpdateAt,
 	)
 	return i, err
 }
@@ -256,7 +258,7 @@ func (q *Queries) ListAllConnections(ctx context.Context) ([]ListAllConnectionsR
 }
 
 const listConnections = `-- name: ListConnections :many
-SELECT id, user_id, integration_id, external_item_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at FROM ingestion_connection
+SELECT id, user_id, integration_id, external_item_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at FROM ingestion_connection
 WHERE user_id = $1
   AND ($2::text IS NULL OR (name, id) > ($2::text, $3::uuid))
 ORDER BY name, id
@@ -295,6 +297,7 @@ func (q *Queries) ListConnections(ctx context.Context, arg ListConnectionsParams
 			&i.LastSyncedAt,
 			&i.LastError,
 			&i.CreatedAt,
+			&i.NextItemUpdateAt,
 		); err != nil {
 			return nil, err
 		}
@@ -351,13 +354,14 @@ func (q *Queries) RenameExternalAccount(ctx context.Context, arg RenameExternalA
 
 const saveConnectionState = `-- name: SaveConnectionState :exec
 UPDATE ingestion_connection SET provider_status = $1, last_item_update_at = $2,
-    last_synced_at = $3, last_error = $4
-WHERE user_id = $5 AND id = $6
+    next_item_update_at = $3, last_synced_at = $4, last_error = $5
+WHERE user_id = $6 AND id = $7
 `
 
 type SaveConnectionStateParams struct {
 	ProviderStatus   string
 	LastItemUpdateAt *time.Time
+	NextItemUpdateAt *time.Time
 	LastSyncedAt     *time.Time
 	LastError        *string
 	UserID           int64
@@ -368,6 +372,7 @@ func (q *Queries) SaveConnectionState(ctx context.Context, arg SaveConnectionSta
 	_, err := q.db.Exec(ctx, saveConnectionState,
 		arg.ProviderStatus,
 		arg.LastItemUpdateAt,
+		arg.NextItemUpdateAt,
 		arg.LastSyncedAt,
 		arg.LastError,
 		arg.UserID,

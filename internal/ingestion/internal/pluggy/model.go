@@ -34,6 +34,7 @@ type Item struct {
 	Status          string  `json:"status"`
 	ExecutionStatus string  `json:"executionStatus"`
 	LastUpdatedAt   *string `json:"lastUpdatedAt"`
+	NextAutoSyncAt  *string `json:"nextAutoSyncAt"`
 	Connector       struct {
 		Name string `json:"name"`
 	} `json:"connector"`

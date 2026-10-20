@@ -14,8 +14,9 @@ import (
 func toConnection(row IngestionConnection) domain.Connection {
 	return domain.Connection{
 		ID: row.ID, UserID: row.UserID, IntegrationID: row.IntegrationID, ItemID: row.ExternalItemID, Name: row.Name,
-		ProviderStatus: row.ProviderStatus, LastItemUpdateAt: row.LastItemUpdateAt, LastSyncedAt: row.LastSyncedAt,
-		LastError: value(row.LastError), CreatedAt: row.CreatedAt,
+		ProviderStatus: row.ProviderStatus, LastItemUpdateAt: row.LastItemUpdateAt, NextItemUpdateAt: row.NextItemUpdateAt,
+		LastSyncedAt: row.LastSyncedAt,
+		LastError:    value(row.LastError), CreatedAt: row.CreatedAt,
 	}
 }
 

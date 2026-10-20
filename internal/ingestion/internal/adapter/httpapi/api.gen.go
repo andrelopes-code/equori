@@ -301,15 +301,20 @@ type AccountMappingInput struct {
 
 // Connection defines model for Connection.
 type Connection struct {
-	Accounts         []ExternalAccount  `json:"accounts"`
-	CreatedAt        time.Time          `json:"created_at"`
-	Id               openapi_types.UUID `json:"id"`
-	IntegrationId    openapi_types.UUID `json:"integration_id"`
-	ItemId           string             `json:"item_id"`
-	LastError        *string            `json:"last_error,omitempty"`
-	LastItemUpdateAt *time.Time         `json:"last_item_update_at,omitempty"`
-	LastSyncedAt     *time.Time         `json:"last_synced_at,omitempty"`
-	Name             string             `json:"name"`
+	Accounts      []ExternalAccount  `json:"accounts"`
+	CreatedAt     time.Time          `json:"created_at"`
+	Id            openapi_types.UUID `json:"id"`
+	IntegrationId openapi_types.UUID `json:"integration_id"`
+	ItemId        string             `json:"item_id"`
+	LastError     *string            `json:"last_error,omitempty"`
+
+	// LastItemUpdateAt When the provider last updated the item from the institution, as of the last sync; the ledger holds the data of this update.
+	LastItemUpdateAt *time.Time `json:"last_item_update_at,omitempty"`
+	LastSyncedAt     *time.Time `json:"last_synced_at,omitempty"`
+	Name             string     `json:"name"`
+
+	// NextItemUpdateAt When the provider will next update the item, as the last check read it (A95). The owner cannot bring it forward for a Meu Pluggy item.
+	NextItemUpdateAt *time.Time `json:"next_item_update_at,omitempty"`
 
 	// ProviderStatus The item status the provider reported (Pluggy UPDATED, LOGIN_ERROR, OUTDATED, ...).
 	ProviderStatus string `json:"provider_status"`

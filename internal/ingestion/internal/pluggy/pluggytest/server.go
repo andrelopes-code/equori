@@ -156,6 +156,16 @@ func (s *Server) SetItemUpdatedAt(itemID, at string) {
 	}
 }
 
+// SetItemNextAutoSync changes the instant an item reports for its next automatic update.
+func (s *Server) SetItemNextAutoSync(itemID, at string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if it, ok := s.items[itemID]; ok {
+		it.NextAutoSyncAt = &at
+		s.items[itemID] = it
+	}
+}
+
 func (s *Server) eachAccount(accountID string, fn func(*pluggy.Account)) {
 	for _, as := range s.accounts {
 		for i := range as {

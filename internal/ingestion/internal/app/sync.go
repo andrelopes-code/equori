@@ -56,11 +56,12 @@ func (s *Service) syncItem(ctx context.Context, c *domain.Connection, force bool
 	if err != nil {
 		return nil, err
 	}
-	status, updatedAt, err := s.agg.ItemState(ctx, i.ID, creds, c.ItemID)
+	state, err := s.agg.ItemState(ctx, i.ID, creds, c.ItemID)
 	if err != nil {
 		return nil, err
 	}
-	c.ProviderStatus, c.LastError = status, ""
+	status, updatedAt := state.Status, state.UpdatedAt
+	c.ProviderStatus, c.NextItemUpdateAt, c.LastError = status, state.NextUpdateAt, ""
 	newer := updatedAt != nil && (c.LastItemUpdateAt == nil || updatedAt.After(*c.LastItemUpdateAt))
 	if blockedStatuses[status] || (!force && c.LastSyncedAt != nil && !newer) {
 		return nil, nil

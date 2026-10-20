@@ -2310,8 +2310,16 @@ export interface components {
             name: string;
             /** @description The item status the provider reported (Pluggy UPDATED, LOGIN_ERROR, OUTDATED, ...). */
             provider_status: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description When the provider last updated the item from the institution, as of the last sync; the ledger holds the data of this update.
+             */
             last_item_update_at?: string;
+            /**
+             * Format: date-time
+             * @description When the provider will next update the item, as the last check read it (A95). The owner cannot bring it forward for a Meu Pluggy item.
+             */
+            next_item_update_at?: string;
             /** Format: date-time */
             last_synced_at?: string;
             last_error?: string;

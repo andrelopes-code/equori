@@ -21,6 +21,9 @@ type Connection struct {
 	Name             string
 	ProviderStatus   string
 	LastItemUpdateAt *time.Time
+	// NextItemUpdateAt is when the provider will next update the item, as the last check read
+	// it (A95).
+	NextItemUpdateAt *time.Time
 	LastSyncedAt     *time.Time
 	LastError        string
 	CreatedAt        time.Time

@@ -14,6 +14,13 @@ export const catalogEn = {
   "nav.user": "Your account",
   "nav.user.hint": "Account and preferences",
   "sync.updated": "Open Finance updated at {time}",
+  "sync.detailsTitle": "Open Finance",
+  "sync.detailsDescription":
+    "Pluggy fetches each bank on its own schedule, and the app then reads Pluggy.",
+  "sync.bankData": "Bank data from",
+  "sync.appRead": "Read by the app",
+  "sync.nextFetch": "Next bank fetch",
+  "sync.notReported": "Not reported",
   "date.today": "Today",
   "date.yesterday": "Yesterday",
   "more.title": "More",

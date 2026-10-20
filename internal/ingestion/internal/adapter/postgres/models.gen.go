@@ -47,6 +47,7 @@ type IngestionConnection struct {
 	LastSyncedAt     *time.Time
 	LastError        *string
 	CreatedAt        time.Time
+	NextItemUpdateAt *time.Time
 }
 
 type IngestionCsvProfile struct {

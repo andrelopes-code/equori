@@ -83,7 +83,7 @@ func (r *Repository) MarkAccountSynced(ctx context.Context, a domain.ExternalAcc
 func (r *Repository) SaveConnectionState(ctx context.Context, c domain.Connection) error {
 	return r.q.SaveConnectionState(ctx, SaveConnectionStateParams{
 		UserID: c.UserID, ID: c.ID, ProviderStatus: c.ProviderStatus, LastItemUpdateAt: c.LastItemUpdateAt,
-		LastSyncedAt: c.LastSyncedAt, LastError: optional(c.LastError),
+		NextItemUpdateAt: c.NextItemUpdateAt, LastSyncedAt: c.LastSyncedAt, LastError: optional(c.LastError),
 	})
 }
 

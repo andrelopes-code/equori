@@ -16,6 +16,13 @@ export const catalogPtBR: Catalog = {
   "nav.user": "Sua conta",
   "nav.user.hint": "Conta e preferências",
   "sync.updated": "Open Finance atualizado às {time}",
+  "sync.detailsTitle": "Open Finance",
+  "sync.detailsDescription":
+    "A Pluggy busca os dados de cada banco no próprio horário, e depois o app lê a Pluggy.",
+  "sync.bankData": "Dados do banco de",
+  "sync.appRead": "Lido pelo app",
+  "sync.nextFetch": "Próxima busca no banco",
+  "sync.notReported": "Não informado",
   "date.today": "Hoje",
   "date.yesterday": "Ontem",
   "more.title": "Mais",

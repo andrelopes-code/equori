@@ -120,33 +120,37 @@ func externalAccounts(accounts []pluggy.Account) []domain.ExternalAccount {
 	return out
 }
 
-func (p pluggyPort) ItemState(ctx context.Context, id uuid.UUID, c domain.Credentials, itemID string) (string, *time.Time, error) {
-	var (
-		status string
-		at     *time.Time
-	)
+func (p pluggyPort) ItemState(ctx context.Context, id uuid.UUID, c domain.Credentials, itemID string) (app.ItemState, error) {
+	var state app.ItemState
 	err := p.session(ctx, id, c, func(s *pluggy.Session) error {
 		it, err := s.Item(ctx, itemID)
 		if err != nil {
 			return err
 		}
-		status = it.Status
-		at, err = updatedAt(it)
+		state.Status = it.Status
+		if state.UpdatedAt, err = itemInstant("lastUpdatedAt", it.LastUpdatedAt); err != nil {
+			return err
+		}
+		state.NextUpdateAt, err = itemInstant("nextAutoSyncAt", it.NextAutoSyncAt)
 		return err
 	})
 	if errors.Is(err, app.ErrItemNotFound) {
-		return "", nil, fmt.Errorf("%w: the item is gone", app.ErrProviderUnavailable)
+		return app.ItemState{}, fmt.Errorf("%w: the item is gone", app.ErrProviderUnavailable)
 	}
-	return status, at, err
+	return state, err
 }
 
 func updatedAt(it pluggy.Item) (*time.Time, error) {
-	if it.LastUpdatedAt == nil {
+	return itemInstant("lastUpdatedAt", it.LastUpdatedAt)
+}
+
+func itemInstant(field string, v *string) (*time.Time, error) {
+	if v == nil {
 		return nil, nil
 	}
-	at, err := time.Parse(time.RFC3339Nano, *it.LastUpdatedAt)
+	at, err := time.Parse(time.RFC3339Nano, *v)
 	if err != nil {
-		return nil, errors.New("pluggy GET /items/{id}: lastUpdatedAt is not an RFC 3339 instant")
+		return nil, fmt.Errorf("pluggy GET /items/{id}: %s is not an RFC 3339 instant", field)
 	}
 	return &at, nil
 }

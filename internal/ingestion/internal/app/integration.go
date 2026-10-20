@@ -48,8 +48,8 @@ type Aggregator interface {
 	Item(ctx context.Context, integrationID uuid.UUID, c domain.Credentials, itemID string) (domain.Connection, error)
 	// Accounts lists the item's external accounts, reserved balances included.
 	Accounts(ctx context.Context, integrationID uuid.UUID, c domain.Credentials, itemID string) ([]domain.ExternalAccount, error)
-	// ItemState returns the item's status and last update.
-	ItemState(ctx context.Context, integrationID uuid.UUID, c domain.Credentials, itemID string) (status string, updatedAt *time.Time, err error)
+	// ItemState returns the item's status, last update and next automatic update.
+	ItemState(ctx context.Context, integrationID uuid.UUID, c domain.Credentials, itemID string) (ItemState, error)
 	// ReadAccount returns an account of the item with its lines dated in [from, to], in minor
 	// units of scale; ErrAccountGone when the item no longer lists the account. A reserved balance
 	// is found by its identification and read without lines (A74).
@@ -188,4 +188,11 @@ func (s *Service) RotateSecrets(ctx context.Context) (int, error) {
 		}
 		return s.box.Seal(plain, row)
 	})
+}
+
+// ItemState is what the provider reports about an item.
+type ItemState struct {
+	Status       string
+	UpdatedAt    *time.Time
+	NextUpdateAt *time.Time
 }

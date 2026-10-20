@@ -48,6 +48,7 @@ type connectionView struct {
 	Name             string                `json:"name"`
 	ProviderStatus   string                `json:"provider_status"`
 	LastItemUpdateAt string                `json:"last_item_update_at"`
+	NextItemUpdateAt string                `json:"next_item_update_at"`
 	LastSyncedAt     string                `json:"last_synced_at"`
 	LastError        string                `json:"last_error"`
 	Accounts         []externalAccountView `json:"accounts"`

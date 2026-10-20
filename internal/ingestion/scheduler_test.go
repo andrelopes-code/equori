@@ -89,6 +89,27 @@ func TestTickSyncsOnlyUpdatedItems(t *testing.T) {
 	}
 }
 
+// A95: each check records when the provider will next update the item, also when the item
+// has no new data; the connection reports it.
+func TestCheckRecordsNextItemUpdate(t *testing.T) {
+	t.Parallel()
+	f := newSyncFixture(t)
+	f.line(pluggy.SubtypeChecking, bankLine("tx-1", "2026-10-20", "-120.00"))
+	f.mapTo(pluggy.SubtypeChecking, f.checking)
+	f.p.SetItemNextAutoSync(nubankItem, "2026-11-13T06:00:00.000Z")
+
+	f.tick()
+	if got := f.connection(f.h.Client, f.conn.ID); got.NextItemUpdateAt != "2026-11-13T06:00:00Z" {
+		t.Fatalf("after the first tick: connection %+v", got)
+	}
+	f.p.SetItemNextAutoSync(nubankItem, "2026-11-14T06:00:00.000Z")
+	f.tick()
+	got := f.connection(f.h.Client, f.conn.ID)
+	if got.NextItemUpdateAt != "2026-11-14T06:00:00Z" || got.LastItemUpdateAt != "2026-11-12T06:00:00Z" || len(f.batches(f.checking)) != 1 {
+		t.Fatalf("after a tick without new data: connection %+v, batches %d", got, len(f.batches(f.checking)))
+	}
+}
+
 // S58: two users sync on one tick; each ledger receives only its own lines, and neither
 // user can sync the other's connection.
 func TestTickOverTwoUsers(t *testing.T) {

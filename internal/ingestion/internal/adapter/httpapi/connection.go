@@ -37,7 +37,7 @@ func utc(t *time.Time) *time.Time {
 func toConnectionAPI(c domain.Connection) Connection {
 	out := Connection{
 		Id: c.ID, IntegrationId: c.IntegrationID, ItemId: c.ItemID, Name: c.Name, ProviderStatus: c.ProviderStatus,
-		LastItemUpdateAt: utc(c.LastItemUpdateAt), LastSyncedAt: utc(c.LastSyncedAt), LastError: ref(c.LastError), CreatedAt: c.CreatedAt.UTC(),
+		LastItemUpdateAt: utc(c.LastItemUpdateAt), NextItemUpdateAt: utc(c.NextItemUpdateAt), LastSyncedAt: utc(c.LastSyncedAt), LastError: ref(c.LastError), CreatedAt: c.CreatedAt.UTC(),
 		Accounts: make([]ExternalAccount, len(c.Accounts)),
 	}
 	for i, a := range c.Accounts {

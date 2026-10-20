@@ -49,7 +49,7 @@ WHERE user_id = @user_id AND id = @id;
 
 -- name: SaveConnectionState :exec
 UPDATE ingestion_connection SET provider_status = @provider_status, last_item_update_at = sqlc.narg(last_item_update_at),
-    last_synced_at = sqlc.narg(last_synced_at), last_error = sqlc.narg(last_error)
+    next_item_update_at = sqlc.narg(next_item_update_at), last_synced_at = sqlc.narg(last_synced_at), last_error = sqlc.narg(last_error)
 WHERE user_id = @user_id AND id = @id;
 
 -- name: ListAllConnections :many
