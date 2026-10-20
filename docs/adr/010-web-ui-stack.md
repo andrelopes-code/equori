@@ -5,7 +5,7 @@
 
 ## Context
 
-Sub-project 1 of the web track (foundation and ledger screens) needs a component library, client-side routing, server-state caching, charts, and a component test environment. ADR 008 fixes the delivery model: a Vite, React and TypeScript single-page application embedded in the binary.
+The web interface needs a component library, client-side routing, server-state caching, charts, and a component test environment. ADR 008 fixes the delivery model: a Vite, React and TypeScript single-page application embedded in the binary.
 
 ## Decision
 

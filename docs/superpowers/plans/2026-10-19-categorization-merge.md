@@ -8,7 +8,7 @@
 
 **Tech Stack:** Go, PostgreSQL, sqlc, oapi-codegen; apitests through `internal/apitest`.
 
-**Spec:** `docs/superpowers/specs/2026-10-19-web-categorization-design.md` (A75, S74).
+**Spec:** `docs/superpowers/specs/2026-10-19-categorization-design.md` (A75, S74).
 
 ## Global Constraints
 

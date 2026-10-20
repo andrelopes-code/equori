@@ -8,7 +8,7 @@
 
 **Tech Stack:** Go, PostgreSQL, sqlc, oapi-codegen, goose; apitests through `internal/apitest`.
 
-**Spec:** `docs/superpowers/specs/2026-10-19-web-categorization-design.md` (A77–A83, S76–S79); amendment A84 and the A82 and A83 contract changes below are added to the spec in Task 7.
+**Spec:** `docs/superpowers/specs/2026-10-19-categorization-design.md` (A77–A83, S76–S79); amendment A84 and the A82 and A83 contract changes below are added to the spec in Task 7.
 
 ## Global Constraints
 
@@ -83,6 +83,6 @@
 
 ### Task 7: Spec and domain docs
 
-- [ ] Spec: A82 and A83 contract decisions above, new A84, the `CategoryIcon` list; CZ6 Move uses A84 and Appearance uses `PUT /accounts/{id}/appearance`.
+- [ ] Spec: A82 and A83 contract decisions above, new A84, the `CategoryIcon` list.
 - [ ] `06-scenarios.md`: S76–S79; coverage paragraph S72–S79.
 - [ ] Commit `docs: record amendments A77 to A84`.

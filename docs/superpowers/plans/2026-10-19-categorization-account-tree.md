@@ -8,7 +8,7 @@
 
 **Tech Stack:** Go, PostgreSQL, sqlc, oapi-codegen, goose; tests through `internal/apitest` and raw SQL schema tests.
 
-**Spec:** `docs/superpowers/specs/2026-10-19-web-categorization-design.md` (sections A73, A74, A76, New scenarios, Delivery slice 1).
+**Spec:** `docs/superpowers/specs/2026-10-19-categorization-design.md` (sections A73, A74, A76, New scenarios, Delivery slice 1).
 
 ## Global Constraints
 
@@ -35,7 +35,7 @@
 ### Task 0: Workspace
 
 - [ ] **Step 1:** `git worktree add ../equori-categorization -b feat/web-categorization HEAD`.
-- [ ] **Step 2:** Copy `docs/superpowers/specs/2026-10-19-web-categorization-design.md` and `docs/superpowers/plans/2026-10-19-categorization-account-tree.md` from the main tree into the worktree.
+- [ ] **Step 2:** Copy `docs/superpowers/specs/2026-10-19-categorization-design.md` and `docs/superpowers/plans/2026-10-19-categorization-account-tree.md` from the main tree into the worktree.
 - [ ] **Step 3:** In the worktree, run `make check`. Expected: pass (baseline).
 - [ ] **Step 4:** Commit `docs: specify the categorization section and plan its first slice`.
 
