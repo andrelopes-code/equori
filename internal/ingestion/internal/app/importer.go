@@ -263,9 +263,19 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 		matched []*domain.ExternalRecord
 		taken   = map[uuid.UUID]bool{} // transactions matched by an earlier line of this batch (I07)
 		parts   []InstallmentLine
+		retried []*domain.ExternalRecord
+		again   []InstallmentLine
 	)
 	for i := range claimed {
 		rec := &claimed[i].Record
+		if r := lines[i]; sync && claimed[i].Existed && rec.State == domain.StateNeedsReview && r.Installment != nil && r.Amount < 0 && len(rec.Candidates) == 0 {
+			// A90: an installment line waiting for review is offered again; what refused it
+			// (a reconciled installment, a line of an earlier rule) may have changed.
+			withFacts(rec, r)
+			line := Line{AccountID: rec.AccountID, Currency: currency, Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description), Pending: r.Pending, DueDate: r.DueDate, Category: r.Category, Kind: r.Kind}
+			retried, again = append(retried, rec), append(again, InstallmentLine{RecordID: rec.ID, Line: line, Installment: *r.Installment})
+			continue
+		}
 		if claimed[i].Existed && rec.State != domain.StateReceived {
 			changed, err := s.update(ctx, sync, rec, lines[i])
 			if err != nil {
@@ -333,6 +343,20 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 	if err := s.installments(ctx, batch, parts, pending); err != nil {
 		return err
 	}
+	if err := s.installments(ctx, batch, again, retried); err != nil {
+		return err
+	}
+	for _, rec := range retried {
+		if rec.State == domain.StateNeedsReview {
+			batch.Counts.Ignored++
+			continue
+		}
+		// The record stays in its batch, which counts it as resolved.
+		if err := s.repo.ResolveRecord(ctx, *rec); err != nil {
+			return err
+		}
+		batch.Counts.Updated++
+	}
 
 	outcomes := make([]domain.ExternalRecord, len(pending))
 	for i, rec := range pending {
@@ -393,13 +417,16 @@ func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRec
 		return false, nil
 	}
 	var notes []string
+	applied := rec.LineKind
 	if settled || retype {
 		err := s.ledger.UpdateImportedPosting(ctx, rec.UserID, rec.ID, r.Pending, r.DueDate, r.Kind)
 		switch {
 		case errors.Is(err, ErrReconciled):
 			notes = append(notes, "the provider reports the line "+strings.ToLower(domain.ExternalStatusOf(r))+billNote(r.DueDate)+"; the posting is reconciled and keeps its status and statement")
+			retype = false
 		case errors.Is(err, ErrNotRetypable):
 			notes = append(notes, "the provider reports the line as a card payment; the transaction changed since its import and keeps its categories")
+			retype = false
 		case err != nil && !errors.Is(err, ErrNotFound):
 			return false, err
 		}
@@ -408,6 +435,10 @@ func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRec
 		notes = append(notes, fmt.Sprintf("the provider reports %d minor units; the ledger keeps %d", r.Amount, rec.Amount))
 	}
 	withFacts(rec, r)
+	if !retype {
+		// A type the ledger did not take stays unapplied, so a later sync offers it again (A88).
+		rec.LineKind = applied
+	}
 	rec.UnappliedChange = strings.Join(notes, "; ")
 	return true, nil
 }

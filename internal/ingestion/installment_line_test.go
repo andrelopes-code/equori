@@ -2,6 +2,7 @@ package ingestion_test
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/pluggy"
@@ -113,5 +114,47 @@ func TestInstallmentPlanFromTheReportedTotal(t *testing.T) {
 	want := []string{"1:-6001:2026-09:cleared", "2:-5999:2026-10:cleared", "3:-5999:2026-11:cleared"}
 	if got := f.installments(card); fmt.Sprint(got) != fmt.Sprint(want) {
 		t.Fatalf("installments = %v, want %v", got, want)
+	}
+}
+
+// A90: a sync offers again an installment line waiting for review: refused while its
+// installment was reconciled, it confirms the installment once the account is unlocked.
+func TestSyncRetriesAnInstallmentLineInReview(t *testing.T) {
+	f, card := newInstallmentSync(t)
+	f.line(pluggy.SubtypeCard, parcel("LOJA", 1, 3, "2026-08-24", "100.00", "POSTED", nil))
+	f.sync()
+	var out struct {
+		Items []struct {
+			ID        string `json:"id"`
+			Reference string `json:"reference"`
+			AmountDue struct {
+				Amount int64 `json:"amount"`
+			} `json:"amount_due"`
+		} `json:"items"`
+	}
+	f.h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/statements?from=2026-10&to=2026-10", nil, http.StatusOK, &out)
+	f.h.MustDo(http.MethodPost, "/api/v1/statements/"+out.Items[0].ID+"/reconcile",
+		map[string]any{"amount_due": map[string]any{"amount": out.Items[0].AmountDue.Amount, "currency": "BRL"}}, http.StatusOK, nil)
+
+	f.line(pluggy.SubtypeCard, parcel("LOJA", 2, 3, "2026-10-20", "101.00", "POSTED", nil))
+	f.sync()
+	if state, _ := f.recordOf("LOJA-2"); state != "needs_review" {
+		t.Fatalf("line of a reconciled installment = %s", state)
+	}
+
+	f.h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/unlock", map[string]any{"from": "2026-09-01"}, http.StatusOK, nil)
+	f.sync()
+	if state, _ := f.recordOf("LOJA-2"); state != "matched" {
+		t.Fatalf("retried line = %s", state)
+	}
+	if got := f.installments(card); got[1] != "2:-10100:2026-10:cleared" {
+		t.Fatalf("installments = %v", got)
+	}
+	var review int
+	if err := f.h.Pool.QueryRow(t.Context(), `SELECT coalesce(sum(needs_review), 0)::int FROM ingestion_batch WHERE account_id = $1`, card).Scan(&review); err != nil {
+		t.Fatal(err)
+	}
+	if review != 0 {
+		t.Fatalf("batches still count %d lines in review", review)
 	}
 }

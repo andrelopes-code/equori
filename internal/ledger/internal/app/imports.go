@@ -167,7 +167,8 @@ func (s *Service) RecordImportedBatch(ctx context.Context, userID int64, recs []
 			if payment {
 				draft.Postings[0].CardRole = domain.RolePayment
 			}
-			if rec.Posting.DueDate != nil && accounts[rec.Posting.AccountID].Kind == domain.KindCreditCard {
+			// A payment is billed by its date: a source may list it on the bill it pays (A89).
+			if rec.Posting.DueDate != nil && accounts[rec.Posting.AccountID].Kind == domain.KindCreditCard && !payment {
 				ref, err := s.statementDue(ctx, r, userID, rec.Posting.AccountID, *rec.Posting.DueDate)
 				if err != nil {
 					return err
@@ -381,7 +382,7 @@ func (s *Service) UpdateImportedPosting(ctx context.Context, userID int64, recor
 			status = domain.StatusCleared
 		}
 		var statementID uuid.UUID
-		if u.DueDate != nil && p.CardRole != "" {
+		if u.DueDate != nil && p.CardRole != "" && p.CardRole != domain.RolePayment && u.Kind != LineKindPayment {
 			ref, err := s.statementDue(ctx, r, userID, p.AccountID, *u.DueDate)
 			if err != nil {
 				return err

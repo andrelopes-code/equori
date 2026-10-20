@@ -120,6 +120,10 @@ func TestSyncKeepsACategorizedPayment(t *testing.T) {
 	if change == nil || *change == "" {
 		t.Fatal("no unapplied change on the record")
 	}
+	// The type stays unapplied, so a later sync offers it again.
+	if n := f.count(`SELECT count(*) FROM ingestion_external_record WHERE external_id = 'pay-1' AND line_kind IS NULL`); n != 1 {
+		t.Fatal("the refused type is recorded as applied")
+	}
 }
 
 // S46 (A88): a card line typed as a payment comes first; the checking line pairs with it and
@@ -194,5 +198,20 @@ func TestSyncPendingLineSupersededLater(t *testing.T) {
 	}
 	if p := f.cardPosting(tx, card); p.Status != "cleared" {
 		t.Fatalf("posting = %+v", p)
+	}
+}
+
+// A89: a payment is billed on the statement of its date even when the source lists it on the
+// bill it pays: Pluggy listed a payment of 2026-10-05 on the bill that closed on 2026-09-28.
+func TestPaymentBilledByItsDateNotItsBill(t *testing.T) {
+	f, card := newCardSync(t)
+	f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-dec", DueDate: "2026-12-10T00:00:00.000Z", TotalAmount: "0"})
+	paid := cardLine("pay-1", "2026-11-05", "-784.65", "POSTED", new("bill-nov"))
+	paid.OperationType = new("PAGAMENTO_FATURA")
+	f.line(pluggy.SubtypeCard, paid)
+	f.sync()
+	_, tx := f.recordOf("pay-1")
+	if p := f.cardPosting(tx, card); p.CardRole != "payment" || p.Statement != "2026-12" {
+		t.Fatalf("payment posting = %+v", p)
 	}
 }
