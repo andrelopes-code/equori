@@ -17,8 +17,12 @@ services:
       - /var/lib/postgresql:size=4g
     ports:
       - "127.0.0.1:${EQUORI_TEST_DB_PORT:-54339}:5432"
+    # Over TCP: initdb runs a temporary server on the Unix socket only, which a plain pg_isready
+    # takes for the real one just before it stops.
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "equori", "-d", "equori"]
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "equori", "-d", "equori"]
       interval: 2s
       timeout: 3s
       retries: 15
+      start_period: 30s
+      start_interval: 1s
