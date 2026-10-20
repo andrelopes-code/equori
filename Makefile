@@ -10,19 +10,22 @@ export EQUORI_TEST_DB_SERVICE ?= db-test
 export EQUORI_TEST_DATABASE_URL ?= postgres://equori:equori@127.0.0.1:$(EQUORI_TEST_DB_PORT)/postgres?sslmode=disable
 COMPOSE := docker compose -f compose.yaml -f compose.dev.yaml
 
-.PHONY: check check-commit static fmt fmt-check lint tidy-check gen gen-check test test-race vuln build dev db-up db-down db-test-up hooks tools web-deps web-build web-check web-verify web-dev
+.PHONY: check check-commit static fmt fmt-check lint tidy-check gen gen-check test test-race vuln build dev db-up db-down db-test-up hooks tools web-deps web-build web-check web-static web-test web-dev
 
 # Everything, the Go tests under -race included: CI runs it on every pull request. The web build
-# comes first: the Go tests compile package web, which embeds web/dist.
+# comes first: the Go tests compile package web, which embeds web/dist. The web tests come last:
+# beside the Go tests they starve for CPU and pass their timeouts.
 check: static web-build
-	$(MAKE) --no-print-directory -j2 test-race web-verify
+	$(MAKE) --no-print-directory -j2 test-race web-static
+	$(MAKE) --no-print-directory web-test
 
 # The pre-commit gate: the static checks, then at once the Go tests without -race, which the
 # test cache skips for unchanged packages, and the web checks when the commit touches web/ or
 # the API contract.
 check-commit: static
 	if git diff --cached --quiet -- web api/openapi.yaml; then $(MAKE) --no-print-directory test; \
-	else $(MAKE) --no-print-directory web-build && $(MAKE) --no-print-directory -j2 test web-verify; fi
+	else $(MAKE) --no-print-directory web-build && $(MAKE) --no-print-directory -j2 test web-static \
+	&& $(MAKE) --no-print-directory web-test; fi
 
 static: fmt-check tidy-check gen-check lint
 
@@ -94,14 +97,15 @@ web-build: $(WEB_DEPS)
 	find web/dist -mindepth 1 ! -name .gitkeep -delete
 	cd web && pnpm build
 
-web-check: web-build web-verify
+web-check: web-build web-static web-test
 
-# Typecheck, lint, format and tests of the built tree; eslint, prettier and tsc keep caches
-# under web/node_modules/.cache.
-web-verify: $(WEB_DEPS)
+# Typecheck, lint and format; eslint, prettier and tsc keep caches under web/node_modules/.cache.
+web-static: $(WEB_DEPS)
 	cd web && pnpm typecheck
 	cd web && pnpm lint
 	cd web && pnpm format:check
+
+web-test: $(WEB_DEPS)
 	cd web && pnpm test
 
 web-dev: $(WEB_DEPS)
