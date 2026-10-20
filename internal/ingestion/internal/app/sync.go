@@ -166,8 +166,22 @@ func (s *Service) syncAccount(ctx context.Context, c domain.Connection, ext doma
 	if err := s.withdraw(ctx, &batch, read.Seen, from, to); err != nil {
 		return domain.Batch{}, err
 	}
+	// A85: the bills date their statements before the lines are billed by date.
+	for _, b := range read.Bills {
+		if b.Due.Before(*ext.SyncFrom) {
+			continue
+		}
+		if err := s.ledger.RecordStatementFacts(ctx, c.UserID, accountID, b, target.Currency); err != nil {
+			return domain.Batch{}, fmt.Errorf("account %s bill due %s: %w", ext.ID, b.Due.Format(time.DateOnly), err)
+		}
+	}
 	if err := s.importRecords(ctx, &batch, target.Currency, read.Records, s.reserveTransfers(c, ext)); err != nil {
 		return domain.Batch{}, err
+	}
+	if len(read.Bills) > 0 {
+		if err := s.ledger.SettleReportedStatements(ctx, c.UserID, accountID); err != nil {
+			return domain.Batch{}, err
+		}
 	}
 	if b := read.Balance; b != nil && !b.Date.After(today) {
 		// The ledger decides an open assertion of this balance again on every sync (A77).

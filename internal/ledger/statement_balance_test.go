@@ -1,6 +1,7 @@
 package ledger_test
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
@@ -27,6 +28,11 @@ func TestS84RefundBeforePayment(t *testing.T) {
 	if s := ss["2026-12"]; s.Opening != 103475 || s.Charges != 228132 || s.Credits != 56957 || s.Prior != 7290 ||
 		s.Payments != 196185 || s.Early != 100000 || s.AmountDue != 78465 || s.Billed != 178465 || s.Status != "paid" {
 		t.Fatalf("2026-12 = %+v", s)
+	}
+	var detail statementView
+	c.h.MustDo(http.MethodGet, "/api/v1/statements/"+ss["2026-12"].ID, nil, http.StatusOK, &detail)
+	if detail.Billed != 178465 || detail.Early != 100000 || detail.Prior != 7290 || detail.Settled != 78465 {
+		t.Fatalf("2026-12 detail = %+v", detail)
 	}
 }
 
@@ -55,4 +61,34 @@ func TestS85EarlyAndPartialPayments(t *testing.T) {
 			t.Fatalf("2026-12 = %+v", s)
 		}
 	})
+}
+
+// S82 (A85, A86): the owner's facts re-date a statement; a purchase recorded by date before
+// moves with the new closing date, and later purchases follow the stored dates.
+func TestS82ManualPurchaseAfterRedating(t *testing.T) {
+	c := newCardSetup(t, "2026-11-12")
+	before := c.purchase("2026-11-02", 1000)
+	if got := c.h.Transaction(before).Postings[0].Statement; got != "2026-11" {
+		t.Fatalf("purchase of 2026-11-02 before the facts billed on %s", got)
+	}
+	c.h.MustDo(http.MethodPut, "/api/v1/statements/"+c.statementID(t, "2026-11")+"/facts",
+		map[string]any{"closing_date": "2026-11-01", "due_date": "2026-11-10", "total": apitest.BRL(0)}, http.StatusOK, nil)
+
+	if got := c.h.Transaction(before).Postings[0].Statement; got != "2026-12" {
+		t.Fatalf("purchase of 2026-11-02 after the facts billed on %s", got)
+	}
+	for date, want := range map[string]string{"2026-10-31": "2026-11", "2026-11-01": "2026-12"} {
+		if got := c.h.Transaction(c.purchase(date, 500)).Postings[0].Statement; got != want {
+			t.Errorf("purchase of %s billed on %s, want %s", date, got, want)
+		}
+	}
+	ss := statements(t, c.h, c.card)
+	if s := ss["2026-11"]; s.Charges != 500 {
+		t.Fatalf("2026-11 = %+v", s)
+	}
+
+	c.h.MustDo(http.MethodDelete, "/api/v1/statements/"+c.statementID(t, "2026-11")+"/facts", nil, http.StatusNoContent, nil)
+	if got := c.h.Transaction(before).Postings[0].Statement; got != "2026-11" {
+		t.Fatalf("purchase of 2026-11-02 after removing the facts billed on %s", got)
+	}
 }

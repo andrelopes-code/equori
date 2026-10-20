@@ -292,6 +292,26 @@ func (p ledgerPort) installmentError(err error) error {
 	return p.translate(err)
 }
 
+func (p ledgerPort) RecordStatementFacts(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Bill, c money.Currency) error {
+	total, err := money.New(b.Total, c)
+	if err != nil {
+		return err
+	}
+	f := ledger.StatementFacts{Closing: b.Closing, Due: b.Due, Total: total}
+	if b.Minimum != nil {
+		minimum, err := money.New(*b.Minimum, c)
+		if err != nil {
+			return err
+		}
+		f.Minimum = &minimum
+	}
+	return p.translate(p.l.RecordStatementFacts(ctx, userID, accountID, f))
+}
+
+func (p ledgerPort) SettleReportedStatements(ctx context.Context, userID int64, accountID uuid.UUID) error {
+	return p.translate(p.l.SettleReportedStatements(ctx, userID, accountID))
+}
+
 func (p ledgerPort) ReleaseRecord(ctx context.Context, userID int64, recordID uuid.UUID) error {
 	return p.translate(p.l.ReleaseRecord(ctx, userID, recordID))
 }

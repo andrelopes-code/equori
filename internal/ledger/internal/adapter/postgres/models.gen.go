@@ -155,6 +155,17 @@ type LedgerStatement struct {
 	CreatedAt        time.Time
 }
 
+type LedgerStatementFact struct {
+	UserID      int64
+	StatementID uuid.UUID
+	Source      string
+	ClosingDate *time.Time
+	DueDate     time.Time
+	Total       int64
+	Minimum     *int64
+	ReportedAt  time.Time
+}
+
 type LedgerTrade struct {
 	TransactionID uuid.UUID
 	UserID        int64

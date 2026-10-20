@@ -1062,6 +1062,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/statements/{id}/facts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Record the institution's facts for a statement, as the owner reads them (A85).
+         * @description The owner's facts win over an aggregator's. The statement takes their dates, and the
+         *     card postings billed by a date the new dates move are billed again (A86).
+         */
+        put: operations["setStatementFacts"];
+        post?: never;
+        /** Remove the owner's facts; the statement takes the aggregator's facts or the rule's dates. */
+        delete: operations["removeStatementFacts"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/transactions/{id}/attachments": {
         parameters: {
             query?: never;
@@ -2651,7 +2673,7 @@ export interface components {
             month: string;
             amount: components["schemas"]["Money"];
         };
-        /** @description Amounts are positive when owed by the user. Every card posting is billed on the statement of its cycle (A89). opening is the previous amount_due; credits and payments are those billed on the statement; amount_due = opening + charges − credits − payments, the card balance at closing; settled is the credits and payments of the next statement, up to today, that cover amount_due; unpaid = amount_due − settled, zero for a credit balance; prior_credits are the credits that settled the previous statement; early_payments are the payments beyond what settled it; billed_amount = amount_due + early_payments. */
+        /** @description Amounts are positive when owed by the user. Every card posting is billed on the statement of its cycle (A89). opening is the previous amount_due; credits and payments are those billed on the statement; amount_due = opening + charges − credits − payments, the card balance at closing; settled is the credits and payments of the next statement, up to today, that cover amount_due; unpaid = amount_due − settled, zero for a credit balance; prior_credits are the credits that settled the previous statement; early_payments are the payments beyond what settled it; billed_amount = amount_due + early_payments. institution and amount_difference (amount_due − institution.total) are present when the institution reported the statement (A92). */
         StatementSummary: {
             /** Format: uuid */
             id: string;
@@ -2676,6 +2698,27 @@ export interface components {
             status: "open" | "closed" | "paid" | "partially_paid" | "overdue" | "financed";
             /** @description The institution's amount due was confirmed (POST /statements/{id}/reconcile). */
             reconciled: boolean;
+            institution?: components["schemas"]["StatementFact"];
+            amount_difference?: components["schemas"]["Money"];
+        };
+        /** @description What the institution reported for the statement (A85); the owner's facts first. */
+        StatementFact: {
+            /** @enum {string} */
+            source: "aggregator" | "owner";
+            /** Format: date */
+            closing_date?: string;
+            /** Format: date */
+            due_date: string;
+            total: components["schemas"]["Money"];
+            minimum?: components["schemas"]["Money"];
+        };
+        StatementFactsInput: {
+            /** Format: date */
+            closing_date?: string;
+            /** Format: date */
+            due_date: string;
+            total: components["schemas"]["Money"];
+            minimum?: components["schemas"]["Money"];
         };
         StatementList: {
             items: components["schemas"]["StatementSummary"][];
@@ -5505,6 +5548,58 @@ export interface operations {
             404: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    setStatementFacts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatementFactsInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementDetail"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    removeStatementFacts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
         };
     };
     listAttachments: {

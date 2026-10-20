@@ -348,6 +348,20 @@ func (m *Module) LinkInstallment(ctx context.Context, userID int64, recordID, pl
 // InstallmentConfirmation is what an aggregator line reports about its installment (A90).
 type InstallmentConfirmation = app.InstallmentConfirmation
 
+// StatementFacts is what an institution reports for a card statement (A85).
+type StatementFacts = app.StatementFacts
+
+// RecordStatementFacts records an aggregator's bill on the card statement it is due on (A85, A86).
+func (m *Module) RecordStatementFacts(ctx context.Context, userID int64, cardID uuid.UUID, f StatementFacts) error {
+	return m.svc.RecordStatementFacts(ctx, userID, cardID, f)
+}
+
+// SettleReportedStatements moves pending card postings off reported statements and
+// reconciles the reported statements that match (A90, A92).
+func (m *Module) SettleReportedStatements(ctx context.Context, userID int64, cardID uuid.UUID) error {
+	return m.svc.SettleReportedStatements(ctx, userID, cardID)
+}
+
 // ReleaseRecord unlinks a withdrawn record from its posting (P6 A38).
 func (m *Module) ReleaseRecord(ctx context.Context, userID int64, recordID uuid.UUID) error {
 	return m.svc.ReleaseRecord(ctx, userID, recordID)

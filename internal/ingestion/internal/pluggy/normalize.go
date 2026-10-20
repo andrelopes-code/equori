@@ -156,3 +156,28 @@ func raw(t Transaction) map[string]string {
 	}
 	return m
 }
+
+// ReadBill reads a card bill (A85): its total and minimum rounded to the currency's scale.
+func ReadBill(b Bill, scale int, loc *time.Location) (domain.Bill, error) {
+	due, err := Date(b.DueDate, loc)
+	if err != nil {
+		return domain.Bill{}, fmt.Errorf("bill %s: %w", b.ID, err)
+	}
+	out := domain.Bill{Due: due}
+	if b.BillClosingDate != nil && *b.BillClosingDate != "" {
+		closing, err := Date(*b.BillClosingDate, loc)
+		if err != nil {
+			return domain.Bill{}, fmt.Errorf("bill %s: %w", b.ID, err)
+		}
+		out.Closing = &closing
+	}
+	if out.Total, err = Rounded(b.TotalAmount, scale); err != nil {
+		return domain.Bill{}, fmt.Errorf("bill %s: %w", b.ID, err)
+	}
+	if b.MinimumPaymentAmount != "" {
+		if minimum, err := Rounded(b.MinimumPaymentAmount, scale); err == nil {
+			out.Minimum = &minimum
+		}
+	}
+	return out, nil
+}

@@ -50,11 +50,13 @@ func (f syncFixture) purchaseTotal(card string) int64 {
 		WHERE pl.account_id = $1 AND p.account_id <> $1`, card))
 }
 
-func newInstallmentSync(t *testing.T) (syncFixture, string) {
+// newInstallmentSync has a card with the bills due on dues; a bill is a statement the
+// institution reported, which a pending line never stays on (A90).
+func newInstallmentSync(t *testing.T, dues ...string) (syncFixture, string) {
 	f := newSyncFixture(t)
 	card := f.h.Card("Nubank card", 3, 10, "next")
 	f.mapCard(card, "2026-08-01")
-	for _, due := range []string{"2026-09-10", "2026-10-10", "2026-11-10"} {
+	for _, due := range dues {
 		f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-" + due, DueDate: due + "T00:00:00.000Z", TotalAmount: "0"})
 	}
 	return f, card
@@ -63,7 +65,7 @@ func newInstallmentSync(t *testing.T) (syncFixture, string) {
 // S86: the installment that carries the rounding remainder confirms its installment with its
 // own amount, whichever line came first (A90, 5.2.5).
 func TestS86InstallmentRemainder(t *testing.T) {
-	f, card := newInstallmentSync(t)
+	f, card := newInstallmentSync(t, "2026-09-10", "2026-10-10")
 	f.line(pluggy.SubtypeCard, parcel("CEA", 2, 3, "2026-09-24", "59.99", "POSTED", new("bill-2026-10-10")))
 	f.line(pluggy.SubtypeCard, parcel("CEA", 1, 3, "2026-08-24", "60.01", "POSTED", new("bill-2026-09-10")))
 	f.line(pluggy.SubtypeCard, parcel("CEA", 3, 3, "2026-10-24", "59.99", "PENDING", nil))
@@ -83,7 +85,7 @@ func TestS86InstallmentRemainder(t *testing.T) {
 
 // S87 (A90): an installment line on a bill moves its installment to that bill's statement.
 func TestS87InstallmentOnTheInstitutionBill(t *testing.T) {
-	f, card := newInstallmentSync(t)
+	f, card := newInstallmentSync(t, "2026-09-10", "2026-11-10")
 	f.line(pluggy.SubtypeCard, parcel("SHOPEE", 1, 2, "2026-08-24", "86.14", "POSTED", new("bill-2026-09-10")))
 	f.sync()
 	if got := f.installments(card); fmt.Sprint(got) != "[1:-8614:2026-09:cleared 2:-8614:2026-10:cleared]" {
@@ -103,7 +105,7 @@ func TestS87InstallmentOnTheInstitutionBill(t *testing.T) {
 // A90: a plan created from installment 2 takes the purchase total the source reports, split
 // with the remainder on installment 1.
 func TestInstallmentPlanFromTheReportedTotal(t *testing.T) {
-	f, card := newInstallmentSync(t)
+	f, card := newInstallmentSync(t, "2026-10-10")
 	line := parcel("CEA", 2, 3, "2026-09-24", "59.99", "POSTED", new("bill-2026-10-10"))
 	line.CreditCardMetadata.TotalAmount = "179.99"
 	f.line(pluggy.SubtypeCard, line)

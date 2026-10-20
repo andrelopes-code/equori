@@ -176,13 +176,16 @@ func (p pluggyPort) ReadAccount(ctx context.Context, id uuid.UUID, c domain.Cred
 			}
 			for _, b := range bs {
 				bills[b.ID] = b
+				if bill, err := pluggy.ReadBill(b, scale, p.loc); err == nil {
+					out.Bills = append(out.Bills, bill)
+				}
 			}
 		}
 		ts, err := s.Transactions(ctx, a.ID, from, to)
 		if err != nil {
 			return err
 		}
-		out = domain.AccountRead{ItemStatus: it.Status}
+		out.ItemStatus = it.Status
 		if out.ItemUpdatedAt, err = updatedAt(it); err != nil {
 			return err
 		}

@@ -95,6 +95,14 @@ type Statement struct {
 	FinancedBy uuid.UUID
 	Reconciled bool // the institution's amount due was confirmed (P3 amendment A7)
 	Input      domain.StatementInput
+	Fact       *domain.StatementFact // what the institution reported, the owner's first (A85)
+}
+
+// RedatablePosting is a card posting billed by its date (A86).
+type RedatablePosting struct {
+	ID          uuid.UUID
+	Date        time.Time
+	StatementID uuid.UUID
 }
 
 // StatementPosting is one posting billed on a statement, with its transaction context.
@@ -319,6 +327,16 @@ type Repository interface {
 
 	EnsureStatement(ctx context.Context, userID int64, accountID uuid.UUID, d domain.StatementDates, due time.Time) (uuid.UUID, error)
 	Statements(ctx context.Context, userID int64, accountID uuid.UUID) ([]Statement, error)
+	// StatementClosings returns the closing date of each stored statement of the card.
+	StatementClosings(ctx context.Context, userID int64, accountID uuid.UUID) (map[domain.ReferenceMonth]time.Time, error)
+	// SaveStatementFact records a fact, replacing the one of its source (A85).
+	SaveStatementFact(ctx context.Context, f domain.StatementFact) error
+	DeleteStatementFact(ctx context.Context, userID int64, statementID uuid.UUID, source string) error
+	// RedatablePostings lists the card's postings billed by their date (A86).
+	RedatablePostings(ctx context.Context, userID int64, accountID uuid.UUID) ([]RedatablePosting, error)
+	// PendingOnReported lists the card's pending postings billed on a statement with facts (A90).
+	PendingOnReported(ctx context.Context, userID int64, accountID uuid.UUID) ([]RedatablePosting, error)
+	MovePostingStatement(ctx context.Context, userID int64, postingID, statementID uuid.UUID) error
 	StatementAccount(ctx context.Context, userID int64, statementID uuid.UUID) (uuid.UUID, error)
 	OpenStatementsFrom(ctx context.Context, userID int64, accountID uuid.UUID, from domain.ReferenceMonth, today time.Time) ([]Statement, error)
 	UpdateStatementDates(ctx context.Context, id uuid.UUID, closing, due time.Time) error

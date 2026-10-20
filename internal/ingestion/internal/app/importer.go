@@ -104,6 +104,11 @@ type Ledger interface {
 	// kind KindPayment retypes a card credit as a payment; ErrNotRetypable when the
 	// transaction changed since its import.
 	UpdateImportedPosting(ctx context.Context, userID int64, recordID uuid.UUID, pending bool, dueDate *time.Time, kind string) error
+	// RecordStatementFacts records a card bill on the ledger statement due on its due date (A85).
+	RecordStatementFacts(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Bill, c money.Currency) error
+	// SettleReportedStatements moves pending card postings off reported statements and
+	// reconciles the reported statements that match (A90, A92).
+	SettleReportedStatements(ctx context.Context, userID int64, accountID uuid.UUID) error
 	// ReleaseRecord unlinks a withdrawn record from its posting (A38).
 	ReleaseRecord(ctx context.Context, userID int64, recordID uuid.UUID) error
 	// RecordInstallment creates the installment purchase of the first line seen of it and

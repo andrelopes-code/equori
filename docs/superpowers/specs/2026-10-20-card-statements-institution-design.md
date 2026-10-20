@@ -100,7 +100,7 @@ A line that confirms an installment sets that installment's amount and statement
 
 A plan created from a line takes `creditCardMetadata.totalAmount` as its total when the source reports it, split by 5.2.5 (remainder to installment 1), and the line's own amount for its installment.
 
-An unconfirmed installment is never billed on a statement that has aggregator facts: it moves to the first statement without them, still projected. A `PENDING` line confirms an installment as `pending` only. C4's 2/2 86.13 therefore leaves 2026-10 and stays a pending projection on the open statement until the aggregator stops returning it (A38) or the owner cancels the plan (S14).
+A `PENDING` line confirms an installment as `pending` only. A pending card posting is never billed on a statement with aggregator facts: the institution has not billed it, so it moves to the first statement without them. C4's 2/2 86.13 therefore leaves 2026-10 and stays pending on the open statement until the aggregator stops returning it (A38) or the owner cancels the plan (S14). An installment no line confirmed stays where it is projected: it may have been billed before the sync's first day.
 
 ### A91 Provisional lines
 
@@ -108,7 +108,7 @@ A `PENDING` card line without a bill is superseded by a `POSTED` line of the sam
 
 ### A92 Statement check
 
-For each statement with facts, the statement read returns the facts and the differences: amount due − total, closing date, due date. The sync reconciles (A7) each statement after its closing date whose differences are zero, and reports the others in the batch. The admin and cards screens show the difference beside the figure.
+For each statement with facts, the statement read returns the facts and the amount difference (amount due − total); the dates are the facts' own (A86). The sync reconciles (A7) each statement after its closing date whose difference is zero. The admin and cards screens show the difference beside the figure.
 
 ### A93 Card sync start
 

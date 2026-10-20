@@ -86,11 +86,11 @@ func (s *Service) lineStatement(ctx context.Context, userID int64, in ImportedIn
 	if err != nil {
 		return domain.ReferenceMonth{}, err
 	}
-	ref, err := domain.StatementFor(in.LineDate, rules)
-	if err != nil {
+	ref, err := s.statementOn(ctx, s.repo, userID, in.CardAccountID, in.LineDate, rules)
+	if errors.Is(err, domain.ErrNoBillingRule) {
 		return domain.ReferenceMonth{}, validationError("card_account_id", "card has no billing cycle rule for the date")
 	}
-	return ref, nil
+	return ref, err
 }
 
 // InstallmentConfirmation is what an aggregator line reports about the installment it

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -48,11 +49,20 @@ func (s *Service) bill(ctx context.Context, r Repository, t *domain.Transaction)
 
 // statementOf: explicit statement, else the statement the date falls in (T04); a payment is
 // billed on the statement of its cycle, not on the one it pays (A89).
-func (s *Service) statementOf(_ context.Context, _ Repository, t *domain.Transaction, p *domain.Posting, rules domain.Rules) (domain.ReferenceMonth, error) {
+func (s *Service) statementOf(ctx context.Context, r Repository, t *domain.Transaction, p *domain.Posting, rules domain.Rules) (domain.ReferenceMonth, error) {
 	if p.Statement != nil {
 		return *p.Statement, nil
 	}
-	return domain.StatementFor(t.Date, rules)
+	return s.statementOn(ctx, r, t.UserID, p.AccountID, t.Date, rules)
+}
+
+// statementOn is the statement of a posting dated d by the card's stored dates (A86).
+func (s *Service) statementOn(ctx context.Context, r Repository, userID int64, cardID uuid.UUID, d time.Time, rules domain.Rules) (domain.ReferenceMonth, error) {
+	closing, err := r.StatementClosings(ctx, userID, cardID)
+	if err != nil {
+		return domain.ReferenceMonth{}, err
+	}
+	return domain.StatementOn(d, closing, rules)
 }
 
 func (s *Service) ensureStatement(ctx context.Context, r Repository, userID int64, accountID uuid.UUID, ref domain.ReferenceMonth, rules domain.Rules) (uuid.UUID, error) {

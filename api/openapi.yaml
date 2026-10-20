@@ -1931,6 +1931,50 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /statements/{id}/facts:
+    put:
+      tags: [ledger]
+      operationId: setStatementFacts
+      summary: Record the institution's facts for a statement, as the owner reads them (A85).
+      description: |
+        The owner's facts win over an aggregator's. The statement takes their dates, and the
+        card postings billed by a date the new dates move are billed again (A86).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatementFactsInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatementDetail"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [ledger]
+      operationId: removeStatementFacts
+      summary: Remove the owner's facts; the statement takes the aggregator's facts or the rule's dates.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Removed.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
   /transactions/{id}/attachments:
     get:
       tags: [ledger]
@@ -4796,7 +4840,8 @@ components:
         settled is the credits and payments of the next statement, up to today, that cover amount_due;
         unpaid = amount_due − settled, zero for a credit balance; prior_credits are the credits that
         settled the previous statement; early_payments are the payments beyond what settled it;
-        billed_amount = amount_due + early_payments.
+        billed_amount = amount_due + early_payments. institution and amount_difference (amount_due −
+        institution.total) are present when the institution reported the statement (A92).
       properties:
         id:
           type: string
@@ -4838,6 +4883,43 @@ components:
         reconciled:
           type: boolean
           description: The institution's amount due was confirmed (POST /statements/{id}/reconcile).
+        institution:
+          $ref: "#/components/schemas/StatementFact"
+        amount_difference:
+          $ref: "#/components/schemas/Money"
+    StatementFact:
+      type: object
+      description: What the institution reported for the statement (A85); the owner's facts first.
+      required: [source, due_date, total]
+      properties:
+        source:
+          type: string
+          enum: [aggregator, owner]
+        closing_date:
+          type: string
+          format: date
+        due_date:
+          type: string
+          format: date
+        total:
+          $ref: "#/components/schemas/Money"
+        minimum:
+          $ref: "#/components/schemas/Money"
+    StatementFactsInput:
+      type: object
+      additionalProperties: false
+      required: [due_date, total]
+      properties:
+        closing_date:
+          type: string
+          format: date
+        due_date:
+          type: string
+          format: date
+        total:
+          $ref: "#/components/schemas/Money"
+        minimum:
+          $ref: "#/components/schemas/Money"
     StatementList:
       type: object
       required: [items]

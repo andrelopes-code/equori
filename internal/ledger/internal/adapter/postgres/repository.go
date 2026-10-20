@@ -793,6 +793,17 @@ func (r *Repository) Statements(ctx context.Context, userID int64, accountID uui
 	if err != nil {
 		return nil, err
 	}
+	factRows, err := r.q.ListStatementFacts(ctx, ListStatementFactsParams{UserID: userID, AccountID: accountID})
+	if err != nil {
+		return nil, err
+	}
+	facts := make(map[uuid.UUID][]domain.StatementFact)
+	for _, f := range factRows {
+		facts[f.StatementID] = append(facts[f.StatementID], domain.StatementFact{
+			UserID: f.UserID, StatementID: f.StatementID, Source: f.Source, Closing: f.ClosingDate, Due: f.DueDate,
+			Total: f.Total, Minimum: f.Minimum,
+		})
+	}
 	byStatement := make(map[uuid.UUID][]domain.StatementLine)
 	for _, l := range lines {
 		byStatement[l.StatementID.UUID] = append(byStatement[l.StatementID.UUID], domain.StatementLine{Role: deref(l.CardRole), Amount: l.Amount, Date: l.BookedOn})
@@ -805,9 +816,52 @@ func (r *Repository) Statements(ctx context.Context, userID int64, accountID uui
 				Reference: domain.MonthOf(row.ReferenceMonth), Closing: row.ClosingDate, Due: row.DueDate,
 				Lines: byStatement[row.ID], Financed: row.FinancedByPlanID.Valid,
 			},
+			Fact: domain.EffectiveFact(facts[row.ID]),
 		}
 	}
 	return out, nil
+}
+
+func (r *Repository) StatementClosings(ctx context.Context, userID int64, accountID uuid.UUID) (map[domain.ReferenceMonth]time.Time, error) {
+	rows, err := r.q.ListStatementClosings(ctx, ListStatementClosingsParams{UserID: userID, AccountID: accountID})
+	out := make(map[domain.ReferenceMonth]time.Time, len(rows))
+	for _, row := range rows {
+		out[domain.MonthOf(row.ReferenceMonth)] = row.ClosingDate
+	}
+	return out, err
+}
+
+func (r *Repository) SaveStatementFact(ctx context.Context, f domain.StatementFact) error {
+	return r.q.UpsertStatementFact(ctx, UpsertStatementFactParams{
+		UserID: f.UserID, StatementID: f.StatementID, Source: f.Source, ClosingDate: f.Closing, DueDate: f.Due,
+		Total: f.Total, Minimum: f.Minimum,
+	})
+}
+
+func (r *Repository) DeleteStatementFact(ctx context.Context, userID int64, statementID uuid.UUID, source string) error {
+	return r.q.DeleteStatementFact(ctx, DeleteStatementFactParams{UserID: userID, StatementID: statementID, Source: source})
+}
+
+func (r *Repository) RedatablePostings(ctx context.Context, userID int64, accountID uuid.UUID) ([]app.RedatablePosting, error) {
+	rows, err := r.q.ListRedatablePostings(ctx, ListRedatablePostingsParams{UserID: userID, AccountID: accountID})
+	out := make([]app.RedatablePosting, len(rows))
+	for i, row := range rows {
+		out[i] = app.RedatablePosting{ID: row.ID, Date: row.BookedOn, StatementID: row.StatementID}
+	}
+	return out, err
+}
+
+func (r *Repository) PendingOnReported(ctx context.Context, userID int64, accountID uuid.UUID) ([]app.RedatablePosting, error) {
+	rows, err := r.q.ListPendingOnReported(ctx, ListPendingOnReportedParams{UserID: userID, AccountID: accountID})
+	out := make([]app.RedatablePosting, len(rows))
+	for i, row := range rows {
+		out[i] = app.RedatablePosting{ID: row.ID, StatementID: row.StatementID}
+	}
+	return out, err
+}
+
+func (r *Repository) MovePostingStatement(ctx context.Context, userID int64, postingID, statementID uuid.UUID) error {
+	return r.q.MovePostingStatement(ctx, MovePostingStatementParams{UserID: userID, ID: postingID, StatementID: nullUUID(statementID)})
 }
 
 func (r *Repository) StatementAccount(ctx context.Context, userID int64, statementID uuid.UUID) (uuid.UUID, error) {
