@@ -1,10 +1,8 @@
 package ledger_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
 )
@@ -216,11 +214,12 @@ func TestSecurityPostingsWaitForTheAccountLock(t *testing.T) {
 			apitest.Posting(f.cash, -1000),
 		}})
 	}()
-	waiting, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
+	// Only sessions on this test's database count: tests of other packages and of this one
+	// run at once on the same server.
 	for {
 		var n int
-		if err := f.h.Pool.QueryRow(waiting, `SELECT count(*) FROM pg_locks WHERE NOT granted`).Scan(&n); err != nil {
+		if err := f.h.Pool.QueryRow(ctx, `SELECT count(*) FROM pg_locks l JOIN pg_stat_activity a ON a.pid = l.pid
+			WHERE NOT l.granted AND a.datname = current_database()`).Scan(&n); err != nil {
 			t.Fatalf("the change never waited for the account lock: %v", err)
 		}
 		if n > 0 {

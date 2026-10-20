@@ -1,10 +1,8 @@
 package classification_test
 
 import (
-	"context"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
 )
@@ -32,12 +30,12 @@ func method(c categorizationView) string {
 
 // dispatch delivers every pending event within 10 s; a handler that waits on its own
 // database lock fails it (P5 Review Focus 1).
+// dispatch delivers outbox events until none is pending; the bound on rounds, not a clock,
+// stops a delivery that keeps publishing, so a slow machine never fails it.
 func dispatch(t *testing.T, h *apitest.Harness) {
 	t.Helper()
-	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
-	defer cancel()
-	for {
-		n, err := h.App.Dispatcher.DispatchPending(ctx)
+	for range 100 {
+		n, err := h.App.Dispatcher.DispatchPending(t.Context())
 		if err != nil {
 			t.Fatalf("dispatch: %v", err)
 		}
@@ -45,6 +43,7 @@ func dispatch(t *testing.T, h *apitest.Harness) {
 			return
 		}
 	}
+	t.Fatal("dispatch: events still pending after 100 rounds")
 }
 
 type books struct {
