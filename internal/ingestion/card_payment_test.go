@@ -151,3 +151,48 @@ func TestS46TypedPaymentPairsWithChecking(t *testing.T) {
 		t.Fatalf("paired transaction = %+v", v)
 	}
 }
+
+// S88 (A91): a pending line without a bill and the posted line of the same amount and sign
+// within 3 days are one line; a pending and a posted charge five days apart are two.
+func TestS88PendingPaymentSuperseded(t *testing.T) {
+	f, card := newCardSync(t)
+	pending := cardLine("pay-pending", "2026-11-05", "-784.65", "PENDING", nil)
+	pending.OperationType = new("PAGAMENTO_FATURA")
+	f.line(pluggy.SubtypeCard, pending)
+	f.line(pluggy.SubtypeCard, typedCardLine("pay-posted", "2026-11-05", "-784.65", "PAGAMENTO_FATURA"))
+	f.line(pluggy.SubtypeCard, cardLine("charge-pending", "2026-11-09", "50.00", "PENDING", nil))
+	f.line(pluggy.SubtypeCard, cardLine("charge-posted", "2026-11-03", "50.00", "POSTED", new("bill-nov")))
+	f.sync()
+
+	payments := f.count(`SELECT count(*) FROM ledger_posting p JOIN ledger_transaction t ON t.id = p.transaction_id
+		WHERE p.account_id = $1 AND p.amount = 78465 AND t.voided_at IS NULL`, card)
+	charges := f.count(`SELECT count(*) FROM ledger_posting p JOIN ledger_transaction t ON t.id = p.transaction_id
+		WHERE p.account_id = $1 AND p.amount = -5000 AND t.voided_at IS NULL`, card)
+	if payments != 1 || charges != 2 {
+		t.Fatalf("payments %d, charges %d; want 1 and 2", payments, charges)
+	}
+	if n := f.count(`SELECT count(*) FROM ingestion_external_record WHERE external_id = 'pay-pending' AND state <> 'withdrawn'`); n != 0 {
+		t.Fatalf("pending payment records = %d", n)
+	}
+}
+
+// A91: a pending line recorded by an earlier sync is withdrawn when its posted line arrives
+// under another id, and the posted line confirms its transaction.
+func TestSyncPendingLineSupersededLater(t *testing.T) {
+	f, card := newCardSync(t)
+	f.line(pluggy.SubtypeCard, cardLine("charge-pending", "2026-11-05", "50.00", "PENDING", nil))
+	f.sync()
+	_, tx := f.recordOf("charge-pending")
+
+	f.line(pluggy.SubtypeCard, cardLine("charge-posted", "2026-11-06", "50.00", "POSTED", new("bill-nov")))
+	f.sync()
+	if state, _ := f.recordOf("charge-pending"); state != "withdrawn" {
+		t.Fatalf("pending record = %s", state)
+	}
+	if state, matched := f.recordOf("charge-posted"); state != "matched" || matched != tx {
+		t.Fatalf("posted record = %s on %s, want matched on %s", state, matched, tx)
+	}
+	if p := f.cardPosting(tx, card); p.Status != "cleared" {
+		t.Fatalf("posting = %+v", p)
+	}
+}

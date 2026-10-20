@@ -155,6 +155,7 @@ func (s *Service) syncAccount(ctx context.Context, c domain.Connection, ext doma
 	if err != nil {
 		return domain.Batch{}, fmt.Errorf("account %s: %w", ext.ID, err)
 	}
+	read = withoutSuperseded(read)
 	batch, err := s.repo.InsertBatch(ctx, domain.Batch{
 		UserID: c.UserID, AccountID: accountID, Source: domain.SourceOpenFinance, ExternalAccountID: &ext.ID,
 		Currency: string(target.Currency), PeriodFrom: &from, PeriodTo: &to, Balance: domain.FileBalance{Status: domain.BalanceNone},
@@ -193,6 +194,27 @@ func (s *Service) syncAccount(ctx context.Context, c domain.Connection, ext doma
 	}
 	ext.LastSyncedOn = &today
 	return batch, s.repo.MarkAccountSynced(ctx, ext)
+}
+
+// withoutSuperseded drops the pending lines that a posted line of the same read replaces:
+// a stored one is then withdrawn and its transaction waits for the posted line (A91).
+func withoutSuperseded(read domain.AccountRead) domain.AccountRead {
+	gone := domain.Superseded(read.Records)
+	if len(gone) == 0 {
+		return read
+	}
+	dropped := map[string]bool{}
+	var kept []domain.NormalizedRecord
+	for i, r := range read.Records {
+		if gone[i] {
+			dropped[r.ExternalID] = true
+			continue
+		}
+		kept = append(kept, r)
+	}
+	read.Records = kept
+	read.Seen = slices.DeleteFunc(slices.Clone(read.Seen), func(id string) bool { return dropped[id] })
+	return read
 }
 
 // reserveTransfers resolves the reserve a bank line moves money into or out of from the
