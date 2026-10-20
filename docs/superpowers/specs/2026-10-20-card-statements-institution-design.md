@@ -83,7 +83,7 @@ Every card posting, payments included, is billed on the statement of its cycle: 
 |---|---|
 | Opening | The previous statement's amount due; 0 for the card's first statement. |
 | Amount due | Opening + charges − credits − payments, all billed on the statement. It is the card balance at closing and the institution's bill total (C6). |
-| Settled | Payments and credits billed on the next statement, in date order, up to the amount due, dated on or before today. |
+| Settled | Payments and credits billed on the next statement, dated after the closing date and on or before today, in date order, up to the amount due (A96). |
 | Unpaid | Amount due − settled (the API keeps the field name `unpaid`; it no longer carries a negative credit). |
 | Early payments | Payments billed on the statement beyond what settled the previous statement. |
 | Billed amount | Amount due + early payments: the bill total an institution shows before early payments (the Nubank app's "fatura"). |
@@ -100,7 +100,7 @@ A line that confirms an installment sets that installment's amount and statement
 
 A plan created from a line takes `creditCardMetadata.totalAmount` as its total when the source reports it, split by 5.2.5 (remainder to installment 1), and the line's own amount for its installment.
 
-A `PENDING` line confirms an installment as `pending` only. A pending card posting is never billed on a statement with aggregator facts: the institution has not billed it, so it moves to the first statement without them. C4's 2/2 86.13 therefore leaves 2026-10 and stays pending on the open statement until the aggregator stops returning it (A38) or the owner cancels the plan (S14). An installment no line confirmed stays where it is projected: it may have been billed before the sync's first day.
+A `PENDING` line confirms an installment as `pending` only. A pending card posting other than an installment is never billed on a statement with aggregator facts: the institution has not billed it, so it moves to the first statement without them. A pending installment stays on its statement (A97): its plan fixes the statement (T07), so a reported bill without it did not bill it. C4's 2/2 86.13 therefore stays on 2026-10, which reports a difference of 86.13 and is not reconciled until the owner cancels the plan (S14). An installment no line confirmed stays where it is projected: it may have been billed before the sync's first day.
 
 ### A91 Provisional lines
 
@@ -148,3 +148,21 @@ Each slice is one commit with `make check` green.
 - Table and column names, the shape of stored bills, the route for owner facts (extend `POST /statements/{id}/reconcile` or add one).
 - Where the figures of A89 are computed (SQL or Go), provided the API returns the same figures for any import order.
 - The layout of the differences on the admin and cards screens.
+
+### Amendment A96: settlement by inflows after the closing
+
+Owner data of 2026-10-20: cancelling the Shopee and OLX plans of C4 booked reversals of 86.13
+and 496.66, dated 2026-08-18 and 2026-09-18, on statement 2026-11. Settlement took them, being
+the oldest inflows of 2026-11, as the settlement of 2026-10, and reported the payment of
+784.65 as an early payment of 582.79. Only inflows dated after a statement's closing settle
+it; an earlier credit billed on the next statement nets against that statement.
+
+### Amendment A97: an unbilled installment stays on its statement
+
+Owner data of 2026-10-20: the institution cancelled the remaining installments of two refunded
+purchases, and the aggregator kept returning them as `PENDING`. A90 moved each one from the
+reported bill to the next statement, so every statement after it carried it and no statement
+showed a difference: statement 2026-11 read 1,763.55 against the institution's 1,187.88. A
+pending installment now stays on its statement; the reported bill shows the difference and is
+not reconciled, and cancelling the plan (S14) clears it. A pending line that is not an
+installment still moves (A90).

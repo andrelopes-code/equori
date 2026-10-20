@@ -51,6 +51,7 @@ func (q *Queries) HasOpeningBalance(ctx context.Context, arg HasOpeningBalancePa
 const listPendingOnReported = `-- name: ListPendingOnReported :many
 SELECT p.id, p.statement_id::uuid AS statement_id FROM ledger_posting p
 WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided AND p.status = 'pending'
+  AND p.installment_plan_id IS NULL
   AND EXISTS (SELECT 1 FROM ledger_statement_fact f WHERE f.statement_id = p.statement_id)
 `
 
@@ -64,7 +65,9 @@ type ListPendingOnReportedRow struct {
 	StatementID uuid.UUID
 }
 
-// A90: pending card postings billed on a statement the institution reported.
+// A90: pending card postings billed on a statement the institution reported. An installment
+// is billed on the statement its plan fixes (T07), so a reported bill without it did not bill
+// it, and it stays (A97).
 func (q *Queries) ListPendingOnReported(ctx context.Context, arg ListPendingOnReportedParams) ([]ListPendingOnReportedRow, error) {
 	rows, err := q.db.Query(ctx, listPendingOnReported, arg.UserID, arg.AccountID)
 	if err != nil {

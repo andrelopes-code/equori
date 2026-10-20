@@ -162,3 +162,30 @@ func TestSyncRetriesAnInstallmentLineInReview(t *testing.T) {
 		t.Fatalf("batches still count %d lines in review", review)
 	}
 }
+
+// A97: an installment that a reported bill closed without was not billed; it stays on its
+// statement, which reports the difference and is not reconciled, instead of moving to the
+// next statement as a pending purchase does (A90).
+func TestUnbilledInstallmentStaysOnTheReportedBill(t *testing.T) {
+	t.Parallel()
+	f := newSyncFixture(t)
+	card := f.h.Card("Nubank card", 3, 10, "next")
+	f.mapCard(card, "2026-08-01")
+	f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-sep", DueDate: "2026-09-10T00:00:00.000Z", TotalAmount: "0"})
+	f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-oct", DueDate: "2026-10-10T00:00:00.000Z", TotalAmount: "10.00"})
+	f.line(pluggy.SubtypeCard, parcel("SHOPEE", 1, 2, "2026-08-24", "86.14", "POSTED", new("bill-sep")))
+	refund := cardLine("refund-1", "2026-08-26", "-86.14", "POSTED", new("bill-sep"))
+	refund.OperationType = new("ESTORNO")
+	f.line(pluggy.SubtypeCard, refund)
+	f.line(pluggy.SubtypeCard, cardLine("charge-oct", "2026-09-15", "10.00", "POSTED", new("bill-oct")))
+	f.line(pluggy.SubtypeCard, parcel("SHOPEE", 2, 2, "2026-09-24", "86.13", "PENDING", nil))
+	f.sync()
+
+	want := []string{"1:-8614:2026-09:reconciled", "2:-8613:2026-10:pending"}
+	if got := f.installments(card); fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("installments = %v, want %v", got, want)
+	}
+	if s := f.statement(card, "2026-10"); s.Difference == nil || s.Difference.Amount != 8613 || s.Reconciled {
+		t.Fatalf("2026-10 = %+v (difference %+v)", s, s.Difference)
+	}
+}

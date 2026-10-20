@@ -31,9 +31,12 @@ WHERE p.user_id = @user_id AND p.account_id = @account_id AND NOT p.voided AND p
   AND p.external_record_id IS NULL AND p.installment_plan_id IS NULL AND p.status <> 'reconciled';
 
 -- name: ListPendingOnReported :many
--- A90: pending card postings billed on a statement the institution reported.
+-- A90: pending card postings billed on a statement the institution reported. An installment
+-- is billed on the statement its plan fixes (T07), so a reported bill without it did not bill
+-- it, and it stays (A97).
 SELECT p.id, p.statement_id::uuid AS statement_id FROM ledger_posting p
 WHERE p.user_id = @user_id AND p.account_id = @account_id AND NOT p.voided AND p.status = 'pending'
+  AND p.installment_plan_id IS NULL
   AND EXISTS (SELECT 1 FROM ledger_statement_fact f WHERE f.statement_id = p.statement_id);
 
 -- name: MovePostingStatement :exec

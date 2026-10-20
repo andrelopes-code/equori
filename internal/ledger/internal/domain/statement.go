@@ -52,7 +52,7 @@ type StatementSummary struct {
 
 // Summarize walks consecutive statements of one card in reference order. Each opens with
 // the previous one's amount due, and is settled by the credits and payments of the next
-// statement in date order, up to today (A89).
+// statement dated after its closing, in date order, up to today (A89, A96).
 func Summarize(in []StatementInput, today time.Time) []StatementSummary {
 	out := make([]StatementSummary, len(in))
 	var opening int64
@@ -81,7 +81,7 @@ func Summarize(in []StatementInput, today time.Time) []StatementSummary {
 		if i+1 < len(in) {
 			next = in[i+1].Lines
 		}
-		credits, payments := settle(&out[i], next, today)
+		credits, payments := settle(&out[i], in[i].Closing, next, today)
 		out[i].Unpaid = max(out[i].AmountDue, 0) - out[i].Settled
 		if i+1 < len(out) {
 			out[i+1].PriorCredits = credits
@@ -95,16 +95,18 @@ func Summarize(in []StatementInput, today time.Time) []StatementSummary {
 	return out
 }
 
-// settle covers sum's amount due with the inflows of the next statement dated on or before
-// today, oldest first, and returns how much of its credits and payments it used.
-func settle(sum *StatementSummary, next []StatementLine, today time.Time) (credits, payments int64) {
+// settle covers sum's amount due with the inflows of the next statement dated after closing
+// and on or before today, oldest first, and returns how much of its credits and payments it
+// used. An inflow dated on or before closing, such as the reversal of a cancelled installment,
+// nets against the next statement instead (A96).
+func settle(sum *StatementSummary, closing time.Time, next []StatementLine, today time.Time) (credits, payments int64) {
 	inflows := slices.SortedStableFunc(slices.Values(next), func(a, b StatementLine) int { return a.Date.Compare(b.Date) })
 	left := max(sum.AmountDue, 0)
 	for _, l := range inflows {
 		if left == 0 || l.Date.After(today) {
 			break
 		}
-		if l.Role != RoleCredit && l.Role != RolePayment {
+		if (l.Role != RoleCredit && l.Role != RolePayment) || !l.Date.After(closing) {
 			continue
 		}
 		used := min(l.Amount, left)

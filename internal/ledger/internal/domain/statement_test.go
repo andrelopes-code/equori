@@ -141,3 +141,20 @@ func TestSummarizeEmptyStatementCarriesItsOpening(t *testing.T) {
 		t.Fatalf("summaries = %+v", got)
 	}
 }
+
+// A96: only inflows dated after a statement's closing settle it. A credit billed on the next
+// statement but dated before the closing, such as the reversal of a cancelled installment,
+// nets against that statement and leaves the payment whole.
+func TestSummarizeCreditBeforeClosingDoesNotSettle(t *testing.T) {
+	t.Parallel()
+	got := Summarize([]StatementInput{
+		input("2026-11", charge("2026-10-14", 150000)),
+		input("2026-12", charge("2026-10-13", 49666), credit("2026-10-20", 49666), payment("2026-11-10", 150000)),
+	}, day("2026-11-12"))
+	if s := got[0]; s.Settled != 150000 || s.Status != StatusPaid {
+		t.Fatalf("2026-11 = %+v", s)
+	}
+	if s := got[1]; s.AmountDue != 0 || s.PriorCredits != 0 || s.EarlyPayments != 0 || s.BilledAmount != 0 {
+		t.Fatalf("2026-12 = %+v", s)
+	}
+}
