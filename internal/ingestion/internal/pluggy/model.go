@@ -100,10 +100,11 @@ type CardMetadata struct {
 }
 
 type Bill struct {
-	ID              string  `json:"id"`
-	DueDate         string  `json:"dueDate"`
-	BillClosingDate *string `json:"billClosingDate"`
-	TotalAmount     Decimal `json:"totalAmount"`
+	ID                   string  `json:"id"`
+	DueDate              string  `json:"dueDate"`
+	BillClosingDate      *string `json:"billClosingDate"`
+	TotalAmount          Decimal `json:"totalAmount"`
+	MinimumPaymentAmount Decimal `json:"minimumPaymentAmount"`
 }
 
 // Item statuses that allow a sync (P6 A43).

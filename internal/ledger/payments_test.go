@@ -29,7 +29,8 @@ func TestStatementPaymentEndpoint(t *testing.T) {
 	var tx apitest.TransactionView
 	r.Decode(t, &tx)
 	card := cardPostings(tx, c.card)[0]
-	if card.CardRole != "payment" || card.Statement != "2026-11" || card.Amount.Amount != 150000 {
+	// A89: made after the closing of 2026-11, the payment is billed on 2026-12 and settles 2026-11.
+	if card.CardRole != "payment" || card.Statement != "2026-12" || card.Amount.Amount != 150000 {
 		t.Fatalf("payment posting = %+v", card)
 	}
 	if s := statements(t, c.h, c.card)["2026-11"]; s.Status != "paid" {
@@ -45,7 +46,7 @@ func TestEarlyPaymentInTwoParts(t *testing.T) {
 		map[string]any{"date": "2026-10-28", "from_account_id": c.checking, "amount": apitest.BRL(30000)}, http.StatusCreated, nil)
 	c.h.MustDo(http.MethodPost, "/api/v1/statements/"+c.statementID(t, "2026-11")+"/payments",
 		map[string]any{"date": "2026-11-10", "from_account_id": c.checking, "amount": apitest.BRL(120001)}, http.StatusCreated, nil)
-	if s := statements(t, c.h, c.card)["2026-11"]; s.Status != "paid" || s.Payments != 150001 {
+	if s := statements(t, c.h, c.card)["2026-11"]; s.Status != "paid" || s.Payments != 30000 || s.Early != 30000 || s.AmountDue != 120001 {
 		t.Fatalf("statement = %+v", s)
 	}
 }
@@ -61,7 +62,7 @@ func TestRevolvingInterestCharge(t *testing.T) {
 	if s := ss["2026-11"]; s.Status != "overdue" || s.Unpaid != 50000 {
 		t.Fatalf("2026-11 = %+v", s)
 	}
-	if s := ss["2026-12"]; s.Opening != 50000 || s.Charges != 6250 || s.AmountDue != 56250 {
+	if s := ss["2026-12"]; s.Opening != 150000 || s.Charges != 6250 || s.Payments != 100000 || s.AmountDue != 56250 {
 		t.Fatalf("2026-12 = %+v", s)
 	}
 }
@@ -75,7 +76,7 @@ func TestStatementFinancing(t *testing.T) {
 		map[string]any{"date": "2026-11-12", "installment_count": 6, "installment_amount": apitest.BRL(36340)}, http.StatusCreated, &res)
 
 	cards := cardPostings(res.Transaction, c.card)
-	if len(cards) != 7 || cards[0].CardRole != "payment" || cards[0].Amount.Amount != 200000 || cards[0].Statement != "2026-11" {
+	if len(cards) != 7 || cards[0].CardRole != "payment" || cards[0].Amount.Amount != 200000 || cards[0].Statement != "2026-12" {
 		t.Fatalf("settlement posting = %+v", cards)
 	}
 	for k, p := range cards[1:] {

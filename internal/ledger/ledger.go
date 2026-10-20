@@ -121,14 +121,14 @@ var (
 	ErrValidation        = domain.ErrValidation
 	ErrVoided            = domain.ErrVoided
 	ErrAlreadyReconciled = domain.ErrAlreadyReconciled
-	// ErrInstallmentUnavailable and ErrAmountMismatch refuse a line for an installment (P6 A40).
+	// ErrInstallmentUnavailable refuses a line for an installment (P6 A40).
 	ErrInstallmentUnavailable = app.ErrInstallmentUnavailable
-	ErrAmountMismatch         = app.ErrAmountMismatch
 	ErrAlreadyMatched         = app.ErrAlreadyMatched
 	ErrVersionConflict        = domain.ErrVersionConflict
 	ErrNotCategorizable       = domain.ErrNotCategorizable
 	ErrPairingAmbiguous       = app.ErrPairingAmbiguous
 	ErrReconciled             = domain.ErrReconciled
+	ErrNotRetypable           = domain.ErrNotRetypable
 	ErrMixedInstruments       = app.ErrMixedInstruments
 )
 
@@ -341,8 +341,30 @@ func (m *Module) RecordImportedInstallment(ctx context.Context, userID int64, in
 }
 
 // LinkInstallment links an aggregator line to installment number of a plan (P6 A40).
-func (m *Module) LinkInstallment(ctx context.Context, userID int64, recordID, planID uuid.UUID, number int, amount money.Money) (uuid.UUID, error) {
-	return m.svc.LinkInstallment(ctx, userID, recordID, planID, number, amount)
+func (m *Module) LinkInstallment(ctx context.Context, userID int64, recordID, planID uuid.UUID, number int, c InstallmentConfirmation) (uuid.UUID, error) {
+	return m.svc.LinkInstallment(ctx, userID, recordID, planID, number, c)
+}
+
+// InstallmentConfirmation is what an aggregator line reports about its installment (A90).
+type InstallmentConfirmation = app.InstallmentConfirmation
+
+// StatementFacts is what an institution reports for a card statement (A85).
+type StatementFacts = app.StatementFacts
+
+// RecordStatementFacts records an aggregator's bill on the card statement it is due on (A85, A86).
+func (m *Module) RecordStatementFacts(ctx context.Context, userID int64, cardID uuid.UUID, f StatementFacts) error {
+	return m.svc.RecordStatementFacts(ctx, userID, cardID, f)
+}
+
+// RecordCardOpening opens a card without an opening balance with a bill's total (A93).
+func (m *Module) RecordCardOpening(ctx context.Context, userID int64, cardID uuid.UUID, due time.Time, total money.Money) error {
+	return m.svc.RecordCardOpening(ctx, userID, cardID, due, total)
+}
+
+// SettleReportedStatements moves pending card postings off reported statements and
+// reconciles the reported statements that match (A90, A92).
+func (m *Module) SettleReportedStatements(ctx context.Context, userID int64, cardID uuid.UUID) error {
+	return m.svc.SettleReportedStatements(ctx, userID, cardID)
 }
 
 // ReleaseRecord unlinks a withdrawn record from its posting (P6 A38).

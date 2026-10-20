@@ -55,12 +55,15 @@ type LedgerBillingCycleRule struct {
 	UserID               int64
 	AccountID            uuid.UUID
 	EffectiveFrom        time.Time
-	ClosingDay           int16
+	ClosingDay           *int16
 	DueDay               int16
 	ClosingDayAssignment string
 	DueDateAdjustment    string
 	Calendar             string
 	CreatedAt            time.Time
+	ClosingMode          string
+	ClosingDaysBeforeDue *int16
+	ClosingAdjustment    string
 }
 
 type LedgerCard struct {
@@ -153,6 +156,17 @@ type LedgerStatement struct {
 	DueDate          time.Time
 	FinancedByPlanID uuid.NullUUID
 	CreatedAt        time.Time
+}
+
+type LedgerStatementFact struct {
+	UserID      int64
+	StatementID uuid.UUID
+	Source      string
+	ClosingDate *time.Time
+	DueDate     time.Time
+	Total       int64
+	Minimum     *int64
+	ReportedAt  time.Time
 }
 
 type LedgerTrade struct {

@@ -147,13 +147,28 @@ func (s *Service) syncAccount(ctx context.Context, c domain.Connection, ext doma
 	}
 	defer unlock()
 
-	read, err := s.agg.ReadAccount(ctx, c.IntegrationID, creds, c.ItemID, ext.ExternalID, from, to, target.Currency.MinorUnits())
+	// A93: a card's first sync reads back to the cycle that holds sync_from.
+	first := target.Kind == cardKind && ext.LastSyncedOn == nil
+	readFrom := from
+	if first {
+		readFrom = from.AddDate(0, 0, -cycleLookback)
+	}
+	read, err := s.agg.ReadAccount(ctx, c.IntegrationID, creds, c.ItemID, ext.ExternalID, readFrom, to, target.Currency.MinorUnits())
 	if errors.Is(err, ErrAccountGone) && ext.Subtype == domain.SubtypeReservedBalance {
 		// A reserved balance the item stopped reporting syncs without a balance (D2).
 		read, err = domain.AccountRead{}, nil
 	}
 	if err != nil {
 		return domain.Batch{}, fmt.Errorf("account %s: %w", ext.ID, err)
+	}
+	read = withoutSuperseded(read)
+	var opening *domain.Bill
+	firstDue := *ext.SyncFrom
+	if first {
+		read, opening, from = fromCycleStart(read, *ext.SyncFrom, from)
+		if opening != nil {
+			firstDue = opening.Due
+		}
 	}
 	batch, err := s.repo.InsertBatch(ctx, domain.Batch{
 		UserID: c.UserID, AccountID: accountID, Source: domain.SourceOpenFinance, ExternalAccountID: &ext.ID,
@@ -165,8 +180,27 @@ func (s *Service) syncAccount(ctx context.Context, c domain.Connection, ext doma
 	if err := s.withdraw(ctx, &batch, read.Seen, from, to); err != nil {
 		return domain.Batch{}, err
 	}
+	// A85: the bills date their statements before the lines are billed by date.
+	for _, b := range read.Bills {
+		if b.Due.Before(firstDue) {
+			continue
+		}
+		if err := s.ledger.RecordStatementFacts(ctx, c.UserID, accountID, b, target.Currency); err != nil {
+			return domain.Batch{}, fmt.Errorf("account %s bill due %s: %w", ext.ID, b.Due.Format(time.DateOnly), err)
+		}
+	}
+	if opening != nil {
+		if err := s.ledger.RecordCardOpening(ctx, c.UserID, accountID, *opening, target.Currency); err != nil {
+			return domain.Batch{}, fmt.Errorf("account %s opening: %w", ext.ID, err)
+		}
+	}
 	if err := s.importRecords(ctx, &batch, target.Currency, read.Records, s.reserveTransfers(c, ext)); err != nil {
 		return domain.Batch{}, err
+	}
+	if len(read.Bills) > 0 {
+		if err := s.ledger.SettleReportedStatements(ctx, c.UserID, accountID); err != nil {
+			return domain.Batch{}, err
+		}
 	}
 	if b := read.Balance; b != nil && !b.Date.After(today) {
 		// The ledger decides an open assertion of this balance again on every sync (A77).
@@ -193,6 +227,75 @@ func (s *Service) syncAccount(ctx context.Context, c domain.Connection, ext doma
 	}
 	ext.LastSyncedOn = &today
 	return batch, s.repo.MarkAccountSynced(ctx, ext)
+}
+
+const (
+	cardKind = "credit_card"
+	// cycleLookback reaches the closing of the bill before sync_from on a first card sync.
+	cycleLookback = 40
+	// closingMargin keeps the unbilled lines a calendar shift may place before a reported closing.
+	closingMargin = 7
+)
+
+// fromCycleStart keeps, on a card's first sync, the lines of the bills due after the last
+// bill closed before syncFrom and the unbilled lines from that bill's closing on, and
+// returns that bill, which opens the card (A93). Without such a bill the read keeps the
+// lines from syncFrom.
+func fromCycleStart(read domain.AccountRead, syncFrom, from time.Time) (domain.AccountRead, *domain.Bill, time.Time) {
+	var prev *domain.Bill
+	for i, b := range read.Bills {
+		closed := b.Due
+		if b.Closing != nil {
+			closed = *b.Closing
+		}
+		if closed.Before(syncFrom) && (prev == nil || b.Due.After(prev.Due)) {
+			prev = &read.Bills[i]
+		}
+	}
+	start := syncFrom
+	if prev != nil {
+		start = prev.Due.AddDate(0, 0, -closingMargin)
+		if prev.Closing != nil {
+			start = prev.Closing.AddDate(0, 0, -closingMargin)
+		}
+	}
+	var kept []domain.NormalizedRecord
+	for _, r := range read.Records {
+		switch {
+		case r.DueDate != nil && prev != nil:
+			if r.DueDate.After(prev.Due) {
+				kept = append(kept, r)
+			}
+		case !r.Date.Before(start):
+			kept = append(kept, r)
+		}
+	}
+	read.Records = kept
+	if start.Before(from) {
+		from = start
+	}
+	return read, prev, from
+}
+
+// withoutSuperseded drops the pending lines that a posted line of the same read replaces:
+// a stored one is then withdrawn and its transaction waits for the posted line (A91).
+func withoutSuperseded(read domain.AccountRead) domain.AccountRead {
+	gone := domain.Superseded(read.Records)
+	if len(gone) == 0 {
+		return read
+	}
+	dropped := map[string]bool{}
+	var kept []domain.NormalizedRecord
+	for i, r := range read.Records {
+		if gone[i] {
+			dropped[r.ExternalID] = true
+			continue
+		}
+		kept = append(kept, r)
+	}
+	read.Records = kept
+	read.Seen = slices.DeleteFunc(slices.Clone(read.Seen), func(id string) bool { return dropped[id] })
+	return read
 }
 
 // reserveTransfers resolves the reserve a bank line moves money into or out of from the

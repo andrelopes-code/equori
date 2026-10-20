@@ -17,6 +17,10 @@ function statement(reference: string, status: Statement["status"]): Statement {
     amount_due: zero,
     payments: zero,
     unpaid: zero,
+    settled: zero,
+    prior_credits: zero,
+    early_payments: zero,
+    billed_amount: zero,
     status,
     reconciled: false,
   };

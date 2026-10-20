@@ -15,13 +15,55 @@ import (
 
 func toStatementAPI(v app.StatementView, currency money.Currency) StatementSummary {
 	m := func(amount int64) Money { return Money{Amount: amount, Currency: string(currency)} }
-	return StatementSummary{
+	out := StatementSummary{
 		Id: v.ID, AccountId: v.AccountID, Reference: v.Input.Reference.String(),
 		ClosingDate: apiDate(v.Input.Closing), DueDate: apiDate(v.Input.Due),
 		Opening: m(v.Summary.Opening), Charges: m(v.Summary.Charges), Credits: m(v.Summary.Credits), AmountDue: m(v.Summary.AmountDue),
 		Payments: m(v.Summary.Payments), Unpaid: m(v.Summary.Unpaid), Status: StatementSummaryStatus(v.Summary.Status),
-		Reconciled: v.Reconciled,
+		Reconciled: v.Reconciled, Settled: m(v.Summary.Settled), PriorCredits: m(v.Summary.PriorCredits),
+		EarlyPayments: m(v.Summary.EarlyPayments), BilledAmount: m(v.Summary.BilledAmount),
 	}
+	if f := v.Fact; f != nil {
+		fact := StatementFact{Source: StatementFactSource(f.Source), ClosingDate: apiOptDate(f.Closing), DueDate: apiDate(f.Due), Total: m(f.Total)}
+		if f.Minimum != nil {
+			minimum := m(*f.Minimum)
+			fact.Minimum = &minimum
+		}
+		difference := m(v.Summary.AmountDue - f.Total)
+		out.Institution, out.AmountDifference = &fact, &difference
+	}
+	return out
+}
+
+func (s *Server) SetStatementFacts(ctx context.Context, req SetStatementFactsRequestObject) (SetStatementFactsResponseObject, error) {
+	total, err := fromMoneyAPI("total", req.Body.Total)
+	if err != nil {
+		return nil, err
+	}
+	f := app.StatementFacts{Closing: optDate(req.Body.ClosingDate), Due: dateOf(req.Body.DueDate), Total: total}
+	if req.Body.Minimum != nil {
+		minimum, err := fromMoneyAPI("minimum", *req.Body.Minimum)
+		if err != nil {
+			return nil, err
+		}
+		f.Minimum = &minimum
+	}
+	userID := auth.MustUserID(ctx)
+	if err := s.svc.SetOwnerFacts(ctx, userID, req.Id, f); err != nil {
+		return nil, err
+	}
+	out, err := s.statementDetail(ctx, userID, req.Id)
+	if err != nil {
+		return nil, err
+	}
+	return SetStatementFacts200JSONResponse(out), nil
+}
+
+func (s *Server) RemoveStatementFacts(ctx context.Context, req RemoveStatementFactsRequestObject) (RemoveStatementFactsResponseObject, error) {
+	if err := s.svc.RemoveOwnerFacts(ctx, auth.MustUserID(ctx), req.Id); err != nil {
+		return nil, err
+	}
+	return RemoveStatementFacts204Response{}, nil
 }
 
 func optMonth(field string, s *string) (*domain.ReferenceMonth, error) {
@@ -79,6 +121,8 @@ func (s *Server) statementDetail(ctx context.Context, userID int64, id uuid.UUID
 		DueDate: summary.DueDate, Opening: summary.Opening, Charges: summary.Charges,
 		Credits: summary.Credits, AmountDue: summary.AmountDue, Payments: summary.Payments, Unpaid: summary.Unpaid,
 		Status: StatementDetailStatus(summary.Status), Reconciled: summary.Reconciled, Postings: make([]StatementPosting, len(postings)),
+		Settled: summary.Settled, PriorCredits: summary.PriorCredits, EarlyPayments: summary.EarlyPayments,
+		BilledAmount: summary.BilledAmount, Institution: summary.Institution, AmountDifference: summary.AmountDifference,
 	}
 	for i, p := range postings {
 		sp := StatementPosting{

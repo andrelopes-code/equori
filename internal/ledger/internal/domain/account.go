@@ -67,6 +67,9 @@ const (
 	RoleFees                 SystemRole = "fees"
 	RoleRealizedGains        SystemRole = "realized_gains"
 	RoleRealizedLosses       SystemRole = "realized_losses"
+	// RoleTransfersInTransit holds the other side of a card payment until the paying
+	// account's line pairs with it (A88).
+	RoleTransfersInTransit SystemRole = "transfers_in_transit"
 )
 
 var systemRoles = []struct {
@@ -76,6 +79,7 @@ var systemRoles = []struct {
 }{
 	{RoleOpeningBalances, ClassEquity, "Opening balances"},
 	{RoleAdjustments, ClassEquity, "Adjustments"},
+	{RoleTransfersInTransit, ClassEquity, "Transfers in transit"},
 	{RoleUncategorizedExpense, ClassExpense, "Uncategorized expense"},
 	{RoleInterest, ClassExpense, "Interest"},
 	{RoleTaxes, ClassExpense, "Taxes"},
@@ -191,6 +195,12 @@ func (a Account) HoldsSecurity() bool {
 
 // IsBalance reports whether the account holds money the user has or owes (chapter 2).
 func (a Account) IsBalance() bool { return a.Class == ClassAsset || a.Class == ClassLiability }
+
+// IsReplaceable reports whether a transfer replaces the account's postings: a category, or
+// the transit account a card payment waits on (A88).
+func (a Account) IsReplaceable() bool {
+	return a.IsCategory() || a.SystemRole == RoleTransfersInTransit
+}
 
 // IsOpenOn includes both the opening and the closing date.
 func (a Account) IsOpenOn(d time.Time) bool {

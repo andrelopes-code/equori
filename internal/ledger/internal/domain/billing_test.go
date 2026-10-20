@@ -184,3 +184,37 @@ func TestAllocate(t *testing.T) {
 		}
 	}
 }
+
+// A87: the closing date counted back from the nominal due date, before any calendar shift.
+func TestDatesForBeforeDue(t *testing.T) {
+	r := rule("2026-01", 0, 5, "next")
+	r.ClosingMode, r.ClosingDaysBeforeDue = ClosingBeforeDue, 7
+	for ref, want := range map[string][2]string{
+		"2026-09": {"2026-08-29", "2026-09-05"},
+		"2026-03": {"2026-02-26", "2026-03-05"},
+		"2026-11": {"2026-10-29", "2026-11-05"},
+	} {
+		d := DatesFor(month(ref), r)
+		if d.Closing.Format(time.DateOnly) != want[0] || d.DueUnadjusted.Format(time.DateOnly) != want[1] {
+			t.Errorf("%s: closing %s due %s, want %v", ref, d.Closing.Format(time.DateOnly), d.DueUnadjusted.Format(time.DateOnly), want)
+		}
+	}
+}
+
+func TestNewBillingCycleRuleClosingModes(t *testing.T) {
+	for name, tc := range map[string]struct {
+		r     BillingCycleRule
+		field string
+	}{
+		"day without closing day":    {BillingCycleRule{DueDay: 5}, "closing_day"},
+		"before due without days":    {BillingCycleRule{DueDay: 5, ClosingMode: ClosingBeforeDue}, "closing_days_before_due"},
+		"before due with 29 days":    {BillingCycleRule{DueDay: 5, ClosingMode: ClosingBeforeDue, ClosingDaysBeforeDue: 29}, "closing_days_before_due"},
+		"unknown closing adjustment": {BillingCycleRule{DueDay: 5, ClosingDay: 28, ClosingAdjustment: "sideways"}, "closing_adjustment"},
+	} {
+		_, err := NewBillingCycleRule(tc.r)
+		var fe *FieldError
+		if !errors.As(err, &fe) || fe.Field != tc.field {
+			t.Errorf("%s: err = %v, want a field error on %s", name, err, tc.field)
+		}
+	}
+}

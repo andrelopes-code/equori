@@ -293,6 +293,30 @@ func (e BalanceAssertionInputSource) Valid() bool {
 	}
 }
 
+// Defines values for BillingCycleRuleClosingAdjustment.
+const (
+	BillingCycleRuleClosingAdjustmentFollowing         BillingCycleRuleClosingAdjustment = "following"
+	BillingCycleRuleClosingAdjustmentModifiedFollowing BillingCycleRuleClosingAdjustment = "modified_following"
+	BillingCycleRuleClosingAdjustmentNone              BillingCycleRuleClosingAdjustment = "none"
+	BillingCycleRuleClosingAdjustmentPreceding         BillingCycleRuleClosingAdjustment = "preceding"
+)
+
+// Valid indicates whether the value is a known member of the BillingCycleRuleClosingAdjustment enum.
+func (e BillingCycleRuleClosingAdjustment) Valid() bool {
+	switch e {
+	case BillingCycleRuleClosingAdjustmentFollowing:
+		return true
+	case BillingCycleRuleClosingAdjustmentModifiedFollowing:
+		return true
+	case BillingCycleRuleClosingAdjustmentNone:
+		return true
+	case BillingCycleRuleClosingAdjustmentPreceding:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for BillingCycleRuleClosingDayAssignment.
 const (
 	Closing BillingCycleRuleClosingDayAssignment = "closing"
@@ -305,6 +329,24 @@ func (e BillingCycleRuleClosingDayAssignment) Valid() bool {
 	case Closing:
 		return true
 	case Next:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BillingCycleRuleClosingMode.
+const (
+	BeforeDue BillingCycleRuleClosingMode = "before_due"
+	Day       BillingCycleRuleClosingMode = "day"
+)
+
+// Valid indicates whether the value is a known member of the BillingCycleRuleClosingMode enum.
+func (e BillingCycleRuleClosingMode) Valid() bool {
+	switch e {
+	case BeforeDue:
+		return true
+	case Day:
 		return true
 	default:
 		return false
@@ -890,6 +932,24 @@ func (e StatementDetailStatus) Valid() bool {
 	}
 }
 
+// Defines values for StatementFactSource.
+const (
+	Aggregator StatementFactSource = "aggregator"
+	Owner      StatementFactSource = "owner"
+)
+
+// Valid indicates whether the value is a known member of the StatementFactSource enum.
+func (e StatementFactSource) Valid() bool {
+	switch e {
+	case Aggregator:
+		return true
+	case Owner:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for StatementPostingCardRole.
 const (
 	StatementPostingCardRoleCharge  StatementPostingCardRole = "charge"
@@ -1215,11 +1275,14 @@ type BalanceList struct {
 	Items []Balance `json:"items"`
 }
 
-// BillingCycleRule defines model for BillingCycleRule.
+// BillingCycleRule closing_mode day closes on closing_day; before_due closes closing_days_before_due days before the nominal due date. closing_adjustment shifts the closing date, projected or reported by the institution, on the rule's calendar (A87).
 type BillingCycleRule struct {
 	Calendar             *string                               `json:"calendar,omitempty"`
-	ClosingDay           int                                   `json:"closing_day"`
+	ClosingAdjustment    *BillingCycleRuleClosingAdjustment    `json:"closing_adjustment,omitempty"`
+	ClosingDay           *int                                  `json:"closing_day,omitempty"`
 	ClosingDayAssignment *BillingCycleRuleClosingDayAssignment `json:"closing_day_assignment,omitempty"`
+	ClosingDaysBeforeDue *int                                  `json:"closing_days_before_due,omitempty"`
+	ClosingMode          *BillingCycleRuleClosingMode          `json:"closing_mode,omitempty"`
 	DueDateAdjustment    *BillingCycleRuleDueDateAdjustment    `json:"due_date_adjustment,omitempty"`
 	DueDay               int                                   `json:"due_day"`
 
@@ -1227,8 +1290,14 @@ type BillingCycleRule struct {
 	EffectiveFrom string `json:"effective_from"`
 }
 
+// BillingCycleRuleClosingAdjustment defines model for BillingCycleRule.ClosingAdjustment.
+type BillingCycleRuleClosingAdjustment string
+
 // BillingCycleRuleClosingDayAssignment defines model for BillingCycleRule.ClosingDayAssignment.
 type BillingCycleRuleClosingDayAssignment string
+
+// BillingCycleRuleClosingMode defines model for BillingCycleRule.ClosingMode.
+type BillingCycleRuleClosingMode string
 
 // BillingCycleRuleDueDateAdjustment defines model for BillingCycleRule.DueDateAdjustment.
 type BillingCycleRuleDueDateAdjustment string
@@ -1724,26 +1793,54 @@ type Split struct {
 
 // StatementDetail defines model for StatementDetail.
 type StatementDetail struct {
-	AccountId   openapi_types.UUID `json:"account_id"`
-	AmountDue   Money              `json:"amount_due"`
-	Charges     Money              `json:"charges"`
-	ClosingDate openapi_types.Date `json:"closing_date"`
-	Credits     Money              `json:"credits"`
-	DueDate     openapi_types.Date `json:"due_date"`
-	Id          openapi_types.UUID `json:"id"`
-	Opening     Money              `json:"opening"`
-	Payments    Money              `json:"payments"`
-	Postings    []StatementPosting `json:"postings"`
+	AccountId        openapi_types.UUID `json:"account_id"`
+	AmountDifference *Money             `json:"amount_difference,omitempty"`
+	AmountDue        Money              `json:"amount_due"`
+	BilledAmount     Money              `json:"billed_amount"`
+	Charges          Money              `json:"charges"`
+	ClosingDate      openapi_types.Date `json:"closing_date"`
+	Credits          Money              `json:"credits"`
+	DueDate          openapi_types.Date `json:"due_date"`
+	EarlyPayments    Money              `json:"early_payments"`
+	Id               openapi_types.UUID `json:"id"`
+
+	// Institution What the institution reported for the statement (A85); the owner's facts first.
+	Institution  *StatementFact     `json:"institution,omitempty"`
+	Opening      Money              `json:"opening"`
+	Payments     Money              `json:"payments"`
+	Postings     []StatementPosting `json:"postings"`
+	PriorCredits Money              `json:"prior_credits"`
 
 	// Reconciled The institution's amount due was confirmed (POST /statements/{id}/reconcile).
 	Reconciled bool                  `json:"reconciled"`
 	Reference  string                `json:"reference"`
+	Settled    Money                 `json:"settled"`
 	Status     StatementDetailStatus `json:"status"`
 	Unpaid     Money                 `json:"unpaid"`
 }
 
 // StatementDetailStatus defines model for StatementDetail.Status.
 type StatementDetailStatus string
+
+// StatementFact What the institution reported for the statement (A85); the owner's facts first.
+type StatementFact struct {
+	ClosingDate *openapi_types.Date `json:"closing_date,omitempty"`
+	DueDate     openapi_types.Date  `json:"due_date"`
+	Minimum     *Money              `json:"minimum,omitempty"`
+	Source      StatementFactSource `json:"source"`
+	Total       Money               `json:"total"`
+}
+
+// StatementFactSource defines model for StatementFact.Source.
+type StatementFactSource string
+
+// StatementFactsInput defines model for StatementFactsInput.
+type StatementFactsInput struct {
+	ClosingDate *openapi_types.Date `json:"closing_date,omitempty"`
+	DueDate     openapi_types.Date  `json:"due_date"`
+	Minimum     *Money              `json:"minimum,omitempty"`
+	Total       Money               `json:"total"`
+}
 
 // StatementFinancingInput defines model for StatementFinancingInput.
 type StatementFinancingInput struct {
@@ -1785,21 +1882,29 @@ type StatementReconciliationInput struct {
 	AmountDue Money `json:"amount_due"`
 }
 
-// StatementSummary Amounts are positive when owed by the user.
+// StatementSummary Amounts are positive when owed by the user. Every card posting is billed on the statement of its cycle (A89). opening is the previous amount_due; credits and payments are those billed on the statement; amount_due = opening + charges − credits − payments, the card balance at closing; settled is the credits and payments of the next statement, up to today, that cover amount_due; unpaid = amount_due − settled, zero for a credit balance; prior_credits are the credits that settled the previous statement; early_payments are the payments beyond what settled it; billed_amount = amount_due + early_payments. institution and amount_difference (amount_due − institution.total) are present when the institution reported the statement (A92).
 type StatementSummary struct {
-	AccountId   openapi_types.UUID `json:"account_id"`
-	AmountDue   Money              `json:"amount_due"`
-	Charges     Money              `json:"charges"`
-	ClosingDate openapi_types.Date `json:"closing_date"`
-	Credits     Money              `json:"credits"`
-	DueDate     openapi_types.Date `json:"due_date"`
-	Id          openapi_types.UUID `json:"id"`
-	Opening     Money              `json:"opening"`
-	Payments    Money              `json:"payments"`
+	AccountId        openapi_types.UUID `json:"account_id"`
+	AmountDifference *Money             `json:"amount_difference,omitempty"`
+	AmountDue        Money              `json:"amount_due"`
+	BilledAmount     Money              `json:"billed_amount"`
+	Charges          Money              `json:"charges"`
+	ClosingDate      openapi_types.Date `json:"closing_date"`
+	Credits          Money              `json:"credits"`
+	DueDate          openapi_types.Date `json:"due_date"`
+	EarlyPayments    Money              `json:"early_payments"`
+	Id               openapi_types.UUID `json:"id"`
+
+	// Institution What the institution reported for the statement (A85); the owner's facts first.
+	Institution  *StatementFact `json:"institution,omitempty"`
+	Opening      Money          `json:"opening"`
+	Payments     Money          `json:"payments"`
+	PriorCredits Money          `json:"prior_credits"`
 
 	// Reconciled The institution's amount due was confirmed (POST /statements/{id}/reconcile).
 	Reconciled bool                   `json:"reconciled"`
 	Reference  string                 `json:"reference"`
+	Settled    Money                  `json:"settled"`
 	Status     StatementSummaryStatus `json:"status"`
 	Unpaid     Money                  `json:"unpaid"`
 }
@@ -2118,6 +2223,9 @@ type MergePayeeJSONRequestBody = MergePayeeInput
 // UpdateSettingsJSONRequestBody defines body for UpdateSettings for application/json ContentType.
 type UpdateSettingsJSONRequestBody = Settings
 
+// SetStatementFactsJSONRequestBody defines body for SetStatementFacts for application/json ContentType.
+type SetStatementFactsJSONRequestBody = StatementFactsInput
+
 // FinanceStatementJSONRequestBody defines body for FinanceStatement for application/json ContentType.
 type FinanceStatementJSONRequestBody = StatementFinancingInput
 
@@ -2291,6 +2399,12 @@ type ServerInterface interface {
 	// GetStatement A statement with its postings.
 	// (GET /statements/{id})
 	GetStatement(w http.ResponseWriter, r *http.Request, id ID)
+	// RemoveStatementFacts Remove the owner's facts; the statement takes the aggregator's facts or the rule's dates.
+	// (DELETE /statements/{id}/facts)
+	RemoveStatementFacts(w http.ResponseWriter, r *http.Request, id ID)
+	// SetStatementFacts Record the institution's facts for a statement, as the owner reads them (A85).
+	// (PUT /statements/{id}/facts)
+	SetStatementFacts(w http.ResponseWriter, r *http.Request, id ID)
 	// FinanceStatement Convert the unpaid amount of a closed statement into installments.
 	// (POST /statements/{id}/financing)
 	FinanceStatement(w http.ResponseWriter, r *http.Request, id ID)
@@ -3617,6 +3731,58 @@ func (siw *ServerInterfaceWrapper) GetStatement(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
+// RemoveStatementFacts operation middleware
+func (siw *ServerInterfaceWrapper) RemoveStatementFacts(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveStatementFacts(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetStatementFacts operation middleware
+func (siw *ServerInterfaceWrapper) SetStatementFacts(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetStatementFacts(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // FinanceStatement operation middleware
 func (siw *ServerInterfaceWrapper) FinanceStatement(w http.ResponseWriter, r *http.Request) {
 
@@ -4414,6 +4580,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/reconciliation", wrapper.GetReconciliationStatus)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/unlock", wrapper.UnlockAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/statements/{id}/reconcile", wrapper.ReconcileStatement)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/statements/{id}/facts", wrapper.RemoveStatementFacts)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/statements/{id}/facts", wrapper.SetStatementFacts)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions/{id}/attachments", wrapper.ListAttachments)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/attachments", wrapper.CreateAttachment)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/attachments/{id}", wrapper.DeleteAttachment)
@@ -7165,6 +7333,133 @@ func (response GetStatement404ApplicationProblemPlusJSONResponse) VisitGetStatem
 	return err
 }
 
+type RemoveStatementFactsRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type RemoveStatementFactsResponseObject interface {
+	VisitRemoveStatementFactsResponse(w http.ResponseWriter) error
+}
+
+type RemoveStatementFacts204Response struct {
+}
+
+func (response RemoveStatementFacts204Response) VisitRemoveStatementFactsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RemoveStatementFacts401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RemoveStatementFacts401ApplicationProblemPlusJSONResponse) VisitRemoveStatementFactsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveStatementFacts404ApplicationProblemPlusJSONResponse Problem
+
+func (response RemoveStatementFacts404ApplicationProblemPlusJSONResponse) VisitRemoveStatementFactsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetStatementFactsRequestObject struct {
+	Id   ID `json:"id"`
+	Body *SetStatementFactsJSONRequestBody
+}
+
+type SetStatementFactsResponseObject interface {
+	VisitSetStatementFactsResponse(w http.ResponseWriter) error
+}
+
+type SetStatementFacts200JSONResponse StatementDetail
+
+func (response SetStatementFacts200JSONResponse) VisitSetStatementFactsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetStatementFacts400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetStatementFacts400ApplicationProblemPlusJSONResponse) VisitSetStatementFactsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetStatementFacts401ApplicationProblemPlusJSONResponse Problem
+
+func (response SetStatementFacts401ApplicationProblemPlusJSONResponse) VisitSetStatementFactsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetStatementFacts404ApplicationProblemPlusJSONResponse Problem
+
+func (response SetStatementFacts404ApplicationProblemPlusJSONResponse) VisitSetStatementFactsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetStatementFacts422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetStatementFacts422ApplicationProblemPlusJSONResponse) VisitSetStatementFactsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type FinanceStatementRequestObject struct {
 	Id   ID `json:"id"`
 	Body *FinanceStatementJSONRequestBody
@@ -8632,6 +8927,12 @@ type StrictServerInterface interface {
 	// GetStatement A statement with its postings.
 	// (GET /statements/{id})
 	GetStatement(ctx context.Context, request GetStatementRequestObject) (GetStatementResponseObject, error)
+	// RemoveStatementFacts Remove the owner's facts; the statement takes the aggregator's facts or the rule's dates.
+	// (DELETE /statements/{id}/facts)
+	RemoveStatementFacts(ctx context.Context, request RemoveStatementFactsRequestObject) (RemoveStatementFactsResponseObject, error)
+	// SetStatementFacts Record the institution's facts for a statement, as the owner reads them (A85).
+	// (PUT /statements/{id}/facts)
+	SetStatementFacts(ctx context.Context, request SetStatementFactsRequestObject) (SetStatementFactsResponseObject, error)
 	// FinanceStatement Convert the unpaid amount of a closed statement into installments.
 	// (POST /statements/{id}/financing)
 	FinanceStatement(ctx context.Context, request FinanceStatementRequestObject) (FinanceStatementResponseObject, error)
@@ -10028,6 +10329,65 @@ func (sh *strictHandler) GetStatement(w http.ResponseWriter, r *http.Request, id
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetStatementResponseObject); ok {
 		if err := validResponse.VisitGetStatementResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RemoveStatementFacts operation middleware
+func (sh *strictHandler) RemoveStatementFacts(w http.ResponseWriter, r *http.Request, id ID) {
+	var request RemoveStatementFactsRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveStatementFacts(ctx, request.(RemoveStatementFactsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveStatementFacts")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveStatementFactsResponseObject); ok {
+		if err := validResponse.VisitRemoveStatementFactsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetStatementFacts operation middleware
+func (sh *strictHandler) SetStatementFacts(w http.ResponseWriter, r *http.Request, id ID) {
+	var request SetStatementFactsRequestObject
+
+	request.Id = id
+
+	var body SetStatementFactsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetStatementFacts(ctx, request.(SetStatementFactsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetStatementFacts")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetStatementFactsResponseObject); ok {
+		if err := validResponse.VisitSetStatementFactsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

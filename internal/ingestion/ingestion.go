@@ -138,13 +138,15 @@ func (p ledgerPort) translate(err error) error {
 		return app.ErrAlreadyMatched
 	case errors.Is(err, ledger.ErrReconciled):
 		return app.ErrReconciled
+	case errors.Is(err, ledger.ErrNotRetypable):
+		return app.ErrNotRetypable
 	}
 	return err
 }
 
 func (p ledgerPort) posting(l app.Line) (ledger.ImportedPosting, error) {
 	amount, err := money.New(l.Amount, l.Currency)
-	return ledger.ImportedPosting{AccountID: l.AccountID, Date: l.Date, Amount: amount, Description: l.Description, Pending: l.Pending, DueDate: l.DueDate}, err
+	return ledger.ImportedPosting{AccountID: l.AccountID, Date: l.Date, Amount: amount, Description: l.Description, Pending: l.Pending, DueDate: l.DueDate, Kind: l.Kind}, err
 }
 
 // importLine is a line as Classification decides it; aggregator lines carry Pluggy's category.
@@ -241,8 +243,8 @@ func (p ledgerPort) assert(ctx context.Context, userID int64, accountID uuid.UUI
 	return p.translate(err)
 }
 
-func (p ledgerPort) UpdateImportedPosting(ctx context.Context, userID int64, recordID uuid.UUID, pending bool, dueDate *time.Time) error {
-	return p.translate(p.l.UpdateImportedPosting(ctx, userID, recordID, ledger.ImportedUpdate{Pending: pending, DueDate: dueDate}))
+func (p ledgerPort) UpdateImportedPosting(ctx context.Context, userID int64, recordID uuid.UUID, pending bool, dueDate *time.Time, kind string) error {
+	return p.translate(p.l.UpdateImportedPosting(ctx, userID, recordID, ledger.ImportedUpdate{Pending: pending, DueDate: dueDate, Kind: kind}))
 }
 
 func (p ledgerPort) RecordInstallment(ctx context.Context, userID int64, l app.InstallmentLine) (uuid.UUID, uuid.UUID, error) {
@@ -254,10 +256,18 @@ func (p ledgerPort) RecordInstallment(ctx context.Context, userID int64, l app.I
 	if err != nil {
 		return uuid.Nil, uuid.Nil, err
 	}
+	var total *money.Money
+	if t := l.Installment.Total; t != nil {
+		m, err := money.New(*t, l.Line.Currency)
+		if err != nil {
+			return uuid.Nil, uuid.Nil, err
+		}
+		total = &m
+	}
 	txID, planID, err := p.l.RecordImportedInstallment(ctx, userID, ledger.ImportedInstallment{
 		RecordID: l.RecordID, CardAccountID: posting.AccountID, PurchaseDate: l.Installment.PurchaseDate, LineDate: posting.Date,
 		DueDate: l.Line.DueDate, Description: posting.Description, Number: l.Installment.Number, Count: l.Installment.Count,
-		Amount: posting.Amount.Neg(), Decision: decisions[0],
+		Amount: posting.Amount.Neg(), Total: total, Decision: decisions[0],
 	})
 	return txID, planID, p.installmentError(err)
 }
@@ -267,17 +277,47 @@ func (p ledgerPort) LinkInstallment(ctx context.Context, userID int64, recordID,
 	if err != nil {
 		return uuid.Nil, err
 	}
-	txID, err := p.l.LinkInstallment(ctx, userID, recordID, planID, number, posting.Amount.Neg())
+	txID, err := p.l.LinkInstallment(ctx, userID, recordID, planID, number, ledger.InstallmentConfirmation{
+		Amount: posting.Amount.Neg(), DueDate: l.DueDate, Pending: l.Pending,
+	})
 	return txID, p.installmentError(err)
 }
 
 func (p ledgerPort) installmentError(err error) error {
-	for _, refused := range []error{ledger.ErrInstallmentUnavailable, ledger.ErrAmountMismatch, ledger.ErrAlreadyMatched, ledger.ErrValidation} {
+	for _, refused := range []error{ledger.ErrInstallmentUnavailable, ledger.ErrAlreadyMatched, ledger.ErrValidation} {
 		if errors.Is(err, refused) {
 			return fmt.Errorf("%w: %w", app.ErrInstallmentRefused, err)
 		}
 	}
 	return p.translate(err)
+}
+
+func (p ledgerPort) RecordStatementFacts(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Bill, c money.Currency) error {
+	total, err := money.New(b.Total, c)
+	if err != nil {
+		return err
+	}
+	f := ledger.StatementFacts{Closing: b.Closing, Due: b.Due, Total: total}
+	if b.Minimum != nil {
+		minimum, err := money.New(*b.Minimum, c)
+		if err != nil {
+			return err
+		}
+		f.Minimum = &minimum
+	}
+	return p.translate(p.l.RecordStatementFacts(ctx, userID, accountID, f))
+}
+
+func (p ledgerPort) RecordCardOpening(ctx context.Context, userID int64, accountID uuid.UUID, b domain.Bill, c money.Currency) error {
+	total, err := money.New(b.Total, c)
+	if err != nil {
+		return err
+	}
+	return p.translate(p.l.RecordCardOpening(ctx, userID, accountID, b.Due, total))
+}
+
+func (p ledgerPort) SettleReportedStatements(ctx context.Context, userID int64, accountID uuid.UUID) error {
+	return p.translate(p.l.SettleReportedStatements(ctx, userID, accountID))
 }
 
 func (p ledgerPort) ReleaseRecord(ctx context.Context, userID int64, recordID uuid.UUID) error {

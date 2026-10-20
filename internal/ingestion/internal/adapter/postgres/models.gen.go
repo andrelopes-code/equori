@@ -105,6 +105,7 @@ type IngestionExternalRecord struct {
 	CategoryID        *string
 	BalanceAfter      *int64
 	UnappliedChange   *string
+	LineKind          *string
 }
 
 type IngestionIntegration struct {

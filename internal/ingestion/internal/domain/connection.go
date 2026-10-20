@@ -93,6 +93,16 @@ type AccountRead struct {
 	Records []NormalizedRecord
 	// Seen holds the id of every line returned, recorded or not.
 	Seen []string
+	// Bills are a card's statements as the institution reports them (A85).
+	Bills []Bill
+}
+
+// Bill is a card statement as the institution reports it; Total is positive when owed.
+type Bill struct {
+	Closing *time.Time
+	Due     time.Time
+	Total   int64
+	Minimum *int64
 }
 
 func (a ExternalAccount) State() MappingState {

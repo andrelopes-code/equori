@@ -84,7 +84,7 @@ func cardRole(v apitest.TransactionView, card string) string {
 func TestCheckingFirstTransfer(t *testing.T) {
 	s := newPaymentSetup(t)
 	id := s.recordTransfer(t, "2026-11-10")
-	if v := s.h.Transaction(id.String()); len(v.Postings) != 2 || cardRole(v, s.card) != "payment 2026-11" || v.Version != 1 {
+	if v := s.h.Transaction(id.String()); len(v.Postings) != 2 || cardRole(v, s.card) != "payment 2026-12" || v.Version != 1 {
 		t.Fatalf("transfer = %+v", v)
 	}
 	b := mustImport(t, s.h, s.card, "ofx", "fatura.ofx", apitest.CardOFX(apitest.OFXLine{Date: "20261111", Amount: "1500.00", FITID: "p1", Name: "PAGAMENTO RECEBIDO"}))
@@ -114,7 +114,7 @@ func TestCardFirstTransfer(t *testing.T) {
 		t.Fatalf("transfer %s, card transaction %s, count %d → %d", id, created[0].TransactionID, before, transactionCount(t, s.h))
 	}
 	v := s.h.Transaction(id.String())
-	if got := postingAmounts(v); v.Version != 2 || len(v.Postings) != 2 || got[s.checking] != -150000 || cardRole(v, s.card) != "payment 2026-11" {
+	if got := postingAmounts(v); v.Version != 2 || len(v.Postings) != 2 || got[s.checking] != -150000 || cardRole(v, s.card) != "payment 2026-12" {
 		t.Fatalf("transaction = %+v", v)
 	}
 	if st := s.statementStatus(t); st != "paid" {

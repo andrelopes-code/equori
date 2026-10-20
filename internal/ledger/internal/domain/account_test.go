@@ -52,7 +52,7 @@ func TestNewAccount(t *testing.T) {
 
 func TestSystemRolesHaveClasses(t *testing.T) {
 	want := map[SystemRole]Class{
-		RoleOpeningBalances: ClassEquity, RoleAdjustments: ClassEquity,
+		RoleOpeningBalances: ClassEquity, RoleAdjustments: ClassEquity, RoleTransfersInTransit: ClassEquity,
 		RoleUncategorizedExpense: ClassExpense, RoleInterest: ClassExpense, RoleTaxes: ClassExpense,
 		RoleFees: ClassExpense, RoleRealizedLosses: ClassExpense,
 		RoleUncategorizedIncome: ClassIncome, RoleYield: ClassIncome, RoleDiscounts: ClassIncome,

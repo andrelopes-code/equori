@@ -1,10 +1,10 @@
 -- name: InsertRecords :batchone
 -- A row comes back only for a new key; a conflict is pgx.ErrNoRows for that item.
 INSERT INTO ingestion_external_record (user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description,
-    external_status, due_date, installment_number, installment_count, category_id, balance_after)
+    external_status, due_date, installment_number, installment_count, category_id, balance_after, line_kind)
 VALUES (@user_id, @batch_id, @account_id, sqlc.narg(external_id), @dedup_key, @raw, @booked_on, @amount, @description,
     sqlc.narg(external_status), sqlc.narg(due_date), sqlc.narg(installment_number), sqlc.narg(installment_count),
-    sqlc.narg(category_id), sqlc.narg(balance_after))
+    sqlc.narg(category_id), sqlc.narg(balance_after), sqlc.narg(line_kind))
 ON CONFLICT (user_id, dedup_key) DO NOTHING
 RETURNING *;
 
@@ -47,7 +47,7 @@ UPDATE ingestion_external_record SET
     raw = @raw, external_status = sqlc.narg(external_status), due_date = sqlc.narg(due_date),
     installment_number = sqlc.narg(installment_number), installment_count = sqlc.narg(installment_count),
     category_id = sqlc.narg(category_id), balance_after = sqlc.narg(balance_after),
-    unapplied_change = sqlc.narg(unapplied_change)
+    line_kind = sqlc.narg(line_kind), unapplied_change = sqlc.narg(unapplied_change)
 WHERE user_id = @user_id AND id = @id;
 
 -- name: ListSyncedRecords :many

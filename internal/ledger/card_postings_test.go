@@ -69,8 +69,8 @@ func TestCardRoleDefaults(t *testing.T) {
 	if refund.CardRole != "credit" || reward.CardRole != "credit" {
 		t.Fatalf("refund %q, cashback %q; want credit", refund.CardRole, reward.CardRole)
 	}
-	if pay.CardRole != "payment" || pay.Statement != "2026-11" {
-		t.Fatalf("payment role %q statement %q; want payment on the closed statement 2026-11", pay.CardRole, pay.Statement)
+	if pay.CardRole != "payment" || pay.Statement != "2026-12" {
+		t.Fatalf("payment role %q statement %q; want payment on the statement of its cycle 2026-12 (A89)", pay.CardRole, pay.Statement)
 	}
 }
 

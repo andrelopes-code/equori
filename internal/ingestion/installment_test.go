@@ -148,18 +148,24 @@ func TestInstallmentsCurrentOnly(t *testing.T) {
 	f.plan(card)
 }
 
-// A40: a line whose amount differs from its installment waits for review.
-func TestInstallmentAmountMismatch(t *testing.T) {
+// A90 (replaces A40's review of a different amount): a line sets the amount of the
+// installment it confirms, and the purchase follows.
+func TestInstallmentLineSetsItsAmount(t *testing.T) {
 	f := newSyncFixture(t)
 	card := f.h.Card("Nubank card", 3, 10, "next")
 	f.mapCard(card, "2026-08-01")
 	f.line(pluggy.SubtypeCard, installmentLine(1, "2026-08-14", "100.00", nil))
 	f.line(pluggy.SubtypeCard, installmentLine(2, "2026-09-14", "101.00", nil))
 	f.sync()
-	if state, _ := f.recordOf("inst-2"); state != "needs_review" || f.installmentOf("inst-2") != 0 {
+	if state, _ := f.recordOf("inst-2"); state != "matched" || f.installmentOf("inst-2") != 2 {
 		t.Fatalf("inst-2 = %s on installment %d", state, f.installmentOf("inst-2"))
 	}
-	f.plan(card)
+	if got := f.installments(card); got[1] != "2:-10100:2026-10:cleared" || got[2] != "3:-10000:2026-11:cleared" {
+		t.Fatalf("installments = %v", got)
+	}
+	if got := f.purchaseTotal(card); got != 60100 {
+		t.Fatalf("purchase total = %d", got)
+	}
 }
 
 // P6 Review Focus 5: a line of a plan cancelled in the ledger waits for review and the

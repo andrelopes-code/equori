@@ -1,7 +1,9 @@
 -- name: InsertBillingRule :one
 INSERT INTO ledger_billing_cycle_rule (
-    user_id, account_id, effective_from, closing_day, due_day, closing_day_assignment, due_date_adjustment, calendar
-) VALUES (@user_id, @account_id, @effective_from, @closing_day, @due_day, @closing_day_assignment, @due_date_adjustment, @calendar)
+    user_id, account_id, effective_from, closing_day, due_day, closing_day_assignment, due_date_adjustment, calendar,
+    closing_mode, closing_days_before_due, closing_adjustment
+) VALUES (@user_id, @account_id, @effective_from, sqlc.narg(closing_day), @due_day, @closing_day_assignment, @due_date_adjustment, @calendar,
+    @closing_mode, sqlc.narg(closing_days_before_due), @closing_adjustment)
 RETURNING *;
 
 -- name: ListBillingRules :many
@@ -41,7 +43,7 @@ WHERE s.user_id = $1 AND s.account_id = $2
 ORDER BY s.reference_month;
 
 -- name: ListStatementLines :many
-SELECT p.statement_id, p.card_role, p.amount
+SELECT p.statement_id, p.card_role, p.amount, p.booked_on
 FROM ledger_posting p
 WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided AND p.statement_id IS NOT NULL;
 

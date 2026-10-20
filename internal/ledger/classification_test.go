@@ -86,7 +86,7 @@ func TestAccountFactsAndPayees(t *testing.T) {
 			found = &facts[i]
 		}
 	}
-	if roles != 11 || found == nil || found.Class != "asset" || found.Kind != "checking" || found.Instrument != "BRL" || found.ClosedOn != nil {
+	if roles != 12 || found == nil || found.Class != "asset" || found.Kind != "checking" || found.Instrument != "BRL" || found.ClosedOn != nil {
 		t.Fatalf("facts = %+v (system roles %d)", found, roles)
 	}
 

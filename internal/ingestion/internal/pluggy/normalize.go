@@ -56,6 +56,9 @@ func Normalize(t Transaction, a Account, bills map[string]Bill, scale int, loc *
 			r.Category.Name = *t.Category
 		}
 	}
+	if card && t.OperationType != nil {
+		r.Kind = cardKinds[*t.OperationType]
+	}
 	if m := t.CreditCardMetadata; card && m != nil {
 		if m.BillID != nil {
 			if b, found := bills[*m.BillID]; found {
@@ -68,6 +71,11 @@ func Normalize(t Transaction, a Account, bills map[string]Bill, scale int, loc *
 		}
 		if m.InstallmentNumber > 0 && m.TotalInstallments > 1 {
 			r.Installment = &domain.Installment{Number: m.InstallmentNumber, Count: m.TotalInstallments, PurchaseDate: r.Date}
+			if m.TotalAmount != "" {
+				if total, err := Minor(m.TotalAmount, scale); err == nil && total > 0 {
+					r.Installment.Total = &total
+				}
+			}
 			if m.PurchaseDate != nil {
 				if r.Installment.PurchaseDate, err = Date(*m.PurchaseDate, loc); err != nil {
 					return domain.NormalizedRecord{}, false, fmt.Errorf("transaction %s purchase date: %w", t.ID, err)
@@ -77,6 +85,10 @@ func Normalize(t Transaction, a Account, bills map[string]Bill, scale int, loc *
 	}
 	return r, true, nil
 }
+
+// cardKinds are the card operation types that state a line's type (A88); any other type
+// follows the amount's sign.
+var cardKinds = map[string]string{"PAGAMENTO_FATURA": domain.KindPayment, "ESTORNO": domain.KindRefund}
 
 // operationReservedTransfer is the operation type of a line that moves money between a
 // bank account and one of its reserved balances (A76).
@@ -143,4 +155,29 @@ func raw(t Transaction) map[string]string {
 		}
 	}
 	return m
+}
+
+// ReadBill reads a card bill (A85): its total and minimum rounded to the currency's scale.
+func ReadBill(b Bill, scale int, loc *time.Location) (domain.Bill, error) {
+	due, err := Date(b.DueDate, loc)
+	if err != nil {
+		return domain.Bill{}, fmt.Errorf("bill %s: %w", b.ID, err)
+	}
+	out := domain.Bill{Due: due}
+	if b.BillClosingDate != nil && *b.BillClosingDate != "" {
+		closing, err := Date(*b.BillClosingDate, loc)
+		if err != nil {
+			return domain.Bill{}, fmt.Errorf("bill %s: %w", b.ID, err)
+		}
+		out.Closing = &closing
+	}
+	if out.Total, err = Rounded(b.TotalAmount, scale); err != nil {
+		return domain.Bill{}, fmt.Errorf("bill %s: %w", b.ID, err)
+	}
+	if b.MinimumPaymentAmount != "" {
+		if minimum, err := Rounded(b.MinimumPaymentAmount, scale); err == nil {
+			out.Minimum = &minimum
+		}
+	}
+	return out, nil
 }
