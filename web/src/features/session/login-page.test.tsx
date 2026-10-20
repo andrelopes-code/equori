@@ -196,7 +196,7 @@ describe("login layout", () => {
     const { fetch } = sessionApi({ loggedIn: false });
     const { container } = await renderApp("/login", { width: 360, fetch });
     await findField(catalogEn["login.email"]);
-    expect(container.querySelector('[data-own="bottom-bar"]')).toBeNull();
+    expect(container.querySelector('[data-own="navigation-bar"]')).toBeNull();
     expect(container.querySelector('[data-ui="side-navigation"]')).toBeNull();
     // No top bar; the page carries the wordmark.
     expect(container.querySelector('[data-ui="top-navigation"]')).toBeNull();

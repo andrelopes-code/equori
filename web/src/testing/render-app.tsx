@@ -22,6 +22,8 @@ export async function renderApp(
     >
       <AppRouterProvider router={router} />
     </AppProviders>,
+    // The application renders under StrictMode (main.tsx); the tests render it the same way.
+    { reactStrictMode: true },
   );
   await act(async () => {
     await router.load();
@@ -42,5 +44,6 @@ export function renderWithProviders(
     >
       {ui}
     </AppProviders>,
+    { reactStrictMode: true },
   );
 }

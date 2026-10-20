@@ -1,0 +1,59 @@
+@layer app {
+  /* Families read: menu, avatar, button. The trigger is a row with the account's name, which
+     no button variant draws at a row's start with the text cut at the end. */
+  .trigger {
+    display: flex;
+    inline-size: 100%;
+    align-items: center;
+    gap: var(--slotted-space-4);
+    min-inline-size: var(--slotted-target-min);
+    min-block-size: var(--slotted-control-height-md);
+    padding: var(--slotted-space-2);
+    border: 0;
+    border-radius: var(--slotted-radius-md);
+    background: transparent;
+    color: var(--slotted-text);
+    font: inherit;
+    font-size: var(--slotted-font-size-sm);
+    text-align: start;
+    cursor: pointer;
+    transition: background-color var(--slotted-duration-short)
+      var(--slotted-easing-standard);
+  }
+
+  .trigger[data-compact] {
+    justify-content: center;
+  }
+
+  .trigger:hover {
+    background: var(--slotted-state-hover);
+  }
+
+  .trigger:active,
+  .trigger[aria-expanded="true"] {
+    background: var(--slotted-state-selected);
+  }
+
+  .trigger:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  .name {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    font-weight: var(--slotted-font-weight-medium);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .chevrons {
+    display: flex;
+    flex: none;
+    margin-inline-start: auto;
+    padding-inline-end: var(--slotted-space-2);
+    color: var(--slotted-text-muted);
+  }
+}

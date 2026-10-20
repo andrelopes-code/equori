@@ -7,7 +7,7 @@ import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { RecordSelect, recordOptions } from "@/features/admin/record-select";
 import { adminQuery } from "@/features/admin/api";
-import { MonthSelect } from "@/features/admin/month-select";
+import { MonthEditor } from "@/features/admin/month-editor";
 import { OperationList } from "@/features/admin/operation-list";
 import { operations } from "@/features/admin/operations";
 import { QueryTable } from "@/features/admin/query-table";
@@ -90,7 +90,7 @@ export function CardsPanel({ ctx }: { ctx: AdminContext }) {
           value={accountID}
           onChange={setAccount}
         />
-        <MonthSelect
+        <MonthEditor
           name="month"
           label={t("admin.month")}
           value={month}

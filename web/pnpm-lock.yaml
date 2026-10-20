@@ -173,17 +173,17 @@ importers:
         specifier: 5.3.0
         version: 5.3.0
       '@slotted/core':
-        specifier: 0.1.0-beta.5
-        version: 0.1.0-beta.5(echarts@6.1.0)
+        specifier: 0.1.0-beta.7
+        version: 0.1.0-beta.7(echarts@6.1.0)
       '@slotted/react':
-        specifier: 0.1.0-beta.5
-        version: 0.1.0-beta.5(@slotted/core@0.1.0-beta.5(echarts@6.1.0))(@slotted/theme@0.1.0-beta.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: 0.1.0-beta.7
+        version: 0.1.0-beta.7(@slotted/core@0.1.0-beta.7(echarts@6.1.0))(@slotted/theme@0.1.0-beta.7)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@slotted/theme':
-        specifier: 0.1.0-beta.5
-        version: 0.1.0-beta.5
+        specifier: 0.1.0-beta.7
+        version: 0.1.0-beta.7
       '@slotted/themes':
-        specifier: 0.1.0-beta.5
-        version: 0.1.0-beta.5(@slotted/theme@0.1.0-beta.5)
+        specifier: 0.1.0-beta.7
+        version: 0.1.0-beta.7(@slotted/theme@0.1.0-beta.7)
       '@tanstack/react-query':
         specifier: 5.104.1
         version: 5.104.1(react@19.3.1)
@@ -608,31 +608,31 @@ packages:
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
-  '@slotted/core@0.1.0-beta.5':
-    resolution: {integrity: sha512-zTQx3cvZ05E4W32axKix2F6q/1AWf6OpMir4ZmttD7fhjcuvlUU6NGIY73vzqT/DEGXeucx8Nn1/hx//vwbHeQ==}
+  '@slotted/core@0.1.0-beta.7':
+    resolution: {integrity: sha512-e90gHtcqZ7Sy4c1N+bV3bdWoMEifK+0Z71UP9R8V5wdinMSFHMno6nYcYymFOsaDDDx0iyEFEDsRbl5xm+D4lQ==}
     peerDependencies:
       echarts: ^6.1.0
     peerDependenciesMeta:
       echarts:
         optional: true
 
-  '@slotted/react@0.1.0-beta.5':
-    resolution: {integrity: sha512-THYnQ5NHg16ELTpuoR1xMINtk284vKI7Gv0UviZMzInsDK5t9tJKWzRrBDXuG/FqPCseMTufFmhEy1Xu/5qTwQ==}
+  '@slotted/react@0.1.0-beta.7':
+    resolution: {integrity: sha512-R1Cwmg9l1x/p7sD2q3oydRn0R1evPiCGTDv8eNgGh75TiO/jammYe4mdETPqUiZfLzoGxYvxwDYe/ARQn4AJkA==}
     hasBin: true
     peerDependencies:
-      '@slotted/core': 0.1.0-beta.5
-      '@slotted/theme': 0.1.0-beta.5
+      '@slotted/core': 0.1.0-beta.7
+      '@slotted/theme': 0.1.0-beta.7
       react: '>=19.2.0 <20'
       react-dom: '>=19.2.0 <20'
 
-  '@slotted/theme@0.1.0-beta.5':
-    resolution: {integrity: sha512-0WmjQGRrwveRR9qRtBPqhKJiOqtB/CsV5dKp1rxyfiVRDkxgCRGWMcvNiU3s4KFnKO1N4JAgV52iBmPVjEmkGw==}
+  '@slotted/theme@0.1.0-beta.7':
+    resolution: {integrity: sha512-oMq1pyVyuxM/15fv34gKWS/xxbmO1c3rOiSKeLZ+90FUvlIamYIo2W1TrOgEsWJCW0rx0mteuASv2g9RFhwYfw==}
     hasBin: true
 
-  '@slotted/themes@0.1.0-beta.5':
-    resolution: {integrity: sha512-szffY6YVv9NV5qR43SCQA14uPXc/F3/2luNmeGLosipyvgjq0uK7v+jigFwkxpQfxzlkevQCCeAGjkzDQTq+bw==}
+  '@slotted/themes@0.1.0-beta.7':
+    resolution: {integrity: sha512-B3WcOw/TFoHnmI7vw3WsWWSTowT474vEhf/mSCOanCzC8IaMDW4cdgF86fhZrN/hkZrLRyWMgE+nKg+wJh767w==}
     peerDependencies:
-      '@slotted/theme': 0.1.0-beta.5
+      '@slotted/theme': 0.1.0-beta.7
     peerDependenciesMeta:
       '@slotted/theme':
         optional: true
@@ -2488,26 +2488,26 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
-  '@slotted/core@0.1.0-beta.5(echarts@6.1.0)':
+  '@slotted/core@0.1.0-beta.7(echarts@6.1.0)':
     dependencies:
       '@floating-ui/dom': 1.8.0
     optionalDependencies:
       echarts: 6.1.0
 
-  '@slotted/react@0.1.0-beta.5(@slotted/core@0.1.0-beta.5(echarts@6.1.0))(@slotted/theme@0.1.0-beta.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@slotted/react@0.1.0-beta.7(@slotted/core@0.1.0-beta.7(echarts@6.1.0))(@slotted/theme@0.1.0-beta.7)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
-      '@slotted/core': 0.1.0-beta.5(echarts@6.1.0)
-      '@slotted/theme': 0.1.0-beta.5
+      '@slotted/core': 0.1.0-beta.7(echarts@6.1.0)
+      '@slotted/theme': 0.1.0-beta.7
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
 
-  '@slotted/theme@0.1.0-beta.5':
+  '@slotted/theme@0.1.0-beta.7':
     dependencies:
       lightningcss: 1.33.0
 
-  '@slotted/themes@0.1.0-beta.5(@slotted/theme@0.1.0-beta.5)':
+  '@slotted/themes@0.1.0-beta.7(@slotted/theme@0.1.0-beta.7)':
     optionalDependencies:
-      '@slotted/theme': 0.1.0-beta.5
+      '@slotted/theme': 0.1.0-beta.7
 
   '@tanstack/history@1.162.4': {}
 

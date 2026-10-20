@@ -6,13 +6,11 @@ import {
   within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
-import { sharedRoutes } from "@/testing/transaction-api";
 import { setViewport } from "@/testing/viewport";
 
 const html = document.documentElement;
@@ -26,398 +24,205 @@ function newFetch() {
 
 beforeEach(() => {
   localStorage.clear();
-  html.removeAttribute("lang");
   html.removeAttribute("data-slotted-density");
   html.removeAttribute("data-slotted-scheme");
 });
 
-describe("AppFrame navigation", () => {
-  // Below 1024 px a bottom bar of five controls, New in the middle.
-  it.each([360, 768])(
-    "shows five text controls in the bottom bar at %i px",
-    async (width) => {
-      const { container } = await renderApp("/", {
-        width,
-        fetch: newFetch(),
-      });
-      const bar = container.querySelector('[data-own="bottom-bar"]');
-      const controls = [...(bar?.querySelectorAll("a, button") ?? [])];
-      expect(controls.map((control) => control.textContent)).toEqual([
-        catalogEn["nav.home"],
-        catalogEn["nav.transactions"],
-        catalogEn["nav.entry"],
-        catalogEn["nav.cards"],
-        catalogEn["nav.more"],
-      ]);
-      expect(controls[2]).toHaveAttribute("data-emphasis", "primary");
-      expect(controls[2]?.tagName).toBe("BUTTON");
-      expect(bar?.querySelectorAll("svg")).toHaveLength(5);
-      expect(container.querySelector('[data-own="top-bar"]')).toBeNull();
-      expect(container.querySelector('[data-ui="top-navigation"]')).toBeNull();
-      expect(html).toHaveAttribute("data-slotted-density", "comfortable");
-    },
-  );
-
-  it("draws the shell edge to edge at every width", async () => {
-    for (const width of [360, 768, 1280]) {
-      const view = await renderApp("/", { width, fetch: newFetch() });
-      expect(
-        view.container.querySelector('[data-ui="app-shell"]'),
-      ).toHaveAttribute("data-canvas", "flush");
-      view.unmount();
-    }
-  });
-
-  // From 1024 px the destinations stand in a top bar in the shell's banner.
-  it("shows the top bar in the banner at 1280 px", async () => {
-    const { container } = await renderApp("/", {
+describe("AppFrame layout", () => {
+  it("keeps the routed page mounted when the width crosses 1024 px", async () => {
+    const { container } = await renderApp("/goals", {
       width: 1280,
       fetch: newFetch(),
     });
-    const bar = container.querySelector('[data-own="top-bar"]');
-    expect(bar).not.toBeNull();
-    expect(bar?.closest("header")).not.toBeNull();
-    expect(container.querySelector('[data-own="bottom-bar"]')).toBeNull();
-    expect(container.querySelector('[data-ui="top-navigation"]')).toBeNull();
-    expect(container.querySelector('[data-ui="app-shell"] > nav')).toBeNull();
-  });
-
-  // The month switcher belongs to Overview only.
-  it("holds no month switcher in the top bar away from Overview", async () => {
-    const { container } = await renderApp("/accounts", {
-      width: 1280,
-      fetch: newFetch(),
-    });
-    expect(container.querySelector('[data-own="top-bar"]')).not.toBeNull();
-    expect(container.querySelector('[data-own="month-switcher"]')).toBeNull();
-  });
-
-  it("brings the top bar back after the window narrows and widens again", async () => {
-    const { container } = await renderApp("/", {
-      width: 1280,
-      fetch: newFetch(),
-    });
+    const page = container.querySelector("main")?.firstElementChild;
+    expect(page).toBeInstanceOf(HTMLElement);
     act(() => {
-      setViewport(360);
+      setViewport(390);
     });
+    expect(page?.isConnected).toBe(true);
     act(() => {
       setViewport(1280);
     });
-    await waitFor(() => {
-      expect(container.querySelector('[data-own="top-bar"]')).not.toBeNull();
-    });
-    expect(
-      container.querySelector('[data-ui="app-shell"]'),
-    ).not.toHaveAttribute("data-open");
+    expect(page?.isConnected).toBe(true);
   });
 
-  it("lays no scrim over the page on a phone", async () => {
-    const { container } = await renderApp("/", {
-      width: 360,
-      fetch: newFetch(),
-    });
-    expect(
-      container.querySelector('[data-ui="app-shell"]'),
-    ).not.toHaveAttribute("data-open");
+  it("sets the comfortable density when none is stored", async () => {
+    await renderApp("/", { width: 390, fetch: newFetch() });
+    expect(html).toHaveAttribute("data-slotted-density", "comfortable");
   });
 
-  it("swaps the bottom bar for the top bar without a reload", async () => {
-    const { container } = await renderApp("/", {
-      width: 360,
-      fetch: newFetch(),
-    });
-    expect(container.querySelector('[data-own="bottom-bar"]')).not.toBeNull();
-    act(() => {
-      setViewport(1280);
-    });
-    await waitFor(() => {
-      expect(container.querySelector('[data-own="bottom-bar"]')).toBeNull();
-    });
-    expect(container.querySelector('[data-own="top-bar"]')).not.toBeNull();
+  it("sets the stored density", async () => {
+    localStorage.setItem("equori.density", "dense");
+    await renderApp("/", { width: 390, fetch: newFetch() });
+    expect(html).toHaveAttribute("data-slotted-density", "dense");
   });
-
-  it.each([
-    [{ items: [], next_cursor: undefined }, null],
-    [{ items: [{}, {}, {}] }, "3"],
-    [{ items: [{}], next_cursor: "next" }, "200+"],
-  ] as const)(
-    "shows the uncategorized count beside Transactions",
-    async (page, badge) => {
-      const fetch = fakeApi({
-        "GET /api/v1/me": () =>
-          json(200, { id: "user-1", email: "owner@example.com" }),
-        "GET /api/v1/transactions": () => json(200, page),
-      });
-      for (const width of [360, 1280]) {
-        const view = await renderApp("/", { width, fetch });
-        const link = await screen.findByRole("link", {
-          name: new RegExp(`^${catalogEn["nav.transactions"]}`),
-        });
-        await waitFor(() => {
-          expect(
-            link.querySelector('[data-own="nav-count"], [data-own="bar-count"]')
-              ?.textContent ?? null,
-          ).toBe(badge);
-        });
-        // A discreet count in the secondary tone.
-        if (badge !== null) {
-          expect(link.querySelector('[data-ui="badge"]')).toHaveAttribute(
-            "data-tone",
-            "secondary",
-          );
-        }
-        view.unmount();
-      }
-    },
-  );
 });
 
-describe("AppFrame routing", () => {
-  it("navigates from the top bar without a reload", async () => {
-    const user = userEvent.setup();
-    const { router } = await renderApp("/", {
-      width: 1280,
-      fetch: newFetch(),
+function uncategorizedFetch(count: number) {
+  const served: string[] = [];
+  const fetch = fakeApi({
+    "GET /api/v1/me": () =>
+      json(200, { id: "user-1", email: "owner@example.com" }),
+    "GET /api/v1/transactions": (req) => {
+      if (new URL(req.url).searchParams.get("uncategorized") !== "true") {
+        return json(200, { items: [] });
+      }
+      served.push("uncategorized");
+      return json(200, {
+        items: Array.from({ length: count }, (_, i) => ({ id: String(i) })),
+      });
+    },
+  });
+  return Object.assign(fetch, { served });
+}
+
+function column() {
+  return screen.getByRole("navigation", { name: catalogEn["nav.label"] });
+}
+
+describe("desktop column", () => {
+  it("lists the destinations in the column", async () => {
+    await renderApp("/transactions/abc", { fetch: newFetch() });
+    const links = within(column()).getAllByRole("link");
+    expect(links.map((link) => link.textContent)).toEqual([
+      catalogEn["nav.overview"],
+      catalogEn["nav.transactions"],
+      catalogEn["nav.cards"],
+      catalogEn["nav.accounts"],
+      catalogEn["nav.goals"],
+      catalogEn["nav.admin"],
+    ]);
+    expect(links[1]).toHaveAttribute("aria-current", "page");
+    expect(links.filter((link) => link.hasAttribute("aria-current"))).toEqual([
+      links[1],
+    ]);
+  });
+
+  it("shows the uncategorized count beside Transactions", async () => {
+    await renderApp("/", { fetch: uncategorizedFetch(12) });
+    const link = within(column()).getByRole("link", {
+      name: new RegExp(`^${catalogEn["nav.transactions"]}`),
     });
+    await waitFor(() => {
+      expect(link).toHaveTextContent(`${catalogEn["nav.transactions"]}12`);
+    });
+  });
+
+  it("shows no count when nothing is uncategorized", async () => {
+    const fetch = uncategorizedFetch(0);
+    await renderApp("/", { fetch });
+    await waitFor(() => {
+      expect(fetch.served).toEqual(["uncategorized"]);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const link = within(column()).getByRole("link", {
+      name: catalogEn["nav.transactions"],
+    });
+    expect(link).toHaveTextContent(
+      new RegExp(`^${catalogEn["nav.transactions"]}$`),
+    );
+  });
+
+  it("navigates from the column", async () => {
+    const user = userEvent.setup();
+    const { router } = await renderApp("/", { fetch: newFetch() });
     await user.click(
-      screen.getByRole("link", { name: catalogEn["nav.accounts"] }),
+      within(column()).getByRole("link", { name: catalogEn["nav.cards"] }),
     );
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/accounts");
+      expect(router.state.location.pathname).toBe("/cards");
     });
   });
 
-  // The top bar's links select before the route changes, as the tab bar's do.
-  it("selects the clicked destination before the route changes", async () => {
-    const { router } = await renderApp("/", {
-      width: 1280,
-      fetch: newFetch(),
-    });
-    const accounts = screen.getByRole("link", {
-      name: catalogEn["nav.accounts"],
-    });
-    fireEvent.click(accounts);
-    expect(accounts).toHaveAttribute("data-selected");
-    expect(
-      screen.getByRole("link", { name: catalogEn["nav.overview"] }),
-    ).not.toHaveAttribute("data-selected");
-    expect(router.state.location.pathname).toBe("/");
-    await waitFor(() => {
-      expect(accounts).toHaveAttribute("aria-current", "page");
-    });
-  });
-
-  // A tap on the selected tab at its own route scrolls the page to its top.
-  it.each([360, 1280])(
-    "scrolls the page to its top on a tap on the current destination at %i px",
-    async (width) => {
-      // jsdom does not scroll; this stand-in moves scrollTop as a browser would.
-      const scrollTo = Object.getOwnPropertyDescriptor(
-        HTMLElement.prototype,
-        "scrollTo",
-      );
-      Object.defineProperty(HTMLElement.prototype, "scrollTo", {
-        configurable: true,
-        value(this: HTMLElement, options?: ScrollToOptions) {
-          this.scrollTop = options?.top ?? 0;
-        },
-      });
-      try {
-        const { container, router } = await renderApp("/transactions", {
-          width,
-          fetch: newFetch(),
-        });
-        const main = container.querySelector("main");
-        if (main === null) throw new Error("no main");
-        main.scrollTop = 400;
-        fireEvent.click(
-          screen.getByRole("link", {
-            name: new RegExp(`^${catalogEn["nav.transactions"]}`),
-          }),
-        );
-        expect(main.scrollTop).toBe(0);
-        expect(router.state.location.pathname).toBe("/transactions");
-      } finally {
-        if (scrollTo === undefined) {
-          Reflect.deleteProperty(HTMLElement.prototype, "scrollTo");
-        } else {
-          Object.defineProperty(HTMLElement.prototype, "scrollTo", scrollTo);
-        }
-      }
-    },
-  );
-
-  it("marks Transactions current on a transaction detail route", async () => {
-    await renderApp("/transactions/abc", { width: 1280, fetch: newFetch() });
-    expect(
-      screen.getByRole("link", { name: catalogEn["nav.transactions"] }),
-    ).toHaveAttribute("aria-current", "page");
-    expect(
-      screen.getByRole("link", { name: catalogEn["nav.overview"] }),
-    ).not.toHaveAttribute("aria-current");
-  });
-
-  // The entry opens the admin page until the quick entry is rebuilt.
-  it("opens the admin page from the top bar's entry control", async () => {
+  it("opens the entry from the column", async () => {
     const user = userEvent.setup();
-    const { router } = await renderApp("/", {
-      width: 1280,
-      fetch: fakeApi(sharedRoutes),
+    const { router } = await renderApp("/", { fetch: newFetch() });
+    await user.click(
+      screen.getByRole("button", {
+        name: new RegExp(`^${catalogEn["nav.entry.long"]}`),
+      }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/transactions/new");
     });
+  });
+
+  it("marks the commands' keys as keyboard input", async () => {
+    await renderApp("/", { fetch: newFetch() });
     const entry = screen.getByRole("button", {
       name: new RegExp(`^${catalogEn["nav.entry.long"]}`),
     });
-    // A neutral field trigger, the label at the start and the key at the
-    // end.
-    expect(entry).toHaveAttribute("data-own", "entry-trigger");
-    expect(entry.firstElementChild).toHaveTextContent(
-      catalogEn["nav.entry.long"],
-    );
-    expect(entry.lastElementChild).toHaveAttribute("data-ui", "kbd");
-    const css = readFileSync("src/app/shell/top-bar.module.css", "utf8");
-    const rule = /\.entry\s*\{[^}]*\}/.exec(css)?.[0] ?? "";
-    expect(rule).toContain("justify-content: space-between");
-    expect(rule).not.toContain("tone-accent");
-    await user.click(entry);
-    await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/admin");
+    const search = screen.getByRole("button", {
+      name: new RegExp(`^${catalogEn["nav.search"]}`),
     });
+    expect(entry.querySelector("kbd")).toHaveTextContent("N");
+    expect(search.querySelector("kbd")).toHaveTextContent("K");
   });
 
-  // The temporary admin page stands last.
-  it("lists Overview, Transactions, Goals, Cards, Accounts and Admin in the top bar", async () => {
-    await renderApp("/", { width: 1280, fetch: newFetch() });
-    const nav = screen.getByRole("navigation", {
-      name: catalogEn["nav.label"],
-    });
-    const links = within(nav).getAllByRole("link");
-    expect(links).toHaveLength(6);
-    [
-      catalogEn["nav.overview"],
-      catalogEn["nav.transactions"],
-      catalogEn["nav.goals"],
-      catalogEn["nav.cards"],
-      catalogEn["nav.accounts"],
-      catalogEn["nav.admin"],
-    ].forEach((name, n) => {
-      expect(links[n]).toHaveAccessibleName(name);
-    });
-  });
-
-  it("writes no figure beside a destination", async () => {
-    const money = (amount: number) => ({ amount, currency: "BRL" });
-    const fetch = fakeApi({
-      ...sharedRoutes,
-      "GET /api/v1/accounts": () =>
-        json(200, {
-          items: [
-            {
-              id: "a-1",
-              name: "Itaú",
-              class: "asset",
-              kind: "checking",
-              currency: "BRL",
-            },
-          ],
-        }),
-      "GET /api/v1/balances": () =>
-        json(200, { items: [{ account_id: "a-1", balance: money(605480) }] }),
-    });
-    await renderApp("/admin", { width: 1280, fetch });
-    expect((await screen.findAllByText("6054.80 BRL")).length).toBeGreaterThan(
-      0,
-    );
-    const nav = screen.getByRole("navigation", {
-      name: catalogEn["nav.label"],
-    });
-    for (const link of within(nav).getAllByRole("link")) {
-      expect(link).not.toHaveAttribute("aria-describedby");
-    }
-  });
-
-  it("opens goals from the more sheet", async () => {
+  it("collapses the column to the rail and remembers it", async () => {
     const user = userEvent.setup();
-    const { router } = await renderApp("/", { width: 360, fetch: newFetch() });
+    const first = await renderApp("/", { fetch: newFetch() });
     await user.click(
-      screen.getByRole("button", { name: catalogEn["nav.more"] }),
+      screen.getByRole("button", { name: catalogEn["nav.collapse"] }),
     );
-    await user.click(
-      await screen.findByRole("menuitem", { name: catalogEn["nav.goals"] }),
+    expect(localStorage.getItem("equori.nav")).toBe("rail");
+    first.unmount();
+    await renderApp("/", { fetch: newFetch() });
+    expect(
+      screen.getByRole("button", { name: catalogEn["nav.expand"] }),
+    ).toBeInTheDocument();
+  });
+
+  it("opens the palette with Ctrl+K and goes to a destination", async () => {
+    const user = userEvent.setup();
+    const { router } = await renderApp("/", { fetch: newFetch() });
+    await user.keyboard("{Control>}k{/Control}");
+    const dialog = await screen.findByRole("dialog");
+    await user.type(
+      within(dialog).getByRole("combobox"),
+      catalogEn["nav.goals"],
     );
+    await user.keyboard("{Enter}");
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/goals");
     });
   });
 
-  it("opens accounts from the more sheet", async () => {
+  it("opens the palette from the search control", async () => {
     const user = userEvent.setup();
-    const { router } = await renderApp("/", { width: 360, fetch: newFetch() });
+    await renderApp("/", { fetch: newFetch() });
     await user.click(
-      screen.getByRole("button", { name: catalogEn["nav.more"] }),
+      screen.getByRole("button", {
+        name: new RegExp(`^${catalogEn["nav.search"]}`),
+      }),
     );
-    await user.click(
-      await screen.findByRole("menuitem", { name: catalogEn["nav.accounts"] }),
-    );
-    await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/accounts");
-    });
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
   });
 
-  it("opens admin from the more sheet", async () => {
+  it("holds settings, scheme, language and log out in the account menu", async () => {
     const user = userEvent.setup();
-    const { router } = await renderApp("/", { width: 360, fetch: newFetch() });
-    await user.click(
-      screen.getByRole("button", { name: catalogEn["nav.more"] }),
-    );
-    await user.click(
-      await screen.findByRole("menuitem", { name: catalogEn["nav.admin"] }),
-    );
-    await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/admin");
-    });
-  });
-
-  it("opens settings from the more sheet", async () => {
-    const user = userEvent.setup();
-    const { router } = await renderApp("/", { width: 360, fetch: newFetch() });
-    await user.click(
-      screen.getByRole("button", { name: catalogEn["nav.more"] }),
-    );
-    await user.click(
-      await screen.findByRole("menuitem", { name: catalogEn["more.settings"] }),
-    );
-    await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/settings");
-    });
-  });
-});
-
-describe("AppFrame user menu", () => {
-  it("holds settings, colour scheme, language and log out at 1280 px", async () => {
-    const user = userEvent.setup();
-    await renderApp("/", {
-      width: 1280,
-      fetch: newFetch(),
-    });
+    await renderApp("/", { fetch: newFetch() });
     await user.click(
       screen.getByRole("button", { name: catalogEn["nav.user"] }),
     );
     const menu = await screen.findByRole("menu");
     expect(
-      within(menu)
-        .getAllByRole("menuitem")
-        .map((item) => item.textContent),
-    ).toEqual([catalogEn["more.settings"], catalogEn["more.logout"]]);
-    expect(
-      within(menu)
-        .getAllByRole("menuitemradio")
-        .map((item) => item.textContent),
+      [...menu.querySelectorAll('[role^="menuitem"]')].map(
+        (item) => item.textContent,
+      ),
     ).toEqual([
+      catalogEn["more.settings"],
       catalogEn["scheme.dark"],
       catalogEn["scheme.light"],
       catalogEn["scheme.system"],
+      catalogEn["density.comfortable"],
+      catalogEn["density.compact"],
+      catalogEn["density.dense"],
       catalogEn["locale.en"],
       catalogEn["locale.pt-BR"],
+      catalogEn["more.logout"],
     ]);
     await user.click(
       within(menu).getByRole("menuitemradio", {
@@ -427,12 +232,37 @@ describe("AppFrame user menu", () => {
     expect(html).toHaveAttribute("data-slotted-scheme", "light");
   });
 
-  it("opens settings from the user menu", async () => {
+  it("opens the account menu as wide as its trigger", async () => {
     const user = userEvent.setup();
-    const { router } = await renderApp("/", {
-      width: 1280,
-      fetch: newFetch(),
-    });
+    await renderApp("/", { fetch: newFetch() });
+    await user.click(
+      screen.getByRole("button", { name: catalogEn["nav.user"] }),
+    );
+    const menu = await screen.findByRole("menu");
+    expect(menu.closest("[data-width]")).toHaveAttribute(
+      "data-width",
+      "anchor",
+    );
+  });
+
+  it("switches the density from the account menu", async () => {
+    const user = userEvent.setup();
+    await renderApp("/", { fetch: newFetch() });
+    await user.click(
+      screen.getByRole("button", { name: catalogEn["nav.user"] }),
+    );
+    await user.click(
+      await screen.findByRole("menuitemradio", {
+        name: catalogEn["density.compact"],
+      }),
+    );
+    expect(html).toHaveAttribute("data-slotted-density", "compact");
+    expect(localStorage.getItem("equori.density")).toBe("compact");
+  });
+
+  it("opens settings from the account menu", async () => {
+    const user = userEvent.setup();
+    const { router } = await renderApp("/", { fetch: newFetch() });
     await user.click(
       screen.getByRole("button", { name: catalogEn["nav.user"] }),
     );
@@ -445,15 +275,226 @@ describe("AppFrame user menu", () => {
   });
 });
 
-describe("AppProviders locale", () => {
-  it("sets html lang from the stored locale on first load", async () => {
-    localStorage.setItem("equori.locale", "pt-BR");
-    await renderApp("/", { width: 360, fetch: newFetch() });
-    expect(html).toHaveAttribute("lang", "pt-BR");
+describe("entry shortcut", () => {
+  it.each(["N", "n"])("opens the new transaction on %s", async (key) => {
+    const { router } = await renderApp("/", { fetch: newFetch() });
+    fireEvent.keyDown(document.body, { key });
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/transactions/new");
+    });
   });
 
-  it("sets html lang to en when no locale is stored", async () => {
-    await renderApp("/", { width: 360, fetch: newFetch() });
-    expect(html).toHaveAttribute("lang", "en");
+  it("leaves the key to a field", async () => {
+    const { router } = await renderApp("/", { fetch: newFetch() });
+    const field = document.createElement("input");
+    document.body.append(field);
+    fireEvent.keyDown(field, { key: "N" });
+    field.remove();
+    await act(async () => {
+      await router.load();
+    });
+    expect(router.state.location.pathname).toBe("/");
+  });
+
+  it("leaves Ctrl+N to the browser", async () => {
+    const { router } = await renderApp("/", { fetch: newFetch() });
+    fireEvent.keyDown(document.body, { key: "n", ctrlKey: true });
+    await act(async () => {
+      await router.load();
+    });
+    expect(router.state.location.pathname).toBe("/");
+  });
+
+  it("ignores the key while the command palette is open", async () => {
+    const user = userEvent.setup();
+    const { router } = await renderApp("/", { fetch: newFetch() });
+    await user.keyboard("{Control>}k{/Control}");
+    await screen.findByRole("dialog");
+    fireEvent.keyDown(document.body, { key: "N" });
+    await act(async () => {
+      await router.load();
+    });
+    expect(router.state.location.pathname).toBe("/");
+  });
+});
+
+describe("phone top app bar", () => {
+  it("has no back control on a top-level destination", async () => {
+    await renderApp("/cards", { width: 390, fetch: newFetch() });
+    expect(
+      screen.queryByRole("button", { name: catalogEn["nav.back"] }),
+    ).toBeNull();
+  });
+
+  it("goes to the parent destination from a deep link", async () => {
+    const user = userEvent.setup();
+    const { router } = await renderApp("/accounts/abc", {
+      width: 390,
+      fetch: newFetch(),
+    });
+    await user.click(
+      screen.getByRole("button", { name: catalogEn["nav.back"] }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/accounts");
+    });
+  });
+
+  it("goes back in history after an in-app navigation", async () => {
+    const user = userEvent.setup();
+    const { router } = await renderApp("/transactions", {
+      width: 390,
+      fetch: newFetch(),
+    });
+    await act(async () => {
+      await router.navigate({ to: "/transactions/new" });
+    });
+    await user.click(
+      screen.getByRole("button", { name: catalogEn["nav.back"] }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/transactions");
+    });
+    expect(router.history.length).toBe(2);
+  });
+
+  it("opens the palette from search", async () => {
+    const user = userEvent.setup();
+    await renderApp("/", { width: 390, fetch: newFetch() });
+    await user.click(
+      screen.getByRole("button", { name: catalogEn["nav.search"] }),
+    );
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+  });
+});
+
+function navigationBar() {
+  const bar = document.querySelector('[data-own="navigation-bar"]');
+  if (!(bar instanceof HTMLElement)) throw new Error("no navigation bar");
+  return bar;
+}
+
+describe("phone dock", () => {
+  it("shows four tabs and More in the navigation bar", async () => {
+    await renderApp("/", { width: 390, fetch: newFetch() });
+    const controls = [...navigationBar().querySelectorAll("a, button")];
+    expect(controls.map((control) => control.textContent)).toEqual([
+      catalogEn["nav.home"],
+      catalogEn["nav.transactions"],
+      catalogEn["nav.cards"],
+      catalogEn["nav.accounts"],
+      catalogEn["nav.more"],
+    ]);
+    expect(document.querySelector('[data-ui="side-navigation"]')).toBeNull();
+  });
+
+  it("marks the current tab", async () => {
+    await renderApp("/transactions/abc", { width: 390, fetch: newFetch() });
+    expect(
+      within(navigationBar()).getByRole("link", {
+        name: catalogEn["nav.transactions"],
+      }),
+    ).toHaveAttribute("aria-current", "page");
+  });
+
+  it.each(["/goals", "/admin", "/settings"])(
+    "marks More current on %s",
+    async (path) => {
+      await renderApp(path, { width: 390, fetch: newFetch() });
+      expect(
+        within(navigationBar()).getByRole("button", {
+          name: catalogEn["nav.more"],
+        }),
+      ).toHaveAttribute("data-selected");
+    },
+  );
+
+  it("scrolls to the top on a tap of the current tab", async () => {
+    const user = userEvent.setup();
+    const { router, container } = await renderApp("/cards", {
+      width: 390,
+      fetch: newFetch(),
+    });
+    const main = container.querySelector("main");
+    if (main === null) throw new Error("no main");
+    const scrolls: unknown[] = [];
+    main.scrollTo = (options?: ScrollToOptions | number) => {
+      scrolls.push(options);
+    };
+    await user.click(
+      within(navigationBar()).getByRole("link", {
+        name: catalogEn["nav.cards"],
+      }),
+    );
+    expect(scrolls).toEqual([{ top: 0, behavior: "smooth" }]);
+    expect(router.state.location.pathname).toBe("/cards");
+  });
+
+  it("opens the entry from the floating button", async () => {
+    const user = userEvent.setup();
+    const { router } = await renderApp("/", { width: 390, fetch: newFetch() });
+    await user.click(
+      screen.getByRole("button", { name: catalogEn["nav.entry.long"] }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/transactions/new");
+    });
+    expect(
+      screen.queryByRole("button", { name: catalogEn["nav.entry.long"] }),
+    ).toBeNull();
+  });
+
+  it.each([
+    ["nav.goals", "/goals"],
+    ["nav.admin", "/admin"],
+    ["more.settings", "/settings"],
+  ] as const)("opens %s from More", async (label, path) => {
+    const user = userEvent.setup();
+    const { router } = await renderApp("/", { width: 390, fetch: newFetch() });
+    await user.click(
+      within(navigationBar()).getByRole("button", {
+        name: catalogEn["nav.more"],
+      }),
+    );
+    await user.click(
+      await screen.findByRole("menuitem", { name: catalogEn[label] }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(path);
+    });
+  });
+
+  it("switches the density from More", async () => {
+    const user = userEvent.setup();
+    await renderApp("/", { width: 390, fetch: newFetch() });
+    await user.click(
+      within(navigationBar()).getByRole("button", {
+        name: catalogEn["nav.more"],
+      }),
+    );
+    await user.click(
+      await screen.findByRole("menuitem", { name: catalogEn["more.density"] }),
+    );
+    await user.click(
+      await screen.findByRole("menuitem", { name: catalogEn["density.dense"] }),
+    );
+    expect(html).toHaveAttribute("data-slotted-density", "dense");
+  });
+
+  it("switches the scheme from More", async () => {
+    const user = userEvent.setup();
+    await renderApp("/", { width: 390, fetch: newFetch() });
+    await user.click(
+      within(navigationBar()).getByRole("button", {
+        name: catalogEn["nav.more"],
+      }),
+    );
+    await user.click(
+      await screen.findByRole("menuitem", { name: catalogEn["more.scheme"] }),
+    );
+    await user.click(
+      await screen.findByRole("menuitem", { name: catalogEn["scheme.light"] }),
+    );
+    expect(html).toHaveAttribute("data-slotted-scheme", "light");
   });
 });

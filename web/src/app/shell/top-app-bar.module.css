@@ -1,0 +1,47 @@
+@layer app {
+  .bar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--slotted-space-2);
+    inline-size: 100%;
+    box-sizing: border-box;
+    /* 56 px under the status bar; the banner region paints the ground and the seam. */
+    min-block-size: calc(3.5rem + env(safe-area-inset-top));
+    padding-block-start: env(safe-area-inset-top);
+  }
+
+  .start,
+  .end {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Without a back control the title starts 16 px from the edge, as Android's bar sets it. */
+  .start:empty + .title {
+    padding-inline-start: var(--slotted-space-2);
+  }
+
+  .title {
+    margin: 0;
+    overflow: hidden;
+    color: var(--slotted-text);
+    font-family: var(--slotted-font-family-heading);
+    font-size: var(--slotted-font-size-xl);
+    font-weight: var(--slotted-font-weight-semibold);
+    line-height: var(--slotted-line-height-md);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 0;
+    translate: 0 var(--slotted-space-2);
+    transition:
+      opacity var(--slotted-duration-medium) var(--slotted-easing-standard),
+      translate var(--slotted-duration-medium) var(--slotted-easing-standard);
+  }
+
+  .bar[data-scrolled] .title {
+    opacity: 1;
+    translate: 0 0;
+  }
+}

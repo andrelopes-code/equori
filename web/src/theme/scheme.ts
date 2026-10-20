@@ -31,6 +31,28 @@ export function applyScheme(scheme: Scheme): void {
         : "light"
       : scheme;
   document.documentElement.setAttribute("data-slotted-scheme", resolved);
+  paintThemeColor();
+}
+
+// Android paints its status bar, and an installed app its title bar, in theme-color; the
+// colour follows the scheme's surface so the bar and the page read as one plane.
+function paintThemeColor(): void {
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (!(meta instanceof HTMLMetaElement)) return;
+  // The token is a relative colour over a seed; a probe resolves it to a colour a meta accepts.
+  const probe = document.createElement("span");
+  probe.style.color = "var(--slotted-surface)";
+  probe.hidden = true;
+  document.documentElement.append(probe);
+  let color = getComputedStyle(probe).color;
+  probe.remove();
+  // An engine that leaves var() unresolved in a computed colour (jsdom) gets the token as written.
+  if (color.includes("var(")) {
+    color = getComputedStyle(document.documentElement)
+      .getPropertyValue("--slotted-surface")
+      .trim();
+  }
+  if (color !== "" && !color.includes("var(")) meta.content = color;
 }
 
 export function useScheme(): [Scheme, (scheme: Scheme) => void] {

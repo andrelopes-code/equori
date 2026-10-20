@@ -204,18 +204,18 @@ describe.each([360, 768, 1280])("routes at %i px", (width) => {
         ),
       ).toBeNull();
 
-      const bar = container.querySelector('[data-own="bottom-bar"]');
-      // The top bar from 1024 px, the tab bar below.
-      const index = container.querySelector('[data-own="top-bar"]');
+      const bar = container.querySelector('[data-own="navigation-bar"]');
+      // The column from 1024 px, the navigation bar below.
+      const column = container.querySelector('[data-ui="side-navigation"]');
       if (!authenticated) {
         expect(bar).toBeNull();
-        expect(index).toBeNull();
+        expect(column).toBeNull();
       } else if (width < 1024) {
         expect(bar).not.toBeNull();
-        expect(index).toBeNull();
+        expect(column).toBeNull();
       } else {
         expect(bar).toBeNull();
-        expect(index).not.toBeNull();
+        expect(column).not.toBeNull();
       }
       expect(container.querySelector('[data-ui="top-navigation"]')).toBeNull();
     },

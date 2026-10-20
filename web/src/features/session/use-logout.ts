@@ -10,9 +10,14 @@ export function useLogout() {
   return {
     logout: () => {
       deleteSession.mutate(undefined, {
+        // The shell's own queries refill a cache cleared while it is still mounted, so the
+        // cache is cleared once the login route has replaced it.
         onSuccess: () => {
-          queryClient.clear();
-          void navigate({ to: "/login", search: { redirect: undefined } });
+          void navigate({ to: "/login", search: { redirect: undefined } }).then(
+            () => {
+              queryClient.clear();
+            },
+          );
         },
       });
     },

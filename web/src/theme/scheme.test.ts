@@ -77,4 +77,20 @@ describe("scheme", () => {
       "light",
     );
   });
+
+  it("paints the browser's bar in the scheme's surface", () => {
+    stubMatchMedia(false);
+    const meta = document.createElement("meta");
+    meta.name = "theme-color";
+    meta.content = "#000000";
+    document.head.append(meta);
+    document.documentElement.style.setProperty("--slotted-surface", "#fafafa");
+    try {
+      applyScheme("light");
+      expect(meta.content).toBe("#fafafa");
+    } finally {
+      meta.remove();
+      document.documentElement.style.removeProperty("--slotted-surface");
+    }
+  });
 });

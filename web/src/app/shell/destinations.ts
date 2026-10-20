@@ -1,17 +1,79 @@
+import type { ShellIconName } from "@/app/shell/shell-icon";
 import type { MessageKey } from "@/i18n/catalog.en";
 
+export type DestinationKey =
+  | "overview"
+  | "transactions"
+  | "cards"
+  | "accounts"
+  | "goals"
+  | "admin"
+  | "settings";
+
 export interface Destination {
-  key: "home" | "transactions" | "goals" | "cards" | "accounts" | "admin";
-  to: "/" | "/transactions" | "/goals" | "/cards" | "/accounts" | "/admin";
+  key: DestinationKey;
+  to:
+    | "/"
+    | "/transactions"
+    | "/cards"
+    | "/accounts"
+    | "/goals"
+    | "/admin"
+    | "/settings";
   label: MessageKey;
+  icon: ShellIconName;
+  // A phone holds four destinations in its navigation bar and the rest in the More sheet.
+  phone: "bar" | "more";
 }
 
-// Destinations carry no glyph.
 export const destinations: readonly Destination[] = [
-  { key: "home", to: "/", label: "nav.overview" },
-  { key: "transactions", to: "/transactions", label: "nav.transactions" },
-  { key: "goals", to: "/goals", label: "nav.goals" },
-  { key: "cards", to: "/cards", label: "nav.cards" },
-  { key: "accounts", to: "/accounts", label: "nav.accounts" },
-  { key: "admin", to: "/admin", label: "nav.admin" },
+  {
+    key: "overview",
+    to: "/",
+    label: "nav.overview",
+    icon: "overview",
+    phone: "bar",
+  },
+  {
+    key: "transactions",
+    to: "/transactions",
+    label: "nav.transactions",
+    icon: "transactions",
+    phone: "bar",
+  },
+  {
+    key: "cards",
+    to: "/cards",
+    label: "nav.cards",
+    icon: "cards",
+    phone: "bar",
+  },
+  {
+    key: "accounts",
+    to: "/accounts",
+    label: "nav.accounts",
+    icon: "accounts",
+    phone: "bar",
+  },
+  {
+    key: "goals",
+    to: "/goals",
+    label: "nav.goals",
+    icon: "goals",
+    phone: "more",
+  },
+  {
+    key: "admin",
+    to: "/admin",
+    label: "nav.admin",
+    icon: "admin",
+    phone: "more",
+  },
+  {
+    key: "settings",
+    to: "/settings",
+    label: "more.settings",
+    icon: "settings",
+    phone: "more",
+  },
 ];

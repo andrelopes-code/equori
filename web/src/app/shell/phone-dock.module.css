@@ -1,0 +1,201 @@
+@layer app {
+  .dock {
+    position: relative;
+    inline-size: 100%;
+  }
+
+  /* Android's navigation bar: 80 px of controls over the gesture area; the footer region
+     paints the ground. */
+  .bar {
+    padding-block-end: env(safe-area-inset-bottom);
+  }
+
+  .list {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .item {
+    display: flex;
+    min-inline-size: 0;
+  }
+
+  .tab {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--slotted-space-2);
+    min-block-size: 5rem;
+    box-sizing: border-box;
+    padding-block: var(--slotted-space-5) var(--slotted-space-6);
+    padding-inline: var(--slotted-space-1);
+    border: 0;
+    background: transparent;
+    color: var(--slotted-text-muted);
+    font: inherit;
+    text-decoration: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+  }
+
+  .tab:focus-visible {
+    outline: none;
+  }
+
+  /* The pill behind the mark: Android's active indicator, 64 by 32. */
+  .indicator {
+    position: relative;
+    display: grid;
+    place-items: center;
+    inline-size: 4rem;
+    block-size: 2rem;
+    border-radius: var(--slotted-radius-full);
+    isolation: isolate;
+  }
+
+  .indicator::before {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    border-radius: inherit;
+    background: transparent;
+    content: "";
+    scale: 0.6 1;
+    transition:
+      scale var(--slotted-duration-medium) var(--slotted-easing-standard),
+      background-color var(--slotted-duration-short)
+        var(--slotted-easing-standard);
+  }
+
+  .tab:focus-visible .indicator {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  @media (hover: hover) {
+    .tab:hover:not([data-selected]) .indicator::before {
+      background: var(--slotted-state-hover);
+      scale: 1 1;
+    }
+  }
+
+  .tab:active:not([data-selected]) .indicator::before {
+    background: var(--slotted-state-pressed);
+    scale: 1 1;
+  }
+
+  .tab[data-selected] {
+    color: var(--slotted-text);
+  }
+
+  .tab[data-selected] .indicator {
+    color: var(--slotted-tone-accent-text);
+  }
+
+  .tab[data-selected] .indicator::before {
+    background: var(--slotted-tone-accent-subtle-active);
+    scale: 1 1;
+  }
+
+  .tab[data-selected]:active .indicator::before {
+    background: var(--slotted-tone-accent-surface);
+  }
+
+  .label {
+    max-inline-size: 100%;
+    overflow: hidden;
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-medium);
+    line-height: var(--slotted-line-height-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tab[data-selected] .label {
+    font-weight: var(--slotted-font-weight-semibold);
+  }
+
+  /* The count stands on the mark's upper corner, after the label in reading order. */
+  .count {
+    position: absolute;
+    inset-block-start: calc(var(--slotted-space-2) * -1);
+    inset-inline-start: calc(50% + var(--slotted-space-3));
+    display: flex;
+    pointer-events: none;
+  }
+
+  /* Android's extended floating action button, 56 px high, over the bar's inline end. */
+  .fab {
+    position: absolute;
+    inset-block-end: calc(100% + var(--slotted-space-6));
+    inset-inline-end: max(var(--slotted-space-6), env(safe-area-inset-right));
+    display: inline-flex;
+    align-items: center;
+    block-size: 3.5rem;
+    min-inline-size: 3.5rem;
+    box-sizing: border-box;
+    padding-inline: var(--slotted-space-6);
+    border: 0;
+    border-radius: 1rem;
+    background: var(--slotted-tone-accent-solid);
+    box-shadow: var(--slotted-shadow-md);
+    color: var(--slotted-tone-accent-on-solid);
+    font: inherit;
+    font-size: var(--slotted-font-size-md);
+    font-weight: var(--slotted-font-weight-semibold);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+    transition:
+      background-color var(--slotted-duration-short)
+        var(--slotted-easing-standard),
+      box-shadow var(--slotted-duration-short) var(--slotted-easing-standard),
+      scale var(--slotted-duration-short) var(--slotted-easing-standard);
+  }
+
+  @media (hover: hover) {
+    .fab:hover {
+      background: var(--slotted-tone-accent-solid-hover);
+      box-shadow: var(--slotted-shadow-lg);
+    }
+  }
+
+  .fab:active {
+    background: var(--slotted-tone-accent-solid-active);
+    scale: 0.97;
+  }
+
+  .fab:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  /* Folded, the label keeps its place in the accessibility tree and gives up its width. */
+  .fabLabel {
+    display: inline-block;
+    max-inline-size: 12rem;
+    overflow: hidden;
+    padding-inline-start: var(--slotted-space-5);
+    white-space: nowrap;
+    transition:
+      max-inline-size var(--slotted-duration-medium)
+        var(--slotted-easing-standard),
+      padding var(--slotted-duration-medium) var(--slotted-easing-standard),
+      opacity var(--slotted-duration-short) var(--slotted-easing-standard);
+  }
+
+  .fab[data-folded] .fabLabel {
+    max-inline-size: 0;
+    padding-inline-start: 0;
+    opacity: 0;
+  }
+}

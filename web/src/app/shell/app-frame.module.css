@@ -1,0 +1,18 @@
+@layer app {
+  /* The phone's bar lies on the page's own ground at rest and lifts one tonal step, with its
+     seam, once content scrolls under it, as Android's top app bar does. */
+  .banner {
+    --slotted-app-shell-banner-surface: transparent;
+    --slotted-app-shell-border-color: transparent;
+  }
+
+  .bannerScrolled {
+    --slotted-app-shell-banner-surface: var(--slotted-surface);
+  }
+
+  /* The navigation bar is a tonal step above the page, with no rule, as Android's is. */
+  .footer {
+    --slotted-app-shell-footer-surface: var(--slotted-surface);
+    --slotted-app-shell-border-color: transparent;
+  }
+}

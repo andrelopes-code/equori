@@ -17,7 +17,7 @@ import {
 } from "@/features/admin/category-tree";
 import { FigureTile } from "@/features/admin/figure-tile";
 import { monthBounds } from "@/features/admin/month-bounds";
-import { MonthSelect } from "@/features/admin/month-select";
+import { MonthEditor } from "@/features/admin/month-editor";
 import { OperationList } from "@/features/admin/operation-list";
 import { operations } from "@/features/admin/operations";
 import { QueryTable } from "@/features/admin/query-table";
@@ -99,7 +99,7 @@ export function CategorizationPanel({ ctx }: { ctx: AdminContext }) {
   return (
     <Stack gap={8}>
       <Inline>
-        <MonthSelect
+        <MonthEditor
           name="month"
           label={t("admin.month")}
           value={month}

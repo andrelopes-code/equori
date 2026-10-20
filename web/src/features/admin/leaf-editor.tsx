@@ -4,7 +4,7 @@ import { TextField } from "@slotted/react/text-field";
 
 import { DateEditor } from "@/features/admin/date-editor";
 import { fieldKind } from "@/features/admin/draft";
-import { MonthSelect } from "@/features/admin/month-select";
+import { MonthEditor } from "@/features/admin/month-editor";
 import { RecordSelect, recordOptions } from "@/features/admin/record-select";
 import type { AdminContext } from "@/features/admin/use-admin-context";
 
@@ -71,7 +71,7 @@ export function LeafEditor({
       );
     case "month":
       return (
-        <MonthSelect
+        <MonthEditor
           name={path}
           label={name}
           value={text}

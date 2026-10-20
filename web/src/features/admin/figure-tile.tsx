@@ -7,8 +7,6 @@ import {
   StatCardValue,
 } from "@slotted/react/stat-card";
 
-import styles from "@/features/admin/figure-tile.module.css";
-
 export function FigureTile({
   label,
   value,
@@ -24,22 +22,20 @@ export function FigureTile({
   loading?: boolean;
 }) {
   return (
-    <div className={styles.cell}>
-      <StatCard
-        size={size}
-        loading={loading}
-        status={!loading && value === undefined ? "empty" : "ready"}
-      >
-        <StatCardHeader>
-          <StatCardLabel>{label}</StatCardLabel>
-        </StatCardHeader>
-        <StatCardFigure>
-          <StatCardValue value={value} />
-          {comparison !== undefined && (
-            <StatCardComparison>{comparison}</StatCardComparison>
-          )}
-        </StatCardFigure>
-      </StatCard>
-    </div>
+    <StatCard
+      size={size}
+      loading={loading}
+      status={!loading && value === undefined ? "empty" : "ready"}
+    >
+      <StatCardHeader>
+        <StatCardLabel>{label}</StatCardLabel>
+      </StatCardHeader>
+      <StatCardFigure>
+        <StatCardValue value={value} />
+        {comparison !== undefined && (
+          <StatCardComparison>{comparison}</StatCardComparison>
+        )}
+      </StatCardFigure>
+    </StatCard>
   );
 }

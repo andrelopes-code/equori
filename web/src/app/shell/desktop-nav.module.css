@@ -1,0 +1,57 @@
+@layer app {
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--slotted-space-4);
+    min-inline-size: 0;
+    color: var(--slotted-text);
+  }
+
+  .wordmark {
+    font-family: var(--slotted-font-family-heading);
+    font-size: var(--slotted-font-size-xl);
+    font-weight: var(--slotted-font-weight-semibold);
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+
+  /* The two commands stand above the destinations, one step apart; in the rail they stack
+     centred on the marks. */
+  .commands {
+    display: grid;
+    box-sizing: border-box;
+    justify-items: center;
+    gap: var(--slotted-space-3);
+    padding-block-end: var(--slotted-space-6);
+  }
+
+  .commands[data-open] {
+    justify-items: stretch;
+  }
+
+  .foot {
+    box-sizing: border-box;
+    inline-size: 100%;
+  }
+
+  /* Open, the brand and the toggle share the head's row; in the rail the toggle stands alone
+     on the marks' axis. */
+  .head {
+    display: flex;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    inline-size: 100%;
+  }
+
+  .head[data-open] {
+    justify-content: space-between;
+  }
+
+  /* No legend where no key can be pressed (SC-06). */
+  @media (hover: none) and (pointer: coarse) {
+    .keys {
+      display: none;
+    }
+  }
+}

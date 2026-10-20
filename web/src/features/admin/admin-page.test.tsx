@@ -334,10 +334,15 @@ describe("AdminPage", () => {
     await user.click(
       await screen.findByRole("tab", { name: catalogEn["admin.tab.cards"] }),
     );
+    // The month picker's trigger carries the chosen month in its name.
     await user.click(
-      await screen.findByRole("combobox", { name: catalogEn["admin.month"] }),
+      await screen.findByRole("button", { name: /October 2026$/ }),
     );
-    await user.click(await screen.findByRole("option", { name: "2026-09" }));
+    await user.click(
+      within(await screen.findByRole("dialog")).getByRole("button", {
+        name: "September 2026",
+      }),
+    );
     const amount = await statCard(
       `Statement due in ${formatReferenceMonth("2026-09", "en")}`,
     );
