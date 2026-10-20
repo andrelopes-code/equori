@@ -11,6 +11,11 @@ import (
 // ToolHandler executes one tool call; args follow the tool's Parameters schema.
 type ToolHandler func(ctx context.Context, args json.RawMessage) (json.RawMessage, error)
 
+// ToolError is a handler failure whose JSON content reaches the model unchanged.
+type ToolError struct{ Content json.RawMessage }
+
+func (e *ToolError) Error() string { return string(e.Content) }
+
 // RunTools calls the model until it answers without a tool call, running each requested
 // tool with its handler. It returns the final response and the whole conversation, which
 // keeps every signature for a later turn. A handler error goes back to the model as an
@@ -54,6 +59,10 @@ func runTool(ctx context.Context, handlers map[string]ToolHandler, call ToolCall
 	if err != nil {
 		if ctx.Err() != nil || isContextError(err) {
 			return ToolResult{}, fmt.Errorf("run tool %s: %w", call.Name, err)
+		}
+		if te, ok := errors.AsType[*ToolError](err); ok {
+			result.Content, result.IsError = te.Content, true
+			return result, nil
 		}
 		result.Content, result.IsError = errorContent(err.Error()), true
 		return result, nil

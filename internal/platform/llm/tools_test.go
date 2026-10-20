@@ -88,6 +88,7 @@ func TestRunTools(t *testing.T) {
 	}{
 		{"handler error", "balance", map[string]llm.ToolHandler{"balance": handler("", errors.New("account not found"))}, `{"error":"account not found"}`},
 		{"unknown tool", "missing", map[string]llm.ToolHandler{}, `{"error":"unknown tool missing"}`},
+		{"tool error", "balance", map[string]llm.ToolHandler{"balance": handler("", &llm.ToolError{Content: json.RawMessage(`{"code":"not_found"}`)})}, `{"code":"not_found"}`},
 	}
 	for _, tt := range failures {
 		t.Run(tt.name, func(t *testing.T) {
