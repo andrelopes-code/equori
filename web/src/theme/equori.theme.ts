@@ -22,50 +22,26 @@ const currentDestinationRule = `
 }
 `;
 
-// A ledger table lines up with the headings around it: no inset at its outer edges,
-// and a row's name reads at the body weight (complete frontend G4).
-const tableEdgeRule = `
-[data-ui="table"] [data-part="row"] > [data-part="cell"]:first-child,
-[data-ui="table"] [data-part="row"] > [data-part="row-header"]:first-child,
-[data-ui="table"] [data-part="row"] > [data-part="column-header"]:first-child {
-  padding-inline-start: 0;
-}
-
-[data-ui="table"] [data-part="row"] > [data-part="cell"]:last-child,
-[data-ui="table"] [data-part="row"] > [data-part="column-header"]:last-child {
-  padding-inline-end: 0;
-}
-
-[data-ui="table"] [data-part="body"] [data-part="row-header"] {
-  font-weight: var(--slotted-font-weight-regular);
-}
-
-[data-ui="table"] [data-part="column-header"] {
-  font-weight: var(--slotted-font-weight-regular);
-  color: var(--slotted-text-muted);
-}
-`;
-
 export default extendTheme(
   defaultTheme,
   {
     seeds: {
-      accent: "#2dd4bf",
+      accent: "#10b981",
       neutral: "#71717a",
       warning: "#facc15",
       danger: "#f87171",
     },
-    // Accent marks forecasts only (ledger sheet L10): destinations read muted, the
-    // current one in the full text colour over the bar's own ground, underlined.
+    // Destinations read muted, the current one in the full text colour over the bar's own
+    // ground, underlined.
     components: {
       "--slotted-top-navigation-color": "var(--slotted-text-muted)",
       "--slotted-top-navigation-current-color": "var(--slotted-text)",
       "--slotted-top-navigation-current-background": "transparent",
-      // Ledger sheet L12: a table is lines on the page, not a surface over it.
+      // A table is lines on the page, not a surface over it.
       "--slotted-table-surface": "transparent",
       "--slotted-table-header-surface": "transparent",
     },
-    rules: [summaryRule, currentDestinationRule, tableEdgeRule],
+    rules: [summaryRule, currentDestinationRule],
   },
   { name: "equori" },
 );
