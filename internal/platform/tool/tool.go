@@ -71,8 +71,9 @@ func New[In, Out any](s Spec, h func(ctx context.Context, userID int64, in In) (
 		spec: s, input: input, output: output, in: in, out: out,
 		call: func(ctx context.Context, userID int64, args []byte) (any, error) {
 			var v In
+			// The schema has accepted args; what fails here is a value, such as a malformed date.
 			if err := json.Unmarshal(args, &v); err != nil {
-				return nil, err
+				return nil, invalidArguments(err.Error())
 			}
 			return h(ctx, userID, v)
 		},
