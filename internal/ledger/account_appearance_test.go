@@ -42,6 +42,27 @@ func TestAccountAppearanceOnCreate(t *testing.T) {
 	}
 }
 
+// A83: the account list carries the appearance the record carries.
+func TestAccountAppearanceInList(t *testing.T) {
+	t.Parallel()
+	c := newCategoryTree(t)
+	c.h.MustDo(http.MethodPut, "/api/v1/accounts/"+c.food+"/appearance", map[string]any{"color": 3, "icon": "utensils"}, http.StatusOK, nil)
+	var list struct {
+		Items []appearanceView `json:"items"`
+	}
+	c.h.MustDo(http.MethodGet, "/api/v1/accounts?limit=200", nil, http.StatusOK, &list)
+	for _, item := range list.Items {
+		if item.ID != c.food {
+			continue
+		}
+		if item.Color == nil || *item.Color != 3 || item.Icon == nil || *item.Icon != "utensils" {
+			t.Fatalf("listed food = %+v", item)
+		}
+		return
+	}
+	t.Fatalf("food %s not listed", c.food)
+}
+
 func TestAccountAppearanceRejections(t *testing.T) {
 	t.Parallel()
 	c := newCategoryTree(t)

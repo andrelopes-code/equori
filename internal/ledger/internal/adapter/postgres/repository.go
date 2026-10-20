@@ -233,7 +233,8 @@ func (r *Repository) ListAccounts(ctx context.Context, userID int64, p page.Requ
 				ID: row.ID, UserID: row.UserID, Name: row.Name, AccountClass: row.AccountClass, Kind: row.Kind,
 				Instrument: row.Instrument, ParentID: row.ParentID, InstitutionID: row.InstitutionID,
 				CounterpartyPayeeID: row.CounterpartyPayeeID, OpenedOn: row.OpenedOn, ClosedOn: row.ClosedOn,
-				YieldMode: row.YieldMode, SystemRole: row.SystemRole, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
+				YieldMode: row.YieldMode, SystemRole: row.SystemRole, Color: row.Color, Icon: row.Icon,
+				CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
 			})
 		},
 		func(row ListAccountsRow) app.AccountKey {
