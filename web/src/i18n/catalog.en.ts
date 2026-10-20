@@ -199,6 +199,10 @@ export const catalogEn = {
   "problem.dispute_open": "This purchase already has an open dispute.",
   "problem.dispute_resolved": "This dispute is already resolved.",
   "problem.invalid_request": "The request is not valid.",
+  "category.label": "Category",
+  "category.group.expense": "Expenses",
+  "category.group.income": "Income",
+  "category.create": "Create category “{query}”",
 } as const;
 
 export type Catalog = { [K in keyof typeof catalogEn]: string };
