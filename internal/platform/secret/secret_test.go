@@ -11,6 +11,7 @@ import (
 func key(b byte) []byte { return bytes.Repeat([]byte{b}, 32) }
 
 func TestSealAndOpen(t *testing.T) {
+	t.Parallel()
 	box, err := secret.New(key(1), nil)
 	if err != nil {
 		t.Fatal(err)
@@ -50,6 +51,7 @@ func TestSealAndOpen(t *testing.T) {
 
 // ADR 008: the previous key opens old values, which then need resealing.
 func TestKeyRotation(t *testing.T) {
+	t.Parallel()
 	old, _ := secret.New(key(1), nil)
 	sealed, err := old.Seal([]byte("s"), []byte("ad"))
 	if err != nil {
@@ -72,6 +74,7 @@ func TestKeyRotation(t *testing.T) {
 }
 
 func TestNewRejectsBadKeys(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct{ current, previous []byte }{{nil, nil}, {key(1)[:31], nil}, {key(1), key(2)[:16]}, {key(1), key(1)}} {
 		if _, err := secret.New(tc.current, tc.previous); err == nil {
 			t.Errorf("New(%d bytes, %d bytes) accepted", len(tc.current), len(tc.previous))

@@ -10,6 +10,7 @@ import (
 )
 
 func TestConvert(t *testing.T) {
+	t.Parallel()
 	md := marketdata.New(pgtest.New(t))
 	ctx := t.Context()
 	if _, err := md.DefineInstrument(ctx, marketdata.Instrument{Code: "MXRF11", Type: "fii", Scale: 0, Name: "Maxi Renda", QuoteCurrency: "BRL", Exchange: "B3"}); err != nil {

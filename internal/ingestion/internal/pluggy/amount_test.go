@@ -7,6 +7,7 @@ import (
 
 // P6 amendment A37: amounts are read from the number text, never through float64.
 func TestMinor(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		raw  Decimal
 		want int64

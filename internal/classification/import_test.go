@@ -53,6 +53,7 @@ func line(date, amount, fitid, name string) apitest.OFXLine {
 
 // S37: a rule categorizes an imported line before it is recorded (P5 amendment A19).
 func TestImportAppliesRule(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	rule := createRule(t, b.h, "Uber", []map[string]any{contains("uber")}, []map[string]any{setCategory(b.transport)})
 	tx := b.importLines(t, "s37.ofx", line("20261014", "-23.90", "s37", "UBER *TRIP"))["UBER *TRIP"]
@@ -67,6 +68,7 @@ func TestImportAppliesRule(t *testing.T) {
 
 // S38: an alias names the payee and the payee's history gives the category (A22, A23).
 func TestImportAppliesAliasAndHistory(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	ifood := payee(t, b.h, "iFood")
 	b.h.MustDo(http.MethodPost, "/api/v1/payee-aliases", map[string]any{"pattern": "ifd*", "match_type": "starts_with", "payee_id": ifood}, http.StatusCreated, nil)
@@ -84,6 +86,7 @@ func TestImportAppliesAliasAndHistory(t *testing.T) {
 
 // S39: the first rule decides the category, tags accumulate, stop_processing ends evaluation (A21).
 func TestImportMergesRules(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	fuel := b.h.Account("Fuel", "expense", "", nil)
 	posto := createRule(t, b.h, "Posto", []map[string]any{contains("posto")}, []map[string]any{setCategory(fuel)})
@@ -104,6 +107,7 @@ func TestImportMergesRules(t *testing.T) {
 
 // S40: a percent split rounds toward zero and the remainder takes the rest (A21).
 func TestImportSplitsByRule(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	groceries := b.h.Account("Groceries", "expense", "", nil)
 	cleaning := b.h.Account("Cleaning", "expense", "", nil)
@@ -121,6 +125,7 @@ func TestImportSplitsByRule(t *testing.T) {
 
 // P5 Review Focus 3: a rule whose category closed after the rule was created is skipped.
 func TestImportSkipsRuleWithClosedCategory(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	old := b.h.Account("Old bakery", "expense", "", nil)
 	createRule(t, b.h, "Bakery", []map[string]any{contains("padaria")}, []map[string]any{setCategory(old)})
@@ -135,6 +140,7 @@ func TestImportSkipsRuleWithClosedCategory(t *testing.T) {
 
 // S73: a rule naming an archived category does not decide; after reopening, running rules does (A74).
 func TestArchivedCategoryStopsRuleUntilReopened(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	bakery := b.h.Account("Bakery", "expense", "", nil)
 	rule := createRule(t, b.h, "Bakery", []map[string]any{contains("padaria")}, []map[string]any{setCategory(bakery)})
@@ -166,6 +172,7 @@ func TestArchivedCategoryStopsRuleUntilReopened(t *testing.T) {
 
 // S44: SC5 over imports, history, a manual change and an uncategorized line.
 func TestStatisticsAfterImports(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	ifood := payee(t, b.h, "iFood")
 	b.h.MustDo(http.MethodPost, "/api/v1/payee-aliases", map[string]any{"pattern": "ifd*", "match_type": "starts_with", "payee_id": ifood}, http.StatusCreated, nil)

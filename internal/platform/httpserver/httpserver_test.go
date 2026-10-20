@@ -13,6 +13,7 @@ type pingerFunc func(context.Context) error
 func (f pingerFunc) Ping(ctx context.Context) error { return f(ctx) }
 
 func TestHealth(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		ping error

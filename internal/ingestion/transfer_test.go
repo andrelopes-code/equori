@@ -82,6 +82,7 @@ func cardRole(v apitest.TransactionView, card string) string {
 
 // S45: the checking line creates the transfer; the card line matches its card posting.
 func TestCheckingFirstTransfer(t *testing.T) {
+	t.Parallel()
 	s := newPaymentSetup(t)
 	id := s.recordTransfer(t, "2026-11-10")
 	if v := s.h.Transaction(id.String()); len(v.Postings) != 2 || cardRole(v, s.card) != "payment 2026-12" || v.Version != 1 {
@@ -101,6 +102,7 @@ func TestCheckingFirstTransfer(t *testing.T) {
 
 // S46: the card line came first; the checking line completes its transaction (A30).
 func TestCardFirstTransfer(t *testing.T) {
+	t.Parallel()
 	s := newPaymentSetup(t)
 	b := mustImport(t, s.h, s.card, "ofx", "fatura.ofx", apitest.CardOFX(apitest.OFXLine{Date: "20261111", Amount: "1500.00", FITID: "p1", Name: "PAGAMENTO RECEBIDO"}))
 	created := records(t, s.h, b.ID, "created")
@@ -125,6 +127,7 @@ func TestCardFirstTransfer(t *testing.T) {
 // S47 and P5b Review Focus 3 and 4: pairing two imported files, delivery of the paired
 // event twice, and re-imports of both files.
 func TestPairedImportsStayPaired(t *testing.T) {
+	t.Parallel()
 	s := newPaymentSetup(t)
 	checkingFile := apitest.OFX("", apitest.OFXLine{Date: "20261110", Amount: "-1500.00", FITID: "c1", Name: "PAGAMENTO FATURA ITAU"})
 	cardFile := apitest.CardOFX(apitest.OFXLine{Date: "20261111", Amount: "1500.00", FITID: "p1", Name: "PAGAMENTO RECEBIDO"})
@@ -163,6 +166,7 @@ func TestPairedImportsStayPaired(t *testing.T) {
 // A line decided as a transfer with several candidates stays uncategorized for the owner
 // to pair (P5b amendment A30); it never adds a second card posting.
 func TestTransferLineWithSeveralCandidates(t *testing.T) {
+	t.Parallel()
 	s := newPaymentSetup(t)
 	mustImport(t, s.h, s.card, "ofx", "fatura.ofx", apitest.CardOFX(
 		apitest.OFXLine{Date: "20261109", Amount: "1500.00", FITID: "p1", Name: "PAGAMENTO RECEBIDO"},

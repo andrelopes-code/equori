@@ -7,6 +7,7 @@ import (
 )
 
 func TestMigrate(t *testing.T) {
+	t.Parallel()
 	pool := pgtest.New(t)
 
 	if err := pool.Ping(t.Context()); err != nil {

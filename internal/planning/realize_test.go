@@ -44,6 +44,7 @@ func (f fixture) occurrence(scheduleID string, sequence int) occurrenceView {
 }
 
 func TestPaymentOutsideToleranceStaysUnmatched(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.rentSchedule()
 	f.pay("2026-11-05", 235000, f.rent, f.landlord)
@@ -53,6 +54,7 @@ func TestPaymentOutsideToleranceStaysUnmatched(t *testing.T) {
 }
 
 func TestPaymentOutsideWindowStaysUnmatched(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.rentSchedule()
 	f.pay("2026-11-13", 210000, f.rent, f.landlord)
@@ -62,6 +64,7 @@ func TestPaymentOutsideWindowStaysUnmatched(t *testing.T) {
 }
 
 func TestPaymentWithAnotherPayeeStaysUnmatched(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.rentSchedule()
 	f.pay("2026-11-05", 210000, f.rent, "")
@@ -72,6 +75,7 @@ func TestPaymentWithAnotherPayeeStaysUnmatched(t *testing.T) {
 
 // A51: a transaction recorded on another category realizes once it is categorized.
 func TestRealizedAfterCategorization(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.rentSchedule()
 	misc := f.h.Account("Misc", "expense", "", nil)
@@ -90,6 +94,7 @@ func TestRealizedAfterCategorization(t *testing.T) {
 
 // Review Focus 2: one transaction that fits two occurrences realizes the closer one, once.
 func TestTransactionFitsTwoOccurrences(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.schedule("bill", f.checking, f.rent, 10000, map[string]any{"frequency": "weekly", "interval": 1, "start": "2026-11-02"}, nil)
 	tx := f.pay("2026-11-06", 10000, f.rent, "")
@@ -107,6 +112,7 @@ func TestTransactionFitsTwoOccurrences(t *testing.T) {
 // Review Focus 4: voiding the realizing transaction returns the occurrence, which a later
 // matching transaction realizes.
 func TestVoidReleasesTheOccurrence(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.rentSchedule()
 	first := f.pay("2026-11-05", 210000, f.rent, f.landlord)
@@ -123,6 +129,7 @@ func TestVoidReleasesTheOccurrence(t *testing.T) {
 }
 
 func TestManualRealization(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.rentSchedule()
 	tx := f.pay("2026-11-20", 150000, f.rent, "")
@@ -157,6 +164,7 @@ func TestManualRealization(t *testing.T) {
 }
 
 func TestRealizeOccurrenceOfAnotherUser(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.rentSchedule()
 	tx := f.pay("2026-11-20", 150000, f.rent, "")
@@ -170,6 +178,7 @@ func TestRealizeOccurrenceOfAnotherUser(t *testing.T) {
 // I07 under concurrency: a manual realization racing the automatic one for the same
 // transaction is refused with 409 transaction_in_use, not a database error.
 func TestManualRealizationRacingAutomaticIs409(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.rentSchedule()
 	misc := f.h.Account("Misc", "expense", "", nil)

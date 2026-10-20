@@ -6,6 +6,7 @@ import (
 )
 
 func TestDecideAssertion(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name              string
 		asserted, settled int64
@@ -25,6 +26,7 @@ func TestDecideAssertion(t *testing.T) {
 }
 
 func TestCheckAssertionDate(t *testing.T) {
+	t.Parallel()
 	last := day("2026-10-31")
 	if err := CheckAssertionDate(day("2026-10-30"), &last); !errors.Is(err, ErrAlreadyReconciled) {
 		t.Fatalf("earlier date err = %v", err)
@@ -40,6 +42,7 @@ func TestCheckAssertionDate(t *testing.T) {
 }
 
 func TestYieldBound(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		settled int64
@@ -64,6 +67,7 @@ func TestYieldBound(t *testing.T) {
 }
 
 func TestDecideSyncedReserve(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name              string
 		asserted, settled int64

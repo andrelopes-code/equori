@@ -32,6 +32,7 @@ func payeeNames(t *testing.T, h *apitest.Harness) map[string]string {
 
 // A82: a payee is renamed; a name in use is rejected.
 func TestRenamePayee(t *testing.T) {
+	t.Parallel()
 	c := newCategoryTree(t)
 	ifood := newPayee(t, c.h, "IFOOD")
 	newPayee(t, c.h, "Rappi")
@@ -44,6 +45,7 @@ func TestRenamePayee(t *testing.T) {
 
 // A82: transactions move to the destination payee; the source leaves the list.
 func TestMergePayees(t *testing.T) {
+	t.Parallel()
 	c := newCategoryTree(t)
 	from, into := newPayee(t, c.h, "IFOOD SP"), newPayee(t, c.h, "iFood")
 	body := tx("2026-10-01", apitest.Posting(c.checking, -4500), apitest.Posting(c.delivery, 4500))
@@ -75,6 +77,7 @@ func TestMergePayees(t *testing.T) {
 
 // Review Focus 4: a payee cannot merge into itself or into a merged payee.
 func TestMergePayeeRejections(t *testing.T) {
+	t.Parallel()
 	c := newCategoryTree(t)
 	a, b, d := newPayee(t, c.h, "A"), newPayee(t, c.h, "B"), newPayee(t, c.h, "D")
 	c.h.MustDo(http.MethodPost, "/api/v1/payees/"+b+"/merge", map[string]string{"into": d}, http.StatusOK, nil)

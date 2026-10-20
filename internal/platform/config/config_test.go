@@ -7,6 +7,7 @@ import (
 )
 
 func TestLoad(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		env     map[string]string
@@ -98,6 +99,7 @@ func TestLoad(t *testing.T) {
 }
 
 func TestLoadNamedTimeZone(t *testing.T) {
+	t.Parallel()
 	cfg, err := Load(func(k string) string {
 		return map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_TIMEZONE": "America/Sao_Paulo"}[k]
 	})
@@ -111,6 +113,7 @@ func TestLoadNamedTimeZone(t *testing.T) {
 
 // ADR 008: integration keys are 32 bytes of standard base64.
 func TestLoadSecretKeys(t *testing.T) {
+	t.Parallel()
 	current := "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE="
 	previous := "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI="
 	base := func(kv ...string) func(string) string {

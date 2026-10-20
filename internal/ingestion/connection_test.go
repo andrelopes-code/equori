@@ -145,6 +145,7 @@ func assertNoSecrets(t *testing.T, h *apitest.Harness, values ...string) {
 
 // S51: credentials validated by Pluggy, item Nubank added, two accounts mapped and one ignored.
 func TestConnectItemAndMapAccounts(t *testing.T) {
+	t.Parallel()
 	a := newAggregator(t)
 	a.serveItem(pluggyClient, nubankItem, "Nubank")
 	checking := a.h.Account("Nubank checking", "asset", "checking", nil)
@@ -239,6 +240,7 @@ func TestConnectItemAndMapAccounts(t *testing.T) {
 
 // A35: an external account maps to one leaf balance account of its currency and a compatible kind.
 func TestMapAccountRejections(t *testing.T) {
+	t.Parallel()
 	a := newAggregator(t)
 	a.serveItem(pluggyClient, nubankItem, "Nubank")
 	a.serveItem(pluggyClient, "item-inter-52c8", "Inter")
@@ -298,6 +300,7 @@ func TestMapAccountRejections(t *testing.T) {
 
 // S57 (credential part) and integration_in_use.
 func TestIntegrationCredentials(t *testing.T) {
+	t.Parallel()
 	a := newAggregator(t)
 	a.serveItem(pluggyClient, nubankItem, "Nubank")
 
@@ -356,6 +359,7 @@ func (a aggregator) connections(c *http.Client) []connectionView {
 // S59 (integration part): each integration keeps its own API key; a wrong secret on one
 // leaves the other working.
 func TestTwoIntegrations(t *testing.T) {
+	t.Parallel()
 	a := newAggregator(t)
 	a.p.SetCredentials("client-2b7d", "secret-2c90")
 	first := a.integrate(a.h.Client, "Meu Pluggy 1", pluggyClient, pluggySecret)
@@ -411,6 +415,7 @@ func TestTwoIntegrations(t *testing.T) {
 // S58 (credentials, connections and mappings): another user sees none of them; the same
 // item may be connected by both users (A45).
 func TestIntegrationIsolation(t *testing.T) {
+	t.Parallel()
 	a := newAggregator(t)
 	a.serveItem(pluggyClient, nubankItem, "Nubank")
 	checking := a.h.Account("Nubank checking", "asset", "checking", nil)
@@ -449,6 +454,7 @@ func TestIntegrationIsolation(t *testing.T) {
 
 // ADR 008 K2: without EQUORI_SECRET_KEY integrations are unavailable.
 func TestIntegrationsWithoutKey(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	for _, r := range []apitest.Response{
 		h.Do(http.MethodPost, "/api/v1/integrations", integrationBody("Meu Pluggy", pluggyClient, pluggySecret)),
@@ -462,6 +468,7 @@ func TestIntegrationsWithoutKey(t *testing.T) {
 
 // ADR 008 K3: a sealed value copied to another row does not open.
 func TestCredentialsBoundToTheirRow(t *testing.T) {
+	t.Parallel()
 	a := newAggregator(t)
 	a.serveItem(pluggyClient, nubankItem, "Nubank")
 	first := a.integrate(a.h.Client, "Meu Pluggy 1", pluggyClient, pluggySecret)
@@ -476,6 +483,7 @@ func TestCredentialsBoundToTheirRow(t *testing.T) {
 
 // ADR 008 K4: rotation reseals every value under the new key.
 func TestSecretRotation(t *testing.T) {
+	t.Parallel()
 	a := newAggregator(t)
 	a.serveItem(pluggyClient, nubankItem, "Nubank")
 	a.serveItem(pluggyClient, "item-inter-52c8", "Inter")
@@ -499,6 +507,7 @@ func TestSecretRotation(t *testing.T) {
 
 // A Pluggy that does not answer is a 502, not an internal error.
 func TestProviderUnavailable(t *testing.T) {
+	t.Parallel()
 	closed := httptest.NewServer(http.NotFoundHandler())
 	closed.Close()
 	h := apitest.New(t, apitest.Pluggy(closed.URL))

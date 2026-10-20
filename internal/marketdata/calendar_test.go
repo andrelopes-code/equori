@@ -18,6 +18,7 @@ func day(s string) time.Time {
 }
 
 func TestEaster(t *testing.T) {
+	t.Parallel()
 	for year, want := range map[int]string{2024: "2024-03-31", 2025: "2025-04-20", 2026: "2026-04-05", 2027: "2027-03-28", 2038: "2038-04-25"} {
 		if got := marketdata.Easter(year); !got.Equal(day(want)) {
 			t.Errorf("Easter(%d) = %s, want %s", year, got.Format(time.DateOnly), want)
@@ -26,6 +27,7 @@ func TestEaster(t *testing.T) {
 }
 
 func TestBRBanking2026(t *testing.T) {
+	t.Parallel()
 	m := marketdata.New(pgtest.New(t))
 	got, err := m.Holidays(t.Context(), marketdata.CalendarBRBanking, 2026)
 	if err != nil {
@@ -44,6 +46,7 @@ func TestBRBanking2026(t *testing.T) {
 }
 
 func TestConsciousnessDayFrom2024(t *testing.T) {
+	t.Parallel()
 	m := marketdata.New(pgtest.New(t))
 	for d, want := range map[string]bool{"2023-11-20": true, "2024-11-20": false} {
 		got, err := m.IsBusinessDay(t.Context(), marketdata.CalendarBRBanking, day(d))
@@ -54,6 +57,7 @@ func TestConsciousnessDayFrom2024(t *testing.T) {
 }
 
 func TestAdjust(t *testing.T) {
+	t.Parallel()
 	m := marketdata.New(pgtest.New(t))
 	tests := []struct {
 		in   string
@@ -76,6 +80,7 @@ func TestAdjust(t *testing.T) {
 }
 
 func TestInstanceHoliday(t *testing.T) {
+	t.Parallel()
 	pool := pgtest.New(t)
 	m := marketdata.New(pool)
 	if _, err := pool.Exec(t.Context(), `INSERT INTO marketdata_holiday (calendar, date, name) VALUES ('br_banking', '2026-03-19', 'Local holiday')`); err != nil {
@@ -100,6 +105,7 @@ func TestInstanceHoliday(t *testing.T) {
 }
 
 func TestUnknownCalendar(t *testing.T) {
+	t.Parallel()
 	m := marketdata.New(pgtest.New(t))
 	if _, err := m.IsBusinessDay(t.Context(), "mars", day("2026-01-02")); !errors.Is(err, marketdata.ErrUnknownCalendar) {
 		t.Fatalf("err = %v, want ErrUnknownCalendar", err)

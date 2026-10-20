@@ -9,6 +9,7 @@ import (
 )
 
 func TestPlanKey(t *testing.T) {
+	t.Parallel()
 	card := uuid.MustParse("01900000-0000-7000-8000-000000000001")
 	i := Installment{Number: 3, Count: 6, PurchaseDate: time.Date(2026, 8, 14, 0, 0, 0, 0, time.UTC)}
 	key := PlanKey(card, i, "LOJA EXEMPLO 03/06")

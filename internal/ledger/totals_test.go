@@ -13,6 +13,7 @@ import (
 // CategoryTotal sums the non-voided postings of a category subtree booked in [from, to)
 // (P7 amendment A54).
 func TestCategoryTotal(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
@@ -52,6 +53,7 @@ func TestCategoryTotal(t *testing.T) {
 
 // CategoryMonthlyTotals groups the same sums by month in one query (P7 final review).
 func TestCategoryMonthlyTotals(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)

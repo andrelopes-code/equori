@@ -51,6 +51,7 @@ func checkProgress(t *testing.T, got progressView, planned, carried, spent, avai
 
 // S60: a Food budget with rollover across three months and an amount change.
 func TestS60BudgetWithRollover(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-12-01")
 	food := f.h.Account("Food", "expense", "", nil)
 	market := f.h.Account("Supermarket", "expense", "", map[string]any{"parent_id": food})
@@ -77,6 +78,7 @@ func TestS60BudgetWithRollover(t *testing.T) {
 }
 
 func TestBudgetWithoutRolloverAndIncome(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-12-01")
 	f.h.Record("2026-10-05", apitest.Posting(f.checking, 500000), apitest.Posting(f.salary, -500000))
 	f.h.Record("2026-10-06", apitest.Posting(f.checking, -100000), apitest.Posting(f.rent, 100000))
@@ -87,6 +89,7 @@ func TestBudgetWithoutRolloverAndIncome(t *testing.T) {
 }
 
 func TestBudgetErrors(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-12-01")
 	id := f.budget(f.rent, 100000, "2026-10", true)
 	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/budgets/"+id+"/progress?month=2026-09", nil), http.StatusUnprocessableEntity, "validation_failed", "month")

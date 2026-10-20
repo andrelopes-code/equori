@@ -28,6 +28,7 @@ func suggestions(t *testing.T, h *apitest.Harness, state string) []suggestionVie
 
 // S42: two equal corrections suggest a rule; accepting it categorizes the next import (A24).
 func TestSuggestionFromRepeatedCorrections(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	bakery := b.h.Account("Bakery", "expense", "", nil)
 	createRule(t, b.h, "Uber", []map[string]any{contains("uber")}, []map[string]any{setCategory(b.transport)})
@@ -88,6 +89,7 @@ func TestSuggestionFromRepeatedCorrections(t *testing.T) {
 }
 
 func TestSuggestionExamplesAndDismissal(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	var pharmacy []string
 	for _, date := range []string{"2026-10-01", "2026-10-02", "2026-10-03", "2026-10-04"} {

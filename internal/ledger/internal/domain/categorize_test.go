@@ -42,6 +42,7 @@ func (f categorizeFixture) record(t *testing.T, postings ...Posting) Transaction
 }
 
 func TestCategoryState(t *testing.T) {
+	t.Parallel()
 	f := newCategorizeFixture(t)
 	tests := []struct {
 		name     string
@@ -63,6 +64,7 @@ func TestCategoryState(t *testing.T) {
 }
 
 func TestCategorizeReplacesOnlyCategoryPostings(t *testing.T) {
+	t.Parallel()
 	f := newCategorizeFixture(t)
 	prev := f.record(t, Posting{AccountID: f.checking.ID, Amount: brl(t, -25000), Status: StatusReconciled}, Posting{AccountID: f.uncategorized.ID, Amount: brl(t, 25000)})
 	prev.Postings[0].ID = uuid.Must(uuid.NewV7())
@@ -98,6 +100,7 @@ func TestCategorizeReplacesOnlyCategoryPostings(t *testing.T) {
 }
 
 func TestCategorizeKeepsCardPosting(t *testing.T) {
+	t.Parallel()
 	f := newCategorizeFixture(t)
 	prev := f.record(t, Posting{AccountID: f.card.ID, Amount: brl(t, -23000)}, Posting{AccountID: f.uncategorized.ID, Amount: brl(t, 23000)})
 
@@ -111,6 +114,7 @@ func TestCategorizeKeepsCardPosting(t *testing.T) {
 }
 
 func TestCategorizeWithoutPartsKeepsPostings(t *testing.T) {
+	t.Parallel()
 	f := newCategorizeFixture(t)
 	prev := f.record(t, Posting{AccountID: f.checking.ID, Amount: brl(t, -100)}, Posting{AccountID: f.uncategorized.ID, Amount: brl(t, 100)})
 	payee := uuid.Must(uuid.NewV7())
@@ -125,6 +129,7 @@ func TestCategorizeWithoutPartsKeepsPostings(t *testing.T) {
 }
 
 func TestCategorizeRejections(t *testing.T) {
+	t.Parallel()
 	f := newCategorizeFixture(t)
 	uncategorized := func() Transaction {
 		return f.record(t, Posting{AccountID: f.checking.ID, Amount: brl(t, -100)}, Posting{AccountID: f.uncategorized.ID, Amount: brl(t, 100)})

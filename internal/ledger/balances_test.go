@@ -9,6 +9,7 @@ import (
 )
 
 func TestListBalances(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Checking", "asset", "checking", nil)
 	savings := h.Account("Savings", "asset", "savings", nil)
@@ -101,6 +102,7 @@ func TestListBalances(t *testing.T) {
 }
 
 func TestListBalancesExcludesVoidedAndSumsLiability(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Checking", "asset", "checking", nil)
 	card := h.Card("Visa", 5, 12, "closing")

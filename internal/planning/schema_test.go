@@ -14,6 +14,7 @@ import (
 // The database rejects rows that break I07 (occurrence side), I08 for schedule terms,
 // overlapping pauses and references to another user's accounts (7.3, 7.6).
 func TestSchemaInvariants(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	h := f.h
 	id := f.schedule("bill", f.checking, f.rent, 210000, monthly("2026-11-01", 5, ""), nil)

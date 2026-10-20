@@ -27,6 +27,7 @@ func problemFields(t *testing.T, r apitest.Response) []string {
 
 // The rows of the P3.5 plan's evidence table that concern requests (ADR 007, C1–C5).
 func TestContractRejectsNonConformingRequests(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-11-05"))
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
@@ -75,6 +76,7 @@ func TestContractRejectsNonConformingRequests(t *testing.T) {
 
 // Review Focus 3: authentication runs before contract validation.
 func TestUnauthenticatedInvalidRequestIs401(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	r := h.Call(http.DefaultClient, "POST", "/api/v1/accounts", map[string]any{"colour": "red"})
 	h.ExpectProblem(r, http.StatusUnauthorized, "unauthenticated", "")
@@ -82,6 +84,7 @@ func TestUnauthenticatedInvalidRequestIs401(t *testing.T) {
 
 // ADR 007, C3: field rules live in the contract, so every invalid field is reported at once.
 func TestContractReportsEveryInvalidField(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	r := h.Do("POST", "/api/v1/accounts", map[string]any{"name": "", "class": "foo", "kind": "", "currency": "brl"})
 	h.ExpectProblem(r, http.StatusBadRequest, "invalid_request", "")

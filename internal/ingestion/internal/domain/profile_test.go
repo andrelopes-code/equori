@@ -6,6 +6,7 @@ import (
 )
 
 func TestNewProfile(t *testing.T) {
+	t.Parallel()
 	base := Profile{HeaderRows: 1, DateColumn: "Data", DateLayout: LayoutDayMonthYear, AmountColumn: "Valor", DecimalSeparator: ",", DescriptionColumn: "Descrição"}
 	p, err := NewProfile(base)
 	if err != nil || p.Delimiter != "," || p.AmountSign != SignAsIs {

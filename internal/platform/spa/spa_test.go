@@ -11,6 +11,7 @@ import (
 const index = `<!doctype html><div id="root"></div>`
 
 func TestHandler(t *testing.T) {
+	t.Parallel()
 	fsys := fstest.MapFS{
 		"index.html":         {Data: []byte(index)},
 		"assets/app-1a2b.js": {Data: []byte("console.log(1)")},
@@ -62,6 +63,7 @@ func TestHandler(t *testing.T) {
 }
 
 func TestHandlerWithoutIndex(t *testing.T) {
+	t.Parallel()
 	for name, fsys := range map[string]fs.FS{"empty": fstest.MapFS{}, "nil": nil} {
 		for _, path := range []string{"/", "/accounts"} {
 			t.Run(name+" "+path, func(t *testing.T) {

@@ -57,6 +57,7 @@ func events(t *testing.T, h *apitest.Harness, transaction string) map[string][]e
 
 // S43: the category side of a transaction changes after its account is reconciled (P5 amendment A18).
 func TestCategorizeReconciledTransaction(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-11-05"))
 	sys := systemAccounts(h)
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
@@ -114,6 +115,7 @@ func TestCategorizeReconciledTransaction(t *testing.T) {
 }
 
 func TestCategorizeProblems(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-11-05"))
 	sys := systemAccounts(h)
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
@@ -136,6 +138,7 @@ func TestCategorizeProblems(t *testing.T) {
 }
 
 func TestCategorizeKeepsCardPurchase(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-12")
 	sys := systemAccounts(c.h)
 	id := c.h.Record("2026-10-14", apitest.Posting(c.card, -23000), apitest.Posting(sys["uncategorized_expense"], 23000))
@@ -155,6 +158,7 @@ func TestCategorizeKeepsCardPurchase(t *testing.T) {
 
 // Event payloads carry what Classification needs (P5 amendments A17, A18, A20).
 func TestTransactionEventPayloads(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-11-05"))
 	sys := systemAccounts(h)
 	checking := h.Account("Nubank checking", "asset", "checking", nil)

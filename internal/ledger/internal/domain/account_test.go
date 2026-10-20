@@ -8,6 +8,7 @@ import (
 )
 
 func TestNewAccount(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		in        Account
@@ -51,6 +52,7 @@ func TestNewAccount(t *testing.T) {
 }
 
 func TestSystemRolesHaveClasses(t *testing.T) {
+	t.Parallel()
 	want := map[SystemRole]Class{
 		RoleOpeningBalances: ClassEquity, RoleAdjustments: ClassEquity, RoleTransfersInTransit: ClassEquity,
 		RoleUncategorizedExpense: ClassExpense, RoleInterest: ClassExpense, RoleTaxes: ClassExpense,
@@ -69,6 +71,7 @@ func TestSystemRolesHaveClasses(t *testing.T) {
 }
 
 func TestIsOpenOn(t *testing.T) {
+	t.Parallel()
 	a := mustAccount(t, Account{Class: ClassExpense, OpenedOn: day("2026-01-01"), ClosedOn: ptr(day("2026-06-30"))})
 	for d, want := range map[string]bool{"2025-12-31": false, "2026-01-01": true, "2026-06-30": true, "2026-07-01": false} {
 		if got := a.IsOpenOn(day(d)); got != want {
@@ -78,6 +81,7 @@ func TestIsOpenOn(t *testing.T) {
 }
 
 func TestValidateParent(t *testing.T) {
+	t.Parallel()
 	nubank := uuid.Must(uuid.NewV7())
 	itau := uuid.Must(uuid.NewV7())
 	checking := mustAccount(t, Account{Class: ClassAsset, Kind: KindChecking, InstitutionID: nubank})

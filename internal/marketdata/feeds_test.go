@@ -84,6 +84,7 @@ func pricesOf(t *testing.T, h *apitest.Harness, instrument string) []priceAPI {
 
 // N17: with no feed named, a tick sends no request.
 func TestFeedsDisabledSendNoRequest(t *testing.T) {
+	t.Parallel()
 	f := &feedServer{}
 	srv := httptest.NewServer(f)
 	t.Cleanup(srv.Close)
@@ -98,6 +99,7 @@ func TestFeedsDisabledSendNoRequest(t *testing.T) {
 
 // P8 amendment A62 and Review Focus 4.
 func TestFeedsFetchPrices(t *testing.T) {
+	t.Parallel()
 	f := &feedServer{failDay: "30102026", failPTAX: "EUR"}
 	srv := httptest.NewServer(f)
 	t.Cleanup(srv.Close)

@@ -23,6 +23,7 @@ func getAccount(t *testing.T, h *apitest.Harness, id string) accountView {
 
 // S72: an account cannot move under its own descendant (A73).
 func TestMoveUnderDescendantIs422(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	food := h.Account("Food", "expense", "", nil)
 	groceries := h.Account("Groceries", "expense", "", map[string]any{"parent_id": food})
@@ -93,6 +94,7 @@ func (c categoryTree) requireClosedOn(t *testing.T, want string, ids ...string) 
 
 // A74: closing a category ignores its balance and closes its open descendants.
 func TestArchiveCategoryWithPostings(t *testing.T) {
+	t.Parallel()
 	c := newCategoryTree(t)
 	c.h.Record("2026-10-10", apitest.Posting(c.checking, -850), apitest.Posting(c.bakery, 850))
 
@@ -114,6 +116,7 @@ func TestArchiveCategoryWithPostings(t *testing.T) {
 }
 
 func TestArchiveRejectsPostingsAfterDate(t *testing.T) {
+	t.Parallel()
 	c := newCategoryTree(t)
 	c.h.Record("2026-11-02", apitest.Posting(c.checking, -850), apitest.Posting(c.bakery, 850))
 	c.h.ExpectProblem(c.close(c.food, "2026-10-31"), http.StatusConflict, "account_not_empty", "")
@@ -122,6 +125,7 @@ func TestArchiveRejectsPostingsAfterDate(t *testing.T) {
 
 // Review Focus 3: a descendant opened after the closing date rejects the whole close.
 func TestArchiveRejectsLateOpenedDescendant(t *testing.T) {
+	t.Parallel()
 	c := newCategoryTree(t)
 	organic := c.h.Account("Organic", "expense", "", map[string]any{"parent_id": c.food, "opened_on": "2026-11-15"})
 	c.h.ExpectProblem(c.close(c.food, "2026-10-31"), http.StatusUnprocessableEntity, "validation_failed", "closed_on")
@@ -130,6 +134,7 @@ func TestArchiveRejectsLateOpenedDescendant(t *testing.T) {
 
 // S73: a system account is never closed (A74).
 func TestCloseSystemAccountIs422(t *testing.T) {
+	t.Parallel()
 	c := newCategoryTree(t)
 	c.h.ExpectProblem(c.close(c.uncategorizedExpense, "2026-10-31"), http.StatusUnprocessableEntity, "system_account", "")
 	c.requireClosedOn(t, "", c.uncategorizedExpense)
@@ -137,6 +142,7 @@ func TestCloseSystemAccountIs422(t *testing.T) {
 
 // Review Focus 1: a system account inside the subtree blocks the close.
 func TestArchiveRejectsSystemAccountInSubtree(t *testing.T) {
+	t.Parallel()
 	c := newCategoryTree(t)
 	c.h.MustDo(http.MethodPatch, "/api/v1/accounts/"+c.feesAccount, map[string]any{"parent_id": c.food}, http.StatusOK, nil)
 	c.h.ExpectProblem(c.close(c.food, "2026-10-31"), http.StatusUnprocessableEntity, "system_account", "")
@@ -144,6 +150,7 @@ func TestArchiveRejectsSystemAccountInSubtree(t *testing.T) {
 }
 
 func TestOpenAccountUnderClosedParentIs422(t *testing.T) {
+	t.Parallel()
 	c := newCategoryTree(t)
 	c.h.MustDo(http.MethodPost, "/api/v1/accounts/"+c.delivery+"/close", map[string]string{"closed_on": "2026-10-31"}, http.StatusOK, nil)
 	c.h.ExpectProblem(c.h.Do(http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Pizza", "class": "expense", "currency": "BRL", "parent_id": c.delivery}),
@@ -154,6 +161,7 @@ func TestOpenAccountUnderClosedParentIs422(t *testing.T) {
 
 // Review Focus 2: the open-parent rule applies only to open accounts.
 func TestRenameArchivedChildOfArchivedParent(t *testing.T) {
+	t.Parallel()
 	c := newCategoryTree(t)
 	c.h.MustDo(http.MethodPost, "/api/v1/accounts/"+c.food+"/close", map[string]string{"closed_on": "2026-10-31"}, http.StatusOK, nil)
 	var out accountView
@@ -169,6 +177,7 @@ func (c categoryTree) reopen(id string) apitest.Response {
 
 // A74, Review Focus 4: reopening reopens the closed ancestors and leaves siblings closed.
 func TestReopenCategoryReopensAncestors(t *testing.T) {
+	t.Parallel()
 	c := newCategoryTree(t)
 	c.h.MustDo(http.MethodPost, "/api/v1/accounts/"+c.food+"/close", map[string]string{"closed_on": "2026-10-31"}, http.StatusOK, nil)
 
@@ -191,16 +200,19 @@ func TestReopenCategoryReopensAncestors(t *testing.T) {
 }
 
 func TestReopenOpenAccountIs422(t *testing.T) {
+	t.Parallel()
 	c := newCategoryTree(t)
 	c.h.ExpectProblem(c.reopen(c.food), http.StatusUnprocessableEntity, "validation_failed", "")
 }
 
 func TestReopenSystemAccountIs422(t *testing.T) {
+	t.Parallel()
 	c := newCategoryTree(t)
 	c.h.ExpectProblem(c.reopen(c.uncategorizedExpense), http.StatusUnprocessableEntity, "system_account", "")
 }
 
 func TestReopenForeignAccountIs404(t *testing.T) {
+	t.Parallel()
 	c := newCategoryTree(t)
 	other := c.h.Login("other@example.com")
 	var foreign idOnly

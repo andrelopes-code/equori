@@ -87,6 +87,7 @@ func dates(os []occurrenceView) []string {
 
 // S27: monthly rent on day 5 with business-day adjustment following.
 func TestS27RentDates(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.schedule("bill", f.checking, f.rent, 210000, monthly("2026-11-01", 5, "following"), map[string]any{"payee_id": f.landlord})
 	got := f.occurrences("from=2026-11-01&to=2027-01-31&schedule_id=" + id)
@@ -102,6 +103,7 @@ func TestS27RentDates(t *testing.T) {
 
 // S28: day 31 resolves to the last day of shorter months.
 func TestS28Day31Dates(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.schedule("bill", f.checking, f.rent, 10000, monthly("2027-01-31", 31, ""), nil)
 	got := f.occurrences("from=2027-01-01&to=2027-04-30&schedule_id=" + id)
@@ -111,6 +113,7 @@ func TestS28Day31Dates(t *testing.T) {
 }
 
 func TestScheduleIsReadBack(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.schedule("bill", f.checking, f.rent, 210000, monthly("2026-11-01", 5, "following"), map[string]any{"payee_id": f.landlord})
 	var s struct {
@@ -154,6 +157,7 @@ func TestScheduleIsReadBack(t *testing.T) {
 
 // A49, A53: occurrences reach today + 12 months; a tick extends the horizon once.
 func TestHorizonAndTick(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.schedule("bill", f.checking, f.rent, 210000, monthly("2026-11-01", 5, ""), nil)
 	if got := f.occurrences("from=2026-11-01&to=2027-10-31&schedule_id=" + id); len(got) != 12 {
@@ -172,6 +176,7 @@ func TestHorizonAndTick(t *testing.T) {
 }
 
 func TestScheduleValidation(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	body := func(kind, counterpart string) map[string]any {
 		return map[string]any{
@@ -203,6 +208,7 @@ func TestScheduleValidation(t *testing.T) {
 
 // P8 amendment A72: the amount is in the currency of account_id.
 func TestScheduleAmountInAccountCurrency(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	wise := f.h.Account("Wise", "asset", "checking", map[string]any{"currency": "USD"})
 	r := f.h.Do(http.MethodPost, "/api/v1/schedules", map[string]any{
@@ -213,6 +219,7 @@ func TestScheduleAmountInAccountCurrency(t *testing.T) {
 }
 
 func TestScheduleOfAnotherUser(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.schedule("bill", f.checking, f.rent, 100, monthly("2026-11-01", 5, ""), nil)
 	other := f.h.Login("other@example.com")
@@ -235,6 +242,7 @@ func TestScheduleOfAnotherUser(t *testing.T) {
 }
 
 func TestOccurrenceRangeLimit(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/occurrences?from=2026-11-01&to=2027-12-06", nil), http.StatusUnprocessableEntity, "validation_failed", "to")
 	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/occurrences?from=2026-11-02&to=2026-11-01", nil), http.StatusUnprocessableEntity, "validation_failed", "to")

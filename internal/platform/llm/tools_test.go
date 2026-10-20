@@ -45,6 +45,7 @@ func toolMessage(t *testing.T, history []llm.Message, i int) []llm.ToolResult {
 }
 
 func TestRunTools(t *testing.T) {
+	t.Parallel()
 	t.Run("final answer after one tool", func(t *testing.T) {
 		call := llm.ToolCall{ID: "c1", Name: "balance", Args: json.RawMessage(`{"account":"x"}`)}
 		first := calls(call)
@@ -141,6 +142,7 @@ func TestRunTools(t *testing.T) {
 }
 
 func TestRunToolsParallelCalls(t *testing.T) {
+	t.Parallel()
 	a := llmtest.New("a",
 		llmtest.Step{Model: "m1", Response: calls(
 			llm.ToolCall{ID: "c1", Name: "a", Args: json.RawMessage(`{}`)},

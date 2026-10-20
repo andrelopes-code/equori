@@ -8,6 +8,7 @@ import (
 )
 
 func TestWrite(t *testing.T) {
+	t.Parallel()
 	rec := httptest.NewRecorder()
 	d := New(http.StatusNotFound, "account_not_found", "account 42 does not exist")
 	d.RequestID = "req-1"

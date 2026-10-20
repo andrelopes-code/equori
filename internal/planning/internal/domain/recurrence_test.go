@@ -41,6 +41,7 @@ func weekday(w time.Weekday) *time.Weekday { return &w }
 func ptr(t time.Time) *time.Time { return &t }
 
 func TestRuleDates(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		rule     Rule
@@ -164,6 +165,7 @@ func TestRuleDates(t *testing.T) {
 }
 
 func TestRuleValidate(t *testing.T) {
+	t.Parallel()
 	start := day("2026-11-01")
 	tests := []struct {
 		name  string

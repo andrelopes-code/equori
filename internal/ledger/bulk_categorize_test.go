@@ -28,6 +28,7 @@ func item(id string, version int) map[string]any {
 
 // S77: several transactions take one category; a stale version is reported, not applied (A78).
 func TestS77BulkCategorize(t *testing.T) {
+	t.Parallel()
 	c := newCategoryTree(t)
 	a := c.h.Record("2026-10-01", apitest.Posting(c.checking, -100), apitest.Posting(c.uncategorizedExpense, 100))
 	b := c.h.Record("2026-10-02", apitest.Posting(c.checking, -200), apitest.Posting(c.uncategorizedExpense, 120), apitest.Posting(c.delivery, 80))
@@ -52,6 +53,7 @@ func TestS77BulkCategorize(t *testing.T) {
 }
 
 func TestBulkCategorizeItemStatuses(t *testing.T) {
+	t.Parallel()
 	c := newCategoryTree(t)
 	voided := c.h.Record("2026-10-01", apitest.Posting(c.checking, -100), apitest.Posting(c.uncategorizedExpense, 100))
 	c.h.MustDo(http.MethodPost, "/api/v1/transactions/"+voided+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, nil)
@@ -69,6 +71,7 @@ func TestBulkCategorizeItemStatuses(t *testing.T) {
 
 // Review Focus 2 and the category checks: the request is rejected before any item runs.
 func TestBulkCategorizeRejections(t *testing.T) {
+	t.Parallel()
 	c := newCategoryTree(t)
 	a := c.h.Record("2026-10-01", apitest.Posting(c.checking, -100), apitest.Posting(c.uncategorizedExpense, 100))
 	closed := c.h.Account("Closed", "expense", "", nil)

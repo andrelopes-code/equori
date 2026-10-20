@@ -51,6 +51,7 @@ func ambiguous(t *testing.T) (h *apitest.Harness, batch string, record recordVie
 
 // S35.
 func TestResolveAsMatch(t *testing.T) {
+	t.Parallel()
 	h, batch, record, first, second := ambiguous(t)
 	h.ExpectProblem(resolve(h, record.ID, map[string]any{"action": "match"}), http.StatusUnprocessableEntity, "validation_failed", "transaction_id")
 	stranger := h.Record("2026-10-10", apitest.Posting(h.Transaction(first).Postings[0].AccountID, -1), apitest.Posting(h.Transaction(first).Postings[1].AccountID, 1))
@@ -70,6 +71,7 @@ func TestResolveAsMatch(t *testing.T) {
 }
 
 func TestResolveAsCreateOrDiscard(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct{ action, want string }{
 		{"create", "received 1 ignored 0 matched 0 created 1 review 0"},
 		{"discard", "received 1 ignored 0 matched 0 created 0 review 0"},
@@ -90,6 +92,7 @@ func TestResolveAsCreateOrDiscard(t *testing.T) {
 }
 
 func TestResolveAnotherUsersRecordIs404(t *testing.T) {
+	t.Parallel()
 	h, _, record, _, _ := ambiguous(t)
 	other := h.Login("other@example.com")
 	h.ExpectProblem(h.Call(other, http.MethodPost, "/api/v1/external-records/"+record.ID+"/resolve", map[string]any{"action": "discard"}),

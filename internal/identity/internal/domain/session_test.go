@@ -7,6 +7,7 @@ import (
 )
 
 func TestNewSession(t *testing.T) {
+	t.Parallel()
 	now := time.Date(2026, 10, 14, 12, 0, 0, 0, time.UTC)
 
 	token, s := NewSession(7, now)

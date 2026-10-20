@@ -7,6 +7,7 @@ import (
 )
 
 func TestSchemaRejectsInvalidRows(t *testing.T) {
+	t.Parallel()
 	pool := pgtest.New(t)
 	ctx := t.Context()
 	user := pgtest.CreateUser(t, pool)

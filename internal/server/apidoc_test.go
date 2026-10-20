@@ -11,6 +11,7 @@ import (
 )
 
 func TestAPIDocs(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.APIDocs())
 	anonymous := &http.Client{}
 
@@ -38,6 +39,7 @@ func TestAPIDocs(t *testing.T) {
 }
 
 func TestAPIDocsDisabledByDefault(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	for _, path := range []string{"/openapi.yaml", "/docs"} {
 		if r := h.Call(&http.Client{}, http.MethodGet, path, nil); r.Status != http.StatusNotFound {

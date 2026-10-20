@@ -18,6 +18,7 @@ func profile(edit func(*domain.Profile)) domain.Profile {
 }
 
 func TestParse(t *testing.T) {
+	t.Parallel()
 	day := func(s string) time.Time { d, _ := time.Parse(time.DateOnly, s); return d }
 	tests := []struct {
 		name    string
@@ -65,6 +66,7 @@ func TestParse(t *testing.T) {
 }
 
 func TestParseRejects(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name, in, want string
 		p              domain.Profile

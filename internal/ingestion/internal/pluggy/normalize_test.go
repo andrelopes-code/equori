@@ -17,6 +17,7 @@ func saoPaulo(t *testing.T) *time.Location {
 }
 
 func TestNormalize(t *testing.T) {
+	t.Parallel()
 	loc := saoPaulo(t)
 	checking := Account{ID: "acc-1", Type: "BANK", Subtype: SubtypeChecking, CurrencyCode: "BRL"}
 	card := Account{ID: "acc-2", Type: TypeCredit, Subtype: SubtypeCard, CurrencyCode: "BRL"}
@@ -89,6 +90,7 @@ func TestNormalize(t *testing.T) {
 }
 
 func TestNormalizeReserveTransfer(t *testing.T) {
+	t.Parallel()
 	checking := Account{ID: "acc-1", Type: "BANK", Subtype: SubtypeChecking, CurrencyCode: "BRL"}
 	const reserveOp = "TRANSFERENCIA_SALDO_RESERVADO"
 	for _, tc := range []struct {

@@ -30,6 +30,7 @@ func cardPostings(v apitest.TransactionView, card string) []apitest.PostingView 
 }
 
 func TestInstallmentPurchaseWithoutInterest(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-10-25"))
 	card := h.Card("Itaú Visa", 3, 10, "next")
 	electronics := h.Account("Electronics", "expense", "", nil)
@@ -76,6 +77,7 @@ func TestInstallmentPurchaseWithoutInterest(t *testing.T) {
 }
 
 func TestInstallmentPurchaseWithInterest(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-10-25"))
 	card := h.Card("Itaú Visa", 3, 10, "next")
 	electronics := h.Account("Electronics", "expense", "", nil)
@@ -107,6 +109,7 @@ func TestInstallmentPurchaseWithInterest(t *testing.T) {
 }
 
 func TestInstallmentAmountsOverride(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	card := h.Card("Itaú Visa", 3, 10, "next")
 	electronics := h.Account("Electronics", "expense", "", nil)
@@ -125,6 +128,7 @@ func TestInstallmentAmountsOverride(t *testing.T) {
 }
 
 func TestRuleChangeMovesFutureStatementDates(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-10-25"))
 	card := h.Card("Itaú Visa", 3, 10, "next")
 	electronics := h.Account("Electronics", "expense", "", nil)
@@ -146,6 +150,7 @@ func TestRuleChangeMovesFutureStatementDates(t *testing.T) {
 }
 
 func TestTwoInstallmentPurchasesGetDistinctIDs(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	card := h.Card("Itaú Visa", 3, 10, "next")
 	electronics := h.Account("Electronics", "expense", "", nil)
@@ -160,6 +165,7 @@ func TestTwoInstallmentPurchasesGetDistinctIDs(t *testing.T) {
 }
 
 func TestInstallmentPurchaseCannotBeCorrected(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	card := h.Card("Itaú Visa", 3, 10, "next")
 	electronics := h.Account("Electronics", "expense", "", nil)

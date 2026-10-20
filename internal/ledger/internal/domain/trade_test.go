@@ -28,6 +28,7 @@ func price(t *testing.T, s string) money.Rate {
 }
 
 func TestBuildTrade(t *testing.T) {
+	t.Parallel()
 	security, cash := uuid.New(), uuid.New()
 	accts := TradeAccounts{RealizedGains: uuid.New(), RealizedLosses: uuid.New(), Taxes: uuid.New()}
 	type line struct {
@@ -111,6 +112,7 @@ func TestBuildTrade(t *testing.T) {
 }
 
 func TestBuildTradeRejects(t *testing.T) {
+	t.Parallel()
 	accts := TradeAccounts{RealizedGains: uuid.New(), RealizedLosses: uuid.New(), Taxes: uuid.New()}
 	held := Holding{Quantity: shares(t, 100), CostBasis: brl(t, 100827)}
 	fee := func(n int64) *money.Money { m := brl(t, n); return &m }

@@ -24,6 +24,7 @@ func preview(t *testing.T, b books, body map[string]any) previewView {
 
 // S78: with the S41 data, the uber rule categorizes nothing new and contradicts the Travel choice (A81).
 func TestS78RulePreview(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	trip := b.record(t, "2026-10-14", "UBER *TRIP", "", b.travel, 2390)
 	createRule(t, b.h, "Uber", []map[string]any{contains("uber")}, []map[string]any{setCategory(b.transport)})
@@ -38,6 +39,7 @@ func TestS78RulePreview(t *testing.T) {
 
 // A81: an uncategorized match is counted; a transaction older than 365 days is not.
 func TestRulePreviewWouldCategorize(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	recent := b.record(t, "2026-10-20", "PADARIA", "", b.uncategorized, 850)
 	b.record(t, "2025-11-04", "PADARIA OLD", "", b.uncategorized, 900)
@@ -51,6 +53,7 @@ func TestRulePreviewWouldCategorize(t *testing.T) {
 
 // Review Focus 3: an invalid rule answers as createRule does.
 func TestRulePreviewValidation(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	b.h.ExpectProblem(b.h.Do(http.MethodPost, "/api/v1/rules/preview", map[string]any{
 		"name": "Bad", "conditions": []any{map[string]any{"field": "description", "operator": "regex", "value": "("}}, "actions": []any{setCategory(b.food)},

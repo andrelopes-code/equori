@@ -30,6 +30,7 @@ func ruleByName(t *testing.T, h *apitest.Harness, name string) ruleView {
 
 // A75: a merged transaction keeps its method; rule actions name the destination.
 func TestMergeKeepsMethodAndRepointsRules(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	tx := b.record(t, "2026-10-10", "Hotel", "", b.travel, 5000)
 	createRule(t, b.h, "Trips", []map[string]any{contains("trip")}, []map[string]any{setCategory(b.travel)})
@@ -60,6 +61,7 @@ func TestMergeKeepsMethodAndRepointsRules(t *testing.T) {
 // A75, Review Focus 4: source mappings follow the merge; of two suggestions that collide,
 // the older stays.
 func TestMergeRepointsSourceCategoryAndSuggestions(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	if _, err := b.h.Pool.Exec(t.Context(), `INSERT INTO classification_source_category (user_id, provider, external_id, name, category_id)
 		VALUES ($1, 'pluggy', '05010000', 'Travel', $2)`, b.h.OwnerID(), b.travel); err != nil {
@@ -98,6 +100,7 @@ func TestMergeRepointsSourceCategoryAndSuggestions(t *testing.T) {
 
 // S74: merging Travel into Transport moves the transaction, the rule and the budget (A75).
 func TestS74MergeCategories(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	trip := b.record(t, "2026-10-14", "UBER *TRIP", "", b.travel, 2390)
 	createRule(t, b.h, "Trips", []map[string]any{contains("trip")}, []map[string]any{setCategory(b.travel)})
@@ -137,6 +140,7 @@ func TestS74MergeCategories(t *testing.T) {
 
 // S79: merging two payees moves the alias, the rules and the payee history (A82).
 func TestS79MergePayees(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	var ifood, upper struct {
 		ID string `json:"id"`

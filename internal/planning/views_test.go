@@ -40,6 +40,7 @@ func (f fixture) projection(account, to string) projectionView {
 
 // S62: the projected balance of Nubank checking to 2026-12-31.
 func TestS62Projection(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	f.h.Record("2026-10-30", apitest.Posting(f.checking, 500000), apitest.Posting(f.salary, -500000))
 	rent, salary := f.rentSchedule(), f.salarySchedule()
@@ -69,6 +70,7 @@ func TestS62Projection(t *testing.T) {
 }
 
 func TestProjectionEdges(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	rent := f.rentSchedule()
 	f.h.MustDo(http.MethodPost, "/api/v1/occurrences/"+f.occurrence(rent, 2).ID+"/skip", map[string]string{}, http.StatusOK, nil)
@@ -88,6 +90,7 @@ func TestProjectionEdges(t *testing.T) {
 
 // S63: installments and expected bills and subscriptions committed in December 2026.
 func TestS63CommittedAmount(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	card := f.h.Card("Itaú Visa", 3, 10, "next")
 	electronics := f.h.Account("Electronics", "expense", "", nil)

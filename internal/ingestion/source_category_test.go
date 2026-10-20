@@ -53,6 +53,7 @@ func (f syncFixture) categoryOf(externalID string) string {
 // S56: Pluggy category "Food Delivery" mapped to Food › Delivery categorizes a line that no
 // rule matches, with method source (P6 amendment A41).
 func TestSourceCategory(t *testing.T) {
+	t.Parallel()
 	f := newSyncFixture(t)
 	food := f.h.Account("Food", "expense", "", nil)
 	delivery := f.h.Account("Delivery", "expense", "", map[string]any{"parent_id": food})

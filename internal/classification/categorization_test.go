@@ -111,6 +111,7 @@ func categoryOf(t *testing.T, h *apitest.Harness, tx string) (int, map[string]in
 
 // F5 on a transaction recorded without category: a rule decides it after commit.
 func TestNewTransactionIsClassifiedByRule(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	rule := createRule(t, b.h, "Uber", []map[string]any{contains("uber")}, []map[string]any{setCategory(b.transport)})
 	tx := b.record(t, "2026-10-14", "UBER *TRIP", "", b.uncategorized, 2390)
@@ -126,6 +127,7 @@ func TestNewTransactionIsClassifiedByRule(t *testing.T) {
 }
 
 func TestOwnerCategorizationIsManual(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	tx := b.record(t, "2026-10-14", "PADARIA", "", b.uncategorized, 1000)
 	dispatch(t, b.h)
@@ -155,6 +157,7 @@ func TestOwnerCategorizationIsManual(t *testing.T) {
 
 // Events of one transaction delivered out of order and twice (P5 Review Focus 2).
 func TestCategorizationFollowsTheHighestVersion(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	tx := b.record(t, "2026-10-14", "PADARIA", "", b.uncategorized, 1000)
 	b.categorize(t, tx, 1, b.food, 1000)
@@ -192,6 +195,7 @@ func TestCategorizationFollowsTheHighestVersion(t *testing.T) {
 
 // S41 and P5 Review Focus 4: running rules changes only uncategorized transactions.
 func TestRunRules(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	batch := b.h.Import(b.checking, "ofx", "nubank.ofx", apitest.OFX("",
 		apitest.OFXLine{Date: "20261014", Amount: "-23.90", FITID: "u1", Name: "UBER *TRIP"},
@@ -249,6 +253,7 @@ func TestRunRules(t *testing.T) {
 
 // SC5 over manual entries: rule, history, manual and uncategorized in one month.
 func TestCategorizationStatistics(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	createRule(t, b.h, "Uber", []map[string]any{contains("uber")}, []map[string]any{setCategory(b.transport)})
 	var ifood struct {

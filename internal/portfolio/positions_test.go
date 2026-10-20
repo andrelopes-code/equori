@@ -6,6 +6,7 @@ import (
 )
 
 func TestPositionsFollowLedgerChanges(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	if ps := f.positions(t, "2026-10-01"); len(ps) != 0 {
 		t.Fatalf("positions before any trade = %+v", ps)
@@ -52,6 +53,7 @@ func TestPositionsFollowLedgerChanges(t *testing.T) {
 
 // Final review: a holding below zero is listed without an average cost instead of failing.
 func TestNegativeHoldingHasNoAverageCost(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	f.trade(t, "buy", "2026-10-05", 150, "10.05", 490)
 	f.h.Record("2026-10-06",

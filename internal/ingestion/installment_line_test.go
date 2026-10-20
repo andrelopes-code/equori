@@ -66,6 +66,7 @@ func newInstallmentSync(t *testing.T, dues ...string) (syncFixture, string) {
 // S86: the installment that carries the rounding remainder confirms its installment with its
 // own amount, whichever line came first (A90, 5.2.5).
 func TestS86InstallmentRemainder(t *testing.T) {
+	t.Parallel()
 	f, card := newInstallmentSync(t, "2026-09-10", "2026-10-10")
 	f.line(pluggy.SubtypeCard, parcel("CEA", 2, 3, "2026-09-24", "59.99", "POSTED", new("bill-2026-10-10")))
 	f.line(pluggy.SubtypeCard, parcel("CEA", 1, 3, "2026-08-24", "60.01", "POSTED", new("bill-2026-09-10")))
@@ -86,6 +87,7 @@ func TestS86InstallmentRemainder(t *testing.T) {
 
 // S87 (A90): an installment line on a bill moves its installment to that bill's statement.
 func TestS87InstallmentOnTheInstitutionBill(t *testing.T) {
+	t.Parallel()
 	f, card := newInstallmentSync(t, "2026-09-10", "2026-11-10")
 	f.line(pluggy.SubtypeCard, parcel("SHOPEE", 1, 2, "2026-08-24", "86.14", "POSTED", new("bill-2026-09-10")))
 	f.sync()
@@ -106,6 +108,7 @@ func TestS87InstallmentOnTheInstitutionBill(t *testing.T) {
 // A90: a plan created from installment 2 takes the purchase total the source reports, split
 // with the remainder on installment 1.
 func TestInstallmentPlanFromTheReportedTotal(t *testing.T) {
+	t.Parallel()
 	f, card := newInstallmentSync(t, "2026-10-10")
 	line := parcel("CEA", 2, 3, "2026-09-24", "59.99", "POSTED", new("bill-2026-10-10"))
 	line.CreditCardMetadata.TotalAmount = "179.99"
@@ -120,6 +123,7 @@ func TestInstallmentPlanFromTheReportedTotal(t *testing.T) {
 // A90: a sync offers again an installment line waiting for review: refused while its
 // installment was reconciled, it confirms the installment once the account is unlocked.
 func TestSyncRetriesAnInstallmentLineInReview(t *testing.T) {
+	t.Parallel()
 	f, card := newInstallmentSync(t)
 	f.line(pluggy.SubtypeCard, parcel("LOJA", 1, 3, "2026-08-24", "100.00", "POSTED", nil))
 	f.sync()

@@ -73,6 +73,7 @@ func (f syncFixture) plan(card string) {
 
 // S54, bank pattern "all at once": every installment arrives on the first sync.
 func TestInstallmentsAllAtOnce(t *testing.T) {
+	t.Parallel()
 	f := newSyncFixture(t)
 	card := f.h.Card("Nubank card", 3, 10, "next")
 	f.mapCard(card, "2026-08-01")
@@ -97,6 +98,7 @@ func TestInstallmentsAllAtOnce(t *testing.T) {
 
 // S54, bank pattern "month by month": each month adds its installment.
 func TestInstallmentsMonthByMonth(t *testing.T) {
+	t.Parallel()
 	f := newSyncFixture(t)
 	card := f.h.Card("Nubank card", 3, 10, "next")
 	f.mapCard(card, "2026-08-01")
@@ -123,6 +125,7 @@ func TestInstallmentsMonthByMonth(t *testing.T) {
 // S54, bank pattern "current only": installment 3/6 on the bill due 2026-11-10 creates the
 // plan from statement 2026-09; the next month only 4/6 is returned.
 func TestInstallmentsCurrentOnly(t *testing.T) {
+	t.Parallel()
 	f := newSyncFixture(t)
 	card := f.h.Card("Nubank card", 3, 10, "next")
 	f.mapCard(card, "2026-10-01")
@@ -151,6 +154,7 @@ func TestInstallmentsCurrentOnly(t *testing.T) {
 // A90 (replaces A40's review of a different amount): a line sets the amount of the
 // installment it confirms, and the purchase follows.
 func TestInstallmentLineSetsItsAmount(t *testing.T) {
+	t.Parallel()
 	f := newSyncFixture(t)
 	card := f.h.Card("Nubank card", 3, 10, "next")
 	f.mapCard(card, "2026-08-01")
@@ -171,6 +175,7 @@ func TestInstallmentLineSetsItsAmount(t *testing.T) {
 // P6 Review Focus 5: a line of a plan cancelled in the ledger waits for review and the
 // batch completes.
 func TestInstallmentOfACancelledPlan(t *testing.T) {
+	t.Parallel()
 	f := newSyncFixture(t)
 	card := f.h.Card("Nubank card", 3, 10, "next")
 	f.mapCard(card, "2026-08-01")

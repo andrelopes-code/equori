@@ -63,6 +63,7 @@ func (f cardFixture) recordCard(t *testing.T, postings ...cardPosting) (string, 
 }
 
 func TestDBAcceptsBilledCardPosting(t *testing.T) {
+	t.Parallel()
 	f := newCardFixture(t)
 	if _, err := f.recordCard(t, cardPosting{f.card, f.statement, "charge", -23000}, cardPosting{account: f.food, amount: 23000}); err != nil {
 		t.Fatal(err)
@@ -70,30 +71,35 @@ func TestDBAcceptsBilledCardPosting(t *testing.T) {
 }
 
 func TestDBRejectsCardPostingWithoutStatement(t *testing.T) {
+	t.Parallel()
 	f := newCardFixture(t)
 	_, err := f.recordCard(t, cardPosting{account: f.card, amount: -100}, cardPosting{account: f.food, amount: 100})
 	requireViolation(t, err, checkViolation, "statement")
 }
 
 func TestDBRejectsStatementOnNonCardPosting(t *testing.T) {
+	t.Parallel()
 	f := newCardFixture(t)
 	_, err := f.recordCard(t, cardPosting{f.checking, f.statement, "charge", -100}, cardPosting{account: f.food, amount: 100})
 	requireViolation(t, err, checkViolation, "statement")
 }
 
 func TestDBRejectsStatementOfAnotherCard(t *testing.T) {
+	t.Parallel()
 	f := newCardFixture(t)
 	_, err := f.recordCard(t, cardPosting{f.card, f.otherStatement, "charge", -100}, cardPosting{account: f.food, amount: 100})
 	requireViolation(t, err, checkViolation, "statement")
 }
 
 func TestDBRejectsRoleWithoutStatement(t *testing.T) {
+	t.Parallel()
 	f := newCardFixture(t)
 	_, err := f.recordCard(t, cardPosting{account: f.checking, role: "charge", amount: -100}, cardPosting{account: f.food, amount: 100})
 	requireViolation(t, err, checkViolation, "")
 }
 
 func TestDBProtectsReconciledPostings(t *testing.T) {
+	t.Parallel()
 	f := newCardFixture(t)
 	id, err := f.recordTx(t, f.userID, "2026-03-01", postingRow{f.checking, -100}, postingRow{f.food, 100})
 	if err != nil {
@@ -125,6 +131,7 @@ func TestDBProtectsReconciledPostings(t *testing.T) {
 }
 
 func TestDBOneOpenDisputePerTransaction(t *testing.T) {
+	t.Parallel()
 	f := newCardFixture(t)
 	id, err := f.recordCard(t, cardPosting{f.card, f.statement, "charge", -100}, cardPosting{account: f.food, amount: 100})
 	if err != nil {
@@ -139,6 +146,7 @@ func TestDBOneOpenDisputePerTransaction(t *testing.T) {
 }
 
 func TestDBBillingRuleStartsOnFirstDay(t *testing.T) {
+	t.Parallel()
 	f := newCardFixture(t)
 	_, err := f.pool.Exec(t.Context(), `
 		INSERT INTO ledger_billing_cycle_rule (user_id, account_id, effective_from, closing_day, due_day)
@@ -148,6 +156,7 @@ func TestDBBillingRuleStartsOnFirstDay(t *testing.T) {
 
 // A87: a rule closes either on a day or a number of days before the due date, never both.
 func TestDBBillingRuleClosingMode(t *testing.T) {
+	t.Parallel()
 	f := newCardFixture(t)
 	for name, sql := range map[string]string{
 		"before due with a closing day": `INSERT INTO ledger_billing_cycle_rule (user_id, account_id, effective_from, closing_day, due_day, closing_mode, closing_days_before_due)
@@ -164,6 +173,7 @@ func TestDBBillingRuleClosingMode(t *testing.T) {
 
 // A85: a fact belongs to one statement per source, with a due date after its closing date.
 func TestDBStatementFactChecks(t *testing.T) {
+	t.Parallel()
 	f := newCardFixture(t)
 	var statement string
 	if err := f.pool.QueryRow(t.Context(), `INSERT INTO ledger_statement (user_id, account_id, reference_month, closing_date, due_date)

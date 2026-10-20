@@ -15,6 +15,7 @@ func rate(t *testing.T, s string) Rate {
 }
 
 func TestConvert(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		from Money
@@ -47,6 +48,7 @@ func TestConvert(t *testing.T) {
 }
 
 func TestConvertRejects(t *testing.T) {
+	t.Parallel()
 	if _, err := Convert(mustNew(t, 1, "USD"), "XYZ", Leg{Rate: rate(t, "1")}); !errors.Is(err, ErrUnknownCurrency) {
 		t.Fatalf("unknown currency err = %v", err)
 	}
@@ -59,6 +61,7 @@ func TestConvertRejects(t *testing.T) {
 }
 
 func TestFraction(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		m        Money
@@ -84,6 +87,7 @@ func TestFraction(t *testing.T) {
 }
 
 func TestQuotient(t *testing.T) {
+	t.Parallel()
 	got, err := Quotient(mustNew(t, 151240, "BRL"), mustNewOf(t, 150, "MXRF11", 0), 4)
 	if err != nil || got.String() != "10.0827" {
 		t.Fatalf("got %v, %v", got, err)

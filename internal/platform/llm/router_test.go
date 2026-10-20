@@ -60,6 +60,7 @@ func models(p *llmtest.Provider) []string {
 }
 
 func TestClientGenerate(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		a, b       []llmtest.Step
@@ -156,6 +157,7 @@ func TestClientGenerate(t *testing.T) {
 }
 
 func TestClientExhausted(t *testing.T) {
+	t.Parallel()
 	a := llmtest.New("a",
 		llmtest.Step{Model: "m1", Err: &llm.QuotaError{RetryAfter: 30 * time.Second}},
 		llmtest.Step{Model: "m2", Err: &llm.QuotaError{}},
@@ -172,6 +174,7 @@ func TestClientExhausted(t *testing.T) {
 }
 
 func TestClientCooldown(t *testing.T) {
+	t.Parallel()
 	t.Run("quota with retry delay", func(t *testing.T) {
 		a := llmtest.New("a",
 			llmtest.Step{Model: "m1", Err: &llm.QuotaError{RetryAfter: 30 * time.Second}},
@@ -242,6 +245,7 @@ func TestClientCooldown(t *testing.T) {
 }
 
 func TestClientContextCancelled(t *testing.T) {
+	t.Parallel()
 	a := llmtest.New("a",
 		llmtest.Step{Model: "m1", Err: context.Canceled},
 		llmtest.Step{Model: "m1", Response: text("ok")},
@@ -276,6 +280,7 @@ func (quotaFirst) Generate(_ context.Context, model string, _ llm.Request) (llm.
 }
 
 func TestClientConcurrentCalls(t *testing.T) {
+	t.Parallel()
 	f := newFixture(quotaFirst{})
 	c := f.router.Client(target("a/m1"), target("a/m2"))
 	var wg sync.WaitGroup
@@ -301,6 +306,7 @@ func TestClientConcurrentCalls(t *testing.T) {
 }
 
 func TestClientLogs(t *testing.T) {
+	t.Parallel()
 	a := llmtest.New("a",
 		llmtest.Step{Model: "m1", Err: &llm.QuotaError{RetryAfter: 30 * time.Second}},
 		llmtest.Step{Model: "m2", Response: text("ok")},
@@ -337,6 +343,7 @@ func TestClientLogs(t *testing.T) {
 }
 
 func TestClientMalformedOutput(t *testing.T) {
+	t.Parallel()
 	parts := func(texts ...string) []llm.Part {
 		var ps []llm.Part
 		for _, s := range texts {
@@ -377,6 +384,7 @@ func TestClientMalformedOutput(t *testing.T) {
 }
 
 func TestRouterProviders(t *testing.T) {
+	t.Parallel()
 	f := newFixture(llmtest.New("b"), llmtest.New("a"))
 	if got, want := f.router.Providers(), []string{"a", "b"}; !slices.Equal(got, want) {
 		t.Fatalf("Providers() = %v, want %v", got, want)

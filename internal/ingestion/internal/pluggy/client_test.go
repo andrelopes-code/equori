@@ -30,6 +30,7 @@ func newClient(t *testing.T, srv *pluggytest.Server, clk *fakeClock) (*pluggy.Cl
 }
 
 func TestClientReadsItemAccountsBillsAndTransactions(t *testing.T) {
+	t.Parallel()
 	srv := pluggytest.New(t, "client-id", "client-secret")
 	srv.AddItem(pluggy.Item{ID: "item-1", Status: pluggy.StatusUpdated})
 	srv.AddAccount("item-1", pluggy.Account{ID: "acc-1", Type: "BANK", Subtype: pluggy.SubtypeChecking, Name: "Conta", Number: "0001/12345-0", Balance: "2834.1", CurrencyCode: "BRL"})
@@ -71,6 +72,7 @@ func TestClientReadsItemAccountsBillsAndTransactions(t *testing.T) {
 }
 
 func TestClientRetriesAndRenewsKeys(t *testing.T) {
+	t.Parallel()
 	srv := pluggytest.New(t, "client-id", "client-secret")
 	srv.AddItem(pluggy.Item{ID: "item-1", Status: pluggy.StatusUpdated})
 	clk := &fakeClock{now: time.Date(2026, 11, 12, 12, 0, 0, 0, time.UTC)}
@@ -111,6 +113,7 @@ func TestClientRetriesAndRenewsKeys(t *testing.T) {
 
 // N17: requests reach only the configured base URL, even when a cursor names another host.
 func TestClientRefusesForeignCursor(t *testing.T) {
+	t.Parallel()
 	other := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { t.Error("request reached another host") }))
 	defer other.Close()
 	srv := pluggytest.New(t, "client-id", "client-secret")
@@ -128,6 +131,7 @@ func TestClientRefusesForeignCursor(t *testing.T) {
 
 // A44: a transport error names the endpoint, not the URL with its item or account id.
 func TestClientErrorsCarryNoIdentifiers(t *testing.T) {
+	t.Parallel()
 	srv := pluggytest.New(t, "client-id", "client-secret")
 	srv.AddItem(pluggy.Item{ID: "item-7c1e", Status: pluggy.StatusUpdated})
 	clk := &fakeClock{now: time.Date(2026, 11, 12, 12, 0, 0, 0, time.UTC)}

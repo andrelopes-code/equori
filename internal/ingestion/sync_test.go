@@ -116,6 +116,7 @@ func (f syncFixture) count(sql string, args ...any) int {
 // S52: the first sync of Nubank checking matches the manual entry, creates two lines and
 // asserts the balance; repeated syncs create nothing (SC2).
 func TestSyncBankAccount(t *testing.T) {
+	t.Parallel()
 	f := newSyncFixture(t)
 	food := f.h.Account("Food", "expense", "", nil)
 	manual := f.h.Record("2026-10-04", apitest.Posting(f.checking, -4590), apitest.Posting(food, 4590))
@@ -172,6 +173,7 @@ func TestSyncBankAccount(t *testing.T) {
 // S55: a line returned with a new id after its old id disappeared matches the existing
 // transaction, although the assertion of the first sync reconciled it (A38).
 func TestSyncWithdrawnLine(t *testing.T) {
+	t.Parallel()
 	f := newSyncFixture(t)
 	f.line(pluggy.SubtypeChecking, bankLine("tx-1", "2026-10-20", "-120.00"))
 	f.line(pluggy.SubtypeChecking, bankLine("tx-2", "2026-10-25", "3000.00"))
@@ -227,6 +229,7 @@ func (f syncFixture) cardPosting(id string, card string) apitest.PostingView {
 // S53: a pending card charge is billed by the cycle; posted with a bill due 2026-12-10, it
 // turns cleared on statement 2026-12 (A36, A39).
 func TestSyncCardChargeIsPostedOnTheBill(t *testing.T) {
+	t.Parallel()
 	f := newSyncFixture(t)
 	card := f.h.Card("Nubank card", 3, 10, "next")
 	f.mapTo(pluggy.SubtypeCard, card)
@@ -252,6 +255,7 @@ func TestSyncCardChargeIsPostedOnTheBill(t *testing.T) {
 // id with a bill matches its transaction and moves it to the bill's statement, as S53 does
 // for an unchanged id.
 func TestSyncCardChargePostedUnderANewID(t *testing.T) {
+	t.Parallel()
 	f := newSyncFixture(t)
 	card := f.h.Card("Nubank card", 3, 10, "next")
 	f.mapTo(pluggy.SubtypeCard, card)
@@ -274,6 +278,7 @@ func TestSyncCardChargePostedUnderANewID(t *testing.T) {
 // P6 Review Focus 3: a posted update for a reconciled posting changes nothing in the ledger
 // and records the difference on the record.
 func TestSyncUpdateOfAReconciledPosting(t *testing.T) {
+	t.Parallel()
 	f := newSyncFixture(t)
 	card := f.h.Card("Nubank card", 3, 10, "next")
 	f.mapTo(pluggy.SubtypeCard, card)
@@ -316,6 +321,7 @@ func TestSyncUpdateOfAReconciledPosting(t *testing.T) {
 
 // A42: an aggregator balance never records yield, even on a reserve with yield mode auto.
 func TestSyncBalanceRecordsNoYield(t *testing.T) {
+	t.Parallel()
 	f := newSyncFixture(t)
 	reserve := f.h.Account("Caixinha", "asset", "reserve", nil)
 	f.h.Record("2026-10-02", apitest.Posting(f.checking, -5000), apitest.Posting(reserve, 5000))
@@ -383,6 +389,7 @@ func (f syncFixture) openDifference(account string) any {
 // S71: a synced assertion left open by a missing opening balance is decided again by the
 // next sync, which creates no assertion (D5, A77).
 func TestS71SyncReevaluatesOpenAssertion(t *testing.T) {
+	t.Parallel()
 	setup := func(t *testing.T) syncFixture {
 		f := newSyncFixture(t)
 		f.line(pluggy.SubtypeChecking, bankLine("tx-1", "2026-10-05", "-45.90"))

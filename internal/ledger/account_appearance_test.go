@@ -14,6 +14,7 @@ type appearanceView struct {
 
 // A83: a category's colour and icon are set, read back and cleared.
 func TestAccountAppearance(t *testing.T) {
+	t.Parallel()
 	c := newCategoryTree(t)
 	var out appearanceView
 	c.h.MustDo(http.MethodPut, "/api/v1/accounts/"+c.food+"/appearance", map[string]any{"color": 3, "icon": "utensils"}, http.StatusOK, &out)
@@ -32,6 +33,7 @@ func TestAccountAppearance(t *testing.T) {
 }
 
 func TestAccountAppearanceOnCreate(t *testing.T) {
+	t.Parallel()
 	c := newCategoryTree(t)
 	var out appearanceView
 	c.h.MustDo(http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Pets", "class": "expense", "currency": "BRL", "color": 5, "icon": "paw-print"}, http.StatusCreated, &out)
@@ -41,6 +43,7 @@ func TestAccountAppearanceOnCreate(t *testing.T) {
 }
 
 func TestAccountAppearanceRejections(t *testing.T) {
+	t.Parallel()
 	c := newCategoryTree(t)
 	for _, body := range []map[string]any{
 		{"color": 9, "icon": nil},
@@ -53,6 +56,7 @@ func TestAccountAppearanceRejections(t *testing.T) {
 
 // A84, Review Focus 5: the parent is set or cleared; an open account never goes under a closed one.
 func TestSetAccountParent(t *testing.T) {
+	t.Parallel()
 	c := newCategoryTree(t)
 	var out appearanceView
 	c.h.MustDo(http.MethodPut, "/api/v1/accounts/"+c.bakery+"/parent", map[string]any{"parent_id": nil}, http.StatusOK, &out)

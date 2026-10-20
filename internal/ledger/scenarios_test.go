@@ -93,6 +93,7 @@ func (f fixture) expectBalances(t *testing.T, date string, want map[string]int64
 }
 
 func TestScenarios(t *testing.T) {
+	t.Parallel()
 	p := apitest.Posting
 
 	t.Run("S01", func(t *testing.T) {

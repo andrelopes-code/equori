@@ -24,6 +24,7 @@ func day(s string) time.Time {
 }
 
 func TestParseBankStatements(t *testing.T) {
+	t.Parallel()
 	for _, name := range []string{"bank-1x-cp1252.ofx", "bank-2x.ofx"} {
 		t.Run(name, func(t *testing.T) {
 			st, err := parseFile(t, name)
@@ -63,6 +64,7 @@ func TestParseBankStatements(t *testing.T) {
 }
 
 func TestParseCreditCardStatement(t *testing.T) {
+	t.Parallel()
 	st, err := parseFile(t, "card-1x.ofx")
 	if err != nil {
 		t.Fatal(err)
@@ -73,6 +75,7 @@ func TestParseCreditCardStatement(t *testing.T) {
 }
 
 func TestParseRejectsMalformedFiles(t *testing.T) {
+	t.Parallel()
 	valid := "<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><BANKTRANLIST>\n<STMTTRN>\n<DTPOSTED>20261005\n<TRNAMT>%s\n<FITID>x\n</STMTTRN>\n</BANKTRANLIST></STMTRS></STMTTRNRS></BANKMSGSRSV1></OFX>"
 	tests := []struct {
 		name, in, want string

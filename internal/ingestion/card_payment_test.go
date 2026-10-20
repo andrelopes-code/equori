@@ -50,6 +50,7 @@ func newCardSync(t *testing.T) (syncFixture, string) {
 // S83: a card line typed as a bill payment is a payment against transfers_in_transit; a
 // refund stays a credit (A88).
 func TestS83PaymentLineFromAggregator(t *testing.T) {
+	t.Parallel()
 	f, card := newCardSync(t)
 	f.line(pluggy.SubtypeCard, typedCardLine("pay-1", "2026-10-05", "-961.85", "PAGAMENTO_FATURA"))
 	f.line(pluggy.SubtypeCard, typedCardLine("ref-1", "2026-10-06", "-72.90", "ESTORNO"))
@@ -73,6 +74,7 @@ func TestS83PaymentLineFromAggregator(t *testing.T) {
 
 // A88: a payment recorded before its type was read becomes a payment on the next sync.
 func TestSyncRetypesARecordedPayment(t *testing.T) {
+	t.Parallel()
 	f, card := newCardSync(t)
 	untyped := cardLine("pay-1", "2026-11-05", "-961.85", "POSTED", new("bill-nov"))
 	f.line(pluggy.SubtypeCard, untyped)
@@ -99,6 +101,7 @@ func TestSyncRetypesARecordedPayment(t *testing.T) {
 // Plan Review Focus 1: a payment the owner categorized before its type was read keeps its
 // categorization; the record reports the change it did not take.
 func TestSyncKeepsACategorizedPayment(t *testing.T) {
+	t.Parallel()
 	f, card := newCardSync(t)
 	f.line(pluggy.SubtypeCard, cardLine("pay-1", "2026-11-05", "-961.85", "POSTED", new("bill-nov")))
 	f.sync()
@@ -129,6 +132,7 @@ func TestSyncKeepsACategorizedPayment(t *testing.T) {
 // S46 (A88): a card line typed as a payment comes first; the checking line pairs with it and
 // replaces the transit posting.
 func TestS46TypedPaymentPairsWithChecking(t *testing.T) {
+	t.Parallel()
 	f, card := newCardSync(t)
 	f.line(pluggy.SubtypeCard, typedCardLine("pay-1", "2026-11-10", "-1500.00", "PAGAMENTO_FATURA"))
 	f.sync()
@@ -159,6 +163,7 @@ func TestS46TypedPaymentPairsWithChecking(t *testing.T) {
 // S88 (A91): a pending line without a bill and the posted line of the same amount and sign
 // within 3 days are one line; a pending and a posted charge five days apart are two.
 func TestS88PendingPaymentSuperseded(t *testing.T) {
+	t.Parallel()
 	f, card := newCardSync(t)
 	pending := cardLine("pay-pending", "2026-11-05", "-784.65", "PENDING", nil)
 	pending.OperationType = new("PAGAMENTO_FATURA")
@@ -183,6 +188,7 @@ func TestS88PendingPaymentSuperseded(t *testing.T) {
 // A91: a pending line recorded by an earlier sync is withdrawn when its posted line arrives
 // under another id, and the posted line confirms its transaction.
 func TestSyncPendingLineSupersededLater(t *testing.T) {
+	t.Parallel()
 	f, card := newCardSync(t)
 	f.line(pluggy.SubtypeCard, cardLine("charge-pending", "2026-11-05", "50.00", "PENDING", nil))
 	f.sync()
@@ -204,6 +210,7 @@ func TestSyncPendingLineSupersededLater(t *testing.T) {
 // A89: a payment is billed on the statement of its date even when the source lists it on the
 // bill it pays: Pluggy listed a payment of 2026-10-05 on the bill that closed on 2026-09-28.
 func TestPaymentBilledByItsDateNotItsBill(t *testing.T) {
+	t.Parallel()
 	f, card := newCardSync(t)
 	f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-dec", DueDate: "2026-12-10T00:00:00.000Z", TotalAmount: "0"})
 	paid := cardLine("pay-1", "2026-11-05", "-784.65", "POSTED", new("bill-nov"))

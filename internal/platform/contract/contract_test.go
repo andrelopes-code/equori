@@ -105,6 +105,7 @@ func fields(t *testing.T, rec *httptest.ResponseRecorder) []string {
 }
 
 func TestValidatorRejectsContractViolations(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name, method, path, contentType, body string
 		status                                int
@@ -142,6 +143,7 @@ func TestValidatorRejectsContractViolations(t *testing.T) {
 }
 
 func TestValidatorPassesConformingRequests(t *testing.T) {
+	t.Parallel()
 	tests := []struct{ name, method, path, contentType, body string }{
 		{"json body reaches the handler intact", "POST", "/api/v1/items", "application/json; charset=utf-8", `{"name":"x","kind":"a","lines":[{"amount":-1}]}`},
 		{"uuid v7 path", "GET", "/api/v1/items/" + itemID, "", ""},
@@ -161,6 +163,7 @@ func TestValidatorPassesConformingRequests(t *testing.T) {
 }
 
 func TestValidatorAnswersWrongMethod(t *testing.T) {
+	t.Parallel()
 	rec, reached := serve(t, "DELETE", "/api/v1/items", "", "")
 	if reached != "" || rec.Code != http.StatusMethodNotAllowed || !strings.Contains(rec.Body.String(), `"code":"method_not_allowed"`) {
 		t.Fatalf("status %d: %s", rec.Code, rec.Body)
@@ -187,6 +190,7 @@ func (u untouched) Read(p []byte) (int, error) {
 func (u untouched) Close() error { return nil }
 
 func TestValidatorDoesNotReadUploads(t *testing.T) {
+	t.Parallel()
 	v, err := New([]byte(spec), "/api/v1")
 	if err != nil {
 		t.Fatal(err)

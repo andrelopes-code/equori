@@ -102,6 +102,7 @@ func (f fixture) results(t *testing.T, year string) []resultOut {
 }
 
 func TestS64PositionAndRealizedResult(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	buy := f.trade(t, "buy", "2026-10-05", 150, "10.05", 490)
 	sale := f.trade(t, "sell", "2026-10-20", 50, "10.80", 210)
@@ -131,6 +132,7 @@ func TestS64PositionAndRealizedResult(t *testing.T) {
 }
 
 func TestS65IncomeEvents(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	income := func(account, typ string, gross int64, category string) {
 		f.h.MustDo(http.MethodPost, "/api/v1/investment-income", map[string]any{

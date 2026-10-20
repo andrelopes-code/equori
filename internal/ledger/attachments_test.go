@@ -56,6 +56,7 @@ func newAttachmentSetup(t *testing.T) (*apitest.Harness, string, string) {
 }
 
 func TestAttachmentStoresSharedContentOnce(t *testing.T) {
+	t.Parallel()
 	h, groceries, other := newAttachmentSetup(t)
 	content := pdf(230 * 1024)
 	first := mustAttach(t, h, groceries, "receipt.pdf", content)
@@ -95,6 +96,7 @@ func TestAttachmentStoresSharedContentOnce(t *testing.T) {
 }
 
 func TestAttachmentSizeLimit(t *testing.T) {
+	t.Parallel()
 	h, groceries, _ := newAttachmentSetup(t)
 	mustAttach(t, h, groceries, "max.pdf", pdf(10*mib))
 	h.ExpectProblem(attach(h, groceries, "over.pdf", pdf(10*mib+1)), http.StatusUnprocessableEntity, "validation_failed", "file")
@@ -105,6 +107,7 @@ func TestAttachmentSizeLimit(t *testing.T) {
 }
 
 func TestAttachmentRejectsUnsupportedContent(t *testing.T) {
+	t.Parallel()
 	h, groceries, _ := newAttachmentSetup(t)
 	h.ExpectProblem(attach(h, groceries, "data.bin", []byte{0, 1, 2, 3, 4}), http.StatusUnprocessableEntity, "validation_failed", "file")
 	h.ExpectProblem(attach(h, groceries, "empty.txt", nil), http.StatusUnprocessableEntity, "validation_failed", "file")
@@ -114,6 +117,7 @@ func TestAttachmentRejectsUnsupportedContent(t *testing.T) {
 }
 
 func TestAttachmentOfAnotherUserIs404(t *testing.T) {
+	t.Parallel()
 	h, groceries, _ := newAttachmentSetup(t)
 	a := mustAttach(t, h, groceries, "receipt.pdf", pdf(1024))
 	other := h.Login("other@example.com")

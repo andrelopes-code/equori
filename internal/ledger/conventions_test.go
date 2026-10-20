@@ -9,6 +9,7 @@ import (
 
 // ADR 007, C6: a state transition answers 200 with the updated resource.
 func TestTransitionsReturnTheResource(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-11-05"))
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
@@ -55,6 +56,7 @@ func TestTransitionsReturnTheResource(t *testing.T) {
 
 // ADR 007, C6: a created record with a GET endpoint is located by the Location header.
 func TestCreatedRecordsHaveLocation(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-12")
 	purchase := c.purchase("2026-10-14", 100000)
 	statement := statements(t, c.h, c.card)["2026-11"].ID

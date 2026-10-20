@@ -32,6 +32,7 @@ func (f fixture) budgets() budgetListView {
 
 // A75: the source budget moves to a destination without one; schedules follow.
 func TestMergeMovesBudgetAndSchedules(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	housing := f.h.Account("Housing", "expense", "", nil)
 	budget := f.budget(f.rent, 200000, "2026-11", false)
@@ -54,6 +55,7 @@ func TestMergeMovesBudgetAndSchedules(t *testing.T) {
 
 // Review Focus 5: with a budget on both, the destination budget stays as it was.
 func TestMergeDropsSourceBudgetWhenBothHaveOne(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	housing := f.h.Account("Housing", "expense", "", nil)
 	f.budget(f.rent, 200000, "2026-11", false)
@@ -70,6 +72,7 @@ func TestMergeDropsSourceBudgetWhenBothHaveOne(t *testing.T) {
 
 // A82: a schedule follows a payee merge.
 func TestPayeeMergeMovesSchedulePayee(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	var other struct {
 		ID string `json:"id"`

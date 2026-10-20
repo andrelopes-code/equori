@@ -51,6 +51,7 @@ func delivery(t *testing.T, pool *pgxpool.Pool, consumer string) (status string,
 }
 
 func TestInsertIsTransactional(t *testing.T) {
+	t.Parallel()
 	pool := pgtest.New(t)
 	userID := pgtest.CreateUser(t, pool)
 	errRollback := errors.New("rollback")
@@ -71,6 +72,7 @@ func TestInsertIsTransactional(t *testing.T) {
 }
 
 func TestDispatchDeliversOncePerConsumer(t *testing.T) {
+	t.Parallel()
 	pool := pgtest.New(t)
 	userID := pgtest.CreateUser(t, pool)
 	d := newDispatcher(pool)
@@ -91,6 +93,7 @@ func TestDispatchDeliversOncePerConsumer(t *testing.T) {
 }
 
 func TestDeliveredCarriesEvent(t *testing.T) {
+	t.Parallel()
 	pool := pgtest.New(t)
 	userID := pgtest.CreateUser(t, pool)
 	d := newDispatcher(pool)
@@ -110,6 +113,7 @@ func TestDeliveredCarriesEvent(t *testing.T) {
 }
 
 func TestHandlerWritesCommitWithDelivery(t *testing.T) {
+	t.Parallel()
 	pool := pgtest.New(t)
 	userID := pgtest.CreateUser(t, pool)
 	if _, err := pool.Exec(t.Context(), `CREATE TABLE scratch (n int)`); err != nil {
@@ -134,6 +138,7 @@ func TestHandlerWritesCommitWithDelivery(t *testing.T) {
 }
 
 func TestHandlerErrorRetriesWithBackoff(t *testing.T) {
+	t.Parallel()
 	pool := pgtest.New(t)
 	userID := pgtest.CreateUser(t, pool)
 	if _, err := pool.Exec(t.Context(), `CREATE TABLE scratch (n int)`); err != nil {
@@ -191,6 +196,7 @@ func assertRetry(t *testing.T, pool *pgxpool.Pool, attempts int, next time.Time)
 }
 
 func TestTenthFailureMarksFailed(t *testing.T) {
+	t.Parallel()
 	pool := pgtest.New(t)
 	userID := pgtest.CreateUser(t, pool)
 	d := newDispatcher(pool)
@@ -217,6 +223,7 @@ func TestTenthFailureMarksFailed(t *testing.T) {
 }
 
 func TestOtherEventsKeepFlowing(t *testing.T) {
+	t.Parallel()
 	pool := pgtest.New(t)
 	userID := pgtest.CreateUser(t, pool)
 	d := newDispatcher(pool)
@@ -239,6 +246,7 @@ func TestOtherEventsKeepFlowing(t *testing.T) {
 }
 
 func TestHandlerPanicIsRetriedNotFatal(t *testing.T) {
+	t.Parallel()
 	pool := pgtest.New(t)
 	userID := pgtest.CreateUser(t, pool)
 	d := newDispatcher(pool)
@@ -254,6 +262,7 @@ func TestHandlerPanicIsRetriedNotFatal(t *testing.T) {
 }
 
 func TestDrainDeliversMoreThanOneBatch(t *testing.T) {
+	t.Parallel()
 	pool := pgtest.New(t)
 	userID := pgtest.CreateUser(t, pool)
 	d := newDispatcher(pool)

@@ -11,6 +11,7 @@ import (
 )
 
 func TestListTransactionsSearch(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Checking", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
@@ -173,6 +174,7 @@ func transactionIDs(t *testing.T, h *apitest.Harness, query string) []string {
 
 // S75: the account filter includes the account's descendants (A76).
 func TestAccountFilterIncludesSubAccounts(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Checking", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
@@ -196,6 +198,7 @@ func TestAccountFilterIncludesSubAccounts(t *testing.T) {
 
 // Review Focus 5: the subtree filter keeps the order and the cursor, and composes with uncategorized.
 func TestAccountFilterSubtreeWithCursorAndUncategorized(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	var accounts struct {
 		Items []struct {

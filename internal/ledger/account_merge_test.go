@@ -31,6 +31,7 @@ func (m mergeBooks) merge(from, into string) apitest.Response {
 // A75, Review Focus 1 and 3: postings keep their amount and memo, children and the source
 // move; a voided transaction stays.
 func TestMergeMovesPostingsAndChildren(t *testing.T) {
+	t.Parallel()
 	m := newMergeBooks(t)
 	lunch := apitest.Posting(m.food, 600)
 	lunch["memo"] = "lunch"
@@ -95,6 +96,7 @@ func TestMergeMovesPostingsAndChildren(t *testing.T) {
 
 // Review Focus 2: a part on a third category is unchanged.
 func TestMergeKeepsOtherSplitParts(t *testing.T) {
+	t.Parallel()
 	m := newMergeBooks(t)
 	tx := m.h.Record("2026-10-10", apitest.Posting(m.checking, -1000), apitest.Posting(m.food, 700), apitest.Posting(m.transport, 300))
 	m.h.MustDo(http.MethodPost, "/api/v1/accounts/"+m.food+"/merge", map[string]string{"into": m.travel}, http.StatusOK, nil)
@@ -104,6 +106,7 @@ func TestMergeKeepsOtherSplitParts(t *testing.T) {
 }
 
 func TestMergeRejections(t *testing.T) {
+	t.Parallel()
 	m := newMergeBooks(t)
 	closed := m.h.Account("Closed", "expense", "", nil)
 	m.h.MustDo(http.MethodPost, "/api/v1/accounts/"+closed+"/close", map[string]string{"closed_on": "2026-10-31"}, http.StatusOK, nil)

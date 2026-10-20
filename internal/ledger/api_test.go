@@ -18,6 +18,7 @@ func tx(date string, postings ...map[string]any) map[string]any {
 }
 
 func TestCreateAccountAndRecordExpense(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
@@ -37,6 +38,7 @@ func TestCreateAccountAndRecordExpense(t *testing.T) {
 }
 
 func TestValidationErrorsHaveFields(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
@@ -50,6 +52,7 @@ func TestValidationErrorsHaveFields(t *testing.T) {
 }
 
 func TestForeignAccountIs422(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	otherClient := h.Login("other@example.com")
@@ -62,6 +65,7 @@ func TestForeignAccountIs422(t *testing.T) {
 }
 
 func TestCorrectionConflictIs409(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
@@ -89,6 +93,7 @@ func TestCorrectionConflictIs409(t *testing.T) {
 }
 
 func TestPaginationTies(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
@@ -123,12 +128,14 @@ func TestPaginationTies(t *testing.T) {
 }
 
 func TestInvalidCursorIs400(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/transactions?cursor=abc", nil), http.StatusBadRequest, "invalid_request", "")
 	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/transactions?limit=500", nil), http.StatusBadRequest, "invalid_request", "")
 }
 
 func TestSettingsLockAfterFirstTransaction(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	h.MustDo(http.MethodPut, "/api/v1/settings", map[string]string{"base_currency": "USD"}, http.StatusOK, nil)
 	h.MustDo(http.MethodPut, "/api/v1/settings", map[string]string{"base_currency": "BRL"}, http.StatusOK, nil)
@@ -140,6 +147,7 @@ func TestSettingsLockAfterFirstTransaction(t *testing.T) {
 }
 
 func TestUnauthenticated(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	anonymous := &http.Client{}
 	for _, p := range []string{"/api/v1/accounts", "/api/v1/transactions", "/api/v1/settings", "/api/v1/payees", "/api/v1/institutions", "/api/v1/tags"} {
@@ -150,6 +158,7 @@ func TestUnauthenticated(t *testing.T) {
 }
 
 func TestCloseAccountWithBalanceIs409(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)

@@ -38,6 +38,7 @@ func (b cardBooks) transactions(t *testing.T) []apitest.TransactionView {
 
 // S45 through a rule: checking file first, then the card file matches.
 func TestRuleTransfersCardPayment(t *testing.T) {
+	t.Parallel()
 	b := newCardBooks(t)
 	createRule(t, b.h, "Fatura", []map[string]any{contains("pagamento fatura")}, []map[string]any{{"type": "transfer", "account_id": b.card}})
 	b.importLines(t, "nubank.ofx", line("20261110", "-1500.00", "c1", "PAGAMENTO FATURA ITAU"))
@@ -56,6 +57,7 @@ func TestRuleTransfersCardPayment(t *testing.T) {
 
 // S46 through a rule: card file first, then the checking line completes its transaction.
 func TestRuleCompletesCardPayment(t *testing.T) {
+	t.Parallel()
 	b := newCardBooks(t)
 	b.importCard(t, line("20261111", "1500.00", "p1", "PAGAMENTO RECEBIDO"))
 	createRule(t, b.h, "Fatura", []map[string]any{contains("pagamento fatura")}, []map[string]any{{"type": "transfer", "account_id": b.card}})
@@ -76,6 +78,7 @@ func TestRuleCompletesCardPayment(t *testing.T) {
 
 // Running rules pairs two uncategorized imported sides.
 func TestRunRulesPairsImportedSides(t *testing.T) {
+	t.Parallel()
 	b := newCardBooks(t)
 	b.importLines(t, "nubank.ofx", line("20261110", "-1500.00", "c1", "PAGAMENTO FATURA ITAU"))
 	b.importCard(t, line("20261111", "1500.00", "p1", "PAGAMENTO RECEBIDO"))
@@ -107,6 +110,7 @@ func TestRunRulesPairsImportedSides(t *testing.T) {
 
 // S49: a reimbursable expense goes to the counterparty's receivable (S18 step 1).
 func TestRuleMarksReimbursable(t *testing.T) {
+	t.Parallel()
 	b := newCardBooks(t)
 	employer := b.h.Account("Receivable Employer", "asset", "receivable", nil)
 	createRule(t, b.h, "Hotel", []map[string]any{contains("hotel")}, []map[string]any{{"type": "mark_reimbursable", "account_id": employer}})
@@ -130,6 +134,7 @@ func TestRuleMarksReimbursable(t *testing.T) {
 
 // P5b Review Focus 5 for rules.
 func TestTransferActionRejections(t *testing.T) {
+	t.Parallel()
 	b := newCardBooks(t)
 	for _, tt := range []struct {
 		name    string

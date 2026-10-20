@@ -45,6 +45,7 @@ func units(amount int64, code string) map[string]any {
 }
 
 func TestSecurityAccounts(t *testing.T) {
+	t.Parallel()
 	f := newInvestFixture(t)
 	h := f.h
 
@@ -93,6 +94,7 @@ func TestSecurityAccounts(t *testing.T) {
 }
 
 func TestSecurityAccountRules(t *testing.T) {
+	t.Parallel()
 	f := newInvestFixture(t)
 	h := f.h
 	account := func(extra map[string]any) apitest.Response {
@@ -113,6 +115,7 @@ func TestSecurityAccountRules(t *testing.T) {
 
 // P8 amendment A64.
 func TestOriginalAmountRules(t *testing.T) {
+	t.Parallel()
 	f := newInvestFixture(t)
 	h := f.h
 	record := func(original map[string]any) apitest.Response {

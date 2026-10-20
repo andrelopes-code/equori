@@ -7,6 +7,7 @@ import (
 )
 
 func TestHashAndVerify(t *testing.T) {
+	t.Parallel()
 	encoded := Hash("correct horse battery")
 
 	if !strings.HasPrefix(encoded, "$argon2id$v=19$m=19456,t=2,p=1$") {
@@ -27,6 +28,7 @@ func TestHashAndVerify(t *testing.T) {
 }
 
 func TestVerifyMalformed(t *testing.T) {
+	t.Parallel()
 	for _, encoded := range []string{
 		"",
 		"plain",

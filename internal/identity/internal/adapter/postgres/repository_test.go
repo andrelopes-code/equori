@@ -11,6 +11,7 @@ import (
 )
 
 func TestRepositoryUsers(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	repo := NewRepository(pgtest.New(t))
 	in := domain.User{Email: "ann@example.com", PasswordHash: "h", Role: domain.RoleAdmin}
@@ -37,6 +38,7 @@ func TestRepositoryUsers(t *testing.T) {
 }
 
 func TestRepositorySessions(t *testing.T) {
+	t.Parallel()
 	ctx := t.Context()
 	repo := NewRepository(pgtest.New(t))
 	user, err := repo.CreateUser(ctx, domain.User{Email: "ann@example.com", PasswordHash: "h", Role: domain.RoleMember})

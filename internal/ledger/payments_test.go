@@ -19,6 +19,7 @@ func (c cardSetup) payStatement(t *testing.T, ref, date string, amount int64) ap
 }
 
 func TestStatementPaymentEndpoint(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-12")
 	c.purchase("2026-10-14", 150000)
 
@@ -39,6 +40,7 @@ func TestStatementPaymentEndpoint(t *testing.T) {
 }
 
 func TestEarlyPaymentInTwoParts(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-12")
 	c.purchase("2026-10-14", 150000)
 	c.purchase("2026-10-27", 1)
@@ -52,6 +54,7 @@ func TestEarlyPaymentInTwoParts(t *testing.T) {
 }
 
 func TestRevolvingInterestCharge(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-12-05")
 	interest := c.h.Account("Card interest", "expense", "", nil)
 	c.purchase("2026-10-14", 150000)
@@ -68,6 +71,7 @@ func TestRevolvingInterestCharge(t *testing.T) {
 }
 
 func TestStatementFinancing(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-12")
 	c.purchase("2026-10-14", 200000)
 
@@ -105,6 +109,7 @@ func TestStatementFinancing(t *testing.T) {
 }
 
 func TestFinancingOpenStatementIs409(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-10-20")
 	c.purchase("2026-10-14", 200000)
 	c.h.ExpectProblem(c.h.Do(http.MethodPost, "/api/v1/statements/"+c.statementID(t, "2026-11")+"/financing",

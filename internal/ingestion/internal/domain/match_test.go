@@ -9,6 +9,7 @@ import (
 )
 
 func TestCandidates(t *testing.T) {
+	t.Parallel()
 	day := func(d int) time.Time { return time.Date(2026, 10, d, 0, 0, 0, 0, time.UTC) }
 	a, b, c, d, e := uuid.New(), uuid.New(), uuid.New(), uuid.New(), uuid.New()
 	postings := []LedgerPosting{

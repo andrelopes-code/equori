@@ -7,6 +7,7 @@ import (
 )
 
 func TestNormalizeEmail(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		in      string
 		want    string
@@ -35,6 +36,7 @@ func TestNormalizeEmail(t *testing.T) {
 }
 
 func TestValidatePassword(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		in   string

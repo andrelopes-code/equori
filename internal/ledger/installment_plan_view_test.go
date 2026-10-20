@@ -55,6 +55,7 @@ func rowsOf(p planView) []installmentRow {
 }
 
 func TestInstallmentPlanView(t *testing.T) {
+	t.Parallel()
 	laptopBody := func(c cardSetup, electronics string) map[string]any {
 		return map[string]any{
 			"card_account_id": c.card, "date": "2026-10-20",

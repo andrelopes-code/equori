@@ -47,6 +47,7 @@ func systemAccounts(h *apitest.Harness) map[string]string {
 
 // P4 amendments A11 and A14.
 func TestRecordImported(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-12")
 	h, uid := c.h, c.h.OwnerID()
 	sys := systemAccounts(h)
@@ -91,6 +92,7 @@ func TestRecordImported(t *testing.T) {
 }
 
 func TestUnlinkedPostingsAndClearMatched(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-12")
 	h, uid := c.h, c.h.OwnerID()
 	ctx := t.Context()
@@ -144,6 +146,7 @@ func TestUnlinkedPostingsAndClearMatched(t *testing.T) {
 
 // P5b amendment A27: record links live on postings and survive corrections.
 func TestRecordLinksFollowPostings(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-12")
 	h, uid := c.h, c.h.OwnerID()
 	ctx := t.Context()

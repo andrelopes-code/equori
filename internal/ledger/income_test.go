@@ -46,6 +46,7 @@ func (f incomeFixture) income(t *testing.T, body map[string]any) incomeTx {
 }
 
 func TestS22InvestmentIncome(t *testing.T) {
+	t.Parallel()
 	f := newIncomeFixture(t)
 	dividend := f.income(t, map[string]any{
 		"account_id": f.mxrf11, "cash_account_id": f.cash, "income_type": "dividend", "date": "2026-10-26",
@@ -67,6 +68,7 @@ func TestS22InvestmentIncome(t *testing.T) {
 }
 
 func TestInvestmentIncomeRules(t *testing.T) {
+	t.Parallel()
 	f := newIncomeFixture(t)
 	h := f.h
 	order := func(k string, v any) map[string]any {

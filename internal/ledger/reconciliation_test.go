@@ -43,6 +43,7 @@ func newReserveSetup(t *testing.T) reserveSetup {
 }
 
 func TestAssertionRecordsYield(t *testing.T) {
+	t.Parallel()
 	r := newReserveSetup(t)
 	var res assertionResult
 	resp := assertBalance(r.h, r.reserve, "2026-10-31", 1008341)
@@ -72,6 +73,7 @@ func TestAssertionRecordsYield(t *testing.T) {
 }
 
 func TestNegativeDifferenceStaysOpen(t *testing.T) {
+	t.Parallel()
 	r := newReserveSetup(t)
 	var res assertionResult
 	assertBalance(r.h, r.reserve, "2026-10-31", 999000).Decode(t, &res)
@@ -86,6 +88,7 @@ func TestNegativeDifferenceStaysOpen(t *testing.T) {
 }
 
 func TestPositiveDifferenceWithoutYieldStaysOpen(t *testing.T) {
+	t.Parallel()
 	r := newReserveSetup(t)
 	var res assertionResult
 	assertBalance(r.h, r.checking, "2026-10-31", -990000).Decode(t, &res)
@@ -95,6 +98,7 @@ func TestPositiveDifferenceWithoutYieldStaysOpen(t *testing.T) {
 }
 
 func TestAssertionOnParentIs422(t *testing.T) {
+	t.Parallel()
 	r := newReserveSetup(t)
 	var accounts struct {
 		Items []struct {
@@ -113,6 +117,7 @@ func TestAssertionOnParentIs422(t *testing.T) {
 }
 
 func TestAssertionBeforeReconciliationIs409(t *testing.T) {
+	t.Parallel()
 	r := newReserveSetup(t)
 	if resp := assertBalance(r.h, r.reserve, "2026-10-31", 1000000); resp.Status != http.StatusCreated {
 		t.Fatalf("status %d", resp.Status)
@@ -121,6 +126,7 @@ func TestAssertionBeforeReconciliationIs409(t *testing.T) {
 }
 
 func TestAssertionWithoutHistoryStaysOpen(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-11-05"))
 	reserve := h.Account("Emergency fund", "asset", "reserve", nil)
 	var res assertionResult
@@ -131,11 +137,13 @@ func TestAssertionWithoutHistoryStaysOpen(t *testing.T) {
 }
 
 func TestFutureAssertionIs422(t *testing.T) {
+	t.Parallel()
 	r := newReserveSetup(t)
 	r.h.ExpectProblem(assertBalance(r.h, r.reserve, "2026-11-06", 1000000), http.StatusUnprocessableEntity, "validation_failed", "date")
 }
 
 func TestYieldModeCanChange(t *testing.T) {
+	t.Parallel()
 	r := newReserveSetup(t)
 	r.h.MustDo(http.MethodPatch, "/api/v1/accounts/"+r.reserve, map[string]any{"yield_mode": "none"}, http.StatusOK, nil)
 	var res assertionResult
@@ -182,6 +190,7 @@ func newDifference(t *testing.T) (*apitest.Harness, string, string) {
 }
 
 func TestAdjustmentResolvesDifference(t *testing.T) {
+	t.Parallel()
 	h, checking, assertion := newDifference(t)
 	s := reconciliationOf(h, checking)
 	if s.LastReconciledOn != "" || s.OpenDifference == nil || s.OpenDifference.AssertionID != assertion || s.OpenDifference.Difference.Amount != -210 {
@@ -205,6 +214,7 @@ func TestAdjustmentResolvesDifference(t *testing.T) {
 }
 
 func TestTransactionsAddedNeedsMatchingBalance(t *testing.T) {
+	t.Parallel()
 	h, checking, assertion := newDifference(t)
 	h.ExpectProblem(resolve(h, assertion, "transactions_added"), http.StatusConflict, "difference_remains", "")
 
@@ -218,6 +228,7 @@ func TestTransactionsAddedNeedsMatchingBalance(t *testing.T) {
 }
 
 func TestUnlockAllowsCorrection(t *testing.T) {
+	t.Parallel()
 	r := newReserveSetup(t)
 	if resp := assertBalance(r.h, r.reserve, "2026-10-31", 1000000); resp.Status != http.StatusCreated {
 		t.Fatalf("status %d", resp.Status)
@@ -237,6 +248,7 @@ func TestUnlockAllowsCorrection(t *testing.T) {
 }
 
 func TestUnlockKeepsEarlierReconciliations(t *testing.T) {
+	t.Parallel()
 	r := newReserveSetup(t)
 	assertBalance(r.h, r.reserve, "2026-10-15", 1000000)
 	assertBalance(r.h, r.reserve, "2026-10-31", 1000000)
@@ -255,6 +267,7 @@ func reconcileStatement(c cardSetup, reference string, amountDue int64) apitest.
 }
 
 func TestStatementReconciliationLocksPurchases(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-05")
 	purchase := c.purchase("2026-10-14", 100000)
 	c.purchase("2026-10-20", 50000)
@@ -283,6 +296,7 @@ func TestStatementReconciliationLocksPurchases(t *testing.T) {
 }
 
 func TestStatementReconciliationRejects(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-05")
 	purchase := c.purchase("2026-10-14", 100000)
 	c.purchase("2026-11-04", 30000)
@@ -296,6 +310,7 @@ func TestStatementReconciliationRejects(t *testing.T) {
 }
 
 func TestUnlockReleasesWholeStatement(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-05")
 	purchase := c.purchase("2026-10-14", 100000)
 	if resp := reconcileStatement(c, "2026-11", 100000); resp.Status != http.StatusOK {
@@ -310,6 +325,7 @@ func TestUnlockReleasesWholeStatement(t *testing.T) {
 }
 
 func TestCreatedAssertionReportsReconciled(t *testing.T) {
+	t.Parallel()
 	r := newReserveSetup(t)
 	for _, c := range []struct {
 		name   string

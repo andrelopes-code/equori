@@ -3,6 +3,7 @@ package domain
 import "testing"
 
 func TestMinorUnits(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		in      string
 		decimal rune

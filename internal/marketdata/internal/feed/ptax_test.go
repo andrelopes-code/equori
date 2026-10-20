@@ -16,6 +16,7 @@ const ptaxUSD = `{"@odata.context":"x","value":[
 ]}`
 
 func TestPTAX(t *testing.T) {
+	t.Parallel()
 	var rawURL string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rawURL = r.URL.RequestURI()

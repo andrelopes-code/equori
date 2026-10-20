@@ -13,6 +13,7 @@ import (
 
 // Conditions and actions survive the JSON form stored in jsonb and sent over HTTP.
 func TestRuleDocsRoundTrip(t *testing.T) {
+	t.Parallel()
 	r := mustRule(t, Rule{
 		Conditions: []Condition{
 			{Field: FieldDescription, Operator: OpRegex, Text: []string{`^UBER`}},
@@ -61,6 +62,7 @@ func TestRuleDocsRoundTrip(t *testing.T) {
 }
 
 func TestConditionFromDocRejections(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		doc  ConditionDoc

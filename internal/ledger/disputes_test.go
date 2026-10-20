@@ -21,6 +21,7 @@ func openDispute(t *testing.T, h *apitest.Harness, tx string) disputeView {
 }
 
 func TestDisputeWon(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-12-05")
 	charge := c.purchase("2026-10-14", 19990)
 	d := openDispute(t, c.h, charge)
@@ -50,6 +51,7 @@ func refundAgain(h *apitest.Harness, id string) apitest.Response {
 }
 
 func TestDisputeLost(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-12-05")
 	charge := c.purchase("2026-10-14", 19990)
 	d := openDispute(t, c.h, charge)
@@ -62,6 +64,7 @@ func TestDisputeLost(t *testing.T) {
 }
 
 func TestDisputeOnNonCardTransactionIs422(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-12-05")
 	tx := c.h.Record("2026-10-14", apitest.Posting(c.checking, -100), apitest.Posting(c.food, 100))
 	c.h.ExpectProblem(c.h.Do(http.MethodPost, "/api/v1/transactions/"+tx+"/disputes", map[string]any{"opened_on": "2026-11-05"}),
@@ -91,6 +94,7 @@ func listDisputes(t *testing.T, c cardSetup, tx string) disputeListView {
 
 // S13: the disputes of a transaction are listed with their outcome and refund.
 func TestListDisputesS13(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-12-05")
 	charge := c.purchase("2026-10-14", 19990)
 

@@ -22,6 +22,7 @@ func (f fixture) bySequence(scheduleID, from, to string) map[int]occurrenceView 
 // Review Focus 1: a terms change keeps realized, skipped and moved occurrences; a rule
 // change continues the sequence (P7 amendments A49, A52).
 func TestTermsChangeKeepsClosedOccurrences(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.rentSchedule()
 	tx := f.pay("2026-11-05", 210000, f.rent, f.landlord)
@@ -73,6 +74,7 @@ func TestTermsChangeKeepsClosedOccurrences(t *testing.T) {
 
 // Review Focus 5: count holds across horizon extensions.
 func TestCountAcrossHorizonExtensions(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	r := monthly("2026-11-01", 5, "")
 	r["count"] = 14
@@ -89,6 +91,7 @@ func TestCountAcrossHorizonExtensions(t *testing.T) {
 }
 
 func TestChangesConflicts(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.rentSchedule()
 	f.pay("2026-11-05", 210000, f.rent, f.landlord)
@@ -137,6 +140,7 @@ func TestChangesConflicts(t *testing.T) {
 // A52: a move cannot put an occurrence where the schedule produces none: inside a pause
 // (422 on date) or on or after the end (409 schedule_ended).
 func TestMoveRespectsPausesAndEnd(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.rentSchedule()
 	f.h.MustDo(http.MethodPost, "/api/v1/schedules/"+id+"/pauses", map[string]string{"from": "2027-02-01", "to": "2027-03-31"}, http.StatusCreated, nil)

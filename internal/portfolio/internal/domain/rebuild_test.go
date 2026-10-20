@@ -16,6 +16,7 @@ func day(s string) time.Time {
 }
 
 func TestRebuild(t *testing.T) {
+	t.Parallel()
 	mxrf11, petr4 := uuid.New(), uuid.New()
 	buy1, buy2, sale, dividend, jcp := uuid.New(), uuid.New(), uuid.New(), uuid.New(), uuid.New()
 	f := Facts{
@@ -67,6 +68,7 @@ func TestRebuild(t *testing.T) {
 }
 
 func TestRebuildFullSaleKeepsAZeroRow(t *testing.T) {
+	t.Parallel()
 	a := uuid.New()
 	got := Rebuild(Facts{
 		Currency:   "BRL",

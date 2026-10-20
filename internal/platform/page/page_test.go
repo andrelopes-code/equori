@@ -7,6 +7,7 @@ import (
 )
 
 func TestLimit(t *testing.T) {
+	t.Parallel()
 	ptr := func(n int) *int { return &n }
 	tests := []struct {
 		name      string
@@ -36,6 +37,7 @@ type key struct {
 }
 
 func TestCursorRoundTrip(t *testing.T) {
+	t.Parallel()
 	in := key{Date: time.Date(2026, 10, 14, 0, 0, 0, 0, time.UTC), ID: 42}
 
 	cursor, err := EncodeCursor(in)
@@ -52,6 +54,7 @@ func TestCursorRoundTrip(t *testing.T) {
 }
 
 func TestDecodeCursorRejectsGarbage(t *testing.T) {
+	t.Parallel()
 	foreign, err := EncodeCursor(map[string]int{"other": 1})
 	if err != nil {
 		t.Fatal(err)
@@ -65,6 +68,7 @@ func TestDecodeCursorRejectsGarbage(t *testing.T) {
 }
 
 func TestTrim(t *testing.T) {
+	t.Parallel()
 	if items, more := Trim([]int{1, 2, 3}, 2); len(items) != 2 || !more {
 		t.Fatalf("Trim(3 rows, 2) = %v, %v", items, more)
 	}
@@ -74,6 +78,7 @@ func TestTrim(t *testing.T) {
 }
 
 func TestReadAndNext(t *testing.T) {
+	t.Parallel()
 	type key struct {
 		N string `json:"n"`
 	}

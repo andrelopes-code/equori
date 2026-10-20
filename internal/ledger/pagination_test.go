@@ -51,6 +51,7 @@ func walk(t *testing.T, h *apitest.Harness, path string) ([]string, string) {
 
 // ADR 007, C8: lists that grow with use are paginated by cursor.
 func TestGrowingListsPaginate(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-12-20")
 	h := c.h
 	for _, name := range []string{"Caixa", "Banco do Brasil", "Inter"} {

@@ -121,6 +121,7 @@ func (f ledgerFixture) eventCount(t *testing.T, eventType string) int {
 }
 
 func TestProvisionCreatesSystemAccounts(t *testing.T) {
+	t.Parallel()
 	f := newLedgerFixture(t)
 
 	settings, err := f.svc.Settings(t.Context(), f.userID)
@@ -153,6 +154,7 @@ func TestProvisionCreatesSystemAccounts(t *testing.T) {
 }
 
 func TestRecordTransactionPublishesEvent(t *testing.T) {
+	t.Parallel()
 	f := newLedgerFixture(t)
 
 	tx := f.expense(t, "2026-10-14", 23000)
@@ -170,6 +172,7 @@ func TestRecordTransactionPublishesEvent(t *testing.T) {
 }
 
 func TestRecordRejectsForeignAccount(t *testing.T) {
+	t.Parallel()
 	f := newLedgerFixture(t)
 	otherUser := provisionedUser(t, f.pool, f.dispatcher)
 	otherFood, err := f.svc.CreateAccount(t.Context(), otherUser, domain.Account{
@@ -193,6 +196,7 @@ func TestRecordRejectsForeignAccount(t *testing.T) {
 }
 
 func TestCorrectWritesVersion(t *testing.T) {
+	t.Parallel()
 	f := newLedgerFixture(t)
 	tx := f.expense(t, "2026-10-14", 2300)
 
@@ -222,6 +226,7 @@ func TestCorrectWritesVersion(t *testing.T) {
 }
 
 func TestConcurrentCorrectionsConflict(t *testing.T) {
+	t.Parallel()
 	f := newLedgerFixture(t)
 	tx := f.expense(t, "2026-10-14", 2300)
 
@@ -255,6 +260,7 @@ func TestConcurrentCorrectionsConflict(t *testing.T) {
 }
 
 func TestVoidKeepsHistory(t *testing.T) {
+	t.Parallel()
 	f := newLedgerFixture(t)
 	tx := f.expense(t, "2026-10-14", 2300)
 
@@ -271,6 +277,7 @@ func TestVoidKeepsHistory(t *testing.T) {
 }
 
 func TestCloseAccountRequiresZeroBalance(t *testing.T) {
+	t.Parallel()
 	f := newLedgerFixture(t)
 	f.expense(t, "2026-10-14", 2300)
 
@@ -288,6 +295,7 @@ func TestCloseAccountRequiresZeroBalance(t *testing.T) {
 }
 
 func TestListTransactionsCursor(t *testing.T) {
+	t.Parallel()
 	f := newLedgerFixture(t)
 	want := map[uuid.UUID]bool{}
 	for _, d := range []string{"2026-10-01", "2026-10-05", "2026-10-05", "2026-10-05", "2026-10-05", "2026-10-05", "2026-10-09"} {

@@ -8,6 +8,7 @@ import (
 )
 
 func TestBillingCycleRules(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	card := h.Account("Itaú Visa", "liability", "credit_card", nil)
 
@@ -37,6 +38,7 @@ func TestBillingCycleRules(t *testing.T) {
 }
 
 func TestCardProfileOnlyForCards(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/accounts/"+checking+"/billing-cycle-rules",
@@ -46,6 +48,7 @@ func TestCardProfileOnlyForCards(t *testing.T) {
 }
 
 func TestCreditLimitAndAvailableLimit(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	card := h.Account("Itaú Visa", "liability", "credit_card", nil)
 	h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/credit-limits",
@@ -68,6 +71,7 @@ func TestCreditLimitAndAvailableLimit(t *testing.T) {
 }
 
 func TestCards(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	card := h.Account("Itaú Visa", "liability", "credit_card", nil)
 	h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/cards", map[string]any{"holder": "Owner", "last_four": "4021", "virtual": true}, http.StatusCreated, nil)
@@ -87,6 +91,7 @@ func TestCards(t *testing.T) {
 }
 
 func TestBillingRuleUnknownCalendarIs422(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	card := h.Account("Itaú Visa", "liability", "credit_card", nil)
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/accounts/"+card+"/billing-cycle-rules",
@@ -94,6 +99,7 @@ func TestBillingRuleUnknownCalendarIs422(t *testing.T) {
 }
 
 func TestCardActivation(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	account := h.Account("Itaú Visa", "liability", "credit_card", nil)
 	var created struct {

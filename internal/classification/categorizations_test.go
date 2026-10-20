@@ -15,6 +15,7 @@ type categorizationItem struct {
 
 // A79: the categorizations of several transactions in one call; a transaction without a row is absent.
 func TestCategorizationsByTransaction(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	createRule(t, b.h, "Uber", []map[string]any{contains("uber")}, []map[string]any{setCategory(b.transport)})
 	manual := b.record(t, "2026-10-10", "Hotel", "", b.travel, 5000)
@@ -40,6 +41,7 @@ func TestCategorizationsByTransaction(t *testing.T) {
 }
 
 func TestCategorizationsLimit(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	ids := make([]string, 201)
 	for i := range ids {
@@ -50,6 +52,7 @@ func TestCategorizationsLimit(t *testing.T) {
 
 // A80: a rule reports how many current categorizations it decided and when it last did.
 func TestRuleUsage(t *testing.T) {
+	t.Parallel()
 	b := newBooks(t)
 	rule := createRule(t, b.h, "Uber", []map[string]any{contains("uber")}, []map[string]any{setCategory(b.transport)})
 	idle := createRule(t, b.h, "Idle", []map[string]any{contains("zzz")}, []map[string]any{setCategory(b.travel)})

@@ -13,6 +13,7 @@ import (
 )
 
 func TestTransactionFacts(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-10-25"))
 	ctx, uid := t.Context(), h.OwnerID()
 	sys := systemAccounts(h)
@@ -69,6 +70,7 @@ func TestTransactionFacts(t *testing.T) {
 }
 
 func TestAccountFactsAndPayees(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	ctx, uid := t.Context(), h.OwnerID()
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
@@ -103,6 +105,7 @@ func TestAccountFactsAndPayees(t *testing.T) {
 
 // P5 amendment A23.
 func TestLatestPayeeCategories(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	ctx, uid := t.Context(), h.OwnerID()
 	sys := systemAccounts(h)
@@ -145,6 +148,7 @@ func TestLatestPayeeCategories(t *testing.T) {
 
 // P5 amendment A19: an import decision creates the category postings at version 1.
 func TestRecordImportedWithDecision(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	ctx, uid := t.Context(), h.OwnerID()
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
@@ -189,6 +193,7 @@ func TestRecordImportedWithDecision(t *testing.T) {
 }
 
 func TestListUncategorizedTransactions(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	sys := systemAccounts(h)
 	checking := h.Account("Nubank checking", "asset", "checking", nil)

@@ -55,6 +55,7 @@ func expectPostings(t *testing.T, got []postingOut, want ...[3]any) {
 }
 
 func TestS21PurchaseAndSale(t *testing.T) {
+	t.Parallel()
 	f := newInvestFixture(t)
 	gains := systemAccount(t, f.h, "realized_gains")
 
@@ -76,6 +77,7 @@ func TestS21PurchaseAndSale(t *testing.T) {
 
 // Review Focus 2.
 func TestFullSaleLeavesNoCost(t *testing.T) {
+	t.Parallel()
 	f := newInvestFixture(t)
 	f.trade(t, "buy", "2026-10-05", 150, "10.05", 490)
 	f.trade(t, "sell", "2026-10-20", 50, "10.80", 210)
@@ -95,6 +97,7 @@ func TestFullSaleLeavesNoCost(t *testing.T) {
 }
 
 func TestTradeValidation(t *testing.T) {
+	t.Parallel()
 	f := newInvestFixture(t)
 	h := f.h
 	other := h.Account("Other broker", "asset", "brokerage", map[string]any{"institution_id": f.institution})
@@ -113,6 +116,7 @@ func TestTradeValidation(t *testing.T) {
 
 // Review Focus 1 and P8 amendment A69.
 func TestLaterSaleLocksEarlierPostings(t *testing.T) {
+	t.Parallel()
 	f := newInvestFixture(t)
 	h := f.h
 	buy := f.trade(t, "buy", "2026-10-05", 150, "10.05", 490)
@@ -143,6 +147,7 @@ func TestLaterSaleLocksEarlierPostings(t *testing.T) {
 // A69: correcting a generic posting on a security account dated before a sale is refused,
 // both when the correction keeps the date and when it moves the posting past the sale.
 func TestCorrectionBeforeASaleIsRefused(t *testing.T) {
+	t.Parallel()
 	f := newInvestFixture(t)
 	h := f.h
 	f.trade(t, "buy", "2026-10-05", 150, "10.05", 490)
@@ -166,6 +171,7 @@ func TestCorrectionBeforeASaleIsRefused(t *testing.T) {
 // A69 under concurrency: a change to a security account waits for the account row that a
 // sale of that account locks, then sees the sale and is refused.
 func TestSecurityPostingsWaitForTheAccountLock(t *testing.T) {
+	t.Parallel()
 	f := newInvestFixture(t)
 	f.trade(t, "buy", "2026-10-05", 150, "10.05", 490)
 	ctx := t.Context()

@@ -23,6 +23,7 @@ func generate(ctx context.Context, p *aistudio.Provider) error {
 }
 
 func TestGenerateErrors(t *testing.T) {
+	t.Parallel()
 	quota := func(want time.Duration) func(*testing.T, error) {
 		return func(t *testing.T, err error) {
 			var q *llm.QuotaError
@@ -103,6 +104,7 @@ func TestGenerateErrors(t *testing.T) {
 }
 
 func TestKeyNeverExposed(t *testing.T) {
+	t.Parallel()
 	const key = "AIzaTESTKEY"
 	closed := httptest.NewServer(http.NotFoundHandler())
 	closed.Close()

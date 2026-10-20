@@ -7,6 +7,7 @@ import (
 )
 
 func TestSchemaRejectsInvalidPrices(t *testing.T) {
+	t.Parallel()
 	pool := pgtest.New(t)
 	ctx := t.Context()
 	if _, err := pool.Exec(ctx, `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, exchange)

@@ -12,6 +12,7 @@ import (
 
 // S36: card statement lines are charges and credits billed by the card's cycle.
 func TestImportCardStatement(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-11-12"))
 	card := h.Card("Itaú Visa", 3, 10, "next")
 	file := []byte("OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\n\n<OFX><CREDITCARDMSGSRSV1><CCSTMTTRNRS><CCSTMTRS><CURDEF>BRL\n" +

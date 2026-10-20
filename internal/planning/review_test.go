@@ -10,6 +10,7 @@ import (
 // Final review, finding 1: a preceding adjustment may move the first date before start;
 // that occurrence is generated.
 func TestPrecedingDateBeforeStartIsGenerated(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-10-25")
 	id := f.schedule("bill", f.checking, f.rent, 10000, monthly("2026-11-01", 1, "preceding"), nil)
 	got := f.occurrences("from=2026-10-01&to=2026-12-30&schedule_id=" + id)
@@ -21,6 +22,7 @@ func TestPrecedingDateBeforeStartIsGenerated(t *testing.T) {
 // Final review, finding 2: a rule change after a realized occurrence dated on or after the
 // effective date keeps the new rule's first date.
 func TestRuleChangeAfterAnEarlyPayment(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.schedule("bill", f.checking, f.rent, 210000, monthly("2026-11-01", 10, ""), nil)
 	tx := f.pay("2026-11-04", 210000, f.rent, "")
@@ -49,6 +51,7 @@ func TestRuleChangeAfterAnEarlyPayment(t *testing.T) {
 // Final review, finding 3: a terms change effective before the schedule existed creates no
 // occurrence dated before its creation.
 func TestTermsChangeBeforeCreation(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.schedule("bill", f.checking, f.rent, 210000, monthly("2026-01-05", 5, ""), nil)
 	f.h.MustDo(http.MethodPost, "/api/v1/schedules/"+id+"/terms", map[string]any{"effective_from": "2026-02-01", "amount": apitest.BRL(220000)}, http.StatusCreated, nil)
@@ -63,6 +66,7 @@ func TestTermsChangeBeforeCreation(t *testing.T) {
 // Final review, finding 4: an automatic realization the owner releases is not restored by the
 // next event of the same transaction.
 func TestUnrealizedMatchStaysReleased(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.rentSchedule()
 	wrong := f.pay("2026-11-05", 210000, f.rent, f.landlord)
@@ -82,6 +86,7 @@ func TestUnrealizedMatchStaysReleased(t *testing.T) {
 
 // Final review, finding 7: budget progress is bounded by the horizon.
 func TestBudgetProgressBeyondHorizon(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-12-01")
 	id := f.budget(f.rent, 100000, "2026-10", true)
 	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/budgets/"+id+"/progress?month=2028-01", nil), http.StatusUnprocessableEntity, "validation_failed", "month")

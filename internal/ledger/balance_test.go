@@ -19,6 +19,7 @@ func (f ledgerFixture) balance(t *testing.T, accountID domain.Account, on string
 }
 
 func TestBalanceBookedVsSettled(t *testing.T) {
+	t.Parallel()
 	f := newLedgerFixture(t)
 	settled := date("2026-10-19")
 	_, err := f.svc.RecordTransaction(t.Context(), f.userID, domain.Transaction{
@@ -44,6 +45,7 @@ func TestBalanceBookedVsSettled(t *testing.T) {
 }
 
 func TestBalanceExcludesVoided(t *testing.T) {
+	t.Parallel()
 	f := newLedgerFixture(t)
 	f.expense(t, "2026-10-01", 1000)
 	tx := f.expense(t, "2026-10-02", 500)
@@ -58,6 +60,7 @@ func TestBalanceExcludesVoided(t *testing.T) {
 }
 
 func TestBalanceAtDateIncludesThatDay(t *testing.T) {
+	t.Parallel()
 	f := newLedgerFixture(t)
 	f.expense(t, "2026-10-14", 2300)
 
@@ -70,6 +73,7 @@ func TestBalanceAtDateIncludesThatDay(t *testing.T) {
 }
 
 func TestParentBalanceSumsChildren(t *testing.T) {
+	t.Parallel()
 	f := newLedgerFixture(t)
 	parent := f.createAccount(t, domain.Account{Name: "Nubank", Class: domain.ClassAsset, Kind: domain.KindChecking})
 	child := f.createAccount(t, domain.Account{Name: "Nubank account", Class: domain.ClassAsset, Kind: domain.KindChecking, ParentID: parent.ID})
@@ -104,6 +108,7 @@ func TestParentBalanceSumsChildren(t *testing.T) {
 }
 
 func TestBalanceUnknownAccount(t *testing.T) {
+	t.Parallel()
 	f := newLedgerFixture(t)
 	other := provisionedUser(t, f.pool, f.dispatcher)
 	if _, err := f.svc.BalanceAt(t.Context(), other, f.checking.ID, time.Now(), app.BasisBooked); !errors.Is(err, app.ErrNotFound) {

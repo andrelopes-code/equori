@@ -56,6 +56,7 @@ func transactionCount(t *testing.T, h *apitest.Harness) int {
 
 // S32 and S33.
 func TestImportOFX(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-11-05"))
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
@@ -87,6 +88,7 @@ func TestImportOFX(t *testing.T) {
 
 // S34: records without an external id are told apart by their ordinal in the file.
 func TestImportCSVWithIdenticalLines(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-11-05"))
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
 	h.MustDo(http.MethodPut, "/api/v1/accounts/"+checking+"/csv-profile", map[string]any{
@@ -113,6 +115,7 @@ func TestImportCSVWithIdenticalLines(t *testing.T) {
 // Review Focus 1: a record left received after the ledger created its transaction completes
 // without a second transaction (P4 amendments A11, A12).
 func TestImportResumesAnInterruptedRecord(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-11-05"))
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
 	file := apitest.OFX("", apitest.OFXLine{Date: "20261012", Amount: "-120.00", FITID: "a2", Name: "Farmácia"})
@@ -130,6 +133,7 @@ func TestImportResumesAnInterruptedRecord(t *testing.T) {
 // A record matched before the interruption stays matched: the resumed import must not
 // create a second transaction for a line the owner had already entered.
 func TestImportResumesAnInterruptedMatch(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-11-05"))
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
@@ -148,6 +152,7 @@ func TestImportResumesAnInterruptedMatch(t *testing.T) {
 
 // Review Focus 2: one manual entry and two identical lines: one match, one creation (I07).
 func TestImportNeverLinksOneTransactionTwice(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-11-05"))
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
@@ -160,6 +165,7 @@ func TestImportNeverLinksOneTransactionTwice(t *testing.T) {
 
 // Review Focus 3: a balance the ledger cannot take is skipped; the import still succeeds.
 func TestImportSkipsAFutureBalance(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-11-05"))
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
 	b := mustImport(t, h, checking, "ofx", "a.ofx", apitest.OFX("<LEDGERBAL><BALAMT>-120.00<DTASOF>20261130</LEDGERBAL>", apitest.OFXLine{Date: "20261012", Amount: "-120.00", FITID: "a2", Name: "Farmácia"}))
@@ -170,6 +176,7 @@ func TestImportSkipsAFutureBalance(t *testing.T) {
 
 // Review Focus 4 and request rules.
 func TestImportRejectsBadRequests(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-11-05"))
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)

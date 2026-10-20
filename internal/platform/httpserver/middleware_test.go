@@ -21,6 +21,7 @@ func serve(t *testing.T, h http.Handler, req *http.Request) (*httptest.ResponseR
 }
 
 func TestMiddlewareRequestID(t *testing.T) {
+	t.Parallel()
 	var seen string
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { seen = RequestID(r.Context()) })
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
@@ -41,6 +42,7 @@ func TestMiddlewareRequestID(t *testing.T) {
 }
 
 func TestMiddlewareAccessLogStatus(t *testing.T) {
+	t.Parallel()
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusTeapot)
 		_, _ = io.WriteString(w, "abc")
@@ -55,6 +57,7 @@ func TestMiddlewareAccessLogStatus(t *testing.T) {
 }
 
 func TestMiddlewareRecoversPanic(t *testing.T) {
+	t.Parallel()
 	h := http.HandlerFunc(func(http.ResponseWriter, *http.Request) { panic("boom") })
 	rec, logs := serve(t, h, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil))
 
@@ -73,6 +76,7 @@ func TestMiddlewareRecoversPanic(t *testing.T) {
 }
 
 func TestMiddlewareRejectsCrossOriginWrite(t *testing.T) {
+	t.Parallel()
 	called := false
 	h := http.HandlerFunc(func(http.ResponseWriter, *http.Request) { called = true })
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/api/v1/x", nil)
@@ -86,6 +90,7 @@ func TestMiddlewareRejectsCrossOriginWrite(t *testing.T) {
 }
 
 func TestMiddlewareLimitsBody(t *testing.T) {
+	t.Parallel()
 	var readErr error
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, readErr = io.ReadAll(r.Body) })
 	body := strings.NewReader(strings.Repeat("a", maxBodyBytes+1))
@@ -98,6 +103,7 @@ func TestMiddlewareLimitsBody(t *testing.T) {
 }
 
 func TestMiddlewareRaisesBodyLimitForRoute(t *testing.T) {
+	t.Parallel()
 	limits := []BodyLimit{{Pattern: "POST /files/{id}", Bytes: 2 * maxBodyBytes}}
 	tests := []struct {
 		name, method, path string
@@ -123,6 +129,7 @@ func TestMiddlewareRaisesBodyLimitForRoute(t *testing.T) {
 }
 
 func TestNotFound(t *testing.T) {
+	t.Parallel()
 	rec, _ := serve(t, NotFound(), httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/v1/nope", nil))
 
 	if rec.Code != http.StatusNotFound || rec.Header().Get("Content-Type") != problem.ContentType {
@@ -135,6 +142,7 @@ func TestNotFound(t *testing.T) {
 
 // ADR 007, C9; ADR 008 for non-API responses.
 func TestMiddlewareSetsSecurityHeaders(t *testing.T) {
+	t.Parallel()
 	common := map[string]string{"X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer"}
 	byKind := map[bool]map[string]string{
 		true: {"Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'", "Cache-Control": "no-store"},

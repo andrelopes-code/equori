@@ -10,6 +10,7 @@ import (
 )
 
 func TestCOTAHIST(t *testing.T) {
+	t.Parallel()
 	file := cotahistZIP(t, "20261029",
 		cotahistRecord("20261029", "MXRF11", "010", 936),
 		cotahistRecord("20261029", "PETR4", "010", 3842),
@@ -58,6 +59,7 @@ func TestCOTAHIST(t *testing.T) {
 }
 
 func TestCOTAHISTRejectsMalformedFiles(t *testing.T) {
+	t.Parallel()
 	short := cotahistRecord("20261029", "MXRF11", "010", 936)[:200]
 	tests := map[string][]byte{
 		"short line": cotahistZIP(t, "20261029", short),

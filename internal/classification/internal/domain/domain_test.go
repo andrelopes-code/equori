@@ -34,6 +34,7 @@ func day(s string) time.Time {
 func id() uuid.UUID { return uuid.Must(uuid.NewV7()) }
 
 func TestNormalize(t *testing.T) {
+	t.Parallel()
 	tests := map[string]string{
 		"PADARIA SÃO JOÃO":        "padaria sao joao",
 		"  Padaria   São\tJoão  ": "padaria sao joao",
@@ -93,6 +94,7 @@ func mustRule(t *testing.T, r Rule) Rule {
 }
 
 func TestConditionsHold(t *testing.T) {
+	t.Parallel()
 	f := newRuleFixture()
 	s := f.subject(t, "PADARIA SÃO JOÃO 12", -4590)
 	s.PayeeID = f.payee
@@ -140,6 +142,7 @@ func TestConditionsHold(t *testing.T) {
 }
 
 func TestNewRuleRejections(t *testing.T) {
+	t.Parallel()
 	setCategory := []Action{{Type: ActionSetCategory, CategoryID: id()}}
 	contains := []Condition{{Field: FieldDescription, Operator: OpContains, Text: []string{"uber"}}}
 	tests := []struct {
@@ -179,6 +182,7 @@ func TestNewRuleRejections(t *testing.T) {
 }
 
 func TestAliasOrder(t *testing.T) {
+	t.Parallel()
 	ifood, other, regex := id(), id(), id()
 	mk := func(pattern string, mt MatchType, payee uuid.UUID) Alias {
 		a, err := NewAlias(Alias{ID: id(), Pattern: pattern, MatchType: mt, PayeeID: payee})
@@ -216,6 +220,7 @@ func TestAliasOrder(t *testing.T) {
 }
 
 func TestDecideMergesRules(t *testing.T) {
+	t.Parallel()
 	f := newRuleFixture()
 	posto := mustRule(t, Rule{Priority: 1, Conditions: []Condition{{Field: FieldDescription, Operator: OpContains, Text: []string{"posto"}}},
 		Actions: []Action{{Type: ActionSetCategory, CategoryID: f.fuel}}})
@@ -248,6 +253,7 @@ func TestDecideMergesRules(t *testing.T) {
 }
 
 func TestDecideAliasAndHistory(t *testing.T) {
+	t.Parallel()
 	f := newRuleFixture()
 	alias, err := NewAlias(Alias{ID: id(), Pattern: "ifd*", MatchType: MatchStartsWith, PayeeID: f.payee})
 	if err != nil {
@@ -279,6 +285,7 @@ func TestDecideAliasAndHistory(t *testing.T) {
 }
 
 func TestAllocate(t *testing.T) {
+	t.Parallel()
 	f := newRuleFixture()
 	split := []Part{{CategoryID: f.groceries, Percent: 8000}, {CategoryID: f.cleaning, Remainder: true}}
 	tests := []struct {
@@ -311,6 +318,7 @@ func TestAllocate(t *testing.T) {
 
 // Every split of every total sums to the total without zero parts (Review Focus 5).
 func TestAllocateSumsToTotal(t *testing.T) {
+	t.Parallel()
 	f := newRuleFixture()
 	rng := rand.New(rand.NewPCG(1, 2))
 	cats := []uuid.UUID{f.food, f.groceries, f.cleaning, f.travel, f.fuel}
@@ -352,6 +360,7 @@ func TestAllocateSumsToTotal(t *testing.T) {
 }
 
 func TestMatchKey(t *testing.T) {
+	t.Parallel()
 	payee := id()
 	if got := MatchKey(payee, "IFD*IFOOD"); got != "payee:"+payee.String() {
 		t.Errorf("with payee = %q", got)

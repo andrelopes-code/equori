@@ -20,6 +20,7 @@ import (
 )
 
 func TestLive(t *testing.T) {
+	t.Parallel()
 	key := os.Getenv("EQUORI_GEMINI_API_KEY")
 	if key == "" {
 		t.Fatal("EQUORI_GEMINI_API_KEY is not set")

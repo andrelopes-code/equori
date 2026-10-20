@@ -11,6 +11,7 @@ import (
 
 // ADR 008.
 func TestWebIsServedOutsideAPI(t *testing.T) {
+	t.Parallel()
 	const index = `<!doctype html><div id="root"></div>`
 	h := apitest.New(t, apitest.Web(fstest.MapFS{"index.html": {Data: []byte(index)}}))
 
@@ -30,6 +31,7 @@ func TestWebIsServedOutsideAPI(t *testing.T) {
 
 // The web app manifest and its icon are same-origin files under web/public; the CSP is default-src 'self'.
 func TestWebServesManifestAndIcon(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Web(fstest.MapFS{
 		"index.html":    {Data: []byte(`<!doctype html><div id="root"></div>`)},
 		"manifest.json": {Data: []byte(`{"name":"equori"}`)},

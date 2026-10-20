@@ -10,6 +10,7 @@ import (
 
 // S29: a streaming subscription with a price change, a pause and an end.
 func TestS29SubscriptionWithPriceChangeAndPause(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	card := f.h.Card("Itaú Visa", 3, 10, "next")
 	subscriptions := f.h.Account("Subscriptions", "expense", "", nil)
@@ -37,6 +38,7 @@ func TestS29SubscriptionWithPriceChangeAndPause(t *testing.T) {
 
 // S27: the rent PIX of 2026-11-05 realizes the 2026-11 occurrence.
 func TestS27MonthlyRent(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.rentSchedule()
 	tx := f.pay("2026-11-05", 210000, f.rent, f.landlord)

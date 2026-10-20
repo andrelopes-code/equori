@@ -29,6 +29,7 @@ func systemAccount(t *testing.T, h *apitest.Harness, role string) string {
 }
 
 func TestCardScenarios(t *testing.T) {
+	t.Parallel()
 	laptop := func(c cardSetup, electronics string) purchaseResult {
 		return installmentPurchase(c.h.T(), c.h, map[string]any{
 			"card_account_id": c.card, "date": "2026-10-20", "description": "Laptop",

@@ -21,6 +21,7 @@ func mxrf11() map[string]any {
 }
 
 func TestDefineInstrument(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 
 	r := h.Do(http.MethodPost, "/api/v1/instruments", mxrf11())
@@ -58,6 +59,7 @@ func TestDefineInstrument(t *testing.T) {
 }
 
 func TestDefineInstrumentValidation(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	with := func(k string, v any) map[string]any {
 		in := mxrf11()

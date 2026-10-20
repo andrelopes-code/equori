@@ -16,6 +16,7 @@ import (
 var errKnown = errors.New("known")
 
 func TestErrorWriter(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		request bool

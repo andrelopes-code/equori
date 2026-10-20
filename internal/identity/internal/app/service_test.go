@@ -7,6 +7,7 @@ import (
 )
 
 func TestAcquireHashSlotWhenFull(t *testing.T) {
+	t.Parallel()
 	s := &Service{hashSlots: make(chan struct{}, 1)}
 	release, err := s.acquireHashSlot(t.Context())
 	if err != nil {

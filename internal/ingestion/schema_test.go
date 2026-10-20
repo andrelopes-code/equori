@@ -8,6 +8,7 @@ import (
 )
 
 func TestSchemaInvariants(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
@@ -54,6 +55,7 @@ func TestSchemaInvariants(t *testing.T) {
 }
 
 func TestImportBatchListStartsEmpty(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	var out struct {
 		Items []any `json:"items"`
@@ -65,6 +67,7 @@ func TestImportBatchListStartsEmpty(t *testing.T) {
 }
 
 func TestConnectionSchemaInvariants(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	savings := h.Account("Savings", "asset", "savings", nil)

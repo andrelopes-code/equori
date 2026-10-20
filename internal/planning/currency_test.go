@@ -16,6 +16,7 @@ func (f fixture) price(t *testing.T, date, value string) {
 
 // P8 amendment A72.
 func TestSchedulesInAnotherCurrency(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	h := f.h
 	wise := h.Account("Wise USD", "asset", "checking", map[string]any{"currency": "USD"})
@@ -85,6 +86,7 @@ type committedOut struct {
 }
 
 func TestS66ForeignSubscriptionCommitted(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	h := f.h
 	wise := h.Account("Wise USD", "asset", "checking", map[string]any{"currency": "USD"})
@@ -105,6 +107,7 @@ func TestS66ForeignSubscriptionCommitted(t *testing.T) {
 }
 
 func TestS67GoalInForeignCurrency(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	h := f.h
 	wise := h.Account("Wise USD", "asset", "checking", map[string]any{"currency": "USD"})
@@ -133,6 +136,7 @@ func TestS67GoalInForeignCurrency(t *testing.T) {
 
 // Final review: a parent whose children hold several instruments has no single balance.
 func TestMixedParentInGoalsAndProjections(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	h := f.h
 	h.MustDo(http.MethodPost, "/api/v1/instruments", map[string]any{"code": "MXRF11", "type": "fii", "scale": 0, "name": "MXRF11", "quote_currency": "BRL"}, http.StatusCreated, nil)

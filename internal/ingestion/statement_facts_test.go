@@ -47,6 +47,7 @@ func cardWithBill(t *testing.T, bill pluggy.Bill) (syncFixture, string) {
 // S80 (A85, A86, A92): a bill's closing date, due date and total are the statement's facts;
 // the statement takes the dates and, with no difference, is reconciled by the sync.
 func TestS80StatementFactsFromBill(t *testing.T) {
+	t.Parallel()
 	f, card := cardWithBill(t, pluggy.Bill{ID: "bill-nov", DueDate: "2026-11-10T00:00:00.000Z", BillClosingDate: new("2026-11-02T00:00:00.000Z"), TotalAmount: "230.00"})
 	f.line(pluggy.SubtypeCard, cardLine("charge-1", "2026-10-20", "230.00", "POSTED", new("bill-nov")))
 	f.sync()
@@ -60,6 +61,7 @@ func TestS80StatementFactsFromBill(t *testing.T) {
 
 // A92: a total that differs from the derived amount due is reported and not reconciled.
 func TestStatementFactsReportADifference(t *testing.T) {
+	t.Parallel()
 	f, card := cardWithBill(t, pluggy.Bill{ID: "bill-nov", DueDate: "2026-11-10T00:00:00.000Z", TotalAmount: "240.00"})
 	f.line(pluggy.SubtypeCard, cardLine("charge-1", "2026-10-20", "230.00", "POSTED", new("bill-nov")))
 	f.sync()
@@ -73,6 +75,7 @@ func TestStatementFactsReportADifference(t *testing.T) {
 // A90: a pending line is never billed on a statement the institution reported; it moves to
 // the first statement without facts.
 func TestPendingLineLeavesAReportedStatement(t *testing.T) {
+	t.Parallel()
 	f, card := cardWithBill(t, pluggy.Bill{ID: "bill-nov", DueDate: "2026-11-10T00:00:00.000Z", BillClosingDate: new("2026-11-02T00:00:00.000Z"), TotalAmount: "230.00"})
 	f.line(pluggy.SubtypeCard, cardLine("charge-1", "2026-10-20", "230.00", "POSTED", new("bill-nov")))
 	f.line(pluggy.SubtypeCard, cardLine("pending-1", "2026-10-25", "86.13", "PENDING", nil))
@@ -90,6 +93,7 @@ func TestPendingLineLeavesAReportedStatement(t *testing.T) {
 // A86, A87: a reported closing date takes the rule's closing adjustment: the institution
 // reports a Saturday and closes on the Friday before.
 func TestReportedClosingTakesTheRuleShift(t *testing.T) {
+	t.Parallel()
 	f := newSyncFixture(t)
 	card := f.h.Account("Nubank Gold", "liability", "credit_card", nil)
 	f.h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/billing-cycle-rules", map[string]any{
@@ -111,6 +115,7 @@ func TestReportedClosingTakesTheRuleShift(t *testing.T) {
 // S89 (A93): a card's first sync starts at the cycle that holds sync_from and opens the card
 // with the total of the bill before it; the second sync records no second opening.
 func TestS89CardSyncStart(t *testing.T) {
+	t.Parallel()
 	f := newSyncFixture(t)
 	card := f.h.Account("Nubank Gold", "liability", "credit_card", nil)
 	f.h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/billing-cycle-rules", map[string]any{

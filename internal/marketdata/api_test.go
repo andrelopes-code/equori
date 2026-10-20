@@ -8,6 +8,7 @@ import (
 )
 
 func TestHolidaysAPI(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	var out struct {
 		Items []struct {

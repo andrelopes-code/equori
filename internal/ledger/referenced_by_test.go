@@ -45,6 +45,7 @@ func sourcesOf(refs []referenceView, linkType string) []string {
 }
 
 func TestReferencedBy(t *testing.T) {
+	t.Parallel()
 	t.Run("S08 refunds reference the laptop and a voided refund drops out", func(t *testing.T) {
 		c := newCardSetup(t, "2026-11-20")
 		laptop := installmentPurchase(t, c.h, map[string]any{

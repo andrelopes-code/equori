@@ -6,6 +6,7 @@ import (
 )
 
 func TestToday(t *testing.T) {
+	t.Parallel()
 	saoPaulo, err := time.LoadLocation("America/Sao_Paulo")
 	if err != nil {
 		t.Fatal(err)

@@ -44,6 +44,7 @@ func (f syncFixture) setItemUpdated(clientID, itemID, connector, at string) {
 // S57 (item part): an item that needs its owner in Meu Pluggy is not synced; the
 // connection reports its status and no batch is created.
 func TestSyncSkipsABlockedItem(t *testing.T) {
+	t.Parallel()
 	f := newSyncFixture(t)
 	f.line(pluggy.SubtypeChecking, bankLine("tx-1", "2026-10-20", "-120.00"))
 	f.mapTo(pluggy.SubtypeChecking, f.checking)
@@ -64,6 +65,7 @@ func TestSyncSkipsABlockedItem(t *testing.T) {
 // A43: a tick syncs a connection only when its item has data newer than the last sync; a
 // manual sync always runs.
 func TestTickSyncsOnlyUpdatedItems(t *testing.T) {
+	t.Parallel()
 	f := newSyncFixture(t)
 	f.line(pluggy.SubtypeChecking, bankLine("tx-1", "2026-10-20", "-120.00"))
 	f.mapTo(pluggy.SubtypeChecking, f.checking)
@@ -90,6 +92,7 @@ func TestTickSyncsOnlyUpdatedItems(t *testing.T) {
 // S58: two users sync on one tick; each ledger receives only its own lines, and neither
 // user can sync the other's connection.
 func TestTickOverTwoUsers(t *testing.T) {
+	t.Parallel()
 	f := newSyncFixture(t)
 	f.line(pluggy.SubtypeChecking, bankLine("tx-owner", "2026-10-20", "-120.00"))
 	f.mapTo(pluggy.SubtypeChecking, f.checking)
@@ -141,6 +144,7 @@ func TestTickOverTwoUsers(t *testing.T) {
 // S59 and Review Focus 4: a wrong secret on one integration leaves the other syncing, and
 // the failure is logged by equori ids only.
 func TestTickWithTwoIntegrations(t *testing.T) {
+	t.Parallel()
 	f := newSyncFixture(t)
 	f.line(pluggy.SubtypeChecking, bankLine("tx-1", "2026-10-20", "-120.00"))
 	f.mapTo(pluggy.SubtypeChecking, f.checking)
@@ -179,6 +183,7 @@ func TestTickWithTwoIntegrations(t *testing.T) {
 // Review Focus 2: a manual sync during another sync of the account waits for the account
 // lock and then finds nothing new.
 func TestManualSyncWaitsForTheAccountLock(t *testing.T) {
+	t.Parallel()
 	f := newSyncFixture(t)
 	f.line(pluggy.SubtypeChecking, bankLine("tx-1", "2026-10-20", "-120.00"))
 	f.mapTo(pluggy.SubtypeChecking, f.checking)
@@ -219,6 +224,7 @@ func TestManualSyncWaitsForTheAccountLock(t *testing.T) {
 // Review Focus 2: a sync interrupted after some batches completes on the next one without
 // duplicates.
 func TestInterruptedSyncCompletes(t *testing.T) {
+	t.Parallel()
 	f := newSyncFixture(t)
 	card := f.h.Card("Nubank card", 3, 10, "next")
 	f.line(pluggy.SubtypeChecking, bankLine("tx-1", "2026-10-20", "-120.00"))

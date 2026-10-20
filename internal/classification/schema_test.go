@@ -8,6 +8,7 @@ import (
 )
 
 func TestSchemaInvariants(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)

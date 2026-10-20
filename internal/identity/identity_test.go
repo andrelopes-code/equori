@@ -107,6 +107,7 @@ func expectProblem(t *testing.T, resp response, status int, code string) {
 }
 
 func TestSessionLifecycle(t *testing.T) {
+	t.Parallel()
 	h := newHarness(t, identity.Config{})
 	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleAdmin); err != nil {
 		t.Fatal(err)
@@ -141,6 +142,7 @@ func TestSessionLifecycle(t *testing.T) {
 }
 
 func TestLoginFailures(t *testing.T) {
+	t.Parallel()
 	h := newHarness(t, identity.Config{})
 	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleMember); err != nil {
 		t.Fatal(err)
@@ -159,6 +161,7 @@ func TestLoginFailures(t *testing.T) {
 }
 
 func TestRequireSessionDeniesByDefault(t *testing.T) {
+	t.Parallel()
 	h := newHarness(t, identity.Config{})
 
 	expectProblem(t, h.do(http.MethodGet, "/api/v1/probe", ""), http.StatusUnauthorized, "unauthenticated")
@@ -179,6 +182,7 @@ func TestRequireSessionDeniesByDefault(t *testing.T) {
 }
 
 func TestUnknownAPIRoute(t *testing.T) {
+	t.Parallel()
 	h := newHarness(t, identity.Config{})
 	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleMember); err != nil {
 		t.Fatal(err)
@@ -189,6 +193,7 @@ func TestUnknownAPIRoute(t *testing.T) {
 }
 
 func TestLoginBodyTooLarge(t *testing.T) {
+	t.Parallel()
 	h := newHarness(t, identity.Config{})
 	body := `{"email":"` + email + `","password":"` + strings.Repeat("a", 2<<20) + `"}`
 
@@ -196,6 +201,7 @@ func TestLoginBodyTooLarge(t *testing.T) {
 }
 
 func TestConcurrentLoginAttemptsRespectLimit(t *testing.T) {
+	t.Parallel()
 	h := newHarness(t, identity.Config{})
 	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleMember); err != nil {
 		t.Fatal(err)
@@ -220,6 +226,7 @@ func TestConcurrentLoginAttemptsRespectLimit(t *testing.T) {
 }
 
 func TestSessionCookieAttributes(t *testing.T) {
+	t.Parallel()
 	h := newHarness(t, identity.Config{SecureCookies: true})
 	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleMember); err != nil {
 		t.Fatal(err)
@@ -234,6 +241,7 @@ func TestSessionCookieAttributes(t *testing.T) {
 }
 
 func TestCreateUserValidation(t *testing.T) {
+	t.Parallel()
 	h := newHarness(t, identity.Config{})
 	ctx := t.Context()
 
@@ -264,6 +272,7 @@ func mustURL(t *testing.T, raw string) *url.URL {
 }
 
 func TestCreateUserPublishesEvent(t *testing.T) {
+	t.Parallel()
 	h := newHarness(t, identity.Config{})
 
 	u, err := h.module.CreateUser(t.Context(), email, password, identity.RoleAdmin)

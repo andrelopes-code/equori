@@ -36,6 +36,7 @@ func amountOf(p postingOut) (int64, string) {
 }
 
 func TestS16ForeignPurchase(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	h := f.h
 	travel := h.Account("Travel", "expense", "", nil)
@@ -101,6 +102,7 @@ func sign(n int64) float64 {
 }
 
 func TestS17CurrencyExchange(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t)
 	h := f.h
 	wise := h.Account("Wise USD", "asset", "checking", map[string]any{"currency": "USD"})
@@ -201,6 +203,7 @@ func TestS17CurrencyExchange(t *testing.T) {
 }
 
 func TestValuedBalanceOfMixedParent(t *testing.T) {
+	t.Parallel()
 	f := newInvestFixture(t)
 	h := f.h
 	h.Record("2026-10-05",

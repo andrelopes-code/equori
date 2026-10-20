@@ -34,6 +34,7 @@ func reservedByName(c connectionView, name string) externalAccountView {
 // S68: reserved balances of a bank account are external accounts that map only to a
 // reserve; each sync adds the ones the connection lacks (D1, A73).
 func TestS68ReservedBalanceMapping(t *testing.T) {
+	t.Parallel()
 	a := newAggregator(t)
 	a.serveItem(pluggyClient, nubankItem, "Nubank")
 	it := pluggy.Item{ID: mercadoPagoItem, Status: pluggy.StatusUpdated, LastUpdatedAt: new("2026-11-12T06:00:00.000Z")}
@@ -153,6 +154,7 @@ func openingBalances(f syncFixture) string {
 // from the reserve amount; a reserve the item stops reporting syncs without a balance (D2,
 // A74).
 func TestS68ReservedBalanceSync(t *testing.T) {
+	t.Parallel()
 	a := newAggregator(t)
 	it := pluggy.Item{ID: mercadoPagoItem, Status: pluggy.StatusUpdated, LastUpdatedAt: new("2026-11-10T15:00:00.000Z")}
 	it.Connector.Name = "Mercado Pago"
@@ -302,6 +304,7 @@ func wantYield(t *testing.T, f syncFixture, reserve, description string, amount 
 // S69: the difference of a mapped reserve books as yield only within the bound of 3% per 30
 // days of the settled balance, for a reserve with automatic yield (D3, A75).
 func TestS69BoundedReserveYield(t *testing.T) {
+	t.Parallel()
 	t.Run("within and above the bound", func(t *testing.T) {
 		f, reserve, checkingID := reserveAfterFirstSync(t, "auto")
 		// B = floor(100292 * 3 * 1 / 3000) = 100.
@@ -401,6 +404,7 @@ func reserveLine(id, date, description string, amount pluggy.Decimal) pluggy.Tra
 // start date is booked as a transfer to the reserve; any other line follows the normal
 // pipeline (D4, A76).
 func TestS70ReserveTransfers(t *testing.T) {
+	t.Parallel()
 	a := newAggregator(t)
 	it := pluggy.Item{ID: mercadoPagoItem, Status: pluggy.StatusUpdated, LastUpdatedAt: new("2026-11-11T15:00:00.000Z")}
 	it.Connector.Name = "Mercado Pago"
@@ -487,6 +491,7 @@ func TestS70ReserveTransfers(t *testing.T) {
 // S70: a name held by two mapped reserves is ambiguous, so a line naming it books no
 // transfer (D4 condition 4, A76).
 func TestS70AmbiguousReserveName(t *testing.T) {
+	t.Parallel()
 	a := newAggregator(t)
 	it := pluggy.Item{ID: mercadoPagoItem, Status: pluggy.StatusUpdated, LastUpdatedAt: new("2026-11-11T15:00:00.000Z")}
 	it.Connector.Name = "Mercado Pago"
@@ -537,6 +542,7 @@ func TestS70AmbiguousReserveName(t *testing.T) {
 // S68: a mapped reserved balance that no longer holds an amount in the parent currency is
 // read as not reported: the batch records no balance and no assertion is added (D1, D2).
 func TestS68ReserveWithoutParentCurrency(t *testing.T) {
+	t.Parallel()
 	f, reserve, checkingID := reserveAfterFirstSync(t, "none")
 	f.p.RemoveReservedBalance(checkingID, "res-cofrinho")
 	f.p.AddReservedBalance(checkingID, pluggy.ReservedBalance{

@@ -19,6 +19,7 @@ func cardPosting(account string, amount int64, statement, role string) map[strin
 }
 
 func TestCardPurchaseStatements(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	card := h.Card("Itaú Visa", 3, 10, "next")
 	closingCard := h.Card("Closing card", 3, 10, "closing")
@@ -45,6 +46,7 @@ func TestCardPurchaseStatements(t *testing.T) {
 }
 
 func TestExplicitStatementOverride(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	card := h.Card("Itaú Visa", 3, 10, "next")
 	food := h.Account("Food", "expense", "", nil)
@@ -55,6 +57,7 @@ func TestExplicitStatementOverride(t *testing.T) {
 }
 
 func TestCardRoleDefaults(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-11-05"))
 	card := h.Card("Itaú Visa", 3, 10, "next")
 	food := h.Account("Food", "expense", "", nil)
@@ -75,6 +78,7 @@ func TestCardRoleDefaults(t *testing.T) {
 }
 
 func TestCardRoleSignMustMatch(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	card := h.Card("Itaú Visa", 3, 10, "next")
 	food := h.Account("Food", "expense", "", nil)
@@ -83,6 +87,7 @@ func TestCardRoleSignMustMatch(t *testing.T) {
 }
 
 func TestStatementOnNonCardPostingIs422(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
@@ -91,6 +96,7 @@ func TestStatementOnNonCardPostingIs422(t *testing.T) {
 }
 
 func TestCardWithoutRuleIs422(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	card := h.Account("No rule", "liability", "credit_card", nil)
 	food := h.Account("Food", "expense", "", nil)
@@ -99,6 +105,7 @@ func TestCardWithoutRuleIs422(t *testing.T) {
 }
 
 func TestCorrectingDateMovesStatement(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	card := h.Card("Itaú Visa", 3, 10, "next")
 	food := h.Account("Food", "expense", "", nil)
@@ -113,6 +120,7 @@ func TestCorrectingDateMovesStatement(t *testing.T) {
 }
 
 func TestPurchaseConsumesLimit(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	card := h.Card("Itaú Visa", 3, 10, "next")
 	food := h.Account("Food", "expense", "", nil)

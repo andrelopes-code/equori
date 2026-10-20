@@ -89,6 +89,7 @@ const (
 
 // A73: the account tree has no cycle.
 func TestAccountTreeRejectsCycle(t *testing.T) {
+	t.Parallel()
 	f := newSchemaFixture(t)
 	a := f.account(t, f.userID, "expense", "", "2026-01-01")
 	b := f.account(t, f.userID, "expense", "", "2026-02-01")
@@ -103,6 +104,7 @@ func TestAccountTreeRejectsCycle(t *testing.T) {
 
 // A83: colour is a data slot 1-8 and icon a kebab-case key.
 func TestAccountAppearanceChecks(t *testing.T) {
+	t.Parallel()
 	f := newSchemaFixture(t)
 	_, err := f.pool.Exec(t.Context(), `UPDATE ledger_account SET color = 9 WHERE id = $1`, f.food)
 	requireViolation(t, err, checkViolation, "color")
@@ -111,6 +113,7 @@ func TestAccountAppearanceChecks(t *testing.T) {
 }
 
 func TestDBAcceptsBalancedTransaction(t *testing.T) {
+	t.Parallel()
 	f := newSchemaFixture(t)
 	if _, err := f.recordTx(t, f.userID, "2026-03-01", postingRow{f.checking, -10000}, postingRow{f.food, 10000}); err != nil {
 		t.Fatal(err)
@@ -118,18 +121,21 @@ func TestDBAcceptsBalancedTransaction(t *testing.T) {
 }
 
 func TestDBRejectsUnbalancedTransaction(t *testing.T) {
+	t.Parallel()
 	f := newSchemaFixture(t)
 	_, err := f.recordTx(t, f.userID, "2026-03-01", postingRow{f.checking, -9000}, postingRow{f.food, 10000})
 	requireViolation(t, err, checkViolation, "unbalanced")
 }
 
 func TestDBRejectsSinglePosting(t *testing.T) {
+	t.Parallel()
 	f := newSchemaFixture(t)
 	_, err := f.recordTx(t, f.userID, "2026-03-01", postingRow{f.checking, -9000})
 	requireViolation(t, err, checkViolation, "at least 2")
 }
 
 func TestDBIgnoresVoidedTransaction(t *testing.T) {
+	t.Parallel()
 	f := newSchemaFixture(t)
 	id, err := f.recordTx(t, f.userID, "2026-03-01", postingRow{f.checking, -10000}, postingRow{f.food, 10000})
 	if err != nil {
@@ -148,6 +154,7 @@ func TestDBIgnoresVoidedTransaction(t *testing.T) {
 }
 
 func TestDBRejectsPostingOutsideOpenPeriod(t *testing.T) {
+	t.Parallel()
 	f := newSchemaFixture(t)
 	late := f.account(t, f.userID, "asset", "cash", "2026-02-01")
 	_, err := f.recordTx(t, f.userID, "2026-01-31", postingRow{late, -100}, postingRow{f.food, 100})
@@ -155,6 +162,7 @@ func TestDBRejectsPostingOutsideOpenPeriod(t *testing.T) {
 }
 
 func TestDBRejectsCrossUserAccount(t *testing.T) {
+	t.Parallel()
 	f := newSchemaFixture(t)
 	other := pgtest.CreateUser(t, f.pool)
 	otherFood := f.account(t, other, "expense", "", "2026-01-01")
@@ -163,6 +171,7 @@ func TestDBRejectsCrossUserAccount(t *testing.T) {
 }
 
 func TestDBRejectsClassKindMismatch(t *testing.T) {
+	t.Parallel()
 	f := newSchemaFixture(t)
 	for _, c := range []struct{ class, kind string }{{"expense", "checking"}, {"liability", "cash"}, {"asset", ""}} {
 		_, err := f.pool.Exec(context.Background(), `
@@ -173,6 +182,7 @@ func TestDBRejectsClassKindMismatch(t *testing.T) {
 }
 
 func TestDBForbidsUnvoid(t *testing.T) {
+	t.Parallel()
 	f := newSchemaFixture(t)
 	id, err := f.recordTx(t, f.userID, "2026-03-01", postingRow{f.checking, -100}, postingRow{f.food, 100})
 	if err != nil {
@@ -186,6 +196,7 @@ func TestDBForbidsUnvoid(t *testing.T) {
 }
 
 func TestDBBookedOnFollowsDate(t *testing.T) {
+	t.Parallel()
 	f := newSchemaFixture(t)
 	id, err := f.recordTx(t, f.userID, "2026-03-01", postingRow{f.checking, -100}, postingRow{f.food, 100})
 	if err != nil {
@@ -203,6 +214,7 @@ func TestDBBookedOnFollowsDate(t *testing.T) {
 }
 
 func TestDBRejectsSaleWithoutCost(t *testing.T) {
+	t.Parallel()
 	f := newSchemaFixture(t)
 	ctx := t.Context()
 	cash, other := f.checking, f.food

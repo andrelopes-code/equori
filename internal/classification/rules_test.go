@@ -54,6 +54,7 @@ func rulePriorities(t *testing.T, h *apitest.Harness) []string {
 }
 
 func TestRuleLifecycle(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	transport := h.Account("Transport", "expense", "", nil)
 	groceries := h.Account("Groceries", "expense", "", nil)
@@ -103,6 +104,7 @@ func TestRuleLifecycle(t *testing.T) {
 }
 
 func TestRuleRejections(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	transport := h.Account("Transport", "expense", "", nil)
 	checking := h.Account("Nubank", "asset", "checking", nil)
@@ -134,6 +136,7 @@ func TestRuleRejections(t *testing.T) {
 }
 
 func TestAnotherUsersRuleIsNotFound(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	transport := h.Account("Transport", "expense", "", nil)
 	rule := createRule(t, h, "Uber", []map[string]any{contains("uber")}, []map[string]any{setCategory(transport)})

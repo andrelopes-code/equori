@@ -29,6 +29,7 @@ func feedPrice(t *testing.T, source, date, value string) marketdata.Price {
 
 // Review Focus 3: a manual price stays chosen when a feed records the same date again.
 func TestManualPriceWinsOverFeed(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	md := marketdata.New(h.Pool)
 	ctx := t.Context()
@@ -67,6 +68,7 @@ func TestManualPriceWinsOverFeed(t *testing.T) {
 }
 
 func TestRecordPriceValidation(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	price := func(k, v string) map[string]any {
 		in := map[string]any{"instrument": "USD", "quote_instrument": "BRL", "date": "2026-10-30", "value": "5.5"}
@@ -88,6 +90,7 @@ func TestRecordPriceValidation(t *testing.T) {
 }
 
 func TestImportPrices(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
 

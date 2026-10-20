@@ -40,6 +40,7 @@ func balanceAt(t *testing.T, h *apitest.Harness, account, date, basis string) in
 }
 
 func TestSeriesFollowsRecordedTransactions(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
@@ -66,6 +67,7 @@ func TestSeriesFollowsRecordedTransactions(t *testing.T) {
 }
 
 func TestSeriesRebuildsFromEarliestChangedDate(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
@@ -85,6 +87,7 @@ func TestSeriesRebuildsFromEarliestChangedDate(t *testing.T) {
 }
 
 func TestSeriesDropsVoided(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
@@ -101,6 +104,7 @@ func TestSeriesDropsVoided(t *testing.T) {
 }
 
 func TestRebuildIsIdempotent(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
@@ -121,6 +125,7 @@ func TestRebuildIsIdempotent(t *testing.T) {
 }
 
 func TestSeriesRangeLimit(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/reports/balances?account_id="+checking+"&from=2016-01-01&to=2026-01-08", nil),
@@ -128,6 +133,7 @@ func TestSeriesRangeLimit(t *testing.T) {
 }
 
 func TestSeriesOfAnotherUsersAccountIs404(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	other := h.Login("other@example.com")
 	var acc struct {

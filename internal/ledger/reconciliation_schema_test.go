@@ -6,6 +6,7 @@ import (
 )
 
 func TestDBReconciliationNeedsOneSubject(t *testing.T) {
+	t.Parallel()
 	f := newCardFixture(t)
 	var assertion string
 	if err := f.pool.QueryRow(t.Context(), `
@@ -25,6 +26,7 @@ func TestDBReconciliationNeedsOneSubject(t *testing.T) {
 }
 
 func TestDBAttachmentBlobLimits(t *testing.T) {
+	t.Parallel()
 	f := newCardFixture(t)
 	_, err := f.pool.Exec(t.Context(), `
 		INSERT INTO ledger_attachment_blob (user_id, sha256, size, content) VALUES ($1, 'x', 10485761, '')`, f.userID)
@@ -32,6 +34,7 @@ func TestDBAttachmentBlobLimits(t *testing.T) {
 }
 
 func TestDBAttachmentRejectsOtherUsersBlob(t *testing.T) {
+	t.Parallel()
 	f := newCardFixture(t)
 	id, err := f.recordTx(t, f.userID, "2026-03-01", postingRow{f.checking, -100}, postingRow{f.food, 100})
 	if err != nil {

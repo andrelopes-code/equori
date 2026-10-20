@@ -15,6 +15,7 @@ func mustNew(t *testing.T, amount int64, c Currency) Money {
 }
 
 func TestNew(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		amount   int64
@@ -44,6 +45,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestArithmetic(t *testing.T) {
+	t.Parallel()
 	a := mustNew(t, 1000, "BRL")
 	b := mustNew(t, 250, "BRL")
 
@@ -68,6 +70,7 @@ func TestArithmetic(t *testing.T) {
 }
 
 func TestString(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		amount   int64
 		currency Currency
@@ -87,6 +90,7 @@ func TestString(t *testing.T) {
 }
 
 func TestParseCurrency(t *testing.T) {
+	t.Parallel()
 	if c, err := ParseCurrency("JPY"); err != nil || c.MinorUnits() != 0 {
 		t.Fatalf("ParseCurrency(JPY) = %q, %v", c, err)
 	}
@@ -96,6 +100,7 @@ func TestParseCurrency(t *testing.T) {
 }
 
 func TestCurrencies(t *testing.T) {
+	t.Parallel()
 	got := Currencies()
 	if len(got) != len(minorUnits) {
 		t.Fatalf("len = %d, want %d", len(got), len(minorUnits))
@@ -108,6 +113,7 @@ func TestCurrencies(t *testing.T) {
 }
 
 func TestNewOf(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name   string
 		amount int64
@@ -139,6 +145,7 @@ func TestNewOf(t *testing.T) {
 }
 
 func TestInstrumentArithmeticKeepsScale(t *testing.T) {
+	t.Parallel()
 	a, _ := NewOf(150, "MXRF11", 0)
 	b, _ := NewOf(50, "MXRF11", 0)
 	got, err := a.Sub(b)

@@ -30,6 +30,7 @@ func categoryTotals(t *testing.T, h *apitest.Harness, query string) []categoryTo
 
 // S76, Review Focus 1: totals of a month by category and by subtree (A77).
 func TestS76CategoryTotals(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Checking", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
@@ -66,6 +67,7 @@ func TestS76CategoryTotals(t *testing.T) {
 }
 
 func TestCategoryTotalsIncomeIsPositive(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Checking", "asset", "checking", nil)
 	salary := h.Account("Salary", "income", "", nil)
@@ -83,6 +85,7 @@ func TestCategoryTotalsIncomeIsPositive(t *testing.T) {
 }
 
 func TestCategoryTotalsRange(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	for _, q := range []string{"from=2026-10-31&to=2026-10-01&class=expense", "from=2026-01-01&to=2027-01-02&class=expense"} {
 		h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/reports/categories?"+q, nil), http.StatusBadRequest, "invalid_request", "to")
@@ -91,6 +94,7 @@ func TestCategoryTotalsRange(t *testing.T) {
 
 // ADR 003: another user's categories are not listed.
 func TestCategoryTotalsOtherUser(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	other := h.Login("other@example.com")
 	var foreign struct {

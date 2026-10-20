@@ -24,6 +24,7 @@ type aliasView struct {
 }
 
 func TestAliasLifecycle(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	ifood := payee(t, h, "iFood")
 	rappi := payee(t, h, "Rappi")

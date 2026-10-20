@@ -77,6 +77,7 @@ func (c cardSetup) pay(date string, amount int64) {
 }
 
 func TestStatementFullPayment(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-12")
 	c.purchase("2026-10-14", 100000)
 	c.purchase("2026-10-20", 50000)
@@ -93,6 +94,7 @@ func TestStatementFullPayment(t *testing.T) {
 }
 
 func TestStatementPartialPaymentCarries(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-12")
 	c.purchase("2026-10-14", 150000)
 	c.pay("2026-11-10", 100000)
@@ -108,6 +110,7 @@ func TestStatementPartialPaymentCarries(t *testing.T) {
 }
 
 func TestStatementOverpaymentBecomesCredit(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-12")
 	c.purchase("2026-10-14", 150000)
 	c.pay("2026-11-10", 160000)
@@ -123,6 +126,7 @@ func TestStatementOverpaymentBecomesCredit(t *testing.T) {
 }
 
 func TestEmptyStatementAfterVoid(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-12")
 	id := c.purchase("2026-10-14", 1000)
 	c.h.MustDo(http.MethodPost, "/api/v1/transactions/"+id+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, nil)
@@ -133,6 +137,7 @@ func TestEmptyStatementAfterVoid(t *testing.T) {
 }
 
 func TestStatementDetail(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-12")
 	c.purchase("2026-10-14", 23000)
 	c.purchase("2026-10-20", 1000)

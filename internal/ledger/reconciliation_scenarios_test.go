@@ -11,6 +11,7 @@ import (
 // Acceptance scenarios of docs/domain/06-scenarios.md that phase P3 covers.
 
 func TestReconciliationScenarios(t *testing.T) {
+	t.Parallel()
 	t.Run("S24", func(t *testing.T) {
 		for _, tc := range []struct {
 			name              string

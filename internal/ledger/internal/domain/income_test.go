@@ -10,6 +10,7 @@ import (
 )
 
 func TestBuildIncome(t *testing.T) {
+	t.Parallel()
 	security, cash, category, taxes := uuid.New(), uuid.New(), uuid.New(), uuid.New()
 	amount := func(n int64) *money.Money { m := brl(t, n); return &m }
 	tests := []struct {
@@ -51,6 +52,7 @@ func TestBuildIncome(t *testing.T) {
 }
 
 func TestBuildIncomeRejects(t *testing.T) {
+	t.Parallel()
 	amount := func(n int64) *money.Money { m := brl(t, n); return &m }
 	tests := []struct {
 		name  string

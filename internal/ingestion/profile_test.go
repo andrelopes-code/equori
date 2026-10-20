@@ -19,6 +19,7 @@ type csvProfile struct {
 }
 
 func TestCSVProfile(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	path := "/api/v1/accounts/" + checking + "/csv-profile"

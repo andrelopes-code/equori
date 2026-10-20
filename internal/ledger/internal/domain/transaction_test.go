@@ -38,6 +38,7 @@ func (f txFixture) tx(postings ...Posting) Transaction {
 }
 
 func TestNewTransactionBalanced(t *testing.T) {
+	t.Parallel()
 	f := newTxFixture(t)
 	got, err := NewTransaction(f.tx(
 		Posting{AccountID: f.checking.ID, Amount: brl(t, -23000)},
@@ -60,6 +61,7 @@ func TestNewTransactionBalanced(t *testing.T) {
 }
 
 func TestNewTransactionRejections(t *testing.T) {
+	t.Parallel()
 	f := newTxFixture(t)
 	usd := func(a int64) money.Money { return mustMoney(t, a, "USD") }
 	tests := []struct {
@@ -102,6 +104,7 @@ func TestNewTransactionRejections(t *testing.T) {
 }
 
 func TestNewTransactionPostingLimit(t *testing.T) {
+	t.Parallel()
 	f := newTxFixture(t)
 	postings := make([]Posting, 0, MaxPostings+2)
 	for range MaxPostings/2 + 1 {
@@ -112,6 +115,7 @@ func TestNewTransactionPostingLimit(t *testing.T) {
 }
 
 func TestNewTransactionForeignCurrency(t *testing.T) {
+	t.Parallel()
 	f := newTxFixture(t)
 	got, err := NewTransaction(f.tx(
 		Posting{AccountID: f.checking.ID, Amount: brl(t, -548300)},
@@ -126,6 +130,7 @@ func TestNewTransactionForeignCurrency(t *testing.T) {
 }
 
 func TestTagsAreNormalized(t *testing.T) {
+	t.Parallel()
 	f := newTxFixture(t)
 	tx := f.tx(Posting{AccountID: f.checking.ID, Amount: brl(t, -100)}, Posting{AccountID: f.food.ID, Amount: brl(t, 100)})
 	tx.Tags = []string{"Trip Lisbon", "trip-lisbon", "work"}
@@ -150,6 +155,7 @@ func recorded(t *testing.T, f txFixture) Transaction {
 }
 
 func TestCorrect(t *testing.T) {
+	t.Parallel()
 	f := newTxFixture(t)
 	orig := recorded(t, f)
 	next := f.tx(Posting{AccountID: f.checking.ID, Amount: brl(t, -3200)}, Posting{AccountID: f.food.ID, Amount: brl(t, 3200)})

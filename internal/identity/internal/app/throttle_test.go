@@ -9,6 +9,7 @@ import (
 )
 
 func TestThrottle(t *testing.T) {
+	t.Parallel()
 	start := time.Date(2026, 10, 14, 12, 0, 0, 0, time.UTC)
 	th := newThrottle(3, 15*time.Minute)
 
@@ -35,6 +36,7 @@ func TestThrottle(t *testing.T) {
 }
 
 func TestThrottleConcurrentAttempts(t *testing.T) {
+	t.Parallel()
 	now := time.Date(2026, 10, 14, 12, 0, 0, 0, time.UTC)
 	th := newThrottle(5, 15*time.Minute)
 	var accepted atomic.Int32
@@ -54,6 +56,7 @@ func TestThrottleConcurrentAttempts(t *testing.T) {
 }
 
 func TestThrottleSweepsStaleKeys(t *testing.T) {
+	t.Parallel()
 	start := time.Date(2026, 10, 14, 12, 0, 0, 0, time.UTC)
 	th := newThrottle(5, time.Minute)
 	for i := range maxThrottleKeys {

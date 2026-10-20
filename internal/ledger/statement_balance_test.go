@@ -11,6 +11,7 @@ import (
 // with the payment; the next statement reports it apart from its own credits and shows the
 // payment made before its closing as an early payment (A89).
 func TestS84RefundBeforePayment(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-12-20")
 	refunds := c.h.Account("Refunds", "income", "", nil)
 	c.purchase("2026-10-14", 103475)
@@ -39,6 +40,7 @@ func TestS84RefundBeforePayment(t *testing.T) {
 // S85 (S10 restated): an early payment lowers the amount due and is shown apart; a partial
 // payment leaves the rest unpaid and in the next opening.
 func TestS85EarlyAndPartialPayments(t *testing.T) {
+	t.Parallel()
 	t.Run("early", func(t *testing.T) {
 		c := newCardSetup(t, "2026-11-12")
 		c.purchase("2026-10-14", 150000)
@@ -66,6 +68,7 @@ func TestS85EarlyAndPartialPayments(t *testing.T) {
 // S82 (A85, A86): the owner's facts re-date a statement; a purchase recorded by date before
 // moves with the new closing date, and later purchases follow the stored dates.
 func TestS82ManualPurchaseAfterRedating(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-12")
 	before := c.purchase("2026-11-02", 1000)
 	if got := c.h.Transaction(before).Postings[0].Statement; got != "2026-11" {
@@ -96,6 +99,7 @@ func TestS82ManualPurchaseAfterRedating(t *testing.T) {
 // S81 (A87): a card that closes 7 days before its nominal due date, on the preceding
 // business day, and falls due on day 5 or the following business day.
 func TestS81ClosingBeforeDue(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-11-12"))
 	card := h.Account("Nubank Gold", "liability", "credit_card", nil)
 	h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/billing-cycle-rules", map[string]any{

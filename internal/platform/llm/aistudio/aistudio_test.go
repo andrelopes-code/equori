@@ -55,6 +55,7 @@ func decode(t *testing.T, b []byte) map[string]any {
 }
 
 func TestGenerateRequest(t *testing.T) {
+	t.Parallel()
 	temperature := 0.2
 	call := llm.ToolCall{ID: "c1", Name: "balance", Args: json.RawMessage(`{"account":"x"}`)}
 	tests := []struct {
@@ -127,6 +128,7 @@ func TestGenerateRequest(t *testing.T) {
 }
 
 func TestGenerateResponse(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		fixture string
 		want    llm.Response
@@ -192,6 +194,7 @@ func TestGenerateResponse(t *testing.T) {
 }
 
 func TestName(t *testing.T) {
+	t.Parallel()
 	if got := aistudio.New("http://x", "k", http.DefaultClient).Name(); got != "aistudio" {
 		t.Fatalf("Name() = %q, want aistudio", got)
 	}

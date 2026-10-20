@@ -76,6 +76,7 @@ func postingOn(v apitest.TransactionView, card string) apitest.PostingView {
 
 // S50: a transfer without a counterpart replaces the category side.
 func TestTransferWithoutCounterpart(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-12")
 	savings := c.h.Account("Savings", "asset", "savings", nil)
 	id, record := importLine(t, c.h, c.checking, "2026-11-05", -50000)
@@ -96,6 +97,7 @@ func TestTransferWithoutCounterpart(t *testing.T) {
 
 // S47: the checking line pairs with the card line; the card line is voided.
 func TestTransferPairsImportedCardPayment(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-12")
 	c.purchase("2026-10-14", 150000)
 	checkingTx, checkingRecord := importLine(t, c.h, c.checking, "2026-11-10", -150000)
@@ -139,6 +141,7 @@ func TestTransferPairsImportedCardPayment(t *testing.T) {
 
 // S48: several candidates need pair_with.
 func TestTransferWithSeveralCandidates(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-12")
 	checkingTx, _ := importLine(t, c.h, c.checking, "2026-11-10", -150000)
 	first, _ := importLine(t, c.h, c.card, "2026-11-09", 150000)
@@ -154,6 +157,7 @@ func TestTransferWithSeveralCandidates(t *testing.T) {
 
 // P5b Review Focus 2: a reconciled side is kept; two reconciled sides cannot pair.
 func TestTransferKeepsTheReconciledSide(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-12")
 	checkingTx, checkingRecord := importLine(t, c.h, c.checking, "2026-11-10", -150000)
 	if r := assertBalance(c.h, c.checking, "2026-11-10", -150000); r.Status != http.StatusCreated {
@@ -178,6 +182,7 @@ func TestTransferKeepsTheReconciledSide(t *testing.T) {
 }
 
 func TestTransferWithBothSidesReconciled(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-12")
 	c.purchase("2026-10-14", 150000)
 	cardTx, _ := importLine(t, c.h, c.card, "2026-10-20", 150000)
@@ -194,6 +199,7 @@ func TestTransferWithBothSidesReconciled(t *testing.T) {
 
 // P5b Review Focus 5.
 func TestTransferRejections(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-12")
 	sys := systemAccounts(c.h)
 	closed := c.h.Account("Old savings", "asset", "savings", nil)
@@ -210,6 +216,7 @@ func TestTransferRejections(t *testing.T) {
 
 // A card credit transferred to checking becomes the payment of the oldest unpaid statement (A28).
 func TestTransferTurnsCardCreditIntoPayment(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-12")
 	c.purchase("2026-10-14", 150000)
 	cardTx, cardRecord := importLine(t, c.h, c.card, "2026-11-11", 150000)

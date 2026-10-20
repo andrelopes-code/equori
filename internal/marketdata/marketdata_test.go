@@ -10,6 +10,7 @@ import (
 )
 
 func TestCurrenciesMatchMoneyPackage(t *testing.T) {
+	t.Parallel()
 	m := marketdata.New(pgtest.New(t))
 
 	rows, err := m.Currencies(t.Context())
@@ -31,6 +32,7 @@ func TestCurrenciesMatchMoneyPackage(t *testing.T) {
 }
 
 func TestInstrument(t *testing.T) {
+	t.Parallel()
 	m := marketdata.New(pgtest.New(t))
 
 	brl, err := m.Instrument(t.Context(), "BRL")

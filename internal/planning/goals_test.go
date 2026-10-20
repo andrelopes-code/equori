@@ -35,6 +35,7 @@ func (f fixture) goal(name string, target int64, accounts ...string) goalView {
 
 // S61: progress of an emergency fund goal.
 func TestS61GoalProgress(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-12")
 	f.h.Record("2026-10-31", apitest.Posting(f.checking, -1008341), apitest.Posting(f.savings, 1008341))
 	created := f.goal("Emergency", 3000000, f.savings)
@@ -54,6 +55,7 @@ func TestS61GoalProgress(t *testing.T) {
 }
 
 func TestGoalBeyondTarget(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-12")
 	f.h.Record("2026-10-31", apitest.Posting(f.checking, -50000), apitest.Posting(f.savings, 50000))
 	got := f.goal("Trip", 40000, f.savings, f.checking)
@@ -67,6 +69,7 @@ func TestGoalBeyondTarget(t *testing.T) {
 }
 
 func TestGoalErrors(t *testing.T) {
+	t.Parallel()
 	f := newFixture(t, "2026-11-12")
 	post := func(body map[string]any) apitest.Response { return f.h.Do(http.MethodPost, "/api/v1/goals", body) }
 	body := func(target int64, accounts ...string) map[string]any {

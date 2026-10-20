@@ -9,6 +9,7 @@ import (
 
 // N02: a transaction is accepted if and only if its weights sum to zero.
 func TestNewTransactionAcceptsOnlyBalanced(t *testing.T) {
+	t.Parallel()
 	f := newTxFixture(t)
 	open := []uuid.UUID{f.checking.ID, f.food.ID}
 	for seed := uint64(1); seed <= 200; seed++ {

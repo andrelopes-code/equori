@@ -23,6 +23,7 @@ func payment(date string, a int64) StatementLine {
 // Statement 2026-11 closes on 2026-11-03 and is due on 2026-11-10; payments made after its
 // closing are billed on 2026-12 (A89).
 func TestSummarize(t *testing.T) {
+	t.Parallel()
 	financed := input("2026-11", charge("2026-10-14", 200000))
 	financed.Financed = true
 	tests := []struct {
@@ -93,6 +94,7 @@ func TestSummarize(t *testing.T) {
 }
 
 func TestSummarizeAmounts(t *testing.T) {
+	t.Parallel()
 	got := Summarize([]StatementInput{input("2026-11",
 		charge("2026-10-14", 23000), charge("2026-10-20", 33334), credit("2026-10-21", 5000), payment("2026-10-28", 10000))}, day("2026-11-05"))[0]
 	if got.Charges != 56334 || got.Credits != 5000 || got.Payments != 10000 || got.AmountDue != 41334 ||
@@ -105,6 +107,7 @@ func TestSummarizeAmounts(t *testing.T) {
 // 2026-10 (closing 2026-09-28), with the refund of 72.90 received after the closing of
 // 2026-09 and before its payment.
 func TestSummarizeBalanceAtClosing(t *testing.T) {
+	t.Parallel()
 	sep := StatementInput{Reference: month("2026-09"), Closing: day("2026-08-28"), Due: day("2026-09-08"), Lines: []StatementLine{
 		charge("2026-08-20", 77354), charge("2026-08-27", 112089), credit("2026-08-18", 8614), payment("2026-08-04", 77354),
 	}}
@@ -130,6 +133,7 @@ func TestSummarizeBalanceAtClosing(t *testing.T) {
 }
 
 func TestSummarizeEmptyStatementCarriesItsOpening(t *testing.T) {
+	t.Parallel()
 	got := Summarize([]StatementInput{
 		input("2026-10", charge("2026-09-14", 50000)), input("2026-11"), input("2026-12", charge("2026-11-14", 1000)),
 	}, day("2026-12-20"))

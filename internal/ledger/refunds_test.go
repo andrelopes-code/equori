@@ -21,6 +21,7 @@ func amountsByAccount(v apitest.TransactionView) map[string]int64 {
 }
 
 func TestRefunds(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-20")
 	electronics := c.h.Account("Electronics", "expense", "", nil)
 	supermarket := c.purchase("2026-10-14", 23000)
@@ -52,6 +53,7 @@ func TestRefunds(t *testing.T) {
 }
 
 func TestRefundIsProportional(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-20")
 	cleaning := c.h.Account("Cleaning", "expense", "", nil)
 	id := c.h.Record("2026-10-14", apitest.Posting(c.card, -23000), apitest.Posting(c.food, 18000), apitest.Posting(cleaning, 5000))
@@ -66,6 +68,7 @@ func TestRefundIsProportional(t *testing.T) {
 }
 
 func TestConcurrentRefundsRespectCeiling(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-20")
 	id := c.purchase("2026-10-14", 100000)
 
@@ -90,6 +93,7 @@ func TestConcurrentRefundsRespectCeiling(t *testing.T) {
 }
 
 func TestInstallmentCancellation(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2026-11-20")
 	electronics := c.h.Account("Electronics", "expense", "", nil)
 	laptop := installmentPurchase(t, c.h, map[string]any{
@@ -120,6 +124,7 @@ func TestInstallmentCancellation(t *testing.T) {
 }
 
 func TestInstallmentAnticipation(t *testing.T) {
+	t.Parallel()
 	c := newCardSetup(t, "2027-01-15")
 	electronics := c.h.Account("Electronics", "expense", "", nil)
 	tv := installmentPurchase(t, c.h, map[string]any{

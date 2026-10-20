@@ -9,6 +9,7 @@ import (
 )
 
 func TestDedupKey(t *testing.T) {
+	t.Parallel()
 	account := uuid.New()
 	day := time.Date(2026, 10, 7, 0, 0, 0, 0, time.UTC)
 	line := NormalizedRecord{Date: day, Amount: -850, Description: "  Padaria  do  João "}

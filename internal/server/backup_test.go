@@ -88,6 +88,7 @@ func snapshot(t *testing.T, pool *pgxpool.Pool) []string {
 
 // N12: a dump restored into an empty database reproduces every fact and every derived value.
 func TestRestoredBackupMatchesTheOriginal(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-11-20"))
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	reserve := h.Account("Emergency fund", "asset", "reserve", nil)

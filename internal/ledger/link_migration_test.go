@@ -12,6 +12,7 @@ import (
 // P5b amendment A27: migration 12 moves each record link from the transaction to the
 // posting on the record's account.
 func TestRecordLinksMoveToPostings(t *testing.T) {
+	t.Parallel()
 	pool := pgtest.Empty(t)
 	ctx := t.Context()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
