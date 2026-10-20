@@ -13,6 +13,7 @@ const MaxCategoryDays = 366
 // CategoryRow is one account of a class with its own booked total in a period.
 type CategoryRow struct {
 	ID         uuid.UUID
+	Name       string
 	ParentID   uuid.UUID
 	Instrument string
 	Closed     bool
@@ -23,6 +24,8 @@ type CategoryRow struct {
 // spending of an expense category and earnings of an income category.
 type CategoryTotal struct {
 	AccountID    uuid.UUID
+	Name         string
+	ParentID     uuid.UUID
 	Instrument   string
 	Total        int64
 	SubtreeTotal int64
@@ -54,7 +57,7 @@ func (s *Service) CategoryTotals(ctx context.Context, userID int64, class string
 	}
 	out := make([]CategoryTotal, 0, len(rows))
 	for _, r := range rows {
-		t := CategoryTotal{AccountID: r.ID, Instrument: r.Instrument, Total: r.Total * sign, SubtreeTotal: subtree[r.ID]}
+		t := CategoryTotal{AccountID: r.ID, Name: r.Name, ParentID: r.ParentID, Instrument: r.Instrument, Total: r.Total * sign, SubtreeTotal: subtree[r.ID]}
 		if r.Closed && t.Total == 0 && t.SubtreeTotal == 0 {
 			continue
 		}

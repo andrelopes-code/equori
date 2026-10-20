@@ -14,8 +14,10 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/ledger"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
+	"github.com/andrelopes-code/equori/internal/platform/tool"
 	"github.com/andrelopes-code/equori/internal/reporting/internal/adapter/httpapi"
 	"github.com/andrelopes-code/equori/internal/reporting/internal/adapter/postgres"
+	"github.com/andrelopes-code/equori/internal/reporting/internal/adapter/toolapi"
 	"github.com/andrelopes-code/equori/internal/reporting/internal/app"
 )
 
@@ -33,6 +35,11 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, log *slog.Logger) *M
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
+
+// Tools returns the reporting module's tools for language models (ADR 012).
+func (m *Module) Tools() tool.Group {
+	return tool.Group{Tools: toolapi.Tools(m.svc), Errors: tool.FromProblem(httpapi.ToProblem)}
+}
 
 // RebuildAll recomputes every account's series from its first posting (equori reporting rebuild).
 func (m *Module) RebuildAll(ctx context.Context) error { return m.svc.RebuildAll(ctx) }

@@ -82,7 +82,7 @@ func (r *Repository) CategoryTotals(ctx context.Context, userID int64, class str
 	}
 	out := make([]app.CategoryRow, len(rows))
 	for i, row := range rows {
-		out[i] = app.CategoryRow{ID: row.ID, ParentID: row.ParentID.UUID, Instrument: row.Instrument, Closed: row.ClosedOn != nil, Total: row.Total}
+		out[i] = app.CategoryRow{ID: row.ID, Name: row.Name, ParentID: row.ParentID.UUID, Instrument: row.Instrument, Closed: row.ClosedOn != nil, Total: row.Total}
 	}
 	return out, nil
 }
