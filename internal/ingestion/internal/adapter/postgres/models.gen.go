@@ -108,6 +108,8 @@ type IngestionExternalRecord struct {
 	BalanceAfter      *int64
 	UnappliedChange   *string
 	LineKind          *string
+	ReviewReason      *string
+	CandidateScores   []byte
 }
 
 type IngestionIntegration struct {

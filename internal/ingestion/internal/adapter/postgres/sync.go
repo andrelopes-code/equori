@@ -34,6 +34,7 @@ func (r *Repository) UpdateRecordFacts(ctx context.Context, recs []domain.Extern
 			UserID: rec.UserID, ID: rec.ID, Raw: raw, ExternalStatus: f.status, DueDate: f.dueDate,
 			InstallmentNumber: f.number, InstallmentCount: f.count, CategoryID: f.category, BalanceAfter: f.balanceAfter,
 			LineKind: f.kind, UnappliedChange: optional(rec.UnappliedChange),
+			BookedOn: rec.Date, Amount: rec.Amount, ReviewReason: optional(rec.ReviewReason),
 		}
 	}
 	var first error

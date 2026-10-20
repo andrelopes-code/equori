@@ -20,7 +20,9 @@ func (r *Repository) TransactionByExternalRecord(ctx context.Context, userID int
 func (r *Repository) UnlinkedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]app.UnlinkedPosting, error) {
 	rows, err := r.q.ListUnlinkedPostings(ctx, ListUnlinkedPostingsParams{UserID: userID, AccountID: accountID, FromDate: from, ToDate: to})
 	return mapAll(rows, func(row ListUnlinkedPostingsRow) app.UnlinkedPosting {
-		return app.UnlinkedPosting{TransactionID: row.TransactionID, Date: row.BookedOn, Amount: row.Amount}
+		return app.UnlinkedPosting{
+			TransactionID: row.TransactionID, Date: row.BookedOn, Amount: row.Amount, PayeeID: row.PayeeID.UUID, Description: row.Description,
+		}
 	}), err
 }
 

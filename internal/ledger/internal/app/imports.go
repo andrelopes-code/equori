@@ -314,6 +314,8 @@ type UnlinkedPosting struct {
 	TransactionID uuid.UUID
 	Date          time.Time
 	Amount        int64
+	PayeeID       uuid.UUID
+	Description   string
 }
 
 // UnlinkedPostings lists the account's postings in [from, to] whose transaction is not

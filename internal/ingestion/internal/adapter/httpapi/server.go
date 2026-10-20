@@ -66,6 +66,10 @@ func toProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusConflict, "record_resolved", err.Error()), true
 	case errors.Is(err, app.ErrAlreadyMatched):
 		return problem.New(http.StatusConflict, "already_matched", err.Error()), true
+	case errors.Is(err, app.ErrTransactionVoided):
+		return problem.New(http.StatusConflict, "transaction_voided", err.Error()), true
+	case errors.Is(err, app.ErrReconciled):
+		return problem.New(http.StatusConflict, "posting_reconciled", err.Error()), true
 	case errors.Is(err, app.ErrIntegrationUnavailable):
 		return problem.New(http.StatusConflict, "integration_unavailable", err.Error()), true
 	case errors.Is(err, app.ErrIntegrationInUse):

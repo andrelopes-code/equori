@@ -34,6 +34,8 @@ var (
 	ErrReconciled = errors.New("the posting is reconciled")
 	// ErrNotRetypable: the transaction of a line changed since its import and keeps it (A88).
 	ErrNotRetypable = errors.New("the transaction changed since its import")
+	// ErrTransactionVoided: the transaction a record would confirm is voided.
+	ErrTransactionVoided = errors.New("the transaction is voided")
 	// ErrInstallmentRefused: the ledger cannot place the line in its installment purchase.
 	ErrInstallmentRefused = errors.New("the ledger refused the installment line")
 )
@@ -86,9 +88,15 @@ type Ledger interface {
 	// UnlinkedPostings lists the account's postings in [from, to] that no external record
 	// confirms and whose transaction is not voided.
 	UnlinkedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]domain.LedgerPosting, error)
+	// LinePayees returns the payee classification decides for each line, uuid.Nil for none,
+	// in input order (A99).
+	LinePayees(ctx context.Context, userID int64, lines []Line) ([]uuid.UUID, error)
 	// RecordImported creates the transactions of the lines, ids in input order; a refused
 	// line is a *RejectedLine and creates none.
 	RecordImported(ctx context.Context, userID int64, lines []NewLine) ([]uuid.UUID, error)
+	// ConfirmLine corrects the transaction to the line's amount and date (A101); a voided
+	// transaction is ErrTransactionVoided and a reconciled posting ErrReconciled.
+	ConfirmLine(ctx context.Context, userID int64, txID, accountID uuid.UUID, amount int64, date time.Time) error
 	// ClearMatched links the matches and returns the indexes of those whose transaction
 	// already carries another record.
 	ClearMatched(ctx context.Context, userID int64, ms []Match) (conflicts []int, err error)
@@ -246,6 +254,7 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 		if rec := &claimed[i].Record; claimed[i].Existed && rec.State == domain.StateWithdrawn {
 			withFacts(rec, lines[i])
 			rec.Date, rec.Amount, rec.State, rec.TransactionID, rec.Candidates = lines[i].Date, lines[i].Amount, domain.StateReceived, uuid.Nil, nil
+			rec.ReviewReason, rec.Scores = "", nil
 			claimed[i].Existed = false
 		}
 	}
@@ -261,7 +270,7 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 		created []*domain.ExternalRecord
 		matches []Match
 		matched []*domain.ExternalRecord
-		taken   = map[uuid.UUID]bool{} // transactions matched by an earlier line of this batch (I07)
+		scoring []scoredLine
 		parts   []InstallmentLine
 		retried []*domain.ExternalRecord
 		again   []InstallmentLine
@@ -310,16 +319,26 @@ func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, curren
 				continue
 			}
 		}
-		candidates := domain.Candidates(rec.Date, rec.Amount, postings, taken)
-		switch len(candidates) {
-		case 0:
+		scoring = append(scoring, scoredLine{rec: rec, line: line})
+	}
+	assigned, err := s.assign(ctx, batch.UserID, scoring, postings)
+	if err != nil {
+		return err
+	}
+	for i, a := range assigned {
+		rec, line := scoring[i].rec, scoring[i].line
+		switch a.Zone {
+		case domain.ZoneNew:
 			creates, created = append(creates, NewLine{RecordID: rec.ID, Line: line}), append(created, rec)
-		case 1:
-			taken[candidates[0]] = true
-			matches = append(matches, Match{RecordID: rec.ID, TransactionID: candidates[0], AccountID: rec.AccountID, Pending: r.Pending})
+		case domain.ZoneLink:
+			matches = append(matches, Match{RecordID: rec.ID, TransactionID: a.TransactionID, AccountID: rec.AccountID, Pending: line.Pending})
 			matched = append(matched, rec)
 		default:
-			rec.State, rec.Candidates = domain.StateNeedsReview, candidates
+			rec.State, rec.ReviewReason, rec.Scores = domain.StateNeedsReview, string(a.Zone), a.Candidates
+			rec.Candidates = make([]uuid.UUID, len(a.Candidates))
+			for j, c := range a.Candidates {
+				rec.Candidates[j] = c.TransactionID
+			}
 		}
 	}
 
@@ -413,7 +432,8 @@ func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRec
 	}
 	settled := rec.ExternalStatus != domain.ExternalStatusOf(r) || !sameDate(rec.DueDate, r.DueDate)
 	retype := r.Kind == domain.KindPayment && rec.LineKind != r.Kind
-	if !settled && !retype && rec.Amount == r.Amount {
+	moved := rec.Amount != r.Amount || !rec.Date.Equal(r.Date)
+	if !settled && !retype && !moved {
 		return false, nil
 	}
 	var notes []string
@@ -431,8 +451,14 @@ func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRec
 			return false, err
 		}
 	}
-	if rec.Amount != r.Amount {
-		notes = append(notes, fmt.Sprintf("the provider reports %d minor units; the ledger keeps %d", r.Amount, rec.Amount))
+	if moved {
+		note, err := s.followLine(ctx, rec, r)
+		if err != nil {
+			return false, err
+		}
+		if note != "" {
+			notes = append(notes, note)
+		}
 	}
 	withFacts(rec, r)
 	if !retype {
@@ -441,6 +467,29 @@ func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRec
 	}
 	rec.UnappliedChange = strings.Join(notes, "; ")
 	return true, nil
+}
+
+// followLine corrects the transaction of a linked line to the line's new amount and date
+// (A102). A reconciled posting keeps them: the record describes the change and is flagged
+// with review reason changed. An installment keeps the amount its plan fixes.
+func (s *Service) followLine(ctx context.Context, rec *domain.ExternalRecord, r domain.NormalizedRecord) (string, error) {
+	kept := fmt.Sprintf("the provider reports %d minor units on %s; the ledger keeps %d on %s",
+		r.Amount, r.Date.Format(time.DateOnly), rec.Amount, rec.Date.Format(time.DateOnly))
+	if rec.Installment != nil || rec.TransactionID == uuid.Nil {
+		return kept, nil
+	}
+	err := s.ledger.ConfirmLine(ctx, rec.UserID, rec.TransactionID, rec.AccountID, r.Amount, r.Date)
+	switch {
+	case errors.Is(err, ErrReconciled):
+		rec.ReviewReason = domain.ReviewChanged
+		return kept, nil
+	case errors.Is(err, ErrTransactionVoided), errors.Is(err, ErrNotFound):
+		return kept, nil
+	case err != nil:
+		return "", err
+	}
+	rec.Amount, rec.Date, rec.ReviewReason = r.Amount, r.Date, ""
+	return "", nil
 }
 
 // billMatched moves a matched card posting to the statement of the line's bill, as update
@@ -488,7 +537,41 @@ func (s *Service) unlinked(ctx context.Context, batch *domain.Batch, claimed []C
 	if from.IsZero() {
 		return nil, nil
 	}
-	return s.ledger.UnlinkedPostings(ctx, batch.UserID, batch.AccountID, from.AddDate(0, 0, -domain.MatchWindow), to.AddDate(0, 0, domain.MatchWindow))
+	return s.ledger.UnlinkedPostings(ctx, batch.UserID, batch.AccountID, from.AddDate(0, 0, -domain.MatchHardLimit), to.AddDate(0, 0, domain.MatchHardLimit))
+}
+
+// scoredLine is a line that matching decides: link, review or create.
+type scoredLine struct {
+	rec  *domain.ExternalRecord
+	line Line
+}
+
+// assign decides the lines by score (A98–A100); the payees of the lines are asked of
+// classification only when the account has postings to compare.
+func (s *Service) assign(ctx context.Context, userID int64, lines []scoredLine, postings []domain.LedgerPosting) ([]domain.Assignment, error) {
+	if len(lines) == 0 {
+		return nil, nil
+	}
+	if len(postings) == 0 {
+		out := make([]domain.Assignment, len(lines))
+		for i := range out {
+			out[i].Zone = domain.ZoneNew
+		}
+		return out, nil
+	}
+	plain := make([]Line, len(lines))
+	for i, l := range lines {
+		plain[i] = l.line
+	}
+	payees, err := s.ledger.LinePayees(ctx, userID, plain)
+	if err != nil {
+		return nil, err
+	}
+	compared := make([]domain.MatchLine, len(lines))
+	for i, l := range lines {
+		compared[i] = domain.MatchLine{Date: l.rec.Date, Amount: l.rec.Amount, PayeeID: payees[i], Description: l.rec.Description}
+	}
+	return domain.Assign(compared, postings), nil
 }
 
 // resume completes a record whose transaction a previous import committed in the ledger

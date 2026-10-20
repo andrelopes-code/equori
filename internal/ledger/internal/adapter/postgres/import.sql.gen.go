@@ -117,7 +117,7 @@ func (q *Queries) ListTransactionsByExternalRecords(ctx context.Context, arg Lis
 }
 
 const listUnlinkedPostings = `-- name: ListUnlinkedPostings :many
-SELECT u.transaction_id, u.booked_on, u.amount FROM (
+SELECT u.transaction_id, u.booked_on, u.amount, t.payee_id, t.description FROM (
     SELECT DISTINCT ON (p.transaction_id) p.transaction_id, p.booked_on, p.amount
     FROM ledger_posting p
     WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided
@@ -125,6 +125,7 @@ SELECT u.transaction_id, u.booked_on, u.amount FROM (
       AND p.booked_on BETWEEN $3::date AND $4::date
     ORDER BY p.transaction_id, p.position
 ) u
+JOIN ledger_transaction t ON t.id = u.transaction_id
 ORDER BY u.booked_on, u.transaction_id
 `
 
@@ -139,6 +140,8 @@ type ListUnlinkedPostingsRow struct {
 	TransactionID uuid.UUID
 	BookedOn      time.Time
 	Amount        int64
+	PayeeID       uuid.NullUUID
+	Description   string
 }
 
 // The first unlinked posting of each non-voided transaction on the account in the window:
@@ -157,7 +160,13 @@ func (q *Queries) ListUnlinkedPostings(ctx context.Context, arg ListUnlinkedPost
 	var items []ListUnlinkedPostingsRow
 	for rows.Next() {
 		var i ListUnlinkedPostingsRow
-		if err := rows.Scan(&i.TransactionID, &i.BookedOn, &i.Amount); err != nil {
+		if err := rows.Scan(
+			&i.TransactionID,
+			&i.BookedOn,
+			&i.Amount,
+			&i.PayeeID,
+			&i.Description,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

@@ -121,6 +121,27 @@ func (e ExternalAccountState) Valid() bool {
 	}
 }
 
+// Defines values for ExternalRecordReviewReason.
+const (
+	Ambiguous ExternalRecordReviewReason = "ambiguous"
+	Changed   ExternalRecordReviewReason = "changed"
+	Probable  ExternalRecordReviewReason = "probable"
+)
+
+// Valid indicates whether the value is a known member of the ExternalRecordReviewReason enum.
+func (e ExternalRecordReviewReason) Valid() bool {
+	switch e {
+	case Ambiguous:
+		return true
+	case Changed:
+		return true
+	case Probable:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ExternalRecordState.
 const (
 	ExternalRecordStateCreated     ExternalRecordState = "created"
@@ -238,6 +259,72 @@ func (e RecordResolutionAction) Valid() bool {
 	case Discard:
 		return true
 	case Match:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ScoredCandidateAmount.
+const (
+	Bounded   ScoredCandidateAmount = "bounded"
+	Close     ScoredCandidateAmount = "close"
+	Identical ScoredCandidateAmount = "identical"
+)
+
+// Valid indicates whether the value is a known member of the ScoredCandidateAmount enum.
+func (e ScoredCandidateAmount) Valid() bool {
+	switch e {
+	case Bounded:
+		return true
+	case Close:
+		return true
+	case Identical:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ScoredCandidateCounterparty.
+const (
+	OtherPayee         ScoredCandidateCounterparty = "other_payee"
+	SamePayee          ScoredCandidateCounterparty = "same_payee"
+	SimilarDescription ScoredCandidateCounterparty = "similar_description"
+	Unknown            ScoredCandidateCounterparty = "unknown"
+)
+
+// Valid indicates whether the value is a known member of the ScoredCandidateCounterparty enum.
+func (e ScoredCandidateCounterparty) Valid() bool {
+	switch e {
+	case OtherPayee:
+		return true
+	case SamePayee:
+		return true
+	case SimilarDescription:
+		return true
+	case Unknown:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ScoredCandidateDate.
+const (
+	Far     ScoredCandidateDate = "far"
+	Near    ScoredCandidateDate = "near"
+	SameDay ScoredCandidateDate = "same_day"
+)
+
+// Valid indicates whether the value is a known member of the ScoredCandidateDate enum.
+func (e ScoredCandidateDate) Valid() bool {
+	switch e {
+	case Far:
+		return true
+	case Near:
+		return true
+	case SameDay:
 		return true
 	default:
 		return false
@@ -394,17 +481,26 @@ type ExternalRecord struct {
 	BatchId   openapi_types.UUID `json:"batch_id"`
 
 	// Candidates Transactions the record may confirm, while it needs review.
-	Candidates    []openapi_types.UUID `json:"candidates"`
-	Date          openapi_types.Date   `json:"date"`
-	Description   string               `json:"description"`
-	ExternalId    *string              `json:"external_id,omitempty"`
-	Id            openapi_types.UUID   `json:"id"`
-	State         ExternalRecordState  `json:"state"`
-	TransactionId *openapi_types.UUID  `json:"transaction_id,omitempty"`
+	Candidates  []openapi_types.UUID `json:"candidates"`
+	Date        openapi_types.Date   `json:"date"`
+	Description string               `json:"description"`
+	ExternalId  *string              `json:"external_id,omitempty"`
+	Id          openapi_types.UUID   `json:"id"`
+
+	// ReviewReason Why the record waits for review (A100, A102).
+	ReviewReason *ExternalRecordReviewReason `json:"review_reason,omitempty"`
+
+	// ScoredCandidates The candidates as matching scored them, best first (A99, A100).
+	ScoredCandidates *[]ScoredCandidate  `json:"scored_candidates,omitempty"`
+	State            ExternalRecordState `json:"state"`
+	TransactionId    *openapi_types.UUID `json:"transaction_id,omitempty"`
 
 	// UnappliedChange A change the aggregator reported that the ledger did not take (P6 amendment A36).
 	UnappliedChange *string `json:"unapplied_change,omitempty"`
 }
+
+// ExternalRecordReviewReason Why the record waits for review (A100, A102).
+type ExternalRecordReviewReason string
 
 // ExternalRecordState defines model for ExternalRecord.State.
 type ExternalRecordState string
@@ -563,10 +659,42 @@ type RecordResolution struct {
 // RecordResolutionAction defines model for RecordResolution.Action.
 type RecordResolutionAction string
 
+// ScoredCandidate defines model for ScoredCandidate.
+type ScoredCandidate struct {
+	Amount        ScoredCandidateAmount       `json:"amount"`
+	Counterparty  ScoredCandidateCounterparty `json:"counterparty"`
+	Date          ScoredCandidateDate         `json:"date"`
+	Score         int                         `json:"score"`
+	TransactionId openapi_types.UUID          `json:"transaction_id"`
+}
+
+// ScoredCandidateAmount defines model for ScoredCandidate.Amount.
+type ScoredCandidateAmount string
+
+// ScoredCandidateCounterparty defines model for ScoredCandidate.Counterparty.
+type ScoredCandidateCounterparty string
+
+// ScoredCandidateDate defines model for ScoredCandidate.Date.
+type ScoredCandidateDate string
+
 // SyncResult defines model for SyncResult.
 type SyncResult struct {
 	Batches    []ImportBatch `json:"batches"`
 	Connection Connection    `json:"connection"`
+}
+
+// UnconfirmedEntry defines model for UnconfirmedEntry.
+type UnconfirmedEntry struct {
+	Amount        Money               `json:"amount"`
+	Date          openapi_types.Date  `json:"date"`
+	Description   string              `json:"description"`
+	PayeeId       *openapi_types.UUID `json:"payee_id,omitempty"`
+	TransactionId openapi_types.UUID  `json:"transaction_id"`
+}
+
+// UnconfirmedList defines model for UnconfirmedList.
+type UnconfirmedList struct {
+	Items []UnconfirmedEntry `json:"items"`
 }
 
 // Cursor defines model for Cursor.
@@ -647,6 +775,9 @@ type ServerInterface interface {
 	// ImportFile Import an OFX or CSV statement into a balance account.
 	// (POST /accounts/{id}/imports)
 	ImportFile(w http.ResponseWriter, r *http.Request, id ID)
+	// ListUnconfirmed Entries of the account that no institution line confirmed (A103).
+	// (GET /accounts/{id}/unconfirmed)
+	ListUnconfirmed(w http.ResponseWriter, r *http.Request, id ID)
 	// ListConnections Connections with their external accounts, by name.
 	// (GET /connections)
 	ListConnections(w http.ResponseWriter, r *http.Request, params ListConnectionsParams)
@@ -772,6 +903,32 @@ func (siw *ServerInterfaceWrapper) ImportFile(w http.ResponseWriter, r *http.Req
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ImportFile(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListUnconfirmed operation middleware
+func (siw *ServerInterfaceWrapper) ListUnconfirmed(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListUnconfirmed(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1384,6 +1541,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/imports", wrapper.ImportFile)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/import-batches/{id}", wrapper.GetImportBatch)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/import-batches/{id}/records", wrapper.ListBatchRecords)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/unconfirmed", wrapper.ListUnconfirmed)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/external-records/{id}/resolve", wrapper.ResolveExternalRecord)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/integrations", wrapper.ListIntegrations)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/integrations", wrapper.CreateIntegration)
@@ -1601,6 +1759,72 @@ func (response ImportFile413ApplicationProblemPlusJSONResponse) VisitImportFileR
 type ImportFile422ApplicationProblemPlusJSONResponse Problem
 
 func (response ImportFile422ApplicationProblemPlusJSONResponse) VisitImportFileResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListUnconfirmedRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type ListUnconfirmedResponseObject interface {
+	VisitListUnconfirmedResponse(w http.ResponseWriter) error
+}
+
+type ListUnconfirmed200JSONResponse UnconfirmedList
+
+func (response ListUnconfirmed200JSONResponse) VisitListUnconfirmedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListUnconfirmed401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListUnconfirmed401ApplicationProblemPlusJSONResponse) VisitListUnconfirmedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListUnconfirmed404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListUnconfirmed404ApplicationProblemPlusJSONResponse) VisitListUnconfirmedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListUnconfirmed422ApplicationProblemPlusJSONResponse Problem
+
+func (response ListUnconfirmed422ApplicationProblemPlusJSONResponse) VisitListUnconfirmedResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -2654,6 +2878,9 @@ type StrictServerInterface interface {
 	// ImportFile Import an OFX or CSV statement into a balance account.
 	// (POST /accounts/{id}/imports)
 	ImportFile(ctx context.Context, request ImportFileRequestObject) (ImportFileResponseObject, error)
+	// ListUnconfirmed Entries of the account that no institution line confirmed (A103).
+	// (GET /accounts/{id}/unconfirmed)
+	ListUnconfirmed(ctx context.Context, request ListUnconfirmedRequestObject) (ListUnconfirmedResponseObject, error)
 	// ListConnections Connections with their external accounts, by name.
 	// (GET /connections)
 	ListConnections(ctx context.Context, request ListConnectionsRequestObject) (ListConnectionsResponseObject, error)
@@ -2825,6 +3052,32 @@ func (sh *strictHandler) ImportFile(w http.ResponseWriter, r *http.Request, id I
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ImportFileResponseObject); ok {
 		if err := validResponse.VisitImportFileResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListUnconfirmed operation middleware
+func (sh *strictHandler) ListUnconfirmed(w http.ResponseWriter, r *http.Request, id ID) {
+	var request ListUnconfirmedRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListUnconfirmed(ctx, request.(ListUnconfirmedRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListUnconfirmed")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListUnconfirmedResponseObject); ok {
+		if err := validResponse.VisitListUnconfirmedResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

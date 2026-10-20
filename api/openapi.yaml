@@ -2702,6 +2702,31 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /accounts/{id}/unconfirmed:
+    get:
+      tags: [ingestion]
+      operationId: listUnconfirmed
+      summary: Entries of the account that no institution line confirmed (A103).
+      description: |
+        Postings without an external record, dated on or after the start of the account's lines
+        from an institution (the mapping's start date, or the first imported file's period) and
+        more than 10 days before the last synced date or the end of the last imported period,
+        oldest first. An account without lines from an institution lists none.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnconfirmedList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /external-records/{id}/resolve:
     post:
       tags: [ingestion]
@@ -4313,6 +4338,58 @@ components:
         unapplied_change:
           type: string
           description: A change the aggregator reported that the ledger did not take (P6 amendment A36).
+        review_reason:
+          type: string
+          enum: [ambiguous, probable, changed]
+          description: Why the record waits for review (A100, A102).
+        scored_candidates:
+          type: array
+          description: The candidates as matching scored them, best first (A99, A100).
+          items:
+            $ref: "#/components/schemas/ScoredCandidate"
+    UnconfirmedList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/UnconfirmedEntry"
+    UnconfirmedEntry:
+      type: object
+      required: [transaction_id, date, amount, description]
+      properties:
+        transaction_id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        amount:
+          $ref: "#/components/schemas/Money"
+        description:
+          type: string
+        payee_id:
+          type: string
+          format: uuid
+    ScoredCandidate:
+      type: object
+      required: [transaction_id, score, amount, date, counterparty]
+      properties:
+        transaction_id:
+          type: string
+          format: uuid
+        score:
+          type: integer
+        amount:
+          type: string
+          enum: [identical, close, bounded]
+        date:
+          type: string
+          enum: [same_day, near, far]
+        counterparty:
+          type: string
+          enum: [same_payee, other_payee, similar_description, unknown]
     ExternalRecordList:
       type: object
       required: [items]

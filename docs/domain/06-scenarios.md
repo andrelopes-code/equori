@@ -410,7 +410,7 @@ An OFX credit card statement for Itaú Visa: −230.00 on 2026-10-14 is a `charg
 | M28 | S02 |
 | M29 | S31 |
 
-The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44; the category tree and its tools by S72–S79 (amendments A73–A84 of `docs/superpowers/specs/2026-10-19-web-categorization-design.md`); transfers from imports by S45–S50; aggregator sync by S51–S59, S68–S71 and S90; card statements from the institution by S80–S89 (amendments A85–A93); schedules (F7) by S27–S29 and the planning views by S60–S63; currencies and investments (F9) by S16, S17, S21, S22 and S64–S67.
+The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44; the category tree and its tools by S72–S79 (amendments A73–A84 of `docs/superpowers/specs/2026-10-19-web-categorization-design.md`); transfers from imports by S45–S50; aggregator sync by S51–S59, S68–S71 and S90; matching by score by S91–S97 (amendments A98–A104); card statements from the institution by S80–S89 (amendments A85–A93); schedules (F7) by S27–S29 and the planning views by S60–S63; currencies and investments (F9) by S16, S17, S21, S22 and S64–S67.
 
 ## 6.13 Classification
 
@@ -563,6 +563,10 @@ With "Cofrinho Mercado Livre" and "Algum dinheiro" mapped from 2026-11-11, check
 ### S90 Renamed reserved balance (A94)
 
 "Aaa" is mapped from 2026-11-11 to MP Reserva with 100.00. The owner renames it "Algum dinheiro"; the sync of 2026-11-12 lists it under the new name, still mapped, and books "Dinheiro reservado Algum dinheiro" −20.00 of 2026-11-12 and "Dinheiro retirado Aaa" +10.00 of 2026-11-11 as transfers with MP Reserva; the reserve meets the reported 110.00. A reserve later created with a renamed reserve's former name takes the lines that name it.
+
+### S91–S97 Matching by score (A98–A104)
+
+The scenarios of `docs/superpowers/specs/2026-10-20-record-matching-design.md`: a manual entry linked by identical amount, day and payee (S91); a probable entry corrected to the line's amount on match (S92); two rides of one payee and amount ambiguous (S93); another payee creating a transaction (S94); a hotel entry seven days away linked (S95); a linked line's change corrected or, on a reconciled posting, described (S96); entries no line confirmed listed (S97).
 
 ### S71 Synced assertion re-evaluated
 

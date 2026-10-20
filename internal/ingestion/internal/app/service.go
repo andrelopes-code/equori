@@ -64,6 +64,8 @@ type Repository interface {
 	// InsertMissingExternalAccount stores the external account, pending, unless the connection
 	// already has one with its external id.
 	InsertMissingExternalAccount(ctx context.Context, a domain.ExternalAccount) error
+	// AccountFeed reports where the account's institution lines start and end (A103).
+	AccountFeed(ctx context.Context, userID int64, accountID uuid.UUID) (domain.Feed, error)
 	// RenameExternalAccount stores the name the institution now reports for the external
 	// account and keeps the previous one among its former names (A94).
 	RenameExternalAccount(ctx context.Context, userID int64, id uuid.UUID, name string) error

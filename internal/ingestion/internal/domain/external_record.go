@@ -39,6 +39,10 @@ type ExternalRecord struct {
 	State         RecordState
 	TransactionID uuid.UUID
 	Candidates    []uuid.UUID
+	// ReviewReason is why the record waits for review, and Scores its candidates as matching
+	// scored them (A100–A102).
+	ReviewReason string
+	Scores       []Scored
 
 	// What an aggregator reported, to detect its later changes (P6 A36); empty for files.
 	ExternalStatus string
@@ -51,6 +55,13 @@ type ExternalRecord struct {
 	// UnappliedChange describes a provider change the ledger did not take.
 	UnappliedChange string
 }
+
+// Why a record waits for review (A100, A102); the first two are the zones of Assign.
+const (
+	ReviewAmbiguous = string(ZoneAmbiguous)
+	ReviewProbable  = string(ZoneProbable)
+	ReviewChanged   = "changed"
+)
 
 // ExternalStatusOf is the aggregator status of a normalized line.
 func ExternalStatusOf(r NormalizedRecord) string {

@@ -43,7 +43,8 @@ func ambiguous(t *testing.T) (h *apitest.Harness, batch string, record recordVie
 		t.Fatalf("import: %s", got)
 	}
 	queued := records(t, h, b.ID, "needs_review")
-	if len(queued) != 1 || !slices.Equal(queued[0].Candidates, []string{first, second}) || queued[0].Amount.Amount != -5000 {
+	// A100: candidates come best first; the entry of the line's day scores 9, the other 8.
+	if len(queued) != 1 || !slices.Equal(queued[0].Candidates, []string{second, first}) || queued[0].Amount.Amount != -5000 {
 		t.Fatalf("review queue = %+v", queued)
 	}
 	return h, b.ID, queued[0], first, second

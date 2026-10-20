@@ -1511,6 +1511,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/{id}/unconfirmed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Entries of the account that no institution line confirmed (A103).
+         * @description Postings without an external record, dated on or after the start of the account's lines
+         *     from an institution (the mapping's start date, or the first imported file's period) and
+         *     more than 10 days before the last synced date or the end of the last imported period,
+         *     oldest first. An account without lines from an institution lists none.
+         */
+        get: operations["listUnconfirmed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/external-records/{id}/resolve": {
         parameters: {
             query?: never;
@@ -2398,6 +2421,37 @@ export interface components {
             candidates: string[];
             /** @description A change the aggregator reported that the ledger did not take (P6 amendment A36). */
             unapplied_change?: string;
+            /**
+             * @description Why the record waits for review (A100, A102).
+             * @enum {string}
+             */
+            review_reason?: "ambiguous" | "probable" | "changed";
+            /** @description The candidates as matching scored them, best first (A99, A100). */
+            scored_candidates?: components["schemas"]["ScoredCandidate"][];
+        };
+        UnconfirmedList: {
+            items: components["schemas"]["UnconfirmedEntry"][];
+        };
+        UnconfirmedEntry: {
+            /** Format: uuid */
+            transaction_id: string;
+            /** Format: date */
+            date: string;
+            amount: components["schemas"]["Money"];
+            description: string;
+            /** Format: uuid */
+            payee_id?: string;
+        };
+        ScoredCandidate: {
+            /** Format: uuid */
+            transaction_id: string;
+            score: number;
+            /** @enum {string} */
+            amount: "identical" | "close" | "bounded";
+            /** @enum {string} */
+            date: "same_day" | "near" | "far";
+            /** @enum {string} */
+            counterparty: "same_payee" | "other_payee" | "similar_description" | "unknown";
         };
         ExternalRecordList: {
             items: components["schemas"]["ExternalRecord"][];
@@ -6436,6 +6490,31 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+        };
+    };
+    listUnconfirmed: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnconfirmedList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     resolveExternalRecord: {

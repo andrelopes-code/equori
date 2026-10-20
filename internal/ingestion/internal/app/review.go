@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/domain"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 
@@ -64,6 +65,10 @@ func (s *Service) Resolve(ctx context.Context, userID int64, recordID uuid.UUID,
 		if !slices.Contains(rec.Candidates, txID) {
 			return domain.ExternalRecord{}, domain.Batch{}, &domain.FieldError{Field: "transaction_id", Message: "must be one of the record's candidates"}
 		}
+		// A101: the institution's amount and date win; the owner's classification stays.
+		if err := s.ledger.ConfirmLine(ctx, userID, txID, rec.AccountID, rec.Amount, rec.Date); err != nil {
+			return domain.ExternalRecord{}, domain.Batch{}, err
+		}
 		conflicts, err := s.ledger.ClearMatched(ctx, userID, []Match{{RecordID: rec.ID, TransactionID: txID, AccountID: rec.AccountID}})
 		if err != nil {
 			return domain.ExternalRecord{}, domain.Batch{}, err
@@ -90,4 +95,23 @@ func (s *Service) Resolve(ctx context.Context, userID int64, recordID uuid.UUID,
 		return domain.ExternalRecord{}, domain.Batch{}, err
 	}
 	return rec, b, nil
+}
+
+// Unconfirmed lists the account's entries that no institution line confirmed: dated within its
+// feed and more than MatchHardLimit days before the feed's end, oldest first (A103).
+func (s *Service) Unconfirmed(ctx context.Context, userID int64, accountID uuid.UUID) ([]domain.LedgerPosting, money.Currency, error) {
+	target, err := s.ledger.ImportTarget(ctx, userID, accountID)
+	if err != nil {
+		return nil, "", err
+	}
+	feed, err := s.repo.AccountFeed(ctx, userID, accountID)
+	if err != nil || feed.From == nil || feed.To == nil {
+		return nil, target.Currency, err
+	}
+	to := feed.To.AddDate(0, 0, -domain.MatchHardLimit-1)
+	if to.Before(*feed.From) {
+		return nil, target.Currency, nil
+	}
+	ps, err := s.ledger.UnlinkedPostings(ctx, userID, accountID, *feed.From, to)
+	return ps, target.Currency, err
 }

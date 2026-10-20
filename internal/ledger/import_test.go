@@ -103,7 +103,11 @@ func TestUnlinkedPostingsAndClearMatched(t *testing.T) {
 	h.Record("2026-10-09", apitest.Posting(c.checking, -4590), apitest.Posting(c.food, 4590))
 	voided := h.Record("2026-10-05", apitest.Posting(c.checking, -4590), apitest.Posting(c.food, 4590))
 	h.MustDo(http.MethodPost, "/api/v1/transactions/"+voided+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, nil)
-	other := h.Record("2026-10-05", apitest.Posting(c.checking, -4500), apitest.Posting(c.food, 4500))
+	var payee, otherTx idOnly
+	h.MustDo(http.MethodPost, "/api/v1/payees", map[string]any{"name": "Padaria"}, http.StatusCreated, &payee)
+	h.MustDo(http.MethodPost, "/api/v1/transactions", map[string]any{"date": "2026-10-05", "description": "Pão", "payee_id": payee.ID,
+		"postings": []map[string]any{apitest.Posting(c.checking, -4500), apitest.Posting(c.food, 4500)}}, http.StatusCreated, &otherTx)
+	other := otherTx.ID
 	h.Record("2026-10-05", apitest.Posting(c.card, -4590), apitest.Posting(c.food, 4590))
 
 	line := imported(t, c.checking, "2026-10-05", -4590)
@@ -114,11 +118,12 @@ func TestUnlinkedPostingsAndClearMatched(t *testing.T) {
 		}
 		var out []string
 		for _, p := range ps {
-			out = append(out, fmt.Sprintf("%s %s %d", p.TransactionID, p.Date.Format(time.DateOnly), p.Amount))
+			out = append(out, fmt.Sprintf("%s %s %d %s %q", p.TransactionID, p.Date.Format(time.DateOnly), p.Amount, p.PayeeID, p.Description))
 		}
 		return out
 	}
-	want := []string{pending.ID + " 2026-10-04 -4590", other + " 2026-10-05 -4500"}
+	// The payee and the description are what matching by score compares (A99).
+	want := []string{pending.ID + " 2026-10-04 -4590 " + uuid.Nil.String() + ` ""`, other + " 2026-10-05 -4500 " + payee.ID + ` "Pão"`}
 	if got := unlinked(); !slices.Equal(got, want) {
 		t.Fatalf("unlinked = %v, want %v (voided, out of window and other accounts excluded)", got, want)
 	}

@@ -241,6 +241,12 @@ func (m *Module) UnlinkedPostings(ctx context.Context, userID int64, accountID u
 	return m.svc.UnlinkedPostings(ctx, userID, accountID, from, to)
 }
 
+// ConfirmLine corrects a transaction to the amount and date of the statement line matched to
+// it on the account (A101).
+func (m *Module) ConfirmLine(ctx context.Context, userID int64, txID, accountID uuid.UUID, amount int64, date time.Time) error {
+	return m.svc.ConfirmLine(ctx, userID, txID, accountID, amount, date)
+}
+
 // ClearMatched links an external record to a transaction and clears its pending postings.
 func (m *Module) ClearMatched(ctx context.Context, userID int64, recordID, txID, accountID uuid.UUID) error {
 	return m.svc.ClearMatched(ctx, userID, recordID, txID, accountID)

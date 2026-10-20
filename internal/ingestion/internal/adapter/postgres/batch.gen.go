@@ -25,7 +25,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,
     $10, $11, $12, $13,
     $14, $15, $16)
 ON CONFLICT (user_id, dedup_key) DO NOTHING
-RETURNING id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind
+RETURNING id, user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description, state, transaction_id, candidates, external_status, due_date, installment_number, installment_count, category_id, balance_after, unapplied_change, line_kind, review_reason, candidate_scores
 `
 
 type InsertRecordsBatchResults struct {
@@ -114,6 +114,8 @@ func (b *InsertRecordsBatchResults) QueryRow(f func(int, IngestionExternalRecord
 			&i.BalanceAfter,
 			&i.UnappliedChange,
 			&i.LineKind,
+			&i.ReviewReason,
+			&i.CandidateScores,
 		)
 		if f != nil {
 			f(t, i, err)
@@ -128,8 +130,9 @@ func (b *InsertRecordsBatchResults) Close() error {
 
 const saveRecordOutcomes = `-- name: SaveRecordOutcomes :batchexec
 UPDATE ingestion_external_record
-SET batch_id = $1, state = $2, transaction_id = $3, candidates = $4
-WHERE user_id = $5 AND id = $6
+SET batch_id = $1, state = $2, transaction_id = $3, candidates = $4,
+    review_reason = $5, candidate_scores = $6
+WHERE user_id = $7 AND id = $8
 `
 
 type SaveRecordOutcomesBatchResults struct {
@@ -139,12 +142,14 @@ type SaveRecordOutcomesBatchResults struct {
 }
 
 type SaveRecordOutcomesParams struct {
-	BatchID       uuid.UUID
-	State         string
-	TransactionID uuid.NullUUID
-	Candidates    []uuid.UUID
-	UserID        int64
-	ID            uuid.UUID
+	BatchID         uuid.UUID
+	State           string
+	TransactionID   uuid.NullUUID
+	Candidates      []uuid.UUID
+	ReviewReason    *string
+	CandidateScores []byte
+	UserID          int64
+	ID              uuid.UUID
 }
 
 func (q *Queries) SaveRecordOutcomes(ctx context.Context, arg []SaveRecordOutcomesParams) *SaveRecordOutcomesBatchResults {
@@ -155,6 +160,8 @@ func (q *Queries) SaveRecordOutcomes(ctx context.Context, arg []SaveRecordOutcom
 			a.State,
 			a.TransactionID,
 			a.Candidates,
+			a.ReviewReason,
+			a.CandidateScores,
 			a.UserID,
 			a.ID,
 		}
@@ -190,8 +197,9 @@ UPDATE ingestion_external_record SET
     raw = $1, external_status = $2, due_date = $3,
     installment_number = $4, installment_count = $5,
     category_id = $6, balance_after = $7,
-    line_kind = $8, unapplied_change = $9
-WHERE user_id = $10 AND id = $11
+    line_kind = $8, unapplied_change = $9,
+    booked_on = $10, amount = $11, review_reason = $12
+WHERE user_id = $13 AND id = $14
 `
 
 type UpdateRecordFactsBatchResults struct {
@@ -210,6 +218,9 @@ type UpdateRecordFactsParams struct {
 	BalanceAfter      *int64
 	LineKind          *string
 	UnappliedChange   *string
+	BookedOn          time.Time
+	Amount            int64
+	ReviewReason      *string
 	UserID            int64
 	ID                uuid.UUID
 }
@@ -228,6 +239,9 @@ func (q *Queries) UpdateRecordFacts(ctx context.Context, arg []UpdateRecordFacts
 			a.BalanceAfter,
 			a.LineKind,
 			a.UnappliedChange,
+			a.BookedOn,
+			a.Amount,
+			a.ReviewReason,
 			a.UserID,
 			a.ID,
 		}

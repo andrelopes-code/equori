@@ -12,6 +12,64 @@ import (
 	"github.com/google/uuid"
 )
 
+const accountFilePeriods = `-- name: AccountFilePeriods :many
+SELECT period_from, period_to FROM ingestion_batch
+WHERE user_id = $1 AND account_id = $2 AND source <> 'open_finance'
+`
+
+type AccountFilePeriodsParams struct {
+	UserID    int64
+	AccountID uuid.UUID
+}
+
+type AccountFilePeriodsRow struct {
+	PeriodFrom *time.Time
+	PeriodTo   *time.Time
+}
+
+// A103: the periods the account's imported files covered.
+func (q *Queries) AccountFilePeriods(ctx context.Context, arg AccountFilePeriodsParams) ([]AccountFilePeriodsRow, error) {
+	rows, err := q.db.Query(ctx, accountFilePeriods, arg.UserID, arg.AccountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AccountFilePeriodsRow
+	for rows.Next() {
+		var i AccountFilePeriodsRow
+		if err := rows.Scan(&i.PeriodFrom, &i.PeriodTo); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const accountMapping = `-- name: AccountMapping :one
+SELECT sync_from, last_synced_on FROM ingestion_external_account WHERE user_id = $1 AND account_id = $2
+`
+
+type AccountMappingParams struct {
+	UserID    int64
+	AccountID uuid.NullUUID
+}
+
+type AccountMappingRow struct {
+	SyncFrom     *time.Time
+	LastSyncedOn *time.Time
+}
+
+// A103: the start and the last synced date of the account's mapping.
+func (q *Queries) AccountMapping(ctx context.Context, arg AccountMappingParams) (AccountMappingRow, error) {
+	row := q.db.QueryRow(ctx, accountMapping, arg.UserID, arg.AccountID)
+	var i AccountMappingRow
+	err := row.Scan(&i.SyncFrom, &i.LastSyncedOn)
+	return i, err
+}
+
 const deleteConnection = `-- name: DeleteConnection :execrows
 DELETE FROM ingestion_connection WHERE user_id = $1 AND id = $2
 `

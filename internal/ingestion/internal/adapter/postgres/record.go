@@ -14,9 +14,22 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 
+// scoreRow is one scored candidate as candidate_scores stores it (A100).
+type scoreRow struct {
+	TransactionID uuid.UUID `json:"transaction_id"`
+	Score         int       `json:"score"`
+	Amount        string    `json:"amount"`
+	Date          string    `json:"date"`
+	Counterparty  string    `json:"counterparty"`
+}
+
 func toRecord(row IngestionExternalRecord) (domain.ExternalRecord, error) {
 	var raw map[string]string
 	if err := json.Unmarshal(row.Raw, &raw); err != nil {
+		return domain.ExternalRecord{}, err
+	}
+	var scores []scoreRow
+	if err := json.Unmarshal(row.CandidateScores, &scores); err != nil {
 		return domain.ExternalRecord{}, err
 	}
 	rec := domain.ExternalRecord{
@@ -25,6 +38,12 @@ func toRecord(row IngestionExternalRecord) (domain.ExternalRecord, error) {
 		State: domain.RecordState(row.State), TransactionID: row.TransactionID.UUID, Candidates: row.Candidates,
 		ExternalStatus: value(row.ExternalStatus), DueDate: row.DueDate, CategoryID: value(row.CategoryID),
 		BalanceAfter: row.BalanceAfter, LineKind: value(row.LineKind), UnappliedChange: value(row.UnappliedChange),
+		ReviewReason: value(row.ReviewReason),
+	}
+	for _, s := range scores {
+		rec.Scores = append(rec.Scores, domain.Scored{
+			TransactionID: s.TransactionID, Score: s.Score, Amount: s.Amount, Date: s.Date, Counterparty: s.Counterparty,
+		})
 	}
 	if row.InstallmentNumber != nil && row.InstallmentCount != nil {
 		rec.Installment = &domain.Installment{Number: int(*row.InstallmentNumber), Count: int(*row.InstallmentCount)}
@@ -108,21 +127,30 @@ func (r *Repository) ClaimRecords(ctx context.Context, recs []domain.ExternalRec
 	return out, err
 }
 
-func outcome(rec domain.ExternalRecord) SaveRecordOutcomesParams {
+func outcome(rec domain.ExternalRecord) (SaveRecordOutcomesParams, error) {
 	candidates := rec.Candidates
 	if candidates == nil {
 		candidates = []uuid.UUID{}
 	}
+	scores := make([]scoreRow, len(rec.Scores))
+	for i, s := range rec.Scores {
+		scores[i] = scoreRow{TransactionID: s.TransactionID, Score: s.Score, Amount: s.Amount, Date: s.Date, Counterparty: s.Counterparty}
+	}
+	stored, err := json.Marshal(scores)
 	return SaveRecordOutcomesParams{
 		UserID: rec.UserID, ID: rec.ID, BatchID: rec.BatchID, State: string(rec.State),
 		TransactionID: uuid.NullUUID{UUID: rec.TransactionID, Valid: rec.TransactionID != uuid.Nil}, Candidates: candidates,
-	}
+		ReviewReason: optional(rec.ReviewReason), CandidateScores: stored,
+	}, err
 }
 
 func saveOutcomes(ctx context.Context, q *Queries, recs []domain.ExternalRecord) error {
 	params := make([]SaveRecordOutcomesParams, len(recs))
 	for i, rec := range recs {
-		params[i] = outcome(rec)
+		var err error
+		if params[i], err = outcome(rec); err != nil {
+			return err
+		}
 	}
 	var first error
 	q.SaveRecordOutcomes(ctx, params).Exec(func(_ int, err error) {

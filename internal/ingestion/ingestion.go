@@ -140,6 +140,8 @@ func (p ledgerPort) translate(err error) error {
 		return app.ErrReconciled
 	case errors.Is(err, ledger.ErrNotRetypable):
 		return app.ErrNotRetypable
+	case errors.Is(err, ledger.ErrVoided):
+		return app.ErrTransactionVoided
 	}
 	return err
 }
@@ -199,11 +201,37 @@ func (p ledgerPort) RecordImported(ctx context.Context, userID int64, lines []ap
 	return ids, p.translate(err)
 }
 
+func (p ledgerPort) LinePayees(ctx context.Context, userID int64, lines []app.Line) ([]uuid.UUID, error) {
+	decide := make([]classification.ImportLine, len(lines))
+	for i, l := range lines {
+		posting, err := p.posting(l)
+		if err != nil {
+			return nil, err
+		}
+		decide[i] = importLine(posting, l)
+	}
+	decisions, err := p.c.DecideImport(ctx, userID, decide)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]uuid.UUID, len(lines))
+	for i, d := range decisions {
+		if d != nil {
+			out[i] = d.PayeeID
+		}
+	}
+	return out, nil
+}
+
+func (p ledgerPort) ConfirmLine(ctx context.Context, userID int64, txID, accountID uuid.UUID, amount int64, date time.Time) error {
+	return p.translate(p.l.ConfirmLine(ctx, userID, txID, accountID, amount, date))
+}
+
 func (p ledgerPort) UnlinkedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]domain.LedgerPosting, error) {
 	ps, err := p.l.UnlinkedPostings(ctx, userID, accountID, from, to)
 	out := make([]domain.LedgerPosting, len(ps))
 	for i, x := range ps {
-		out[i] = domain.LedgerPosting{TransactionID: x.TransactionID, Date: x.Date, Amount: x.Amount}
+		out[i] = domain.LedgerPosting{TransactionID: x.TransactionID, Date: x.Date, Amount: x.Amount, PayeeID: x.PayeeID, Description: x.Description}
 	}
 	return out, p.translate(err)
 }

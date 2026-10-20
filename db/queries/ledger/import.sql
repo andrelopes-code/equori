@@ -4,7 +4,7 @@ SELECT transaction_id FROM ledger_posting WHERE user_id = $1 AND external_record
 -- name: ListUnlinkedPostings :many
 -- The first unlinked posting of each non-voided transaction on the account in the window:
 -- what statement lines may confirm (I07, P5b amendment A27).
-SELECT u.transaction_id, u.booked_on, u.amount FROM (
+SELECT u.transaction_id, u.booked_on, u.amount, t.payee_id, t.description FROM (
     SELECT DISTINCT ON (p.transaction_id) p.transaction_id, p.booked_on, p.amount
     FROM ledger_posting p
     WHERE p.user_id = @user_id AND p.account_id = @account_id AND NOT p.voided
@@ -12,6 +12,7 @@ SELECT u.transaction_id, u.booked_on, u.amount FROM (
       AND p.booked_on BETWEEN @from_date::date AND @to_date::date
     ORDER BY p.transaction_id, p.position
 ) u
+JOIN ledger_transaction t ON t.id = u.transaction_id
 ORDER BY u.booked_on, u.transaction_id;
 
 -- name: LinkExternalRecord :exec

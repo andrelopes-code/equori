@@ -20,6 +20,20 @@ func toRecordAPI(r domain.ExternalRecord, currency string) ExternalRecord {
 		UnappliedChange: ref(r.UnappliedChange),
 	}
 	copy(out.Candidates, r.Candidates)
+	if r.ReviewReason != "" {
+		reason := ExternalRecordReviewReason(r.ReviewReason)
+		out.ReviewReason = &reason
+	}
+	if len(r.Scores) > 0 {
+		scored := make([]ScoredCandidate, len(r.Scores))
+		for i, s := range r.Scores {
+			scored[i] = ScoredCandidate{
+				TransactionId: s.TransactionID, Score: s.Score, Amount: ScoredCandidateAmount(s.Amount),
+				Date: ScoredCandidateDate(s.Date), Counterparty: ScoredCandidateCounterparty(s.Counterparty),
+			}
+		}
+		out.ScoredCandidates = &scored
+	}
 	if r.TransactionID != uuid.Nil {
 		out.TransactionId = &r.TransactionID
 	}
@@ -57,4 +71,22 @@ func (s *Server) ResolveExternalRecord(ctx context.Context, req ResolveExternalR
 		return nil, err
 	}
 	return ResolveExternalRecord200JSONResponse(toRecordAPI(rec, b.Currency)), nil
+}
+
+func (s *Server) ListUnconfirmed(ctx context.Context, req ListUnconfirmedRequestObject) (ListUnconfirmedResponseObject, error) {
+	ps, currency, err := s.svc.Unconfirmed(ctx, auth.MustUserID(ctx), req.Id)
+	if err != nil {
+		return nil, err
+	}
+	out := ListUnconfirmed200JSONResponse{Items: make([]UnconfirmedEntry, len(ps))}
+	for i, p := range ps {
+		out.Items[i] = UnconfirmedEntry{
+			TransactionId: p.TransactionID, Date: openapi_types.Date{Time: p.Date},
+			Amount: Money{Amount: p.Amount, Currency: string(currency)}, Description: p.Description,
+		}
+		if p.PayeeID != uuid.Nil {
+			out.Items[i].PayeeId = &p.PayeeID
+		}
+	}
+	return out, nil
 }

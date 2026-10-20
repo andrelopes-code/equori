@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -137,4 +139,28 @@ func (r *Repository) SaveMapping(ctx context.Context, a domain.ExternalAccount) 
 		return domain.ExternalAccount{}, &domain.FieldError{Field: "account_id", Message: "already receives another external account"}
 	}
 	return toExternalAccount(row), notFound(err)
+}
+
+func (r *Repository) AccountFeed(ctx context.Context, userID int64, accountID uuid.UUID) (domain.Feed, error) {
+	var f domain.Feed
+	widen := func(from, to *time.Time) {
+		if from != nil && (f.From == nil || from.Before(*f.From)) {
+			f.From = from
+		}
+		if to != nil && (f.To == nil || to.After(*f.To)) {
+			f.To = to
+		}
+	}
+	m, err := r.q.AccountMapping(ctx, AccountMappingParams{UserID: userID, AccountID: uuid.NullUUID{UUID: accountID, Valid: true}})
+	switch {
+	case err == nil:
+		widen(m.SyncFrom, m.LastSyncedOn)
+	case !errors.Is(err, pgx.ErrNoRows):
+		return domain.Feed{}, err
+	}
+	periods, err := r.q.AccountFilePeriods(ctx, AccountFilePeriodsParams{UserID: userID, AccountID: accountID})
+	for _, p := range periods {
+		widen(p.PeriodFrom, p.PeriodTo)
+	}
+	return f, err
 }

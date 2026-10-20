@@ -13,7 +13,8 @@ SELECT * FROM ingestion_external_record WHERE user_id = @user_id AND dedup_key =
 
 -- name: SaveRecordOutcomes :batchexec
 UPDATE ingestion_external_record
-SET batch_id = @batch_id, state = @state, transaction_id = sqlc.narg(transaction_id), candidates = @candidates
+SET batch_id = @batch_id, state = @state, transaction_id = sqlc.narg(transaction_id), candidates = @candidates,
+    review_reason = sqlc.narg(review_reason), candidate_scores = @candidate_scores
 WHERE user_id = @user_id AND id = @id;
 
 -- name: GetRecord :one
@@ -47,7 +48,8 @@ UPDATE ingestion_external_record SET
     raw = @raw, external_status = sqlc.narg(external_status), due_date = sqlc.narg(due_date),
     installment_number = sqlc.narg(installment_number), installment_count = sqlc.narg(installment_count),
     category_id = sqlc.narg(category_id), balance_after = sqlc.narg(balance_after),
-    line_kind = sqlc.narg(line_kind), unapplied_change = sqlc.narg(unapplied_change)
+    line_kind = sqlc.narg(line_kind), unapplied_change = sqlc.narg(unapplied_change),
+    booked_on = @booked_on, amount = @amount, review_reason = sqlc.narg(review_reason)
 WHERE user_id = @user_id AND id = @id;
 
 -- name: ListSyncedRecords :many

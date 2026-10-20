@@ -55,3 +55,12 @@ WHERE user_id = @user_id AND id = @id;
 -- name: ListAllConnections :many
 -- The scheduler checks every user's connections (A43); each sync then filters by its user.
 SELECT id, user_id FROM ingestion_connection ORDER BY user_id, id;
+
+-- name: AccountMapping :one
+-- A103: the start and the last synced date of the account's mapping.
+SELECT sync_from, last_synced_on FROM ingestion_external_account WHERE user_id = @user_id AND account_id = @account_id;
+
+-- name: AccountFilePeriods :many
+-- A103: the periods the account's imported files covered.
+SELECT period_from, period_to FROM ingestion_batch
+WHERE user_id = @user_id AND account_id = @account_id AND source <> 'open_finance';
