@@ -26,6 +26,8 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    // Screens that render a whole page take about 5 s on a loaded machine, the default limit.
+    testTimeout: 15_000,
     setupFiles: ["src/testing/setup.ts"],
     // @slotted/react ships a CommonJS react-dom shim that needs the Vite transform.
     server: { deps: { inline: [/@slotted\//] } },
