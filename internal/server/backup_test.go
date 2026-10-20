@@ -2,11 +2,13 @@ package server_test
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"slices"
@@ -26,7 +28,9 @@ func compose(t *testing.T, stdin []byte, args ...string) []byte {
 	if err != nil {
 		t.Fatal(err)
 	}
-	base := []string{"compose", "-f", filepath.Join(root, "compose.yaml"), "-f", filepath.Join(root, "compose.dev.yaml"), "exec", "-T", "db"}
+	// The service that holds the test databases; make test sets it, db-test by default.
+	service := cmp.Or(os.Getenv("EQUORI_TEST_DB_SERVICE"), "db-test")
+	base := []string{"compose", "-f", filepath.Join(root, "compose.yaml"), "-f", filepath.Join(root, "compose.dev.yaml"), "exec", "-T", service}
 	cmd := exec.CommandContext(t.Context(), "docker", append(base, args...)...) //nolint:gosec // fixed binary; arguments built by the test
 	cmd.Stdin = bytes.NewReader(stdin)
 	var stdout, stderr bytes.Buffer

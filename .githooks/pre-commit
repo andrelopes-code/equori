@@ -1,2 +1,2 @@
 #!/bin/sh
-exec make check
+exec make check-commit

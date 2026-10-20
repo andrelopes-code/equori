@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint .",
-    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit --incremental --tsBuildInfoFile node_modules/.cache/tsc/tsbuildinfo",
+    "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ .",
+    "format:check": "prettier --check --cache .",
     "test": "vitest run && node --test src/theme/equori.theme.test.ts"
   },
   "dependencies": {

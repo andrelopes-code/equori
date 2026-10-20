@@ -3,3 +3,22 @@ services:
   db:
     ports:
       - "127.0.0.1:${EQUORI_DEV_DB_PORT:-54329}:5432"
+
+  # Test server: tests create and drop one database each, so nothing on it outlives a run; data
+  # in memory without fsync makes those databases cheap.
+  db-test:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: equori
+      POSTGRES_PASSWORD: equori
+      POSTGRES_DB: equori
+    command: ["postgres", "-c", "fsync=off", "-c", "synchronous_commit=off", "-c", "full_page_writes=off", "-c", "max_connections=300"]
+    tmpfs:
+      - /var/lib/postgresql:size=4g
+    ports:
+      - "127.0.0.1:${EQUORI_TEST_DB_PORT:-54339}:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "equori", "-d", "equori"]
+      interval: 2s
+      timeout: 3s
+      retries: 15

@@ -3,12 +3,28 @@ TOOLS := $(BIN)/.tools
 WEB_DEPS := web/node_modules/.installed
 
 export EQUORI_DEV_DB_PORT ?= 54329
-# Tests create and drop one database per test on this server.
-export EQUORI_TEST_DATABASE_URL ?= postgres://equori:equori@127.0.0.1:$(EQUORI_DEV_DB_PORT)/postgres?sslmode=disable
+# Tests create and drop one database per test on the db-test server of compose.dev.yaml, which
+# keeps its data in memory without fsync; the backup test runs pg_dump in that service.
+export EQUORI_TEST_DB_PORT ?= 54339
+export EQUORI_TEST_DB_SERVICE ?= db-test
+export EQUORI_TEST_DATABASE_URL ?= postgres://equori:equori@127.0.0.1:$(EQUORI_TEST_DB_PORT)/postgres?sslmode=disable
+COMPOSE := docker compose -f compose.yaml -f compose.dev.yaml
 
-.PHONY: check fmt fmt-check lint tidy-check gen gen-check test vuln build dev db-up db-down hooks tools web-deps web-build web-check web-dev
+.PHONY: check check-commit static fmt fmt-check lint tidy-check gen gen-check test test-race vuln build dev db-up db-down db-test-up hooks tools web-deps web-build web-check web-verify web-dev
 
-check: fmt-check tidy-check gen-check lint web-check test
+# Everything, the Go tests under -race included: CI runs it on every pull request. The web build
+# comes first: the Go tests compile package web, which embeds web/dist.
+check: static web-build
+	$(MAKE) --no-print-directory -j2 test-race web-verify
+
+# The pre-commit gate: the static checks, then at once the Go tests without -race, which the
+# test cache skips for unchanged packages, and the web checks when the commit touches web/ or
+# the API contract.
+check-commit: static
+	if git diff --cached --quiet -- web api/openapi.yaml; then $(MAKE) --no-print-directory test; \
+	else $(MAKE) --no-print-directory web-build && $(MAKE) --no-print-directory -j2 test web-verify; fi
+
+static: fmt-check tidy-check gen-check lint
 
 fmt: $(TOOLS)
 	$(BIN)/golangci-lint fmt
@@ -37,7 +53,10 @@ tidy-check:
 	go mod tidy -diff
 	go -C tools mod tidy -diff
 
-test: db-up
+test: db-test-up
+	go test -timeout 30m ./...
+
+test-race: db-test-up
 	go test -race -timeout 30m ./...
 
 vuln: $(TOOLS)
@@ -50,10 +69,13 @@ dev: db-up
 	set -a && . ./dev.env && { [ ! -f .env ] || . ./.env; } && set +a && go run ./cmd/equori
 
 db-up:
-	docker compose -f compose.yaml -f compose.dev.yaml up -d --wait db
+	$(COMPOSE) up -d --wait db
+
+db-test-up:
+	$(COMPOSE) up -d --wait db-test
 
 db-down:
-	docker compose -f compose.yaml -f compose.dev.yaml down
+	$(COMPOSE) down
 
 hooks:
 	git config core.hooksPath .githooks
@@ -72,7 +94,11 @@ web-build: $(WEB_DEPS)
 	find web/dist -mindepth 1 ! -name .gitkeep -delete
 	cd web && pnpm build
 
-web-check: web-build
+web-check: web-build web-verify
+
+# Typecheck, lint, format and tests of the built tree; eslint, prettier and tsc keep caches
+# under web/node_modules/.cache.
+web-verify: $(WEB_DEPS)
 	cd web && pnpm typecheck
 	cd web && pnpm lint
 	cd web && pnpm format:check
