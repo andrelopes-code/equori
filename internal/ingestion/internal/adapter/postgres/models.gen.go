@@ -82,6 +82,7 @@ type IngestionExternalAccount struct {
 	LastSyncedOn      *time.Time
 	BalanceOn         *time.Time
 	BalanceAmount     *int64
+	FormerNames       []string
 }
 
 type IngestionExternalRecord struct {

@@ -410,7 +410,7 @@ An OFX credit card statement for Itaú Visa: −230.00 on 2026-10-14 is a `charg
 | M28 | S02 |
 | M29 | S31 |
 
-The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44; the category tree and its tools by S72–S79 (amendments A73–A84 of `docs/superpowers/specs/2026-10-19-web-categorization-design.md`); transfers from imports by S45–S50; aggregator sync by S51–S59 and S68–S71; card statements from the institution by S80–S89 (amendments A85–A93); schedules (F7) by S27–S29 and the planning views by S60–S63; currencies and investments (F9) by S16, S17, S21, S22 and S64–S67.
+The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44; the category tree and its tools by S72–S79 (amendments A73–A84 of `docs/superpowers/specs/2026-10-19-web-categorization-design.md`); transfers from imports by S45–S50; aggregator sync by S51–S59, S68–S71 and S90; card statements from the institution by S80–S89 (amendments A85–A93); schedules (F7) by S27–S29 and the planning views by S60–S63; currencies and investments (F9) by S16, S17, S21, S22 and S64–S67.
 
 ## 6.13 Classification
 
@@ -559,6 +559,10 @@ After S68, the item updated on 2026-11-11 reports 1,003.52: the difference 0.60 
 ### S70 Transfer to and from a reserved balance
 
 With "Cofrinho Mercado Livre" and "Algum dinheiro" mapped from 2026-11-11, checking lines of 2026-11-11 with `operationType` `TRANSFERENCIA_SALDO_RESERVADO`: "Dinheiro reservado Cofrinho Mercado Livre" −200.00 creates a transfer of 200.00 from Mercado Pago to MP Cofrinho; "Dinheiro retirado Algum dinheiro" +100.00 creates a transfer of 100.00 from the "Algum dinheiro" reserve to Mercado Pago. "Dinheiro retirado Aaa" +50.00, and "Dinheiro reservado Cofrinho Mercado Livre" −30.00 dated 2026-11-10, are recorded as ordinary lines.
+
+### S90 Renamed reserved balance (A94)
+
+"Aaa" is mapped from 2026-11-11 to MP Reserva with 100.00. The owner renames it "Algum dinheiro"; the sync of 2026-11-12 lists it under the new name, still mapped, and books "Dinheiro reservado Algum dinheiro" −20.00 of 2026-11-12 and "Dinheiro retirado Aaa" +10.00 of 2026-11-11 as transfers with MP Reserva; the reserve meets the reported 110.00. A reserve later created with a renamed reserve's former name takes the lines that name it.
 
 ### S71 Synced assertion re-evaluated
 

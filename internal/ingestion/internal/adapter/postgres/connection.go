@@ -22,8 +22,9 @@ func toConnection(row IngestionConnection) domain.Connection {
 func toExternalAccount(row IngestionExternalAccount) domain.ExternalAccount {
 	a := domain.ExternalAccount{
 		ID: row.ID, UserID: row.UserID, ConnectionID: row.ConnectionID, ExternalID: row.ExternalAccountID,
-		Type: row.Type, Subtype: row.Subtype, Name: row.Name, NumberLast4: value(row.NumberLast4), Currency: row.Currency,
-		Ignored: row.Ignored, LastSyncedOn: row.LastSyncedOn,
+		Type: row.Type, Subtype: row.Subtype, Name: row.Name, FormerNames: row.FormerNames, NumberLast4: value(row.NumberLast4),
+		Currency: row.Currency,
+		Ignored:  row.Ignored, LastSyncedOn: row.LastSyncedOn,
 	}
 	if row.AccountID.Valid {
 		a.AccountID, a.SyncFrom = &row.AccountID.UUID, row.SyncFrom
@@ -72,6 +73,10 @@ func (r *Repository) InsertMissingExternalAccount(ctx context.Context, a domain.
 		UserID: a.UserID, ConnectionID: a.ConnectionID, ExternalAccountID: a.ExternalID, Type: a.Type, Subtype: a.Subtype,
 		Name: a.Name, NumberLast4: optional(a.NumberLast4), Currency: a.Currency,
 	}))
+}
+
+func (r *Repository) RenameExternalAccount(ctx context.Context, userID int64, id uuid.UUID, name string) error {
+	return r.q.RenameExternalAccount(ctx, RenameExternalAccountParams{UserID: userID, ID: id, Name: name})
 }
 
 // withAccounts loads the external accounts of the connections in one query.

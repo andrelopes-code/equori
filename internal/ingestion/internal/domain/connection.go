@@ -62,6 +62,8 @@ type ExternalAccount struct {
 	Type         string
 	Subtype      string
 	Name         string
+	// FormerNames are the names the institution reported before renaming the account (A94).
+	FormerNames  []string
 	NumberLast4  string
 	Currency     string
 	AccountID    *uuid.UUID

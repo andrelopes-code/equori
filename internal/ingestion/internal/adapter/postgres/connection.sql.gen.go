@@ -30,7 +30,7 @@ func (q *Queries) DeleteConnection(ctx context.Context, arg DeleteConnectionPara
 }
 
 const externalAccountsOf = `-- name: ExternalAccountsOf :many
-SELECT id, user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount FROM ingestion_external_account
+SELECT id, user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names FROM ingestion_external_account
 WHERE user_id = $1 AND connection_id = ANY($2::uuid[])
 ORDER BY connection_id, id
 `
@@ -65,6 +65,7 @@ func (q *Queries) ExternalAccountsOf(ctx context.Context, arg ExternalAccountsOf
 			&i.LastSyncedOn,
 			&i.BalanceOn,
 			&i.BalanceAmount,
+			&i.FormerNames,
 		); err != nil {
 			return nil, err
 		}
@@ -146,7 +147,7 @@ func (q *Queries) InsertConnection(ctx context.Context, arg InsertConnectionPara
 const insertExternalAccount = `-- name: InsertExternalAccount :one
 INSERT INTO ingestion_external_account (user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount
+RETURNING id, user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names
 `
 
 type InsertExternalAccountParams struct {
@@ -188,6 +189,7 @@ func (q *Queries) InsertExternalAccount(ctx context.Context, arg InsertExternalA
 		&i.LastSyncedOn,
 		&i.BalanceOn,
 		&i.BalanceAmount,
+		&i.FormerNames,
 	)
 	return i, err
 }
@@ -329,6 +331,24 @@ func (q *Queries) MarkAccountSynced(ctx context.Context, arg MarkAccountSyncedPa
 	return err
 }
 
+const renameExternalAccount = `-- name: RenameExternalAccount :exec
+UPDATE ingestion_external_account
+SET former_names = array_remove(array_append(array_remove(former_names, name), name), $1::text), name = $1
+WHERE user_id = $2 AND id = $3 AND name <> $1
+`
+
+type RenameExternalAccountParams struct {
+	Name   string
+	UserID int64
+	ID     uuid.UUID
+}
+
+// A94: the previous name joins the former names; the new name leaves them.
+func (q *Queries) RenameExternalAccount(ctx context.Context, arg RenameExternalAccountParams) error {
+	_, err := q.db.Exec(ctx, renameExternalAccount, arg.Name, arg.UserID, arg.ID)
+	return err
+}
+
 const saveConnectionState = `-- name: SaveConnectionState :exec
 UPDATE ingestion_connection SET provider_status = $1, last_item_update_at = $2,
     last_synced_at = $3, last_error = $4
@@ -359,7 +379,7 @@ func (q *Queries) SaveConnectionState(ctx context.Context, arg SaveConnectionSta
 const saveMapping = `-- name: SaveMapping :one
 UPDATE ingestion_external_account SET account_id = $1, sync_from = $2, ignored = $3
 WHERE user_id = $4 AND connection_id = $5 AND id = $6
-RETURNING id, user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount
+RETURNING id, user_id, connection_id, external_account_id, type, subtype, name, number_last4, currency, account_id, sync_from, ignored, last_synced_on, balance_on, balance_amount, former_names
 `
 
 type SaveMappingParams struct {
@@ -397,6 +417,7 @@ func (q *Queries) SaveMapping(ctx context.Context, arg SaveMappingParams) (Inges
 		&i.LastSyncedOn,
 		&i.BalanceOn,
 		&i.BalanceAmount,
+		&i.FormerNames,
 	)
 	return i, err
 }

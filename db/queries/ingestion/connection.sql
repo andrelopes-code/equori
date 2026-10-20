@@ -13,6 +13,12 @@ INSERT INTO ingestion_external_account (user_id, connection_id, external_account
 VALUES (@user_id, @connection_id, @external_account_id, @type, @subtype, @name, sqlc.narg(number_last4), @currency)
 ON CONFLICT (connection_id, external_account_id) DO NOTHING;
 
+-- name: RenameExternalAccount :exec
+-- A94: the previous name joins the former names; the new name leaves them.
+UPDATE ingestion_external_account
+SET former_names = array_remove(array_append(array_remove(former_names, name), name), @name::text), name = @name
+WHERE user_id = @user_id AND id = @id AND name <> @name;
+
 -- name: GetConnection :one
 SELECT * FROM ingestion_connection WHERE user_id = $1 AND id = $2;
 

@@ -559,3 +559,123 @@ func TestS68ReserveWithoutParentCurrency(t *testing.T) {
 		t.Fatalf("assertions = %+v, want the one of the first sync", as)
 	}
 }
+
+// S90 (A94): a reserve renamed at the institution keeps its mapping; the sync stores the new
+// name and keeps the former one, so a line naming either books a transfer to the reserve.
+func TestS90RenamedReserve(t *testing.T) {
+	t.Parallel()
+	a := newAggregator(t)
+	it := pluggy.Item{ID: mercadoPagoItem, Status: pluggy.StatusUpdated, LastUpdatedAt: new("2026-11-11T15:00:00.000Z")}
+	it.Connector.Name = "Mercado Pago"
+	a.p.AddItemTo(pluggyClient, it)
+	checkingID := mercadoPagoItem + "-checking"
+	a.p.AddAccount(mercadoPagoItem, pluggy.Account{ID: checkingID, Type: "BANK", Subtype: pluggy.SubtypeChecking, Name: "Mercado Pago", Number: checkingNumber, Balance: "500.05", CurrencyCode: "BRL"})
+	a.p.AddReservedBalance(checkingID, reserved("Aaa", "res-aaa", "100.00"))
+	in := a.integrate(a.h.Client, "Meu Pluggy", pluggyClient, pluggySecret)
+	f := syncFixture{aggregator: a, conn: a.mustConnect(a.h.Client, in.ID, mercadoPagoItem)}
+
+	checking := a.h.Account("Mercado Pago", "asset", "checking", nil)
+	reserve := a.h.Account("MP Reserva", "asset", "reserve", nil)
+	a.h.Record("2026-10-31", apitest.Posting(checking, 100000), apitest.Posting(openingBalances(f), -100000))
+	a.h.Record("2026-11-10", apitest.Posting(reserve, 10000), apitest.Posting(openingBalances(f), -10000))
+	for _, m := range []struct{ external, ledger, from string }{
+		{externalAccount(f.conn, pluggy.SubtypeChecking).ID, checking, "2026-11-01"},
+		{reservedByName(f.conn, "Aaa").ID, reserve, "2026-11-11"},
+	} {
+		if r := a.mapAccount(a.h.Client, f.conn.ID, m.external, map[string]any{"account_id": m.ledger, "sync_from": m.from}); r.Status != http.StatusOK {
+			t.Fatalf("map status %d: %s", r.Status, r.Body)
+		}
+	}
+	f.sync()
+
+	a.p.RenameReservedBalance(checkingID, "res-aaa", "Algum dinheiro")
+	a.p.SetReservedAmount(checkingID, "res-aaa", "110.00")
+	a.p.SetItemUpdatedAt(mercadoPagoItem, "2026-11-12T15:00:00.000Z")
+	a.p.AddTransaction(checkingID, reserveLine("t-new-name", "2026-11-12", "Dinheiro reservado Algum dinheiro", "-20.00"))
+	a.p.AddTransaction(checkingID, reserveLine("t-former-name", "2026-11-11", "Dinheiro retirado Aaa", "10.00"))
+	f.sync()
+
+	conn := a.connection(a.h.Client, f.conn.ID)
+	if x := reservedByName(conn, "Algum dinheiro"); x.ID != reservedByName(f.conn, "Aaa").ID || x.State != "mapped" {
+		t.Fatalf("accounts after the rename = %+v", conn.Accounts)
+	}
+	for _, c := range []struct {
+		external string
+		want     map[string]int64
+	}{
+		{"t-new-name", map[string]int64{checking: -2000, reserve: 2000}},
+		{"t-former-name", map[string]int64{checking: 1000, reserve: -1000}},
+	} {
+		state, tx := f.recordOf(c.external)
+		if tx == "" {
+			t.Fatalf("record %s is %s without a transaction", c.external, state)
+		}
+		got := map[string]int64{}
+		for _, p := range f.h.Transaction(tx).Postings {
+			got[p.AccountID] = p.Amount.Amount
+		}
+		if !maps.Equal(got, c.want) {
+			t.Fatalf("postings of %s = %v, want %v", c.external, got, c.want)
+		}
+	}
+	// The reserve meets the reported 110.00 with both transfers booked.
+	as := f.assertions(reserve)
+	reconciled := false
+	for _, x := range as {
+		reconciled = reconciled || (x.Date == "2026-11-12" && x.Reconciled)
+	}
+	if !reconciled {
+		t.Fatalf("reserve assertions = %+v, want 2026-11-12 reconciled", as)
+	}
+}
+
+// A94: a former name that another mapped reserve holds as its current name resolves to that
+// reserve; the renamed reserve keeps its current name.
+func TestReserveCurrentNameWinsOverFormerName(t *testing.T) {
+	t.Parallel()
+	a := newAggregator(t)
+	it := pluggy.Item{ID: mercadoPagoItem, Status: pluggy.StatusUpdated, LastUpdatedAt: new("2026-11-11T15:00:00.000Z")}
+	it.Connector.Name = "Mercado Pago"
+	a.p.AddItemTo(pluggyClient, it)
+	checkingID := mercadoPagoItem + "-checking"
+	a.p.AddAccount(mercadoPagoItem, pluggy.Account{ID: checkingID, Type: "BANK", Subtype: pluggy.SubtypeChecking, Name: "Mercado Pago", Number: checkingNumber, Balance: "500.05", CurrencyCode: "BRL"})
+	a.p.AddReservedBalance(checkingID, reserved("Viagem", "res-old", "0.00"))
+	in := a.integrate(a.h.Client, "Meu Pluggy", pluggyClient, pluggySecret)
+	f := syncFixture{aggregator: a, conn: a.mustConnect(a.h.Client, in.ID, mercadoPagoItem)}
+
+	checking := a.h.Account("Mercado Pago", "asset", "checking", nil)
+	house := a.h.Account("MP Casa", "asset", "reserve", nil)
+	trip := a.h.Account("MP Viagem", "asset", "reserve", nil)
+	a.h.Record("2026-10-31", apitest.Posting(checking, 100000), apitest.Posting(openingBalances(f), -100000))
+	mapTo := func(external, ledger, from string) {
+		t.Helper()
+		if r := a.mapAccount(a.h.Client, f.conn.ID, external, map[string]any{"account_id": ledger, "sync_from": from}); r.Status != http.StatusOK {
+			t.Fatalf("map status %d: %s", r.Status, r.Body)
+		}
+	}
+	mapTo(externalAccount(f.conn, pluggy.SubtypeChecking).ID, checking, "2026-11-01")
+	mapTo(reservedByName(f.conn, "Viagem").ID, house, "2026-11-11")
+	f.sync()
+
+	a.p.RenameReservedBalance(checkingID, "res-old", "Casa")
+	a.p.AddReservedBalance(checkingID, reserved("Viagem", "res-new", "0.00"))
+	a.p.SetItemUpdatedAt(mercadoPagoItem, "2026-11-12T15:00:00.000Z")
+	f.sync()
+	conn := a.connection(a.h.Client, f.conn.ID)
+	mapTo(reservedByName(conn, "Viagem").ID, trip, "2026-11-12")
+
+	a.p.AddTransaction(checkingID, reserveLine("t-trip", "2026-11-12", "Dinheiro reservado Viagem", "-40.00"))
+	a.p.SetItemUpdatedAt(mercadoPagoItem, "2026-11-12T16:00:00.000Z")
+	f.sync()
+	state, tx := f.recordOf("t-trip")
+	if tx == "" {
+		t.Fatalf("record is %s without a transaction", state)
+	}
+	got := map[string]int64{}
+	for _, p := range f.h.Transaction(tx).Postings {
+		got[p.AccountID] = p.Amount.Amount
+	}
+	if want := (map[string]int64{checking: -4000, trip: 4000}); !maps.Equal(got, want) {
+		t.Fatalf("postings = %v, want %v", got, want)
+	}
+}

@@ -119,6 +119,22 @@ func (s *Server) SetReservedAmount(accountID, identification string, amount plug
 	})
 }
 
+// RenameReservedBalance changes the name of a reserved balance, as when the owner renames it.
+func (s *Server) RenameReservedBalance(accountID, identification, name string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.eachAccount(accountID, func(a *pluggy.Account) {
+		if a.BankData == nil {
+			return
+		}
+		for i := range a.BankData.ReservedBalances {
+			if r := &a.BankData.ReservedBalances[i]; r.Identification == identification {
+				r.Name = name
+			}
+		}
+	})
+}
+
 // RemoveReservedBalance stops reporting a reserved balance, as when the owner deletes it.
 func (s *Server) RemoveReservedBalance(accountID, identification string) {
 	s.mu.Lock()

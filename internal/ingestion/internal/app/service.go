@@ -64,6 +64,9 @@ type Repository interface {
 	// InsertMissingExternalAccount stores the external account, pending, unless the connection
 	// already has one with its external id.
 	InsertMissingExternalAccount(ctx context.Context, a domain.ExternalAccount) error
+	// RenameExternalAccount stores the name the institution now reports for the external
+	// account and keeps the previous one among its former names (A94).
+	RenameExternalAccount(ctx context.Context, userID int64, id uuid.UUID, name string) error
 	// SaveMapping returns a *domain.FieldError on account_id when another external account
 	// feeds the ledger account.
 	SaveMapping(ctx context.Context, a domain.ExternalAccount) (domain.ExternalAccount, error)

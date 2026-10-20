@@ -97,28 +97,36 @@ func reserveRank(ext domain.ExternalAccount) int {
 }
 
 // addMissingAccounts stores, pending, every account and reserved balance the item reports
-// that the connection lacks; stored accounts are not changed (A73).
+// that the connection lacks (A73), and the name the item now reports for a stored account
+// it renamed; the mapping of a stored account is not changed (A94).
 func (s *Service) addMissingAccounts(ctx context.Context, c *domain.Connection, creds domain.Credentials) error {
 	listed, err := s.agg.Accounts(ctx, c.IntegrationID, creds, c.ItemID)
 	if err != nil {
 		return err
 	}
-	known := make(map[string]bool, len(c.Accounts))
+	known := make(map[string]domain.ExternalAccount, len(c.Accounts))
 	for _, ext := range c.Accounts {
-		known[ext.ExternalID] = true
+		known[ext.ExternalID] = ext
 	}
-	added := false
+	changed := false
 	for _, a := range listed {
-		if known[a.ExternalID] {
+		if stored, ok := known[a.ExternalID]; ok {
+			if a.Name == stored.Name || a.Name == "" {
+				continue
+			}
+			if err := s.repo.RenameExternalAccount(ctx, c.UserID, stored.ID, a.Name); err != nil {
+				return err
+			}
+			changed = true
 			continue
 		}
 		a.UserID, a.ConnectionID = c.UserID, c.ID
 		if err := s.repo.InsertMissingExternalAccount(ctx, a); err != nil {
 			return err
 		}
-		added = true
+		changed = true
 	}
-	if !added {
+	if !changed {
 		return nil
 	}
 	reloaded, err := s.repo.Connection(ctx, c.UserID, c.ID)
@@ -299,22 +307,25 @@ func withoutSuperseded(read domain.AccountRead) domain.AccountRead {
 }
 
 // reserveTransfers resolves the reserve a bank line moves money into or out of from the
-// reserve's name. A name held by two mapped reserves is ambiguous and resolves to none, and so
-// does a line dated before the reserve's start date (A76).
+// reserve's name (A76), or from a former name that no mapped reserve holds as its current one
+// (A94). A name held by two mapped reserves at the same rank is ambiguous and resolves to
+// none, and so does a line dated before the reserve's start date.
 func (s *Service) reserveTransfers(c domain.Connection, ext domain.ExternalAccount) func(domain.NormalizedRecord) *uuid.UUID {
 	if ext.Subtype == domain.SubtypeReservedBalance {
 		return nil
 	}
-	byName := map[string]domain.ExternalAccount{}
+	var reserves []domain.ExternalAccount
 	for _, x := range c.Accounts {
-		if x.Subtype != domain.SubtypeReservedBalance || x.State() != domain.MappingMapped {
-			continue
+		if x.Subtype == domain.SubtypeReservedBalance && x.State() == domain.MappingMapped {
+			reserves = append(reserves, x)
 		}
-		if _, dup := byName[x.Name]; dup {
-			byName[x.Name] = domain.ExternalAccount{}
-			continue
+	}
+	byName := reserveNames(reserves, func(x domain.ExternalAccount) []string { return []string{x.Name} })
+	former := reserveNames(reserves, func(x domain.ExternalAccount) []string { return x.FormerNames })
+	for name, x := range former {
+		if _, current := byName[name]; !current {
+			byName[name] = x
 		}
-		byName[x.Name] = x
 	}
 	return func(r domain.NormalizedRecord) *uuid.UUID {
 		reserve, ok := byName[r.ReserveName]
@@ -323,6 +334,22 @@ func (s *Service) reserveTransfers(c domain.Connection, ext domain.ExternalAccou
 		}
 		return reserve.AccountID
 	}
+}
+
+// reserveNames indexes the reserves by the names names returns; a name two reserves hold
+// maps to the zero account, which resolves to none.
+func reserveNames(reserves []domain.ExternalAccount, names func(domain.ExternalAccount) []string) map[string]domain.ExternalAccount {
+	out := map[string]domain.ExternalAccount{}
+	for _, x := range reserves {
+		for _, name := range names(x) {
+			if held, dup := out[name]; dup && held.ID != x.ID {
+				out[name] = domain.ExternalAccount{}
+				continue
+			}
+			out[name] = x
+		}
+	}
+	return out
 }
 
 // withdraw marks withdrawn the account's aggregator records the window covers that the

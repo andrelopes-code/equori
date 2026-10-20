@@ -100,7 +100,8 @@ Recognition is reliable from the observed data under these conditions, all requi
 3. The description is "Dinheiro reservado <name>" with a negative amount, or
    "Dinheiro retirado <name>" with a positive amount.
 4. `<name>` equals the `name` of exactly one mapped `RESERVED_BALANCE` external account of the
-   connection.
+   connection, or, when no mapped reserve holds it as its `name`, one of the `former_names` of
+   exactly one (amendment A94).
 5. The line date is on or after that external account's `sync_from`.
 
 A recognized line that creates a transaction is recorded as a transfer between the bank account
@@ -221,3 +222,13 @@ An open synced assertion with a second assertion of the same date and amount cre
   `sync_from`, with the bank balance at the end of that day (`POST /api/v1/transactions` against
   Opening balances)", before the first sync. A missing opening balance is fixed by recording it
   and syncing again.
+
+### Amendment A94: renamed reserved balances
+
+The owner renames a reserve in the institution's app; the item keeps its identification and
+reports the new name. Each sync stores the name the item reports for a stored external account
+and appends the previous one to `former_names`; the mapping does not change. A line that names
+the reserve by its new name, or by a former name no mapped reserve holds as its current name,
+is recognized (D4 condition 4). A name the app never stored, such as one changed before the
+connection, stays unrecognized; the owner turns those lines into transfers
+(`POST /transactions/{id}/transfer`, S47). Scenario S90.
