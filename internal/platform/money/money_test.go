@@ -90,6 +90,7 @@ func TestString(t *testing.T) {
 }
 
 func TestDecimal(t *testing.T) {
+	t.Parallel()
 	security, err := NewOf(150, "MXRF11", 0)
 	if err != nil {
 		t.Fatal(err)

@@ -45,6 +45,7 @@ func runEcho(t *testing.T, args string) llm.ToolResult {
 }
 
 func TestSetLLM(t *testing.T) {
+	t.Parallel()
 	r, _ := newTestRegistry(t)
 	s, err := r.Select("echo", "optional")
 	if err != nil {

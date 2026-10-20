@@ -18,6 +18,7 @@ type toolCategory struct {
 }
 
 func TestCategoryTotalsTool(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-10-20"))
 	checking := h.Account("Checking", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)

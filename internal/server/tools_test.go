@@ -43,6 +43,7 @@ func operationIDs(t *testing.T) []string {
 }
 
 func TestToolExposure(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	ops := operationIDs(t)
 	for _, op := range ops {
@@ -77,6 +78,7 @@ func TestToolExposure(t *testing.T) {
 
 // TestToolCatalog shows every change of a tool's contract in the diff of testdata/tools.json.
 func TestToolCatalog(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t)
 	type entry struct {
 		Name         string `json:"name"`

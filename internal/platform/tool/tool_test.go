@@ -48,6 +48,7 @@ func assertJSON(t *testing.T, v any, want string) {
 }
 
 func TestNewInfersSchemas(t *testing.T) {
+	t.Parallel()
 	tl := New(searchSpec, search)
 	assertJSON(t, tl.InputSchema(), `{"type":"object","additionalProperties":false,"required":["query"],"properties":{
 		"query":{"type":"string","description":"text to find"},
@@ -64,6 +65,7 @@ func TestNewInfersSchemas(t *testing.T) {
 }
 
 func TestNewSliceIsArray(t *testing.T) {
+	t.Parallel()
 	type item struct {
 		Tags []string `json:"tags"`
 	}
@@ -77,6 +79,7 @@ func TestNewSliceIsArray(t *testing.T) {
 }
 
 func TestNewRejects(t *testing.T) {
+	t.Parallel()
 	type withPointer struct {
 		Name *string `json:"name"`
 	}
@@ -124,6 +127,7 @@ func TestNewRejects(t *testing.T) {
 }
 
 func TestValidateOutput(t *testing.T) {
+	t.Parallel()
 	tl := New(searchSpec, search)
 	if err := tl.ValidateOutput([]byte(`{"total":{"amount":"1.00","currency":"BRL"}}`)); err != nil {
 		t.Errorf("valid output: %v", err)

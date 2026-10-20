@@ -9,6 +9,7 @@ import (
 )
 
 func TestMoneyOf(t *testing.T) {
+	t.Parallel()
 	m, err := money.New(-123456, "BRL")
 	if err != nil {
 		t.Fatal(err)
@@ -19,6 +20,7 @@ func TestMoneyOf(t *testing.T) {
 }
 
 func TestDateJSON(t *testing.T) {
+	t.Parallel()
 	type wrapper struct {
 		D Date `json:"d,omitzero"`
 	}

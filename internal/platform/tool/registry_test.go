@@ -92,6 +92,7 @@ func assertError(t *testing.T, r Result, code, detail string) {
 }
 
 func TestRegistry(t *testing.T) {
+	t.Parallel()
 	t.Run("duplicate", func(t *testing.T) {
 		echo := New(Spec{Name: "echo", Description: "d", Effect: ReadOnly},
 			func(context.Context, int64, echoIn) (echoOut, error) { return echoOut{}, nil })
@@ -254,6 +255,7 @@ func TestRegistry(t *testing.T) {
 }
 
 func TestFromProblem(t *testing.T) {
+	t.Parallel()
 	d := problem.New(http.StatusNotFound, "not_found", "x")
 	d.Errors = []problem.FieldError{{Field: "id", Message: "unknown"}}
 	m := FromProblem(func(error) (problem.Details, bool) { return d, true })

@@ -34,6 +34,7 @@ type searchOutput struct {
 }
 
 func TestSearchTransactionsTool(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-10-20"))
 	checking := h.Account("Checking", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
@@ -85,6 +86,7 @@ func TestSearchTransactionsTool(t *testing.T) {
 }
 
 func TestSearchTransactionsToolArguments(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-10-20"))
 	tests := []struct {
 		args  map[string]any
@@ -102,6 +104,7 @@ func TestSearchTransactionsToolArguments(t *testing.T) {
 }
 
 func TestSearchTransactionsToolIsolation(t *testing.T) {
+	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-10-20"))
 	other := h.Login("other@example.com")
 	var wallet, misc struct {
