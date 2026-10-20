@@ -32,6 +32,7 @@ const (
 type Installment struct {
 	Number, Count int
 	PurchaseDate  time.Time
+	Total         *int64 // the purchase total the source reports, minor units (A90)
 }
 
 // SourceCategory is the category the source assigned to a line.

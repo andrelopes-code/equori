@@ -121,9 +121,8 @@ var (
 	ErrValidation        = domain.ErrValidation
 	ErrVoided            = domain.ErrVoided
 	ErrAlreadyReconciled = domain.ErrAlreadyReconciled
-	// ErrInstallmentUnavailable and ErrAmountMismatch refuse a line for an installment (P6 A40).
+	// ErrInstallmentUnavailable refuses a line for an installment (P6 A40).
 	ErrInstallmentUnavailable = app.ErrInstallmentUnavailable
-	ErrAmountMismatch         = app.ErrAmountMismatch
 	ErrAlreadyMatched         = app.ErrAlreadyMatched
 	ErrVersionConflict        = domain.ErrVersionConflict
 	ErrNotCategorizable       = domain.ErrNotCategorizable
@@ -342,9 +341,12 @@ func (m *Module) RecordImportedInstallment(ctx context.Context, userID int64, in
 }
 
 // LinkInstallment links an aggregator line to installment number of a plan (P6 A40).
-func (m *Module) LinkInstallment(ctx context.Context, userID int64, recordID, planID uuid.UUID, number int, amount money.Money) (uuid.UUID, error) {
-	return m.svc.LinkInstallment(ctx, userID, recordID, planID, number, amount)
+func (m *Module) LinkInstallment(ctx context.Context, userID int64, recordID, planID uuid.UUID, number int, c InstallmentConfirmation) (uuid.UUID, error) {
+	return m.svc.LinkInstallment(ctx, userID, recordID, planID, number, c)
 }
+
+// InstallmentConfirmation is what an aggregator line reports about its installment (A90).
+type InstallmentConfirmation = app.InstallmentConfirmation
 
 // ReleaseRecord unlinks a withdrawn record from its posting (P6 A38).
 func (m *Module) ReleaseRecord(ctx context.Context, userID int64, recordID uuid.UUID) error {

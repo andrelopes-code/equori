@@ -256,10 +256,18 @@ func (p ledgerPort) RecordInstallment(ctx context.Context, userID int64, l app.I
 	if err != nil {
 		return uuid.Nil, uuid.Nil, err
 	}
+	var total *money.Money
+	if t := l.Installment.Total; t != nil {
+		m, err := money.New(*t, l.Line.Currency)
+		if err != nil {
+			return uuid.Nil, uuid.Nil, err
+		}
+		total = &m
+	}
 	txID, planID, err := p.l.RecordImportedInstallment(ctx, userID, ledger.ImportedInstallment{
 		RecordID: l.RecordID, CardAccountID: posting.AccountID, PurchaseDate: l.Installment.PurchaseDate, LineDate: posting.Date,
 		DueDate: l.Line.DueDate, Description: posting.Description, Number: l.Installment.Number, Count: l.Installment.Count,
-		Amount: posting.Amount.Neg(), Decision: decisions[0],
+		Amount: posting.Amount.Neg(), Total: total, Decision: decisions[0],
 	})
 	return txID, planID, p.installmentError(err)
 }
@@ -269,12 +277,14 @@ func (p ledgerPort) LinkInstallment(ctx context.Context, userID int64, recordID,
 	if err != nil {
 		return uuid.Nil, err
 	}
-	txID, err := p.l.LinkInstallment(ctx, userID, recordID, planID, number, posting.Amount.Neg())
+	txID, err := p.l.LinkInstallment(ctx, userID, recordID, planID, number, ledger.InstallmentConfirmation{
+		Amount: posting.Amount.Neg(), DueDate: l.DueDate, Pending: l.Pending,
+	})
 	return txID, p.installmentError(err)
 }
 
 func (p ledgerPort) installmentError(err error) error {
-	for _, refused := range []error{ledger.ErrInstallmentUnavailable, ledger.ErrAmountMismatch, ledger.ErrAlreadyMatched, ledger.ErrValidation} {
+	for _, refused := range []error{ledger.ErrInstallmentUnavailable, ledger.ErrAlreadyMatched, ledger.ErrValidation} {
 		if errors.Is(err, refused) {
 			return fmt.Errorf("%w: %w", app.ErrInstallmentRefused, err)
 		}

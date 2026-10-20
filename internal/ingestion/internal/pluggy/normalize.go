@@ -71,6 +71,11 @@ func Normalize(t Transaction, a Account, bills map[string]Bill, scale int, loc *
 		}
 		if m.InstallmentNumber > 0 && m.TotalInstallments > 1 {
 			r.Installment = &domain.Installment{Number: m.InstallmentNumber, Count: m.TotalInstallments, PurchaseDate: r.Date}
+			if m.TotalAmount != "" {
+				if total, err := Minor(m.TotalAmount, scale); err == nil && total > 0 {
+					r.Installment.Total = &total
+				}
+			}
 			if m.PurchaseDate != nil {
 				if r.Installment.PurchaseDate, err = Date(*m.PurchaseDate, loc); err != nil {
 					return domain.NormalizedRecord{}, false, fmt.Errorf("transaction %s purchase date: %w", t.ID, err)
