@@ -134,3 +134,49 @@ describe("searchFromTree", () => {
     ).toEqual({});
   });
 });
+
+describe("category filter", () => {
+  const food = "55555555-5555-4555-8555-555555555555";
+  const isCategory = (id: string) => id === food;
+
+  it("writes a category rule when the account is a category", () => {
+    expect(treeFromSearch({ account_id: food }, isCategory)).toEqual({
+      join: "and",
+      rules: [{ field: "category", filter: setFilter([food]) }],
+    });
+  });
+
+  it("reads a category rule into account_id", () => {
+    const tree: FilterGroup = {
+      join: "and",
+      rules: [{ field: "category", filter: setFilter([food]) }],
+    };
+    expect(searchFromTree(tree, {})).toEqual({ account_id: food });
+  });
+
+  it("lets a newly added category replace the account filter", () => {
+    const tree: FilterGroup = {
+      join: "and",
+      rules: [
+        { field: "account", filter: setFilter([account]) },
+        { field: "category", filter: setFilter([food]) },
+      ],
+    };
+    expect(searchFromTree(tree, { account_id: account })).toEqual({
+      account_id: food,
+    });
+  });
+
+  it("lets a newly added account replace the category filter", () => {
+    const tree: FilterGroup = {
+      join: "and",
+      rules: [
+        { field: "account", filter: setFilter([account]) },
+        { field: "category", filter: setFilter([food]) },
+      ],
+    };
+    expect(searchFromTree(tree, { account_id: food })).toEqual({
+      account_id: account,
+    });
+  });
+});

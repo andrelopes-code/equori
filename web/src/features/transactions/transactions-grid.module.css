@@ -1,0 +1,26 @@
+@layer app {
+  /* A cell template carries the cut, the title and a maximum of the whole width (LP-04). */
+  .cell {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-3);
+    min-inline-size: 0;
+    max-inline-size: 100%;
+  }
+
+  .cut {
+    overflow: hidden;
+    min-inline-size: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The cell's button keeps to the column; its label cuts inside it. */
+  .categoryButton {
+    max-inline-size: 100%;
+  }
+
+  .struck {
+    text-decoration: line-through;
+  }
+}

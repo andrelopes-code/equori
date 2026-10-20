@@ -1,0 +1,25 @@
+@layer app {
+  /* LP-12: from 600 px the grid takes the height the bar leaves and scrolls its own rows. */
+  .region {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-4);
+    block-size: 100%;
+    min-block-size: 0;
+  }
+
+  .listing {
+    flex: 1 1 0;
+    min-block-size: 0;
+  }
+
+  @media (max-width: 599px) {
+    .region {
+      block-size: auto;
+    }
+
+    .listing {
+      flex-basis: auto;
+    }
+  }
+}

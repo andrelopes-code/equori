@@ -12,6 +12,7 @@ import type { TransactionSearch } from "@/features/transactions/search";
 // tree is derived from the URL and every edit is written back to it.
 export const filterFields = {
   account: "account",
+  category: "category",
   period: "period",
   payee: "payee",
   tag: "tag",
@@ -29,11 +30,18 @@ function periodFilter(from?: string, to?: string): FilterDescriptor {
   return { kind: "date", join: "and", conditions: [condition] };
 }
 
-export function treeFromSearch(search: TransactionSearch): FilterGroup | null {
+// The API filters by one account_id, a balance account or a category; the bar shows it under
+// the field its class belongs to.
+export function treeFromSearch(
+  search: TransactionSearch,
+  isCategory: (id: string) => boolean = () => false,
+): FilterGroup | null {
   const rules: FilterRule[] = [];
   if (search.account_id !== undefined) {
     rules.push({
-      field: filterFields.account,
+      field: isCategory(search.account_id)
+        ? filterFields.category
+        : filterFields.account,
       filter: setFilter([search.account_id]),
     });
   }
@@ -97,6 +105,19 @@ function period(filter: FilterDescriptor | undefined): {
   }
 }
 
+// Account and category share account_id: the one whose value differs from the URL is the one
+// the reader just set, and it replaces the other.
+function accountOrCategory(
+  tree: FilterGroup | null,
+  current: string | undefined,
+): string | undefined {
+  const account = single(ruleFor(tree, filterFields.account), current);
+  const category = single(ruleFor(tree, filterFields.category), current);
+  if (category !== undefined && category !== current) return category;
+  if (account !== undefined && account !== current) return account;
+  return category ?? account;
+}
+
 export function searchFromTree(
   tree: FilterGroup | null,
   search: TransactionSearch,
@@ -106,10 +127,7 @@ export function searchFromTree(
   return patchSearch(
     { ...(search.q === undefined ? {} : { q: search.q }) },
     {
-      account_id: single(
-        ruleFor(tree, filterFields.account),
-        search.account_id,
-      ),
+      account_id: accountOrCategory(tree, search.account_id),
       payee_id: single(ruleFor(tree, filterFields.payee), search.payee_id),
       tag: single(ruleFor(tree, filterFields.tag), search.tag),
       from,

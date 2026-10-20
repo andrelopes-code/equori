@@ -12,6 +12,10 @@ export interface TransactionRow {
   title: string;
   // Category names, without the uncategorized system accounts.
   category: string;
+  // The category accounts of the row, without the uncategorized system accounts.
+  categoryIds: string[];
+  payee?: string;
+  description: string;
   uncategorized: boolean;
   transfer: boolean;
   // Balance accounts of the row: "from → to" for a transfer.
@@ -64,6 +68,9 @@ export function transactionRow(
     date: tx.date,
     title: payee ?? (tx.description || category),
     category,
+    categoryIds: [...new Set(named.map(({ account }) => account.id))],
+    ...(payee === undefined ? {} : { payee }),
+    description: tx.description,
     uncategorized: categories.length > 0 && named.length === 0,
     transfer,
     accounts,
