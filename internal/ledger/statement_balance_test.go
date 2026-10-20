@@ -92,3 +92,44 @@ func TestS82ManualPurchaseAfterRedating(t *testing.T) {
 		t.Fatalf("purchase of 2026-11-02 after removing the facts billed on %s", got)
 	}
 }
+
+// S81 (A87): a card that closes 7 days before its nominal due date, on the preceding
+// business day, and falls due on day 5 or the following business day.
+func TestS81ClosingBeforeDue(t *testing.T) {
+	h := apitest.New(t, apitest.Today("2026-11-12"))
+	card := h.Account("Nubank Gold", "liability", "credit_card", nil)
+	h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/billing-cycle-rules", map[string]any{
+		"effective_from": "2026-01", "due_day": 5, "due_date_adjustment": "following", "calendar": "br_banking",
+		"closing_mode": "before_due", "closing_days_before_due": 7, "closing_adjustment": "preceding",
+	}, http.StatusCreated, nil)
+	food := h.Account("Food", "expense", "", nil)
+	purchase := func(date string) string {
+		return h.Transaction(h.Record(date, apitest.Posting(card, -1000), apitest.Posting(food, 1000))).Postings[0].Statement
+	}
+	for _, date := range []string{"2026-07-20", "2026-08-10", "2026-09-10", "2026-10-10"} {
+		purchase(date)
+	}
+	if got := purchase("2026-08-28"); got != "2026-10" {
+		t.Fatalf("purchase of 2026-08-28 billed on %s, want 2026-10", got)
+	}
+	var out struct {
+		Items []struct {
+			Reference   string `json:"reference"`
+			ClosingDate string `json:"closing_date"`
+			DueDate     string `json:"due_date"`
+		} `json:"items"`
+	}
+	h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/statements?from=2026-08&to=2026-11", nil, http.StatusOK, &out)
+	want := map[string][2]string{
+		"2026-08": {"2026-07-29", "2026-08-05"}, "2026-09": {"2026-08-28", "2026-09-08"},
+		"2026-10": {"2026-09-28", "2026-10-05"}, "2026-11": {"2026-10-29", "2026-11-05"},
+	}
+	if len(out.Items) != len(want) {
+		t.Fatalf("statements = %+v", out.Items)
+	}
+	for _, s := range out.Items {
+		if w := want[s.Reference]; s.ClosingDate != w[0] || s.DueDate != w[1] {
+			t.Errorf("%s closes %s, due %s; want %v", s.Reference, s.ClosingDate, s.DueDate, w)
+		}
+	}
+}

@@ -293,6 +293,30 @@ func (e BalanceAssertionInputSource) Valid() bool {
 	}
 }
 
+// Defines values for BillingCycleRuleClosingAdjustment.
+const (
+	BillingCycleRuleClosingAdjustmentFollowing         BillingCycleRuleClosingAdjustment = "following"
+	BillingCycleRuleClosingAdjustmentModifiedFollowing BillingCycleRuleClosingAdjustment = "modified_following"
+	BillingCycleRuleClosingAdjustmentNone              BillingCycleRuleClosingAdjustment = "none"
+	BillingCycleRuleClosingAdjustmentPreceding         BillingCycleRuleClosingAdjustment = "preceding"
+)
+
+// Valid indicates whether the value is a known member of the BillingCycleRuleClosingAdjustment enum.
+func (e BillingCycleRuleClosingAdjustment) Valid() bool {
+	switch e {
+	case BillingCycleRuleClosingAdjustmentFollowing:
+		return true
+	case BillingCycleRuleClosingAdjustmentModifiedFollowing:
+		return true
+	case BillingCycleRuleClosingAdjustmentNone:
+		return true
+	case BillingCycleRuleClosingAdjustmentPreceding:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for BillingCycleRuleClosingDayAssignment.
 const (
 	Closing BillingCycleRuleClosingDayAssignment = "closing"
@@ -305,6 +329,24 @@ func (e BillingCycleRuleClosingDayAssignment) Valid() bool {
 	case Closing:
 		return true
 	case Next:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for BillingCycleRuleClosingMode.
+const (
+	BeforeDue BillingCycleRuleClosingMode = "before_due"
+	Day       BillingCycleRuleClosingMode = "day"
+)
+
+// Valid indicates whether the value is a known member of the BillingCycleRuleClosingMode enum.
+func (e BillingCycleRuleClosingMode) Valid() bool {
+	switch e {
+	case BeforeDue:
+		return true
+	case Day:
 		return true
 	default:
 		return false
@@ -1233,11 +1275,14 @@ type BalanceList struct {
 	Items []Balance `json:"items"`
 }
 
-// BillingCycleRule defines model for BillingCycleRule.
+// BillingCycleRule closing_mode day closes on closing_day; before_due closes closing_days_before_due days before the nominal due date. closing_adjustment shifts the closing date, projected or reported by the institution, on the rule's calendar (A87).
 type BillingCycleRule struct {
 	Calendar             *string                               `json:"calendar,omitempty"`
-	ClosingDay           int                                   `json:"closing_day"`
+	ClosingAdjustment    *BillingCycleRuleClosingAdjustment    `json:"closing_adjustment,omitempty"`
+	ClosingDay           *int                                  `json:"closing_day,omitempty"`
 	ClosingDayAssignment *BillingCycleRuleClosingDayAssignment `json:"closing_day_assignment,omitempty"`
+	ClosingDaysBeforeDue *int                                  `json:"closing_days_before_due,omitempty"`
+	ClosingMode          *BillingCycleRuleClosingMode          `json:"closing_mode,omitempty"`
 	DueDateAdjustment    *BillingCycleRuleDueDateAdjustment    `json:"due_date_adjustment,omitempty"`
 	DueDay               int                                   `json:"due_day"`
 
@@ -1245,8 +1290,14 @@ type BillingCycleRule struct {
 	EffectiveFrom string `json:"effective_from"`
 }
 
+// BillingCycleRuleClosingAdjustment defines model for BillingCycleRule.ClosingAdjustment.
+type BillingCycleRuleClosingAdjustment string
+
 // BillingCycleRuleClosingDayAssignment defines model for BillingCycleRule.ClosingDayAssignment.
 type BillingCycleRuleClosingDayAssignment string
+
+// BillingCycleRuleClosingMode defines model for BillingCycleRule.ClosingMode.
+type BillingCycleRuleClosingMode string
 
 // BillingCycleRuleDueDateAdjustment defines model for BillingCycleRule.DueDateAdjustment.
 type BillingCycleRuleDueDateAdjustment string

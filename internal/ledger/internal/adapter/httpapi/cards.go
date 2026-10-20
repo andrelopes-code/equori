@@ -12,10 +12,21 @@ func toBillingRuleAPI(r domain.BillingCycleRule) BillingCycleRule {
 	assignment := BillingCycleRuleClosingDayAssignment(r.Assignment)
 	adjustment := BillingCycleRuleDueDateAdjustment(r.Adjustment)
 	calendar := r.Calendar
-	return BillingCycleRule{
-		EffectiveFrom: r.EffectiveFrom.String(), ClosingDay: r.ClosingDay, DueDay: r.DueDay,
+	mode := BillingCycleRuleClosingMode(r.ClosingMode)
+	closingAdjustment := BillingCycleRuleClosingAdjustment(r.ClosingAdjustment)
+	out := BillingCycleRule{
+		EffectiveFrom: r.EffectiveFrom.String(), DueDay: r.DueDay,
 		ClosingDayAssignment: &assignment, DueDateAdjustment: &adjustment, Calendar: &calendar,
+		ClosingMode: &mode, ClosingAdjustment: &closingAdjustment,
 	}
+	if r.ClosingMode == domain.ClosingBeforeDue {
+		days := r.ClosingDaysBeforeDue
+		out.ClosingDaysBeforeDue = &days
+	} else {
+		day := r.ClosingDay
+		out.ClosingDay = &day
+	}
+	return out
 }
 
 func (s *Server) ListBillingCycleRules(ctx context.Context, req ListBillingCycleRulesRequestObject) (ListBillingCycleRulesResponseObject, error) {
@@ -36,7 +47,19 @@ func (s *Server) CreateBillingCycleRule(ctx context.Context, req CreateBillingCy
 	if err != nil {
 		return nil, &domain.FieldError{Field: "effective_from", Message: "must be YYYY-MM", Err: domain.ErrValidation}
 	}
-	r := domain.BillingCycleRule{EffectiveFrom: from, ClosingDay: b.ClosingDay, DueDay: b.DueDay, Calendar: optString(b.Calendar)}
+	r := domain.BillingCycleRule{EffectiveFrom: from, DueDay: b.DueDay, Calendar: optString(b.Calendar)}
+	if b.ClosingDay != nil {
+		r.ClosingDay = *b.ClosingDay
+	}
+	if b.ClosingMode != nil {
+		r.ClosingMode = string(*b.ClosingMode)
+	}
+	if b.ClosingDaysBeforeDue != nil {
+		r.ClosingDaysBeforeDue = *b.ClosingDaysBeforeDue
+	}
+	if b.ClosingAdjustment != nil {
+		r.ClosingAdjustment = string(*b.ClosingAdjustment)
+	}
 	if b.ClosingDayAssignment != nil {
 		r.Assignment = string(*b.ClosingDayAssignment)
 	}

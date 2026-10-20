@@ -145,3 +145,35 @@ func TestDBBillingRuleStartsOnFirstDay(t *testing.T) {
 		VALUES ($1, $2, '2026-11-02', 3, 10)`, f.userID, f.card)
 	requireViolation(t, err, checkViolation, "")
 }
+
+// A87: a rule closes either on a day or a number of days before the due date, never both.
+func TestDBBillingRuleClosingMode(t *testing.T) {
+	f := newCardFixture(t)
+	for name, sql := range map[string]string{
+		"before due with a closing day": `INSERT INTO ledger_billing_cycle_rule (user_id, account_id, effective_from, closing_day, due_day, closing_mode, closing_days_before_due)
+			VALUES ($1, $2, '2026-11-01', 3, 5, 'before_due', 7)`,
+		"day without a closing day": `INSERT INTO ledger_billing_cycle_rule (user_id, account_id, effective_from, due_day)
+			VALUES ($1, $2, '2026-11-01', 5)`,
+		"29 days before due": `INSERT INTO ledger_billing_cycle_rule (user_id, account_id, effective_from, due_day, closing_mode, closing_days_before_due)
+			VALUES ($1, $2, '2026-11-01', 5, 'before_due', 29)`,
+	} {
+		_, err := f.pool.Exec(t.Context(), sql, f.userID, f.card)
+		t.Run(name, func(t *testing.T) { requireViolation(t, err, checkViolation, "") })
+	}
+}
+
+// A85: a fact belongs to one statement per source, with a due date after its closing date.
+func TestDBStatementFactChecks(t *testing.T) {
+	f := newCardFixture(t)
+	var statement string
+	if err := f.pool.QueryRow(t.Context(), `INSERT INTO ledger_statement (user_id, account_id, reference_month, closing_date, due_date)
+		VALUES ($1, $2, '2027-05-01', '2027-05-03', '2027-05-10') RETURNING id::text`, f.userID, f.card).Scan(&statement); err != nil {
+		t.Fatal(err)
+	}
+	_, err := f.pool.Exec(t.Context(), `INSERT INTO ledger_statement_fact (user_id, statement_id, source, closing_date, due_date, total)
+		VALUES ($1, $2, 'aggregator', '2026-11-10', '2026-11-03', 100)`, f.userID, statement)
+	requireViolation(t, err, checkViolation, "")
+	_, err = f.pool.Exec(t.Context(), `INSERT INTO ledger_statement_fact (user_id, statement_id, source, due_date, total)
+		VALUES ($1, $2, 'bank', '2026-11-10', 100)`, f.userID, statement)
+	requireViolation(t, err, checkViolation, "")
+}

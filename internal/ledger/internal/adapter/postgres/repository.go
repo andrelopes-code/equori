@@ -713,11 +713,20 @@ func (r *Repository) CategoryMonthlyTotals(ctx context.Context, userID int64, ac
 }
 
 func (r *Repository) InsertBillingRule(ctx context.Context, userID int64, accountID uuid.UUID, rule domain.BillingCycleRule) (domain.BillingCycleRule, error) {
-	row, err := r.q.InsertBillingRule(ctx, InsertBillingRuleParams{
+	p := InsertBillingRuleParams{
 		UserID: userID, AccountID: accountID, EffectiveFrom: rule.EffectiveFrom.FirstDay(),
-		ClosingDay: int16(rule.ClosingDay), DueDay: int16(rule.DueDay), //nolint:gosec // days are 1 to 31 (domain.NewBillingCycleRule).
+		DueDay:               int16(rule.DueDay), //nolint:gosec // days are 1 to 31 (domain.NewBillingCycleRule).
 		ClosingDayAssignment: rule.Assignment, DueDateAdjustment: rule.Adjustment, Calendar: rule.Calendar,
-	})
+		ClosingMode: rule.ClosingMode, ClosingAdjustment: rule.ClosingAdjustment,
+	}
+	if rule.ClosingMode == domain.ClosingBeforeDue {
+		days := int16(rule.ClosingDaysBeforeDue) //nolint:gosec // 1 to 28 (domain.NewBillingCycleRule).
+		p.ClosingDaysBeforeDue = &days
+	} else {
+		day := int16(rule.ClosingDay) //nolint:gosec // days are 1 to 31 (domain.NewBillingCycleRule).
+		p.ClosingDay = &day
+	}
+	row, err := r.q.InsertBillingRule(ctx, p)
 	if err != nil {
 		return domain.BillingCycleRule{}, duplicate(err, "effective_from")
 	}

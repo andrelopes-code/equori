@@ -86,3 +86,24 @@ func TestPendingLineLeavesAReportedStatement(t *testing.T) {
 		t.Fatalf("2026-11 difference = %+v", s.Difference)
 	}
 }
+
+// A86, A87: a reported closing date takes the rule's closing adjustment: the institution
+// reports a Saturday and closes on the Friday before.
+func TestReportedClosingTakesTheRuleShift(t *testing.T) {
+	f := newSyncFixture(t)
+	card := f.h.Account("Nubank Gold", "liability", "credit_card", nil)
+	f.h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/billing-cycle-rules", map[string]any{
+		"effective_from": "2026-01", "due_day": 5, "closing_mode": "before_due", "closing_days_before_due": 7,
+		"closing_adjustment": "preceding",
+	}, http.StatusCreated, nil)
+	r := f.mapAccount(f.h.Client, f.conn.ID, externalAccount(f.conn, pluggy.SubtypeCard).ID, map[string]any{"account_id": card, "sync_from": "2026-08-01"})
+	if r.Status != http.StatusOK {
+		t.Fatalf("map status %d: %s", r.Status, r.Body)
+	}
+	f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-sep", DueDate: "2026-09-08T00:00:00.000Z", BillClosingDate: new("2026-08-29T00:00:00.000Z"), TotalAmount: "16.61"})
+	f.line(pluggy.SubtypeCard, cardLine("uber-1", "2026-08-27", "16.61", "POSTED", new("bill-sep")))
+	f.sync()
+	if s := f.statement(card, "2026-09"); s.ClosingDate != "2026-08-28" || s.DueDate != "2026-09-08" || s.Institution.ClosingDate != "2026-08-29" {
+		t.Fatalf("statement = %+v (institution %+v)", s, s.Institution)
+	}
+}

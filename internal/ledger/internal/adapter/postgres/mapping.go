@@ -257,10 +257,18 @@ func (s snapshot) transaction(ctx context.Context, ins app.Instruments) (domain.
 }
 
 func toBillingRule(row LedgerBillingCycleRule) domain.BillingCycleRule {
-	return domain.BillingCycleRule{
-		EffectiveFrom: domain.MonthOf(row.EffectiveFrom), ClosingDay: int(row.ClosingDay), DueDay: int(row.DueDay),
+	r := domain.BillingCycleRule{
+		EffectiveFrom: domain.MonthOf(row.EffectiveFrom), DueDay: int(row.DueDay),
 		Assignment: row.ClosingDayAssignment, Adjustment: row.DueDateAdjustment, Calendar: row.Calendar,
+		ClosingMode: row.ClosingMode, ClosingAdjustment: row.ClosingAdjustment,
 	}
+	if row.ClosingDay != nil {
+		r.ClosingDay = int(*row.ClosingDay)
+	}
+	if row.ClosingDaysBeforeDue != nil {
+		r.ClosingDaysBeforeDue = int(*row.ClosingDaysBeforeDue)
+	}
+	return r
 }
 
 func toCard(row LedgerCard) domain.Card {

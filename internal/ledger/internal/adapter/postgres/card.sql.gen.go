@@ -238,20 +238,25 @@ func (q *Queries) GetSystemAccount(ctx context.Context, arg GetSystemAccountPara
 
 const insertBillingRule = `-- name: InsertBillingRule :one
 INSERT INTO ledger_billing_cycle_rule (
-    user_id, account_id, effective_from, closing_day, due_day, closing_day_assignment, due_date_adjustment, calendar
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING user_id, account_id, effective_from, closing_day, due_day, closing_day_assignment, due_date_adjustment, calendar, created_at
+    user_id, account_id, effective_from, closing_day, due_day, closing_day_assignment, due_date_adjustment, calendar,
+    closing_mode, closing_days_before_due, closing_adjustment
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8,
+    $9, $10, $11)
+RETURNING user_id, account_id, effective_from, closing_day, due_day, closing_day_assignment, due_date_adjustment, calendar, created_at, closing_mode, closing_days_before_due, closing_adjustment
 `
 
 type InsertBillingRuleParams struct {
 	UserID               int64
 	AccountID            uuid.UUID
 	EffectiveFrom        time.Time
-	ClosingDay           int16
+	ClosingDay           *int16
 	DueDay               int16
 	ClosingDayAssignment string
 	DueDateAdjustment    string
 	Calendar             string
+	ClosingMode          string
+	ClosingDaysBeforeDue *int16
+	ClosingAdjustment    string
 }
 
 func (q *Queries) InsertBillingRule(ctx context.Context, arg InsertBillingRuleParams) (LedgerBillingCycleRule, error) {
@@ -264,6 +269,9 @@ func (q *Queries) InsertBillingRule(ctx context.Context, arg InsertBillingRulePa
 		arg.ClosingDayAssignment,
 		arg.DueDateAdjustment,
 		arg.Calendar,
+		arg.ClosingMode,
+		arg.ClosingDaysBeforeDue,
+		arg.ClosingAdjustment,
 	)
 	var i LedgerBillingCycleRule
 	err := row.Scan(
@@ -276,6 +284,9 @@ func (q *Queries) InsertBillingRule(ctx context.Context, arg InsertBillingRulePa
 		&i.DueDateAdjustment,
 		&i.Calendar,
 		&i.CreatedAt,
+		&i.ClosingMode,
+		&i.ClosingDaysBeforeDue,
+		&i.ClosingAdjustment,
 	)
 	return i, err
 }
@@ -402,7 +413,7 @@ func (q *Queries) InsertInstallmentPlan(ctx context.Context, arg InsertInstallme
 }
 
 const listBillingRules = `-- name: ListBillingRules :many
-SELECT user_id, account_id, effective_from, closing_day, due_day, closing_day_assignment, due_date_adjustment, calendar, created_at FROM ledger_billing_cycle_rule WHERE user_id = $1 AND account_id = $2 ORDER BY effective_from
+SELECT user_id, account_id, effective_from, closing_day, due_day, closing_day_assignment, due_date_adjustment, calendar, created_at, closing_mode, closing_days_before_due, closing_adjustment FROM ledger_billing_cycle_rule WHERE user_id = $1 AND account_id = $2 ORDER BY effective_from
 `
 
 type ListBillingRulesParams struct {
@@ -429,6 +440,9 @@ func (q *Queries) ListBillingRules(ctx context.Context, arg ListBillingRulesPara
 			&i.DueDateAdjustment,
 			&i.Calendar,
 			&i.CreatedAt,
+			&i.ClosingMode,
+			&i.ClosingDaysBeforeDue,
+			&i.ClosingAdjustment,
 		); err != nil {
 			return nil, err
 		}

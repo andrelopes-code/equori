@@ -48,21 +48,50 @@ const (
 
 var adjustments = []string{"none", "following", "preceding", "modified_following"}
 
+// Closing modes of a billing cycle rule (A87).
+const (
+	ClosingDay       = "day"
+	ClosingBeforeDue = "before_due"
+)
+
 type BillingCycleRule struct {
 	EffectiveFrom ReferenceMonth
-	ClosingDay    int
+	ClosingDay    int // with ClosingMode ClosingDay
 	DueDay        int
 	Assignment    string // AssignNext or AssignClosing (T04)
 	Adjustment    string // shift of the due date: none, following, preceding, modified_following
 	Calendar      string
+	// ClosingMode ClosingBeforeDue counts ClosingDaysBeforeDue back from the nominal due date (A87).
+	ClosingMode          string
+	ClosingDaysBeforeDue int
+	// ClosingAdjustment shifts the closing date, projected or reported, by the calendar (A87).
+	ClosingAdjustment string
 }
 
 func NewBillingCycleRule(r BillingCycleRule) (BillingCycleRule, error) {
+	if r.ClosingMode == "" {
+		r.ClosingMode = ClosingDay
+	}
 	switch {
-	case r.ClosingDay < 1 || r.ClosingDay > 31:
+	case r.ClosingMode != ClosingDay && r.ClosingMode != ClosingBeforeDue:
+		return BillingCycleRule{}, invalid("closing_mode", "must be day or before_due")
+	case r.ClosingMode == ClosingDay && (r.ClosingDay < 1 || r.ClosingDay > 31):
 		return BillingCycleRule{}, invalid("closing_day", "must be between 1 and 31")
+	case r.ClosingMode == ClosingBeforeDue && (r.ClosingDaysBeforeDue < 1 || r.ClosingDaysBeforeDue > 28):
+		return BillingCycleRule{}, invalid("closing_days_before_due", "must be between 1 and 28")
 	case r.DueDay < 1 || r.DueDay > 31:
 		return BillingCycleRule{}, invalid("due_day", "must be between 1 and 31")
+	}
+	if r.ClosingMode == ClosingBeforeDue {
+		r.ClosingDay = 0
+	} else {
+		r.ClosingDaysBeforeDue = 0
+	}
+	if r.ClosingAdjustment == "" {
+		r.ClosingAdjustment = "none"
+	}
+	if !slices.Contains(adjustments, r.ClosingAdjustment) {
+		return BillingCycleRule{}, invalid("closing_adjustment", "must be none, following, preceding or modified_following")
 	}
 	if r.Assignment == "" {
 		r.Assignment = AssignNext
@@ -106,8 +135,13 @@ type StatementDates struct {
 }
 
 // DatesFor places the closing date in the reference month when it precedes the due day,
-// otherwise in the previous month (A1). Neither date is shifted here (A2).
+// otherwise in the previous month (A1); with ClosingBeforeDue it is the nominal due date
+// minus the days (A87). Neither date is shifted here (A2).
 func DatesFor(m ReferenceMonth, r BillingCycleRule) StatementDates {
+	if r.ClosingMode == ClosingBeforeDue {
+		due := m.dayIn(r.DueDay)
+		return StatementDates{Reference: m, Closing: due.AddDate(0, 0, -r.ClosingDaysBeforeDue), DueUnadjusted: due}
+	}
 	closingMonth := m
 	if r.ClosingDay >= r.DueDay {
 		closingMonth = m.Add(-1)

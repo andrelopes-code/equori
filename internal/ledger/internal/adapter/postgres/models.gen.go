@@ -55,12 +55,15 @@ type LedgerBillingCycleRule struct {
 	UserID               int64
 	AccountID            uuid.UUID
 	EffectiveFrom        time.Time
-	ClosingDay           int16
+	ClosingDay           *int16
 	DueDay               int16
 	ClosingDayAssignment string
 	DueDateAdjustment    string
 	Calendar             string
 	CreatedAt            time.Time
+	ClosingMode          string
+	ClosingDaysBeforeDue *int16
+	ClosingAdjustment    string
 }
 
 type LedgerCard struct {

@@ -62,7 +62,26 @@ func (s *Service) statementOn(ctx context.Context, r Repository, userID int64, c
 	if err != nil {
 		return domain.ReferenceMonth{}, err
 	}
-	return domain.StatementOn(d, closing, rules)
+	return domain.StatementOn(d, closing, rules, s.projectedClosing(ctx))
+}
+
+// projectedClosing is the rule's closing date of a month, shifted by its closing adjustment
+// (A87); a calendar that cannot answer leaves it unshifted.
+func (s *Service) projectedClosing(ctx context.Context) func(domain.ReferenceMonth, domain.BillingCycleRule) time.Time {
+	return func(m domain.ReferenceMonth, rule domain.BillingCycleRule) time.Time {
+		return s.shiftClosing(ctx, domain.DatesFor(m, rule).Closing, rule)
+	}
+}
+
+func (s *Service) shiftClosing(ctx context.Context, closing time.Time, rule domain.BillingCycleRule) time.Time {
+	if rule.ClosingAdjustment == "" || rule.ClosingAdjustment == "none" {
+		return closing
+	}
+	shifted, err := s.cal.Adjust(ctx, rule.Calendar, closing, rule.ClosingAdjustment)
+	if err != nil {
+		return closing
+	}
+	return shifted
 }
 
 func (s *Service) ensureStatement(ctx context.Context, r Repository, userID int64, accountID uuid.UUID, ref domain.ReferenceMonth, rules domain.Rules) (uuid.UUID, error) {
@@ -75,6 +94,7 @@ func (s *Service) ensureStatement(ctx context.Context, r Repository, userID int6
 	if err != nil {
 		return uuid.Nil, err
 	}
+	dates.Closing = s.shiftClosing(ctx, dates.Closing, rule)
 	return r.EnsureStatement(ctx, userID, accountID, dates, due)
 }
 

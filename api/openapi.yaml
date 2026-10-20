@@ -4963,16 +4963,30 @@ components:
     BillingCycleRule:
       type: object
       additionalProperties: false
-      required: [effective_from, closing_day, due_day]
+      required: [effective_from, due_day]
+      description: >-
+        closing_mode day closes on closing_day; before_due closes closing_days_before_due days before
+        the nominal due date. closing_adjustment shifts the closing date, projected or reported by the
+        institution, on the rule's calendar (A87).
       properties:
         effective_from:
           type: string
           pattern: "^[0-9]{4}-[0-9]{2}$"
           description: Reference month (YYYY-MM) from which the rule applies.
+        closing_mode:
+          type: string
+          enum: [day, before_due]
         closing_day:
           type: integer
           minimum: 1
           maximum: 31
+        closing_days_before_due:
+          type: integer
+          minimum: 1
+          maximum: 28
+        closing_adjustment:
+          type: string
+          enum: [none, following, preceding, modified_following]
         due_day:
           type: integer
           minimum: 1

@@ -36,9 +36,9 @@ func EffectiveFact(facts []StatementFact) *StatementFact {
 
 // StatementOn returns the statement a posting dated d is billed on (T04, A86): the first
 // month, from the one before the rule's answer, whose closing date — the stored one when
-// closing is set for the month, else the rule's — is after d, or on it when the rule in force
-// assigns closing-day purchases to the closing statement.
-func StatementOn(d time.Time, closing map[ReferenceMonth]time.Time, rules Rules) (ReferenceMonth, error) {
+// closing is set for the month, else projected by the rule in force — is after d, or on it
+// when that rule assigns closing-day purchases to the closing statement.
+func StatementOn(d time.Time, closing map[ReferenceMonth]time.Time, rules Rules, ruleClosing func(ReferenceMonth, BillingCycleRule) time.Time) (ReferenceMonth, error) {
 	projected, err := StatementFor(d, rules)
 	if err != nil {
 		return ReferenceMonth{}, err
@@ -50,7 +50,7 @@ func StatementOn(d time.Time, closing map[ReferenceMonth]time.Time, rules Rules)
 		}
 		c, ok := closing[m]
 		if !ok {
-			c = DatesFor(m, r).Closing
+			c = ruleClosing(m, r)
 		}
 		if d.Before(c) || (r.Assignment == AssignClosing && d.Equal(c)) {
 			return m, nil

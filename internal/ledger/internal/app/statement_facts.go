@@ -136,11 +136,11 @@ func (s *Service) dateByFacts(ctx context.Context, r Repository, userID int64, c
 		return err
 	}
 	for _, p := range postings {
-		was, err := domain.StatementOn(p.Date, before, rules)
+		was, err := domain.StatementOn(p.Date, before, rules, s.projectedClosing(ctx))
 		if err != nil || was != refOf[p.StatementID] {
 			continue
 		}
-		now, err := domain.StatementOn(p.Date, after, rules)
+		now, err := domain.StatementOn(p.Date, after, rules, s.projectedClosing(ctx))
 		if err != nil || now == was {
 			continue
 		}
@@ -166,14 +166,15 @@ func (s *Service) effectiveDates(ctx context.Context, st Statement, rules domain
 		return time.Time{}, time.Time{}, err
 	}
 	dates := domain.DatesFor(st.Input.Reference, rule)
-	closing = dates.Closing
+	closing = s.shiftClosing(ctx, dates.Closing, rule)
 	if due, err = s.cal.Adjust(ctx, rule.Calendar, dates.DueUnadjusted, rule.Adjustment); err != nil {
 		return time.Time{}, time.Time{}, err
 	}
 	if f := st.Fact; f != nil {
 		due = f.Due
 		if f.Closing != nil {
-			closing = *f.Closing
+			// The institution reports the closing date before its calendar shift (A86, C3).
+			closing = s.shiftClosing(ctx, *f.Closing, rule)
 		}
 	}
 	return closing, due, nil

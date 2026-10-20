@@ -2739,10 +2739,16 @@ export interface components {
         StatementDetail: components["schemas"]["StatementSummary"] & {
             postings: components["schemas"]["StatementPosting"][];
         };
+        /** @description closing_mode day closes on closing_day; before_due closes closing_days_before_due days before the nominal due date. closing_adjustment shifts the closing date, projected or reported by the institution, on the rule's calendar (A87). */
         BillingCycleRule: {
             /** @description Reference month (YYYY-MM) from which the rule applies. */
             effective_from: string;
-            closing_day: number;
+            /** @enum {string} */
+            closing_mode?: "day" | "before_due";
+            closing_day?: number;
+            closing_days_before_due?: number;
+            /** @enum {string} */
+            closing_adjustment?: "none" | "following" | "preceding" | "modified_following";
             due_day: number;
             /** @enum {string} */
             closing_day_assignment?: "next" | "closing";

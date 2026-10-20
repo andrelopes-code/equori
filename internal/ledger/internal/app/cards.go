@@ -59,7 +59,7 @@ func (s *Service) redateOpenStatements(ctx context.Context, r Repository, userID
 		if err != nil {
 			return err
 		}
-		if err := r.UpdateStatementDates(ctx, st.ID, dates.Closing, due); err != nil {
+		if err := r.UpdateStatementDates(ctx, st.ID, s.shiftClosing(ctx, dates.Closing, rule), due); err != nil {
 			return err
 		}
 	}
