@@ -40,13 +40,25 @@ func TestLoad(t *testing.T) {
 				"EQUORI_PRICE_FEEDS":      "bcb_ptax, b3_cotahist",
 				"EQUORI_BCB_PTAX_URL":     "http://127.0.0.1:9300",
 				"EQUORI_B3_COTAHIST_URL":  "http://127.0.0.1:9400",
+				"EQUORI_WEB_DEV_PORT":     "5173",
 			},
 			want: Config{
 				DatabaseURL: "postgres://x", HTTPAddr: "127.0.0.1:9000", LogLevel: slog.LevelDebug,
 				TimeZone: time.UTC, InsecureCookies: true, APIDocs: true, PluggyURL: "http://127.0.0.1:9100",
 				SyncInterval: 15 * time.Minute, GeminiAPIKey: "k", GeminiURL: "http://127.0.0.1:9200",
 				PTAXFeed: true, COTAHISTFeed: true, PTAXURL: "http://127.0.0.1:9300", COTAHISTURL: "http://127.0.0.1:9400",
+				WebDevPort: 5173,
 			},
+		},
+		{
+			name:    "invalid web dev port",
+			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_WEB_DEV_PORT": "vite"},
+			wantErr: true,
+		},
+		{
+			name:    "web dev port out of range",
+			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_WEB_DEV_PORT": "70000"},
+			wantErr: true,
 		},
 		{name: "missing database url", env: map[string]string{}, wantErr: true},
 		{

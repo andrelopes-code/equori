@@ -4,8 +4,11 @@ package spa
 import (
 	"io"
 	"io/fs"
+	"net"
 	"net/http"
+	"net/url"
 	"path"
+	"strconv"
 	"strings"
 )
 
@@ -64,4 +67,23 @@ func serveFile(w http.ResponseWriter, r *http.Request, fsys fs.FS, name string) 
 	// ServeContent serves index.html under its own name; http.ServeFileFS would redirect it to "./".
 	http.ServeContent(w, r, name, info.ModTime(), content)
 	return true
+}
+
+// DevRedirect answers every GET and HEAD with a temporary redirect to the Vite server on port
+// of the request's host, keeping the path and the query, so a page opened on the
+// application's port shows the current sources (ADR 008, development).
+func DevRedirect(port int) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet && r.Method != http.MethodHead {
+			w.Header().Set("Allow", "GET, HEAD")
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		host := r.Host
+		if h, _, err := net.SplitHostPort(r.Host); err == nil {
+			host = h
+		}
+		target := url.URL{Scheme: "http", Host: net.JoinHostPort(host, strconv.Itoa(port)), Path: r.URL.Path, RawQuery: r.URL.RawQuery}
+		http.Redirect(w, r, target.String(), http.StatusTemporaryRedirect)
+	})
 }

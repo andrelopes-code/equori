@@ -77,7 +77,7 @@ func serve() error {
 	router := llmRouter(cfg, &clk, log)
 	log.Info("llm providers", "providers", router.Providers())
 	scfg := serverConfig(cfg, &clk, router)
-	scfg.Web = web.Dist()
+	scfg.Web, scfg.WebDevPort = web.Dist(), cfg.WebDevPort
 	app, err := server.New(pool, scfg, log)
 	if err != nil {
 		return err

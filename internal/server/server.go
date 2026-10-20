@@ -35,6 +35,9 @@ type Config struct {
 	Clock *clock.Clock
 	// Web holds the built single-page application; nil answers 404 outside /api/.
 	Web fs.FS
+	// WebDevPort, when set, redirects every path outside /api/ to the Vite server on that port
+	// instead of serving Web (ADR 008, development).
+	WebDevPort int
 	// APIDocs registers GET /docs and GET /openapi.yaml.
 	APIDocs bool
 	// SecretKey and PreviousSecretKey seal integration credentials (ADR 008): 32 raw bytes,
@@ -103,7 +106,11 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	marketdataModule.RegisterRoutes(mux, log)
 	mux.Handle("/api/", httpserver.NotFound())
 	// Method-less: "GET /" overlaps "/api/" without either being more specific, and ServeMux panics.
-	mux.Handle("/", spa.Handler(cfg.Web))
+	if cfg.WebDevPort != 0 {
+		mux.Handle("/", spa.DevRedirect(cfg.WebDevPort))
+	} else {
+		mux.Handle("/", spa.Handler(cfg.Web))
+	}
 
 	return &App{
 		Handler: httpserver.Middleware(identityModule.RequireSession(validator.Middleware(mux)), log,

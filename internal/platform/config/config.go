@@ -28,6 +28,9 @@ type Config struct {
 	PluggyURL string
 	// SyncInterval is how often the scheduler checks connections for new data (P6 A43).
 	SyncInterval time.Duration
+	// WebDevPort, when set, redirects pages to the Vite server on that port of the same host,
+	// for development (ADR 008); zero serves the embedded application.
+	WebDevPort int
 	// GeminiAPIKey enables the Gemini API provider (ADR 009); empty leaves it unregistered.
 	GeminiAPIKey string
 	// GeminiURL is the base URL of the Gemini API, the only address Gemini requests go to (N17).
@@ -82,6 +85,13 @@ func Load(getenv func(string) string) (Config, error) {
 			return Config{}, errors.New("EQUORI_SYNC_INTERVAL must be at least 1m")
 		}
 		cfg.SyncInterval = d
+	}
+	if v := getenv("EQUORI_WEB_DEV_PORT"); v != "" {
+		port, err := strconv.Atoi(v)
+		if err != nil || port < 1 || port > 65535 {
+			return Config{}, fmt.Errorf("EQUORI_WEB_DEV_PORT: %q is not a port", v)
+		}
+		cfg.WebDevPort = port
 	}
 	if cfg.DatabaseURL == "" {
 		return Config{}, errors.New("EQUORI_DATABASE_URL is not set")

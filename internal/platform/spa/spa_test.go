@@ -77,3 +77,30 @@ func TestHandlerWithoutIndex(t *testing.T) {
 		}
 	}
 }
+
+// ADR 008, development: every path outside /api/ redirects to the Vite server on the same
+// host, keeping the path and the query.
+func TestDevRedirect(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name, method, host, target string
+		status                     int
+		location                   string
+	}{
+		{"named host", http.MethodGet, "devserver.local:8080", "/admin?tab=categorization", http.StatusTemporaryRedirect, "http://devserver.local:5173/admin?tab=categorization"},
+		{"host without a port", http.MethodGet, "127.0.0.1", "/", http.StatusTemporaryRedirect, "http://127.0.0.1:5173/"},
+		{"ipv6 host", http.MethodHead, "[::1]:8080", "/accounts/42", http.StatusTemporaryRedirect, "http://[::1]:5173/accounts/42"},
+		{"other method", http.MethodPost, "devserver.local:8080", "/admin", http.StatusMethodNotAllowed, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := httptest.NewRequestWithContext(t.Context(), tt.method, tt.target, nil)
+			r.Host = tt.host
+			w := httptest.NewRecorder()
+			DevRedirect(5173).ServeHTTP(w, r)
+			if w.Code != tt.status || w.Header().Get("Location") != tt.location {
+				t.Fatalf("status %d, location %q; want %d, %q", w.Code, w.Header().Get("Location"), tt.status, tt.location)
+			}
+		})
+	}
+}

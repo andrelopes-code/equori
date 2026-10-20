@@ -2,6 +2,7 @@ package server_test
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -58,4 +59,20 @@ func TestWebServesManifestAndIcon(t *testing.T) {
 			}
 		})
 	}
+}
+
+// ADR 008, development: with the Vite port set, pages redirect to the Vite server, which
+// serves the current sources; the API stays here.
+func TestWebRedirectsToTheDevServer(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t, apitest.WebDevPort(5173))
+
+	r := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/admin", nil)
+	r.Host = "devserver.local:8080"
+	w := httptest.NewRecorder()
+	h.App.Handler.ServeHTTP(w, r)
+	if w.Code != http.StatusTemporaryRedirect || w.Header().Get("Location") != "http://devserver.local:5173/admin" {
+		t.Fatalf("status %d, location %q", w.Code, w.Header().Get("Location"))
+	}
+	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/nope", nil), http.StatusNotFound, "not_found", "")
 }

@@ -77,6 +77,11 @@ func Web(fsys fs.FS) Option {
 	return func(c *server.Config) { c.Web = fsys }
 }
 
+// WebDevPort redirects pages to a Vite server on port of the request's host.
+func WebDevPort(port int) Option {
+	return func(c *server.Config) { c.WebDevPort = port }
+}
+
 // APIDocs serves the API reference at /docs and the contract at /openapi.yaml.
 func APIDocs() Option {
 	return func(c *server.Config) { c.APIDocs = true }
