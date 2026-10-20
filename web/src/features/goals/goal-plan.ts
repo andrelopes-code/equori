@@ -1,6 +1,6 @@
 import { shiftMonth } from "@/features/overview";
 
-// Complete frontend R5-1: the slider runs from 50 to 5 000 major units in steps of 50.
+// The slider runs from 50 to 5 000 major units in steps of 50.
 export const monthlyRange = { min: 50, max: 5000, step: 50 } as const;
 
 function monthsBetween(from: string, to: string): number {
@@ -9,7 +9,7 @@ function monthsBetween(from: string, to: string): number {
   return (ty - fy) * 12 + (tm - fm);
 }
 
-// Complete frontend R5-2: the month the remainder is covered at the monthly amount.
+// The month the remainder is covered at the monthly amount.
 export function completionMonth(
   today: string,
   remaining: number,

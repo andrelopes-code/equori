@@ -1,13 +1,5 @@
-import { configure, getConfig, screen } from "@testing-library/react";
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { writeLocale } from "@/i18n/locale";
@@ -17,18 +9,6 @@ import { renderApp } from "@/testing/render-app";
 const checkingID = "11111111-1111-4111-8111-111111111111";
 const foodID = "22222222-2222-4222-8222-222222222222";
 const txID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
-
-// Mounting the Chart on the account page costs about 600 ms of synchronous work per render in jsdom, so the default 5 s test
-// timeout and 1 s query timeout are CPU bound here. vitest reads the test timeout when `it` is collected, so it is set at
-// module level; the query timeout is read per call.
-vi.setConfig({ testTimeout: 20_000 });
-const defaultAsyncUtilTimeout = getConfig().asyncUtilTimeout;
-beforeAll(() => {
-  configure({ asyncUtilTimeout: 10_000 });
-});
-afterAll(() => {
-  configure({ asyncUtilTimeout: defaultAsyncUtilTimeout });
-});
 
 beforeEach(() => {
   localStorage.clear();
@@ -147,41 +127,48 @@ interface RouteCase {
   authenticated: boolean;
 }
 
+// The product screens hold only their header until they are rebuilt; /admin loads data.
 const routes: RouteCase[] = [
   {
     path: "/",
-    heading: "Outubro de 2026",
-    loaded: "Itaú",
+    heading: catalogPtBR["nav.overview"],
+    loaded: catalogPtBR["nav.overview"],
     authenticated: true,
   },
   {
     path: "/transactions",
     heading: catalogPtBR["nav.transactions"],
-    loaded: "Compra no mercado",
+    loaded: catalogPtBR["nav.transactions"],
     authenticated: true,
   },
   {
     path: "/transactions/new",
     heading: catalogPtBR["nav.new"],
-    loaded: catalogPtBR["transactions.new.category"],
+    loaded: catalogPtBR["nav.new"],
     authenticated: true,
   },
   {
     path: `/transactions/${txID}`,
-    heading: "Compra no mercado",
-    loaded: "Mercado",
+    heading: catalogPtBR["nav.transactions"],
+    loaded: catalogPtBR["nav.transactions"],
     authenticated: true,
   },
   {
     path: "/accounts",
-    heading: catalogPtBR["accounts.title"],
-    loaded: "Itaú",
+    heading: catalogPtBR["nav.accounts"],
+    loaded: catalogPtBR["nav.accounts"],
     authenticated: true,
   },
   {
     path: `/accounts/${checkingID}`,
-    heading: "Itaú",
-    loaded: catalogPtBR["accounts.balance.booked"],
+    heading: catalogPtBR["nav.accounts"],
+    loaded: catalogPtBR["nav.accounts"],
+    authenticated: true,
+  },
+  {
+    path: "/admin",
+    heading: catalogPtBR["nav.admin"],
+    loaded: "1234.56 BRL",
     authenticated: true,
   },
   {
@@ -218,8 +205,8 @@ describe.each([360, 768, 1280])("routes at %i px", (width) => {
       ).toBeNull();
 
       const bar = container.querySelector('[data-own="bottom-bar"]');
-      // Shell second pass S1 and S2: the ledger index from 1024 px, a bottom bar below.
-      const index = container.querySelector('[data-own="ledger-index"]');
+      // The top bar from 1024 px, the tab bar below.
+      const index = container.querySelector('[data-own="top-bar"]');
       if (!authenticated) {
         expect(bar).toBeNull();
         expect(index).toBeNull();

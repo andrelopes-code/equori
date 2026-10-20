@@ -14,7 +14,7 @@ export interface UpcomingRow {
   money: { amount: number; currency: string };
 }
 
-// Complete frontend T4: expected occurrences after today, the farthest first like the rows under them.
+// Expected occurrences after today, the farthest first like the rows under them.
 export function upcomingRows(
   occurrences: readonly Occurrence[],
   schedules: readonly Schedule[],

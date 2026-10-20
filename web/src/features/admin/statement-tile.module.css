@@ -1,0 +1,8 @@
+@layer app {
+  /* Slotted finding "stat-card @scope limit matches the card's own root under another family":
+     the card's parts lose their styles when its parent carries data-ui, so a plain cell is its
+     parent; grid stretches the card to the cell. */
+  .cell {
+    display: grid;
+  }
+}

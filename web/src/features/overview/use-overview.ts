@@ -59,7 +59,7 @@ export interface Overview {
   elapsed: number;
 }
 
-// Complete frontend O2: the forecast covers the Available accounts in the base currency.
+// The forecast covers the Available accounts in the base currency.
 export function useOverview(month: string): {
   overview: Overview | undefined;
   scale: ((currency: string) => number) | null;

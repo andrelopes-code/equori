@@ -4,7 +4,7 @@ const editable =
   'input, textarea, select, [contenteditable=""], [contenteditable="true"]';
 const overlay = '[role="dialog"], [role="alertdialog"]';
 
-// Ledger sheet L7 and complete frontend F2: N opens the quick entry from any authenticated
+// N opens the quick entry from any authenticated
 // route, unless a field takes the key, a modifier makes it a command, or an overlay is open.
 export function useNewShortcut(open: () => void): void {
   useEffect(() => {

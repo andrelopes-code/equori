@@ -68,6 +68,12 @@ export function MoreSheet({
                 {t("nav.accounts")}
               </ActionSheetItem>
               <ActionSheetItem
+                value="admin"
+                onSelect={() => void navigate({ to: "/admin" })}
+              >
+                {t("nav.admin")}
+              </ActionSheetItem>
+              <ActionSheetItem
                 value="settings"
                 onSelect={() => void navigate({ to: "/settings" })}
               >

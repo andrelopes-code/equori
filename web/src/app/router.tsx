@@ -21,6 +21,7 @@ import { RouteError } from "@/app/route-error";
 import { RouteNotFound } from "@/app/route-not-found";
 import { AppFrame } from "@/app/shell/app-frame";
 import { AccountPage, AccountsPage } from "@/features/accounts";
+import { AdminPage } from "@/features/admin";
 import { OverviewPage } from "@/features/overview";
 import { CardOverviewPage, CardsPage } from "@/features/cards";
 import { GoalsPage } from "@/features/goals";
@@ -138,6 +139,12 @@ const goalsRoute = createRoute({
   component: GoalsPage,
 });
 
+const adminRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "admin",
+  component: AdminPage,
+});
+
 const accountsRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "accounts",
@@ -180,6 +187,7 @@ export const routeTree = rootRoute.addChildren([
     cardsRoute,
     cardRoute,
     settingsRoute,
+    adminRoute,
   ]),
 ]);
 

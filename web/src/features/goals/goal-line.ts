@@ -14,7 +14,7 @@ export interface GoalLine {
   late: boolean;
 }
 
-// Complete frontend R5-2: the month of completion reads late after the due month.
+// The month of completion reads late after the due month.
 export function goalLine(
   goal: Goal,
   major: number,

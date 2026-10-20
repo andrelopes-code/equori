@@ -1,44 +1,49 @@
-import { Link } from "@tanstack/react-router";
+import { Badge } from "@slotted/react/badge";
 
 import type { BottomBarItem } from "@/ui/bottom-bar";
 import styles from "@/ui/bottom-bar.module.css";
-import { IconGlyph } from "@/ui/icon-glyph";
+import { NavGlyph } from "@/ui/nav-glyph";
+import type { TabSelection } from "@/ui/use-tab-selection";
 
 export function BarControl({
   item,
   current,
+  selected,
+  link,
 }: {
   item: BottomBarItem;
   current: boolean;
+  selected: boolean;
+  link: ReturnType<TabSelection["link"]> | undefined;
 }) {
   const content = (
     <>
       <span className={styles.glyph}>
-        <IconGlyph name={item.glyph} />
+        <NavGlyph name={item.glyph} filled={selected} />
       </span>
       <span className={styles.label}>{item.label}</span>
       {/* After the label in reading order; drawn on the glyph's corner. */}
       {item.badge !== undefined && (
         <span data-own="bar-count" className={styles.count}>
-          {item.badge}
+          <Badge size="sm" tone="secondary" variant="solid">
+            {item.badge}
+          </Badge>
         </span>
       )}
     </>
   );
-  const ink = item.ink === true ? { "data-emphasis": "ink" } : {};
-  if (item.to !== undefined) {
+  const primary = item.primary === true ? { "data-emphasis": "primary" } : {};
+  if (link !== undefined) {
     return (
-      <Link
-        to={item.to}
-        {...(item.search === undefined ? {} : { search: item.search })}
+      <a
+        {...link}
         className={styles.control}
-        // Link marks only exact paths; aria-current below covers nested routes.
-        activeOptions={{ exact: true }}
         aria-current={current ? "page" : undefined}
-        {...ink}
+        {...(selected ? { "data-selected": "" } : {})}
+        {...primary}
       >
         {content}
-      </Link>
+      </a>
     );
   }
   return (
@@ -46,7 +51,7 @@ export function BarControl({
       type="button"
       className={styles.control}
       onClick={item.onPress}
-      {...ink}
+      {...primary}
     >
       {content}
     </button>

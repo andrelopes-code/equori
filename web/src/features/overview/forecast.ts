@@ -152,7 +152,7 @@ const annotated = 3;
 // eight days hold the longest description the chart labels.
 const minGapDays = 8;
 
-// Complete frontend O4: the largest occurrences first, each kept only when it stands apart
+// The largest occurrences first, each kept only when it stands apart
 // from today and from the occurrences already kept.
 export function annotatedEvents(
   events: readonly ForecastEvent[],

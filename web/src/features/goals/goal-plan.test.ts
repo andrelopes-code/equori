@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import { completionMonth, defaultMonthly } from "@/features/goals/goal-plan";
 
-// Complete frontend decision R5-2.
 describe("goal plan", () => {
   it("completes after the months the remainder takes at the monthly amount", () => {
     expect(completionMonth("2026-10-17", 1000000, 200000)).toBe("2027-03");

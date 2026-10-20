@@ -21,8 +21,18 @@ export default defineConfig({
   // tsconfig.json paths are the single definition of the @/ alias.
   resolve: { tsconfigPaths: true },
   server: {
+    // mDNS names of a development server on the LAN, such as devserver.local.
+    allowedHosts: [".local"],
     // make dev serves the API; one origin lets the session cookie through without CORS.
-    proxy: { "/api": "http://127.0.0.1:8080" },
+    // Over plain HTTP on a LAN address the browser sends no Sec-Fetch-Site, so the
+    // backend's cross-origin protection compares Origin with Host; both name the target.
+    proxy: {
+      "/api": {
+        target: "http://127.0.0.1:8080",
+        changeOrigin: true,
+        headers: { origin: "http://127.0.0.1:8080" },
+      },
+    },
   },
   test: {
     environment: "jsdom",

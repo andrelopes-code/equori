@@ -1,5 +1,12 @@
-import { act, screen, waitFor, within } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
@@ -24,9 +31,8 @@ beforeEach(() => {
   html.removeAttribute("data-slotted-scheme");
 });
 
-// Ledger sheet decisions L5, L7 and L8; complete frontend G7; shell second pass S1 and S2.
 describe("AppFrame navigation", () => {
-  // Shell second pass S2: below 1024 px a bottom bar of five controls, New in the middle.
+  // Below 1024 px a bottom bar of five controls, New in the middle.
   it.each([360, 768])(
     "shows five text controls in the bottom bar at %i px",
     async (width) => {
@@ -43,10 +49,10 @@ describe("AppFrame navigation", () => {
         catalogEn["nav.cards"],
         catalogEn["nav.more"],
       ]);
-      expect(controls[2]).toHaveAttribute("data-emphasis", "ink");
+      expect(controls[2]).toHaveAttribute("data-emphasis", "primary");
       expect(controls[2]?.tagName).toBe("BUTTON");
       expect(bar?.querySelectorAll("svg")).toHaveLength(5);
-      expect(container.querySelector('[data-own="ledger-index"]')).toBeNull();
+      expect(container.querySelector('[data-own="top-bar"]')).toBeNull();
       expect(container.querySelector('[data-ui="top-navigation"]')).toBeNull();
       expect(html).toHaveAttribute("data-slotted-density", "comfortable");
     },
@@ -62,19 +68,31 @@ describe("AppFrame navigation", () => {
     }
   });
 
-  // Shell second pass S1: from 1024 px the destinations stand in an index beside the page.
-  it("shows the ledger index at 1280 px", async () => {
+  // From 1024 px the destinations stand in a top bar in the shell's banner.
+  it("shows the top bar in the banner at 1280 px", async () => {
     const { container } = await renderApp("/", {
       width: 1280,
       fetch: newFetch(),
     });
-    expect(container.querySelector('[data-own="ledger-index"]')).not.toBeNull();
+    const bar = container.querySelector('[data-own="top-bar"]');
+    expect(bar).not.toBeNull();
+    expect(bar?.closest("header")).not.toBeNull();
     expect(container.querySelector('[data-own="bottom-bar"]')).toBeNull();
     expect(container.querySelector('[data-ui="top-navigation"]')).toBeNull();
+    expect(container.querySelector('[data-ui="app-shell"] > nav')).toBeNull();
   });
 
-  // A narrow window closes the shell's navigation; widening it again must show the whole index.
-  it("keeps the ledger index open after the window narrows and widens again", async () => {
+  // The month switcher belongs to Overview only.
+  it("holds no month switcher in the top bar away from Overview", async () => {
+    const { container } = await renderApp("/accounts", {
+      width: 1280,
+      fetch: newFetch(),
+    });
+    expect(container.querySelector('[data-own="top-bar"]')).not.toBeNull();
+    expect(container.querySelector('[data-own="month-switcher"]')).toBeNull();
+  });
+
+  it("brings the top bar back after the window narrows and widens again", async () => {
     const { container } = await renderApp("/", {
       width: 1280,
       fetch: newFetch(),
@@ -86,13 +104,11 @@ describe("AppFrame navigation", () => {
       setViewport(1280);
     });
     await waitFor(() => {
-      expect(
-        container.querySelector('[data-own="ledger-index"]'),
-      ).not.toBeNull();
+      expect(container.querySelector('[data-own="top-bar"]')).not.toBeNull();
     });
-    expect(container.querySelector('[data-ui="app-shell"]')).toHaveAttribute(
-      "data-open",
-    );
+    expect(
+      container.querySelector('[data-ui="app-shell"]'),
+    ).not.toHaveAttribute("data-open");
   });
 
   it("lays no scrim over the page on a phone", async () => {
@@ -105,7 +121,7 @@ describe("AppFrame navigation", () => {
     ).not.toHaveAttribute("data-open");
   });
 
-  it("swaps the bottom bar for the ledger index without a reload", async () => {
+  it("swaps the bottom bar for the top bar without a reload", async () => {
     const { container } = await renderApp("/", {
       width: 360,
       fetch: newFetch(),
@@ -117,7 +133,7 @@ describe("AppFrame navigation", () => {
     await waitFor(() => {
       expect(container.querySelector('[data-own="bottom-bar"]')).toBeNull();
     });
-    expect(container.querySelector('[data-own="ledger-index"]')).not.toBeNull();
+    expect(container.querySelector('[data-own="top-bar"]')).not.toBeNull();
   });
 
   it.each([
@@ -139,11 +155,17 @@ describe("AppFrame navigation", () => {
         });
         await waitFor(() => {
           expect(
-            link.querySelector(
-              '[data-own="index-count"], [data-own="bar-count"]',
-            )?.textContent ?? null,
+            link.querySelector('[data-own="nav-count"], [data-own="bar-count"]')
+              ?.textContent ?? null,
           ).toBe(badge);
         });
+        // A discreet count in the secondary tone.
+        if (badge !== null) {
+          expect(link.querySelector('[data-ui="badge"]')).toHaveAttribute(
+            "data-tone",
+            "secondary",
+          );
+        }
         view.unmount();
       }
     },
@@ -151,7 +173,7 @@ describe("AppFrame navigation", () => {
 });
 
 describe("AppFrame routing", () => {
-  it("navigates from the ledger index without a reload", async () => {
+  it("navigates from the top bar without a reload", async () => {
     const user = userEvent.setup();
     const { router } = await renderApp("/", {
       width: 1280,
@@ -160,8 +182,70 @@ describe("AppFrame routing", () => {
     await user.click(
       screen.getByRole("link", { name: catalogEn["nav.accounts"] }),
     );
-    expect(router.state.location.pathname).toBe("/accounts");
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/accounts");
+    });
   });
+
+  // The top bar's links select before the route changes, as the tab bar's do.
+  it("selects the clicked destination before the route changes", async () => {
+    const { router } = await renderApp("/", {
+      width: 1280,
+      fetch: newFetch(),
+    });
+    const accounts = screen.getByRole("link", {
+      name: catalogEn["nav.accounts"],
+    });
+    fireEvent.click(accounts);
+    expect(accounts).toHaveAttribute("data-selected");
+    expect(
+      screen.getByRole("link", { name: catalogEn["nav.overview"] }),
+    ).not.toHaveAttribute("data-selected");
+    expect(router.state.location.pathname).toBe("/");
+    await waitFor(() => {
+      expect(accounts).toHaveAttribute("aria-current", "page");
+    });
+  });
+
+  // A tap on the selected tab at its own route scrolls the page to its top.
+  it.each([360, 1280])(
+    "scrolls the page to its top on a tap on the current destination at %i px",
+    async (width) => {
+      // jsdom does not scroll; this stand-in moves scrollTop as a browser would.
+      const scrollTo = Object.getOwnPropertyDescriptor(
+        HTMLElement.prototype,
+        "scrollTo",
+      );
+      Object.defineProperty(HTMLElement.prototype, "scrollTo", {
+        configurable: true,
+        value(this: HTMLElement, options?: ScrollToOptions) {
+          this.scrollTop = options?.top ?? 0;
+        },
+      });
+      try {
+        const { container, router } = await renderApp("/transactions", {
+          width,
+          fetch: newFetch(),
+        });
+        const main = container.querySelector("main");
+        if (main === null) throw new Error("no main");
+        main.scrollTop = 400;
+        fireEvent.click(
+          screen.getByRole("link", {
+            name: new RegExp(`^${catalogEn["nav.transactions"]}`),
+          }),
+        );
+        expect(main.scrollTop).toBe(0);
+        expect(router.state.location.pathname).toBe("/transactions");
+      } finally {
+        if (scrollTo === undefined) {
+          Reflect.deleteProperty(HTMLElement.prototype, "scrollTo");
+        } else {
+          Object.defineProperty(HTMLElement.prototype, "scrollTo", scrollTo);
+        }
+      }
+    },
+  );
 
   it("marks Transactions current on a transaction detail route", async () => {
     await renderApp("/transactions/abc", { width: 1280, fetch: newFetch() });
@@ -173,38 +257,54 @@ describe("AppFrame routing", () => {
     ).not.toHaveAttribute("aria-current");
   });
 
-  // Complete frontend F2: the index's entry field opens the quick entry.
-  it("opens the quick entry from the index's entry field", async () => {
+  // The entry opens the admin page until the quick entry is rebuilt.
+  it("opens the admin page from the top bar's entry control", async () => {
     const user = userEvent.setup();
-    await renderApp("/", { width: 1280, fetch: fakeApi(sharedRoutes) });
-    await user.click(
-      screen.getByRole("button", { name: new RegExp(catalogEn["nav.entry"]) }),
+    const { router } = await renderApp("/", {
+      width: 1280,
+      fetch: fakeApi(sharedRoutes),
+    });
+    const entry = screen.getByRole("button", {
+      name: new RegExp(`^${catalogEn["nav.entry.long"]}`),
+    });
+    // A neutral field trigger, the label at the start and the key at the
+    // end.
+    expect(entry).toHaveAttribute("data-own", "entry-trigger");
+    expect(entry.firstElementChild).toHaveTextContent(
+      catalogEn["nav.entry.long"],
     );
-    expect(
-      await screen.findByRole("dialog", { name: catalogEn["entry.title"] }),
-    ).toBeInTheDocument();
+    expect(entry.lastElementChild).toHaveAttribute("data-ui", "kbd");
+    const css = readFileSync("src/app/shell/top-bar.module.css", "utf8");
+    const rule = /\.entry\s*\{[^}]*\}/.exec(css)?.[0] ?? "";
+    expect(rule).toContain("justify-content: space-between");
+    expect(rule).not.toContain("tone-accent");
+    await user.click(entry);
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/admin");
+    });
   });
 
-  // Complete frontend G7.
-  it("lists Overview, Transactions, Goals, Cards and Accounts in the ledger index", async () => {
+  // The temporary admin page stands last.
+  it("lists Overview, Transactions, Goals, Cards, Accounts and Admin in the top bar", async () => {
     await renderApp("/", { width: 1280, fetch: newFetch() });
     const nav = screen.getByRole("navigation", {
       name: catalogEn["nav.label"],
     });
     const links = within(nav).getAllByRole("link");
-    expect(links).toHaveLength(5);
+    expect(links).toHaveLength(6);
     [
       catalogEn["nav.overview"],
       catalogEn["nav.transactions"],
       catalogEn["nav.goals"],
       catalogEn["nav.cards"],
       catalogEn["nav.accounts"],
+      catalogEn["nav.admin"],
     ].forEach((name, n) => {
       expect(links[n]).toHaveAccessibleName(name);
     });
   });
 
-  it("describes each destination with its figure", async () => {
+  it("writes no figure beside a destination", async () => {
     const money = (amount: number) => ({ amount, currency: "BRL" });
     const fetch = fakeApi({
       ...sharedRoutes,
@@ -218,60 +318,21 @@ describe("AppFrame routing", () => {
               kind: "checking",
               currency: "BRL",
             },
-            {
-              id: "a-2",
-              name: "Reserva",
-              class: "asset",
-              kind: "reserve",
-              currency: "BRL",
-            },
-            {
-              id: "a-3",
-              name: "Nubank",
-              class: "liability",
-              kind: "credit_card",
-              currency: "BRL",
-            },
           ],
         }),
       "GET /api/v1/balances": () =>
-        json(200, {
-          items: [
-            { account_id: "a-1", balance: money(605480) },
-            { account_id: "a-2", balance: money(1000000) },
-            { account_id: "a-3", balance: money(-246370) },
-          ],
-        }),
-      "GET /api/v1/goals": () =>
-        json(200, {
-          items: [
-            {
-              id: "g-1",
-              name: "Japão",
-              target: money(2500000),
-              due_on: "2027-06-30",
-              account_ids: ["a-2"],
-              current: money(1600000),
-              remaining: money(900000),
-              progress_bp: 6400,
-            },
-          ],
-        }),
+        json(200, { items: [{ account_id: "a-1", balance: money(605480) }] }),
     });
-    await renderApp("/", { width: 1280, fetch });
+    await renderApp("/admin", { width: 1280, fetch });
+    expect((await screen.findAllByText("6054.80 BRL")).length).toBeGreaterThan(
+      0,
+    );
     const nav = screen.getByRole("navigation", {
       name: catalogEn["nav.label"],
     });
-    const link = (key: keyof typeof catalogEn) =>
-      within(nav).getByRole("link", { name: catalogEn[key] });
-    await waitFor(() => {
-      expect(link("nav.overview")).toHaveAccessibleDescription("R$6,054.80");
-    });
-    expect(link("nav.cards")).toHaveAccessibleDescription("R$2,463.70");
-    expect(link("nav.accounts")).toHaveAccessibleDescription("R$13,591.10");
-    await waitFor(() => {
-      expect(link("nav.goals")).toHaveAccessibleDescription("64%");
-    });
+    for (const link of within(nav).getAllByRole("link")) {
+      expect(link).not.toHaveAttribute("aria-describedby");
+    }
   });
 
   it("opens goals from the more sheet", async () => {
@@ -299,6 +360,20 @@ describe("AppFrame routing", () => {
     );
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/accounts");
+    });
+  });
+
+  it("opens admin from the more sheet", async () => {
+    const user = userEvent.setup();
+    const { router } = await renderApp("/", { width: 360, fetch: newFetch() });
+    await user.click(
+      screen.getByRole("button", { name: catalogEn["nav.more"] }),
+    );
+    await user.click(
+      await screen.findByRole("menuitem", { name: catalogEn["nav.admin"] }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/admin");
     });
   });
 

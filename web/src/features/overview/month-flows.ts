@@ -50,7 +50,7 @@ export type Pace = "ok" | "ahead" | "over";
 
 const aheadMargin = 0.15;
 
-// Ledger sheet O6: overspent is danger; ahead of the month's elapsed share by more than 15 points is warning.
+// Overspent is danger; ahead of the month's elapsed share by more than 15 points is warning.
 export function budgetPace({
   spent,
   planned,

@@ -147,7 +147,7 @@ describe("buildForecast", () => {
   });
 });
 
-// Complete frontend O4: an annotation's label ends on its line, so two lines need room for the
+// An annotation's label ends on its line, so two lines need room for the
 // later label between them.
 describe("annotatedEvents", () => {
   const event = (date: string, amount: number) => ({

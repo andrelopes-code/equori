@@ -146,8 +146,6 @@ describe("expired session", () => {
 });
 
 describe("logout", () => {
-  const draftKey = "equori.draft.transaction-new";
-
   async function openLogout(fetch: ReturnType<typeof sessionApi>["fetch"]) {
     const actor = userEvent.setup();
     const { router } = await renderApp("/", { width: 360, fetch });
@@ -160,18 +158,7 @@ describe("logout", () => {
     return router;
   }
 
-  it("clears the transaction draft so the next user starts blank", async () => {
-    sessionStorage.setItem(draftKey, '{"description":"previous user"}');
-    const { fetch } = sessionApi({ loggedIn: true });
-    const router = await openLogout(fetch);
-    await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/login");
-    });
-    expect(sessionStorage.getItem(draftKey)).toBeNull();
-  });
-
-  it("reports a failed logout and keeps the session and the draft", async () => {
-    sessionStorage.setItem(draftKey, '{"description":"kept"}');
+  it("reports a failed logout and keeps the session", async () => {
     const { fetch, state } = sessionApi({
       loggedIn: true,
       logout: () => problem(500, "internal"),
@@ -182,7 +169,6 @@ describe("logout", () => {
     );
     expect(state.logouts).toBe(1);
     expect(router.state.location.pathname).toBe("/");
-    expect(sessionStorage.getItem(draftKey)).toBe('{"description":"kept"}');
   });
 
   it("ends the session from the more sheet and lands on /login", async () => {
@@ -212,7 +198,7 @@ describe("login layout", () => {
     await findField(catalogEn["login.email"]);
     expect(container.querySelector('[data-own="bottom-bar"]')).toBeNull();
     expect(container.querySelector('[data-ui="side-navigation"]')).toBeNull();
-    // Ledger sheet L4 and L18: no top bar; the page carries the wordmark.
+    // No top bar; the page carries the wordmark.
     expect(container.querySelector('[data-ui="top-navigation"]')).toBeNull();
     expect(screen.getByText(catalogEn["app.name"])).toBeInTheDocument();
   });

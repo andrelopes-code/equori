@@ -2,7 +2,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 
 import { useDeleteSession } from "@/features/session/api";
-import { clearDraft } from "@/features/transactions";
 
 export function useLogout() {
   const queryClient = useQueryClient();
@@ -13,7 +12,6 @@ export function useLogout() {
       deleteSession.mutate(undefined, {
         onSuccess: () => {
           queryClient.clear();
-          clearDraft();
           void navigate({ to: "/login", search: { redirect: undefined } });
         },
       });

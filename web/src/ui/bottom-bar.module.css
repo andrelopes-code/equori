@@ -1,23 +1,56 @@
 @layer app {
+  /* The bar floats over the bottom of the page, so content scrolls under its material (N3);
+     the frame keeps a space of the bar's height after the content. */
   .bar {
-    /* The shell footer is a flex row; the bar takes all of it. */
-    flex: 1 1 auto;
-    position: sticky;
+    position: fixed;
+    inset-inline: 0;
     inset-block-end: 0;
+    z-index: var(--slotted-z-index-sticky);
+    container: tab-bar / inline-size;
     padding-block-end: env(safe-area-inset-bottom);
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
     background: var(--slotted-surface);
   }
 
+  @supports (backdrop-filter: blur(1px)) {
+    .bar {
+      /* Slotted finding "No token for a translucent material": the surface at 80 % and the
+         blur radius of a phone's bar are literals until the theme holds them. */
+      background: color-mix(in oklab, var(--slotted-surface) 80%, transparent);
+      backdrop-filter: saturate(1.6) blur(20px);
+    }
+  }
+
+  @media (prefers-reduced-transparency: reduce), (forced-colors: active) {
+    .bar {
+      background: var(--slotted-surface);
+      backdrop-filter: none;
+    }
+  }
+
+  /* The bar's own height; the frame's space after the content reads the same sum. */
   .list {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
+    block-size: calc(
+      var(--slotted-target-comfortable) + var(--slotted-space-5)
+    );
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
+  .space {
+    block-size: calc(
+      var(--slotted-target-comfortable) + var(--slotted-space-5) +
+        env(safe-area-inset-bottom)
+    );
+  }
+
   .item {
     display: flex;
+    min-inline-size: 0;
   }
 
   /* One tab: the glyph over its label, the whole column a target. */
@@ -29,19 +62,17 @@
     justify-content: center;
     gap: var(--slotted-space-1);
     inline-size: 100%;
-    min-block-size: calc(
-      var(--slotted-target-comfortable) + var(--slotted-space-4)
-    );
-    padding-block: var(--slotted-space-3) var(--slotted-space-2);
+    padding-block: var(--slotted-space-2) 0;
     border: 0;
     background: transparent;
     color: var(--slotted-text-muted);
     font: inherit;
     text-decoration: none;
     cursor: pointer;
+    user-select: none;
     -webkit-tap-highlight-color: transparent;
-    transition: color var(--slotted-duration-short)
-      var(--slotted-easing-standard);
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
   }
 
   .glyph {
@@ -49,18 +80,16 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    inline-size: var(--slotted-space-9);
-    block-size: var(--slotted-space-8);
+    inline-size: calc(var(--slotted-space-10) + var(--slotted-space-2));
+    block-size: calc(var(--slotted-space-8) + var(--slotted-space-2));
     border-radius: var(--slotted-radius-full);
-    transition:
-      background-color var(--slotted-duration-short)
-        var(--slotted-easing-standard),
-      transform var(--slotted-duration-short) var(--slotted-easing-standard);
+    transition: transform var(--slotted-duration-short)
+      var(--slotted-easing-standard);
   }
 
   .glyph svg {
-    inline-size: var(--slotted-control-icon-size-md);
-    block-size: var(--slotted-control-icon-size-md);
+    inline-size: var(--slotted-space-8);
+    block-size: var(--slotted-space-8);
   }
 
   .label {
@@ -74,57 +103,75 @@
     word-break: normal;
   }
 
-  /* Ledger sheet L8: the uncategorized count sits on the glyph's corner. */
+  /* The uncategorized count sits on the glyph's corner, ringed in
+     the bar's ground so it stands apart from the glyph it overlaps. */
   .count {
     position: absolute;
-    inset-block-start: var(--slotted-space-2);
-    inset-inline-start: calc(50% + var(--slotted-space-3));
-    min-inline-size: var(--slotted-space-6);
-    padding-inline: var(--slotted-space-2);
+    inset-block-start: 0;
+    inset-inline-start: calc(50% + var(--slotted-space-2));
+    display: inline-flex;
     border-radius: var(--slotted-radius-full);
-    background: var(--slotted-tone-warning-solid);
-    color: var(--slotted-tone-warning-on-solid);
-    font-size: var(--slotted-font-size-xs);
-    font-weight: var(--slotted-font-weight-semibold);
-    /* The badge holds one line at the glyph's corner; the xs line height would push it off. */
-    line-height: 1.4;
-    font-variant-numeric: tabular-nums;
-    text-align: center;
+    box-shadow: 0 0 0 var(--slotted-border-width-thick) var(--slotted-surface);
   }
 
-  .control:hover {
-    color: var(--slotted-text);
+  /* N2: the selected tab takes the accent text colour at once; a selection is not motion. */
+  .control[data-selected] {
+    color: var(--slotted-tone-accent-text);
   }
 
-  /* The current tab takes the text colour and a soft pill behind its glyph. */
-  .control[aria-current="page"] {
-    color: var(--slotted-text);
-  }
-
-  .control[aria-current="page"] .glyph {
-    /* A tint of the text colour; no token holds a selected-pill surface. */
-    background: color-mix(in oklab, var(--slotted-text) 12%, transparent);
-  }
-
+  /* N4: a press answers in the frame it starts in. */
   .control:active .glyph {
-    transform: scale(0.94);
+    transform: scale(0.88);
+    transition-duration: var(--slotted-duration-instant);
   }
 
-  /* Shell second pass S2: entry is a round control in ink in the middle of the bar. */
-  .control[data-emphasis="ink"] {
+  @media (hover: hover) {
+    .control:not([data-selected]):hover {
+      color: var(--slotted-text);
+    }
+  }
+
+  /* N2 and E2: entry is a plus in an accent capsule, on the row's baseline. */
+  .control[data-emphasis="primary"] {
     color: var(--slotted-text);
   }
 
-  .control[data-emphasis="ink"] .glyph {
-    inline-size: var(--slotted-space-10);
-    block-size: var(--slotted-space-10);
-    /* The circle rises above the row by its extra height, so every label keeps one baseline. */
-    margin-block-start: calc(
-      (var(--slotted-space-10) - var(--slotted-space-8)) * -1
-    );
-    background: var(--slotted-surface-inverse);
-    color: var(--slotted-text-inverse);
-    box-shadow: var(--slotted-shadow-md);
+  .control[data-emphasis="primary"] .glyph {
+    background: var(--slotted-tone-accent-solid);
+    color: var(--slotted-tone-accent-on-solid);
+  }
+
+  .control[data-emphasis="primary"]:active .glyph {
+    background: var(--slotted-tone-accent-solid-active);
+  }
+
+  .control[data-emphasis="primary"] .glyph svg {
+    inline-size: var(--slotted-space-7);
+    block-size: var(--slotted-space-7);
+  }
+
+  /* From 600 px each tab sets its glyph beside its label, the row centred (N2). */
+  @container tab-bar (min-width: 600px) {
+    .list {
+      max-inline-size: 36rem;
+      margin-inline: auto;
+    }
+
+    .control {
+      flex-direction: row;
+      gap: var(--slotted-space-3);
+      padding-block: 0;
+    }
+
+    .label {
+      font-size: var(--slotted-font-size-sm);
+    }
+
+    /* Beside the label, the count reads after it instead of on the glyph. */
+    .count {
+      position: static;
+      box-shadow: none;
+    }
   }
 
   .control:focus-visible {
@@ -138,13 +185,12 @@
   }
 
   @media (forced-colors: active) {
-    .control[aria-current="page"] .glyph {
+    .control[data-selected] .glyph {
       outline: var(--slotted-border-width-thin) solid CanvasText;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .control,
     .glyph {
       transition: none;
     }

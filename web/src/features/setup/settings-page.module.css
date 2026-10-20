@@ -1,6 +1,0 @@
-@layer app {
-  .sections {
-    display: grid;
-    gap: var(--slotted-space-11);
-  }
-}
