@@ -46,22 +46,11 @@ func (s *Service) bill(ctx context.Context, r Repository, t *domain.Transaction)
 	return nil
 }
 
-// statementOf: explicit statement, else the oldest unpaid closed statement for a payment
-// (P2 amendment A5), else the statement the date falls in (T04).
-func (s *Service) statementOf(ctx context.Context, r Repository, t *domain.Transaction, p *domain.Posting, rules domain.Rules) (domain.ReferenceMonth, error) {
+// statementOf: explicit statement, else the statement the date falls in (T04); a payment is
+// billed on the statement of its cycle, not on the one it pays (A89).
+func (s *Service) statementOf(_ context.Context, _ Repository, t *domain.Transaction, p *domain.Posting, rules domain.Rules) (domain.ReferenceMonth, error) {
 	if p.Statement != nil {
 		return *p.Statement, nil
-	}
-	if p.CardRole == domain.RolePayment {
-		summaries, err := s.statementSummaries(ctx, r, t.UserID, p.AccountID)
-		if err != nil {
-			return domain.ReferenceMonth{}, err
-		}
-		for _, st := range summaries {
-			if st.Summary.Unpaid > 0 && !st.Input.Closing.After(t.Date) {
-				return st.Input.Reference, nil
-			}
-		}
 	}
 	return domain.StatementFor(t.Date, rules)
 }

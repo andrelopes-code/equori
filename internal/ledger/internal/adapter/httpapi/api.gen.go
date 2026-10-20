@@ -1724,20 +1724,24 @@ type Split struct {
 
 // StatementDetail defines model for StatementDetail.
 type StatementDetail struct {
-	AccountId   openapi_types.UUID `json:"account_id"`
-	AmountDue   Money              `json:"amount_due"`
-	Charges     Money              `json:"charges"`
-	ClosingDate openapi_types.Date `json:"closing_date"`
-	Credits     Money              `json:"credits"`
-	DueDate     openapi_types.Date `json:"due_date"`
-	Id          openapi_types.UUID `json:"id"`
-	Opening     Money              `json:"opening"`
-	Payments    Money              `json:"payments"`
-	Postings    []StatementPosting `json:"postings"`
+	AccountId     openapi_types.UUID `json:"account_id"`
+	AmountDue     Money              `json:"amount_due"`
+	BilledAmount  Money              `json:"billed_amount"`
+	Charges       Money              `json:"charges"`
+	ClosingDate   openapi_types.Date `json:"closing_date"`
+	Credits       Money              `json:"credits"`
+	DueDate       openapi_types.Date `json:"due_date"`
+	EarlyPayments Money              `json:"early_payments"`
+	Id            openapi_types.UUID `json:"id"`
+	Opening       Money              `json:"opening"`
+	Payments      Money              `json:"payments"`
+	Postings      []StatementPosting `json:"postings"`
+	PriorCredits  Money              `json:"prior_credits"`
 
 	// Reconciled The institution's amount due was confirmed (POST /statements/{id}/reconcile).
 	Reconciled bool                  `json:"reconciled"`
 	Reference  string                `json:"reference"`
+	Settled    Money                 `json:"settled"`
 	Status     StatementDetailStatus `json:"status"`
 	Unpaid     Money                 `json:"unpaid"`
 }
@@ -1785,21 +1789,25 @@ type StatementReconciliationInput struct {
 	AmountDue Money `json:"amount_due"`
 }
 
-// StatementSummary Amounts are positive when owed by the user.
+// StatementSummary Amounts are positive when owed by the user. Every card posting is billed on the statement of its cycle (A89). opening is the previous amount_due; credits and payments are those billed on the statement; amount_due = opening + charges − credits − payments, the card balance at closing; settled is the credits and payments of the next statement, up to today, that cover amount_due; unpaid = amount_due − settled, zero for a credit balance; prior_credits are the credits that settled the previous statement; early_payments are the payments beyond what settled it; billed_amount = amount_due + early_payments.
 type StatementSummary struct {
-	AccountId   openapi_types.UUID `json:"account_id"`
-	AmountDue   Money              `json:"amount_due"`
-	Charges     Money              `json:"charges"`
-	ClosingDate openapi_types.Date `json:"closing_date"`
-	Credits     Money              `json:"credits"`
-	DueDate     openapi_types.Date `json:"due_date"`
-	Id          openapi_types.UUID `json:"id"`
-	Opening     Money              `json:"opening"`
-	Payments    Money              `json:"payments"`
+	AccountId     openapi_types.UUID `json:"account_id"`
+	AmountDue     Money              `json:"amount_due"`
+	BilledAmount  Money              `json:"billed_amount"`
+	Charges       Money              `json:"charges"`
+	ClosingDate   openapi_types.Date `json:"closing_date"`
+	Credits       Money              `json:"credits"`
+	DueDate       openapi_types.Date `json:"due_date"`
+	EarlyPayments Money              `json:"early_payments"`
+	Id            openapi_types.UUID `json:"id"`
+	Opening       Money              `json:"opening"`
+	Payments      Money              `json:"payments"`
+	PriorCredits  Money              `json:"prior_credits"`
 
 	// Reconciled The institution's amount due was confirmed (POST /statements/{id}/reconcile).
 	Reconciled bool                   `json:"reconciled"`
 	Reference  string                 `json:"reference"`
+	Settled    Money                  `json:"settled"`
 	Status     StatementSummaryStatus `json:"status"`
 	Unpaid     Money                  `json:"unpaid"`
 }

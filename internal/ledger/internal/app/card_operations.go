@@ -201,7 +201,8 @@ func (s *Service) statementView(ctx context.Context, r Repository, userID int64,
 	return StatementView{}, domain.Account{}, ErrNotFound
 }
 
-// PayStatement moves amount from a balance account to the card, billed on the statement (M08).
+// PayStatement moves amount from a balance account to the card (M08); the payment is billed
+// on the statement of its date's cycle and settles the statement (A89).
 func (s *Service) PayStatement(ctx context.Context, userID int64, statementID uuid.UUID, date time.Time, from uuid.UUID, amount money.Money) (domain.Transaction, error) {
 	var created domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
@@ -216,7 +217,7 @@ func (s *Service) PayStatement(ctx context.Context, userID int64, statementID uu
 		created, err = s.insert(ctx, r, domain.Transaction{
 			UserID: userID, Date: date, Description: "Statement payment " + ref.String(),
 			Postings: []domain.Posting{
-				{AccountID: card.ID, Amount: amount, CardRole: domain.RolePayment, Statement: &ref},
+				{AccountID: card.ID, Amount: amount, CardRole: domain.RolePayment},
 				{AccountID: from, Amount: amount.Neg()},
 			},
 		})
@@ -257,7 +258,7 @@ func (s *Service) FinanceStatement(ctx context.Context, userID int64, statementI
 			return validationError("installment_amount", "installments must cover the unpaid amount")
 		}
 		ref := v.Input.Reference
-		postings := []domain.Posting{{AccountID: card.ID, Amount: unpaid, CardRole: domain.RolePayment, Statement: &ref}}
+		postings := []domain.Posting{{AccountID: card.ID, Amount: unpaid, CardRole: domain.RolePayment}}
 		for k := 1; k <= count; k++ {
 			next := ref.Add(k)
 			postings = append(postings, domain.Posting{

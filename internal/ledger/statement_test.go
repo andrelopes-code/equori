@@ -37,6 +37,10 @@ type statementView struct {
 	AmountDue  brl    `json:"amount_due"`
 	Payments   brl    `json:"payments"`
 	Unpaid     brl    `json:"unpaid"`
+	Settled    brl    `json:"settled"`
+	Prior      brl    `json:"prior_credits"`
+	Early      brl    `json:"early_payments"`
+	Billed     brl    `json:"billed_amount"`
 	Status     string `json:"status"`
 	Reconciled bool   `json:"reconciled"`
 }
@@ -78,9 +82,13 @@ func TestStatementFullPayment(t *testing.T) {
 	c.purchase("2026-10-20", 50000)
 	c.pay("2026-11-10", 150000)
 
-	s := statements(t, c.h, c.card)["2026-11"]
-	if s.AmountDue != 150000 || s.Payments != 150000 || s.Unpaid != 0 || s.Status != "paid" || s.DueDate != "2026-11-10" {
-		t.Fatalf("statement = %+v", s)
+	// A89: the payment of 2026-11-10 is made in the cycle of 2026-12 and settles 2026-11.
+	ss := statements(t, c.h, c.card)
+	if s := ss["2026-11"]; s.AmountDue != 150000 || s.Payments != 0 || s.Settled != 150000 || s.Unpaid != 0 || s.Status != "paid" || s.DueDate != "2026-11-10" {
+		t.Fatalf("2026-11 = %+v", s)
+	}
+	if s := ss["2026-12"]; s.Payments != 150000 || s.Early != 0 || s.AmountDue != 0 {
+		t.Fatalf("2026-12 = %+v", s)
 	}
 }
 
@@ -94,7 +102,7 @@ func TestStatementPartialPaymentCarries(t *testing.T) {
 	if s := ss["2026-11"]; s.Status != "overdue" || s.Unpaid != 50000 {
 		t.Fatalf("2026-11 = %+v", s)
 	}
-	if s := ss["2026-12"]; s.Opening != 50000 || s.AmountDue != 56250 || s.Status != "open" {
+	if s := ss["2026-12"]; s.Opening != 150000 || s.AmountDue != 56250 || s.Status != "open" {
 		t.Fatalf("2026-12 = %+v", s)
 	}
 }
@@ -106,10 +114,10 @@ func TestStatementOverpaymentBecomesCredit(t *testing.T) {
 	c.purchase("2026-11-05", 1000)
 
 	ss := statements(t, c.h, c.card)
-	if s := ss["2026-11"]; s.Status != "paid" || s.Unpaid != -10000 {
+	if s := ss["2026-11"]; s.Status != "paid" || s.Unpaid != 0 {
 		t.Fatalf("2026-11 = %+v", s)
 	}
-	if s := ss["2026-12"]; s.Opening != -10000 || s.AmountDue != -9000 {
+	if s := ss["2026-12"]; s.Opening != 150000 || s.AmountDue != -9000 || s.Early != 10000 {
 		t.Fatalf("2026-12 = %+v", s)
 	}
 }

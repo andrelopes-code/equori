@@ -20,7 +20,8 @@ func toStatementAPI(v app.StatementView, currency money.Currency) StatementSumma
 		ClosingDate: apiDate(v.Input.Closing), DueDate: apiDate(v.Input.Due),
 		Opening: m(v.Summary.Opening), Charges: m(v.Summary.Charges), Credits: m(v.Summary.Credits), AmountDue: m(v.Summary.AmountDue),
 		Payments: m(v.Summary.Payments), Unpaid: m(v.Summary.Unpaid), Status: StatementSummaryStatus(v.Summary.Status),
-		Reconciled: v.Reconciled,
+		Reconciled: v.Reconciled, Settled: m(v.Summary.Settled), PriorCredits: m(v.Summary.PriorCredits),
+		EarlyPayments: m(v.Summary.EarlyPayments), BilledAmount: m(v.Summary.BilledAmount),
 	}
 }
 

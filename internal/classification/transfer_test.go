@@ -48,7 +48,7 @@ func TestRuleTransfersCardPayment(t *testing.T) {
 		t.Fatalf("card transactions = %+v", txs)
 	}
 	for _, p := range txs[0].Postings {
-		if p.AccountID == b.card && (p.CardRole != "payment" || p.Statement != "2026-11" || p.Amount.Amount != 150000) {
+		if p.AccountID == b.card && (p.CardRole != "payment" || p.Statement != "2026-12" || p.Amount.Amount != 150000) {
 			t.Fatalf("card posting = %+v", p)
 		}
 	}

@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"slices"
+	"time"
+)
 
 const (
 	RoleCharge  = "charge"
@@ -19,6 +22,7 @@ const (
 type StatementLine struct {
 	Role   string
 	Amount int64
+	Date   time.Time
 }
 
 type StatementInput struct {
@@ -29,25 +33,31 @@ type StatementInput struct {
 	Financed  bool
 }
 
-// StatementSummary amounts are positive when the user owes them (chapter 5, 5.2.4).
+// StatementSummary amounts are positive when the user owes them (chapter 5, 5.2.4, A89).
 type StatementSummary struct {
 	Reference ReferenceMonth
-	Opening   int64
+	Opening   int64 // the previous statement's amount due
 	Charges   int64
-	Credits   int64
-	AmountDue int64
-	Payments  int64
-	Unpaid    int64 // negative when payments exceed the amount due: a credit carried forward
+	Credits   int64 // every credit billed on the statement, PriorCredits included
+	Payments  int64 // every payment billed on the statement, made in its cycle
+	AmountDue int64 // the card balance at closing: opening + charges − credits − payments
+	Settled   int64 // inflows of the next statement, dated on or before today, that cover AmountDue
+	Unpaid    int64 // AmountDue − Settled; zero for a credit balance
 	Status    string
+
+	PriorCredits  int64 // credits of the statement that settled the previous one
+	EarlyPayments int64 // payments of the statement beyond what settled the previous one
+	BilledAmount  int64 // AmountDue + EarlyPayments: the bill before early payments
 }
 
-// Summarize walks consecutive statements of one card in reference order; each statement
-// opens with the previous one's unpaid amount (revolving credit or carried credit).
+// Summarize walks consecutive statements of one card in reference order. Each opens with
+// the previous one's amount due, and is settled by the credits and payments of the next
+// statement in date order, up to today (A89).
 func Summarize(in []StatementInput, today time.Time) []StatementSummary {
 	out := make([]StatementSummary, len(in))
-	var carry int64
+	var opening int64
 	for i, s := range in {
-		sum := StatementSummary{Reference: s.Reference, Opening: carry}
+		sum := StatementSummary{Reference: s.Reference, Opening: opening}
 		for _, l := range s.Lines {
 			switch l.Role {
 			case RoleCharge:
@@ -58,30 +68,71 @@ func Summarize(in []StatementInput, today time.Time) []StatementSummary {
 				sum.Payments += l.Amount
 			}
 		}
-		sum.AmountDue = sum.Opening + sum.Charges - sum.Credits
-		sum.Unpaid = sum.AmountDue - sum.Payments
-		sum.Status = status(s, sum, today)
+		sum.AmountDue = sum.Opening + sum.Charges - sum.Credits - sum.Payments
 		out[i] = sum
-		carry = sum.Unpaid
+		opening = sum.AmountDue
+	}
+	if len(out) > 0 {
+		// The first statement's payments settled nothing equori holds.
+		out[0].EarlyPayments = out[0].Payments
+	}
+	for i := range out {
+		var next []StatementLine
+		if i+1 < len(in) {
+			next = in[i+1].Lines
+		}
+		credits, payments := settle(&out[i], next, today)
+		out[i].Unpaid = max(out[i].AmountDue, 0) - out[i].Settled
+		if i+1 < len(out) {
+			out[i+1].PriorCredits = credits
+			out[i+1].EarlyPayments = out[i+1].Payments - payments
+		}
+	}
+	for i, s := range in {
+		out[i].BilledAmount = out[i].AmountDue + out[i].EarlyPayments
+		out[i].Status = status(s, out[i], today)
 	}
 	return out
 }
 
+// settle covers sum's amount due with the inflows of the next statement dated on or before
+// today, oldest first, and returns how much of its credits and payments it used.
+func settle(sum *StatementSummary, next []StatementLine, today time.Time) (credits, payments int64) {
+	inflows := slices.SortedStableFunc(slices.Values(next), func(a, b StatementLine) int { return a.Date.Compare(b.Date) })
+	left := max(sum.AmountDue, 0)
+	for _, l := range inflows {
+		if left == 0 || l.Date.After(today) {
+			break
+		}
+		if l.Role != RoleCredit && l.Role != RolePayment {
+			continue
+		}
+		used := min(l.Amount, left)
+		left -= used
+		if l.Role == RoleCredit {
+			credits += used
+		} else {
+			payments += used
+		}
+	}
+	sum.Settled = max(sum.AmountDue, 0) - left
+	return credits, payments
+}
+
 func status(s StatementInput, sum StatementSummary, today time.Time) string {
-	paid := sum.Unpaid <= 0
 	switch {
 	case s.Financed:
 		return StatusFinanced
 	case today.Before(s.Closing):
-		if paid && sum.AmountDue > 0 {
+		if sum.AmountDue <= 0 && sum.BilledAmount > 0 {
 			return StatusPaid
 		}
 		return StatusOpen
-	case paid:
+	case sum.Unpaid <= 0:
 		return StatusPaid
 	case today.After(s.Due):
 		return StatusOverdue
-	case sum.Payments > 0:
+	case sum.Settled > 0:
 		return StatusPartiallyPaid
 	default:
 		return StatusClosed

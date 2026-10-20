@@ -643,7 +643,7 @@ func (q *Queries) ListPlanInstallments(ctx context.Context, arg ListPlanInstallm
 }
 
 const listStatementLines = `-- name: ListStatementLines :many
-SELECT p.statement_id, p.card_role, p.amount
+SELECT p.statement_id, p.card_role, p.amount, p.booked_on
 FROM ledger_posting p
 WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided AND p.statement_id IS NOT NULL
 `
@@ -657,6 +657,7 @@ type ListStatementLinesRow struct {
 	StatementID uuid.NullUUID
 	CardRole    *string
 	Amount      int64
+	BookedOn    time.Time
 }
 
 func (q *Queries) ListStatementLines(ctx context.Context, arg ListStatementLinesParams) ([]ListStatementLinesRow, error) {
@@ -668,7 +669,12 @@ func (q *Queries) ListStatementLines(ctx context.Context, arg ListStatementLines
 	var items []ListStatementLinesRow
 	for rows.Next() {
 		var i ListStatementLinesRow
-		if err := rows.Scan(&i.StatementID, &i.CardRole, &i.Amount); err != nil {
+		if err := rows.Scan(
+			&i.StatementID,
+			&i.CardRole,
+			&i.Amount,
+			&i.BookedOn,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

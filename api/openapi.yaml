@@ -4787,8 +4787,16 @@ components:
           $ref: "#/components/schemas/Money"
     StatementSummary:
       type: object
-      required: [id, account_id, reference, closing_date, due_date, opening, charges, credits, amount_due, payments, unpaid, status, reconciled]
-      description: Amounts are positive when owed by the user.
+      required: [id, account_id, reference, closing_date, due_date, opening, charges, credits, amount_due, payments, unpaid, status, reconciled,
+        settled, prior_credits, early_payments, billed_amount]
+      description: >-
+        Amounts are positive when owed by the user. Every card posting is billed on the statement of its
+        cycle (A89). opening is the previous amount_due; credits and payments are those billed on the
+        statement; amount_due = opening + charges − credits − payments, the card balance at closing;
+        settled is the credits and payments of the next statement, up to today, that cover amount_due;
+        unpaid = amount_due − settled, zero for a credit balance; prior_credits are the credits that
+        settled the previous statement; early_payments are the payments beyond what settled it;
+        billed_amount = amount_due + early_payments.
       properties:
         id:
           type: string
@@ -4814,7 +4822,15 @@ components:
           $ref: "#/components/schemas/Money"
         payments:
           $ref: "#/components/schemas/Money"
+        settled:
+          $ref: "#/components/schemas/Money"
         unpaid:
+          $ref: "#/components/schemas/Money"
+        prior_credits:
+          $ref: "#/components/schemas/Money"
+        early_payments:
+          $ref: "#/components/schemas/Money"
+        billed_amount:
           $ref: "#/components/schemas/Money"
         status:
           type: string

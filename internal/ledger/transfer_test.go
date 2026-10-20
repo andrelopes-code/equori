@@ -105,7 +105,7 @@ func TestTransferPairsImportedCardPayment(t *testing.T) {
 	if res.Transaction.ID != checkingTx || res.VoidedTransactionID != cardTx || len(res.Transaction.Postings) != 2 {
 		t.Fatalf("result = %+v", res)
 	}
-	if p := postingOn(res.Transaction, c.card); p.Amount.Amount != 150000 || p.CardRole != "payment" || p.Statement != "2026-11" {
+	if p := postingOn(res.Transaction, c.card); p.Amount.Amount != 150000 || p.CardRole != "payment" || p.Statement != "2026-12" {
 		t.Fatalf("card posting = %+v", p)
 	}
 	if reason := voidReason(t, c.h, cardTx); reason != "paired with "+checkingTx {
@@ -116,7 +116,7 @@ func TestTransferPairsImportedCardPayment(t *testing.T) {
 			t.Fatalf("record %s on %s/%s", record, tx, got)
 		}
 	}
-	if s := statements(t, c.h, c.card)["2026-11"]; s.Status != "paid" || s.Payments != 150000 || s.Credits != 0 {
+	if s := statements(t, c.h, c.card)["2026-11"]; s.Status != "paid" || s.Settled != 150000 || s.Credits != 0 {
 		t.Fatalf("statement = %+v", s)
 	}
 
@@ -218,7 +218,7 @@ func TestTransferTurnsCardCreditIntoPayment(t *testing.T) {
 	}
 
 	res := mustTransfer(t, c.h, cardTx, 1, c.checking, "")
-	if p := postingOn(res.Transaction, c.card); p.CardRole != "payment" || p.Statement != "2026-11" || p.Amount.Amount != 150000 {
+	if p := postingOn(res.Transaction, c.card); p.CardRole != "payment" || p.Statement != "2026-12" || p.Amount.Amount != 150000 {
 		t.Fatalf("card posting = %+v", p)
 	}
 	if tx, account := postingOfRecord(t, c.h, cardRecord); tx != cardTx || account != c.card {
