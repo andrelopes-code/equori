@@ -376,6 +376,7 @@ type TransactionView struct {
 }
 
 type PostingView struct {
+	ID        string `json:"id"`
 	AccountID string `json:"account_id"`
 	Amount    struct {
 		Amount int64 `json:"amount"`

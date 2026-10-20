@@ -471,6 +471,10 @@ func (s *Service) CorrectTransaction(ctx context.Context, userID int64, id uuid.
 		if err := r.ReplaceTransaction(ctx, prev, corrected, reason); err != nil {
 			return err
 		}
+		// The stored postings carry the ids the database assigned.
+		if corrected, err = r.Transaction(ctx, userID, id); err != nil {
+			return err
+		}
 		return r.Publish(ctx, outbox.Event{
 			Type: EventTransactionCorrected, UserID: userID, AggregateID: id.String(),
 			Payload: func() TransactionEvent {

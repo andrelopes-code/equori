@@ -92,6 +92,30 @@ func TestCorrectionConflictIs409(t *testing.T) {
 		http.StatusConflict, "transaction_voided", "")
 }
 
+// The correction response carries the stored postings, ids included, as a read does.
+func TestCorrectionReturnsStoredPostings(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	checking := h.Account("Nubank", "asset", "checking", nil)
+	food := h.Account("Food", "expense", "", nil)
+	id := h.Record("2026-10-14", apitest.Posting(checking, -100), apitest.Posting(food, 100))
+
+	correction := tx("2026-10-14", apitest.Posting(checking, -200), apitest.Posting(food, 200))
+	correction["expected_version"] = 1
+	correction["reason"] = "typo"
+	var corrected apitest.TransactionView
+	h.MustDo(http.MethodPut, "/api/v1/transactions/"+id, correction, http.StatusOK, &corrected)
+	read := h.Transaction(id)
+	if len(corrected.Postings) != 2 || len(read.Postings) != 2 {
+		t.Fatalf("corrected = %+v, read = %+v", corrected.Postings, read.Postings)
+	}
+	for i, p := range corrected.Postings {
+		if p.ID != read.Postings[i].ID || p.ID == "00000000-0000-0000-0000-000000000000" {
+			t.Fatalf("corrected posting %d id = %s, stored %s", i, p.ID, read.Postings[i].ID)
+		}
+	}
+}
+
 func TestPaginationTies(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
