@@ -10,11 +10,6 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
-const (
-	defaultLimit = 20
-	maxLimit     = 50
-)
-
 type searchTransactionsIn struct {
 	Query         string    `json:"query,omitzero" jsonschema:"case-insensitive text found in the description, the payee name or a posting memo"`
 	AccountID     string    `json:"account_id,omitzero" jsonschema:"keep transactions with a posting on this account; IDs come from list_accounts"`
@@ -23,8 +18,7 @@ type searchTransactionsIn struct {
 	From          tool.Date `json:"from,omitzero" jsonschema:"first date, inclusive"`
 	To            tool.Date `json:"to,omitzero" jsonschema:"last date, inclusive"`
 	Uncategorized bool      `json:"uncategorized,omitzero" jsonschema:"keep only transactions still waiting for a category"`
-	Limit         int       `json:"limit,omitzero" jsonschema:"transactions per page, 1 to 50; 20 when absent"`
-	Cursor        string    `json:"cursor,omitzero" jsonschema:"next_cursor of the previous page"`
+	tool.PageArgs
 }
 
 type postingView struct {
@@ -108,7 +102,7 @@ func searchTransactions(svc *app.Service) tool.Tool {
 
 // transactionQuery checks the argument values the schema cannot: identifiers, limit and cursor.
 func transactionQuery(userID int64, in searchTransactionsIn) (app.TransactionQuery, error) {
-	q := app.TransactionQuery{UserID: userID, Tag: in.Tag, Q: in.Query, Uncategorized: in.Uncategorized, Limit: in.Limit}
+	q := app.TransactionQuery{UserID: userID, Tag: in.Tag, Q: in.Query, Uncategorized: in.Uncategorized}
 	var err error
 	if q.AccountID, err = optionalID(in.AccountID, "account_id"); err != nil {
 		return q, err
@@ -116,16 +110,13 @@ func transactionQuery(userID int64, in searchTransactionsIn) (app.TransactionQue
 	if q.PayeeID, err = optionalID(in.PayeeID, "payee_id"); err != nil {
 		return q, err
 	}
-	switch {
-	case q.Limit == 0:
-		q.Limit = defaultLimit
-	case q.Limit < 1 || q.Limit > maxLimit:
-		return q, fieldError("limit", "must be between 1 and 50")
+	if q.Limit, err = tool.Limit(in.Limit); err != nil {
+		return q, err
 	}
 	if in.Cursor != "" {
 		var after app.TransactionCursor
 		if err := page.DecodeCursor(in.Cursor, &after); err != nil {
-			return q, fieldError("cursor", "is not a next_cursor of search_transactions")
+			return q, tool.InvalidArgument("cursor", "is not a next_cursor of search_transactions")
 		}
 		q.After = &after
 	}
@@ -144,11 +135,7 @@ func optionalID(s, field string) (uuid.UUID, error) {
 	}
 	id, err := uuid.Parse(s)
 	if err != nil {
-		return uuid.Nil, fieldError(field, "is not a UUID")
+		return uuid.Nil, tool.InvalidArgument(field, "is not a UUID")
 	}
 	return id, nil
-}
-
-func fieldError(field, message string) *tool.Error {
-	return &tool.Error{Code: "invalid_arguments", Detail: field + " " + message, Errors: []tool.FieldError{{Field: field, Message: message}}}
 }

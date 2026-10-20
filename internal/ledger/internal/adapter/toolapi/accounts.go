@@ -12,6 +12,7 @@ import (
 type listAccountsIn struct {
 	Class         accountClass `json:"class,omitzero" jsonschema:"keep only accounts of this class; income and expense accounts are the categories of transactions"`
 	IncludeClosed bool         `json:"include_closed,omitzero" jsonschema:"also list closed accounts"`
+	tool.PageArgs
 }
 
 type accountView struct {
@@ -27,7 +28,8 @@ type accountView struct {
 }
 
 type listAccountsOut struct {
-	Accounts []accountView `json:"accounts"`
+	Accounts   []accountView `json:"accounts"`
+	NextCursor string        `json:"next_cursor,omitzero" jsonschema:"present when more accounts follow; pass it as cursor"`
 }
 
 func listAccounts(svc *app.Service) tool.Tool {
@@ -41,7 +43,7 @@ func listAccounts(svc *app.Service) tool.Tool {
 		if err != nil {
 			return listAccountsOut{}, err
 		}
-		out := listAccountsOut{Accounts: []accountView{}}
+		views := []accountView{}
 		for _, a := range all {
 			if (in.Class != "" && string(a.Class) != string(in.Class)) || (a.ClosedOn != nil && !in.IncludeClosed) {
 				continue
@@ -53,9 +55,11 @@ func listAccounts(svc *app.Service) tool.Tool {
 			if a.ParentID != uuid.Nil {
 				v.ParentID, v.ParentName = a.ParentID.String(), byID[a.ParentID].Name
 			}
-			out.Accounts = append(out.Accounts, v)
+			views = append(views, v)
 		}
-		return out, nil
+		var out listAccountsOut
+		out.Accounts, out.NextCursor, err = tool.PageOf(views, func(v accountView) string { return v.ID }, in.PageArgs)
+		return out, err
 	})
 }
 
@@ -71,6 +75,7 @@ type getBalancesIn struct {
 	Date  tool.Date    `json:"date,omitzero" jsonschema:"balances at the end of this date; today when absent"`
 	Basis basis        `json:"basis,omitzero" jsonschema:"booked places a posting at the transaction date, settled at the institution's settlement date; booked when absent"`
 	Class balanceClass `json:"class,omitzero" jsonschema:"keep only accounts of this class"`
+	tool.PageArgs
 }
 
 type balanceView struct {
@@ -81,9 +86,10 @@ type balanceView struct {
 }
 
 type getBalancesOut struct {
-	Date     tool.Date     `json:"date"`
-	Basis    string        `json:"basis"`
-	Balances []balanceView `json:"balances"`
+	Date       tool.Date     `json:"date"`
+	Basis      string        `json:"basis"`
+	Balances   []balanceView `json:"balances"`
+	NextCursor string        `json:"next_cursor,omitzero" jsonschema:"present when more balances follow; pass it as cursor"`
 }
 
 func getBalances(svc *app.Service) tool.Tool {
@@ -115,14 +121,16 @@ func getBalances(svc *app.Service) tool.Tool {
 		if err != nil {
 			return getBalancesOut{}, err
 		}
-		out := getBalancesOut{Date: tool.DateOf(date), Basis: string(b), Balances: []balanceView{}}
+		views := []balanceView{}
 		for _, a := range all {
 			m, ok := amounts[a.ID]
 			if !ok || (in.Class != "" && string(a.Class) != string(in.Class)) {
 				continue
 			}
-			out.Balances = append(out.Balances, balanceView{AccountID: a.ID.String(), AccountName: a.Name, Class: string(a.Class), Balance: m})
+			views = append(views, balanceView{AccountID: a.ID.String(), AccountName: a.Name, Class: string(a.Class), Balance: m})
 		}
-		return out, nil
+		out := getBalancesOut{Date: tool.DateOf(date), Basis: string(b)}
+		out.Balances, out.NextCursor, err = tool.PageOf(views, func(v balanceView) string { return v.AccountID }, in.PageArgs)
+		return out, err
 	})
 }

@@ -2,6 +2,7 @@ package ledger_test
 
 import (
 	"encoding/json"
+	"maps"
 	"net/http"
 	"slices"
 	"strings"
@@ -35,13 +36,30 @@ func toolOutput(t *testing.T, h *apitest.Harness, name string, args any, out any
 	}
 }
 
-func listAccountsTool(t *testing.T, h *apitest.Harness, args any) []toolAccount {
+// listAccountsTool reads every page of list_accounts with pages of limit accounts.
+func listAccountsTool(t *testing.T, h *apitest.Harness, args map[string]any, limit int) []toolAccount {
 	t.Helper()
-	var out struct {
-		Accounts []toolAccount `json:"accounts"`
+	var all []toolAccount
+	cursor := ""
+	for {
+		a := maps.Clone(args)
+		a["limit"] = limit
+		if cursor != "" {
+			a["cursor"] = cursor
+		}
+		var out struct {
+			Accounts   []toolAccount `json:"accounts"`
+			NextCursor string        `json:"next_cursor"`
+		}
+		toolOutput(t, h, "list_accounts", a, &out)
+		if len(out.Accounts) > limit || (out.NextCursor != "" && len(out.Accounts) != limit) {
+			t.Fatalf("page of %d accounts with limit %d and next_cursor %q", len(out.Accounts), limit, out.NextCursor)
+		}
+		all = append(all, out.Accounts...)
+		if cursor = out.NextCursor; cursor == "" {
+			return all
+		}
 	}
-	toolOutput(t, h, "list_accounts", args, &out)
-	return out.Accounts
 }
 
 // openAccountIDs returns the IDs of the accounts of class that GET /accounts lists, the
@@ -84,7 +102,7 @@ func TestListAccountsTool(t *testing.T) {
 	old := h.Account("Old", "asset", "checking", nil)
 	h.MustDo(http.MethodPost, "/api/v1/accounts/"+old+"/close", map[string]string{"closed_on": "2026-10-20"}, http.StatusOK, nil)
 
-	expense := listAccountsTool(t, h, map[string]any{"class": "expense"})
+	expense := listAccountsTool(t, h, map[string]any{"class": "expense"}, 50)
 	if got, want := accountIDs(expense), openAccountIDs(t, h, "expense", false); !slices.Equal(got, want) {
 		t.Fatalf("expense ids = %v, want %v", got, want)
 	}
@@ -110,11 +128,11 @@ func TestListAccountsTool(t *testing.T) {
 		}
 	}
 
-	assets := listAccountsTool(t, h, map[string]any{"class": "asset"})
+	assets := listAccountsTool(t, h, map[string]any{"class": "asset"}, 50)
 	if got, want := accountIDs(assets), openAccountIDs(t, h, "asset", false); !slices.Equal(got, want) || slices.Contains(got, old) {
 		t.Errorf("asset ids = %v, want %v without %s", got, want, old)
 	}
-	withClosed := listAccountsTool(t, h, map[string]any{"class": "asset", "include_closed": true})
+	withClosed := listAccountsTool(t, h, map[string]any{"class": "asset", "include_closed": true}, 50)
 	if got, want := accountIDs(withClosed), openAccountIDs(t, h, "asset", true); !slices.Equal(got, want) || !slices.Contains(got, old) {
 		t.Errorf("asset ids with closed = %v, want %v", got, want)
 	}
@@ -124,7 +142,13 @@ func TestListAccountsTool(t *testing.T) {
 		}
 	}
 
+	// Pages of one account cover the same accounts in the same order.
+	if paged := listAccountsTool(t, h, map[string]any{"class": "expense"}, 1); !slices.Equal(paged, expense) {
+		t.Errorf("pages of one = %+v, want %+v", paged, expense)
+	}
 	h.ExpectToolError(h.Tool("list_accounts", map[string]any{"class": "cash"}), "invalid_arguments", "")
+	h.ExpectToolError(h.Tool("list_accounts", map[string]any{"limit": 51}), "invalid_arguments", "limit")
+	h.ExpectToolError(h.Tool("list_accounts", map[string]any{"cursor": "bad"}), "invalid_arguments", "cursor")
 }
 
 type toolBalance struct {
@@ -153,6 +177,19 @@ func TestGetBalancesTool(t *testing.T) {
 	}}
 	if !slices.Equal(got.Balances, want.Balances) || got.Date != want.Date || got.Basis != want.Basis {
 		t.Errorf("get_balances = %+v, want %+v", got, want)
+	}
+
+	savings := h.Account("Savings", "asset", "savings", nil)
+	h.Record("2026-10-02", apitest.Posting(checking, -300), apitest.Posting(savings, 300))
+	var page1, page2 struct {
+		Balances   []toolBalance `json:"balances"`
+		NextCursor string        `json:"next_cursor"`
+	}
+	toolOutput(t, h, "get_balances", map[string]any{"limit": 1}, &page1)
+	toolOutput(t, h, "get_balances", map[string]any{"limit": 1, "cursor": page1.NextCursor}, &page2)
+	if len(page1.Balances) != 1 || page1.Balances[0].AccountName != "Checking" || page1.Balances[0].Balance.Amount != "-13.00" ||
+		len(page2.Balances) != 1 || page2.Balances[0].AccountName != "Savings" || page2.NextCursor != "" {
+		t.Errorf("pages = %+v, %+v", page1, page2)
 	}
 
 	var before output

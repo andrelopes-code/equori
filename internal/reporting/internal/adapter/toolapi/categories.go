@@ -18,6 +18,7 @@ type getCategoryTotalsIn struct {
 	Class categoryClass `json:"class" jsonschema:"expense totals spending, income totals earnings; both are positive"`
 	From  tool.Date     `json:"from" jsonschema:"first date, inclusive"`
 	To    tool.Date     `json:"to" jsonschema:"last date, inclusive; at most 366 days after from"`
+	tool.PageArgs
 }
 
 type categoryView struct {
@@ -32,21 +33,22 @@ type getCategoryTotalsOut struct {
 	From       tool.Date      `json:"from"`
 	To         tool.Date      `json:"to"`
 	Categories []categoryView `json:"categories"`
+	NextCursor string         `json:"next_cursor,omitzero" jsonschema:"present when more categories follow; pass it as cursor"`
 }
 
 func getCategoryTotals(svc *app.Service) tool.Tool {
 	return tool.New(tool.Spec{
 		Name: "get_category_totals",
 		Description: "Totals the income or expense categories in a period, each with its own total and the total of its subtree, " +
-			"in category name order. Closed categories with zero totals are omitted.",
+			"in category name order. Only categories with postings in the period and their ancestors are listed.",
 		Effect: tool.ReadOnly,
 	}, func(ctx context.Context, userID int64, in getCategoryTotalsIn) (getCategoryTotalsOut, error) {
 		totals, err := svc.CategoryTotals(ctx, userID, string(in.Class), in.From.Time, in.To.Time)
 		if err != nil {
 			return getCategoryTotalsOut{}, err
 		}
-		out := getCategoryTotalsOut{From: in.From, To: in.To, Categories: make([]categoryView, len(totals))}
-		for i, t := range totals {
+		views := []categoryView{}
+		for _, t := range active(totals) {
 			total, err := money.New(t.Total, money.Currency(t.Instrument))
 			if err != nil {
 				return getCategoryTotalsOut{}, err
@@ -59,8 +61,35 @@ func getCategoryTotals(svc *app.Service) tool.Tool {
 			if t.ParentID != uuid.Nil {
 				v.ParentID = t.ParentID.String()
 			}
-			out.Categories[i] = v
+			views = append(views, v)
 		}
-		return out, nil
+		out := getCategoryTotalsOut{From: in.From, To: in.To}
+		out.Categories, out.NextCursor, err = tool.PageOf(views, func(v categoryView) string { return v.AccountID }, in.PageArgs)
+		return out, err
 	})
+}
+
+// active keeps the categories with postings of their own and their ancestors, in order. A
+// subtree total is not enough: a refund on one child can cancel a purchase on another.
+func active(totals []app.CategoryTotal) []app.CategoryTotal {
+	parent := make(map[uuid.UUID]uuid.UUID, len(totals))
+	for _, t := range totals {
+		parent[t.AccountID] = t.ParentID
+	}
+	keep := map[uuid.UUID]bool{}
+	for _, t := range totals {
+		if t.Total == 0 {
+			continue
+		}
+		for id := t.AccountID; id != uuid.Nil && !keep[id]; id = parent[id] {
+			keep[id] = true
+		}
+	}
+	var out []app.CategoryTotal
+	for _, t := range totals {
+		if keep[t.AccountID] {
+			out = append(out, t)
+		}
+	}
+	return out
 }

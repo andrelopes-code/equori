@@ -28,6 +28,11 @@ func (e *Error) Error() string { return e.Code + ": " + e.Detail }
 
 func invalidArguments(detail string) *Error { return &Error{Code: "invalid_arguments", Detail: detail} }
 
+// InvalidArgument reports an argument value the schema accepts but the tool cannot use.
+func InvalidArgument(field, message string) *Error {
+	return &Error{Code: "invalid_arguments", Detail: field + " " + message, Errors: []FieldError{{Field: field, Message: message}}}
+}
+
 // FromProblem reuses a module's HTTP error mapping for its tools.
 func FromProblem(m func(error) (problem.Details, bool)) func(error) (Error, bool) {
 	return func(err error) (Error, bool) {

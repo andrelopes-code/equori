@@ -28,6 +28,14 @@
             "liability",
             "equity"
           ]
+        },
+        "limit": {
+          "type": "integer",
+          "description": "items per page, 1 to 50; 20 when absent"
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor of the previous page; absent for the first page"
         }
       },
       "additionalProperties": false
@@ -83,6 +91,10 @@
             ],
             "additionalProperties": false
           }
+        },
+        "next_cursor": {
+          "type": "string",
+          "description": "present when more balances follow; pass it as cursor"
         }
       },
       "required": [
@@ -95,7 +107,7 @@
   },
   {
     "name": "get_category_totals",
-    "description": "Totals the income or expense categories in a period, each with its own total and the total of its subtree, in category name order. Closed categories with zero totals are omitted.",
+    "description": "Totals the income or expense categories in a period, each with its own total and the total of its subtree, in category name order. Only categories with postings in the period and their ancestors are listed.",
     "effect": "read_only",
     "idempotent": false,
     "input_schema": {
@@ -118,6 +130,14 @@
           "type": "string",
           "description": "last date, inclusive; at most 366 days after from",
           "format": "date"
+        },
+        "limit": {
+          "type": "integer",
+          "description": "items per page, 1 to 50; 20 when absent"
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor of the previous page; absent for the first page"
         }
       },
       "required": [
@@ -199,6 +219,10 @@
             ],
             "additionalProperties": false
           }
+        },
+        "next_cursor": {
+          "type": "string",
+          "description": "present when more categories follow; pass it as cursor"
         }
       },
       "required": [
@@ -231,6 +255,14 @@
         "include_closed": {
           "type": "boolean",
           "description": "also list closed accounts"
+        },
+        "limit": {
+          "type": "integer",
+          "description": "items per page, 1 to 50; 20 when absent"
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor of the previous page; absent for the first page"
         }
       },
       "additionalProperties": false
@@ -282,6 +314,10 @@
             ],
             "additionalProperties": false
           }
+        },
+        "next_cursor": {
+          "type": "string",
+          "description": "present when more accounts follow; pass it as cursor"
         }
       },
       "required": [
@@ -330,11 +366,11 @@
         },
         "limit": {
           "type": "integer",
-          "description": "transactions per page, 1 to 50; 20 when absent"
+          "description": "items per page, 1 to 50; 20 when absent"
         },
         "cursor": {
           "type": "string",
-          "description": "next_cursor of the previous page"
+          "description": "next_cursor of the previous page; absent for the first page"
         }
       },
       "additionalProperties": false
