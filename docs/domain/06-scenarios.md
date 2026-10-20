@@ -130,10 +130,10 @@ Given statement 2026-11 with amount due 1,500.00:
 
 | Case | Postings | Result |
 |---|---|---|
-| Full payment on 2026-11-10 | Nubank checking −1,500.00; Itaú Visa +1,500.00 (role `payment`, billed on 2026-11) | Status `paid` |
-| Early payment of 300.00 on 2026-10-28, then 1,200.00 on 2026-11-10 | Two payment postings billed on 2026-11 | Status `paid` after the second |
-| Partial payment of 1,000.00 on 2026-11-10 | Nubank checking −1,000.00; Itaú Visa +1,000.00 | Status `partially_paid`; after the due date: `overdue`; 500.00 becomes the opening amount of 2026-12 |
-| Revolving interest billed by the issuer on 2026-12-01 | Itaú Visa −62.50 (2026-12); Interest +62.50 | Amount due of 2026-12 includes 500.00 + 62.50 + new charges |
+| Full payment on 2026-11-10 | Nubank checking −1,500.00; Itaú Visa +1,500.00 (role `payment`, billed on 2026-12, the statement of its cycle; A89) | 2026-11 status `paid` |
+| Early payment of 300.00 on 2026-10-28, then 1,200.00 on 2026-11-10 | The first billed on 2026-11 (amount due 1,200.00, early payments 300.00, billed amount 1,500.00), the second on 2026-12 | 2026-11 status `paid` after the second |
+| Partial payment of 1,000.00 on 2026-11-10 | Nubank checking −1,000.00; Itaú Visa +1,000.00 (billed on 2026-12) | 2026-11 unpaid 500.00, `partially_paid`; after the due date: `overdue`; 2026-12 opens with 1,500.00 and holds the payment |
+| Revolving interest billed by the issuer on 2026-12-01 | Itaú Visa −62.50 (2026-12); Interest +62.50 | Amount due of 2026-12: 1,500.00 + 62.50 − 1,000.00 + new charges |
 
 ### S11 Statement financing (M09)
 
@@ -388,7 +388,7 @@ An OFX credit card statement for Itaú Visa: −230.00 on 2026-10-14 is a `charg
 | M05 | S06, S07 |
 | M06 | S08 |
 | M07 | S09, S10 |
-| M08 | S10 |
+| M08 | S10, S84, S85 |
 | M09 | S11 |
 | M10 | S12 |
 | M11 | S16 |
@@ -410,7 +410,7 @@ An OFX credit card statement for Itaú Visa: −230.00 on 2026-10-14 is a `charg
 | M28 | S02 |
 | M29 | S31 |
 
-The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44; the category tree and its tools by S72–S79 (amendments A73–A84 of `docs/superpowers/specs/2026-10-19-web-categorization-design.md`); transfers from imports by S45–S50; aggregator sync by S51–S59 and S68–S71; schedules (F7) by S27–S29 and the planning views by S60–S63; currencies and investments (F9) by S16, S17, S21, S22 and S64–S67.
+The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44; the category tree and its tools by S72–S79 (amendments A73–A84 of `docs/superpowers/specs/2026-10-19-web-categorization-design.md`); transfers from imports by S45–S50; aggregator sync by S51–S59 and S68–S71; card statements from the institution by S80–S89 (amendments A85–A93); schedules (F7) by S27–S29 and the planning views by S60–S63; currencies and investments (F9) by S16, S17, S21, S22 and S64–S67.
 
 ## 6.13 Classification
 
@@ -490,7 +490,7 @@ Rule "description contains `pagamento fatura`" → transfer to Itaú Visa. A che
 
 ### S46 Card file first
 
-The card file of S45 is imported first: its line creates Itaú Visa +1,500.00 `credit` against `uncategorized_income`. The checking file then completes that transaction: version 2 holds Itaú Visa +1,500.00 `payment` and checking −1,500.00 confirmed by the checking record; there is one transaction and statement 2026-11 is `paid`.
+The card file of S45 is imported first: its line creates Itaú Visa +1,500.00 `credit` against `uncategorized_income`; a line its source types as a payment creates a `payment` against `transfers_in_transit` instead, which the pairing replaces the same way (A88). The checking file then completes that transaction: version 2 holds Itaú Visa +1,500.00 `payment` and checking −1,500.00 confirmed by the checking record; there is one transaction and statement 2026-11 is `paid`.
 
 ### S47 Pairing by the owner
 
@@ -563,6 +563,50 @@ With "Cofrinho Mercado Livre" and "Algum dinheiro" mapped from 2026-11-11, check
 ### S71 Synced assertion re-evaluated
 
 Nubank checking mapped from 2026-10-01 with the S52 lines and balance 3,834.10, without an opening balance: the first sync records an assertion with an open difference of 1,000.00. The owner records an opening balance of 1,000.00; the next sync, with the same balance, creates no assertion, and the existing one becomes `reconciled` with resolution `none`. An open synced assertion with a second assertion of the same date and amount created through `POST /accounts/{id}/balance-assertions` is reconciled by the next sync; all assertions are `reconciled`.
+
+## 6.15b Card statements from the institution
+
+Scenarios of amendments A85–A93 (`docs/superpowers/specs/2026-10-20-card-statements-institution-design.md`). Itaú Visa closes on day 3 and is due on day 10 unless a scenario says otherwise.
+
+### S80 Statement facts from a bill
+
+A Pluggy bill due 2026-11-10, closing 2026-11-02, total 230.00 and its line of 230.00 date statement 2026-11 by the bill and return `institution` with an `amount_difference` of 0.00; the sync reconciles the statement. A total of 240.00 returns −10.00 and leaves it open.
+
+### S81 Closing before the due date
+
+Rule due day 5 `following`, `before_due` 7 `preceding`, calendar `br_banking`: 2026-08 to 2026-11 close on 2026-07-29, 2026-08-28, 2026-09-28, 2026-10-29 and fall due on 2026-08-05, 2026-09-08, 2026-10-05, 2026-11-05; a purchase on 2026-08-28 is billed on 2026-10. A bill reporting closing 2026-08-29 (a Saturday) closes the statement on 2026-08-28.
+
+### S82 Manual purchase after re-dating
+
+A purchase of 2026-11-02 is billed on 2026-11; owner facts closing 2026-11-01 move it to 2026-12; purchases of 2026-10-31 and 2026-11-01 are then billed on 2026-11 and 2026-12; removing the facts moves the first purchase back.
+
+### S83 Payment line from the aggregator
+
+`PAGAMENTO_FATURA` −961.85 becomes a `payment` of +961.85 against `transfers_in_transit`; `ESTORNO` −72.90 a `credit` of +72.90.
+
+### S84 Refund before payment
+
+Statement 2026-11 of 1,034.75; a refund of 72.90 on 2026-11-05 and a payment of 961.85 on 2026-11-08 settle it (`paid`). 2026-12 opens with 1,034.75, holds charges 2,281.32, credits 569.57 (prior credits 72.90), payments 1,961.85 (early payments 1,000.00): amount due 784.65, billed amount 1,784.65; 784.65 paid on 2026-12-09 makes it `paid`.
+
+### S85 Early and partial payments
+
+S10 restated: an early payment of 300.00 gives amount due 1,200.00 and billed amount 1,500.00; a partial payment leaves unpaid 500.00 and 2026-12 opens with 1,500.00.
+
+### S86 Installment remainder
+
+Cea 2/3 59.99 seen first, then 1/3 60.01 and 3/3 59.99 pending: the plan holds 60.01, 59.99, 59.99 (179.99); nothing waits in review.
+
+### S87 Installment on the institution's bill
+
+Shopee 1/2 86.14 on the bill due 2026-09-10 projects 2/2 on 2026-10; 2/2 86.13 on the bill due 2026-11-10 moves it to 2026-11, and the purchase totals 172.27.
+
+### S88 Pending payment superseded
+
+A `PENDING` −784.65 without a bill and a `POSTED` −784.65 with a bill, both 2026-11-05, give one transaction; a pending and a posted charge five days apart stay two.
+
+### S89 Card sync start and opening
+
+Mapping from 2026-07-01 with the bills due 2026-07-06 (closing 2026-06-28, total 701.48) and 2026-08-05 (total 773.54): the line of 2026-06-30 on the second bill is imported, a line on the first is not, an opening balance of 701.48 is billed on 2026-07, and both statements match their bills.
 
 ## 6.16 Planning views
 

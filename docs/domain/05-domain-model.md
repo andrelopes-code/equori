@@ -171,7 +171,7 @@ classDiagram
 | `parent` | Same user, same class. Balance accounts: same institution. A parent of a balance account has no postings of its own; its balance is the sum of its children. Categories form a tree of any depth. An account is never its own ancestor (A73). |
 | `openedOn`, `closedOn` | Postings only between them (I09). Closing an account closes its open descendants and requires no posting after the date; an asset, liability or equity account also requires a zero balance. An open account never has a closed parent: reopening an account reopens its closed ancestors. System accounts are never closed (A74). Merging a category moves its postings (one new version per transaction, amounts and memos kept), its children and its references to the destination and closes it (A75). |
 | `yieldMode` | `none`, `auto` (F6). Default `auto` for kind `reserve`, `none` otherwise. |
-| `systemRole` | Marks accounts the domain refers to: `opening_balances`, `adjustments`, `uncategorized_expense`, `uncategorized_income`, `yield`, `discounts`, `interest`, `taxes`, `fees`, `realized_gains`, `realized_losses`. Created with the user; renamable, not deletable. |
+| `systemRole` | Marks accounts the domain refers to: `opening_balances`, `adjustments`, `transfers_in_transit` (A88), `uncategorized_expense`, `uncategorized_income`, `yield`, `discounts`, `interest`, `taxes`, `fees`, `realized_gains`, `realized_losses`. Created with the user; renamable, not deletable. |
 
 | Kind | Class | Notes |
 |---|---|---|
@@ -221,19 +221,21 @@ flowchart LR
 | Rule | Statement |
 |---|---|
 | Creation | A statement exists for every reference month from the card's first posting to the last statement with a billed installment. It is created on demand by the billing service. |
-| Dates | `closingDate` and `dueDate` come from the billing cycle rule in force for that reference month (T05). The due date is shifted by the business-day calendar per `dueDateAdjustment` (`following` by default) (T06). Stored on creation. A new rule version re-dates the statements from its effective month whose closing date has not passed; their postings keep the reference month. Closed statements keep their dates. |
-| Amount due | Opening amount + charges − credits. Derived, never stored. |
-| Payments | Card postings with role `payment`, billed on the statement they pay. Every card posting has a role: `charge`, `credit` or `payment`. |
-| Unpaid amount | Amount due − payments, when positive after the due date. Becomes the opening amount of the next statement (revolving credit). |
-| Status | Derived from dates, amount due and payments (chapter 3, 3.4.1). |
-| Reference month | The month of the due date. The closing date falls in the reference month when `closingDay < dueDay`, otherwise in the previous month (P2 amendment A1). |
-| Closed | After `closingDate` the statement is closed; postings may still be added (back-fill, late issuer charges). Its postings become immutable when reconciled (I05, amendment A3). Only the due date is shifted by the calendar (A2). |
+| Dates | By precedence: the owner's facts, the aggregator's facts, the projection of the billing cycle rule in force for that reference month (T05, A86). The rule closes on `closingDay` or `closingDaysBeforeDue` days before the nominal due date (A87); `closingAdjustment` shifts the projected and the reported closing date, and `dueDateAdjustment` (`following` by default) shifts the projected due date (T06). Stored on creation. A change of facts re-dates the statement, also after its closing date; a new rule version re-dates the statements from its effective month whose closing date has not passed. Re-dating bills again the card postings billed by a date that the new dates move (A86). |
+| Facts | What the institution reported for the statement: closing date, due date, total, minimum payment; source `aggregator` (a Pluggy bill) or `owner`, the owner's winning (A85). The statement read returns them with the amount difference, amount due − total (A92); a sync reconciles a closed statement whose difference is zero. |
+| Billing | Every card posting is billed on the statement of its cycle: an explicit statement, else the line's bill, else the first statement whose stored closing date is after its date (T04, A86). A payment is billed on the statement of its date, not on the one it pays (A89). A pending posting never stays on a statement with facts: it moves to the first statement without them (A90). |
+| Amount due | Opening amount + charges − credits − payments, all billed on the statement: the card balance at closing and the institution's bill total. Derived, never stored (A89). |
+| Opening amount | The previous statement's amount due (revolving credit and credit balances carry without a rule of their own). |
+| Settlement | The credits and payments of the next statement, in date order and dated on or before today, settle the amount due; unpaid = amount due − settled, never negative. Credits that settled the previous statement are prior credits; payments beyond them are early payments; billed amount = amount due + early payments (A89). |
+| Status | Derived from dates, amount due and settlement: `open` before closing; after it `paid` (amount due ≤ 0 or unpaid 0), `overdue` (after the due date), `partially_paid`, `closed`; `financed` (chapter 3, 3.4.1, A89). |
+| Reference month | The month of the due date. With `closingDay`, the closing date falls in the reference month when `closingDay < dueDay`, otherwise in the previous month (P2 amendment A1). |
+| Closed | After `closingDate` the statement is closed; postings may still be added (back-fill, late issuer charges). Its postings become immutable when reconciled (I05, amendment A3). |
 
 ### 5.2.5 Installment plan
 
 | Rule | Statement |
 |---|---|
-| Split | Principal ÷ N in minor units; the remainder goes to the first installment (1,000.00 in 3× = 333.34 + 333.33 + 333.33). Imported data overrides the split. |
+| Split | Principal ÷ N in minor units; the remainder goes to the first installment (1,000.00 in 3× = 333.34 + 333.33 + 333.33). Imported data overrides the split: a line that confirms an installment sets its amount and, with a bill, its statement, and the later unconfirmed installments follow it; a plan created from a line takes the total the source reports when its split gives the line its amount (A90). |
 | Interest | For plans with interest, the total interest is recorded at purchase in the `interest` category; installment amounts are (principal + interest) split as above. |
 | Statements | Installment k is billed on statement `firstStatement + (k − 1)` (T07). |
 | Refund, cancellation, anticipation | Recorded as new transactions linked to the origin (F3). The plan keeps the running totals; refunded + cancelled ≤ principal + interest (I06). |
@@ -474,7 +476,10 @@ classDiagram
 | States | `received`, `ignored` (duplicate), `matched`, `created`, `needs_review`, `discarded` (owner decision), `withdrawn` (the aggregator stopped returning the line; P6 amendment A38). |
 | Credentials | An integration holds one aggregator application's client id and secret, sealed with AES-256-GCM under `EQUORI_SECRET_KEY` and bound to its row (ADR 008); a user may hold several (P6 amendment A34). An integration with connections cannot be deleted. |
 | Account mapping | An external account maps to one leaf balance account of its currency and a compatible kind (`CHECKING_ACCOUNT` to checking, `SAVINGS_ACCOUNT` to savings or reserve, `RESERVED_BALANCE` to reserve, `CREDIT_CARD` to credit_card) from a start date, or is ignored; one ledger account takes one external account (A35). Only the last four digits of the number are stored. |
-| Aggregator facts | An aggregator record keeps the line's status (`PENDING`, `POSTED`), bill due date, installment, category and balance after, to detect later changes (A36), and describes a change the ledger did not take (`unapplied_change`). |
+| Aggregator facts | An aggregator record keeps the line's status (`PENDING`, `POSTED`), bill due date, installment, category, balance after and card line type, to detect later changes (A36, A88), and describes a change the ledger did not take (`unapplied_change`). |
+| Card line type | Pluggy `operationType` `PAGAMENTO_FATURA` is a card `payment` booked against `transfers_in_transit` until the paying account's line pairs with it; `ESTORNO` is a `credit`; a classification rule action types a payment for sources without a type. A later type rewrites a line recorded as a credit unless it changed since its import (A88). |
+| Provisional line | A pending card line without a bill and a posted line of the same amount within 3 days in one read are one line; the pending one is dropped or withdrawn (A91). |
+| Card sync start | A card's first sync reads from the cycle that holds `sync_from` and opens a card without an opening balance with the total of the bill before it (A93). |
 | Installment plan key | A card installment line belongs to the plan keyed by card, purchase date, installment count and description without the installment mark (A40). |
 | Isolation | Integrations, connections, mappings and API keys belong to one user; the same item may be connected by two users (A45). |
 
