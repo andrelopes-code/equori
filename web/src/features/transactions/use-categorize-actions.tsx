@@ -84,47 +84,51 @@ export function useCategorizeActions(
         parts: categoryParts(tx, accounts, category.id),
       });
       const id = `categorized-${tx.id}`;
-      const undo = (
-        <Button
-          size="sm"
-          variant="ghost"
-          tone="secondary"
-          onClick={() => {
-            toast.dismiss(id);
-            void single.mutateAsync({ current: next, parts: previous });
-          }}
-        >
-          {t("categorize.undo")}
-        </Button>
-      );
-      const title = t("categorize.done", { category: category.path });
-      toast.show({ id, tone: "success", title, actions: undo, duration: 8000 });
-
+      // The similar transactions are looked up before the toast shows, so its actions never
+      // change under the reader's pointer.
       const search = similarSearch(tx);
-      if (search === null) return;
-      const similar = (await similarTransactions(api, search)).filter(
-        (other) => other.id !== tx.id && other.voided_at === undefined,
-      );
-      if (similar.length === 0) return;
+      const similar =
+        search === null
+          ? []
+          : await similarTransactions(api, search)
+              .then((items) =>
+                items.filter(
+                  (other) =>
+                    other.id !== tx.id && other.voided_at === undefined,
+                ),
+              )
+              .catch(() => []);
       toast.show({
         id,
         tone: "success",
-        title,
-        duration: 12000,
+        title: t("categorize.done", { category: category.path }),
+        duration: similar.length === 0 ? 8000 : 12000,
         actions: (
           <>
-            {undo}
             <Button
               size="sm"
-              variant="outline"
+              variant="ghost"
               tone="secondary"
               onClick={() => {
                 toast.dismiss(id);
-                void categorizeMany(similar, category);
+                void single.mutateAsync({ current: next, parts: previous });
               }}
             >
-              {t("categorize.applySimilar", { count: similar.length })}
+              {t("categorize.undo")}
             </Button>
+            {similar.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                tone="secondary"
+                onClick={() => {
+                  toast.dismiss(id);
+                  void categorizeMany(similar, category);
+                }}
+              >
+                {t("categorize.applySimilar", { count: similar.length })}
+              </Button>
+            )}
           </>
         ),
       });

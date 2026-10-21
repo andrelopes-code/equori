@@ -394,6 +394,20 @@ export const catalogEn = {
   "entry.categoryPlaceholder": "Search or create a category",
   "entry.payeePlaceholder": "Search or create a payee",
   "entry.tagsPlaceholder": "Add tags",
+  "correct.title": "Correct transaction",
+  "correct.subtitle": "{date} · version {version}",
+  "correct.save": "Save correction",
+  "correct.done": "Correction saved",
+  "correct.reason": "Reason for the correction",
+  "correct.reasonHint": "Kept in the history of the transaction.",
+  "correct.reasonRequired": "Say why the transaction changes.",
+  "conflict.title": "The transaction changed while the form was open",
+  "conflict.moved":
+    "The transaction was read again. Changed since: {fields}. Your form keeps what you wrote.",
+  "conflict.nothingMoved":
+    "The transaction was read again. No field of the form changed; only its version moved.",
+  "conflict.overwrite": "Save mine over it",
+  "conflict.restart": "Start from the current one",
 } as const;
 
 export type Catalog = { [K in keyof typeof catalogEn]: string };

@@ -399,4 +399,18 @@ export const catalogPtBR: Catalog = {
   "entry.categoryPlaceholder": "Buscar ou criar categoria",
   "entry.payeePlaceholder": "Buscar ou criar favorecido",
   "entry.tagsPlaceholder": "Adicionar tags",
+  "correct.title": "Corrigir transação",
+  "correct.subtitle": "{date} · versão {version}",
+  "correct.save": "Salvar correção",
+  "correct.done": "Correção salva",
+  "correct.reason": "Motivo da correção",
+  "correct.reasonHint": "Fica no histórico da transação.",
+  "correct.reasonRequired": "Diga por que a transação muda.",
+  "conflict.title": "A transação mudou enquanto o formulário estava aberto",
+  "conflict.moved":
+    "A transação foi lida de novo. Mudou desde então: {fields}. O formulário mantém o que você escreveu.",
+  "conflict.nothingMoved":
+    "A transação foi lida de novo. Nenhum campo do formulário mudou; só a versão avançou.",
+  "conflict.overwrite": "Gravar a minha por cima",
+  "conflict.restart": "Recomeçar da atual",
 };

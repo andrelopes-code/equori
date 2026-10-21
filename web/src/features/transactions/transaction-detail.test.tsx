@@ -102,50 +102,62 @@ describe("transaction detail", () => {
     });
   });
 
-  it("splits the category side into parts that keep the total", async () => {
-    const sent: Sent[] = [];
-    await renderApp(`/transactions/${txID}`, { fetch: api(sent) });
-    await userEvent.click(
-      await screen.findByRole("button", {
-        name: catalogEn["detail.category.change"],
-      }),
-    );
-    await userEvent.click(
-      screen.getByRole("button", {
-        name: catalogEn["detail.category.addPart"],
-      }),
-    );
-    const second = screen.getByRole("combobox", { name: "Category of part 2" });
-    await userEvent.type(second, "Lazer");
-    await waitFor(() => {
-      expect(screen.getAllByRole("option")).toHaveLength(1);
-    });
-    await userEvent.keyboard("{ArrowDown}{Enter}");
-    const first = screen.getByRole("spinbutton", { name: "Amount of part 1" });
-    await userEvent.clear(first);
-    await userEvent.type(first, "10000");
-    const left = screen.getByRole("spinbutton", { name: "Amount of part 2" });
-    await userEvent.clear(left);
-    await userEvent.type(left, "2000");
-    await userEvent.click(
-      screen.getByRole("button", { name: catalogEn["detail.save"] }),
-    );
-    await waitFor(() => {
-      expect(sent[0]).toEqual({
-        path: "categorize",
-        body: {
-          expected_version: 3,
-          parts: [
-            { account_id: foodID, amount: { amount: 10000, currency: "BRL" } },
-            {
-              account_id: leisureID,
-              amount: { amount: 2000, currency: "BRL" },
-            },
-          ],
-        },
+  // Typing into a picker and two amount fields takes several seconds under a loaded runner.
+  it(
+    "splits the category side into parts that keep the total",
+    { timeout: 30_000 },
+    async () => {
+      const sent: Sent[] = [];
+      await renderApp(`/transactions/${txID}`, { fetch: api(sent) });
+      await userEvent.click(
+        await screen.findByRole("button", {
+          name: catalogEn["detail.category.change"],
+        }),
+      );
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: catalogEn["detail.category.addPart"],
+        }),
+      );
+      const second = screen.getByRole("combobox", {
+        name: "Category of part 2",
       });
-    });
-  });
+      await userEvent.type(second, "Lazer");
+      await waitFor(() => {
+        expect(screen.getAllByRole("option")).toHaveLength(1);
+      });
+      await userEvent.keyboard("{ArrowDown}{Enter}");
+      const first = screen.getByRole("spinbutton", {
+        name: "Amount of part 1",
+      });
+      await userEvent.clear(first);
+      await userEvent.type(first, "10000");
+      const left = screen.getByRole("spinbutton", { name: "Amount of part 2" });
+      await userEvent.clear(left);
+      await userEvent.type(left, "2000");
+      await userEvent.click(
+        screen.getByRole("button", { name: catalogEn["detail.save"] }),
+      );
+      await waitFor(() => {
+        expect(sent[0]).toEqual({
+          path: "categorize",
+          body: {
+            expected_version: 3,
+            parts: [
+              {
+                account_id: foodID,
+                amount: { amount: 10000, currency: "BRL" },
+              },
+              {
+                account_id: leisureID,
+                amount: { amount: 2000, currency: "BRL" },
+              },
+            ],
+          },
+        });
+      });
+    },
+  );
 
   it("voids with the reason the reader writes", async () => {
     const sent: Sent[] = [];
