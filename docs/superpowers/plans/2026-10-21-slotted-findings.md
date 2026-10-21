@@ -299,3 +299,21 @@ Need: previous/next steppers (month, period, pagination) and back/forward links 
 Proposed API: add chevron-left, chevron-up, arrow-right and arrow-down to GlyphName, with the same viewBox and stroke as the existing chevrons and arrows.
 Acceptance: the glyph contract test lists each direction for chevron and arrow.
 ```
+
+### 19. light-dark() compiles to variables no stylesheet defines
+
+- **Kind:** bug
+- **Area:** family — `segmented-control` (`indicator`) and `event-calendar`; the build of `@slotted/react/styles.css`
+- **Problem:** Lightning CSS lowers each `light-dark()` of the family stylesheets to `var(--lightningcss-light, A) var(--lightningcss-dark, B)`. The pair is only declared where a rule sets `color-scheme` through Lightning CSS, and no rule of the shipped CSS does: `styles.css` reads the pair 20 times and declares it 0 times, in 0.1.0-beta.7 and 0.1.0-beta.8. Both fallbacks are then substituted side by side, the value is invalid at computed-value time, and the property falls back to its initial value.
+- **Evidence:** `/transactions/new`, Chrome 141, every scheme: the segmented-control indicator computes `background-color: rgba(0, 0, 0, 0)`, so the chosen segment is drawn only by its 10 % border over the track. With `--lightningcss-light: ; --lightningcss-dark: initial` declared on `<html>`, the indicator computes `oklab(0.314 …)` in dark and `oklch(0.985 …)` in light.
+- **Impact on equori:** the chosen kind of the entry form (expense, income, transfer) is not raised above the track.
+- **Workaround:** `web/src/app/app.css` declares the pair for each `data-slotted-scheme` value.
+
+```
+Bug — build: light-dark() lowered to undeclared variables.
+Observed: @slotted/react/dist/styles.css contains var(--lightningcss-light, …) var(--lightningcss-dark, …) pairs (segmented-control indicator background, event-calendar event hues) but declares neither variable anywhere, so the computed value is invalid and the property resolves to its initial value: the segmented-control thumb is transparent in every scheme.
+Expected: the indicator is surface-raised in light and text 14 % over surface-raised in dark, as the source's light-dark() states.
+Repro: render <SegmentedControl defaultValue="a"><Segment value="a"/><Segment value="b"/></SegmentedControl> under data-slotted-theme="default" data-slotted-scheme="dark"; getComputedStyle of [data-part="indicator"] gives background-color rgba(0, 0, 0, 0).
+Fix: either target browsers with native light-dark() so Lightning CSS keeps it, or have the theme's scheme blocks declare --lightningcss-light/--lightningcss-dark next to color-scheme (on :scope and the seeds element), or replace light-dark() in family CSS with a scheme token.
+Acceptance: a build check fails when styles.css reads a --lightningcss-* variable that no shipped stylesheet declares, and a browser test asserts the indicator background is not transparent in light and dark.
+```

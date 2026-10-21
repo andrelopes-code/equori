@@ -11,4 +11,28 @@
   #root {
     block-size: 100dvh;
   }
+
+  /* Workaround for Slotted finding "light-dark() compiles to variables no stylesheet defines":
+     Lightning CSS lowers light-dark() to var(--lightningcss-light, …) var(--lightningcss-dark, …)
+     pairs that only resolve where the pair is declared; without it the value is invalid, and the
+     segmented-control thumb and the event-calendar hues draw transparent. A theme rule cannot
+     select the document root, so the pair is declared here. */
+  [data-slotted-scheme="light"],
+  [data-slotted-scheme="high-contrast"],
+  [data-slotted-scheme="system"] {
+    --lightningcss-light: initial;
+    --lightningcss-dark: ;
+  }
+
+  [data-slotted-scheme="dark"] {
+    --lightningcss-light: ;
+    --lightningcss-dark: initial;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    [data-slotted-scheme="system"] {
+      --lightningcss-light: ;
+      --lightningcss-dark: initial;
+    }
+  }
 }
