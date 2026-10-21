@@ -80,7 +80,7 @@ describe("CorrectTransactionPage", () => {
     });
     expect(description).toHaveValue("Weekly shop");
     expect(
-      screen.getByRole("spinbutton", { name: catalogEn["entry.amount"] }),
+      screen.getByRole("textbox", { name: catalogEn["entry.amount"] }),
     ).toHaveValue("120.00");
     await userEvent.type(
       screen.getByRole("textbox", { name: catalogEn["correct.reason"] }),

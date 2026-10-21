@@ -1,0 +1,89 @@
+@layer app {
+  /* The amount panel: the page's largest figure, centred over the fields that qualify it. */
+  .panel {
+    --money-ink: var(--slotted-text);
+
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: var(--slotted-space-3);
+    padding-block: var(--slotted-space-8);
+    padding-inline: var(--slotted-space-6);
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-lg);
+    background: var(--slotted-surface-sunken);
+    color: var(--money-ink);
+    cursor: text;
+    transition: border-color var(--slotted-duration-short)
+      var(--slotted-easing-standard);
+  }
+
+  .panel[data-sign="expense"] {
+    --money-ink: var(--slotted-tone-danger-text);
+  }
+
+  .panel[data-sign="income"] {
+    --money-ink: var(--slotted-tone-success-text);
+  }
+
+  .panel[data-empty] {
+    --money-ink: var(--slotted-text-muted);
+  }
+
+  .panel:focus-within {
+    border-color: var(--slotted-focus-ring-color);
+    box-shadow: 0 0 0 var(--slotted-focus-ring-width)
+      var(--slotted-focus-ring-color);
+  }
+
+  .panel[data-invalid] {
+    border-color: var(--slotted-tone-danger-border);
+  }
+
+  .figure {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--slotted-space-2);
+    font-size: var(--slotted-font-size-2xl);
+    font-weight: var(--slotted-font-weight-medium);
+  }
+
+  .sign {
+    font-weight: var(--slotted-font-weight-semibold);
+  }
+
+  .symbol {
+    color: var(--slotted-text-muted);
+  }
+
+  /* The input is as wide as its digits, so the symbol and the code hug the number. */
+  .input {
+    field-sizing: content;
+    /* Two digits: the narrowest amount the panel shows. */
+    min-inline-size: 2ch;
+    max-inline-size: 100%;
+    padding: 0;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: var(--slotted-font-size-4xl);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--slotted-font-weight-semibold);
+    line-height: 1;
+    text-align: center;
+  }
+
+  .code {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+    font-weight: var(--slotted-font-weight-medium);
+  }
+
+  @media (forced-colors: active) {
+    .panel:focus-within {
+      outline: var(--slotted-focus-ring-width) solid Highlight;
+    }
+  }
+}

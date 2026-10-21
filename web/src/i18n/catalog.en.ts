@@ -672,6 +672,7 @@ export const catalogEn = {
   "day.today": "Today",
   "day.yesterday": "Yesterday",
   "transactions.column.date.group": "Day",
+  "day.beforeYesterday": "Day before yesterday",
 } as const;
 
 export type Catalog = { [K in keyof typeof catalogEn]: string };

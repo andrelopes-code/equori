@@ -1,5 +1,4 @@
 import { parseISODate, toISODate } from "@slotted/core/date";
-import { CurrencyField } from "@slotted/react/currency-field";
 import { DatePicker } from "@slotted/react/date-picker";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
@@ -9,15 +8,16 @@ import type { ReactNode } from "react";
 
 import type { components } from "@/api/schema.gen";
 import { CategoryPicker } from "@/features/categories";
-import { AccountSelect } from "@/features/transactions/account-select";
+import { AccountPicker } from "@/features/transactions/account-picker";
+import { DateShortcuts } from "@/features/transactions/date-shortcuts";
 import type { EntryDraft, EntryKind } from "@/features/transactions/entry-kind";
 import { PayeeField } from "@/features/transactions/payee-field";
 import { PostingsEditor } from "@/features/transactions/postings-editor";
 import { TagsField } from "@/features/transactions/tags-field";
-import { majorFromMinor, minorFromMajor } from "@/features/transactions/split";
 import styles from "@/features/transactions/transaction-form.module.css";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
+import { MoneyInput } from "@/ui/money-input";
 
 type Account = components["schemas"]["Account"];
 type Payee = components["schemas"]["Payee"];
@@ -48,6 +48,7 @@ export function TransactionForm({
   baseCurrency,
   scale,
   errors,
+  autoFocusAmount = false,
   children,
 }: {
   draft: EntryDraft;
@@ -58,6 +59,8 @@ export function TransactionForm({
   baseCurrency: string;
   scale: (code: string) => number;
   errors: Record<string, string>;
+  // A new entry starts at its amount; a correction leaves focus where the page puts it.
+  autoFocusAmount?: boolean;
   // Fields only one of the forms has, such as the reason of a correction.
   children?: ReactNode;
 }) {
@@ -95,15 +98,20 @@ export function TransactionForm({
       {simple && (
         <Field invalid={error("amount") !== undefined}>
           <FieldLabel>{t("entry.amount")}</FieldLabel>
-          <CurrencyField
-            appearance="display"
+          <MoneyInput
+            value={draft.amount}
             currency={currency}
-            min={0}
-            value={
-              draft.amount === 0 ? null : majorFromMinor(draft.amount, digits)
+            scale={digits}
+            sign={
+              draft.kind === "expense"
+                ? "expense"
+                : draft.kind === "income"
+                  ? "income"
+                  : "neutral"
             }
-            onValueChange={(value: number | null) => {
-              set({ amount: minorFromMajor(Math.abs(value ?? 0), digits) });
+            autoFocus={autoFocusAmount}
+            onChange={(amount) => {
+              set({ amount });
             }}
           />
           {error("amount") !== undefined && (
@@ -112,9 +120,45 @@ export function TransactionForm({
         </Field>
       )}
 
-      <div className={styles.pair}>
-        <Field invalid={error("date") !== undefined}>
-          <FieldLabel>{t("entry.date")}</FieldLabel>
+      {simple && (
+        <Field invalid={error("account") !== undefined}>
+          <FieldLabel>
+            {draft.kind === "transfer" ? t("entry.from") : t("entry.account")}
+          </FieldLabel>
+          <AccountPicker
+            name="account"
+            accounts={accounts}
+            value={draft.accountId}
+            exclude={draft.kind === "transfer" ? draft.toAccountId : null}
+            onChange={(id) => {
+              set({ accountId: id });
+            }}
+          />
+          {error("account") !== undefined && (
+            <FieldError>{error("account")}</FieldError>
+          )}
+        </Field>
+      )}
+
+      {draft.kind === "transfer" && (
+        <Field invalid={error("to") !== undefined}>
+          <FieldLabel>{t("entry.to")}</FieldLabel>
+          <AccountPicker
+            name="to"
+            accounts={accounts}
+            value={draft.toAccountId}
+            exclude={draft.accountId}
+            onChange={(id) => {
+              set({ toAccountId: id });
+            }}
+          />
+          {error("to") !== undefined && <FieldError>{error("to")}</FieldError>}
+        </Field>
+      )}
+
+      <Field invalid={error("date") !== undefined}>
+        <FieldLabel>{t("entry.date")}</FieldLabel>
+        <div className={styles.date}>
           <DatePicker
             name="date"
             value={parseISODate(draft.date)}
@@ -124,30 +168,17 @@ export function TransactionForm({
               }
             }}
           />
-          {error("date") !== undefined && (
-            <FieldError>{error("date")}</FieldError>
-          )}
-        </Field>
-        {simple && (
-          <Field invalid={error("account") !== undefined}>
-            <FieldLabel>
-              {draft.kind === "transfer" ? t("entry.from") : t("entry.account")}
-            </FieldLabel>
-            <AccountSelect
-              accounts={accounts}
-              value={draft.accountId}
-              exclude={draft.kind === "transfer" ? draft.toAccountId : null}
-              placeholder={t("entry.chooseAccount")}
-              onChange={(id) => {
-                set({ accountId: id });
-              }}
-            />
-            {error("account") !== undefined && (
-              <FieldError>{error("account")}</FieldError>
-            )}
-          </Field>
+          <DateShortcuts
+            value={draft.date}
+            onChange={(date) => {
+              set({ date });
+            }}
+          />
+        </div>
+        {error("date") !== undefined && (
+          <FieldError>{error("date")}</FieldError>
         )}
-      </div>
+      </Field>
 
       {(draft.kind === "expense" || draft.kind === "income") && (
         <div className={styles.pair}>
@@ -180,22 +211,6 @@ export function TransactionForm({
             )}
           </Field>
         </div>
-      )}
-
-      {draft.kind === "transfer" && (
-        <Field invalid={error("to") !== undefined}>
-          <FieldLabel>{t("entry.to")}</FieldLabel>
-          <AccountSelect
-            accounts={accounts}
-            value={draft.toAccountId}
-            exclude={draft.accountId}
-            placeholder={t("entry.chooseAccount")}
-            onChange={(id) => {
-              set({ toAccountId: id });
-            }}
-          />
-          {error("to") !== undefined && <FieldError>{error("to")}</FieldError>}
-        </Field>
       )}
 
       {draft.kind === "advanced" && (

@@ -233,6 +233,8 @@ export function NewTransactionPage() {
               baseCurrency={base}
               scale={scale}
               errors={errors}
+              // A phone would open its keyboard over the form before the reader chose to type.
+              autoFocusAmount={wide}
             />
           )}
         </form>

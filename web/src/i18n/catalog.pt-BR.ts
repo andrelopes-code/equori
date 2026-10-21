@@ -675,4 +675,5 @@ export const catalogPtBR: Catalog = {
   "day.today": "Hoje",
   "day.yesterday": "Ontem",
   "transactions.column.date.group": "Dia",
+  "day.beforeYesterday": "Anteontem",
 };

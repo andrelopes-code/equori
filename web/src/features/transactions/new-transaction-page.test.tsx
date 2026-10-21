@@ -1,4 +1,4 @@
-import { act, screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -29,9 +29,13 @@ function api(
   });
 }
 
-async function chooseOption(trigger: HTMLElement, name: string) {
-  await userEvent.click(trigger);
-  await userEvent.click(await screen.findByRole("option", { name }));
+// Owner review 2026-10-21, item 16: balance accounts are radio tiles, named by account and kind.
+async function chooseAccount(group: string, account: string) {
+  await userEvent.click(
+    within(screen.getByRole("radiogroup", { name: group })).getByRole("radio", {
+      name: new RegExp(`^${account}`),
+    }),
+  );
 }
 
 async function pick(label: string, text: string) {
@@ -55,14 +59,11 @@ describe("NewTransactionPage", () => {
     const { router } = await renderApp("/transactions/new", {
       fetch: api(sent),
     });
-    const amount = await screen.findByRole("spinbutton", {
+    const amount = await screen.findByRole("textbox", {
       name: catalogEn["entry.amount"],
     });
     await userEvent.type(amount, "12000");
-    await chooseOption(
-      screen.getByRole("combobox", { name: catalogEn["entry.account"] }),
-      "Itau",
-    );
+    await chooseAccount(catalogEn["entry.account"], "Itau");
     await pick(catalogEn["category.label"], "Mercado");
     await pick(catalogEn["facts.payee"], "Padaria");
     await userEvent.type(
@@ -99,17 +100,11 @@ describe("NewTransactionPage", () => {
       }),
     );
     await userEvent.type(
-      screen.getByRole("spinbutton", { name: catalogEn["entry.amount"] }),
+      screen.getByRole("textbox", { name: catalogEn["entry.amount"] }),
       "50000",
     );
-    await chooseOption(
-      screen.getByRole("combobox", { name: catalogEn["entry.from"] }),
-      "Itau",
-    );
-    await chooseOption(
-      screen.getByRole("combobox", { name: catalogEn["entry.to"] }),
-      "Reserva",
-    );
+    await chooseAccount(catalogEn["entry.from"], "Itau");
+    await chooseAccount(catalogEn["entry.to"], "Reserva");
     await userEvent.click(
       screen.getByRole("button", { name: catalogEn["entry.save"] }),
     );
@@ -157,15 +152,12 @@ describe("NewTransactionPage", () => {
       ),
     });
     await userEvent.type(
-      await screen.findByRole("spinbutton", {
+      await screen.findByRole("textbox", {
         name: catalogEn["entry.amount"],
       }),
       "100",
     );
-    await chooseOption(
-      screen.getByRole("combobox", { name: catalogEn["entry.account"] }),
-      "Itau",
-    );
+    await chooseAccount(catalogEn["entry.account"], "Itau");
     await pick(catalogEn["category.label"], "Lazer");
     await userEvent.click(
       screen.getByRole("button", { name: catalogEn["entry.save"] }),
