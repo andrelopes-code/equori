@@ -1,0 +1,26 @@
+@layer app {
+  /* From 1024 px the preview stands beside the form and stays in view while it scrolls; below,
+     it follows the form. */
+  .editor {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-8);
+  }
+
+  .form {
+    container: conditions / inline-size;
+    min-inline-size: 0;
+  }
+
+  @media (min-width: 1024px) {
+    .editor {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 24rem);
+      align-items: start;
+    }
+
+    .preview {
+      position: sticky;
+      inset-block-start: var(--slotted-page-sticky-top, 0);
+    }
+  }
+}

@@ -1,0 +1,33 @@
+@layer app {
+  .row {
+    display: grid;
+    grid-template-areas: "type body remove" "message message message";
+    grid-template-columns: minmax(0, 13rem) minmax(0, 1fr) auto;
+    align-items: start;
+    gap: var(--slotted-space-2);
+  }
+
+  .type {
+    grid-area: type;
+  }
+
+  .body {
+    grid-area: body;
+    min-inline-size: 0;
+  }
+
+  .remove {
+    grid-area: remove;
+  }
+
+  .message {
+    grid-area: message;
+  }
+
+  @container conditions (max-width: 36rem) {
+    .row {
+      grid-template-areas: "type remove" "body body" "message message";
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+  }
+}

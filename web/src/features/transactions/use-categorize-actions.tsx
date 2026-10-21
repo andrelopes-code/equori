@@ -1,5 +1,6 @@
 import { Button } from "@slotted/react/button";
 import { toast } from "@slotted/react/toast";
+import { useNavigate } from "@tanstack/react-router";
 import { useCallback } from "react";
 
 import { useApi } from "@/api/api-context";
@@ -43,6 +44,7 @@ export function useCategorizeActions(
 ): CategorizeActions {
   const t = useT();
   const api = useApi();
+  const navigate = useNavigate();
   const single = useCategorizeTransaction();
   const bulk = useBulkCategorize();
 
@@ -129,11 +131,30 @@ export function useCategorizeActions(
                 {t("categorize.applySimilar", { count: similar.length })}
               </Button>
             )}
+            <Button
+              size="sm"
+              variant="ghost"
+              tone="secondary"
+              onClick={() => {
+                toast.dismiss(id);
+                void navigate({
+                  to: "/categories/rules/new",
+                  search: {
+                    category: category.id,
+                    ...(tx.payee_id === undefined
+                      ? { description: tx.description }
+                      : { payee: tx.payee_id }),
+                  },
+                });
+              }}
+            >
+              {t("categorize.createRule")}
+            </Button>
           </>
         ),
       });
     },
-    [accounts, api, categorizeMany, single, t],
+    [accounts, api, categorizeMany, navigate, single, t],
   );
 
   return { categorizeOne, categorizeMany };

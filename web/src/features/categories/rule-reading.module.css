@@ -1,0 +1,33 @@
+@layer app {
+  /* Two columns: the step's word on the rail, the lines beside it. */
+  .sheet {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: var(--slotted-space-2) var(--slotted-space-4);
+    padding: var(--slotted-space-4);
+    border-inline-start: var(--slotted-border-width-thick) solid
+      var(--slotted-border-strong);
+    background: var(--slotted-surface-sunken);
+    border-radius: var(--slotted-radius-md);
+  }
+
+  .lines {
+    display: grid;
+    gap: var(--slotted-space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .line {
+    display: grid;
+    grid-template-columns: 2.5ch minmax(0, 1fr);
+    gap: var(--slotted-space-2);
+  }
+
+  /* The join and the step number stand in a column as wide as the word "and" in either
+     language; no token holds a text measure. */
+  .join {
+    text-align: end;
+  }
+}

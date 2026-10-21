@@ -30,6 +30,7 @@ import {
   RuleEditorPage,
   RulesPage,
   validateCategoriesSearch,
+  validateRulePrefill,
 } from "@/features/categories";
 import { GoalsPage } from "@/features/goals";
 import { LoginPage, meQuery } from "@/features/session";
@@ -156,6 +157,7 @@ const rulesRoute = createRoute({
 const newRuleRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "categories/rules/new",
+  validateSearch: validateRulePrefill,
   component: RuleEditorPage,
 });
 

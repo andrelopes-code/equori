@@ -49,7 +49,7 @@ export function RuleList({
         id: "enabled",
         label: t("rules.enabled"),
         accessor: "enabled",
-        width: 84,
+        width: 104,
         sortable: false,
       },
       {

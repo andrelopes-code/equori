@@ -1,0 +1,40 @@
+@layer app {
+  .row {
+    display: grid;
+    grid-template-areas: "field operator value remove" "message message message message";
+    grid-template-columns: minmax(0, 11rem) minmax(0, 10rem) minmax(0, 1fr) auto;
+    align-items: start;
+    gap: var(--slotted-space-2);
+  }
+
+  .field {
+    grid-area: field;
+  }
+
+  .operator {
+    grid-area: operator;
+  }
+
+  .value {
+    grid-area: value;
+    min-inline-size: 0;
+  }
+
+  .remove {
+    grid-area: remove;
+  }
+
+  .message {
+    grid-area: message;
+  }
+
+  /* OE-09: below the room the three controls need (11 + 10 + 12 rem of fields) in the list of
+     conditions, the field takes its own line; the rem values are the controls' readable widths,
+     which no token holds. */
+  @container conditions (max-width: 36rem) {
+    .row {
+      grid-template-areas: "field field remove" "operator value value" "message message message";
+      grid-template-columns: minmax(0, 10rem) minmax(0, 1fr) auto;
+    }
+  }
+}

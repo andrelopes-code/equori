@@ -1,0 +1,19 @@
+@layer app {
+  /* A part: its category, how its share is given, the share, and its removal (LA-05). */
+  .row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 9rem) minmax(0, 8rem) auto;
+    align-items: start;
+    gap: var(--slotted-space-2);
+  }
+
+  @container conditions (max-width: 36rem) {
+    .row {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    }
+
+    .row > :first-child {
+      grid-column: 1 / -1;
+    }
+  }
+}

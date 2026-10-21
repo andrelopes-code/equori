@@ -18,3 +18,4 @@ export { PayeesPage } from "@/features/categories/payees-page";
 export { validateCategoriesSearch } from "@/features/categories/categories-search";
 export { useCategoryEntries } from "@/features/categories/use-category-entries";
 export { RuleEditorPage } from "@/features/categories/rule-editor-page";
+export { validateRulePrefill } from "@/features/categories/rule-prefill";
