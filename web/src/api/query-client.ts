@@ -13,9 +13,15 @@ export function newQueryClient(
       onUnauthenticated();
     }
   };
-  return new QueryClient({
+  const client: QueryClient = new QueryClient({
     queryCache: new QueryCache({ onError }),
-    mutationCache: new MutationCache({ onError }),
+    // A write can change any figure on screen (a balance, a category total, a rule's coverage,
+    // a count in a tab); every query goes stale and the ones on screen refetch, so no screen
+    // keeps a value the write made wrong.
+    mutationCache: new MutationCache({
+      onError,
+      onSuccess: () => client.invalidateQueries(),
+    }),
     defaultOptions: {
       queries: {
         ...(retryDelay === undefined ? {} : { retryDelay }),
@@ -25,4 +31,5 @@ export function newQueryClient(
       },
     },
   });
+  return client;
 }

@@ -67,4 +67,25 @@ describe("newQueryClient", () => {
     );
     expect(onUnauthenticated).not.toHaveBeenCalled();
   });
+
+  it("marks every query stale after a mutation succeeds", async () => {
+    const client = newQueryClient(vi.fn());
+    await client.query({ queryKey: ["reports", "x"], queryFn: () => 1 });
+    await client
+      .getMutationCache()
+      .build(client, { mutationFn: () => Promise.resolve("ok") })
+      .execute(undefined);
+    expect(client.getQueryState(["reports", "x"])?.isInvalidated).toBe(true);
+  });
+
+  it("leaves queries fresh after a mutation fails", async () => {
+    const client = newQueryClient(vi.fn());
+    await client.query({ queryKey: ["reports", "x"], queryFn: () => 1 });
+    await client
+      .getMutationCache()
+      .build(client, { mutationFn: () => Promise.reject(new Error("no")) })
+      .execute(undefined)
+      .catch(() => undefined);
+    expect(client.getQueryState(["reports", "x"])?.isInvalidated).toBe(false);
+  });
 });

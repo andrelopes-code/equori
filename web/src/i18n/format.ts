@@ -24,6 +24,43 @@ export interface MoneyParts {
 
 const minusSign = "\u2212";
 
+// Building an Intl formatter costs about a hundred times a format call, and a grid formats every
+// visible cell on each render; formatters are kept per locale and options.
+const numberFormats = new Map<string, Intl.NumberFormat | RangeError>();
+const dateFormats = new Map<string, Intl.DateTimeFormat>();
+
+function numberFormat(
+  locale: string,
+  options: Intl.NumberFormatOptions,
+): Intl.NumberFormat {
+  const key = `${locale}|${JSON.stringify(options)}`;
+  let format = numberFormats.get(key);
+  if (format === undefined) {
+    try {
+      format = new Intl.NumberFormat(locale, options);
+    } catch (error) {
+      if (!(error instanceof RangeError)) throw error;
+      format = error;
+    }
+    numberFormats.set(key, format);
+  }
+  if (format instanceof RangeError) throw format;
+  return format;
+}
+
+function dateFormat(
+  locale: string,
+  options: Intl.DateTimeFormatOptions,
+): Intl.DateTimeFormat {
+  const key = `${locale}|${JSON.stringify(options)}`;
+  let format = dateFormats.get(key);
+  if (format === undefined) {
+    format = new Intl.DateTimeFormat(locale, { timeZone: "UTC", ...options });
+    dateFormats.set(key, format);
+  }
+  return format;
+}
+
 export function formatMoneyParts(
   m: Money,
   scale: number,
@@ -38,7 +75,7 @@ export function formatMoneyParts(
   let parts: Intl.NumberFormatPart[];
   let symbol = m.currency;
   try {
-    parts = new Intl.NumberFormat(locale, {
+    parts = numberFormat(locale, {
       style: "currency",
       currency: m.currency,
       ...fraction,
@@ -46,7 +83,7 @@ export function formatMoneyParts(
   } catch (error) {
     // Intl throws RangeError for codes that are not ISO 4217 (a security ticker).
     if (!(error instanceof RangeError)) throw error;
-    parts = new Intl.NumberFormat(locale, {
+    parts = numberFormat(locale, {
       style: "decimal",
       ...fraction,
     }).formatToParts(plain);
@@ -81,7 +118,7 @@ export function formatMoney(
 
 function isISOCurrency(code: string): boolean {
   try {
-    new Intl.NumberFormat("en", { style: "currency", currency: code });
+    numberFormat("en", { style: "currency", currency: code });
     return true;
   } catch {
     return false;
@@ -109,8 +146,7 @@ export function parseAmount(
 }
 
 export function formatDate(iso: string, locale: Locale): string {
-  return new Intl.DateTimeFormat(locale, {
-    timeZone: "UTC",
+  return dateFormat(locale, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -125,11 +161,9 @@ export function todayISO(now: Date = new Date()): string {
 
 export function formatReferenceMonth(month: string, locale: Locale): string {
   const [year = 0, m = 1] = month.split("-").map(Number);
-  return new Intl.DateTimeFormat(locale, {
-    timeZone: "UTC",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(Date.UTC(year, m - 1, 1)));
+  return dateFormat(locale, { month: "short", year: "numeric" }).format(
+    new Date(Date.UTC(year, m - 1, 1)),
+  );
 }
 
 function utcDate(iso: string): Date {
@@ -143,10 +177,7 @@ function dateParts(
   options: Intl.DateTimeFormatOptions,
 ): Record<string, string> {
   const out: Record<string, string> = {};
-  for (const part of new Intl.DateTimeFormat(locale, {
-    timeZone: "UTC",
-    ...options,
-  }).formatToParts(utcDate(iso))) {
+  for (const part of dateFormat(locale, options).formatToParts(utcDate(iso))) {
     out[part.type] = part.value.replace(/\.$/, "");
   }
   return out;
@@ -182,20 +213,16 @@ function capitalize(text: string): string {
 // "Outubro de 2026" / "October 2026".
 export function formatMonthTitle(month: string, locale: Locale): string {
   return capitalize(
-    new Intl.DateTimeFormat(locale, {
-      timeZone: "UTC",
-      month: "long",
-      year: "numeric",
-    }).format(utcDate(`${month}-01`)),
+    dateFormat(locale, { month: "long", year: "numeric" }).format(
+      utcDate(`${month}-01`),
+    ),
   );
 }
 
 // "Outubro" / "October".
 export function formatMonthName(month: string, locale: Locale): string {
   return capitalize(
-    new Intl.DateTimeFormat(locale, { timeZone: "UTC", month: "long" }).format(
-      utcDate(`${month}-01`),
-    ),
+    dateFormat(locale, { month: "long" }).format(utcDate(`${month}-01`)),
   );
 }
 
