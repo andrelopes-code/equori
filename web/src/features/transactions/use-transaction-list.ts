@@ -28,9 +28,16 @@ export interface TransactionList {
   retry: () => void;
 }
 
+const pageSize = 30;
+
 export function useTransactionList(search: TransactionSearch): TransactionList {
   const api = useApi();
-  const list = useInfiniteQuery(transactionsInfiniteQuery(api, search));
+  // A page of 30 fills a desktop's frame twice; every row mounted costs its style matching
+  // (Slotted finding "Every element with a data-part attribute is matched against about 4 900
+  // selectors"), so the first paint mounts no more than that.
+  const list = useInfiniteQuery(
+    transactionsInfiniteQuery(api, { ...search, limit: pageSize }),
+  );
   const accounts = useQuery(accountsQuery(api));
   const payees = useQuery(payeesQuery(api));
   const scale = useScale();

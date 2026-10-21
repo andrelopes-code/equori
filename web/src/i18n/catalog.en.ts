@@ -656,6 +656,22 @@ export const catalogEn = {
   "alias.match.regex": "matches the expression",
   "payees.create": "Create payee",
   "rule.unset": "…",
+  "transactions.period.last30Days": "Last 30 days",
+  "transactions.period.lastYear": "Last year",
+  "transactions.period.all": "All time",
+  "transactions.period.previous": "Previous period",
+  "transactions.period.next": "Next period",
+  "transactions.period.choose": "Choose period",
+  "transactions.period.custom": "Or pick the first and the last day",
+  "transactions.subtitle": "Every entry of your accounts, newest first.",
+  "transactions.summary.label": "Totals of the period",
+  "transactions.summary.income": "Money in",
+  "transactions.summary.expense": "Money out",
+  "transactions.summary.net": "Result",
+  "transactions.dayTotal": "Total of the day: {amount}",
+  "day.today": "Today",
+  "day.yesterday": "Yesterday",
+  "transactions.column.date.group": "Day",
 } as const;
 
 export type Catalog = { [K in keyof typeof catalogEn]: string };

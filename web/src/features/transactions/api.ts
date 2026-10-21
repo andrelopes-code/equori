@@ -80,6 +80,33 @@ export function periodTransactionsQuery(
   });
 }
 
+// Every transaction a search keeps, following the cursor; the page asks only for a bounded period.
+export function searchTransactionsQuery(
+  api: Client<paths>,
+  search: TransactionSearch,
+) {
+  return queryOptions({
+    queryKey: [...transactionKeys.all, "search", search] as const,
+    queryFn: async () => {
+      const items: components["schemas"]["Transaction"][] = [];
+      let cursor: string | undefined;
+      do {
+        const page = await unwrap(
+          await api.GET("/transactions", {
+            params: {
+              query: { ...search, limit: 200, ...(cursor ? { cursor } : {}) },
+            },
+          }),
+        );
+        items.push(...page.items);
+        // A cursor that does not move would page forever.
+        cursor = page.next_cursor === cursor ? undefined : page.next_cursor;
+      } while (cursor !== undefined);
+      return items;
+    },
+  });
+}
+
 // No count endpoint exists: one page of 200 gives the count, and a next cursor means "more than 200".
 export function uncategorizedCountQuery(api: Client<paths>) {
   return queryOptions({

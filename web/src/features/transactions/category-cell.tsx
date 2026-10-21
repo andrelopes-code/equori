@@ -1,7 +1,6 @@
 import { Button } from "@slotted/react/button";
 import { Text } from "@slotted/react/typography";
 
-import { CategoryMark } from "@/features/categories";
 import type { CategoryEntry } from "@/features/categories";
 import styles from "@/features/transactions/transactions-grid.module.css";
 import type { ListRow } from "@/features/transactions/use-transaction-list";
@@ -42,12 +41,8 @@ export function CategoryCell({
       ? t("transactions.split", { count: entries.length })
       : first.name;
   const whole = entries.map((e) => e.path).join(", ");
-  const content = (
-    <span className={styles.cell}>
-      <CategoryMark name={first.name} color={first.color} icon={first.icon} />
-      <span className={styles.cut}>{name}</span>
-    </span>
-  );
+  // The category's mark leads the row; the cell names it.
+  const content = <span className={styles.cut}>{name}</span>;
   return onCategorize === undefined ? (
     <span title={whole}>{content}</span>
   ) : (

@@ -3,7 +3,7 @@
   .cell {
     display: flex;
     align-items: center;
-    gap: var(--slotted-space-3);
+    gap: var(--slotted-space-5);
     min-inline-size: 0;
     max-inline-size: 100%;
   }
@@ -18,6 +18,30 @@
   /* The cell's button keeps to the column; its label cuts inside it. */
   .categoryButton {
     max-inline-size: 100%;
+  }
+
+  /* The payee over its detail line; the stack takes what the mark leaves and cuts inside it. */
+  .lines {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
+  .line {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-3);
+    min-inline-size: 0;
+  }
+
+  /* A day's name at the start of its group row, its total at the end. */
+  .day {
+    display: flex;
+    flex: 1;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--slotted-space-4);
+    min-inline-size: 0;
   }
 
   .struck {

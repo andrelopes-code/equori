@@ -100,16 +100,17 @@ beforeEach(() => {
 });
 
 describe("TransactionsPage", () => {
+  // Owner review 2026-10-21, item 8: rows are grouped by day; the description and the
+  // accounts share the line under the payee.
   it("lists every cursor page with payee, category, account and amount", async () => {
     const seen: Seen = { queries: [] };
     await renderApp("/transactions", { fetch: api(seen), today: "2026-10-17" });
     await screen.findByText("Year end");
     const first = rowOf("Padaria");
-    expect(within(first).getByText("Weekly shop")).toBeInTheDocument();
+    expect(within(first).getByText("Weekly shop · Itau")).toBeInTheDocument();
     expect(within(first).getByText("Mercado")).toBeInTheDocument();
-    expect(within(first).getByText("Itau")).toBeInTheDocument();
     expect(within(first).getByText("−R$120.00")).toBeInTheDocument();
-    expect(within(first).getByText("Oct 10")).toBeInTheDocument();
+    expect(screen.getByText("Sat, Oct 10")).toBeInTheDocument();
     expect(
       within(first).getByRole("checkbox", { name: "Select Padaria" }),
     ).toBeInTheDocument();
@@ -120,8 +121,8 @@ describe("TransactionsPage", () => {
       }),
     ).toBeInTheDocument();
     expect(within(second).getByText("R$500.00")).toBeInTheDocument();
-    // A date of another year carries its year.
-    expect(within(rowOf("Year end")).queryByText("Dec 30")).toBeNull();
+    // A day of another year carries its year.
+    expect(screen.queryByText(/Dec 30/)).toBeNull();
     expect(seen.queries.map((q) => q.get("cursor"))).toEqual([null, "page-2"]);
   });
 
@@ -141,7 +142,7 @@ describe("TransactionsPage", () => {
   it("writes the search to the URL and the request", async () => {
     const seen: Seen = { queries: [] };
     const { router } = await renderApp("/transactions", { fetch: api(seen) });
-    await screen.findByText("Weekly shop");
+    await screen.findByText("Weekly shop · Itau");
     await userEvent.type(
       screen.getByRole("searchbox", {
         name: catalogEn["transactions.search"],
@@ -161,7 +162,7 @@ describe("TransactionsPage", () => {
     await renderApp(`/transactions?account_id=${foodID}`, {
       fetch: api(seen),
     });
-    await screen.findByText("Weekly shop");
+    await screen.findByText("Weekly shop · Itau");
     expect(
       screen.getByRole("group", { name: /^Category: / }),
     ).toBeInTheDocument();
@@ -204,7 +205,7 @@ describe("TransactionsPage", () => {
     await userEvent.click(
       screen.getByRole("button", { name: catalogEn["transactions.tryAgain"] }),
     );
-    expect(await screen.findByText("Weekly shop")).toBeInTheDocument();
+    expect(await screen.findByText("Weekly shop · Itau")).toBeInTheDocument();
   });
 });
 
@@ -213,7 +214,7 @@ describe("TransactionsPage queue", () => {
     await renderApp("/transactions?uncategorized=true", {
       fetch: api({ queries: [] }),
     });
-    await screen.findByText("Weekly shop");
+    await screen.findByText("Weekly shop · Itau");
     expect(screen.queryByRole("group", { name: /uncategorized/i })).toBeNull();
     expect(
       screen.getByRole("tab", { name: "Uncategorized (1)", selected: true }),

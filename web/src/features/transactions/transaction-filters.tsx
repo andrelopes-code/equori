@@ -1,8 +1,5 @@
 import { FilterBar } from "@slotted/react/filter-bar";
-import type {
-  FilterBarField,
-  FilterBarPreset,
-} from "@slotted/react/filter-bar";
+import type { FilterBarField } from "@slotted/react/filter-bar";
 import { useMemo } from "react";
 
 import type { components } from "@/api/schema.gen";
@@ -12,13 +9,11 @@ import {
   searchFromTree,
   treeFromSearch,
 } from "@/features/transactions/filter-tree";
-import { periodPresets } from "@/features/transactions/period-presets";
 import type {
   TransactionSearch,
   TransactionSearchDraft,
 } from "@/features/transactions/search";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { useToday } from "@/i18n/today";
 
 type Account = components["schemas"]["Account"];
 type Payee = components["schemas"]["Payee"];
@@ -46,7 +41,6 @@ export function TransactionFilters({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
-  const today = useToday();
   const categoryIds = useMemo(
     () => new Set(categories.map((c) => c.id)),
     [categories],
@@ -80,14 +74,6 @@ export function TransactionFilters({
           .map((c) => ({ value: c.id, label: c.path })),
       },
       {
-        key: filterFields.period,
-        label: t("transactions.filter.period"),
-        kind: "date",
-        pinned: true,
-        operators: ["between", "after", "before"],
-        defaultOperator: "between",
-      },
-      {
         key: filterFields.payee,
         label: t("transactions.filter.payee"),
         kind: "set",
@@ -104,23 +90,12 @@ export function TransactionFilters({
     ];
   }, [accounts, categories, payees, tags, t, locale]);
 
-  const presets = useMemo<FilterBarPreset[]>(
-    () =>
-      periodPresets(today).map((p) => ({
-        key: p.key,
-        label: t(p.label),
-        value: treeFromSearch({ from: p.from, to: p.to }),
-      })),
-    [today, t],
-  );
-  const { uncategorized, q, ...filtered } = search;
-  const preset =
-    periodPresets(today).find(
-      (p) =>
-        Object.keys(filtered).length === 2 &&
-        filtered.from === p.from &&
-        filtered.to === p.to,
-    )?.key ?? null;
+  // The period is the header's control (PeriodControl); the bar holds the other filters.
+  const { uncategorized, q, from, to, ...filtered } = search;
+  const period = {
+    ...(from === undefined ? {} : { from }),
+    ...(to === undefined ? {} : { to }),
+  };
 
   return (
     <FilterBar
@@ -133,6 +108,7 @@ export function TransactionFilters({
       onValueChange={(tree) => {
         onSearchChange({
           ...searchFromTree(tree, search),
+          ...period,
           ...(uncategorized === undefined ? {} : { uncategorized }),
         });
       }}
@@ -144,16 +120,6 @@ export function TransactionFilters({
           ...(text === "" ? { q: undefined } : { q: text }),
         });
       }}
-      presets={presets}
-      preset={preset}
-      onPresetChange={(key) => {
-        const chosen = periodPresets(today).find((p) => p.key === key);
-        onSearchChange({
-          ...(uncategorized === undefined ? {} : { uncategorized }),
-          ...(q === undefined ? {} : { q }),
-          ...(chosen === undefined ? {} : { from: chosen.from, to: chosen.to }),
-        });
-      }}
       shortcut="/"
       loading={loading}
       {...(count === undefined ? {} : { count })}
@@ -162,8 +128,6 @@ export function TransactionFilters({
           ? t("transactions.countMore")
           : t("transactions.count"),
         search: t("transactions.search"),
-        preset: t("transactions.filter.period"),
-        presetNone: t("transactions.period.any"),
       }}
     />
   );

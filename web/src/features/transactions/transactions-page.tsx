@@ -1,10 +1,13 @@
 import { Glyph, Icon } from "@slotted/react/icon";
-import { IconButton } from "@slotted/react/button";
+import { Button, IconButton } from "@slotted/react/button";
 import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import {
   PageHeader,
   PageHeaderActions,
+  PageHeaderArea,
+  PageHeaderContent,
   PageHeaderHeading,
+  PageHeaderSubheading,
   PageHeaderTabs,
   PageHeaderTitle,
   PageHeaderTitleArea,
@@ -28,6 +31,8 @@ import {
 } from "@/features/transactions/api";
 import { validateTransactionSearch } from "@/features/transactions/search";
 import type { TransactionSearchDraft } from "@/features/transactions/search";
+import { PeriodControl } from "@/features/transactions/period-control";
+import { PeriodSummary } from "@/features/transactions/period-summary";
 import { SelectionBar } from "@/features/transactions/selection-bar";
 import { TransactionFilters } from "@/features/transactions/transaction-filters";
 import { TransactionDetail } from "@/features/transactions/transaction-detail";
@@ -35,6 +40,7 @@ import { TransactionsEmpty } from "@/features/transactions/transactions-empty";
 import { TransactionsGrid } from "@/features/transactions/transactions-grid";
 import styles from "@/features/transactions/transactions-page.module.css";
 import { useCategorizeActions } from "@/features/transactions/use-categorize-actions";
+import { usePeriodTotals } from "@/features/transactions/use-period-totals";
 import { useTransactionList } from "@/features/transactions/use-transaction-list";
 import { useT } from "@/i18n/i18n-provider";
 import { compactQuery, useMediaQuery, wideQuery } from "@/ui/use-media-query";
@@ -56,6 +62,7 @@ export function TransactionsPage() {
   // The tab and the bar paint at once; the grid follows from the deferred search (CP-09).
   const shown = useDeferredValue(search);
   const list = useTransactionList(shown);
+  const periodTotals = usePeriodTotals(shown);
   const accounts = useQuery(accountsQuery(api));
   const payees = useQuery(payeesQuery(api));
   const tags = useQuery(tagsQuery(api));
@@ -154,8 +161,25 @@ export function TransactionsPage() {
           <PageHeaderTitleRow>
             <PageHeaderTitle>
               <PageHeaderHeading>{t("nav.transactions")}</PageHeaderHeading>
+              <PageHeaderSubheading>
+                {t("transactions.subtitle")}
+              </PageHeaderSubheading>
             </PageHeaderTitle>
             <PageHeaderActions>
+              <PeriodControl
+                value={
+                  search.from !== undefined && search.to !== undefined
+                    ? { from: search.from, to: search.to }
+                    : undefined
+                }
+                onChange={(period) => {
+                  setSearch({
+                    ...search,
+                    from: period?.from,
+                    to: period?.to,
+                  });
+                }}
+              />
               <IconButton
                 aria-label={t("transactions.refresh")}
                 variant="ghost"
@@ -171,9 +195,30 @@ export function TransactionsPage() {
                   <Glyph name="rotate-ccw" />
                 </Icon>
               </IconButton>
+              {!compact && (
+                <Button
+                  start={
+                    <Icon size="sm">
+                      <Glyph name="plus" />
+                    </Icon>
+                  }
+                  onClick={() => {
+                    void navigate({ to: "/transactions/new" });
+                  }}
+                >
+                  {t("nav.new")}
+                </Button>
+              )}
             </PageHeaderActions>
           </PageHeaderTitleRow>
         </PageHeaderTitleArea>
+        {periodTotals.totals !== null && scale !== null && (
+          <PageHeaderArea>
+            <PageHeaderContent>
+              <PeriodSummary totals={periodTotals.totals} scale={scale} />
+            </PageHeaderContent>
+          </PageHeaderArea>
+        )}
         <PageHeaderTabs>
           <Tabs
             value={queue ? "queue" : "all"}

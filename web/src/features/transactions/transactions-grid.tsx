@@ -1,21 +1,24 @@
+import { emptyQuery } from "@slotted/core/grid";
 import type { GridCell, GridColumn } from "@slotted/core/grid";
 import { DataGrid } from "@slotted/react/data-grid";
-import type { DataGridHandle } from "@slotted/react/data-grid";
-import { Inline } from "@slotted/react/inline";
-import { Tag } from "@slotted/react/tag";
+import type {
+  DataGridEditorContext,
+  DataGridHandle,
+} from "@slotted/react/data-grid";
 import type { KeyboardEvent, ReactNode } from "react";
-import { useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 
 import type { CategoryEntry } from "@/features/categories";
 import { AmountCell } from "@/features/transactions/amount-cell";
 import { CategoryCell } from "@/features/transactions/category-cell";
 import { CategoryEditor } from "@/features/transactions/category-editor";
+import { DayHeader } from "@/features/transactions/day-header";
 import { TitleCell } from "@/features/transactions/title-cell";
 import type {
   ListRow,
   TransactionList,
 } from "@/features/transactions/use-transaction-list";
-import { formatDate, formatDayMonth, formatMoney } from "@/i18n/format";
+import { formatDate, formatDayHeader, formatMoney } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 
@@ -46,13 +49,13 @@ export function TransactionsGrid({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
-  const year = useToday().slice(0, 4);
+  const today = useToday();
   const handle = useRef<DataGridHandle>(null);
   const current = useRef<GridCell | null>(null);
 
-  const editCategory = (key: string) => {
+  const editCategory = useCallback((key: string) => {
     handle.current?.startEdit({ row: key, column: "category" });
-  };
+  }, []);
 
   // C categorizes the selection, or the row the cursor stands on.
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -74,15 +77,18 @@ export function TransactionsGrid({
   const columns = useMemo<GridColumn<ListRow>[]>(
     () => [
       {
+        // Hidden: the rows are grouped by it, and each day's group row names it.
         id: "date",
         label: t("transactions.column.date"),
         accessor: "date",
         width: 104,
-        priority: 3,
         format: (value) => {
           const iso = String(value);
-          return iso.startsWith(year)
-            ? formatDayMonth(iso, locale)
+          return iso.startsWith(today.slice(0, 4))
+            ? formatDayHeader(iso, today, locale, {
+                today: t("day.today"),
+                yesterday: t("day.yesterday"),
+              })
             : formatDate(iso, locale);
         },
       },
@@ -106,38 +112,79 @@ export function TransactionsGrid({
         priority: 2,
       },
       {
-        id: "accounts",
-        label: t("transactions.column.account"),
-        accessor: "accounts",
-        flex: 1,
-        minWidth: 140,
-        maxWidth: 240,
-        priority: 4,
-      },
-      {
         id: "tags",
         label: t("transactions.column.tags"),
         accessor: (row) => row.tags.join(", "),
         width: 160,
         priority: 5,
+        // Without room the tags leave the row rather than lengthen it on a phone.
+        popin: false,
       },
       {
         id: "amount",
         label: t("transactions.column.amount"),
         accessor: (row) => row.money.amount,
         numeric: true,
-        width: 136,
+        width: 148,
         priority: 1,
         format: (_value, row) =>
           formatMoney(row.money, scale(row.money.currency), locale),
       },
     ],
-    [t, locale, year, scale],
+    [t, locale, today, scale],
   );
 
   const titles = useMemo(
     () => new Map(list.rows.map((row) => [row.id, row.title])),
     [list.rows],
+  );
+
+  // Renderers keep their identity across renders, so a page render that does not touch the
+  // rows does not hand the grid new cells.
+  const cellRenderers = useMemo(
+    () => ({
+      title: ({ row }: { row: ListRow }) => (
+        <TitleCell
+          row={row}
+          category={categories.get(row.categoryIds[0] ?? "")}
+        />
+      ),
+      category: ({ row }: { row: ListRow }) => (
+        <CategoryCell
+          row={row}
+          categories={categories}
+          onCategorize={
+            row.voided || row.transfer
+              ? undefined
+              : () => {
+                  editCategory(row.id);
+                }
+          }
+        />
+      ),
+      amount: ({ row, text }: { row: ListRow; text: string }) => (
+        <AmountCell row={row} text={text} />
+      ),
+    }),
+    [categories, editCategory],
+  );
+  const editorRenderers = useMemo(
+    () => ({
+      category: ({
+        row,
+        draft,
+        setDraft,
+        commit,
+      }: DataGridEditorContext<ListRow>) => (
+        <CategoryEditor
+          draft={draft}
+          setDraft={setDraft}
+          commit={commit}
+          amount={row.money.amount}
+        />
+      ),
+    }),
+    [],
   );
 
   return (
@@ -155,21 +202,24 @@ export function TransactionsGrid({
         }
         await onCategoryCommit(commit.row, commit.value);
       }}
-      editorRenderers={{
-        category: ({ row, draft, setDraft, commit }) => (
-          <CategoryEditor
-            draft={draft}
-            setDraft={setDraft}
-            commit={commit}
-            amount={row.money.amount}
-          />
-        ),
-      }}
+      editorRenderers={editorRenderers}
       columns={columns}
+      defaultColumnState={{ hidden: ["date"] }}
+      defaultQuery={{ ...emptyQuery(), group: ["date"] }}
+      variant="framed"
+      rowHeight={56}
+      // Workaround for Slotted finding "Data-grid rows re-render on every scroll step and every
+      // selection change": a windowed grid re-renders every row on each wheel step (120 to 170 ms
+      // per step measured), while mounted rows scroll natively. The list grows a page of 50 at a
+      // time as the reader scrolls, so the rows mounted are the rows the reader reached.
+      virtualize={false}
       rows={list.rows}
       rowKey="id"
       {...(height === undefined ? {} : { height })}
-      mode="server"
+      // Workaround for Slotted finding "A server-mode data-grid does not group the rows it is
+      // given": the server already orders and filters, and client mode with an empty sort keeps
+      // that order while it groups by day.
+      mode="client"
       hasMore={list.hasMore}
       onLoadMore={list.loadMore}
       loading={list.pending || list.refreshing}
@@ -191,33 +241,10 @@ export function TransactionsGrid({
         selectRow: ({ row }) =>
           t("transactions.selectRow", { row: titles.get(row) ?? row }),
       }}
-      cellRenderers={{
-        title: ({ row }) => <TitleCell row={row} />,
-        category: ({ row }) => (
-          <CategoryCell
-            row={row}
-            categories={categories}
-            onCategorize={
-              row.voided || row.transfer
-                ? undefined
-                : () => {
-                    editCategory(row.id);
-                  }
-            }
-          />
-        ),
-        tags: ({ row }) =>
-          row.tags.length === 0 ? null : (
-            <Inline gap={1} wrap="nowrap">
-              {row.tags.map((tag) => (
-                <Tag key={tag} size="sm">
-                  {tag}
-                </Tag>
-              ))}
-            </Inline>
-          ),
-        amount: ({ row, text }) => <AmountCell row={row} text={text} />,
-      }}
+      cellRenderers={cellRenderers}
+      renderGroup={({ node }) => (
+        <DayHeader label={node.text} rows={node.rows} scale={scale} />
+      )}
     />
   );
 }

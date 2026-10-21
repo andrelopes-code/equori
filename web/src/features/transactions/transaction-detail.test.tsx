@@ -86,7 +86,7 @@ describe("transaction detail", () => {
       width: 1280,
       fetch: api(),
     });
-    const cell = await screen.findByText("Weekly shop");
+    const cell = await screen.findByText(/^Weekly shop/);
     await userEvent.dblClick(cell);
     await waitFor(() => {
       expect(router.state.location.search).toEqual({ selected: txID });
