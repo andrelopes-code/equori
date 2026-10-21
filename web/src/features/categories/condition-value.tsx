@@ -102,6 +102,9 @@ export function ConditionValue({
           maxLength={200}
           invalid={invalid}
           mono={operator === "regex"}
+          {...(operator === "regex"
+            ? { placeholder: t("ruleEditor.regexPlaceholder") }
+            : {})}
           onChange={(event) => {
             onChange(event.target.value);
           }}

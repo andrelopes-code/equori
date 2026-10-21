@@ -484,7 +484,7 @@ export const catalogEn = {
   "rule.op.equals": "is",
   "rule.op.contains": "contains",
   "rule.op.starts_with": "starts with",
-  "rule.op.regex": "matches",
+  "rule.op.regex": "matches the regex",
   "rule.op.between": "is between",
   "rule.op.greater_than": "is greater than",
   "rule.op.less_than": "is less than",
@@ -588,7 +588,7 @@ export const catalogEn = {
   "ruleEditor.actionType": "Action {index}",
   "ruleEditor.newTitle": "New rule",
   "ruleEditor.editTitle": "Edit rule",
-  "ruleEditor.when": "When",
+  "ruleEditor.when": "If the transaction",
   "ruleEditor.then": "Then",
   "ruleEditor.and": "and",
   "ruleEditor.limits":
@@ -685,6 +685,13 @@ export const catalogEn = {
     "Rules categorize new and imported transactions as they arrive.",
   "categories.subtitle.payees":
     "Who you pay and who pays you, and the names your bank gives them.",
+  "ruleEditor.whenNote":
+    "Every condition must hold at once. Text comparisons ignore case and accents.",
+  "ruleEditor.thenNote": "The actions apply in the order of the list.",
+  "ruleEditor.regexHint":
+    "A pattern in RE2 syntax, matched against the text as the bank wrote it, case included; start with (?i) to ignore case. Example: (?i)^(uber|99)",
+  "ruleEditor.regexPlaceholder": "(?i)^(uber|99)",
+  "ruleEditor.stepLabel": "Step {n}",
 } as const;
 
 export type Catalog = { [K in keyof typeof catalogEn]: string };

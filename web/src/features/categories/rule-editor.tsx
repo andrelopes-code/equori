@@ -21,7 +21,10 @@ import {
 import {
   Section,
   SectionBody,
+  SectionDescription,
+  SectionEyebrow,
   SectionHeader,
+  SectionHeading,
   SectionTitle,
 } from "@slotted/react/section";
 import { Stack } from "@slotted/react/stack";
@@ -31,7 +34,7 @@ import { toast } from "@slotted/react/toast";
 import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
@@ -265,35 +268,51 @@ export function RuleEditor({ rule }: { rule: Rule | null }) {
                   <FieldError>{shown.name}</FieldError>
                 )}
               </Field>
-              <Section>
+              <Section ground="surface">
                 <SectionHeader>
-                  <SectionTitle>{t("ruleEditor.when")}</SectionTitle>
+                  <SectionTitle>
+                    <SectionEyebrow>
+                      {t("ruleEditor.stepLabel", { n: 1 })}
+                    </SectionEyebrow>
+                    <SectionHeading>{t("ruleEditor.when")}</SectionHeading>
+                    <SectionDescription>
+                      {t("ruleEditor.whenNote")}
+                    </SectionDescription>
+                  </SectionTitle>
                 </SectionHeader>
                 <SectionBody>
                   <Stack gap={3}>
                     {draft.conditions.map((condition, index) => (
-                      <ConditionRow
-                        key={index}
-                        index={index}
-                        condition={condition}
-                        onChange={(next) => {
-                          setCondition(index, next);
-                        }}
-                        onRemove={() => {
-                          update({
-                            ...draft,
-                            conditions: draft.conditions.filter(
-                              (_, i) => i !== index,
-                            ),
-                          });
-                        }}
-                        canRemove={draft.conditions.length > 1}
-                        error={shown[`conditions[${String(index)}].value`]}
-                        payees={payeeChoices}
-                        accounts={accountChoices}
-                        currency={currency}
-                        scale={digits}
-                      />
+                      <Fragment key={index}>
+                        {index > 0 && (
+                          <span className={styles.connector}>
+                            <Text size="xs" weight="semibold" tone="muted">
+                              {t("ruleEditor.and")}
+                            </Text>
+                          </span>
+                        )}
+                        <ConditionRow
+                          index={index}
+                          condition={condition}
+                          onChange={(next) => {
+                            setCondition(index, next);
+                          }}
+                          onRemove={() => {
+                            update({
+                              ...draft,
+                              conditions: draft.conditions.filter(
+                                (_, i) => i !== index,
+                              ),
+                            });
+                          }}
+                          canRemove={draft.conditions.length > 1}
+                          error={shown[`conditions[${String(index)}].value`]}
+                          payees={payeeChoices}
+                          accounts={accountChoices}
+                          currency={currency}
+                          scale={digits}
+                        />
+                      </Fragment>
                     ))}
                     <div>
                       <Button
@@ -326,9 +345,17 @@ export function RuleEditor({ rule }: { rule: Rule | null }) {
                   </Stack>
                 </SectionBody>
               </Section>
-              <Section>
+              <Section ground="surface">
                 <SectionHeader>
-                  <SectionTitle>{t("ruleEditor.then")}</SectionTitle>
+                  <SectionTitle>
+                    <SectionEyebrow>
+                      {t("ruleEditor.stepLabel", { n: 2 })}
+                    </SectionEyebrow>
+                    <SectionHeading>{t("ruleEditor.then")}</SectionHeading>
+                    <SectionDescription>
+                      {t("ruleEditor.thenNote")}
+                    </SectionDescription>
+                  </SectionTitle>
                 </SectionHeader>
                 <SectionBody>
                   <Stack gap={3}>

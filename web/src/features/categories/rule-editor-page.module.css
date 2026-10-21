@@ -25,4 +25,20 @@
       inset-block-start: var(--slotted-page-sticky-top, 0);
     }
   }
+
+  /* "and" between two conditions: a short label on a hairline across the builder. */
+  .connector {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-4);
+    text-transform: uppercase;
+  }
+
+  .connector::before,
+  .connector::after {
+    flex: 1;
+    border-block-start: var(--slotted-border-width-thin) dashed
+      var(--slotted-border-subtle);
+    content: "";
+  }
 }

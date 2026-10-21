@@ -487,7 +487,7 @@ export const catalogPtBR: Catalog = {
   "rule.op.equals": "é",
   "rule.op.contains": "contém",
   "rule.op.starts_with": "começa com",
-  "rule.op.regex": "corresponde a",
+  "rule.op.regex": "casa com a regex",
   "rule.op.between": "está entre",
   "rule.op.greater_than": "é maior que",
   "rule.op.less_than": "é menor que",
@@ -592,7 +592,7 @@ export const catalogPtBR: Catalog = {
   "ruleEditor.actionType": "Ação {index}",
   "ruleEditor.newTitle": "Nova regra",
   "ruleEditor.editTitle": "Editar regra",
-  "ruleEditor.when": "Quando",
+  "ruleEditor.when": "Se a transação",
   "ruleEditor.then": "Então",
   "ruleEditor.and": "e",
   "ruleEditor.limits": "{conditions} de 20 condições · {actions} de 10 ações",
@@ -688,4 +688,11 @@ export const catalogPtBR: Catalog = {
     "As regras categorizam transações novas e importadas assim que chegam.",
   "categories.subtitle.payees":
     "Quem você paga e quem te paga, e os nomes que o banco dá a cada um.",
+  "ruleEditor.whenNote":
+    "Todas as condições precisam valer ao mesmo tempo. Comparações de texto ignoram maiúsculas e acentos.",
+  "ruleEditor.thenNote": "As ações são aplicadas na ordem da lista.",
+  "ruleEditor.regexHint":
+    "Um padrão na sintaxe RE2, comparado ao texto como o banco escreveu, com maiúsculas; comece com (?i) para ignorá-las. Exemplo: (?i)^(uber|99)",
+  "ruleEditor.regexPlaceholder": "(?i)^(uber|99)",
+  "ruleEditor.stepLabel": "Passo {n}",
 };

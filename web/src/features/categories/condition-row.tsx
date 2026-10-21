@@ -50,6 +50,13 @@ export function ConditionRow({
     value: o,
     label: t(`rule.op.${o}` as MessageKey),
   }));
+  // What the value means where it is not obvious: the sign of an amount, a pattern's syntax.
+  const hint =
+    condition.field === "amount"
+      ? t("ruleEditor.amountHint")
+      : condition.operator === "regex"
+        ? t("ruleEditor.regexHint")
+        : undefined;
   return (
     <div
       className={styles.row}
@@ -110,13 +117,13 @@ export function ConditionRow({
           </Icon>
         </IconButton>
       </div>
-      {(error !== undefined || condition.field === "amount") && (
+      {(error !== undefined || hint !== undefined) && (
         <Text
           size="sm"
           tone={error === undefined ? "muted" : "danger"}
           className={styles.message}
         >
-          {error ?? t("ruleEditor.amountHint")}
+          {error ?? hint}
         </Text>
       )}
     </div>
