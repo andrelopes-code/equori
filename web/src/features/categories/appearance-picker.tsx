@@ -87,6 +87,7 @@ export function AppearancePicker({
           role="radiogroup"
           aria-label={t("appearance.icon")}
           className={styles.icons}
+          data-color={color ?? undefined}
         >
           <label className={styles.option} title={t("appearance.noIcon")}>
             <input

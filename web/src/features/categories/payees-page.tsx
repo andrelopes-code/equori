@@ -180,6 +180,11 @@ export function PayeesPage() {
           <div className={styles.listing}>
             <DataGrid
               aria-label={t("categories.tab.payees")}
+              variant="framed"
+              // The row's actions stay in view when the columns scroll sideways; a row of 44 px keeps
+              // the small icon button inside the current-cell ring.
+              defaultColumnState={{ pinned: { start: [], end: ["actions"] } }}
+              rowHeight={44}
               columns={columns}
               rows={rows}
               rowKey="id"

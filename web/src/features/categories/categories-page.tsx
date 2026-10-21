@@ -1,4 +1,3 @@
-import { parseISOYearMonth, toISOYearMonth } from "@slotted/core/date";
 import {
   AlertDialog,
   DialogContent,
@@ -8,7 +7,6 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Button } from "@slotted/react/button";
-import { DatePicker } from "@slotted/react/date-picker";
 import { Inline } from "@slotted/react/inline";
 import { Page, PageBody } from "@slotted/react/page";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
@@ -42,6 +40,7 @@ import type { TreeRow } from "@/features/categories/category-tree";
 import { MergeDialog } from "@/features/categories/merge-dialog";
 import { settingsQuery, useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
+import { MonthControl } from "@/ui/month-control";
 import { useToday } from "@/i18n/today";
 
 type Dialog =
@@ -190,22 +189,13 @@ export function CategoriesPage() {
                 <Segment value="expense">{t("category.group.expense")}</Segment>
                 <Segment value="income">{t("category.group.income")}</Segment>
               </SegmentedControl>
-              <div className={styles.month}>
-                <DatePicker
-                  aria-label={t("category.month")}
-                  granularity="month"
-                  value={parseISOYearMonth(month)}
-                  onValueChange={(next) => {
-                    if (
-                      next !== null &&
-                      !Array.isArray(next) &&
-                      "month" in next
-                    ) {
-                      setSearch({ month: toISOYearMonth(next) });
-                    }
-                  }}
-                />
-              </div>
+              <MonthControl
+                label={t("category.month")}
+                value={month}
+                onChange={(next) => {
+                  setSearch({ month: next });
+                }}
+              />
             </Inline>
             <Switch
               checked={showArchived}

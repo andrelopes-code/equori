@@ -11,12 +11,49 @@
     gap: var(--slotted-space-2);
   }
 
-  /* The icon grid holds 80 tiles; it scrolls inside the dialog instead of growing it, at
-     five rows of tiles, which no token measures. */
+  /* The icon grid holds 80 tiles at the comfortable target, as many per line as fit; it
+     scrolls inside the dialog at six rows instead of growing it, which no token measures. */
   .icons {
-    max-block-size: 14rem;
+    display: grid;
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(var(--slotted-target-comfortable), 1fr)
+    );
+    max-block-size: 20rem;
     overflow-y: auto;
-    padding: var(--slotted-space-1);
+    padding: var(--slotted-space-2);
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-md);
+    background: var(--slotted-surface-sunken);
+  }
+
+  /* The tiles take the chosen colour, so the grid previews the mark. */
+  .icons[data-color] {
+    --tile-ink: var(--slotted-text);
+  }
+  .icons[data-color="1"] {
+    --tile-ink: var(--slotted-data-1);
+  }
+  .icons[data-color="2"] {
+    --tile-ink: var(--slotted-data-2);
+  }
+  .icons[data-color="3"] {
+    --tile-ink: var(--slotted-data-3);
+  }
+  .icons[data-color="4"] {
+    --tile-ink: var(--slotted-data-4);
+  }
+  .icons[data-color="5"] {
+    --tile-ink: var(--slotted-data-5);
+  }
+  .icons[data-color="6"] {
+    --tile-ink: var(--slotted-data-6);
+  }
+  .icons[data-color="7"] {
+    --tile-ink: var(--slotted-data-7);
+  }
+  .icons[data-color="8"] {
+    --tile-ink: var(--slotted-data-8);
   }
 
   .option {
@@ -61,12 +98,16 @@
   }
 
   .tile {
+    inline-size: var(--slotted-target-comfortable);
+    block-size: var(--slotted-target-comfortable);
+    border-color: transparent;
     border-radius: var(--slotted-radius-md);
+    color: var(--tile-ink, var(--slotted-text-muted));
   }
 
   .glyph {
-    inline-size: 60%;
-    block-size: 60%;
+    inline-size: 50%;
+    block-size: 50%;
   }
 
   .swatch[data-color="none"] {
@@ -108,7 +149,10 @@
   .radio:checked + .tile {
     border-width: var(--slotted-border-width-thick);
     border-color: var(--slotted-text);
-    color: var(--slotted-text);
+  }
+
+  .radio:checked + .tile {
+    background: var(--slotted-surface);
   }
 
   .radio:focus-visible + .swatch,

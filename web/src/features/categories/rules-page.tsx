@@ -182,6 +182,7 @@ export function RulesPage() {
           <Coverage
             statistics={statistics.data}
             loading={statistics.isPending}
+            month={today.slice(0, 7)}
           />
           {pending.length > 0 && (
             <Section>

@@ -2,6 +2,7 @@ import {
   PageHeader,
   PageHeaderActions,
   PageHeaderHeading,
+  PageHeaderSubheading,
   PageHeaderTabs,
   PageHeaderTitle,
   PageHeaderTitleArea,
@@ -9,6 +10,7 @@ import {
 } from "@slotted/react/page-header";
 import { Tab, TabList, Tabs } from "@slotted/react/tabs";
 import { useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { useT } from "@/i18n/i18n-provider";
@@ -19,6 +21,12 @@ const routes = {
   categories: "/categories",
   rules: "/categories/rules",
   payees: "/categories/payees",
+} as const;
+
+const subtitles = {
+  categories: "categories.subtitle.categories",
+  rules: "categories.subtitle.rules",
+  payees: "categories.subtitle.payees",
 } as const;
 
 // The three pages of the destination share one header; each tab is its own route (LA-04).
@@ -34,12 +42,17 @@ export function CategoriesHeader({
 }) {
   const t = useT();
   const navigate = useNavigate();
+  // CP-09: the strip moves at once; the next tab's page mounts after that frame is painted.
+  // The router commits a navigation synchronously, so a transition alone would hold the strip
+  // until the next page has rendered.
+  const [chosen, setChosen] = useState<CategoriesTab | null>(null);
   return (
     <PageHeader size="lg">
       <PageHeaderTitleArea>
         <PageHeaderTitleRow>
           <PageHeaderTitle>
             <PageHeaderHeading>{t("nav.categories")}</PageHeaderHeading>
+            <PageHeaderSubheading>{t(subtitles[current])}</PageHeaderSubheading>
           </PageHeaderTitle>
           {actions !== undefined && (
             <PageHeaderActions>{actions}</PageHeaderActions>
@@ -48,14 +61,19 @@ export function CategoriesHeader({
       </PageHeaderTitleArea>
       <PageHeaderTabs>
         <Tabs
-          value={current}
+          value={chosen ?? current}
           onValueChange={(value) => {
             if (
               value === "categories" ||
               value === "rules" ||
               value === "payees"
             ) {
-              void navigate({ to: routes[value] });
+              setChosen(value);
+              requestAnimationFrame(() => {
+                setTimeout(() => {
+                  void navigate({ to: routes[value] });
+                }, 0);
+              });
             }
           }}
         >

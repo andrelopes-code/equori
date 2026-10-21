@@ -99,9 +99,23 @@ export function CategoryTree({
     ];
   }, [t, locale, currency, scale]);
 
+  const percent = useMemo(
+    () =>
+      new Intl.NumberFormat(locale, {
+        style: "percent",
+        maximumFractionDigits: 1,
+      }),
+    [locale],
+  );
+
   return (
     <DataGrid
       aria-label={t("nav.categories")}
+      variant="framed"
+      // The row's actions stay in view when the columns scroll sideways; a row of 44 px keeps
+      // the small icon button inside the current-cell ring.
+      defaultColumnState={{ pinned: { start: [], end: ["actions"] } }}
+      rowHeight={44}
       columns={columns}
       rows={rows}
       rowKey="id"
@@ -137,10 +151,7 @@ export function CategoryTree({
           <span className={styles.share}>
             <ShareBar share={row.share} color={row.entry.color} />
             <Text size="sm" tone="muted" numeric="tabular">
-              {new Intl.NumberFormat(locale, {
-                style: "percent",
-                maximumFractionDigits: 1,
-              }).format(row.share)}
+              {percent.format(row.share)}
             </Text>
           </span>
         ),

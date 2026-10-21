@@ -8,11 +8,6 @@
     min-block-size: 0;
   }
 
-  /* A month reads in seven characters; the picker keeps a field's step, not the line. */
-  .month {
-    inline-size: 11rem;
-  }
-
   .listing {
     flex: 1 1 0;
     min-block-size: 0;

@@ -554,12 +554,12 @@ export const catalogPtBR: Catalog = {
   "suggestion.accept": "Criar regra",
   "suggestion.create": "Criar",
   "suggestion.accepted": "Regra {name} criada",
-  "coverage.automatic": "Categorizadas automaticamente neste mês",
+  "coverage.automatic": "Automáticas",
   "coverage.automaticNote":
-    "{rule} por regras, {history} pelo histórico do favorecido, {source} pela categoria do banco",
-  "coverage.manual": "Categorizadas à mão",
+    "{rule} por regras · {history} pelo histórico · {source} pelo banco",
+  "coverage.manual": "À mão",
   "coverage.uncategorized": "Sem categoria",
-  "coverage.total": "Transações neste mês",
+  "coverage.total": "No mês",
   "sources.section": "Categorias do banco",
   "sources.caption": "Categorias enviadas pelo banco com as linhas importadas",
   "sources.bank": "Categoria do banco",
@@ -676,4 +676,16 @@ export const catalogPtBR: Catalog = {
   "day.yesterday": "Ontem",
   "transactions.column.date.group": "Dia",
   "day.beforeYesterday": "Anteontem",
+  "coverage.manualNote": "categorizadas por você",
+  "coverage.uncategorizedNote": "esperando na fila",
+  "coverage.review": "Revisar",
+  "coverage.totalNote": "transações em {month}",
+  "month.previous": "Mês anterior",
+  "month.next": "Próximo mês",
+  "categories.subtitle.categories":
+    "Para onde foi o dinheiro do mês, por categoria e grupo.",
+  "categories.subtitle.rules":
+    "As regras categorizam transações novas e importadas assim que chegam.",
+  "categories.subtitle.payees":
+    "Quem você paga e quem te paga, e os nomes que o banco dá a cada um.",
 };

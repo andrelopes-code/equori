@@ -551,12 +551,12 @@ export const catalogEn = {
   "suggestion.accept": "Create rule",
   "suggestion.create": "Create",
   "suggestion.accepted": "Rule {name} created",
-  "coverage.automatic": "Categorized automatically this month",
+  "coverage.automatic": "Automatic",
   "coverage.automaticNote":
-    "{rule} by rules, {history} by payee history, {source} by bank category",
-  "coverage.manual": "Categorized by hand",
+    "{rule} by rules · {history} by history · {source} by bank",
+  "coverage.manual": "By hand",
   "coverage.uncategorized": "Uncategorized",
-  "coverage.total": "Transactions this month",
+  "coverage.total": "This month",
   "sources.section": "Bank categories",
   "sources.caption": "Categories sent by the bank with imported lines",
   "sources.bank": "Bank category",
@@ -673,6 +673,18 @@ export const catalogEn = {
   "day.yesterday": "Yesterday",
   "transactions.column.date.group": "Day",
   "day.beforeYesterday": "Day before yesterday",
+  "coverage.manualNote": "categorized by you",
+  "coverage.uncategorizedNote": "waiting in the queue",
+  "coverage.review": "Review",
+  "coverage.totalNote": "transactions in {month}",
+  "month.previous": "Previous month",
+  "month.next": "Next month",
+  "categories.subtitle.categories":
+    "Where the money of the month went, by category and group.",
+  "categories.subtitle.rules":
+    "Rules categorize new and imported transactions as they arrive.",
+  "categories.subtitle.payees":
+    "Who you pay and who pays you, and the names your bank gives them.",
 } as const;
 
 export type Catalog = { [K in keyof typeof catalogEn]: string };
