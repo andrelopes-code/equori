@@ -360,3 +360,38 @@ export function useTransferTransaction() {
       mutated(queryClient, current, result.transaction),
   });
 }
+
+export function useCreateTransaction() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: components["schemas"]["TransactionInput"]) =>
+      unwrap(await api.POST("/transactions", { body })),
+    onSuccess: (created) =>
+      transactionMutated(
+        queryClient,
+        created.postings.map((p) => p.account_id),
+      ),
+  });
+}
+
+export function useCorrectTransaction() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      current,
+      body,
+    }: {
+      current: Transaction;
+      body: components["schemas"]["CorrectionInput"];
+    }) =>
+      unwrap(
+        await api.PUT("/transactions/{id}", {
+          params: { path: { id: current.id } },
+          body,
+        }),
+      ),
+    onSuccess: (next, { current }) => mutated(queryClient, current, next),
+  });
+}

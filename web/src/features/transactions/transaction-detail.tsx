@@ -44,6 +44,7 @@ import { useTransactionData } from "@/features/transactions/use-transaction-data
 import { VoidDialog } from "@/features/transactions/void-dialog";
 import { formatDate, formatMoney } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
 
 // One transaction as a page of its own (level 1) or as the pane beside the list.
 export function TransactionDetail({
@@ -59,6 +60,7 @@ export function TransactionDetail({
   const [locale] = useAppLocale();
   const data = useTransactionData(id);
   const navigate = useNavigate();
+  const wide = useMediaQuery(wideQuery);
   const [voiding, setVoiding] = useState(false);
   const [transferring, setTransferring] = useState(false);
 
@@ -88,8 +90,9 @@ export function TransactionDetail({
         </Icon>
       </IconButton>
     ) : null;
+  // Below 1024 px the shell's top app bar carries the way back.
   const back =
-    host === "page" ? (
+    host === "page" && wide ? (
       <PageHeaderNav>
         <PageHeaderBack
           render={(props) => <Link {...props} to="/transactions" />}

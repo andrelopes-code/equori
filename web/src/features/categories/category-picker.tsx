@@ -27,6 +27,7 @@ export interface CategoryPickerProps {
   // The balance side of the transaction: money in (positive) puts income first, money out expense.
   amount?: number;
   "aria-label"?: string;
+  placeholder?: string;
   name?: string;
   size?: "sm" | "md" | "lg";
   variant?: "outline" | "subtle" | "plain";
