@@ -47,7 +47,7 @@ Acceptance: a test that opens a modal Dialog, forces 5 re-renders of its root wi
 - **Problem:** The row is wrapped in `memo`, but it reads the whole grid context, and the context value changes when the window scrolls or the selection moves; every rendered row and every cell renderer runs again.
 - **Evidence:** scrolling 120 px rewrites `name` and `type` on all 51 row checkboxes (408 attribute mutations for 4 wheel steps); selecting one row rewrites them on every row (308 mutations). Scroll in the development build: long tasks of 120 to 350 ms per wheel step; production: 662 ms worst task for 40 steps; selection click: 1 309 ms long task (production).
 - **Impact on equori:** scrolling the transactions grid drops to a few frames per second; selecting a row freezes the page for over a second. Owner items 4, 5.
-- **Workaround:** none in the family; equori caches its Intl formatters so its cell renderers cost less.
+- **Workaround:** `transactions-grid.tsx` sets `virtualize={false}` and the list pages 30 rows at a time: mounted rows scroll natively (a windowed wheel step measured 120 to 170 ms, an unwindowed one no long task). The cost moves to selection and to appending a page (480 to 680 ms), which stay slow until the fix.
 
 ```
 Bug — data-grid: every row re-renders on scroll and on selection.
@@ -131,7 +131,7 @@ Acceptance: a browser test: a panel 400px tall with 1,200px of sections; after s
 - **Problem:** The current-cell ring is an inset shadow on the cell. A button in the cell is as tall as the row; on hover or press its surface paints over the ring, so the button appears to jump out of the cell.
 - **Evidence:** `/transactions`, category column (`Button size="sm" variant="ghost"`), and `/categories`, actions column (`IconButton size="sm"`), at the comfortable density.
 - **Impact on equori:** owner items 10, 11, 18.
-- **Workaround:** none in the family; the transactions list redesign removes buttons from cells.
+- **Workaround:** grids that hold buttons set a `rowHeight` taller than the button (`transactions-grid.tsx` 56 px, the category grids 44 px), so the ring stays visible.
 
 ```
 Bug — data-grid: cell content covers the current-cell ring.
@@ -154,4 +154,148 @@ Improvement — data-grid: Load more next to infinite loading.
 Need: a grid that loads its next page on scroll should not also show a Load more button; the button is the fallback for when automatic loading is off or failed.
 Proposed API: loadMore: 'scroll' | 'button' | 'both' (default 'scroll' when onLoadMore is set and virtualization is on). Under 'scroll' the footer shows a quiet loading row while a page loads and a Retry button only after a failure.
 Acceptance: a test with hasMore and onLoadMore and the default setting: no Load more button in the footer; scrolling to the end calls onLoadMore once.
+```
+
+### 10. The screen skill lets a domain value fall back to a generic field
+
+- **Kind:** improvement
+- **Area:** agent — `dist/docs/skills/compose-screen/SKILL.md`, step 4 and step 6; guideline — `composition.md` CP-04
+- **Problem:** CP-04 allows an element of the screen's own "where no family answers the problem", but nothing in the skill asks which values the product is about, or whether the family that technically accepts a value answers the reader's task with it. A period became a filter-bar date field with an operator, money a plain currency-field, an account a select of names, a ledger a generic grid without days. Every check of step 6 passed.
+- **Evidence:** equori `0b9c718`, `b0d77c1` replaced each of those with an element of the app's own after the owner review (items 2, 8, 14, 15, 16). The skill's step 4 lists CP-04 as the last bullet, after LP-14's "A list longer than a hundred rows is a data-grid".
+- **Impact on equori:** the transactions list, the entry form and the period filter read as generic admin screens; the owner rejected all three.
+- **Workaround:** `web/CLAUDE.md` section "Screens", rule "Domain controls before families".
+
+```
+Improvement — agent instructions: compose-screen skill, domain values.
+Current text (skills/compose-screen/SKILL.md, step 4, last bullet): "Where no anatomy answers the problem, the screen writes an element of its own instead of bending a family into a shape it does not have (CP-04)."
+Problem: an agent reads "answers the problem" as "accepts the value". A period, an amount of money, a choice among five accounts and a list of ledger entries are each accepted by a generic family (filter-bar date field, currency-field, select, data-grid), so CP-04 never triggers, and the product's core screens end up generic.
+Replacement for step 1 (new first step): "Name the values the product is about on this screen — money, a period, a day, an account, a person — and the task the reader performs with each (enter it in one motion, step it, compare it). For each, write which family accepts the value and whether that family performs the task in one step with the value's own words; when it does not, CP-04 applies before any family is chosen."
+Add to step 6 (Done): "5. For each value named in step 1, the control that edits it was chosen against the task, and the reason is written beside it."
+Acceptance: run the skill on a fixture brief ('a personal finance ledger with a period and an entry form'); the produced plan names the period, the amount and the account as domain values and chooses an element of the screen's own for at least the period and the amount — a check the current text does not produce.
+```
+
+### 11. Data-grid's default variant draws no frame, and no rule says when to frame it
+
+- **Kind:** improvement
+- **Area:** guideline — `list-pages.md`; family — `data-grid` (`variant` default `ruled`)
+- **Problem:** The grid defaults to `ruled`, a block of rows with no outer edge, and no list-page rule chooses between `plain`, `ruled` and `framed`; on the application's raised page surface every grid read as a bare slab.
+- **Evidence:** every grid of equori before `b0d77c1` and `699fa5c` used the default; owner item 7.
+- **Impact on equori:** all lists looked unfinished.
+- **Workaround:** `web/CLAUDE.md` "Grids": `variant="framed"` on every grid.
+
+```
+Improvement — guideline: list-pages, the grid's frame.
+Need: a rule that decides a grid's variant from where it stands. Today data-grid defaults to `ruled` and list-pages.md is silent.
+Proposed rule (LP-15, SHOULD): "A grid that stands on the page's surface beside other blocks is `framed`; a grid that is the page's only body under a `bleed` page may be `ruled`; `plain` is for a grid inside a card or a panel that already draws the frame." Consider making `framed` the default of data-grid when the page is not `bleed`.
+Acceptance: a check in the review-screen sweep table — "a data-grid with no variant on a page whose width is not bleed" — that finds the defect in a fixture page.
+```
+
+### 12. Header guidance leaves a list page with a bare title
+
+- **Kind:** improvement
+- **Area:** guideline — `list-pages.md`, `layout-alignment.md` LA-03; agent — `skills/compose-screen/SKILL.md`
+- **Problem:** The guidelines describe a subheading only for records (`record-pages.md`) and reports (`reports.md`); a list page gets a heading, tabs and actions, and nothing asks what the reader must know before the list (what the page covers, the period, its totals) or which action is primary.
+- **Evidence:** equori's Transactions and Categories headers before `b0d77c1`/`699fa5c`: a heading and a refresh icon; owner item 3.
+- **Impact on equori:** headers were "under-used"; the period and totals had no place.
+- **Workaround:** `web/CLAUDE.md` "Headers".
+
+```
+Improvement — guideline: list-pages, the header's content.
+Proposed rule (LP-16, SHOULD): "A list page's header holds: a subheading that says what the list covers; the control of the period when the list reads one; the page's figures for that period in the header area (a line of label-over-figure pairs, not cards); and the primary action as the last, solid control. A refresh control is an icon button, never the only action."
+Acceptance: the review-screen skill gains a step that, on a fixture list page with only a heading, reports LP-16.
+```
+
+### 13. Stat cards in a row have no rule for a balanced structure
+
+- **Kind:** improvement
+- **Area:** guideline — `record-pages.md` RP-02 and `overviews.md`; family docs — `stat-card.md`
+- **Problem:** Nothing says that the cards of one row share their parts. One card with a long label and a wrapping comparison beside three cards with a label and a value gave four boxes of the height of the tallest, three of them mostly empty.
+- **Evidence:** equori `/categories/rules` before `699fa5c`; owner item 20.
+- **Impact on equori:** the coverage row looked broken.
+- **Workaround:** none needed after the fix: `categories/coverage.tsx` gives every card a short label, a value and one comparison line.
+
+```
+Improvement — guideline: stat-card rows.
+Proposed rule (SHOULD, in overviews.md and record-pages.md): "The stat-cards of one row share their structure: a label of at most three words, the figure, and the same optional parts on every card (a comparison of one line, or none on any). Detail that only one card has goes into its comparison or a tooltip, never into a longer label."
+Acceptance: a fixture row of four cards where one has a twelve-word label; the review-screen sweep reports the rule.
+```
+
+### 14. No rule pins an actions column
+
+- **Kind:** improvement
+- **Area:** guideline — `list-pages.md`; family — `data-grid` (`kind: "actions"`)
+- **Problem:** A column of `kind: "actions"` is not pinned by default and no guideline asks for it; when the columns scroll sideways the row's actions leave the frame.
+- **Evidence:** equori's category, payee and rule grids before `699fa5c`; owner item 21.
+- **Impact on equori:** row menus scrolled out of reach on narrow frames.
+- **Workaround:** `defaultColumnState={{ pinned: { start: [], end: ["actions"] } }}` on each grid.
+
+```
+Improvement — data-grid: pin the actions column.
+Proposed API: a column of kind 'actions' is pinned to the end by default (pinned: 'end' in the column model, overridable); a rowHeader column is pinned to the start when the grid scrolls sideways.
+Guideline (LP-17, SHOULD): "The row header and the actions column are pinned; nothing else is pinned without a reason the page states."
+Acceptance: a grid with an actions column and 12 columns in a 600px frame; after scrolling to the end of the columns the actions cell is in view, without any columnState given.
+```
+
+### 15. No guideline says that a write refreshes every view it changed
+
+- **Kind:** improvement
+- **Area:** guideline — `async-feedback.md`; agent — `skills/waiting-states/SKILL.md`
+- **Problem:** AF rules cover what a region draws while it waits and after a mutation is "read back", but none requires that a write refreshes the other views it changes (totals, counts, coverage). Screens kept stale figures until a reload.
+- **Evidence:** equori before `0f09168`: categorizing a transaction left the category totals and the rules coverage stale; owner item 24.
+- **Impact on equori:** the owner had to reload after every action.
+- **Workaround:** `web/src/api/query-client.ts` invalidates every query after a successful mutation.
+
+```
+Improvement — guideline: async-feedback, refresh after a write.
+Proposed rule (AF-xx, MUST): "A successful write marks stale every query whose answer the write can change, and the regions on screen read again; when the app cannot list them, it marks all queries stale. A region that read again keeps its rows and dims them (LP-06)."
+Add to skills/waiting-states/SKILL.md a step: "For each control that writes, list the regions on any screen whose figures the write changes, and show where they are refreshed."
+Acceptance: the waiting-states skill run on a fixture with a 'categorize' action and a 'totals by category' panel produces a plan that refreshes the panel.
+```
+
+### 16. CP-07 gives each page type its own measure, so the measure jumps
+
+- **Kind:** improvement
+- **Area:** guideline — `composition.md` CP-07
+- **Problem:** CP-07 makes a list `bleed`, a record `wide`, a form `content`. Moving between destinations changes the column's measure, and a form at 56 rem stands narrow in a desktop frame.
+- **Evidence:** equori before `b55d4f2`: Transactions `bleed`, Categories `wide`, new transaction `content`; owner item 25 ("pages look squeezed, and there is no pattern").
+- **Impact on equori:** inconsistent and narrow pages.
+- **Workaround:** `web/CLAUDE.md` "Page width (replaces CP-07)": destinations `full`, forms `wide`.
+
+```
+Improvement — guideline: CP-07 page width.
+Current text (composition.md CP-07): "A list page is `bleed` with `fill`; a record, a dashboard and an overview keep the default `wide`; a create or edit form is `content`; a page of preferences read as prose is `measure`."
+Replacement: "Every destination of the navigation — list, record, dashboard, overview — has the same width (`full`), so moving between destinations never moves the column's edges. A create or edit form is `wide` and lays its fields out in a grid of the form's own; a page of prose is `measure`."
+Acceptance: the review-screen sweep reports two destinations of one app with different widths.
+```
+
+### 17. A server-mode data-grid does not group the rows it is given
+
+- **Kind:** bug
+- **Area:** family — `data-grid` (`mode="server"`, `query.group`, `renderGroup`)
+- **Problem:** In server mode the grid builds one row node per row and ignores `query.group`; grouping, group rows and their aggregates exist only in client mode, although a server that pages by date can deliver rows already ordered for grouping.
+- **Evidence:** `dist/data-grid-*.js`: under `mode === "server"` the nodes are `{ kind: "row", groups: [] }` for every row. equori's day groups render only with `mode="client"`.
+- **Impact on equori:** the transactions grid runs in client mode to group by day.
+- **Workaround:** `web/src/features/transactions/transactions-grid.tsx`, `mode="client"` with an empty sort.
+
+```
+Bug — data-grid: grouping ignored in server mode.
+Observed: <DataGrid mode="server" rows={rows} defaultQuery={{...emptyQuery(), group: ['date']}} renderGroup={...}/> renders no group rows; the node builder for server mode emits plain rows.
+Expected: in server mode the grid groups the rows it is given, in their order (consecutive rows with the same group key form one group), with group rows, toggles and aggregates as in client mode; sorting stays the server's.
+Acceptance: a server-mode grid with 6 rows over 3 dates and group ['date'] renders 3 group rows with counts 2, 2, 2.
+```
+
+### 18. The glyph set has no chevron-left or arrow-right
+
+- **Kind:** improvement
+- **Area:** family — `icon` (`GlyphName`)
+- **Problem:** The library's glyphs include `chevron-right`, `chevron-down`, `arrow-left` and `arrow-up`, but not `chevron-left` or `arrow-right`; a previous/next pair cannot be drawn from one set.
+- **Evidence:** `@slotted/core/dist/types/glyph/glyphs.d.ts`; equori's period and month steppers.
+- **Impact on equori:** an own SVG for the steppers.
+- **Workaround:** `web/src/ui/step-glyph.tsx`.
+
+```
+Improvement — icon: complete the directional glyphs.
+Need: previous/next steppers (month, period, pagination) and back/forward links need both directions.
+Proposed API: add chevron-left, chevron-up, arrow-right and arrow-down to GlyphName, with the same viewBox and stroke as the existing chevrons and arrows.
+Acceptance: the glyph contract test lists each direction for chevron and arrow.
 ```
