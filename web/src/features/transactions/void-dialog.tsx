@@ -11,7 +11,7 @@ import {
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
 import { Textarea } from "@slotted/react/textarea";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
@@ -31,6 +31,7 @@ export function VoidDialog({
 }) {
   const t = useT();
   const voiding = useVoidTransaction();
+  const formId = useId();
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   return (
@@ -46,25 +47,27 @@ export function VoidDialog({
       size="sm"
     >
       <DialogContent>
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            setError(null);
-            voiding
-              .mutateAsync({ current: transaction, reason: reason.trim() })
-              .then(() => {
-                onOpenChange(false);
-              })
-              .catch((caught: unknown) => {
-                setError(errorText(caught, t));
-              });
-          }}
-        >
-          <DialogHeader>
-            <DialogTitle>{t("void.title")}</DialogTitle>
-            <DialogDescription>{t("void.description")}</DialogDescription>
-          </DialogHeader>
-          <DialogBody>
+        <DialogHeader>
+          <DialogTitle>{t("void.title")}</DialogTitle>
+          <DialogDescription>{t("void.description")}</DialogDescription>
+        </DialogHeader>
+        <DialogBody>
+          {/* Workaround for Slotted finding "dialog has no place for a form around its parts". */}
+          <form
+            id={formId}
+            onSubmit={(event) => {
+              event.preventDefault();
+              setError(null);
+              voiding
+                .mutateAsync({ current: transaction, reason: reason.trim() })
+                .then(() => {
+                  onOpenChange(false);
+                })
+                .catch((caught: unknown) => {
+                  setError(errorText(caught, t));
+                });
+            }}
+          >
             <Field>
               <FieldLabel>{t("void.reason")}</FieldLabel>
               <Textarea
@@ -81,27 +84,28 @@ export function VoidDialog({
             {error !== null && (
               <InlineMessage tone="danger">{error}</InlineMessage>
             )}
-          </DialogBody>
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              tone="secondary"
-              onClick={() => {
-                onOpenChange(false);
-              }}
-            >
-              {t("detail.cancel")}
-            </Button>
-            <Button
-              type="submit"
-              tone="danger"
-              loading={voiding.isPending}
-              disabled={reason.trim() === ""}
-            >
-              {t("void.confirm")}
-            </Button>
-          </DialogFooter>
-        </form>
+          </form>
+        </DialogBody>
+        <DialogFooter>
+          <Button
+            variant="ghost"
+            tone="secondary"
+            onClick={() => {
+              onOpenChange(false);
+            }}
+          >
+            {t("detail.cancel")}
+          </Button>
+          <Button
+            type="submit"
+            form={formId}
+            tone="danger"
+            loading={voiding.isPending}
+            disabled={reason.trim() === ""}
+          >
+            {t("void.confirm")}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

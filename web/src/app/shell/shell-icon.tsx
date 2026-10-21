@@ -1,6 +1,7 @@
 export type ShellIconName =
   | "overview"
   | "transactions"
+  | "categories"
   | "cards"
   | "accounts"
   | "goals"
@@ -16,7 +17,7 @@ export type ShellIconName =
   | "chevrons"
   | "density";
 
-// Lucide geometry (ISC licence) on its 24-unit grid: house, arrow-left-right, credit-card,
+// Lucide geometry (ISC licence) on its 24-unit grid: house, arrow-left-right, tags, credit-card,
 // wallet, target, shield, settings, plus, search, layout-grid, arrow-left, moon, globe,
 // log-out, chevrons-up-down and rows-3.
 const PATHS: Record<ShellIconName, readonly string[]> = {
@@ -25,6 +26,11 @@ const PATHS: Record<ShellIconName, readonly string[]> = {
     "M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
   ],
   transactions: ["M8 3 4 7l4 4", "M4 7h16", "m16 21 4-4-4-4", "M20 17H4"],
+  categories: [
+    "m15 5 6.3 6.3a2.4 2.4 0 0 1 0 3.4L17 19",
+    "M9.586 5.586A2 2 0 0 0 8.172 5H3a1 1 0 0 0-1 1v5.172a2 2 0 0 0 .586 1.414L8.29 18.29a2.426 2.426 0 0 0 3.42 0l3.58-3.58a2.426 2.426 0 0 0 0-3.42z",
+    "M6 9.5a0.5 0.5 0 1 0 1 0a0.5 0.5 0 1 0 -1 0",
+  ],
   cards: [
     "M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z",
     "M2 10h20",

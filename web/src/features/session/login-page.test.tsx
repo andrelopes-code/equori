@@ -153,7 +153,7 @@ describe("logout", () => {
       screen.getByRole("button", { name: catalogEn["nav.more"] }),
     );
     await actor.click(
-      await screen.findByRole("menuitem", { name: catalogEn["more.logout"] }),
+      await screen.findByRole("button", { name: catalogEn["more.logout"] }),
     );
     return router;
   }
@@ -179,7 +179,7 @@ describe("logout", () => {
       screen.getByRole("button", { name: catalogEn["nav.more"] }),
     );
     await actor.click(
-      await screen.findByRole("menuitem", { name: catalogEn["more.logout"] }),
+      await screen.findByRole("button", { name: catalogEn["more.logout"] }),
     );
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/login");

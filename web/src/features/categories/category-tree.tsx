@@ -1,0 +1,156 @@
+import type { GridColumn } from "@slotted/core/grid";
+import { Badge } from "@slotted/react/badge";
+import { DataGrid } from "@slotted/react/data-grid";
+import { Text } from "@slotted/react/typography";
+import { VisuallyHidden } from "@slotted/react/visually-hidden";
+import { useMemo } from "react";
+
+import { CategoryMark } from "@/features/categories/category-mark";
+import type { CategoryEntry } from "@/features/categories/category-paths";
+import { CategoryRowMenu } from "@/features/categories/category-row-menu";
+import type { CategoryAction } from "@/features/categories/category-row-menu";
+import styles from "@/features/categories/category-tree.module.css";
+import { ShareBar } from "@/features/categories/share-bar";
+import { formatMoney } from "@/i18n/format";
+import { useAppLocale, useT } from "@/i18n/i18n-provider";
+
+export interface TreeRow {
+  id: string;
+  parentId: string | null;
+  entry: CategoryEntry;
+  // Minor units in the base currency, signed as the class reads: spent or earned, positive.
+  own: number;
+  subtree: number;
+  share: number;
+}
+
+export function CategoryTree({
+  rows,
+  currency,
+  scale,
+  loading,
+  onAction,
+}: {
+  rows: readonly TreeRow[];
+  currency: string;
+  scale: number;
+  loading: boolean;
+  onAction: (entry: CategoryEntry, action: CategoryAction) => void;
+}) {
+  const t = useT();
+  const [locale] = useAppLocale();
+  const expanded = useMemo(
+    () => [
+      ...new Set(
+        rows.flatMap((r) => (r.parentId === null ? [] : [r.parentId])),
+      ),
+    ],
+    [rows],
+  );
+
+  const columns = useMemo<GridColumn<TreeRow>[]>(() => {
+    const format = (amount: number) =>
+      formatMoney({ amount, currency }, scale, locale);
+    return [
+      {
+        id: "name",
+        label: t("category.name"),
+        accessor: (row) => row.entry.name,
+        rowHeader: true,
+        flex: 2,
+        minWidth: 220,
+      },
+      {
+        id: "subtree",
+        label: t("category.total"),
+        description: t("category.totalHint"),
+        accessor: "subtree",
+        numeric: true,
+        width: 140,
+        priority: 1,
+        format: (value) => format(Number(value)),
+      },
+      {
+        id: "own",
+        label: t("category.own"),
+        description: t("category.ownHint"),
+        accessor: "own",
+        numeric: true,
+        width: 140,
+        priority: 3,
+        format: (value) => format(Number(value)),
+      },
+      {
+        id: "share",
+        label: t("category.share"),
+        accessor: "share",
+        width: 180,
+        priority: 2,
+      },
+      {
+        id: "actions",
+        label: t("category.actionsColumn"),
+        accessor: () => "",
+        width: 56,
+        sortable: false,
+      },
+    ];
+  }, [t, locale, currency, scale]);
+
+  return (
+    <DataGrid
+      aria-label={t("nav.categories")}
+      columns={columns}
+      rows={rows}
+      rowKey="id"
+      tree={{ parentKey: (row) => row.parentId }}
+      defaultExpanded={expanded}
+      loading={loading}
+      height="100%"
+      renderHeader={({ column }) =>
+        // The actions column is named for a screen reader and draws no words over its menus.
+        column.id === "actions" ? (
+          <VisuallyHidden>{column.label}</VisuallyHidden>
+        ) : (
+          column.label
+        )
+      }
+      cellRenderers={{
+        name: ({ row }) => (
+          <span className={styles.name} title={row.entry.path}>
+            <CategoryMark
+              name={row.entry.name}
+              color={row.entry.color}
+              icon={row.entry.icon}
+            />
+            <Text className={styles.cut}>{row.entry.name}</Text>
+            {row.entry.archived && (
+              <Badge size="sm" tone="secondary">
+                {t("category.archived")}
+              </Badge>
+            )}
+          </span>
+        ),
+        share: ({ row }) => (
+          <span className={styles.share}>
+            <ShareBar share={row.share} color={row.entry.color} />
+            <Text size="sm" tone="muted" numeric="tabular">
+              {new Intl.NumberFormat(locale, {
+                style: "percent",
+                maximumFractionDigits: 1,
+              }).format(row.share)}
+            </Text>
+          </span>
+        ),
+        actions: ({ row }) => (
+          <CategoryRowMenu
+            entry={row.entry}
+            onAction={(action) => {
+              onAction(row.entry, action);
+            }}
+          />
+        ),
+      }}
+    />
+  );
+}

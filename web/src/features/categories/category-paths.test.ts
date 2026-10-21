@@ -4,6 +4,7 @@ import type { components } from "@/api/schema.gen";
 import {
   categoryEntries,
   orderForAmount,
+  subtreeOf,
 } from "@/features/categories/category-paths";
 
 type Account = components["schemas"]["Account"];
@@ -104,5 +105,17 @@ describe("orderForAmount", () => {
       "expense",
       "expense",
     ]);
+  });
+});
+
+describe("subtreeOf", () => {
+  it("holds the category and every category under it", () => {
+    const entries = categoryEntries(accounts, "en");
+    expect([...subtreeOf(entries, "food")].sort()).toEqual([
+      "bakery",
+      "food",
+      "groceries",
+    ]);
+    expect([...subtreeOf(entries, "salary")]).toEqual(["salary"]);
   });
 });

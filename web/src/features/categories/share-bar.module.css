@@ -1,0 +1,54 @@
+@layer app {
+  .track {
+    display: block;
+    overflow: hidden;
+    inline-size: 100%;
+    block-size: var(--slotted-space-2);
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-surface-sunken);
+  }
+
+  .fill {
+    --fill: var(--slotted-text-muted);
+
+    display: block;
+    block-size: 100%;
+    border-radius: inherit;
+    background: var(--fill);
+  }
+
+  .fill[data-color="1"] {
+    --fill: var(--slotted-data-1);
+  }
+  .fill[data-color="2"] {
+    --fill: var(--slotted-data-2);
+  }
+  .fill[data-color="3"] {
+    --fill: var(--slotted-data-3);
+  }
+  .fill[data-color="4"] {
+    --fill: var(--slotted-data-4);
+  }
+  .fill[data-color="5"] {
+    --fill: var(--slotted-data-5);
+  }
+  .fill[data-color="6"] {
+    --fill: var(--slotted-data-6);
+  }
+  .fill[data-color="7"] {
+    --fill: var(--slotted-data-7);
+  }
+  .fill[data-color="8"] {
+    --fill: var(--slotted-data-8);
+  }
+
+  @media (forced-colors: active) {
+    .track {
+      border: var(--slotted-border-width-thin) solid CanvasText;
+    }
+
+    .fill {
+      background: CanvasText;
+    }
+  }
+}

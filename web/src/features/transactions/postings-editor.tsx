@@ -9,7 +9,7 @@ import { Text } from "@slotted/react/typography";
 import { useMemo } from "react";
 
 import type { components } from "@/api/schema.gen";
-import { categoryEntries } from "@/features/categories";
+import { useCategoryEntries } from "@/features/categories";
 import { imbalance } from "@/features/transactions/entry-kind";
 import type { EntryRow } from "@/features/transactions/entry-kind";
 import styles from "@/features/transactions/postings-editor.module.css";
@@ -37,14 +37,13 @@ export function PostingsEditor({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const entries = useCategoryEntries(accounts);
   const byId = useMemo(
     () => new Map(accounts.map((a) => [a.id, a])),
     [accounts],
   );
   const items = useMemo(() => {
-    const paths = new Map(
-      categoryEntries(accounts, locale).map((c) => [c.id, c.path]),
-    );
+    const paths = new Map(entries.map((c) => [c.id, c.path]));
     const collator = new Intl.Collator(locale, { sensitivity: "base" });
     return accounts
       .filter((a) => a.closed_on === undefined)
@@ -60,7 +59,7 @@ export function PostingsEditor({
         avatar: null,
       }))
       .sort((a, b) => collator.compare(a.label, b.label));
-  }, [accounts, locale, t]);
+  }, [accounts, entries, locale, t]);
 
   const set = (index: number, patch: Partial<EntryRow>) => {
     onChange(rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));

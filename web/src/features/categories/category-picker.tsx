@@ -9,10 +9,8 @@ import { useApi } from "@/api/api-context";
 import { accountsQuery } from "@/features/accounts";
 import { useCreateCategory } from "@/features/categories/api";
 import { CategoryMark } from "@/features/categories/category-mark";
-import {
-  categoryEntries,
-  orderForAmount,
-} from "@/features/categories/category-paths";
+import { orderForAmount } from "@/features/categories/category-paths";
+import { useCategoryEntries } from "@/features/categories/use-category-entries";
 import type { CategoryEntry } from "@/features/categories/category-paths";
 import {
   readRecentCategories,
@@ -37,6 +35,8 @@ export interface CategoryPickerProps {
   disabled?: boolean;
   // False keeps the list inside a layer the picker already stands in.
   portal?: boolean;
+  // Categories the choice may not land on, such as a merge source and its subtree.
+  exclude?: ReadonlySet<string>;
   onOpenChange?: (open: boolean) => void;
 }
 
@@ -45,6 +45,7 @@ export function CategoryPicker({
   onChange,
   amount = -1,
   onOpenChange,
+  exclude,
   ...rest
 }: CategoryPickerProps) {
   const t = useT();
@@ -55,10 +56,7 @@ export function CategoryPicker({
   const create = useCreateCategory();
   const [recentIds, setRecentIds] = useState(readRecentCategories);
 
-  const entries = useMemo(
-    () => categoryEntries(accounts.data ?? [], locale),
-    [accounts.data, locale],
-  );
+  const entries = useCategoryEntries(accounts.data);
   const byId = useMemo(() => new Map(entries.map((e) => [e.id, e])), [entries]);
   const groups = {
     expense: t("category.group.expense"),
@@ -70,7 +68,9 @@ export function CategoryPicker({
     group: groups[entry.class],
     avatar: null,
   });
-  const items = orderForAmount(entries, amount).map(toEntity);
+  const items = orderForAmount(entries, amount)
+    .filter((entry) => exclude?.has(entry.id) !== true)
+    .map(toEntity);
   // The chosen category stays known even when archived, so the field shows its name.
   const chosen = value === null ? undefined : byId.get(value);
   const known = chosen === undefined ? [] : [toEntity(chosen)];

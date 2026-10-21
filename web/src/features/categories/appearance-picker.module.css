@@ -1,0 +1,126 @@
+@layer app {
+  .preview {
+    display: flex;
+    justify-content: center;
+  }
+
+  .swatches,
+  .icons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--slotted-space-2);
+  }
+
+  /* The icon grid holds 80 tiles; it scrolls inside the dialog instead of growing it. */
+  .icons {
+    max-block-size: 14rem;
+    overflow-y: auto;
+    padding: var(--slotted-space-1);
+  }
+
+  .option {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    min-inline-size: var(--slotted-target-min);
+    min-block-size: var(--slotted-target-min);
+    cursor: pointer;
+  }
+
+  @media (pointer: coarse) {
+    .option {
+      min-inline-size: var(--slotted-target-comfortable);
+      min-block-size: var(--slotted-target-comfortable);
+    }
+  }
+
+  /* The radio stays in the accessibility tree and takes focus; the drawing is its label. */
+  .radio {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .swatch,
+  .tile {
+    display: inline-grid;
+    place-items: center;
+    box-sizing: border-box;
+    inline-size: var(--slotted-control-inner-size-lg);
+    block-size: var(--slotted-control-inner-size-lg);
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-full);
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-control-font-size-sm);
+    font-weight: var(--slotted-font-weight-semibold);
+    transition: border-color var(--slotted-control-transition-duration)
+      var(--slotted-control-transition-easing);
+  }
+
+  .tile {
+    border-radius: var(--slotted-radius-md);
+  }
+
+  .glyph {
+    inline-size: 60%;
+    block-size: 60%;
+  }
+
+  .swatch[data-color="none"] {
+    background: var(--slotted-surface-sunken);
+  }
+
+  .swatch[data-color="1"] {
+    background: var(--slotted-data-1);
+  }
+  .swatch[data-color="2"] {
+    background: var(--slotted-data-2);
+  }
+  .swatch[data-color="3"] {
+    background: var(--slotted-data-3);
+  }
+  .swatch[data-color="4"] {
+    background: var(--slotted-data-4);
+  }
+  .swatch[data-color="5"] {
+    background: var(--slotted-data-5);
+  }
+  .swatch[data-color="6"] {
+    background: var(--slotted-data-6);
+  }
+  .swatch[data-color="7"] {
+    background: var(--slotted-data-7);
+  }
+  .swatch[data-color="8"] {
+    background: var(--slotted-data-8);
+  }
+
+  .option:hover .swatch,
+  .option:hover .tile {
+    border-color: var(--slotted-border-strong);
+  }
+
+  /* checked: an edge in the text colour, so it reads without the ground (OE-06). */
+  .radio:checked + .swatch,
+  .radio:checked + .tile {
+    border-width: var(--slotted-border-width-thick);
+    border-color: var(--slotted-text);
+    color: var(--slotted-text);
+  }
+
+  .radio:focus-visible + .swatch,
+  .radio:focus-visible + .tile {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  @media (forced-colors: active) {
+    .radio:checked + .swatch,
+    .radio:checked + .tile {
+      border-color: Highlight;
+    }
+  }
+}

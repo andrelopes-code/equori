@@ -24,6 +24,12 @@ import { AccountPage, AccountsPage } from "@/features/accounts";
 import { AdminPage } from "@/features/admin";
 import { OverviewPage } from "@/features/overview";
 import { CardOverviewPage, CardsPage } from "@/features/cards";
+import {
+  CategoriesPage,
+  PayeesPage,
+  RulesPage,
+  validateCategoriesSearch,
+} from "@/features/categories";
 import { GoalsPage } from "@/features/goals";
 import { LoginPage, meQuery } from "@/features/session";
 import { SettingsPage } from "@/features/setup";
@@ -133,6 +139,25 @@ const transactionsRoute = createRoute({
   component: TransactionsPage,
 });
 
+const categoriesRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "categories",
+  validateSearch: validateCategoriesSearch,
+  component: CategoriesPage,
+});
+
+const rulesRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "categories/rules",
+  component: RulesPage,
+});
+
+const payeesRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "categories/payees",
+  component: PayeesPage,
+});
+
 const goalsRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "goals",
@@ -181,6 +206,9 @@ export const routeTree = rootRoute.addChildren([
     newTransactionRoute,
     transactionRoute,
     correctTransactionRoute,
+    categoriesRoute,
+    rulesRoute,
+    payeesRoute,
     goalsRoute,
     accountsRoute,
     accountRoute,

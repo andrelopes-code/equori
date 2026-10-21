@@ -30,7 +30,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
 import { ProblemError, errorText } from "@/api/problem";
-import { CategoryMark, categoryEntries } from "@/features/categories";
+import { CategoryMark, useCategoryEntries } from "@/features/categories";
 import { DetailActions } from "@/features/transactions/detail-actions";
 import { AttachmentsSection } from "@/features/transactions/attachments-section";
 import { CategorySection } from "@/features/transactions/category-section";
@@ -65,12 +65,10 @@ export function TransactionDetail({
   const [transferring, setTransferring] = useState(false);
 
   const ready = data.status === "ready" ? data : undefined;
+  const entries = useCategoryEntries(ready?.accounts);
   const categories = useMemo(
-    () =>
-      new Map(
-        categoryEntries(ready?.accounts ?? [], locale).map((c) => [c.id, c]),
-      ),
-    [ready?.accounts, locale],
+    () => new Map(entries.map((c) => [c.id, c])),
+    [entries],
   );
   const accounts = useMemo(
     () => new Map((ready?.accounts ?? []).map((a) => [a.id, a])),

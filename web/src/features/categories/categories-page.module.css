@@ -1,0 +1,30 @@
+@layer app {
+  /* LP-12: from 600 px the tree takes the height the controls leave and scrolls its own rows. */
+  .region {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-4);
+    block-size: 100%;
+    min-block-size: 0;
+  }
+
+  /* A month reads in seven characters; the picker keeps a field's step, not the line. */
+  .month {
+    inline-size: 11rem;
+  }
+
+  .listing {
+    flex: 1 1 0;
+    min-block-size: 0;
+  }
+
+  @media (max-width: 599px) {
+    .region {
+      block-size: auto;
+    }
+
+    .listing {
+      flex-basis: auto;
+    }
+  }
+}

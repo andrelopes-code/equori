@@ -37,23 +37,29 @@ function isCategory(
 export function categoryEntries(
   accounts: readonly Account[],
   locale: string,
+  // The words for a system account, whose stored name is the server's.
+  systemName: (role: string) => string | undefined = () => undefined,
 ): CategoryEntry[] {
   const byId = new Map(accounts.map((a) => [a.id, a]));
+  const nameOf = (account: Account) =>
+    (account.system_role === undefined
+      ? undefined
+      : systemName(account.system_role)) ?? account.name;
   const entries = accounts.filter(isCategory).map((account) => {
-    const names = [account.name];
+    const names = [nameOf(account)];
     const seen = new Set([account.id]);
     let parent =
       account.parent_id === undefined ? undefined : byId.get(account.parent_id);
     // A parent seen before is a cycle the server should never hold; the walk stops there.
     while (parent !== undefined && !seen.has(parent.id)) {
       seen.add(parent.id);
-      names.unshift(parent.name);
+      names.unshift(nameOf(parent));
       parent =
         parent.parent_id === undefined ? undefined : byId.get(parent.parent_id);
     }
     const entry: CategoryEntry = {
       id: account.id,
-      name: account.name,
+      name: nameOf(account),
       path: names.join(pathSeparator),
       depth: names.length - 1,
       class: account.class,
@@ -91,4 +97,28 @@ export function orderForAmount(
     ...open.filter((e) => e.class === first),
     ...open.filter((e) => e.class !== first),
   ];
+}
+
+// The category and every category under it, for the places a move or a merge may not target.
+export function subtreeOf(
+  entries: readonly CategoryEntry[],
+  id: string,
+): Set<string> {
+  const children = new Map<string, string[]>();
+  for (const entry of entries) {
+    if (entry.parentId === undefined) continue;
+    children.set(entry.parentId, [
+      ...(children.get(entry.parentId) ?? []),
+      entry.id,
+    ]);
+  }
+  const out = new Set<string>();
+  const stack = [id];
+  while (stack.length > 0) {
+    const next = stack.pop();
+    if (next === undefined || out.has(next)) continue;
+    out.add(next);
+    stack.push(...(children.get(next) ?? []));
+  }
+  return out;
 }

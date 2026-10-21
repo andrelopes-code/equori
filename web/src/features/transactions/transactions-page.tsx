@@ -19,7 +19,7 @@ import { useDeferredValue, useMemo, useState } from "react";
 import { useApi } from "@/api/api-context";
 import { errorText } from "@/api/problem";
 import { accountsQuery } from "@/features/accounts";
-import { categoryEntries } from "@/features/categories";
+import { useCategoryEntries } from "@/features/categories";
 import { payeesQuery, useScale } from "@/features/setup";
 import {
   tagsQuery,
@@ -36,14 +36,14 @@ import { TransactionsGrid } from "@/features/transactions/transactions-grid";
 import styles from "@/features/transactions/transactions-page.module.css";
 import { useCategorizeActions } from "@/features/transactions/use-categorize-actions";
 import { useTransactionList } from "@/features/transactions/use-transaction-list";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useT } from "@/i18n/i18n-provider";
 import { compactQuery, useMediaQuery, wideQuery } from "@/ui/use-media-query";
 
 const listID = "transactions-list";
 
 export function TransactionsPage() {
   const t = useT();
-  const [locale] = useAppLocale();
+
   const api = useApi();
   const queryClient = useQueryClient();
   const navigate = useNavigate({ from: "/transactions" });
@@ -72,10 +72,7 @@ export function TransactionsPage() {
   const [picking, setPicking] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
 
-  const categories = useMemo(
-    () => categoryEntries(accounts.data ?? [], locale),
-    [accounts.data, locale],
-  );
+  const categories = useCategoryEntries(accounts.data);
   const categoriesById = useMemo(
     () => new Map(categories.map((c) => [c.id, c])),
     [categories],

@@ -87,6 +87,7 @@ describe("desktop column", () => {
     expect(links.map((link) => link.textContent)).toEqual([
       catalogEn["nav.overview"],
       catalogEn["nav.transactions"],
+      catalogEn["nav.categories"],
       catalogEn["nav.cards"],
       catalogEn["nav.accounts"],
       catalogEn["nav.goals"],

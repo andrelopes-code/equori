@@ -57,6 +57,17 @@ export function CommandMenu({ ref }: { ref: Ref<CommandPaletteHandle> }) {
         onSelect: () => void navigate({ to: destination.to }),
       })),
       {
+        id: "go.uncategorized",
+        label: t("palette.uncategorized"),
+        group: "go",
+        icon: icon("transactions"),
+        onSelect: () =>
+          void navigate({
+            to: "/transactions",
+            search: { uncategorized: true },
+          }),
+      },
+      {
         id: "entry",
         label: t("nav.entry.long"),
         group: "actions",

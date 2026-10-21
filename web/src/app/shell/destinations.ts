@@ -4,6 +4,7 @@ import type { MessageKey } from "@/i18n/catalog.en";
 export type DestinationKey =
   | "overview"
   | "transactions"
+  | "categories"
   | "cards"
   | "accounts"
   | "goals"
@@ -15,6 +16,7 @@ export interface Destination {
   to:
     | "/"
     | "/transactions"
+    | "/categories"
     | "/cards"
     | "/accounts"
     | "/goals"
@@ -40,6 +42,13 @@ export const destinations: readonly Destination[] = [
     label: "nav.transactions",
     icon: "transactions",
     phone: "bar",
+  },
+  {
+    key: "categories",
+    to: "/categories",
+    label: "nav.categories",
+    icon: "categories",
+    phone: "more",
   },
   {
     key: "cards",

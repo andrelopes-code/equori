@@ -12,3 +12,8 @@ export type {
   CategoryEntry,
   CategoryIconName,
 } from "@/features/categories/category-paths";
+export { CategoriesPage } from "@/features/categories/categories-page";
+export { RulesPage } from "@/features/categories/rules-page";
+export { PayeesPage } from "@/features/categories/payees-page";
+export { validateCategoriesSearch } from "@/features/categories/categories-search";
+export { useCategoryEntries } from "@/features/categories/use-category-entries";

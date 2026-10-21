@@ -1,0 +1,27 @@
+@layer app {
+  .name {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-3);
+    min-inline-size: 0;
+    max-inline-size: 100%;
+  }
+
+  .cut {
+    overflow: hidden;
+    min-inline-size: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The percentage takes the width of its longest form, "100,0%", in tabular figures; no
+     token holds a text measure. */
+  .share {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 3.5rem;
+    align-items: center;
+    gap: var(--slotted-space-2);
+    inline-size: 100%;
+    text-align: end;
+  }
+}
