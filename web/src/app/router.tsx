@@ -27,6 +27,7 @@ import { CardOverviewPage, CardsPage } from "@/features/cards";
 import {
   CategoriesPage,
   PayeesPage,
+  RuleEditorPage,
   RulesPage,
   validateCategoriesSearch,
 } from "@/features/categories";
@@ -152,6 +153,18 @@ const rulesRoute = createRoute({
   component: RulesPage,
 });
 
+const newRuleRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "categories/rules/new",
+  component: RuleEditorPage,
+});
+
+const ruleRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "categories/rules/$id",
+  component: RuleEditorPage,
+});
+
 const payeesRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "categories/payees",
@@ -208,6 +221,8 @@ export const routeTree = rootRoute.addChildren([
     correctTransactionRoute,
     categoriesRoute,
     rulesRoute,
+    newRuleRoute,
+    ruleRoute,
     payeesRoute,
     goalsRoute,
     accountsRoute,

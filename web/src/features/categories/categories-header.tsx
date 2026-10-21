@@ -30,7 +30,7 @@ export function CategoriesHeader({
   current: CategoriesTab;
   actions?: ReactNode;
   // The rules tab names the pending suggestions when there are any.
-  rulesLabel?: string;
+  rulesLabel?: string | undefined;
 }) {
   const t = useT();
   const navigate = useNavigate();

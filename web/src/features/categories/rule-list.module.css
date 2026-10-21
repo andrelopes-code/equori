@@ -1,0 +1,24 @@
+@layer app {
+  .cut {
+    display: block;
+    overflow: hidden;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .usage {
+    display: inline-flex;
+    align-items: baseline;
+    justify-content: end;
+    gap: var(--slotted-space-2);
+    inline-size: 100%;
+  }
+
+  .empty {
+    display: block;
+    padding: var(--slotted-space-6);
+    text-align: center;
+  }
+}

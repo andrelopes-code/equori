@@ -149,3 +149,171 @@ export function useReopenCategory() {
     "everything",
   );
 }
+
+type Rule = components["schemas"]["Rule"];
+type RuleInput = components["schemas"]["RuleInput"];
+
+export const ruleKeys = {
+  all: ["rules"] as const,
+  list: ["rules", "list"] as const,
+  suggestions: ["rules", "suggestions"] as const,
+  statistics: (from: string, to: string) =>
+    ["rules", "statistics", from, to] as const,
+  sources: ["rules", "sources"] as const,
+};
+
+const pageLimit = 200;
+
+// Every rule in priority order, following the cursor.
+export function rulesQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: ruleKeys.list,
+    queryFn: async () => {
+      const items: Rule[] = [];
+      let cursor: string | undefined;
+      do {
+        const page = await unwrap(
+          await api.GET("/rules", {
+            params: {
+              query: {
+                limit: pageLimit,
+                ...(cursor === undefined ? {} : { cursor }),
+              },
+            },
+          }),
+        );
+        items.push(...page.items);
+        cursor = page.next_cursor;
+      } while (cursor !== undefined);
+      return items;
+    },
+  });
+}
+
+export function pendingSuggestionsQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: ruleKeys.suggestions,
+    queryFn: async () =>
+      (
+        await unwrap(
+          await api.GET("/rule-suggestions", {
+            params: { query: { state: "pending", limit: pageLimit } },
+          }),
+        )
+      ).items,
+  });
+}
+
+export function statisticsQuery(api: Client<paths>, from: string, to: string) {
+  return queryOptions({
+    queryKey: ruleKeys.statistics(from, to),
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/categorization-statistics", {
+          params: { query: { from, to } },
+        }),
+      ),
+  });
+}
+
+export function sourceCategoriesQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: ruleKeys.sources,
+    queryFn: async () =>
+      (
+        await unwrap(
+          await api.GET("/source-categories", {
+            params: { query: { limit: pageLimit } },
+          }),
+        )
+      ).items,
+  });
+}
+
+// A rule changes what the next run decides; the rules and the statistics are read again.
+function useRuleMutation<T, R>(
+  request: (api: Client<paths>, input: T) => Promise<R>,
+) {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: T) => request(api, input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ruleKeys.all }),
+  });
+}
+
+export function useCreateRule() {
+  return useRuleMutation(async (api, body: RuleInput) =>
+    unwrap(await api.POST("/rules", { body })),
+  );
+}
+
+export function useReplaceRule() {
+  return useRuleMutation(
+    async (api, { id, body }: { id: string; body: RuleInput }) =>
+      unwrap(await api.PUT("/rules/{id}", { params: { path: { id } }, body })),
+  );
+}
+
+export function useDeleteRule() {
+  return useRuleMutation(async (api, id: string) =>
+    unwrap(await api.DELETE("/rules/{id}", { params: { path: { id } } })),
+  );
+}
+
+export function useReorderRules() {
+  return useRuleMutation(async (api, ids: string[]) =>
+    unwrap(await api.POST("/rules/reorder", { body: { rule_ids: ids } })),
+  );
+}
+
+export function useAcceptSuggestion() {
+  return useRuleMutation(
+    async (api, { id, name }: { id: string; name: string }) =>
+      unwrap(
+        await api.POST("/rule-suggestions/{id}/accept", {
+          params: { path: { id } },
+          body: { name },
+        }),
+      ),
+  );
+}
+
+export function useDismissSuggestion() {
+  return useRuleMutation(async (api, id: string) =>
+    unwrap(
+      await api.POST("/rule-suggestions/{id}/dismiss", {
+        params: { path: { id } },
+      }),
+    ),
+  );
+}
+
+export function useMapSourceCategory() {
+  return useRuleMutation(
+    async (
+      api,
+      { id, categoryId }: { id: string; categoryId: string | null },
+    ) =>
+      unwrap(
+        await api.PUT("/source-categories/{id}", {
+          params: { path: { id } },
+          body: { category_id: categoryId },
+        }),
+      ),
+  );
+}
+
+// Running the rules categorizes transactions: every read can be stale.
+export function useRunRules() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => unwrap(await api.POST("/rules/run")),
+    onSuccess: () => queryClient.invalidateQueries(),
+  });
+}
+
+export function rulePreview(api: Client<paths>, body: RuleInput) {
+  return api.POST("/rules/preview", { body });
+}

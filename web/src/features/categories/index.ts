@@ -17,3 +17,4 @@ export { RulesPage } from "@/features/categories/rules-page";
 export { PayeesPage } from "@/features/categories/payees-page";
 export { validateCategoriesSearch } from "@/features/categories/categories-search";
 export { useCategoryEntries } from "@/features/categories/use-category-entries";
+export { RuleEditorPage } from "@/features/categories/rule-editor-page";
