@@ -628,6 +628,33 @@ export const catalogEn = {
   "preview.failed": "The preview could not be computed.",
   "ruleEditor.step": "{n}.",
   "categorize.createRule": "Create rule",
+  "payees.name": "Name",
+  "payees.aliases": "Aliases",
+  "payees.actions": "Actions for {name}",
+  "payees.manageAliases": "Aliases…",
+  "payees.merge": "Merge",
+  "payees.mergeTitle": "Merge {count} payees",
+  "payees.mergeDescription":
+    "Their transactions and aliases move to the payee that stays; the others leave the list. This cannot be undone.",
+  "payees.keep": "Payee that stays",
+  "payees.merged": "Payees merged",
+  "payees.new": "New payee",
+  "payees.created": "Payee {name} created",
+  "payees.search": "Search payees",
+  "alias.title": "Aliases of {name}",
+  "alias.description":
+    "An imported line without a payee takes this one when its description matches.",
+  "alias.pattern": "Description",
+  "alias.match": "Matches when it",
+  "alias.add": "Add alias",
+  "alias.caption": "Aliases of the payee",
+  "alias.none": "No alias yet.",
+  "alias.remove": "Remove alias {pattern}",
+  "alias.match.contains": "contains it",
+  "alias.match.starts_with": "starts with it",
+  "alias.match.equals": "is exactly it",
+  "alias.match.regex": "matches the expression",
+  "payees.create": "Create payee",
 } as const;
 
 export type Catalog = { [K in keyof typeof catalogEn]: string };

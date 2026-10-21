@@ -317,3 +317,122 @@ export function useRunRules() {
 export function rulePreview(api: Client<paths>, body: RuleInput) {
   return api.POST("/rules/preview", { body });
 }
+
+type PayeeAlias = components["schemas"]["PayeeAlias"];
+type PayeeAliasInput = components["schemas"]["PayeeAliasInput"];
+
+export const aliasKeys = { all: ["payee-aliases"] as const };
+
+// Every alias, oldest first, following the cursor.
+export function payeeAliasesQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: aliasKeys.all,
+    queryFn: async () => {
+      const items: PayeeAlias[] = [];
+      let cursor: string | undefined;
+      do {
+        const page = await unwrap(
+          await api.GET("/payee-aliases", {
+            params: {
+              query: {
+                limit: pageLimit,
+                ...(cursor === undefined ? {} : { cursor }),
+              },
+            },
+          }),
+        );
+        items.push(...page.items);
+        cursor = page.next_cursor;
+      } while (cursor !== undefined);
+      return items;
+    },
+  });
+}
+
+function useAliasMutation<T, R>(
+  request: (api: Client<paths>, input: T) => Promise<R>,
+) {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: T) => request(api, input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: aliasKeys.all }),
+  });
+}
+
+export function useCreateAlias() {
+  return useAliasMutation(async (api, body: PayeeAliasInput) =>
+    unwrap(await api.POST("/payee-aliases", { body })),
+  );
+}
+
+export function useReplaceAlias() {
+  return useAliasMutation(
+    async (api, { id, body }: { id: string; body: PayeeAliasInput }) =>
+      unwrap(
+        await api.PUT("/payee-aliases/{id}", {
+          params: { path: { id } },
+          body,
+        }),
+      ),
+  );
+}
+
+export function useDeleteAlias() {
+  return useAliasMutation(async (api, id: string) =>
+    unwrap(
+      await api.DELETE("/payee-aliases/{id}", { params: { path: { id } } }),
+    ),
+  );
+}
+
+// A renamed payee reads anew in every list that names it.
+export function useRenamePayee() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) =>
+      unwrap(
+        await api.PATCH("/payees/{id}", {
+          params: { path: { id } },
+          body: { name },
+        }),
+      ),
+    onSuccess: () => queryClient.invalidateQueries(),
+  });
+}
+
+export function useCreatePayeeRecord() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (name: string) =>
+      unwrap(await api.POST("/payees", { body: { name } })),
+    onSuccess: () => queryClient.invalidateQueries(),
+  });
+}
+
+// A82: the source's transactions get a version naming the destination; aliases follow it.
+export function useMergePayees() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      sources,
+      into,
+    }: {
+      sources: string[];
+      into: string;
+    }) => {
+      for (const id of sources) {
+        await unwrap(
+          await api.POST("/payees/{id}/merge", {
+            params: { path: { id } },
+            body: { into },
+          }),
+        );
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries(),
+  });
+}
