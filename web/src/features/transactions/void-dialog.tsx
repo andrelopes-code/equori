@@ -17,6 +17,7 @@ import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { useVoidTransaction } from "@/features/transactions/api";
 import { useT } from "@/i18n/i18n-provider";
+import { useStableCallback } from "@/ui/use-stable-callback";
 
 type Transaction = components["schemas"]["Transaction"];
 
@@ -34,18 +35,15 @@ export function VoidDialog({
   const formId = useId();
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const change = useStableCallback((next: boolean) => {
+    if (!next) {
+      setReason("");
+      setError(null);
+    }
+    onOpenChange(next);
+  });
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) {
-          setReason("");
-          setError(null);
-        }
-        onOpenChange(next);
-      }}
-      size="sm"
-    >
+    <Dialog open={open} onOpenChange={change} size="sm">
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("void.title")}</DialogTitle>

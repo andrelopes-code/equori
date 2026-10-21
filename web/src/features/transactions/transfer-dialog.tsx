@@ -24,6 +24,7 @@ import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { useTransferTransaction } from "@/features/transactions/api";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useStableCallback } from "@/ui/use-stable-callback";
 
 type Account = components["schemas"]["Account"];
 type Transaction = components["schemas"]["Transaction"];
@@ -58,18 +59,15 @@ export function TransferDialog({
     )
     .sort((a, b) => collator.compare(a.name, b.name));
 
+  const change = useStableCallback((next: boolean) => {
+    if (!next) {
+      setAccountId(null);
+      setError(null);
+    }
+    onOpenChange(next);
+  });
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) {
-          setAccountId(null);
-          setError(null);
-        }
-        onOpenChange(next);
-      }}
-      size="sm"
-    >
+    <Dialog open={open} onOpenChange={change} size="sm">
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("transfer.title")}</DialogTitle>

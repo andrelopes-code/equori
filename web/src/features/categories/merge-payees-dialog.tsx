@@ -17,6 +17,7 @@ import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { useMergePayees } from "@/features/categories/api";
 import { useT } from "@/i18n/i18n-provider";
+import { useStableCallback } from "@/ui/use-stable-callback";
 
 type Payee = components["schemas"]["Payee"];
 
@@ -34,13 +35,11 @@ export function MergePayeesDialog({
   const merge = useMergePayees();
   const [into, setInto] = useState(payees[0]?.id ?? "");
   const [error, setError] = useState<string | null>(null);
+  const change = useStableCallback((open: boolean) => {
+    if (!open) onCancel();
+  });
   return (
-    <AlertDialog
-      open
-      onOpenChange={(open) => {
-        if (!open) onCancel();
-      }}
-    >
+    <AlertDialog open onOpenChange={change}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>

@@ -39,6 +39,7 @@ import type {
   CategoryIconName,
 } from "@/features/categories/category-paths";
 import { useT } from "@/i18n/i18n-provider";
+import { useStableCallback } from "@/ui/use-stable-callback";
 
 const topLevel = "__top__";
 
@@ -59,6 +60,7 @@ export function CategoryDialog({
   defaultParent?: string | null;
 }) {
   const t = useT();
+  const change = useStableCallback(onOpenChange);
   const formId = useId();
   const api = useApi();
   const settings = useQuery(settingsQuery(api));
@@ -141,7 +143,7 @@ export function CategoryDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} size="md">
+    <Dialog open={open} onOpenChange={change} size="md">
       <DialogContent>
         <DialogHeader>
           <DialogTitle>

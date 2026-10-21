@@ -19,6 +19,7 @@ import { CategoryPicker } from "@/features/categories/category-picker";
 import { subtreeOf } from "@/features/categories/category-paths";
 import type { CategoryEntry } from "@/features/categories/category-paths";
 import { useT } from "@/i18n/i18n-provider";
+import { useStableCallback } from "@/ui/use-stable-callback";
 
 // A75: the source's postings, rules and budgets move to the destination, and the source closes.
 export function MergeDialog({
@@ -33,12 +34,13 @@ export function MergeDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useT();
+  const change = useStableCallback(onOpenChange);
   const merge = useMergeCategory();
   const [into, setInto] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const excluded = subtreeOf(entries, source.id);
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialog open={open} onOpenChange={change}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("merge.title", { name: source.path })}</DialogTitle>

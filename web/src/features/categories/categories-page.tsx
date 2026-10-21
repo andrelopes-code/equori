@@ -41,6 +41,7 @@ import { MergeDialog } from "@/features/categories/merge-dialog";
 import { settingsQuery, useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { MonthControl } from "@/ui/month-control";
+import { useStableCallback } from "@/ui/use-stable-callback";
 import { useToday } from "@/i18n/today";
 
 type Dialog =
@@ -77,6 +78,9 @@ export function CategoriesPage() {
   const archive = useArchiveCategory();
   const reopen = useReopenCategory();
   const [dialog, setDialog] = useState<Dialog | null>(null);
+  const closeArchive = useStableCallback((open: boolean) => {
+    if (!open) setDialog(null);
+  });
 
   const entries = useCategoryEntries(accounts.data);
   const currency = settings.data?.base_currency ?? "BRL";
@@ -242,12 +246,7 @@ export function CategoriesPage() {
         />
       )}
       {dialog?.kind === "archive" && (
-        <AlertDialog
-          open
-          onOpenChange={(open) => {
-            if (!open) setDialog(null);
-          }}
-        >
+        <AlertDialog open onOpenChange={closeArchive}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>

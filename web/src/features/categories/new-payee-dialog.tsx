@@ -14,6 +14,7 @@ import { useId, useState } from "react";
 import { errorText } from "@/api/problem";
 import { useCreatePayeeRecord } from "@/features/categories/api";
 import { useT } from "@/i18n/i18n-provider";
+import { useStableCallback } from "@/ui/use-stable-callback";
 
 export function NewPayeeDialog({
   onDone,
@@ -27,14 +28,11 @@ export function NewPayeeDialog({
   const create = useCreatePayeeRecord();
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const change = useStableCallback((open: boolean) => {
+    if (!open) onCancel();
+  });
   return (
-    <Dialog
-      open
-      size="sm"
-      onOpenChange={(open) => {
-        if (!open) onCancel();
-      }}
-    >
+    <Dialog open size="sm" onOpenChange={change}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("payees.new")}</DialogTitle>

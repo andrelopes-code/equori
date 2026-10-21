@@ -47,6 +47,7 @@ import { SourceCategories } from "@/features/categories/source-categories";
 import { SuggestionCard } from "@/features/categories/suggestion-card";
 import { useRuleWords } from "@/features/categories/use-rule-words";
 import { useT } from "@/i18n/i18n-provider";
+import { useStableCallback } from "@/ui/use-stable-callback";
 import { useToday } from "@/i18n/today";
 
 type Rule = components["schemas"]["Rule"];
@@ -81,6 +82,9 @@ export function RulesPage() {
   const map = useMapSourceCategory();
   const [order, setOrder] = useState<string[] | null>(null);
   const [deleting, setDeleting] = useState<Rule | null>(null);
+  const closeDeleting = useStableCallback((open: boolean) => {
+    if (!open) setDeleting(null);
+  });
 
   const fail = (error: unknown) => {
     toast.show({ tone: "danger", title: errorText(error, t) });
@@ -263,12 +267,7 @@ export function RulesPage() {
         </Stack>
       </PageBody>
       {deleting !== null && (
-        <AlertDialog
-          open
-          onOpenChange={(open) => {
-            if (!open) setDeleting(null);
-          }}
-        >
+        <AlertDialog open onOpenChange={closeDeleting}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
