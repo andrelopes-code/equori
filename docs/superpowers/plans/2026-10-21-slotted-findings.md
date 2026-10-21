@@ -299,37 +299,3 @@ Need: previous/next steppers (month, period, pagination) and back/forward links 
 Proposed API: add chevron-left, chevron-up, arrow-right and arrow-down to GlyphName, with the same viewBox and stroke as the existing chevrons and arrows.
 Acceptance: the glyph contract test lists each direction for chevron and arrow.
 ```
-
-### 19. light-dark() compiles to variables no stylesheet defines
-
-- **Kind:** bug
-- **Area:** family — `segmented-control` (`indicator`) and `event-calendar`; the build of `@slotted/react/styles.css`
-- **Problem:** Lightning CSS lowers each `light-dark()` of the family stylesheets to `var(--lightningcss-light, A) var(--lightningcss-dark, B)`. The pair is only declared where a rule sets `color-scheme` through Lightning CSS, and no rule of the shipped CSS does: `styles.css` reads the pair 20 times and declares it 0 times, in 0.1.0-beta.7 and 0.1.0-beta.8. Both fallbacks are then substituted side by side, the value is invalid at computed-value time, and the property falls back to its initial value.
-- **Evidence:** `/transactions/new`, Chrome 141, every scheme: the segmented-control indicator computes `background-color: rgba(0, 0, 0, 0)`, so the chosen segment is drawn only by its 10 % border over the track. With `--lightningcss-light: ; --lightningcss-dark: initial` declared on `<html>`, the indicator computes `oklab(0.314 …)` in dark and `oklch(0.985 …)` in light.
-- **Impact on equori:** the chosen kind of the entry form (expense, income, transfer) is not raised above the track.
-- **Workaround:** `web/src/app/app.css` declares the pair for each `data-slotted-scheme` value.
-
-```
-Bug — build: light-dark() lowered to undeclared variables.
-Observed: @slotted/react/dist/styles.css contains var(--lightningcss-light, …) var(--lightningcss-dark, …) pairs (segmented-control indicator background, event-calendar event hues) but declares neither variable anywhere, so the computed value is invalid and the property resolves to its initial value: the segmented-control thumb is transparent in every scheme.
-Expected: the indicator is surface-raised in light and text 14 % over surface-raised in dark, as the source's light-dark() states.
-Repro: render <SegmentedControl defaultValue="a"><Segment value="a"/><Segment value="b"/></SegmentedControl> under data-slotted-theme="default" data-slotted-scheme="dark"; getComputedStyle of [data-part="indicator"] gives background-color rgba(0, 0, 0, 0).
-Fix: either target browsers with native light-dark() so Lightning CSS keeps it, or have the theme's scheme blocks declare --lightningcss-light/--lightningcss-dark next to color-scheme (on :scope and the seeds element), or replace light-dark() in family CSS with a scheme token.
-Acceptance: a build check fails when styles.css reads a --lightningcss-* variable that no shipped stylesheet declares, and a browser test asserts the indicator background is not transparent in light and dark.
-```
-
-### 20. Dialog sends focus back to its opener when onOpenChange changes identity
-
-- **Kind:** bug
-- **Area:** family — `dialog` (`Dialog`, `AlertDialog`), regression in 0.1.0-beta.8
-- **Problem:** While a Dialog or an AlertDialog is open, a render that passes a new `onOpenChange` function moves focus out of the panel to the element that opened it, as if the dialog had closed. A handler written inline is a new function on every render, so a controlled field inside the dialog keeps only the first key typed.
-- **Evidence:** `transaction-detail.test.tsx > voids with the reason the reader writes`: typing "Duplicated" sends "D"; after the first key `document.activeElement` is the page's Void button, outside the open dialog. On a clean worktree the test passes with 0.1.0-beta.7 and fails with 0.1.0-beta.8. A minimal test (trigger button, Dialog with an inline `onOpenChange`, controlled input) fails for Dialog and AlertDialog and passes for Drawer and Popover; with a stable `onOpenChange` it passes.
-- **Impact on equori:** the void reason, the payee name, the category name and every other field in a dialog lost all but the first key.
-- **Workaround:** `web/src/ui/use-stable-callback.ts`; every Dialog and AlertDialog of the app receives an `onOpenChange` of stable identity.
-
-```
-Bug — dialog: focus returns to the opener when onOpenChange changes identity (regression in 0.1.0-beta.8).
-Observed: function P(){const[o,setO]=useState(false);return <><button onClick={()=>setO(true)}>Open</button><D open={o} setOpen={setO}/></>} with function D({open,setOpen}){const[v,setV]=useState("");return <Dialog open={open} onOpenChange={(x)=>setOpen(x)}><DialogContent><DialogTitle>T</DialogTitle><DialogBody><input aria-label="R" value={v} onChange={(e)=>setV(e.target.value)}/></DialogBody></DialogContent></Dialog>}. Click Open, type "Duplicated" in the input: the value is "D" and document.activeElement is the Open button. Same with AlertDialog; Drawer and Popover keep focus. 0.1.0-beta.7 keeps focus.
-Expected: the dialog's open lifecycle (focus entry, focus return, modal layer) runs only when open changes; a new handler identity is read through a ref and moves nothing.
-Acceptance: a test with the component above, typing "Duplicated", asserts the value is "Duplicated" and focus stays in the input, for Dialog and AlertDialog; it fails on 0.1.0-beta.8.
-```
