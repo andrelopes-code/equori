@@ -21,6 +21,8 @@ export default defineConfig({
   // tsconfig.json paths are the single definition of the @/ alias.
   resolve: { tsconfigPaths: true },
   server: {
+    // Reachable from other devices on the LAN, such as a phone.
+    host: "0.0.0.0",
     // mDNS names of a development server on the LAN, such as devserver.local.
     allowedHosts: [".local"],
     // make dev serves the API; one origin lets the session cookie through without CORS.
