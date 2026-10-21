@@ -34,6 +34,8 @@ export interface CategoryPickerProps {
   defaultOpen?: boolean;
   invalid?: boolean;
   disabled?: boolean;
+  // False keeps the list inside a layer the picker already stands in.
+  portal?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 

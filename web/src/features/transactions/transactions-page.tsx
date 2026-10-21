@@ -1,6 +1,6 @@
 import { Glyph, Icon } from "@slotted/react/icon";
 import { IconButton } from "@slotted/react/button";
-import { Page, PageBody } from "@slotted/react/page";
+import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import {
   PageHeader,
   PageHeaderActions,
@@ -11,11 +11,13 @@ import {
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
 import { Tab, TabList, Tabs } from "@slotted/react/tabs";
+import { toast } from "@slotted/react/toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useDeferredValue, useMemo, useState } from "react";
 
 import { useApi } from "@/api/api-context";
+import { errorText } from "@/api/problem";
 import { accountsQuery } from "@/features/accounts";
 import { categoryEntries } from "@/features/categories";
 import { payeesQuery, useScale } from "@/features/setup";
@@ -26,10 +28,12 @@ import {
 } from "@/features/transactions/api";
 import { validateTransactionSearch } from "@/features/transactions/search";
 import type { TransactionSearchDraft } from "@/features/transactions/search";
+import { SelectionBar } from "@/features/transactions/selection-bar";
 import { TransactionFilters } from "@/features/transactions/transaction-filters";
 import { TransactionsEmpty } from "@/features/transactions/transactions-empty";
 import { TransactionsGrid } from "@/features/transactions/transactions-grid";
 import styles from "@/features/transactions/transactions-page.module.css";
+import { useCategorizeActions } from "@/features/transactions/use-categorize-actions";
 import { useTransactionList } from "@/features/transactions/use-transaction-list";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
@@ -58,6 +62,8 @@ export function TransactionsPage() {
   const scale = useScale();
   const compact = useMediaQuery(compactQuery);
   const [selection, setSelection] = useState<readonly string[]>([]);
+  const [picking, setPicking] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   const categories = useMemo(
     () => categoryEntries(accounts.data ?? [], locale),
@@ -67,6 +73,34 @@ export function TransactionsPage() {
     () => new Map(categories.map((c) => [c.id, c])),
     [categories],
   );
+  const accountsById = useMemo(
+    () => new Map((accounts.data ?? []).map((a) => [a.id, a])),
+    [accounts.data],
+  );
+  const actions = useCategorizeActions(accountsById);
+
+  const selectedRows = list.rows.filter((row) => selection.includes(row.id));
+  const selectedAmount = selectedRows.reduce(
+    (sum, row) => sum + row.money.amount,
+    0,
+  );
+
+  const categorizeSelection = async (categoryId: string) => {
+    const category = categoriesById.get(categoryId);
+    if (category === undefined) return;
+    setBulkBusy(true);
+    try {
+      await actions.categorizeMany(
+        selectedRows.map((row) => row.transaction),
+        category,
+      );
+      setSelection([]);
+    } catch (error) {
+      toast.show({ tone: "danger", title: errorText(error, t) });
+    } finally {
+      setBulkBusy(false);
+    }
+  };
 
   const setSearch = (next: TransactionSearchDraft) => {
     setSelection([]);
@@ -88,7 +122,29 @@ export function TransactionsPage() {
         });
 
   return (
-    <Page width="bleed" fill>
+    <Page
+      width="bleed"
+      fill
+      footer={
+        selection.length > 0 ? (
+          <PageFooter>
+            <SelectionBar
+              count={selection.length}
+              amount={selectedAmount}
+              busy={bulkBusy}
+              open={picking}
+              onOpenChange={setPicking}
+              onClear={() => {
+                setSelection([]);
+              }}
+              onCategorize={(id) => {
+                void categorizeSelection(id);
+              }}
+            />
+          </PageFooter>
+        ) : undefined
+      }
+    >
       <PageHeader size="lg">
         <PageHeaderTitleArea>
           <PageHeaderTitleRow>
@@ -159,6 +215,18 @@ export function TransactionsPage() {
                 height={compact ? undefined : "100%"}
                 selection={selection}
                 onSelectionChange={setSelection}
+                onCategoryCommit={async (row, categoryId) => {
+                  const category = categoriesById.get(categoryId);
+                  if (category === undefined) return;
+                  try {
+                    await actions.categorizeOne(row.transaction, category);
+                  } catch (error) {
+                    throw new Error(errorText(error, t), { cause: error });
+                  }
+                }}
+                onCategorizeSelection={() => {
+                  setPicking(true);
+                }}
                 onOpen={(id) => {
                   void navigate({
                     to: "/transactions/$id",

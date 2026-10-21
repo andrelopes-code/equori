@@ -115,7 +115,9 @@ describe("TransactionsPage", () => {
     ).toBeInTheDocument();
     const second = rowOf("PIX RECEBIDO");
     expect(
-      within(second).getByText(catalogEn["transactions.uncategorized"]),
+      within(second).getByRole("button", {
+        name: catalogEn["transactions.categorize"],
+      }),
     ).toBeInTheDocument();
     expect(within(second).getByText("R$500.00")).toBeInTheDocument();
     // A date of another year carries its year.
@@ -203,5 +205,18 @@ describe("TransactionsPage", () => {
       screen.getByRole("button", { name: catalogEn["transactions.tryAgain"] }),
     );
     expect(await screen.findByText("Weekly shop")).toBeInTheDocument();
+  });
+});
+
+describe("TransactionsPage queue", () => {
+  it("keeps the queue out of the filter bar's pills", async () => {
+    await renderApp("/transactions?uncategorized=true", {
+      fetch: api({ queries: [] }),
+    });
+    await screen.findByText("Weekly shop");
+    expect(screen.queryByRole("group", { name: /uncategorized/i })).toBeNull();
+    expect(
+      screen.getByRole("tab", { name: "Uncategorized (1)", selected: true }),
+    ).toBeInTheDocument();
   });
 });

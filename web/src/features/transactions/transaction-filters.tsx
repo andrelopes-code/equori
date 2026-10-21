@@ -125,7 +125,11 @@ export function TransactionFilters({
   return (
     <FilterBar
       fields={fields}
-      value={treeFromSearch(search, (id) => categoryIds.has(id))}
+      // The queue is the page's place, set by the header tabs, never a pill (LP-09).
+      value={treeFromSearch(
+        { ...filtered, ...(q === undefined ? {} : { q }) },
+        (id) => categoryIds.has(id),
+      )}
       onValueChange={(tree) => {
         onSearchChange({
           ...searchFromTree(tree, search),

@@ -67,3 +67,10 @@ export function unwrap<T>(result: {
   }
   return Promise.resolve(result.data as T);
 }
+
+// A problem reads as its code's words; anything else is a request that never reached the server.
+export function errorText(error: unknown, t: TFunction): string {
+  return error instanceof ProblemError
+    ? problemMessage(error.problem, t)
+    : t("problem.transport");
+}

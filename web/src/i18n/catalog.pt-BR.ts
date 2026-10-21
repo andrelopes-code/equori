@@ -253,4 +253,22 @@ export const catalogPtBR: Catalog = {
   "transactions.tryAgain": "Tentar de novo",
   "transactions.selectRow": "Selecionar {row}",
   "transactions.period.any": "Qualquer período",
+  "problem.transport":
+    "Nada foi gravado: o servidor não respondeu. Tente de novo.",
+  "categorize.done": "Categorizada como {category}",
+  "categorize.undo": "Desfazer",
+  "categorize.applySimilar": "Aplicar a {count} semelhantes",
+  "categorize.bulkDone": "{count} categorizadas como {category}",
+  "categorize.refused.version_conflict":
+    "{count} mudaram depois que a lista foi lida e ficaram como estavam.",
+  "categorize.refused.transaction_voided": "{count} estão anuladas.",
+  "categorize.refused.not_categorizable":
+    "{count} não têm lado de categoria para mudar.",
+  "categorize.refused.not_found": "{count} não existem mais.",
+  "categorize.refused.other": "{count} foram recusadas.",
+  "selection.label": "Transações selecionadas",
+  "selection.count": "{count} selecionadas",
+  "selection.clear": "Limpar",
+  "selection.categorize": "Categorizar como…",
+  "selection.categorizeTitle": "Categorizar {count} transações",
 };

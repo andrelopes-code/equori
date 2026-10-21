@@ -248,6 +248,24 @@ export const catalogEn = {
   "transactions.tryAgain": "Try again",
   "transactions.selectRow": "Select {row}",
   "transactions.period.any": "Any period",
+  "problem.transport":
+    "Nothing was written: the server could not be reached. Try again.",
+  "categorize.done": "Categorized as {category}",
+  "categorize.undo": "Undo",
+  "categorize.applySimilar": "Apply to {count} similar",
+  "categorize.bulkDone": "{count} categorized as {category}",
+  "categorize.refused.version_conflict":
+    "{count} changed since the list was read and were left as they are.",
+  "categorize.refused.transaction_voided": "{count} are voided.",
+  "categorize.refused.not_categorizable":
+    "{count} have no category side to change.",
+  "categorize.refused.not_found": "{count} no longer exist.",
+  "categorize.refused.other": "{count} were refused.",
+  "selection.label": "Selected transactions",
+  "selection.count": "{count} selected",
+  "selection.clear": "Clear",
+  "selection.categorize": "Categorize as…",
+  "selection.categorizeTitle": "Categorize {count} transactions",
 } as const;
 
 export type Catalog = { [K in keyof typeof catalogEn]: string };

@@ -1,13 +1,15 @@
-import type { GridColumn } from "@slotted/core/grid";
+import type { GridCell, GridColumn } from "@slotted/core/grid";
 import { DataGrid } from "@slotted/react/data-grid";
+import type { DataGridHandle } from "@slotted/react/data-grid";
 import { Inline } from "@slotted/react/inline";
 import { Tag } from "@slotted/react/tag";
-import type { ReactNode } from "react";
-import { useMemo } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
+import { useMemo, useRef } from "react";
 
 import type { CategoryEntry } from "@/features/categories";
 import { AmountCell } from "@/features/transactions/amount-cell";
 import { CategoryCell } from "@/features/transactions/category-cell";
+import { CategoryEditor } from "@/features/transactions/category-editor";
 import { TitleCell } from "@/features/transactions/title-cell";
 import type {
   ListRow,
@@ -25,7 +27,8 @@ export function TransactionsGrid({
   selection,
   onSelectionChange,
   onOpen,
-  onCategorize,
+  onCategoryCommit,
+  onCategorizeSelection,
   empty,
 }: {
   list: TransactionList;
@@ -36,12 +39,37 @@ export function TransactionsGrid({
   selection: readonly string[];
   onSelectionChange: (ids: readonly string[]) => void;
   onOpen: (id: string) => void;
-  onCategorize?: (row: ListRow) => void;
+  // Resolves once the category is written; a rejection reopens the editor with its message.
+  onCategoryCommit: (row: ListRow, categoryId: string) => Promise<void>;
+  onCategorizeSelection: () => void;
   empty: (status: "empty" | "no-results" | "error") => ReactNode;
 }) {
   const t = useT();
   const [locale] = useAppLocale();
   const year = useToday().slice(0, 4);
+  const handle = useRef<DataGridHandle>(null);
+  const current = useRef<GridCell | null>(null);
+
+  const editCategory = (key: string) => {
+    handle.current?.startEdit({ row: key, column: "category" });
+  };
+
+  // C categorizes the selection, or the row the cursor stands on.
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key.toLowerCase() !== "c") return;
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+    if (event.target instanceof Element && event.target.closest("input")) {
+      return;
+    }
+    const row = current.current?.row;
+    if (selection.length > 0) {
+      event.preventDefault();
+      onCategorizeSelection();
+    } else if (typeof row === "string" && list.rows.some((r) => r.id === row)) {
+      event.preventDefault();
+      editCategory(row);
+    }
+  };
 
   const columns = useMemo<GridColumn<ListRow>[]>(
     () => [
@@ -70,6 +98,7 @@ export function TransactionsGrid({
         id: "category",
         label: t("transactions.column.category"),
         accessor: "category",
+        editable: (row) => !row.voided && !row.transfer,
         flex: 1,
         minWidth: 160,
         maxWidth: 280,
@@ -112,7 +141,29 @@ export function TransactionsGrid({
 
   return (
     <DataGrid
+      handle={handle}
       aria-label={t("nav.transactions")}
+      aria-keyshortcuts="C"
+      onKeyDown={onKeyDown}
+      onCurrentChange={(cell) => {
+        current.current = cell;
+      }}
+      onEditCommit={async (commit) => {
+        if (commit.column !== "category" || typeof commit.value !== "string") {
+          return;
+        }
+        await onCategoryCommit(commit.row, commit.value);
+      }}
+      editorRenderers={{
+        category: ({ row, draft, setDraft, commit }) => (
+          <CategoryEditor
+            draft={draft}
+            setDraft={setDraft}
+            commit={commit}
+            amount={row.money.amount}
+          />
+        ),
+      }}
       columns={columns}
       rows={list.rows}
       rowKey="id"
@@ -146,10 +197,10 @@ export function TransactionsGrid({
             row={row}
             categories={categories}
             onCategorize={
-              onCategorize === undefined || row.voided
+              row.voided || row.transfer
                 ? undefined
                 : () => {
-                    onCategorize(row);
+                    editCategory(row.id);
                   }
             }
           />

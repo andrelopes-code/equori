@@ -12,6 +12,7 @@ import { unwrap } from "@/api/problem";
 import type { components, paths } from "@/api/schema.gen";
 import { accountKeys, balanceKeys } from "@/features/accounts";
 import { setupKeys } from "@/features/setup";
+import { bulkLimit, chunks } from "@/features/transactions/categorize";
 import type { TransactionSearch } from "@/features/transactions/search";
 
 export interface TransactionQuery extends TransactionSearch {
@@ -217,4 +218,48 @@ export function useCategorizeTransaction() {
       ),
     onSuccess: (next, { current }) => mutated(queryClient, current, next),
   });
+}
+
+type BulkItemResult = components["schemas"]["BulkCategorizeItemResult"];
+
+// A78: each item is decided on its own; the request takes at most 200 items, so a larger
+// selection is sent in runs and the answers are joined in order.
+export function useBulkCategorize() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      categoryId,
+      items,
+    }: {
+      categoryId: string;
+      items: { id: string; expected_version: number }[];
+    }) => {
+      const results: BulkItemResult[] = [];
+      for (const run of chunks(items, bulkLimit)) {
+        const answer = await unwrap(
+          await api.POST("/transactions/categorize", {
+            body: { category_id: categoryId, items: run },
+          }),
+        );
+        results.push(...answer.results);
+      }
+      return results;
+    },
+    onSuccess: (_results, { categoryId }) =>
+      transactionMutated(queryClient, [categoryId]),
+  });
+}
+
+// One page of up to 200 uncategorized transactions like the given one.
+export async function similarTransactions(
+  api: Client<paths>,
+  search: TransactionSearch,
+): Promise<Transaction[]> {
+  const page = await unwrap(
+    await api.GET("/transactions", {
+      params: { query: { ...search, limit: countLimit } },
+    }),
+  );
+  return page.items;
 }
