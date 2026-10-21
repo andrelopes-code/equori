@@ -43,15 +43,13 @@ export function CategoryCell({
       : first.name;
   const whole = entries.map((e) => e.path).join(", ");
   const content = (
-    <>
+    <span className={styles.cell}>
       <CategoryMark name={first.name} color={first.color} icon={first.icon} />
       <span className={styles.cut}>{name}</span>
-    </>
+    </span>
   );
   return onCategorize === undefined ? (
-    <span className={styles.cell} title={whole}>
-      {content}
-    </span>
+    <span title={whole}>{content}</span>
   ) : (
     <Button
       size="sm"

@@ -1,0 +1,36 @@
+@layer app {
+  .parts {
+    display: grid;
+    gap: var(--slotted-space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .part {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-3);
+    min-inline-size: 0;
+  }
+
+  .name {
+    flex: 1 1 auto;
+    overflow: hidden;
+    min-inline-size: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* LA-05: the picker, the amount and the remove control share one line, aligned at the top. */
+  .row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 10rem) auto;
+    align-items: start;
+    gap: var(--slotted-space-2);
+  }
+
+  .row:has(> :only-child) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

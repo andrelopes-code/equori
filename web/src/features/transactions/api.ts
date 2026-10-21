@@ -263,3 +263,100 @@ export async function similarTransactions(
   );
   return page.items;
 }
+
+export function categorizationQuery(api: Client<paths>, id: string) {
+  return queryOptions({
+    queryKey: [...transactionKeys.detail(id), "categorization"] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/transactions/{id}/categorization", {
+          params: { path: { id } },
+        }),
+      ),
+  });
+}
+
+// The rule that decided a categorization; a deleted rule answers 404 and the line says so.
+export function ruleNameQuery(api: Client<paths>, id: string) {
+  return queryOptions({
+    queryKey: ["rules", "detail", id] as const,
+    queryFn: async () =>
+      (await unwrap(await api.GET("/rules/{id}", { params: { path: { id } } })))
+        .name,
+    retry: false,
+  });
+}
+
+export function attachmentsQuery(api: Client<paths>, id: string) {
+  return queryOptions({
+    queryKey: [...transactionKeys.detail(id), "attachments"] as const,
+    queryFn: async () =>
+      (
+        await unwrap(
+          await api.GET("/transactions/{id}/attachments", {
+            params: { path: { id } },
+          }),
+        )
+      ).items,
+  });
+}
+
+export function useUploadAttachment(transactionId: string) {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const body = new FormData();
+      body.append("file", file);
+      return unwrap(
+        await api.POST("/transactions/{id}/attachments", {
+          params: { path: { id: transactionId } },
+          // openapi-fetch sends FormData as it is, with the boundary the browser writes.
+          body: body as unknown as { file: string },
+          bodySerializer: (value) => value as unknown as FormData,
+        }),
+      );
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: attachmentsQuery(api, transactionId).queryKey,
+      }),
+  });
+}
+
+export function useRemoveAttachment(transactionId: string) {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      unwrap(
+        await api.DELETE("/attachments/{id}", { params: { path: { id } } }),
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: attachmentsQuery(api, transactionId).queryKey,
+      }),
+  });
+}
+
+export function useTransferTransaction() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      current,
+      accountId,
+    }: {
+      current: Transaction;
+      accountId: string;
+    }) =>
+      unwrap(
+        await api.POST("/transactions/{id}/transfer", {
+          params: { path: { id: current.id } },
+          body: { expected_version: current.version, account_id: accountId },
+        }),
+      ),
+    onSuccess: (result, { current }) =>
+      mutated(queryClient, current, result.transaction),
+  });
+}

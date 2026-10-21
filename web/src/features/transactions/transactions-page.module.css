@@ -9,8 +9,24 @@
   }
 
   .listing {
+    display: grid;
     flex: 1 1 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-4);
     min-block-size: 0;
+  }
+
+  /* The pane takes a third of the room, between 24 and 32 rem, and scrolls on its own. */
+  .listing[data-pane] {
+    grid-template-columns: minmax(0, 1fr) clamp(24rem, 34%, 32rem);
+  }
+
+  .pane {
+    overflow: hidden;
+    min-block-size: 0;
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-lg);
+    background: var(--slotted-surface);
   }
 
   @media (max-width: 599px) {

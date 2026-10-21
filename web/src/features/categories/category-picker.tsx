@@ -24,7 +24,7 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 export interface CategoryPickerProps {
   value: string | null;
   onChange: (id: string | null) => void;
-  // The amount the category receives; its sign puts expense or income first.
+  // The balance side of the transaction: money in (positive) puts income first, money out expense.
   amount?: number;
   "aria-label"?: string;
   name?: string;

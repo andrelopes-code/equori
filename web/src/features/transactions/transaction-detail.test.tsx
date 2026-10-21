@@ -1,0 +1,180 @@
+import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it } from "vitest";
+
+import { catalogEn } from "@/i18n/catalog.en";
+import { fakeApi, json, problem } from "@/testing/fake-api";
+import { renderApp } from "@/testing/render-app";
+import {
+  foodID,
+  leisureID,
+  sharedRoutes,
+  transactionFixture,
+  txID,
+} from "@/testing/transaction-api";
+
+const transaction = transactionFixture();
+
+interface Sent {
+  path: string;
+  body: unknown;
+}
+
+function api(sent: Sent[] = [], detail = () => json(200, transaction)) {
+  return fakeApi({
+    ...sharedRoutes,
+    "GET /api/v1/transactions": () => json(200, { items: [transaction] }),
+    [`GET /api/v1/transactions/${txID}`]: detail,
+    [`GET /api/v1/transactions/${txID}/versions`]: () =>
+      json(200, {
+        items: [
+          {
+            version: 2,
+            reason: "Wrong amount",
+            replaced_at: "2026-10-11T10:00:00Z",
+            transaction,
+          },
+        ],
+      }),
+    [`GET /api/v1/transactions/${txID}/categorization`]: () =>
+      json(200, {
+        transaction_id: txID,
+        method: "manual",
+        decided_at: "2026-10-11T10:00:00Z",
+      }),
+    [`GET /api/v1/transactions/${txID}/attachments`]: () =>
+      json(200, { items: [] }),
+    [`POST /api/v1/transactions/${txID}/void`]: async (req) => {
+      sent.push({ path: "void", body: await req.json() });
+      return json(200, { ...transaction, voided_at: "2026-10-17T12:00:00Z" });
+    },
+    [`POST /api/v1/transactions/${txID}/categorize`]: async (req) => {
+      sent.push({ path: "categorize", body: await req.json() });
+      return json(200, { ...transaction, version: 4 });
+    },
+  });
+}
+
+beforeEach(() => {
+  localStorage.clear();
+});
+
+describe("transaction detail", () => {
+  it("shows the transaction as a page with its postings, facts and history", async () => {
+    await renderApp(`/transactions/${txID}`, { width: 390, fetch: api() });
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Padaria" }),
+    ).toBeInTheDocument();
+    const postings = screen.getByRole("table", {
+      name: catalogEn["postings.caption"],
+    });
+    expect(within(postings).getByText("Itau")).toBeInTheDocument();
+    expect(within(postings).getByText("Mercado")).toBeInTheDocument();
+    expect(within(postings).getByText("−R$120.00")).toBeInTheDocument();
+    expect(
+      await screen.findByText(catalogEn["method.manual"]),
+    ).toBeInTheDocument();
+    expect(await screen.findByText("Version 2 replaced")).toBeInTheDocument();
+    expect(screen.getByText("Wrong amount")).toBeInTheDocument();
+    expect(
+      await screen.findByText(catalogEn["attachments.none"]),
+    ).toBeInTheDocument();
+  });
+
+  it("opens the pane beside the list on a desktop", async () => {
+    const { router } = await renderApp("/transactions", {
+      width: 1280,
+      fetch: api(),
+    });
+    const cell = await screen.findByText("Weekly shop");
+    await userEvent.dblClick(cell);
+    await waitFor(() => {
+      expect(router.state.location.search).toEqual({ selected: txID });
+    });
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Padaria" }),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["detail.close"] }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.search).toEqual({});
+    });
+  });
+
+  it("splits the category side into parts that keep the total", async () => {
+    const sent: Sent[] = [];
+    await renderApp(`/transactions/${txID}`, { fetch: api(sent) });
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["detail.category.change"],
+      }),
+    );
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: catalogEn["detail.category.addPart"],
+      }),
+    );
+    const second = screen.getByRole("combobox", { name: "Category of part 2" });
+    await userEvent.type(second, "Lazer");
+    await waitFor(() => {
+      expect(screen.getAllByRole("option")).toHaveLength(1);
+    });
+    await userEvent.keyboard("{ArrowDown}{Enter}");
+    const first = screen.getByRole("spinbutton", { name: "Amount of part 1" });
+    await userEvent.clear(first);
+    await userEvent.type(first, "10000");
+    const left = screen.getByRole("spinbutton", { name: "Amount of part 2" });
+    await userEvent.clear(left);
+    await userEvent.type(left, "2000");
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["detail.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent[0]).toEqual({
+        path: "categorize",
+        body: {
+          expected_version: 3,
+          parts: [
+            { account_id: foodID, amount: { amount: 10000, currency: "BRL" } },
+            {
+              account_id: leisureID,
+              amount: { amount: 2000, currency: "BRL" },
+            },
+          ],
+        },
+      });
+    });
+  });
+
+  it("voids with the reason the reader writes", async () => {
+    const sent: Sent[] = [];
+    await renderApp(`/transactions/${txID}`, { fetch: api(sent) });
+    await userEvent.click(
+      await screen.findByRole("button", { name: catalogEn["detail.void"] }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.type(
+      within(dialog).getByRole("textbox", { name: catalogEn["void.reason"] }),
+      "Duplicated",
+    );
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: catalogEn["void.confirm"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toEqual([{ path: "void", body: { reason: "Duplicated" } }]);
+    });
+  });
+
+  it("says a missing transaction does not exist and keeps the way back", async () => {
+    await renderApp(`/transactions/${txID}`, {
+      fetch: api([], () => problem(404, "not_found")),
+    });
+    expect(
+      await screen.findByText(catalogEn["detail.notFound"]),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: catalogEn["nav.transactions"] }),
+    ).toHaveAttribute("href", "/transactions");
+  });
+});

@@ -30,13 +30,14 @@ import { validateTransactionSearch } from "@/features/transactions/search";
 import type { TransactionSearchDraft } from "@/features/transactions/search";
 import { SelectionBar } from "@/features/transactions/selection-bar";
 import { TransactionFilters } from "@/features/transactions/transaction-filters";
+import { TransactionDetail } from "@/features/transactions/transaction-detail";
 import { TransactionsEmpty } from "@/features/transactions/transactions-empty";
 import { TransactionsGrid } from "@/features/transactions/transactions-grid";
 import styles from "@/features/transactions/transactions-page.module.css";
 import { useCategorizeActions } from "@/features/transactions/use-categorize-actions";
 import { useTransactionList } from "@/features/transactions/use-transaction-list";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
+import { compactQuery, useMediaQuery, wideQuery } from "@/ui/use-media-query";
 
 const listID = "transactions-list";
 
@@ -61,6 +62,12 @@ export function TransactionsPage() {
   const uncategorized = useQuery(uncategorizedCountQuery(api));
   const scale = useScale();
   const compact = useMediaQuery(compactQuery);
+  const wide = useMediaQuery(wideQuery);
+  // The pane opens beside the list on a desktop; narrower, the record is its own page.
+  const selected = wide ? pageSearch.selected : undefined;
+  const closePane = () => {
+    void navigate({ search: search, replace: true });
+  };
   const [selection, setSelection] = useState<readonly string[]>([]);
   const [picking, setPicking] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -206,7 +213,10 @@ export function TransactionsPage() {
             hasMore={list.hasMore}
             loading={list.pending}
           />
-          <div className={styles.listing}>
+          <div
+            className={styles.listing}
+            data-pane={selected === undefined ? undefined : ""}
+          >
             {scale !== null && (
               <TransactionsGrid
                 list={list}
@@ -228,10 +238,14 @@ export function TransactionsPage() {
                   setPicking(true);
                 }}
                 onOpen={(id) => {
-                  void navigate({
-                    to: "/transactions/$id",
-                    params: { id },
-                  });
+                  if (wide) {
+                    void navigate({
+                      search: { ...search, selected: id },
+                      replace: pageSearch.selected !== undefined,
+                    });
+                  } else {
+                    void navigate({ to: "/transactions/$id", params: { id } });
+                  }
                 }}
                 empty={(status) => (
                   <TransactionsEmpty
@@ -245,6 +259,23 @@ export function TransactionsPage() {
                   />
                 )}
               />
+            )}
+            {selected !== undefined && (
+              <div
+                className={styles.pane}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape" && !event.defaultPrevented) {
+                    closePane();
+                  }
+                }}
+              >
+                <TransactionDetail
+                  key={selected}
+                  id={selected}
+                  host="pane"
+                  onClose={closePane}
+                />
+              </div>
             )}
           </div>
         </div>

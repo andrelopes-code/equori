@@ -1,28 +1,15 @@
 import { Page, PageBody } from "@slotted/react/page";
-import {
-  PageHeader,
-  PageHeaderHeading,
-  PageHeaderTitle,
-  PageHeaderTitleArea,
-  PageHeaderTitleRow,
-} from "@slotted/react/page-header";
+import { useParams } from "@tanstack/react-router";
 
-import { useT } from "@/i18n/i18n-provider";
+import { TransactionDetail } from "@/features/transactions/transaction-detail";
 
 export function TransactionPage() {
-  const t = useT();
+  const { id } = useParams({ from: "/_authed/transactions/$id" });
   return (
     <Page width="wide">
-      <PageHeader size="lg">
-        <PageHeaderTitleArea>
-          <PageHeaderTitleRow>
-            <PageHeaderTitle>
-              <PageHeaderHeading>{t("nav.transactions")}</PageHeaderHeading>
-            </PageHeaderTitle>
-          </PageHeaderTitleRow>
-        </PageHeaderTitleArea>
-      </PageHeader>
-      <PageBody />
+      <PageBody>
+        <TransactionDetail id={id} host="page" />
+      </PageBody>
     </Page>
   );
 }
