@@ -7,7 +7,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@slotted/react/dialog";
-import { Glyph, Icon } from "@slotted/react/icon";
 import { Inline } from "@slotted/react/inline";
 import { Page, PageBody } from "@slotted/react/page";
 import {
@@ -40,6 +39,7 @@ import {
 } from "@/features/categories/api";
 import { CategoriesHeader } from "@/features/categories/categories-header";
 import { Coverage } from "@/features/categories/coverage";
+import { HeaderAction } from "@/features/categories/header-action";
 import { RuleList } from "@/features/categories/rule-list";
 import type { RuleAction } from "@/features/categories/rule-list";
 import styles from "@/features/categories/rules-page.module.css";
@@ -147,9 +147,9 @@ export function RulesPage() {
         }
         actions={
           <Inline gap={2} wrap="nowrap">
-            <Button
-              variant="outline"
-              tone="secondary"
+            <HeaderAction
+              label={t("rules.run")}
+              glyph="play"
               loading={run.isPending}
               onClick={() => {
                 run
@@ -165,21 +165,15 @@ export function RulesPage() {
                   })
                   .catch(fail);
               }}
-            >
-              {t("rules.run")}
-            </Button>
-            <Button
-              start={
-                <Icon size="sm">
-                  <Glyph name="plus" />
-                </Icon>
-              }
+            />
+            <HeaderAction
+              primary
+              label={t("rules.new")}
+              glyph="plus"
               onClick={() => {
                 void navigate({ to: "/categories/rules/new" });
               }}
-            >
-              {t("rules.new")}
-            </Button>
+            />
           </Inline>
         }
       />
@@ -204,6 +198,9 @@ export function RulesPage() {
                       busy={
                         accept.isPending &&
                         accept.variables.id === suggestion.id
+                      }
+                      dismissing={
+                        dismiss.isPending && dismiss.variables === suggestion.id
                       }
                       onAccept={(name) => {
                         accept

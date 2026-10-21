@@ -12,6 +12,8 @@
     min-inline-size: 0;
   }
 
+  /* The preview column takes the width of a short list of descriptions and dates; no token
+     holds a column measure. */
   @media (min-width: 1024px) {
     .editor {
       grid-template-columns: minmax(0, 1fr) minmax(0, 24rem);

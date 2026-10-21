@@ -1,4 +1,6 @@
 @layer app {
+  /* The rem widths are the readable widths of the controls on the line; no token holds a
+     field measure. */
   .row {
     display: grid;
     grid-template-areas: "type body remove" "message message message";

@@ -81,6 +81,7 @@ export function RuleList({
       {
         id: "actions",
         label: t("category.actionsColumn"),
+        kind: "actions",
         accessor: () => "",
         width: 56,
         sortable: false,

@@ -9,7 +9,6 @@ import {
 } from "@slotted/react/dialog";
 import { Button } from "@slotted/react/button";
 import { DatePicker } from "@slotted/react/date-picker";
-import { Glyph, Icon } from "@slotted/react/icon";
 import { Inline } from "@slotted/react/inline";
 import { Page, PageBody } from "@slotted/react/page";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
@@ -30,6 +29,7 @@ import {
 import { CategoriesHeader } from "@/features/categories/categories-header";
 import { validateCategoriesSearch } from "@/features/categories/categories-search";
 import styles from "@/features/categories/categories-page.module.css";
+import { HeaderAction } from "@/features/categories/header-action";
 import { CategoryDialog } from "@/features/categories/category-dialog";
 import { useCategoryEntries } from "@/features/categories/use-category-entries";
 import type {
@@ -162,18 +162,14 @@ export function CategoriesPage() {
       <CategoriesHeader
         current="categories"
         actions={
-          <Button
-            start={
-              <Icon size="sm">
-                <Glyph name="plus" />
-              </Icon>
-            }
+          <HeaderAction
+            primary
+            label={t("category.new")}
+            glyph="plus"
             onClick={() => {
               setDialog({ kind: "create", parent: null });
             }}
-          >
-            {t("category.new")}
-          </Button>
+          />
         }
       />
       <PageBody>

@@ -1,5 +1,6 @@
 @layer app {
-  /* LA-05: the pattern, its match and the button share one line, aligned on the controls. */
+  /* LA-05: the pattern, its match and the button share one line, aligned on the controls. The rem widths are the
+     readable widths of the controls on the line; no token holds a field measure. */
   .add {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 10rem) auto;

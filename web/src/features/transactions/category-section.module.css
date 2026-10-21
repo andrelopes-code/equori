@@ -22,7 +22,8 @@
     white-space: nowrap;
   }
 
-  /* LA-05: the picker, the amount and the remove control share one line, aligned at the top. */
+  /* LA-05: the picker, the amount and the remove control share one line, aligned at the top. The rem widths are the
+     readable widths of the controls on the line; no token holds a field measure. */
   .row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 10rem) auto;

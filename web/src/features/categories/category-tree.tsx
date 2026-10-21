@@ -58,7 +58,8 @@ export function CategoryTree({
         accessor: (row) => row.entry.name,
         rowHeader: true,
         flex: 2,
-        minWidth: 220,
+        // Narrow enough that the total keeps its column beside it on a 390 px phone.
+        minWidth: 150,
       },
       {
         id: "subtree",
@@ -90,6 +91,7 @@ export function CategoryTree({
       {
         id: "actions",
         label: t("category.actionsColumn"),
+        kind: "actions",
         accessor: () => "",
         width: 56,
         sortable: false,

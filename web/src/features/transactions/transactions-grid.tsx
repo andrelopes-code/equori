@@ -92,7 +92,8 @@ export function TransactionsGrid({
         accessor: "title",
         rowHeader: true,
         flex: 2,
-        minWidth: 200,
+        // Narrow enough that the amount keeps its column beside it on a 390 px phone.
+        minWidth: 150,
       },
       {
         id: "category",

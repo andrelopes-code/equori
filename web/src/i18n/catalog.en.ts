@@ -655,6 +655,7 @@ export const catalogEn = {
   "alias.match.equals": "is exactly it",
   "alias.match.regex": "matches the expression",
   "payees.create": "Create payee",
+  "rule.unset": "…",
 } as const;
 
 export type Catalog = { [K in keyof typeof catalogEn]: string };

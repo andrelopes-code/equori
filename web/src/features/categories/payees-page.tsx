@@ -24,6 +24,7 @@ import { AliasesDrawer } from "@/features/categories/aliases-drawer";
 import { payeeAliasesQuery, useRenamePayee } from "@/features/categories/api";
 import { CategoriesHeader } from "@/features/categories/categories-header";
 import styles from "@/features/categories/categories-page.module.css";
+import { HeaderAction } from "@/features/categories/header-action";
 import { MergePayeesDialog } from "@/features/categories/merge-payees-dialog";
 import { NewPayeeDialog } from "@/features/categories/new-payee-dialog";
 import { payeesQuery } from "@/features/setup";
@@ -103,6 +104,7 @@ export function PayeesPage() {
       {
         id: "actions",
         label: t("category.actionsColumn"),
+        kind: "actions",
         accessor: () => "",
         width: 56,
         sortable: false,
@@ -153,18 +155,14 @@ export function PayeesPage() {
       <CategoriesHeader
         current="payees"
         actions={
-          <Button
-            start={
-              <Icon size="sm">
-                <Glyph name="plus" />
-              </Icon>
-            }
+          <HeaderAction
+            primary
+            label={t("payees.new")}
+            glyph="plus"
             onClick={() => {
               setCreating(true);
             }}
-          >
-            {t("payees.new")}
-          </Button>
+          />
         }
       />
       <PageBody>

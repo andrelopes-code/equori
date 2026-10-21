@@ -13,6 +13,7 @@ import { Glyph, Icon } from "@slotted/react/icon";
 import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
+import { VisuallyHidden } from "@slotted/react/visually-hidden";
 import { useQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 
@@ -23,7 +24,6 @@ import {
   useRemoveAttachment,
   useUploadAttachment,
 } from "@/features/transactions/api";
-import styles from "@/features/transactions/attachments-section.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
 // The media types the server detects and keeps (N26).
@@ -95,22 +95,23 @@ export function AttachmentsSection({
       {error !== null && <InlineMessage tone="danger">{error}</InlineMessage>}
       {!readOnly && (
         <div>
-          <input
-            ref={input}
-            className={styles.file}
-            type="file"
-            accept={accepted}
-            aria-label={t("attachments.add")}
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              event.target.value = "";
-              if (file === undefined) return;
-              setError(null);
-              upload.mutateAsync(file).catch((caught: unknown) => {
-                setError(errorText(caught, t));
-              });
-            }}
-          />
+          <VisuallyHidden>
+            <input
+              ref={input}
+              type="file"
+              accept={accepted}
+              aria-label={t("attachments.add")}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (file === undefined) return;
+                setError(null);
+                upload.mutateAsync(file).catch((caught: unknown) => {
+                  setError(errorText(caught, t));
+                });
+              }}
+            />
+          </VisuallyHidden>
           <Button
             size="sm"
             variant="outline"

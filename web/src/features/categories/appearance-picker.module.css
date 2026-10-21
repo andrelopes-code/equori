@@ -11,7 +11,8 @@
     gap: var(--slotted-space-2);
   }
 
-  /* The icon grid holds 80 tiles; it scrolls inside the dialog instead of growing it. */
+  /* The icon grid holds 80 tiles; it scrolls inside the dialog instead of growing it, at
+     five rows of tiles, which no token measures. */
   .icons {
     max-block-size: 14rem;
     overflow-y: auto;

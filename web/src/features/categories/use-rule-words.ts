@@ -26,7 +26,8 @@ export function useRuleWords(): RuleWords {
     ]);
     return {
       t,
-      name: (id) => names.get(id) ?? t("rule.unknown"),
+      name: (id) =>
+        id === "" ? t("rule.unset") : (names.get(id) ?? t("rule.unknown")),
       money: (m) => formatMoney(m, scale?.(m.currency) ?? 2, locale),
     };
   }, [accounts.data, entries, payees.data, scale, locale, t]);

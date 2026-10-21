@@ -657,4 +657,5 @@ export const catalogPtBR: Catalog = {
   "alias.match.equals": "é exatamente",
   "alias.match.regex": "corresponde à expressão",
   "payees.create": "Criar favorecido",
+  "rule.unset": "…",
 };

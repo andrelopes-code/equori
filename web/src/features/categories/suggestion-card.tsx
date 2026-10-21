@@ -18,12 +18,14 @@ export function SuggestionCard({
   suggestion,
   words,
   busy,
+  dismissing,
   onAccept,
   onDismiss,
 }: {
   suggestion: Suggestion;
   words: RuleWords;
   busy: boolean;
+  dismissing: boolean;
   onAccept: (name: string) => void;
   onDismiss: () => void;
 }) {
@@ -71,6 +73,7 @@ export function SuggestionCard({
             size="sm"
             variant="ghost"
             tone="secondary"
+            loading={!naming && dismissing}
             onClick={
               naming
                 ? () => {

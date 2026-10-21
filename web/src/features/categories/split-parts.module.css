@@ -1,5 +1,6 @@
 @layer app {
-  /* A part: its category, how its share is given, the share, and its removal (LA-05). */
+  /* A part: its category, how its share is given, the share, and its removal (LA-05). The rem widths are the
+     readable widths of the controls on the line; no token holds a field measure. */
   .row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 9rem) minmax(0, 8rem) auto;
