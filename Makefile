@@ -10,7 +10,7 @@ export EQUORI_TEST_DB_SERVICE ?= db-test
 export EQUORI_TEST_DATABASE_URL ?= postgres://equori:equori@127.0.0.1:$(EQUORI_TEST_DB_PORT)/postgres?sslmode=disable
 COMPOSE := docker compose -f compose.yaml -f compose.dev.yaml
 
-.PHONY: check check-commit static fmt fmt-check lint tidy-check gen gen-check test test-race vuln build dev db-up db-down db-test-up hooks tools web-deps web-build web-check web-static web-test web-dev
+.PHONY: check check-commit static fmt fmt-check lint tidy-check gen gen-check test test-race vuln build dev db-up db-down db-test-up run-dev run-prod hooks tools web-deps web-build web-check web-static web-test web-dev
 
 # Everything, the Go tests under -race included: CI runs it on every pull request. The web build
 # comes first: the Go tests compile package web, which embeds web/dist. The web tests come last:
@@ -70,6 +70,17 @@ build: web-build
 
 dev: db-up
 	set -a && . ./dev.env && { [ ! -f .env ] || . ./.env; } && set +a && go run ./cmd/equori
+
+# The app and the Vite dev server together; Ctrl-C stops both.
+run-dev: $(WEB_DEPS)
+	$(MAKE) --no-print-directory -j2 dev web-dev
+
+# The production build on PROD_ADDR beside run-dev: minified web/dist embedded in the binary.
+# An empty EQUORI_WEB_DEV_PORT makes the binary serve web/dist instead of proxying to Vite.
+PROD_ADDR ?= :8091
+run-prod: build db-up
+	set -a && . ./dev.env && { [ ! -f .env ] || . ./.env; } && set +a \
+		&& EQUORI_WEB_DEV_PORT= EQUORI_HTTP_ADDR=$(PROD_ADDR) $(BIN)/equori
 
 db-up:
 	$(COMPOSE) up -d --wait db

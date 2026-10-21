@@ -13,6 +13,8 @@ Decisions: `docs/adr/`. Read the relevant ADR before changing what it covers.
 | `make test` / `make test-race` | Go tests, without or with `-race`, on the test server `db-test` (`127.0.0.1:54339`, data in memory) |
 | `make db-up` / `make dev` | Start local Postgres on `127.0.0.1:54329`, run the app on `:8080` |
 | `make web-dev` | Vite dev server for `web/`, proxying `/api` to `make dev` |
+| `make run-dev` | `make dev` and `make web-dev` together |
+| `make run-prod` | Production build served by the binary on `:8091` (`PROD_ADDR`), beside `make run-dev` |
 | `make web-check` | Build `web/`, then typecheck, ESLint and Prettier check |
 | `make gen` | Regenerate sqlc and oapi-codegen output after editing `db/queries`, `db/migrations` or `api/openapi.yaml`; also compiles the theme |
 | `make vuln` | govulncheck |
