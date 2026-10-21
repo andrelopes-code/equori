@@ -137,7 +137,7 @@ export function RulesPage() {
   const mapped = sources.data ?? [];
 
   return (
-    <Page width="wide">
+    <Page width="full">
       <CategoriesHeader
         current="rules"
         rulesLabel={

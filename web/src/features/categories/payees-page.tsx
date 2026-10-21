@@ -115,7 +115,7 @@ export function PayeesPage() {
 
   return (
     <Page
-      width="bleed"
+      width="full"
       fill
       footer={
         selection.length > 0 ? (

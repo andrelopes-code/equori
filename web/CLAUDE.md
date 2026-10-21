@@ -68,3 +68,13 @@ The application sets `data-slotted-theme="equori"` and loads `@/theme/equori.gen
 | O6  | JSX contains no user-visible literal text; text comes from `useT()`.                                                                                          | `react/jsx-no-literals`          |
 | O7  | Money travels as an integer plus an instrument code. Integer-text conversion is string manipulation with the instrument scale, never floating-point division. | Money type, tests of `format.ts` |
 | O8  | `*.gen.*` files are never edited by hand.                                                                                                                     | existing convention              |
+
+## Screens
+
+These rules replace the Slotted guideline they name; the owner review of 2026-10-21 (`docs/superpowers/plans/2026-10-21-web-owner-review.md`) set them.
+
+- **Page width (replaces CP-07).** Every destination, list, record and overview page is `full`; a create or edit form is `wide`; the login page is `content`. Moving between destinations never changes the page's measure.
+- **Domain controls before families.** Money, a period, a month, a day and an account are what this application is about. Each has a control of the app's own (`ui/money-input`, `transactions/period-control`, `ui/month-control`, `transactions/date-shortcuts`, `transactions/account-picker`); a screen that asks for one of them uses it, and a new screen that meets another such value builds its control under CP-04 rather than settling for a family's generic field.
+- **Grids.** A data-grid is `variant="framed"`. An `actions` column is pinned at the end, and a grid holding buttons sets a `rowHeight` that leaves the cursor ring visible around them.
+- **Headers.** A destination's header carries a subheading that says what the page is for, its period control when the page reads a period, and its primary action.
+- **Writes refresh.** Every successful mutation marks all queries stale (`api/query-client.ts`); a screen never needs a reload to show the result of a write.

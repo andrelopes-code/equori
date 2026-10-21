@@ -6,7 +6,7 @@ import { TransactionDetail } from "@/features/transactions/transaction-detail";
 export function TransactionPage() {
   const { id } = useParams({ from: "/_authed/transactions/$id" });
   return (
-    <Page width="wide">
+    <Page width="full">
       <PageBody>
         <TransactionDetail id={id} host="page" />
       </PageBody>

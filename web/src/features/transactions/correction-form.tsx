@@ -159,7 +159,7 @@ export function CorrectionForm({
 
   return (
     <Page
-      width="content"
+      width="wide"
       footer={
         <PageFooter>
           <ActionBar aria-label={t("entry.actions")}>

@@ -134,7 +134,7 @@ export function TransactionsPage() {
 
   return (
     <Page
-      width="bleed"
+      width="full"
       fill
       footer={
         selection.length > 0 ? (

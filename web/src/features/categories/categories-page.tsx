@@ -157,7 +157,7 @@ export function CategoriesPage() {
   };
 
   return (
-    <Page width="wide" fill>
+    <Page width="full" fill>
       <CategoriesHeader
         current="categories"
         actions={

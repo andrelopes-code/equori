@@ -12,7 +12,7 @@ import { useT } from "@/i18n/i18n-provider";
 export function AccountsPage() {
   const t = useT();
   return (
-    <Page width="wide">
+    <Page width="full">
       <PageHeader size="lg">
         <PageHeaderTitleArea>
           <PageHeaderTitleRow>

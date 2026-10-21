@@ -10,7 +10,7 @@ import { useT } from "@/i18n/i18n-provider";
 export function MissingRule() {
   const t = useT();
   return (
-    <Page width="wide">
+    <Page width="full">
       <PageBody>
         <ResultState status="not-found">
           <ResultStateContent>

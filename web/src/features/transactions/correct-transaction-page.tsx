@@ -29,7 +29,7 @@ export function CorrectTransactionPage() {
   }
   if (data.status === "loading") {
     return (
-      <Page width="content" loading>
+      <Page width="wide" loading>
         <PageBody>
           <SkeletonText lines={6} />
         </PageBody>

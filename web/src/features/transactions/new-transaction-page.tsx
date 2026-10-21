@@ -140,7 +140,7 @@ export function NewTransactionPage() {
 
   return (
     <Page
-      width="content"
+      width="wide"
       footer={
         <PageFooter>
           <ActionBar aria-label={t("entry.actions")}>
