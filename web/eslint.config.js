@@ -143,4 +143,16 @@ export default defineConfig(
     },
   },
   { files: ["**/*.js"], extends: [tseslint.configs.disableTypeChecked] },
+  {
+    // A classic script served as written, before the application loads (index.html).
+    files: ["public/boot.js"],
+    languageOptions: {
+      sourceType: "script",
+      globals: {
+        document: "readonly",
+        localStorage: "readonly",
+        matchMedia: "readonly",
+      },
+    },
+  },
 );

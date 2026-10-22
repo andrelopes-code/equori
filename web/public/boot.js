@@ -11,7 +11,9 @@
         ? "dark"
         : "light";
     }
-  } catch (e) {}
+  } catch {
+    // Storage is unavailable: the dark default stays.
+  }
   document.documentElement.setAttribute("data-slotted-scheme", scheme);
   document
     .querySelector('meta[name="theme-color"]')
