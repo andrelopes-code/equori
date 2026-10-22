@@ -43,8 +43,26 @@ describe("manifest.json", () => {
     expect(manifest.start_url).toBe("/");
   });
 
-  it("declares the SVG icon", () => {
+  it("declares the PNG icons an installed app needs, a maskable one, and the SVG icon", () => {
     expect(manifest.icons).toEqual([
+      {
+        src: "/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icon-maskable-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
       { src: "/icon.svg", sizes: "any", type: "image/svg+xml" },
     ]);
   });

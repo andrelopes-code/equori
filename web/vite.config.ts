@@ -23,8 +23,9 @@ export default defineConfig({
   server: {
     // Reachable from other devices on the LAN, such as a phone.
     host: "0.0.0.0",
-    // mDNS names of a development server on the LAN, such as devserver.local.
-    allowedHosts: [".local"],
+    // mDNS names of a development server on the LAN, such as devserver.local, and MagicDNS
+    // names of a tailnet, such as dev-server-0.taild3dcad.ts.net.
+    allowedHosts: [".local", ".ts.net"],
     // make dev serves the API; one origin lets the session cookie through without CORS.
     // Over plain HTTP on a LAN address the browser sends no Sec-Fetch-Site, so the
     // backend's cross-origin protection compares Origin with Host; both name the target.

@@ -16,6 +16,27 @@
     block-size: 100dvh;
   }
 
+  /* Workaround for Slotted findings "Spinner mask is a data: URL that a strict CSP blocks" and
+     "Spinner rotation is a SMIL animation inside a mask image": the CSP of ADR 008 refuses data:
+     images, and Chromium rasterises the SMIL animation on the main thread. The arc and the track
+     come from files in public/, and the element rotates on the compositor. */
+  [data-ui-spinner] {
+    mask-image: url("/spinner-arc.svg"), url("/spinner-track.svg");
+    animation: spinner-rotate 0.9s linear infinite;
+  }
+
+  @keyframes spinner-rotate {
+    to {
+      rotate: 360deg;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-ui-spinner] {
+      animation: none;
+    }
+  }
+
   /* Workaround for Slotted finding "light-dark() compiles to variables no stylesheet defines":
      Lightning CSS lowers light-dark() to var(--lightningcss-light, …) var(--lightningcss-dark, …)
      pairs that only resolve where the pair is declared; without it the value is invalid, and the
