@@ -106,7 +106,7 @@ func NewBillingCycleRule(r BillingCycleRule) (BillingCycleRule, error) {
 		return BillingCycleRule{}, invalid("due_date_adjustment", "must be none, following, preceding or modified_following")
 	}
 	if r.Calendar == "" {
-		r.Calendar = "br_banking"
+		return BillingCycleRule{}, invalid("calendar", "is required")
 	}
 	return r, nil
 }

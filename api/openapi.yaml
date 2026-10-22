@@ -5371,6 +5371,7 @@ components:
           enum: [none, following, preceding, modified_following]
         calendar:
           type: string
+          description: Business-day calendar id from GET /calendars; defaults to the calendar of the owner's region.
     StatementPlacement:
       type: object
       additionalProperties: false

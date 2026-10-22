@@ -151,11 +151,12 @@ func TestSplitInstallments(t *testing.T) {
 
 func TestNewBillingCycleRule(t *testing.T) {
 	t.Parallel()
-	r, err := NewBillingCycleRule(BillingCycleRule{EffectiveFrom: month("2026-11"), ClosingDay: 3, DueDay: 10})
-	if err != nil || r.Assignment != AssignNext || r.Adjustment != "following" || r.Calendar != "br_banking" {
+	r, err := NewBillingCycleRule(BillingCycleRule{EffectiveFrom: month("2026-11"), ClosingDay: 3, DueDay: 10, Calendar: "weekend"})
+	if err != nil || r.Assignment != AssignNext || r.Adjustment != "following" || r.Calendar != "weekend" {
 		t.Fatalf("defaults = %+v, %v", r, err)
 	}
 	for field, in := range map[string]BillingCycleRule{
+		"calendar":               {ClosingDay: 3, DueDay: 10},
 		"closing_day":            {ClosingDay: 0, DueDay: 10},
 		"due_day":                {ClosingDay: 3, DueDay: 32},
 		"closing_day_assignment": {ClosingDay: 3, DueDay: 10, Assignment: "later"},

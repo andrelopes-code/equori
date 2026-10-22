@@ -83,7 +83,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		PTAX: cfg.PTAXFeed, COTAHIST: cfg.COTAHISTFeed, PTAXURL: cfg.PTAXURL, COTAHISTURL: cfg.COTAHISTURL,
 		Client: &http.Client{Timeout: time.Minute}, Clock: clk, Log: log,
 	})
-	ledgerModule := ledger.New(pool, dispatcher, marketdataModule, clk, log)
+	ledgerModule := ledger.New(pool, dispatcher, marketdataModule, identityModule, clk, log)
 	reportingModule := reporting.New(pool, dispatcher, log)
 	classificationModule := classification.New(pool, dispatcher, ledgerModule, log)
 	captureModule := capture.New(pool, ledgerModule, classificationModule, cfg.LLM, clk, log)

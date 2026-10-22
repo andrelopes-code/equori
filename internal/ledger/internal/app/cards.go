@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 
@@ -20,6 +21,13 @@ func (s *Service) card(ctx context.Context, userID int64, accountID uuid.UUID) (
 func (s *Service) AddBillingRule(ctx context.Context, userID int64, accountID uuid.UUID, r domain.BillingCycleRule) (domain.BillingCycleRule, error) {
 	if _, err := s.card(ctx, userID, accountID); err != nil {
 		return domain.BillingCycleRule{}, err
+	}
+	if r.Calendar == "" {
+		p, err := s.profiles.Profile(ctx, userID)
+		if err != nil {
+			return domain.BillingCycleRule{}, fmt.Errorf("read profile: %w", err)
+		}
+		r.Calendar = s.cal.DefaultCalendar(p.Region)
 	}
 	rule, err := domain.NewBillingCycleRule(r)
 	if err != nil {

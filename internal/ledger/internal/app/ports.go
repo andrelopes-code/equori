@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
+	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 )
@@ -75,6 +76,12 @@ type Price struct {
 // Calendar shifts due dates to business days (marketdata, P2 amendment A2).
 type Calendar interface {
 	Adjust(ctx context.Context, calendar string, d time.Time, adjustment string) (time.Time, error)
+	DefaultCalendar(region string) string
+}
+
+// Profiles gives the language and region of a user (identity).
+type Profiles interface {
+	Profile(ctx context.Context, userID int64) (locale.Locale, error)
 }
 
 type CreditLimit struct {

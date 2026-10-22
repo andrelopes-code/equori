@@ -1280,6 +1280,7 @@ type BalanceList struct {
 
 // BillingCycleRule closing_mode day closes on closing_day; before_due closes closing_days_before_due days before the nominal due date. closing_adjustment shifts the closing date, projected or reported by the institution, on the rule's calendar (A87).
 type BillingCycleRule struct {
+	// Calendar Business-day calendar id from GET /calendars; defaults to the calendar of the owner's region.
 	Calendar             *string                               `json:"calendar,omitempty"`
 	ClosingAdjustment    *BillingCycleRuleClosingAdjustment    `json:"closing_adjustment,omitempty"`
 	ClosingDay           *int                                  `json:"closing_day,omitempty"`

@@ -31,15 +31,16 @@ const (
 var earliestDate = time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)
 
 type Service struct {
-	repo   Repository
-	clock  Clock
-	cal    Calendar
-	ins    Instruments
-	prices Prices
+	repo     Repository
+	clock    Clock
+	cal      Calendar
+	ins      Instruments
+	prices   Prices
+	profiles Profiles
 }
 
-func NewService(repo Repository, clock Clock, cal Calendar, ins Instruments, prices Prices) *Service {
-	return &Service{repo: repo, clock: clock, cal: cal, ins: ins, prices: prices}
+func NewService(repo Repository, clock Clock, cal Calendar, ins Instruments, prices Prices, profiles Profiles) *Service {
+	return &Service{repo: repo, clock: clock, cal: cal, ins: ins, prices: prices, profiles: profiles}
 }
 
 // Today is the date of the ledger's clock.

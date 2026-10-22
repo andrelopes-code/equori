@@ -149,8 +149,8 @@ func TestDBBillingRuleStartsOnFirstDay(t *testing.T) {
 	t.Parallel()
 	f := newCardFixture(t)
 	_, err := f.pool.Exec(t.Context(), `
-		INSERT INTO ledger_billing_cycle_rule (user_id, account_id, effective_from, closing_day, due_day)
-		VALUES ($1, $2, '2026-11-02', 3, 10)`, f.userID, f.card)
+		INSERT INTO ledger_billing_cycle_rule (user_id, account_id, effective_from, closing_day, due_day, calendar)
+		VALUES ($1, $2, '2026-11-02', 3, 10, 'weekend')`, f.userID, f.card)
 	requireViolation(t, err, checkViolation, "")
 }
 
@@ -159,12 +159,12 @@ func TestDBBillingRuleClosingMode(t *testing.T) {
 	t.Parallel()
 	f := newCardFixture(t)
 	for name, sql := range map[string]string{
-		"before due with a closing day": `INSERT INTO ledger_billing_cycle_rule (user_id, account_id, effective_from, closing_day, due_day, closing_mode, closing_days_before_due)
-			VALUES ($1, $2, '2026-11-01', 3, 5, 'before_due', 7)`,
-		"day without a closing day": `INSERT INTO ledger_billing_cycle_rule (user_id, account_id, effective_from, due_day)
-			VALUES ($1, $2, '2026-11-01', 5)`,
-		"29 days before due": `INSERT INTO ledger_billing_cycle_rule (user_id, account_id, effective_from, due_day, closing_mode, closing_days_before_due)
-			VALUES ($1, $2, '2026-11-01', 5, 'before_due', 29)`,
+		"before due with a closing day": `INSERT INTO ledger_billing_cycle_rule (user_id, account_id, effective_from, closing_day, due_day, closing_mode, closing_days_before_due, calendar)
+			VALUES ($1, $2, '2026-11-01', 3, 5, 'before_due', 7, 'weekend')`,
+		"day without a closing day": `INSERT INTO ledger_billing_cycle_rule (user_id, account_id, effective_from, due_day, calendar)
+			VALUES ($1, $2, '2026-11-01', 5, 'weekend')`,
+		"29 days before due": `INSERT INTO ledger_billing_cycle_rule (user_id, account_id, effective_from, due_day, closing_mode, closing_days_before_due, calendar)
+			VALUES ($1, $2, '2026-11-01', 5, 'before_due', 29, 'weekend')`,
 	} {
 		_, err := f.pool.Exec(t.Context(), sql, f.userID, f.card)
 		t.Run(name, func(t *testing.T) { requireViolation(t, err, checkViolation, "") })
@@ -186,4 +186,15 @@ func TestDBStatementFactChecks(t *testing.T) {
 	_, err = f.pool.Exec(t.Context(), `INSERT INTO ledger_statement_fact (user_id, statement_id, source, due_date, total)
 		VALUES ($1, $2, 'bank', '2026-11-10', 100)`, f.userID, statement)
 	requireViolation(t, err, checkViolation, "")
+}
+
+func TestDBBillingRuleCalendarFormat(t *testing.T) {
+	t.Parallel()
+	f := newCardFixture(t)
+	for name, calendar := range map[string]string{"uppercase": "BR_Banking", "too short": "x", "dash": "br-banking"} {
+		_, err := f.pool.Exec(t.Context(), `
+			INSERT INTO ledger_billing_cycle_rule (user_id, account_id, effective_from, closing_day, due_day, calendar)
+			VALUES ($1, $2, '2026-11-01', 3, 10, $3)`, f.userID, f.card, calendar)
+		t.Run(name, func(t *testing.T) { requireViolation(t, err, checkViolation, "") })
+	}
 }

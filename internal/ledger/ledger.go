@@ -24,6 +24,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/marketdata"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
+	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
@@ -137,6 +138,12 @@ type MarketData interface {
 	Adjust(ctx context.Context, name string, d time.Time, a marketdata.Adjustment) (time.Time, error)
 	Instrument(ctx context.Context, code string) (marketdata.Instrument, error)
 	Convert(ctx context.Context, q money.Money, to money.Currency, date time.Time) (marketdata.Conversion, error)
+	DefaultCalendar(region string) string
+}
+
+// Profiles is the part of identity the ledger uses to default a card's calendar.
+type Profiles interface {
+	Profile(ctx context.Context, userID int64) (locale.Locale, error)
 }
 
 type pricesAdapter struct{ md MarketData }
@@ -161,6 +168,8 @@ type calendarAdapter struct{ cal MarketData }
 func (c calendarAdapter) Adjust(ctx context.Context, name string, d time.Time, adjustment string) (time.Time, error) {
 	return c.cal.Adjust(ctx, name, d, marketdata.Adjustment(adjustment))
 }
+
+func (c calendarAdapter) DefaultCalendar(region string) string { return c.cal.DefaultCalendar(region) }
 
 // instruments caches Market data instruments for the module's lifetime: code, type,
 // scale and quote currency are immutable (P8 amendment A59).
@@ -191,9 +200,9 @@ func (c *instruments) Instrument(ctx context.Context, code money.Currency) (app.
 	return in, nil
 }
 
-func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, md MarketData, clk clock.Clock, log *slog.Logger) *Module {
+func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, md MarketData, profiles Profiles, clk clock.Clock, log *slog.Logger) *Module {
 	ins := &instruments{md: md, cache: map[money.Currency]app.Instrument{}}
-	svc := app.NewService(postgres.NewRepository(pool, ins), clk, calendarAdapter{md}, ins, pricesAdapter{md})
+	svc := app.NewService(postgres.NewRepository(pool, ins), clk, calendarAdapter{md}, ins, pricesAdapter{md}, profiles)
 	dispatcher.Subscribe("ledger-provisioning", "identity.user_created.v2", provision)
 	return &Module{http: httpapi.NewServer(svc, log), svc: svc}
 }
@@ -416,6 +425,6 @@ func provision(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
 	if err := json.Unmarshal(e.Payload, &p); err != nil {
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
-	svc := app.NewService(postgres.NewRepository(tx, nil), clock.New(time.UTC, time.Now), nil, nil, nil)
+	svc := app.NewService(postgres.NewRepository(tx, nil), clock.New(time.UTC, time.Now), nil, nil, nil, nil)
 	return svc.Provision(ctx, p.UserID, p.BaseCurrency)
 }

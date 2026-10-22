@@ -3017,6 +3017,7 @@ export interface components {
             closing_day_assignment?: "next" | "closing";
             /** @enum {string} */
             due_date_adjustment?: "none" | "following" | "preceding" | "modified_following";
+            /** @description Business-day calendar id from GET /calendars; defaults to the calendar of the owner's region. */
             calendar?: string;
         };
         /** @description previous_closing_date and previous_due_date are the dates of the statement before, present when a rule or a stored statement gives them. */
