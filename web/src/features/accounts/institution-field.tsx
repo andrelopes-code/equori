@@ -11,14 +11,25 @@ import { InstitutionOption } from "@/features/accounts/institution-option";
 import {
   ispbOf,
   logoIndexQuery,
+  logoOf,
   logoURL,
 } from "@/features/accounts/institution-logo";
 import { institutionsQuery, useCreateInstitution } from "@/features/setup";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useAppLocale, useAppLocaleState, useT } from "@/i18n/i18n-provider";
 
 type Institution = components["schemas"]["Institution"];
 
 const cataloguePrefix = "catalogue:";
+
+// The catalogue is the Brazilian bank list (scheme br_ispb); other regions offer none.
+function offersCatalogue(region: string): boolean {
+  switch (region) {
+    case "BR":
+      return true;
+    default:
+      return false;
+  }
+}
 
 function entityOf(
   institution: Institution,
@@ -54,6 +65,7 @@ export function InstitutionField({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const { region } = useAppLocaleState().locale;
   const api = useApi();
   const institutions = useQuery(institutionsQuery(api));
   const index = useQuery(logoIndexQuery);
@@ -66,14 +78,10 @@ export function InstitutionField({
     const owned = institutions.data ?? [];
     const logos = index.data;
     const mine = owned.map((i) =>
-      entityOf(
-        i,
-        logos === undefined ? undefined : logoURL(logos, ispbOf(i)),
-        t("institutionField.mine"),
-      ),
+      entityOf(i, logoOf(i.identifier, logos), t("institutionField.mine")),
     );
     const catalogue =
-      logos === undefined
+      logos === undefined || !offersCatalogue(region)
         ? []
         : catalogueEntries(
             logos,
@@ -95,16 +103,14 @@ export function InstitutionField({
             };
           });
     return [...mine, ...catalogue];
-  }, [institutions.data, index.data, t, locale]);
+  }, [institutions.data, index.data, t, locale, region]);
 
   const source = useMemo(() => catalogueSource(items), [items]);
 
   const remember = (institution: Institution): Entity => {
     const entity = entityOf(
       institution,
-      index.data === undefined
-        ? undefined
-        : logoURL(index.data, ispbOf(institution)),
+      logoOf(institution.identifier, index.data),
       t("institutionField.mine"),
     );
     names.current.set(institution.id, institution.name);

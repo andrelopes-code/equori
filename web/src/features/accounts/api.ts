@@ -406,16 +406,22 @@ export function useSetAppearance() {
   );
 }
 
-export function useSetInstitutionISPB() {
+export function useSetInstitutionIdentifier() {
   return useApiMutation(
-    async (api, { id, ispb }: { id: string; ispb: string | null }) =>
+    async (
+      api,
+      {
+        id,
+        identifier,
+      }: {
+        id: string;
+        identifier: { scheme: string; identifier: string } | null;
+      },
+    ) =>
       unwrap(
         await api.PUT("/institutions/{id}/identifier", {
           params: { path: { id } },
-          body:
-            ispb === null
-              ? { scheme: null, identifier: null }
-              : { scheme: "br_ispb", identifier: ispb },
+          body: identifier ?? { scheme: null, identifier: null },
         }),
       ),
   );

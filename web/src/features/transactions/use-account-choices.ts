@@ -5,8 +5,7 @@ import type { components } from "@/api/schema.gen";
 import {
   balancesQuery,
   logoIndexQuery,
-  ispbOf,
-  logoURL,
+  logoOf,
   shapeOf,
 } from "@/features/accounts";
 import type { AccountShape } from "@/features/accounts";
@@ -127,10 +126,7 @@ export function useAccountChoices({
       group: groupOf(account),
       shape: shapeOf(account.kind),
       institution: institution?.name,
-      logo:
-        logos.data === undefined
-          ? undefined
-          : logoURL(logos.data, ispbOf(institution)),
+      logo: logoOf(institution?.identifier, logos.data),
       progress: progressOf.get(account.id),
       balance,
       freeLimit: free?.currency === account.currency ? free.amount : undefined,

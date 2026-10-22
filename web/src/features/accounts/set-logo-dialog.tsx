@@ -16,7 +16,7 @@ import { useId, useMemo, useState } from "react";
 
 import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
-import { useSetInstitutionISPB } from "@/features/accounts/api";
+import { useSetInstitutionIdentifier } from "@/features/accounts/api";
 import { catalogueEntries } from "@/features/accounts/institution-catalogue";
 import { catalogueSource } from "@/features/accounts/catalogue-search";
 import {
@@ -46,7 +46,7 @@ export function SetLogoDialog({
   const overlayOpen = useOverlayOpen();
   const formId = useId();
   const index = useQuery(logoIndexQuery);
-  const save = useSetInstitutionISPB();
+  const save = useSetInstitutionIdentifier();
   const [ispb, setISPB] = useState<string | null>(ispbOf(institution) ?? null);
   const [error, setError] = useState<string | null>(null);
   const change = useStableCallback((open: boolean) => {
@@ -89,7 +89,10 @@ export function SetLogoDialog({
               if (ispb === null) return;
               setError(null);
               save
-                .mutateAsync({ id: institution.id, ispb })
+                .mutateAsync({
+                  id: institution.id,
+                  identifier: { scheme: "br_ispb", identifier: ispb },
+                })
                 .then(onDone)
                 .catch((caught: unknown) => {
                   setError(errorText(caught, t));

@@ -93,6 +93,30 @@ describe("InstitutionField", () => {
     ]);
   });
 
+  it("offers no Brazilian catalogue entry to a profile outside Brazil", async () => {
+    renderWithProviders(<Harness onPick={() => undefined} />, {
+      fetch: fakeApi(
+        accountRoutes({
+          "GET /api/v1/me": () =>
+            json(200, {
+              id: 1,
+              email: "a@b.c",
+              role: "admin",
+              language: "en",
+              region: "DE",
+            }),
+        }),
+      ),
+    });
+    const input = screen.getByRole("combobox", { name: label });
+    await userEvent.click(input);
+    await userEvent.type(input, "Banco do Bra");
+    await screen.findByRole("option", { name: /^Create institution/ });
+    expect(
+      screen.queryByRole("option", { name: /^Banco do Brasil/ }),
+    ).toBeNull();
+  });
+
   it("creates an institution outside the catalogue from what was typed", async () => {
     const bodies: unknown[] = [];
     renderWithProviders(<Harness onPick={() => undefined} />, {

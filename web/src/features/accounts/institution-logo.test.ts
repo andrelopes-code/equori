@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { loadLogoIndex, logoURL } from "@/features/accounts/institution-logo";
+import {
+  loadLogoIndex,
+  logoOf,
+  logoURL,
+} from "@/features/accounts/institution-logo";
 
 describe("logoURL", async () => {
   const index = await loadLogoIndex();
@@ -19,5 +23,28 @@ describe("logoURL", async () => {
     const url = logoURL(index, ispb);
     if (file === undefined) expect(url).toBeUndefined();
     else expect(url).toMatch(new RegExp(`${file.replace(".", "\\.")}$`));
+  });
+});
+
+describe("logoOf", async () => {
+  const index = await loadLogoIndex();
+
+  it("resolves a br_ispb identifier to its PNG", () => {
+    expect(
+      logoOf({ scheme: "br_ispb", identifier: "00360305" }, index),
+    ).toMatch(/00360305\.png$/);
+  });
+
+  it.each<[string, { scheme: string; identifier: string } | null]>([
+    ["a scheme without a resolver", { scheme: "bic", identifier: "BOFAUS3N" }],
+    ["no identifier", null],
+  ])("returns undefined for %s", (_, id) => {
+    expect(logoOf(id, index)).toBeUndefined();
+  });
+
+  it("returns undefined while the index is loading", () => {
+    expect(
+      logoOf({ scheme: "br_ispb", identifier: "00360305" }, undefined),
+    ).toBeUndefined();
   });
 });

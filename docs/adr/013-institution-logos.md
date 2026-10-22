@@ -17,10 +17,12 @@ The ISPB is the eight-digit identifier the Banco Central do Brasil gives every p
 |---|---|---|---|
 | `logos-bancos-br` | 0.8.2 | MIT (code and data); logos remain trademarks of their owners | Catalogue of the institutions of the STR and Pix lists, keyed by ISPB, with the logo each institution publishes in the Open Finance Brasil directory |
 
-- `ledger_institution` gains `ispb` (eight digits, unique per user), set at creation or through `PUT /institutions/{id}/ispb`.
+- `ledger_institution` carries an identifier `{scheme, identifier}`, unique per user and scheme, set at creation or through `PUT /institutions/{id}/identifier`. The scheme `br_ispb` holds an ISPB (eight digits).
+- A logo resolver per scheme maps an identifier to a logo URL (`logoOf` in `web/src/features/accounts/institution-logo.ts`). `br_ispb` is the only scheme with a resolver; an institution with another scheme is drawn with its monogram.
+- The bank catalogue is offered only when the profile region is `BR`.
 - The web application resolves an ISPB to the package's 256 × 256 PNG through `import.meta.glob`. Vite emits each PNG as a hashed asset, and `web/embed.go` embeds it in the binary. A browser fetches one logo only when a mark draws it.
 - The package's SVG set covers fewer institutions (140 files against 187 PNG files in 0.8.2) and is not used.
-- An institution without an ISPB, or with an ISPB the catalogue has no logo for, is drawn with its monogram.
+- An institution without an identifier, or with an ISPB the catalogue has no logo for, is drawn with its monogram.
 - A logo identifies its institution only. It is never recoloured, cropped beyond its own square or combined with another mark, as the package's `DISCLAIMER.md` requires.
 
 ## Consequences

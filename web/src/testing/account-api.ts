@@ -201,7 +201,14 @@ export function accountRoutes(
   overrides: Record<string, Route> = {},
 ): Record<string, Route> {
   return {
-    "GET /api/v1/me": () => json(200, { id: 1, email: "a@b.c", role: "admin" }),
+    "GET /api/v1/me": () =>
+      json(200, {
+        id: 1,
+        email: "a@b.c",
+        role: "admin",
+        language: "en",
+        region: "BR",
+      }),
     "GET /api/v1/settings": () => json(200, { base_currency: "BRL" }),
     "GET /api/v1/instruments": () =>
       json(200, {

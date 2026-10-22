@@ -27,11 +27,14 @@ import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { AccountMark } from "@/features/accounts/account-mark";
 import { HeaderSlot } from "@/features/accounts/header-slot";
-import { accountsQuery, useSetInstitutionISPB } from "@/features/accounts/api";
+import {
+  accountsQuery,
+  useSetInstitutionIdentifier,
+} from "@/features/accounts/api";
 import {
   ispbOf,
   logoIndexQuery,
-  logoURL,
+  logoOf,
 } from "@/features/accounts/institution-logo";
 import { NewInstitutionDialog } from "@/features/accounts/new-institution-dialog";
 import { SetLogoDialog } from "@/features/accounts/set-logo-dialog";
@@ -50,9 +53,9 @@ export function InstitutionsPage() {
   const institutions = useQuery(institutionsQuery(api));
   const accounts = useQuery(accountsQuery(api));
   const index = useQuery(logoIndexQuery);
-  const setISPB = useSetInstitutionISPB();
+  const setIdentifier = useSetInstitutionIdentifier();
   const [creating, setCreating] = useState(false);
-  const [logoOf, setLogoOf] = useState<Institution | null>(null);
+  const [logoTarget, setLogoTarget] = useState<Institution | null>(null);
 
   const counts = new Map<string, number>();
   for (const account of accounts.data ?? []) {
@@ -119,10 +122,7 @@ export function InstitutionsPage() {
                     <TableEmpty>{t("institutions.empty")}</TableEmpty>
                   )}
                   {rows.map((institution) => {
-                    const logo =
-                      index.data === undefined
-                        ? undefined
-                        : logoURL(index.data, ispbOf(institution));
+                    const logo = logoOf(institution.identifier, index.data);
                     return (
                       <TableRow key={institution.id} value={institution.id}>
                         <TableRowHeader>
@@ -171,18 +171,18 @@ export function InstitutionsPage() {
                             <MenuContent>
                               <MenuItem
                                 onSelect={() => {
-                                  setLogoOf(institution);
+                                  setLogoTarget(institution);
                                 }}
                               >
                                 {t("institutions.setLogo")}
                               </MenuItem>
-                              {ispbOf(institution) !== undefined && (
+                              {institution.identifier !== undefined && (
                                 <MenuItem
                                   onSelect={() => {
-                                    setISPB
+                                    setIdentifier
                                       .mutateAsync({
                                         id: institution.id,
-                                        ispb: null,
+                                        identifier: null,
                                       })
                                       .then(() => {
                                         toast.show({
@@ -231,15 +231,15 @@ export function InstitutionsPage() {
           />
         )}
       </Presence>
-      <Presence value={logoOf ?? undefined}>
+      <Presence value={logoTarget ?? undefined}>
         {(institution) => (
           <SetLogoDialog
             institution={institution}
             onCancel={() => {
-              setLogoOf(null);
+              setLogoTarget(null);
             }}
             onDone={() => {
-              setLogoOf(null);
+              setLogoTarget(null);
               toast.show({
                 tone: "success",
                 title: t("institutions.logoSet", { name: institution.name }),

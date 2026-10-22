@@ -45,3 +45,22 @@ export function logoURL(
   if (typeof formats !== "number" || (formats & png) === 0) return undefined;
   return urlOfFile.get(typeof shared === "string" ? shared : ispb);
 }
+
+export interface InstitutionIdentifier {
+  scheme: string;
+  identifier: string;
+}
+
+// ADR 013: the resolver of a scheme maps an identifier to a logo; a scheme without one has none.
+export function logoOf(
+  id: InstitutionIdentifier | null | undefined,
+  index: LogoIndex | undefined,
+): string | undefined {
+  if (id === null || id === undefined || index === undefined) return undefined;
+  switch (id.scheme) {
+    case "br_ispb":
+      return logoURL(index, id.identifier);
+    default:
+      return undefined;
+  }
+}
