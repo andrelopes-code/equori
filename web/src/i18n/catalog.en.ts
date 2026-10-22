@@ -54,8 +54,6 @@ export const catalogEn = {
   "scheme.dark": "Dark",
   "scheme.light": "Light",
   "scheme.system": "System",
-  "locale.en": "English",
-  "locale.pt-BR": "Português (Brasil)",
   "common.selected": "{count} selected",
   "nav.goals": "Goals",
   "nav.cards": "Cards",

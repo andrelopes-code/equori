@@ -12,7 +12,7 @@ const txID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 
 beforeEach(() => {
   localStorage.clear();
-  writeLocale("pt-BR");
+  writeLocale({ language: "pt", region: "BR" });
 });
 
 const accounts = [

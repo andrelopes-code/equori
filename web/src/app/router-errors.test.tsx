@@ -9,7 +9,7 @@ import { renderApp } from "@/testing/render-app";
 
 beforeEach(() => {
   localStorage.clear();
-  writeLocale("pt-BR");
+  writeLocale({ language: "pt", region: "BR" });
 });
 
 const me = { id: 1, email: "a@b.c", role: "admin" };

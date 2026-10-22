@@ -31,16 +31,15 @@ import { destinations } from "@/app/shell/destinations";
 import styles from "@/app/shell/more-sheet.module.css";
 import { ShellIcon } from "@/app/shell/shell-icon";
 import type { ShellIconName } from "@/app/shell/shell-icon";
-import { meQuery, useLogout } from "@/features/session";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import type { Locale } from "@/i18n/locale";
+import { meQuery, useChooseLanguage, useLogout } from "@/features/session";
+import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
+import { isLanguage, languages } from "@/i18n/languages";
 import { densities, useDensity } from "@/theme/density";
 import type { Density } from "@/theme/density";
 import { useScheme } from "@/theme/scheme";
 import type { Scheme } from "@/theme/scheme";
 
 const schemes: readonly Scheme[] = ["dark", "light", "system"];
-const locales: readonly Locale[] = ["en", "pt-BR"];
 const listed = destinations.filter((d) => d.phone === "more");
 
 function isScheme(value: string): value is Scheme {
@@ -49,10 +48,6 @@ function isScheme(value: string): value is Scheme {
 
 function isDensity(value: string): value is Density {
   return (densities as readonly string[]).includes(value);
-}
-
-function isLocale(value: string): value is Locale {
-  return (locales as readonly string[]).includes(value);
 }
 
 function mark(name: ShellIconName) {
@@ -80,7 +75,8 @@ export function MoreSheet({
   const { logout, failed } = useLogout();
   const [scheme, setScheme] = useScheme();
   const [density, setDensity] = useDensity();
-  const [locale, setLocale] = useAppLocale();
+  const { language } = useAppLocaleState();
+  const chooseLanguage = useChooseLanguage();
   const [open, setOpen] = useState(false);
   const { data: me } = useQuery({ ...meQuery(useApi()), staleTime: Infinity });
 
@@ -158,14 +154,14 @@ export function MoreSheet({
                 <FieldLabel>{t("more.language")}</FieldLabel>
                 <SegmentedControl
                   fullWidth
-                  value={locale}
+                  value={language}
                   onValueChange={(next) => {
-                    if (isLocale(next)) setLocale(next);
+                    if (isLanguage(next)) chooseLanguage(next);
                   }}
                 >
-                  {locales.map((l) => (
-                    <Segment key={l} value={l}>
-                      {t(`locale.${l}`)}
+                  {languages.map((l) => (
+                    <Segment key={l.language} value={l.language}>
+                      {l.nativeName}
                     </Segment>
                   ))}
                 </SegmentedControl>

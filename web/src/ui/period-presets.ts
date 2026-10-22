@@ -5,7 +5,6 @@ import {
   formatMonthTitle,
   shiftDate,
 } from "@/i18n/format";
-import type { Locale } from "@/i18n/locale";
 
 export interface PeriodPreset {
   key: string;
@@ -118,7 +117,7 @@ export function periodLabel(
   from: string,
   to: string,
   today: string,
-  locale: Locale,
+  locale: string,
 ): string {
   switch (periodKind(from, to)) {
     case "month":

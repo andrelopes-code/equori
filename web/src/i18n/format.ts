@@ -1,5 +1,3 @@
-import type { Locale } from "@/i18n/locale";
-
 export function formatPlain(minor: number, scale: number): string {
   const digits = Math.abs(minor)
     .toString()
@@ -64,7 +62,7 @@ function dateFormat(
 export function formatMoneyParts(
   m: Money,
   scale: number,
-  locale: Locale,
+  locale: string,
 ): MoneyParts {
   // O7: Intl reads the decimal string, never a float divided by the scale.
   const plain = formatPlain(m.amount, scale) as `${number}`;
@@ -105,14 +103,14 @@ export function formatMoneyParts(
 export function formatMoney(
   m: Money,
   scale: number,
-  locale: Locale,
+  locale: string,
   options: { symbol?: boolean } = {},
 ): string {
   const p = formatMoneyParts(m, scale, locale);
   const number = p.integer + p.fraction;
   if (options.symbol === false) return p.sign + number;
   if (!isISOCurrency(m.currency)) return `${p.sign}${number} ${p.symbol}`;
-  const gap = locale === "pt-BR" ? "\u00a0" : "";
+  const gap = locale.startsWith("pt") ? "\u00a0" : "";
   return `${p.sign}${p.symbol}${gap}${number}`;
 }
 
@@ -128,9 +126,9 @@ function isISOCurrency(code: string): boolean {
 export function parseAmount(
   text: string,
   scale: number,
-  locale: Locale,
+  locale: string,
 ): number | null {
-  const [group, decimal] = locale === "pt-BR" ? [".", ","] : [",", "."];
+  const [group, decimal] = locale.startsWith("pt") ? [".", ","] : [",", "."];
   const g = `\\${group}`;
   const d = `\\${decimal}`;
   const m = new RegExp(
@@ -145,7 +143,7 @@ export function parseAmount(
   return n === 0 ? 0 : n;
 }
 
-export function formatDate(iso: string, locale: Locale): string {
+export function formatDate(iso: string, locale: string): string {
   return dateFormat(locale, {
     year: "numeric",
     month: "2-digit",
@@ -159,7 +157,7 @@ export function todayISO(now: Date = new Date()): string {
   return `${String(now.getFullYear())}-${month}-${day}`;
 }
 
-export function formatReferenceMonth(month: string, locale: Locale): string {
+export function formatReferenceMonth(month: string, locale: string): string {
   const [year = 0, m = 1] = month.split("-").map(Number);
   return dateFormat(locale, { month: "short", year: "numeric" }).format(
     new Date(Date.UTC(year, m - 1, 1)),
@@ -173,7 +171,7 @@ function utcDate(iso: string): Date {
 
 function dateParts(
   iso: string,
-  locale: Locale,
+  locale: string,
   options: Intl.DateTimeFormatOptions,
 ): Record<string, string> {
   const out: Record<string, string> = {};
@@ -184,22 +182,22 @@ function dateParts(
 }
 
 // "16 out" / "Oct 16".
-export function formatDayMonth(iso: string, locale: Locale): string {
+export function formatDayMonth(iso: string, locale: string): string {
   const p = dateParts(iso, locale, { day: "numeric", month: "short" });
-  return locale === "en"
+  return locale.startsWith("en")
     ? `${p.month ?? ""} ${p.day ?? ""}`
     : `${p.day ?? ""} ${p.month ?? ""}`;
 }
 
 // "05/11" / "11/05".
-export function formatDayMonthNumeric(iso: string, locale: Locale): string {
+export function formatDayMonthNumeric(iso: string, locale: string): string {
   return dateFormat(locale, { day: "2-digit", month: "2-digit" }).format(
     utcDate(iso),
   );
 }
 
 // "5 de novembro" / "November 5".
-export function formatDayMonthLong(iso: string, locale: Locale): string {
+export function formatDayMonthLong(iso: string, locale: string): string {
   return dateFormat(locale, { day: "numeric", month: "long" }).format(
     utcDate(iso),
   );
@@ -208,7 +206,7 @@ export function formatDayMonthLong(iso: string, locale: Locale): string {
 export function formatDayHeader(
   iso: string,
   today: string,
-  locale: Locale,
+  locale: string,
   words: { today: string; yesterday: string },
 ): string {
   if (iso === today) return words.today;
@@ -225,7 +223,7 @@ function capitalize(text: string): string {
 }
 
 // "Outubro de 2026" / "October 2026".
-export function formatMonthTitle(month: string, locale: Locale): string {
+export function formatMonthTitle(month: string, locale: string): string {
   return capitalize(
     dateFormat(locale, { month: "long", year: "numeric" }).format(
       utcDate(`${month}-01`),
@@ -234,7 +232,7 @@ export function formatMonthTitle(month: string, locale: Locale): string {
 }
 
 // "Outubro" / "October".
-export function formatMonthName(month: string, locale: Locale): string {
+export function formatMonthName(month: string, locale: string): string {
   return capitalize(
     dateFormat(locale, { month: "long" }).format(utcDate(`${month}-01`)),
   );
@@ -244,7 +242,7 @@ export function formatMonthName(month: string, locale: Locale): string {
 export function formatSigned(
   m: { amount: number; currency: string },
   scale: number,
-  locale: Locale,
+  locale: string,
   options: { symbol?: boolean } = {},
 ): string {
   const text = formatMoney(m, scale, locale, options);

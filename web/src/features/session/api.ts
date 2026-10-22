@@ -4,6 +4,8 @@ import type { Client } from "openapi-fetch";
 import { useApi } from "@/api/api-context";
 import { unwrap } from "@/api/problem";
 import type { paths } from "@/api/schema.gen";
+import { useAppLocale } from "@/i18n/i18n-provider";
+import type { Language } from "@/i18n/languages";
 
 export const sessionKeys = { me: ["session", "me"] as const };
 
@@ -30,4 +32,19 @@ export function useDeleteSession() {
       await unwrap(await api.DELETE("/session"));
     },
   });
+}
+
+// Applies the language at once and stores it in the profile.
+export function useChooseLanguage(): (language: Language) => void {
+  const api = useApi();
+  const [, setLanguage] = useAppLocale();
+  const update = useMutation({
+    mutationFn: async (language: Language) => {
+      await unwrap(await api.PATCH("/me", { body: { language } }));
+    },
+  });
+  return (language) => {
+    setLanguage(language);
+    update.mutate(language);
+  };
 }

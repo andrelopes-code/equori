@@ -19,13 +19,16 @@ beforeEach(() => {
 
 describe("AppProviders locale", () => {
   it("sets html lang from the stored locale on first load", async () => {
-    localStorage.setItem("equori.locale", "pt-BR");
+    localStorage.setItem(
+      "equori.locale",
+      JSON.stringify({ language: "pt", region: "BR" }),
+    );
     await renderApp("/", { width: 360, fetch: newFetch() });
     expect(html).toHaveAttribute("lang", "pt-BR");
   });
 
   it("sets html lang to en when no locale is stored", async () => {
     await renderApp("/", { width: 360, fetch: newFetch() });
-    expect(html).toHaveAttribute("lang", "en");
+    expect(html).toHaveAttribute("lang", "en-US");
   });
 });

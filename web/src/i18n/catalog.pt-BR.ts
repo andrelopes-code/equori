@@ -55,8 +55,6 @@ export const catalogPtBR: Catalog = {
   "scheme.dark": "Escuro",
   "scheme.light": "Claro",
   "scheme.system": "Sistema",
-  "locale.en": "English",
-  "locale.pt-BR": "Português (Brasil)",
   "common.selected": "{count} selecionados",
   "nav.goals": "Metas",
   "nav.cards": "Cartões",

@@ -15,15 +15,14 @@ import { destinations } from "@/app/shell/destinations";
 import { ShellIcon } from "@/app/shell/shell-icon";
 import { useEntry } from "@/app/shell/use-entry";
 import { accountsQuery } from "@/features/accounts";
-import { useLogout } from "@/features/session";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import type { Locale } from "@/i18n/locale";
+import { useChooseLanguage, useLogout } from "@/features/session";
+import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
+import { languages } from "@/i18n/languages";
 import { densities, useDensity } from "@/theme/density";
 import { useScheme } from "@/theme/scheme";
 import type { Scheme } from "@/theme/scheme";
 
 const schemes: readonly Scheme[] = ["dark", "light", "system"];
-const locales: readonly Locale[] = ["en", "pt-BR"];
 
 // The one palette of the application: every destination and every account action, opened by
 // Ctrl+K anywhere, by the column's search control and by the phone's search, through its
@@ -35,7 +34,8 @@ export function CommandMenu({ ref }: { ref: Ref<CommandPaletteHandle> }) {
   const { logout } = useLogout();
   const [, setScheme] = useScheme();
   const [, setDensity] = useDensity();
-  const [locale, setLocale] = useAppLocale();
+  const { language } = useAppLocaleState();
+  const chooseLanguage = useChooseLanguage();
   // The accounts are read the first time the palette opens, not on every page load.
   const [opened, setOpened] = useState(false);
   const accounts = useQuery({
@@ -159,15 +159,15 @@ export function CommandMenu({ ref }: { ref: Ref<CommandPaletteHandle> }) {
           setDensity(d);
         },
       })),
-      ...locales
-        .filter((l) => l !== locale)
+      ...languages
+        .filter((l) => l.language !== language)
         .map((l) => ({
-          id: `locale.${l}`,
-          label: t("palette.language", { name: t(`locale.${l}`) }),
+          id: `language.${l.language}`,
+          label: t("palette.language", { name: l.nativeName }),
           group: "actions",
           icon: icon("language"),
           onSelect: () => {
-            setLocale(l);
+            chooseLanguage(l.language);
           },
         })),
       {
@@ -185,8 +185,8 @@ export function CommandMenu({ ref }: { ref: Ref<CommandPaletteHandle> }) {
     openEntry,
     setScheme,
     setDensity,
-    locale,
-    setLocale,
+    language,
+    chooseLanguage,
     logout,
   ]);
 

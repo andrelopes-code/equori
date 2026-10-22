@@ -7,6 +7,7 @@ import { newClient } from "@/api/client";
 import { newQueryClient } from "@/api/query-client";
 import { SlottedLocale } from "@/app/slotted-locale";
 import { I18nProvider } from "@/i18n/i18n-provider";
+import { ProfileLocale } from "@/i18n/profile-locale";
 import { readLocale } from "@/i18n/locale";
 import { TodayProvider } from "@/i18n/today";
 
@@ -64,6 +65,7 @@ export function AppProviders({
         <ApiProvider client={client}>
           <SessionExpiryContext value={expiry}>
             <I18nProvider locale={locale}>
+              <ProfileLocale />
               <SlottedLocale>{children}</SlottedLocale>
             </I18nProvider>
           </SessionExpiryContext>

@@ -16,16 +16,15 @@ import {
 import { useApi } from "@/api/api-context";
 import styles from "@/app/shell/account-menu.module.css";
 import { ShellIcon } from "@/app/shell/shell-icon";
-import { meQuery, useLogout } from "@/features/session";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import type { Locale } from "@/i18n/locale";
+import { meQuery, useChooseLanguage, useLogout } from "@/features/session";
+import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
+import { isLanguage, languages } from "@/i18n/languages";
 import { densities, useDensity } from "@/theme/density";
 import type { Density } from "@/theme/density";
 import { useScheme } from "@/theme/scheme";
 import type { Scheme } from "@/theme/scheme";
 
 const schemes: readonly Scheme[] = ["dark", "light", "system"];
-const locales: readonly Locale[] = ["en", "pt-BR"];
 
 function isScheme(value: string): value is Scheme {
   return (schemes as readonly string[]).includes(value);
@@ -33,10 +32,6 @@ function isScheme(value: string): value is Scheme {
 
 function isDensity(value: string): value is Density {
   return (densities as readonly string[]).includes(value);
-}
-
-function isLocale(value: string): value is Locale {
-  return (locales as readonly string[]).includes(value);
 }
 
 // The column's foot: the signed-in account, and the menu of what belongs to it. In the rail
@@ -47,7 +42,8 @@ export function AccountMenu({ compact }: { compact: boolean }) {
   const { logout, failed } = useLogout();
   const [scheme, setScheme] = useScheme();
   const [density, setDensity] = useDensity();
-  const [locale, setLocale] = useAppLocale();
+  const { language } = useAppLocaleState();
+  const chooseLanguage = useChooseLanguage();
   // The session guard has loaded /me; the menu reads that answer without asking again.
   const { data: me } = useQuery({ ...meQuery(useApi()), staleTime: Infinity });
   // The part before the @ names the account; the domain adds width and no recognition.
@@ -122,14 +118,14 @@ export function AccountMenu({ compact }: { compact: boolean }) {
           <MenuGroup label={t("more.language")}>
             <MenuRadioGroup
               aria-label={t("more.language")}
-              value={locale}
+              value={language}
               onValueChange={(next) => {
-                if (isLocale(next)) setLocale(next);
+                if (isLanguage(next)) chooseLanguage(next);
               }}
             >
-              {locales.map((l) => (
-                <MenuRadioItem key={l} value={l}>
-                  {t(`locale.${l}`)}
+              {languages.map((l) => (
+                <MenuRadioItem key={l.language} value={l.language}>
+                  {l.nativeName}
                 </MenuRadioItem>
               ))}
             </MenuRadioGroup>

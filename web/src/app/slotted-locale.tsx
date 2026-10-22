@@ -1,17 +1,22 @@
 import { SlottedProvider } from "@slotted/react/i18n";
-import { PT_BR } from "@slotted/core/i18n/pt-BR";
 import { useEffect } from "react";
 import type { ReactNode } from "react";
 
-import { useAppLocale } from "@/i18n/i18n-provider";
+import { useAppLocaleState } from "@/i18n/i18n-provider";
+import { languages } from "@/i18n/languages";
 
 export function SlottedLocale({ children }: { children: ReactNode }) {
-  const [locale] = useAppLocale();
+  const { tag, language } = useAppLocaleState();
   useEffect(() => {
-    document.documentElement.lang = locale;
-  }, [locale]);
+    document.documentElement.lang = tag;
+  }, [tag]);
+  const entry = languages.find((l) => l.language === language);
+  const slotted =
+    entry !== undefined && "slotted" in entry ? entry.slotted : null;
+  const catalogs =
+    slotted === null ? {} : { [language]: slotted, [tag]: slotted };
   return (
-    <SlottedProvider locale={locale} catalogs={{ "pt-BR": PT_BR }}>
+    <SlottedProvider locale={tag} catalogs={catalogs}>
       {children}
     </SlottedProvider>
   );

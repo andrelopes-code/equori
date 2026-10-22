@@ -1,7 +1,6 @@
 import { formatDayMonth, todayISO } from "@/i18n/format";
-import type { Locale } from "@/i18n/locale";
 
-function clock(at: Date, locale: Locale): string {
+function clock(at: Date, locale: string): string {
   return new Intl.DateTimeFormat(locale, {
     hour: "2-digit",
     minute: "2-digit",
@@ -13,7 +12,7 @@ function clock(at: Date, locale: Locale): string {
 export function instantLabel(
   at: string,
   today: string,
-  locale: Locale,
+  locale: string,
 ): string {
   const date = new Date(at);
   const day = todayISO(date);

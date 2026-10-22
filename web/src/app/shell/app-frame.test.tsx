@@ -16,10 +16,19 @@ import { setViewport } from "@/testing/viewport";
 
 const html = document.documentElement;
 
-function newFetch() {
+function newFetch(patches: unknown[] = []) {
   return fakeApi({
     "GET /api/v1/me": () =>
       json(200, { id: "user-1", email: "owner@example.com" }),
+    "PATCH /api/v1/me": async (req) => {
+      patches.push(await req.json());
+      return json(200, {
+        id: "user-1",
+        email: "owner@example.com",
+        language: "pt",
+        region: "US",
+      });
+    },
   });
 }
 
@@ -222,8 +231,8 @@ describe("desktop column", () => {
       catalogEn["density.comfortable"],
       catalogEn["density.compact"],
       catalogEn["density.dense"],
-      catalogEn["locale.en"],
-      catalogEn["locale.pt-BR"],
+      "English",
+      "Português",
       catalogEn["more.logout"],
     ]);
     await user.click(
@@ -556,16 +565,28 @@ describe("phone dock", () => {
     expect(screen.getByRole("dialog")).toBe(sheet);
   });
 
-  it("switches the language in More", async () => {
-    await renderApp("/", { width: 390, fetch: newFetch() });
+  it("switches the language in More and sends it to the profile", async () => {
+    const patches: unknown[] = [];
+    await renderApp("/", { width: 390, fetch: newFetch(patches) });
     const { user, sheet } = await openMore();
-    await user.click(
-      within(sheet).getByRole("radio", { name: catalogEn["locale.pt-BR"] }),
-    );
+    await user.click(within(sheet).getByRole("radio", { name: "Português" }));
     expect(
       await within(navigationBar()).findByRole("button", {
         name: catalogPtBR["nav.more"],
       }),
+    ).toBeInTheDocument();
+    expect(patches).toEqual([{ language: "pt" }]);
+  });
+
+  it("lists English and Português in the command menu and the account menu", async () => {
+    const user = userEvent.setup();
+    await renderApp("/", { fetch: newFetch() });
+    await user.keyboard("{Control>}k{/Control}");
+    const dialog = await screen.findByRole("dialog");
+    expect(
+      within(dialog).getByText(
+        catalogEn["palette.language"].replace("{name}", "Português"),
+      ),
     ).toBeInTheDocument();
   });
 });
