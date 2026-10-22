@@ -6,6 +6,14 @@ export interface Refs {
   month: string;
   currency: string;
   account: (kindOrClass: string) => string;
+  aggregator: Aggregator | undefined;
+}
+
+// The first aggregator the server lists, with an empty value for each credential field.
+export interface Aggregator {
+  id: string;
+  name: string;
+  credentials: Record<string, string>;
 }
 
 export interface Operation {
@@ -926,10 +934,10 @@ export const operations: Record<GroupKey, readonly Operation[]> = {
       id: "createIntegration",
       method: "POST",
       path: "/integrations",
-      body: () => ({
-        aggregator: "pluggy",
-        name: "Pluggy",
-        credentials: { client_id: "", client_secret: "" },
+      body: (r) => ({
+        aggregator: r.aggregator?.id ?? "",
+        name: r.aggregator?.name ?? "",
+        credentials: r.aggregator?.credentials ?? {},
       }),
     },
     { id: "getIntegration", method: "GET", path: "/integrations/{id}" },
@@ -938,7 +946,7 @@ export const operations: Record<GroupKey, readonly Operation[]> = {
       id: "updateIntegrationCredentials",
       method: "PUT",
       path: "/integrations/{id}/credentials",
-      body: () => ({ client_id: "", client_secret: "" }),
+      body: (r) => r.aggregator?.credentials ?? {},
     },
     { id: "listConnections", method: "GET", path: "/connections", query: page },
     {

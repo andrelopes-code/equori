@@ -254,11 +254,20 @@ function breakdownItem(term: string): HTMLElement {
 async function chooseOperation(
   user: ReturnType<typeof userEvent.setup>,
   name: RegExp,
+  scope: Pick<typeof screen, "findByRole"> = screen,
 ) {
   await user.click(
-    await screen.findByRole("combobox", { name: catalogEn["admin.op.choose"] }),
+    await scope.findByRole("combobox", { name: catalogEn["admin.op.choose"] }),
   );
   await user.click(await screen.findByRole("option", { name }));
+}
+
+async function chooseIntegrationOperation(
+  user: ReturnType<typeof userEvent.setup>,
+) {
+  const section = (await screen.findByText("ingestion")).closest("section");
+  if (section === null) throw new Error("no ingestion section");
+  await chooseOperation(user, /createIntegration/, within(section));
 }
 
 describe("AdminPage", () => {
@@ -492,5 +501,73 @@ describe("AdminPage", () => {
         },
       ],
     });
+  });
+  it("builds the createIntegration template from the aggregator the server lists", async () => {
+    const user = userEvent.setup();
+    await renderApp("/admin", {
+      fetch: newFetch([], {
+        "GET /api/v1/aggregators": () =>
+          json(200, {
+            items: [
+              {
+                id: "pluggy",
+                name: "Pluggy",
+                credential_fields: [
+                  { name: "client_id", secret: false },
+                  { name: "client_secret", secret: true },
+                ],
+                connect_method: "reference",
+              },
+            ],
+          }),
+      }),
+    });
+    await user.click(
+      await screen.findByRole("tab", { name: catalogEn["admin.tab.more"] }),
+    );
+    await chooseIntegrationOperation(user);
+    const form = screen.getByRole("form", { name: /createIntegration/ });
+    expect(
+      within(form).getByRole("textbox", { name: "aggregator" }),
+    ).toHaveValue("pluggy");
+    expect(within(form).getByRole("textbox", { name: "name" })).toHaveValue(
+      "Pluggy",
+    );
+    expect(
+      within(form).getByRole("textbox", { name: "client_id" }),
+    ).toHaveValue("");
+    expect(
+      within(form).getByRole("textbox", { name: "client_secret" }),
+    ).toHaveValue("");
+  });
+
+  it("names the credential fields of the aggregator in the createIntegration template", async () => {
+    const user = userEvent.setup();
+    await renderApp("/admin", {
+      fetch: newFetch([], {
+        "GET /api/v1/aggregators": () =>
+          json(200, {
+            items: [
+              {
+                id: "other",
+                name: "Other",
+                credential_fields: [{ name: "api_key", secret: true }],
+                connect_method: "reference",
+              },
+            ],
+          }),
+      }),
+    });
+    await user.click(
+      await screen.findByRole("tab", { name: catalogEn["admin.tab.more"] }),
+    );
+    await chooseIntegrationOperation(user);
+    const form = screen.getByRole("form", { name: /createIntegration/ });
+    expect(within(form).getByRole("textbox", { name: "api_key" })).toHaveValue(
+      "",
+    );
+    expect(
+      within(form).queryByRole("textbox", { name: "client_id" }),
+    ).toBeNull();
   });
 });

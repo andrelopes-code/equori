@@ -214,7 +214,6 @@ const enums: Record<string, readonly (readonly string[])[]> = {
       "in_list",
     ],
   ],
-  aggregator: [["pluggy"]],
   exchange: [["BVMF"]],
   delimiter: [["comma", "semicolon", "tab", "pipe"]],
   date_layout: [["DD/MM/YYYY", "YYYY-MM-DD", "MM/DD/YYYY"]],

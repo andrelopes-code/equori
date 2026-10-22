@@ -5,7 +5,7 @@ import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { adminQuery } from "@/features/admin/api";
 import type { CellContext } from "@/features/admin/cell-text";
-import type { Refs } from "@/features/admin/operations";
+import type { Aggregator, Refs } from "@/features/admin/operations";
 import { accountsQuery } from "@/features/accounts";
 import { settingsQuery, useScale } from "@/features/setup";
 import { useToday } from "@/i18n/today";
@@ -20,6 +20,29 @@ function itemsOf(body: unknown): Named[] {
     return [];
   }
   return (body as { items: Named[] }).items;
+}
+
+function aggregatorOf(body: unknown): Aggregator | undefined {
+  if (typeof body !== "object" || body === null || !("items" in body)) {
+    return undefined;
+  }
+  const [first] = (
+    body as {
+      items: {
+        id: string;
+        name: string;
+        credential_fields: { name: string }[];
+      }[];
+    }
+  ).items;
+  if (first === undefined) return undefined;
+  return {
+    id: first.id,
+    name: first.name,
+    credentials: Object.fromEntries(
+      first.credential_fields.map((field) => [field.name, ""]),
+    ),
+  };
 }
 
 export interface AdminContext {
@@ -38,6 +61,7 @@ export function useAdminContext(): AdminContext {
   const institutions = useQuery(
     adminQuery(api, "/institutions", { limit: "200" }),
   );
+  const aggregators = useQuery(adminQuery(api, "/aggregators"));
   const settings = useQuery(settingsQuery(api));
   const scaleOf = useScale();
 
@@ -61,6 +85,7 @@ export function useAdminContext(): AdminContext {
         month: today.slice(0, 7),
         currency: settings.data?.base_currency ?? "",
         account,
+        aggregator: aggregatorOf(aggregators.data),
       },
       accounts: list,
       payees: itemsOf(payees.data),
@@ -70,6 +95,7 @@ export function useAdminContext(): AdminContext {
     accounts.data,
     payees.data,
     institutions.data,
+    aggregators.data,
     settings.data,
     scaleOf,
     today,
