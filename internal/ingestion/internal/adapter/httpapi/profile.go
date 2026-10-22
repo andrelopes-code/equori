@@ -37,6 +37,7 @@ func toProfileAPI(p domain.Profile) CsvProfile {
 	}
 	sign := CsvProfileAmountSign(p.AmountSign)
 	out.AmountSign = &sign
+	out.Encoding = &p.Encoding
 	return out
 }
 
@@ -60,6 +61,9 @@ func (s *Server) SaveCsvProfile(ctx context.Context, req SaveCsvProfileRequestOb
 	}
 	if b.HeaderRows != nil {
 		p.HeaderRows = *b.HeaderRows
+	}
+	if b.Encoding != nil {
+		p.Encoding = *b.Encoding
 	}
 	if b.AmountSign != nil {
 		p.AmountSign = domain.AmountSign(*b.AmountSign)

@@ -99,3 +99,28 @@ func TestParseRejectsMalformedFiles(t *testing.T) {
 		t.Fatalf("valid minimal file: %v", err)
 	}
 }
+
+func TestParseDeclaredEncoding(t *testing.T) {
+	t.Parallel()
+	body := "<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><BANKTRANLIST>\n<STMTTRN>\n<DTPOSTED>20261005\n<TRNAMT>-1.00\n<FITID>x\n<MEMO>Caf\xe9\n</STMTTRN>\n</BANKTRANLIST></STMTRS></STMTTRNRS></BANKMSGSRSV1></OFX>"
+	tests := []struct{ name, in string }{
+		{"sgml charset 1252", "OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\nENCODING:USASCII\nCHARSET:1252\n\n" + body},
+		{"sgml charset iso-8859-1", "OFXHEADER:100\nCHARSET:ISO-8859-1\n\n" + body},
+		{"xml declaration", "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n" + body},
+		{"no declaration", body},
+		{"xml windows-1251", "<?xml version=\"1.0\" encoding=\"windows-1251\"?>\n" + strings.Replace(body, "Caf\xe9", "\xcc\xe0\xe3\xe0\xe7\xe8\xed", 1)},
+	}
+	for _, tc := range tests {
+		st, err := Parse([]byte(tc.in), 2)
+		if err != nil || len(st.Records) != 1 || st.Records[0].Description != want(tc.name) {
+			t.Errorf("%s: records = %+v, err = %v", tc.name, st.Records, err)
+		}
+	}
+}
+
+func want(name string) string {
+	if name == "xml windows-1251" {
+		return "Магазин"
+	}
+	return "Café"
+}

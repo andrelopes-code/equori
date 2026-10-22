@@ -12,7 +12,7 @@ type OFXLine struct{ Date, Amount, FITID, Name string }
 // LEDGERBAL element.
 func OFX(balance string, lines ...OFXLine) []byte {
 	var b strings.Builder
-	b.WriteString("OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\nCHARSET:1252\n\n<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><CURDEF>BRL\n<BANKTRANLIST><DTSTART>20261001<DTEND>20261031\n")
+	b.WriteString("OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\nCHARSET:UTF-8\n\n<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><CURDEF>BRL\n<BANKTRANLIST><DTSTART>20261001<DTEND>20261031\n")
 	for _, l := range lines {
 		fmt.Fprintf(&b, "<STMTTRN><TRNTYPE>OTHER<DTPOSTED>%s<TRNAMT>%s", l.Date, l.Amount)
 		if l.FITID != "" {

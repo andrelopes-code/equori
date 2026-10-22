@@ -65,6 +65,7 @@ type IngestionCsvProfile struct {
 	IDColumn          *string
 	AmountSign        string
 	UpdatedAt         time.Time
+	Encoding          string
 }
 
 type IngestionExternalAccount struct {

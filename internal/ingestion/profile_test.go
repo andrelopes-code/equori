@@ -16,6 +16,7 @@ type csvProfile struct {
 	DecimalSeparator  string `json:"decimal_separator"`
 	DescriptionColumn string `json:"description_column"`
 	AmountSign        string `json:"amount_sign"`
+	Encoding          string `json:"encoding"`
 }
 
 func TestCSVProfile(t *testing.T) {
@@ -28,7 +29,7 @@ func TestCSVProfile(t *testing.T) {
 	body := map[string]any{"date_column": "Data", "date_layout": "DD/MM/YYYY", "amount_column": "Valor", "decimal_separator": ".", "description_column": "Descrição"}
 	var saved csvProfile
 	h.MustDo(http.MethodPut, path, body, http.StatusOK, &saved)
-	if saved.Delimiter != "comma" || saved.HeaderRows != 1 || saved.AmountSign != "as_is" || saved.AmountColumn != "Valor" {
+	if saved.Delimiter != "comma" || saved.HeaderRows != 1 || saved.AmountSign != "as_is" || saved.AmountColumn != "Valor" || saved.Encoding != "auto" {
 		t.Fatalf("saved = %+v", saved)
 	}
 	var got csvProfile
@@ -41,6 +42,16 @@ func TestCSVProfile(t *testing.T) {
 	h.ExpectProblem(h.Do(http.MethodPut, path, body), http.StatusUnprocessableEntity, "validation_failed", "date_column")
 	body["header_rows"], body["debit_column"], body["credit_column"] = 1, "Débito", "Crédito"
 	h.ExpectProblem(h.Do(http.MethodPut, path, body), http.StatusUnprocessableEntity, "validation_failed", "amount_column")
+
+	delete(body, "debit_column")
+	delete(body, "credit_column")
+	body["encoding"] = "ebcdic"
+	h.ExpectProblem(h.Do(http.MethodPut, path, body), http.StatusUnprocessableEntity, "validation_failed", "encoding")
+	body["encoding"] = "windows-1251"
+	h.MustDo(http.MethodPut, path, body, http.StatusOK, &saved)
+	if saved.Encoding != "windows-1251" {
+		t.Fatalf("encoding = %q", saved.Encoding)
+	}
 
 	other := h.Login("other@example.com")
 	h.ExpectProblem(h.Call(other, http.MethodPut, path, map[string]any{"date_column": "Data", "date_layout": "DD/MM/YYYY", "amount_column": "Valor", "decimal_separator": ".", "description_column": "D"}),

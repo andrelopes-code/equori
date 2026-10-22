@@ -2,9 +2,12 @@ package app
 
 import (
 	"context"
+	"slices"
+	"strings"
 
 	"github.com/google/uuid"
 
+	"github.com/andrelopes-code/equori/internal/ingestion/internal/charset"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/domain"
 )
 
@@ -17,6 +20,9 @@ func (s *Service) SaveProfile(ctx context.Context, p domain.Profile) (domain.Pro
 	p, err := domain.NewProfile(p)
 	if err != nil {
 		return domain.Profile{}, err
+	}
+	if !slices.Contains(charset.Names(), p.Encoding) {
+		return domain.Profile{}, &domain.FieldError{Field: "encoding", Message: "must be one of " + strings.Join(charset.Names(), ", ")}
 	}
 	return s.repo.SaveProfile(ctx, p)
 }

@@ -1,11 +1,14 @@
 package domain
 
 import (
+	"regexp"
 	"strconv"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+var encodingName = regexp.MustCompile(`^[a-z0-9_-]{2,40}$`)
 
 type DateLayout string
 
@@ -50,6 +53,7 @@ type Profile struct {
 	DescriptionColumn string
 	IDColumn          string
 	AmountSign        AmountSign
+	Encoding          string
 }
 
 // NewProfile applies defaults (comma delimiter, one header row, amounts as they are) and
@@ -61,6 +65,9 @@ func NewProfile(p Profile) (Profile, error) {
 	if p.AmountSign == "" {
 		p.AmountSign = SignAsIs
 	}
+	if p.Encoding == "" {
+		p.Encoding = "auto"
+	}
 	switch {
 	case p.Delimiter != "," && p.Delimiter != ";" && p.Delimiter != "\t" && p.Delimiter != "|":
 		return Profile{}, invalid("delimiter", `must be ",", ";", tab or "|"`)
@@ -70,6 +77,8 @@ func NewProfile(p Profile) (Profile, error) {
 		return Profile{}, invalid("date_layout", "must be DD/MM/YYYY, YYYY-MM-DD or MM/DD/YYYY")
 	case p.DecimalSeparator != "," && p.DecimalSeparator != ".":
 		return Profile{}, invalid("decimal_separator", `must be "," or "."`)
+	case !encodingName.MatchString(p.Encoding):
+		return Profile{}, invalid("encoding", "must match ^[a-z0-9_-]{2,40}$")
 	case p.AmountSign != SignAsIs && p.AmountSign != SignInverted:
 		return Profile{}, invalid("amount_sign", "must be as_is or inverted")
 	case (p.DebitColumn == "") != (p.CreditColumn == ""):

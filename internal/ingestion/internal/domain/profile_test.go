@@ -20,6 +20,7 @@ func TestNewProfile(t *testing.T) {
 		{"amount and debit columns", func(p *Profile) { p.DebitColumn, p.CreditColumn = "D", "C" }, "amount_column"},
 		{"no amount column", func(p *Profile) { p.AmountColumn = "" }, "amount_column"},
 		{"debit without credit", func(p *Profile) { p.AmountColumn, p.DebitColumn = "", "D" }, "credit_column"},
+		{"encoding pattern", func(p *Profile) { p.Encoding = "Windows 1252" }, "encoding"},
 		{"delimiter", func(p *Profile) { p.Delimiter = ":" }, "delimiter"},
 		{"layout", func(p *Profile) { p.DateLayout = "DD-MM-YY" }, "date_layout"},
 		{"position without header", func(p *Profile) { p.HeaderRows = 0 }, "date_column"},

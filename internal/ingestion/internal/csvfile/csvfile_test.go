@@ -85,3 +85,28 @@ func TestParseRejects(t *testing.T) {
 		})
 	}
 }
+
+func TestParseDeclaredEncoding(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		in       []byte
+		encoding string
+		want     string
+	}{
+		{"utf-8 bom under windows-1252", []byte("\xef\xbb\xbfData,Valor,Identificador,Descrição\n05/10/2026,-1.00,a1,Café\n"), "windows-1252", "Café"},
+		{"windows-1251", []byte("Data,Valor,Identificador,\xce\xef\xe8\xf1\xe0\xed\xe8\xe5\n05/10/2026,-1.00,a1,\xcc\xe0\xe3\xe0\xe7\xe8\xed\n"), "windows-1251", "Магазин"},
+	}
+	for _, tc := range tests {
+		p := profile(func(p *domain.Profile) {
+			p.Encoding = tc.encoding
+			if tc.encoding == "windows-1251" {
+				p.DescriptionColumn = "Описание"
+			}
+		})
+		st, err := Parse(tc.in, p, 2)
+		if err != nil || len(st.Records) != 1 || st.Records[0].Description != tc.want {
+			t.Errorf("%s: records = %+v, err = %v", tc.name, st.Records, err)
+		}
+	}
+}

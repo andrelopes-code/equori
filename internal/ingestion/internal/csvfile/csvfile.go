@@ -18,7 +18,10 @@ import (
 
 // Parse reads the records of a CSV file; amounts have scale decimal places.
 func Parse(data []byte, p domain.Profile, scale int) (domain.Statement, error) {
-	text := strings.TrimPrefix(charset.Text(data), "\xef\xbb\xbf")
+	text, err := charset.Decode(data, p.Encoding)
+	if err != nil {
+		return domain.Statement{}, err
+	}
 	r := csv.NewReader(strings.NewReader(text))
 	r.Comma, _ = utf8.DecodeRuneInString(p.Delimiter)
 	r.FieldsPerRecord = -1

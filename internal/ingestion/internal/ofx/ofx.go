@@ -21,9 +21,37 @@ var entities = strings.NewReplacer("&amp;", "&", "&lt;", "<", "&gt;", ">", "&quo
 // Leaves of a transaction that identify the account; they are never stored (N16).
 var accountLeaves = map[string]bool{"ACCTID": true, "BANKID": true, "BRANCHID": true}
 
+var (
+	sgmlCharset     = regexp.MustCompile(`(?im)^CHARSET:\s*([A-Za-z0-9_-]+)`)
+	xmlEncodingDecl = regexp.MustCompile(`(?i)^\s*<\?xml[^>]*\sencoding\s*=\s*["']([A-Za-z0-9_-]+)["']`)
+)
+
+// declaredEncoding reads the encoding from the SGML header or the XML declaration, or "auto".
+func declaredEncoding(data []byte) string {
+	head := data[:min(len(data), 1024)]
+	if m := sgmlCharset.FindSubmatch(head); m != nil {
+		switch strings.ToUpper(string(m[1])) {
+		case "1252":
+			return "windows-1252"
+		case "ISO-8859-1":
+			return "iso-8859-1"
+		case "UTF-8", "65001":
+			return "utf-8"
+		}
+		return "auto"
+	}
+	if m := xmlEncodingDecl.FindSubmatch(head); m != nil {
+		return strings.ToLower(string(m[1]))
+	}
+	return "auto"
+}
+
 // Parse reads a statement whose amounts have scale decimal places (the account currency's).
 func Parse(data []byte, scale int) (domain.Statement, error) {
-	text := charset.Text(data)
+	text, err := charset.Decode(data, declaredEncoding(data))
+	if err != nil {
+		return domain.Statement{}, err
+	}
 	start := strings.Index(strings.ToUpper(text), "<OFX>")
 	if start < 0 {
 		return domain.Statement{}, errors.New("not an OFX file: no <OFX> element")

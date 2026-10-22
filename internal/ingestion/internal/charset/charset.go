@@ -1,33 +1,33 @@
-// Package charset decodes the text encodings that Brazilian bank exports use (P4 amendment A15).
+// Package charset decodes the text encodings that bank exports use (P4 amendment A15).
 package charset
 
 import (
-	"strings"
+	"bytes"
+	"fmt"
 	"unicode/utf8"
 )
 
-// cp1252 holds the characters of bytes 0x80 to 0x9F, where Windows-1252 differs from Latin-1.
-var cp1252 = [32]rune{
-	'€', '�', '‚', 'ƒ', '„', '…', '†', '‡', 'ˆ', '‰', 'Š', '‹', 'Œ', '�', 'Ž', '�',
-	'�', '‘', '’', '“', '”', '•', '–', '—', '˜', '™', 'š', '›', 'œ', '�', 'ž', 'Ÿ',
-}
+var utf8BOM = []byte{0xEF, 0xBB, 0xBF}
 
-// Text returns b as UTF-8: unchanged when it is valid UTF-8, otherwise decoded as Windows-1252.
-func Text(b []byte) string {
-	if utf8.Valid(b) {
-		return string(b)
+// Decode returns data as UTF-8. A UTF-8 byte order mark selects UTF-8 whatever name says.
+// "auto", or an empty name, keeps valid UTF-8 and decodes anything else as Windows-1252.
+func Decode(data []byte, name string) (string, error) {
+	if rest, ok := bytes.CutPrefix(data, utf8BOM); ok {
+		return string(rest), nil
 	}
-	var sb strings.Builder
-	sb.Grow(len(b) + len(b)/8)
-	for _, c := range b {
-		switch {
-		case c < 0x80:
-			sb.WriteByte(c)
-		case c < 0xA0:
-			sb.WriteRune(cp1252[c-0x80])
-		default:
-			sb.WriteRune(rune(c))
+	if name == "auto" || name == "" {
+		if utf8.Valid(data) {
+			return string(data), nil
 		}
+		name = "windows-1252"
 	}
-	return sb.String()
+	enc, ok := Decoder(name)
+	if !ok {
+		return "", fmt.Errorf("decode: unknown encoding %q", name)
+	}
+	out, err := enc.NewDecoder().Bytes(data)
+	if err != nil {
+		return "", fmt.Errorf("decode %s: %w", name, err)
+	}
+	return string(out), nil
 }

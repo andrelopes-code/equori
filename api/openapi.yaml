@@ -4809,6 +4809,11 @@ components:
           type: string
           enum: [as_is, inverted]
           description: inverted flips the sign of every amount, for exports that list card charges as positive.
+        encoding:
+          type: string
+          pattern: "^[a-z0-9_-]{2,40}$"
+          default: auto
+          description: Text encoding of the file. auto keeps valid UTF-8 and decodes anything else as windows-1252.
     ImportBatch:
       type: object
       description: One file import, or one sync of a mapped account (source aggregator).

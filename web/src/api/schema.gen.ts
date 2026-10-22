@@ -2750,6 +2750,11 @@ export interface components {
              * @enum {string}
              */
             amount_sign?: "as_is" | "inverted";
+            /**
+             * @description Text encoding of the file. auto keeps valid UTF-8 and decodes anything else as windows-1252.
+             * @default auto
+             */
+            encoding: string;
         };
         /** @description One file import, or one sync of a mapped account (source aggregator). */
         ImportBatch: {

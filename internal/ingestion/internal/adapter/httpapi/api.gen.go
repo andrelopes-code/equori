@@ -449,8 +449,11 @@ type CsvProfile struct {
 	DecimalSeparator  CsvProfileDecimalSeparator `json:"decimal_separator"`
 	Delimiter         *CsvProfileDelimiter       `json:"delimiter,omitempty"`
 	DescriptionColumn string                     `json:"description_column"`
-	HeaderRows        *int                       `json:"header_rows,omitempty"`
-	IdColumn          *string                    `json:"id_column,omitempty"`
+
+	// Encoding Text encoding of the file. auto keeps valid UTF-8 and decodes anything else as windows-1252.
+	Encoding   *string `json:"encoding,omitempty"`
+	HeaderRows *int    `json:"header_rows,omitempty"`
+	IdColumn   *string `json:"id_column,omitempty"`
 }
 
 // CsvProfileAmountSign inverted flips the sign of every amount, for exports that list card charges as positive.
