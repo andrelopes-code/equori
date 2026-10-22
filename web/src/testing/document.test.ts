@@ -141,3 +141,21 @@ describe("app.css text selection", () => {
     );
   });
 });
+
+// Scrollbars are drawn by the browser, so the declarations are asserted on the stylesheet text.
+describe("app.css scrollbar", () => {
+  const declarations =
+    /(^|\s)html\s*\{([^}]*-webkit-tap-highlight-color[^}]*)\}/.exec(
+      appCSS,
+    )?.[2] ?? "";
+
+  it("draws a thin scrollbar on the document", () => {
+    expect(declarations).toMatch(/scrollbar-width:\s*thin/);
+  });
+
+  it("colours the thumb from the theme's strong border over a transparent track, as the library's own scroll regions do", () => {
+    expect(declarations).toMatch(
+      /scrollbar-color:\s*var\(--slotted-border-strong\)\s+transparent/,
+    );
+  });
+});

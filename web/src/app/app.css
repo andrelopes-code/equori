@@ -11,6 +11,9 @@
   /* Android's press box is the browser's default feedback; the app draws its own pressed states, and the property is inherited, so one declaration covers links and the app's own elements the library does not reach. */
   html {
     -webkit-tap-highlight-color: transparent;
+    /* The document's scrollbar takes the thumb the library's own scroll regions use; the colour is inherited by every scroll container that sets none, and a width is not, so it is set here for the document alone. */
+    scrollbar-width: thin;
+    scrollbar-color: var(--slotted-border-strong) transparent;
   }
 
   /* A press or a long press on a control selects its label and opens the system callout, which reads as a web page. The library clears the selection on some of its controls only; text content and fields stay selectable so a value can be copied. */
