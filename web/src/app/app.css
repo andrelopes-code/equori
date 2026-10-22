@@ -8,6 +8,11 @@
     margin: 0;
   }
 
+  /* Android's press box is the browser's default feedback; the app draws its own pressed states, and the property is inherited, so one declaration covers links and the app's own elements the library does not reach. */
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
   .text-trim {
     text-box: trim-both cap alphabetic;
   }

@@ -93,3 +93,16 @@ describe("app.css document root sizing", () => {
     expect(rule("#root")).toMatch(/block-size:\s*100dvh/);
   });
 });
+
+// Chromium on Android paints a translucent box over an element while it is pressed; no engine here renders it, so the declaration is asserted on the stylesheet text.
+describe("app.css tap highlight", () => {
+  it("clears the tap highlight on the document root inside @layer app, where every element inherits it", () => {
+    const layerStart = appCSS.indexOf("@layer app {");
+    const rule =
+      /(^|\s)html\s*\{[^}]*-webkit-tap-highlight-color:\s*transparent/.exec(
+        appCSS,
+      );
+    expect(layerStart).toBeGreaterThan(-1);
+    expect(rule?.index).toBeGreaterThan(layerStart);
+  });
+});
