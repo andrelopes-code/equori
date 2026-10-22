@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"regexp"
 	"strconv"
 	"strings"
 )
@@ -12,29 +11,33 @@ type decimal struct {
 	exp      int
 }
 
-// The number forms of A108; the three are disjoint.
-var (
-	plainNumber   = regexp.MustCompile(`^[0-9]+(,[0-9]+)?$`)
-	groupedNumber = regexp.MustCompile(`^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]+)?$`)
-	dottedNumber  = regexp.MustCompile(`^[0-9]+\.[0-9]{1,2}$`)
-)
-
 // maxDigits keeps every mantissa, and a mantissa times a multiplier, inside int64.
 const maxDigits = 15
 
 // maxUnits is the largest whole amount a line may carry (A108).
 const maxUnits = 999_999_999
 
-func parseNumber(s string) (decimal, bool) {
+// parseNumber reads the number forms of A108, which are disjoint: plain digits, digits grouped
+// by thousands, and digits with the group separator as a decimal point of one or two places.
+func parseNumber(s string, c Conventions) (decimal, bool) {
 	var whole, frac string
-	switch {
-	case plainNumber.MatchString(s), groupedNumber.MatchString(s):
-		whole, frac, _ = strings.Cut(s, ",")
-		whole = strings.ReplaceAll(whole, ".", "")
-	case dottedNumber.MatchString(s):
-		whole, frac, _ = strings.Cut(s, ".")
-	default:
-		return decimal{}, false
+	if w, f, hasDecimal := strings.Cut(s, string(c.Decimal)); hasDecimal {
+		if !allDigits(f) || !wholeNumber(w, c.Group) {
+			return decimal{}, false
+		}
+		whole, frac = strings.ReplaceAll(w, string(c.Group), ""), f
+	} else {
+		parts := strings.Split(s, string(c.Group))
+		switch {
+		case len(parts) == 1 && allDigits(s):
+			whole = s
+		case len(parts) == 2 && allDigits(parts[0]) && allDigits(parts[1]) && len(parts[1]) <= 2:
+			whole, frac = parts[0], parts[1]
+		case wholeNumber(s, c.Group):
+			whole = strings.ReplaceAll(s, string(c.Group), "")
+		default:
+			return decimal{}, false
+		}
 	}
 	digits := strings.TrimLeft(whole+frac, "0")
 	if len(digits) > maxDigits {
@@ -45,6 +48,35 @@ func parseNumber(s string) (decimal, bool) {
 		return decimal{}, false
 	}
 	return decimal{mantissa: m, exp: len(frac)}, true
+}
+
+func allDigits(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+// wholeNumber reports whether s is plain digits or digits grouped by thousands with group.
+func wholeNumber(s string, group rune) bool {
+	parts := strings.Split(s, string(group))
+	if len(parts) == 1 {
+		return allDigits(s)
+	}
+	if !allDigits(parts[0]) || len(parts[0]) > 3 {
+		return false
+	}
+	for _, p := range parts[1:] {
+		if len(p) != 3 || !allDigits(p) {
+			return false
+		}
+	}
+	return true
 }
 
 // times multiplies d by a small factor; maxDigits leaves room for 10⁴ and the 420 of A110.
@@ -85,7 +117,7 @@ type amountPhrase struct {
 }
 
 // readAmount reads the amount phrase that starts at free word i.
-func readAmount(ws []word, i int, lex Lexicon) (amountPhrase, bool) {
+func readAmount(ws []word, i int, lex Lexicon, conv Conventions) (amountPhrase, bool) {
 	var p amountPhrase
 	s := ws[i].norm
 	p.words = 1
@@ -111,7 +143,7 @@ func readAmount(ws []word, i int, lex Lexicon) (amountPhrase, bool) {
 	if rest, f, ok := lex.cutSuffixFactor(s); ok {
 		s, factor, p.explicit = rest, f, true
 	}
-	v, ok := parseNumber(s)
+	v, ok := parseNumber(s, conv)
 	if !ok {
 		return amountPhrase{}, false
 	}

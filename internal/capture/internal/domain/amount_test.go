@@ -44,7 +44,7 @@ func TestReadAmount(t *testing.T) {
 		t.Run(c.text, func(t *testing.T) {
 			t.Parallel()
 			ws := splitWords(c.text)
-			p, ok := readAmount(ws, 0, Merge(Portuguese(), English()))
+			p, ok := readAmount(ws, 0, Merge(Portuguese(), English()), Conventions{',', '.', DMY})
 			if ok != c.ok {
 				t.Fatalf("ok = %v, want %v", ok, c.ok)
 			}

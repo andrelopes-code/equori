@@ -23,7 +23,7 @@ type installmentPhrase struct {
 }
 
 // readInstallments reads the installment phrase that starts at free word i.
-func readInstallments(ws []word, i int, lex Lexicon) (installmentPhrase, bool) {
+func readInstallments(ws []word, i int, lex Lexicon, conv Conventions) (installmentPhrase, bool) {
 	at := func(j int) string {
 		if j < len(ws) && ws[j].free() {
 			return ws[j].norm
@@ -61,7 +61,7 @@ func readInstallments(ws []word, i int, lex Lexicon) (installmentPhrase, bool) {
 		p.count = 0
 	}
 	if end := j + size; slices.Contains(lex.Of, at(end)) && at(end+1) != "" {
-		if each, ok := readAmount(ws, end+1, lex); ok {
+		if each, ok := readAmount(ws, end+1, lex, conv); ok {
 			p.each = &each
 			p.words += 1 + each.words
 		}

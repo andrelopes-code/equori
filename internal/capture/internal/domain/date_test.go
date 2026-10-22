@@ -43,7 +43,7 @@ func TestReadDate(t *testing.T) {
 	} {
 		t.Run(c.text, func(t *testing.T) {
 			t.Parallel()
-			p, ok := readDate(splitWords(c.text), 0, c.today, Merge(Portuguese(), English()))
+			p, ok := readDate(splitWords(c.text), 0, c.today, Merge(Portuguese(), English()), DMY)
 			if !ok {
 				t.Fatal("not read as a date")
 			}
@@ -53,7 +53,7 @@ func TestReadDate(t *testing.T) {
 		})
 	}
 	for _, text := range []string{"dia", "dia x", "12", "1/2/3", "domingueira"} {
-		if _, ok := readDate(splitWords(text), 0, wednesday, Merge(Portuguese(), English())); ok {
+		if _, ok := readDate(splitWords(text), 0, wednesday, Merge(Portuguese(), English()), DMY); ok {
 			t.Errorf("%q read as a date", text)
 		}
 	}
@@ -84,7 +84,7 @@ func TestReadInstallments(t *testing.T) {
 	} {
 		t.Run(c.text, func(t *testing.T) {
 			t.Parallel()
-			p, ok := readInstallments(splitWords(c.text), 0, Merge(Portuguese(), English()))
+			p, ok := readInstallments(splitWords(c.text), 0, Merge(Portuguese(), English()), Conventions{',', '.', DMY})
 			if !ok {
 				t.Fatal("not read as installments")
 			}
@@ -98,7 +98,7 @@ func TestReadInstallments(t *testing.T) {
 		})
 	}
 	for _, text := range []string{"em casa", "parcelado", "3", "x3", "3 dias"} {
-		if _, ok := readInstallments(splitWords(text), 0, Merge(Portuguese(), English())); ok {
+		if _, ok := readInstallments(splitWords(text), 0, Merge(Portuguese(), English()), Conventions{',', '.', DMY}); ok {
 			t.Errorf("%q read as installments", text)
 		}
 	}

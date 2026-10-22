@@ -20,6 +20,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/ledger"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/llm"
+	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
@@ -27,14 +28,19 @@ type Module struct {
 	http *httpapi.Server
 }
 
+// Profiles is the part of identity the module uses to read a user's lines by language and region.
+type Profiles interface {
+	Profile(ctx context.Context, userID int64) (locale.Locale, error)
+}
+
 // New wires the module; router is nil when no language model is configured, and category
 // suggestions then serve kept answers only (ADR 014 L6).
-func New(pool *pgxpool.Pool, l *ledger.Module, c *classification.Module, router *llm.Router, clk clock.Clock, log *slog.Logger) *Module {
+func New(pool *pgxpool.Pool, l *ledger.Module, c *classification.Module, profiles Profiles, router *llm.Router, clk clock.Clock, log *slog.Logger) *Module {
 	var suggester app.Suggester
 	if router != nil {
 		suggester = llmapi.New(router)
 	}
-	svc := app.NewService(ledgerPort{l}, classifierPort{c}, postgres.NewRepository(pool), suggester, clk)
+	svc := app.NewService(ledgerPort{l}, classifierPort{c}, postgres.NewRepository(pool), profiles, suggester, clk)
 	return &Module{http: httpapi.NewServer(svc, log)}
 }
 

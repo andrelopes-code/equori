@@ -173,11 +173,11 @@ func (r *lineReader) read(number int, text string, idx handleIndex) Line {
 	r.readTags()
 	mentions := r.findMentions(idx)
 	installments := r.scan(RoleInstallments, func(i int) (int, any, bool) {
-		p, ok := readInstallments(r.words, i, r.vocabulary.Lexicon)
+		p, ok := readInstallments(r.words, i, r.vocabulary.Lexicon, r.vocabulary.Conventions)
 		return p.words, p, ok
 	})
 	dates := r.scan(RoleDate, func(i int) (int, any, bool) {
-		p, ok := readDate(r.words, i, r.today, r.vocabulary.Lexicon)
+		p, ok := readDate(r.words, i, r.today, r.vocabulary.Lexicon, r.vocabulary.Conventions.Order)
 		return p.words, p, ok
 	})
 	var amounts []amountAt
@@ -185,7 +185,7 @@ func (r *lineReader) read(number int, text string, idx handleIndex) Line {
 		if !r.words[i].free() {
 			continue
 		}
-		if p, ok := readAmount(r.words, i, r.vocabulary.Lexicon); ok {
+		if p, ok := readAmount(r.words, i, r.vocabulary.Lexicon, r.vocabulary.Conventions); ok {
 			amounts = append(amounts, amountAt{p, i})
 			i += p.words - 1
 		}

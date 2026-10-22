@@ -22,7 +22,7 @@ var (
 )
 
 func vocabulary(extra ...Account) Vocabulary {
-	return Vocabulary{Base: "BRL", Lexicon: Merge(Portuguese(), English()), Accounts: append([]Account{
+	return Vocabulary{Base: "BRL", Lexicon: Merge(Portuguese(), English()), Conventions: Conventions{',', '.', DMY}, Accounts: append([]Account{
 		{ID: checking, Class: "asset", Kind: "checking", Currency: "BRL", Handles: []string{"Nubank checking", "Nubank"}},
 		{ID: visa, Class: "liability", Kind: "credit_card", Currency: "BRL", Handles: []string{"Itaú Visa", "Itaú", "final 1234", "*1234"}},
 		{ID: wallet, Class: "asset", Kind: "cash", Currency: "BRL", Handles: []string{"Wallet"}},
@@ -265,5 +265,39 @@ func TestEditDistance(t *testing.T) {
 		if got := editDistance(c.a, c.b); got != c.want {
 			t.Errorf("editDistance(%q, %q) = %d, want %d", c.a, c.b, got, c.want)
 		}
+	}
+}
+
+func TestReadByConventions(t *testing.T) {
+	t.Parallel()
+	english := Merge(English(), English())
+	for _, c := range []struct {
+		name, text string
+		conv       Conventions
+		lex        Lexicon
+		amount     int64
+		date       string
+		desc       string
+	}{
+		{"mdy with dot decimal", "lunch 25.90 05/11", Conventions{'.', ',', MDY}, english, 2590, "2026-05-11", "Lunch"},
+		{"mdy with comma group", "1,234.50 rent", Conventions{'.', ',', MDY}, english, 123450, "2026-11-20", "Rent"},
+		{"dmy with dot decimal", "lunch 25.90 05/11", Conventions{'.', ',', DMY}, english, 2590, "2026-11-05", "Lunch"},
+		{"ymd reads month and day", "lunch 25.90 05/11", Conventions{'.', ',', YMD}, english, 2590, "2026-05-11", "Lunch"},
+		{"portuguese keeps comma decimal", "1.234,50 aluguel", Conventions{',', '.', DMY}, Merge(Portuguese(), English()), 123450, "2026-11-20", "Aluguel"},
+		{"comma decimal without a local lexicon", "today 12,50", Conventions{',', '.', DMY}, english, 1250, "2026-11-20", ""},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+			v := Vocabulary{Base: "EUR", Lexicon: c.lex, Conventions: c.conv}
+			today := time.Date(2026, 11, 20, 0, 0, 0, 0, time.UTC)
+			lines := Read(c.text, v, today, uuid.Nil)
+			if len(lines) != 1 {
+				t.Fatalf("lines = %d, want 1", len(lines))
+			}
+			got := lines[0]
+			if got.Amount != c.amount || got.Date.Format(time.DateOnly) != c.date || got.Description != c.desc {
+				t.Fatalf("got %d %s %q, want %d %s %q", got.Amount, got.Date.Format(time.DateOnly), got.Description, c.amount, c.date, c.desc)
+			}
+		})
 	}
 }

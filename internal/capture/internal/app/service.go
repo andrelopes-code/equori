@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/capture/internal/domain"
+	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
@@ -75,19 +76,25 @@ type Line struct {
 	CategorySource string
 }
 
+// Profiles supplies the language and region a user's lines are read in.
+type Profiles interface {
+	Profile(ctx context.Context, userID int64) (locale.Locale, error)
+}
+
 type Clock interface{ Now() time.Time }
 
 type Service struct {
 	ledger     Ledger
 	classifier Classifier
 	hints      HintRepository
+	profiles   Profiles
 	// suggester is nil when no language model is wired (ADR 014 L6).
 	suggester Suggester
 	clock     Clock
 }
 
-func NewService(l Ledger, c Classifier, h HintRepository, sg Suggester, clk Clock) *Service {
-	return &Service{ledger: l, classifier: c, hints: h, suggester: sg, clock: clk}
+func NewService(l Ledger, c Classifier, h HintRepository, p Profiles, sg Suggester, clk Clock) *Service {
+	return &Service{ledger: l, classifier: c, hints: h, profiles: p, suggester: sg, clock: clk}
 }
 
 // Preview reads text into drafts (A106–A113). It records nothing.
@@ -110,7 +117,11 @@ func (s *Service) Preview(ctx context.Context, userID int64, text string, defaul
 	if err != nil {
 		return nil, err
 	}
-	v := vocabulary(accounts, base)
+	profile, err := s.profiles.Profile(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	v := vocabulary(accounts, base, profile)
 	if defaultAccount != uuid.Nil && !slices.ContainsFunc(v.Accounts, func(a domain.Account) bool { return a.ID == defaultAccount }) {
 		return nil, ErrDefaultAccount
 	}
@@ -155,12 +166,17 @@ func (s *Service) Preview(ctx context.Context, userID int64, text string, defaul
 
 // vocabulary keeps the accounts a line may name: open balance accounts without children,
 // without a system role, held in a currency (A111).
-func vocabulary(accounts []Account, base money.Currency) domain.Vocabulary {
+func vocabulary(accounts []Account, base money.Currency, profile locale.Locale) domain.Vocabulary {
 	parents := map[uuid.UUID]bool{}
 	for _, a := range accounts {
 		parents[a.ParentID] = true
 	}
-	v := domain.Vocabulary{Base: base, Lexicon: domain.Merge(domain.Portuguese(), domain.English())}
+	c := locale.ConventionsOf(profile)
+	v := domain.Vocabulary{
+		Base:        base,
+		Lexicon:     domain.Merge(lexiconOf(profile.Language), domain.English()),
+		Conventions: domain.Conventions{Decimal: c.Decimal, Group: c.Group, Order: domain.DateOrder(c.Order)},
+	}
 	for _, a := range accounts {
 		if a.Closed || a.SystemRole != "" || parents[a.ID] || (a.Class != "asset" && a.Class != "liability") {
 			continue
@@ -178,6 +194,14 @@ func vocabulary(accounts []Account, base money.Currency) domain.Vocabulary {
 		v.Accounts = append(v.Accounts, domain.Account{ID: a.ID, Class: a.Class, Kind: a.Kind, Currency: a.Instrument, Handles: handles})
 	}
 	return v
+}
+
+// lexiconOf returns the words of a language; a language without words reads with English.
+func lexiconOf(language string) domain.Lexicon {
+	if language == "pt" {
+		return domain.Portuguese()
+	}
+	return domain.English()
 }
 
 // entryOf returns the entry classification decides for an expense or income line that has

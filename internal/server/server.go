@@ -91,7 +91,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	ledgerModule := ledger.New(pool, dispatcher, marketdataModule, identityModule, clk, log)
 	reportingModule := reporting.New(pool, dispatcher, log)
 	classificationModule := classification.New(pool, dispatcher, ledgerModule, log)
-	captureModule := capture.New(pool, ledgerModule, classificationModule, cfg.LLM, clk, log)
+	captureModule := capture.New(pool, ledgerModule, classificationModule, identityModule, cfg.LLM, clk, log)
 	ingestionModule, err := ingestion.New(pool, dispatcher, ledgerModule, classificationModule, ingestion.Config{
 		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, URLs: cfg.AggregatorURLs, Clock: clk,
 	}, log)

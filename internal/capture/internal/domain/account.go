@@ -27,6 +27,8 @@ type Vocabulary struct {
 	Base money.Currency
 	// Lexicon holds the words the line is read with.
 	Lexicon Lexicon
+	// Conventions are the separators and date order of the owner's region.
+	Conventions Conventions
 }
 
 func (v Vocabulary) account(id uuid.UUID) (Account, bool) {

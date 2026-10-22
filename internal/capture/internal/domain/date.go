@@ -8,6 +8,7 @@ import (
 
 var (
 	dayMonth  = regexp.MustCompile(`^([0-9]{1,2})/([0-9]{1,2})(?:/([0-9]{2}|[0-9]{4}))?$`)
+	yearFirst = regexp.MustCompile(`^([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})$`)
 	isoDate   = regexp.MustCompile(`^([0-9]{4})-([0-9]{2})-([0-9]{2})$`)
 	dayNumber = regexp.MustCompile(`^[0-9]{1,2}$`)
 )
@@ -20,7 +21,7 @@ type datePhrase struct {
 }
 
 // readDate reads the date phrase of A109 that starts at free word i; today is a UTC midnight.
-func readDate(ws []word, i int, today time.Time, lex Lexicon) (datePhrase, bool) {
+func readDate(ws []word, i int, today time.Time, lex Lexicon, order DateOrder) (datePhrase, bool) {
 	n := ws[i].norm
 	if back, ok := lex.DaysBack[n]; ok {
 		return datePhrase{date: today.AddDate(0, 0, -back), valid: true, words: 1}, true
@@ -40,8 +41,15 @@ func readDate(ws []word, i int, today time.Time, lex Lexicon) (datePhrase, bool)
 		date, ok := dateOf(y, m, d)
 		return datePhrase{date: date, valid: ok, words: 2}, true
 	}
-	if g := dayMonth.FindStringSubmatch(n); g != nil {
+	if g := yearFirst.FindStringSubmatch(n); g != nil && order == YMD {
+		date, ok := dateOf(atoi(g[1]), atoi(g[2]), atoi(g[3]))
+		return datePhrase{date: date, valid: ok, words: 1}, true
+	}
+	if g := dayMonth.FindStringSubmatch(n); g != nil && (order != YMD || g[3] == "") {
 		d, m := atoi(g[1]), atoi(g[2])
+		if order != DMY {
+			d, m = m, d
+		}
 		switch len(g[3]) {
 		case 2:
 			date, ok := dateOf(2000+atoi(g[3]), m, d)
