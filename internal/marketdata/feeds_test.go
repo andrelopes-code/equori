@@ -159,3 +159,21 @@ func filter(rs []string, prefix string) []string {
 	}
 	return out
 }
+
+func TestFeedFailureKeepsOtherCurrencies(t *testing.T) {
+	t.Parallel()
+	f := &feedServer{failPTAX: "EUR"}
+	srv := httptest.NewServer(f)
+	t.Cleanup(srv.Close)
+	h := apitest.New(t, apitest.Today("2026-10-31"), apitest.PriceFeeds(true, false, srv.URL+"/ptax", srv.URL+"/b3"))
+
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	if got := pricesOf(t, h, "USD"); len(got) != 2 || got[0].Date != "2026-10-29" || got[1].Date != "2026-10-30" {
+		t.Fatalf("USD prices = %+v", got)
+	}
+	logs := h.Logs()
+	if !strings.Contains(logs, "price feed") || !strings.Contains(logs, "bcb_ptax") || !strings.Contains(logs, "instrument=EUR") {
+		t.Fatalf("logs = %s", logs)
+	}
+}

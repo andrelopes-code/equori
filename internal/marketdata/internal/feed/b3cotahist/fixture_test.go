@@ -1,4 +1,4 @@
-package feed_test
+package b3cotahist_test
 
 import (
 	"archive/zip"

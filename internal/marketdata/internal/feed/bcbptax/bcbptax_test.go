@@ -1,11 +1,14 @@
-package feed_test
+package bcbptax_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed"
+	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/bcbptax"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
 const ptaxUSD = `{"@odata.context":"x","value":[
@@ -31,9 +34,9 @@ func TestPTAX(t *testing.T) {
 		_, _ = w.Write([]byte(ptaxUSD))
 	}))
 	t.Cleanup(srv.Close)
-	src := feed.NewPTAX(srv.Client(), srv.URL)
+	src := bcbptax.New(srv.Client(), srv.URL)
 
-	got, err := src.Fetch(t.Context(), "USD", day("2026-10-29"), day("2026-10-30"))
+	got, err := src.Fetch(t.Context(), []money.Currency{"USD"}, day("2026-10-29"), day("2026-10-30"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,10 +49,30 @@ func TestPTAX(t *testing.T) {
 		t.Fatalf("quotes = %+v", got)
 	}
 
-	if got, err := src.Fetch(t.Context(), "SEK", day("2026-10-29"), day("2026-10-30")); err != nil || len(got) != 0 {
+	if got, err := src.Fetch(t.Context(), []money.Currency{"SEK"}, day("2026-10-29"), day("2026-10-30")); err != nil || len(got) != 0 {
 		t.Fatalf("empty answer = %+v, %v", got, err)
 	}
-	if _, err := src.Fetch(t.Context(), "EUR", day("2026-10-29"), day("2026-10-30")); err == nil {
+	if _, err := src.Fetch(t.Context(), []money.Currency{"EUR"}, day("2026-10-29"), day("2026-10-30")); err == nil {
 		t.Fatal("a 503 answer returned no error")
+	}
+}
+
+func day(s string) time.Time {
+	d, err := time.Parse(time.DateOnly, s)
+	if err != nil {
+		panic(err)
+	}
+	return d
+}
+
+func TestCodes(t *testing.T) {
+	t.Parallel()
+	ins := []feed.Instrument{
+		{Code: "BRL", Type: "currency"}, {Code: "USD", Type: "currency"}, {Code: "KWD", Type: "currency"},
+		{Code: "EUR", Type: "currency"}, {Code: "MXRF11", Type: "reit", Exchange: "B3", QuoteCurrency: "BRL"},
+	}
+	got := bcbptax.New(nil, "").Codes(ins)
+	if len(got) != 2 || got[0] != "USD" || got[1] != "EUR" {
+		t.Fatalf("codes = %v", got)
 	}
 }

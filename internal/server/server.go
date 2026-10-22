@@ -79,9 +79,9 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		clk = *cfg.Clock
 	}
 	identityModule := identity.New(pool, identity.Config{SecureCookies: cfg.SecureCookies}, log)
+	feedClient := &http.Client{Timeout: time.Minute}
 	marketdataModule := marketdata.New(pool).WithFeeds(marketdata.FeedConfig{
-		PTAX: cfg.PTAXFeed, COTAHIST: cfg.COTAHISTFeed, PTAXURL: cfg.PTAXURL, COTAHISTURL: cfg.COTAHISTURL,
-		Client: &http.Client{Timeout: time.Minute}, Clock: clk, Log: log,
+		Sources: marketdata.LegacySources(cfg.PTAXFeed, cfg.COTAHISTFeed, cfg.PTAXURL, cfg.COTAHISTURL, feedClient), Client: feedClient, Clock: clk, Log: log,
 	})
 	ledgerModule := ledger.New(pool, dispatcher, marketdataModule, identityModule, clk, log)
 	reportingModule := reporting.New(pool, dispatcher, log)

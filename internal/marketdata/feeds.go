@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/adapter/postgres"
-	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/money"
@@ -18,13 +17,12 @@ import (
 // feedWindowDays bounds how far back a feed fetches (P8 amendment A62).
 const feedWindowDays = 30
 
-// FeedConfig enables the price feeds; their requests go only to the given base URLs (N17).
+// FeedConfig lists the price sources TickFeeds runs.
 type FeedConfig struct {
-	PTAX, COTAHIST       bool
-	PTAXURL, COTAHISTURL string
-	Client               *http.Client
-	Clock                clock.Clock
-	Log                  *slog.Logger
+	Sources []feed.Source
+	Client  *http.Client
+	Clock   clock.Clock
+	Log     *slog.Logger
 }
 
 // WithFeeds sets the feeds TickFeeds runs; the composition root calls it once.
@@ -47,91 +45,70 @@ func (m *Module) RunFeeds(ctx context.Context, interval time.Duration) {
 	}
 }
 
-// TickFeeds fetches each enabled feed from the day after its latest price (per currency
-// for bcb_ptax), never earlier than today − 30 days, to today. A failure is logged and
-// ends the run of that b3_cotahist day or bcb_ptax currency; the next tick fetches the
-// same days again.
+// TickFeeds fetches each source from the day after its latest price (per code), never
+// earlier than today − 30 days, to today. Consecutive codes with the same start share one
+// fetch. A failure is logged; the next tick fetches the same days again.
 func (m *Module) TickFeeds(ctx context.Context) {
-	if m.feeds.PTAX {
-		m.tickPTAX(ctx)
-	}
-	if m.feeds.COTAHIST {
-		m.tickCOTAHIST(ctx)
+	for _, src := range m.feeds.Sources {
+		m.tick(ctx, src)
 	}
 }
 
-func (m *Module) tickPTAX(ctx context.Context) {
-	src := feed.NewPTAX(m.feeds.Client, m.feeds.PTAXURL)
-	currencies, err := m.ListInstruments(ctx, domain.TypeCurrency)
+func (m *Module) tick(ctx context.Context, src feed.Source) {
+	list, err := m.ListInstruments(ctx, "")
 	if err != nil {
-		m.logFeed(ctx, err, "source", domain.SourceBCBPTAX)
+		m.logFeed(ctx, err, "source", src.ID())
+		return
+	}
+	ins := make([]feed.Instrument, len(list))
+	for i, in := range list {
+		ins[i] = feed.Instrument{Code: in.Code, Type: in.Type, Exchange: in.Exchange, QuoteCurrency: in.QuoteCurrency}
+	}
+	codes := src.Codes(ins)
+	if len(codes) == 0 {
 		return
 	}
 	today := m.feeds.Clock.Today()
-	for _, c := range currencies {
-		if c.Code == pivot || !src.Supports(c.Code) {
-			continue
-		}
-		from, err := m.feedStart(ctx, domain.SourceBCBPTAX, c.Code, today)
+	starts := make([]time.Time, len(codes))
+	for i, code := range codes {
+		starts[i], err = m.feedStart(ctx, src.ID(), code, today)
 		if err != nil {
-			m.logFeed(ctx, err, "source", domain.SourceBCBPTAX, "instrument", c.Code)
+			m.logFeed(ctx, err, "source", src.ID(), "instrument", code)
 			return
 		}
-		if from.After(today) {
-			continue
+	}
+	for i := 0; i < len(codes); {
+		j := i + 1
+		for j < len(codes) && starts[j].Equal(starts[i]) {
+			j++
 		}
-		// Each currency has its own window, so a failure ends only that currency's run.
-		quotes, err := src.Fetch(ctx, c.Code, from, today)
-		if errors.Is(err, feed.ErrNoData) {
-			continue
+		if !starts[i].After(today) {
+			quotes, err := src.Fetch(ctx, codes[i:j], starts[i], today)
+			if storeErr := m.storeQuotes(ctx, src.ID(), quotes); err == nil {
+				err = storeErr
+			}
+			m.logFetchError(ctx, src.ID(), err)
 		}
-		if err == nil {
-			err = m.storeQuotes(ctx, domain.SourceBCBPTAX, quotes)
-		}
-		if err != nil {
-			m.logFeed(ctx, err, "source", domain.SourceBCBPTAX, "instrument", c.Code)
-		}
+		i = j
 	}
 }
 
-func (m *Module) tickCOTAHIST(ctx context.Context) {
-	src := feed.NewCOTAHIST(m.feeds.Client, m.feeds.COTAHISTURL)
-	ins, err := m.ListInstruments(ctx, "")
-	if err != nil {
-		m.logFeed(ctx, err, "source", domain.SourceB3COTAHIST)
+func (m *Module) logFetchError(ctx context.Context, source string, err error) {
+	if err == nil {
 		return
 	}
-	var tickers []string
-	for _, in := range ins {
-		if in.Exchange == "B3" && in.QuoteCurrency == pivot {
-			tickers = append(tickers, string(in.Code))
+	if joined, ok := err.(interface{ Unwrap() []error }); ok {
+		for _, e := range joined.Unwrap() {
+			m.logFetchError(ctx, source, e)
 		}
-	}
-	if len(tickers) == 0 {
 		return
 	}
-	today := m.feeds.Clock.Today()
-	from, err := m.feedStart(ctx, domain.SourceB3COTAHIST, "", today)
-	if err != nil {
-		m.logFeed(ctx, err, "source", domain.SourceB3COTAHIST)
+	var scope *feed.ScopeError
+	if errors.As(err, &scope) {
+		m.logFeed(ctx, err, "source", source, scope.Key, scope.Value)
 		return
 	}
-	for d := from; !d.After(today); d = d.AddDate(0, 0, 1) {
-		if d.Weekday() == time.Saturday || d.Weekday() == time.Sunday {
-			continue
-		}
-		quotes, err := src.Fetch(ctx, d, tickers)
-		if errors.Is(err, feed.ErrNoData) {
-			continue
-		}
-		if err == nil {
-			err = m.storeQuotes(ctx, domain.SourceB3COTAHIST, quotes)
-		}
-		if err != nil {
-			m.logFeed(ctx, err, "source", domain.SourceB3COTAHIST, "day", d.Format(time.DateOnly))
-			return
-		}
-	}
+	m.logFeed(ctx, err, "source", source)
 }
 
 // feedStart is the first day to fetch for source, by instrument when one is given.

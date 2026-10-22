@@ -10,13 +10,12 @@ import (
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/platform/money"
+	"github.com/andrelopes-code/equori/internal/platform/registry"
 )
 
 const (
-	SourceManual     = "manual"
-	SourceCSV        = "csv"
-	SourceBCBPTAX    = "bcb_ptax"
-	SourceB3COTAHIST = "b3_cotahist"
+	SourceManual = "manual"
+	SourceCSV    = "csv"
 
 	MaxImportLines = 10000
 	MaxPriceRange  = 366 // days in a GET /prices range
@@ -37,7 +36,8 @@ func Priority(source string) (int16, error) {
 		return 1, nil
 	case SourceCSV:
 		return 2, nil
-	case SourceBCBPTAX, SourceB3COTAHIST:
+	}
+	if registry.ValidID(source) {
 		return 3, nil
 	}
 	return 0, fmt.Errorf("unknown price source %q", source)

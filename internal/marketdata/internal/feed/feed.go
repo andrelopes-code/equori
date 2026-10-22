@@ -26,7 +26,35 @@ type Quote struct {
 	Value      money.Rate
 }
 
-func get(ctx context.Context, c *http.Client, url string) ([]byte, error) {
+// Instrument is a Market data instrument as a source sees it.
+type Instrument struct {
+	Code          money.Currency
+	Type          string
+	Exchange      string
+	QuoteCurrency money.Currency
+}
+
+// Source reads quotes from one public price source.
+type Source interface {
+	ID() string
+	// Codes returns the codes of ins the source quotes.
+	Codes(ins []Instrument) []money.Currency
+	// Fetch returns the quotes read before a failure together with the failure.
+	Fetch(ctx context.Context, codes []money.Currency, from, to time.Time) ([]Quote, error)
+}
+
+// ScopeError names the part of a fetch (a code or a day) that failed.
+type ScopeError struct {
+	Key, Value string
+	Err        error
+}
+
+func (e *ScopeError) Error() string { return e.Key + " " + e.Value + ": " + e.Err.Error() }
+
+func (e *ScopeError) Unwrap() error { return e.Err }
+
+// Get returns the body of url; a 404 answer returns ErrNoData.
+func Get(ctx context.Context, c *http.Client, url string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
