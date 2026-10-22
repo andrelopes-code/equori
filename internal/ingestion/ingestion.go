@@ -18,14 +18,15 @@ import (
 	"github.com/andrelopes-code/equori/internal/classification"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/adapter/httpapi"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/adapter/postgres"
+	"github.com/andrelopes-code/equori/internal/ingestion/internal/aggregator/pluggy"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/app"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/domain"
-	"github.com/andrelopes-code/equori/internal/ingestion/internal/pluggy"
 	"github.com/andrelopes-code/equori/internal/ledger"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
+	"github.com/andrelopes-code/equori/internal/platform/registry"
 	"github.com/andrelopes-code/equori/internal/platform/secret"
 )
 
@@ -57,11 +58,19 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, c 
 		}
 		// A redirect would leave the configured address (N17).
 		hc := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-		client, err := pluggy.NewClient(cfg.PluggyURL, hc, cfg.Clock.Now)
+		port, err := pluggy.NewPort(cfg.PluggyURL, hc, cfg.Clock)
 		if err != nil {
 			return nil, err
 		}
-		in.Box, in.Aggregator = b, pluggyPort{sessions: pluggy.NewSessions(client), loc: cfg.Clock.Location()}
+		aggregators, err := registry.New("aggregator", registry.Entry[app.Aggregator]{ID: port.ID(), Value: port})
+		if err != nil {
+			return nil, err
+		}
+		in.Box = b
+		in.Aggregator, err = aggregators.Get("pluggy")
+		if err != nil {
+			return nil, err
+		}
 	}
 	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l, c}, in)
 	dispatcher.Subscribe("ingestion", ledger.EventTransactionsPaired, followPairing)

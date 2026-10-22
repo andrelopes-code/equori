@@ -11,8 +11,8 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
-	"github.com/andrelopes-code/equori/internal/ingestion/internal/pluggy"
-	"github.com/andrelopes-code/equori/internal/ingestion/internal/pluggy/pluggytest"
+	pluggy "github.com/andrelopes-code/equori/internal/ingestion/internal/aggregator/pluggy/client"
+	"github.com/andrelopes-code/equori/internal/ingestion/internal/aggregator/pluggy/client/pluggytest"
 )
 
 const (

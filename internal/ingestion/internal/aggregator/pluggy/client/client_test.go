@@ -1,4 +1,4 @@
-package pluggy_test
+package client_test
 
 import (
 	"context"
@@ -10,18 +10,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/andrelopes-code/equori/internal/ingestion/internal/pluggy"
-	"github.com/andrelopes-code/equori/internal/ingestion/internal/pluggy/pluggytest"
+	"github.com/andrelopes-code/equori/internal/ingestion/internal/aggregator/pluggy/client"
+	"github.com/andrelopes-code/equori/internal/ingestion/internal/aggregator/pluggy/client/pluggytest"
 )
 
 type fakeClock struct{ now time.Time }
 
 func (c *fakeClock) Now() time.Time { return c.now }
 
-func newClient(t *testing.T, srv *pluggytest.Server, clk *fakeClock) (*pluggy.Client, *[]time.Duration) {
+func newClient(t *testing.T, srv *pluggytest.Server, clk *fakeClock) (*client.Client, *[]time.Duration) {
 	t.Helper()
 	var waits []time.Duration
-	c, err := pluggy.NewClient(srv.URL(), srv.HTTPClient(), clk.Now)
+	c, err := client.NewClient(srv.URL(), srv.HTTPClient(), clk.Now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,13 +32,13 @@ func newClient(t *testing.T, srv *pluggytest.Server, clk *fakeClock) (*pluggy.Cl
 func TestClientReadsItemAccountsBillsAndTransactions(t *testing.T) {
 	t.Parallel()
 	srv := pluggytest.New(t, "client-id", "client-secret")
-	srv.AddItem(pluggy.Item{ID: "item-1", Status: pluggy.StatusUpdated})
-	srv.AddAccount("item-1", pluggy.Account{ID: "acc-1", Type: "BANK", Subtype: pluggy.SubtypeChecking, Name: "Conta", Number: "0001/12345-0", Balance: "2834.1", CurrencyCode: "BRL"})
-	srv.AddBill("acc-1", pluggy.Bill{ID: "bill-1", DueDate: "2026-11-10T00:00:00.000Z", TotalAmount: "1500"})
+	srv.AddItem(client.Item{ID: "item-1", Status: client.StatusUpdated})
+	srv.AddAccount("item-1", client.Account{ID: "acc-1", Type: "BANK", Subtype: client.SubtypeChecking, Name: "Conta", Number: "0001/12345-0", Balance: "2834.1", CurrencyCode: "BRL"})
+	srv.AddBill("acc-1", client.Bill{ID: "bill-1", DueDate: "2026-11-10T00:00:00.000Z", TotalAmount: "1500"})
 	for i := range 1201 {
-		srv.AddTransaction("acc-1", pluggy.Transaction{ID: fmt.Sprintf("t%04d", i), Amount: "-1", CurrencyCode: "BRL", Date: "2026-10-15T00:00:00.000Z", Status: "POSTED"})
+		srv.AddTransaction("acc-1", client.Transaction{ID: fmt.Sprintf("t%04d", i), Amount: "-1", CurrencyCode: "BRL", Date: "2026-10-15T00:00:00.000Z", Status: "POSTED"})
 	}
-	srv.AddTransaction("acc-1", pluggy.Transaction{ID: "late", Amount: "-1", CurrencyCode: "BRL", Date: "2026-11-20T00:00:00.000Z", Status: "POSTED"})
+	srv.AddTransaction("acc-1", client.Transaction{ID: "late", Amount: "-1", CurrencyCode: "BRL", Date: "2026-11-20T00:00:00.000Z", Status: "POSTED"})
 	clk := &fakeClock{now: time.Date(2026, 11, 12, 12, 0, 0, 0, time.UTC)}
 	c, _ := newClient(t, srv, clk)
 	ctx := t.Context()
@@ -48,10 +48,10 @@ func TestClientReadsItemAccountsBillsAndTransactions(t *testing.T) {
 		t.Fatal(err)
 	}
 	item, err := s.Item(ctx, "item-1")
-	if err != nil || item.Status != pluggy.StatusUpdated {
+	if err != nil || item.Status != client.StatusUpdated {
 		t.Fatalf("item = %+v, %v", item, err)
 	}
-	if _, err := s.Item(ctx, "item-x"); !errors.Is(err, pluggy.ErrNotFound) {
+	if _, err := s.Item(ctx, "item-x"); !errors.Is(err, client.ErrNotFound) {
 		t.Fatalf("missing item: %v", err)
 	}
 	accounts, err := s.Accounts(ctx, "item-1")
@@ -74,15 +74,15 @@ func TestClientReadsItemAccountsBillsAndTransactions(t *testing.T) {
 func TestClientRetriesAndRenewsKeys(t *testing.T) {
 	t.Parallel()
 	srv := pluggytest.New(t, "client-id", "client-secret")
-	srv.AddItem(pluggy.Item{ID: "item-1", Status: pluggy.StatusUpdated})
+	srv.AddItem(client.Item{ID: "item-1", Status: client.StatusUpdated})
 	clk := &fakeClock{now: time.Date(2026, 11, 12, 12, 0, 0, 0, time.UTC)}
 	c, waits := newClient(t, srv, clk)
 	ctx := t.Context()
 
-	if _, err := c.Session(ctx, "client-id", "wrong"); !errors.Is(err, pluggy.ErrUnauthorized) {
+	if _, err := c.Session(ctx, "client-id", "wrong"); !errors.Is(err, client.ErrUnauthorized) {
 		t.Fatalf("wrong secret: %v", err)
 	}
-	sessions := pluggy.NewSessions(c)
+	sessions := client.NewSessions(c)
 	s1, err := sessions.Get(ctx, "integration-1", "client-id", "client-secret")
 	if err != nil {
 		t.Fatal(err)
@@ -106,7 +106,7 @@ func TestClientRetriesAndRenewsKeys(t *testing.T) {
 		t.Fatal("three 502 responses succeeded")
 	}
 	srv.RevokeKeys()
-	if _, err := s.Item(ctx, "item-1"); !errors.Is(err, pluggy.ErrUnauthorized) {
+	if _, err := s.Item(ctx, "item-1"); !errors.Is(err, client.ErrUnauthorized) {
 		t.Fatalf("revoked key: %v", err)
 	}
 }
@@ -117,7 +117,7 @@ func TestClientRefusesForeignCursor(t *testing.T) {
 	other := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { t.Error("request reached another host") }))
 	defer other.Close()
 	srv := pluggytest.New(t, "client-id", "client-secret")
-	srv.AddTransaction("acc-1", pluggy.Transaction{ID: "t1", Amount: "-1", CurrencyCode: "BRL", Date: "2026-10-15T00:00:00.000Z", Status: "POSTED"})
+	srv.AddTransaction("acc-1", client.Transaction{ID: "t1", Amount: "-1", CurrencyCode: "BRL", Date: "2026-10-15T00:00:00.000Z", Status: "POSTED"})
 	srv.SetNext(other.URL + "/v2/transactions?after=x")
 	c, _ := newClient(t, srv, &fakeClock{now: time.Date(2026, 11, 12, 0, 0, 0, 0, time.UTC)})
 	s, err := c.Session(t.Context(), "client-id", "client-secret")
@@ -133,7 +133,7 @@ func TestClientRefusesForeignCursor(t *testing.T) {
 func TestClientErrorsCarryNoIdentifiers(t *testing.T) {
 	t.Parallel()
 	srv := pluggytest.New(t, "client-id", "client-secret")
-	srv.AddItem(pluggy.Item{ID: "item-7c1e", Status: pluggy.StatusUpdated})
+	srv.AddItem(client.Item{ID: "item-7c1e", Status: client.StatusUpdated})
 	clk := &fakeClock{now: time.Date(2026, 11, 12, 12, 0, 0, 0, time.UTC)}
 	c, _ := newClient(t, srv, clk)
 	s, err := c.Session(t.Context(), "client-id", "client-secret")

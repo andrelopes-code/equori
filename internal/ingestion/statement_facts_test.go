@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/andrelopes-code/equori/internal/ingestion/internal/pluggy"
+	pluggy "github.com/andrelopes-code/equori/internal/ingestion/internal/aggregator/pluggy/client"
 )
 
 type factView struct {

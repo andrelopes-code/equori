@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/andrelopes-code/equori/internal/ingestion/internal/pluggy"
+	pluggy "github.com/andrelopes-code/equori/internal/ingestion/internal/aggregator/pluggy/client"
 )
 
 // installmentLine is installment k of 6 of a 600.00 purchase on 2026-08-14; banks repeat

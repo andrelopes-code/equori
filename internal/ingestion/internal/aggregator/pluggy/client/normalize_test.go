@@ -1,4 +1,4 @@
-package pluggy
+package client
 
 import (
 	"testing"

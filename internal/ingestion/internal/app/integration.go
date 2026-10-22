@@ -42,6 +42,14 @@ type Sealer interface {
 // cache one API key per integration. Errors: ErrProviderUnauthorized, ErrItemNotFound, or
 // one wrapping ErrProviderUnavailable; none names an identifier (A44).
 type Aggregator interface {
+	ID() string
+	CredentialFields() []domain.CredentialField
+	// ConnectMethod names how a connection is created: "reference" takes the item reference
+	// of an application the owner connected elsewhere.
+	ConnectMethod() string
+	MinSyncInterval() time.Duration
+	// State reads the status an aggregator reports for a connection.
+	State(providerStatus string) domain.ConnectionState
 	// Verify creates an API key from the credentials, replacing any cached one.
 	Verify(ctx context.Context, integrationID uuid.UUID, c domain.Credentials) error
 	// Item returns the item as an unsaved connection with its accounts.

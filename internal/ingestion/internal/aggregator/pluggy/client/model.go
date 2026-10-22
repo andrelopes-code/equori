@@ -1,6 +1,6 @@
 // Package pluggy reads Pluggy items, accounts, bills and transactions and translates them
 // into Ingestion's records (anti-corruption layer, chapter 4).
-package pluggy
+package client
 
 import (
 	"bytes"

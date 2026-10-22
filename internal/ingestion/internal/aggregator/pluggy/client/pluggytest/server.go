@@ -13,7 +13,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/andrelopes-code/equori/internal/ingestion/internal/pluggy"
+	"github.com/andrelopes-code/equori/internal/ingestion/internal/aggregator/pluggy/client"
 )
 
 // Server holds applications, items, accounts, bills and transactions in memory. An
@@ -26,11 +26,11 @@ type Server struct {
 	secrets      map[string]string // client id → secret
 	keys         map[string]string // API key → client id
 	issued       int
-	items        map[string]pluggy.Item
+	items        map[string]client.Item
 	owners       map[string]string // item id → client id
-	accounts     map[string][]pluggy.Account
-	transactions map[string][]pluggy.Transaction
-	bills        map[string][]pluggy.Bill
+	accounts     map[string][]client.Account
+	transactions map[string][]client.Transaction
+	bills        map[string][]client.Bill
 	requests     map[string]int
 	failStatus   int
 	failCount    int
@@ -42,9 +42,9 @@ type Server struct {
 func New(t testing.TB, clientID, secret string) *Server {
 	s := &Server{
 		first: clientID, secrets: map[string]string{clientID: secret}, keys: map[string]string{},
-		items: map[string]pluggy.Item{}, owners: map[string]string{},
-		accounts: map[string][]pluggy.Account{}, transactions: map[string][]pluggy.Transaction{},
-		bills: map[string][]pluggy.Bill{}, requests: map[string]int{}, failing: map[string]int{}, pageSize: 500,
+		items: map[string]client.Item{}, owners: map[string]string{},
+		accounts: map[string][]client.Account{}, transactions: map[string][]client.Transaction{},
+		bills: map[string][]client.Bill{}, requests: map[string]int{}, failing: map[string]int{}, pageSize: 500,
 	}
 	s.srv = httptest.NewServer(http.HandlerFunc(s.serve))
 	t.Cleanup(s.srv.Close)
@@ -62,24 +62,24 @@ func (s *Server) SetCredentials(clientID, secret string) {
 }
 
 // AddItem adds or replaces an item of the application New created.
-func (s *Server) AddItem(it pluggy.Item) { s.AddItemTo(s.first, it) }
+func (s *Server) AddItem(it client.Item) { s.AddItemTo(s.first, it) }
 
 // AddItemTo adds or replaces an item of an application.
-func (s *Server) AddItemTo(clientID string, it pluggy.Item) {
+func (s *Server) AddItemTo(clientID string, it client.Item) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.items[it.ID] = it
 	s.owners[it.ID] = clientID
 }
 
-func (s *Server) AddAccount(itemID string, a pluggy.Account) {
+func (s *Server) AddAccount(itemID string, a client.Account) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.accounts[itemID] = append(s.accounts[itemID], a)
 }
 
 // SetAccountBalance changes an account's balance.
-func (s *Server) SetAccountBalance(accountID string, balance pluggy.Decimal) {
+func (s *Server) SetAccountBalance(accountID string, balance client.Decimal) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for item, as := range s.accounts {
@@ -92,22 +92,22 @@ func (s *Server) SetAccountBalance(accountID string, balance pluggy.Decimal) {
 }
 
 // AddReservedBalance adds a reserved balance to a bank account.
-func (s *Server) AddReservedBalance(accountID string, r pluggy.ReservedBalance) {
+func (s *Server) AddReservedBalance(accountID string, r client.ReservedBalance) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.eachAccount(accountID, func(a *pluggy.Account) {
+	s.eachAccount(accountID, func(a *client.Account) {
 		if a.BankData == nil {
-			a.BankData = &pluggy.BankData{}
+			a.BankData = &client.BankData{}
 		}
 		a.BankData.ReservedBalances = append(a.BankData.ReservedBalances, r)
 	})
 }
 
 // SetReservedAmount changes the first amount of a reserved balance.
-func (s *Server) SetReservedAmount(accountID, identification string, amount pluggy.Decimal) {
+func (s *Server) SetReservedAmount(accountID, identification string, amount client.Decimal) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.eachAccount(accountID, func(a *pluggy.Account) {
+	s.eachAccount(accountID, func(a *client.Account) {
 		if a.BankData == nil {
 			return
 		}
@@ -123,7 +123,7 @@ func (s *Server) SetReservedAmount(accountID, identification string, amount plug
 func (s *Server) RenameReservedBalance(accountID, identification, name string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.eachAccount(accountID, func(a *pluggy.Account) {
+	s.eachAccount(accountID, func(a *client.Account) {
 		if a.BankData == nil {
 			return
 		}
@@ -139,9 +139,9 @@ func (s *Server) RenameReservedBalance(accountID, identification, name string) {
 func (s *Server) RemoveReservedBalance(accountID, identification string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.eachAccount(accountID, func(a *pluggy.Account) {
+	s.eachAccount(accountID, func(a *client.Account) {
 		if a.BankData != nil {
-			a.BankData.ReservedBalances = slices.DeleteFunc(a.BankData.ReservedBalances, func(r pluggy.ReservedBalance) bool { return r.Identification == identification })
+			a.BankData.ReservedBalances = slices.DeleteFunc(a.BankData.ReservedBalances, func(r client.ReservedBalance) bool { return r.Identification == identification })
 		}
 	})
 }
@@ -166,7 +166,7 @@ func (s *Server) SetItemNextAutoSync(itemID, at string) {
 	}
 }
 
-func (s *Server) eachAccount(accountID string, fn func(*pluggy.Account)) {
+func (s *Server) eachAccount(accountID string, fn func(*client.Account)) {
 	for _, as := range s.accounts {
 		for i := range as {
 			if as[i].ID == accountID {
@@ -176,18 +176,18 @@ func (s *Server) eachAccount(accountID string, fn func(*pluggy.Account)) {
 	}
 }
 
-func (s *Server) AddBill(accountID string, b pluggy.Bill) {
+func (s *Server) AddBill(accountID string, b client.Bill) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.bills[accountID] = append(s.bills[accountID], b)
 }
 
 // AddTransaction adds a transaction, or replaces the one with the same id.
-func (s *Server) AddTransaction(accountID string, t pluggy.Transaction) {
+func (s *Server) AddTransaction(accountID string, t client.Transaction) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	ts := s.transactions[accountID]
-	if i := slices.IndexFunc(ts, func(x pluggy.Transaction) bool { return x.ID == t.ID }); i >= 0 {
+	if i := slices.IndexFunc(ts, func(x client.Transaction) bool { return x.ID == t.ID }); i >= 0 {
 		ts[i] = t
 		return
 	}
@@ -198,7 +198,7 @@ func (s *Server) AddTransaction(accountID string, t pluggy.Transaction) {
 func (s *Server) RemoveTransaction(accountID, id string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.transactions[accountID] = slices.DeleteFunc(s.transactions[accountID], func(x pluggy.Transaction) bool { return x.ID == id })
+	s.transactions[accountID] = slices.DeleteFunc(s.transactions[accountID], func(x client.Transaction) bool { return x.ID == id })
 }
 
 // FailNext answers the next n requests with status; 429 carries Retry-After: 7.
@@ -295,7 +295,7 @@ func (s *Server) transactionPage(w http.ResponseWriter, q url.Values) {
 		w.WriteHeader(status)
 		return
 	}
-	var match []pluggy.Transaction
+	var match []client.Transaction
 	for _, t := range s.transactions[q.Get("accountId")] {
 		day := t.Date[:min(10, len(t.Date))]
 		if day >= q.Get("dateFrom") && day <= q.Get("dateTo") {

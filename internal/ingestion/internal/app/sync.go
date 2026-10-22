@@ -13,10 +13,6 @@ import (
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/domain"
 )
 
-// blockedStatuses are item statuses that need the owner in Meu Pluggy; the item's data is
-// stale, so the connection is not synced (P6 amendment A43).
-var blockedStatuses = map[string]bool{"LOGIN_ERROR": true, "OUTDATED": true, "WAITING_USER_INPUT": true}
-
 // SyncConnection syncs every mapped account of a connection now, one batch per account (P6
 // amendments A36, A43).
 func (s *Service) SyncConnection(ctx context.Context, userID int64, connectionID uuid.UUID) (domain.Connection, []domain.Batch, error) {
@@ -63,7 +59,7 @@ func (s *Service) syncItem(ctx context.Context, c *domain.Connection, force bool
 	status, updatedAt := state.Status, state.UpdatedAt
 	c.ProviderStatus, c.NextItemUpdateAt, c.LastError = status, state.NextUpdateAt, ""
 	newer := updatedAt != nil && (c.LastItemUpdateAt == nil || updatedAt.After(*c.LastItemUpdateAt))
-	if blockedStatuses[status] || (!force && c.LastSyncedAt != nil && !newer) {
+	if s.agg.State(status) == domain.StateNeedsOwner || (!force && c.LastSyncedAt != nil && !newer) {
 		return nil, nil
 	}
 	if err := s.addMissingAccounts(ctx, c, creds); err != nil {
