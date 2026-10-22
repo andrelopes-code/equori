@@ -1,0 +1,76 @@
+/* Paints the stored scheme's surface and the brand mark before the application loads. #0c0c0f and
+   #f9fafe are --slotted-surface in the dark and light schemes (equori.gen.css). The CSP of
+   ADR 008 forbids inline styles, so this is a file. React replaces the contents of #root. */
+html {
+  background-color: #0c0c0f;
+  color: #f9fafe;
+  color-scheme: dark;
+}
+
+html[data-slotted-scheme="light"] {
+  background-color: #f9fafe;
+  color: #0c0c0f;
+  color-scheme: light;
+}
+
+html,
+body {
+  block-size: 100%;
+  margin: 0;
+}
+
+#root {
+  block-size: 100dvh;
+}
+
+.boot-splash {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  block-size: 100%;
+  animation: boot-enter 0.4s ease-out both;
+}
+
+/* The mark is a mask over a gradient: a band of full colour crosses it while the rest rests at
+   a third of the colour. */
+.boot-logo {
+  inline-size: 88px;
+  block-size: 88px;
+  background-image: linear-gradient(
+    105deg,
+    color-mix(in srgb, currentColor 30%, transparent) 35%,
+    currentColor 50%,
+    color-mix(in srgb, currentColor 30%, transparent) 65%
+  );
+  background-size: 300% 100%;
+  mask: url("/icon.svg") center / contain no-repeat;
+  animation: boot-sweep 1.8s ease-in-out infinite;
+}
+
+@keyframes boot-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+@keyframes boot-sweep {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot-splash,
+  .boot-logo {
+    animation: none;
+  }
+
+  .boot-logo {
+    background-image: none;
+    background-color: currentColor;
+  }
+}

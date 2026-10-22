@@ -12,13 +12,21 @@
     />
     <!-- #0c0c0f is --slotted-surface in the dark scheme (equori.gen.css). -->
     <meta name="theme-color" content="#0c0c0f" />
+    <!-- Boot files: the stored scheme and its surface, painted before the application loads. They
+         are files because the CSP of ADR 008 forbids inline scripts and styles. -->
+    <script src="/boot.js"></script>
+    <link rel="stylesheet" href="/boot.css" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>equori</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot-splash" role="status" aria-label="equori">
+        <span class="boot-logo"></span>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
