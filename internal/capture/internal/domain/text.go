@@ -5,33 +5,17 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
-)
 
-// latinFold is the table of classification's Normalize (P5 amendment A26), so a word the
-// capture matches and a description classification matches fold the same way.
-var latinFold = []rune("aaaaaaæceeeeiiiiðnooooo×ouuuuyþß" + "aaaaaaæceeeeiiiiðnooooo÷ouuuuyþy" +
-	"aaaaaaccccccccddddeeeeeeeeeegggggggghhhhiiiiiiiiiiĳĳjjkkĸllllllllllnnnnnnŉŋŋoooooo" +
-	"œœrrrrrrssssssssttttttuuuuuuuuuuuuwwyyyzzzzzzs")
-
-const (
-	latinFirst = 0xC0
-	latinLast  = 0x17F
+	"github.com/andrelopes-code/equori/internal/platform/textfold"
 )
 
 // Normalize lowercases s, removes the diacritics of Latin letters and collapses whitespace.
 func Normalize(s string) string {
 	words := strings.Fields(s)
 	for i, w := range words {
-		words[i] = strings.Map(fold, w)
+		words[i] = textfold.String(w)
 	}
 	return strings.Join(words, " ")
-}
-
-func fold(r rune) rune {
-	if r >= latinFirst && r <= latinLast {
-		return latinFold[r-latinFirst]
-	}
-	return unicode.ToLower(r)
 }
 
 const (

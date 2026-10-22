@@ -8,6 +8,8 @@ import (
 	"unicode"
 
 	"github.com/google/uuid"
+
+	"github.com/andrelopes-code/equori/internal/platform/textfold"
 )
 
 // Record matching by score (amendments A98–A100): a Fellegi–Sunter comparison with fixed
@@ -243,27 +245,12 @@ func overlaps(a, b string) bool {
 
 func words(s string) map[string]bool {
 	out := map[string]bool{}
-	for _, w := range strings.FieldsFunc(strings.Map(fold, s), func(r rune) bool { return !unicode.IsLetter(r) }) {
+	for _, w := range strings.FieldsFunc(textfold.String(s), func(r rune) bool { return !unicode.IsLetter(r) }) {
 		if len([]rune(w)) >= 3 {
 			out[w] = true
 		}
 	}
 	return out
-}
-
-// fold lowercases r and removes the accents Portuguese uses.
-func fold(r rune) rune {
-	r = unicode.ToLower(r)
-	if base, ok := unaccented[r]; ok {
-		return base
-	}
-	return r
-}
-
-var unaccented = map[rune]rune{
-	'á': 'a', 'à': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a', 'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e',
-	'í': 'i', 'ì': 'i', 'î': 'i', 'ï': 'i', 'ó': 'o', 'ò': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o',
-	'ú': 'u', 'ù': 'u', 'û': 'u', 'ü': 'u', 'ç': 'c', 'ñ': 'n',
 }
 
 func abs(n int64) int64 { return max(n, -n) }
