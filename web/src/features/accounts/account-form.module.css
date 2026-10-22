@@ -16,7 +16,9 @@
 
     .aside {
       position: sticky;
-      inset-block-start: var(--slotted-space-6);
+      inset-block-start: calc(
+        var(--slotted-page-sticky-top, 0px) + var(--slotted-space-6)
+      );
     }
   }
 
