@@ -14,6 +14,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/identity/internal/adapter/postgres"
 	"github.com/andrelopes-code/equori/internal/identity/internal/app"
 	"github.com/andrelopes-code/equori/internal/identity/internal/domain"
+	"github.com/andrelopes-code/equori/internal/platform/locale"
 )
 
 const (
@@ -45,11 +46,16 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) *Module {
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 
+// Profile returns the language and region of a user.
+func (m *Module) Profile(ctx context.Context, userID int64) (locale.Locale, error) {
+	return m.svc.Profile(ctx, userID)
+}
+
 // RequireSession must wrap the whole HTTP handler: it is the single authentication gate for /api/.
 func (m *Module) RequireSession(next http.Handler) http.Handler { return m.http.RequireSession(next) }
 
 func (m *Module) CreateUser(ctx context.Context, email, password, role string) (User, error) {
-	u, err := m.svc.CreateUser(ctx, email, password, domain.Role(role))
+	u, err := m.svc.CreateUser(ctx, email, password, domain.Role(role), locale.Locale{Language: "pt", Region: "BR"})
 	if err != nil {
 		return User{}, err
 	}

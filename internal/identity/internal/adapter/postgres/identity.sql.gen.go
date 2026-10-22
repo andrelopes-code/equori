@@ -33,19 +33,27 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) er
 }
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO identity_user (email, password_hash, role)
-VALUES ($1, $2, $3)
-RETURNING id, email, password_hash, role, disabled_at, created_at
+INSERT INTO identity_user (email, password_hash, role, language, region)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, email, password_hash, role, disabled_at, created_at, language, region
 `
 
 type CreateUserParams struct {
 	Email        string
 	PasswordHash string
 	Role         string
+	Language     string
+	Region       string
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (IdentityUser, error) {
-	row := q.db.QueryRow(ctx, createUser, arg.Email, arg.PasswordHash, arg.Role)
+	row := q.db.QueryRow(ctx, createUser,
+		arg.Email,
+		arg.PasswordHash,
+		arg.Role,
+		arg.Language,
+		arg.Region,
+	)
 	var i IdentityUser
 	err := row.Scan(
 		&i.ID,
@@ -54,6 +62,8 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Identit
 		&i.Role,
 		&i.DisabledAt,
 		&i.CreatedAt,
+		&i.Language,
+		&i.Region,
 	)
 	return i, err
 }
@@ -77,7 +87,7 @@ func (q *Queries) DeleteSession(ctx context.Context, tokenHash []byte) error {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, password_hash, role, disabled_at, created_at FROM identity_user WHERE email = $1
+SELECT id, email, password_hash, role, disabled_at, created_at, language, region FROM identity_user WHERE email = $1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (IdentityUser, error) {
@@ -90,12 +100,34 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (IdentityUse
 		&i.Role,
 		&i.DisabledAt,
 		&i.CreatedAt,
+		&i.Language,
+		&i.Region,
+	)
+	return i, err
+}
+
+const getUserByID = `-- name: GetUserByID :one
+SELECT id, email, password_hash, role, disabled_at, created_at, language, region FROM identity_user WHERE id = $1
+`
+
+func (q *Queries) GetUserByID(ctx context.Context, id int64) (IdentityUser, error) {
+	row := q.db.QueryRow(ctx, getUserByID, id)
+	var i IdentityUser
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Role,
+		&i.DisabledAt,
+		&i.CreatedAt,
+		&i.Language,
+		&i.Region,
 	)
 	return i, err
 }
 
 const getUserBySession = `-- name: GetUserBySession :one
-SELECT u.id, u.email, u.password_hash, u.role, u.disabled_at, u.created_at
+SELECT u.id, u.email, u.password_hash, u.role, u.disabled_at, u.created_at, u.language, u.region
 FROM identity_session s
 JOIN identity_user u ON u.id = s.user_id
 WHERE s.token_hash = $1 AND s.expires_at > $2
@@ -116,6 +148,35 @@ func (q *Queries) GetUserBySession(ctx context.Context, arg GetUserBySessionPara
 		&i.Role,
 		&i.DisabledAt,
 		&i.CreatedAt,
+		&i.Language,
+		&i.Region,
+	)
+	return i, err
+}
+
+const updateProfile = `-- name: UpdateProfile :one
+UPDATE identity_user SET language = $2, region = $3 WHERE id = $1
+RETURNING id, email, password_hash, role, disabled_at, created_at, language, region
+`
+
+type UpdateProfileParams struct {
+	ID       int64
+	Language string
+	Region   string
+}
+
+func (q *Queries) UpdateProfile(ctx context.Context, arg UpdateProfileParams) (IdentityUser, error) {
+	row := q.db.QueryRow(ctx, updateProfile, arg.ID, arg.Language, arg.Region)
+	var i IdentityUser
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Role,
+		&i.DisabledAt,
+		&i.CreatedAt,
+		&i.Language,
+		&i.Region,
 	)
 	return i, err
 }

@@ -598,6 +598,12 @@ export const operations: Record<GroupKey, readonly Operation[]> = {
   ],
   registry: [
     { id: "getCurrentUser", method: "GET", path: "/me" },
+    {
+      id: "updateCurrentUser",
+      method: "PATCH",
+      path: "/me",
+      body: () => ({ language: "pt", region: "BR" }),
+    },
     { id: "getSettings", method: "GET", path: "/settings" },
     {
       id: "updateSettings",

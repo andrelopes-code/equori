@@ -15,4 +15,6 @@ type IdentityUser struct {
 	Role         string
 	DisabledAt   *time.Time
 	CreatedAt    time.Time
+	Language     string
+	Region       string
 }

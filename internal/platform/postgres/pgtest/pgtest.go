@@ -168,8 +168,21 @@ func create(t testing.TB, template string) *pgxpool.Pool {
 	return pool
 }
 
-// CreateUser inserts an identity_user row with a unique email and returns its id.
+// CreateUser inserts an identity_user row with a unique email, language en and region US, and returns its id.
 func CreateUser(t testing.TB, pool *pgxpool.Pool) int64 {
+	t.Helper()
+	var id int64
+	email := strings.ToLower(rand.Text()) + "@example.com"
+	err := pool.QueryRow(context.Background(),
+		`INSERT INTO identity_user (email, password_hash, role, language, region) VALUES ($1, 'x', 'admin', 'en', 'US') RETURNING id`, email).Scan(&id)
+	if err != nil {
+		t.Fatalf("create user: %v", err)
+	}
+	return id
+}
+
+// CreateUserBeforeProfile inserts an identity_user row in a schema migrated below version 39, which has no language and region.
+func CreateUserBeforeProfile(t testing.TB, pool *pgxpool.Pool) int64 {
 	t.Helper()
 	var id int64
 	email := strings.ToLower(rand.Text()) + "@example.com"

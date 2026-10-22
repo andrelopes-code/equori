@@ -19,7 +19,7 @@ func TestRecordLinksMoveToPostings(t *testing.T) {
 	if err := postgres.MigrateTo(ctx, pool, 11, log); err != nil {
 		t.Fatal(err)
 	}
-	uid := pgtest.CreateUser(t, pool)
+	uid := pgtest.CreateUserBeforeProfile(t, pool)
 	var checking, savings, expense, batch, created, matched, createdRecord, matchedRecord string
 	row := func(dst *string, sql string, args ...any) {
 		t.Helper()

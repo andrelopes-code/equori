@@ -14,7 +14,7 @@ func TestRepositoryUsers(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
 	repo := NewRepository(pgtest.New(t))
-	in := domain.User{Email: "ann@example.com", PasswordHash: "h", Role: domain.RoleAdmin}
+	in := domain.User{Email: "ann@example.com", PasswordHash: "h", Role: domain.RoleAdmin, Language: "pt", Region: "BR"}
 
 	created, err := repo.CreateUser(ctx, in)
 	if err != nil {
@@ -41,7 +41,7 @@ func TestRepositorySessions(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
 	repo := NewRepository(pgtest.New(t))
-	user, err := repo.CreateUser(ctx, domain.User{Email: "ann@example.com", PasswordHash: "h", Role: domain.RoleMember})
+	user, err := repo.CreateUser(ctx, domain.User{Email: "ann@example.com", PasswordHash: "h", Role: domain.RoleMember, Language: "pt", Region: "BR"})
 	if err != nil {
 		t.Fatal(err)
 	}

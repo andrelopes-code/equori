@@ -6,6 +6,7 @@ var exposure = map[string]string{
 	"createSession":                "-session",
 	"deleteSession":                "-session",
 	"getCurrentUser":               "-session",
+	"updateCurrentUser":            "-write",
 	"getSettings":                  "-pending",
 	"updateSettings":               "-write",
 	"listInstitutions":             "-pending",

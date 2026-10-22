@@ -112,7 +112,33 @@ func (s *Server) GetCurrentUser(ctx context.Context, _ GetCurrentUserRequestObje
 	if !ok {
 		return nil, app.ErrUnauthenticated
 	}
-	return GetCurrentUser200JSONResponse{Id: user.ID, Email: user.Email, Role: UserRole(user.Role)}, nil
+	return GetCurrentUser200JSONResponse(toAPIUser(user)), nil
+}
+
+func (s *Server) UpdateCurrentUser(ctx context.Context, req UpdateCurrentUserRequestObject) (UpdateCurrentUserResponseObject, error) {
+	user, ok := ctx.Value(userKey{}).(domain.User)
+	if !ok {
+		return nil, app.ErrUnauthenticated
+	}
+	if req.Body == nil {
+		return nil, errInvalidRequest
+	}
+	updated, err := s.svc.UpdateProfile(ctx, user, deref(req.Body.Language), deref(req.Body.Region))
+	if err != nil {
+		return nil, err
+	}
+	return UpdateCurrentUser200JSONResponse(toAPIUser(updated)), nil
+}
+
+func toAPIUser(u domain.User) User {
+	return User{Id: u.ID, Email: u.Email, Role: UserRole(u.Role), Language: u.Language, Region: u.Region}
+}
+
+func deref(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 func (s *Server) cookie(value string, expires time.Time) string {
@@ -133,6 +159,11 @@ var errInvalidRequest = errors.New("invalid request")
 
 // toProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).
 func toProblem(err error) (problem.Details, bool) {
+	if fe, ok := errors.AsType[*domain.FieldError](err); ok {
+		d := problem.New(http.StatusUnprocessableEntity, "validation_failed", fe.Error())
+		d.Errors = []problem.FieldError{{Field: fe.Field, Message: fe.Message}}
+		return d, true
+	}
 	switch {
 	case errors.Is(err, errInvalidRequest):
 		return problem.New(http.StatusBadRequest, "invalid_request", "malformed request"), true

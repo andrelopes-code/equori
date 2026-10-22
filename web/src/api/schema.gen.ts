@@ -36,7 +36,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Change the language or region of the authenticated user. */
+        patch: operations["updateCurrentUser"];
         trace?: never;
     };
     "/settings": {
@@ -3884,6 +3885,12 @@ export interface components {
             email: string;
             /** @enum {string} */
             role: "admin" | "member";
+            language: string;
+            region: string;
+        };
+        UpdateUserInput: {
+            language?: string;
+            region?: string;
         };
         Problem: {
             type: string;
@@ -4004,6 +4011,32 @@ export interface operations {
                 };
             };
             401: components["responses"]["Problem"];
+        };
+    };
+    updateCurrentUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserInput"];
+            };
+        };
+        responses: {
+            /** @description Updated user. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     getSettings: {

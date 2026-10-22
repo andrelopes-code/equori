@@ -1,7 +1,14 @@
 -- name: CreateUser :one
-INSERT INTO identity_user (email, password_hash, role)
-VALUES ($1, $2, $3)
+INSERT INTO identity_user (email, password_hash, role, language, region)
+VALUES ($1, $2, $3, $4, $5)
 RETURNING *;
+
+-- name: UpdateProfile :one
+UPDATE identity_user SET language = $2, region = $3 WHERE id = $1
+RETURNING *;
+
+-- name: GetUserByID :one
+SELECT * FROM identity_user WHERE id = $1;
 
 -- name: GetUserByEmail :one
 SELECT * FROM identity_user WHERE email = $1;

@@ -45,7 +45,7 @@ func TestDBAttachmentRejectsOtherUsersBlob(t *testing.T) {
 		t.Fatal(err)
 	}
 	var anotherUser int64
-	if err := f.pool.QueryRow(t.Context(), `INSERT INTO identity_user (email, password_hash, role) VALUES ($1, 'x', 'member') RETURNING id`,
+	if err := f.pool.QueryRow(t.Context(), `INSERT INTO identity_user (email, password_hash, role, language, region) VALUES ($1, 'x', 'member', 'en', 'US') RETURNING id`,
 		strings.Repeat("b", 5)+"@example.com").Scan(&anotherUser); err != nil {
 		t.Fatal(err)
 	}

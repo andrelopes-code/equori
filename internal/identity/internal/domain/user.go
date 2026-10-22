@@ -22,8 +22,18 @@ type User struct {
 	Email        string
 	PasswordHash string
 	Role         Role
+	Language     string
+	Region       string
 	Disabled     bool
 }
+
+// FieldError names the request field that failed validation, as in the API.
+type FieldError struct {
+	Field   string
+	Message string
+}
+
+func (e *FieldError) Error() string { return e.Field + ": " + e.Message }
 
 const (
 	MinPasswordLength = 12

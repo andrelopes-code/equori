@@ -11,6 +11,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/identity/internal/app"
 	"github.com/andrelopes-code/equori/internal/identity/internal/domain"
+	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 )
 
@@ -49,6 +50,8 @@ func (r *Repository) CreateUser(ctx context.Context, u domain.User) (domain.User
 			Email:        u.Email,
 			PasswordHash: u.PasswordHash,
 			Role:         string(u.Role),
+			Language:     u.Language,
+			Region:       u.Region,
 		})
 		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == uniqueViolation {
 			return app.ErrEmailTaken
@@ -68,6 +71,22 @@ func (r *Repository) CreateUser(ctx context.Context, u domain.User) (domain.User
 		return domain.User{}, err
 	}
 	return created, nil
+}
+
+func (r *Repository) UpdateProfile(ctx context.Context, userID int64, l locale.Locale) (domain.User, error) {
+	row, err := r.q.UpdateProfile(ctx, UpdateProfileParams{ID: userID, Language: l.Language, Region: l.Region})
+	if err != nil {
+		return domain.User{}, notFound(err)
+	}
+	return toUser(row), nil
+}
+
+func (r *Repository) UserByID(ctx context.Context, userID int64) (domain.User, error) {
+	row, err := r.q.GetUserByID(ctx, userID)
+	if err != nil {
+		return domain.User{}, notFound(err)
+	}
+	return toUser(row), nil
 }
 
 func (r *Repository) UserByEmail(ctx context.Context, email string) (domain.User, error) {
@@ -109,6 +128,8 @@ func toUser(row IdentityUser) domain.User {
 		Email:        row.Email,
 		PasswordHash: row.PasswordHash,
 		Role:         domain.Role(row.Role),
+		Language:     row.Language,
+		Region:       row.Region,
 		Disabled:     row.DisabledAt != nil,
 	}
 }

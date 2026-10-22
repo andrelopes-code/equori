@@ -85,6 +85,27 @@ paths:
                 $ref: "#/components/schemas/User"
         "401":
           $ref: "#/components/responses/Problem"
+    patch:
+      tags: [identity]
+      operationId: updateCurrentUser
+      summary: Change the language or region of the authenticated user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserInput"
+      responses:
+        "200":
+          description: Updated user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /settings:
     get:
       tags: [ledger]
@@ -7165,7 +7186,7 @@ components:
           type: string
     User:
       type: object
-      required: [id, email, role]
+      required: [id, email, role, language, region]
       properties:
         id:
           type: integer
@@ -7175,6 +7196,22 @@ components:
         role:
           type: string
           enum: [admin, member]
+        language:
+          type: string
+          pattern: "^[a-z]{2,3}$"
+        region:
+          type: string
+          pattern: "^[A-Z]{2}$"
+    UpdateUserInput:
+      type: object
+      additionalProperties: false
+      properties:
+        language:
+          type: string
+          pattern: "^[a-z]{2,3}$"
+        region:
+          type: string
+          pattern: "^[A-Z]{2}$"
     Problem:
       type: object
       required: [type, title, status, code]
