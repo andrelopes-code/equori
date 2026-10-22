@@ -59,68 +59,96 @@ function dateFormat(
   return format;
 }
 
-export function formatMoneyParts(
+function currencyPartList(
   m: Money,
   scale: number,
   locale: string,
-): MoneyParts {
+): { parts: Intl.NumberFormatPart[]; iso: boolean } {
   // O7: Intl reads the decimal string, never a float divided by the scale.
   const plain = formatPlain(m.amount, scale) as `${number}`;
   const fraction = {
     minimumFractionDigits: scale,
     maximumFractionDigits: scale,
   };
-  let parts: Intl.NumberFormatPart[];
-  let symbol = m.currency;
   try {
-    parts = numberFormat(locale, {
-      style: "currency",
-      currency: m.currency,
-      ...fraction,
-    }).formatToParts(plain);
+    return {
+      parts: numberFormat(locale, {
+        style: "currency",
+        currency: m.currency,
+        ...fraction,
+      }).formatToParts(plain),
+      iso: true,
+    };
   } catch (error) {
     // Intl throws RangeError for codes that are not ISO 4217 (a security ticker).
     if (!(error instanceof RangeError)) throw error;
-    parts = numberFormat(locale, {
-      style: "decimal",
-      ...fraction,
-    }).formatToParts(plain);
+    return {
+      parts: numberFormat(locale, {
+        style: "decimal",
+        ...fraction,
+      }).formatToParts(plain),
+      iso: false,
+    };
   }
-  const out: MoneyParts = { sign: "", symbol, integer: "", fraction: "" };
+}
+
+export function formatMoneyParts(
+  m: Money,
+  scale: number,
+  locale: string,
+): MoneyParts {
+  const { parts } = currencyPartList(m, scale, locale);
+  const out: MoneyParts = {
+    sign: "",
+    symbol: m.currency,
+    integer: "",
+    fraction: "",
+  };
   for (const part of parts) {
     if (part.type === "minusSign") out.sign = m.amount < 0 ? minusSign : "";
-    else if (part.type === "currency") symbol = part.value;
+    else if (part.type === "currency") out.symbol = part.value;
     else if (part.type === "integer" || part.type === "group")
       out.integer += part.value;
     else if (part.type === "decimal" || part.type === "fraction")
       out.fraction += part.value;
   }
-  out.symbol = symbol;
   return out;
 }
 
-// The symbol precedes the number in both locales; pt-BR separates them with a no-break space.
+// Sign, symbol, gap and number come in the order and with the literal of the locale's pattern.
 export function formatMoney(
   m: Money,
   scale: number,
   locale: string,
   options: { symbol?: boolean } = {},
 ): string {
+  const { parts, iso } = currencyPartList(m, scale, locale);
   const p = formatMoneyParts(m, scale, locale);
   const number = p.integer + p.fraction;
   if (options.symbol === false) return p.sign + number;
-  if (!isISOCurrency(m.currency)) return `${p.sign}${number} ${p.symbol}`;
-  const gap = locale.startsWith("pt") ? "\u00a0" : "";
-  return `${p.sign}${p.symbol}${gap}${number}`;
+  if (!iso) return `${p.sign}${number} ${p.symbol}`;
+  return parts
+    .map((part) => {
+      if (part.type === "minusSign") return p.sign;
+      if (part.type === "currency") return p.symbol;
+      return part.value;
+    })
+    .join("");
 }
 
-function isISOCurrency(code: string): boolean {
-  try {
-    numberFormat("en", { style: "currency", currency: code });
-    return true;
-  } catch {
-    return false;
-  }
+// The literal the locale puts beside the currency symbol; empty when the pattern has none.
+export function symbolGap(m: Money, scale: number, locale: string): string {
+  const { parts, iso } = currencyPartList(m, scale, locale);
+  if (!iso) return " ";
+  const at = parts.findIndex((part) => part.type === "currency");
+  const next = parts[at + 1];
+  if (next?.type === "literal") return next.value;
+  const previous = parts[at - 1];
+  return previous?.type === "literal" ? previous.value : "";
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 export function parseAmount(
@@ -128,16 +156,23 @@ export function parseAmount(
   scale: number,
   locale: string,
 ): number | null {
-  const [group, decimal] = locale.startsWith("pt") ? [".", ","] : [",", "."];
-  const g = `\\${group}`;
-  const d = `\\${decimal}`;
-  const m = new RegExp(
-    `^(-?)(\\d{1,3}(?:${g}\\d{3})+|\\d+)(?:${d}(\\d*))?$`,
-  ).exec(text.trim());
+  const sample = numberFormat(locale, {}).formatToParts(1234567.5);
+  const group = sample.find((part) => part.type === "group")?.value ?? "";
+  const decimal = sample.find((part) => part.type === "decimal")?.value ?? ".";
+  let input = text.trim();
+  if (/^\s$/u.test(group)) input = input.replace(/[\s\u202f]/gu, group);
+  else if (group === "\u2019" || group === "'")
+    input = input.replace(/['\u2019]/gu, group);
+  const g = escapeRegExp(group);
+  const d = escapeRegExp(decimal);
+  const grouped = group === "" ? "" : `\\d{1,3}(?:${g}\\d{3})+|`;
+  const m = new RegExp(`^(-?)(${grouped}\\d+)(?:${d}(\\d*))?$`, "u").exec(
+    input,
+  );
   if (m === null) return null;
   const frac = m[3] ?? "";
   if (frac.length > scale) return null;
-  const int = (m[2] ?? "").split(group).join("");
+  const int = group === "" ? (m[2] ?? "") : (m[2] ?? "").split(group).join("");
   const n = Number(`${m[1] ?? ""}${int}${frac.padEnd(scale, "0")}`);
   if (!Number.isSafeInteger(n)) return null;
   return n === 0 ? 0 : n;
@@ -181,12 +216,13 @@ function dateParts(
   return out;
 }
 
-// "16 out" / "Oct 16".
+// "16 out" / "Oct 16": the day and the month in the order of the locale.
 export function formatDayMonth(iso: string, locale: string): string {
-  const p = dateParts(iso, locale, { day: "numeric", month: "short" });
-  return locale.startsWith("en")
-    ? `${p.month ?? ""} ${p.day ?? ""}`
-    : `${p.day ?? ""} ${p.month ?? ""}`;
+  return dateFormat(locale, { day: "numeric", month: "short" })
+    .formatToParts(utcDate(iso))
+    .filter((part) => part.type === "day" || part.type === "month")
+    .map((part) => part.value.replace(/\.$/, ""))
+    .join(" ");
 }
 
 // "05/11" / "11/05".

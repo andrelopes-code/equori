@@ -73,7 +73,7 @@ export function AccountCard({
   const symbol = parts(0).symbol;
   const hiddenAmount = t("accountCard.hiddenAmount", { symbol });
   const whole = (amount: number) =>
-    hidden ? hiddenAmount : wholeMoney(parts(amount), locale);
+    hidden ? hiddenAmount : wholeMoney(parts(amount));
 
   if (loading) {
     return (
@@ -126,7 +126,7 @@ export function AccountCard({
           title: title,
           kind: kindWord,
           label: labelSpoken,
-          amount: hidden ? t("accountCard.hidden") : fullMoney(amount, locale),
+          amount: hidden ? t("accountCard.hidden") : fullMoney(amount),
         });
 
   const m =
@@ -140,7 +140,7 @@ export function AccountCard({
   const showSignal = signal !== undefined && signal.length > 1;
   const legend = t(`accountCard.signal.${kind}`);
   const sumParts = parts(signal?.reduce((s, v) => s + v, 0) ?? 0);
-  const sum = hidden ? hiddenAmount : fullMoney(sumParts, locale);
+  const sum = hidden ? hiddenAmount : fullMoney(sumParts);
 
   const meterText =
     m === undefined

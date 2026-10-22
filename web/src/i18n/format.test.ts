@@ -214,3 +214,31 @@ describe("month and signed formats", () => {
     );
   });
 });
+
+describe("Intl-derived formats", () => {
+  it.each([
+    [{ amount: 123450, currency: "EUR" }, 2, "de-DE", "1.234,50 €"],
+    [{ amount: 1234567, currency: "KWD" }, 3, "en-US", "KWD 1,234.567"],
+    [{ amount: 1234, currency: "JPY" }, 0, "ja-JP", "￥1,234"],
+    [{ amount: 123450, currency: "EUR" }, 2, "en-DE", "€1,234.50"],
+  ])("formats %o at scale %d in %s", (m, scale, tag, want) => {
+    expect(formatMoney(m, scale, tag)).toBe(want);
+  });
+  it.each([
+    ["1.234,50", 2, "de-DE", 123450],
+    ["1'234.50", 2, "de-CH", 123450],
+    ["1,234", 0, "ja-JP", 1234],
+    ["1,234.567", 3, "en-US", 1234567],
+  ])("parses %s at scale %d in %s", (text, scale, tag, want) => {
+    expect(parseAmount(text, scale, tag)).toBe(want);
+  });
+  it("orders day and month by locale", () => {
+    expect(formatDayMonth("2026-10-16", "en-GB")).toBe("16 Oct");
+    expect(formatDayMonth("2026-10-16", "en-US")).toBe("Oct 16");
+  });
+  it("formats partial locales without throwing", () => {
+    expect(() =>
+      formatMoney({ amount: 123450, currency: "AOA" }, 2, "pt-AO"),
+    ).not.toThrow();
+  });
+});
