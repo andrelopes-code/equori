@@ -109,14 +109,12 @@ func Pluggy(url string) Option {
 	return func(c *server.Config) { c.PluggyURL, c.SecretKey = url, SecretKey }
 }
 
-// SecretKeys replaces the integration keys; pass it after Pluggy.
-// PriceFeeds enables the BCB PTAX and B3 COTAHIST feeds against base URLs of a test server.
-func PriceFeeds(ptax, cotahist bool, ptaxURL, cotahistURL string) Option {
-	return func(c *server.Config) {
-		c.PTAXFeed, c.COTAHISTFeed, c.PTAXURL, c.COTAHISTURL = ptax, cotahist, ptaxURL, cotahistURL
-	}
+// PriceFeeds enables the price feeds ids against the base URLs of a test server.
+func PriceFeeds(ids []string, urls map[string]string) Option {
+	return func(c *server.Config) { c.PriceFeeds, c.FeedURLs = ids, urls }
 }
 
+// SecretKeys replaces the integration keys; pass it after Pluggy.
 func SecretKeys(current, previous string) Option {
 	return func(c *server.Config) { c.SecretKey, c.PreviousSecretKey = current, previous }
 }

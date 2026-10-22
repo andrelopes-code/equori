@@ -1,6 +1,7 @@
 package marketdata
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed"
@@ -8,14 +9,46 @@ import (
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/bcbptax"
 )
 
-// LegacySources builds the sources selected by the boolean feed settings. The feed registry replaces it.
-func LegacySources(ptax, cotahist bool, ptaxURL, cotahistURL string, hc *http.Client) []feed.Source {
-	var out []feed.Source
-	if ptax {
-		out = append(out, bcbptax.New(hc, ptaxURL))
+type sourceEntry struct {
+	id         string
+	defaultURL string
+	build      func(hc *http.Client, url string) feed.Source
+}
+
+func sourceEntries() []sourceEntry {
+	return []sourceEntry{
+		{"b3_cotahist", "https://bvmf.bmfbovespa.com.br/InstDados/SerHist", func(hc *http.Client, url string) feed.Source { return b3cotahist.New(hc, url) }},
+		{"bcb_ptax", "https://olinda.bcb.gov.br/olinda/service/PTAX/version/v1/odata", func(hc *http.Client, url string) feed.Source { return bcbptax.New(hc, url) }},
 	}
-	if cotahist {
-		out = append(out, b3cotahist.New(hc, cotahistURL))
+}
+
+// SourceIDs lists the identifiers accepted in EQUORI_PRICE_FEEDS.
+func SourceIDs() []string {
+	entries := sourceEntries()
+	ids := make([]string, len(entries))
+	for i, e := range entries {
+		ids[i] = e.id
 	}
-	return out
+	return ids
+}
+
+// NewSources builds the sources named by ids; urls overrides a source's default base URL.
+func NewSources(ids []string, urls map[string]string, hc *http.Client) ([]feed.Source, error) {
+	byID := make(map[string]sourceEntry)
+	for _, e := range sourceEntries() {
+		byID[e.id] = e
+	}
+	out := make([]feed.Source, 0, len(ids))
+	for _, id := range ids {
+		e, ok := byID[id]
+		if !ok {
+			return nil, fmt.Errorf("EQUORI_PRICE_FEEDS: unknown feed %q", id)
+		}
+		url := urls[id]
+		if url == "" {
+			url = e.defaultURL
+		}
+		out = append(out, e.build(hc, url))
+	}
+	return out, nil
 }

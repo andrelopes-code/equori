@@ -9,8 +9,8 @@ need no key. Phase P8 of the roadmap describes the rules (amendments A60–A62 o
 | Variable | Default | Meaning |
 |---|---|---|
 | `EQUORI_PRICE_FEEDS` | empty | Comma list of `bcb_ptax`, `b3_cotahist`. Empty: equori sends no feed request (N17). |
-| `EQUORI_BCB_PTAX_URL` | `https://olinda.bcb.gov.br/olinda/service/PTAX/version/v1/odata` | Base URL of the BCB PTAX service. |
-| `EQUORI_B3_COTAHIST_URL` | `https://bvmf.bmfbovespa.com.br/InstDados/SerHist` | Base URL of the B3 daily historical quotes files. |
+| `EQUORI_FEED_BCB_PTAX_URL` | `https://olinda.bcb.gov.br/olinda/service/PTAX/version/v1/odata` | Base URL of the BCB PTAX service. |
+| `EQUORI_FEED_B3_COTAHIST_URL` | `https://bvmf.bmfbovespa.com.br/InstDados/SerHist` | Base URL of the B3 daily historical quotes files. |
 
 A network allowlist for the container adds `olinda.bcb.gov.br` and `bvmf.bmfbovespa.com.br`
 for the enabled feeds.

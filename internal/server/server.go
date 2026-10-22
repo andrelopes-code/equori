@@ -48,9 +48,9 @@ type Config struct {
 	PluggyURL                    string
 	// LLM routes language model calls (ADR 009); modules take clients from it.
 	LLM *llm.Router
-	// PTAXFeed and COTAHISTFeed enable the price feeds at their base URLs (P8 amendment A62).
-	PTAXFeed, COTAHISTFeed bool
-	PTAXURL, COTAHISTURL   string
+	// PriceFeeds names the enabled price feeds; FeedURLs overrides their base URLs by identifier.
+	PriceFeeds []string
+	FeedURLs   map[string]string
 }
 
 type App struct {
@@ -80,8 +80,12 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	}
 	identityModule := identity.New(pool, identity.Config{SecureCookies: cfg.SecureCookies}, log)
 	feedClient := &http.Client{Timeout: time.Minute}
+	sources, err := marketdata.NewSources(cfg.PriceFeeds, cfg.FeedURLs, feedClient)
+	if err != nil {
+		return nil, err
+	}
 	marketdataModule := marketdata.New(pool).WithFeeds(marketdata.FeedConfig{
-		Sources: marketdata.LegacySources(cfg.PTAXFeed, cfg.COTAHISTFeed, cfg.PTAXURL, cfg.COTAHISTURL, feedClient), Client: feedClient, Clock: clk, Log: log,
+		Sources: sources, Client: feedClient, Clock: clk, Log: log,
 	})
 	ledgerModule := ledger.New(pool, dispatcher, marketdataModule, identityModule, clk, log)
 	reportingModule := reporting.New(pool, dispatcher, log)

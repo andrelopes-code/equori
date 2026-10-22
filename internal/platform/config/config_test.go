@@ -2,6 +2,7 @@ package config
 
 import (
 	"log/slog"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -20,8 +21,6 @@ func TestLoad(t *testing.T) {
 			want: Config{
 				DatabaseURL: "postgres://x", HTTPAddr: ":8080", LogLevel: slog.LevelInfo, TimeZone: time.UTC, PluggyURL: "https://api.pluggy.ai",
 				SyncInterval: time.Hour, GeminiURL: "https://generativelanguage.googleapis.com",
-				PTAXURL:     "https://olinda.bcb.gov.br/olinda/service/PTAX/version/v1/odata",
-				COTAHISTURL: "https://bvmf.bmfbovespa.com.br/InstDados/SerHist",
 			},
 		},
 		{
@@ -37,16 +36,14 @@ func TestLoad(t *testing.T) {
 				"EQUORI_SYNC_INTERVAL":    "15m",
 				"EQUORI_GEMINI_API_KEY":   "k",
 				"EQUORI_GEMINI_URL":       "http://127.0.0.1:9200",
-				"EQUORI_PRICE_FEEDS":      "bcb_ptax, b3_cotahist",
-				"EQUORI_BCB_PTAX_URL":     "http://127.0.0.1:9300",
-				"EQUORI_B3_COTAHIST_URL":  "http://127.0.0.1:9400",
+				"EQUORI_PRICE_FEEDS":      " bcb_ptax, ,ecb",
 				"EQUORI_WEB_DEV_PORT":     "5173",
 			},
 			want: Config{
 				DatabaseURL: "postgres://x", HTTPAddr: "127.0.0.1:9000", LogLevel: slog.LevelDebug,
 				TimeZone: time.UTC, InsecureCookies: true, APIDocs: true, PluggyURL: "http://127.0.0.1:9100",
 				SyncInterval: 15 * time.Minute, GeminiAPIKey: "k", GeminiURL: "http://127.0.0.1:9200",
-				PTAXFeed: true, COTAHISTFeed: true, PTAXURL: "http://127.0.0.1:9300", COTAHISTURL: "http://127.0.0.1:9400",
+				PriceFeeds: []string{"bcb_ptax", "ecb"},
 				WebDevPort: 5173,
 			},
 		},
@@ -82,11 +79,6 @@ func TestLoad(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "unknown price feed",
-			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_PRICE_FEEDS": "bcb_ptax,yahoo"},
-			wantErr: true,
-		},
-		{
 			name:    "unknown time zone",
 			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_TIMEZONE": "Mars/Olympus"},
 			wantErr: true,
@@ -103,7 +95,7 @@ func TestLoad(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("err = %v, wantErr %v", err, tt.wantErr)
 			}
-			if got != tt.want {
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Fatalf("got %+v, want %+v", got, tt.want)
 			}
 		})
@@ -150,5 +142,18 @@ func TestLoadSecretKeys(t *testing.T) {
 		if _, err := Load(getenv); err == nil {
 			t.Errorf("%s: accepted", name)
 		}
+	}
+}
+
+func TestLoadPriceFeeds(t *testing.T) {
+	t.Parallel()
+	cfg, err := Load(func(k string) string {
+		return map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_PRICE_FEEDS": " bcb_ptax, ,ecb"}[k]
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"bcb_ptax", "ecb"}; !reflect.DeepEqual(cfg.PriceFeeds, want) {
+		t.Fatalf("PriceFeeds = %v, want %v", cfg.PriceFeeds, want)
 	}
 }

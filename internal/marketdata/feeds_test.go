@@ -53,6 +53,10 @@ func (f *feedServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func feedURLs(srv *httptest.Server) map[string]string {
+	return map[string]string{"bcb_ptax": srv.URL + "/ptax", "b3_cotahist": srv.URL + "/b3"}
+}
+
 func (f *feedServer) take() []string {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -88,7 +92,7 @@ func TestFeedsDisabledSendNoRequest(t *testing.T) {
 	f := &feedServer{}
 	srv := httptest.NewServer(f)
 	t.Cleanup(srv.Close)
-	h := apitest.New(t, apitest.Today("2026-11-01"), apitest.PriceFeeds(false, false, srv.URL+"/ptax", srv.URL+"/b3"))
+	h := apitest.New(t, apitest.Today("2026-11-01"), apitest.PriceFeeds(nil, feedURLs(srv)))
 	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
 
 	h.App.Marketdata.TickFeeds(t.Context())
@@ -103,7 +107,7 @@ func TestFeedsFetchPrices(t *testing.T) {
 	f := &feedServer{failDay: "30102026", failPTAX: "EUR"}
 	srv := httptest.NewServer(f)
 	t.Cleanup(srv.Close)
-	h := apitest.New(t, apitest.Today("2026-11-01"), apitest.PriceFeeds(true, true, srv.URL+"/ptax", srv.URL+"/b3"))
+	h := apitest.New(t, apitest.Today("2026-11-01"), apitest.PriceFeeds([]string{"bcb_ptax", "b3_cotahist"}, feedURLs(srv)))
 	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
 	h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "USD", "quote_instrument": "BRL", "date": "2026-10-30", "value": "5.6"}, http.StatusCreated, nil)
 
@@ -165,7 +169,7 @@ func TestFeedFailureKeepsOtherCurrencies(t *testing.T) {
 	f := &feedServer{failPTAX: "EUR"}
 	srv := httptest.NewServer(f)
 	t.Cleanup(srv.Close)
-	h := apitest.New(t, apitest.Today("2026-10-31"), apitest.PriceFeeds(true, false, srv.URL+"/ptax", srv.URL+"/b3"))
+	h := apitest.New(t, apitest.Today("2026-10-31"), apitest.PriceFeeds([]string{"bcb_ptax"}, feedURLs(srv)))
 
 	h.App.Marketdata.TickFeeds(t.Context())
 

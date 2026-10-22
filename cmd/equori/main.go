@@ -9,12 +9,14 @@ import (
 	"os"
 	"os/signal"
 	"runtime/debug"
+	"strings"
 	"syscall"
 	"time"
 	_ "time/tzdata" // EQUORI_TIMEZONE must resolve in images without a zoneinfo database.
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/andrelopes-code/equori/internal/marketdata"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/config"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
@@ -148,8 +150,19 @@ func serverConfig(cfg config.Config, clk *clock.Clock, router *llm.Router) serve
 	return server.Config{
 		SecureCookies: !cfg.InsecureCookies, Clock: clk, APIDocs: cfg.APIDocs,
 		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, PluggyURL: cfg.PluggyURL,
-		LLM: router, PTAXFeed: cfg.PTAXFeed, COTAHISTFeed: cfg.COTAHISTFeed, PTAXURL: cfg.PTAXURL, COTAHISTURL: cfg.COTAHISTURL,
+		LLM: router, PriceFeeds: cfg.PriceFeeds, FeedURLs: feedURLs(os.Getenv),
 	}
+}
+
+// feedURLs reads EQUORI_FEED_<ID>_URL for each price feed the marketdata module offers.
+func feedURLs(getenv func(string) string) map[string]string {
+	urls := make(map[string]string)
+	for _, id := range marketdata.SourceIDs() {
+		if v := getenv("EQUORI_FEED_" + strings.ToUpper(id) + "_URL"); v != "" {
+			urls[id] = v
+		}
+	}
+	return urls
 }
 
 // llmRouter registers the language model providers whose credentials are configured.

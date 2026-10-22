@@ -20,7 +20,7 @@ func TestSchemaRejectsInvalidPrices(t *testing.T) {
 	}{
 		{name: "zero value", sql: `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('USD', 'BRL', '2026-10-30', 0, 'manual', 1)`},
 		{name: "priority of another source", sql: `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('USD', 'BRL', '2026-10-30', 5.5, 'csv', 1)`},
-		{name: "unknown source", sql: `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('USD', 'BRL', '2026-10-30', 5.5, 'yahoo', 3)`},
+		{name: "source outside the identifier pattern", sql: `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('USD', 'BRL', '2026-10-30', 5.5, 'BCB', 3)`},
 		{name: "same instrument", sql: `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('USD', 'USD', '2026-10-30', 1, 'manual', 1)`},
 		{name: "unknown instrument", sql: `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('PETR4', 'BRL', '2026-10-30', 30, 'manual', 1)`},
 		{name: "security without quote currency", sql: `INSERT INTO marketdata_instrument (code, instrument_type, scale, name) VALUES ('PETR4', 'stock', 0, 'Petrobras')`},
