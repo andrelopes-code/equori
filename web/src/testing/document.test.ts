@@ -170,3 +170,19 @@ describe("app.css scrollbar on touch", () => {
     expect(touch).toMatch(/html,\s*\*\s*\{[^}]*scrollbar-width:\s*none/);
   });
 });
+
+describe("app.css document behaviour on a phone", () => {
+  const html =
+    /(^|\s)html\s*\{([^}]*-webkit-tap-highlight-color[^}]*)\}/.exec(
+      appCSS,
+    )?.[2] ?? "";
+
+  it("contains the overscroll, which removes pull-to-refresh and keeps the edge glow", () => {
+    expect(html).toMatch(/overscroll-behavior-y:\s*contain/);
+  });
+
+  it("stops the browser from rescaling text", () => {
+    expect(html).toMatch(/-webkit-text-size-adjust:\s*100%/);
+    expect(html).toMatch(/(^|[\s;])text-size-adjust:\s*100%/);
+  });
+});

@@ -14,6 +14,11 @@
     /* The document's scrollbar takes the thumb the library's own scroll regions use; the colour is inherited by every scroll container that sets none, and a width is not, so it is set here for the document alone. */
     scrollbar-width: thin;
     scrollbar-color: var(--slotted-border-strong) transparent;
+    /* Pulling the page down at its top reloads an installed app, which a native app does not do; contain keeps the edge glow. */
+    overscroll-behavior-y: contain;
+    /* Chrome on Android enlarges text blocks it judges small; the layout sets its own sizes. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   /* A finger scrolls by dragging, so a scrollbar adds nothing there, as in a native app. The rule reaches the library's own scroll regions too, which is why it sits in the app layer. Scrolling itself is unchanged. */
