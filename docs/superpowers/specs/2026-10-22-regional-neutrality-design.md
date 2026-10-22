@@ -69,7 +69,7 @@ ADR 015 records this pattern. ADR 016 records the dependency `golang.org/x/text`
 | Level | Owner | Holds | Changed by |
 |---|---|---|---|
 | Instance | `internal/platform/config` | Enabled price feeds, aggregator base URLs, LLM keys, time zone | Environment variables, restart |
-| User | `identity` (language, region); `ledger` (base currency) | `language` (BCP 47 primary language subtag, `^[a-z]{2,3}$`), `region` (ISO 3166-1 alpha-2), `base_currency` (ISO 4217) | `equori user create` flags; `PATCH /profile`; `PUT /settings` (base currency, existing rule: until the first transaction) |
+| User | `identity` (language, region); `ledger` (base currency) | `language` (BCP 47 primary language subtag, `^[a-z]{2,3}$`), `region` (ISO 3166-1 alpha-2), `base_currency` (ISO 4217) | `equori user create` flags; `PATCH /me`; `PUT /settings` (base currency, existing rule: until the first transaction) |
 | Record | the owning module | Card calendar and foreign charge rate, schedule calendar, CSV profile encoding and formats, institution identifier | The record's own endpoints |
 
 A record attribute that has a regional default receives it at creation from the user's region through the owning module's region defaults (section 4.3). Changing a user's region changes defaults for new records only.
@@ -121,17 +121,18 @@ Numbers in brackets are the coupling numbers of the survey of 2026-10-22.
 // internal/marketdata/internal/feed
 type Source interface {
 	ID() string                                   // price source id, e.g. "bcb_ptax"
-	Priority() int16                              // A60 priority; feeds use 3
-	Quotes(ins []Instrument) []money.Currency     // the instruments this source prices
+	Codes(ins []Instrument) []money.Currency      // the instrument codes whose prices this source fetches
 	Fetch(ctx context.Context, codes []money.Currency, from, to time.Time) ([]Quote, error)
 }
 ```
 
+- `Fetch` returns every quote it read before a failure together with the failure; Market data stores the quotes and logs the failure. A code the source has no data for is skipped inside `Fetch`, so one currency without data never stops the others (the current per-currency behavior of `bcb_ptax`).
+
 - `bcb_ptax` and `b3_cotahist` move to `feed/bcbptax` and `feed/b3cotahist`. Each declares its base URL default; `b3cotahist` selects instruments whose exchange is `BVMF` and whose quote currency is `BRL`, and keeps skipping Saturdays and Sundays (a holiday returns `ErrNoData`, as today).
-- Second implementation: `ecb`, the euro foreign exchange reference rates of the European Central Bank, read from the 90-day history file (`eurofxref-hist-90d.xml` under `https://www.ecb.europa.eu/stats/eurofxref/`; the address is confirmed against the ECB downloads page before the task starts). It prices each currency it lists in `EUR`.
+- Second implementation: `ecb`, the euro foreign exchange reference rates of the European Central Bank, read from the 90-day history file (`eurofxref-hist-90d.xml` under `https://www.ecb.europa.eu/stats/eurofxref/`; the address is confirmed against the ECB downloads page before the task starts). The file states units of each currency per euro, so each value is stored as the price of `EUR` in that currency (`Instrument: EUR, Quote: USD, Value: 1.0832`), with no division; `Codes` returns the listed currencies that exist as instruments, other than `EUR`.
 - `TickFeeds` iterates the enabled sources in registry order. The start date per source is the minimum over its instruments of the day after the latest stored price, bounded by `feedWindowDays`.
-- Configuration: `EQUORI_PRICE_FEEDS` (comma-separated ids) and, per source, `EQUORI_FEED_<ID>_URL` with the id upper-cased (`EQUORI_FEED_BCB_PTAX_URL`). `EQUORI_BCB_PTAX_URL` and `EQUORI_B3_COTAHIST_URL` are removed.
-- `Priority` replaces the `switch` of `domain.Priority`; `manual` (1) and `csv` (2) remain domain constants.
+- Configuration: `EQUORI_PRICE_FEEDS` (comma-separated ids) and, per source, `EQUORI_FEED_<ID>_URL` with the id upper-cased (`EQUORI_FEED_BCB_PTAX_URL`). `EQUORI_BCB_PTAX_URL` and `EQUORI_B3_COTAHIST_URL` are removed. `internal/platform/config` parses only the id list; `cmd/equori`, the composition root, reads the URL variable of each registered source and passes `FeedURLs map[string]string` through `server.Config`. Aggregator URLs follow the same path (`AggregatorURLs`).
+- `domain.Priority` returns 1 for `manual`, 2 for `csv` and 3 for any other valid identifier, the rule the existing `priority` check already states (`ELSE 3`).
 - Schema: `marketdata_price.source` gets the identifier `CHECK` of 4.1.
 
 ### 5.4 Exchanges and instrument types [4]
@@ -166,9 +167,9 @@ type Rule struct {
 
 ### 5.6 Base currency at provisioning [14, 9, 10]
 
-- `identity_user` gains `language` and `region`, both `NOT NULL`; the migration sets `pt` and `BR` on existing rows, the values of the only pre-release instance. `GET /profile` and `PATCH /profile` (tag `identity`) read and change them.
-- `identity.UserCreated` carries `region`, `language` and `base_currency`. `equori user create` takes `--region` (required), `--language` (required) and `--currency` (required when the region has no ledger default).
-- Ledger, Planning, Portfolio and Capture read a user's language and region through a port each declares (`Profile(ctx, userID)`), implemented by the `identity` root and wired in `internal/server`. Ledger and Planning read the default calendar of a region from Market data, their upstream.
+- `identity_user` gains `language` and `region`, both `NOT NULL`; the migration sets `pt` and `BR` on existing rows, the values of the only pre-release instance. The `User` schema of `GET /me` gains both fields; `PATCH /me` (tag `identity`) changes them. The pair is called the profile and travels as `locale.Locale`.
+- `identity.user_created.v2` carries `user_id`, `email`, `language`, `region` and `base_currency`. `identity.CreateUser` requires all three settings and validates the currency format with `money.ParseCurrency`; it holds no defaults. `equori user create` takes `--region` (required), `--language` (required) and `--currency`; without `--currency` the command takes `ledger.DefaultBaseCurrency(region)` and fails when the region has none.
+- Ledger, Planning, Portfolio and Capture read a user's profile through an interface each module root declares, `Profiles { Profile(ctx context.Context, userID int64) (locale.Locale, error) }`, the way `ledger.MarketData` is declared today. `*identity.Module` implements it; `internal/server` passes it to each constructor. Ledger and Planning read the default calendar of a region from Market data, their upstream.
 - `ledger.DefaultBaseCurrency` is removed; `provision` reads the payload.
 - `planning_schedule.currency` loses `DEFAULT 'BRL'`; the application always writes it.
 - `apitest` keeps BRL helpers for Brazilian scenarios and gains a user factory with a region parameter.
@@ -202,7 +203,7 @@ type Jurisdiction interface {
 - `ledger_investment_income.income_type` and `portfolio_income_event.income_type` get the identifier `CHECK`. Ledger validates the format only, because Portfolio depends on Ledger and not the reverse (chapter 4, 4.2). Portfolio derives a null treatment for a type that neither the universal set nor the jurisdiction knows. `GET /investment-income-types` (Portfolio) lists the universal types plus those of the user's jurisdiction for the web form.
 - `br` maps `reit` on `BVMF` to `fii`, `depositary_receipt` on `BVMF` to `bdr`, any other type to itself; `dividend` to `exempt`, other types to `exclusive`. The current results are preserved.
 - `portfolio_income_event.tax_treatment` becomes nullable with the identifier `CHECK`; it is null without a jurisdiction. `tax_class` likewise.
-- Portfolio rebuilds every brokerage once after the migration (P8 amendment A71 path).
+- `equori portfolio rebuild` rebuilds every brokerage of every user, after the precedent of `equori reporting rebuild`. The operator runs it once after upgrading; the release note of the migration says so.
 
 ### 5.10 Aggregators [5]
 
@@ -246,7 +247,7 @@ type Lexicon struct {
 ```
 
 - `pt` and `en` lexicons hold the words now spread across `date.go`, `amount.go`, `installments.go` and `account.go`. The active lexicon is the user's language lexicon merged with `en`, the user's entries winning.
-- Number reading takes the decimal and group separators, and date reading the day-month order, from `platform/locale` for the user's `language-region`.
+- Number reading takes the decimal and group separators, and date reading the day-month order, from `platform/locale` for the user's `language-region`. ADR 002 limits `domain` imports to the standard library and `platform/money`, so the capture domain declares its own `Conventions{Decimal, Group rune; Order DateOrder}` and `Vocabulary` gains `Lexicon` and `Conventions`; the capture `app` fills them from `platform/locale`. ADR 015 extends the depguard allowance of `domain` with `internal/platform/textfold` only.
 - ADR 014 L2 is amended: the system prompt names the language and region of the user (`The descriptions are short texts the owner typed, mostly in Portuguese (Brazil)`), from `platform/locale` English names.
 
 ### 5.14 Locale conventions (server)
@@ -256,13 +257,13 @@ type Lexicon struct {
 ### 5.15 Web [9, 11, 12, 21, 24, 25]
 
 - `web/src/i18n/locales.ts` is the one registry of interface languages: `{ language, nativeName, catalog, slottedCatalog }`. `Locale` becomes the BCP 47 tag string `language-region`; the menus in `command-menu.tsx`, `more-sheet.tsx` and `account-menu.tsx` read the registry.
-- The profile (`GET /profile`) decides language and region; `localStorage` keeps the last value only to render before the profile loads. Browser detection matches `navigator.languages` against the registry by primary language subtag.
+- The profile (`GET /me`) decides language and region; `localStorage` keeps the last value only to render before the profile loads. Browser detection matches `navigator.languages` against the registry by primary language subtag.
 - `format.ts` and `account-card-money.ts` derive every separator, gap and order from `Intl.NumberFormat#formatToParts` and `Intl.DateTimeFormat#formatToParts` for the tag; the `pt-BR` and `en` branches are removed. `parseAmount` reads the group and decimal separators from the parts of `1234.5`.
 - No component falls back to a currency: the currency comes from the record or from settings, and the component renders its waiting state until settings are loaded. `account-card-preview.tsx` takes the base currency from settings; `operations.ts` takes the quote currency from the instrument.
 - Collation and case mapping use the active tag (`institution-catalogue.ts`, `link-candidates.ts`).
 - Institution logos and the institution catalogue resolve through a resolver per identifier scheme (5.7).
 - The integration form renders the credential fields of `GET /aggregators`.
-- A settings screen edits language and region (`PATCH /profile`) and shows base currency (`PUT /settings`).
+- A settings screen edits language and region (`PATCH /me`) and shows base currency (`PUT /settings`).
 
 ## 6. Documents
 
@@ -285,7 +286,7 @@ Each step is one or more vertical slices that leave `make check` passing.
 
 1. ADR 015, ADR 016; `platform/registry`, `platform/textfold`, `platform/locale`.
 2. ISO 4217 generation and startup reconciliation (5.1).
-3. Identity profile, provisioning without a default currency (5.6), `GET/PATCH /profile`.
+3. Identity profile, provisioning without a default currency (5.6), `GET/PATCH /me`.
 4. Market data: calendars (5.5), feeds with `ecb` (5.3), conversion (5.2), MIC and types (5.4).
 5. Ledger: calendar default on billing rules, foreign charge (5.8), institution identifiers (5.7); Planning schedule calendar.
 6. Portfolio jurisdictions (5.9).
