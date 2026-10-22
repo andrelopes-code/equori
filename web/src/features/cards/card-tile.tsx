@@ -1,7 +1,6 @@
 import { Button } from "@slotted/react/button";
 import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
-import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -15,10 +14,6 @@ import {
   logoURL,
 } from "@/features/accounts";
 import { flowsQuery } from "@/features/cards/api";
-import {
-  statementStatusTone,
-  statementStatusWords,
-} from "@/features/cards/statement-words";
 import {
   formatDate,
   formatDayMonth,
@@ -39,8 +34,7 @@ function daysSinceMonday(iso: string): number {
 }
 
 // One credit card: the account card with the statement purchases go on, the limit and the
-// week's purchases, and below it the strip of the statement's status, dates and a closed
-// statement still owing.
+// week's purchases, and below it a closed statement still owing.
 export function CardTile({
   account,
   institution,
@@ -121,19 +115,6 @@ export function CardTile({
           <Text size="sm" tone="muted">
             {t("cards.noStatement")}
           </Text>
-        )}
-        {current !== undefined && (
-          <Inline gap={2}>
-            <Tag size="sm" tone={statementStatusTone[current.status]}>
-              {t(statementStatusWords[current.status])}
-            </Tag>
-            <Text className="text-trim" size="sm" tone="muted">
-              {t("cards.closesDue", {
-                closing: formatDate(current.closing_date, locale),
-                due: formatDate(current.due_date, locale),
-              })}
-            </Text>
-          </Inline>
         )}
         {oldest !== undefined && (
           <Inline justify="between" gap={3}>

@@ -47,21 +47,21 @@ describe("CardsPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows each card's statement, dates and limit", async () => {
+  it("shows each card's statement and limit on the card face only", async () => {
     await renderApp("/cards", { fetch: api() });
     const tile = await screen.findByRole("article", { name: "Itaú Visa" });
-    expect(
-      await within(tile).findByText(catalogEn["statement.status.open"]),
-    ).toBeInTheDocument();
-    expect(
-      within(tile).getByText(
-        words("cards.closesDue", { closing: "11/05/2026", due: "11/12/2026" }),
-      ),
-    ).toBeInTheDocument();
     // Spec 2026-10-21-account-card-design: the card's meter replaces the limit progress bar.
-    const face = within(tile).getByRole("link", {
+    const face = await within(tile).findByRole("link", {
       name: "Itaú Visa, credit, open statement · due Nov 12: R$2,500.00",
     });
+    expect(
+      within(tile).queryByText(catalogEn["statement.status.open"]),
+    ).toBeNull();
+    expect(
+      within(tile).queryByText(
+        words("cards.closesDue", { closing: "11/05/2026", due: "11/12/2026" }),
+      ),
+    ).toBeNull();
     expect(face).toHaveAttribute("href", `/cards/${cardID}`);
     expect(within(face).getByRole("meter")).toHaveAttribute(
       "aria-valuetext",
