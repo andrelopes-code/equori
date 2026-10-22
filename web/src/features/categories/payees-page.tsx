@@ -5,17 +5,14 @@ import {
   ActionBarActions,
   ActionBarStatus,
 } from "@slotted/react/action-bar";
-import { Button, IconButton } from "@slotted/react/button";
+import { Button } from "@slotted/react/button";
 import { DataGrid } from "@slotted/react/data-grid";
 import { FilterBar } from "@slotted/react/filter-bar";
-import { Glyph, Icon } from "@slotted/react/icon";
-import { Menu, MenuContent, MenuItem, MenuTrigger } from "@slotted/react/menu";
 import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import { toast } from "@slotted/react/toast";
 import { VisuallyHidden } from "@slotted/react/visually-hidden";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
-import { useDeferredValue, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useMemo, useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { errorText } from "@/api/problem";
@@ -26,6 +23,7 @@ import { CategoriesHeader } from "@/features/categories/categories-header";
 import styles from "@/features/categories/categories-page.module.css";
 import { HeaderAction } from "@/ui/header-action";
 import { MergePayeesDialog } from "@/features/categories/merge-payees-dialog";
+import { PayeeActions } from "@/features/categories/payee-actions";
 import { NewPayeeDialog } from "@/features/categories/new-payee-dialog";
 import { payeesQuery } from "@/features/setup";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -43,7 +41,6 @@ export function PayeesPage() {
   const t = useT();
   const [locale] = useAppLocale();
   const api = useApi();
-  const navigate = useNavigate();
   const compact = useMediaQuery(compactQuery);
   const payees = useQuery(payeesQuery(api));
   const aliases = useQuery(payeeAliasesQuery(api));
@@ -81,7 +78,46 @@ export function PayeesPage() {
       }));
   }, [payees.data, aliases.data, shownQuery, locale]);
 
-  const byId = new Map((payees.data ?? []).map((p) => [p.id, p]));
+  const byId = useMemo(
+    () => new Map((payees.data ?? []).map((p) => [p.id, p])),
+    [payees.data],
+  );
+  // Workaround for Slotted finding "Data-grid re-renders every row when messages or a renderer
+  // changes identity": a selection renders the page, and new messages or renderers would render
+  // every row with it, so they keep their identity.
+  const messages = useMemo(
+    () => ({
+      // Workaround for Slotted finding "The selection checkbox of a data-grid row is named by its key".
+      selectRow: ({ row }: { row: string }) =>
+        t("transactions.selectRow", { row: byId.get(row)?.name ?? row }),
+    }),
+    [t, byId],
+  );
+  const renderHeader = useCallback(
+    ({ column }: { column: { id: string; label: string } }) =>
+      // The actions column is named for a screen reader and draws no words over its menus.
+      column.id === "actions" ? (
+        <VisuallyHidden>{column.label}</VisuallyHidden>
+      ) : (
+        column.label
+      ),
+    [],
+  );
+  const cellRenderers = useMemo(
+    () => ({
+      actions: ({ row }: { row: PayeeRow }) => (
+        <PayeeActions
+          payee={row}
+          onManageAliases={() => {
+            const payee = byId.get(row.id);
+            if (payee !== undefined) setAliasesOf(payee);
+          }}
+        />
+      ),
+    }),
+    [byId],
+  );
+
   const columns = useMemo<GridColumn<PayeeRow>[]>(
     () => [
       {
@@ -197,13 +233,7 @@ export function PayeesPage() {
                   typeof value === "string" ? [value] : (value ?? []),
                 );
               }}
-              messages={{
-                // Workaround for Slotted finding "The selection checkbox of a data-grid row is named by its key".
-                selectRow: ({ row }) =>
-                  t("transactions.selectRow", {
-                    row: byId.get(row)?.name ?? row,
-                  }),
-              }}
+              messages={messages}
               onEditCommit={async (commit) => {
                 const name = String(commit.value).trim();
                 if (
@@ -218,54 +248,8 @@ export function PayeesPage() {
                   throw new Error(errorText(error, t), { cause: error });
                 }
               }}
-              renderHeader={({ column }) =>
-                column.id === "actions" ? (
-                  <VisuallyHidden>{column.label}</VisuallyHidden>
-                ) : (
-                  column.label
-                )
-              }
-              cellRenderers={{
-                actions: ({ row }) => (
-                  <Menu>
-                    <MenuTrigger
-                      render={(props) => (
-                        <IconButton
-                          {...props}
-                          size="sm"
-                          variant="ghost"
-                          tone="secondary"
-                          aria-label={t("payees.actions", { name: row.name })}
-                        >
-                          <Icon>
-                            <Glyph name="ellipsis" />
-                          </Icon>
-                        </IconButton>
-                      )}
-                    />
-                    <MenuContent>
-                      <MenuItem
-                        onSelect={() => {
-                          void navigate({
-                            to: "/transactions",
-                            search: { payee_id: row.id },
-                          });
-                        }}
-                      >
-                        {t("category.viewTransactions")}
-                      </MenuItem>
-                      <MenuItem
-                        onSelect={() => {
-                          const payee = byId.get(row.id);
-                          if (payee !== undefined) setAliasesOf(payee);
-                        }}
-                      >
-                        {t("payees.manageAliases")}
-                      </MenuItem>
-                    </MenuContent>
-                  </Menu>
-                ),
-              }}
+              renderHeader={renderHeader}
+              cellRenderers={cellRenderers}
             />
           </div>
         </div>

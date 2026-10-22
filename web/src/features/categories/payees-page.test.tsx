@@ -1,11 +1,26 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 import { sharedRoutes } from "@/testing/transaction-api";
+
+// Records the payees whose row's actions render, so a test can tell one row's render from all.
+const actions = vi.hoisted(() => ({ rendered: new Set<string>() }));
+vi.mock("@/features/categories/payee-actions", async (importOriginal) => {
+  const actual =
+    await importOriginal<
+      typeof import("@/features/categories/payee-actions")
+    >();
+  return {
+    PayeeActions: (props: Parameters<typeof actual.PayeeActions>[0]) => {
+      actions.rendered.add(props.payee.name);
+      return actual.PayeeActions(props);
+    },
+  };
+});
 
 const payees = [
   { id: "p1", name: "iFood" },
@@ -84,6 +99,15 @@ describe("PayeesPage", () => {
     await waitFor(() => {
       expect(sent).toEqual([{ route: "rename", body: { name: "Uber BR" } }]);
     });
+  });
+
+  // Owner review 2026-10-22: a selection rendered every row of the grid again.
+  it("renders only the selected row when the selection changes", async () => {
+    await renderApp("/categories/payees", { fetch: api([]) });
+    const box = await screen.findByRole("checkbox", { name: "Select iFood" });
+    actions.rendered.clear();
+    await userEvent.click(box);
+    expect([...actions.rendered]).toEqual(["iFood"]);
   });
 
   it("merges the selected payees into the one the reader keeps", async () => {

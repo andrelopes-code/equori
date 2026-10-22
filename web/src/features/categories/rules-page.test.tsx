@@ -1,11 +1,24 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 import { sharedRoutes } from "@/testing/transaction-api";
+
+// Records the rules whose row menu renders, so a test can tell a row's render from none.
+const menus = vi.hoisted(() => ({ rendered: new Set<string>() }));
+vi.mock("@/features/categories/rule-actions", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/features/categories/rule-actions")>();
+  return {
+    RuleActions: (props: Parameters<typeof actual.RuleActions>[0]) => {
+      menus.rendered.add(props.rule.name);
+      return actual.RuleActions(props);
+    },
+  };
+});
 
 const base = { currency: "BRL", opened_on: "2026-01-01", yield_mode: "none" };
 const accounts = [
@@ -120,6 +133,23 @@ describe("RulesPage", () => {
     expect(within(uberRow).getByText("12 categorized")).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Rules (1)" })).toBeInTheDocument();
     expect(await screen.findByText("75%")).toBeInTheDocument();
+  });
+
+  // Owner review 2026-10-22: a render of the page, such as a dialog opening, rendered every row.
+  it("renders no row of the list when the delete dialog opens over it", async () => {
+    await renderApp("/categories/rules", { fetch: api([]) });
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["rules.actions"].replace("{name}", "Uber"),
+      }),
+    );
+    const remove = await screen.findByRole("menuitem", {
+      name: catalogEn["rules.delete"],
+    });
+    menus.rendered.clear();
+    await userEvent.click(remove);
+    await screen.findByRole("alertdialog");
+    expect([...menus.rendered]).toEqual([]);
   });
 
   it("switches a rule off with the whole rule", async () => {

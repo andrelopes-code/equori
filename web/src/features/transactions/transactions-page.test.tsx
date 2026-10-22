@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json, problem } from "@/testing/fake-api";
@@ -13,6 +13,19 @@ import {
   sharedRoutes,
   transactionFixture,
 } from "@/testing/transaction-api";
+
+// Records the rows whose title cell renders, so a test can tell one row's render from all.
+const titles = vi.hoisted(() => ({ rendered: new Set<string>() }));
+vi.mock("@/features/transactions/title-cell", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/features/transactions/title-cell")>();
+  return {
+    TitleCell: (props: Parameters<typeof actual.TitleCell>[0]) => {
+      titles.rendered.add(props.row.title);
+      return actual.TitleCell(props);
+    },
+  };
+});
 
 const uncategorizedID = "99999999-9999-4999-8999-999999999999";
 const secondID = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
@@ -124,6 +137,23 @@ describe("TransactionsPage", () => {
     // A day of another year carries its year.
     expect(screen.queryByText(/Dec 30/)).toBeNull();
     expect(seen.queries.map((q) => q.get("cursor"))).toEqual([null, "page-2"]);
+  });
+
+  // Owner review 2026-10-22: selecting a row rendered every row again, which took seconds on a
+  // phone holding a few hundred. A selection renders the row it changed and no other.
+  it("renders only the selected row when the selection changes", async () => {
+    await renderApp("/transactions", {
+      fetch: api({ queries: [] }),
+      today: "2026-10-17",
+    });
+    await screen.findByText("Year end");
+    titles.rendered.clear();
+    await userEvent.click(
+      within(rowOf("Padaria")).getByRole("checkbox", {
+        name: "Select Padaria",
+      }),
+    );
+    expect([...titles.rendered]).toEqual(["Padaria"]);
   });
 
   // A refresh reads the whole page again, so the header's bar waits on it, not the button.
@@ -285,5 +315,45 @@ describe("TransactionsPage queue", () => {
     expect(
       screen.getByRole("tab", { name: "Uncategorized (1)", selected: true }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("TransactionsPage on a phone", () => {
+  // jsdom lays nothing out; the grid's bottom edge is where the test says it is.
+  let gridBottom = 0;
+
+  beforeEach(() => {
+    // jsdom measures every other element as an empty box at the origin, as here.
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+      function (this: HTMLElement) {
+        return this.dataset.ui === "data-grid"
+          ? DOMRect.fromRect({ y: gridBottom - 1000, height: 1000 })
+          : new DOMRect();
+      },
+    );
+    return () => {
+      vi.restoreAllMocks();
+    };
+  });
+
+  // The phone's list grows with the page's scroll, not with the grid's: the grid there is as
+  // tall as its rows, so it holds the next page until its end comes within a screen of the view.
+  it("asks for the next page only when the end of the rows comes near", async () => {
+    gridBottom = 5000;
+    const seen: Seen = { queries: [] };
+    await renderApp("/transactions", {
+      fetch: api(seen),
+      today: "2026-10-17",
+      width: 390,
+    });
+    await screen.findByText("Padaria");
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(seen.queries.map((q) => q.get("cursor"))).toEqual([null]);
+    expect(screen.queryByText("Year end")).toBeNull();
+
+    gridBottom = innerHeight + 100;
+    window.dispatchEvent(new Event("scroll"));
+    expect(await screen.findByText("Year end")).toBeInTheDocument();
+    expect(seen.queries.map((q) => q.get("cursor"))).toEqual([null, "page-2"]);
   });
 });

@@ -3,7 +3,7 @@ import { Badge } from "@slotted/react/badge";
 import { DataGrid } from "@slotted/react/data-grid";
 import { Text } from "@slotted/react/typography";
 import { VisuallyHidden } from "@slotted/react/visually-hidden";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
 import { CategoryMark } from "@/features/categories/category-mark";
 import type { CategoryEntry } from "@/features/categories/category-paths";
@@ -13,6 +13,7 @@ import styles from "@/features/categories/category-tree.module.css";
 import { ShareBar } from "@/features/categories/share-bar";
 import { formatMoney } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useStableCallback } from "@/ui/use-stable-callback";
 
 export interface TreeRow {
   id: string;
@@ -23,6 +24,10 @@ export interface TreeRow {
   subtree: number;
   share: number;
 }
+
+// Workaround for Slotted finding "A new tree object rebuilds every row of a data-grid": a
+// page render, a dialog opening, rendered every row of the tree, so the object is a constant.
+const tree = { parentKey: (row: TreeRow) => row.parentId };
 
 export function CategoryTree({
   rows,
@@ -108,6 +113,57 @@ export function CategoryTree({
     [locale],
   );
 
+  // Workaround for Slotted finding "Data-grid re-renders every row when messages or a renderer
+  // changes identity": a render of the page around the tree, a dialog opening, would render every
+  // row, so the renderers keep their identity.
+  const act = useStableCallback(onAction);
+  const renderHeader = useCallback(
+    ({ column }: { column: { id: string; label: string } }) =>
+      // The actions column is named for a screen reader and draws no words over its menus.
+      column.id === "actions" ? (
+        <VisuallyHidden>{column.label}</VisuallyHidden>
+      ) : (
+        column.label
+      ),
+    [],
+  );
+  const cellRenderers = useMemo(
+    () => ({
+      name: ({ row }: { row: TreeRow }) => (
+        <span className={styles.name} title={row.entry.path}>
+          <CategoryMark
+            name={row.entry.name}
+            color={row.entry.color}
+            icon={row.entry.icon}
+          />
+          <Text className={styles.cut}>{row.entry.name}</Text>
+          {row.entry.archived && (
+            <Badge size="sm" tone="secondary">
+              {t("category.archived")}
+            </Badge>
+          )}
+        </span>
+      ),
+      share: ({ row }: { row: TreeRow }) => (
+        <span className={styles.share}>
+          <ShareBar share={row.share} color={row.entry.color} />
+          <Text size="sm" tone="muted" numeric="tabular">
+            {percent.format(row.share)}
+          </Text>
+        </span>
+      ),
+      actions: ({ row }: { row: TreeRow }) => (
+        <CategoryRowMenu
+          entry={row.entry}
+          onAction={(action) => {
+            act(row.entry, action);
+          }}
+        />
+      ),
+    }),
+    [t, percent, act],
+  );
+
   return (
     <DataGrid
       aria-label={t("nav.categories")}
@@ -119,51 +175,12 @@ export function CategoryTree({
       columns={columns}
       rows={rows}
       rowKey="id"
-      tree={{ parentKey: (row) => row.parentId }}
+      tree={tree}
       defaultExpanded={expanded}
       loading={loading}
       height="100%"
-      renderHeader={({ column }) =>
-        // The actions column is named for a screen reader and draws no words over its menus.
-        column.id === "actions" ? (
-          <VisuallyHidden>{column.label}</VisuallyHidden>
-        ) : (
-          column.label
-        )
-      }
-      cellRenderers={{
-        name: ({ row }) => (
-          <span className={styles.name} title={row.entry.path}>
-            <CategoryMark
-              name={row.entry.name}
-              color={row.entry.color}
-              icon={row.entry.icon}
-            />
-            <Text className={styles.cut}>{row.entry.name}</Text>
-            {row.entry.archived && (
-              <Badge size="sm" tone="secondary">
-                {t("category.archived")}
-              </Badge>
-            )}
-          </span>
-        ),
-        share: ({ row }) => (
-          <span className={styles.share}>
-            <ShareBar share={row.share} color={row.entry.color} />
-            <Text size="sm" tone="muted" numeric="tabular">
-              {percent.format(row.share)}
-            </Text>
-          </span>
-        ),
-        actions: ({ row }) => (
-          <CategoryRowMenu
-            entry={row.entry}
-            onAction={(action) => {
-              onAction(row.entry, action);
-            }}
-          />
-        ),
-      }}
+      renderHeader={renderHeader}
+      cellRenderers={cellRenderers}
     />
   );
 }

@@ -1,11 +1,27 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 import { sharedRoutes } from "@/testing/transaction-api";
+
+// Records the categories whose row menu renders, so a test can tell a row's render from none.
+const menus = vi.hoisted(() => ({ rendered: new Set<string>() }));
+vi.mock("@/features/categories/category-row-menu", async (importOriginal) => {
+  const actual =
+    await importOriginal<
+      typeof import("@/features/categories/category-row-menu")
+    >();
+  return {
+    ...actual,
+    CategoryRowMenu: (props: Parameters<typeof actual.CategoryRowMenu>[0]) => {
+      menus.rendered.add(props.entry.name);
+      return actual.CategoryRowMenu(props);
+    },
+  };
+});
 
 const base = { currency: "BRL", opened_on: "2026-01-01", yield_mode: "none" };
 const accounts = [
@@ -166,6 +182,18 @@ describe("CategoriesPage", () => {
     expect(
       queries.find((q) => q.get("from") === "2026-10-01")?.toString(),
     ).toBe("from=2026-10-01&to=2026-10-31&class=expense");
+  });
+
+  // Owner review 2026-10-22: a render of the page, such as a dialog opening, rendered every row.
+  it("renders no row of the tree when a dialog opens over it", async () => {
+    await renderApp("/categories", { fetch: api([]), today: "2026-10-17" });
+    await screen.findByText("Groceries", { selector: "span, p" });
+    menus.rendered.clear();
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["category.new"] }),
+    );
+    await screen.findByRole("dialog");
+    expect([...menus.rendered]).toEqual([]);
   });
 
   it("switches to income categories", async () => {
