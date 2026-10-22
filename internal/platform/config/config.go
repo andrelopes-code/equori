@@ -24,8 +24,6 @@ type Config struct {
 	// SecretKey and PreviousSecretKey seal integration credentials (ADR 008): 32 raw bytes,
 	// empty when unset. Without SecretKey integrations are unavailable.
 	SecretKey, PreviousSecretKey string
-	// PluggyURL is the base URL of the Pluggy API, the only address Pluggy requests go to (N17).
-	PluggyURL string
 	// SyncInterval is how often the scheduler checks connections for new data (P6 A43).
 	SyncInterval time.Duration
 	// WebDevPort, when set, redirects pages to the Vite server on that port of the same host,
@@ -43,7 +41,6 @@ func Load(getenv func(string) string) (Config, error) {
 	cfg := Config{
 		DatabaseURL:  getenv("EQUORI_DATABASE_URL"),
 		HTTPAddr:     getenv("EQUORI_HTTP_ADDR"),
-		PluggyURL:    getenv("EQUORI_PLUGGY_URL"),
 		GeminiAPIKey: getenv("EQUORI_GEMINI_API_KEY"),
 		GeminiURL:    getenv("EQUORI_GEMINI_URL"),
 	}
@@ -51,9 +48,6 @@ func Load(getenv func(string) string) (Config, error) {
 		if name = strings.TrimSpace(name); name != "" {
 			cfg.PriceFeeds = append(cfg.PriceFeeds, name)
 		}
-	}
-	if cfg.PluggyURL == "" {
-		cfg.PluggyURL = "https://api.pluggy.ai"
 	}
 	if cfg.GeminiURL == "" {
 		cfg.GeminiURL = "https://generativelanguage.googleapis.com"

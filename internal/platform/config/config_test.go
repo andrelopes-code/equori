@@ -19,7 +19,7 @@ func TestLoad(t *testing.T) {
 			name: "defaults",
 			env:  map[string]string{"EQUORI_DATABASE_URL": "postgres://x"},
 			want: Config{
-				DatabaseURL: "postgres://x", HTTPAddr: ":8080", LogLevel: slog.LevelInfo, TimeZone: time.UTC, PluggyURL: "https://api.pluggy.ai",
+				DatabaseURL: "postgres://x", HTTPAddr: ":8080", LogLevel: slog.LevelInfo, TimeZone: time.UTC,
 				SyncInterval: time.Hour, GeminiURL: "https://generativelanguage.googleapis.com",
 			},
 		},
@@ -32,7 +32,6 @@ func TestLoad(t *testing.T) {
 				"EQUORI_INSECURE_COOKIES": "true",
 				"EQUORI_TIMEZONE":         "UTC",
 				"EQUORI_API_DOCS":         "true",
-				"EQUORI_PLUGGY_URL":       "http://127.0.0.1:9100",
 				"EQUORI_SYNC_INTERVAL":    "15m",
 				"EQUORI_GEMINI_API_KEY":   "k",
 				"EQUORI_GEMINI_URL":       "http://127.0.0.1:9200",
@@ -41,7 +40,7 @@ func TestLoad(t *testing.T) {
 			},
 			want: Config{
 				DatabaseURL: "postgres://x", HTTPAddr: "127.0.0.1:9000", LogLevel: slog.LevelDebug,
-				TimeZone: time.UTC, InsecureCookies: true, APIDocs: true, PluggyURL: "http://127.0.0.1:9100",
+				TimeZone: time.UTC, InsecureCookies: true, APIDocs: true,
 				SyncInterval: 15 * time.Minute, GeminiAPIKey: "k", GeminiURL: "http://127.0.0.1:9200",
 				PriceFeeds: []string{"bcb_ptax", "ecb"},
 				WebDevPort: 5173,

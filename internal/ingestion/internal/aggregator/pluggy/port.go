@@ -24,8 +24,14 @@ type Port struct {
 	loc *time.Location
 }
 
+// DefaultURL is the Pluggy API address used when none is configured.
+const DefaultURL = "https://api.pluggy.ai"
+
 // NewPort builds the Pluggy port on hc, which the caller configures not to follow redirects (N17).
 func NewPort(baseURL string, hc *http.Client, clk clock.Clock) (*Port, error) {
+	if baseURL == "" {
+		baseURL = DefaultURL
+	}
 	c, err := client.NewClient(baseURL, hc, clk.Now)
 	if err != nil {
 		return nil, err
@@ -34,6 +40,8 @@ func NewPort(baseURL string, hc *http.Client, clk clock.Clock) (*Port, error) {
 }
 
 func (p Port) ID() string { return "pluggy" }
+
+func (p Port) Name() string { return "Pluggy" }
 
 func (p Port) CredentialFields() []domain.CredentialField {
 	return []domain.CredentialField{{Name: "client_id"}, {Name: "client_secret", Secret: true}}
@@ -72,7 +80,7 @@ func (p Port) translate(err error) error {
 func (p Port) session(ctx context.Context, id uuid.UUID, c domain.Credentials, fn func(*client.Session) error) error {
 	key := id.String()
 	for attempt := 0; ; attempt++ {
-		s, err := p.sessions.Get(ctx, key, c.ClientID, c.ClientSecret)
+		s, err := p.sessions.Get(ctx, key, c["client_id"], c["client_secret"])
 		if err != nil {
 			return p.translate(err)
 		}

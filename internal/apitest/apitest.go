@@ -104,9 +104,14 @@ func APIDocs() Option {
 // SecretKey is the integration key Pluggy sets (32 bytes).
 const SecretKey = "equori-test-secret-key-32-bytes!" //nolint:gosec // G101: a fixed key for test databases only
 
-// Pluggy sends Pluggy requests to url and enables integrations with SecretKey.
-func Pluggy(url string) Option {
-	return func(c *server.Config) { c.PluggyURL, c.SecretKey = url, SecretKey }
+// Aggregator sends the requests of aggregator id to url and enables integrations with SecretKey.
+func Aggregator(id, url string) Option {
+	return func(c *server.Config) {
+		if c.AggregatorURLs == nil {
+			c.AggregatorURLs = map[string]string{}
+		}
+		c.AggregatorURLs[id], c.SecretKey = url, SecretKey
+	}
 }
 
 // PriceFeeds enables the price feeds ids against the base URLs of a test server.
@@ -114,7 +119,7 @@ func PriceFeeds(ids []string, urls map[string]string) Option {
 	return func(c *server.Config) { c.PriceFeeds, c.FeedURLs = ids, urls }
 }
 
-// SecretKeys replaces the integration keys; pass it after Pluggy.
+// SecretKeys replaces the integration keys; pass it after Aggregator.
 func SecretKeys(current, previous string) Option {
 	return func(c *server.Config) { c.SecretKey, c.PreviousSecretKey = current, previous }
 }

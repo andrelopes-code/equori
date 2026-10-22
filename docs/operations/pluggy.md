@@ -47,9 +47,11 @@ Pluggy plan; check Pluggy's terms before splitting banks across accounts.
 
 ## 3. Integration, connections and mapping
 
+`EQUORI_AGGREGATOR_PLUGGY_URL` overrides the Pluggy API address (default `https://api.pluggy.ai`). `GET /api/v1/aggregators` lists the credential fields of each aggregator.
+
 ```sh
 # Integration: Pluggy validates the credentials before equori stores them (422 provider_unauthorized otherwise).
-POST /api/v1/integrations {"provider": "pluggy", "name": "Meu Pluggy", "client_id": "...", "client_secret": "..."}
+POST /api/v1/integrations {"provider": "pluggy", "name": "Meu Pluggy", "credentials": {"client_id": "...", "client_secret": "..."}}
 
 # One connection per item id; the response lists the item's accounts, all pending.
 POST /api/v1/connections {"integration_id": "<integration>", "item_id": "<item id>"}

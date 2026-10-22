@@ -125,6 +125,7 @@ var exposure = map[string]string{
 	"listBatchRecords":                 "-pending",
 	"listUnconfirmed":                  "-pending",
 	"resolveExternalRecord":            "-write",
+	"listAggregators":                  "-pending",
 	"listIntegrations":                 "-pending",
 	"createIntegration":                "-write",
 	"getIntegration":                   "-pending",

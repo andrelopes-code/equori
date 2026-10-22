@@ -3076,6 +3076,20 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /aggregators:
+    get:
+      tags: [ingestion]
+      operationId: listAggregators
+      summary: Aggregators this instance offers, with the credential fields each requires.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AggregatorList"
+        "401":
+          $ref: "#/components/responses/Problem"
   /integrations:
     get:
       tags: [ingestion]
@@ -4436,7 +4450,7 @@ components:
     IntegrationInput:
       type: object
       additionalProperties: false
-      required: [provider, name, client_id, client_secret]
+      required: [provider, name, credentials]
       properties:
         provider:
           type: string
@@ -4445,27 +4459,46 @@ components:
           type: string
           minLength: 1
           maxLength: 60
-        client_id:
-          type: string
-          minLength: 1
-          maxLength: 200
-        client_secret:
-          type: string
-          minLength: 1
-          maxLength: 200
+        credentials:
+          $ref: "#/components/schemas/IntegrationCredentials"
     IntegrationCredentials:
       type: object
-      additionalProperties: false
-      required: [client_id, client_secret]
+      description: |
+        One value per credential field the aggregator declares in listAggregators; a missing
+        or undeclared member is 422 validation_failed on credentials.<name>.
+      additionalProperties:
+        type: string
+        maxLength: 200
+    Aggregator:
+      type: object
+      required: [id, name, credential_fields, connect_method]
       properties:
-        client_id:
+        id:
           type: string
-          minLength: 1
-          maxLength: 200
-        client_secret:
+          pattern: "^[a-z0-9_]{2,40}$"
+        name:
           type: string
-          minLength: 1
-          maxLength: 200
+        credential_fields:
+          type: array
+          items:
+            type: object
+            required: [name, secret]
+            properties:
+              name:
+                type: string
+              secret:
+                type: boolean
+        connect_method:
+          type: string
+          description: "reference: a connection takes the item reference of an application the owner connected elsewhere."
+    AggregatorList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Aggregator"
     Integration:
       type: object
       required: [id, provider, name, updated_at]

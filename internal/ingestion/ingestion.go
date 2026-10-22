@@ -40,10 +40,14 @@ type Config struct {
 	// SecretKey and PreviousSecretKey are 32 raw bytes each (ADR 008); without SecretKey
 	// integrations are unavailable.
 	SecretKey, PreviousSecretKey string
-	// PluggyURL is the only address Pluggy requests go to (N17).
-	PluggyURL string
-	Clock     clock.Clock
+	// URLs holds, by aggregator identifier, the only address its requests go to (N17); an
+	// aggregator without an entry uses its own default.
+	URLs  map[string]string
+	Clock clock.Clock
 }
+
+// AggregatorIDs lists the aggregators this build offers, in ascending order.
+func AggregatorIDs() []string { return []string{"pluggy"} }
 
 func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, c *classification.Module, cfg Config, log *slog.Logger) (*Module, error) {
 	in := app.Integrations{Now: cfg.Clock.Now, Today: cfg.Clock.Today}
@@ -58,16 +62,12 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, c 
 		}
 		// A redirect would leave the configured address (N17).
 		hc := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-		port, err := pluggy.NewPort(cfg.PluggyURL, hc, cfg.Clock)
-		if err != nil {
-			return nil, err
-		}
-		aggregators, err := registry.New("aggregator", registry.Entry[app.Aggregator]{ID: port.ID(), Value: port})
+		port, err := pluggy.NewPort(cfg.URLs["pluggy"], hc, cfg.Clock)
 		if err != nil {
 			return nil, err
 		}
 		in.Box = b
-		in.Aggregator, err = aggregators.Get("pluggy")
+		in.Aggregators, err = registry.New("aggregator", registry.Entry[app.Aggregator]{ID: port.ID(), Value: port})
 		if err != nil {
 			return nil, err
 		}
@@ -164,7 +164,7 @@ func (p ledgerPort) posting(l app.Line) (ledger.ImportedPosting, error) {
 func importLine(posting ledger.ImportedPosting, l app.Line) classification.ImportLine {
 	line := classification.ImportLine{AccountID: posting.AccountID, Date: posting.Date, Amount: posting.Amount, Description: posting.Description}
 	if c := l.Category; c != nil {
-		line.SourceCategory = &classification.LineCategory{Provider: string(domain.ProviderPluggy), ExternalID: c.ID, Name: c.Name}
+		line.SourceCategory = &classification.LineCategory{Provider: c.Aggregator, ExternalID: c.ID, Name: c.Name}
 	}
 	return line
 }

@@ -61,7 +61,7 @@ type aggregator struct {
 
 func newAggregator(t *testing.T) aggregator {
 	p := pluggytest.New(t, pluggyClient, pluggySecret)
-	return aggregator{h: apitest.New(t, apitest.Today("2026-11-12"), apitest.Pluggy(p.URL())), p: p}
+	return aggregator{h: apitest.New(t, apitest.Today("2026-11-12"), apitest.Aggregator("pluggy", p.URL())), p: p}
 }
 
 // serveItem adds an item with a checking account, a credit card and a savings account.
@@ -75,7 +75,7 @@ func (a aggregator) serveItem(clientID, itemID, connector string) {
 }
 
 func integrationBody(name, clientID, secret string) map[string]any {
-	return map[string]any{"provider": "pluggy", "name": name, "client_id": clientID, "client_secret": secret}
+	return map[string]any{"provider": "pluggy", "name": name, "credentials": map[string]any{"client_id": clientID, "client_secret": secret}}
 }
 
 func (a aggregator) integrate(c *http.Client, name, clientID, secret string) integrationView {
@@ -477,7 +477,7 @@ func TestCredentialsBoundToTheirRow(t *testing.T) {
 	if _, err := a.h.Pool.Exec(t.Context(), `UPDATE ingestion_integration SET credential_ciphertext = (SELECT credential_ciphertext FROM ingestion_integration WHERE id = $1) WHERE id = $2`, first.ID, second.ID); err != nil {
 		t.Fatal(err)
 	}
-	a.h.Restart(apitest.Pluggy(a.p.URL()))
+	a.h.Restart(apitest.Aggregator("pluggy", a.p.URL()))
 	a.h.ExpectProblem(a.connect(a.h.Client, second.ID, nubankItem), http.StatusConflict, "integration_unavailable", "")
 	a.mustConnect(a.h.Client, first.ID, nubankItem)
 }
@@ -493,16 +493,16 @@ func TestSecretRotation(t *testing.T) {
 	a.integrate(other, "Meu Pluggy", pluggyClient, pluggySecret)
 
 	next := strings.Repeat("n", 32)
-	a.h.Restart(apitest.Pluggy(a.p.URL()), apitest.SecretKeys(next, apitest.SecretKey))
+	a.h.Restart(apitest.Aggregator("pluggy", a.p.URL()), apitest.SecretKeys(next, apitest.SecretKey))
 	for i, want := range []int{2, 0} {
 		n, err := a.h.App.Ingestion.RotateSecrets(t.Context())
 		if err != nil || n != want {
 			t.Fatalf("rotation %d = %d, %v; want %d", i, n, err, want)
 		}
 	}
-	a.h.Restart(apitest.Pluggy(a.p.URL()), apitest.SecretKeys(next, ""))
+	a.h.Restart(apitest.Aggregator("pluggy", a.p.URL()), apitest.SecretKeys(next, ""))
 	a.mustConnect(a.h.Client, in.ID, nubankItem)
-	a.h.Restart(apitest.Pluggy(a.p.URL()))
+	a.h.Restart(apitest.Aggregator("pluggy", a.p.URL()))
 	a.h.ExpectProblem(a.connect(a.h.Client, in.ID, "item-inter-52c8"), http.StatusConflict, "integration_unavailable", "")
 }
 
@@ -511,7 +511,7 @@ func TestProviderUnavailable(t *testing.T) {
 	t.Parallel()
 	closed := httptest.NewServer(http.NotFoundHandler())
 	closed.Close()
-	h := apitest.New(t, apitest.Pluggy(closed.URL))
+	h := apitest.New(t, apitest.Aggregator("pluggy", closed.URL))
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/integrations", integrationBody("Meu Pluggy", pluggyClient, pluggySecret)),
 		http.StatusBadGateway, "provider_unavailable", "")
 }

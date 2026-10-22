@@ -52,17 +52,21 @@ func (s *Service) syncItem(ctx context.Context, c *domain.Connection, force bool
 	if err != nil {
 		return nil, err
 	}
-	state, err := s.agg.ItemState(ctx, i.ID, creds, c.ItemID)
+	agg, err := s.aggregator(i.Provider)
+	if err != nil {
+		return nil, err
+	}
+	state, err := agg.ItemState(ctx, i.ID, creds, c.ItemID)
 	if err != nil {
 		return nil, err
 	}
 	status, updatedAt := state.Status, state.UpdatedAt
 	c.ProviderStatus, c.NextItemUpdateAt, c.LastError = status, state.NextUpdateAt, ""
 	newer := updatedAt != nil && (c.LastItemUpdateAt == nil || updatedAt.After(*c.LastItemUpdateAt))
-	if s.agg.State(status) == domain.StateNeedsOwner || (!force && c.LastSyncedAt != nil && !newer) {
+	if agg.State(status) == domain.StateNeedsOwner || (!force && c.LastSyncedAt != nil && !newer) {
 		return nil, nil
 	}
-	if err := s.addMissingAccounts(ctx, c, creds); err != nil {
+	if err := s.addMissingAccounts(ctx, agg, c, creds); err != nil {
 		return nil, err
 	}
 	var batches []domain.Batch
@@ -75,7 +79,7 @@ func (s *Service) syncItem(ctx context.Context, c *domain.Connection, force bool
 		if ext.State() != domain.MappingMapped {
 			continue
 		}
-		b, err := s.syncAccount(ctx, *c, ext, creds)
+		b, err := s.syncAccount(ctx, agg, *c, ext, creds)
 		if err != nil {
 			return batches, err
 		}
@@ -96,8 +100,8 @@ func reserveRank(ext domain.ExternalAccount) int {
 // addMissingAccounts stores, pending, every account and reserved balance the item reports
 // that the connection lacks (A73), and the name the item now reports for a stored account
 // it renamed; the mapping of a stored account is not changed (A94).
-func (s *Service) addMissingAccounts(ctx context.Context, c *domain.Connection, creds domain.Credentials) error {
-	listed, err := s.agg.Accounts(ctx, c.IntegrationID, creds, c.ItemID)
+func (s *Service) addMissingAccounts(ctx context.Context, agg Aggregator, c *domain.Connection, creds domain.Credentials) error {
+	listed, err := agg.Accounts(ctx, c.IntegrationID, creds, c.ItemID)
 	if err != nil {
 		return err
 	}
@@ -138,7 +142,7 @@ func (s *Service) addMissingAccounts(ctx context.Context, c *domain.Connection, 
 // the aggregator stopped returning are withdrawn first, so that a line returned with a new
 // id finds its released posting (A38); then the lines go through the P4 pipeline, and a
 // bank balance becomes a balance assertion (A42).
-func (s *Service) syncAccount(ctx context.Context, c domain.Connection, ext domain.ExternalAccount, creds domain.Credentials) (domain.Batch, error) {
+func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Connection, ext domain.ExternalAccount, creds domain.Credentials) (domain.Batch, error) {
 	accountID := *ext.AccountID
 	target, err := s.ledger.ImportTarget(ctx, c.UserID, accountID)
 	if err != nil {
@@ -158,7 +162,7 @@ func (s *Service) syncAccount(ctx context.Context, c domain.Connection, ext doma
 	if first {
 		readFrom = from.AddDate(0, 0, -cycleLookback)
 	}
-	read, err := s.agg.ReadAccount(ctx, c.IntegrationID, creds, c.ItemID, ext.ExternalID, readFrom, to, target.Currency.MinorUnits())
+	read, err := agg.ReadAccount(ctx, c.IntegrationID, creds, c.ItemID, ext.ExternalID, readFrom, to, target.Currency.MinorUnits())
 	if errors.Is(err, ErrAccountGone) && ext.Subtype == domain.SubtypeReservedBalance {
 		// A reserved balance the item stopped reporting syncs without a balance (D2).
 		read, err = domain.AccountRead{}, nil
@@ -167,6 +171,11 @@ func (s *Service) syncAccount(ctx context.Context, c domain.Connection, ext doma
 		return domain.Batch{}, fmt.Errorf("account %s: %w", ext.ID, err)
 	}
 	read = withoutSuperseded(read)
+	for _, r := range read.Records {
+		if r.Category != nil {
+			r.Category.Aggregator = agg.ID()
+		}
+	}
 	var opening *domain.Bill
 	firstDue := *ext.SyncFrom
 	if first {

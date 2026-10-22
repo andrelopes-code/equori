@@ -43,6 +43,7 @@ type Sealer interface {
 // one wrapping ErrProviderUnavailable; none names an identifier (A44).
 type Aggregator interface {
 	ID() string
+	Name() string
 	CredentialFields() []domain.CredentialField
 	// ConnectMethod names how a connection is created: "reference" takes the item reference
 	// of an application the owner connected elsewhere.
@@ -102,8 +103,29 @@ func (s *Service) credentials(i domain.Integration) (domain.Credentials, error) 
 	return c, nil
 }
 
-func (s *Service) verify(ctx context.Context, id uuid.UUID, c domain.Credentials) error {
-	err := s.agg.Verify(ctx, id, c)
+// Aggregators lists the aggregators this instance offers, by identifier.
+func (s *Service) Aggregators() []Aggregator {
+	ids := s.aggs.IDs()
+	out := make([]Aggregator, len(ids))
+	for i, id := range ids {
+		out[i], _ = s.aggs.Get(id)
+	}
+	return out
+}
+
+func (s *Service) aggregator(p domain.Provider) (Aggregator, error) {
+	a, err := s.aggs.Get(string(p))
+	if err != nil {
+		return nil, &domain.FieldError{Field: "provider", Message: "is not an aggregator of this instance"}
+	}
+	return a, nil
+}
+
+func (s *Service) verify(ctx context.Context, agg Aggregator, id uuid.UUID, c domain.Credentials) error {
+	if err := c.Validate(agg.CredentialFields()); err != nil {
+		return err
+	}
+	err := agg.Verify(ctx, id, c)
 	if errors.Is(err, ErrProviderUnauthorized) {
 		return &UnauthorizedError{Field: "client_secret"}
 	}
@@ -119,16 +141,20 @@ func (s *Service) CreateIntegration(ctx context.Context, userID int64, p domain.
 	if err != nil {
 		return domain.Integration{}, err
 	}
-	if err := s.verify(ctx, i.ID, c); err != nil {
+	agg, err := s.aggregator(p)
+	if err != nil {
+		return domain.Integration{}, err
+	}
+	if err := s.verify(ctx, agg, i.ID, c); err != nil {
 		return domain.Integration{}, err
 	}
 	if i.SealedCredentials, err = s.seal(userID, i.ID, c); err != nil {
-		s.agg.Forget(i.ID)
+		agg.Forget(i.ID)
 		return domain.Integration{}, err
 	}
 	saved, err := s.repo.InsertIntegration(ctx, i)
 	if err != nil {
-		s.agg.Forget(i.ID)
+		agg.Forget(i.ID)
 	}
 	return saved, err
 }
@@ -153,11 +179,16 @@ func (s *Service) UpdateCredentials(ctx context.Context, userID int64, id uuid.U
 	if err := s.available(); err != nil {
 		return domain.Integration{}, err
 	}
-	if _, err := s.repo.Integration(ctx, userID, id); err != nil {
+	i, err := s.repo.Integration(ctx, userID, id)
+	if err != nil {
 		return domain.Integration{}, err
 	}
-	if err := s.verify(ctx, id, c); err != nil {
-		s.agg.Forget(id)
+	agg, err := s.aggregator(i.Provider)
+	if err != nil {
+		return domain.Integration{}, err
+	}
+	if err := s.verify(ctx, agg, id, c); err != nil {
+		agg.Forget(id)
 		return domain.Integration{}, err
 	}
 	sealed, err := s.seal(userID, id, c)
@@ -171,10 +202,16 @@ func (s *Service) DeleteIntegration(ctx context.Context, userID int64, id uuid.U
 	if err := s.available(); err != nil {
 		return err
 	}
+	i, err := s.repo.Integration(ctx, userID, id)
+	if err != nil {
+		return err
+	}
 	if err := s.repo.DeleteIntegration(ctx, userID, id); err != nil {
 		return err
 	}
-	s.agg.Forget(id)
+	if agg, err := s.aggregator(i.Provider); err == nil {
+		agg.Forget(id)
+	}
 	return nil
 }
 

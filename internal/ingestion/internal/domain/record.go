@@ -38,6 +38,8 @@ type Installment struct {
 // SourceCategory is the category the source assigned to a line.
 type SourceCategory struct {
 	ID, Name string
+	// Aggregator is the identifier of the aggregator that assigned it; empty for files.
+	Aggregator string
 }
 
 // Balance is the balance a file reports at the end of a date.

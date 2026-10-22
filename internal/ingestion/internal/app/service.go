@@ -10,6 +10,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/page"
+	"github.com/andrelopes-code/equori/internal/platform/registry"
 )
 
 var ErrNotFound = errors.New("not found")
@@ -108,21 +109,21 @@ type Service struct {
 	ledger Ledger
 	// box is nil without EQUORI_SECRET_KEY: integrations are unavailable (ADR 008 K2).
 	box   Sealer
-	agg   Aggregator
+	aggs  registry.Registry[Aggregator]
 	now   func() time.Time
 	today func() time.Time
 }
 
 // Integrations are what aggregator integrations need; the zero value leaves them unavailable.
 type Integrations struct {
-	Box        Sealer
-	Aggregator Aggregator
+	Box         Sealer
+	Aggregators registry.Registry[Aggregator]
 	// Now and Today are the instance's clock (ADR 005).
 	Now, Today func() time.Time
 }
 
 func NewService(repo Repository, ledger Ledger, in Integrations) *Service {
-	return &Service{repo: repo, ledger: ledger, box: in.Box, agg: in.Aggregator, now: in.Now, today: in.Today}
+	return &Service{repo: repo, ledger: ledger, box: in.Box, aggs: in.Aggregators, now: in.Now, today: in.Today}
 }
 
 // FollowPairing points the records that a ledger pairing moved to the kept transaction

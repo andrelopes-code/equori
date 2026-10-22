@@ -915,6 +915,7 @@ export const operations: Record<GroupKey, readonly Operation[]> = {
         description_column: "Descrição",
       }),
     },
+    { id: "listAggregators", method: "GET", path: "/aggregators" },
     {
       id: "listIntegrations",
       method: "GET",
@@ -928,8 +929,7 @@ export const operations: Record<GroupKey, readonly Operation[]> = {
       body: () => ({
         provider: "pluggy",
         name: "Pluggy",
-        client_id: "",
-        client_secret: "",
+        credentials: { client_id: "", client_secret: "" },
       }),
     },
     { id: "getIntegration", method: "GET", path: "/integrations/{id}" },

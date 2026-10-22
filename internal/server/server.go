@@ -45,7 +45,8 @@ type Config struct {
 	// SecretKey and PreviousSecretKey seal integration credentials (ADR 008): 32 raw bytes,
 	// empty when unset.
 	SecretKey, PreviousSecretKey string
-	PluggyURL                    string
+	// AggregatorURLs overrides the base URL of an aggregator, by identifier.
+	AggregatorURLs map[string]string
 	// LLM routes language model calls (ADR 009); modules take clients from it.
 	LLM *llm.Router
 	// PriceFeeds names the enabled price feeds; FeedURLs overrides their base URLs by identifier.
@@ -92,7 +93,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	classificationModule := classification.New(pool, dispatcher, ledgerModule, log)
 	captureModule := capture.New(pool, ledgerModule, classificationModule, cfg.LLM, clk, log)
 	ingestionModule, err := ingestion.New(pool, dispatcher, ledgerModule, classificationModule, ingestion.Config{
-		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, PluggyURL: cfg.PluggyURL, Clock: clk,
+		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, URLs: cfg.AggregatorURLs, Clock: clk,
 	}, log)
 	if err != nil {
 		return nil, err

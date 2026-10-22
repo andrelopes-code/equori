@@ -16,7 +16,7 @@ func toIntegrationAPI(i domain.Integration) Integration {
 func (s *Server) CreateIntegration(ctx context.Context, req CreateIntegrationRequestObject) (CreateIntegrationResponseObject, error) {
 	b := req.Body
 	i, err := s.svc.CreateIntegration(ctx, auth.MustUserID(ctx), domain.Provider(b.Provider), b.Name,
-		domain.Credentials{ClientID: b.ClientId, ClientSecret: b.ClientSecret})
+		domain.Credentials(b.Credentials))
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (s *Server) GetIntegration(ctx context.Context, req GetIntegrationRequestOb
 }
 
 func (s *Server) UpdateIntegrationCredentials(ctx context.Context, req UpdateIntegrationCredentialsRequestObject) (UpdateIntegrationCredentialsResponseObject, error) {
-	i, err := s.svc.UpdateCredentials(ctx, auth.MustUserID(ctx), req.Id, domain.Credentials{ClientID: req.Body.ClientId, ClientSecret: req.Body.ClientSecret})
+	i, err := s.svc.UpdateCredentials(ctx, auth.MustUserID(ctx), req.Id, domain.Credentials(*req.Body))
 	if err != nil {
 		return nil, err
 	}
@@ -62,4 +62,20 @@ func (s *Server) DeleteIntegration(ctx context.Context, req DeleteIntegrationReq
 		return nil, err
 	}
 	return DeleteIntegration204Response{}, nil
+}
+
+func (s *Server) ListAggregators(ctx context.Context, _ ListAggregatorsRequestObject) (ListAggregatorsResponseObject, error) {
+	all := s.svc.Aggregators()
+	out := ListAggregators200JSONResponse{Items: make([]Aggregator, len(all))}
+	for i, a := range all {
+		fields := make([]struct {
+			Name   string `json:"name"`
+			Secret bool   `json:"secret"`
+		}, len(a.CredentialFields()))
+		for j, f := range a.CredentialFields() {
+			fields[j].Name, fields[j].Secret = f.Name, f.Secret
+		}
+		out.Items[i] = Aggregator{Id: a.ID(), Name: a.Name(), CredentialFields: fields, ConnectMethod: a.ConnectMethod()}
+	}
+	return out, nil
 }

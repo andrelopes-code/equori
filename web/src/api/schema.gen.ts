@@ -1790,6 +1790,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/aggregators": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Aggregators this instance offers, with the credential fields each requires. */
+        get: operations["listAggregators"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/integrations": {
         parameters: {
             query?: never;
@@ -2536,12 +2553,27 @@ export interface components {
             /** @enum {string} */
             provider: "pluggy";
             name: string;
-            client_id: string;
-            client_secret: string;
+            credentials: components["schemas"]["IntegrationCredentials"];
         };
+        /**
+         * @description One value per credential field the aggregator declares in listAggregators; a missing
+         *     or undeclared member is 422 validation_failed on credentials.<name>.
+         */
         IntegrationCredentials: {
-            client_id: string;
-            client_secret: string;
+            [key: string]: string;
+        };
+        Aggregator: {
+            id: string;
+            name: string;
+            credential_fields: {
+                name: string;
+                secret: boolean;
+            }[];
+            /** @description reference: a connection takes the item reference of an application the owner connected elsewhere. */
+            connect_method: string;
+        };
+        AggregatorList: {
+            items: components["schemas"]["Aggregator"][];
         };
         Integration: {
             /** Format: uuid */
@@ -7303,6 +7335,27 @@ export interface operations {
             404: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    listAggregators: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AggregatorList"];
+                };
+            };
+            401: components["responses"]["Problem"];
         };
     };
     listIntegrations: {

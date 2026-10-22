@@ -16,6 +16,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/andrelopes-code/equori/internal/ingestion"
 	"github.com/andrelopes-code/equori/internal/marketdata"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/config"
@@ -174,9 +175,20 @@ func portfolioCommand(args []string) error {
 func serverConfig(cfg config.Config, clk *clock.Clock, router *llm.Router) server.Config {
 	return server.Config{
 		SecureCookies: !cfg.InsecureCookies, Clock: clk, APIDocs: cfg.APIDocs,
-		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, PluggyURL: cfg.PluggyURL,
+		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, AggregatorURLs: aggregatorURLs(os.Getenv),
 		LLM: router, PriceFeeds: cfg.PriceFeeds, FeedURLs: feedURLs(os.Getenv),
 	}
+}
+
+// aggregatorURLs reads EQUORI_AGGREGATOR_<ID>_URL for each aggregator the ingestion module offers.
+func aggregatorURLs(getenv func(string) string) map[string]string {
+	urls := make(map[string]string)
+	for _, id := range ingestion.AggregatorIDs() {
+		if v := getenv("EQUORI_AGGREGATOR_" + strings.ToUpper(id) + "_URL"); v != "" {
+			urls[id] = v
+		}
+	}
+	return urls
 }
 
 // feedURLs reads EQUORI_FEED_<ID>_URL for each price feed the marketdata module offers.

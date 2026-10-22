@@ -27,7 +27,11 @@ func (s *Service) CreateConnection(ctx context.Context, userID int64, integratio
 	if err != nil {
 		return domain.Connection{}, err
 	}
-	c, err := s.agg.Item(ctx, i.ID, creds, itemID)
+	agg, err := s.aggregator(i.Provider)
+	if err != nil {
+		return domain.Connection{}, err
+	}
+	c, err := agg.Item(ctx, i.ID, creds, itemID)
 	switch {
 	case errors.Is(err, ErrProviderUnauthorized):
 		return domain.Connection{}, &UnauthorizedError{Field: "integration_id"}

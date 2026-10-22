@@ -386,6 +386,23 @@ type AccountMappingInput struct {
 	SyncFrom  *openapi_types.Date `json:"sync_from,omitempty"`
 }
 
+// Aggregator defines model for Aggregator.
+type Aggregator struct {
+	// ConnectMethod reference: a connection takes the item reference of an application the owner connected elsewhere.
+	ConnectMethod    string `json:"connect_method"`
+	CredentialFields []struct {
+		Name   string `json:"name"`
+		Secret bool   `json:"secret"`
+	} `json:"credential_fields"`
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+
+// AggregatorList defines model for AggregatorList.
+type AggregatorList struct {
+	Items []Aggregator `json:"items"`
+}
+
 // Connection defines model for Connection.
 type Connection struct {
 	Accounts      []ExternalAccount  `json:"accounts"`
@@ -591,18 +608,17 @@ type Integration struct {
 // IntegrationProvider defines model for Integration.Provider.
 type IntegrationProvider string
 
-// IntegrationCredentials defines model for IntegrationCredentials.
-type IntegrationCredentials struct {
-	ClientId     string `json:"client_id"`
-	ClientSecret string `json:"client_secret"`
-}
+// IntegrationCredentials One value per credential field the aggregator declares in listAggregators; a missing
+// or undeclared member is 422 validation_failed on credentials.<name>.
+type IntegrationCredentials map[string]string
 
 // IntegrationInput defines model for IntegrationInput.
 type IntegrationInput struct {
-	ClientId     string                   `json:"client_id"`
-	ClientSecret string                   `json:"client_secret"`
-	Name         string                   `json:"name"`
-	Provider     IntegrationInputProvider `json:"provider"`
+	// Credentials One value per credential field the aggregator declares in listAggregators; a missing
+	// or undeclared member is 422 validation_failed on credentials.<name>.
+	Credentials IntegrationCredentials   `json:"credentials"`
+	Name        string                   `json:"name"`
+	Provider    IntegrationInputProvider `json:"provider"`
 }
 
 // IntegrationInputProvider defines model for IntegrationInput.Provider.
@@ -778,6 +794,9 @@ type ServerInterface interface {
 	// ListUnconfirmed Entries of the account that no institution line confirmed (A103).
 	// (GET /accounts/{id}/unconfirmed)
 	ListUnconfirmed(w http.ResponseWriter, r *http.Request, id ID)
+	// ListAggregators Aggregators this instance offers, with the credential fields each requires.
+	// (GET /aggregators)
+	ListAggregators(w http.ResponseWriter, r *http.Request)
 	// ListConnections Connections with their external accounts, by name.
 	// (GET /connections)
 	ListConnections(w http.ResponseWriter, r *http.Request, params ListConnectionsParams)
@@ -929,6 +948,20 @@ func (siw *ServerInterfaceWrapper) ListUnconfirmed(w http.ResponseWriter, r *htt
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListUnconfirmed(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListAggregators operation middleware
+func (siw *ServerInterfaceWrapper) ListAggregators(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListAggregators(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1543,6 +1576,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/import-batches/{id}/records", wrapper.ListBatchRecords)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/unconfirmed", wrapper.ListUnconfirmed)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/external-records/{id}/resolve", wrapper.ResolveExternalRecord)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/aggregators", wrapper.ListAggregators)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/integrations", wrapper.ListIntegrations)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/integrations", wrapper.CreateIntegration)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/integrations/{id}", wrapper.DeleteIntegration)
@@ -1832,6 +1866,43 @@ func (response ListUnconfirmed422ApplicationProblemPlusJSONResponse) VisitListUn
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAggregatorsRequestObject struct {
+}
+
+type ListAggregatorsResponseObject interface {
+	VisitListAggregatorsResponse(w http.ResponseWriter) error
+}
+
+type ListAggregators200JSONResponse AggregatorList
+
+func (response ListAggregators200JSONResponse) VisitListAggregatorsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAggregators401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListAggregators401ApplicationProblemPlusJSONResponse) VisitListAggregatorsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -2881,6 +2952,9 @@ type StrictServerInterface interface {
 	// ListUnconfirmed Entries of the account that no institution line confirmed (A103).
 	// (GET /accounts/{id}/unconfirmed)
 	ListUnconfirmed(ctx context.Context, request ListUnconfirmedRequestObject) (ListUnconfirmedResponseObject, error)
+	// ListAggregators Aggregators this instance offers, with the credential fields each requires.
+	// (GET /aggregators)
+	ListAggregators(ctx context.Context, request ListAggregatorsRequestObject) (ListAggregatorsResponseObject, error)
 	// ListConnections Connections with their external accounts, by name.
 	// (GET /connections)
 	ListConnections(ctx context.Context, request ListConnectionsRequestObject) (ListConnectionsResponseObject, error)
@@ -3078,6 +3152,30 @@ func (sh *strictHandler) ListUnconfirmed(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListUnconfirmedResponseObject); ok {
 		if err := validResponse.VisitListUnconfirmedResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListAggregators operation middleware
+func (sh *strictHandler) ListAggregators(w http.ResponseWriter, r *http.Request) {
+	var request ListAggregatorsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListAggregators(ctx, request.(ListAggregatorsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListAggregators")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListAggregatorsResponseObject); ok {
+		if err := validResponse.VisitListAggregatorsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
