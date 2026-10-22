@@ -6,13 +6,14 @@ import { accountsQuery } from "@/features/accounts";
 import type { RuleWords } from "@/features/categories/rule-sentence";
 import { useCategoryEntries } from "@/features/categories/use-category-entries";
 import { payeesQuery, useScale } from "@/features/setup";
-import { formatMoney } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 // The words a rule is read in: payees, accounts and category paths by id, money by its scale.
 export function useRuleWords(): RuleWords {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const api = useApi();
   const accounts = useQuery(accountsQuery(api));
   const payees = useQuery(payeesQuery(api));
@@ -28,7 +29,7 @@ export function useRuleWords(): RuleWords {
       t,
       name: (id) =>
         id === "" ? t("rule.unset") : (names.get(id) ?? t("rule.unknown")),
-      money: (m) => formatMoney(m, scale?.(m.currency) ?? 2, locale),
+      money: (m) => fmt.money(m, scale?.(m.currency) ?? 2),
     };
-  }, [accounts.data, entries, payees.data, scale, locale, t]);
+  }, [accounts.data, entries, payees.data, scale, t, fmt]);
 }

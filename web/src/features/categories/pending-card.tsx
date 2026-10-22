@@ -3,8 +3,8 @@ import { useNavigate } from "@tanstack/react-router";
 
 import { FigureCard } from "@/ui/figure-card";
 import type { CategoryClass } from "@/features/categories/category-paths";
-import { formatMoney } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 // OV-01: the figure leads to the list it counts, with the month and the condition in the address.
 export function PendingCard({
@@ -28,6 +28,7 @@ export function PendingCard({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const navigate = useNavigate();
   const percent = new Intl.NumberFormat(locale, {
     style: "percent",
@@ -36,7 +37,7 @@ export function PendingCard({
   return (
     <FigureCard
       label={t("category.pending")}
-      value={formatMoney({ amount, currency }, scale, locale)}
+      value={fmt.money({ amount, currency }, scale)}
       note={t(
         cls === "income"
           ? "category.pendingNote.income"

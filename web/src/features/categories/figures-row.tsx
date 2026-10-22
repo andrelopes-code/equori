@@ -7,8 +7,9 @@ import type { CategoryClass } from "@/features/categories/category-paths";
 import { FigureCard } from "@/ui/figure-card";
 import styles from "@/features/categories/figures-row.module.css";
 import { PendingCard } from "@/features/categories/pending-card";
-import { formatMoney, formatMonthName } from "@/i18n/format";
+import { formatMonthName } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 // OV-05: peer tiles in one grid. Each answers a question the tree and the charts leave to
 // arithmetic: how the month compares with the same days before, what drove it, where it is
@@ -49,8 +50,8 @@ export function FiguresRow({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
-  const money = (amount: number) =>
-    formatMoney({ amount, currency }, scale, locale);
+  const fmt = useMoneyFormat();
+  const money = (amount: number) => fmt.money({ amount, currency }, scale);
   const before = formatMonthName(previousMonth, locale).toLocaleLowerCase(
     locale,
   );

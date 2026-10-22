@@ -4,8 +4,8 @@ import { Grid } from "@slotted/react/grid";
 import { useMemo } from "react";
 
 import type { Trend } from "@/features/categories/category-figures";
-import { formatMoney } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 function isSlot(color: number | undefined): color is ChartSlot {
   return color !== undefined && color >= 1 && color <= 8;
@@ -27,10 +27,11 @@ export function CategoryCharts({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
 
   const { months, composition, series, compositionSeries } = useMemo(() => {
     const money = (value: number) =>
-      formatMoney({ amount: value, currency }, scale, locale);
+      fmt.money({ amount: value, currency }, scale);
     const short = new Intl.DateTimeFormat(locale, {
       month: "short",
       timeZone: "UTC",
@@ -69,7 +70,7 @@ export function CategoryCharts({
       series: all,
       compositionSeries: all.filter((s) => Number(last?.[s.field]) > 0),
     };
-  }, [trend, currency, scale, locale, t]);
+  }, [trend, currency, scale, locale, t, fmt]);
 
   const empty = !months.some((r) => series.some((s) => Number(r[s.field]) > 0));
   return (
@@ -98,8 +99,7 @@ export function CategoryCharts({
         title={t("category.chart.trend")}
         x={{ field: "label" }}
         y={{
-          format: (value) =>
-            formatMoney({ amount: value, currency }, scale, locale),
+          format: (value) => fmt.money({ amount: value, currency }, scale),
         }}
       />
     </Grid>

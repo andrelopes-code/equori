@@ -11,9 +11,9 @@ import { CategoryRowMenu } from "@/features/categories/category-row-menu";
 import type { CategoryAction } from "@/features/categories/category-row-menu";
 import styles from "@/features/categories/category-tree.module.css";
 import { ShareBar } from "@/features/categories/share-bar";
-import { formatMoney } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useStableCallback } from "@/ui/use-stable-callback";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 export interface TreeRow {
   id: string;
@@ -44,6 +44,7 @@ export function CategoryTree({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const expanded = useMemo(
     () => [
       ...new Set(
@@ -54,8 +55,7 @@ export function CategoryTree({
   );
 
   const columns = useMemo<GridColumn<TreeRow>[]>(() => {
-    const format = (amount: number) =>
-      formatMoney({ amount, currency }, scale, locale);
+    const format = (amount: number) => fmt.money({ amount, currency }, scale);
     return [
       {
         id: "name",
@@ -102,7 +102,7 @@ export function CategoryTree({
         sortable: false,
       },
     ];
-  }, [t, locale, currency, scale]);
+  }, [t, currency, scale, fmt]);
 
   const percent = useMemo(
     () =>
