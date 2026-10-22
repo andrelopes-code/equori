@@ -1,6 +1,6 @@
 # Price feeds
 
-equori records prices from two public sources when the owner enables them. Both are free and
+equori records prices from public sources when the owner enables them. Both are free and
 need no key. Phase P8 of the roadmap describes the rules (amendments A60–A62 of
 `docs/superpowers/plans/2026-10-17-p8-currencies-investments.md`).
 
@@ -8,12 +8,13 @@ need no key. Phase P8 of the roadmap describes the rules (amendments A60–A62 o
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `EQUORI_PRICE_FEEDS` | empty | Comma list of `bcb_ptax`, `b3_cotahist`. Empty: equori sends no feed request (N17). |
+| `EQUORI_PRICE_FEEDS` | empty | Comma list of `bcb_ptax`, `b3_cotahist`, `ecb`. Empty: equori sends no feed request (N17). |
 | `EQUORI_FEED_BCB_PTAX_URL` | `https://olinda.bcb.gov.br/olinda/service/PTAX/version/v1/odata` | Base URL of the BCB PTAX service. |
+| `EQUORI_FEED_ECB_URL` | `https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist-90d.xml` | URL of the ECB reference rates XML file (last 90 days). |
 | `EQUORI_FEED_B3_COTAHIST_URL` | `https://bvmf.bmfbovespa.com.br/InstDados/SerHist` | Base URL of the B3 daily historical quotes files. |
 
 A network allowlist for the container adds `olinda.bcb.gov.br` and `bvmf.bmfbovespa.com.br`
-for the enabled feeds.
+for the enabled feeds (`www.ecb.europa.eu` for `ecb`).
 
 ## 2. Sources
 
@@ -21,6 +22,7 @@ for the enabled feeds.
 |---|---|---|---|
 | `bcb_ptax` | Every currency instrument except `BRL` | `ExchangeRatePeriod` per currency for the whole window | `cotacaoVenda` of the `Fechamento` bulletin, quoted in `BRL` |
 | `b3_cotahist` | Instruments with exchange `B3` and quote currency `BRL` | `COTAHIST_D{DDMMYYYY}.ZIP` per weekday | `PREULT` of the spot market (`TPMERC` 010), quoted in `BRL` |
+| `ecb` | Every currency instrument except `EUR` | One XML file with the last 90 days | Units of the currency per euro, stored as the price of `EUR` quoted in that currency |
 
 A currency the BCB does not quote returns an empty answer and stores nothing.
 

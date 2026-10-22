@@ -7,6 +7,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/b3cotahist"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/bcbptax"
+	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed/ecb"
 )
 
 type sourceEntry struct {
@@ -19,6 +20,7 @@ func sourceEntries() []sourceEntry {
 	return []sourceEntry{
 		{"b3_cotahist", "https://bvmf.bmfbovespa.com.br/InstDados/SerHist", func(hc *http.Client, url string) feed.Source { return b3cotahist.New(hc, url) }},
 		{"bcb_ptax", "https://olinda.bcb.gov.br/olinda/service/PTAX/version/v1/odata", func(hc *http.Client, url string) feed.Source { return bcbptax.New(hc, url) }},
+		{"ecb", "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist-90d.xml", func(hc *http.Client, url string) feed.Source { return ecb.New(hc, url) }},
 	}
 }
 
