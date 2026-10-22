@@ -8,6 +8,7 @@ import type { Client } from "openapi-fetch";
 import { useApi } from "@/api/api-context";
 import { unwrap } from "@/api/problem";
 import type { components, paths } from "@/api/schema.gen";
+import { useAppLocaleState } from "@/i18n/i18n-provider";
 
 export const setupKeys = {
   settings: ["setup", "settings"] as const,
@@ -130,4 +131,19 @@ export function useCreatePayee() {
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: setupKeys.payees }),
   });
+}
+
+// Applies the region at once, so formats follow, and stores it in the profile.
+export function useChooseRegion(): (region: string) => void {
+  const api = useApi();
+  const { locale, setLocale } = useAppLocaleState();
+  const update = useMutation({
+    mutationFn: async (region: string) => {
+      await unwrap(await api.PATCH("/me", { body: { region } }));
+    },
+  });
+  return (region) => {
+    setLocale({ ...locale, region });
+    update.mutate(region);
+  };
 }
