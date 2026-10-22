@@ -82,6 +82,9 @@ func serve() error {
 	if err != nil {
 		return err
 	}
+	if err := app.Marketdata.ReconcileCurrencies(ctx); err != nil {
+		return err
+	}
 
 	// The dispatcher and the scheduler must stop before the pool closes.
 	dispatcherDone := make(chan error, 1)

@@ -36,6 +36,7 @@ lint: $(TOOLS)
 
 # Each module's adapter/httpapi holds an oapi-codegen.yaml selecting its tag from api/openapi.yaml.
 gen: $(TOOLS) $(WEB_DEPS)
+	go run ./internal/platform/money/gen
 	$(BIN)/sqlc generate
 	for cfg in $$(find internal -name oapi-codegen.yaml); do \
 		(cd $$(dirname $$cfg) && $(BIN)/oapi-codegen -config oapi-codegen.yaml $(CURDIR)/api/openapi.yaml) || exit 1; \

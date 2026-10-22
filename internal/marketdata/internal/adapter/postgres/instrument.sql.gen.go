@@ -57,6 +57,23 @@ func (q *Queries) InsertInstrument(ctx context.Context, arg InsertInstrumentPara
 	return result.RowsAffected(), nil
 }
 
+const insertMissingCurrencies = `-- name: InsertMissingCurrencies :exec
+INSERT INTO marketdata_instrument (code, instrument_type, scale, name)
+SELECT unnest($1::text[]), 'currency', unnest($2::smallint[]), unnest($3::text[])
+ON CONFLICT (code) DO NOTHING
+`
+
+type InsertMissingCurrenciesParams struct {
+	Codes  []string
+	Scales []int16
+	Names  []string
+}
+
+func (q *Queries) InsertMissingCurrencies(ctx context.Context, arg InsertMissingCurrenciesParams) error {
+	_, err := q.db.Exec(ctx, insertMissingCurrencies, arg.Codes, arg.Scales, arg.Names)
+	return err
+}
+
 const listInstruments = `-- name: ListInstruments :many
 SELECT code, instrument_type, scale, name, quote_currency, exchange FROM marketdata_instrument ORDER BY code
 `

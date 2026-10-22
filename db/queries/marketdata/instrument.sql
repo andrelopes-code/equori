@@ -11,3 +11,8 @@ SELECT * FROM marketdata_instrument ORDER BY code;
 INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, exchange)
 VALUES (@code, @instrument_type, @scale, @name, @quote_currency, sqlc.narg(exchange))
 ON CONFLICT (code) DO NOTHING;
+
+-- name: InsertMissingCurrencies :exec
+INSERT INTO marketdata_instrument (code, instrument_type, scale, name)
+SELECT unnest(@codes::text[]), 'currency', unnest(@scales::smallint[]), unnest(@names::text[])
+ON CONFLICT (code) DO NOTHING;

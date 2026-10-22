@@ -194,3 +194,21 @@ func TestInstrumentArithmeticKeepsScale(t *testing.T) {
 		t.Fatalf("String = %q", got)
 	}
 }
+
+func TestISOCurrencies(t *testing.T) {
+	t.Parallel()
+	for code, units := range map[string]int{"EUR": 2, "INR": 2, "KWD": 3, "ISK": 0, "JPY": 0} {
+		c, err := ParseCurrency(code)
+		if err != nil || c.MinorUnits() != units {
+			t.Errorf("%s: %v, units %d", code, err, c.MinorUnits())
+		}
+	}
+	for _, code := range []string{"XAU", "CLF", "XXX", "XTS"} {
+		if _, err := ParseCurrency(code); !errors.Is(err, ErrUnknownCurrency) {
+			t.Errorf("%s accepted", code)
+		}
+	}
+	if Name("BRL") != "Brazilian Real" {
+		t.Errorf("Name(BRL) = %q", Name("BRL"))
+	}
+}

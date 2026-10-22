@@ -145,6 +145,9 @@ func (h *Harness) start(opts []Option) {
 	if err != nil {
 		h.t.Fatal(err)
 	}
+	if err := app.Marketdata.ReconcileCurrencies(h.t.Context()); err != nil {
+		h.t.Fatal(err)
+	}
 	h.App = app
 	h.handler.Store(&app.Handler)
 }

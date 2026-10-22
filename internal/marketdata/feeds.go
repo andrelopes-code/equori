@@ -69,7 +69,7 @@ func (m *Module) tickPTAX(ctx context.Context) {
 	}
 	today := m.feeds.Clock.Today()
 	for _, c := range currencies {
-		if c.Code == pivot {
+		if c.Code == pivot || !src.Supports(c.Code) {
 			continue
 		}
 		from, err := m.feedStart(ctx, domain.SourceBCBPTAX, c.Code, today)

@@ -28,12 +28,6 @@ var instrumentCode = regexp.MustCompile(`^[A-Z0-9.]{2,20}$`)
 // Currency is the code of an instrument: ISO 4217 for currencies, a ticker or registry code otherwise.
 type Currency string
 
-// minorUnits lists the supported currencies and their ISO 4217 exponent.
-var minorUnits = map[Currency]int8{
-	"ARS": 2, "AUD": 2, "BRL": 2, "CAD": 2, "CHF": 2, "CLP": 0, "CNY": 2, "COP": 2,
-	"EUR": 2, "GBP": 2, "JPY": 0, "MXN": 2, "PYG": 0, "USD": 2, "UYU": 2,
-}
-
 func ParseCurrency(s string) (Currency, error) {
 	c := Currency(s)
 	if _, ok := minorUnits[c]; !ok {
@@ -43,6 +37,9 @@ func ParseCurrency(s string) (Currency, error) {
 }
 
 func (c Currency) MinorUnits() int { return int(minorUnits[c]) }
+
+// Name returns the ISO 4217 English name of a currency, or "" for other instruments.
+func Name(c Currency) string { return currencyNames[c] }
 
 // Currencies returns the supported currencies in ascending code order.
 func Currencies() []Currency {

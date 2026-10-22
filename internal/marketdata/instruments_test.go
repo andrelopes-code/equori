@@ -2,9 +2,11 @@ package marketdata_test
 
 import (
 	"net/http"
+	"slices"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
 type instrumentAPI struct {
@@ -50,7 +52,8 @@ func TestDefineInstrument(t *testing.T) {
 		t.Fatalf("fii list = %+v", list)
 	}
 	h.MustDo(http.MethodGet, "/api/v1/instruments?type=currency", nil, http.StatusOK, &list)
-	if len(list.Items) != 15 || list.Items[2].Code != "BRL" || list.Items[2].QuoteCurrency != "" {
+	brl := slices.IndexFunc(list.Items, func(i instrumentAPI) bool { return i.Code == "BRL" })
+	if len(list.Items) != len(money.Currencies()) || brl < 0 || list.Items[brl].QuoteCurrency != "" {
 		t.Fatalf("currency list = %+v", list.Items)
 	}
 
@@ -84,4 +87,35 @@ func TestDefineInstrumentValidation(t *testing.T) {
 	}
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/instruments", with("scale", 13)), http.StatusBadRequest, "invalid_request", "")
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/instruments", with("code", "mxrf11")), http.StatusBadRequest, "invalid_request", "")
+}
+
+func TestReconcileCurrencies(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	ctx := t.Context()
+
+	count := func() int {
+		var n int
+		if err := h.Pool.QueryRow(ctx, `SELECT count(*) FROM marketdata_instrument WHERE instrument_type = 'currency'`).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+	if got, want := count(), len(money.Currencies()); got != want {
+		t.Fatalf("currency instruments = %d, want %d", got, want)
+	}
+
+	if _, err := h.Pool.Exec(ctx, `UPDATE marketdata_instrument SET name = 'Custom' WHERE code = 'EUR'`); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.App.Marketdata.ReconcileCurrencies(ctx); err != nil {
+		t.Fatal(err)
+	}
+	var name string
+	if err := h.Pool.QueryRow(ctx, `SELECT name FROM marketdata_instrument WHERE code = 'EUR'`).Scan(&name); err != nil {
+		t.Fatal(err)
+	}
+	if name != "Custom" {
+		t.Errorf("EUR name = %q, want Custom", name)
+	}
 }

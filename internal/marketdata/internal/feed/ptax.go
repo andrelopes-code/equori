@@ -22,6 +22,16 @@ func NewPTAX(c *http.Client, baseURL string) PTAX {
 	return PTAX{client: c, baseURL: strings.TrimSuffix(baseURL, "/")}
 }
 
+// Supports reports whether the tick requests code from the BCB. Currency instruments
+// outside this set are not requested.
+func (PTAX) Supports(code money.Currency) bool {
+	switch code {
+	case "ARS", "AUD", "CAD", "CHF", "CLP", "CNY", "COP", "EUR", "GBP", "JPY", "MXN", "PYG", "USD", "UYU":
+		return true
+	}
+	return false
+}
+
 type ptaxAnswer struct {
 	Value []struct {
 		CotacaoVenda    json.Number `json:"cotacaoVenda"`
