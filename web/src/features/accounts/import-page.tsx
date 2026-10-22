@@ -81,10 +81,13 @@ export function ImportPage() {
   };
 
   const profile = draft === null ? null : completeProfile(draft);
-  const currency = account.data?.currency ?? "BRL";
+  const currency = account.data?.currency;
   const preview = useMemo(
     () =>
-      text === null || draft === null || scale === null
+      text === null ||
+      draft === null ||
+      scale === null ||
+      currency === undefined
         ? null
         : previewCsv(text, draft, scale(currency)),
     [text, draft, scale, currency],
@@ -212,29 +215,32 @@ export function ImportPage() {
               </SegmentedControl>
             </Field>
           )}
-          {format === "csv" && draft !== null && preview !== null && (
-            <div className={styles.csv}>
-              <CsvProfileSection
-                value={draft}
-                onChange={setEdited}
-                headers={preview.headers}
-              />
-              <Stack gap={2}>
-                <CsvPreviewTable
-                  preview={preview}
-                  currency={currency}
-                  scale={scale === null ? 2 : scale(currency)}
+          {format === "csv" &&
+            draft !== null &&
+            preview !== null &&
+            currency !== undefined && (
+              <div className={styles.csv}>
+                <CsvProfileSection
+                  value={draft}
+                  onChange={setEdited}
+                  headers={preview.headers}
                 />
-                {preview.problem !== null && (
-                  <FieldError>
-                    {t("importFile.missingColumn", {
-                      column: preview.problem.column,
-                    })}
-                  </FieldError>
-                )}
-              </Stack>
-            </div>
-          )}
+                <Stack gap={2}>
+                  <CsvPreviewTable
+                    preview={preview}
+                    currency={currency}
+                    scale={scale === null ? 2 : scale(currency)}
+                  />
+                  {preview.problem !== null && (
+                    <FieldError>
+                      {t("importFile.missingColumn", {
+                        column: preview.problem.column,
+                      })}
+                    </FieldError>
+                  )}
+                </Stack>
+              </div>
+            )}
         </Stack>
       </PageBody>
     </Page>

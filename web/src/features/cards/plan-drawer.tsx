@@ -91,7 +91,7 @@ export function PlanDrawer({
     ahead.map((i) => i.amount.amount),
     paid ?? ahead.reduce((sum, i) => sum + i.amount.amount, 0),
   );
-  const currency = progress?.each.currency ?? "BRL";
+  const currency = progress?.each?.currency;
   const state = (i: ScheduledInstallment) =>
     i.reversed
       ? { tone: "secondary" as const, word: t("plan.reversed") }
@@ -104,6 +104,7 @@ export function PlanDrawer({
       mode === "cancel"
         ? cancel.mutateAsync({ id: planId, body: { date } })
         : mode === "anticipate" &&
+            currency !== undefined &&
             openReference !== undefined &&
             ahead.length > 0
           ? anticipate.mutateAsync({
@@ -137,7 +138,7 @@ export function PlanDrawer({
         <DrawerHeader>
           <DrawerTitle>{t("plan.title", { name })}</DrawerTitle>
           <DrawerDescription>
-            {p === undefined || progress === undefined
+            {p === undefined || progress?.each === undefined
               ? t("plan.loading")
               : t("plan.summary", {
                   count: p.count,
@@ -154,7 +155,7 @@ export function PlanDrawer({
             />
           ) : (
             <Stack gap={5}>
-              {p !== undefined && progress !== undefined && (
+              {p !== undefined && progress?.remaining !== undefined && (
                 <Stack gap={1}>
                   <Inline>
                     <Tag size="sm" tone={planStatusTone[p.status]}>
@@ -239,16 +240,17 @@ export function PlanDrawer({
                     >
                       {mode === "cancel"
                         ? t("plan.cancelHint", {
-                            remaining: money(
-                              progress?.remaining ?? { amount: 0, currency },
-                            ),
+                            remaining:
+                              progress?.remaining === undefined
+                                ? ""
+                                : money(progress.remaining),
                           })
                         : t("plan.anticipateHint", {
                             count: ahead.length,
                             month: formatMonthTitle(reference, locale),
                           })}
                     </InlineMessage>
-                    {mode === "anticipate" && (
+                    {mode === "anticipate" && currency !== undefined && (
                       <Field>
                         <FieldLabel>{t("plan.paid")}</FieldLabel>
                         <MoneyInput

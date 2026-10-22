@@ -27,6 +27,7 @@ import {
   SectionHeading,
   SectionTitle,
 } from "@slotted/react/section";
+import { Skeleton } from "@slotted/react/skeleton";
 import { Stack } from "@slotted/react/stack";
 import { Switch } from "@slotted/react/switch";
 import { TextField } from "@slotted/react/text-field";
@@ -96,8 +97,8 @@ export function RuleEditor({ rule }: { rule: Rule | null }) {
   const [summary, setSummary] = useState<string | null>(null);
   const [tried, setTried] = useState(false);
 
-  const currency = settings.data?.base_currency ?? "BRL";
-  const digits = scale?.(currency) ?? 2;
+  const currency = settings.data?.base_currency;
+  const digits = currency === undefined ? 2 : (scale?.(currency) ?? 2);
   const payeeChoices = useMemo<Choice[]>(() => {
     const collator = new Intl.Collator(locale, { sensitivity: "base" });
     return (payees.data ?? [])
@@ -248,206 +249,215 @@ export function RuleEditor({ rule }: { rule: Rule | null }) {
         </PageHeaderTitleArea>
       </PageHeader>
       <PageBody>
-        <div className={styles.editor}>
-          <div className={styles.form}>
-            <Stack gap={6}>
-              <RuleReading draft={draft} words={words} />
-              {summary !== null && (
-                <InlineMessage tone="danger">{summary}</InlineMessage>
-              )}
-              <Field invalid={shown.name !== undefined} required>
-                <FieldLabel>{t("ruleEditor.name")}</FieldLabel>
-                <TextField
-                  value={draft.name}
-                  maxLength={120}
-                  onChange={(event) => {
-                    update({ ...draft, name: event.target.value });
-                  }}
-                />
-                {shown.name !== undefined && (
-                  <FieldError>{shown.name}</FieldError>
+        {currency === undefined ? (
+          <Stack gap={4} aria-busy="true">
+            <Skeleton shape="block" blockSize="6rem" />
+            <Skeleton shape="block" blockSize="16rem" />
+          </Stack>
+        ) : (
+          <div className={styles.editor}>
+            <div className={styles.form}>
+              <Stack gap={6}>
+                <RuleReading draft={draft} words={words} />
+                {summary !== null && (
+                  <InlineMessage tone="danger">{summary}</InlineMessage>
                 )}
-              </Field>
-              <Section ground="surface">
-                <SectionHeader>
-                  <SectionTitle>
-                    <SectionEyebrow>
-                      {t("ruleEditor.stepLabel", { n: 1 })}
-                    </SectionEyebrow>
-                    <SectionHeading>{t("ruleEditor.when")}</SectionHeading>
-                    <SectionDescription>
-                      {t("ruleEditor.whenNote")}
-                    </SectionDescription>
-                  </SectionTitle>
-                </SectionHeader>
-                <SectionBody>
-                  <Stack gap={3}>
-                    {draft.conditions.map((condition, index) => (
-                      <Fragment key={index}>
-                        {index > 0 && (
-                          <span className={styles.connector}>
-                            <Text size="xs" weight="semibold" tone="muted">
-                              {t("ruleEditor.and")}
-                            </Text>
-                          </span>
-                        )}
-                        <ConditionRow
+                <Field invalid={shown.name !== undefined} required>
+                  <FieldLabel>{t("ruleEditor.name")}</FieldLabel>
+                  <TextField
+                    value={draft.name}
+                    maxLength={120}
+                    onChange={(event) => {
+                      update({ ...draft, name: event.target.value });
+                    }}
+                  />
+                  {shown.name !== undefined && (
+                    <FieldError>{shown.name}</FieldError>
+                  )}
+                </Field>
+                <Section ground="surface">
+                  <SectionHeader>
+                    <SectionTitle>
+                      <SectionEyebrow>
+                        {t("ruleEditor.stepLabel", { n: 1 })}
+                      </SectionEyebrow>
+                      <SectionHeading>{t("ruleEditor.when")}</SectionHeading>
+                      <SectionDescription>
+                        {t("ruleEditor.whenNote")}
+                      </SectionDescription>
+                    </SectionTitle>
+                  </SectionHeader>
+                  <SectionBody>
+                    <Stack gap={3}>
+                      {draft.conditions.map((condition, index) => (
+                        <Fragment key={index}>
+                          {index > 0 && (
+                            <span className={styles.connector}>
+                              <Text size="xs" weight="semibold" tone="muted">
+                                {t("ruleEditor.and")}
+                              </Text>
+                            </span>
+                          )}
+                          <ConditionRow
+                            index={index}
+                            condition={condition}
+                            onChange={(next) => {
+                              setCondition(index, next);
+                            }}
+                            onRemove={() => {
+                              update({
+                                ...draft,
+                                conditions: draft.conditions.filter(
+                                  (_, i) => i !== index,
+                                ),
+                              });
+                            }}
+                            canRemove={draft.conditions.length > 1}
+                            error={shown[`conditions[${String(index)}].value`]}
+                            payees={payeeChoices}
+                            accounts={accountChoices}
+                            currency={currency}
+                            scale={digits}
+                          />
+                        </Fragment>
+                      ))}
+                      <div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          tone="secondary"
+                          disabled={
+                            draft.conditions.length >= limits.conditions
+                          }
+                          start={
+                            <Icon size="sm">
+                              <Glyph name="plus" />
+                            </Icon>
+                          }
+                          onClick={() => {
+                            update({
+                              ...draft,
+                              conditions: [
+                                ...draft.conditions,
+                                {
+                                  field: "description",
+                                  operator: "contains",
+                                  value: "",
+                                },
+                              ],
+                            });
+                          }}
+                        >
+                          {t("ruleEditor.addCondition")}
+                        </Button>
+                      </div>
+                    </Stack>
+                  </SectionBody>
+                </Section>
+                <Section ground="surface">
+                  <SectionHeader>
+                    <SectionTitle>
+                      <SectionEyebrow>
+                        {t("ruleEditor.stepLabel", { n: 2 })}
+                      </SectionEyebrow>
+                      <SectionHeading>{t("ruleEditor.then")}</SectionHeading>
+                      <SectionDescription>
+                        {t("ruleEditor.thenNote")}
+                      </SectionDescription>
+                    </SectionTitle>
+                  </SectionHeader>
+                  <SectionBody>
+                    <Stack gap={3}>
+                      {shown.actions !== undefined && (
+                        <InlineMessage tone="danger">
+                          {shown.actions}
+                        </InlineMessage>
+                      )}
+                      {draft.actions.map((action, index) => (
+                        <ActionRow
+                          key={index}
                           index={index}
-                          condition={condition}
+                          action={action}
                           onChange={(next) => {
-                            setCondition(index, next);
+                            setAction(index, next);
                           }}
                           onRemove={() => {
                             update({
                               ...draft,
-                              conditions: draft.conditions.filter(
+                              actions: draft.actions.filter(
                                 (_, i) => i !== index,
                               ),
                             });
                           }}
-                          canRemove={draft.conditions.length > 1}
-                          error={shown[`conditions[${String(index)}].value`]}
+                          canRemove={draft.actions.length > 1}
+                          errors={shown}
                           payees={payeeChoices}
                           accounts={accountChoices}
+                          receivables={receivables}
                           currency={currency}
                           scale={digits}
                         />
-                      </Fragment>
-                    ))}
-                    <div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        tone="secondary"
-                        disabled={draft.conditions.length >= limits.conditions}
-                        start={
-                          <Icon size="sm">
-                            <Glyph name="plus" />
-                          </Icon>
-                        }
-                        onClick={() => {
-                          update({
-                            ...draft,
-                            conditions: [
-                              ...draft.conditions,
-                              {
-                                field: "description",
-                                operator: "contains",
-                                value: "",
-                              },
-                            ],
-                          });
-                        }}
-                      >
-                        {t("ruleEditor.addCondition")}
-                      </Button>
-                    </div>
-                  </Stack>
-                </SectionBody>
-              </Section>
-              <Section ground="surface">
-                <SectionHeader>
-                  <SectionTitle>
-                    <SectionEyebrow>
-                      {t("ruleEditor.stepLabel", { n: 2 })}
-                    </SectionEyebrow>
-                    <SectionHeading>{t("ruleEditor.then")}</SectionHeading>
-                    <SectionDescription>
-                      {t("ruleEditor.thenNote")}
-                    </SectionDescription>
-                  </SectionTitle>
-                </SectionHeader>
-                <SectionBody>
-                  <Stack gap={3}>
-                    {shown.actions !== undefined && (
-                      <InlineMessage tone="danger">
-                        {shown.actions}
-                      </InlineMessage>
-                    )}
-                    {draft.actions.map((action, index) => (
-                      <ActionRow
-                        key={index}
-                        index={index}
-                        action={action}
-                        onChange={(next) => {
-                          setAction(index, next);
-                        }}
-                        onRemove={() => {
-                          update({
-                            ...draft,
-                            actions: draft.actions.filter(
-                              (_, i) => i !== index,
-                            ),
-                          });
-                        }}
-                        canRemove={draft.actions.length > 1}
-                        errors={shown}
-                        payees={payeeChoices}
-                        accounts={accountChoices}
-                        receivables={receivables}
-                        currency={currency}
-                        scale={digits}
-                      />
-                    ))}
-                    <div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        tone="secondary"
-                        disabled={draft.actions.length >= limits.actions}
-                        start={
-                          <Icon size="sm">
-                            <Glyph name="plus" />
-                          </Icon>
-                        }
-                        onClick={() => {
-                          update({
-                            ...draft,
-                            actions: [
-                              ...draft.actions,
-                              emptyAction("add_tags"),
-                            ],
-                          });
-                        }}
-                      >
-                        {t("ruleEditor.addAction")}
-                      </Button>
-                    </div>
-                  </Stack>
-                </SectionBody>
-              </Section>
-              <Text size="sm" tone="muted">
-                {t("ruleEditor.limits", {
-                  conditions: draft.conditions.length,
-                  actions: draft.actions.length,
-                })}
-              </Text>
-              <Stack gap={3}>
-                <Switch
-                  checked={draft.enabled}
-                  onCheckedChange={(checked) => {
-                    update({ ...draft, enabled: checked });
-                  }}
-                >
-                  {t("ruleEditor.enabled")}
-                </Switch>
-                <Switch
-                  checked={draft.stop_processing}
-                  onCheckedChange={(checked) => {
-                    update({ ...draft, stop_processing: checked });
-                  }}
-                >
-                  {t("ruleEditor.stop")}
-                </Switch>
+                      ))}
+                      <div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          tone="secondary"
+                          disabled={draft.actions.length >= limits.actions}
+                          start={
+                            <Icon size="sm">
+                              <Glyph name="plus" />
+                            </Icon>
+                          }
+                          onClick={() => {
+                            update({
+                              ...draft,
+                              actions: [
+                                ...draft.actions,
+                                emptyAction("add_tags"),
+                              ],
+                            });
+                          }}
+                        >
+                          {t("ruleEditor.addAction")}
+                        </Button>
+                      </div>
+                    </Stack>
+                  </SectionBody>
+                </Section>
+                <Text size="sm" tone="muted">
+                  {t("ruleEditor.limits", {
+                    conditions: draft.conditions.length,
+                    actions: draft.actions.length,
+                  })}
+                </Text>
+                <Stack gap={3}>
+                  <Switch
+                    checked={draft.enabled}
+                    onCheckedChange={(checked) => {
+                      update({ ...draft, enabled: checked });
+                    }}
+                  >
+                    {t("ruleEditor.enabled")}
+                  </Switch>
+                  <Switch
+                    checked={draft.stop_processing}
+                    onCheckedChange={(checked) => {
+                      update({ ...draft, stop_processing: checked });
+                    }}
+                  >
+                    {t("ruleEditor.stop")}
+                  </Switch>
+                </Stack>
               </Stack>
-            </Stack>
+            </div>
+            <aside className={styles.preview}>
+              <RulePreview
+                rule={ready ? { ...draft, name: draft.name.trim() } : null}
+              />
+            </aside>
           </div>
-          <aside className={styles.preview}>
-            <RulePreview
-              rule={ready ? { ...draft, name: draft.name.trim() } : null}
-            />
-          </aside>
-        </div>
+        )}
       </PageBody>
     </Page>
   );

@@ -664,12 +664,12 @@ export const operations: Record<GroupKey, readonly Operation[]> = {
       id: "defineInstrument",
       method: "POST",
       path: "/instruments",
-      body: () => ({
+      body: (r) => ({
         code: "PETR4",
         type: "stock",
         scale: 0,
         name: "Petrobras PN",
-        quote_currency: "BRL",
+        quote_currency: r.currency,
         exchange: "BVMF",
       }),
     },

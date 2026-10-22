@@ -35,7 +35,7 @@ export function CandidateCard({
   );
   const own = tx.data?.postings.filter((p) => p.account_id === accountId) ?? [];
   const amount = own.reduce((sum, p) => sum + p.amount.amount, 0);
-  const currency = own[0]?.amount.currency ?? "BRL";
+  const currency = own[0]?.amount.currency;
   const name =
     tx.data === undefined
       ? t("batch.candidateLoading")
@@ -57,7 +57,7 @@ export function CandidateCard({
                 </Text>
               )}
             </Stack>
-            {tx.data !== undefined && (
+            {tx.data !== undefined && currency !== undefined && (
               <Text size="sm" weight="semibold">
                 {formatSigned({ amount, currency }, scale(currency), locale)}
               </Text>

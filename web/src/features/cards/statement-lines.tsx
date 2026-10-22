@@ -89,15 +89,19 @@ export function StatementLines({
               (sum, line) => sum + lineAmount(line).money.amount,
               0,
             );
-            const currency = dayLines[0]?.amount.currency ?? "BRL";
+            const currency = dayLines[0]?.amount.currency;
             return (
               <Fragment key={day}>
                 <TableGroupRow
-                  end={formatMoney(
-                    { amount: net, currency },
-                    scale(currency),
-                    locale,
-                  )}
+                  end={
+                    currency === undefined
+                      ? undefined
+                      : formatMoney(
+                          { amount: net, currency },
+                          scale(currency),
+                          locale,
+                        )
+                  }
                 >
                   {formatDayHeader(day, today, locale, {
                     today: t("day.today"),

@@ -10,6 +10,7 @@ export function linkCandidates(
   external: ExternalAccount,
   accounts: readonly Account[],
   fed: ReadonlySet<string>,
+  locale: string,
 ): Account[] {
   const kinds = compatibleKinds(external.subtype);
   const parents = new Set(accounts.map((a) => a.parent_id));
@@ -24,5 +25,5 @@ export function linkCandidates(
         !parents.has(a.id) &&
         !fed.has(a.id),
     )
-    .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+    .sort((a, b) => a.name.localeCompare(b.name, locale));
 }

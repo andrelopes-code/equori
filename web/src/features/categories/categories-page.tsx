@@ -10,6 +10,8 @@ import { Button } from "@slotted/react/button";
 import { Inline } from "@slotted/react/inline";
 import { Page, PageBody } from "@slotted/react/page";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
+import { Skeleton } from "@slotted/react/skeleton";
+import { Stack } from "@slotted/react/stack";
 import { Switch } from "@slotted/react/switch";
 import { toast } from "@slotted/react/toast";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -117,7 +119,7 @@ export function CategoriesPage() {
   });
 
   const entries = useCategoryEntries(accounts.data);
-  const currency = settings.data?.base_currency ?? "BRL";
+  const currency = settings.data?.base_currency;
 
   const { rows, pending } = useMemo(() => {
     const byId = new Map(
@@ -287,7 +289,7 @@ export function CategoriesPage() {
               {t("category.showArchived")}
             </Switch>
           </Inline>
-          {scale !== null && (
+          {scale !== null && currency !== undefined && (
             <FiguresRow
               cls={cls}
               currency={currency}
@@ -304,7 +306,7 @@ export function CategoriesPage() {
               loading={accounts.isPending || totals.isPending}
             />
           )}
-          {scale !== null && (
+          {scale !== null && currency !== undefined && (
             <CategoryCharts
               trend={trend}
               currency={currency}
@@ -312,8 +314,14 @@ export function CategoriesPage() {
               loading={history.pending}
             />
           )}
+          {(scale === null || currency === undefined) && (
+            <Stack gap={4} aria-busy="true">
+              <Skeleton shape="block" blockSize="6rem" />
+              <Skeleton shape="block" blockSize="16rem" />
+            </Stack>
+          )}
           <div className={styles.listing}>
-            {scale !== null && (
+            {scale !== null && currency !== undefined && (
               <CategoryTree
                 rows={rows}
                 currency={currency}

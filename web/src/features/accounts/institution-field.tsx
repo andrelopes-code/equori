@@ -14,7 +14,7 @@ import {
   logoURL,
 } from "@/features/accounts/institution-logo";
 import { institutionsQuery, useCreateInstitution } from "@/features/setup";
-import { useT } from "@/i18n/i18n-provider";
+import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 type Institution = components["schemas"]["Institution"];
 
@@ -53,6 +53,7 @@ export function InstitutionField({
   "aria-label"?: string;
 }) {
   const t = useT();
+  const [locale] = useAppLocale();
   const api = useApi();
   const institutions = useQuery(institutionsQuery(api));
   const index = useQuery(logoIndexQuery);
@@ -77,6 +78,7 @@ export function InstitutionField({
         : catalogueEntries(
             logos,
             owned.map((i) => ({ ispb: ispbOf(i) })),
+            locale,
           ).map((entry): Entity => {
             const src = logoURL(logos, entry.ispb);
             return {
@@ -93,7 +95,7 @@ export function InstitutionField({
             };
           });
     return [...mine, ...catalogue];
-  }, [institutions.data, index.data, t]);
+  }, [institutions.data, index.data, t, locale]);
 
   const source = useMemo(() => catalogueSource(items), [items]);
 
@@ -140,7 +142,9 @@ export function InstitutionField({
         const entry =
           index.data === undefined
             ? undefined
-            : catalogueEntries(index.data, []).find((e) => e.ispb === ispb);
+            : catalogueEntries(index.data, [], locale).find(
+                (e) => e.ispb === ispb,
+              );
         if (entry === undefined) return;
         void create
           .mutateAsync({

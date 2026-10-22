@@ -72,6 +72,8 @@ function api(
   byMonth: Record<string, unknown[]> = {},
   // The totals of the income class, which the server answers positive: earnings count as earned.
   income?: unknown[],
+  settings: () => Response | Promise<Response> = () =>
+    json(200, { base_currency: "BRL" }),
 ) {
   const record = (route: string) => async (req: Request) => {
     sent.push({ route, body: await req.json() });
@@ -79,6 +81,14 @@ function api(
   };
   return fakeApi({
     ...sharedRoutes,
+    "GET /api/v1/settings": settings,
+    "GET /api/v1/instruments": () =>
+      json(200, {
+        items: [
+          { code: "BRL", type: "currency", scale: 2, name: "Real" },
+          { code: "EUR", type: "currency", scale: 2, name: "Euro" },
+        ],
+      }),
     "GET /api/v1/accounts": () => json(200, { items: accounts }),
     "GET /api/v1/reports/categories": (req) => {
       const query = new URL(req.url).searchParams;
@@ -166,6 +176,37 @@ beforeEach(() => {
 });
 
 describe("CategoriesPage", () => {
+  it("draws its waiting state and no amount while the settings are pending", async () => {
+    await renderApp("/categories", {
+      fetch: api(
+        [],
+        [],
+        undefined,
+        [],
+        {},
+        undefined,
+        () => new Promise<Response>(() => undefined),
+      ),
+      today: "2026-10-17",
+    });
+    await waitFor(() => {
+      expect(document.querySelector('[aria-busy="true"]')).not.toBeNull();
+    });
+    expect(screen.queryByText(/R\$|€/u)).toBeNull();
+  });
+
+  it("writes the amounts in the base currency of the settings", async () => {
+    await renderApp("/categories", {
+      fetch: api([], [], undefined, [], {}, undefined, () =>
+        json(200, { base_currency: "EUR" }),
+      ),
+      today: "2026-10-17",
+    });
+    await screen.findByText("Groceries", { selector: "span, p" });
+    expect(within(rowOf("Food")).getByText("€300.00")).toBeInTheDocument();
+    expect(screen.queryByText(/R\$/u)).toBeNull();
+  });
+
   it("shows the tree of the month with totals and shares", async () => {
     const queries: URLSearchParams[] = [];
     await renderApp("/categories", {

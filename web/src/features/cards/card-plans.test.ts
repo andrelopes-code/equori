@@ -71,3 +71,19 @@ describe("planProgress", () => {
     });
   });
 });
+
+describe("planProgress without installments", () => {
+  it("returns no amount", () => {
+    const plan = {
+      id: "p",
+      transaction_id: "t",
+      account_id: "a",
+      status: "active" as const,
+      count: 0,
+      installments: [],
+    };
+    const progress = planProgress(plan, "2026-10");
+    expect(progress.each).toBeUndefined();
+    expect(progress.remaining).toBeUndefined();
+  });
+});

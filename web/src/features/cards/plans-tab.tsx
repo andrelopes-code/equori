@@ -132,10 +132,12 @@ export function PlansTab({
                           })}
                     </TableCell>
                     <TableCell numeric>
-                      {progress === undefined ? null : money(progress.each)}
+                      {progress?.each === undefined
+                        ? null
+                        : money(progress.each)}
                     </TableCell>
                     <TableCell numeric>
-                      {progress === undefined
+                      {progress?.remaining === undefined
                         ? null
                         : money(progress.remaining)}
                     </TableCell>

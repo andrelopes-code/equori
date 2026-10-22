@@ -24,7 +24,7 @@ import {
   logoIndexQuery,
   logoURL,
 } from "@/features/accounts/institution-logo";
-import { useT } from "@/i18n/i18n-provider";
+import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { InstitutionOption } from "@/features/accounts/institution-option";
@@ -42,6 +42,7 @@ export function SetLogoDialog({
   onCancel: () => void;
 }) {
   const t = useT();
+  const [locale] = useAppLocale();
   const overlayOpen = useOverlayOpen();
   const formId = useId();
   const index = useQuery(logoIndexQuery);
@@ -54,7 +55,7 @@ export function SetLogoDialog({
   const items = useMemo((): Entity[] => {
     const logos = index.data;
     if (logos === undefined) return [];
-    return catalogueEntries(logos, []).map((entry) => {
+    return catalogueEntries(logos, [], locale).map((entry) => {
       const src = logoURL(logos, entry.ispb);
       return {
         id: entry.ispb,
@@ -68,7 +69,7 @@ export function SetLogoDialog({
         },
       };
     });
-  }, [index.data]);
+  }, [index.data, locale]);
   const source = useMemo(() => catalogueSource(items), [items]);
   return (
     <Dialog open={overlayOpen} size="sm" onOpenChange={change}>

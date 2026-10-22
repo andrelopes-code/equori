@@ -59,7 +59,7 @@ export function useAdminContext(): AdminContext {
       refs: {
         today,
         month: today.slice(0, 7),
-        currency: settings.data?.base_currency ?? "BRL",
+        currency: settings.data?.base_currency ?? "",
         account,
       },
       accounts: list,

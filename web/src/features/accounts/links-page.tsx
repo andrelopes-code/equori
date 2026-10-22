@@ -17,13 +17,14 @@ import { accountsQuery, connectionsListQuery } from "@/features/accounts/api";
 import { ConnectionLinks } from "@/features/accounts/connection-links";
 import { linkCandidates } from "@/features/accounts/link-candidates";
 import { LinkDrawer } from "@/features/accounts/link-drawer";
-import { useT } from "@/i18n/i18n-provider";
+import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { QueryError } from "@/ui/query-error";
 import { Presence } from "@/ui/presence";
 
 // The accounts Open Finance connections bring, and the ledger account each one feeds (A35).
 export function LinksPage() {
   const t = useT();
+  const [locale] = useAppLocale();
   const api = useApi();
   const navigate = useNavigate();
   const search = useSearch({ from: "/_authed/accounts/links" });
@@ -99,6 +100,7 @@ export function LinksPage() {
                 entry.external,
                 accounts.data ?? [],
                 fed,
+                locale,
               )}
               preselected={search.account}
               onClose={() => {

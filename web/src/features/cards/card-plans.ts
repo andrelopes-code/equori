@@ -20,22 +20,31 @@ export function planIDs(
 }
 
 // Where a plan stands against the open statement: installments billed so far, what the later
-// statements still hold (reversed ones excluded) and the statement of the last one.
+// statements still hold (reversed ones excluded) and the statement of the last one. A plan
+// without installments has no currency, so it has no amounts.
 export function planProgress(
   plan: InstallmentPlan,
   openReference: string,
-): { billed: number; remaining: Money; each: Money; last: string | undefined } {
-  const currency = plan.installments[0]?.amount.currency ?? "BRL";
+): {
+  billed: number;
+  remaining: Money | undefined;
+  each: Money | undefined;
+  last: string | undefined;
+} {
+  const each = plan.installments[0]?.amount;
   const live = plan.installments.filter((i) => !i.reversed);
   return {
     billed: live.filter((i) => i.statement <= openReference).length,
-    remaining: {
-      amount: live
-        .filter((i) => i.statement > openReference)
-        .reduce((sum, i) => sum + i.amount.amount, 0),
-      currency,
-    },
-    each: plan.installments[0]?.amount ?? { amount: 0, currency },
+    remaining:
+      each === undefined
+        ? undefined
+        : {
+            amount: live
+              .filter((i) => i.statement > openReference)
+              .reduce((sum, i) => sum + i.amount.amount, 0),
+            currency: each.currency,
+          },
+    each,
     last: plan.installments[plan.installments.length - 1]?.statement,
   };
 }

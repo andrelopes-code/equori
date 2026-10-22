@@ -44,11 +44,12 @@ const png = 1;
 export function catalogueEntries(
   index: LogoIndex,
   owned: readonly { ispb?: string | undefined }[],
+  locale: string,
 ): CatalogueEntry[] {
   const taken = new Set(
     owned.flatMap((i) => (i.ispb === undefined ? [] : [i.ispb])),
   );
-  const collator = new Intl.Collator("pt-BR", { sensitivity: "base" });
+  const collator = new Intl.Collator(locale, { sensitivity: "base" });
   return Object.entries(index)
     .flatMap(([ispb, [code, legalName, formats]]) =>
       typeof formats === "number" &&
@@ -66,4 +67,12 @@ export function catalogueEntries(
         : [],
     )
     .sort((a, b) => collator.compare(a.name, b.name));
+}
+
+export function sortInstitutions(
+  names: readonly string[],
+  locale: string,
+): string[] {
+  const collator = new Intl.Collator(locale, { sensitivity: "base" });
+  return [...names].sort((a, b) => collator.compare(a, b));
 }

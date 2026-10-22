@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   catalogueEntries,
   displayName,
+  sortInstitutions,
 } from "@/features/accounts/institution-catalogue";
 import type { LogoIndex } from "@/features/accounts/institution-logo";
 
@@ -29,7 +30,7 @@ describe("catalogueEntries", () => {
   };
 
   it("lists the entries with a logo by name, without the ones the owner has", () => {
-    expect(catalogueEntries(index, [{ ispb: "18236120" }])).toEqual([
+    expect(catalogueEntries(index, [{ ispb: "18236120" }], "pt-BR")).toEqual([
       {
         ispb: "00000000",
         code: "001",
@@ -42,6 +43,21 @@ describe("catalogueEntries", () => {
         name: "Itaú Unibanco",
         legalName: "ITAÚ UNIBANCO S.A.",
       },
+    ]);
+  });
+});
+
+describe("sortInstitutions", () => {
+  it("collates by the given locale", () => {
+    expect(sortInstitutions(["Ålandsbanken", "Zeta", "Aba"], "sv-SE")).toEqual([
+      "Aba",
+      "Zeta",
+      "Ålandsbanken",
+    ]);
+    expect(sortInstitutions(["Ålandsbanken", "Zeta", "Aba"], "en-US")).toEqual([
+      "Aba",
+      "Ålandsbanken",
+      "Zeta",
     ]);
   });
 });

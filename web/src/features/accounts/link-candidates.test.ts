@@ -87,6 +87,7 @@ describe("linkCandidates", () => {
         external("RESERVED_BALANCE"),
         accounts,
         new Set(["fed"]),
+        "pt-BR",
       ).map((a) => a.id),
     ).toEqual(["kid", "res"]);
     expect(
@@ -94,13 +95,14 @@ describe("linkCandidates", () => {
         external("SAVINGS_ACCOUNT"),
         accounts,
         new Set(["fed"]),
+        "pt-BR",
       ).map((a) => a.id),
     ).toEqual(["kid", "sav", "res"]);
   });
 
   it("offers nothing for a subtype the ledger has no kind for", () => {
-    expect(linkCandidates(external("INVESTMENT"), accounts, new Set())).toEqual(
-      [],
-    );
+    expect(
+      linkCandidates(external("INVESTMENT"), accounts, new Set(), "pt-BR"),
+    ).toEqual([]);
   });
 });

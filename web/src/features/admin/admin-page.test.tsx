@@ -65,6 +65,7 @@ function newFetch(
   routes: Parameters<typeof fakeApi>[0] = {},
 ) {
   return fakeApi({
+    "GET /api/v1/settings": () => json(200, { base_currency: "BRL" }),
     "GET /api/v1/me": () => json(200, { id: 1, email: "owner@example.com" }),
     "GET /api/v1/accounts": () => json(200, { items: [checking, card] }),
     [`GET /api/v1/accounts/${card.id}/statements`]: () =>

@@ -4,6 +4,8 @@ import { Heading } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 import type { ComponentProps } from "react";
 
+import { useApi } from "@/api/api-context";
+import { settingsQuery, useScale } from "@/features/setup";
 import { AccountCard } from "@/features/accounts/account-card";
 import { accountCardColor } from "@/features/accounts/account-card-kind";
 import styles from "@/features/accounts/account-card-preview.module.css";
@@ -25,6 +27,9 @@ export function AccountCardPreview() {
   const t = useT();
   const [locale] = useAppLocale();
   const index = useQuery(logoIndexQuery);
+  const settings = useQuery(settingsQuery(useApi()));
+  const scale = useScale();
+  const currency = settings.data?.base_currency;
   const logo = (ispb: string) =>
     index.data === undefined ? undefined : logoURL(index.data, ispb);
   const due = t("accountCard.due", {
@@ -138,9 +143,16 @@ export function AccountCardPreview() {
                 {t(section.title)}
               </Heading>
               <div className={styles.grid}>
-                {section.cards.map(({ key, ...card }) => (
-                  <AccountCard key={key} {...card} currency="BRL" scale={2} />
-                ))}
+                {currency !== undefined && scale !== null
+                  ? section.cards.map(({ key, ...card }) => (
+                      <AccountCard
+                        key={key}
+                        {...card}
+                        currency={currency}
+                        scale={scale(currency)}
+                      />
+                    ))
+                  : null}
               </div>
             </Stack>
           ))}
