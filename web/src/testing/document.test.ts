@@ -106,3 +106,38 @@ describe("app.css tap highlight", () => {
     expect(rule?.index).toBeGreaterThan(layerStart);
   });
 });
+
+// A press or a long press on a control must not select its label; content stays selectable. No engine here renders a selection, so the declarations are asserted on the stylesheet text.
+describe("app.css text selection", () => {
+  function declarationsOf(selectorPart: string): string {
+    const escaped = selectorPart.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`${escaped}[^{]*\\{([^}]*)\\}`).exec(appCSS)?.[1] ?? "";
+  }
+
+  it.each(["button", '[role="tab"]', '[role="menuitem"]', "a[href]"])(
+    "disables selection and the touch callout on %s",
+    (selector) => {
+      const declarations = declarationsOf(selector);
+      expect(declarations).toMatch(/(^|\s)user-select:\s*none/);
+      expect(declarations).toMatch(/-webkit-touch-callout:\s*none/);
+    },
+  );
+
+  it("leaves content and fields selectable", () => {
+    expect(appCSS).not.toMatch(
+      /(^|[\s,{])(html|body|input|textarea)\s*[,{][^}]*user-select:\s*none/,
+    );
+  });
+
+  it("tints the selection with the theme's accent and keeps the text colour", () => {
+    const declarations = declarationsOf("::selection");
+    expect(declarations).toContain("var(--slotted-tone-accent-solid)");
+    expect(declarations).not.toMatch(/(^|[;\s])color:/);
+  });
+
+  it("leaves the selection to the system under forced colours", () => {
+    expect(appCSS).toMatch(
+      /@media not \(forced-colors:\s*active\)\s*\{[^@]*::selection/,
+    );
+  });
+});

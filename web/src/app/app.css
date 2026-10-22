@@ -13,6 +13,33 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* A press or a long press on a control selects its label and opens the system callout, which reads as a web page. The library clears the selection on some of its controls only; text content and fields stay selectable so a value can be copied. */
+  button,
+  a[href],
+  summary,
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"],
+  [role="menuitemcheckbox"],
+  [role="menuitemradio"],
+  [role="option"],
+  [role="switch"] {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* The selection tints the text with the accent and leaves the text colour alone, since a brand panel sets its own. Declared on html, it reaches by highlight inheritance every element that has no selection rule of its own, so the library's own selection colours (the combobox completion, the prompt composer) stay. Under forced colours the system's selection colours stay. */
+  @media not (forced-colors: active) {
+    html::selection {
+      background-color: color-mix(
+        in oklab,
+        var(--slotted-tone-accent-solid) 40%,
+        transparent
+      );
+    }
+  }
+
   .text-trim {
     text-box: trim-both cap alphabetic;
   }
