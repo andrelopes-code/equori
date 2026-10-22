@@ -72,7 +72,7 @@ func (s *Server) ListRealizedResults(ctx context.Context, req ListRealizedResult
 		items[i] = RealizedResult{
 			TransactionId: r.TransactionID, AccountId: r.AccountID, Instrument: string(r.Instrument), Date: date(r.Date),
 			Month: r.Month.Format("2006-01"), Quantity: toMoney(r.QuantityAmount), Cost: toMoney(r.CostAmount),
-			Proceeds: toMoney(r.Proceeds), Result: toMoney(r.ResultAmount), TaxClass: InstrumentType(r.TaxClass),
+			Proceeds: toMoney(r.Proceeds), Result: toMoney(r.ResultAmount), TaxClass: optional(r.TaxClass),
 		}
 	}
 	return ListRealizedResults200JSONResponse{Items: items}, nil
@@ -87,11 +87,31 @@ func (s *Server) ListIncomeEvents(ctx context.Context, req ListIncomeEventsReque
 	for i, e := range es {
 		items[i] = IncomeEvent{
 			TransactionId: e.TransactionID, AccountId: e.AccountID, Instrument: string(e.Instrument), Date: date(e.Date),
-			IncomeType: IncomeType(e.Type), TaxTreatment: IncomeEventTaxTreatment(e.TaxTreatment),
+			IncomeType: IncomeType(e.Type), TaxTreatment: optional(e.TaxTreatment),
 			Gross: toMoney(e.GrossAmount), Withheld: toMoney(e.WithheldAmount),
 		}
 	}
 	return ListIncomeEvents200JSONResponse{Items: items}, nil
+}
+
+func (s *Server) ListInvestmentIncomeTypes(ctx context.Context, _ ListInvestmentIncomeTypesRequestObject) (ListInvestmentIncomeTypesResponseObject, error) {
+	types, err := s.svc.IncomeTypes(ctx, auth.MustUserID(ctx))
+	if err != nil {
+		return nil, err
+	}
+	items := make([]IncomeType, len(types))
+	for i, t := range types {
+		items[i] = IncomeType(t)
+	}
+	return ListInvestmentIncomeTypes200JSONResponse{Items: items}, nil
+}
+
+// optional maps the empty string, the domain's absence of a value, to JSON null.
+func optional(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }
 
 func toMoney(m money.Money) Money { return Money{Amount: m.Amount(), Currency: string(m.Currency())} }

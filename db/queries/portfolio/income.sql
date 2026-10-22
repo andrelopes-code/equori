@@ -9,3 +9,9 @@ VALUES (@user_id, @transaction_id, @account_id, @instrument, @date, @income_type
 SELECT * FROM portfolio_income_event
 WHERE user_id = @user_id AND date >= @from_date AND date < @to_date
 ORDER BY date, transaction_id;
+
+-- name: ListRebuildUsers :many
+SELECT user_id FROM portfolio_position_day
+UNION SELECT user_id FROM portfolio_realized_result
+UNION SELECT user_id FROM portfolio_income_event
+ORDER BY user_id;

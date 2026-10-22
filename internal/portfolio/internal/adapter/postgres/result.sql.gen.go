@@ -42,7 +42,7 @@ type InsertRealizedResultParams struct {
 	Cost          int64
 	Proceeds      int64
 	Result        int64
-	TaxClass      string
+	TaxClass      *string
 	Currency      string
 }
 

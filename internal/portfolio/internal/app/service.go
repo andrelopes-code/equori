@@ -4,6 +4,7 @@ package app
 import (
 	"context"
 	"errors"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -55,6 +56,7 @@ type Repository interface {
 	PositionsAt(ctx context.Context, userID int64, date time.Time) ([]domain.PositionDay, error)
 	RealizedResults(ctx context.Context, userID int64, from, to time.Time) ([]domain.RealizedResult, error)
 	IncomeEvents(ctx context.Context, userID int64, from, to time.Time) ([]domain.IncomeEvent, error)
+	RebuildUsers(ctx context.Context) ([]int64, error)
 }
 
 type Service struct {
@@ -96,6 +98,44 @@ func (s *Service) HandleTransaction(ctx context.Context, userID int64, accountID
 		}
 	}
 	return nil
+}
+
+// RebuildAll rebuilds every brokerage of every user that has derived rows (equori portfolio rebuild).
+func (s *Service) RebuildAll(ctx context.Context) error {
+	users, err := s.repo.RebuildUsers(ctx)
+	if err != nil {
+		return err
+	}
+	for _, userID := range users {
+		accounts, err := s.ledger.AccountFacts(ctx, userID)
+		if err != nil {
+			return err
+		}
+		ids := make([]uuid.UUID, 0, len(accounts))
+		for _, a := range accounts {
+			if a.Kind == kindBrokerage {
+				ids = append(ids, a.ID)
+			}
+		}
+		if err := s.HandleTransaction(ctx, userID, ids); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// IncomeTypes returns the universal income types plus those of the user's jurisdiction, sorted.
+func (s *Service) IncomeTypes(ctx context.Context, userID int64) ([]string, error) {
+	j, err := s.juris.For(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	types := slices.Clone(domain.UniversalIncomeTypes)
+	if j != nil {
+		types = append(types, j.IncomeTypes()...)
+	}
+	slices.Sort(types)
+	return slices.Compact(types), nil
 }
 
 func (s *Service) rebuild(ctx context.Context, userID int64, brokerageID uuid.UUID) error {

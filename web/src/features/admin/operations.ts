@@ -972,6 +972,11 @@ export const operations: Record<GroupKey, readonly Operation[]> = {
       query: ["year"],
     },
     {
+      id: "listInvestmentIncomeTypes",
+      method: "GET",
+      path: "/investment-income-types",
+    },
+    {
       id: "recordTrade",
       method: "POST",
       path: "/trades",

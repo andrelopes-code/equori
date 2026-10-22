@@ -272,3 +272,23 @@ func TestTagNameSchema(t *testing.T) {
 		}
 	}
 }
+
+// Spec 5.9: income types are identifiers; the ledger does not enumerate them.
+func TestDBInvestmentIncomeTypeIsAnIdentifier(t *testing.T) {
+	t.Parallel()
+	f := newSchemaFixture(t)
+	id, err := f.recordTx(t, f.userID, "2026-03-01", postingRow{f.checking, -10000}, postingRow{f.food, 10000})
+	if err != nil {
+		t.Fatal(err)
+	}
+	insert := func(incomeType string) error {
+		_, err := f.pool.Exec(t.Context(), `
+			INSERT INTO ledger_investment_income (transaction_id, user_id, account_id, cash_account_id, income_type, gross, withheld, currency)
+			VALUES ($1, $2, $3, $3, $4, 100, 0, 'BRL')`, id, f.userID, f.checking, incomeType)
+		return err
+	}
+	requireViolation(t, insert("Bad!"), checkViolation, "income_type")
+	if err := insert("rent"); err != nil {
+		t.Fatalf("identifier rejected: %v", err)
+	}
+}

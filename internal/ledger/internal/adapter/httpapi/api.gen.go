@@ -692,30 +692,6 @@ func (e DisputeResolutionOutcome) Valid() bool {
 	}
 }
 
-// Defines values for IncomeType.
-const (
-	Coupon   IncomeType = "coupon"
-	Dividend IncomeType = "dividend"
-	Interest IncomeType = "interest"
-	Jcp      IncomeType = "jcp"
-)
-
-// Valid indicates whether the value is a known member of the IncomeType enum.
-func (e IncomeType) Valid() bool {
-	switch e {
-	case Coupon:
-		return true
-	case Dividend:
-		return true
-	case Interest:
-		return true
-	case Jcp:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for InstallmentPlanStatus.
 const (
 	Active      InstallmentPlanStatus = "active"
@@ -1505,7 +1481,7 @@ type ForeignPurchaseInput struct {
 }
 
 // IncomeType defines model for IncomeType.
-type IncomeType string
+type IncomeType = string
 
 // Installment defines model for Installment.
 type Installment struct {

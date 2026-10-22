@@ -878,6 +878,20 @@ paths:
           $ref: "#/components/responses/Problem"
         "401":
           $ref: "#/components/responses/Problem"
+  /investment-income-types:
+    get:
+      tags: [portfolio]
+      operationId: listInvestmentIncomeTypes
+      summary: Income types the user's jurisdiction accepts.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncomeTypeList"
+        "401":
+          $ref: "#/components/responses/Problem"
   /transactions/{id}:
     get:
       tags: [ledger]
@@ -6147,7 +6161,15 @@ components:
             - $ref: "#/components/schemas/Money"
     IncomeType:
       type: string
-      enum: [dividend, jcp, interest, coupon]
+      pattern: "^[a-z0-9_]{2,40}$"
+    IncomeTypeList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/IncomeType"
     InvestmentIncomeInput:
       type: object
       additionalProperties: false
@@ -6259,7 +6281,9 @@ components:
         result:
           $ref: "#/components/schemas/Money"
         tax_class:
-          $ref: "#/components/schemas/InstrumentType"
+          type: string
+          nullable: true
+          pattern: "^[a-z0-9_]{2,40}$"
     RealizedResultList:
       type: object
       required: [items]
@@ -6287,7 +6311,8 @@ components:
           $ref: "#/components/schemas/IncomeType"
         tax_treatment:
           type: string
-          enum: [exempt, exclusive]
+          nullable: true
+          pattern: "^[a-z0-9_]{2,40}$"
         gross:
           $ref: "#/components/schemas/Money"
         withheld:

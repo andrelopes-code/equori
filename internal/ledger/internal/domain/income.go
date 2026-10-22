@@ -1,12 +1,12 @@
 package domain
 
 import (
-	"slices"
 	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/platform/money"
+	"github.com/andrelopes-code/equori/internal/platform/registry"
 )
 
 type IncomeType string
@@ -17,8 +17,6 @@ const (
 	IncomeInterest IncomeType = "interest"
 	IncomeCoupon   IncomeType = "coupon"
 )
-
-var incomeTypes = []IncomeType{IncomeDividend, IncomeJCP, IncomeInterest, IncomeCoupon}
 
 // JCPWithholdingBP is the income tax withheld on JCP when none is given (F9).
 const JCPWithholdingBP = 1500
@@ -42,8 +40,8 @@ type Income struct {
 
 // BuildIncome returns the postings cash, withheld tax and income category (P8 amendment A70).
 func BuildIncome(o IncomeOrder) ([]Posting, Income, error) {
-	if !slices.Contains(incomeTypes, o.Type) {
-		return nil, Income{}, invalid("income_type", "must be dividend, jcp, interest or coupon")
+	if !registry.ValidID(string(o.Type)) {
+		return nil, Income{}, invalid("income_type", "must match ^[a-z0-9_]{2,40}$")
 	}
 	if o.Gross.IsZero() || o.Gross.IsNegative() {
 		return nil, Income{}, invalid("gross", "must be positive")

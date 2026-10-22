@@ -85,7 +85,7 @@ func TestInvestmentIncomeRules(t *testing.T) {
 	}
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/investment-income", order("withheld", apitest.BRL(4500))), http.StatusUnprocessableEntity, "validation_failed", "withheld")
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/investment-income", order("category_id", f.travel)), http.StatusUnprocessableEntity, "validation_failed", "category_id")
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/investment-income", order("income_type", "amortization")), http.StatusBadRequest, "invalid_request", "")
+	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/investment-income", order("income_type", "Bad!")), http.StatusBadRequest, "invalid_request", "")
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/investment-income", order("account_id", f.cash)), http.StatusUnprocessableEntity, "validation_failed", "account_id")
 	h.ExpectProblem(h.Do(http.MethodPut, "/api/v1/transactions/"+zero.ID, map[string]any{
 		"expected_version": zero.Version, "date": "2026-10-26", "description": "edit", "reason": "edit",

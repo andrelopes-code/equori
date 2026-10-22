@@ -17,84 +17,6 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
-// Defines values for IncomeEventTaxTreatment.
-const (
-	Exclusive IncomeEventTaxTreatment = "exclusive"
-	Exempt    IncomeEventTaxTreatment = "exempt"
-)
-
-// Valid indicates whether the value is a known member of the IncomeEventTaxTreatment enum.
-func (e IncomeEventTaxTreatment) Valid() bool {
-	switch e {
-	case Exclusive:
-		return true
-	case Exempt:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for IncomeType.
-const (
-	Coupon   IncomeType = "coupon"
-	Dividend IncomeType = "dividend"
-	Interest IncomeType = "interest"
-	Jcp      IncomeType = "jcp"
-)
-
-// Valid indicates whether the value is a known member of the IncomeType enum.
-func (e IncomeType) Valid() bool {
-	switch e {
-	case Coupon:
-		return true
-	case Dividend:
-		return true
-	case Interest:
-		return true
-	case Jcp:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for InstrumentType.
-const (
-	Crypto            InstrumentType = "crypto"
-	Currency          InstrumentType = "currency"
-	DepositaryReceipt InstrumentType = "depositary_receipt"
-	Etf               InstrumentType = "etf"
-	FixedIncome       InstrumentType = "fixed_income"
-	Fund              InstrumentType = "fund"
-	Reit              InstrumentType = "reit"
-	Stock             InstrumentType = "stock"
-)
-
-// Valid indicates whether the value is a known member of the InstrumentType enum.
-func (e InstrumentType) Valid() bool {
-	switch e {
-	case Crypto:
-		return true
-	case Currency:
-		return true
-	case DepositaryReceipt:
-		return true
-	case Etf:
-		return true
-	case FixedIncome:
-		return true
-	case Fund:
-		return true
-	case Reit:
-		return true
-	case Stock:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for PriceSource.
 const (
 	B3Cotahist PriceSource = "b3_cotahist"
@@ -127,18 +49,15 @@ type FieldError struct {
 
 // IncomeEvent defines model for IncomeEvent.
 type IncomeEvent struct {
-	AccountId     openapi_types.UUID      `json:"account_id"`
-	Date          openapi_types.Date      `json:"date"`
-	Gross         Money                   `json:"gross"`
-	IncomeType    IncomeType              `json:"income_type"`
-	Instrument    string                  `json:"instrument"`
-	TaxTreatment  IncomeEventTaxTreatment `json:"tax_treatment"`
-	TransactionId openapi_types.UUID      `json:"transaction_id"`
-	Withheld      Money                   `json:"withheld"`
+	AccountId     openapi_types.UUID `json:"account_id"`
+	Date          openapi_types.Date `json:"date"`
+	Gross         Money              `json:"gross"`
+	IncomeType    IncomeType         `json:"income_type"`
+	Instrument    string             `json:"instrument"`
+	TaxTreatment  *string            `json:"tax_treatment"`
+	TransactionId openapi_types.UUID `json:"transaction_id"`
+	Withheld      Money              `json:"withheld"`
 }
-
-// IncomeEventTaxTreatment defines model for IncomeEvent.TaxTreatment.
-type IncomeEventTaxTreatment string
 
 // IncomeEventList defines model for IncomeEventList.
 type IncomeEventList struct {
@@ -146,10 +65,12 @@ type IncomeEventList struct {
 }
 
 // IncomeType defines model for IncomeType.
-type IncomeType string
+type IncomeType = string
 
-// InstrumentType defines model for InstrumentType.
-type InstrumentType string
+// IncomeTypeList defines model for IncomeTypeList.
+type IncomeTypeList struct {
+	Items []IncomeType `json:"items"`
+}
 
 // Money defines model for Money.
 type Money struct {
@@ -234,7 +155,7 @@ type RealizedResult struct {
 	Proceeds      Money              `json:"proceeds"`
 	Quantity      Money              `json:"quantity"`
 	Result        Money              `json:"result"`
-	TaxClass      InstrumentType     `json:"tax_class"`
+	TaxClass      *string            `json:"tax_class"`
 	TransactionId openapi_types.UUID `json:"transaction_id"`
 }
 
@@ -266,6 +187,9 @@ type ServerInterface interface {
 	// ListIncomeEvents Investment income of a year by tax treatment (D1).
 	// (GET /income-events)
 	ListIncomeEvents(w http.ResponseWriter, r *http.Request, params ListIncomeEventsParams)
+	// ListInvestmentIncomeTypes Income types the user's jurisdiction accepts.
+	// (GET /investment-income-types)
+	ListInvestmentIncomeTypes(w http.ResponseWriter, r *http.Request)
 	// ListPositions Positions of the security accounts at the end of a date, valued with stored prices.
 	// (GET /positions)
 	ListPositions(w http.ResponseWriter, r *http.Request, params ListPositionsParams)
@@ -307,6 +231,20 @@ func (siw *ServerInterfaceWrapper) ListIncomeEvents(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListIncomeEvents(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListInvestmentIncomeTypes operation middleware
+func (siw *ServerInterfaceWrapper) ListInvestmentIncomeTypes(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListInvestmentIncomeTypes(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -505,6 +443,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/positions", wrapper.ListPositions)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/realized-results", wrapper.ListRealizedResults)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/income-events", wrapper.ListIncomeEvents)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/investment-income-types", wrapper.ListInvestmentIncomeTypes)
 
 	return m
 }
@@ -552,6 +491,43 @@ func (response ListIncomeEvents400ApplicationProblemPlusJSONResponse) VisitListI
 type ListIncomeEvents401ApplicationProblemPlusJSONResponse Problem
 
 func (response ListIncomeEvents401ApplicationProblemPlusJSONResponse) VisitListIncomeEventsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListInvestmentIncomeTypesRequestObject struct {
+}
+
+type ListInvestmentIncomeTypesResponseObject interface {
+	VisitListInvestmentIncomeTypesResponse(w http.ResponseWriter) error
+}
+
+type ListInvestmentIncomeTypes200JSONResponse IncomeTypeList
+
+func (response ListInvestmentIncomeTypes200JSONResponse) VisitListInvestmentIncomeTypesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListInvestmentIncomeTypes401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListInvestmentIncomeTypes401ApplicationProblemPlusJSONResponse) VisitListInvestmentIncomeTypesResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -672,6 +648,9 @@ type StrictServerInterface interface {
 	// ListIncomeEvents Investment income of a year by tax treatment (D1).
 	// (GET /income-events)
 	ListIncomeEvents(ctx context.Context, request ListIncomeEventsRequestObject) (ListIncomeEventsResponseObject, error)
+	// ListInvestmentIncomeTypes Income types the user's jurisdiction accepts.
+	// (GET /investment-income-types)
+	ListInvestmentIncomeTypes(ctx context.Context, request ListInvestmentIncomeTypesRequestObject) (ListInvestmentIncomeTypesResponseObject, error)
 	// ListPositions Positions of the security accounts at the end of a date, valued with stored prices.
 	// (GET /positions)
 	ListPositions(ctx context.Context, request ListPositionsRequestObject) (ListPositionsResponseObject, error)
@@ -738,6 +717,30 @@ func (sh *strictHandler) ListIncomeEvents(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListIncomeEventsResponseObject); ok {
 		if err := validResponse.VisitListIncomeEventsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListInvestmentIncomeTypes operation middleware
+func (sh *strictHandler) ListInvestmentIncomeTypes(w http.ResponseWriter, r *http.Request) {
+	var request ListInvestmentIncomeTypesRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListInvestmentIncomeTypes(ctx, request.(ListInvestmentIncomeTypesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListInvestmentIncomeTypes")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListInvestmentIncomeTypesResponseObject); ok {
+		if err := validResponse.VisitListInvestmentIncomeTypesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -17,7 +17,7 @@ type PortfolioIncomeEvent struct {
 	Instrument    string
 	Date          time.Time
 	IncomeType    string
-	TaxTreatment  string
+	TaxTreatment  *string
 	Gross         int64
 	Withheld      int64
 	Currency      string
@@ -43,6 +43,6 @@ type PortfolioRealizedResult struct {
 	Cost          int64
 	Proceeds      int64
 	Result        int64
-	TaxClass      string
+	TaxClass      *string
 	Currency      string
 }

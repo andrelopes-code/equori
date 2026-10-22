@@ -44,7 +44,7 @@ func (r *Repository) Replace(ctx context.Context, userID int64, accountIDs []uui
 	for _, x := range rb.Results {
 		if err := r.q.InsertRealizedResult(ctx, InsertRealizedResultParams{
 			UserID: userID, TransactionID: x.TransactionID, AccountID: x.AccountID, Instrument: string(x.Instrument), Date: x.Date, Month: x.Month,
-			Quantity: x.Quantity, Cost: x.Cost, Proceeds: x.Proceeds, Result: x.Result, TaxClass: x.TaxClass, Currency: string(x.Currency),
+			Quantity: x.Quantity, Cost: x.Cost, Proceeds: x.Proceeds, Result: x.Result, TaxClass: optional(x.TaxClass), Currency: string(x.Currency),
 		}); err != nil {
 			return err
 		}
@@ -52,7 +52,7 @@ func (r *Repository) Replace(ctx context.Context, userID int64, accountIDs []uui
 	for _, e := range rb.Incomes {
 		if err := r.q.InsertIncomeEvent(ctx, InsertIncomeEventParams{
 			UserID: userID, TransactionID: e.TransactionID, AccountID: e.AccountID, Instrument: string(e.Instrument), Date: e.Date,
-			IncomeType: e.Type, TaxTreatment: e.TaxTreatment, Gross: e.Gross, Withheld: e.Withheld, Currency: string(e.Currency),
+			IncomeType: e.Type, TaxTreatment: optional(e.TaxTreatment), Gross: e.Gross, Withheld: e.Withheld, Currency: string(e.Currency),
 		}); err != nil {
 			return err
 		}
@@ -75,7 +75,7 @@ func (r *Repository) RealizedResults(ctx context.Context, userID int64, from, to
 	for i, row := range rows {
 		out[i] = domain.RealizedResult{
 			TransactionID: row.TransactionID, AccountID: row.AccountID, Instrument: money.Currency(row.Instrument), Date: row.Date, Month: row.Month,
-			Quantity: row.Quantity, Cost: row.Cost, Proceeds: row.Proceeds, Result: row.Result, TaxClass: row.TaxClass, Currency: money.Currency(row.Currency),
+			Quantity: row.Quantity, Cost: row.Cost, Proceeds: row.Proceeds, Result: row.Result, TaxClass: deref(row.TaxClass), Currency: money.Currency(row.Currency),
 		}
 	}
 	return out, err
@@ -87,8 +87,27 @@ func (r *Repository) IncomeEvents(ctx context.Context, userID int64, from, to ti
 	for i, row := range rows {
 		out[i] = domain.IncomeEvent{
 			TransactionID: row.TransactionID, AccountID: row.AccountID, Instrument: money.Currency(row.Instrument), Date: row.Date,
-			Type: row.IncomeType, TaxTreatment: row.TaxTreatment, Gross: row.Gross, Withheld: row.Withheld, Currency: money.Currency(row.Currency),
+			Type: row.IncomeType, TaxTreatment: deref(row.TaxTreatment), Gross: row.Gross, Withheld: row.Withheld, Currency: money.Currency(row.Currency),
 		}
 	}
 	return out, err
+}
+
+func (r *Repository) RebuildUsers(ctx context.Context) ([]int64, error) {
+	return r.q.ListRebuildUsers(ctx)
+}
+
+// optional stores the empty string as NULL.
+func optional(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func deref(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }

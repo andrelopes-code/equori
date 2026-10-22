@@ -38,7 +38,7 @@ type InsertIncomeEventParams struct {
 	Instrument    string
 	Date          time.Time
 	IncomeType    string
-	TaxTreatment  string
+	TaxTreatment  *string
 	Gross         int64
 	Withheld      int64
 	Currency      string
@@ -96,6 +96,33 @@ func (q *Queries) ListIncomeEvents(ctx context.Context, arg ListIncomeEventsPara
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRebuildUsers = `-- name: ListRebuildUsers :many
+SELECT user_id FROM portfolio_position_day
+UNION SELECT user_id FROM portfolio_realized_result
+UNION SELECT user_id FROM portfolio_income_event
+ORDER BY user_id
+`
+
+func (q *Queries) ListRebuildUsers(ctx context.Context) ([]int64, error) {
+	rows, err := q.db.Query(ctx, listRebuildUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int64
+	for rows.Next() {
+		var user_id int64
+		if err := rows.Scan(&user_id); err != nil {
+			return nil, err
+		}
+		items = append(items, user_id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

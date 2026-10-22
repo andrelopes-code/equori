@@ -43,6 +43,8 @@ func main() {
 		err = userCommand(os.Args[2:])
 	case "reporting":
 		err = reportingCommand(os.Args[2:])
+	case "portfolio":
+		err = portfolioCommand(os.Args[2:])
 	case "secrets":
 		err = secretsCommand(os.Args[2:])
 	case "healthcheck":
@@ -50,7 +52,7 @@ func main() {
 	case "version":
 		fmt.Println(buildVersion())
 	default:
-		fmt.Fprintf(os.Stderr, "unknown command %q; available: serve, user, reporting, secrets, healthcheck, version\n", cmd)
+		fmt.Fprintf(os.Stderr, "unknown command %q; available: serve, user, reporting, portfolio, secrets, healthcheck, version\n", cmd)
 		os.Exit(2)
 	}
 	if err != nil {
@@ -144,6 +146,29 @@ func reportingCommand(args []string) error {
 		return err
 	}
 	return app.Reporting.RebuildAll(ctx)
+}
+
+// portfolioCommand rebuilds every derived position, result and income event from the ledger.
+func portfolioCommand(args []string) error {
+	if len(args) != 1 || args[0] != "rebuild" {
+		fmt.Fprintln(os.Stderr, "usage: equori portfolio rebuild")
+		return errUsage
+	}
+	cfg, log, err := setup()
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+	pool, err := openDatabase(ctx, cfg, log)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+	app, err := server.New(pool, server.Config{}, log)
+	if err != nil {
+		return err
+	}
+	return app.Portfolio.RebuildAll(ctx)
 }
 
 func serverConfig(cfg config.Config, clk *clock.Clock, router *llm.Router) server.Config {

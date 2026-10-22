@@ -59,7 +59,7 @@ func TestBuildIncomeRejects(t *testing.T) {
 		order IncomeOrder
 		field string
 	}{
-		{name: "unknown type", order: IncomeOrder{Type: "amortization", Gross: brl(t, 100)}, field: "income_type"},
+		{name: "malformed type", order: IncomeOrder{Type: "Bad!", Gross: brl(t, 100)}, field: "income_type"},
 		{name: "zero gross", order: IncomeOrder{Type: IncomeDividend, Gross: brl(t, 0)}, field: "gross"},
 		{name: "withheld equal to gross", order: IncomeOrder{Type: IncomeJCP, Gross: brl(t, 100), Withheld: amount(100)}, field: "withheld"},
 		{name: "negative withheld", order: IncomeOrder{Type: IncomeJCP, Gross: brl(t, 100), Withheld: amount(-1)}, field: "withheld"},

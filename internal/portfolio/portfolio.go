@@ -81,6 +81,9 @@ func (m *Module) handle(ctx context.Context, tx pgx.Tx, e outbox.Delivered) erro
 	return m.svc.WithRepository(postgres.NewTxRepository(tx)).HandleTransaction(ctx, e.UserID, payload.AccountIDs)
 }
 
+// RebuildAll recomputes every derived row from the ledger (equori portfolio rebuild).
+func (m *Module) RebuildAll(ctx context.Context) error { return m.svc.RebuildAll(ctx) }
+
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 
 type ledgerPort struct {

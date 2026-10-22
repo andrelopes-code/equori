@@ -483,6 +483,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/investment-income-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Income types the user's jurisdiction accepts. */
+        get: operations["listInvestmentIncomeTypes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/transactions/{id}": {
         parameters: {
             query?: never;
@@ -3370,8 +3387,10 @@ export interface components {
             /** @description Cost basis removed by a sale at average cost. */
             cost?: components["schemas"]["Money"];
         };
-        /** @enum {string} */
-        IncomeType: "dividend" | "jcp" | "interest" | "coupon";
+        IncomeType: string;
+        IncomeTypeList: {
+            items: components["schemas"]["IncomeType"][];
+        };
         InvestmentIncomeInput: {
             /**
              * Format: uuid
@@ -3438,7 +3457,7 @@ export interface components {
             cost: components["schemas"]["Money"];
             proceeds: components["schemas"]["Money"];
             result: components["schemas"]["Money"];
-            tax_class: components["schemas"]["InstrumentType"];
+            tax_class: string | null;
         };
         RealizedResultList: {
             items: components["schemas"]["RealizedResult"][];
@@ -3452,8 +3471,7 @@ export interface components {
             /** Format: date */
             date: string;
             income_type: components["schemas"]["IncomeType"];
-            /** @enum {string} */
-            tax_treatment: "exempt" | "exclusive";
+            tax_treatment: string | null;
             gross: components["schemas"]["Money"];
             withheld: components["schemas"]["Money"];
         };
@@ -4930,6 +4948,27 @@ export interface operations {
                 };
             };
             400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+        };
+    };
+    listInvestmentIncomeTypes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncomeTypeList"];
+                };
+            };
             401: components["responses"]["Problem"];
         };
     };
