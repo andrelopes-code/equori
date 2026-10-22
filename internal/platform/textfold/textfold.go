@@ -8,13 +8,31 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-// special holds letters that have no canonical decomposition but fold to a base letter.
-var special = map[rune]rune{'ø': 'o', 'đ': 'd', 'ħ': 'h', 'ı': 'i', 'ŀ': 'l', 'ł': 'l', 'ŧ': 't', 'ſ': 's'}
+// special folds letters that have no canonical decomposition but have a base letter.
+func special(r rune) (rune, bool) {
+	switch r {
+	case 'ø':
+		return 'o', true
+	case 'đ':
+		return 'd', true
+	case 'ħ':
+		return 'h', true
+	case 'ı':
+		return 'i', true
+	case 'ŀ', 'ł':
+		return 'l', true
+	case 'ŧ':
+		return 't', true
+	case 'ſ':
+		return 's', true
+	}
+	return r, false
+}
 
 // Rune returns r lowercased; a Latin letter also loses its diacritics.
 func Rune(r rune) rune {
 	l := unicode.ToLower(r)
-	if base, ok := special[l]; ok {
+	if base, ok := special(l); ok {
 		return base
 	}
 	if !unicode.Is(unicode.Latin, l) {
