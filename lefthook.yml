@@ -1,0 +1,63 @@
+# Git hooks (ADR 015). A commit checks the files it stages; a push checks the files it sends.
+# make check, which CI runs on every pull request, checks everything.
+glob_matcher: doublestar
+
+pre-commit:
+  parallel: true
+  jobs:
+    - name: go-fmt
+      glob: "**/*.go"
+      run: bin/golangci-lint fmt {staged_files}
+      stage_fixed: true
+
+    - name: web-format
+      root: web/
+      glob: "web/**/*.{ts,tsx,js,css,json,md,html,yaml}"
+      run: pnpm exec prettier --write --ignore-unknown {staged_files}
+      stage_fixed: true
+
+    - name: web-lint
+      root: web/
+      glob: "web/**/*.{ts,tsx}"
+      run: pnpm exec eslint --cache --cache-location node_modules/.cache/eslint/ --no-warn-ignored {staged_files}
+
+    - name: gen-check
+      glob:
+        - "db/queries/**"
+        - "db/migrations/**"
+        - "sqlc.yaml"
+        - "api/openapi.yaml"
+        - "**/oapi-codegen.yaml"
+        - "web/src/theme/equori.theme.ts"
+      run: make gen-check
+
+pre-push:
+  parallel: true
+  jobs:
+    - name: go-lint
+      glob: "**/*.go"
+      run: bin/golangci-lint run
+
+    # The test cache skips the packages the push leaves unchanged.
+    - name: go-test
+      glob:
+        - "**/*.go"
+        - "db/**"
+        - "go.mod"
+        - "go.sum"
+      run: make test
+
+    - name: web-typecheck
+      root: web/
+      glob: "web/**/*.{ts,tsx}"
+      run: pnpm typecheck
+
+    - name: web-test
+      root: web/
+      glob: "web/**/*.{ts,tsx,css}"
+      run: pnpm exec vitest related --run {push_files}
+
+    - name: web-node-test
+      root: web/
+      glob: "web/src/**"
+      run: node --test src/theme/equori.theme.test.ts src/testing/slotted-findings.test.ts

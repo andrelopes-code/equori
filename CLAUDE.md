@@ -9,7 +9,6 @@ Decisions: `docs/adr/`. Read the relevant ADR before changing what it covers.
 | Command | Purpose |
 |---|---|
 | `make check` | Everything: format, tidy and generated-code checks, lint, `make web-check`, Go tests with `-race`. CI runs it on every pull request. |
-| `make check-commit` | The pre-commit gate: the static checks, then at once the Go tests without `-race` (cached for unchanged packages) and, when the commit touches `web/` or `api/openapi.yaml`, the web checks. Must pass before every commit. |
 | `make test` / `make test-race` | Go tests, without or with `-race`, on the test server `db-test` (`127.0.0.1:54339`, data in memory) |
 | `make db-up` / `make dev` | Start local Postgres on `127.0.0.1:54329`, run the app on `:8080`; reads `dev.env`, then `~/.config/equori/local.env` (`LOCAL_ENV`) when present, then `.env` |
 | `make web-dev` | Vite dev server for `web/`, proxying `/api` to `make dev` |
@@ -18,7 +17,7 @@ Decisions: `docs/adr/`. Read the relevant ADR before changing what it covers.
 | `make web-check` | Build `web/`, then typecheck, ESLint and Prettier check |
 | `make gen` | Regenerate sqlc and oapi-codegen output after editing `db/queries`, `db/migrations` or `api/openapi.yaml`; also compiles the theme |
 | `make vuln` | govulncheck |
-| `make hooks` | Enable the pre-commit hook (`make check-commit`) |
+| `make hooks` | Install the git hooks of `lefthook.yml` (ADR 015): a commit formats and lints its staged files and checks generated code when its sources change; a push lints, typechecks and runs the Go tests and the web tests related to the files it sends |
 
 Tools are pinned in `tools/go.mod` and built into `bin/`; `web/` tools are pinned in `web/package.json`, and pnpm runs from inside `web/` so Corepack selects its version. Do not install tools globally. Do not add custom lint scripts.
 
@@ -88,7 +87,7 @@ Write a comment only when it carries information the code cannot: a non-obvious 
 
 ## Definition of done
 
-1. `make check-commit` passes; `make check` passes before a merge.
+1. The hooks of `lefthook.yml` pass on commit and on push; `make check` passes before a merge.
 2. A test covers each acceptance criterion of the task.
 3. Schema changes come as a new goose migration; applied migrations are never edited.
 4. One vertical slice per commit.

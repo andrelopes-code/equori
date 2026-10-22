@@ -14,7 +14,7 @@ COMPOSE := docker compose -f compose.yaml -f compose.dev.yaml
 LOCAL_ENV ?= $(HOME)/.config/equori/local.env
 LOAD_ENV := set -a && . ./dev.env && { [ ! -f "$(LOCAL_ENV)" ] || . "$(LOCAL_ENV)"; } && { [ ! -f .env ] || . ./.env; } && set +a
 
-.PHONY: check check-commit static fmt fmt-check lint tidy-check gen gen-check test test-race vuln build dev db-up db-down db-test-up run-dev run-prod hooks tools web-deps web-build web-check web-static web-test web-dev
+.PHONY: check static fmt fmt-check lint tidy-check gen gen-check test test-race vuln build dev db-up db-down db-test-up run-dev run-prod hooks tools web-deps web-build web-check web-static web-test web-dev
 
 # Everything, the Go tests under -race included: CI runs it on every pull request. The web build
 # comes first: the Go tests compile package web, which embeds web/dist. The web tests come last:
@@ -22,14 +22,6 @@ LOAD_ENV := set -a && . ./dev.env && { [ ! -f "$(LOCAL_ENV)" ] || . "$(LOCAL_ENV
 check: static web-build
 	$(MAKE) --no-print-directory -j2 test-race web-static
 	$(MAKE) --no-print-directory web-test
-
-# The pre-commit gate: the static checks, then at once the Go tests without -race, which the
-# test cache skips for unchanged packages, and the web checks when the commit touches web/ or
-# the API contract.
-check-commit: static
-	if git diff --cached --quiet -- web api/openapi.yaml; then $(MAKE) --no-print-directory test; \
-	else $(MAKE) --no-print-directory web-build && $(MAKE) --no-print-directory -j2 test web-static \
-	&& $(MAKE) --no-print-directory web-test; fi
 
 static: fmt-check tidy-check gen-check lint
 
@@ -95,8 +87,10 @@ db-test-up:
 db-down:
 	$(COMPOSE) down
 
-hooks:
-	git config core.hooksPath .githooks
+# lefthook.yml holds the hooks; the unset drops the hooks path of the former .githooks/.
+hooks: $(TOOLS)
+	git config --unset core.hooksPath || true
+	$(BIN)/lefthook install
 
 tools: $(TOOLS)
 
