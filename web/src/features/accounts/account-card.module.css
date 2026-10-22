@@ -40,6 +40,11 @@
       inset 0 1px 0 rgb(255 255 255 / 18%),
       0 1px 2px rgb(15 23 42 / 20%),
       0 14px 28px -12px oklch(from var(--account-card-color) 0.3 c h / 55%);
+    /* Placeholders are drawn in the card's white ink, so they take the account's colour. */
+    --slotted-skeleton-fill: rgb(255 255 255 / 14%);
+    --slotted-skeleton-highlight-color: rgb(255 255 255 / 18%);
+    --slotted-skeleton-border-color: transparent;
+
     color: white;
     font-family: var(--slotted-font-family-sans);
     font-variant-numeric: tabular-nums;
@@ -302,36 +307,6 @@
       var(--slotted-tone-warning-solid) 28%,
       transparent
     );
-  }
-
-  .placeholder {
-    display: block;
-    border-radius: var(--slotted-radius-sm);
-    background: rgb(255 255 255 / 14%);
-  }
-
-  .placeholder[data-size="title"] {
-    inline-size: 96px;
-    block-size: 10px;
-  }
-
-  .placeholder[data-size="label"] {
-    inline-size: 72px;
-    block-size: 8px;
-  }
-
-  .placeholder[data-size="amount"] {
-    inline-size: 160px;
-    block-size: 26px;
-  }
-
-  .placeholder[data-size="meter"] {
-    block-size: 5px;
-  }
-
-  .card[aria-busy="true"] .tile {
-    border: 0;
-    background: rgb(255 255 255 / 14%);
   }
 
   @media (forced-colors: active) {

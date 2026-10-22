@@ -153,5 +153,9 @@ describe("AccountCard", () => {
     expect(face.getAttribute("aria-label")).toBe("Loading account");
     expect(face.getAttribute("aria-busy")).toBe("true");
     expect(face.textContent).toBe("");
+    expect(face.getAttribute("data-ui")).toBe("skeleton");
+    expect(
+      face.querySelectorAll('[data-ui="skeleton"][data-part="root"]'),
+    ).toHaveLength(5);
   });
 });

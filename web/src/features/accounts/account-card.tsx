@@ -1,3 +1,4 @@
+import { Skeleton, SkeletonRegion } from "@slotted/react/skeleton";
 import { useId } from "react";
 import type { CSSProperties, MouseEventHandler, ReactNode } from "react";
 
@@ -82,22 +83,23 @@ export function AccountCard({
         data-colour={color === undefined ? undefined : ""}
         aria-label={title}
       >
-        <div
+        {/* The cards of a page load together; the page, not each card, reports the wait. */}
+        <SkeletonRegion
           className={styles.card}
           role="group"
           aria-label={t("accountCard.loading")}
-          aria-busy="true"
+          live="off"
         >
           <div className={styles.header}>
-            <span className={styles.tile} />
-            <span className={styles.placeholder} data-size="title" />
+            <Skeleton shape="square" inlineSize={22} blockSize={22} />
+            <Skeleton inlineSize={96} blockSize={10} />
           </div>
           <div className={styles.value}>
-            <span className={styles.placeholder} data-size="label" />
-            <span className={styles.placeholder} data-size="amount" />
+            <Skeleton inlineSize={72} blockSize={8} />
+            <Skeleton inlineSize={160} blockSize={26} />
           </div>
-          <span className={styles.placeholder} data-size="meter" />
-        </div>
+          <Skeleton blockSize={5} />
+        </SkeletonRegion>
         {children}
       </article>
     );
