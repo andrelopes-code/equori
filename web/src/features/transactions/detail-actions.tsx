@@ -1,6 +1,7 @@
 import { Button, IconButton } from "@slotted/react/button";
 import { Glyph, Icon } from "@slotted/react/icon";
 import { Inline } from "@slotted/react/inline";
+import { Toolbar, ToolbarItem, ToolbarOverflow } from "@slotted/react/toolbar";
 import {
   Menu,
   MenuContent,
@@ -11,8 +12,9 @@ import {
 
 import { useT } from "@/i18n/i18n-provider";
 
-// A page has room for the actions as buttons; the pane beside the list folds them into one
-// menu so the title keeps its line (LA-03).
+// On the page the actions stand in a toolbar that folds into its menu what the width beside the
+// title cannot hold; the pane beside the list folds them all into one menu so the title keeps its
+// line (LA-03).
 export function DetailActions({
   host,
   voided,
@@ -44,49 +46,88 @@ export function DetailActions({
   if (host === "page") {
     if (voided) return null;
     return (
-      <Inline gap={2} wrap="nowrap">
-        <Button
-          size="sm"
-          variant="outline"
-          tone="secondary"
-          onClick={onCorrect}
+      <Toolbar aria-label={t("detail.actions")} overflow="menu">
+        <ToolbarItem
+          counterpart={
+            <MenuItem onSelect={onCorrect}>{t("detail.correct")}</MenuItem>
+          }
         >
-          {t("detail.correct")}
-        </Button>
-        {!transfer && (
           <Button
             size="sm"
             variant="outline"
             tone="secondary"
-            onClick={onTransfer}
+            onClick={onCorrect}
           >
-            {t("detail.transfer")}
+            {t("detail.correct")}
           </Button>
+        </ToolbarItem>
+        {!transfer && (
+          <ToolbarItem
+            counterpart={
+              <MenuItem onSelect={onTransfer}>{t("detail.transfer")}</MenuItem>
+            }
+          >
+            <Button
+              size="sm"
+              variant="outline"
+              tone="secondary"
+              onClick={onTransfer}
+            >
+              {t("detail.transfer")}
+            </Button>
+          </ToolbarItem>
         )}
         {expense && (
-          <Button
-            size="sm"
-            variant="outline"
-            tone="secondary"
-            onClick={onRepay}
+          <ToolbarItem
+            counterpart={
+              <MenuItem onSelect={onRepay}>{t("detail.repay")}</MenuItem>
+            }
           >
-            {t("detail.repay")}
-          </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              tone="secondary"
+              onClick={onRepay}
+            >
+              {t("detail.repay")}
+            </Button>
+          </ToolbarItem>
         )}
         {inflow && (
-          <Button
-            size="sm"
-            variant="outline"
-            tone="secondary"
-            onClick={onReimburse}
+          <ToolbarItem
+            counterpart={
+              <MenuItem onSelect={onReimburse}>
+                {t("detail.reimburse")}
+              </MenuItem>
+            }
           >
-            {t("detail.reimburse")}
-          </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              tone="secondary"
+              onClick={onReimburse}
+            >
+              {t("detail.reimburse")}
+            </Button>
+          </ToolbarItem>
         )}
-        <Button size="sm" variant="ghost" tone="danger" onClick={onVoid}>
-          {t("detail.void")}
-        </Button>
-      </Inline>
+        <ToolbarItem
+          counterpart={
+            <MenuItem tone="danger" onSelect={onVoid}>
+              {t("detail.void")}
+            </MenuItem>
+          }
+        >
+          <Button size="sm" variant="ghost" tone="danger" onClick={onVoid}>
+            {t("detail.void")}
+          </Button>
+        </ToolbarItem>
+        {/* Workaround for Slotted finding "Toolbar's overflow control is named in English
+            whatever the language": the label comes from the app's catalog. */}
+        <ToolbarOverflow
+          label={(hidden) => t("detail.moreActions", { count: hidden })}
+        />
+      </Toolbar>
     );
   }
   return (

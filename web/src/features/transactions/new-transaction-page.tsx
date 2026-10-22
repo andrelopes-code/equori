@@ -3,8 +3,11 @@ import {
   ActionBarAction,
   ActionBarActions,
 } from "@slotted/react/action-bar";
-import { Button, ButtonLink } from "@slotted/react/button";
+import { Button, ButtonLink, IconButton } from "@slotted/react/button";
+import { Glyph, Icon } from "@slotted/react/icon";
+import { Inline } from "@slotted/react/inline";
 import { InlineMessage } from "@slotted/react/inline-message";
+import { Menu, MenuContent, MenuItem, MenuTrigger } from "@slotted/react/menu";
 import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import {
   PageHeader,
@@ -41,7 +44,7 @@ import {
 } from "@/features/transactions/transaction-form";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
+import { compactQuery, useMediaQuery, wideQuery } from "@/ui/use-media-query";
 
 const draftKey = "new";
 
@@ -58,6 +61,7 @@ export function NewTransactionPage() {
   const scale = useScale();
   const create = useCreateTransaction();
   const wide = useMediaQuery(wideQuery);
+  const compact = useMediaQuery(compactQuery);
 
   const [draft, setDraft] = useState<EntryDraft>(
     () => readDraft(draftKey) ?? emptyDraft(today, account_id ?? null),
@@ -143,6 +147,27 @@ export function NewTransactionPage() {
     }
   };
 
+  const discard = () => {
+    clearDraft(draftKey);
+    void navigate({ to: "/transactions" });
+  };
+  const saveAnother = () => {
+    void submit("another");
+  };
+  const save = (
+    <Button
+      fullWidth={compact}
+      disabled={!ready}
+      loading={create.isPending}
+      aria-keyshortcuts="Control+Enter"
+      onClick={() => {
+        void submit("list");
+      }}
+    >
+      {t("entry.save")}
+    </Button>
+  );
+
   return (
     <Page
       width="wide"
@@ -150,43 +175,60 @@ export function NewTransactionPage() {
         <PageFooter>
           <ActionBar aria-label={t("entry.actions")}>
             <ActionBarActions>
-              <ActionBarAction>
-                <Button
-                  variant="ghost"
-                  tone="secondary"
-                  onClick={() => {
-                    clearDraft(draftKey);
-                    void navigate({ to: "/transactions" });
-                  }}
-                >
-                  {t("entry.discard")}
-                </Button>
-              </ActionBarAction>
-              <ActionBarAction>
-                <Button
-                  variant="outline"
-                  tone="secondary"
-                  disabled={!ready}
-                  loading={create.isPending}
-                  onClick={() => {
-                    void submit("another");
-                  }}
-                >
-                  {t("entry.saveAnother")}
-                </Button>
-              </ActionBarAction>
-              <ActionBarAction>
-                <Button
-                  disabled={!ready}
-                  loading={create.isPending}
-                  aria-keyshortcuts="Control+Enter"
-                  onClick={() => {
-                    void submit("list");
-                  }}
-                >
-                  {t("entry.save")}
-                </Button>
-              </ActionBarAction>
+              {compact ? (
+                // Workaround for Slotted finding "Action-bar stacks every action below 24rem and
+                // hides its overflow": stacked, the three actions took a fifth of a phone's
+                // screen. Save fills the bar's one row; Discard and Save another wait in a menu.
+                <ActionBarAction>
+                  <Inline gap={2} wrap="nowrap">
+                    <Menu>
+                      <MenuTrigger
+                        render={(props) => (
+                          <IconButton
+                            {...props}
+                            aria-label={t("entry.moreActions")}
+                            variant="outline"
+                            tone="secondary"
+                          >
+                            <Icon>
+                              <Glyph name="ellipsis" />
+                            </Icon>
+                          </IconButton>
+                        )}
+                      />
+                      <MenuContent>
+                        <MenuItem onSelect={discard}>
+                          {t("entry.discard")}
+                        </MenuItem>
+                        <MenuItem disabled={!ready} onSelect={saveAnother}>
+                          {t("entry.saveAnother")}
+                        </MenuItem>
+                      </MenuContent>
+                    </Menu>
+                    {save}
+                  </Inline>
+                </ActionBarAction>
+              ) : (
+                <>
+                  <ActionBarAction>
+                    <Button variant="ghost" tone="secondary" onClick={discard}>
+                      {t("entry.discard")}
+                    </Button>
+                  </ActionBarAction>
+                  <ActionBarAction>
+                    <Button
+                      variant="outline"
+                      tone="secondary"
+                      disabled={!ready}
+                      loading={create.isPending}
+                      onClick={saveAnother}
+                    >
+                      {t("entry.saveAnother")}
+                    </Button>
+                  </ActionBarAction>
+                  <ActionBarAction>{save}</ActionBarAction>
+                </>
+              )}
             </ActionBarActions>
           </ActionBar>
         </PageFooter>

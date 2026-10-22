@@ -81,6 +81,24 @@ describe("transaction detail", () => {
     ).toBeInTheDocument();
   });
 
+  // Owner review 2026-10-22: on a phone the four labelled actions squeezed into one row and broke
+  // inside their words. They stand in a toolbar that folds into its menu what does not fit (LA-03).
+  it("holds the record's actions in a toolbar that folds into a menu", async () => {
+    await renderApp(`/transactions/${txID}`, { width: 390, fetch: api() });
+    const actions = await screen.findByRole("toolbar", {
+      name: catalogEn["detail.actions"],
+    });
+    for (const name of [
+      "detail.correct",
+      "detail.transfer",
+      "detail.void",
+    ] as const) {
+      expect(
+        within(actions).getByRole("button", { name: catalogEn[name] }),
+      ).toBeInTheDocument();
+    }
+  });
+
   it("opens the pane beside the list on a desktop", async () => {
     const { router } = await renderApp("/transactions", {
       width: 1280,

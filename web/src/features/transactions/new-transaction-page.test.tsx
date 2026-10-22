@@ -54,6 +54,31 @@ beforeEach(() => {
 });
 
 describe("NewTransactionPage", () => {
+  // Owner review 2026-10-22: on a phone the footer stacked its three actions and took a fifth of
+  // the screen. It holds one row: Save, and a menu with Discard and Save another.
+  it("keeps the phone's footer to Save and a menu of the other actions", async () => {
+    await renderApp("/transactions/new", { width: 390, fetch: api([]) });
+    const save = await screen.findByRole("button", {
+      name: catalogEn["entry.save"],
+    });
+    const bar = save.closest('[data-ui="action-bar"]');
+    if (!(bar instanceof HTMLElement)) throw new Error("no action bar");
+    expect(
+      within(bar).queryByRole("button", {
+        name: catalogEn["entry.saveAnother"],
+      }),
+    ).toBeNull();
+    await userEvent.click(
+      within(bar).getByRole("button", { name: catalogEn["entry.moreActions"] }),
+    );
+    const menu = await screen.findByRole("menu");
+    expect(
+      within(menu)
+        .getAllByRole("menuitem")
+        .map((item) => item.textContent),
+    ).toEqual([catalogEn["entry.discard"], catalogEn["entry.saveAnother"]]);
+  });
+
   it("records an expense and returns to the list", async () => {
     const sent: unknown[] = [];
     const { router } = await renderApp("/transactions/new", {
