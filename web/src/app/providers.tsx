@@ -10,6 +10,7 @@ import { I18nProvider } from "@/i18n/i18n-provider";
 import { ProfileLocale } from "@/i18n/profile-locale";
 import { readLocale } from "@/i18n/locale";
 import { TodayProvider } from "@/i18n/today";
+import { PrivacyProvider } from "@/privacy/privacy-provider";
 
 interface SessionExpiry {
   trigger: () => void;
@@ -66,7 +67,9 @@ export function AppProviders({
           <SessionExpiryContext value={expiry}>
             <I18nProvider locale={locale}>
               <ProfileLocale />
-              <SlottedLocale>{children}</SlottedLocale>
+              <PrivacyProvider>
+                <SlottedLocale>{children}</SlottedLocale>
+              </PrivacyProvider>
             </I18nProvider>
           </SessionExpiryContext>
         </ApiProvider>
