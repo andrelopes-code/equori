@@ -4,6 +4,9 @@ export interface CellContext {
   // Display names by record ID: accounts, payees, institutions.
   names: ReadonlyMap<string, string>;
   scaleOf: (code: string) => number;
+  // Writes the bare decimal of an amount. The application passes the one of useMoneyFormat, which
+  // masks it while privacy is on; absent, the decimal is written as it is.
+  plain?: (m: { amount: number; currency: string }) => string;
 }
 
 interface Money {
@@ -26,7 +29,10 @@ function isMoney(value: unknown): value is Money {
 export function cellText(value: unknown, ctx: CellContext): string {
   if (value === undefined || value === null) return "";
   if (isMoney(value)) {
-    return `${formatPlain(value.amount, ctx.scaleOf(value.currency))} ${value.currency}`;
+    const plain =
+      ctx.plain?.(value) ??
+      formatPlain(value.amount, ctx.scaleOf(value.currency));
+    return `${plain} ${value.currency}`;
   }
   if (typeof value === "string") {
     const name = uuid.test(value) ? ctx.names.get(value) : undefined;

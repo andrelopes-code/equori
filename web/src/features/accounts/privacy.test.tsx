@@ -8,6 +8,7 @@ import {
   brokerageID,
   checkingID,
   money,
+  stockID,
 } from "@/testing/account-api";
 import { fakeApi, json } from "@/testing/fake-api";
 import { expectNoAmounts, hideAmounts } from "@/testing/privacy";
@@ -80,6 +81,38 @@ describe("accounts with the amounts hidden", () => {
       await settle();
       expectNoAmounts(container, []);
     }
+  });
+
+  it("masks the quantity and the cost of a position", async () => {
+    hideAmounts();
+    const { container } = await renderApp(
+      `/accounts/${brokerageID}?tab=positions`,
+      {
+        fetch: fakeApi(
+          accountRoutes({
+            "GET /api/v1/positions": () =>
+              json(200, {
+                items: [
+                  {
+                    account_id: stockID,
+                    instrument: "PETR4",
+                    quantity: money(1234, "PETR4"),
+                    cost_basis: money(300000),
+                    average_cost: "30.00",
+                    market_value: money(380000),
+                  },
+                ],
+              }),
+          }),
+        ),
+      },
+    );
+    const table = await screen.findByRole("table", {
+      name: "Positions",
+    });
+    await settle();
+    expect(table).toHaveTextContent("PETR4");
+    expectNoAmounts(container, ["1234", "30.00"]);
   });
 
   it("masks the batch page", async () => {

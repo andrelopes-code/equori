@@ -40,6 +40,14 @@ describe("useMoneyFormat", () => {
     expect(result.current.parts(brl(123456), 2).integer).toBe(MASK);
   });
 
+  it("writes the plain decimal while visible and the mask while hidden", () => {
+    const visible = renderHook(() => useMoneyFormat(), { wrapper });
+    expect(visible.result.current.plain(brl(-123456), 2)).toBe("-1234.56");
+    localStorage.setItem("equori.privacy", "hidden");
+    const hidden = renderHook(() => useMoneyFormat(), { wrapper });
+    expect(hidden.result.current.plain(brl(-123456), 2)).toBe(MASK);
+  });
+
   it("keeps the amount in an entry field readable while hidden", () => {
     localStorage.setItem("equori.privacy", "hidden");
     const { result } = renderHook(() => useMoneyFormat(), { wrapper });

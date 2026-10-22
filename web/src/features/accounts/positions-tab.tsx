@@ -19,9 +19,9 @@ import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { positionsQuery } from "@/features/accounts/api";
 import { settingsQuery } from "@/features/setup";
-import { formatPlain } from "@/i18n/format";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { MASK } from "@/privacy/mask";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
@@ -99,12 +99,11 @@ export function PositionsTab({
                   >
                     <TableRowHeader>{p.instrument}</TableRowHeader>
                     <TableCell numeric>
-                      {formatPlain(
-                        p.quantity.amount,
-                        scale(p.quantity.currency),
-                      )}
+                      {fmt.plain(p.quantity, scale(p.quantity.currency))}
                     </TableCell>
-                    <TableCell numeric>{p.average_cost ?? ""}</TableCell>
+                    <TableCell numeric>
+                      {fmt.hidden ? MASK : (p.average_cost ?? "")}
+                    </TableCell>
                     <TableCell numeric>{money(p.cost_basis)}</TableCell>
                     <TableCell numeric>
                       {p.market_value === undefined ? (

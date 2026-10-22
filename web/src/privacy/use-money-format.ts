@@ -1,9 +1,14 @@
 import { useMemo } from "react";
 
-import { formatMoney, formatMoneyParts, formatSigned } from "@/i18n/format";
+import {
+  formatMoney,
+  formatMoneyParts,
+  formatPlain,
+  formatSigned,
+} from "@/i18n/format";
 import type { MoneyParts } from "@/i18n/format";
 import { useAppLocale } from "@/i18n/i18n-provider";
-import { maskParts, maskText } from "@/privacy/mask";
+import { MASK, maskParts, maskText } from "@/privacy/mask";
 import { usePrivacy } from "@/privacy/privacy-provider";
 
 interface Money {
@@ -16,6 +21,8 @@ export interface MoneyFormat {
   money: (m: Money, scale: number, options?: { symbol?: boolean }) => string;
   signed: (m: Money, scale: number, options?: { symbol?: boolean }) => string;
   parts: (m: Money, scale: number) => MoneyParts;
+  // The bare decimal ("-1234.56") of a table cell, a quantity or a price, with no symbol or grouping.
+  plain: (m: Money, scale: number) => string;
   // The figure inside a field the person types into. It is never masked: a field that hid its own
   // value could not be edited. Only a field the person is filling in or correcting uses it.
   entry: (m: Money, scale: number) => MoneyParts;
@@ -35,6 +42,7 @@ export function useMoneyFormat(): MoneyFormat {
       return {
         hidden,
         entry,
+        plain: () => MASK,
         money: masked,
         signed: masked,
         parts: (m, scale) => maskParts(formatMoneyParts(m, scale, locale)),
@@ -43,6 +51,7 @@ export function useMoneyFormat(): MoneyFormat {
     return {
       hidden,
       entry,
+      plain: (m, scale) => formatPlain(m.amount, scale),
       money: (m, scale, options) => formatMoney(m, scale, locale, options),
       signed: (m, scale, options) => formatSigned(m, scale, locale, options),
       parts: (m, scale) => formatMoneyParts(m, scale, locale),

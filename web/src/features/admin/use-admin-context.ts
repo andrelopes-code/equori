@@ -9,6 +9,7 @@ import type { Aggregator, Refs } from "@/features/admin/operations";
 import { accountsQuery } from "@/features/accounts";
 import { settingsQuery, useScale } from "@/features/setup";
 import { useToday } from "@/i18n/today";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 export interface Named {
   id: string;
@@ -64,6 +65,7 @@ export function useAdminContext(): AdminContext {
   const aggregators = useQuery(adminQuery(api, "/aggregators"));
   const settings = useQuery(settingsQuery(api));
   const scaleOf = useScale();
+  const fmt = useMoneyFormat();
 
   return useMemo(() => {
     const list = accounts.data ?? [];
@@ -79,7 +81,11 @@ export function useAdminContext(): AdminContext {
       list.find((a) => a.kind === kindOrClass || a.class === kindOrClass)?.id ??
       "";
     return {
-      cells: { names, scaleOf: scaleOf ?? (() => 0) },
+      cells: {
+        names,
+        scaleOf: scaleOf ?? (() => 0),
+        plain: (m) => fmt.plain(m, (scaleOf ?? (() => 0))(m.currency)),
+      },
       refs: {
         today,
         month: today.slice(0, 7),
@@ -98,6 +104,7 @@ export function useAdminContext(): AdminContext {
     aggregators.data,
     settings.data,
     scaleOf,
+    fmt,
     today,
   ]);
 }
