@@ -2,14 +2,15 @@ package marketdata
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
+	"github.com/andrelopes-code/equori/internal/marketdata/internal/adapter/postgres"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
-
-// pivot is the currency a conversion passes through when no direct or inverse price exists.
-const pivot money.Currency = "BRL"
 
 // Conversion is a converted amount and the prices it used (B05).
 type Conversion struct {
@@ -18,7 +19,7 @@ type Conversion struct {
 }
 
 // Convert values q in currency to at date by the path of P8 amendment A61: direct
-// price, inverse price, or both legs through BRL.
+// price, inverse price, or both legs through the intermediate that ConversionIntermediate selects.
 func (m *Module) Convert(ctx context.Context, q money.Money, to money.Currency, date time.Time) (Conversion, error) {
 	from := q.Currency()
 	if from == to {
@@ -30,14 +31,18 @@ func (m *Module) Convert(ctx context.Context, q money.Money, to money.Currency, 
 	}
 	legs, prices := []money.Leg{leg}, []Price{p}
 	if !ok {
-		if from == pivot || to == pivot {
-			return Conversion{}, missing(from, to, date)
-		}
-		first, p1, ok1, err := m.leg(ctx, from, pivot, date)
+		x, found, err := m.intermediate(ctx, from, to, date)
 		if err != nil {
 			return Conversion{}, err
 		}
-		second, p2, ok2, err := m.leg(ctx, pivot, to, date)
+		if !found {
+			return Conversion{}, missing(from, to, date)
+		}
+		first, p1, ok1, err := m.leg(ctx, from, x, date)
+		if err != nil {
+			return Conversion{}, err
+		}
+		second, p2, ok2, err := m.leg(ctx, x, to, date)
 		if err != nil {
 			return Conversion{}, err
 		}
@@ -51,6 +56,17 @@ func (m *Module) Convert(ctx context.Context, q money.Money, to money.Currency, 
 		return Conversion{}, fmt.Errorf("convert %s to %s: %w", from, to, err)
 	}
 	return Conversion{Value: v, Prices: prices}, nil
+}
+
+func (m *Module) intermediate(ctx context.Context, from, to money.Currency, date time.Time) (money.Currency, bool, error) {
+	code, err := m.q.ConversionIntermediate(ctx, postgres.ConversionIntermediateParams{FromCode: string(from), ToCode: string(to), Date: date})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", false, nil
+	}
+	if err != nil {
+		return "", false, fmt.Errorf("select conversion intermediate: %w", err)
+	}
+	return money.Currency(code), true, nil
 }
 
 func (m *Module) leg(ctx context.Context, from, to money.Currency, date time.Time) (money.Leg, Price, bool, error) {

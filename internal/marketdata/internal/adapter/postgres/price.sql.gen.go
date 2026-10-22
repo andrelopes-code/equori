@@ -12,6 +12,36 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const conversionIntermediate = `-- name: ConversionIntermediate :one
+WITH legs AS (
+    SELECT quote_instrument AS other, instrument AS side, max(date) AS latest FROM marketdata_price
+    WHERE instrument IN ($2::text, $1::text) AND marketdata_price.date <= $3 GROUP BY 1, 2
+    UNION ALL
+    SELECT instrument, quote_instrument, max(date) FROM marketdata_price
+    WHERE quote_instrument IN ($2::text, $1::text) AND marketdata_price.date <= $3 GROUP BY 1, 2
+), best AS (
+    SELECT other, side, max(latest) AS latest FROM legs GROUP BY other, side
+)
+SELECT f.other::text AS code FROM best f
+JOIN best t ON t.other = f.other AND t.side = $1::text
+WHERE f.side = $2::text AND f.other NOT IN ($2::text, $1::text)
+ORDER BY least(f.latest, t.latest) DESC, f.other
+LIMIT 1
+`
+
+type ConversionIntermediateParams struct {
+	ToCode   string
+	FromCode string
+	Date     time.Time
+}
+
+func (q *Queries) ConversionIntermediate(ctx context.Context, arg ConversionIntermediateParams) (string, error) {
+	row := q.db.QueryRow(ctx, conversionIntermediate, arg.ToCode, arg.FromCode, arg.Date)
+	var code string
+	err := row.Scan(&code)
+	return code, err
+}
+
 const latestSourceDate = `-- name: LatestSourceDate :one
 SELECT coalesce(max(date), DATE '1970-01-01')::date AS latest FROM marketdata_price
 WHERE source = $1 AND ($2::text IS NULL OR instrument = $2)

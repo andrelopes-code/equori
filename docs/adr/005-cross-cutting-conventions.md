@@ -46,6 +46,7 @@ Package `internal/platform/money` (stdlib only) is the shared kernel for amounts
 - Supported currencies and their minor units are listed in `money`. `money.New` rejects an unlisted code; `money.NewOf` rejects a listed currency with another scale.
 - `|amount| ≤ 2^53 − 1` (`money.MaxAmount`). The bound keeps amounts exact as JSON numbers in JavaScript and makes `int64` overflow impossible in `Add`/`Sub`.
 - Arithmetic across instruments returns `money.ErrCurrencyMismatch`. Conversion is a domain operation with explicit rates, never implicit: `money.Convert` multiplies by each `money.Leg` exactly and rounds half to even once.
+- Conversion path: a direct price, else an inverse price, else two legs through the instrument priced against both sides whose older leg is the most recent (ties by code). No leg has a maximum age.
 - `money.Rate`: a positive exact decimal, `int64` mantissa and 0–12 decimals. Database: `numeric(30,12)`. API: a decimal string, `"5.4830"`.
 - Database: `bigint` amount; the instrument comes from the row's account or currency column (ADR 001).
 - API: `{"amount": 1234, "currency": "BRL"}` — integer units of the instrument scale; `currency` carries any instrument code (`{"amount": 150, "currency": "MXRF11"}`). Clients format for display.
