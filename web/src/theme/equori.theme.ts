@@ -104,6 +104,16 @@ const footerMaterialRule = `
 }
 `;
 
+// Workaround for Slotted finding "Toast has no backdrop-filter token for a material surface": the
+// family exposes its raised ground as a token but not the filter behind it. A soft or solid toast
+// paints its tone and keeps no blur.
+const toastMaterialRule = `
+[data-ui="toast"] > [data-part="list"] > [data-part="item"][data-variant="raised"] {
+  -webkit-backdrop-filter: var(--slotted-material-backdrop);
+  backdrop-filter: var(--slotted-material-backdrop);
+}
+`;
+
 const defaultDark = defaultTheme.recipe.dark;
 
 // The default turns the dark accent edge and text 10 to 13 degrees toward blue and lifts them to
@@ -240,6 +250,7 @@ export default extendTheme(
       // The palette floats over the page as a material; its footer keeps a tint of the sunken
       // layer instead of an opaque band across the glass.
       "--slotted-command-palette-surface": "var(--slotted-surface-material)",
+      "--slotted-toast-surface": "var(--slotted-surface-material)",
       "--slotted-command-palette-footer-surface":
         "color-mix(in oklab, var(--slotted-surface-sunken) 50%, transparent)",
     },
@@ -249,6 +260,7 @@ export default extendTheme(
       pageHeaderGroundRule,
       paletteMaterialRule,
       footerMaterialRule,
+      toastMaterialRule,
     ],
   },
   { name: "equori" },

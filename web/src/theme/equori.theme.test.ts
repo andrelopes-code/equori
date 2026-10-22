@@ -112,3 +112,20 @@ test("a plain page header fades its ground in and out as it sticks", () => {
     )?.[1] ?? "";
   assert.match(titleArea, ground);
 });
+
+// Workaround for Slotted finding "Toast has no backdrop-filter token for a material surface".
+test("a raised toast is a material over the page", () => {
+  assert.match(
+    css,
+    /--slotted-toast-surface:\s*var\(--slotted-surface-material\)/,
+  );
+  const item =
+    /\[data-ui="toast"\] > \[data-part="list"\] > \[data-part="item"\]\[data-variant="raised"\] \{([^}]*)\}/.exec(
+      css,
+    )?.[1] ?? "";
+  assert.ok(
+    item !== "",
+    "the raised toast rule is missing from equori.gen.css",
+  );
+  assert.match(item, /backdrop-filter: var\(--slotted-material-backdrop\)/);
+});

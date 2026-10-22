@@ -210,6 +210,7 @@
     --slotted-page-header-backdrop-filter: var(--slotted-material-backdrop);
     --slotted-page-footer-background: var(--slotted-surface-material);
     --slotted-command-palette-surface: var(--slotted-surface-material);
+    --slotted-toast-surface: var(--slotted-surface-material);
     --slotted-command-palette-footer-surface: color-mix(in oklab, var(--slotted-surface-sunken) 50%, transparent);
   }
 
@@ -1834,6 +1835,11 @@
     [data-ui="page"] > [data-part="footer"][data-status="entering"],
     [data-ui="page"] > [data-part="footer"][data-status="exiting"] {
       opacity: 1;
+    }
+
+    [data-ui="toast"] > [data-part="list"] > [data-part="item"][data-variant="raised"] {
+      -webkit-backdrop-filter: var(--slotted-material-backdrop);
+      backdrop-filter: var(--slotted-material-backdrop);
     }
   }
 }
