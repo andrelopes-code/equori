@@ -14,15 +14,11 @@ import {
   logoOf,
 } from "@/features/accounts";
 import { flowsQuery } from "@/features/cards/api";
-import {
-  formatDate,
-  formatDayMonth,
-  formatMoney,
-  shiftDate,
-} from "@/i18n/format";
+import { formatDate, formatDayMonth, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useAppLink } from "@/ui/use-app-link";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 type Institution = components["schemas"]["Institution"];
@@ -52,6 +48,7 @@ export function CardTile({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const api = useApi();
   const navigate = useNavigate();
   const follow = useAppLink();
@@ -61,7 +58,7 @@ export function CardTile({
   const flows = useQuery(flowsQuery(api, account.id, monday, today));
   const index = useQuery(logoIndexQuery);
   const money = (m: components["schemas"]["Money"]) =>
-    formatMoney(m, scale(m.currency), locale);
+    fmt.money(m, scale(m.currency));
   const oldest = unpaid[0];
   const owed = unpaid.reduce((sum, s) => sum + s.unpaid.amount, 0);
   const limit = account.card?.credit_limit;

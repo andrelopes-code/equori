@@ -22,9 +22,10 @@ import {
   statementStatusTone,
   statementStatusWords,
 } from "@/features/cards/statement-words";
-import { formatDate, formatMoney, formatMonthTitle } from "@/i18n/format";
+import { formatDate, formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useAppLink } from "@/ui/use-app-link";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Statement = components["schemas"]["StatementSummary"];
 
@@ -45,9 +46,10 @@ export function StatementsTab({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const follow = useAppLink();
   const money = (m: components["schemas"]["Money"]) =>
-    formatMoney(m, scale(m.currency), locale);
+    fmt.money(m, scale(m.currency));
   const rows = [...statements].reverse();
   return (
     <Stack gap={3}>

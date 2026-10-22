@@ -27,8 +27,9 @@ import { billingRulesQuery, creditLimitsQuery } from "@/features/cards/api";
 import { BillingRuleForm } from "@/features/cards/billing-rule-form";
 import { CreditLimitForm } from "@/features/cards/credit-limit-form";
 import { PlacementCheck } from "@/features/cards/placement-check";
-import { formatDate, formatMoney, formatMonthTitle } from "@/i18n/format";
+import { formatDate, formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 
@@ -47,6 +48,7 @@ export function CardSettingsTab({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const api = useApi();
   const rules = useQuery(billingRulesQuery(api, account.id));
   const limits = useQuery(creditLimitsQuery(api, account.id));
@@ -207,11 +209,7 @@ export function CardSettingsTab({
                       {formatDate(limit.effective_from, locale)}
                     </TableRowHeader>
                     <TableCell numeric>
-                      {formatMoney(
-                        limit.amount,
-                        scale(limit.amount.currency),
-                        locale,
-                      )}
+                      {fmt.money(limit.amount, scale(limit.amount.currency))}
                     </TableCell>
                   </TableRow>
                 ))}

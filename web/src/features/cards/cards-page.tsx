@@ -30,17 +30,19 @@ import { CardTile } from "@/features/cards/card-tile";
 import styles from "@/features/cards/card-tile.module.css";
 import { useCardStatements } from "@/features/cards/use-card-statements";
 import { institutionsQuery, settingsQuery, useScale } from "@/features/setup";
-import { formatDate, formatMoney } from "@/i18n/format";
+import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
 import { HeaderAction } from "@/ui/header-action";
 import { QueryError } from "@/ui/query-error";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 // The credit cards: what each one bills now, what is due and when, and how much limit is free.
 export function CardsPage() {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const api = useApi();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -65,7 +67,7 @@ export function CardsPage() {
         );
   const sc = scale ?? (() => 2);
   const money = (m: { amount: number; currency: string }) =>
-    formatMoney(m, sc(m.currency), locale);
+    fmt.money(m, sc(m.currency));
   const loading =
     accounts.isPending || states.some((s) => s.loading) || scale === null;
   const openCount = (accounts.data ?? []).filter(

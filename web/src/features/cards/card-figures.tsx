@@ -1,10 +1,11 @@
 import { memo } from "react";
 
 import type { components } from "@/api/schema.gen";
-import { formatDate, formatMoney } from "@/i18n/format";
+import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 type Money = components["schemas"]["Money"];
@@ -29,7 +30,8 @@ export const CardFigures = memo(function CardFigures({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
-  const money = (m: Money) => formatMoney(m, scale(m.currency), locale);
+  const fmt = useMoneyFormat();
+  const money = (m: Money) => fmt.money(m, scale(m.currency));
   const oldest = unpaid[0];
   const owed = unpaid.reduce((sum, s) => sum + s.unpaid.amount, 0);
   const limit = account.card?.credit_limit;

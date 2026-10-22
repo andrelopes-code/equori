@@ -22,13 +22,14 @@ import type { components } from "@/api/schema.gen";
 import { accountsQuery } from "@/features/accounts";
 import { usePayStatement } from "@/features/cards/api";
 import { AccountField } from "@/features/transactions";
-import { formatMoney, formatMonthTitle } from "@/i18n/format";
+import { formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
 import { MoneyInput } from "@/ui/money-input";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Statement = components["schemas"]["StatementSummary"];
 
@@ -48,6 +49,7 @@ export function PayDialog({
   const t = useT();
   const overlayOpen = useOverlayOpen();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const today = useToday();
   const formId = useId();
   const accounts = useQuery(accountsQuery(useApi()));
@@ -61,7 +63,7 @@ export function PayDialog({
     if (!open) onCancel();
   });
   const money = (value: number) =>
-    formatMoney({ amount: value, currency }, scale(currency), locale);
+    fmt.money({ amount: value, currency }, scale(currency));
   const minimum = statement.institution?.minimum;
   const presets = [
     {

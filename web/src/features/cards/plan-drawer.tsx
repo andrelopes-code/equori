@@ -37,13 +37,14 @@ import { planQuery, useAnticipate, useCancelPlan } from "@/features/cards/api";
 import { anticipation } from "@/features/cards/card-math";
 import { planProgress } from "@/features/cards/card-plans";
 import { planStatusTone, planStatusWords } from "@/features/cards/plan-words";
-import { formatMoney, formatMonthTitle } from "@/i18n/format";
+import { formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
 import { MoneyInput } from "@/ui/money-input";
 import { QueryError } from "@/ui/query-error";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Money = components["schemas"]["Money"];
 type ScheduledInstallment = components["schemas"]["ScheduledInstallment"];
@@ -68,6 +69,7 @@ export function PlanDrawer({
   const t = useT();
   const overlayOpen = useOverlayOpen();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const today = useToday();
   const formId = useId();
   const plan = useQuery(planQuery(useApi(), planId));
@@ -78,7 +80,7 @@ export function PlanDrawer({
   const [paid, setPaid] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const p = plan.data;
-  const money = (m: Money) => formatMoney(m, scale(m.currency), locale);
+  const money = (m: Money) => fmt.money(m, scale(m.currency));
   const reference = openReference ?? today.slice(0, 7);
   const progress = p === undefined ? undefined : planProgress(p, reference);
   const ahead =

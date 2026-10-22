@@ -16,11 +16,11 @@ import { useId, useState } from "react";
 import { ProblemError, errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { useReconcileStatement } from "@/features/cards/api";
-import { formatMoney } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useT } from "@/i18n/i18n-provider";
 import { MoneyInput } from "@/ui/money-input";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Statement = components["schemas"]["StatementSummary"];
 
@@ -41,7 +41,7 @@ export function ReconcileDialog({
 }) {
   const t = useT();
   const overlayOpen = useOverlayOpen();
-  const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const formId = useId();
   const reconcile = useReconcileStatement();
   const currency = statement.amount_due.currency;
@@ -60,11 +60,7 @@ export function ReconcileDialog({
           <DialogTitle>{t("reconcileStatement.title")}</DialogTitle>
           <DialogDescription>
             {t("reconcileStatement.hint", {
-              amount: formatMoney(
-                statement.amount_due,
-                scale(currency),
-                locale,
-              ),
+              amount: fmt.money(statement.amount_due, scale(currency)),
             })}
           </DialogDescription>
         </DialogHeader>
@@ -91,13 +87,12 @@ export function ReconcileDialog({
                     setDiffers(true);
                     setError(
                       t("reconcileStatement.differs", {
-                        amount: formatMoney(
+                        amount: fmt.money(
                           {
                             amount: amount - statement.amount_due.amount,
                             currency,
                           },
                           scale(currency),
-                          locale,
                         ),
                       }),
                     );

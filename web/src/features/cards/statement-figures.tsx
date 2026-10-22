@@ -2,10 +2,10 @@ import { Text } from "@slotted/react/typography";
 import { Stack } from "@slotted/react/stack";
 
 import type { components } from "@/api/schema.gen";
-import { formatMoney } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useT } from "@/i18n/i18n-provider";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Statement = components["schemas"]["StatementSummary"];
 
@@ -19,9 +19,9 @@ export function StatementFigures({
   scale: (code: string) => number;
 }) {
   const t = useT();
-  const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const money = (m: components["schemas"]["Money"]) =>
-    formatMoney(m, scale(m.currency), locale);
+    fmt.money(m, scale(m.currency));
   const institution = statement.institution;
   return (
     <Stack gap={3}>

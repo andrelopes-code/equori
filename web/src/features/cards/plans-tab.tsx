@@ -25,9 +25,10 @@ import { planIDs, planProgress } from "@/features/cards/card-plans";
 import { PlanDrawer } from "@/features/cards/plan-drawer";
 import { addMonths } from "@/features/cards/reference-months";
 import { planStatusTone, planStatusWords } from "@/features/cards/plan-words";
-import { formatMoney, formatMonthTitle } from "@/i18n/format";
+import { formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { Presence } from "@/ui/presence";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Statement = components["schemas"]["StatementSummary"];
 
@@ -53,6 +54,7 @@ export function PlansTab({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const api = useApi();
   const [opened, setOpened] = useState<string | null>(null);
   const anchor =
@@ -119,7 +121,7 @@ export function PlansTab({
                     ? undefined
                     : planProgress(plan, reference);
                 const money = (m: components["schemas"]["Money"]) =>
-                  formatMoney(m, scale(m.currency), locale);
+                  fmt.money(m, scale(m.currency));
                 return (
                   <TableRow key={id} value={id}>
                     <TableRowHeader>{name(id)}</TableRowHeader>

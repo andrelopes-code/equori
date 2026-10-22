@@ -26,9 +26,10 @@ import type { components } from "@/api/schema.gen";
 import { DisputeTag } from "@/features/cards/dispute-tag";
 import { lineAmount } from "@/features/cards/line-amount";
 import type { MessageKey } from "@/i18n/catalog.en";
-import { formatDayHeader, formatMoney } from "@/i18n/format";
+import { formatDayHeader } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type StatementPosting = components["schemas"]["StatementPosting"];
 
@@ -53,6 +54,7 @@ export function StatementLines({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const today = useToday();
   const navigate = useNavigate();
   const days = useMemo(() => {
@@ -96,11 +98,7 @@ export function StatementLines({
                   end={
                     currency === undefined
                       ? undefined
-                      : formatMoney(
-                          { amount: net, currency },
-                          scale(currency),
-                          locale,
-                        )
+                      : fmt.money({ amount: net, currency }, scale(currency))
                   }
                 >
                   {formatDayHeader(day, today, locale, {
@@ -153,7 +151,7 @@ export function StatementLines({
                           weight="semibold"
                           tone={tone === "positive" ? "success" : "default"}
                         >
-                          {formatMoney(money, scale(money.currency), locale)}
+                          {fmt.money(money, scale(money.currency))}
                         </Text>
                       </TableCell>
                       <TableCell align="end">

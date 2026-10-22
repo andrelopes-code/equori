@@ -3,8 +3,9 @@ import type { ChartSeries } from "@slotted/core/chart";
 import { memo, useMemo } from "react";
 
 import type { components } from "@/api/schema.gen";
-import { formatMoney, formatReferenceMonth } from "@/i18n/format";
+import { formatReferenceMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Statement = components["schemas"]["StatementSummary"];
 type Money = components["schemas"]["Money"];
@@ -26,6 +27,7 @@ export const StatementsChart = memo(function StatementsChart({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const data = useMemo(() => {
     const past = statements
       .filter((s) => s.status !== "open")
@@ -57,7 +59,7 @@ export const StatementsChart = memo(function StatementsChart({
     return [...past, ...now, ...ahead];
   }, [statements, commitments, locale]);
   const money = (value: number) =>
-    formatMoney({ amount: value, currency }, scale, locale);
+    fmt.money({ amount: value, currency }, scale);
   const series: ChartSeries[] = [
     {
       id: "billed",

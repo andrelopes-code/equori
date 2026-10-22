@@ -18,14 +18,14 @@ import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { useFinanceStatement } from "@/features/cards/api";
 import { financingInterest } from "@/features/cards/card-math";
-import { formatMoney } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { DateInput } from "@/ui/date-input";
 import { MoneyInput } from "@/ui/money-input";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Statement = components["schemas"]["StatementSummary"];
 
@@ -46,7 +46,7 @@ export function FinanceDialog({
 }) {
   const t = useT();
   const overlayOpen = useOverlayOpen();
-  const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const today = useToday();
   const formId = useId();
   const finance = useFinanceStatement();
@@ -59,7 +59,7 @@ export function FinanceDialog({
     if (!open) onCancel();
   });
   const money = (value: number) =>
-    formatMoney({ amount: value, currency }, scale(currency), locale);
+    fmt.money({ amount: value, currency }, scale(currency));
   return (
     <Dialog open={overlayOpen} size="sm" onOpenChange={change}>
       <DialogContent>
