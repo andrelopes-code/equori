@@ -16,7 +16,7 @@ func TestRepositoryUsers(t *testing.T) {
 	repo := NewRepository(pgtest.New(t))
 	in := domain.User{Email: "ann@example.com", PasswordHash: "h", Role: domain.RoleAdmin, Language: "pt", Region: "BR"}
 
-	created, err := repo.CreateUser(ctx, in)
+	created, err := repo.CreateUser(ctx, in, "BRL")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -24,7 +24,7 @@ func TestRepositoryUsers(t *testing.T) {
 		t.Fatalf("unexpected user %+v", created)
 	}
 
-	if _, err := repo.CreateUser(ctx, in); !errors.Is(err, app.ErrEmailTaken) {
+	if _, err := repo.CreateUser(ctx, in, "BRL"); !errors.Is(err, app.ErrEmailTaken) {
 		t.Fatalf("duplicate email err = %v, want ErrEmailTaken", err)
 	}
 
@@ -41,7 +41,7 @@ func TestRepositorySessions(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
 	repo := NewRepository(pgtest.New(t))
-	user, err := repo.CreateUser(ctx, domain.User{Email: "ann@example.com", PasswordHash: "h", Role: domain.RoleMember, Language: "pt", Region: "BR"})
+	user, err := repo.CreateUser(ctx, domain.User{Email: "ann@example.com", PasswordHash: "h", Role: domain.RoleMember, Language: "pt", Region: "BR"}, "BRL")
 	if err != nil {
 		t.Fatal(err)
 	}

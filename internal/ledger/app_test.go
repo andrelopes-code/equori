@@ -46,14 +46,14 @@ func newLedgerFixture(t testing.TB) ledgerFixture {
 	return f
 }
 
-// provisionedUser creates a user, publishes identity.user_created.v1 and dispatches it.
+// provisionedUser creates a user, publishes identity.user_created.v2 and dispatches it.
 func provisionedUser(t testing.TB, pool *pgxpool.Pool, d *outbox.Dispatcher) int64 {
 	t.Helper()
 	userID := pgtest.CreateUser(t, pool)
 	err := pgx.BeginFunc(t.Context(), pool, func(tx pgx.Tx) error {
 		return outbox.Insert(t.Context(), tx, outbox.Event{
-			Type: "identity.user_created.v1", UserID: userID, AggregateID: "u",
-			Payload: map[string]any{"user_id": userID, "email": "x@example.com"},
+			Type: "identity.user_created.v2", UserID: userID, AggregateID: "u",
+			Payload: map[string]any{"user_id": userID, "email": "x@example.com", "language": "en", "region": "US", "base_currency": "BRL"},
 		})
 	})
 	if err != nil {

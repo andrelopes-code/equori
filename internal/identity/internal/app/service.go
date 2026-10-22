@@ -11,6 +11,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/identity/internal/domain"
 	"github.com/andrelopes-code/equori/internal/identity/internal/password"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
 var (
@@ -24,7 +25,7 @@ var (
 
 // Repository returns ErrNotFound for missing rows and ErrEmailTaken on duplicate email.
 type Repository interface {
-	CreateUser(ctx context.Context, u domain.User) (domain.User, error)
+	CreateUser(ctx context.Context, u domain.User, base money.Currency) (domain.User, error)
 	UpdateProfile(ctx context.Context, userID int64, l locale.Locale) (domain.User, error)
 	UserByID(ctx context.Context, userID int64) (domain.User, error)
 	UserByEmail(ctx context.Context, email string) (domain.User, error)
@@ -61,7 +62,7 @@ func NewService(repo Repository, now func() time.Time) *Service {
 	}
 }
 
-func (s *Service) CreateUser(ctx context.Context, email, plain string, role domain.Role, l locale.Locale) (domain.User, error) {
+func (s *Service) CreateUser(ctx context.Context, email, plain string, role domain.Role, l locale.Locale, base money.Currency) (domain.User, error) {
 	email, err := domain.NormalizeEmail(email)
 	if err != nil {
 		return domain.User{}, err
@@ -75,13 +76,16 @@ func (s *Service) CreateUser(ctx context.Context, email, plain string, role doma
 	if err := validateLocale(l); err != nil {
 		return domain.User{}, err
 	}
+	if _, err := money.ParseCurrency(string(base)); err != nil {
+		return domain.User{}, &domain.FieldError{Field: "base_currency", Message: "must be an ISO 4217 currency code"}
+	}
 	release, err := s.acquireHashSlot(ctx)
 	if err != nil {
 		return domain.User{}, err
 	}
 	hash := password.Hash(plain)
 	release()
-	return s.repo.CreateUser(ctx, domain.User{Email: email, PasswordHash: hash, Role: role, Language: l.Language, Region: l.Region})
+	return s.repo.CreateUser(ctx, domain.User{Email: email, PasswordHash: hash, Role: role, Language: l.Language, Region: l.Region}, base)
 }
 
 func validateLocale(l locale.Locale) error {

@@ -1,7 +1,7 @@
 package identity_test
 
 import (
-	"encoding/json/v2"
+	"encoding/json"
 	"errors"
 	"io"
 	"log/slog"
@@ -18,6 +18,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/identity"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
+	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
 )
 
@@ -109,7 +110,7 @@ func expectProblem(t *testing.T, resp response, status int, code string) {
 func TestSessionLifecycle(t *testing.T) {
 	t.Parallel()
 	h := newHarness(t, identity.Config{})
-	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleAdmin); err != nil {
+	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleAdmin, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -144,7 +145,7 @@ func TestSessionLifecycle(t *testing.T) {
 func TestLoginFailures(t *testing.T) {
 	t.Parallel()
 	h := newHarness(t, identity.Config{})
-	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleMember); err != nil {
+	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -184,7 +185,7 @@ func TestRequireSessionDeniesByDefault(t *testing.T) {
 func TestUnknownAPIRoute(t *testing.T) {
 	t.Parallel()
 	h := newHarness(t, identity.Config{})
-	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleMember); err != nil {
+	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
 		t.Fatal(err)
 	}
 	h.login(password)
@@ -203,7 +204,7 @@ func TestLoginBodyTooLarge(t *testing.T) {
 func TestConcurrentLoginAttemptsRespectLimit(t *testing.T) {
 	t.Parallel()
 	h := newHarness(t, identity.Config{})
-	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleMember); err != nil {
+	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
 		t.Fatal(err)
 	}
 	var wg sync.WaitGroup
@@ -228,7 +229,7 @@ func TestConcurrentLoginAttemptsRespectLimit(t *testing.T) {
 func TestSessionCookieAttributes(t *testing.T) {
 	t.Parallel()
 	h := newHarness(t, identity.Config{SecureCookies: true})
-	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleMember); err != nil {
+	if _, err := h.module.CreateUser(t.Context(), email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -245,19 +246,19 @@ func TestCreateUserValidation(t *testing.T) {
 	h := newHarness(t, identity.Config{})
 	ctx := t.Context()
 
-	if _, err := h.module.CreateUser(ctx, "not an email", password, identity.RoleMember); err == nil {
+	if _, err := h.module.CreateUser(ctx, "not an email", password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err == nil {
 		t.Fatal("invalid email accepted")
 	}
-	if _, err := h.module.CreateUser(ctx, email, "short", identity.RoleMember); err == nil {
+	if _, err := h.module.CreateUser(ctx, email, "short", identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err == nil {
 		t.Fatal("short password accepted")
 	}
-	if _, err := h.module.CreateUser(ctx, email, password, "owner"); err == nil {
+	if _, err := h.module.CreateUser(ctx, email, password, "owner", locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err == nil {
 		t.Fatal("unknown role accepted")
 	}
-	if _, err := h.module.CreateUser(ctx, email, password, identity.RoleMember); err != nil {
+	if _, err := h.module.CreateUser(ctx, email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := h.module.CreateUser(ctx, "ANN@example.com", password, identity.RoleMember); !errors.Is(err, identity.ErrEmailTaken) {
+	if _, err := h.module.CreateUser(ctx, "ANN@example.com", password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); !errors.Is(err, identity.ErrEmailTaken) {
 		t.Fatalf("duplicate email with different case err = %v, want ErrEmailTaken", err)
 	}
 }
@@ -275,7 +276,7 @@ func TestCreateUserPublishesEvent(t *testing.T) {
 	t.Parallel()
 	h := newHarness(t, identity.Config{})
 
-	u, err := h.module.CreateUser(t.Context(), email, password, identity.RoleAdmin)
+	u, err := h.module.CreateUser(t.Context(), email, password, identity.RoleAdmin, locale.Locale{Language: "pt", Region: "BR"}, "BRL")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -283,8 +284,25 @@ func TestCreateUserPublishesEvent(t *testing.T) {
 	var n int
 	var userID int64
 	err = h.pool.QueryRow(t.Context(),
-		`SELECT count(*), max(user_id) FROM outbox_event WHERE type = 'identity.user_created.v1'`).Scan(&n, &userID)
+		`SELECT count(*), max(user_id) FROM outbox_event WHERE type = 'identity.user_created.v2'`).Scan(&n, &userID)
 	if err != nil || n != 1 || userID != u.ID {
 		t.Fatalf("events = %d for user %d, %v; want 1 for user %d", n, userID, err, u.ID)
+	}
+	var payload struct {
+		UserID       int64
+		Email        string
+		Language     string
+		Region       string
+		BaseCurrency string `json:"base_currency"`
+	}
+	var raw []byte
+	if err := h.pool.QueryRow(t.Context(), `SELECT payload FROM outbox_event WHERE type = 'identity.user_created.v2'`).Scan(&raw); err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(raw, &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.Language != "pt" || payload.Region != "BR" || payload.BaseCurrency != "BRL" || payload.Email != email {
+		t.Fatalf("payload = %+v", payload)
 	}
 }

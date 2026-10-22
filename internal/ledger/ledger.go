@@ -29,9 +29,6 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
-// DefaultBaseCurrency is the base currency of a new user; it can change until the first transaction.
-const DefaultBaseCurrency = "BRL"
-
 // Event types published by the ledger (ADR 006).
 const (
 	EventTransactionRecorded  = app.EventTransactionRecorded
@@ -197,7 +194,7 @@ func (c *instruments) Instrument(ctx context.Context, code money.Currency) (app.
 func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, md MarketData, clk clock.Clock, log *slog.Logger) *Module {
 	ins := &instruments{md: md, cache: map[money.Currency]app.Instrument{}}
 	svc := app.NewService(postgres.NewRepository(pool, ins), clk, calendarAdapter{md}, ins, pricesAdapter{md})
-	dispatcher.Subscribe("ledger-provisioning", "identity.user_created.v1", provision)
+	dispatcher.Subscribe("ledger-provisioning", "identity.user_created.v2", provision)
 	return &Module{http: httpapi.NewServer(svc, log), svc: svc}
 }
 
@@ -409,7 +406,8 @@ func (m *Module) BodyLimits() []httpserver.BodyLimit {
 }
 
 type userCreated struct {
-	UserID int64 `json:"user_id"`
+	UserID       int64          `json:"user_id"`
+	BaseCurrency money.Currency `json:"base_currency"`
 }
 
 // provision runs in the dispatcher's transaction, so the system accounts commit with the delivery.
@@ -419,5 +417,5 @@ func provision(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
 	svc := app.NewService(postgres.NewRepository(tx, nil), clock.New(time.UTC, time.Now), nil, nil, nil)
-	return svc.Provision(ctx, p.UserID, DefaultBaseCurrency)
+	return svc.Provision(ctx, p.UserID, p.BaseCurrency)
 }

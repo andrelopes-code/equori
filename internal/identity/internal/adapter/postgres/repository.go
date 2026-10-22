@@ -12,6 +12,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/identity/internal/app"
 	"github.com/andrelopes-code/equori/internal/identity/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 )
 
@@ -35,15 +36,18 @@ func NewRepository(db db) *Repository {
 	return &Repository{db: db, q: New(db)}
 }
 
-const userCreatedEvent = "identity.user_created.v1"
+const userCreatedEvent = "identity.user_created.v2"
 
 type userCreated struct {
-	UserID int64  `json:"user_id"`
-	Email  string `json:"email"`
+	UserID       int64          `json:"user_id"`
+	Email        string         `json:"email"`
+	Language     string         `json:"language"`
+	Region       string         `json:"region"`
+	BaseCurrency money.Currency `json:"base_currency"`
 }
 
-// CreateUser publishes identity.user_created.v1 in the same transaction.
-func (r *Repository) CreateUser(ctx context.Context, u domain.User) (domain.User, error) {
+// CreateUser publishes identity.user_created.v2 in the same transaction.
+func (r *Repository) CreateUser(ctx context.Context, u domain.User, base money.Currency) (domain.User, error) {
 	var created domain.User
 	err := pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
 		row, err := r.q.WithTx(tx).CreateUser(ctx, CreateUserParams{
@@ -64,7 +68,7 @@ func (r *Repository) CreateUser(ctx context.Context, u domain.User) (domain.User
 			Type:        userCreatedEvent,
 			UserID:      row.ID,
 			AggregateID: strconv.FormatInt(row.ID, 10),
-			Payload:     userCreated{UserID: row.ID, Email: row.Email},
+			Payload:     userCreated{UserID: row.ID, Email: row.Email, Language: row.Language, Region: row.Region, BaseCurrency: base},
 		})
 	})
 	if err != nil {

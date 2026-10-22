@@ -24,6 +24,8 @@ import (
 	"github.com/andrelopes-code/equori/internal/identity"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/llm"
+	"github.com/andrelopes-code/equori/internal/platform/locale"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
 	"github.com/andrelopes-code/equori/internal/server"
 )
@@ -165,10 +167,16 @@ func (h *Harness) Logs() string { return h.logs.String() }
 // T returns the test the harness reports to.
 func (h *Harness) T() testing.TB { return h.t }
 
-// Login creates the user, runs the outbox so the ledger provisions it, and returns a client with its session.
+// Login is LoginAs for a Brazilian user with BRL as base currency.
 func (h *Harness) Login(email string) *http.Client {
 	h.t.Helper()
-	if _, err := h.App.Identity.CreateUser(h.t.Context(), email, Password, identity.RoleAdmin); err != nil {
+	return h.LoginAs(email, locale.Locale{Language: "pt", Region: "BR"}, "BRL")
+}
+
+// LoginAs creates the user, runs the outbox so the ledger provisions it, and returns a client with its session.
+func (h *Harness) LoginAs(email string, l locale.Locale, base money.Currency) *http.Client {
+	h.t.Helper()
+	if _, err := h.App.Identity.CreateUser(h.t.Context(), email, Password, identity.RoleAdmin, l, base); err != nil {
 		h.t.Fatal(err)
 	}
 	h.Dispatch()

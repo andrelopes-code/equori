@@ -15,6 +15,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/identity/internal/app"
 	"github.com/andrelopes-code/equori/internal/identity/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
 const (
@@ -54,8 +55,8 @@ func (m *Module) Profile(ctx context.Context, userID int64) (locale.Locale, erro
 // RequireSession must wrap the whole HTTP handler: it is the single authentication gate for /api/.
 func (m *Module) RequireSession(next http.Handler) http.Handler { return m.http.RequireSession(next) }
 
-func (m *Module) CreateUser(ctx context.Context, email, password, role string) (User, error) {
-	u, err := m.svc.CreateUser(ctx, email, password, domain.Role(role), locale.Locale{Language: "pt", Region: "BR"})
+func (m *Module) CreateUser(ctx context.Context, email, password, role string, l locale.Locale, baseCurrency money.Currency) (User, error) {
+	u, err := m.svc.CreateUser(ctx, email, password, domain.Role(role), l, baseCurrency)
 	if err != nil {
 		return User{}, err
 	}
