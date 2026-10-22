@@ -61,32 +61,32 @@ func (e IncomeType) Valid() bool {
 
 // Defines values for InstrumentType.
 const (
-	Bdr         InstrumentType = "bdr"
-	Crypto      InstrumentType = "crypto"
-	Currency    InstrumentType = "currency"
-	Etf         InstrumentType = "etf"
-	Fii         InstrumentType = "fii"
-	FixedIncome InstrumentType = "fixed_income"
-	Fund        InstrumentType = "fund"
-	Stock       InstrumentType = "stock"
+	Crypto            InstrumentType = "crypto"
+	Currency          InstrumentType = "currency"
+	DepositaryReceipt InstrumentType = "depositary_receipt"
+	Etf               InstrumentType = "etf"
+	FixedIncome       InstrumentType = "fixed_income"
+	Fund              InstrumentType = "fund"
+	Reit              InstrumentType = "reit"
+	Stock             InstrumentType = "stock"
 )
 
 // Valid indicates whether the value is a known member of the InstrumentType enum.
 func (e InstrumentType) Valid() bool {
 	switch e {
-	case Bdr:
-		return true
 	case Crypto:
 		return true
 	case Currency:
 		return true
-	case Etf:
+	case DepositaryReceipt:
 		return true
-	case Fii:
+	case Etf:
 		return true
 	case FixedIncome:
 		return true
 	case Fund:
+		return true
+	case Reit:
 		return true
 	case Stock:
 		return true

@@ -665,7 +665,7 @@ export const operations: Record<GroupKey, readonly Operation[]> = {
         scale: 0,
         name: "Petrobras PN",
         quote_currency: "BRL",
-        exchange: "B3",
+        exchange: "BVMF",
       }),
     },
     { id: "getInstrument", method: "GET", path: "/instruments/{code}" },

@@ -66,7 +66,7 @@ func TestSchedulesInAnotherCurrency(t *testing.T) {
 		"recurrence": monthly("2026-11-05", 5, ""),
 	}), http.StatusUnprocessableEntity, "currency_unsupported", "counterpart_id")
 
-	h.MustDo(http.MethodPost, "/api/v1/instruments", map[string]any{"code": "MXRF11", "type": "fii", "scale": 0, "name": "MXRF11", "quote_currency": "BRL"}, http.StatusCreated, nil)
+	h.MustDo(http.MethodPost, "/api/v1/instruments", map[string]any{"code": "MXRF11", "type": "reit", "scale": 0, "name": "MXRF11", "quote_currency": "BRL"}, http.StatusCreated, nil)
 	xp := h.Account("XP", "asset", "brokerage", nil)
 	shares := h.Account("XP MXRF11", "asset", "brokerage", map[string]any{"parent_id": xp, "currency": "MXRF11"})
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/schedules", map[string]any{
@@ -139,7 +139,7 @@ func TestMixedParentInGoalsAndProjections(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	h := f.h
-	h.MustDo(http.MethodPost, "/api/v1/instruments", map[string]any{"code": "MXRF11", "type": "fii", "scale": 0, "name": "MXRF11", "quote_currency": "BRL"}, http.StatusCreated, nil)
+	h.MustDo(http.MethodPost, "/api/v1/instruments", map[string]any{"code": "MXRF11", "type": "reit", "scale": 0, "name": "MXRF11", "quote_currency": "BRL"}, http.StatusCreated, nil)
 	xp := h.Account("XP", "asset", "brokerage", nil)
 	h.Account("XP cash", "asset", "brokerage", map[string]any{"parent_id": xp})
 

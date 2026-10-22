@@ -108,7 +108,7 @@ func TestFetchRangeSkipsWeekendsAndKeepsEarlierDays(t *testing.T) {
 func TestCodes(t *testing.T) {
 	t.Parallel()
 	ins := []feed.Instrument{
-		{Code: "MXRF11", Type: "reit", Exchange: "B3", QuoteCurrency: "BRL"},
+		{Code: "MXRF11", Type: "reit", Exchange: "BVMF", QuoteCurrency: "BRL"},
 		{Code: "AAPL", Type: "stock", Exchange: "XNAS", QuoteCurrency: "USD"},
 		{Code: "USD", Type: "currency"},
 	}

@@ -47,7 +47,7 @@ func (Source) ID() string { return "b3_cotahist" }
 func (Source) Codes(ins []feed.Instrument) []money.Currency {
 	var out []money.Currency
 	for _, in := range ins {
-		if in.Exchange == "B3" && in.QuoteCurrency == "BRL" {
+		if in.Exchange == "BVMF" && in.QuoteCurrency == "BRL" {
 			out = append(out, in.Code)
 		}
 	}

@@ -11,7 +11,7 @@ func TestSchemaRejectsInvalidPrices(t *testing.T) {
 	pool := pgtest.New(t)
 	ctx := t.Context()
 	if _, err := pool.Exec(ctx, `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, exchange)
-		VALUES ('MXRF11', 'fii', 0, 'Maxi Renda', 'BRL', 'B3')`); err != nil {
+		VALUES ('MXRF11', 'reit', 0, 'Maxi Renda', 'BRL', 'BVMF')`); err != nil {
 		t.Fatal(err)
 	}
 	tests := []struct {
@@ -26,6 +26,8 @@ func TestSchemaRejectsInvalidPrices(t *testing.T) {
 		{name: "security without quote currency", sql: `INSERT INTO marketdata_instrument (code, instrument_type, scale, name) VALUES ('PETR4', 'stock', 0, 'Petrobras')`},
 		{name: "currency with quote currency", sql: `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency) VALUES ('SEK', 'currency', 2, 'Krona', 'BRL')`},
 		{name: "unknown exchange", sql: `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, exchange) VALUES ('AAPL', 'stock', 0, 'Apple', 'USD', 'NASDAQ')`},
+		{name: "legacy exchange", sql: `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, exchange) VALUES ('AAPL', 'stock', 0, 'Apple', 'USD', 'B3')`},
+		{name: "legacy type", sql: `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency) VALUES ('HGLG11', 'fii', 0, 'CSHG', 'BRL')`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

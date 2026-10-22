@@ -19,7 +19,7 @@ type instrumentAPI struct {
 }
 
 func mxrf11() map[string]any {
-	return map[string]any{"code": "MXRF11", "type": "fii", "scale": 0, "name": "Maxi Renda", "quote_currency": "BRL", "exchange": "B3"}
+	return map[string]any{"code": "MXRF11", "type": "reit", "scale": 0, "name": "Maxi Renda", "quote_currency": "BRL", "exchange": "BVMF"}
 }
 
 func TestDefineInstrument(t *testing.T) {
@@ -35,7 +35,7 @@ func TestDefineInstrument(t *testing.T) {
 	if r.Header.Get("Location") != "/api/v1/instruments/MXRF11" {
 		t.Fatalf("Location = %q", r.Header.Get("Location"))
 	}
-	if got != (instrumentAPI{Code: "MXRF11", Type: "fii", Scale: 0, Name: "Maxi Renda", QuoteCurrency: "BRL", Exchange: "B3"}) {
+	if got != (instrumentAPI{Code: "MXRF11", Type: "reit", Scale: 0, Name: "Maxi Renda", QuoteCurrency: "BRL", Exchange: "BVMF"}) {
 		t.Fatalf("instrument = %+v", got)
 	}
 
@@ -47,9 +47,9 @@ func TestDefineInstrument(t *testing.T) {
 	var list struct {
 		Items []instrumentAPI `json:"items"`
 	}
-	h.MustDo(http.MethodGet, "/api/v1/instruments?type=fii", nil, http.StatusOK, &list)
+	h.MustDo(http.MethodGet, "/api/v1/instruments?type=reit", nil, http.StatusOK, &list)
 	if len(list.Items) != 1 || list.Items[0].Code != "MXRF11" {
-		t.Fatalf("fii list = %+v", list)
+		t.Fatalf("reit list = %+v", list)
 	}
 	h.MustDo(http.MethodGet, "/api/v1/instruments?type=currency", nil, http.StatusOK, &list)
 	brl := slices.IndexFunc(list.Items, func(i instrumentAPI) bool { return i.Code == "BRL" })
@@ -84,6 +84,14 @@ func TestDefineInstrumentValidation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/instruments", tt.body), http.StatusUnprocessableEntity, "validation_failed", tt.field)
 		})
+	}
+	for _, body := range []map[string]any{with("exchange", "B3"), with("exchange", "bvmf"), with("type", "fii"), with("type", "bdr")} {
+		h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/instruments", body), http.StatusBadRequest, "invalid_request", "")
+	}
+	for _, body := range []map[string]any{with("exchange", "XNYS"), with("type", "depositary_receipt")} {
+		if r := h.Do(http.MethodPost, "/api/v1/instruments", body); r.Status != http.StatusCreated && r.Status != http.StatusConflict {
+			t.Fatalf("status %d: %s", r.Status, r.Body)
+		}
 	}
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/instruments", with("scale", 13)), http.StatusBadRequest, "invalid_request", "")
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/instruments", with("code", "mxrf11")), http.StatusBadRequest, "invalid_request", "")

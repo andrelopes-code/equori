@@ -18,12 +18,12 @@ type investFixture struct {
 }
 
 func security(code, typ string) map[string]any {
-	return map[string]any{"code": code, "type": typ, "scale": 0, "name": code, "quote_currency": "BRL", "exchange": "B3"}
+	return map[string]any{"code": code, "type": typ, "scale": 0, "name": code, "quote_currency": "BRL", "exchange": "BVMF"}
 }
 
 func newInvestFixture(t *testing.T, opts ...apitest.Option) investFixture {
 	h := apitest.New(t, opts...)
-	h.MustDo(http.MethodPost, "/api/v1/instruments", security("MXRF11", "fii"), http.StatusCreated, nil)
+	h.MustDo(http.MethodPost, "/api/v1/instruments", security("MXRF11", "reit"), http.StatusCreated, nil)
 	h.MustDo(http.MethodPost, "/api/v1/instruments", security("PETR4", "stock"), http.StatusCreated, nil)
 	var inst idOnly
 	h.MustDo(http.MethodPost, "/api/v1/institutions", map[string]string{"name": "XP"}, http.StatusCreated, &inst)

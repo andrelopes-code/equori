@@ -69,64 +69,34 @@ func (e HolidaySource) Valid() bool {
 	}
 }
 
-// Defines values for InstrumentExchange.
-const (
-	InstrumentExchangeB3 InstrumentExchange = "B3"
-)
-
-// Valid indicates whether the value is a known member of the InstrumentExchange enum.
-func (e InstrumentExchange) Valid() bool {
-	switch e {
-	case InstrumentExchangeB3:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for InstrumentInputExchange.
-const (
-	InstrumentInputExchangeB3 InstrumentInputExchange = "B3"
-)
-
-// Valid indicates whether the value is a known member of the InstrumentInputExchange enum.
-func (e InstrumentInputExchange) Valid() bool {
-	switch e {
-	case InstrumentInputExchangeB3:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for InstrumentType.
 const (
-	Bdr         InstrumentType = "bdr"
-	Crypto      InstrumentType = "crypto"
-	Currency    InstrumentType = "currency"
-	Etf         InstrumentType = "etf"
-	Fii         InstrumentType = "fii"
-	FixedIncome InstrumentType = "fixed_income"
-	Fund        InstrumentType = "fund"
-	Stock       InstrumentType = "stock"
+	Crypto            InstrumentType = "crypto"
+	Currency          InstrumentType = "currency"
+	DepositaryReceipt InstrumentType = "depositary_receipt"
+	Etf               InstrumentType = "etf"
+	FixedIncome       InstrumentType = "fixed_income"
+	Fund              InstrumentType = "fund"
+	Reit              InstrumentType = "reit"
+	Stock             InstrumentType = "stock"
 )
 
 // Valid indicates whether the value is a known member of the InstrumentType enum.
 func (e InstrumentType) Valid() bool {
 	switch e {
-	case Bdr:
-		return true
 	case Crypto:
 		return true
 	case Currency:
 		return true
-	case Etf:
+	case DepositaryReceipt:
 		return true
-	case Fii:
+	case Etf:
 		return true
 	case FixedIncome:
 		return true
 	case Fund:
+		return true
+	case Reit:
 		return true
 	case Stock:
 		return true
@@ -196,9 +166,9 @@ type HolidayList struct {
 
 // Instrument defines model for Instrument.
 type Instrument struct {
-	Code     string              `json:"code"`
-	Exchange *InstrumentExchange `json:"exchange,omitempty"`
-	Name     string              `json:"name"`
+	Code     string  `json:"code"`
+	Exchange *string `json:"exchange,omitempty"`
+	Name     string  `json:"name"`
 
 	// QuoteCurrency Absent for currencies.
 	QuoteCurrency *string        `json:"quote_currency,omitempty"`
@@ -206,21 +176,15 @@ type Instrument struct {
 	Type          InstrumentType `json:"type"`
 }
 
-// InstrumentExchange defines model for Instrument.Exchange.
-type InstrumentExchange string
-
 // InstrumentInput defines model for InstrumentInput.
 type InstrumentInput struct {
-	Code          string                   `json:"code"`
-	Exchange      *InstrumentInputExchange `json:"exchange,omitempty"`
-	Name          string                   `json:"name"`
-	QuoteCurrency string                   `json:"quote_currency"`
-	Scale         int                      `json:"scale"`
-	Type          InstrumentType           `json:"type"`
+	Code          string         `json:"code"`
+	Exchange      *string        `json:"exchange,omitempty"`
+	Name          string         `json:"name"`
+	QuoteCurrency string         `json:"quote_currency"`
+	Scale         int            `json:"scale"`
+	Type          InstrumentType `json:"type"`
 }
-
-// InstrumentInputExchange defines model for InstrumentInput.Exchange.
-type InstrumentInputExchange string
 
 // InstrumentList defines model for InstrumentList.
 type InstrumentList struct {

@@ -17,12 +17,12 @@ type fixture struct {
 }
 
 func security(code, typ string) map[string]any {
-	return map[string]any{"code": code, "type": typ, "scale": 0, "name": code, "quote_currency": "BRL", "exchange": "B3"}
+	return map[string]any{"code": code, "type": typ, "scale": 0, "name": code, "quote_currency": "BRL", "exchange": "BVMF"}
 }
 
 func newFixture(t *testing.T) fixture {
 	h := apitest.New(t, apitest.Today("2026-11-01"))
-	h.MustDo(http.MethodPost, "/api/v1/instruments", security("MXRF11", "fii"), http.StatusCreated, nil)
+	h.MustDo(http.MethodPost, "/api/v1/instruments", security("MXRF11", "reit"), http.StatusCreated, nil)
 	h.MustDo(http.MethodPost, "/api/v1/instruments", security("PETR4", "stock"), http.StatusCreated, nil)
 	var inst struct {
 		ID string `json:"id"`
@@ -126,7 +126,7 @@ func TestS64PositionAndRealizedResult(t *testing.T) {
 
 	rs := f.results(t, "2026")
 	if len(rs) != 1 || rs[0].TransactionID != sale || rs[0].Month != "2026-10" || rs[0].Result["amount"] != float64(3377) ||
-		rs[0].Cost["amount"] != float64(50413) || rs[0].Proceeds["amount"] != float64(53790) || rs[0].Quantity["amount"] != float64(50) || rs[0].TaxClass != "fii" {
+		rs[0].Cost["amount"] != float64(50413) || rs[0].Proceeds["amount"] != float64(53790) || rs[0].Quantity["amount"] != float64(50) || rs[0].TaxClass != "reit" {
 		t.Fatalf("results = %+v", rs)
 	}
 }

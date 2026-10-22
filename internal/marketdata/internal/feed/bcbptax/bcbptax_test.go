@@ -69,7 +69,7 @@ func TestCodes(t *testing.T) {
 	t.Parallel()
 	ins := []feed.Instrument{
 		{Code: "BRL", Type: "currency"}, {Code: "USD", Type: "currency"}, {Code: "KWD", Type: "currency"},
-		{Code: "EUR", Type: "currency"}, {Code: "MXRF11", Type: "reit", Exchange: "B3", QuoteCurrency: "BRL"},
+		{Code: "EUR", Type: "currency"}, {Code: "MXRF11", Type: "reit", Exchange: "BVMF", QuoteCurrency: "BRL"},
 	}
 	got := bcbptax.New(nil, "").Codes(ins)
 	if len(got) != 2 || got[0] != "USD" || got[1] != "EUR" {

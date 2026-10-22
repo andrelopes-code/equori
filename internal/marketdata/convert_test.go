@@ -16,7 +16,7 @@ func TestConvert(t *testing.T) {
 	t.Parallel()
 	md := marketdata.New(pgtest.New(t))
 	ctx := t.Context()
-	if _, err := md.DefineInstrument(ctx, marketdata.Instrument{Code: "MXRF11", Type: "fii", Scale: 0, Name: "Maxi Renda", QuoteCurrency: "BRL", Exchange: "B3"}); err != nil {
+	if _, err := md.DefineInstrument(ctx, marketdata.Instrument{Code: "MXRF11", Type: "reit", Scale: 0, Name: "Maxi Renda", QuoteCurrency: "BRL", Exchange: "BVMF"}); err != nil {
 		t.Fatal(err)
 	}
 	price := func(instrument, quote money.Currency, date, value string) marketdata.Price {

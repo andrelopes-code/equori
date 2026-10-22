@@ -52,7 +52,7 @@ func toInstrumentAPI(in domain.Instrument) Instrument {
 		out.QuoteCurrency = &q
 	}
 	if in.Exchange != "" {
-		e := InstrumentExchange(in.Exchange)
+		e := in.Exchange
 		out.Exchange = &e
 	}
 	return out

@@ -5504,7 +5504,7 @@ components:
             $ref: "#/components/schemas/Holiday"
     InstrumentType:
       type: string
-      enum: [currency, stock, fii, etf, bdr, fixed_income, fund, crypto]
+      enum: [currency, stock, etf, reit, depositary_receipt, fixed_income, fund, crypto]
     Instrument:
       type: object
       additionalProperties: false
@@ -5523,7 +5523,7 @@ components:
           description: Absent for currencies.
         exchange:
           type: string
-          enum: [B3]
+          pattern: "^[A-Z0-9]{4}$"
     InstrumentInput:
       type: object
       additionalProperties: false
@@ -5546,7 +5546,7 @@ components:
           type: string
         exchange:
           type: string
-          enum: [B3]
+          pattern: "^[A-Z0-9]{4}$"
     InstrumentList:
       type: object
       required: [items]

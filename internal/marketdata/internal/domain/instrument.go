@@ -11,8 +11,10 @@ import (
 
 const TypeCurrency = "currency"
 
-// SecurityTypes are the tax classes of 5.6 other than currency.
-var SecurityTypes = []string{"stock", "fii", "etf", "bdr", "fixed_income", "fund", "crypto"}
+// SecurityTypes are the instrument types other than currency.
+var SecurityTypes = []string{"stock", "etf", "reit", "depositary_receipt", "fixed_income", "fund", "crypto"}
+
+var micPattern = regexp.MustCompile(`^[A-Z0-9]{4}$`)
 
 var codePattern = regexp.MustCompile(`^[A-Z0-9.]{2,20}$`)
 
@@ -22,7 +24,7 @@ type Instrument struct {
 	Scale         int
 	Name          string
 	QuoteCurrency money.Currency // empty for currencies
-	Exchange      string         // "B3" or empty
+	Exchange      string         // ISO 10383 MIC or empty
 }
 
 // Validate checks a security definition (P8 amendment A59); the quote currency is
@@ -40,8 +42,8 @@ func (in Instrument) Validate() (Instrument, error) {
 		return in, invalid("scale", "must be between 0 and 12")
 	case in.Name == "" || utf8.RuneCountInString(in.Name) > 120:
 		return in, invalid("name", "must have 1 to 120 characters")
-	case in.Exchange != "" && in.Exchange != "B3":
-		return in, invalid("exchange", "must be B3")
+	case in.Exchange != "" && !micPattern.MatchString(in.Exchange):
+		return in, invalid("exchange", "must be an ISO 10383 MIC")
 	}
 	return in, nil
 }

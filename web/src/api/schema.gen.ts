@@ -3078,7 +3078,7 @@ export interface components {
             items: components["schemas"]["Holiday"][];
         };
         /** @enum {string} */
-        InstrumentType: "currency" | "stock" | "fii" | "etf" | "bdr" | "fixed_income" | "fund" | "crypto";
+        InstrumentType: "currency" | "stock" | "etf" | "reit" | "depositary_receipt" | "fixed_income" | "fund" | "crypto";
         Instrument: {
             code: string;
             type: components["schemas"]["InstrumentType"];
@@ -3086,8 +3086,7 @@ export interface components {
             name: string;
             /** @description Absent for currencies. */
             quote_currency?: string;
-            /** @enum {string} */
-            exchange?: "B3";
+            exchange?: string;
         };
         InstrumentInput: {
             code: string;
@@ -3095,8 +3094,7 @@ export interface components {
             scale: number;
             name: string;
             quote_currency: string;
-            /** @enum {string} */
-            exchange?: "B3";
+            exchange?: string;
         };
         InstrumentList: {
             items: components["schemas"]["Instrument"][];
