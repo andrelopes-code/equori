@@ -198,3 +198,26 @@ func TestDBBillingRuleCalendarFormat(t *testing.T) {
 		t.Run(name, func(t *testing.T) { requireViolation(t, err, checkViolation, "") })
 	}
 }
+
+func TestDBRejectsCardForeignChargeOutOfRange(t *testing.T) {
+	t.Parallel()
+	f := newCardFixture(t)
+	for _, bp := range []string{"-1", "10001", "NULL"} {
+		_, err := f.pool.Exec(t.Context(), `
+			INSERT INTO ledger_card (user_id, account_id, holder, last_four, foreign_charge_bp)
+			VALUES ($1, $2, 'Ana', '1234', `+bp+`)`, f.userID, f.card)
+		if bp == "NULL" {
+			requireViolation(t, err, notNullViolation, "foreign_charge_bp")
+			continue
+		}
+		requireViolation(t, err, checkViolation, "foreign_charge_bp")
+	}
+}
+
+func TestDBRequiresCardForeignChargeWithoutDefault(t *testing.T) {
+	t.Parallel()
+	f := newCardFixture(t)
+	_, err := f.pool.Exec(t.Context(), `
+		INSERT INTO ledger_card (user_id, account_id, holder, last_four) VALUES ($1, $2, 'Ana', '1234')`, f.userID, f.card)
+	requireViolation(t, err, notNullViolation, "foreign_charge_bp")
+}

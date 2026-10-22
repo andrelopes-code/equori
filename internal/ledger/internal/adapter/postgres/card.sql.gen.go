@@ -292,15 +292,16 @@ func (q *Queries) InsertBillingRule(ctx context.Context, arg InsertBillingRulePa
 }
 
 const insertCard = `-- name: InsertCard :one
-INSERT INTO ledger_card (user_id, account_id, holder, last_four, virtual) VALUES ($1, $2, $3, $4, $5) RETURNING id, user_id, account_id, holder, last_four, virtual, active, created_at
+INSERT INTO ledger_card (user_id, account_id, holder, last_four, virtual, foreign_charge_bp) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, user_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp
 `
 
 type InsertCardParams struct {
-	UserID    int64
-	AccountID uuid.UUID
-	Holder    string
-	LastFour  string
-	Virtual   bool
+	UserID          int64
+	AccountID       uuid.UUID
+	Holder          string
+	LastFour        string
+	Virtual         bool
+	ForeignChargeBp int32
 }
 
 func (q *Queries) InsertCard(ctx context.Context, arg InsertCardParams) (LedgerCard, error) {
@@ -310,6 +311,7 @@ func (q *Queries) InsertCard(ctx context.Context, arg InsertCardParams) (LedgerC
 		arg.Holder,
 		arg.LastFour,
 		arg.Virtual,
+		arg.ForeignChargeBp,
 	)
 	var i LedgerCard
 	err := row.Scan(
@@ -321,6 +323,7 @@ func (q *Queries) InsertCard(ctx context.Context, arg InsertCardParams) (LedgerC
 		&i.Virtual,
 		&i.Active,
 		&i.CreatedAt,
+		&i.ForeignChargeBp,
 	)
 	return i, err
 }
@@ -455,7 +458,7 @@ func (q *Queries) ListBillingRules(ctx context.Context, arg ListBillingRulesPara
 }
 
 const listCards = `-- name: ListCards :many
-SELECT id, user_id, account_id, holder, last_four, virtual, active, created_at FROM ledger_card WHERE user_id = $1 AND account_id = $2 ORDER BY created_at, id
+SELECT id, user_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp FROM ledger_card WHERE user_id = $1 AND account_id = $2 ORDER BY created_at, id
 `
 
 type ListCardsParams struct {
@@ -481,6 +484,7 @@ func (q *Queries) ListCards(ctx context.Context, arg ListCardsParams) ([]LedgerC
 			&i.Virtual,
 			&i.Active,
 			&i.CreatedAt,
+			&i.ForeignChargeBp,
 		); err != nil {
 			return nil, err
 		}
@@ -928,7 +932,7 @@ func (q *Queries) ResolveDispute(ctx context.Context, arg ResolveDisputeParams) 
 }
 
 const setCardActive = `-- name: SetCardActive :one
-UPDATE ledger_card SET active = $1 WHERE user_id = $2 AND id = $3 RETURNING id, user_id, account_id, holder, last_four, virtual, active, created_at
+UPDATE ledger_card SET active = $1 WHERE user_id = $2 AND id = $3 RETURNING id, user_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp
 `
 
 type SetCardActiveParams struct {
@@ -949,6 +953,7 @@ func (q *Queries) SetCardActive(ctx context.Context, arg SetCardActiveParams) (L
 		&i.Virtual,
 		&i.Active,
 		&i.CreatedAt,
+		&i.ForeignChargeBp,
 	)
 	return i, err
 }

@@ -705,7 +705,7 @@ paths:
     post:
       tags: [ledger]
       operationId: recordForeignPurchase
-      summary: Record a purchase charged in another currency, with IOF (P8 amendment A66).
+      summary: Record a purchase charged in another currency, with the card's foreign charge (P8 amendment A66).
       requestBody:
         required: true
         content:
@@ -5454,12 +5454,21 @@ components:
           pattern: "^[0-9]{4}$"
         virtual:
           type: boolean
+        foreign_charge_bp:
+          type: integer
+          minimum: 0
+          maximum: 10000
+          description: Default from the region of the owner.
     Card:
       allOf:
         - $ref: "#/components/schemas/CardInput"
         - type: object
-          required: [id, active]
+          required: [id, active, foreign_charge_bp]
           properties:
+            foreign_charge_bp:
+              type: integer
+              minimum: 0
+              maximum: 10000
             id:
               type: string
               format: uuid
@@ -6315,12 +6324,12 @@ components:
           $ref: "#/components/schemas/Money"
         rate:
           $ref: "#/components/schemas/Rate"
-        iof_rate_bp:
+        foreign_charge_rate_bp:
           type: integer
           minimum: 0
           maximum: 10000
-          description: Default 350.
-        iof_category_id:
+          description: Default the foreign_charge_bp of the card.
+        foreign_charge_category_id:
           type: string
           format: uuid
           description: Default the system account taxes.

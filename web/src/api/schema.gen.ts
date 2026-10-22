@@ -373,7 +373,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Record a purchase charged in another currency, with IOF (P8 amendment A66). */
+        /** Record a purchase charged in another currency, with the card's foreign charge (P8 amendment A66). */
         post: operations["recordForeignPurchase"];
         delete?: never;
         options?: never;
@@ -3068,8 +3068,11 @@ export interface components {
             holder: string;
             last_four: string;
             virtual?: boolean;
+            /** @description Default from the region of the owner. */
+            foreign_charge_bp?: number;
         };
         Card: components["schemas"]["CardInput"] & {
+            foreign_charge_bp: number;
             /** Format: uuid */
             id: string;
             active: boolean;
@@ -3469,13 +3472,13 @@ export interface components {
             payee_id?: string;
             original: components["schemas"]["Money"];
             rate: components["schemas"]["Rate"];
-            /** @description Default 350. */
-            iof_rate_bp?: number;
+            /** @description Default the foreign_charge_bp of the card. */
+            foreign_charge_rate_bp?: number;
             /**
              * Format: uuid
              * @description Default the system account taxes.
              */
-            iof_category_id?: string;
+            foreign_charge_category_id?: string;
             statement?: string;
         };
         ExchangeInput: {

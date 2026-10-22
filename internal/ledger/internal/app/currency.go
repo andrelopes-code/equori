@@ -14,17 +14,14 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
-// DefaultIOFRateBP is the IOF on card purchases in another currency (P8 amendment A66).
-const DefaultIOFRateBP = 350
-
 type ForeignPurchase struct {
-	AccountID, CategoryID, PayeeID, IOFCategoryID uuid.UUID
-	Date                                          time.Time
-	Description                                   string
-	Original                                      money.Money
-	Rate                                          money.Rate
-	IOFRateBP                                     *int
-	Statement                                     *domain.ReferenceMonth
+	AccountID, CategoryID, PayeeID, ForeignChargeCategoryID uuid.UUID
+	Date                                                    time.Time
+	Description                                             string
+	Original                                                money.Money
+	Rate                                                    money.Rate
+	ForeignChargeRateBP                                     *int
+	Statement                                               *domain.ReferenceMonth
 }
 
 type Exchange struct {
@@ -39,7 +36,7 @@ func fieldErr(field, message string, err error) error {
 	return &domain.FieldError{Field: field, Message: message, Err: err}
 }
 
-// RecordForeignPurchase records M11: amount = original × rate, IOF on the amount, both
+// RecordForeignPurchase records M11: amount = original × rate, the foreign charge on the amount, both
 // charged to the account in the base currency (P8 amendment A66).
 func (s *Service) RecordForeignPurchase(ctx context.Context, userID int64, in ForeignPurchase) (domain.Transaction, error) {
 	var created domain.Transaction
@@ -61,37 +58,39 @@ func (s *Service) RecordForeignPurchase(ctx context.Context, userID int64, in Fo
 		if _, err := money.ParseCurrency(string(in.Original.Currency())); err != nil || in.Original.Currency() == base || in.Original.IsZero() || in.Original.IsNegative() {
 			return fieldErr("original", "must be a positive amount of a currency other than "+string(base), domain.ErrValidation)
 		}
-		bp := DefaultIOFRateBP
-		if in.IOFRateBP != nil {
-			bp = *in.IOFRateBP
+		var bp int
+		if in.ForeignChargeRateBP != nil {
+			bp = *in.ForeignChargeRateBP
+		} else if bp, err = s.cardForeignChargeBP(ctx, r, userID, in.AccountID); err != nil {
+			return err
 		}
 		if bp < 0 || bp > 10000 {
-			return fieldErr("iof_rate_bp", "must be between 0 and 10000", domain.ErrValidation)
+			return fieldErr("foreign_charge_rate_bp", "must be between 0 and 10000", domain.ErrValidation)
 		}
 		amount, err := money.Convert(in.Original, base, money.Leg{Rate: in.Rate})
 		if err != nil {
 			return fieldErr("rate", err.Error(), domain.ErrValidation)
 		}
-		iof, err := money.Fraction(amount, int64(bp), 10000)
+		charge, err := money.Fraction(amount, int64(bp), 10000)
 		if err != nil {
 			return err
 		}
 		original, negOriginal := in.Original, in.Original.Neg()
 		postings := []domain.Posting{{AccountID: in.CategoryID, Amount: amount, Original: &original}}
 		charges := []domain.Posting{{AccountID: in.AccountID, Amount: amount.Neg(), Original: &negOriginal, Statement: in.Statement}}
-		if !iof.IsZero() {
-			iofCategory := in.IOFCategoryID
-			if iofCategory == uuid.Nil {
+		if !charge.IsZero() {
+			chargeCategory := in.ForeignChargeCategoryID
+			if chargeCategory == uuid.Nil {
 				taxes, err := r.SystemAccount(ctx, userID, domain.RoleTaxes)
 				if err != nil {
 					return err
 				}
-				iofCategory = taxes.ID
-			} else if err := s.expenseCategory(ctx, r, userID, iofCategory, "iof_category_id"); err != nil {
+				chargeCategory = taxes.ID
+			} else if err := s.expenseCategory(ctx, r, userID, chargeCategory, "foreign_charge_category_id"); err != nil {
 				return err
 			}
-			postings = append(postings, domain.Posting{AccountID: iofCategory, Amount: iof})
-			charges = append(charges, domain.Posting{AccountID: in.AccountID, Amount: iof.Neg(), Statement: in.Statement})
+			postings = append(postings, domain.Posting{AccountID: chargeCategory, Amount: charge})
+			charges = append(charges, domain.Posting{AccountID: in.AccountID, Amount: charge.Neg(), Statement: in.Statement})
 		}
 		if account.Kind != domain.KindCreditCard && in.Statement != nil {
 			return fieldErr("statement", "is only allowed on a card account", domain.ErrValidation)
@@ -261,4 +260,19 @@ func (s *Service) expenseCategory(ctx context.Context, r Repository, userID int6
 		return fieldErr(field, "must be an expense category", domain.ErrValidation)
 	}
 	return nil
+}
+
+// cardForeignChargeBP reads the rate from the first active card of the account; an account
+// without an active card takes the default of the owner's region.
+func (s *Service) cardForeignChargeBP(ctx context.Context, r Repository, userID int64, accountID uuid.UUID) (int, error) {
+	cards, err := r.Cards(ctx, userID, accountID)
+	if err != nil {
+		return 0, err
+	}
+	for _, c := range cards {
+		if c.Active {
+			return c.ForeignChargeBP, nil
+		}
+	}
+	return s.regionForeignChargeBP(ctx, userID)
 }

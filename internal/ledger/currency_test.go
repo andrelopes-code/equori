@@ -45,7 +45,7 @@ func TestS16ForeignPurchase(t *testing.T) {
 	var tx transactionOut
 	r := h.Do(http.MethodPost, "/api/v1/foreign-purchases", map[string]any{
 		"account_id": f.itauVisa, "category_id": travel, "date": "2026-10-22", "description": "Hotel",
-		"original": units(10000, "USD"), "rate": "5.4830", "iof_rate_bp": 350, "iof_category_id": iof,
+		"original": units(10000, "USD"), "rate": "5.4830", "foreign_charge_rate_bp": 350, "foreign_charge_category_id": iof,
 	})
 	if r.Status != http.StatusCreated {
 		t.Fatalf("status %d: %s", r.Status, r.Body)
@@ -75,7 +75,7 @@ func TestS16ForeignPurchase(t *testing.T) {
 	}
 
 	r = h.Do(http.MethodPost, "/api/v1/foreign-purchases", map[string]any{
-		"account_id": f.itauVisa, "category_id": travel, "date": "2026-10-22", "original": units(10000, "USD"), "rate": "5.4830", "iof_rate_bp": 0,
+		"account_id": f.itauVisa, "category_id": travel, "date": "2026-10-22", "original": units(10000, "USD"), "rate": "5.4830", "foreign_charge_rate_bp": 0,
 	})
 	r.Decode(t, &tx)
 	if r.Status != http.StatusCreated || len(tx.Postings) != 2 {

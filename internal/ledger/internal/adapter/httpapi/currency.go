@@ -20,8 +20,8 @@ func (s *Server) RecordForeignPurchase(ctx context.Context, req RecordForeignPur
 		return nil, &domain.FieldError{Field: "rate", Message: "must be a positive decimal with at most 12 decimals", Err: domain.ErrValidation}
 	}
 	in := app.ForeignPurchase{
-		AccountID: b.AccountId, CategoryID: b.CategoryId, PayeeID: optUUID(b.PayeeId), IOFCategoryID: optUUID(b.IofCategoryId),
-		Date: dateOf(b.Date), Description: optString(b.Description), Original: original, Rate: rate, IOFRateBP: b.IofRateBp,
+		AccountID: b.AccountId, CategoryID: b.CategoryId, PayeeID: optUUID(b.PayeeId), ForeignChargeCategoryID: optUUID(b.ForeignChargeCategoryId),
+		Date: dateOf(b.Date), Description: optString(b.Description), Original: original, Rate: rate, ForeignChargeRateBP: b.ForeignChargeRateBp,
 	}
 	if b.Statement != nil {
 		m, err := domain.ParseReferenceMonth(*b.Statement)

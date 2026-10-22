@@ -309,7 +309,7 @@ export const operations: Record<GroupKey, readonly Operation[]> = {
         description: "Online store",
         original: { amount: 1999, currency: "USD" },
         rate: "5.4321",
-        iof_rate_bp: 350,
+        foreign_charge_rate_bp: 350,
         statement: r.month,
       }),
     },

@@ -10,3 +10,12 @@ func DefaultBaseCurrency(region string) (money.Currency, bool) {
 	}
 	return "", false
 }
+
+// DefaultForeignChargeBP returns the foreign purchase charge, in basis points, a new card of a region starts with.
+func DefaultForeignChargeBP(region string) int {
+	switch region {
+	case "BR":
+		return 350
+	}
+	return 0
+}

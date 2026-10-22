@@ -86,6 +86,7 @@ const (
 	checkViolation      = "23514"
 	foreignKeyViolation = "23503"
 	uniqueViolation     = "23505"
+	notNullViolation    = "23502"
 )
 
 // A73: the account tree has no cycle.

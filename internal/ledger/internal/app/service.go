@@ -37,10 +37,11 @@ type Service struct {
 	ins      Instruments
 	prices   Prices
 	profiles Profiles
+	defaults RegionDefaults
 }
 
-func NewService(repo Repository, clock Clock, cal Calendar, ins Instruments, prices Prices, profiles Profiles) *Service {
-	return &Service{repo: repo, clock: clock, cal: cal, ins: ins, prices: prices, profiles: profiles}
+func NewService(repo Repository, clock Clock, cal Calendar, ins Instruments, prices Prices, profiles Profiles, defaults RegionDefaults) *Service {
+	return &Service{repo: repo, clock: clock, cal: cal, ins: ins, prices: prices, profiles: profiles, defaults: defaults}
 }
 
 // Today is the date of the ledger's clock.

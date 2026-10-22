@@ -146,6 +146,10 @@ type Profiles interface {
 	Profile(ctx context.Context, userID int64) (locale.Locale, error)
 }
 
+type regionDefaults struct{}
+
+func (regionDefaults) ForeignChargeBP(region string) int { return DefaultForeignChargeBP(region) }
+
 type pricesAdapter struct{ md MarketData }
 
 func (p pricesAdapter) Convert(ctx context.Context, q money.Money, to money.Currency, date time.Time) (app.Conversion, error) {
@@ -202,7 +206,7 @@ func (c *instruments) Instrument(ctx context.Context, code money.Currency) (app.
 
 func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, md MarketData, profiles Profiles, clk clock.Clock, log *slog.Logger) *Module {
 	ins := &instruments{md: md, cache: map[money.Currency]app.Instrument{}}
-	svc := app.NewService(postgres.NewRepository(pool, ins), clk, calendarAdapter{md}, ins, pricesAdapter{md}, profiles)
+	svc := app.NewService(postgres.NewRepository(pool, ins), clk, calendarAdapter{md}, ins, pricesAdapter{md}, profiles, regionDefaults{})
 	dispatcher.Subscribe("ledger-provisioning", "identity.user_created.v2", provision)
 	return &Module{http: httpapi.NewServer(svc, log), svc: svc}
 }
@@ -425,6 +429,6 @@ func provision(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
 	if err := json.Unmarshal(e.Payload, &p); err != nil {
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
-	svc := app.NewService(postgres.NewRepository(tx, nil), clock.New(time.UTC, time.Now), nil, nil, nil, nil)
+	svc := app.NewService(postgres.NewRepository(tx, nil), clock.New(time.UTC, time.Now), nil, nil, nil, nil, nil)
 	return svc.Provision(ctx, p.UserID, p.BaseCurrency)
 }

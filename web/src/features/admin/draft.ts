@@ -60,7 +60,7 @@ const numericKeys = new Set([
   "expected_version",
   "from_installment",
   "to_installment",
-  "iof_rate_bp",
+  "foreign_charge_rate_bp",
   "scale",
   "header_rows",
   "percent",

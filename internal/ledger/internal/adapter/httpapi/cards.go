@@ -99,7 +99,7 @@ func (s *Server) CreateCreditLimit(ctx context.Context, req CreateCreditLimitReq
 
 func toCardAPI(c domain.Card) Card {
 	virtual := c.Virtual
-	return Card{Id: c.ID, Holder: c.Holder, LastFour: c.LastFour, Virtual: &virtual, Active: c.Active}
+	return Card{Id: c.ID, Holder: c.Holder, LastFour: c.LastFour, Virtual: &virtual, Active: c.Active, ForeignChargeBp: c.ForeignChargeBP}
 }
 
 func (s *Server) ListCards(ctx context.Context, req ListCardsRequestObject) (ListCardsResponseObject, error) {
@@ -116,7 +116,7 @@ func (s *Server) ListCards(ctx context.Context, req ListCardsRequestObject) (Lis
 
 func (s *Server) CreateCard(ctx context.Context, req CreateCardRequestObject) (CreateCardResponseObject, error) {
 	virtual := req.Body.Virtual != nil && *req.Body.Virtual
-	c, err := s.svc.AddCard(ctx, auth.MustUserID(ctx), domain.Card{AccountID: req.Id, Holder: req.Body.Holder, LastFour: req.Body.LastFour, Virtual: virtual})
+	c, err := s.svc.AddCard(ctx, auth.MustUserID(ctx), domain.Card{AccountID: req.Id, Holder: req.Body.Holder, LastFour: req.Body.LastFour, Virtual: virtual}, req.Body.ForeignChargeBp)
 	if err != nil {
 		return nil, err
 	}

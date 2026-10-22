@@ -273,7 +273,7 @@ func toBillingRule(row LedgerBillingCycleRule) domain.BillingCycleRule {
 }
 
 func toCard(row LedgerCard) domain.Card {
-	return domain.Card{ID: row.ID, UserID: row.UserID, AccountID: row.AccountID, Holder: row.Holder, LastFour: row.LastFour, Virtual: row.Virtual, Active: row.Active}
+	return domain.Card{ID: row.ID, UserID: row.UserID, AccountID: row.AccountID, Holder: row.Holder, LastFour: row.LastFour, Virtual: row.Virtual, Active: row.Active, ForeignChargeBP: int(row.ForeignChargeBp)}
 }
 
 func installmentPlan(i *domain.InstallmentRef) uuid.NullUUID {

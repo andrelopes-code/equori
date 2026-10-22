@@ -1346,18 +1346,21 @@ type CancellationInput struct {
 
 // Card defines model for Card.
 type Card struct {
-	Active   bool               `json:"active"`
-	Holder   string             `json:"holder"`
-	Id       openapi_types.UUID `json:"id"`
-	LastFour string             `json:"last_four"`
-	Virtual  *bool              `json:"virtual,omitempty"`
+	Active          bool               `json:"active"`
+	ForeignChargeBp int                `json:"foreign_charge_bp"`
+	Holder          string             `json:"holder"`
+	Id              openapi_types.UUID `json:"id"`
+	LastFour        string             `json:"last_four"`
+	Virtual         *bool              `json:"virtual,omitempty"`
 }
 
 // CardInput defines model for CardInput.
 type CardInput struct {
-	Holder   string `json:"holder"`
-	LastFour string `json:"last_four"`
-	Virtual  *bool  `json:"virtual,omitempty"`
+	// ForeignChargeBp Default from the region of the owner.
+	ForeignChargeBp *int   `json:"foreign_charge_bp,omitempty"`
+	Holder          string `json:"holder"`
+	LastFour        string `json:"last_four"`
+	Virtual         *bool  `json:"virtual,omitempty"`
 }
 
 // CardList defines model for CardList.
@@ -1486,13 +1489,13 @@ type ForeignPurchaseInput struct {
 	Date        openapi_types.Date `json:"date"`
 	Description *string            `json:"description,omitempty"`
 
-	// IofCategoryId Default the system account taxes.
-	IofCategoryId *openapi_types.UUID `json:"iof_category_id,omitempty"`
+	// ForeignChargeCategoryId Default the system account taxes.
+	ForeignChargeCategoryId *openapi_types.UUID `json:"foreign_charge_category_id,omitempty"`
 
-	// IofRateBp Default 350.
-	IofRateBp *int                `json:"iof_rate_bp,omitempty"`
-	Original  Money               `json:"original"`
-	PayeeId   *openapi_types.UUID `json:"payee_id,omitempty"`
+	// ForeignChargeRateBp Default the foreign_charge_bp of the card.
+	ForeignChargeRateBp *int                `json:"foreign_charge_rate_bp,omitempty"`
+	Original            Money               `json:"original"`
+	PayeeId             *openapi_types.UUID `json:"payee_id,omitempty"`
 
 	// Rate Positive exact decimal with at most 12 decimals (ADR 005).
 	//
@@ -2472,7 +2475,7 @@ type ServerInterface interface {
 	// ExchangeCurrency Exchange money between own accounts in two currencies, one of them the base currency (P8 amendment A67).
 	// (POST /exchanges)
 	ExchangeCurrency(w http.ResponseWriter, r *http.Request)
-	// RecordForeignPurchase Record a purchase charged in another currency, with IOF (P8 amendment A66).
+	// RecordForeignPurchase Record a purchase charged in another currency, with the card's foreign charge (P8 amendment A66).
 	// (POST /foreign-purchases)
 	RecordForeignPurchase(w http.ResponseWriter, r *http.Request)
 	// GetInstallmentPlan Schedule and state of an installment plan.
@@ -9652,7 +9655,7 @@ type StrictServerInterface interface {
 	// ExchangeCurrency Exchange money between own accounts in two currencies, one of them the base currency (P8 amendment A67).
 	// (POST /exchanges)
 	ExchangeCurrency(ctx context.Context, request ExchangeCurrencyRequestObject) (ExchangeCurrencyResponseObject, error)
-	// RecordForeignPurchase Record a purchase charged in another currency, with IOF (P8 amendment A66).
+	// RecordForeignPurchase Record a purchase charged in another currency, with the card's foreign charge (P8 amendment A66).
 	// (POST /foreign-purchases)
 	RecordForeignPurchase(ctx context.Context, request RecordForeignPurchaseRequestObject) (RecordForeignPurchaseResponseObject, error)
 	// GetInstallmentPlan Schedule and state of an installment plan.

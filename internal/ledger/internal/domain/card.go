@@ -16,6 +16,8 @@ type Card struct {
 	LastFour  string
 	Virtual   bool
 	Active    bool
+	// ForeignChargeBP is the charge, in basis points, on purchases in another currency.
+	ForeignChargeBP int
 }
 
 var lastFourPattern = regexp.MustCompile(`^[0-9]{4}$`)
@@ -27,6 +29,9 @@ func NewCard(c Card) (Card, error) {
 	}
 	if !lastFourPattern.MatchString(c.LastFour) {
 		return Card{}, invalid("last_four", "must be the last four digits")
+	}
+	if c.ForeignChargeBP < 0 || c.ForeignChargeBP > 10000 {
+		return Card{}, invalid("foreign_charge_bp", "must be between 0 and 10000")
 	}
 	c.Active = true
 	return c, nil

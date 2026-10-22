@@ -16,7 +16,7 @@ INSERT INTO ledger_credit_limit (user_id, account_id, effective_from, amount) VA
 SELECT * FROM ledger_credit_limit WHERE user_id = $1 AND account_id = $2 ORDER BY effective_from;
 
 -- name: InsertCard :one
-INSERT INTO ledger_card (user_id, account_id, holder, last_four, virtual) VALUES ($1, $2, $3, $4, $5) RETURNING *;
+INSERT INTO ledger_card (user_id, account_id, holder, last_four, virtual, foreign_charge_bp) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
 
 -- name: ListCards :many
 SELECT * FROM ledger_card WHERE user_id = $1 AND account_id = $2 ORDER BY created_at, id;

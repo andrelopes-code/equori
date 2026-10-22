@@ -99,16 +99,34 @@ func (s *Service) CreditLimits(ctx context.Context, userID int64, accountID uuid
 	return s.repo.CreditLimits(ctx, userID, accountID)
 }
 
-func (s *Service) AddCard(ctx context.Context, userID int64, c domain.Card) (domain.Card, error) {
+// AddCard creates a card; a nil foreignChargeBP takes the default of the owner's region.
+func (s *Service) AddCard(ctx context.Context, userID int64, c domain.Card, foreignChargeBP *int) (domain.Card, error) {
 	if _, err := s.card(ctx, userID, c.AccountID); err != nil {
 		return domain.Card{}, err
 	}
 	c.UserID = userID
+	if foreignChargeBP != nil {
+		c.ForeignChargeBP = *foreignChargeBP
+	} else {
+		bp, err := s.regionForeignChargeBP(ctx, userID)
+		if err != nil {
+			return domain.Card{}, err
+		}
+		c.ForeignChargeBP = bp
+	}
 	c, err := domain.NewCard(c)
 	if err != nil {
 		return domain.Card{}, err
 	}
 	return s.repo.InsertCard(ctx, c)
+}
+
+func (s *Service) regionForeignChargeBP(ctx context.Context, userID int64) (int, error) {
+	p, err := s.profiles.Profile(ctx, userID)
+	if err != nil {
+		return 0, fmt.Errorf("read profile: %w", err)
+	}
+	return s.defaults.ForeignChargeBP(p.Region), nil
 }
 
 func (s *Service) Cards(ctx context.Context, userID int64, accountID uuid.UUID) ([]domain.Card, error) {

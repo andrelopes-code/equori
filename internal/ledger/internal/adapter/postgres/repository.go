@@ -796,7 +796,7 @@ func (r *Repository) CreditLimits(ctx context.Context, userID int64, accountID u
 }
 
 func (r *Repository) InsertCard(ctx context.Context, c domain.Card) (domain.Card, error) {
-	row, err := r.q.InsertCard(ctx, InsertCardParams{UserID: c.UserID, AccountID: c.AccountID, Holder: c.Holder, LastFour: c.LastFour, Virtual: c.Virtual})
+	row, err := r.q.InsertCard(ctx, InsertCardParams{UserID: c.UserID, AccountID: c.AccountID, Holder: c.Holder, LastFour: c.LastFour, Virtual: c.Virtual, ForeignChargeBp: int32(c.ForeignChargeBP)}) //nolint:gosec // G115: NewCard bounds the rate to 0–10000
 	if err != nil {
 		return domain.Card{}, referenceError(err)
 	}

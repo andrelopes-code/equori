@@ -84,6 +84,11 @@ type Profiles interface {
 	Profile(ctx context.Context, userID int64) (locale.Locale, error)
 }
 
+// RegionDefaults gives the values a record takes from the region of its owner.
+type RegionDefaults interface {
+	ForeignChargeBP(region string) int
+}
+
 type CreditLimit struct {
 	AccountID     uuid.UUID
 	EffectiveFrom time.Time

@@ -67,14 +67,15 @@ type LedgerBillingCycleRule struct {
 }
 
 type LedgerCard struct {
-	ID        uuid.UUID
-	UserID    int64
-	AccountID uuid.UUID
-	Holder    string
-	LastFour  string
-	Virtual   bool
-	Active    bool
-	CreatedAt time.Time
+	ID              uuid.UUID
+	UserID          int64
+	AccountID       uuid.UUID
+	Holder          string
+	LastFour        string
+	Virtual         bool
+	Active          bool
+	CreatedAt       time.Time
+	ForeignChargeBp int32
 }
 
 type LedgerCreditLimit struct {
