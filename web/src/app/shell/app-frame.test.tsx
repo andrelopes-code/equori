@@ -432,17 +432,43 @@ describe("phone dock", () => {
     expect(router.state.location.pathname).toBe("/cards");
   });
 
-  it("opens the entry from the floating button", async () => {
+  it("offers the transaction form, the text and a new account from the floating button", async () => {
     const user = userEvent.setup();
-    const { router } = await renderApp("/", { width: 390, fetch: newFetch() });
+    await renderApp("/", { width: 390, fetch: newFetch() });
     await user.click(
-      screen.getByRole("button", { name: catalogEn["nav.entry.long"] }),
+      screen.getByRole("button", { name: catalogEn["nav.create"] }),
     );
+    expect(
+      screen.getByRole("button", { name: catalogEn["nav.create.close"] }),
+    ).toHaveAttribute("aria-expanded", "true");
+    expect(
+      screen.getAllByRole("menuitem").map((item) => item.textContent),
+    ).toEqual([
+      catalogEn["nav.new"],
+      catalogEn["capture.title"],
+      catalogEn["palette.newAccount"],
+    ]);
+  });
+
+  it.each([
+    ["nav.new", "/transactions/new"],
+    ["capture.title", "/transactions/capture"],
+    ["palette.newAccount", "/accounts/new"],
+  ] as const)("opens %s from the floating button", async (label, path) => {
+    const user = userEvent.setup();
+    const { router } = await renderApp("/", {
+      width: 390,
+      fetch: newFetch(),
+    });
+    await user.click(
+      screen.getByRole("button", { name: catalogEn["nav.create"] }),
+    );
+    await user.click(screen.getByRole("menuitem", { name: catalogEn[label] }));
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/transactions/new");
+      expect(router.state.location.pathname).toBe(path);
     });
     expect(
-      screen.queryByRole("button", { name: catalogEn["nav.entry.long"] }),
+      screen.queryByRole("button", { name: catalogEn["nav.create"] }),
     ).toBeNull();
   });
 
@@ -467,7 +493,7 @@ describe("phone dock", () => {
   it("draws the floating button as its mark alone", async () => {
     await renderApp("/", { width: 390, fetch: newFetch() });
     const fab = screen.getByRole("button", {
-      name: catalogEn["nav.entry.long"],
+      name: catalogEn["nav.create"],
     });
     expect(fab).toHaveTextContent(/^$/);
   });
@@ -541,5 +567,66 @@ describe("phone dock", () => {
         name: catalogPtBR["nav.more"],
       }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("phone bars as materials", () => {
+  const callbacks: ResizeObserverCallback[] = [];
+
+  class RecordingResizeObserver implements ResizeObserver {
+    constructor(callback: ResizeObserverCallback) {
+      callbacks.push(callback);
+    }
+
+    observe(): void {
+      return undefined;
+    }
+
+    unobserve(): void {
+      return undefined;
+    }
+
+    disconnect(): void {
+      return undefined;
+    }
+  }
+
+  function region(part: "banner" | "main" | "footer") {
+    const element = document.querySelector(
+      `[data-ui="app-shell"] > [data-part="${part}"]`,
+    );
+    if (!(element instanceof HTMLElement)) throw new Error(`no ${part}`);
+    return element;
+  }
+
+  function measure(element: HTMLElement, height: number) {
+    element.getBoundingClientRect = () => new DOMRect(0, 0, 390, height);
+    act(() => {
+      callbacks.forEach((callback) => {
+        callback([], new RecordingResizeObserver(callback));
+      });
+    });
+  }
+
+  beforeEach(() => {
+    callbacks.length = 0;
+    globalThis.ResizeObserver = RecordingResizeObserver;
+  });
+
+  it("reserves the height of the top bar and the dock at the ends of the content", async () => {
+    await renderApp("/", { width: 390, fetch: newFetch() });
+    measure(region("banner"), 56);
+    measure(region("footer"), 93.796875);
+    const main = region("main");
+    expect(main.style.paddingBlockStart).toBe("56px");
+    expect(main.style.paddingBlockEnd).toBe("93.796875px");
+    expect(main.style.scrollPaddingBlock).toBe("56px 93.796875px");
+  });
+
+  it("reserves nothing at the column's width, where no bar lies over the content", async () => {
+    await renderApp("/", { width: 1280, fetch: newFetch() });
+    const main = region("main");
+    expect(main.style.paddingBlockStart).toBe("");
+    expect(main.style.paddingBlockEnd).toBe("");
   });
 });

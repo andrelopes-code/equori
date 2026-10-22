@@ -1,18 +1,40 @@
 @layer app {
-  /* The phone's bar lies on the page's own ground at rest and lifts one tonal step, with its
-     seam, once content scrolls under it, as Android's top app bar does. */
+  /* On a phone the content scrolls under the two bars, so their material has something to blur:
+     the content takes every row of the shell and keeps clear of the bars by the padding the
+     frame measures. */
+  .main {
+    grid-row: 1 / -1;
+  }
+
+  /* The phone's bar lies on the page's own ground at rest and turns to the material, with its
+     blur, once content scrolls under it, as the page header does when it sticks. */
+  .banner,
+  .bannerScrolled {
+    position: relative;
+    z-index: 1;
+    -webkit-backdrop-filter: var(--slotted-material-backdrop);
+    backdrop-filter: var(--slotted-material-backdrop);
+    transition: background-color var(--slotted-duration-medium)
+      var(--slotted-easing-standard);
+  }
+
   .banner {
     --slotted-app-shell-banner-surface: transparent;
     --slotted-app-shell-border-color: transparent;
   }
 
   .bannerScrolled {
-    --slotted-app-shell-banner-surface: var(--slotted-surface);
+    --slotted-app-shell-banner-surface: var(--slotted-surface-material);
+    --slotted-app-shell-border-color: transparent;
   }
 
-  /* The navigation bar is a tonal step above the page, with no rule, as Android's is. */
+  /* The navigation bar is a material over the content, with no rule, as the page footer is. */
   .footer {
-    --slotted-app-shell-footer-surface: var(--slotted-surface);
+    --slotted-app-shell-footer-surface: var(--slotted-surface-material);
     --slotted-app-shell-border-color: transparent;
+    position: relative;
+    z-index: 1;
+    -webkit-backdrop-filter: var(--slotted-material-backdrop);
+    backdrop-filter: var(--slotted-material-backdrop);
   }
 }

@@ -1,4 +1,5 @@
 import { Badge } from "@slotted/react/badge";
+import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { destinations } from "@/app/shell/destinations";
@@ -6,19 +7,25 @@ import { MoreSheet } from "@/app/shell/more-sheet";
 import styles from "@/app/shell/phone-dock.module.css";
 import { ShellIcon } from "@/app/shell/shell-icon";
 import { useDestinationPress } from "@/app/shell/use-destination-press";
-import { useEntry } from "@/app/shell/use-entry";
 import { useUncategorizedCount } from "@/app/shell/use-uncategorized-count";
 import { useT } from "@/i18n/i18n-provider";
+import { SpeedDial } from "@/ui/speed-dial";
 
 const tabs = destinations.filter((d) => d.phone === "bar");
 
 // Families read: app-shell, tabs, side-navigation, top-navigation, button, badge. The dock is
-// equori's own by choice, drawn as Android's navigation bar and floating action button, which
-// no family is meant to imitate.
-export function PhoneDock({ onReselect }: { onReselect: () => void }) {
+// equori's own by choice, drawn as Android's navigation bar, which no family is meant to imitate.
+export function PhoneDock({
+  onReselect,
+  extent,
+}: {
+  onReselect: () => void;
+  // The dock's block size, which the floating button stands above.
+  extent: number;
+}) {
   const t = useT();
+  const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
-  const openEntry = useEntry();
   const count = useUncategorizedCount();
   const { current, topLevel, selected, press } =
     useDestinationPress(onReselect);
@@ -29,15 +36,32 @@ export function PhoneDock({ onReselect }: { onReselect: () => void }) {
   return (
     <div className={styles.dock}>
       {fab && (
-        <button
-          type="button"
-          data-own="entry-fab"
-          aria-label={t("nav.entry.long")}
-          className={styles.fab}
-          onClick={openEntry}
-        >
-          <ShellIcon name="plus" size={24} weight={2} />
-        </button>
+        <SpeedDial
+          tone="accent"
+          label={t("nav.create")}
+          closeLabel={t("nav.create.close")}
+          offset={extent}
+          actions={[
+            {
+              id: "form",
+              label: t("nav.new"),
+              icon: <ShellIcon name="form" size={20} weight={1.9} />,
+              onSelect: () => void navigate({ to: "/transactions/new" }),
+            },
+            {
+              id: "text",
+              label: t("capture.title"),
+              icon: <ShellIcon name="text" size={20} weight={1.9} />,
+              onSelect: () => void navigate({ to: "/transactions/capture" }),
+            },
+            {
+              id: "account",
+              label: t("palette.newAccount"),
+              icon: <ShellIcon name="accounts" size={20} weight={1.9} />,
+              onSelect: () => void navigate({ to: "/accounts/new" }),
+            },
+          ]}
+        />
       )}
       <nav
         aria-label={t("nav.label")}

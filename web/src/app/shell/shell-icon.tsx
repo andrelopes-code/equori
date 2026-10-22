@@ -8,6 +8,8 @@ export type ShellIconName =
   | "admin"
   | "settings"
   | "plus"
+  | "form"
+  | "text"
   | "search"
   | "more"
   | "back"
@@ -18,8 +20,8 @@ export type ShellIconName =
   | "density";
 
 // Lucide geometry (ISC licence) on its 24-unit grid: house, arrow-left-right, tags, credit-card,
-// wallet, target, shield, settings, plus, search, layout-grid, arrow-left, moon, globe,
-// log-out, chevrons-up-down and rows-3.
+// wallet, target, shield, settings, plus, square-pen, text, search, layout-grid, arrow-left,
+// moon, globe, log-out, chevrons-up-down and rows-3.
 const PATHS: Record<ShellIconName, readonly string[]> = {
   overview: [
     "M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8",
@@ -52,6 +54,11 @@ const PATHS: Record<ShellIconName, readonly string[]> = {
     "M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6z",
   ],
   plus: ["M5 12h14", "M12 5v14"],
+  form: [
+    "M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7",
+    "M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z",
+  ],
+  text: ["M15 18H3", "M17 6H3", "M21 12H3"],
   search: ["M11 3a8 8 0 1 1 0 16 8 8 0 0 1 0-16z", "m21 21-4.3-4.3"],
   more: [
     "M4 3h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z",

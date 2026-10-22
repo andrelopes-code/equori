@@ -1,0 +1,547 @@
+@layer app {
+  /* Durations are multiples of the theme's steps, so the theme's collapse under reduced motion
+     reaches every transition and every stagger. */
+  .root {
+    --enter: calc(var(--slotted-duration-long) * 2);
+    --leave: calc(var(--slotted-duration-long) * 1.2);
+    /* The orb sizes: no token holds a floating button's size. */
+    --fab: 4rem;
+    --action: 3rem;
+    --glow-rest: 0.8;
+    --glow-hot: 1;
+    --liquid-opacity: 0.6;
+
+    position: fixed;
+    z-index: var(--slotted-z-index-sticky);
+    inset: 0;
+    color: var(--slotted-text);
+    font-family: var(--slotted-font-family-sans);
+    pointer-events: none;
+  }
+
+  .root[data-open="true"] {
+    z-index: var(--slotted-z-index-overlay);
+  }
+
+  /* Declared where --i is set: a custom property resolves var() on the element that declares it.
+     Actions open from the button upward and close from the top down; each rises 4.25rem above
+     the one below it. */
+  .item,
+  .drop {
+    --d: calc(var(--i) * var(--slotted-duration-medium) / 4);
+    --dc: calc((var(--n) - 1 - var(--i)) * var(--slotted-duration-medium) / 5);
+    --y: calc(-5rem - var(--i) * 4.25rem);
+  }
+
+  /* Accent: the theme's one colour on the edge, the glow and the mark; the glass stays neutral. */
+  .root[data-tone="accent"] {
+    --c1: var(--slotted-tone-accent-text);
+    --c2: var(--slotted-tone-accent-solid);
+    --c3: var(--slotted-tone-accent-solid-active);
+    --c4: var(--slotted-tone-accent-solid);
+    --g1: var(--slotted-tone-accent-text);
+    --g2: var(--slotted-tone-accent-border);
+    --g3: var(--slotted-tone-accent-solid);
+    --rim: 0.95;
+  }
+
+  :global([data-slotted-scheme="light"]) .root[data-tone="accent"] {
+    --c1: var(--slotted-tone-accent-surface);
+    --c2: var(--slotted-tone-accent-border);
+    --g1: var(--slotted-tone-accent-border);
+    --g2: var(--slotted-tone-accent-solid);
+    --g3: var(--slotted-tone-accent-solid-active);
+  }
+
+  /* Aurora: the data slots in order, as a spectrum. */
+  .root[data-tone="aurora"] {
+    --c1: var(--slotted-data-1);
+    --c2: var(--slotted-data-3);
+    --c3: var(--slotted-data-5);
+    --c4: var(--slotted-data-7);
+    --g1: color-mix(in oklab, var(--slotted-data-1) 55%, var(--slotted-text));
+    --g2: var(--slotted-data-5);
+    --g3: var(--slotted-data-7);
+    --rim: 0.85;
+  }
+
+  :global([data-slotted-scheme="light"]) .root[data-tone="aurora"] {
+    --g1: var(--slotted-data-1);
+  }
+
+  /* Stays mounted and hides by visibility, so its fade out runs to the end. */
+  .scrim {
+    position: absolute;
+    inset: 0;
+    background: var(--slotted-surface-material);
+    -webkit-backdrop-filter: var(--slotted-material-backdrop);
+    backdrop-filter: var(--slotted-material-backdrop);
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity var(--slotted-duration-long) var(--slotted-easing-standard)
+        var(--slotted-duration-short),
+      visibility 0s linear
+        calc(var(--slotted-duration-long) + var(--slotted-duration-short));
+  }
+
+  .root[data-open="true"] .scrim {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition:
+      opacity var(--slotted-duration-long) var(--slotted-easing-enter),
+      visibility 0s;
+  }
+
+  .stage {
+    position: absolute;
+    inset-block-end: calc(var(--offset) + var(--slotted-space-6));
+    inset-inline-end: max(var(--slotted-space-6), env(safe-area-inset-right));
+    inline-size: var(--fab);
+    block-size: var(--fab);
+    pointer-events: auto;
+  }
+
+  .defs {
+    position: absolute;
+    inline-size: 0;
+    block-size: 0;
+  }
+
+  .stop1 {
+    stop-color: var(--g1);
+  }
+
+  .stop2 {
+    stop-color: var(--g2);
+  }
+
+  .stop3 {
+    stop-color: var(--g3);
+  }
+
+  .fab,
+  .item {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+  }
+
+  .fab {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    border-radius: var(--slotted-radius-full);
+  }
+
+  /* An orb: the glow outside, the glass, a one-pixel rim and the mark, in one circle. */
+  .orb {
+    position: relative;
+    display: block;
+    inline-size: var(--z);
+    block-size: var(--z);
+    border-radius: var(--slotted-radius-full);
+  }
+
+  .fab .orb {
+    --z: var(--fab);
+    --gs: 0.75rem;
+  }
+
+  .item .orb {
+    --z: var(--action);
+    --gs: 0.5625rem;
+  }
+
+  .press {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    will-change: transform;
+    transition: transform calc(var(--slotted-duration-long) * 1.6)
+      var(--slotted-easing-emphasized);
+  }
+
+  .fab:active .press {
+    transform: scale(0.93);
+    transition: transform var(--slotted-duration-short)
+      var(--slotted-easing-enter);
+  }
+
+  .item:active .press {
+    transform: scale(0.92);
+    transition: transform var(--slotted-duration-short)
+      var(--slotted-easing-enter);
+  }
+
+  .glow,
+  .rim {
+    background: conic-gradient(
+      var(--c1),
+      var(--c2) 25%,
+      var(--c3) 50%,
+      var(--c4) 75%,
+      var(--c1)
+    );
+    /* One turn every 6.4 s: a sheen, slower than any loop the theme names. The layer turns by
+       transform, on the compositor; animating the gradient's angle recalculated style on every
+       frame and held the main thread (1 000 ms per second at 4x CPU throttle). Both layers are
+       circles, so the turn shows only in the gradient. */
+    animation: sheen calc(var(--slotted-duration-loop-slow) * 4) linear infinite;
+  }
+
+  /* The mask is clear up to the orb's radius, so the glow never lies under the glass; its black
+     stops are alpha, not paint. */
+  .glow {
+    position: absolute;
+    inset: calc(var(--gs) * -1);
+    border-radius: var(--slotted-radius-full);
+    filter: blur(2px);
+    opacity: var(--glow-rest);
+    transition: opacity calc(var(--slotted-duration-medium) * 2.1)
+      var(--slotted-easing-enter);
+    mask: radial-gradient(
+      circle closest-side,
+      transparent calc(var(--z) / 2 - 1px),
+      rgb(0 0 0 / 0.45) calc(var(--z) / 2 + 0.5px),
+      rgb(0 0 0 / 0.12) calc(var(--z) / 2 + var(--gs) * 0.45),
+      transparent calc(var(--z) / 2 + var(--gs) * 0.85)
+    );
+  }
+
+  .glass {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-surface-material);
+    -webkit-backdrop-filter: var(--slotted-material-backdrop);
+    backdrop-filter: var(--slotted-material-backdrop);
+    box-shadow: var(--slotted-shadow-md);
+    transition: box-shadow var(--slotted-duration-medium)
+      var(--slotted-easing-standard);
+  }
+
+  /* A ring cut by two alpha masks: the content box out of the border box. */
+  .rim {
+    position: absolute;
+    inset: 0;
+    padding: var(--slotted-border-width-thin);
+    border-radius: var(--slotted-radius-full);
+    opacity: var(--rim);
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+  }
+
+  .glyph {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--slotted-text);
+  }
+
+  .plus {
+    will-change: transform;
+    transition: transform calc(var(--slotted-duration-long) * 1.4)
+      var(--slotted-easing-emphasized);
+  }
+
+  .root[data-open="true"] .plus {
+    transform: rotate(45deg);
+  }
+
+  @media (hover: hover) {
+    .fab:hover .glass,
+    .item:hover .glass {
+      box-shadow:
+        var(--slotted-shadow-md),
+        inset 0 0 0 var(--fab) var(--slotted-state-hover);
+    }
+
+    .fab:hover .glow,
+    .root[data-open="true"] .item:hover .glow {
+      opacity: var(--glow-hot);
+      transition-delay: 0s;
+    }
+  }
+
+  .root[data-open="true"] .fab .glow {
+    opacity: var(--glow-hot);
+  }
+
+  .fab:focus-visible .orb,
+  .item:focus-visible .orb {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  /* A fixed 48 px box, centred on the button: the label stands outside it, so the box never
+     takes a fractional size from the text. */
+  .item {
+    position: absolute;
+    z-index: 1;
+    inset-block-end: calc((var(--fab) - var(--action)) / 2);
+    inset-inline-end: calc((var(--fab) - var(--action)) / 2);
+    inline-size: var(--action);
+    block-size: var(--action);
+    visibility: hidden;
+    will-change: transform;
+    transition:
+      transform var(--leave) var(--slotted-easing-standard)
+        calc(var(--dc) + var(--slotted-duration-medium) / 5),
+      visibility 0s linear
+        calc(var(--dc) + var(--leave) + var(--slotted-duration-short) / 2);
+  }
+
+  .root[data-open="true"] .item {
+    visibility: visible;
+    transform: translateY(var(--y));
+    transition:
+      transform var(--enter) var(--slotted-easing-emphasized) var(--d),
+      visibility 0s;
+  }
+
+  .item .orb {
+    transform: scale(0.5);
+    will-change: transform;
+    transition: transform var(--leave) var(--slotted-easing-standard)
+      calc(var(--dc) + var(--slotted-duration-medium) / 5);
+  }
+
+  .root[data-open="true"] .item .orb {
+    transform: scale(1);
+    transition: transform var(--enter) var(--slotted-easing-emphasized) var(--d);
+  }
+
+  /* Each layer fades on its own: an ancestor below opacity 1 becomes a backdrop root, and the
+     glass would lose its blur for the length of the fade. The layers leave once the action has
+     returned into the button. */
+  .item .glass,
+  .item .rim,
+  .item .glyph,
+  .item .glow {
+    opacity: 0;
+    transition: opacity var(--slotted-duration-medium)
+      var(--slotted-easing-standard)
+      calc(var(--dc) + var(--slotted-duration-long) * 0.75);
+  }
+
+  .root[data-open="true"] .item .glass,
+  .root[data-open="true"] .item .glyph {
+    opacity: 1;
+    transition: opacity calc(var(--slotted-duration-medium) * 0.8)
+      var(--slotted-easing-enter) var(--d);
+  }
+
+  .root[data-open="true"] .item .rim {
+    opacity: var(--rim);
+    transition: opacity calc(var(--slotted-duration-medium) * 0.8)
+      var(--slotted-easing-enter) var(--d);
+  }
+
+  .root[data-open="true"] .item .glow {
+    opacity: var(--glow-rest);
+    transition: opacity calc(var(--slotted-duration-medium) * 1.1)
+      var(--slotted-easing-enter) var(--d);
+  }
+
+  .chip {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: calc(100% + var(--slotted-space-5));
+    block-size: fit-content;
+    margin-block: auto;
+    padding: var(--slotted-space-3) var(--slotted-space-5);
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-surface-material);
+    -webkit-backdrop-filter: var(--slotted-material-backdrop);
+    backdrop-filter: var(--slotted-material-backdrop);
+    box-shadow: var(--slotted-shadow-sm);
+    color: var(--slotted-text);
+    font-size: var(--slotted-font-size-sm);
+    font-weight: var(--slotted-font-weight-medium);
+    line-height: var(--slotted-line-height-sm);
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateX(var(--slotted-space-3));
+    will-change: transform, opacity;
+    transition:
+      opacity calc(var(--slotted-duration-short) * 1.2)
+        var(--slotted-easing-standard) var(--dc),
+      transform var(--slotted-duration-medium) var(--slotted-easing-exit)
+        var(--dc);
+  }
+
+  .root[data-open="true"] .chip {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity calc(var(--slotted-duration-medium) * 1.3)
+        var(--slotted-easing-enter)
+        calc(var(--d) + var(--slotted-duration-medium) * 0.8),
+      transform calc(var(--slotted-duration-medium) * 2.1)
+        var(--slotted-easing-enter)
+        calc(var(--d) + var(--slotted-duration-medium) * 0.8);
+  }
+
+  /* The liquid: neutral drops under a goo filter, shown only while the orbs move; at rest the
+     orbs are perfect circles. Its box leaves the filter room on every side. */
+  .liquid {
+    position: absolute;
+    inset-block-end: -1.25rem;
+    inset-inline-end: -1.25rem;
+    inline-size: calc(var(--fab) + 2.5rem);
+    block-size: calc(var(--n) * 4.25rem + 7rem);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .drop,
+  .dropMain {
+    position: absolute;
+    inset-block-end: calc(1.25rem + var(--fab) / 2 - var(--z) / 2);
+    inset-inline-end: calc(1.25rem + var(--fab) / 2 - var(--z) / 2);
+    inline-size: var(--z);
+    block-size: var(--z);
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-tone-secondary-solid);
+  }
+
+  /* Smaller than the orbs they follow, so no drop shows past a rim. */
+  .dropMain {
+    --z: calc(var(--fab) - 0.75rem);
+  }
+
+  .drop {
+    --z: calc(var(--action) - 0.625rem);
+    transform: translateY(0) scale(0.5);
+    transition: transform var(--leave) var(--slotted-easing-standard)
+      calc(var(--dc) + var(--slotted-duration-medium) / 5);
+  }
+
+  .root[data-open="true"] .drop {
+    transform: translateY(var(--y)) scale(1);
+    transition: transform var(--enter) var(--slotted-easing-emphasized) var(--d);
+  }
+
+  .root[data-open="true"] .liquid {
+    animation: liquid-open calc(var(--slotted-duration-long) * 2.8) linear both;
+  }
+
+  .root[data-open="false"][data-moved] .liquid {
+    animation: liquid-close calc(var(--slotted-duration-long) * 1.9) linear both;
+  }
+
+  /* A hidden action still runs its animations; they wait until the dial opens. */
+  .root[data-open="false"] .item .glow,
+  .root[data-open="false"] .item .rim {
+    animation-play-state: paused;
+  }
+
+  @keyframes sheen {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+
+  @keyframes liquid-open {
+    0% {
+      opacity: 0;
+    }
+
+    8%,
+    50% {
+      opacity: var(--liquid-opacity);
+    }
+
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes liquid-close {
+    0%,
+    20% {
+      opacity: 0;
+    }
+
+    35%,
+    75% {
+      opacity: var(--liquid-opacity);
+    }
+
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .glow,
+    .rim {
+      animation: none;
+    }
+
+    .root .liquid {
+      display: none;
+    }
+  }
+
+  /* High contrast and forced colours: no glass, glow, sheen or liquid; a solid orb with a heavy
+     edge, the mark in text colour. */
+  :global([data-slotted-scheme="high-contrast"]) .scrim {
+    background: var(--slotted-scrim);
+    backdrop-filter: none;
+  }
+
+  :global([data-slotted-scheme="high-contrast"]) .glow,
+  :global([data-slotted-scheme="high-contrast"]) .rim,
+  :global([data-slotted-scheme="high-contrast"]) .liquid {
+    display: none;
+  }
+
+  :global([data-slotted-scheme="high-contrast"]) .glass {
+    border: var(--slotted-border-width-thick) solid var(--slotted-border-strong);
+    background: var(--slotted-surface);
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+
+  :global([data-slotted-scheme="high-contrast"]) .plus {
+    stroke: currentcolor;
+  }
+
+  @media (forced-colors: active) {
+    .glow,
+    .rim,
+    .liquid {
+      display: none;
+    }
+
+    .glass {
+      border: var(--slotted-border-width-thick) solid CanvasText;
+      background: Canvas;
+      backdrop-filter: none;
+    }
+
+    .plus {
+      stroke: currentcolor;
+    }
+
+    .scrim {
+      background: Canvas;
+      backdrop-filter: none;
+    }
+  }
+}

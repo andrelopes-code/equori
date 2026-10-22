@@ -14,6 +14,8 @@ export const catalogPtBR: Catalog = {
   "nav.entry.key": "N",
   "nav.entry": "Lançar",
   "nav.entry.long": "Novo lançamento",
+  "nav.create": "Criar",
+  "nav.create.close": "Fechar menu",
   "nav.user": "Sua conta",
   "nav.search": "Buscar",
   "nav.back": "Voltar",

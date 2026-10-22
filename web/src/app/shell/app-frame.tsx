@@ -21,6 +21,7 @@ import { TopAppBar } from "@/app/shell/top-app-bar";
 import { useEditing } from "@/app/shell/use-editing";
 import { useEntry, useEntryShortcut } from "@/app/shell/use-entry";
 import { useNavPreference } from "@/app/shell/use-nav-preference";
+import { useExtent } from "@/app/shell/use-extent";
 import { useScrollState } from "@/app/shell/use-scroll-state";
 import { useWide } from "@/app/shell/use-wide";
 import { useT } from "@/i18n/i18n-provider";
@@ -35,6 +36,8 @@ export function AppFrame() {
   const [navOpen, setNavOpen] = useNavPreference();
   const palette = useRef<CommandPaletteHandle>(null);
   const scroll = useScrollState(main);
+  const [barExtent, barRef] = useExtent();
+  const [dockExtent, dockRef] = useExtent();
   const editing = useEditing();
   const openEntry = useEntry();
   useEntryShortcut(openEntry);
@@ -78,12 +81,25 @@ export function AppFrame() {
         </AppShellNav>
       ) : (
         <AppShellBanner
+          ref={barRef}
           className={scroll.scrolled ? styles.bannerScrolled : styles.banner}
         >
           <TopAppBar scrolled={scroll.scrolled} onSearch={openPalette} />
         </AppShellBanner>
       )}
-      <AppShellMain ref={main}>
+      <AppShellMain
+        ref={main}
+        className={wide ? undefined : styles.main}
+        style={
+          wide
+            ? undefined
+            : {
+                paddingBlockStart: barExtent,
+                paddingBlockEnd: dockExtent,
+                scrollPaddingBlock: `${String(barExtent)}px ${String(dockExtent)}px`,
+              }
+        }
+      >
         {/* 32 px beside a column, 16 px on a phone. */}
         <PageDefaultsProvider inset={wide ? 9 : 6}>
           <PageHeaderDefaultsProvider variant="plain">
@@ -95,11 +111,12 @@ export function AppFrame() {
       </AppShellMain>
       {wide || editing ? null : (
         // A div: the dock is navigation, not the page's contentinfo.
+        // Workaround for Slotted finding "AppShellFooter drops its ref when render is given": the ref is set on the div itself.
         <AppShellFooter
           className={styles.footer}
-          render={(props) => <div {...props} />}
+          render={(props) => <div {...props} ref={dockRef} />}
         >
-          <PhoneDock onReselect={scrollToTop} />
+          <PhoneDock onReselect={scrollToTop} extent={dockExtent} />
         </AppShellFooter>
       )}
       <CommandMenu ref={palette} />

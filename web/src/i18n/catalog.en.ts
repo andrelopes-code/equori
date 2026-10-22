@@ -13,6 +13,8 @@ export const catalogEn = {
   "nav.entry.key": "N",
   "nav.entry": "New",
   "nav.entry.long": "New transaction",
+  "nav.create": "Create",
+  "nav.create.close": "Close menu",
   "nav.user": "Your account",
   "nav.search": "Search",
   "nav.back": "Back",
