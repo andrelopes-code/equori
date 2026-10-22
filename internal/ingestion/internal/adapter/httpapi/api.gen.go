@@ -58,27 +58,6 @@ func (e CsvProfileAmountSign) Valid() bool {
 	}
 }
 
-// Defines values for CsvProfileDateLayout.
-const (
-	DDMMYYYY CsvProfileDateLayout = "DD/MM/YYYY"
-	MMDDYYYY CsvProfileDateLayout = "MM/DD/YYYY"
-	YYYYMMDD CsvProfileDateLayout = "YYYY-MM-DD"
-)
-
-// Valid indicates whether the value is a known member of the CsvProfileDateLayout enum.
-func (e CsvProfileDateLayout) Valid() bool {
-	switch e {
-	case DDMMYYYY:
-		return true
-	case MMDDYYYY:
-		return true
-	case YYYYMMDD:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for CsvProfileDecimalSeparator.
 const (
 	Dot   CsvProfileDecimalSeparator = "."
@@ -441,26 +420,28 @@ type CsvProfile struct {
 	AmountColumn *string `json:"amount_column,omitempty"`
 
 	// AmountSign inverted flips the sign of every amount, for exports that list card charges as positive.
-	AmountSign        *CsvProfileAmountSign      `json:"amount_sign,omitempty"`
-	CreditColumn      *string                    `json:"credit_column,omitempty"`
-	DateColumn        string                     `json:"date_column"`
-	DateLayout        CsvProfileDateLayout       `json:"date_layout"`
+	AmountSign   *CsvProfileAmountSign `json:"amount_sign,omitempty"`
+	CreditColumn *string               `json:"credit_column,omitempty"`
+	DateColumn   string                `json:"date_column"`
+
+	// DateLayout Order and separator of the date; day, month and year appear once each.
+	DateLayout        string                     `json:"date_layout"`
 	DebitColumn       *string                    `json:"debit_column,omitempty"`
 	DecimalSeparator  CsvProfileDecimalSeparator `json:"decimal_separator"`
 	Delimiter         *CsvProfileDelimiter       `json:"delimiter,omitempty"`
 	DescriptionColumn string                     `json:"description_column"`
 
 	// Encoding Text encoding of the file. auto keeps valid UTF-8 and decodes anything else as windows-1252.
-	Encoding   *string `json:"encoding,omitempty"`
-	HeaderRows *int    `json:"header_rows,omitempty"`
-	IdColumn   *string `json:"id_column,omitempty"`
+	Encoding *string `json:"encoding,omitempty"`
+
+	// GroupSeparator Digit group separator of amounts; empty for none. Defaults to the one that is not decimal_separator.
+	GroupSeparator *string `json:"group_separator,omitempty"`
+	HeaderRows     *int    `json:"header_rows,omitempty"`
+	IdColumn       *string `json:"id_column,omitempty"`
 }
 
 // CsvProfileAmountSign inverted flips the sign of every amount, for exports that list card charges as positive.
 type CsvProfileAmountSign string
-
-// CsvProfileDateLayout defines model for CsvProfile.DateLayout.
-type CsvProfileDateLayout string
 
 // CsvProfileDecimalSeparator defines model for CsvProfile.DecimalSeparator.
 type CsvProfileDecimalSeparator string

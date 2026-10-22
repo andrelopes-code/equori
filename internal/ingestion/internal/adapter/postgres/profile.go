@@ -44,7 +44,7 @@ func toProfile(row IngestionCsvProfile) domain.Profile {
 		UserID: row.UserID, AccountID: row.AccountID, Delimiter: row.Delimiter, HeaderRows: int(row.HeaderRows),
 		DateColumn: row.DateColumn, DateLayout: domain.DateLayout(row.DateLayout), AmountColumn: value(row.AmountColumn),
 		DebitColumn: value(row.DebitColumn), CreditColumn: value(row.CreditColumn), DecimalSeparator: row.DecimalSeparator,
-		DescriptionColumn: row.DescriptionColumn, IDColumn: value(row.IDColumn), AmountSign: domain.AmountSign(row.AmountSign), Encoding: row.Encoding,
+		DescriptionColumn: row.DescriptionColumn, IDColumn: value(row.IDColumn), AmountSign: domain.AmountSign(row.AmountSign), Encoding: row.Encoding, GroupSeparator: row.GroupSeparator,
 	}
 }
 
@@ -61,7 +61,7 @@ func (r *Repository) SaveProfile(ctx context.Context, p domain.Profile) (domain.
 		UserID: p.UserID, AccountID: p.AccountID, Delimiter: p.Delimiter, HeaderRows: int32(p.HeaderRows), //nolint:gosec // at most 10
 		DateColumn: p.DateColumn, DateLayout: string(p.DateLayout), AmountColumn: optional(p.AmountColumn),
 		DebitColumn: optional(p.DebitColumn), CreditColumn: optional(p.CreditColumn), DecimalSeparator: p.DecimalSeparator,
-		DescriptionColumn: p.DescriptionColumn, IDColumn: optional(p.IDColumn), AmountSign: string(p.AmountSign), Encoding: p.Encoding,
+		DescriptionColumn: p.DescriptionColumn, IDColumn: optional(p.IDColumn), AmountSign: string(p.AmountSign), Encoding: p.Encoding, GroupSeparator: p.GroupSeparator,
 	})
 	if err != nil {
 		return domain.Profile{}, notFound(err)

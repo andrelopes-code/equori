@@ -66,6 +66,7 @@ type IngestionCsvProfile struct {
 	AmountSign        string
 	UpdatedAt         time.Time
 	Encoding          string
+	GroupSeparator    string
 }
 
 type IngestionExternalAccount struct {

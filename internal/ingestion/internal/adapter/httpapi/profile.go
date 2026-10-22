@@ -26,7 +26,7 @@ func ref(s string) *string {
 
 func toProfileAPI(p domain.Profile) CsvProfile {
 	out := CsvProfile{
-		DateColumn: p.DateColumn, DateLayout: CsvProfileDateLayout(p.DateLayout), DecimalSeparator: CsvProfileDecimalSeparator(p.DecimalSeparator),
+		DateColumn: p.DateColumn, DateLayout: string(p.DateLayout), DecimalSeparator: CsvProfileDecimalSeparator(p.DecimalSeparator),
 		DescriptionColumn: p.DescriptionColumn, HeaderRows: &p.HeaderRows, AmountColumn: ref(p.AmountColumn),
 		DebitColumn: ref(p.DebitColumn), CreditColumn: ref(p.CreditColumn), IdColumn: ref(p.IDColumn),
 	}
@@ -38,6 +38,7 @@ func toProfileAPI(p domain.Profile) CsvProfile {
 	sign := CsvProfileAmountSign(p.AmountSign)
 	out.AmountSign = &sign
 	out.Encoding = &p.Encoding
+	out.GroupSeparator = &p.GroupSeparator
 	return out
 }
 
@@ -64,6 +65,13 @@ func (s *Server) SaveCsvProfile(ctx context.Context, req SaveCsvProfileRequestOb
 	}
 	if b.Encoding != nil {
 		p.Encoding = *b.Encoding
+	}
+	if b.GroupSeparator != nil {
+		p.GroupSeparator = *b.GroupSeparator
+	} else if p.DecimalSeparator == "," {
+		p.GroupSeparator = "."
+	} else {
+		p.GroupSeparator = ","
 	}
 	if b.AmountSign != nil {
 		p.AmountSign = domain.AmountSign(*b.AmountSign)

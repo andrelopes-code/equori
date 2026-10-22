@@ -17,6 +17,7 @@ type csvProfile struct {
 	DescriptionColumn string `json:"description_column"`
 	AmountSign        string `json:"amount_sign"`
 	Encoding          string `json:"encoding"`
+	GroupSeparator    string `json:"group_separator"`
 }
 
 func TestCSVProfile(t *testing.T) {
@@ -29,7 +30,7 @@ func TestCSVProfile(t *testing.T) {
 	body := map[string]any{"date_column": "Data", "date_layout": "DD/MM/YYYY", "amount_column": "Valor", "decimal_separator": ".", "description_column": "Descrição"}
 	var saved csvProfile
 	h.MustDo(http.MethodPut, path, body, http.StatusOK, &saved)
-	if saved.Delimiter != "comma" || saved.HeaderRows != 1 || saved.AmountSign != "as_is" || saved.AmountColumn != "Valor" || saved.Encoding != "auto" {
+	if saved.Delimiter != "comma" || saved.HeaderRows != 1 || saved.AmountSign != "as_is" || saved.AmountColumn != "Valor" || saved.Encoding != "auto" || saved.GroupSeparator != "," {
 		t.Fatalf("saved = %+v", saved)
 	}
 	var got csvProfile
@@ -51,6 +52,18 @@ func TestCSVProfile(t *testing.T) {
 	h.MustDo(http.MethodPut, path, body, http.StatusOK, &saved)
 	if saved.Encoding != "windows-1251" {
 		t.Fatalf("encoding = %q", saved.Encoding)
+	}
+
+	body["group_separator"] = ";"
+	h.ExpectProblem(h.Do(http.MethodPut, path, body), http.StatusBadRequest, "invalid_request", "group_separator")
+	body["group_separator"], body["decimal_separator"] = ".", "."
+	h.ExpectProblem(h.Do(http.MethodPut, path, body), http.StatusUnprocessableEntity, "validation_failed", "group_separator")
+	body["group_separator"], body["decimal_separator"], body["date_layout"] = "'", ".", "DD/DD/YYYY"
+	h.ExpectProblem(h.Do(http.MethodPut, path, body), http.StatusUnprocessableEntity, "validation_failed", "date_layout")
+	body["date_layout"] = "DD.MM.YYYY"
+	h.MustDo(http.MethodPut, path, body, http.StatusOK, &saved)
+	if saved.DateLayout != "DD.MM.YYYY" || saved.GroupSeparator != "'" {
+		t.Fatalf("formats = %q, %q", saved.DateLayout, saved.GroupSeparator)
 	}
 
 	other := h.Login("other@example.com")

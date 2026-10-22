@@ -2736,8 +2736,8 @@ export interface components {
             delimiter?: "comma" | "semicolon" | "tab" | "pipe";
             header_rows?: number;
             date_column: string;
-            /** @enum {string} */
-            date_layout: "DD/MM/YYYY" | "YYYY-MM-DD" | "MM/DD/YYYY";
+            /** @description Order and separator of the date; day, month and year appear once each. */
+            date_layout: string;
             amount_column?: string;
             debit_column?: string;
             credit_column?: string;
@@ -2755,6 +2755,8 @@ export interface components {
              * @default auto
              */
             encoding: string;
+            /** @description Digit group separator of amounts; empty for none. Defaults to the one that is not decimal_separator. */
+            group_separator?: string;
         };
         /** @description One file import, or one sync of a mapped account (source aggregator). */
         ImportBatch: {

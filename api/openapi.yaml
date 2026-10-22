@@ -4781,7 +4781,8 @@ components:
           maxLength: 100
         date_layout:
           type: string
-          enum: [DD/MM/YYYY, YYYY-MM-DD, MM/DD/YYYY]
+          pattern: '^(DD|MM|YYYY|YY)[/. -](DD|MM|YYYY|YY)[/. -](DD|MM|YYYY|YY)$'
+          description: Order and separator of the date; day, month and year appear once each.
         amount_column:
           type: string
           minLength: 1
@@ -4814,6 +4815,10 @@ components:
           pattern: "^[a-z0-9_-]{2,40}$"
           default: auto
           description: Text encoding of the file. auto keeps valid UTF-8 and decodes anything else as windows-1252.
+        group_separator:
+          type: string
+          pattern: "^[,. \u00a0']?$"
+          description: Digit group separator of amounts; empty for none. Defaults to the one that is not decimal_separator.
     ImportBatch:
       type: object
       description: One file import, or one sync of a mapped account (source aggregator).

@@ -9,7 +9,6 @@ import (
 	"io"
 	"strconv"
 	"strings"
-	"time"
 	"unicode/utf8"
 
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/charset"
@@ -121,27 +120,31 @@ func cell(row []string, i int) string {
 }
 
 func (c columns) record(row, header []string, p domain.Profile, scale int) (domain.NormalizedRecord, error) {
-	d, err := time.Parse(p.DateLayout.GoLayout(), cell(row, c.date))
+	d, err := p.DateLayout.Parse(cell(row, c.date))
 	if err != nil {
 		return domain.NormalizedRecord{}, fmt.Errorf("date %q is not %s", cell(row, c.date), p.DateLayout)
 	}
 	decimal, _ := utf8.DecodeRuneInString(p.DecimalSeparator)
+	group, _ := utf8.DecodeRuneInString(p.GroupSeparator)
+	if p.GroupSeparator == "" {
+		group = 0
+	}
 	var amount int64
 	if c.amount >= 0 {
-		if amount, err = domain.MinorUnits(cell(row, c.amount), decimal, scale); err != nil {
+		if amount, err = domain.MinorUnits(cell(row, c.amount), decimal, group, scale); err != nil {
 			return domain.NormalizedRecord{}, fmt.Errorf("amount: %w", err)
 		}
 	} else {
 		debit, credit := cell(row, c.debit), cell(row, c.credit)
 		switch {
 		case debit != "":
-			v, err := domain.MinorUnits(debit, decimal, scale)
+			v, err := domain.MinorUnits(debit, decimal, group, scale)
 			if err != nil {
 				return domain.NormalizedRecord{}, fmt.Errorf("debit: %w", err)
 			}
 			amount = -abs(v)
 		case credit != "":
-			v, err := domain.MinorUnits(credit, decimal, scale)
+			v, err := domain.MinorUnits(credit, decimal, group, scale)
 			if err != nil {
 				return domain.NormalizedRecord{}, fmt.Errorf("credit: %w", err)
 			}

@@ -69,20 +69,21 @@ function parseDate(
   layout: CsvProfile["date_layout"] | undefined,
 ): string | undefined {
   if (layout === undefined) return undefined;
-  const patterns = {
-    "DD/MM/YYYY": /^(\d{2})\/(\d{2})\/(\d{4})$/,
-    "MM/DD/YYYY": /^(\d{2})\/(\d{2})\/(\d{4})$/,
-    "YYYY-MM-DD": /^(\d{4})-(\d{2})-(\d{2})$/,
+  const tokens = layout.split(/[/. -]/u);
+  const separator = layout.charAt(tokens[0]?.length ?? 0);
+  const m = new RegExp(
+    `^${tokens.map((t) => `(\\d{${String(t.length)}})`).join(`[${separator}]`)}$`,
+    "u",
+  ).exec(text);
+  if (m === null || tokens.length !== 3) return undefined;
+  const part = (kind: string): string => {
+    const i = tokens.findIndex((t) => t.startsWith(kind));
+    return m[i + 1] ?? "";
   };
-  const m = patterns[layout].exec(text);
-  if (m === null) return undefined;
-  const [, a = "", b = "", c = ""] = m;
-  const [year, month, day] =
-    layout === "YYYY-MM-DD"
-      ? [a, b, c]
-      : layout === "DD/MM/YYYY"
-        ? [c, b, a]
-        : [c, a, b];
+  const shortYear = part("YY");
+  const year = shortYear.length === 2 ? `20${shortYear}` : shortYear;
+  const month = part("MM");
+  const day = part("DD");
   const iso = `${year}-${month}-${day}`;
   const parsed = new Date(`${iso}T00:00:00Z`);
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().startsWith(iso)

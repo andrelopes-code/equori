@@ -5,24 +5,41 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
+func isAffix(r rune) bool {
+	return unicode.IsLetter(r) || unicode.IsSpace(r) || unicode.Is(unicode.Sc, r)
+}
+
 // MinorUnits converts a written amount to minor units with scale decimals. decimal is the
-// decimal separator; the other of '.' and ',' is a thousands separator and is removed,
-// as are spaces and a leading "R$".
-func MinorUnits(s string, decimal rune, scale int) (int64, error) {
-	thousands := ","
-	if decimal == ',' {
-		thousands = "."
+// decimal separator and group the digit group separator (0 for none); spaces are always
+// removed. A currency symbol or code before or after the number is ignored. Parentheses
+// around the number or a trailing minus sign make it negative.
+func MinorUnits(s string, decimal, group rune, scale int) (int64, error) {
+	v := strings.TrimFunc(s, isAffix)
+	negative := false
+	if strings.HasPrefix(v, "(") && strings.HasSuffix(v, ")") {
+		v, negative = strings.TrimFunc(v[1:len(v)-1], isAffix), true
 	}
-	v := strings.NewReplacer(" ", "", " ", "", "R$", "", thousands, "").Replace(strings.TrimSpace(s))
+	if strings.HasSuffix(v, "-") {
+		v, negative = strings.TrimFunc(v[:len(v)-1], isAffix), true
+	}
+	v = strings.Map(func(r rune) rune {
+		if unicode.IsSpace(r) || (group != 0 && r == group) {
+			return -1
+		}
+		return r
+	}, v)
 	if v == "" {
 		return 0, errors.New("missing amount")
 	}
-	sign := int64(1)
 	switch v[0] {
 	case '-':
-		sign, v = -1, v[1:]
+		if negative {
+			return 0, fmt.Errorf("%q is not an amount", s)
+		}
+		negative, v = true, v[1:]
 	case '+':
 		v = v[1:]
 	}
@@ -35,5 +52,8 @@ func MinorUnits(s string, decimal rune, scale int) (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("%q is not an amount", s)
 	}
-	return sign * n, nil
+	if negative {
+		n = -n
+	}
+	return n, nil
 }

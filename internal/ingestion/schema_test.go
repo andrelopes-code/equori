@@ -46,6 +46,15 @@ func TestSchemaInvariants(t *testing.T) {
 		{"profile encoding outside the identifier pattern", exec(`INSERT INTO ingestion_csv_profile
 			(user_id, account_id, date_column, date_layout, amount_column, decimal_separator, description_column, encoding)
 			VALUES ($1, $2, 'Data', 'DD/MM/YYYY', 'Valor', ',', 'Descrição', 'Windows 1252')`, uid, checking)},
+		{"profile date layout outside the token pattern", exec(`INSERT INTO ingestion_csv_profile
+			(user_id, account_id, date_column, date_layout, amount_column, decimal_separator, description_column)
+			VALUES ($1, $2, 'Data', 'D/M/YYYY', 'Valor', ',', 'Descrição')`, uid, checking)},
+		{"profile date layout mixing separators", exec(`INSERT INTO ingestion_csv_profile
+			(user_id, account_id, date_column, date_layout, amount_column, decimal_separator, description_column)
+			VALUES ($1, $2, 'Data', 'DD/MM-YYYY', 'Valor', ',', 'Descrição')`, uid, checking)},
+		{"profile group separator outside the allowed set", exec(`INSERT INTO ingestion_csv_profile
+			(user_id, account_id, date_column, date_layout, amount_column, decimal_separator, description_column, group_separator)
+			VALUES ($1, $2, 'Data', 'DD/MM/YYYY', 'Valor', ',', 'Descrição', ';')`, uid, checking)},
 		{"profile without amount columns", exec(`INSERT INTO ingestion_csv_profile
 			(user_id, account_id, date_column, date_layout, decimal_separator, description_column)
 			VALUES ($1, $2, 'Data', 'DD/MM/YYYY', ',', 'Descrição')`, uid, checking)},

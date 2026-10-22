@@ -1,15 +1,22 @@
 package domain
 
 import (
+	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 )
 
+var groupSeparators = []string{",", ".", " ", "\u00a0", "'", ""}
+
 var encodingName = regexp.MustCompile(`^[a-z0-9_-]{2,40}$`)
 
+// DateLayout names the order and separator of a date: three of DD, MM and YYYY (or YY),
+// each of day, month and year once, joined by one of "/", ".", "-" or " ".
 type DateLayout string
 
 const (
@@ -18,16 +25,54 @@ const (
 	LayoutMonthDayYear DateLayout = "MM/DD/YYYY"
 )
 
-// GoLayout is the time.Parse layout of the date layout.
+var goTokens = map[string]string{"DD": "02", "MM": "01", "YYYY": "2006", "YY": "06"}
+
+// GoLayout is the time.Parse layout of the date layout, or "" when the layout is invalid.
 func (l DateLayout) GoLayout() string {
-	switch l {
-	case LayoutDayMonthYear:
-		return "02/01/2006"
-	case LayoutMonthDayYear:
-		return "01/02/2006"
-	default:
-		return time.DateOnly
+	s := string(l)
+	if len(s) < 8 {
+		return ""
 	}
+	sep := ""
+	for _, r := range []string{"/", ".", "-", " "} {
+		if strings.Count(s, r) == 2 {
+			sep = r
+		}
+	}
+	parts := strings.Split(s, sep)
+	if sep == "" || len(parts) != 3 {
+		return ""
+	}
+	var day, month, year int
+	out := make([]string, 3)
+	for i, p := range parts {
+		g, ok := goTokens[p]
+		if !ok {
+			return ""
+		}
+		out[i] = g
+		switch p {
+		case "DD":
+			day++
+		case "MM":
+			month++
+		default:
+			year++
+		}
+	}
+	if day != 1 || month != 1 || year != 1 {
+		return ""
+	}
+	return strings.Join(out, sep)
+}
+
+// Parse reads a date written in the layout.
+func (l DateLayout) Parse(s string) (time.Time, error) {
+	g := l.GoLayout()
+	if g == "" {
+		return time.Time{}, fmt.Errorf("invalid date layout %q", string(l))
+	}
+	return time.Parse(g, s)
 }
 
 type AmountSign string
@@ -54,6 +99,7 @@ type Profile struct {
 	IDColumn          string
 	AmountSign        AmountSign
 	Encoding          string
+	GroupSeparator    string
 }
 
 // NewProfile applies defaults (comma delimiter, one header row, amounts as they are) and
@@ -73,10 +119,12 @@ func NewProfile(p Profile) (Profile, error) {
 		return Profile{}, invalid("delimiter", `must be ",", ";", tab or "|"`)
 	case p.HeaderRows < 0 || p.HeaderRows > 10:
 		return Profile{}, invalid("header_rows", "must be between 0 and 10")
-	case p.DateLayout != LayoutDayMonthYear && p.DateLayout != LayoutISO && p.DateLayout != LayoutMonthDayYear:
-		return Profile{}, invalid("date_layout", "must be DD/MM/YYYY, YYYY-MM-DD or MM/DD/YYYY")
+	case p.DateLayout.GoLayout() == "":
+		return Profile{}, invalid("date_layout", `must hold DD, MM and YYYY or YY once each, joined by "/", ".", "-" or " "`)
 	case p.DecimalSeparator != "," && p.DecimalSeparator != ".":
 		return Profile{}, invalid("decimal_separator", `must be "," or "."`)
+	case !slices.Contains(groupSeparators, p.GroupSeparator) || p.GroupSeparator == p.DecimalSeparator && p.GroupSeparator != "":
+		return Profile{}, invalid("group_separator", `must be "," , ".", a space, a no-break space, "'" or empty, and differ from decimal_separator`)
 	case !encodingName.MatchString(p.Encoding):
 		return Profile{}, invalid("encoding", "must match ^[a-z0-9_-]{2,40}$")
 	case p.AmountSign != SignAsIs && p.AmountSign != SignInverted:

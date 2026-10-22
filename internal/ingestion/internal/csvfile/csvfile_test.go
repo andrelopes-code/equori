@@ -10,7 +10,7 @@ import (
 
 func profile(edit func(*domain.Profile)) domain.Profile {
 	p := domain.Profile{Delimiter: ",", HeaderRows: 1, DateColumn: "Data", DateLayout: domain.LayoutDayMonthYear,
-		AmountColumn: "Valor", DecimalSeparator: ".", DescriptionColumn: "Descrição", IDColumn: "Identificador", AmountSign: domain.SignAsIs}
+		AmountColumn: "Valor", DecimalSeparator: ".", GroupSeparator: ",", DescriptionColumn: "Descrição", IDColumn: "Identificador", AmountSign: domain.SignAsIs}
 	if edit != nil {
 		edit(&p)
 	}
@@ -30,7 +30,9 @@ func TestParse(t *testing.T) {
 		{"amount column", []byte("\xef\xbb\xbfData,Valor,Identificador,Descrição\n05/10/2026,-45.90,a1,Pão de Açúcar\n\n15/10/2026,3000.00,a3,Salário\n"),
 			profile(nil), []int64{-4590, 300000}, domain.NormalizedRecord{ExternalID: "a1", Date: day("2026-10-05"), Description: "Pão de Açúcar"}},
 		{"brazilian decimals and semicolons", []byte("Data;Valor;Descrição\n07/10/2026;\"-1.234,56\";Aluguel\n"),
-			profile(func(p *domain.Profile) { p.Delimiter, p.DecimalSeparator, p.IDColumn = ";", ",", "" }), []int64{-123456},
+			profile(func(p *domain.Profile) {
+				p.Delimiter, p.DecimalSeparator, p.GroupSeparator, p.IDColumn = ";", ",", ".", ""
+			}), []int64{-123456},
 			domain.NormalizedRecord{Date: day("2026-10-07"), Description: "Aluguel"}},
 		{"debit and credit columns", []byte("Data,Histórico,Débito,Crédito\n2026-10-08,Tarifa,12.50,\n2026-10-09,PIX,,100\n"),
 			profile(func(p *domain.Profile) {

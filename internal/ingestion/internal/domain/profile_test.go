@@ -22,7 +22,11 @@ func TestNewProfile(t *testing.T) {
 		{"debit without credit", func(p *Profile) { p.AmountColumn, p.DebitColumn = "", "D" }, "credit_column"},
 		{"encoding pattern", func(p *Profile) { p.Encoding = "Windows 1252" }, "encoding"},
 		{"delimiter", func(p *Profile) { p.Delimiter = ":" }, "delimiter"},
-		{"layout", func(p *Profile) { p.DateLayout = "DD-MM-YY" }, "date_layout"},
+		{"layout repeats the day", func(p *Profile) { p.DateLayout = "DD/DD/YYYY" }, "date_layout"},
+		{"layout mixes separators", func(p *Profile) { p.DateLayout = "DD/MM-YYYY" }, "date_layout"},
+		{"layout lacks the year", func(p *Profile) { p.DateLayout = "DD/MM/MM" }, "date_layout"},
+		{"group separator", func(p *Profile) { p.GroupSeparator = ";" }, "group_separator"},
+		{"group separator equals the decimal separator", func(p *Profile) { p.GroupSeparator = "," }, "group_separator"},
 		{"position without header", func(p *Profile) { p.HeaderRows = 0 }, "date_column"},
 		{"description required", func(p *Profile) { p.DescriptionColumn = "" }, "description_column"},
 	}
@@ -38,5 +42,24 @@ func TestNewProfile(t *testing.T) {
 	positional := Profile{DateColumn: "1", DateLayout: LayoutISO, DebitColumn: "3", CreditColumn: "4", DecimalSeparator: ".", DescriptionColumn: "2"}
 	if _, err := NewProfile(positional); err != nil {
 		t.Fatalf("positional profile: %v", err)
+	}
+}
+
+func TestDateLayoutParse(t *testing.T) {
+	t.Parallel()
+	for _, c := range []struct {
+		layout DateLayout
+		in     string
+		want   string
+	}{
+		{"DD.MM.YYYY", "05.11.2026", "2026-11-05"},
+		{"YYYY/MM/DD", "2026/11/05", "2026-11-05"},
+		{"MM-DD-YY", "11-05-26", "2026-11-05"},
+		{LayoutDayMonthYear, "05/11/2026", "2026-11-05"},
+	} {
+		got, err := c.layout.Parse(c.in)
+		if err != nil || got.Format("2006-01-02") != c.want {
+			t.Errorf("%s.Parse(%q) = %v, %v; want %s", c.layout, c.in, got, err, c.want)
+		}
 	}
 }

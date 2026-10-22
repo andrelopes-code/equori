@@ -12,7 +12,7 @@ import (
 )
 
 const getProfile = `-- name: GetProfile :one
-SELECT user_id, account_id, delimiter, header_rows, date_column, date_layout, amount_column, debit_column, credit_column, decimal_separator, description_column, id_column, amount_sign, updated_at, encoding FROM ingestion_csv_profile WHERE user_id = $1 AND account_id = $2
+SELECT user_id, account_id, delimiter, header_rows, date_column, date_layout, amount_column, debit_column, credit_column, decimal_separator, description_column, id_column, amount_sign, updated_at, encoding, group_separator FROM ingestion_csv_profile WHERE user_id = $1 AND account_id = $2
 `
 
 type GetProfileParams struct {
@@ -39,24 +39,25 @@ func (q *Queries) GetProfile(ctx context.Context, arg GetProfileParams) (Ingesti
 		&i.AmountSign,
 		&i.UpdatedAt,
 		&i.Encoding,
+		&i.GroupSeparator,
 	)
 	return i, err
 }
 
 const upsertProfile = `-- name: UpsertProfile :one
 INSERT INTO ingestion_csv_profile (user_id, account_id, delimiter, header_rows, date_column, date_layout,
-    amount_column, debit_column, credit_column, decimal_separator, description_column, id_column, amount_sign, encoding)
+    amount_column, debit_column, credit_column, decimal_separator, description_column, id_column, amount_sign, encoding, group_separator)
 VALUES ($1, $2, $3, $4, $5, $6,
     $7, $8, $9, $10,
-    $11, $12, $13, $14)
+    $11, $12, $13, $14, $15)
 ON CONFLICT (account_id) DO UPDATE SET
     delimiter = EXCLUDED.delimiter, header_rows = EXCLUDED.header_rows, date_column = EXCLUDED.date_column,
     date_layout = EXCLUDED.date_layout, amount_column = EXCLUDED.amount_column, debit_column = EXCLUDED.debit_column,
     credit_column = EXCLUDED.credit_column, decimal_separator = EXCLUDED.decimal_separator,
     description_column = EXCLUDED.description_column, id_column = EXCLUDED.id_column,
-    amount_sign = EXCLUDED.amount_sign, encoding = EXCLUDED.encoding, updated_at = now()
+    amount_sign = EXCLUDED.amount_sign, encoding = EXCLUDED.encoding, group_separator = EXCLUDED.group_separator, updated_at = now()
 WHERE ingestion_csv_profile.user_id = EXCLUDED.user_id
-RETURNING user_id, account_id, delimiter, header_rows, date_column, date_layout, amount_column, debit_column, credit_column, decimal_separator, description_column, id_column, amount_sign, updated_at, encoding
+RETURNING user_id, account_id, delimiter, header_rows, date_column, date_layout, amount_column, debit_column, credit_column, decimal_separator, description_column, id_column, amount_sign, updated_at, encoding, group_separator
 `
 
 type UpsertProfileParams struct {
@@ -74,6 +75,7 @@ type UpsertProfileParams struct {
 	IDColumn          *string
 	AmountSign        string
 	Encoding          string
+	GroupSeparator    string
 }
 
 // The WHERE keeps another user's profile out of reach: no row comes back for it.
@@ -93,6 +95,7 @@ func (q *Queries) UpsertProfile(ctx context.Context, arg UpsertProfileParams) (I
 		arg.IDColumn,
 		arg.AmountSign,
 		arg.Encoding,
+		arg.GroupSeparator,
 	)
 	var i IngestionCsvProfile
 	err := row.Scan(
@@ -111,6 +114,7 @@ func (q *Queries) UpsertProfile(ctx context.Context, arg UpsertProfileParams) (I
 		&i.AmountSign,
 		&i.UpdatedAt,
 		&i.Encoding,
+		&i.GroupSeparator,
 	)
 	return i, err
 }

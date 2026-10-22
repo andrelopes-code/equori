@@ -211,5 +211,5 @@ func date(s string) (time.Time, error) {
 
 // amount converts an OFX amount ("-45.90", "-45,90", "+3000"); OFX has no thousands separator.
 func amount(s string, scale int) (int64, error) {
-	return domain.MinorUnits(strings.Replace(s, ",", ".", 1), '.', scale)
+	return domain.MinorUnits(strings.Replace(s, ",", ".", 1), '.', ',', scale)
 }
