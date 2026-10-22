@@ -42,7 +42,7 @@ func (r *lineReader) findNear(idx handleIndex) []nearWord {
 		}
 		// Map order is random; the choices follow the vocabulary.
 		slices.Sort(accounts)
-		destination := i > 0 && r.words[i-1].free() && slices.Contains(destinationWords, r.words[i-1].norm)
+		destination := i > 0 && r.words[i-1].free() && slices.Contains(r.vocabulary.Lexicon.Destination, r.words[i-1].norm)
 		out = append(out, nearWord{at: i, accounts: accounts, destination: destination})
 	}
 	return out

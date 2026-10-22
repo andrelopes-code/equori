@@ -6,16 +6,6 @@ import (
 	"time"
 )
 
-var daysBack = map[string]int{"hoje": 0, "today": 0, "ontem": 1, "yesterday": 1, "anteontem": 2}
-
-var weekdays = map[string]time.Weekday{
-	"domingo": time.Sunday, "segunda": time.Monday, "segunda-feira": time.Monday, "terca": time.Tuesday,
-	"terca-feira": time.Tuesday, "quarta": time.Wednesday, "quarta-feira": time.Wednesday, "quinta": time.Thursday,
-	"quinta-feira": time.Thursday, "sexta": time.Friday, "sexta-feira": time.Friday, "sabado": time.Saturday,
-	"sunday": time.Sunday, "monday": time.Monday, "tuesday": time.Tuesday, "wednesday": time.Wednesday,
-	"thursday": time.Thursday, "friday": time.Friday, "saturday": time.Saturday,
-}
-
 var (
 	dayMonth  = regexp.MustCompile(`^([0-9]{1,2})/([0-9]{1,2})(?:/([0-9]{2}|[0-9]{4}))?$`)
 	isoDate   = regexp.MustCompile(`^([0-9]{4})-([0-9]{2})-([0-9]{2})$`)
@@ -30,12 +20,12 @@ type datePhrase struct {
 }
 
 // readDate reads the date phrase of A109 that starts at free word i; today is a UTC midnight.
-func readDate(ws []word, i int, today time.Time) (datePhrase, bool) {
+func readDate(ws []word, i int, today time.Time, lex Lexicon) (datePhrase, bool) {
 	n := ws[i].norm
-	if back, ok := daysBack[n]; ok {
+	if back, ok := lex.DaysBack[n]; ok {
 		return datePhrase{date: today.AddDate(0, 0, -back), valid: true, words: 1}, true
 	}
-	if wd, ok := weekdays[n]; ok {
+	if wd, ok := lex.Weekdays[n]; ok {
 		back := (int(today.Weekday()) - int(wd) + 7) % 7
 		return datePhrase{date: today.AddDate(0, 0, -back), valid: true, words: 1}, true
 	}

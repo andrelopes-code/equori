@@ -2,7 +2,6 @@ package domain
 
 import (
 	"regexp"
-	"slices"
 	"strconv"
 	"strings"
 )
@@ -86,12 +85,12 @@ type amountPhrase struct {
 }
 
 // readAmount reads the amount phrase that starts at free word i.
-func readAmount(ws []word, i int) (amountPhrase, bool) {
+func readAmount(ws []word, i int, lex Lexicon) (amountPhrase, bool) {
 	var p amountPhrase
 	s := ws[i].norm
 	p.words = 1
 	s, p.sign = cutSign(s)
-	if rest, ok := strings.CutPrefix(s, "r$"); ok {
+	if rest, ok := lex.cutSymbol(s); ok {
 		s = rest
 		p.explicit = true
 		if p.sign == 0 {
@@ -109,26 +108,24 @@ func readAmount(ws []word, i int) (amountPhrase, bool) {
 		p.words = 2
 	}
 	factor := int64(1)
-	if rest, ok := strings.CutSuffix(s, "k"); ok {
-		s, factor, p.explicit = rest, 1000, true
+	if rest, f, ok := lex.cutSuffixFactor(s); ok {
+		s, factor, p.explicit = rest, f, true
 	}
 	v, ok := parseNumber(s)
 	if !ok {
 		return amountPhrase{}, false
 	}
-	next := func(words ...string) bool {
-		j := i + p.words
-		if j < len(ws) && ws[j].free() && slices.Contains(words, ws[j].norm) {
+	if j := i + p.words; factor == 1 && j < len(ws) && ws[j].free() {
+		if f, ok := lex.wordFactor(ws[j].norm); ok {
+			factor, p.explicit = f, true
 			p.words++
-			return true
 		}
-		return false
 	}
-	if factor == 1 && next("mil") {
-		factor, p.explicit = 1000, true
-	}
-	if next("reais", "real") {
-		p.explicit = true
+	if j := i + p.words; j < len(ws) && ws[j].free() {
+		if _, ok := lex.CurrencyWords[ws[j].norm]; ok {
+			p.explicit = true
+			p.words++
+		}
 	}
 	p.value = v.times(factor)
 	return p, true

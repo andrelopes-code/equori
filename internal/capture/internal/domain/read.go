@@ -173,11 +173,11 @@ func (r *lineReader) read(number int, text string, idx handleIndex) Line {
 	r.readTags()
 	mentions := r.findMentions(idx)
 	installments := r.scan(RoleInstallments, func(i int) (int, any, bool) {
-		p, ok := readInstallments(r.words, i)
+		p, ok := readInstallments(r.words, i, r.vocabulary.Lexicon)
 		return p.words, p, ok
 	})
 	dates := r.scan(RoleDate, func(i int) (int, any, bool) {
-		p, ok := readDate(r.words, i, r.today)
+		p, ok := readDate(r.words, i, r.today, r.vocabulary.Lexicon)
 		return p.words, p, ok
 	})
 	var amounts []amountAt
@@ -185,7 +185,7 @@ func (r *lineReader) read(number int, text string, idx handleIndex) Line {
 		if !r.words[i].free() {
 			continue
 		}
-		if p, ok := readAmount(r.words, i); ok {
+		if p, ok := readAmount(r.words, i, r.vocabulary.Lexicon); ok {
 			amounts = append(amounts, amountAt{p, i})
 			i += p.words - 1
 		}
@@ -261,7 +261,7 @@ func (r *lineReader) keywords() (transfer, income bool) {
 func (r *lineReader) methods() []method {
 	var named []method
 	for i, w := range r.words {
-		if m, ok := methodWords[w.norm]; ok && w.free() {
+		if m, ok := r.vocabulary.Lexicon.Methods[w.norm]; ok && w.free() {
 			named = append(named, m)
 			r.mark(i, i+1, RoleAccount)
 		}

@@ -23,32 +23,33 @@ type installmentPhrase struct {
 }
 
 // readInstallments reads the installment phrase that starts at free word i.
-func readInstallments(ws []word, i int) (installmentPhrase, bool) {
+func readInstallments(ws []word, i int, lex Lexicon) (installmentPhrase, bool) {
 	at := func(j int) string {
 		if j < len(ws) && ws[j].free() {
 			return ws[j].norm
 		}
 		return ""
 	}
-	if at(i) == "a" && at(i+1) == "vista" {
+	if lex.isLumpSum(at(i), at(i+1)) {
 		return installmentPhrase{valid: true, words: 2}, true
 	}
 	j := i
 	parcelled := false
-	switch at(j) {
-	case "parcelado", "parcelada":
-		parcelled = true
-		if j++; at(j) == "em" {
-			j++
-		}
-	case "em":
+	if k := slices.Index(lex.InstallmentLeads, at(j)); k >= 0 && at(j) != "" {
+		connective := lex.InstallmentLeads[len(lex.InstallmentLeads)-1]
 		j++
+		if at(j-1) != connective {
+			parcelled = true
+			if at(j) == connective {
+				j++
+			}
+		}
 	}
 	n, size := 0, 0
 	switch {
 	case timesWord.MatchString(at(j)):
 		n, size = atoi(timesWord.FindStringSubmatch(at(j))[1]), 1
-	case countNumber.MatchString(at(j)) && slices.Contains([]string{"x", "vezes", "parcelas"}, at(j+1)):
+	case countNumber.MatchString(at(j)) && slices.Contains(lex.CountWords, at(j+1)):
 		n, size = atoi(at(j)), 2
 	case countNumber.MatchString(at(j)) && parcelled:
 		n, size = atoi(at(j)), 1
@@ -59,8 +60,8 @@ func readInstallments(ws []word, i int) (installmentPhrase, bool) {
 	if n == 1 {
 		p.count = 0
 	}
-	if end := j + size; at(end) == "de" && at(end+1) != "" {
-		if each, ok := readAmount(ws, end+1); ok {
+	if end := j + size; slices.Contains(lex.Of, at(end)) && at(end+1) != "" {
+		if each, ok := readAmount(ws, end+1, lex); ok {
 			p.each = &each
 			p.words += 1 + each.words
 		}

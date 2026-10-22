@@ -25,6 +25,8 @@ type Vocabulary struct {
 	Accounts []Account
 	// Base is the currency of a line without an account.
 	Base money.Currency
+	// Lexicon holds the words the line is read with.
+	Lexicon Lexicon
 }
 
 func (v Vocabulary) account(id uuid.UUID) (Account, bool) {
@@ -56,11 +58,6 @@ func indexHandles(accounts []Account) handleIndex {
 	return idx
 }
 
-var (
-	destinationWords = []string{"para", "pra", "pro", "p/", "->", "→", "to"}
-	sourceWords      = []string{"de", "do", "da", "from"}
-)
-
 // mention is a handle found in a line, with the direction word before it.
 type mention struct {
 	accounts            []int
@@ -79,9 +76,9 @@ func (r *lineReader) findMentions(idx handleIndex) []mention {
 				first := i
 				if i > 0 && ws[i-1].free() {
 					switch {
-					case slices.Contains(destinationWords, ws[i-1].norm):
+					case slices.Contains(r.vocabulary.Lexicon.Destination, ws[i-1].norm):
 						m.destination, first = true, i-1
-					case slices.Contains(sourceWords, ws[i-1].norm):
+					case slices.Contains(r.vocabulary.Lexicon.Source, ws[i-1].norm):
 						m.source, first = true, i-1
 					}
 				}
@@ -119,13 +116,6 @@ const (
 	// methodCard is "cartão": credit, unless another method word names the group.
 	methodCard method = "card"
 )
-
-var methodWords = map[string]method{
-	"credito": methodCredit, "credit": methodCredit,
-	"debito": methodDebit, "debit": methodDebit, "pix": methodDebit, "ted": methodDebit,
-	"dinheiro": methodCash, "especie": methodCash, "cash": methodCash,
-	"cartao": methodCard, "card": methodCard,
-}
 
 func (m method) admits(a Account) bool {
 	switch m {

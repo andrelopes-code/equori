@@ -22,7 +22,7 @@ var (
 )
 
 func vocabulary(extra ...Account) Vocabulary {
-	return Vocabulary{Base: "BRL", Accounts: append([]Account{
+	return Vocabulary{Base: "BRL", Lexicon: Merge(Portuguese(), English()), Accounts: append([]Account{
 		{ID: checking, Class: "asset", Kind: "checking", Currency: "BRL", Handles: []string{"Nubank checking", "Nubank"}},
 		{ID: visa, Class: "liability", Kind: "credit_card", Currency: "BRL", Handles: []string{"Itaú Visa", "Itaú", "final 1234", "*1234"}},
 		{ID: wallet, Class: "asset", Kind: "cash", Currency: "BRL", Handles: []string{"Wallet"}},

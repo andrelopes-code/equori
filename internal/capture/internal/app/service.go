@@ -160,7 +160,7 @@ func vocabulary(accounts []Account, base money.Currency) domain.Vocabulary {
 	for _, a := range accounts {
 		parents[a.ParentID] = true
 	}
-	v := domain.Vocabulary{Base: base}
+	v := domain.Vocabulary{Base: base, Lexicon: domain.Merge(domain.Portuguese(), domain.English())}
 	for _, a := range accounts {
 		if a.Closed || a.SystemRole != "" || parents[a.ID] || (a.Class != "asset" && a.Class != "liability") {
 			continue
