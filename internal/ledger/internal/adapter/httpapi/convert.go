@@ -244,7 +244,11 @@ func toTransactionAPI(t domain.Transaction) Transaction {
 }
 
 func toInstitutionAPI(i app.Institution) Institution {
-	return Institution{Id: i.ID, Name: i.Name, Code: apiOptString(i.Code), Ispb: apiOptString(i.ISPB)}
+	out := Institution{Id: i.ID, Name: i.Name, Code: apiOptString(i.Code)}
+	if i.Identifier != (app.InstitutionIdentifier{}) {
+		out.Identifier = &InstitutionIdentifier{Scheme: i.Identifier.Scheme, Identifier: i.Identifier.Value}
+	}
+	return out
 }
 
 func toPayeeAPI(p app.Payee) Payee { return Payee{Id: p.ID, Name: p.Name} }

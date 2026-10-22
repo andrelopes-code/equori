@@ -181,11 +181,25 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
-  /institutions/{id}/ispb:
+  /institution-identifier-schemes:
+    get:
+      tags: [ledger]
+      operationId: listInstitutionIdentifierSchemes
+      summary: List the institution identifier schemes and their patterns.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstitutionIdentifierSchemeList"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /institutions/{id}/identifier:
     put:
       tags: [ledger]
-      operationId: setInstitutionISPB
-      summary: Set or clear the ISPB of an institution, the key of its logo (ADR 013).
+      operationId: setInstitutionIdentifier
+      summary: Set or clear the identifier of an institution; the br_ispb identifier keys its logo (ADR 013).
       parameters:
         - $ref: "#/components/parameters/ID"
       requestBody:
@@ -193,7 +207,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/InstitutionISPB"
+              $ref: "#/components/schemas/InstitutionIdentifierInput"
       responses:
         "200":
           description: OK.
@@ -5687,20 +5701,52 @@ components:
           maxLength: 120
         code:
           type: string
-        ispb:
-          type: string
-          pattern: "^[0-9]{8}$"
-          description: Identifier of the institution in the Brazilian payment system, unique per user (ADR 013).
-    InstitutionISPB:
+        identifier:
+          $ref: "#/components/schemas/InstitutionIdentifier"
+    InstitutionIdentifier:
       type: object
       additionalProperties: false
-      required: [ispb]
-      description: null clears the ISPB.
+      required: [scheme, identifier]
+      description: Identifier of the institution in a scheme, unique per user and scheme (ADR 013).
       properties:
-        ispb:
+        scheme:
           type: string
-          pattern: "^[0-9]{8}$"
+          pattern: "^[a-z0-9_]{2,40}$"
+        identifier:
+          type: string
+          minLength: 1
+          maxLength: 40
+    InstitutionIdentifierInput:
+      type: object
+      additionalProperties: false
+      required: [scheme, identifier]
+      description: Both null clear the identifier.
+      properties:
+        scheme:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
           nullable: true
+        identifier:
+          type: string
+          minLength: 1
+          maxLength: 40
+          nullable: true
+    InstitutionIdentifierScheme:
+      type: object
+      required: [id, pattern]
+      properties:
+        id:
+          type: string
+        pattern:
+          type: string
+    InstitutionIdentifierSchemeList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/InstitutionIdentifierScheme"
     Institution:
       allOf:
         - $ref: "#/components/schemas/InstitutionInput"

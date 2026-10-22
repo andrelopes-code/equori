@@ -1557,23 +1557,41 @@ type Institution struct {
 	Code *string            `json:"code,omitempty"`
 	Id   openapi_types.UUID `json:"id"`
 
-	// Ispb Identifier of the institution in the Brazilian payment system, unique per user (ADR 013).
-	Ispb *string `json:"ispb,omitempty"`
-	Name string  `json:"name"`
+	// Identifier Identifier of the institution in a scheme, unique per user and scheme (ADR 013).
+	Identifier *InstitutionIdentifier `json:"identifier,omitempty"`
+	Name       string                 `json:"name"`
 }
 
-// InstitutionISPB null clears the ISPB.
-type InstitutionISPB struct {
-	Ispb *string `json:"ispb"`
+// InstitutionIdentifier Identifier of the institution in a scheme, unique per user and scheme (ADR 013).
+type InstitutionIdentifier struct {
+	Identifier string `json:"identifier"`
+	Scheme     string `json:"scheme"`
+}
+
+// InstitutionIdentifierInput Both null clear the identifier.
+type InstitutionIdentifierInput struct {
+	Identifier *string `json:"identifier"`
+	Scheme     *string `json:"scheme"`
+}
+
+// InstitutionIdentifierScheme defines model for InstitutionIdentifierScheme.
+type InstitutionIdentifierScheme struct {
+	Id      string `json:"id"`
+	Pattern string `json:"pattern"`
+}
+
+// InstitutionIdentifierSchemeList defines model for InstitutionIdentifierSchemeList.
+type InstitutionIdentifierSchemeList struct {
+	Items []InstitutionIdentifierScheme `json:"items"`
 }
 
 // InstitutionInput defines model for InstitutionInput.
 type InstitutionInput struct {
 	Code *string `json:"code,omitempty"`
 
-	// Ispb Identifier of the institution in the Brazilian payment system, unique per user (ADR 013).
-	Ispb *string `json:"ispb,omitempty"`
-	Name string  `json:"name"`
+	// Identifier Identifier of the institution in a scheme, unique per user and scheme (ADR 013).
+	Identifier *InstitutionIdentifier `json:"identifier,omitempty"`
+	Name       string                 `json:"name"`
 }
 
 // InstitutionList defines model for InstitutionList.
@@ -2296,8 +2314,8 @@ type CreateInstallmentPurchaseJSONRequestBody = InstallmentPurchaseInput
 // CreateInstitutionJSONRequestBody defines body for CreateInstitution for application/json ContentType.
 type CreateInstitutionJSONRequestBody = InstitutionInput
 
-// SetInstitutionISPBJSONRequestBody defines body for SetInstitutionISPB for application/json ContentType.
-type SetInstitutionISPBJSONRequestBody = InstitutionISPB
+// SetInstitutionIdentifierJSONRequestBody defines body for SetInstitutionIdentifier for application/json ContentType.
+type SetInstitutionIdentifierJSONRequestBody = InstitutionIdentifierInput
 
 // RecordInvestmentIncomeJSONRequestBody defines body for RecordInvestmentIncome for application/json ContentType.
 type RecordInvestmentIncomeJSONRequestBody = InvestmentIncomeInput
@@ -2469,15 +2487,18 @@ type ServerInterface interface {
 	// CreateInstallmentPurchase Record a card purchase in installments.
 	// (POST /installment-purchases)
 	CreateInstallmentPurchase(w http.ResponseWriter, r *http.Request)
+	// ListInstitutionIdentifierSchemes List the institution identifier schemes and their patterns.
+	// (GET /institution-identifier-schemes)
+	ListInstitutionIdentifierSchemes(w http.ResponseWriter, r *http.Request)
 	// ListInstitutions List institutions.
 	// (GET /institutions)
 	ListInstitutions(w http.ResponseWriter, r *http.Request, params ListInstitutionsParams)
 	// CreateInstitution Create an institution.
 	// (POST /institutions)
 	CreateInstitution(w http.ResponseWriter, r *http.Request)
-	// SetInstitutionISPB Set or clear the ISPB of an institution, the key of its logo (ADR 013).
-	// (PUT /institutions/{id}/ispb)
-	SetInstitutionISPB(w http.ResponseWriter, r *http.Request, id ID)
+	// SetInstitutionIdentifier Set or clear the identifier of an institution; the br_ispb identifier keys its logo (ADR 013).
+	// (PUT /institutions/{id}/identifier)
+	SetInstitutionIdentifier(w http.ResponseWriter, r *http.Request, id ID)
 	// RecordInvestmentIncome Record income paid on a security into cash of the same brokerage (P8 amendment A70).
 	// (POST /investment-income)
 	RecordInvestmentIncome(w http.ResponseWriter, r *http.Request)
@@ -3648,6 +3669,20 @@ func (siw *ServerInterfaceWrapper) CreateInstallmentPurchase(w http.ResponseWrit
 	handler.ServeHTTP(w, r)
 }
 
+// ListInstitutionIdentifierSchemes operation middleware
+func (siw *ServerInterfaceWrapper) ListInstitutionIdentifierSchemes(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListInstitutionIdentifierSchemes(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListInstitutions operation middleware
 func (siw *ServerInterfaceWrapper) ListInstitutions(w http.ResponseWriter, r *http.Request) {
 
@@ -3708,8 +3743,8 @@ func (siw *ServerInterfaceWrapper) CreateInstitution(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
-// SetInstitutionISPB operation middleware
-func (siw *ServerInterfaceWrapper) SetInstitutionISPB(w http.ResponseWriter, r *http.Request) {
+// SetInstitutionIdentifier operation middleware
+func (siw *ServerInterfaceWrapper) SetInstitutionIdentifier(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	_ = err
@@ -3724,7 +3759,7 @@ func (siw *ServerInterfaceWrapper) SetInstitutionISPB(w http.ResponseWriter, r *
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SetInstitutionISPB(w, r, id)
+		siw.Handler.SetInstitutionIdentifier(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4800,7 +4835,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/settings", wrapper.UpdateSettings)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/institutions", wrapper.ListInstitutions)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/institutions", wrapper.CreateInstitution)
-	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/institutions/{id}/ispb", wrapper.SetInstitutionISPB)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/institution-identifier-schemes", wrapper.ListInstitutionIdentifierSchemes)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/institutions/{id}/identifier", wrapper.SetInstitutionIdentifier)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/payees", wrapper.ListPayees)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/payees", wrapper.CreatePayee)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/payees/{id}", wrapper.RenamePayee)
@@ -7150,6 +7186,43 @@ func (response CreateInstallmentPurchase422ApplicationProblemPlusJSONResponse) V
 	return err
 }
 
+type ListInstitutionIdentifierSchemesRequestObject struct {
+}
+
+type ListInstitutionIdentifierSchemesResponseObject interface {
+	VisitListInstitutionIdentifierSchemesResponse(w http.ResponseWriter) error
+}
+
+type ListInstitutionIdentifierSchemes200JSONResponse InstitutionIdentifierSchemeList
+
+func (response ListInstitutionIdentifierSchemes200JSONResponse) VisitListInstitutionIdentifierSchemesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListInstitutionIdentifierSchemes401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListInstitutionIdentifierSchemes401ApplicationProblemPlusJSONResponse) VisitListInstitutionIdentifierSchemesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListInstitutionsRequestObject struct {
 	Params ListInstitutionsParams
 }
@@ -7240,18 +7313,18 @@ func (response CreateInstitution422ApplicationProblemPlusJSONResponse) VisitCrea
 	return err
 }
 
-type SetInstitutionISPBRequestObject struct {
+type SetInstitutionIdentifierRequestObject struct {
 	Id   ID `json:"id"`
-	Body *SetInstitutionISPBJSONRequestBody
+	Body *SetInstitutionIdentifierJSONRequestBody
 }
 
-type SetInstitutionISPBResponseObject interface {
-	VisitSetInstitutionISPBResponse(w http.ResponseWriter) error
+type SetInstitutionIdentifierResponseObject interface {
+	VisitSetInstitutionIdentifierResponse(w http.ResponseWriter) error
 }
 
-type SetInstitutionISPB200JSONResponse Institution
+type SetInstitutionIdentifier200JSONResponse Institution
 
-func (response SetInstitutionISPB200JSONResponse) VisitSetInstitutionISPBResponse(w http.ResponseWriter) error {
+func (response SetInstitutionIdentifier200JSONResponse) VisitSetInstitutionIdentifierResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -7263,11 +7336,11 @@ func (response SetInstitutionISPB200JSONResponse) VisitSetInstitutionISPBRespons
 	return err
 }
 
-type SetInstitutionISPB401ApplicationProblemPlusJSONResponse struct {
+type SetInstitutionIdentifier401ApplicationProblemPlusJSONResponse struct {
 	ProblemApplicationProblemPlusJSONResponse
 }
 
-func (response SetInstitutionISPB401ApplicationProblemPlusJSONResponse) VisitSetInstitutionISPBResponse(w http.ResponseWriter) error {
+func (response SetInstitutionIdentifier401ApplicationProblemPlusJSONResponse) VisitSetInstitutionIdentifierResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -7279,9 +7352,9 @@ func (response SetInstitutionISPB401ApplicationProblemPlusJSONResponse) VisitSet
 	return err
 }
 
-type SetInstitutionISPB404ApplicationProblemPlusJSONResponse Problem
+type SetInstitutionIdentifier404ApplicationProblemPlusJSONResponse Problem
 
-func (response SetInstitutionISPB404ApplicationProblemPlusJSONResponse) VisitSetInstitutionISPBResponse(w http.ResponseWriter) error {
+func (response SetInstitutionIdentifier404ApplicationProblemPlusJSONResponse) VisitSetInstitutionIdentifierResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -7293,9 +7366,9 @@ func (response SetInstitutionISPB404ApplicationProblemPlusJSONResponse) VisitSet
 	return err
 }
 
-type SetInstitutionISPB422ApplicationProblemPlusJSONResponse Problem
+type SetInstitutionIdentifier422ApplicationProblemPlusJSONResponse Problem
 
-func (response SetInstitutionISPB422ApplicationProblemPlusJSONResponse) VisitSetInstitutionISPBResponse(w http.ResponseWriter) error {
+func (response SetInstitutionIdentifier422ApplicationProblemPlusJSONResponse) VisitSetInstitutionIdentifierResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -9594,15 +9667,18 @@ type StrictServerInterface interface {
 	// CreateInstallmentPurchase Record a card purchase in installments.
 	// (POST /installment-purchases)
 	CreateInstallmentPurchase(ctx context.Context, request CreateInstallmentPurchaseRequestObject) (CreateInstallmentPurchaseResponseObject, error)
+	// ListInstitutionIdentifierSchemes List the institution identifier schemes and their patterns.
+	// (GET /institution-identifier-schemes)
+	ListInstitutionIdentifierSchemes(ctx context.Context, request ListInstitutionIdentifierSchemesRequestObject) (ListInstitutionIdentifierSchemesResponseObject, error)
 	// ListInstitutions List institutions.
 	// (GET /institutions)
 	ListInstitutions(ctx context.Context, request ListInstitutionsRequestObject) (ListInstitutionsResponseObject, error)
 	// CreateInstitution Create an institution.
 	// (POST /institutions)
 	CreateInstitution(ctx context.Context, request CreateInstitutionRequestObject) (CreateInstitutionResponseObject, error)
-	// SetInstitutionISPB Set or clear the ISPB of an institution, the key of its logo (ADR 013).
-	// (PUT /institutions/{id}/ispb)
-	SetInstitutionISPB(ctx context.Context, request SetInstitutionISPBRequestObject) (SetInstitutionISPBResponseObject, error)
+	// SetInstitutionIdentifier Set or clear the identifier of an institution; the br_ispb identifier keys its logo (ADR 013).
+	// (PUT /institutions/{id}/identifier)
+	SetInstitutionIdentifier(ctx context.Context, request SetInstitutionIdentifierRequestObject) (SetInstitutionIdentifierResponseObject, error)
 	// RecordInvestmentIncome Record income paid on a security into cash of the same brokerage (P8 amendment A70).
 	// (POST /investment-income)
 	RecordInvestmentIncome(ctx context.Context, request RecordInvestmentIncomeRequestObject) (RecordInvestmentIncomeResponseObject, error)
@@ -10783,6 +10859,30 @@ func (sh *strictHandler) CreateInstallmentPurchase(w http.ResponseWriter, r *htt
 	}
 }
 
+// ListInstitutionIdentifierSchemes operation middleware
+func (sh *strictHandler) ListInstitutionIdentifierSchemes(w http.ResponseWriter, r *http.Request) {
+	var request ListInstitutionIdentifierSchemesRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListInstitutionIdentifierSchemes(ctx, request.(ListInstitutionIdentifierSchemesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListInstitutionIdentifierSchemes")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListInstitutionIdentifierSchemesResponseObject); ok {
+		if err := validResponse.VisitListInstitutionIdentifierSchemesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListInstitutions operation middleware
 func (sh *strictHandler) ListInstitutions(w http.ResponseWriter, r *http.Request, params ListInstitutionsParams) {
 	var request ListInstitutionsRequestObject
@@ -10840,13 +10940,13 @@ func (sh *strictHandler) CreateInstitution(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-// SetInstitutionISPB operation middleware
-func (sh *strictHandler) SetInstitutionISPB(w http.ResponseWriter, r *http.Request, id ID) {
-	var request SetInstitutionISPBRequestObject
+// SetInstitutionIdentifier operation middleware
+func (sh *strictHandler) SetInstitutionIdentifier(w http.ResponseWriter, r *http.Request, id ID) {
+	var request SetInstitutionIdentifierRequestObject
 
 	request.Id = id
 
-	var body SetInstitutionISPBJSONRequestBody
+	var body SetInstitutionIdentifierJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 		return
@@ -10854,18 +10954,18 @@ func (sh *strictHandler) SetInstitutionISPB(w http.ResponseWriter, r *http.Reque
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.SetInstitutionISPB(ctx, request.(SetInstitutionISPBRequestObject))
+		return sh.ssi.SetInstitutionIdentifier(ctx, request.(SetInstitutionIdentifierRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "SetInstitutionISPB")
+		handler = middleware(handler, "SetInstitutionIdentifier")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(SetInstitutionISPBResponseObject); ok {
-		if err := validResponse.VisitSetInstitutionISPBResponse(w); err != nil {
+	} else if validResponse, ok := response.(SetInstitutionIdentifierResponseObject); ok {
+		if err := validResponse.VisitSetInstitutionIdentifierResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

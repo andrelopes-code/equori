@@ -27,6 +27,15 @@ export const logoIndexQuery = queryOptions({
   staleTime: Infinity,
 });
 
+export function ispbOf(
+  institution:
+    { identifier?: { scheme: string; identifier: string } } | undefined,
+): string | undefined {
+  return institution?.identifier?.scheme === "br_ispb"
+    ? institution.identifier.identifier
+    : undefined;
+}
+
 export function logoURL(
   index: LogoIndex,
   ispb: string | undefined,

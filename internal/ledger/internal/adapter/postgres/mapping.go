@@ -72,7 +72,7 @@ func originalInstrument(m *money.Money) *string {
 }
 
 func toInstitution(row LedgerInstitution) app.Institution {
-	return app.Institution{ID: row.ID, UserID: row.UserID, Name: row.Name, Code: deref(row.Code), ISPB: deref(row.Ispb)}
+	return app.Institution{ID: row.ID, UserID: row.UserID, Name: row.Name, Code: deref(row.Code), Identifier: app.InstitutionIdentifier{Scheme: deref(row.IdentifierScheme), Value: deref(row.Identifier)}}
 }
 
 func toPayee(row LedgerPayee) app.Payee {

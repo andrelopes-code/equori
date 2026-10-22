@@ -11,6 +11,7 @@ import {
   AccountCard,
   accountCardColor,
   logoIndexQuery,
+  ispbOf,
   logoURL,
 } from "@/features/accounts";
 import { flowsQuery } from "@/features/cards/api";
@@ -87,7 +88,7 @@ export function CardTile({
       logo={
         index.data === undefined
           ? undefined
-          : logoURL(index.data, institution?.ispb)
+          : logoURL(index.data, ispbOf(institution))
       }
       currency={account.currency}
       scale={scale(account.currency)}

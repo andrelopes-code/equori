@@ -410,9 +410,12 @@ export function useSetInstitutionISPB() {
   return useApiMutation(
     async (api, { id, ispb }: { id: string; ispb: string | null }) =>
       unwrap(
-        await api.PUT("/institutions/{id}/ispb", {
+        await api.PUT("/institutions/{id}/identifier", {
           params: { path: { id } },
-          body: { ispb },
+          body:
+            ispb === null
+              ? { scheme: null, identifier: null }
+              : { scheme: "br_ispb", identifier: ispb },
         }),
       ),
   );

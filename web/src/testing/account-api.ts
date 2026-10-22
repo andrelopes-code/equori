@@ -113,7 +113,12 @@ export const accountFixtures = [
 ];
 
 export const institutionFixtures = [
-  { id: nubankID, name: "Nubank", code: "260", ispb: "18236120" },
+  {
+    id: nubankID,
+    name: "Nubank",
+    code: "260",
+    identifier: { scheme: "br_ispb", identifier: "18236120" },
+  },
   { id: itauID, name: "Itaú", code: "341" },
 ];
 

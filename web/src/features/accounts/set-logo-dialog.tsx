@@ -19,7 +19,11 @@ import type { components } from "@/api/schema.gen";
 import { useSetInstitutionISPB } from "@/features/accounts/api";
 import { catalogueEntries } from "@/features/accounts/institution-catalogue";
 import { catalogueSource } from "@/features/accounts/catalogue-search";
-import { logoIndexQuery, logoURL } from "@/features/accounts/institution-logo";
+import {
+  ispbOf,
+  logoIndexQuery,
+  logoURL,
+} from "@/features/accounts/institution-logo";
 import { useT } from "@/i18n/i18n-provider";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
@@ -42,7 +46,7 @@ export function SetLogoDialog({
   const formId = useId();
   const index = useQuery(logoIndexQuery);
   const save = useSetInstitutionISPB();
-  const [ispb, setISPB] = useState<string | null>(institution.ispb ?? null);
+  const [ispb, setISPB] = useState<string | null>(ispbOf(institution) ?? null);
   const [error, setError] = useState<string | null>(null);
   const change = useStableCallback((open: boolean) => {
     if (!open) onCancel();

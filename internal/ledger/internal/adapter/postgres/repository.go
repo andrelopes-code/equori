@@ -92,15 +92,15 @@ func (r *Repository) CountTransactions(ctx context.Context, userID int64) (int64
 }
 
 func (r *Repository) InsertInstitution(ctx context.Context, i app.Institution) (app.Institution, error) {
-	row, err := r.q.InsertInstitution(ctx, InsertInstitutionParams{UserID: i.UserID, Name: i.Name, Code: nullString(i.Code), Ispb: nullString(i.ISPB)})
+	row, err := r.q.InsertInstitution(ctx, InsertInstitutionParams{UserID: i.UserID, Name: i.Name, Code: nullString(i.Code), IdentifierScheme: nullString(i.Identifier.Scheme), Identifier: nullString(i.Identifier.Value)})
 	if err != nil {
 		return app.Institution{}, duplicateInstitution(err)
 	}
 	return toInstitution(row), nil
 }
 
-func (r *Repository) SetInstitutionISPB(ctx context.Context, userID int64, id uuid.UUID, ispb string) (app.Institution, error) {
-	row, err := r.q.SetInstitutionISPB(ctx, SetInstitutionISPBParams{UserID: userID, ID: id, Ispb: nullString(ispb)})
+func (r *Repository) SetInstitutionIdentifier(ctx context.Context, userID int64, id uuid.UUID, ident app.InstitutionIdentifier) (app.Institution, error) {
+	row, err := r.q.SetInstitutionIdentifier(ctx, SetInstitutionIdentifierParams{UserID: userID, ID: id, IdentifierScheme: nullString(ident.Scheme), Identifier: nullString(ident.Value)})
 	if err != nil {
 		return app.Institution{}, duplicateInstitution(notFound(err))
 	}
@@ -109,8 +109,8 @@ func (r *Repository) SetInstitutionISPB(ctx context.Context, userID int64, id uu
 
 // duplicateInstitution names the field of the unique index an institution violated.
 func duplicateInstitution(err error) error {
-	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.ConstraintName == "ledger_institution_ispb_key" {
-		return duplicate(err, "ispb")
+	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.ConstraintName == "ledger_institution_identifier_key" {
+		return duplicate(err, "identifier")
 	}
 	return duplicate(err, "name")
 }
@@ -126,7 +126,7 @@ func (r *Repository) ListInstitutions(ctx context.Context, userID int64, p page.
 	}
 	items, next := pageOf(rows, p.Limit,
 		func(row ListInstitutionsRow) app.Institution {
-			return toInstitution(LedgerInstitution{ID: row.ID, UserID: row.UserID, Name: row.Name, Code: row.Code, Ispb: row.Ispb})
+			return toInstitution(LedgerInstitution{ID: row.ID, UserID: row.UserID, Name: row.Name, Code: row.Code, IdentifierScheme: row.IdentifierScheme, Identifier: row.Identifier})
 		},
 		func(row ListInstitutionsRow) app.InstitutionKey {
 			return app.InstitutionKey{Name: row.SortName, ID: row.ID}

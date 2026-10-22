@@ -20,8 +20,8 @@ function api(sent: Sent[]) {
   };
   return fakeApi(
     accountRoutes({
-      [`PUT /api/v1/institutions/${itauID}/ispb`]: record("PUT itau"),
-      [`PUT /api/v1/institutions/${nubankID}/ispb`]: record("PUT nubank"),
+      [`PUT /api/v1/institutions/${itauID}/identifier`]: record("PUT itau"),
+      [`PUT /api/v1/institutions/${nubankID}/identifier`]: record("PUT nubank"),
       "POST /api/v1/institutions": record("POST"),
     }),
   );
@@ -71,7 +71,12 @@ describe("InstitutionsPage", () => {
       within(dialog).getByRole("button", { name: catalogEn["detail.save"] }),
     );
     await waitFor(() => {
-      expect(sent).toEqual([{ route: "PUT itau", body: { ispb: "60701190" } }]);
+      expect(sent).toEqual([
+        {
+          route: "PUT itau",
+          body: { scheme: "br_ispb", identifier: "60701190" },
+        },
+      ]);
     });
   });
 
@@ -85,7 +90,9 @@ describe("InstitutionsPage", () => {
       }),
     );
     await waitFor(() => {
-      expect(sent).toEqual([{ route: "PUT nubank", body: { ispb: null } }]);
+      expect(sent).toEqual([
+        { route: "PUT nubank", body: { scheme: null, identifier: null } },
+      ]);
     });
   });
 
@@ -107,7 +114,11 @@ describe("InstitutionsPage", () => {
       expect(sent).toEqual([
         {
           route: "POST",
-          body: { name: "Banco do Brasil", code: "001", ispb: "00000000" },
+          body: {
+            name: "Banco do Brasil",
+            code: "001",
+            identifier: { scheme: "br_ispb", identifier: "00000000" },
+          },
         },
       ]);
     });

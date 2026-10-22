@@ -76,7 +76,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/institutions/{id}/ispb": {
+    "/institution-identifier-schemes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the institution identifier schemes and their patterns. */
+        get: operations["listInstitutionIdentifierSchemes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/institutions/{id}/identifier": {
         parameters: {
             query?: never;
             header?: never;
@@ -84,8 +101,8 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Set or clear the ISPB of an institution, the key of its logo (ADR 013). */
-        put: operations["setInstitutionISPB"];
+        /** Set or clear the identifier of an institution; the br_ispb identifier keys its logo (ADR 013). */
+        put: operations["setInstitutionIdentifier"];
         post?: never;
         delete?: never;
         options?: never;
@@ -3168,12 +3185,24 @@ export interface components {
         InstitutionInput: {
             name: string;
             code?: string;
-            /** @description Identifier of the institution in the Brazilian payment system, unique per user (ADR 013). */
-            ispb?: string;
+            identifier?: components["schemas"]["InstitutionIdentifier"];
         };
-        /** @description null clears the ISPB. */
-        InstitutionISPB: {
-            ispb: string | null;
+        /** @description Identifier of the institution in a scheme, unique per user and scheme (ADR 013). */
+        InstitutionIdentifier: {
+            scheme: string;
+            identifier: string;
+        };
+        /** @description Both null clear the identifier. */
+        InstitutionIdentifierInput: {
+            scheme: string | null;
+            identifier: string | null;
+        };
+        InstitutionIdentifierScheme: {
+            id: string;
+            pattern: string;
+        };
+        InstitutionIdentifierSchemeList: {
+            items: components["schemas"]["InstitutionIdentifierScheme"][];
         };
         Institution: components["schemas"]["InstitutionInput"] & {
             /** Format: uuid */
@@ -4164,7 +4193,28 @@ export interface operations {
             422: components["responses"]["Problem"];
         };
     };
-    setInstitutionISPB: {
+    listInstitutionIdentifierSchemes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstitutionIdentifierSchemeList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    setInstitutionIdentifier: {
         parameters: {
             query?: never;
             header?: never;
@@ -4175,7 +4225,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["InstitutionISPB"];
+                "application/json": components["schemas"]["InstitutionIdentifierInput"];
             };
         };
         responses: {

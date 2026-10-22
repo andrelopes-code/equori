@@ -28,7 +28,11 @@ import type { components } from "@/api/schema.gen";
 import { AccountMark } from "@/features/accounts/account-mark";
 import { HeaderSlot } from "@/features/accounts/header-slot";
 import { accountsQuery, useSetInstitutionISPB } from "@/features/accounts/api";
-import { logoIndexQuery, logoURL } from "@/features/accounts/institution-logo";
+import {
+  ispbOf,
+  logoIndexQuery,
+  logoURL,
+} from "@/features/accounts/institution-logo";
 import { NewInstitutionDialog } from "@/features/accounts/new-institution-dialog";
 import { SetLogoDialog } from "@/features/accounts/set-logo-dialog";
 import { institutionsQuery } from "@/features/setup";
@@ -118,7 +122,7 @@ export function InstitutionsPage() {
                     const logo =
                       index.data === undefined
                         ? undefined
-                        : logoURL(index.data, institution.ispb);
+                        : logoURL(index.data, ispbOf(institution));
                     return (
                       <TableRow key={institution.id} value={institution.id}>
                         <TableRowHeader>
@@ -136,7 +140,7 @@ export function InstitutionsPage() {
                         </TableRowHeader>
                         <TableCell numeric>{institution.code ?? ""}</TableCell>
                         <TableCell>
-                          {institution.ispb ?? (
+                          {ispbOf(institution) ?? (
                             <Text size="sm" tone="muted">
                               {t("institutions.noLogo")}
                             </Text>
@@ -172,7 +176,7 @@ export function InstitutionsPage() {
                               >
                                 {t("institutions.setLogo")}
                               </MenuItem>
-                              {institution.ispb !== undefined && (
+                              {ispbOf(institution) !== undefined && (
                                 <MenuItem
                                   onSelect={() => {
                                     setISPB

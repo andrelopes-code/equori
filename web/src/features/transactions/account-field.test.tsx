@@ -84,7 +84,13 @@ const routes = {
     }),
   "GET /api/v1/institutions": () =>
     json(200, {
-      items: [{ id: itauInstitution, name: "Itaú", ispb: "60701190" }],
+      items: [
+        {
+          id: itauInstitution,
+          name: "Itaú",
+          identifier: { scheme: "br_ispb", identifier: "60701190" },
+        },
+      ],
     }),
   "GET /api/v1/goals": () =>
     json(200, {

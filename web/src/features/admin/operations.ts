@@ -624,10 +624,15 @@ export const operations: Record<GroupKey, readonly Operation[]> = {
       body: () => ({ name: "Bank", code: "001" }),
     },
     {
-      id: "setInstitutionISPB",
+      id: "setInstitutionIdentifier",
       method: "PUT",
-      path: "/institutions/{id}/ispb",
-      body: () => ({ ispb: "00000000" }),
+      path: "/institutions/{id}/identifier",
+      body: () => ({ scheme: "br_ispb", identifier: "00000000" }),
+    },
+    {
+      id: "listInstitutionIdentifierSchemes",
+      method: "GET",
+      path: "/institution-identifier-schemes",
     },
     { id: "listPayees", method: "GET", path: "/payees", query: page },
     {

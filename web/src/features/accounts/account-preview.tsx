@@ -15,7 +15,11 @@ import { AccountMark } from "@/features/accounts/account-mark";
 import { shapeOf } from "@/features/accounts/account-shape";
 import { billingPreview } from "@/features/accounts/billing-preview";
 import { billingRuleBody } from "@/features/accounts/create-account-steps";
-import { logoIndexQuery, logoURL } from "@/features/accounts/institution-logo";
+import {
+  ispbOf,
+  logoIndexQuery,
+  logoURL,
+} from "@/features/accounts/institution-logo";
 import { institutionsQuery } from "@/features/setup";
 import { formatDate, formatMoney, formatReferenceMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -42,7 +46,7 @@ export function AccountPreview({
   const logo =
     index.data === undefined
       ? undefined
-      : logoURL(index.data, institution?.ispb);
+      : logoURL(index.data, ispbOf(institution));
   const group =
     kindGroups.find((g) => g.kinds.includes(kind))?.key ?? "accounts";
   const card = draft.card;

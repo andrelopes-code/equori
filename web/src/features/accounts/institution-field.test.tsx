@@ -85,7 +85,11 @@ describe("InstitutionField", () => {
       expect(picked).toBe("new-bb");
     });
     expect(bodies).toEqual([
-      { name: "Banco do Brasil", code: "001", ispb: "00000000" },
+      {
+        name: "Banco do Brasil",
+        code: "001",
+        identifier: { scheme: "br_ispb", identifier: "00000000" },
+      },
     ]);
   });
 

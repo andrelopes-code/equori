@@ -101,13 +101,31 @@ func (s *Service) CreateInstitution(ctx context.Context, userID int64, i Institu
 	if i.Name == "" || len([]rune(i.Name)) > 120 {
 		return Institution{}, &domain.FieldError{Field: "name", Message: "must have 1 to 120 characters", Err: domain.ErrValidation}
 	}
+	if err := validateInstitutionIdentifier(i.Identifier); err != nil {
+		return Institution{}, err
+	}
 	i.UserID = userID
 	return s.repo.InsertInstitution(ctx, i)
 }
 
-// SetInstitutionISPB sets the ISPB of an institution, or clears it when ispb is empty (ADR 013).
-func (s *Service) SetInstitutionISPB(ctx context.Context, userID int64, id uuid.UUID, ispb string) (Institution, error) {
-	return s.repo.SetInstitutionISPB(ctx, userID, id, ispb)
+// SetInstitutionIdentifier sets the identifier of an institution, or clears it when ident is empty (ADR 013).
+func (s *Service) SetInstitutionIdentifier(ctx context.Context, userID int64, id uuid.UUID, ident InstitutionIdentifier) (Institution, error) {
+	if err := validateInstitutionIdentifier(ident); err != nil {
+		return Institution{}, err
+	}
+	return s.repo.SetInstitutionIdentifier(ctx, userID, id, ident)
+}
+
+// InstitutionIdentifierSchemes lists the schemes an institution identifier may use.
+func (s *Service) InstitutionIdentifierSchemes() []domain.IdentifierScheme {
+	return domain.IdentifierSchemes()
+}
+
+func validateInstitutionIdentifier(ident InstitutionIdentifier) error {
+	if ident == (InstitutionIdentifier{}) {
+		return nil
+	}
+	return domain.ValidateIdentifier(ident.Scheme, ident.Value)
 }
 
 func (s *Service) ListInstitutions(ctx context.Context, userID int64, p page.Request[InstitutionKey]) ([]Institution, *InstitutionKey, error) {

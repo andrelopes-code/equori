@@ -8,7 +8,11 @@ import type { components } from "@/api/schema.gen";
 import { catalogueEntries } from "@/features/accounts/institution-catalogue";
 import { catalogueSource } from "@/features/accounts/catalogue-search";
 import { InstitutionOption } from "@/features/accounts/institution-option";
-import { logoIndexQuery, logoURL } from "@/features/accounts/institution-logo";
+import {
+  ispbOf,
+  logoIndexQuery,
+  logoURL,
+} from "@/features/accounts/institution-logo";
 import { institutionsQuery, useCreateInstitution } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 
@@ -63,14 +67,17 @@ export function InstitutionField({
     const mine = owned.map((i) =>
       entityOf(
         i,
-        logos === undefined ? undefined : logoURL(logos, i.ispb),
+        logos === undefined ? undefined : logoURL(logos, ispbOf(i)),
         t("institutionField.mine"),
       ),
     );
     const catalogue =
       logos === undefined
         ? []
-        : catalogueEntries(logos, owned).map((entry): Entity => {
+        : catalogueEntries(
+            logos,
+            owned.map((i) => ({ ispb: ispbOf(i) })),
+          ).map((entry): Entity => {
             const src = logoURL(logos, entry.ispb);
             return {
               id: `${cataloguePrefix}${entry.ispb}`,
@@ -95,7 +102,7 @@ export function InstitutionField({
       institution,
       index.data === undefined
         ? undefined
-        : logoURL(index.data, institution.ispb),
+        : logoURL(index.data, ispbOf(institution)),
       t("institutionField.mine"),
     );
     names.current.set(institution.id, institution.name);
@@ -139,7 +146,7 @@ export function InstitutionField({
           .mutateAsync({
             name: entry.name,
             ...(entry.code === undefined ? {} : { code: entry.code }),
-            ispb,
+            identifier: { scheme: "br_ispb", identifier: ispb },
           })
           .then((institution) => {
             remember(institution);

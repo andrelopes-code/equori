@@ -110,11 +110,12 @@ type LedgerInstallmentPlan struct {
 }
 
 type LedgerInstitution struct {
-	ID     uuid.UUID
-	UserID int64
-	Name   string
-	Code   *string
-	Ispb   *string
+	ID               uuid.UUID
+	UserID           int64
+	Name             string
+	Code             *string
+	IdentifierScheme *string
+	Identifier       *string
 }
 
 type LedgerInvestmentIncome struct {

@@ -5,6 +5,7 @@ import type { components } from "@/api/schema.gen";
 import {
   balancesQuery,
   logoIndexQuery,
+  ispbOf,
   logoURL,
   shapeOf,
 } from "@/features/accounts";
@@ -129,7 +130,7 @@ export function useAccountChoices({
       logo:
         logos.data === undefined
           ? undefined
-          : logoURL(logos.data, institution?.ispb),
+          : logoURL(logos.data, ispbOf(institution)),
       progress: progressOf.get(account.id),
       balance,
       freeLimit: free?.currency === account.currency ? free.amount : undefined,

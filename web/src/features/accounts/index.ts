@@ -14,7 +14,11 @@ export {
   accountCardKind,
 } from "@/features/accounts/account-card-kind";
 export { AccountCardPreview } from "@/features/accounts/account-card-preview";
-export { logoIndexQuery, logoURL } from "@/features/accounts/institution-logo";
+export {
+  ispbOf,
+  logoIndexQuery,
+  logoURL,
+} from "@/features/accounts/institution-logo";
 export type { AccountShape } from "@/features/accounts/account-shape";
 export { useBalanceGroups } from "@/features/accounts/use-balance-groups";
 export { groupLabels } from "@/features/accounts/balance-groups";

@@ -231,18 +231,27 @@ func TestDBRejectsSaleWithoutCost(t *testing.T) {
 	requireViolation(t, err, checkViolation, "")
 }
 
-// ADR 013: the ISPB has eight digits and names one institution of a user.
-func TestInstitutionISPBChecks(t *testing.T) {
+// Spec §5.7: an identifier has a scheme, is set with it, and names one institution of a user.
+func TestInstitutionIdentifierChecks(t *testing.T) {
 	t.Parallel()
 	f := newSchemaFixture(t)
-	_, err := f.pool.Exec(t.Context(), `INSERT INTO ledger_institution (user_id, name, ispb) VALUES ($1, 'Bad', '1823612A')`, f.userID)
-	requireViolation(t, err, checkViolation, "ispb")
-	_, err = f.pool.Exec(t.Context(), `INSERT INTO ledger_institution (user_id, name, ispb) VALUES ($1, 'Nubank', '18236120')`, f.userID)
+	insert := `INSERT INTO ledger_institution (user_id, name, identifier_scheme, identifier) VALUES ($1, $2, $3, $4)`
+	_, err := f.pool.Exec(t.Context(), insert, f.userID, "Bad scheme", "Br-ISPB", "18236120")
+	requireViolation(t, err, checkViolation, "identifier_scheme")
+	_, err = f.pool.Exec(t.Context(), insert, f.userID, "Empty", "bic", "")
+	requireViolation(t, err, checkViolation, "identifier")
+	_, err = f.pool.Exec(t.Context(), insert, f.userID, "Long", "bic", strings.Repeat("A", 41))
+	requireViolation(t, err, checkViolation, "identifier")
+	_, err = f.pool.Exec(t.Context(), insert, f.userID, "Half", "bic", nil)
+	requireViolation(t, err, checkViolation, "")
+	_, err = f.pool.Exec(t.Context(), insert, f.userID, "Half", nil, "18236120")
+	requireViolation(t, err, checkViolation, "")
+	_, err = f.pool.Exec(t.Context(), insert, f.userID, "Nubank", "br_ispb", "18236120")
 	if err != nil {
 		t.Fatalf("insert institution: %v", err)
 	}
-	_, err = f.pool.Exec(t.Context(), `INSERT INTO ledger_institution (user_id, name, ispb) VALUES ($1, 'Nu', '18236120')`, f.userID)
-	requireViolation(t, err, uniqueViolation, "ispb")
+	_, err = f.pool.Exec(t.Context(), insert, f.userID, "Nu", "br_ispb", "18236120")
+	requireViolation(t, err, uniqueViolation, "identifier")
 }
 
 func TestTagNameSchema(t *testing.T) {

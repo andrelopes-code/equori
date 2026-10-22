@@ -174,8 +174,13 @@ type Institution struct {
 	UserID int64
 	Name   string
 	Code   string
-	// ISPB keys the institution's logo (ADR 013); empty when unknown.
-	ISPB string
+	// Identifier keys the institution's logo (ADR 013); the zero value when unknown.
+	Identifier InstitutionIdentifier
+}
+
+// InstitutionIdentifier is an institution's identifier in a scheme; both fields are empty when unknown.
+type InstitutionIdentifier struct {
+	Scheme, Value string
 }
 
 type Payee struct {
@@ -283,7 +288,7 @@ type Repository interface {
 	CountTransactions(ctx context.Context, userID int64) (int64, error)
 
 	InsertInstitution(ctx context.Context, i Institution) (Institution, error)
-	SetInstitutionISPB(ctx context.Context, userID int64, id uuid.UUID, ispb string) (Institution, error)
+	SetInstitutionIdentifier(ctx context.Context, userID int64, id uuid.UUID, ident InstitutionIdentifier) (Institution, error)
 	// List methods return the page and the key of its last row when more rows follow.
 	ListInstitutions(ctx context.Context, userID int64, p page.Request[InstitutionKey]) ([]Institution, *InstitutionKey, error)
 	InsertPayee(ctx context.Context, p Payee) (Payee, error)

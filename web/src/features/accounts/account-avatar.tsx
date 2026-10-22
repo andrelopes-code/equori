@@ -5,7 +5,11 @@ import type { components } from "@/api/schema.gen";
 import { AccountMark } from "@/features/accounts/account-mark";
 import { shapeOf } from "@/features/accounts/account-shape";
 import { goalsQuery } from "@/features/accounts/api";
-import { logoIndexQuery, logoURL } from "@/features/accounts/institution-logo";
+import {
+  ispbOf,
+  logoIndexQuery,
+  logoURL,
+} from "@/features/accounts/institution-logo";
 import { institutionsQuery } from "@/features/setup";
 
 type Account = components["schemas"]["Account"];
@@ -41,7 +45,7 @@ export function AccountAvatar({
       logo={
         index.data === undefined
           ? undefined
-          : logoURL(index.data, institution?.ispb)
+          : logoURL(index.data, ispbOf(institution))
       }
       progress={goal?.progress_bp}
       disabled={account.closed_on !== undefined}

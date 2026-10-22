@@ -76,19 +76,43 @@ func (s *Server) ListInstitutions(ctx context.Context, req ListInstitutionsReque
 }
 
 func (s *Server) CreateInstitution(ctx context.Context, req CreateInstitutionRequestObject) (CreateInstitutionResponseObject, error) {
-	i, err := s.svc.CreateInstitution(ctx, auth.MustUserID(ctx), app.Institution{Name: req.Body.Name, Code: optString(req.Body.Code), ISPB: optString(req.Body.Ispb)})
+	i, err := s.svc.CreateInstitution(ctx, auth.MustUserID(ctx), app.Institution{Name: req.Body.Name, Code: optString(req.Body.Code), Identifier: institutionIdentifier(req.Body.Identifier)})
 	if err != nil {
 		return nil, err
 	}
 	return CreateInstitution201JSONResponse(toInstitutionAPI(i)), nil
 }
 
-func (s *Server) SetInstitutionISPB(ctx context.Context, req SetInstitutionISPBRequestObject) (SetInstitutionISPBResponseObject, error) {
-	i, err := s.svc.SetInstitutionISPB(ctx, auth.MustUserID(ctx), req.Id, optString(req.Body.Ispb))
+func (s *Server) SetInstitutionIdentifier(ctx context.Context, req SetInstitutionIdentifierRequestObject) (SetInstitutionIdentifierResponseObject, error) {
+	ident := app.InstitutionIdentifier{Scheme: optString(req.Body.Scheme), Value: optString(req.Body.Identifier)}
+	if (ident.Scheme == "") != (ident.Value == "") {
+		field := "identifier"
+		if ident.Scheme == "" {
+			field = "scheme"
+		}
+		return nil, &domain.FieldError{Field: field, Message: "must be set together with the other identifier field", Err: domain.ErrValidation}
+	}
+	i, err := s.svc.SetInstitutionIdentifier(ctx, auth.MustUserID(ctx), req.Id, ident)
 	if err != nil {
 		return nil, err
 	}
-	return SetInstitutionISPB200JSONResponse(toInstitutionAPI(i)), nil
+	return SetInstitutionIdentifier200JSONResponse(toInstitutionAPI(i)), nil
+}
+
+func (s *Server) ListInstitutionIdentifierSchemes(context.Context, ListInstitutionIdentifierSchemesRequestObject) (ListInstitutionIdentifierSchemesResponseObject, error) {
+	schemes := s.svc.InstitutionIdentifierSchemes()
+	out := ListInstitutionIdentifierSchemes200JSONResponse{Items: make([]InstitutionIdentifierScheme, len(schemes))}
+	for i, sc := range schemes {
+		out.Items[i] = InstitutionIdentifierScheme{Id: sc.ID, Pattern: sc.Pattern.String()}
+	}
+	return out, nil
+}
+
+func institutionIdentifier(i *InstitutionIdentifier) app.InstitutionIdentifier {
+	if i == nil {
+		return app.InstitutionIdentifier{}
+	}
+	return app.InstitutionIdentifier{Scheme: i.Scheme, Value: i.Identifier}
 }
 
 func (s *Server) ListPayees(ctx context.Context, req ListPayeesRequestObject) (ListPayeesResponseObject, error) {
