@@ -1,4 +1,4 @@
-# ADR 015: Regional extension points
+# ADR 016: Regional extension points
 
 - Status: accepted
 - Date: 2026-10-22

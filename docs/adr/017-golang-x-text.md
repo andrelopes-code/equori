@@ -1,4 +1,4 @@
-# ADR 016: Dependency golang.org/x/text
+# ADR 017: Dependency golang.org/x/text
 
 - Status: accepted
 - Date: 2026-10-22

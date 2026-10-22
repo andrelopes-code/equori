@@ -4,9 +4,9 @@
 
 **Goal:** Separate the universal core of equori from its Brazilian implementations behind module-owned extension points, so a region is added by implementations, registry entries and settings.
 
-**Architecture:** Each regional concern is an interface or data table owned by the consuming module, with an immutable `registry.Registry[T]` built in the module root and selected by the composition root (ADR 015, Task 1). Standard identifiers (ISO 4217, ISO 3166-1, ISO 10383, ISO 9362, BCP 47, IANA charsets) replace Brazilian literals. The user's profile (`locale.Locale{Language, Region}`) drives regional defaults for new records.
+**Architecture:** Each regional concern is an interface or data table owned by the consuming module, with an immutable `registry.Registry[T]` built in the module root and selected by the composition root (ADR 016, Task 1). Standard identifiers (ISO 4217, ISO 3166-1, ISO 10383, ISO 9362, BCP 47, IANA charsets) replace Brazilian literals. The user's profile (`locale.Locale{Language, Region}`) drives regional defaults for new records.
 
-**Tech Stack:** Go (stdlib, `golang.org/x/text` via ADR 016), PostgreSQL with goose and sqlc, oapi-codegen, React with TypeScript, Vitest and Intl.
+**Tech Stack:** Go (stdlib, `golang.org/x/text` via ADR 017), PostgreSQL with goose and sqlc, oapi-codegen, React with TypeScript, Vitest and Intl.
 
 **Spec:** `docs/superpowers/specs/2026-10-22-regional-neutrality-design.md` (read the section a task cites before starting it).
 
@@ -48,8 +48,8 @@
 ### Task 1: ADRs, generic registry and the `x/text` dependency
 
 **Files:**
-- Create: `docs/adr/015-regional-extension-points.md` (Context: spec §1; Decision: spec §4.1–4.4; Consequences: the depguard allowance below and the contributor checklist of Task 36)
-- Create: `docs/adr/016-golang-x-text.md` (packages: `unicode/norm`, `encoding`, `encoding/charmap`, `encoding/japanese`, `encoding/simplifiedchinese`, `encoding/korean`, `encoding/traditionalchinese`; the version added in Step 5)
+- Create: `docs/adr/016-regional-extension-points.md` (Context: spec §1; Decision: spec §4.1–4.4; Consequences: the depguard allowance below and the contributor checklist of Task 36)
+- Create: `docs/adr/017-golang-x-text.md` (packages: `unicode/norm`, `encoding`, `encoding/charmap`, `encoding/japanese`, `encoding/simplifiedchinese`, `encoding/korean`, `encoding/traditionalchinese`; the version added in Step 5)
 - Create: `internal/platform/registry/registry.go`
 - Test: `internal/platform/registry/registry_test.go`
 - Modify: `.golangci.yml` (depguard rule for `domain`: add `github.com/andrelopes-code/equori/internal/platform/textfold` to the allow list)
@@ -97,7 +97,7 @@ func TestRegistry(t *testing.T) {
 - [ ] **Step 2:** Run `go test ./internal/platform/registry/` → FAIL (package does not exist).
 - [ ] **Step 3:** Implement `registry.go` with an unexported map and a sorted id slice, both filled only in `New`. The error of `Get` is `fmt.Errorf("%w %s %q", ErrUnknown, kind, id)`.
 - [ ] **Step 4:** Run the test → PASS.
-- [ ] **Step 5:** Run `go get golang.org/x/text@latest` and `go mod tidy`; write the resulting version into ADR 016. Write ADR 015.
+- [ ] **Step 5:** Run `go get golang.org/x/text@latest` and `go mod tidy`; write the resulting version into ADR 017. Write ADR 016.
 - [ ] **Step 6:** `make check-commit`; commit `feat(platform): add registry for regional extension points`.
 
 ### Task 2: Text folding package

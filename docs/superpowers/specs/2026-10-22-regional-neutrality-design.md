@@ -38,7 +38,7 @@ This design separates the universal core from regional implementations. After it
 ## 3. Constraints
 
 - ADR 002: each extension point and its implementations live in the module that owns the concern; the composition root (`internal/server`, `cmd/equori`) selects implementations.
-- Root `CLAUDE.md`: standard library first; a new dependency needs an ADR. Section 4.1 adds one, `golang.org/x/text`, through ADR 016.
+- Root `CLAUDE.md`: standard library first; a new dependency needs an ADR. Section 4.1 adds one, `golang.org/x/text`, through ADR 017.
 - Root `CLAUDE.md`: applied migrations are never edited. Every schema change is a new goose migration from `00038` on.
 - ADR 007, C3: field-shape rules stay declared in the contract. A value set that grows with regions is declared as a `pattern` in the contract and validated by the registry in the domain, which returns 422 `validation_failed` with the field.
 - Definition of done, item 5: every new or changed operation keeps its entry in `internal/server/tool_exposure_test.go`.
@@ -62,7 +62,7 @@ An extension point is declared by the module that consumes it:
 
 `Registry[T]` is a generic type in `internal/platform/registry` (no business rules): a constructor from a slice of `(id, T)` pairs that rejects duplicate and malformed ids, `Get`, and `IDs` in ascending order.
 
-ADR 015 records this pattern. ADR 016 records the dependency `golang.org/x/text`, used for character set decoding (`encoding/charmap`, `encoding/japanese`, `encoding/simplifiedchinese`, `encoding/korean`, `encoding/traditionalchinese`) and Unicode normalization (`unicode/norm`, `runes`).
+ADR 016 records this pattern. ADR 017 records the dependency `golang.org/x/text`, used for character set decoding (`encoding/charmap`, `encoding/japanese`, `encoding/simplifiedchinese`, `encoding/korean`, `encoding/traditionalchinese`) and Unicode normalization (`unicode/norm`, `runes`).
 
 ### 4.2 Configuration levels
 
@@ -247,7 +247,7 @@ type Lexicon struct {
 ```
 
 - `pt` and `en` lexicons hold the words now spread across `date.go`, `amount.go`, `installments.go` and `account.go`. The active lexicon is the user's language lexicon merged with `en`, the user's entries winning.
-- Number reading takes the decimal and group separators, and date reading the day-month order, from `platform/locale` for the user's `language-region`. ADR 002 limits `domain` imports to the standard library and `platform/money`, so the capture domain declares its own `Conventions{Decimal, Group rune; Order DateOrder}` and `Vocabulary` gains `Lexicon` and `Conventions`; the capture `app` fills them from `platform/locale`. ADR 015 extends the depguard allowance of `domain` with `internal/platform/textfold` only.
+- Number reading takes the decimal and group separators, and date reading the day-month order, from `platform/locale` for the user's `language-region`. ADR 002 limits `domain` imports to the standard library and `platform/money`, so the capture domain declares its own `Conventions{Decimal, Group rune; Order DateOrder}` and `Vocabulary` gains `Lexicon` and `Conventions`; the capture `app` fills them from `platform/locale`. ADR 016 extends the depguard allowance of `domain` with `internal/platform/textfold` only.
 - ADR 014 L2 is amended: the system prompt names the language and region of the user (`The descriptions are short texts the owner typed, mostly in Portuguese (Brazil)`), from `platform/locale` English names.
 
 ### 5.14 Locale conventions (server)
@@ -269,8 +269,8 @@ type Lexicon struct {
 
 | Document | Change |
 |---|---|
-| ADR 015 (new) | Regional extension points: section 4.1 to 4.4 |
-| ADR 016 (new) | Dependency `golang.org/x/text` |
+| ADR 016 (new) | Regional extension points: section 4.1 to 4.4 |
+| ADR 017 (new) | Dependency `golang.org/x/text` |
 | ADR 005 | Section 2: generated ISO 4217 table; conversion path of 5.2 |
 | ADR 013 | Identifier schemes and logo resolvers |
 | ADR 014 | L2 prompt language |
@@ -284,7 +284,7 @@ type Lexicon struct {
 
 Each step is one or more vertical slices that leave `make check` passing.
 
-1. ADR 015, ADR 016; `platform/registry`, `platform/textfold`, `platform/locale`.
+1. ADR 016, ADR 017; `platform/registry`, `platform/textfold`, `platform/locale`.
 2. ISO 4217 generation and startup reconciliation (5.1).
 3. Identity profile, provisioning without a default currency (5.6), `GET/PATCH /me`.
 4. Market data: calendars (5.5), feeds with `ecb` (5.3), conversion (5.2), MIC and types (5.4).
