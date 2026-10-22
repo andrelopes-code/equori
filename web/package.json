@@ -9,7 +9,7 @@
     "typecheck": "tsc --noEmit --incremental --tsBuildInfoFile node_modules/.cache/tsc/tsbuildinfo",
     "lint": "eslint --cache --cache-location node_modules/.cache/eslint/ .",
     "format:check": "prettier --check --cache .",
-    "test": "vitest run && node --test src/theme/equori.theme.test.ts"
+    "test": "vitest run && node --test src/theme/equori.theme.test.ts src/testing/slotted-findings.test.ts"
   },
   "dependencies": {
     "@fontsource-variable/geist": "5.3.0",

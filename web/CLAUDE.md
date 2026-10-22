@@ -30,8 +30,11 @@ Rules:
 1. Every finding is reported to the owner in the reply of the task that met it, in a section titled `Slotted findings`, numbered from 1 within the reply. No finding is dropped because the app works around it.
 2. Each finding follows the template below exactly: same fields, same order, no field omitted (write "none" when a field has nothing). The prose is written in the conversation's language; the prompt is always in English.
 3. The prompt stands alone, for a session that knows nothing of equori. For a `bug` it states the observed behaviour, the expected behaviour and a minimal reproduction; for an `improvement` or a `feature` it states the need met in equori, the proposed API (props, parts, states, tokens, rule text or instruction text) and how it composes with what exists; for `guideline` and `agent` areas it quotes the current text (file and section) and gives the replacement or addition. Every prompt ends with an `Acceptance:` line and asks for a test or check that fails before the change.
-4. A workaround in `web/` carries a comment naming the finding by its title, so it can be removed when the library ships the fix.
-5. When a new Slotted version is installed, check the findings of earlier tasks against it and remove each workaround the version makes unnecessary.
+4. A workaround in `web/` (code, CSS, theme rule or test) carries a comment with the finding's exact title in one phrase: `Workaround for Slotted finding "<title>"`. The title is the key of the finding in `docs/slotted-findings.md`; it is never reworded or alternated with a synonym, and a second workaround for the same finding quotes the same title.
+5. Every finding reported is added to `docs/slotted-findings.md` in the same change: `reported` while no workaround exists, `open` once a comment names it.
+6. When a new Slotted version is installed, run each `open` finding's `Remove when` condition against it. For each one the version fixes, remove the workaround and its comment, remove any test that exists only for the workaround, and set the row to `fixed`, all in one commit whose body names the finding. A test that exists only for the workaround is removed under this rule, not under the root rule on deleting tests.
+7. `src/testing/slotted-findings.test.ts` checks the registry against the comments; `make check` runs it.
+8. `node_modules/@slotted/*` can hold a local build, written by `pnpm sync:equori` in `../slotted`; `package.json` and the lockfile always name the published version. A check that passes only on a local build does not close a finding. `pnpm install --frozen-lockfile --force` returns `node_modules` to the published version.
 
 Template (one block per finding):
 
@@ -42,8 +45,10 @@ Template (one block per finding):
 - **Area:** family | token | utility | docs | guideline | agent — <family and part, token name, export, or file and section>
 - **Problem:** <one or two sentences: the observed behaviour or the gap>
 - **Evidence:** <screen and width, browser measurement, test name and timing, file and line in web/, or the agent step that went wrong>
+- **Version:** <the installed Slotted version the problem was observed on>
 - **Impact on equori:** <what the user sees or what the work cost>
 - **Workaround:** <file in web/ and what it does, or "none">
+- **Remove when:** <the observable condition that proves the fix, such as the assertion that passes without the workaround, or "none" when there is no workaround>
 
 ```
 <Kind> — <area and subject>.

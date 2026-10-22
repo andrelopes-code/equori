@@ -1,6 +1,10 @@
-// Declarations for the Node-runner theme test; @types/node and a typed conformance entry are not installed.
+// Declarations for the Node-runner tests (theme, Slotted findings); @types/node and a typed conformance entry are not installed.
 declare module "node:fs" {
   export function readFileSync(path: URL | string, encoding: "utf8"): string;
+  export function readdirSync(
+    path: URL | string,
+    options: { recursive: true },
+  ): string[];
 }
 
 declare module "@slotted/theme/conformance" {

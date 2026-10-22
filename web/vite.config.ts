@@ -44,7 +44,11 @@ export default defineConfig({
     setupFiles: ["src/testing/setup.ts"],
     // @slotted/react ships a CommonJS react-dom shim that needs the Vite transform.
     server: { deps: { inline: [/@slotted\//] } },
-    exclude: [...configDefaults.exclude, "src/theme/equori.theme.test.ts"],
+    exclude: [
+      ...configDefaults.exclude,
+      "src/theme/equori.theme.test.ts",
+      "src/testing/slotted-findings.test.ts",
+    ],
   },
   build: {
     // web/dist/.gitkeep must survive the build; make web-build cleans the rest.
