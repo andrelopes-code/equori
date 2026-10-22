@@ -185,14 +185,14 @@ erDiagram
 
 | Table | Columns | Constraints |
 |---|---|---|
-| `marketdata_instrument` | `code` PK, `instrument_type` (the tax class of 5.6), `scale`, `name`, `quote_currency`, `exchange` | Instance-wide reference data; `scale BETWEEN 0 AND 12`; `quote_currency` set for securities only; `exchange IN ('B3')` |
+| `marketdata_instrument` | `code` PK, `instrument_type` (5.6), `scale`, `name`, `quote_currency`, `exchange` | Instance-wide reference data; `scale BETWEEN 0 AND 12`; `quote_currency` set for securities only; `exchange ~ '^[A-Z0-9]{4}$'` (MIC; `BVMF` for B3) |
 | `marketdata_price` | `instrument`, `quote_instrument`, `date`, `value numeric(30,12)`, `source`, `priority`, `recorded_at` | `PRIMARY KEY (instrument, quote_instrument, date, source)`; `value > 0`; priority fixed by source (P8 amendment A60) |
 | `marketdata_holiday` | `calendar`, `date`, `name` | `PRIMARY KEY (calendar, date)` |
 | `ledger_trade` | `transaction_id` PK, `user_id`, `account_id`, `cash_account_id`, `side`, `quantity`, `unit_price numeric(30,12)`, `gross`, `fees`, `taxes`, `cost`, `currency` | D1 detail of a trade (A68); `cost` set for sales only; `taxes` 0 on purchases |
 | `ledger_investment_income` | `transaction_id` PK, `user_id`, `account_id`, `cash_account_id`, `income_type`, `gross`, `withheld`, `currency` | D1 detail of an income (A70); `withheld < gross` |
 | `portfolio_position_day` | `user_id`, `account_id`, `instrument`, `date`, `quantity`, `cost_basis` | Derived; one row per security account and date with postings; rebuilt per brokerage (A71) |
-| `portfolio_realized_result` | `user_id`, `transaction_id` PK, `account_id`, `instrument`, `date`, `month`, `quantity`, `cost`, `proceeds`, `result`, `tax_class`, `currency` | Derived; `result = proceeds − cost` |
-| `portfolio_income_event` | `user_id`, `transaction_id` PK, `account_id`, `instrument`, `date`, `income_type`, `tax_treatment`, `gross`, `withheld`, `currency` | Derived; `tax_treatment IN ('exempt', 'exclusive')` |
+| `portfolio_realized_result` | `user_id`, `transaction_id` PK, `account_id`, `instrument`, `date`, `month`, `quantity`, `cost`, `proceeds`, `result`, `tax_class`, `currency` | Derived; `tax_class` is null when the jurisdiction gives none; `result = proceeds − cost` |
+| `portfolio_income_event` | `user_id`, `transaction_id` PK, `account_id`, `instrument`, `date`, `income_type`, `tax_treatment`, `gross`, `withheld`, `currency` | Derived; `tax_treatment ~ '^[a-z0-9_]{2,40}$'` or null |
 | `reporting_account_day` | `user_id`, `account_id`, `date`, `delta_booked`, `delta_settled`, `balance_booked`, `balance_settled` | Derived daily balance series (B02, B08); rebuilt per account from the first changed date |
 | `outbox_event` | ADR 006 | |
 | `<module>_processed_event` | `event_id`, `processed_at` | `PRIMARY KEY (event_id)`; Portfolio keeps none, its rebuild is idempotent |

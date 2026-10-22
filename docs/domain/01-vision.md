@@ -47,7 +47,7 @@ flowchart LR
 | User | Description |
 |---|---|
 | Owner | One person running their own instance. The only user of the first version (ADR 003). |
-| Self-hoster | Anyone deploying the open-source image; may live outside Brazil and use other currencies. |
+| Self-hoster | Anyone deploying the open-source image; may live outside Brazil. The region and language of the profile select the base currency, the calendar, the tax jurisdiction and the text conventions (ADR 016, `docs/contributing/regions.md`). |
 | Household member | Later: additional users with isolated data on the same instance (ADR 003, "Deferred"). |
 
 ## 1.4 Goals
@@ -59,7 +59,7 @@ flowchart LR
 | G3 | Net worth and investments | Net worth over time; positions per asset with cost and market value; returns. |
 | G4 | Planning | Budgets per category and period, projected balance per account, savings goals. |
 | G5 | Effortless recording | Recording a transaction requires the minimum input; import and integrations are the primary path, manual entry the fallback. |
-| G6 | Integrations | File import (OFX, CSV) and Open Finance aggregators (first target: Pluggy, through Meu Pluggy). |
+| G6 | Integrations | File import (OFX, CSV) and Open Finance aggregators behind the `aggregator` registry in `internal/ingestion/ingestion.go` (`pluggy` is the only entry, through Meu Pluggy). |
 | G7 | Categorization | Every expense and income is categorized. The category tree is user-defined. User-defined rules categorize automatically; manual corrections can become rules. |
 | G8 | Trust | Balances always reconcile with institution statements; imports never duplicate; every change is traceable. |
 | G9 | Complete coverage | Every account type and transaction kind in section 1.5 is representable without special cases outside the model. Card statements, installments, refunds, reimbursements and transfers are first-class. |
@@ -129,7 +129,7 @@ The model must represent every item below. Each item gets at least one worked ex
 | T03 | Each occurrence of a recurrence has an expected amount, which may vary, and is linked to the real transaction once it happens. Occurrences can be skipped or moved one by one without changing the rule. |
 | T04 | A credit card has a closing day and a due day. A purchase before the closing date belongs to the statement that closes on that date; a purchase after it belongs to the next one. A purchase on the closing date belongs to the next statement by default; each card can set it to the closing statement, because issuers differ. |
 | T05 | Closing and due days change over time. A change applies from a given statement on; past statements keep their dates. |
-| T06 | A due date on a non-business day moves according to a business-day calendar: Brazilian national holidays at minimum, extensible per instance. |
+| T06 | A due date on a non-business day moves according to a business-day calendar. Each card and each schedule names a calendar; the default comes from the owner's region (`DefaultCalendar` in `internal/marketdata/region_defaults.go`): `br_banking` for `BR`, `weekend` otherwise. |
 | T07 | Installment N of a purchase is billed on the Nth statement from the purchase statement, not on a calendar month offset. |
 | T08 | Cancellation and anticipation change the remaining schedule of an installment purchase without rewriting billed installments. |
 | T09 | Rules that change over time (subscription price, card closing day, recurring amount) are effective-dated: each version has a start date, and history is kept. |
@@ -179,5 +179,5 @@ The model must represent every item below. Each item gets at least one worked ex
 
 | ID | Decision |
 |---|---|
-| D1 | The model stores every datum required for Brazilian income tax (IRPF): trade date, quantity, unit price, fees, taxes withheld, income type (exempt dividends, taxable JCP, taxable yield) and average cost by Receita Federal rules. Generating the annual declaration report is a later feature. Stored from P8 on in `ledger_trade`, `ledger_investment_income` and the `portfolio_` tables (chapter 7, 7.4). |
+| D1 | The model stores every datum required for income tax, and derives the tax class and the tax treatment of income from the owner's jurisdiction (`Jurisdiction` in `internal/portfolio/internal/domain/jurisdiction.go`; `br` is the only implementation). The data required for Brazilian income tax (IRPF) is: trade date, quantity, unit price, fees, taxes withheld, income type (exempt dividends, taxable JCP, taxable yield) and average cost by Receita Federal rules. Generating the annual declaration report is a later feature. Stored from P8 on in `ledger_trade`, `ledger_investment_income` and the `portfolio_` tables (chapter 7, 7.4). |
 | D2 | Transactions accept attachments (M29). Files are stored in PostgreSQL, so one database backup contains all data. Limit: 10 MiB per file. |

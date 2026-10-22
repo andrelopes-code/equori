@@ -188,7 +188,7 @@ classDiagram
 |---|---|
 | I01 (refined) | Each posting has an `amount` in its account's instrument and a `weight` in the transaction's balancing currency. The weights of a transaction sum to zero. When the account instrument is the balancing currency, `weight = amount`. When it differs, `weight` is the explicit value of the posting in the balancing currency, and `weight / amount` is the rate used (B05). |
 | I02 | At least two postings. |
-| Balancing currency | The user's base currency (BRL by default), unless every posting shares another currency, in which case that one. |
+| Balancing currency | The user's base currency, chosen at provisioning (`DefaultBaseCurrency` in `internal/ledger/region_defaults.go` proposes `BRL` for region `BR` and nothing otherwise), unless every posting shares another currency, in which case that one. |
 | Posting status | `pending`, `cleared`, `reconciled` (chapter 2). The transaction has no status of its own. |
 | `settledOn` | Date the institution settled the posting, when it differs from the transaction date (debit purchase on Saturday, settled on Monday). Balances can be computed by transaction date (default) or by settlement date (the institution's view, used in reconciliation). |
 | `statement` | Required on card account postings, forbidden on others (I03, I04). |
@@ -488,9 +488,9 @@ classDiagram
 
 | Aggregate | Fields | Rules |
 |---|---|---|
-| `Instrument` (Market data) | code, type, scale, name, currency of quotation, exchange, tax class | Tax class drives D1: `stock`, `fii`, `etf`, `bdr`, `fixed_income`, `fund`, `crypto`, `currency`. |
-| `Price` (Market data) | instrument, quote instrument, date, value: `Rate`, source | Instance-wide. One chosen price per instrument, quote and date: the lowest priority (`manual` 1, `csv` 2, `bcb_ptax` and `b3_cotahist` 3), then the latest recorded. The price at a date is the chosen price of the latest date on or before it (P8 amendment A60). |
-| `Holiday` (Market data) | calendar, date, name | Calendars: `br_national` (default), user-defined. |
+| `Instrument` (Market data) | code, type, scale, name, currency of quotation, exchange (MIC), tax class | Type is universal (`stock`, `reit`, `etf`, `depositary_receipt`, `fixed_income`, `fund`, `crypto`, `currency`). The tax class is derived from type and exchange by the owner's `Jurisdiction`; under `br`, `reit` on `BVMF` is `fii` and `depositary_receipt` on `BVMF` is `bdr`. Tax class drives D1. |
+| `Price` (Market data) | instrument, quote instrument, date, value: `Rate`, source | Instance-wide. One chosen price per instrument, quote and date: the lowest priority (`manual` 1, `csv` 2, any registered feed identifier 3: `bcb_ptax`, `b3_cotahist`, `ecb`), then the latest recorded. The price at a date is the chosen price of the latest date on or before it (P8 amendment A60). |
+| `Holiday` (Market data) | calendar, date, name | Calendars: `br_banking` (Brazilian national holidays) and `weekend` (Saturdays and Sundays only); the default follows the owner's region. |
 | `Position` (Portfolio, derived) | account, instrument, date, quantity, cost basis | Rebuilt from Ledger postings. Average cost = cost basis ÷ quantity; buys add cost including fees; sells reduce cost at average cost (Receita Federal method). |
 | `RealizedResult` (Portfolio, derived) | sale transaction, instrument, quantity, cost, proceeds, result, tax class, month | Input for monthly tax rules (exemptions, day trade) in a later feature (D1). |
 | `IncomeEvent` (Portfolio, derived) | transaction, instrument, type, gross, withheld | Types and tax treatment per chapter 3, F9. |
@@ -506,7 +506,7 @@ classDiagram
 | Occurrence generator | Planning | Expands recurrence rules into dates (T01, T02, T06). |
 | Matcher | Ingestion, Planning | Finds candidate transactions for an external record or an occurrence. |
 | Rule engine | Classification | Evaluates rules (5.4). |
-| Business-day calendar | Market data | Shifts dates and counts business days. |
+| Business-day calendar | Market data | Shifts dates and counts business days for a named calendar. |
 
 ## 5.8 Decisions in this chapter
 

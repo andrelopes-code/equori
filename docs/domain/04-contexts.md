@@ -98,7 +98,7 @@ Card statements and installment plans stay in Ledger: recording a card purchase 
 | Invariants | I07 (external record side), I10. |
 | Commands | `ImportFile`, `CreateIntegration`, `CreateConnection`, `MapExternalAccount`, `SyncConnection`, `ResolveMatch`, `RotateSecrets`. |
 | Events published | `ImportBatchCompleted`, `ExternalRecordNeedsReview`. |
-| Calls | Ledger `RecordImported`, `ClearMatched`, `AssertBalance`, `AssertSyncedBalance`, `UpdateImportedPosting`, `ReleaseRecord`, `RecordImportedInstallment`, `LinkInstallment`; Classification `DecideImport` before recording created lines, with the line's source category. Pluggy through an anti-corruption layer, at the configured base URL only (N17). |
+| Calls | Ledger `RecordImported`, `ClearMatched`, `AssertBalance`, `AssertSyncedBalance`, `UpdateImportedPosting`, `ReleaseRecord`, `RecordImportedInstallment`, `LinkInstallment`; Classification `DecideImport` before recording created lines, with the line's source category. An aggregator through an anti-corruption layer, at its configured base URL only (`EQUORI_AGGREGATOR_<ID>_URL`, N17); the `Aggregator` interface in `internal/ingestion/internal/app/integration.go` declares its identifier, credential fields, connect method and state mapping. `pluggy` is the only registered aggregator. |
 
 ### 4.3.4 Planning
 
@@ -109,16 +109,16 @@ Card statements and installment plans stay in Ledger: recording a card purchase 
 | Reacts to | `TransactionRecorded`, `TransactionCorrected`, `TransactionCategorized`, `TransactionVoided` (realize or release occurrences, P7 amendment A51). |
 | Commands | `CreateSchedule`, `ChangeScheduleTerms`, `PauseSchedule`, `EndSchedule`, `SkipOccurrence`, `MoveOccurrence`, `RealizeOccurrence`, `UnrealizeOccurrence`, `SetBudget`, `SetGoal`. |
 | Events published | None in P7: `OccurrenceOverdue` and `BudgetExceeded` wait for a consumer; overdue is derived on read (A50). |
-| Calls | Ledger `AccountFacts`, `TransactionFacts`, `MissingPayees`, `BaseCurrency`, `Balance` (projections, goals), `CategoryTotal` (budgets), `Commitment` (committed amounts, A54–A57); Market data holidays of `br_banking` and `Convert` (committed amounts and goals in another currency, P8 amendment A72). |
+| Calls | Ledger `AccountFacts`, `TransactionFacts`, `MissingPayees`, `BaseCurrency`, `Balance` (projections, goals), `CategoryTotal` (budgets), `Commitment` (committed amounts, A54–A57); Market data holidays of the calendar of the schedule and `Convert` (committed amounts and goals in another currency, P8 amendment A72). |
 
 ### 4.3.5 Portfolio
 
 | Item | Content |
 |---|---|
-| Responsibility | Positions and average cost by Receita Federal rules, realized results, investment income by tax treatment, data for the annual declaration (D1). |
+| Responsibility | Positions and average cost, realized results, investment income by tax treatment, data for the annual declaration (D1). The tax class of an instrument and the treatment of an income type come from the `Jurisdiction` of the owner's region (`defaultJurisdiction` in `internal/portfolio/region_defaults.go`); `br` applies Receita Federal rules. |
 | Reacts to | `TransactionRecorded`, `TransactionCorrected`, `TransactionVoided` whose accounts include a child of a brokerage account: the brokerage is rebuilt (P8 amendment A71). |
 | Queries | `GET /positions?date=` (quantity, cost basis, average cost, market value), `GET /realized-results?year=`, `GET /income-events?year=`. |
-| Calls | Ledger `AccountFacts`, `InvestmentFacts`, `BaseCurrency`; Market data `Instrument` (scale, tax class) and `Convert` (market value). |
+| Calls | Ledger `AccountFacts`, `InvestmentFacts`, `BaseCurrency`; Market data `Instrument` (scale, exchange as MIC) and `Convert` (market value). |
 
 Trades and investment income are Ledger transactions. Portfolio derives everything else from them, so a correction or a void in Ledger rebuilds positions.
 
@@ -127,8 +127,8 @@ Trades and investment income are Ledger transactions. Portfolio derives everythi
 | Item | Content |
 |---|---|
 | Responsibility | Instruments (currencies, securities), prices with source and date, conversion between instruments, business-day calendars. |
-| Commands | `DefineInstrument` (`POST /instruments`, A59), `RecordPrice` (`POST /prices`), `ImportPrices` (`POST /prices/import`), `DefineHoliday`; the feeds `bcb_ptax` and `b3_cotahist` when named in `EQUORI_PRICE_FEEDS` (A62, `docs/operations/price-feeds.md`). |
-| Queries | Instrument by code, chosen price of each date (`GET /prices`), price on or before a date, `Convert` by direct, inverse or BRL path with the prices used (A61), business days in a range. |
+| Commands | `DefineInstrument` (`POST /instruments`, A59), `RecordPrice` (`POST /prices`), `ImportPrices` (`POST /prices/import`), `DefineHoliday`; the feeds `bcb_ptax`, `b3_cotahist` and `ecb` when named in `EQUORI_PRICE_FEEDS`, each with an optional `EQUORI_FEED_<ID>_URL` (A62, `docs/operations/price-feeds.md`, `SourceIDs` in `internal/marketdata/sources.go`). |
+| Queries | Instrument by code, chosen price of each date (`GET /prices`), price on or before a date, `Convert` by direct, inverse or intermediate-instrument path with the prices used (A61), business days in a range of a calendar registered in `internal/marketdata/marketdata.go` (`br_banking`, `weekend`). |
 
 ### 4.3.7 Reporting
 
