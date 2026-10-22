@@ -9,9 +9,11 @@ import { createRoot } from "react-dom/client";
 
 import { AppProviders } from "@/app/providers";
 import { AppRouterProvider, newRouter } from "@/app/router";
+import { guardTouchContextMenu } from "@/app/touch-context-menu";
 import { applyScheme, readScheme } from "@/theme/scheme";
 
 applyScheme(readScheme());
+guardTouchContextMenu(document);
 
 const router = newRouter();
 
