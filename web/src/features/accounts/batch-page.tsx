@@ -103,7 +103,7 @@ export function BatchPage() {
     "matched",
     "created",
     "discarded",
-    ...(batch.data?.source === "open_finance" ? (["withdrawn"] as const) : []),
+    ...(batch.data?.source === "aggregator" ? (["withdrawn"] as const) : []),
   ];
   const showQueue = !compact || current === undefined;
   const showRecord = !compact || current !== undefined;
@@ -151,7 +151,7 @@ export function BatchPage() {
                   ["needs_review", "batch.figure.needs_review"],
                   ["discarded", "batch.figure.discarded"],
                   ["ignored", "batch.figure.ignored"],
-                  ...(batch.data?.source === "open_finance"
+                  ...(batch.data?.source === "aggregator"
                     ? ([
                         ["updated", "batch.figure.updated"],
                         ["withdrawn", "batch.figure.withdrawn"],

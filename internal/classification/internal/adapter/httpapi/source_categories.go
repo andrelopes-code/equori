@@ -12,7 +12,7 @@ import (
 
 func toSourceCategoryAPI(c app.SourceCategory) SourceCategory {
 	out := SourceCategory{
-		Id: c.ID, Provider: SourceCategoryProvider(c.Provider), ExternalId: c.ExternalID, Name: c.Name, Count: c.Count,
+		Id: c.ID, Aggregator: c.Aggregator, ExternalId: c.ExternalID, Name: c.Name, Count: c.Count,
 	}
 	if c.CategoryID != uuid.Nil {
 		out.CategoryId = &c.CategoryID

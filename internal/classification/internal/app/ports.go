@@ -87,7 +87,7 @@ type Repository interface {
 	// CountSourceCategories adds the lines that carried each category and keeps its latest name.
 	CountSourceCategories(ctx context.Context, userID int64, seen []SourceCategory) error
 	// MappedSourceCategories returns the owner's category of each mapped external id.
-	MappedSourceCategories(ctx context.Context, userID int64, provider string, externalIDs []string) (map[string]uuid.UUID, error)
+	MappedSourceCategories(ctx context.Context, userID int64, aggregator string, externalIDs []string) (map[string]uuid.UUID, error)
 	ListSourceCategories(ctx context.Context, userID int64, p page.Request[NameKey]) ([]SourceCategory, *NameKey, error)
 	// MapSourceCategory sets or, with uuid.Nil, clears the owner's category.
 	MapSourceCategory(ctx context.Context, userID int64, id, categoryID uuid.UUID) (SourceCategory, error)

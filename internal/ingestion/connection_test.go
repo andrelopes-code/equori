@@ -23,10 +23,10 @@ const (
 )
 
 type integrationView struct {
-	ID        string `json:"id"`
-	Provider  string `json:"provider"`
-	Name      string `json:"name"`
-	UpdatedAt string `json:"updated_at"`
+	ID         string `json:"id"`
+	Aggregator string `json:"aggregator"`
+	Name       string `json:"name"`
+	UpdatedAt  string `json:"updated_at"`
 }
 
 type externalAccountView struct {
@@ -44,7 +44,8 @@ type externalAccountView struct {
 type connectionView struct {
 	ID               string                `json:"id"`
 	IntegrationID    string                `json:"integration_id"`
-	ItemID           string                `json:"item_id"`
+	ExternalID       string                `json:"external_id"`
+	State            string                `json:"state"`
 	Name             string                `json:"name"`
 	ProviderStatus   string                `json:"provider_status"`
 	LastItemUpdateAt string                `json:"last_item_update_at"`
@@ -75,7 +76,7 @@ func (a aggregator) serveItem(clientID, itemID, connector string) {
 }
 
 func integrationBody(name, clientID, secret string) map[string]any {
-	return map[string]any{"provider": "pluggy", "name": name, "credentials": map[string]any{"client_id": clientID, "client_secret": secret}}
+	return map[string]any{"aggregator": "pluggy", "name": name, "credentials": map[string]any{"client_id": clientID, "client_secret": secret}}
 }
 
 func (a aggregator) integrate(c *http.Client, name, clientID, secret string) integrationView {
@@ -91,7 +92,7 @@ func (a aggregator) integrate(c *http.Client, name, clientID, secret string) int
 
 func (a aggregator) connect(c *http.Client, integrationID, itemID string) apitest.Response {
 	a.h.T().Helper()
-	return a.h.Call(c, http.MethodPost, "/api/v1/connections", map[string]any{"integration_id": integrationID, "item_id": itemID})
+	return a.h.Call(c, http.MethodPost, "/api/v1/connections", map[string]any{"integration_id": integrationID, "external_id": itemID})
 }
 
 func (a aggregator) mustConnect(c *http.Client, integrationID, itemID string) connectionView {
@@ -158,7 +159,7 @@ func TestConnectItemAndMapAccounts(t *testing.T) {
 	}
 	var in integrationView
 	r.Decode(t, &in)
-	if r.Header.Get("Location") != "/api/v1/integrations/"+in.ID || in.Provider != "pluggy" || in.Name != "Meu Pluggy" || in.UpdatedAt == "" {
+	if r.Header.Get("Location") != "/api/v1/integrations/"+in.ID || in.Aggregator != "pluggy" || in.Name != "Meu Pluggy" || in.UpdatedAt == "" {
 		t.Fatalf("integration = %+v, location %q", in, r.Header.Get("Location"))
 	}
 	if bytes.Contains(r.Body, []byte(pluggySecret)) || bytes.Contains(r.Body, []byte(pluggyClient)) {
@@ -179,8 +180,8 @@ func TestConnectItemAndMapAccounts(t *testing.T) {
 	}
 	var conn connectionView
 	r.Decode(t, &conn)
-	if r.Header.Get("Location") != "/api/v1/connections/"+conn.ID || conn.IntegrationID != in.ID || conn.ItemID != nubankItem ||
-		conn.Name != "Nubank" || conn.ProviderStatus != "UPDATED" || conn.LastItemUpdateAt != "2026-11-12T06:00:00Z" || len(conn.Accounts) != 3 {
+	if r.Header.Get("Location") != "/api/v1/connections/"+conn.ID || conn.IntegrationID != in.ID || conn.ExternalID != nubankItem ||
+		conn.Name != "Nubank" || conn.ProviderStatus != "UPDATED" || conn.State != "ok" || conn.LastItemUpdateAt != "2026-11-12T06:00:00Z" || len(conn.Accounts) != 3 {
 		t.Fatalf("connection = %+v", conn)
 	}
 	ext := externalAccount(conn, pluggy.SubtypeChecking)
@@ -329,8 +330,8 @@ func TestIntegrationCredentials(t *testing.T) {
 	a.p.RevokeKeys()
 	a.serveItem(pluggyClient, "item-inter-52c8", "Inter")
 	inter := a.mustConnect(a.h.Client, in.ID, "item-inter-52c8")
-	a.h.ExpectProblem(a.connect(a.h.Client, in.ID, nubankItem), http.StatusUnprocessableEntity, "validation_failed", "item_id")
-	a.h.ExpectProblem(a.connect(a.h.Client, in.ID, "item-unknown-0d"), http.StatusUnprocessableEntity, "validation_failed", "item_id")
+	a.h.ExpectProblem(a.connect(a.h.Client, in.ID, nubankItem), http.StatusUnprocessableEntity, "validation_failed", "external_id")
+	a.h.ExpectProblem(a.connect(a.h.Client, in.ID, "item-unknown-0d"), http.StatusUnprocessableEntity, "validation_failed", "external_id")
 	a.h.ExpectProblem(a.connect(a.h.Client, uuid.NewString(), nubankItem), http.StatusUnprocessableEntity, "validation_failed", "integration_id")
 
 	path := "/api/v1/integrations/" + in.ID
@@ -403,7 +404,7 @@ func TestTwoIntegrations(t *testing.T) {
 	}
 
 	a.serveItem("client-2b7d", "item-second-3", "Bank 8")
-	a.h.ExpectProblem(a.connect(a.h.Client, first.ID, "item-second-3"), http.StatusUnprocessableEntity, "validation_failed", "item_id")
+	a.h.ExpectProblem(a.connect(a.h.Client, first.ID, "item-second-3"), http.StatusUnprocessableEntity, "validation_failed", "external_id")
 
 	a.p.SetCredentials("client-2b7d", "secret-2c91")
 	a.p.RevokeKeys()
@@ -461,7 +462,7 @@ func TestIntegrationsWithoutKey(t *testing.T) {
 		h.Do(http.MethodPost, "/api/v1/integrations", integrationBody("Meu Pluggy", pluggyClient, pluggySecret)),
 		h.Do(http.MethodGet, "/api/v1/integrations", nil),
 		h.Do(http.MethodGet, "/api/v1/connections", nil),
-		h.Do(http.MethodPost, "/api/v1/connections", map[string]any{"integration_id": uuid.NewString(), "item_id": nubankItem}),
+		h.Do(http.MethodPost, "/api/v1/connections", map[string]any{"integration_id": uuid.NewString(), "external_id": nubankItem}),
 	} {
 		h.ExpectProblem(r, http.StatusConflict, "integration_unavailable", "")
 	}

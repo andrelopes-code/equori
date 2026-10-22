@@ -232,7 +232,7 @@ func (s *Service) read(ctx context.Context, f ImportFile, currency money.Currenc
 // processed again (A38), and a line the ledger refuses waits for review instead of failing
 // the batch. transferTo, when set, names the account a new line is a transfer to (A76).
 func (s *Service) importRecords(ctx context.Context, batch *domain.Batch, currency money.Currency, lines []domain.NormalizedRecord, transferTo func(domain.NormalizedRecord) *uuid.UUID) error {
-	sync := batch.Source == domain.SourceOpenFinance
+	sync := batch.Source == domain.SourceAggregator
 	ordinals := domain.Ordinals{}
 	claims := make([]domain.ExternalRecord, len(lines))
 	for i, r := range lines {

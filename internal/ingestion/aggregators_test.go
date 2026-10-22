@@ -47,11 +47,15 @@ func TestAggregators(t *testing.T) {
 func TestIntegrationCredentialFields(t *testing.T) {
 	t.Parallel()
 	a := newAggregator(t)
-	missing := map[string]any{"provider": "pluggy", "name": "Meu Pluggy", "credentials": map[string]any{"client_id": "a"}}
+	missing := map[string]any{"aggregator": "pluggy", "name": "Meu Pluggy", "credentials": map[string]any{"client_id": "a"}}
 	a.h.ExpectProblem(a.h.Do(http.MethodPost, "/api/v1/integrations", missing),
 		http.StatusUnprocessableEntity, "validation_failed", "credentials.client_secret")
 
-	extra := map[string]any{"provider": "pluggy", "name": "Meu Pluggy", "credentials": map[string]any{"client_id": "a", "client_secret": "b", "x": "1"}}
+	extra := map[string]any{"aggregator": "pluggy", "name": "Meu Pluggy", "credentials": map[string]any{"client_id": "a", "client_secret": "b", "x": "1"}}
 	a.h.ExpectProblem(a.h.Do(http.MethodPost, "/api/v1/integrations", extra),
 		http.StatusUnprocessableEntity, "validation_failed", "credentials.x")
+
+	unknown := map[string]any{"aggregator": "plaid", "name": "Plaid", "credentials": map[string]any{"client_id": "a", "client_secret": "b"}}
+	a.h.ExpectProblem(a.h.Do(http.MethodPost, "/api/v1/integrations", unknown),
+		http.StatusUnprocessableEntity, "validation_failed", "aggregator")
 }

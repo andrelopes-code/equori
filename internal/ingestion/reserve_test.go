@@ -186,11 +186,11 @@ func TestS68ReservedBalanceSync(t *testing.T) {
 		t.Fatalf("reserve batches = %+v", got)
 	}
 	b := got[0]
-	if b.Counts.Received != 0 || b.Source != "open_finance" || b.Balance.Status != "recorded" || b.Balance.Date != "2026-11-10" || b.Balance.Amount.Amount != 100292 {
+	if b.Counts.Received != 0 || b.Source != "aggregator" || b.Balance.Status != "recorded" || b.Balance.Date != "2026-11-10" || b.Balance.Amount.Amount != 100292 {
 		t.Fatalf("reserve batch = %+v", b)
 	}
 	as := f.assertions(reserve)
-	if len(as) != 1 || as[0].Source != "open_finance" || !as[0].Reconciled || as[0].Date != "2026-11-10" || as[0].Amount.Amount != 100292 {
+	if len(as) != 1 || as[0].Source != "aggregator" || !as[0].Reconciled || as[0].Date != "2026-11-10" || as[0].Amount.Amount != 100292 {
 		t.Fatalf("assertions = %+v", as)
 	}
 
@@ -375,7 +375,7 @@ func TestS69BoundedReserveYield(t *testing.T) {
 	// booked once and the older assertion reconciles with resolution none.
 	t.Run("several open assertions of the sync date", func(t *testing.T) {
 		f, reserve, checkingID := reserveAfterFirstSync(t, "auto")
-		body := map[string]any{"date": "2026-11-11", "amount": apitest.BRL(100352), "source": "open_finance"}
+		body := map[string]any{"date": "2026-11-11", "amount": apitest.BRL(100352), "source": "aggregator"}
 		f.h.MustDo(http.MethodPost, "/api/v1/accounts/"+reserve+"/balance-assertions", body, http.StatusCreated, nil)
 		f.h.MustDo(http.MethodPost, "/api/v1/accounts/"+reserve+"/balance-assertions", body, http.StatusCreated, nil)
 		f.syncReserve(checkingID, "2026-11-11", "1003.52")
@@ -442,7 +442,7 @@ func TestS70ReserveTransfers(t *testing.T) {
 	// balance, with the transfers booked, and reconciles with no resolution.
 	for _, reserve := range []string{cofrinho, algum} {
 		as := f.assertions(reserve)
-		if len(as) != 1 || as[0].Source != "open_finance" || !as[0].Reconciled || as[0].Date != "2026-11-11" {
+		if len(as) != 1 || as[0].Source != "aggregator" || !as[0].Reconciled || as[0].Date != "2026-11-11" {
 			t.Fatalf("assertions of %s after the first sync = %+v", reserve, as)
 		}
 		if n := f.count(`SELECT count(*) FROM ledger_reconciliation WHERE account_id = $1 AND assertion_id IS NOT NULL AND resolution = 'none' AND difference = 0`, reserve); n != 1 {

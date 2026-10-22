@@ -86,7 +86,7 @@ func TestConnectionSchemaInvariants(t *testing.T) {
 	if err := h.Pool.QueryRow(ctx, `SELECT id FROM ledger_account WHERE user_id = $1 LIMIT 1`, otherID).Scan(&otherAccount); err != nil {
 		t.Fatal(err)
 	}
-	if err := h.Pool.QueryRow(ctx, `INSERT INTO ingestion_integration (id, user_id, provider, name, credential_ciphertext) VALUES (uuidv7(), $1, 'pluggy', 'Meu Pluggy', '\x01') RETURNING id`, uid).Scan(&integration); err != nil {
+	if err := h.Pool.QueryRow(ctx, `INSERT INTO ingestion_integration (id, user_id, aggregator, name, credential_ciphertext) VALUES (uuidv7(), $1, 'pluggy', 'Meu Pluggy', '\x01') RETURNING id`, uid).Scan(&integration); err != nil {
 		t.Fatal(err)
 	}
 	if err := h.Pool.QueryRow(ctx, `INSERT INTO ingestion_connection (user_id, integration_id, external_item_id, name, provider_status) VALUES ($1, $2, 'item-1', 'Nubank', 'UPDATED') RETURNING id`, uid, integration).Scan(&connection); err != nil {
@@ -111,15 +111,17 @@ func TestConnectionSchemaInvariants(t *testing.T) {
 		name string
 		err  error
 	}{
-		{"A34: an integration name once per user", exec(`INSERT INTO ingestion_integration (id, user_id, provider, name, credential_ciphertext) VALUES (uuidv7(), $1, 'pluggy', 'Meu Pluggy', '\x01')`, uid)},
+		{"A34: an integration name once per user", exec(`INSERT INTO ingestion_integration (id, user_id, aggregator, name, credential_ciphertext) VALUES (uuidv7(), $1, 'pluggy', 'Meu Pluggy', '\x01')`, uid)},
 		{"A34: an integration with connections is not deleted", exec(`DELETE FROM ingestion_integration WHERE id = $1`, integration)},
 		{"an item once per integration", exec(`INSERT INTO ingestion_connection (user_id, integration_id, external_item_id, name, provider_status) VALUES ($1, $2, 'item-1', 'Again', 'UPDATED')`, uid, integration)},
 		{"A35: one feed per ledger account", external("acc-2", checking, "2026-10-01", false)},
 		{"A35: a mapped account has a start date", external("acc-3", savings, nil, false)},
 		{"A35: an ignored account is not mapped", external("acc-4", savings, "2026-10-01", true)},
 		{"ADR 003: a mapping stays within its user", external("acc-5", otherAccount, "2026-10-01", false)},
+		{"an aggregator is an identifier", exec(`INSERT INTO ingestion_integration (id, user_id, aggregator, name, credential_ciphertext) VALUES (uuidv7(), $1, 'Bad Id', 'Other', '\x01')`, uid)},
+		{"open_finance is no batch source", batch("open_finance", "", nil)},
 		{"a file batch has a file name", batch("ofx", "", nil)},
-		{"an aggregator batch has no file name", batch("open_finance", "sync.json", nil)},
+		{"an aggregator batch has no file name", batch("aggregator", "sync.json", nil)},
 		{"A40: an installment key names a ledger plan", exec(`INSERT INTO ingestion_installment_plan (user_id, account_id, plan_key, plan_id)
 			VALUES ($1, $2, $3, uuidv7())`, uid, checking, make([]byte, 32))},
 		{"a file batch has no external account", exec(`INSERT INTO ingestion_batch (user_id, account_id, source, file_name, currency, external_account_id)

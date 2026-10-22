@@ -207,7 +207,7 @@ const categorizationRoutes: Parameters<typeof fakeApi>[0] = {
       items: [
         {
           id: "c-1",
-          provider: "pluggy",
+          aggregator: "pluggy",
           external_id: "05010000",
           name: "Supermarkets",
           count: 5,
@@ -215,7 +215,7 @@ const categorizationRoutes: Parameters<typeof fakeApi>[0] = {
         },
         {
           id: "c-2",
-          provider: "pluggy",
+          aggregator: "pluggy",
           external_id: "06020000",
           name: "Food delivery",
           count: 12,

@@ -50,7 +50,7 @@ type ClassificationRule struct {
 type ClassificationSourceCategory struct {
 	ID         uuid.UUID
 	UserID     int64
-	Provider   string
+	Aggregator string
 	ExternalID string
 	Name       string
 	SeenCount  int32

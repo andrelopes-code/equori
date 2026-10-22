@@ -63,4 +63,4 @@ SELECT sync_from, last_synced_on FROM ingestion_external_account WHERE user_id =
 -- name: AccountFilePeriods :many
 -- A103: the periods the account's imported files covered.
 SELECT period_from, period_to FROM ingestion_batch
-WHERE user_id = @user_id AND account_id = @account_id AND source <> 'open_finance';
+WHERE user_id = @user_id AND account_id = @account_id AND source <> 'aggregator';

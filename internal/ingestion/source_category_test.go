@@ -11,7 +11,7 @@ import (
 
 type sourceCategoryView struct {
 	ID         string `json:"id"`
-	Provider   string `json:"provider"`
+	Aggregator string `json:"aggregator"`
 	ExternalID string `json:"external_id"`
 	Name       string `json:"name"`
 	Count      int    `json:"count"`
@@ -62,7 +62,7 @@ func TestSourceCategory(t *testing.T) {
 	f.sync()
 
 	got := f.sourceCategories(f.h.Client)
-	want := sourceCategoryView{ID: got[0].ID, Provider: "pluggy", ExternalID: "05010000", Name: "Food Delivery", Count: 1}
+	want := sourceCategoryView{ID: got[0].ID, Aggregator: "pluggy", ExternalID: "05010000", Name: "Food Delivery", Count: 1}
 	if len(got) != 1 || got[0] != want {
 		t.Fatalf("source categories = %+v, want [%+v]", got, want)
 	}

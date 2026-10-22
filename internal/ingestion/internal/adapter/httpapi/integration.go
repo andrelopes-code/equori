@@ -10,12 +10,12 @@ import (
 )
 
 func toIntegrationAPI(i domain.Integration) Integration {
-	return Integration{Id: i.ID, Provider: IntegrationProvider(i.Provider), Name: i.Name, UpdatedAt: i.UpdatedAt.UTC()}
+	return Integration{Id: i.ID, Aggregator: string(i.Provider), Name: i.Name, UpdatedAt: i.UpdatedAt.UTC()}
 }
 
 func (s *Server) CreateIntegration(ctx context.Context, req CreateIntegrationRequestObject) (CreateIntegrationResponseObject, error) {
 	b := req.Body
-	i, err := s.svc.CreateIntegration(ctx, auth.MustUserID(ctx), domain.Provider(b.Provider), b.Name,
+	i, err := s.svc.CreateIntegration(ctx, auth.MustUserID(ctx), domain.Provider(b.Aggregator), b.Name,
 		domain.Credentials(b.Credentials))
 	if err != nil {
 		return nil, err

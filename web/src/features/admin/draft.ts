@@ -184,7 +184,7 @@ const enums: Record<string, readonly (readonly string[])[]> = {
   ],
   outcome: [["won", "lost"]],
   resolution: [["adjustment", "transactions_added"]],
-  source: [["manual", "import", "open_finance"]],
+  source: [["manual", "import", "aggregator"]],
   action: [["match", "create", "discard"]],
   match_type: [["equals", "starts_with", "contains", "regex"]],
   field: [
@@ -214,7 +214,7 @@ const enums: Record<string, readonly (readonly string[])[]> = {
       "in_list",
     ],
   ],
-  provider: [["pluggy"]],
+  aggregator: [["pluggy"]],
   exchange: [["BVMF"]],
   delimiter: [["comma", "semicolon", "tab", "pipe"]],
   date_layout: [["DD/MM/YYYY", "YYYY-MM-DD", "MM/DD/YYYY"]],

@@ -222,21 +222,6 @@ func (e RuleSuggestionState) Valid() bool {
 	}
 }
 
-// Defines values for SourceCategoryProvider.
-const (
-	Pluggy SourceCategoryProvider = "pluggy"
-)
-
-// Valid indicates whether the value is a known member of the SourceCategoryProvider enum.
-func (e SourceCategoryProvider) Valid() bool {
-	switch e {
-	case Pluggy:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for ListRuleSuggestionsParamsState.
 const (
 	ListRuleSuggestionsParamsStateAccepted  ListRuleSuggestionsParamsState = "accepted"
@@ -476,17 +461,15 @@ type RuleSuggestionPage struct {
 
 // SourceCategory defines model for SourceCategory.
 type SourceCategory struct {
-	// CategoryId Absent while unmapped.
-	CategoryId *openapi_types.UUID    `json:"category_id,omitempty"`
-	Count      int                    `json:"count"`
-	ExternalId string                 `json:"external_id"`
-	Id         openapi_types.UUID     `json:"id"`
-	Name       string                 `json:"name"`
-	Provider   SourceCategoryProvider `json:"provider"`
-}
+	Aggregator string `json:"aggregator"`
 
-// SourceCategoryProvider defines model for SourceCategory.Provider.
-type SourceCategoryProvider string
+	// CategoryId Absent while unmapped.
+	CategoryId *openapi_types.UUID `json:"category_id,omitempty"`
+	Count      int                 `json:"count"`
+	ExternalId string              `json:"external_id"`
+	Id         openapi_types.UUID  `json:"id"`
+	Name       string              `json:"name"`
+}
 
 // SourceCategoryList defines model for SourceCategoryList.
 type SourceCategoryList struct {

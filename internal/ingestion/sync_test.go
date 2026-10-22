@@ -66,7 +66,7 @@ func (f syncFixture) sync() {
 	}
 }
 
-// batches returns the open_finance batches of an account, newest first.
+// batches returns the aggregator batches of an account, newest first.
 func (f syncFixture) batches(account string) []syncBatch {
 	f.h.T().Helper()
 	var out struct {
@@ -131,7 +131,7 @@ func TestSyncBankAccount(t *testing.T) {
 		t.Fatalf("batches = %+v", bs)
 	}
 	b := bs[0]
-	if b.Source != "open_finance" || b.ExternalAccountID != externalAccount(f.conn, pluggy.SubtypeChecking).ID || b.PeriodFrom != "2026-10-01" || b.PeriodTo != "2026-11-12" ||
+	if b.Source != "aggregator" || b.ExternalAccountID != externalAccount(f.conn, pluggy.SubtypeChecking).ID || b.PeriodFrom != "2026-10-01" || b.PeriodTo != "2026-11-12" ||
 		b.Counts.Received != 3 || b.Counts.Matched != 1 || b.Counts.Created != 2 || b.Counts.Ignored != 0 ||
 		b.Balance.Status != "recorded" || b.Balance.Date != "2026-11-12" || b.Balance.Amount.Amount != 283410 {
 		t.Fatalf("batch = %+v", b)
@@ -336,7 +336,7 @@ func TestSyncBalanceRecordsNoYield(t *testing.T) {
 	if n := f.count(`SELECT count(*) FROM ledger_reconciliation WHERE account_id = $1`, reserve); n != 0 {
 		t.Fatalf("reconciliations = %d; the difference stays open", n)
 	}
-	if n := f.count(`SELECT count(*) FROM ledger_balance_assertion WHERE account_id = $1 AND source = 'open_finance'`, reserve); n != 1 {
+	if n := f.count(`SELECT count(*) FROM ledger_balance_assertion WHERE account_id = $1 AND source = 'aggregator'`, reserve); n != 1 {
 		t.Fatalf("assertions = %d", n)
 	}
 }
@@ -404,7 +404,7 @@ func TestS71SyncReevaluatesOpenAssertion(t *testing.T) {
 		f := setup(t)
 		f.sync()
 		got := f.assertions(f.checking)
-		if len(got) != 1 || got[0].Reconciled || got[0].Source != "open_finance" || got[0].Date != "2026-11-12" || got[0].Amount.Amount != 383410 {
+		if len(got) != 1 || got[0].Reconciled || got[0].Source != "aggregator" || got[0].Date != "2026-11-12" || got[0].Amount.Amount != 383410 {
 			t.Fatalf("assertions after the first sync = %+v", got)
 		}
 		if f.openDifference(f.checking) == nil {
@@ -428,7 +428,7 @@ func TestS71SyncReevaluatesOpenAssertion(t *testing.T) {
 	t.Run("second assertion through the API", func(t *testing.T) {
 		f := setup(t)
 		f.sync()
-		body := map[string]any{"date": "2026-11-12", "amount": apitest.BRL(383410), "source": "open_finance"}
+		body := map[string]any{"date": "2026-11-12", "amount": apitest.BRL(383410), "source": "aggregator"}
 		post := func(wantResolution string) {
 			t.Helper()
 			var out struct {

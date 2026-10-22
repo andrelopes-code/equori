@@ -1,14 +1,14 @@
 -- name: CountSourceCategory :exec
--- A line carried the category: count it and keep the provider's latest name.
-INSERT INTO classification_source_category (user_id, provider, external_id, name, seen_count)
-VALUES (@user_id, @provider, @external_id, @name, @seen)
-ON CONFLICT (user_id, provider, external_id) DO UPDATE SET
+-- A line carried the category: count it and keep the aggregator's latest name.
+INSERT INTO classification_source_category (user_id, aggregator, external_id, name, seen_count)
+VALUES (@user_id, @aggregator, @external_id, @name, @seen)
+ON CONFLICT (user_id, aggregator, external_id) DO UPDATE SET
     seen_count = classification_source_category.seen_count + EXCLUDED.seen_count,
     name = CASE WHEN EXCLUDED.name = '' THEN classification_source_category.name ELSE EXCLUDED.name END;
 
 -- name: MappedSourceCategories :many
 SELECT external_id, category_id::uuid AS category_id FROM classification_source_category
-WHERE user_id = @user_id AND provider = @provider AND external_id = ANY(@external_ids::text[]) AND category_id IS NOT NULL;
+WHERE user_id = @user_id AND aggregator = @aggregator AND external_id = ANY(@external_ids::text[]) AND category_id IS NOT NULL;
 
 -- name: ListSourceCategories :many
 SELECT * FROM classification_source_category

@@ -14,7 +14,7 @@ import (
 
 const accountFilePeriods = `-- name: AccountFilePeriods :many
 SELECT period_from, period_to FROM ingestion_batch
-WHERE user_id = $1 AND account_id = $2 AND source <> 'open_finance'
+WHERE user_id = $1 AND account_id = $2 AND source <> 'aggregator'
 `
 
 type AccountFilePeriodsParams struct {

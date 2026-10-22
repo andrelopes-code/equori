@@ -316,7 +316,7 @@ export function CategorizationPanel({ ctx }: { ctx: AdminContext }) {
                     source.category_id === undefined
                       ? t("admin.none")
                       : categoryPath(source.category_id, ctx.accounts),
-                  provider: source.provider,
+                  aggregator: source.aggregator,
                   external_id: source.external_id,
                   id: source.id,
                 }))

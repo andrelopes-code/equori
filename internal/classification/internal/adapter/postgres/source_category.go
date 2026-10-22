@@ -11,7 +11,7 @@ import (
 
 func toSourceCategory(row ClassificationSourceCategory) app.SourceCategory {
 	return app.SourceCategory{
-		ID: row.ID, Provider: row.Provider, ExternalID: row.ExternalID, Name: row.Name,
+		ID: row.ID, Aggregator: row.Aggregator, ExternalID: row.ExternalID, Name: row.Name,
 		Count: int(row.SeenCount), CategoryID: row.CategoryID.UUID,
 	}
 }
@@ -19,7 +19,7 @@ func toSourceCategory(row ClassificationSourceCategory) app.SourceCategory {
 func (r *Repository) CountSourceCategories(ctx context.Context, userID int64, seen []app.SourceCategory) error {
 	for _, c := range seen {
 		if err := r.q.CountSourceCategory(ctx, CountSourceCategoryParams{
-			UserID: userID, Provider: c.Provider, ExternalID: c.ExternalID, Name: c.Name, Seen: int32(c.Count), //nolint:gosec // lines of one sync
+			UserID: userID, Aggregator: c.Aggregator, ExternalID: c.ExternalID, Name: c.Name, Seen: int32(c.Count), //nolint:gosec // lines of one sync
 		}); err != nil {
 			return err
 		}
@@ -27,8 +27,8 @@ func (r *Repository) CountSourceCategories(ctx context.Context, userID int64, se
 	return nil
 }
 
-func (r *Repository) MappedSourceCategories(ctx context.Context, userID int64, provider string, externalIDs []string) (map[string]uuid.UUID, error) {
-	rows, err := r.q.MappedSourceCategories(ctx, MappedSourceCategoriesParams{UserID: userID, Provider: provider, ExternalIds: externalIDs})
+func (r *Repository) MappedSourceCategories(ctx context.Context, userID int64, aggregator string, externalIDs []string) (map[string]uuid.UUID, error) {
+	rows, err := r.q.MappedSourceCategories(ctx, MappedSourceCategoriesParams{UserID: userID, Aggregator: aggregator, ExternalIds: externalIDs})
 	if err != nil {
 		return nil, err
 	}

@@ -54,10 +54,10 @@ func TestSyncSkipsABlockedItem(t *testing.T) {
 
 	res := f.mustSyncNow(f.conn.ID)
 	f.tick()
-	if len(res.Batches) != 0 || res.Connection.ProviderStatus != "LOGIN_ERROR" || res.Connection.LastSyncedAt != "" {
+	if len(res.Batches) != 0 || res.Connection.ProviderStatus != "LOGIN_ERROR" || res.Connection.State != "needs_owner" || res.Connection.LastSyncedAt != "" {
 		t.Fatalf("result = %+v", res)
 	}
-	if got := f.connection(f.h.Client, f.conn.ID); got.ProviderStatus != "LOGIN_ERROR" || len(f.batches(f.checking)) != 0 {
+	if got := f.connection(f.h.Client, f.conn.ID); got.ProviderStatus != "LOGIN_ERROR" || got.State != "needs_owner" || len(f.batches(f.checking)) != 0 {
 		t.Fatalf("connection = %+v, batches %d", got, len(f.batches(f.checking)))
 	}
 }

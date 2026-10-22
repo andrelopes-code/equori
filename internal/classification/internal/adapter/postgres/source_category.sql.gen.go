@@ -12,26 +12,26 @@ import (
 )
 
 const countSourceCategory = `-- name: CountSourceCategory :exec
-INSERT INTO classification_source_category (user_id, provider, external_id, name, seen_count)
+INSERT INTO classification_source_category (user_id, aggregator, external_id, name, seen_count)
 VALUES ($1, $2, $3, $4, $5)
-ON CONFLICT (user_id, provider, external_id) DO UPDATE SET
+ON CONFLICT (user_id, aggregator, external_id) DO UPDATE SET
     seen_count = classification_source_category.seen_count + EXCLUDED.seen_count,
     name = CASE WHEN EXCLUDED.name = '' THEN classification_source_category.name ELSE EXCLUDED.name END
 `
 
 type CountSourceCategoryParams struct {
 	UserID     int64
-	Provider   string
+	Aggregator string
 	ExternalID string
 	Name       string
 	Seen       int32
 }
 
-// A line carried the category: count it and keep the provider's latest name.
+// A line carried the category: count it and keep the aggregator's latest name.
 func (q *Queries) CountSourceCategory(ctx context.Context, arg CountSourceCategoryParams) error {
 	_, err := q.db.Exec(ctx, countSourceCategory,
 		arg.UserID,
-		arg.Provider,
+		arg.Aggregator,
 		arg.ExternalID,
 		arg.Name,
 		arg.Seen,
@@ -40,7 +40,7 @@ func (q *Queries) CountSourceCategory(ctx context.Context, arg CountSourceCatego
 }
 
 const listSourceCategories = `-- name: ListSourceCategories :many
-SELECT id, user_id, provider, external_id, name, seen_count, category_id FROM classification_source_category
+SELECT id, user_id, aggregator, external_id, name, seen_count, category_id FROM classification_source_category
 WHERE user_id = $1
   AND ($2::text IS NULL OR (name, id) > ($2::text, $3::uuid))
 ORDER BY name, id
@@ -71,7 +71,7 @@ func (q *Queries) ListSourceCategories(ctx context.Context, arg ListSourceCatego
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,
-			&i.Provider,
+			&i.Aggregator,
 			&i.ExternalID,
 			&i.Name,
 			&i.SeenCount,
@@ -90,7 +90,7 @@ func (q *Queries) ListSourceCategories(ctx context.Context, arg ListSourceCatego
 const mapSourceCategory = `-- name: MapSourceCategory :one
 UPDATE classification_source_category SET category_id = $1
 WHERE user_id = $2 AND id = $3
-RETURNING id, user_id, provider, external_id, name, seen_count, category_id
+RETURNING id, user_id, aggregator, external_id, name, seen_count, category_id
 `
 
 type MapSourceCategoryParams struct {
@@ -105,7 +105,7 @@ func (q *Queries) MapSourceCategory(ctx context.Context, arg MapSourceCategoryPa
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
-		&i.Provider,
+		&i.Aggregator,
 		&i.ExternalID,
 		&i.Name,
 		&i.SeenCount,
@@ -116,12 +116,12 @@ func (q *Queries) MapSourceCategory(ctx context.Context, arg MapSourceCategoryPa
 
 const mappedSourceCategories = `-- name: MappedSourceCategories :many
 SELECT external_id, category_id::uuid AS category_id FROM classification_source_category
-WHERE user_id = $1 AND provider = $2 AND external_id = ANY($3::text[]) AND category_id IS NOT NULL
+WHERE user_id = $1 AND aggregator = $2 AND external_id = ANY($3::text[]) AND category_id IS NOT NULL
 `
 
 type MappedSourceCategoriesParams struct {
 	UserID      int64
-	Provider    string
+	Aggregator  string
 	ExternalIds []string
 }
 
@@ -131,7 +131,7 @@ type MappedSourceCategoriesRow struct {
 }
 
 func (q *Queries) MappedSourceCategories(ctx context.Context, arg MappedSourceCategoriesParams) ([]MappedSourceCategoriesRow, error) {
-	rows, err := q.db.Query(ctx, mappedSourceCategories, arg.UserID, arg.Provider, arg.ExternalIds)
+	rows, err := q.db.Query(ctx, mappedSourceCategories, arg.UserID, arg.Aggregator, arg.ExternalIds)
 	if err != nil {
 		return nil, err
 	}

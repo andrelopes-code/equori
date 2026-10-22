@@ -256,19 +256,19 @@ func (e BalanceBasis) Valid() bool {
 
 // Defines values for BalanceAssertionSource.
 const (
-	BalanceAssertionSourceImport      BalanceAssertionSource = "import"
-	BalanceAssertionSourceManual      BalanceAssertionSource = "manual"
-	BalanceAssertionSourceOpenFinance BalanceAssertionSource = "open_finance"
+	BalanceAssertionSourceAggregator BalanceAssertionSource = "aggregator"
+	BalanceAssertionSourceImport     BalanceAssertionSource = "import"
+	BalanceAssertionSourceManual     BalanceAssertionSource = "manual"
 )
 
 // Valid indicates whether the value is a known member of the BalanceAssertionSource enum.
 func (e BalanceAssertionSource) Valid() bool {
 	switch e {
+	case BalanceAssertionSourceAggregator:
+		return true
 	case BalanceAssertionSourceImport:
 		return true
 	case BalanceAssertionSourceManual:
-		return true
-	case BalanceAssertionSourceOpenFinance:
 		return true
 	default:
 		return false
@@ -277,19 +277,19 @@ func (e BalanceAssertionSource) Valid() bool {
 
 // Defines values for BalanceAssertionInputSource.
 const (
-	BalanceAssertionInputSourceImport      BalanceAssertionInputSource = "import"
-	BalanceAssertionInputSourceManual      BalanceAssertionInputSource = "manual"
-	BalanceAssertionInputSourceOpenFinance BalanceAssertionInputSource = "open_finance"
+	BalanceAssertionInputSourceAggregator BalanceAssertionInputSource = "aggregator"
+	BalanceAssertionInputSourceImport     BalanceAssertionInputSource = "import"
+	BalanceAssertionInputSourceManual     BalanceAssertionInputSource = "manual"
 )
 
 // Valid indicates whether the value is a known member of the BalanceAssertionInputSource enum.
 func (e BalanceAssertionInputSource) Valid() bool {
 	switch e {
+	case BalanceAssertionInputSourceAggregator:
+		return true
 	case BalanceAssertionInputSourceImport:
 		return true
 	case BalanceAssertionInputSourceManual:
-		return true
-	case BalanceAssertionInputSourceOpenFinance:
 		return true
 	default:
 		return false
@@ -913,16 +913,16 @@ func (e StatementDetailStatus) Valid() bool {
 
 // Defines values for StatementFactSource.
 const (
-	Aggregator StatementFactSource = "aggregator"
-	Owner      StatementFactSource = "owner"
+	StatementFactSourceAggregator StatementFactSource = "aggregator"
+	StatementFactSourceOwner      StatementFactSource = "owner"
 )
 
 // Valid indicates whether the value is a known member of the StatementFactSource enum.
 func (e StatementFactSource) Valid() bool {
 	switch e {
-	case Aggregator:
+	case StatementFactSourceAggregator:
 		return true
-	case Owner:
+	case StatementFactSourceOwner:
 		return true
 	default:
 		return false

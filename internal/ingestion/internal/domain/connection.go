@@ -14,12 +14,14 @@ import (
 
 // Connection is one aggregator item, read through an integration (P6 amendment A34).
 type Connection struct {
-	ID               uuid.UUID
-	UserID           int64
-	IntegrationID    uuid.UUID
-	ItemID           string
-	Name             string
-	ProviderStatus   string
+	ID             uuid.UUID
+	UserID         int64
+	IntegrationID  uuid.UUID
+	ItemID         string
+	Name           string
+	ProviderStatus string
+	// State is the aggregator's reading of ProviderStatus; the repository does not store it.
+	State            ConnectionState
 	LastItemUpdateAt *time.Time
 	// NextItemUpdateAt is when the provider will next update the item, as the last check read
 	// it (A95).

@@ -15,7 +15,7 @@ function connection(
     ...item,
     id,
     integration_id: "00000000-0000-0000-0000-000000000001",
-    item_id: `item-${id}`,
+    external_id: `item-${id}`,
     name: `Bank ${id}`,
     provider_status: "UPDATED",
     created_at: "2026-10-01T10:00:00Z",

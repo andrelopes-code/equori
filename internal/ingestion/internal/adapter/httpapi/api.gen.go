@@ -19,6 +19,27 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for ConnectionState.
+const (
+	Failed     ConnectionState = "failed"
+	NeedsOwner ConnectionState = "needs_owner"
+	Ok         ConnectionState = "ok"
+)
+
+// Valid indicates whether the value is a known member of the ConnectionState enum.
+func (e ConnectionState) Valid() bool {
+	switch e {
+	case Failed:
+		return true
+	case NeedsOwner:
+		return true
+	case Ok:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CsvProfileAmountSign.
 const (
 	AsIs     CsvProfileAmountSign = "as_is"
@@ -195,49 +216,19 @@ func (e ImportBalanceStatus) Valid() bool {
 
 // Defines values for ImportBatchSource.
 const (
-	ImportBatchSourceCsv         ImportBatchSource = "csv"
-	ImportBatchSourceOfx         ImportBatchSource = "ofx"
-	ImportBatchSourceOpenFinance ImportBatchSource = "open_finance"
+	ImportBatchSourceAggregator ImportBatchSource = "aggregator"
+	ImportBatchSourceCsv        ImportBatchSource = "csv"
+	ImportBatchSourceOfx        ImportBatchSource = "ofx"
 )
 
 // Valid indicates whether the value is a known member of the ImportBatchSource enum.
 func (e ImportBatchSource) Valid() bool {
 	switch e {
+	case ImportBatchSourceAggregator:
+		return true
 	case ImportBatchSourceCsv:
 		return true
 	case ImportBatchSourceOfx:
-		return true
-	case ImportBatchSourceOpenFinance:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for IntegrationProvider.
-const (
-	IntegrationProviderPluggy IntegrationProvider = "pluggy"
-)
-
-// Valid indicates whether the value is a known member of the IntegrationProvider enum.
-func (e IntegrationProvider) Valid() bool {
-	switch e {
-	case IntegrationProviderPluggy:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for IntegrationInputProvider.
-const (
-	IntegrationInputProviderPluggy IntegrationInputProvider = "pluggy"
-)
-
-// Valid indicates whether the value is a known member of the IntegrationInputProvider enum.
-func (e IntegrationInputProvider) Valid() bool {
-	switch e {
-	case IntegrationInputProviderPluggy:
 		return true
 	default:
 		return false
@@ -407,9 +398,9 @@ type AggregatorList struct {
 type Connection struct {
 	Accounts      []ExternalAccount  `json:"accounts"`
 	CreatedAt     time.Time          `json:"created_at"`
+	ExternalId    string             `json:"external_id"`
 	Id            openapi_types.UUID `json:"id"`
 	IntegrationId openapi_types.UUID `json:"integration_id"`
-	ItemId        string             `json:"item_id"`
 	LastError     *string            `json:"last_error,omitempty"`
 
 	// LastItemUpdateAt When the provider last updated the item from the institution, as of the last sync; the ledger holds the data of this update.
@@ -417,17 +408,23 @@ type Connection struct {
 	LastSyncedAt     *time.Time `json:"last_synced_at,omitempty"`
 	Name             string     `json:"name"`
 
-	// NextItemUpdateAt When the provider will next update the item, as the last check read it (A95). The owner cannot bring it forward for a Meu Pluggy item.
+	// NextItemUpdateAt When the provider will next update the item, as the last check read it (A95). The owner cannot bring it forward.
 	NextItemUpdateAt *time.Time `json:"next_item_update_at,omitempty"`
 
-	// ProviderStatus The item status the provider reported (Pluggy UPDATED, LOGIN_ERROR, OUTDATED, ...).
+	// ProviderStatus The item status the aggregator reported, verbatim.
 	ProviderStatus string `json:"provider_status"`
+
+	// State The aggregator-neutral reading of provider_status.
+	State ConnectionState `json:"state"`
 }
+
+// ConnectionState The aggregator-neutral reading of provider_status.
+type ConnectionState string
 
 // ConnectionInput defines model for ConnectionInput.
 type ConnectionInput struct {
+	ExternalId    string             `json:"external_id"`
 	IntegrationId openapi_types.UUID `json:"integration_id"`
-	ItemId        string             `json:"item_id"`
 	Name          *string            `json:"name,omitempty"`
 }
 
@@ -547,7 +544,7 @@ type ImportBalance struct {
 // ImportBalanceStatus defines model for ImportBalance.Status.
 type ImportBalanceStatus string
 
-// ImportBatch One file import, or one sync of a mapped account (source open_finance).
+// ImportBatch One file import, or one sync of a mapped account (source aggregator).
 type ImportBatch struct {
 	AccountId openapi_types.UUID `json:"account_id"`
 
@@ -599,14 +596,11 @@ type ImportCounts struct {
 
 // Integration defines model for Integration.
 type Integration struct {
-	Id        openapi_types.UUID  `json:"id"`
-	Name      string              `json:"name"`
-	Provider  IntegrationProvider `json:"provider"`
-	UpdatedAt time.Time           `json:"updated_at"`
+	Aggregator string             `json:"aggregator"`
+	Id         openapi_types.UUID `json:"id"`
+	Name       string             `json:"name"`
+	UpdatedAt  time.Time          `json:"updated_at"`
 }
-
-// IntegrationProvider defines model for Integration.Provider.
-type IntegrationProvider string
 
 // IntegrationCredentials One value per credential field the aggregator declares in listAggregators; a missing
 // or undeclared member is 422 validation_failed on credentials.<name>.
@@ -614,15 +608,13 @@ type IntegrationCredentials map[string]string
 
 // IntegrationInput defines model for IntegrationInput.
 type IntegrationInput struct {
+	Aggregator string `json:"aggregator"`
+
 	// Credentials One value per credential field the aggregator declares in listAggregators; a missing
 	// or undeclared member is 422 validation_failed on credentials.<name>.
-	Credentials IntegrationCredentials   `json:"credentials"`
-	Name        string                   `json:"name"`
-	Provider    IntegrationInputProvider `json:"provider"`
+	Credentials IntegrationCredentials `json:"credentials"`
+	Name        string                 `json:"name"`
 }
-
-// IntegrationInputProvider defines model for IntegrationInput.Provider.
-type IntegrationInputProvider string
 
 // IntegrationList defines model for IntegrationList.
 type IntegrationList struct {

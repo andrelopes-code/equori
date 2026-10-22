@@ -295,7 +295,7 @@ export const accountsEn = {
   "reconciliation.more": "Load older balances",
   "reconciliation.source.manual": "Typed",
   "reconciliation.source.import": "Statement file",
-  "reconciliation.source.open_finance": "Open Finance",
+  "reconciliation.source.aggregator": "Open Finance",
   "reconciliation.unconfirmed": "Entries without confirmation",
   "reconciliation.unconfirmedEmpty":
     "Every entry in the institution's period has a matching line.",
@@ -319,7 +319,7 @@ export const accountsEn = {
   "imports.balanceNone": "None in the file",
   "imports.source.ofx": "OFX file",
   "imports.source.csv": "CSV file",
-  "imports.source.open_finance": "Open Finance sync",
+  "imports.source.aggregator": "Open Finance sync",
   "scheduled.caption": "Expected entries",
   "scheduled.range": "Look ahead",
   "scheduled.date": "Date",

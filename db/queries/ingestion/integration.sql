@@ -1,6 +1,6 @@
 -- name: InsertIntegration :one
-INSERT INTO ingestion_integration (id, user_id, provider, name, credential_ciphertext)
-VALUES (@id, @user_id, @provider, @name, @credential_ciphertext)
+INSERT INTO ingestion_integration (id, user_id, aggregator, name, credential_ciphertext)
+VALUES (@id, @user_id, @aggregator, @name, @credential_ciphertext)
 RETURNING *;
 
 -- name: GetIntegration :one

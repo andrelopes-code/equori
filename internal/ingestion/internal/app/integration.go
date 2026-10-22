@@ -116,9 +116,20 @@ func (s *Service) Aggregators() []Aggregator {
 func (s *Service) aggregator(p domain.Provider) (Aggregator, error) {
 	a, err := s.aggs.Get(string(p))
 	if err != nil {
-		return nil, &domain.FieldError{Field: "provider", Message: "is not an aggregator of this instance"}
+		return nil, &domain.FieldError{Field: "aggregator", Message: "is not an aggregator of this instance"}
 	}
 	return a, nil
+}
+
+// secretField names the credential member the aggregator rejected: its last secret field, else "credentials".
+func secretField(fields []domain.CredentialField) string {
+	name := "credentials"
+	for _, f := range fields {
+		if f.Secret {
+			name = f.Name
+		}
+	}
+	return name
 }
 
 func (s *Service) verify(ctx context.Context, agg Aggregator, id uuid.UUID, c domain.Credentials) error {
@@ -127,7 +138,7 @@ func (s *Service) verify(ctx context.Context, agg Aggregator, id uuid.UUID, c do
 	}
 	err := agg.Verify(ctx, id, c)
 	if errors.Is(err, ErrProviderUnauthorized) {
-		return &UnauthorizedError{Field: "client_secret"}
+		return &UnauthorizedError{Field: secretField(agg.CredentialFields())}
 	}
 	return err
 }

@@ -293,7 +293,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "reconciliation.more": "Carregar saldos anteriores",
   "reconciliation.source.manual": "Digitado",
   "reconciliation.source.import": "Arquivo de extrato",
-  "reconciliation.source.open_finance": "Open Finance",
+  "reconciliation.source.aggregator": "Open Finance",
   "reconciliation.unconfirmed": "Lançamentos sem confirmação",
   "reconciliation.unconfirmedEmpty":
     "Todo lançamento no período da instituição tem uma linha correspondente.",
@@ -317,7 +317,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "imports.balanceNone": "Nenhum no arquivo",
   "imports.source.ofx": "Arquivo OFX",
   "imports.source.csv": "Arquivo CSV",
-  "imports.source.open_finance": "Sincronização Open Finance",
+  "imports.source.aggregator": "Sincronização Open Finance",
   "scheduled.caption": "Lançamentos previstos",
   "scheduled.range": "Olhar adiante",
   "scheduled.date": "Data",

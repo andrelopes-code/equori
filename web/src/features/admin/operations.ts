@@ -927,7 +927,7 @@ export const operations: Record<GroupKey, readonly Operation[]> = {
       method: "POST",
       path: "/integrations",
       body: () => ({
-        provider: "pluggy",
+        aggregator: "pluggy",
         name: "Pluggy",
         credentials: { client_id: "", client_secret: "" },
       }),
@@ -945,7 +945,7 @@ export const operations: Record<GroupKey, readonly Operation[]> = {
       id: "createConnection",
       method: "POST",
       path: "/connections",
-      body: () => ({ integration_id: "", item_id: "" }),
+      body: () => ({ integration_id: "", external_id: "" }),
     },
     { id: "getConnection", method: "GET", path: "/connections/{id}" },
     { id: "deleteConnection", method: "DELETE", path: "/connections/{id}" },

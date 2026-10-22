@@ -33,7 +33,7 @@ type ImportBatch = components["schemas"]["ImportBatch"];
 export const sourceLabel: Record<ImportBatch["source"], MessageKey> = {
   ofx: "imports.source.ofx",
   csv: "imports.source.csv",
-  open_finance: "imports.source.open_finance",
+  aggregator: "imports.source.aggregator",
 };
 
 // The statements imported into the account and the syncs that read it, newest first.

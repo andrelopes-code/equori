@@ -115,7 +115,7 @@ type IngestionExternalRecord struct {
 type IngestionIntegration struct {
 	ID                   uuid.UUID
 	UserID               int64
-	Provider             string
+	Aggregator           string
 	Name                 string
 	CredentialCiphertext []byte
 	UpdatedAt            time.Time

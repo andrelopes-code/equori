@@ -26,14 +26,14 @@ func violates(err error, code, constraint string) bool {
 
 func toIntegration(row IngestionIntegration) domain.Integration {
 	return domain.Integration{
-		ID: row.ID, UserID: row.UserID, Provider: domain.Provider(row.Provider), Name: row.Name,
+		ID: row.ID, UserID: row.UserID, Provider: domain.Provider(row.Aggregator), Name: row.Name,
 		SealedCredentials: row.CredentialCiphertext, UpdatedAt: row.UpdatedAt,
 	}
 }
 
 func (r *Repository) InsertIntegration(ctx context.Context, i domain.Integration) (domain.Integration, error) {
 	row, err := r.q.InsertIntegration(ctx, InsertIntegrationParams{
-		ID: i.ID, UserID: i.UserID, Provider: string(i.Provider), Name: i.Name, CredentialCiphertext: i.SealedCredentials,
+		ID: i.ID, UserID: i.UserID, Aggregator: string(i.Provider), Name: i.Name, CredentialCiphertext: i.SealedCredentials,
 	})
 	if violates(err, uniqueViolation, "ingestion_integration_name_key") {
 		return domain.Integration{}, &domain.FieldError{Field: "name", Message: "is already used by another integration"}

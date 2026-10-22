@@ -3233,7 +3233,7 @@ paths:
       operationId: createConnection
       summary: Connect an aggregator item and list its accounts (P6 amendments A34, A35).
       description: |
-        item_id is the item of the integration's application (Meu Pluggy: one item per bank).
+        external_id is the identifier the aggregator gives the item (one item per institution).
         The name defaults to the item's connector name. Every external account starts pending.
       requestBody:
         required: true
@@ -3302,7 +3302,7 @@ paths:
       operationId: syncConnection
       summary: Sync every mapped account of the connection now (P6 amendment A43).
       description: |
-        One import batch per mapped account. An item that needs its owner in Meu Pluggy
+        One import batch per mapped account. An item that needs its owner at the aggregator
         (LOGIN_ERROR, OUTDATED, WAITING_USER_INPUT) is not synced: batches is empty and the
         connection shows the status. A sync of an account waits for any other sync or import
         of it. A failure is stored in the connection's last_error.
@@ -4409,14 +4409,14 @@ components:
             $ref: "#/components/schemas/Occurrence"
     SourceCategory:
       type: object
-      required: [id, provider, external_id, name, count]
+      required: [id, aggregator, external_id, name, count]
       properties:
         id:
           type: string
           format: uuid
-        provider:
+        aggregator:
           type: string
-          enum: [pluggy]
+          pattern: "^[a-z0-9_]{2,40}$"
         external_id:
           type: string
         name:
@@ -4450,11 +4450,11 @@ components:
     IntegrationInput:
       type: object
       additionalProperties: false
-      required: [provider, name, credentials]
+      required: [aggregator, name, credentials]
       properties:
-        provider:
+        aggregator:
           type: string
-          enum: [pluggy]
+          pattern: "^[a-z0-9_]{2,40}$"
         name:
           type: string
           minLength: 1
@@ -4501,14 +4501,14 @@ components:
             $ref: "#/components/schemas/Aggregator"
     Integration:
       type: object
-      required: [id, provider, name, updated_at]
+      required: [id, aggregator, name, updated_at]
       properties:
         id:
           type: string
           format: uuid
-        provider:
+        aggregator:
           type: string
-          enum: [pluggy]
+          pattern: "^[a-z0-9_]{2,40}$"
         name:
           type: string
         updated_at:
@@ -4528,12 +4528,12 @@ components:
     ConnectionInput:
       type: object
       additionalProperties: false
-      required: [integration_id, item_id]
+      required: [integration_id, external_id]
       properties:
         integration_id:
           type: string
           format: uuid
-        item_id:
+        external_id:
           type: string
           minLength: 1
           maxLength: 100
@@ -4543,7 +4543,7 @@ components:
           maxLength: 60
     Connection:
       type: object
-      required: [id, integration_id, item_id, name, provider_status, created_at, accounts]
+      required: [id, integration_id, external_id, state, name, provider_status, created_at, accounts]
       properties:
         id:
           type: string
@@ -4551,13 +4551,17 @@ components:
         integration_id:
           type: string
           format: uuid
-        item_id:
+        external_id:
           type: string
         name:
           type: string
+        state:
+          type: string
+          enum: [ok, needs_owner, failed]
+          description: The aggregator-neutral reading of provider_status.
         provider_status:
           type: string
-          description: The item status the provider reported (Pluggy UPDATED, LOGIN_ERROR, OUTDATED, ...).
+          description: The item status the aggregator reported, verbatim.
         last_item_update_at:
           type: string
           format: date-time
@@ -4565,7 +4569,7 @@ components:
         next_item_update_at:
           type: string
           format: date-time
-          description: When the provider will next update the item, as the last check read it (A95). The owner cannot bring it forward for a Meu Pluggy item.
+          description: When the provider will next update the item, as the last check read it (A95). The owner cannot bring it forward.
         last_synced_at:
           type: string
           format: date-time
@@ -4807,7 +4811,7 @@ components:
           description: inverted flips the sign of every amount, for exports that list card charges as positive.
     ImportBatch:
       type: object
-      description: One file import, or one sync of a mapped account (source open_finance).
+      description: One file import, or one sync of a mapped account (source aggregator).
       required: [id, account_id, source, counts, balance, started_at]
       properties:
         id:
@@ -4818,7 +4822,7 @@ components:
           format: uuid
         source:
           type: string
-          enum: [ofx, csv, open_finance]
+          enum: [ofx, csv, aggregator]
         file_name:
           type: string
           description: Absent for a sync.
@@ -4981,7 +4985,7 @@ components:
           $ref: "#/components/schemas/Money"
         source:
           type: string
-          enum: [manual, import, open_finance]
+          enum: [manual, import, aggregator]
     BalanceAssertion:
       type: object
       required: [id, account_id, date, amount, source, recorded_at, reconciled]
@@ -4999,7 +5003,7 @@ components:
           $ref: "#/components/schemas/Money"
         source:
           type: string
-          enum: [manual, import, open_finance]
+          enum: [manual, import, aggregator]
         recorded_at:
           type: string
           format: date-time

@@ -94,7 +94,7 @@ function api(sent: Sent[]) {
         items: [
           {
             id: "sc1",
-            provider: "pluggy",
+            aggregator: "pluggy",
             external_id: "x",
             name: "Transporte",
             count: 7,

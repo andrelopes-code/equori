@@ -50,10 +50,10 @@ import { Presence } from "@/ui/presence";
 
 type Account = components["schemas"]["Account"];
 
-const sourceLabel: Record<"manual" | "import" | "open_finance", MessageKey> = {
+const sourceLabel: Record<"manual" | "import" | "aggregator", MessageKey> = {
   manual: "reconciliation.source.manual",
   import: "reconciliation.source.import",
-  open_finance: "reconciliation.source.open_finance",
+  aggregator: "reconciliation.source.aggregator",
 };
 
 const outcomeLabel: Record<AssertionOutcome["kind"], MessageKey> = {

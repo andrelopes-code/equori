@@ -139,8 +139,9 @@ export const balanceFixtures: Record<string, number> = {
 export const connectionFixture = {
   id: connectionID,
   integration_id: "c0000000-0000-4000-8000-000000000001",
-  item_id: "item-1",
+  external_id: "item-1",
   name: "Nubank",
+  state: "ok",
   provider_status: "UPDATED",
   last_item_update_at: "2026-10-17T06:00:00Z",
   next_item_update_at: "2026-10-18T06:00:00Z",

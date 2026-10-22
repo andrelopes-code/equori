@@ -36,7 +36,7 @@ func (s *Service) CreateConnection(ctx context.Context, userID int64, integratio
 	case errors.Is(err, ErrProviderUnauthorized):
 		return domain.Connection{}, &UnauthorizedError{Field: "integration_id"}
 	case errors.Is(err, ErrItemNotFound):
-		return domain.Connection{}, &domain.FieldError{Field: "item_id", Message: "is not an item of this integration's application"}
+		return domain.Connection{}, &domain.FieldError{Field: "external_id", Message: "is not an item of this integration's application"}
 	case err != nil:
 		return domain.Connection{}, err
 	}
@@ -44,21 +44,60 @@ func (s *Service) CreateConnection(ctx context.Context, userID int64, integratio
 		return domain.Connection{}, err
 	}
 	c.UserID, c.IntegrationID, c.ItemID = userID, i.ID, itemID
-	return s.repo.InsertConnection(ctx, c)
+	stored, err := s.repo.InsertConnection(ctx, c)
+	if err != nil {
+		return domain.Connection{}, err
+	}
+	stored.State = agg.State(stored.ProviderStatus)
+	return stored, nil
+}
+
+// withState sets the connection's state from the aggregator of its integration; an
+// integration whose aggregator this instance no longer offers reads as failed.
+func (s *Service) withState(ctx context.Context, c *domain.Connection, aggs map[uuid.UUID]Aggregator) error {
+	agg, ok := aggs[c.IntegrationID]
+	if !ok {
+		i, err := s.repo.Integration(ctx, c.UserID, c.IntegrationID)
+		if err != nil {
+			return err
+		}
+		agg, _ = s.aggregator(i.Provider)
+		aggs[c.IntegrationID] = agg
+	}
+	if agg == nil {
+		c.State = domain.StateFailed
+		return nil
+	}
+	c.State = agg.State(c.ProviderStatus)
+	return nil
 }
 
 func (s *Service) Connection(ctx context.Context, userID int64, id uuid.UUID) (domain.Connection, error) {
 	if err := s.available(); err != nil {
 		return domain.Connection{}, err
 	}
-	return s.repo.Connection(ctx, userID, id)
+	c, err := s.repo.Connection(ctx, userID, id)
+	if err != nil {
+		return domain.Connection{}, err
+	}
+	return c, s.withState(ctx, &c, map[uuid.UUID]Aggregator{})
 }
 
 func (s *Service) ListConnections(ctx context.Context, userID int64, p page.Request[NameKey]) ([]domain.Connection, *NameKey, error) {
 	if err := s.available(); err != nil {
 		return nil, nil, err
 	}
-	return s.repo.ListConnections(ctx, userID, p)
+	list, next, err := s.repo.ListConnections(ctx, userID, p)
+	if err != nil {
+		return nil, nil, err
+	}
+	aggs := map[uuid.UUID]Aggregator{}
+	for i := range list {
+		if err := s.withState(ctx, &list[i], aggs); err != nil {
+			return nil, nil, err
+		}
+	}
+	return list, next, nil
 }
 
 func (s *Service) DeleteConnection(ctx context.Context, userID int64, id uuid.UUID) error {

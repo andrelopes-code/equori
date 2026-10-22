@@ -29,9 +29,9 @@ type AssertionResult struct {
 }
 
 const (
-	SourceManual      = "manual"
-	SourceImport      = "import"
-	SourceOpenFinance = "open_finance"
+	SourceManual     = "manual"
+	SourceImport     = "import"
+	SourceAggregator = "aggregator"
 )
 
 // AssertBalance records the institution's balance of a leaf balance account (A9) and
@@ -40,9 +40,9 @@ func (s *Service) AssertBalance(ctx context.Context, userID int64, accountID uui
 	switch source {
 	case "":
 		source = SourceManual
-	case SourceManual, SourceImport, SourceOpenFinance:
+	case SourceManual, SourceImport, SourceAggregator:
 	default:
-		return AssertionResult{}, validationError("source", "must be manual, import or open_finance")
+		return AssertionResult{}, validationError("source", "must be manual, import or aggregator")
 	}
 	if date.After(s.clock.Today()) {
 		return AssertionResult{}, validationError("date", "must not be in the future")
@@ -80,7 +80,7 @@ func (s *Service) AssertSynced(ctx context.Context, userID int64, accountID uuid
 		}
 		var repeated bool
 		for _, found := range assertions {
-			if found.Source != SourceOpenFinance || !found.Date.Equal(date) || found.Amount != amount.Amount() {
+			if found.Source != SourceAggregator || !found.Date.Equal(date) || found.Amount != amount.Amount() {
 				continue
 			}
 			newest := !repeated
@@ -91,7 +91,7 @@ func (s *Service) AssertSynced(ctx context.Context, userID int64, accountID uuid
 				}
 				continue
 			}
-			decided, err := s.decideAssertion(ctx, r, a, date, amount, SourceOpenFinance, reserve, &found)
+			decided, err := s.decideAssertion(ctx, r, a, date, amount, SourceAggregator, reserve, &found)
 			if err != nil {
 				return err
 			}
@@ -102,7 +102,7 @@ func (s *Service) AssertSynced(ctx context.Context, userID int64, accountID uuid
 		if repeated {
 			return nil
 		}
-		res, err = s.decideAssertion(ctx, r, a, date, amount, SourceOpenFinance, reserve, nil)
+		res, err = s.decideAssertion(ctx, r, a, date, amount, SourceAggregator, reserve, nil)
 		return err
 	})
 	return res, err
@@ -150,7 +150,7 @@ func (s *Service) decideAssertion(ctx context.Context, r Repository, a domain.Ac
 			days = int(date.Sub(*prev) / (24 * time.Hour))
 		}
 		outcome = domain.DecideSyncedReserve(amount.Amount(), settled, days, a.YieldMode)
-	case source == SourceOpenFinance:
+	case source == SourceAggregator:
 		// P6 A42: yield arrives as feed lines; a line the feed lacks today is not yield.
 		outcome = domain.DecideAssertion(amount.Amount(), settled, domain.YieldNone)
 	default:

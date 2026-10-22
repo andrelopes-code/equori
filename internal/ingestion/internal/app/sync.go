@@ -34,6 +34,9 @@ func (s *Service) sync(ctx context.Context, userID int64, connectionID uuid.UUID
 	if err != nil {
 		c.LastError = err.Error()
 	}
+	if stateErr := s.withState(ctx, &c, map[uuid.UUID]Aggregator{}); stateErr != nil {
+		err = errors.Join(err, stateErr)
+	}
 	if saveErr := s.repo.SaveConnectionState(ctx, c); saveErr != nil {
 		return c, batches, errors.Join(err, saveErr)
 	}
@@ -185,7 +188,7 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 		}
 	}
 	batch, err := s.repo.InsertBatch(ctx, domain.Batch{
-		UserID: c.UserID, AccountID: accountID, Source: domain.SourceOpenFinance, ExternalAccountID: &ext.ID,
+		UserID: c.UserID, AccountID: accountID, Source: domain.SourceAggregator, ExternalAccountID: &ext.ID,
 		Currency: string(target.Currency), PeriodFrom: &from, PeriodTo: &to, Balance: domain.FileBalance{Status: domain.BalanceNone},
 	})
 	if err != nil {

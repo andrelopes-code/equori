@@ -64,7 +64,7 @@ func (r *Repository) InsertConnection(ctx context.Context, c domain.Connection) 
 	})
 	switch {
 	case violates(err, uniqueViolation, "ingestion_connection_item_key"):
-		return domain.Connection{}, &domain.FieldError{Field: "item_id", Message: "is already connected through this integration"}
+		return domain.Connection{}, &domain.FieldError{Field: "external_id", Message: "is already connected through this integration"}
 	case err != nil:
 		return domain.Connection{}, notFound(err)
 	}

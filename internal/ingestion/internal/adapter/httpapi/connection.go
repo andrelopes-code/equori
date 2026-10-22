@@ -36,7 +36,7 @@ func utc(t *time.Time) *time.Time {
 
 func toConnectionAPI(c domain.Connection) Connection {
 	out := Connection{
-		Id: c.ID, IntegrationId: c.IntegrationID, ItemId: c.ItemID, Name: c.Name, ProviderStatus: c.ProviderStatus,
+		Id: c.ID, IntegrationId: c.IntegrationID, ExternalId: c.ItemID, State: ConnectionState(c.State), Name: c.Name, ProviderStatus: c.ProviderStatus,
 		LastItemUpdateAt: utc(c.LastItemUpdateAt), NextItemUpdateAt: utc(c.NextItemUpdateAt), LastSyncedAt: utc(c.LastSyncedAt), LastError: ref(c.LastError), CreatedAt: c.CreatedAt.UTC(),
 		Accounts: make([]ExternalAccount, len(c.Accounts)),
 	}
@@ -48,7 +48,7 @@ func toConnectionAPI(c domain.Connection) Connection {
 
 func (s *Server) CreateConnection(ctx context.Context, req CreateConnectionRequestObject) (CreateConnectionResponseObject, error) {
 	b := req.Body
-	c, err := s.svc.CreateConnection(ctx, auth.MustUserID(ctx), b.IntegrationId, b.ItemId, opt(b.Name))
+	c, err := s.svc.CreateConnection(ctx, auth.MustUserID(ctx), b.IntegrationId, b.ExternalId, opt(b.Name))
 	if err != nil {
 		return nil, err
 	}

@@ -164,7 +164,7 @@ func (p ledgerPort) posting(l app.Line) (ledger.ImportedPosting, error) {
 func importLine(posting ledger.ImportedPosting, l app.Line) classification.ImportLine {
 	line := classification.ImportLine{AccountID: posting.AccountID, Date: posting.Date, Amount: posting.Amount, Description: posting.Description}
 	if c := l.Category; c != nil {
-		line.SourceCategory = &classification.LineCategory{Provider: c.Aggregator, ExternalID: c.ID, Name: c.Name}
+		line.SourceCategory = &classification.LineCategory{Aggregator: c.Aggregator, ExternalID: c.ID, Name: c.Name}
 	}
 	return line
 }

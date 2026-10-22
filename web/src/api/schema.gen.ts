@@ -1878,7 +1878,7 @@ export interface paths {
         put?: never;
         /**
          * Connect an aggregator item and list its accounts (P6 amendments A34, A35).
-         * @description item_id is the item of the integration's application (Meu Pluggy: one item per bank).
+         * @description external_id is the identifier the aggregator gives the item (one item per institution).
          *     The name defaults to the item's connector name. Every external account starts pending.
          */
         post: operations["createConnection"];
@@ -1917,7 +1917,7 @@ export interface paths {
         put?: never;
         /**
          * Sync every mapped account of the connection now (P6 amendment A43).
-         * @description One import batch per mapped account. An item that needs its owner in Meu Pluggy
+         * @description One import batch per mapped account. An item that needs its owner at the aggregator
          *     (LOGIN_ERROR, OUTDATED, WAITING_USER_INPUT) is not synced: batches is empty and the
          *     connection shows the status. A sync of an account waits for any other sync or import
          *     of it. A failure is stored in the connection's last_error.
@@ -2529,8 +2529,7 @@ export interface components {
         SourceCategory: {
             /** Format: uuid */
             id: string;
-            /** @enum {string} */
-            provider: "pluggy";
+            aggregator: string;
             external_id: string;
             name: string;
             count: number;
@@ -2550,8 +2549,7 @@ export interface components {
             category_id: string | null;
         };
         IntegrationInput: {
-            /** @enum {string} */
-            provider: "pluggy";
+            aggregator: string;
             name: string;
             credentials: components["schemas"]["IntegrationCredentials"];
         };
@@ -2578,8 +2576,7 @@ export interface components {
         Integration: {
             /** Format: uuid */
             id: string;
-            /** @enum {string} */
-            provider: "pluggy";
+            aggregator: string;
             name: string;
             /** Format: date-time */
             updated_at: string;
@@ -2592,7 +2589,7 @@ export interface components {
         ConnectionInput: {
             /** Format: uuid */
             integration_id: string;
-            item_id: string;
+            external_id: string;
             name?: string;
         };
         Connection: {
@@ -2600,9 +2597,14 @@ export interface components {
             id: string;
             /** Format: uuid */
             integration_id: string;
-            item_id: string;
+            external_id: string;
             name: string;
-            /** @description The item status the provider reported (Pluggy UPDATED, LOGIN_ERROR, OUTDATED, ...). */
+            /**
+             * @description The aggregator-neutral reading of provider_status.
+             * @enum {string}
+             */
+            state: "ok" | "needs_owner" | "failed";
+            /** @description The item status the aggregator reported, verbatim. */
             provider_status: string;
             /**
              * Format: date-time
@@ -2611,7 +2613,7 @@ export interface components {
             last_item_update_at?: string;
             /**
              * Format: date-time
-             * @description When the provider will next update the item, as the last check read it (A95). The owner cannot bring it forward for a Meu Pluggy item.
+             * @description When the provider will next update the item, as the last check read it (A95). The owner cannot bring it forward.
              */
             next_item_update_at?: string;
             /** Format: date-time */
@@ -2749,14 +2751,14 @@ export interface components {
              */
             amount_sign?: "as_is" | "inverted";
         };
-        /** @description One file import, or one sync of a mapped account (source open_finance). */
+        /** @description One file import, or one sync of a mapped account (source aggregator). */
         ImportBatch: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
             account_id: string;
             /** @enum {string} */
-            source: "ofx" | "csv" | "open_finance";
+            source: "ofx" | "csv" | "aggregator";
             /** @description Absent for a sync. */
             file_name?: string;
             /**
@@ -2851,7 +2853,7 @@ export interface components {
             date: string;
             amount: components["schemas"]["Money"];
             /** @enum {string} */
-            source?: "manual" | "import" | "open_finance";
+            source?: "manual" | "import" | "aggregator";
         };
         BalanceAssertion: {
             /** Format: uuid */
@@ -2862,7 +2864,7 @@ export interface components {
             date: string;
             amount: components["schemas"]["Money"];
             /** @enum {string} */
-            source: "manual" | "import" | "open_finance";
+            source: "manual" | "import" | "aggregator";
             /** Format: date-time */
             recorded_at: string;
             reconciled: boolean;

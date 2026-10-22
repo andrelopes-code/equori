@@ -57,7 +57,7 @@ type Repository interface {
 	// credentials for which reseal returns a value, and returns how many it replaced.
 	ResealCredentials(ctx context.Context, reseal func(userID int64, id uuid.UUID, sealed []byte) ([]byte, error)) (int, error)
 	// InsertConnection stores the connection and its accounts in one database transaction; a
-	// *domain.FieldError on item_id when the integration already connects the item.
+	// *domain.FieldError on external_id when the integration already connects the item.
 	InsertConnection(ctx context.Context, c domain.Connection) (domain.Connection, error)
 	Connection(ctx context.Context, userID int64, id uuid.UUID) (domain.Connection, error)
 	ListConnections(ctx context.Context, userID int64, p page.Request[NameKey]) ([]domain.Connection, *NameKey, error)

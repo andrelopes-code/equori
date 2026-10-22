@@ -63,7 +63,7 @@ func TestMergeKeepsMethodAndRepointsRules(t *testing.T) {
 func TestMergeRepointsSourceCategoryAndSuggestions(t *testing.T) {
 	t.Parallel()
 	b := newBooks(t)
-	if _, err := b.h.Pool.Exec(t.Context(), `INSERT INTO classification_source_category (user_id, provider, external_id, name, category_id)
+	if _, err := b.h.Pool.Exec(t.Context(), `INSERT INTO classification_source_category (user_id, aggregator, external_id, name, category_id)
 		VALUES ($1, 'pluggy', '05010000', 'Travel', $2)`, b.h.OwnerID(), b.travel); err != nil {
 		t.Fatal(err)
 	}

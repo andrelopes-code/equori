@@ -13,8 +13,8 @@ type Source string
 const (
 	SourceOFX Source = "ofx"
 	SourceCSV Source = "csv"
-	// SourceOpenFinance is a sync of one mapped account from an aggregator (P6 A36).
-	SourceOpenFinance Source = "open_finance"
+	// SourceAggregator is a sync of one mapped account from an aggregator (P6 A36).
+	SourceAggregator Source = "aggregator"
 )
 
 // Counts are the records of one batch by outcome; Received is the number of lines read.
