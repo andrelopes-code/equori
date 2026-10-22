@@ -18,6 +18,12 @@
   initial-value: gray;
 }
 
+@property --slotted-seed-info {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: gray;
+}
+
 @property --slotted-seed-warning {
   syntax: '<color>';
   inherits: true;
@@ -35,6 +41,7 @@
     --slotted-seed-accent: #7c6cff;
     --slotted-seed-neutral: #6f6f86;
     --slotted-seed-success: #15803d;
+    --slotted-seed-info: oklch(0.6 0.15 255);
     --slotted-seed-warning: #facc15;
     --slotted-seed-danger: #f87171;
     --slotted-radius-none: 0px;
@@ -97,6 +104,7 @@
     --slotted-focus-ring-width: var(--slotted-border-width-thick);
     --slotted-control-invalid-edge-width: var(--slotted-border-width-thin);
     --slotted-focus-ring-offset: var(--slotted-border-width-thick);
+    --slotted-control-focus-ring-offset: calc(var(--slotted-control-border-width) * -1);
     --slotted-duration-instant: 1ms;
     --slotted-duration-short: 120ms;
     --slotted-duration-medium: 200ms;
@@ -146,11 +154,11 @@
     --slotted-icon-maximize: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 3H5a2 2 0 0 0-2 2v3'/%3E%3Cpath d='M21 8V5a2 2 0 0 0-2-2h-3'/%3E%3Cpath d='M3 16v3a2 2 0 0 0 2 2h3'/%3E%3Cpath d='M16 21h3a2 2 0 0 0 2-2v-3'/%3E%3C/svg%3E");
     --slotted-icon-minimize: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 3v3a2 2 0 0 1-2 2H3'/%3E%3Cpath d='M21 8h-3a2 2 0 0 1-2-2V3'/%3E%3Cpath d='M3 16h3a2 2 0 0 1 2 2v3'/%3E%3Cpath d='M16 21v-3a2 2 0 0 1 2-2h3'/%3E%3C/svg%3E");
     --slotted-icon-search: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21 21-4.34-4.34'/%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3C/svg%3E");
-    --slotted-icon-calendar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v4'/%3E%3Cpath d='M16 2v4'/%3E%3Crect width='18' height='18' x='3' y='4' rx='2'/%3E%3Cpath d='M3 10h18'/%3E%3C/svg%3E");
+    --slotted-icon-calendar: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg transform='translate(0 -1)'%3E%3Cpath d='M8 2v4'/%3E%3Cpath d='M16 2v4'/%3E%3Crect width='18' height='18' x='3' y='4' rx='2'/%3E%3Cpath d='M3 10h18'/%3E%3C/g%3E%3C/svg%3E");
     --slotted-icon-clock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 6v6l4 2'/%3E%3C/svg%3E");
     --slotted-icon-upload: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3v12'/%3E%3Cpath d='m17 8-5-5-5 5'/%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/%3E%3C/svg%3E");
     --slotted-icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z'/%3E%3Cpath d='M14 2v5a1 1 0 0 0 1 1h5'/%3E%3C/svg%3E");
-    --slotted-icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 11v6'/%3E%3Cpath d='M14 11v6'/%3E%3Cpath d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6'/%3E%3Cpath d='M3 6h18'/%3E%3Cpath d='M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'/%3E%3C/svg%3E");
+    --slotted-icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg transform='translate(0 -1)'%3E%3Cpath d='M10 11v6'/%3E%3Cpath d='M14 11v6'/%3E%3Cpath d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6'/%3E%3Cpath d='M3 6h18'/%3E%3Cpath d='M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'/%3E%3C/g%3E%3C/svg%3E");
     --slotted-icon-play: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg transform='translate(-1.001 0)'%3E%3Cpath d='M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z'/%3E%3C/g%3E%3C/svg%3E");
     --slotted-icon-pause: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='14' y='3' width='5' height='18' rx='1'/%3E%3Crect x='5' y='3' width='5' height='18' rx='1'/%3E%3C/svg%3E");
     --slotted-icon-rotate-ccw: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8'/%3E%3Cpath d='M3 3v5h5'/%3E%3C/svg%3E");
@@ -163,7 +171,7 @@
     --slotted-icon-file-type: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z'/%3E%3Cpath d='M14 2v5a1 1 0 0 0 1 1h5'/%3E%3Cpath d='M11 18h2'/%3E%3Cpath d='M12 12v6'/%3E%3Cpath d='M9 13v-.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5v.5'/%3E%3C/svg%3E");
     --slotted-icon-presentation: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 3h20'/%3E%3Cpath d='M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3'/%3E%3Cpath d='m7 21 5-5 5 5'/%3E%3C/svg%3E");
     --slotted-icon-arrow-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m12 19-7-7 7-7'/%3E%3Cpath d='M19 12H5'/%3E%3C/svg%3E");
-    --slotted-icon-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 17v5'/%3E%3Cpath d='M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z'/%3E%3C/svg%3E");
+    --slotted-icon-pin: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg transform='translate(0 1)'%3E%3Cpath d='M12 17v5'/%3E%3Cpath d='M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z'/%3E%3C/g%3E%3C/svg%3E");
     --slotted-icon-pin-off: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 17v5'/%3E%3Cpath d='M15 9.34V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H7.89'/%3E%3Cpath d='m2 2 20 20'/%3E%3Cpath d='M9 9v1.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h11'/%3E%3C/svg%3E");
     --slotted-icon-panel-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2'/%3E%3Cpath d='M9 3v18'/%3E%3Cpath d='m14 9 3 3-3 3'/%3E%3C/svg%3E");
     --slotted-icon-panel-close: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2'/%3E%3Cpath d='M9 3v18'/%3E%3Cpath d='m16 15-3-3 3-3'/%3E%3C/svg%3E");
@@ -288,6 +296,31 @@
       --slotted-border-strong: oklch(from var(--slotted-seed-neutral) 0.623 min(calc(c * 0.857), 0.06) h);
       --slotted-control-border-color: oklch(from var(--slotted-seed-neutral) 0.826 min(calc(c * 0.406), 0.06) h);
       --slotted-control-surface: var(--slotted-surface);
+      --slotted-tone-info-solid: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + 0), 1) min(calc(c * 1), 0.25) h) l c h / c) min(l, calc(0.5586 + alpha * (((0.01357 + (a / max(alpha, 0.00001)) * (0.12873 + (a / max(alpha, 0.00001)) * (0.00094 + (a / max(alpha, 0.00001)) * (-0.08492 + (a / max(alpha, 0.00001)) * (0.04896))))) + (b / max(alpha, 0.00001)) * (0.00929 + (a / max(alpha, 0.00001)) * (0.0188 + (a / max(alpha, 0.00001)) * (-0.14544 + (a / max(alpha, 0.00001)) * (0.07248))))) + alpha * (((0.03631 + (a / max(alpha, 0.00001)) * (-0.15883 + (a / max(alpha, 0.00001)) * (-0.01744 + (a / max(alpha, 0.00001)) * (1.45252 + (a / max(alpha, 0.00001)) * (-0.98552))))) + (b / max(alpha, 0.00001)) * (-0.38033 + (a / max(alpha, 0.00001)) * (0.03424 + (a / max(alpha, 0.00001)) * (2.5058 + (a / max(alpha, 0.00001)) * (-1.8248))))) + alpha * ((0.17717 + (a / max(alpha, 0.00001)) * (1.22898 + (a / max(alpha, 0.00001)) * (-1.73714 + (a / max(alpha, 0.00001)) * (-3.70144 + (a / max(alpha, 0.00001)) * (2.99352))))) + (b / max(alpha, 0.00001)) * (0.87033 + (a / max(alpha, 0.00001)) * (-1.33962 + (a / max(alpha, 0.00001)) * (-6.3798 + (a / max(alpha, 0.00001)) * (6.06448))))))))) a b / 1) l c h);
+      --slotted-tone-info-solid-hover: oklch(from oklab(from oklch(from color-mix(in oklch, var(--slotted-tone-info-solid), oklch(from var(--slotted-tone-info-solid) clamp(0, calc((0.9 - l) * 1000000), 1) 0 none) 6%) l c h / c) min(l, calc(0.5586 + alpha * (((0.01357 + (a / max(alpha, 0.00001)) * (0.12873 + (a / max(alpha, 0.00001)) * (0.00094 + (a / max(alpha, 0.00001)) * (-0.08492 + (a / max(alpha, 0.00001)) * (0.04896))))) + (b / max(alpha, 0.00001)) * (0.00929 + (a / max(alpha, 0.00001)) * (0.0188 + (a / max(alpha, 0.00001)) * (-0.14544 + (a / max(alpha, 0.00001)) * (0.07248))))) + alpha * (((0.03631 + (a / max(alpha, 0.00001)) * (-0.15883 + (a / max(alpha, 0.00001)) * (-0.01744 + (a / max(alpha, 0.00001)) * (1.45252 + (a / max(alpha, 0.00001)) * (-0.98552))))) + (b / max(alpha, 0.00001)) * (-0.38033 + (a / max(alpha, 0.00001)) * (0.03424 + (a / max(alpha, 0.00001)) * (2.5058 + (a / max(alpha, 0.00001)) * (-1.8248))))) + alpha * ((0.17717 + (a / max(alpha, 0.00001)) * (1.22898 + (a / max(alpha, 0.00001)) * (-1.73714 + (a / max(alpha, 0.00001)) * (-3.70144 + (a / max(alpha, 0.00001)) * (2.99352))))) + (b / max(alpha, 0.00001)) * (0.87033 + (a / max(alpha, 0.00001)) * (-1.33962 + (a / max(alpha, 0.00001)) * (-6.3798 + (a / max(alpha, 0.00001)) * (6.06448))))))))) a b / 1) l c h);
+      --slotted-tone-info-solid-active: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + -0.109), 1) min(calc(c * 0.634), 0.25) h) l c h / c) min(l, calc(0.5586 + alpha * (((0.01357 + (a / max(alpha, 0.00001)) * (0.12873 + (a / max(alpha, 0.00001)) * (0.00094 + (a / max(alpha, 0.00001)) * (-0.08492 + (a / max(alpha, 0.00001)) * (0.04896))))) + (b / max(alpha, 0.00001)) * (0.00929 + (a / max(alpha, 0.00001)) * (0.0188 + (a / max(alpha, 0.00001)) * (-0.14544 + (a / max(alpha, 0.00001)) * (0.07248))))) + alpha * (((0.03631 + (a / max(alpha, 0.00001)) * (-0.15883 + (a / max(alpha, 0.00001)) * (-0.01744 + (a / max(alpha, 0.00001)) * (1.45252 + (a / max(alpha, 0.00001)) * (-0.98552))))) + (b / max(alpha, 0.00001)) * (-0.38033 + (a / max(alpha, 0.00001)) * (0.03424 + (a / max(alpha, 0.00001)) * (2.5058 + (a / max(alpha, 0.00001)) * (-1.8248))))) + alpha * ((0.17717 + (a / max(alpha, 0.00001)) * (1.22898 + (a / max(alpha, 0.00001)) * (-1.73714 + (a / max(alpha, 0.00001)) * (-3.70144 + (a / max(alpha, 0.00001)) * (2.99352))))) + (b / max(alpha, 0.00001)) * (0.87033 + (a / max(alpha, 0.00001)) * (-1.33962 + (a / max(alpha, 0.00001)) * (-6.3798 + (a / max(alpha, 0.00001)) * (6.06448))))))))) a b / 1) l c h);
+      --slotted-tone-info-on-solid: oklch(from var(--slotted-seed-info) 1 min(calc(c * 0), 0) h);
+      --slotted-tone-info-surface: oklch(from var(--slotted-seed-info) 0.932 min(calc(c * 0.145), 0.06) h);
+      --slotted-tone-info-subtle-hover: oklch(from var(--slotted-seed-info) 0.97 min(calc(c * 0.065), 0.06) h);
+      --slotted-tone-info-subtle-active: oklch(from var(--slotted-seed-info) 0.932 min(calc(c * 0.145), 0.06) h);
+      --slotted-tone-info-border: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + 0.058), 1) min(calc(c * 0.991), 0.25) h) l c h / c) min(l, calc(0.6029 + alpha * (((0.01353 + (a / max(alpha, 0.00001)) * (0.1238 + (a / max(alpha, 0.00001)) * (-0.02612 + (a / max(alpha, 0.00001)) * (-0.06224 + (a / max(alpha, 0.00001)) * (0.08112))))) + (b / max(alpha, 0.00001)) * (0.00406 + (a / max(alpha, 0.00001)) * (-0.00008 + (a / max(alpha, 0.00001)) * (-0.12732 + (a / max(alpha, 0.00001)) * (0.11864))))) + alpha * (((0.02819 + (a / max(alpha, 0.00001)) * (-0.06359 + (a / max(alpha, 0.00001)) * (0.40756 + (a / max(alpha, 0.00001)) * (1.00212 + (a / max(alpha, 0.00001)) * (-1.41272))))) + (b / max(alpha, 0.00001)) * (-0.27016 + (a / max(alpha, 0.00001)) * (0.29648 + (a / max(alpha, 0.00001)) * (2.05888 + (a / max(alpha, 0.00001)) * (-2.36776))))) + alpha * ((0.19721 + (a / max(alpha, 0.00001)) * (0.75434 + (a / max(alpha, 0.00001)) * (-2.97652 + (a / max(alpha, 0.00001)) * (-2.01276 + (a / max(alpha, 0.00001)) * (4.2672))))) + (b / max(alpha, 0.00001)) * (0.45478 + (a / max(alpha, 0.00001)) * (-1.9677 + (a / max(alpha, 0.00001)) * (-4.60308 + (a / max(alpha, 0.00001)) * (7.3612))))))))) a b / 1) l c h);
+      --slotted-tone-info-text: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + 0), 1) min(calc(c * 1), 0.25) h) l c h / c) min(l, calc(0.4996 + alpha * (((0.01749 + (a / max(alpha, 0.00001)) * (0.13486 + (a / max(alpha, 0.00001)) * (0.02804 + (a / max(alpha, 0.00001)) * (-0.15308 + (a / max(alpha, 0.00001)) * (-0.03744))))) + (b / max(alpha, 0.00001)) * (0.01505 + (a / max(alpha, 0.00001)) * (0.0648 + (a / max(alpha, 0.00001)) * (-0.19708 + (a / max(alpha, 0.00001)) * (-0.07824))))) + alpha * (((-0.02211 + (a / max(alpha, 0.00001)) * (-0.28415 + (a / max(alpha, 0.00001)) * (-0.48764 + (a / max(alpha, 0.00001)) * (2.7512 + (a / max(alpha, 0.00001)) * (0.3512))))) + (b / max(alpha, 0.00001)) * (-0.52183 + (a / max(alpha, 0.00001)) * (-0.72802 + (a / max(alpha, 0.00001)) * (3.6514 + (a / max(alpha, 0.00001)) * (0.47536))))) + alpha * ((0.43624 + (a / max(alpha, 0.00001)) * (1.93247 + (a / max(alpha, 0.00001)) * (-0.37886 + (a / max(alpha, 0.00001)) * (-8.72208 + (a / max(alpha, 0.00001)) * (-1.60608))))) + (b / max(alpha, 0.00001)) * (1.44681 + (a / max(alpha, 0.00001)) * (1.13798 + (a / max(alpha, 0.00001)) * (-11.05816 + (a / max(alpha, 0.00001)) * (-1.61624))))))))) a b / 1) l c h);
+      --slotted-data-1: #7368d4;
+      --slotted-data-2: #b46400;
+      --slotted-data-3: #009597;
+      --slotted-data-4: #c6495b;
+      --slotted-data-5: #0083ce;
+      --slotted-data-6: #4d8e16;
+      --slotted-data-7: #ad51a7;
+      --slotted-data-8: #c4530f;
+      --slotted-data-1-on: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
+      --slotted-data-2-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
+      --slotted-data-3-on: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
+      --slotted-data-4-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
+      --slotted-data-5-on: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
+      --slotted-data-6-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
+      --slotted-data-7-on: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
+      --slotted-data-8-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
       --slotted-shadow-xs: 0 1px 2px rgb(15 23 42 / 0.06);
       --slotted-shadow-sm: 0 1px 3px rgb(15 23 42 / 0.08), 0 1px 2px -1px rgb(15 23 42 / 0.08);
       --slotted-shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.08);
@@ -299,14 +332,6 @@
       --slotted-surface-material: color-mix(in oklab, var(--slotted-surface) 84%, transparent);
       --slotted-control-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
       --slotted-scrim: rgb(0 0 0 / 0.41);
-      --slotted-data-1: #7368d4;
-      --slotted-data-2: #b46400;
-      --slotted-data-3: #009597;
-      --slotted-data-4: #c6495b;
-      --slotted-data-5: #0083ce;
-      --slotted-data-6: #4d8e16;
-      --slotted-data-7: #ad51a7;
-      --slotted-data-8: #c4530f;
       --slotted-upload-kind-pdf: #c62828;
       --slotted-upload-kind-document: #1d4ed8;
       --slotted-upload-kind-spreadsheet: #15803d;
@@ -391,7 +416,7 @@
       --slotted-tone-danger-subtle-hover: oklch(from var(--slotted-seed-danger) 0.187 min(calc(c * 0.055), 0.06) h);
       --slotted-tone-danger-subtle-active: oklch(from var(--slotted-seed-danger) 0.209 min(calc(c * 0.1), 0.06) calc(h + -8));
       --slotted-surface: oklch(from var(--slotted-seed-neutral) 0.155 min(calc(c * 0.22), 0.03) h);
-      --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.17 min(calc(c * 0.22), 0.03) h);
+      --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
       --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0.13 min(calc(c * 0.22), 0.03) h);
       --slotted-surface-inverse: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
       --slotted-tone-neutral-solid: var(--slotted-surface-inverse);
@@ -409,6 +434,31 @@
       --slotted-border-strong: oklch(from var(--slotted-seed-neutral) 0.552 min(calc(c * 0.339), 0.06) h);
       --slotted-control-border-color: oklch(from var(--slotted-seed-neutral) 0.36 min(calc(c * 0.332), 0.06) h);
       --slotted-control-surface: var(--slotted-surface);
+      --slotted-tone-info-solid: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + 0.058), 1) min(calc(c * 0.991), 0.25) h) l c h / c) min(l, calc(0.5586 + alpha * (((0.01357 + (a / max(alpha, 0.00001)) * (0.12873 + (a / max(alpha, 0.00001)) * (0.00094 + (a / max(alpha, 0.00001)) * (-0.08492 + (a / max(alpha, 0.00001)) * (0.04896))))) + (b / max(alpha, 0.00001)) * (0.00929 + (a / max(alpha, 0.00001)) * (0.0188 + (a / max(alpha, 0.00001)) * (-0.14544 + (a / max(alpha, 0.00001)) * (0.07248))))) + alpha * (((0.03631 + (a / max(alpha, 0.00001)) * (-0.15883 + (a / max(alpha, 0.00001)) * (-0.01744 + (a / max(alpha, 0.00001)) * (1.45252 + (a / max(alpha, 0.00001)) * (-0.98552))))) + (b / max(alpha, 0.00001)) * (-0.38033 + (a / max(alpha, 0.00001)) * (0.03424 + (a / max(alpha, 0.00001)) * (2.5058 + (a / max(alpha, 0.00001)) * (-1.8248))))) + alpha * ((0.17717 + (a / max(alpha, 0.00001)) * (1.22898 + (a / max(alpha, 0.00001)) * (-1.73714 + (a / max(alpha, 0.00001)) * (-3.70144 + (a / max(alpha, 0.00001)) * (2.99352))))) + (b / max(alpha, 0.00001)) * (0.87033 + (a / max(alpha, 0.00001)) * (-1.33962 + (a / max(alpha, 0.00001)) * (-6.3798 + (a / max(alpha, 0.00001)) * (6.06448))))))))) a b / 1) l c h);
+      --slotted-tone-info-solid-hover: oklch(from oklab(from oklch(from color-mix(in oklch, var(--slotted-tone-info-solid), oklch(from var(--slotted-tone-info-solid) clamp(0, calc((0.9 - l) * 1000000), 1) 0 none) 8%) l c h / c) min(l, calc(0.5586 + alpha * (((0.01357 + (a / max(alpha, 0.00001)) * (0.12873 + (a / max(alpha, 0.00001)) * (0.00094 + (a / max(alpha, 0.00001)) * (-0.08492 + (a / max(alpha, 0.00001)) * (0.04896))))) + (b / max(alpha, 0.00001)) * (0.00929 + (a / max(alpha, 0.00001)) * (0.0188 + (a / max(alpha, 0.00001)) * (-0.14544 + (a / max(alpha, 0.00001)) * (0.07248))))) + alpha * (((0.03631 + (a / max(alpha, 0.00001)) * (-0.15883 + (a / max(alpha, 0.00001)) * (-0.01744 + (a / max(alpha, 0.00001)) * (1.45252 + (a / max(alpha, 0.00001)) * (-0.98552))))) + (b / max(alpha, 0.00001)) * (-0.38033 + (a / max(alpha, 0.00001)) * (0.03424 + (a / max(alpha, 0.00001)) * (2.5058 + (a / max(alpha, 0.00001)) * (-1.8248))))) + alpha * ((0.17717 + (a / max(alpha, 0.00001)) * (1.22898 + (a / max(alpha, 0.00001)) * (-1.73714 + (a / max(alpha, 0.00001)) * (-3.70144 + (a / max(alpha, 0.00001)) * (2.99352))))) + (b / max(alpha, 0.00001)) * (0.87033 + (a / max(alpha, 0.00001)) * (-1.33962 + (a / max(alpha, 0.00001)) * (-6.3798 + (a / max(alpha, 0.00001)) * (6.06448))))))))) a b / 1) l c h);
+      --slotted-tone-info-solid-active: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + -0.064), 1) min(calc(c * 0.833), 0.25) h) l c h / c) min(l, calc(0.5586 + alpha * (((0.01357 + (a / max(alpha, 0.00001)) * (0.12873 + (a / max(alpha, 0.00001)) * (0.00094 + (a / max(alpha, 0.00001)) * (-0.08492 + (a / max(alpha, 0.00001)) * (0.04896))))) + (b / max(alpha, 0.00001)) * (0.00929 + (a / max(alpha, 0.00001)) * (0.0188 + (a / max(alpha, 0.00001)) * (-0.14544 + (a / max(alpha, 0.00001)) * (0.07248))))) + alpha * (((0.03631 + (a / max(alpha, 0.00001)) * (-0.15883 + (a / max(alpha, 0.00001)) * (-0.01744 + (a / max(alpha, 0.00001)) * (1.45252 + (a / max(alpha, 0.00001)) * (-0.98552))))) + (b / max(alpha, 0.00001)) * (-0.38033 + (a / max(alpha, 0.00001)) * (0.03424 + (a / max(alpha, 0.00001)) * (2.5058 + (a / max(alpha, 0.00001)) * (-1.8248))))) + alpha * ((0.17717 + (a / max(alpha, 0.00001)) * (1.22898 + (a / max(alpha, 0.00001)) * (-1.73714 + (a / max(alpha, 0.00001)) * (-3.70144 + (a / max(alpha, 0.00001)) * (2.99352))))) + (b / max(alpha, 0.00001)) * (0.87033 + (a / max(alpha, 0.00001)) * (-1.33962 + (a / max(alpha, 0.00001)) * (-6.3798 + (a / max(alpha, 0.00001)) * (6.06448))))))))) a b / 1) l c h);
+      --slotted-tone-info-on-solid: oklch(from var(--slotted-seed-info) 1 min(calc(c * 0), 0) h);
+      --slotted-tone-info-surface: oklch(from var(--slotted-seed-info) 0.222 min(calc(c * 0.066), 0.06) h);
+      --slotted-tone-info-subtle-hover: oklch(from var(--slotted-seed-info) 0.187 min(calc(c * 0.049), 0.06) h);
+      --slotted-tone-info-subtle-active: oklch(from var(--slotted-seed-info) 0.222 min(calc(c * 0.066), 0.06) h);
+      --slotted-tone-info-border: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + 0.226), 1) min(calc(c * 0.66), 0.25) h) l c h / c) max(l, calc(0.5129 + alpha * (((-0.00004 + (a / max(alpha, 0.00001)) * (0.12718 + (a / max(alpha, 0.00001)) * (0.00012 + (a / max(alpha, 0.00001)) * (0 + (a / max(alpha, 0.00001)) * (-0.00008))))) + (b / max(alpha, 0.00001)) * (-0.01266 + (a / max(alpha, 0.00001)) * (0 + (a / max(alpha, 0.00001)) * (-0.00016)))) + alpha * (((0.22974 + (a / max(alpha, 0.00001)) * (0.00013 + (a / max(alpha, 0.00001)) * (-0.21006 + (a / max(alpha, 0.00001)) * (-0.00012 + (a / max(alpha, 0.00001)) * (0.00136))))) + (b / max(alpha, 0.00001)) * (-0.00264 + (a / max(alpha, 0.00001)) * (0.01022 + (a / max(alpha, 0.00001)) * (0.00348 + (a / max(alpha, 0.00001)) * (0.00016))))) + alpha * ((-0.00413 + (a / max(alpha, 0.00001)) * (0.0196 + (a / max(alpha, 0.00001)) * (0.01032 + (a / max(alpha, 0.00001)) * (-0.0122 + (a / max(alpha, 0.00001)) * (-0.00632))))) + (b / max(alpha, 0.00001)) * (-0.1877 + (a / max(alpha, 0.00001)) * (0.00056 + (a / max(alpha, 0.00001)) * (0.19164 + (a / max(alpha, 0.00001)) * (-0.00064))))))))) a b / 1) l c h);
+      --slotted-tone-info-text: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + 0.321), 1) min(calc(c * 0.44), 0.25) h) l c h / c) max(l, calc(0.6175 + alpha * (((0.0406 + (a / max(alpha, 0.00001)) * (0.14467 + (a / max(alpha, 0.00001)) * (-0.13242 + (a / max(alpha, 0.00001)) * (-0.01764 + (a / max(alpha, 0.00001)) * (0.09888))))) + (b / max(alpha, 0.00001)) * (-0.04964 + (a / max(alpha, 0.00001)) * (-0.0351 + (a / max(alpha, 0.00001)) * (0.07096 + (a / max(alpha, 0.00001)) * (0.0608))))) + alpha * (((-0.51057 + (a / max(alpha, 0.00001)) * (-0.29433 + (a / max(alpha, 0.00001)) * (2.13382 + (a / max(alpha, 0.00001)) * (0.29916 + (a / max(alpha, 0.00001)) * (-1.72616))))) + (b / max(alpha, 0.00001)) * (0.63433 + (a / max(alpha, 0.00001)) * (0.59642 + (a / max(alpha, 0.00001)) * (-1.21788 + (a / max(alpha, 0.00001)) * (-1.01256))))) + alpha * ((2.66863 + (a / max(alpha, 0.00001)) * (1.10008 + (a / max(alpha, 0.00001)) * (-8.82554 + (a / max(alpha, 0.00001)) * (-1.12128 + (a / max(alpha, 0.00001)) * (6.60888))))) + (b / max(alpha, 0.00001)) * (-2.53673 + (a / max(alpha, 0.00001)) * (-2.15628 + (a / max(alpha, 0.00001)) * (4.73444 + (a / max(alpha, 0.00001)) * (3.6944))))))))) a b / 1) l c h);
+      --slotted-data-1: #8a82e9;
+      --slotted-data-2: #cb7f00;
+      --slotted-data-3: #00a8a8;
+      --slotted-data-4: #de6674;
+      --slotted-data-5: #069ce4;
+      --slotted-data-6: #68a63f;
+      --slotted-data-7: #c46dbd;
+      --slotted-data-8: #db703b;
+      --slotted-data-1-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
+      --slotted-data-2-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
+      --slotted-data-3-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
+      --slotted-data-4-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
+      --slotted-data-5-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
+      --slotted-data-6-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
+      --slotted-data-7-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
+      --slotted-data-8-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
       --slotted-shadow-xs: 0 1px 2px rgb(0 0 0 / 0.40);
       --slotted-shadow-sm: 0 1px 3px rgb(0 0 0 / 0.45), 0 1px 2px -1px rgb(0 0 0 / 0.40);
       --slotted-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.50), 0 2px 4px -2px rgb(0 0 0 / 0.45);
@@ -420,14 +470,6 @@
       --slotted-surface-material: color-mix(in oklab, var(--slotted-surface) 68%, transparent);
       --slotted-control-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
       --slotted-scrim: rgb(0 0 0 / 0.62);
-      --slotted-data-1: #8a82e9;
-      --slotted-data-2: #cb7f00;
-      --slotted-data-3: #00a8a8;
-      --slotted-data-4: #de6674;
-      --slotted-data-5: #069ce4;
-      --slotted-data-6: #68a63f;
-      --slotted-data-7: #c46dbd;
-      --slotted-data-8: #db703b;
       --slotted-upload-kind-pdf: #dc2626;
       --slotted-upload-kind-document: #2563eb;
       --slotted-upload-kind-spreadsheet: #15803d;
@@ -530,6 +572,31 @@
       --slotted-border-strong: oklch(from var(--slotted-seed-neutral) 0 min(calc(c * 0), 0) h);
       --slotted-control-border-color: oklch(from var(--slotted-seed-neutral) 0 min(calc(c * 0), 0) h);
       --slotted-control-surface: var(--slotted-surface);
+      --slotted-tone-info-solid: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + -0.099), 1) min(calc(c * 0.768), 0.25) h) l c h / c) min(l, calc(0.4541 + alpha * (((0.02712 + (a / max(alpha, 0.00001)) * (0.09768 + (a / max(alpha, 0.00001)) * (-0.05946 + (a / max(alpha, 0.00001)) * (-0.15268 + (a / max(alpha, 0.00001)) * (0.00592))))) + (b / max(alpha, 0.00001)) * (0.00702 + (a / max(alpha, 0.00001)) * (0.05022 + (a / max(alpha, 0.00001)) * (-0.18136 + (a / max(alpha, 0.00001)) * (-0.08472))))) + alpha * (((-0.18283 + (a / max(alpha, 0.00001)) * (0.29502 + (a / max(alpha, 0.00001)) * (0.89338 + (a / max(alpha, 0.00001)) * (3.02968 + (a / max(alpha, 0.00001)) * (-0.31088))))) + (b / max(alpha, 0.00001)) * (-0.44286 + (a / max(alpha, 0.00001)) * (-0.56776 + (a / max(alpha, 0.00001)) * (3.76512 + (a / max(alpha, 0.00001)) * (0.65016))))) + alpha * ((1.09903 + (a / max(alpha, 0.00001)) * (0.16681 + (a / max(alpha, 0.00001)) * (-5.57564 + (a / max(alpha, 0.00001)) * (-10.60412 + (a / max(alpha, 0.00001)) * (0.51264))))) + (b / max(alpha, 0.00001)) * (1.28231 + (a / max(alpha, 0.00001)) * (0.55636 + (a / max(alpha, 0.00001)) * (-12.50368 + (a / max(alpha, 0.00001)) * (-2.47704))))))))) a b / 1) l c h);
+      --slotted-tone-info-solid-hover: oklch(from oklab(from oklch(from color-mix(in oklch, var(--slotted-tone-info-solid), oklch(from var(--slotted-tone-info-solid) clamp(0, calc((0.9 - l) * 1000000), 1) 0 none) 6%) l c h / c) min(l, calc(0.4541 + alpha * (((0.02712 + (a / max(alpha, 0.00001)) * (0.09768 + (a / max(alpha, 0.00001)) * (-0.05946 + (a / max(alpha, 0.00001)) * (-0.15268 + (a / max(alpha, 0.00001)) * (0.00592))))) + (b / max(alpha, 0.00001)) * (0.00702 + (a / max(alpha, 0.00001)) * (0.05022 + (a / max(alpha, 0.00001)) * (-0.18136 + (a / max(alpha, 0.00001)) * (-0.08472))))) + alpha * (((-0.18283 + (a / max(alpha, 0.00001)) * (0.29502 + (a / max(alpha, 0.00001)) * (0.89338 + (a / max(alpha, 0.00001)) * (3.02968 + (a / max(alpha, 0.00001)) * (-0.31088))))) + (b / max(alpha, 0.00001)) * (-0.44286 + (a / max(alpha, 0.00001)) * (-0.56776 + (a / max(alpha, 0.00001)) * (3.76512 + (a / max(alpha, 0.00001)) * (0.65016))))) + alpha * ((1.09903 + (a / max(alpha, 0.00001)) * (0.16681 + (a / max(alpha, 0.00001)) * (-5.57564 + (a / max(alpha, 0.00001)) * (-10.60412 + (a / max(alpha, 0.00001)) * (0.51264))))) + (b / max(alpha, 0.00001)) * (1.28231 + (a / max(alpha, 0.00001)) * (0.55636 + (a / max(alpha, 0.00001)) * (-12.50368 + (a / max(alpha, 0.00001)) * (-2.47704))))))))) a b / 1) l c h);
+      --slotted-tone-info-solid-active: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + -0.209), 1) min(calc(c * 0.51), 0.25) h) l c h / c) min(l, calc(0.4541 + alpha * (((0.02712 + (a / max(alpha, 0.00001)) * (0.09768 + (a / max(alpha, 0.00001)) * (-0.05946 + (a / max(alpha, 0.00001)) * (-0.15268 + (a / max(alpha, 0.00001)) * (0.00592))))) + (b / max(alpha, 0.00001)) * (0.00702 + (a / max(alpha, 0.00001)) * (0.05022 + (a / max(alpha, 0.00001)) * (-0.18136 + (a / max(alpha, 0.00001)) * (-0.08472))))) + alpha * (((-0.18283 + (a / max(alpha, 0.00001)) * (0.29502 + (a / max(alpha, 0.00001)) * (0.89338 + (a / max(alpha, 0.00001)) * (3.02968 + (a / max(alpha, 0.00001)) * (-0.31088))))) + (b / max(alpha, 0.00001)) * (-0.44286 + (a / max(alpha, 0.00001)) * (-0.56776 + (a / max(alpha, 0.00001)) * (3.76512 + (a / max(alpha, 0.00001)) * (0.65016))))) + alpha * ((1.09903 + (a / max(alpha, 0.00001)) * (0.16681 + (a / max(alpha, 0.00001)) * (-5.57564 + (a / max(alpha, 0.00001)) * (-10.60412 + (a / max(alpha, 0.00001)) * (0.51264))))) + (b / max(alpha, 0.00001)) * (1.28231 + (a / max(alpha, 0.00001)) * (0.55636 + (a / max(alpha, 0.00001)) * (-12.50368 + (a / max(alpha, 0.00001)) * (-2.47704))))))))) a b / 1) l c h);
+      --slotted-tone-info-on-solid: oklch(from var(--slotted-seed-info) 1 min(calc(c * 0), 0) h);
+      --slotted-tone-info-surface: oklch(from var(--slotted-seed-info) 1 min(calc(c * 0), 0) h);
+      --slotted-tone-info-subtle-hover: oklch(from var(--slotted-seed-info) 0.949 min(calc(c * 0.092), 0.06) h);
+      --slotted-tone-info-subtle-active: oklch(from var(--slotted-seed-info) 0.905 min(calc(c * 0.176), 0.06) h);
+      --slotted-tone-info-border: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) 0 min(calc(c * 0), 0) h) l c h / c) min(l, calc(0.6621 + alpha * (((0.00813 + (a / max(alpha, 0.00001)) * (0.12903 + (a / max(alpha, 0.00001)) * (-0.00656 + (a / max(alpha, 0.00001)) * (-0.05236 + (a / max(alpha, 0.00001)) * (0.05048))))) + (b / max(alpha, 0.00001)) * (0.00008 + (a / max(alpha, 0.00001)) * (-0.0007 + (a / max(alpha, 0.00001)) * (-0.11164 + (a / max(alpha, 0.00001)) * (0.11904))))) + alpha * (((0.09275 + (a / max(alpha, 0.00001)) * (-0.09885 + (a / max(alpha, 0.00001)) * (0.04692 + (a / max(alpha, 0.00001)) * (0.71724 + (a / max(alpha, 0.00001)) * (-0.77288))))) + (b / max(alpha, 0.00001)) * (-0.169 + (a / max(alpha, 0.00001)) * (0.18434 + (a / max(alpha, 0.00001)) * (1.6106 + (a / max(alpha, 0.00001)) * (-2.03008))))) + alpha * ((-0.00102 + (a / max(alpha, 0.00001)) * (0.60368 + (a / max(alpha, 0.00001)) * (-1.2873 + (a / max(alpha, 0.00001)) * (-0.84368 + (a / max(alpha, 0.00001)) * (1.65384))))) + (b / max(alpha, 0.00001)) * (0.05676 + (a / max(alpha, 0.00001)) * (-0.9685 + (a / max(alpha, 0.00001)) * (-2.85064 + (a / max(alpha, 0.00001)) * (5.16904))))))))) a b / 1) l c h);
+      --slotted-tone-info-text: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + -0.099), 1) min(calc(c * 0.768), 0.25) h) l c h / c) min(l, calc(0.4541 + alpha * (((0.02712 + (a / max(alpha, 0.00001)) * (0.09768 + (a / max(alpha, 0.00001)) * (-0.05946 + (a / max(alpha, 0.00001)) * (-0.15268 + (a / max(alpha, 0.00001)) * (0.00592))))) + (b / max(alpha, 0.00001)) * (0.00702 + (a / max(alpha, 0.00001)) * (0.05022 + (a / max(alpha, 0.00001)) * (-0.18136 + (a / max(alpha, 0.00001)) * (-0.08472))))) + alpha * (((-0.18283 + (a / max(alpha, 0.00001)) * (0.29502 + (a / max(alpha, 0.00001)) * (0.89338 + (a / max(alpha, 0.00001)) * (3.02968 + (a / max(alpha, 0.00001)) * (-0.31088))))) + (b / max(alpha, 0.00001)) * (-0.44286 + (a / max(alpha, 0.00001)) * (-0.56776 + (a / max(alpha, 0.00001)) * (3.76512 + (a / max(alpha, 0.00001)) * (0.65016))))) + alpha * ((1.09903 + (a / max(alpha, 0.00001)) * (0.16681 + (a / max(alpha, 0.00001)) * (-5.57564 + (a / max(alpha, 0.00001)) * (-10.60412 + (a / max(alpha, 0.00001)) * (0.51264))))) + (b / max(alpha, 0.00001)) * (1.28231 + (a / max(alpha, 0.00001)) * (0.55636 + (a / max(alpha, 0.00001)) * (-12.50368 + (a / max(alpha, 0.00001)) * (-2.47704))))))))) a b / 1) l c h);
+      --slotted-data-1: oklab(from oklch(from var(--slotted-seed-accent) 0.3 1 h) l calc(a * max(0, min(0.12, (0.0849 + a * (0.04557 + a * (-0.05342 + a * (-0.01372 + a * (0.03584))))) + b * (-0.05001 + a * (-0.07096 + a * (0.07784 + a * (0.0532))))))) calc(b * max(0, min(0.12, (0.0849 + a * (0.04557 + a * (-0.05342 + a * (-0.01372 + a * (0.03584))))) + b * (-0.05001 + a * (-0.07096 + a * (0.07784 + a * (0.0532))))))));
+      --slotted-data-2: oklab(from oklch(from var(--slotted-seed-accent) 0.5 1 calc(h + 315)) l calc(a * max(0, min(0.14, (0.14511 + a * (0.07535 + a * (-0.0548 + a * (-0.02216 + a * (0.03256))))) + b * (-0.0763 + a * (-0.11712 + a * (0.11584 + a * (0.08688))))))) calc(b * max(0, min(0.14, (0.14511 + a * (0.07535 + a * (-0.0548 + a * (-0.02216 + a * (0.03256))))) + b * (-0.0763 + a * (-0.11712 + a * (0.11584 + a * (0.08688))))))));
+      --slotted-data-3: oklab(from oklch(from var(--slotted-seed-accent) 0.3 1 calc(h + 270)) l calc(a * max(0, min(0.12, (0.0849 + a * (0.04557 + a * (-0.05342 + a * (-0.01372 + a * (0.03584))))) + b * (-0.05001 + a * (-0.07096 + a * (0.07784 + a * (0.0532))))))) calc(b * max(0, min(0.12, (0.0849 + a * (0.04557 + a * (-0.05342 + a * (-0.01372 + a * (0.03584))))) + b * (-0.05001 + a * (-0.07096 + a * (0.07784 + a * (0.0532))))))));
+      --slotted-data-4: oklab(from oklch(from var(--slotted-seed-accent) 0.5 1 calc(h + 225)) l calc(a * max(0, min(0.14, (0.14511 + a * (0.07535 + a * (-0.0548 + a * (-0.02216 + a * (0.03256))))) + b * (-0.0763 + a * (-0.11712 + a * (0.11584 + a * (0.08688))))))) calc(b * max(0, min(0.14, (0.14511 + a * (0.07535 + a * (-0.0548 + a * (-0.02216 + a * (0.03256))))) + b * (-0.0763 + a * (-0.11712 + a * (0.11584 + a * (0.08688))))))));
+      --slotted-data-5: oklab(from oklch(from var(--slotted-seed-accent) 0.3 1 calc(h + 180)) l calc(a * max(0, min(0.12, (0.0849 + a * (0.04557 + a * (-0.05342 + a * (-0.01372 + a * (0.03584))))) + b * (-0.05001 + a * (-0.07096 + a * (0.07784 + a * (0.0532))))))) calc(b * max(0, min(0.12, (0.0849 + a * (0.04557 + a * (-0.05342 + a * (-0.01372 + a * (0.03584))))) + b * (-0.05001 + a * (-0.07096 + a * (0.07784 + a * (0.0532))))))));
+      --slotted-data-6: oklab(from oklch(from var(--slotted-seed-accent) 0.5 1 calc(h + 135)) l calc(a * max(0, min(0.14, (0.14511 + a * (0.07535 + a * (-0.0548 + a * (-0.02216 + a * (0.03256))))) + b * (-0.0763 + a * (-0.11712 + a * (0.11584 + a * (0.08688))))))) calc(b * max(0, min(0.14, (0.14511 + a * (0.07535 + a * (-0.0548 + a * (-0.02216 + a * (0.03256))))) + b * (-0.0763 + a * (-0.11712 + a * (0.11584 + a * (0.08688))))))));
+      --slotted-data-7: oklab(from oklch(from var(--slotted-seed-accent) 0.3 1 calc(h + 90)) l calc(a * max(0, min(0.12, (0.0849 + a * (0.04557 + a * (-0.05342 + a * (-0.01372 + a * (0.03584))))) + b * (-0.05001 + a * (-0.07096 + a * (0.07784 + a * (0.0532))))))) calc(b * max(0, min(0.12, (0.0849 + a * (0.04557 + a * (-0.05342 + a * (-0.01372 + a * (0.03584))))) + b * (-0.05001 + a * (-0.07096 + a * (0.07784 + a * (0.0532))))))));
+      --slotted-data-8: oklab(from oklch(from var(--slotted-seed-accent) 0.5 1 calc(h + 45)) l calc(a * max(0, min(0.14, (0.14511 + a * (0.07535 + a * (-0.0548 + a * (-0.02216 + a * (0.03256))))) + b * (-0.0763 + a * (-0.11712 + a * (0.11584 + a * (0.08688))))))) calc(b * max(0, min(0.14, (0.14511 + a * (0.07535 + a * (-0.0548 + a * (-0.02216 + a * (0.03256))))) + b * (-0.0763 + a * (-0.11712 + a * (0.11584 + a * (0.08688))))))));
+      --slotted-data-1-on: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
+      --slotted-data-2-on: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
+      --slotted-data-3-on: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
+      --slotted-data-4-on: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
+      --slotted-data-5-on: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
+      --slotted-data-6-on: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
+      --slotted-data-7-on: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
+      --slotted-data-8-on: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
       --slotted-shadow-xs: 0 0 0 1px #000000;
       --slotted-shadow-sm: 0 0 0 1px #000000;
       --slotted-shadow-md: 0 0 0 2px #000000;
@@ -541,14 +608,6 @@
       --slotted-surface-material: var(--slotted-surface);
       --slotted-control-shadow: none;
       --slotted-scrim: rgb(0 0 0 / 0.75);
-      --slotted-data-1: #1d4ed8;
-      --slotted-data-2: #c2410c;
-      --slotted-data-3: #0e7490;
-      --slotted-data-4: #b91c1c;
-      --slotted-data-5: #6d28d9;
-      --slotted-data-6: #a16207;
-      --slotted-data-7: #a21caf;
-      --slotted-data-8: #15803d;
       --slotted-upload-kind-pdf: #991b1b;
       --slotted-upload-kind-document: #1e3a8a;
       --slotted-upload-kind-spreadsheet: #14532d;
@@ -651,6 +710,31 @@
       --slotted-border-strong: oklch(from var(--slotted-seed-neutral) 0.623 min(calc(c * 0.857), 0.06) h);
       --slotted-control-border-color: oklch(from var(--slotted-seed-neutral) 0.826 min(calc(c * 0.406), 0.06) h);
       --slotted-control-surface: var(--slotted-surface);
+      --slotted-tone-info-solid: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + 0), 1) min(calc(c * 1), 0.25) h) l c h / c) min(l, calc(0.5586 + alpha * (((0.01357 + (a / max(alpha, 0.00001)) * (0.12873 + (a / max(alpha, 0.00001)) * (0.00094 + (a / max(alpha, 0.00001)) * (-0.08492 + (a / max(alpha, 0.00001)) * (0.04896))))) + (b / max(alpha, 0.00001)) * (0.00929 + (a / max(alpha, 0.00001)) * (0.0188 + (a / max(alpha, 0.00001)) * (-0.14544 + (a / max(alpha, 0.00001)) * (0.07248))))) + alpha * (((0.03631 + (a / max(alpha, 0.00001)) * (-0.15883 + (a / max(alpha, 0.00001)) * (-0.01744 + (a / max(alpha, 0.00001)) * (1.45252 + (a / max(alpha, 0.00001)) * (-0.98552))))) + (b / max(alpha, 0.00001)) * (-0.38033 + (a / max(alpha, 0.00001)) * (0.03424 + (a / max(alpha, 0.00001)) * (2.5058 + (a / max(alpha, 0.00001)) * (-1.8248))))) + alpha * ((0.17717 + (a / max(alpha, 0.00001)) * (1.22898 + (a / max(alpha, 0.00001)) * (-1.73714 + (a / max(alpha, 0.00001)) * (-3.70144 + (a / max(alpha, 0.00001)) * (2.99352))))) + (b / max(alpha, 0.00001)) * (0.87033 + (a / max(alpha, 0.00001)) * (-1.33962 + (a / max(alpha, 0.00001)) * (-6.3798 + (a / max(alpha, 0.00001)) * (6.06448))))))))) a b / 1) l c h);
+      --slotted-tone-info-solid-hover: oklch(from oklab(from oklch(from color-mix(in oklch, var(--slotted-tone-info-solid), oklch(from var(--slotted-tone-info-solid) clamp(0, calc((0.9 - l) * 1000000), 1) 0 none) 6%) l c h / c) min(l, calc(0.5586 + alpha * (((0.01357 + (a / max(alpha, 0.00001)) * (0.12873 + (a / max(alpha, 0.00001)) * (0.00094 + (a / max(alpha, 0.00001)) * (-0.08492 + (a / max(alpha, 0.00001)) * (0.04896))))) + (b / max(alpha, 0.00001)) * (0.00929 + (a / max(alpha, 0.00001)) * (0.0188 + (a / max(alpha, 0.00001)) * (-0.14544 + (a / max(alpha, 0.00001)) * (0.07248))))) + alpha * (((0.03631 + (a / max(alpha, 0.00001)) * (-0.15883 + (a / max(alpha, 0.00001)) * (-0.01744 + (a / max(alpha, 0.00001)) * (1.45252 + (a / max(alpha, 0.00001)) * (-0.98552))))) + (b / max(alpha, 0.00001)) * (-0.38033 + (a / max(alpha, 0.00001)) * (0.03424 + (a / max(alpha, 0.00001)) * (2.5058 + (a / max(alpha, 0.00001)) * (-1.8248))))) + alpha * ((0.17717 + (a / max(alpha, 0.00001)) * (1.22898 + (a / max(alpha, 0.00001)) * (-1.73714 + (a / max(alpha, 0.00001)) * (-3.70144 + (a / max(alpha, 0.00001)) * (2.99352))))) + (b / max(alpha, 0.00001)) * (0.87033 + (a / max(alpha, 0.00001)) * (-1.33962 + (a / max(alpha, 0.00001)) * (-6.3798 + (a / max(alpha, 0.00001)) * (6.06448))))))))) a b / 1) l c h);
+      --slotted-tone-info-solid-active: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + -0.109), 1) min(calc(c * 0.634), 0.25) h) l c h / c) min(l, calc(0.5586 + alpha * (((0.01357 + (a / max(alpha, 0.00001)) * (0.12873 + (a / max(alpha, 0.00001)) * (0.00094 + (a / max(alpha, 0.00001)) * (-0.08492 + (a / max(alpha, 0.00001)) * (0.04896))))) + (b / max(alpha, 0.00001)) * (0.00929 + (a / max(alpha, 0.00001)) * (0.0188 + (a / max(alpha, 0.00001)) * (-0.14544 + (a / max(alpha, 0.00001)) * (0.07248))))) + alpha * (((0.03631 + (a / max(alpha, 0.00001)) * (-0.15883 + (a / max(alpha, 0.00001)) * (-0.01744 + (a / max(alpha, 0.00001)) * (1.45252 + (a / max(alpha, 0.00001)) * (-0.98552))))) + (b / max(alpha, 0.00001)) * (-0.38033 + (a / max(alpha, 0.00001)) * (0.03424 + (a / max(alpha, 0.00001)) * (2.5058 + (a / max(alpha, 0.00001)) * (-1.8248))))) + alpha * ((0.17717 + (a / max(alpha, 0.00001)) * (1.22898 + (a / max(alpha, 0.00001)) * (-1.73714 + (a / max(alpha, 0.00001)) * (-3.70144 + (a / max(alpha, 0.00001)) * (2.99352))))) + (b / max(alpha, 0.00001)) * (0.87033 + (a / max(alpha, 0.00001)) * (-1.33962 + (a / max(alpha, 0.00001)) * (-6.3798 + (a / max(alpha, 0.00001)) * (6.06448))))))))) a b / 1) l c h);
+      --slotted-tone-info-on-solid: oklch(from var(--slotted-seed-info) 1 min(calc(c * 0), 0) h);
+      --slotted-tone-info-surface: oklch(from var(--slotted-seed-info) 0.932 min(calc(c * 0.145), 0.06) h);
+      --slotted-tone-info-subtle-hover: oklch(from var(--slotted-seed-info) 0.97 min(calc(c * 0.065), 0.06) h);
+      --slotted-tone-info-subtle-active: oklch(from var(--slotted-seed-info) 0.932 min(calc(c * 0.145), 0.06) h);
+      --slotted-tone-info-border: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + 0.058), 1) min(calc(c * 0.991), 0.25) h) l c h / c) min(l, calc(0.6029 + alpha * (((0.01353 + (a / max(alpha, 0.00001)) * (0.1238 + (a / max(alpha, 0.00001)) * (-0.02612 + (a / max(alpha, 0.00001)) * (-0.06224 + (a / max(alpha, 0.00001)) * (0.08112))))) + (b / max(alpha, 0.00001)) * (0.00406 + (a / max(alpha, 0.00001)) * (-0.00008 + (a / max(alpha, 0.00001)) * (-0.12732 + (a / max(alpha, 0.00001)) * (0.11864))))) + alpha * (((0.02819 + (a / max(alpha, 0.00001)) * (-0.06359 + (a / max(alpha, 0.00001)) * (0.40756 + (a / max(alpha, 0.00001)) * (1.00212 + (a / max(alpha, 0.00001)) * (-1.41272))))) + (b / max(alpha, 0.00001)) * (-0.27016 + (a / max(alpha, 0.00001)) * (0.29648 + (a / max(alpha, 0.00001)) * (2.05888 + (a / max(alpha, 0.00001)) * (-2.36776))))) + alpha * ((0.19721 + (a / max(alpha, 0.00001)) * (0.75434 + (a / max(alpha, 0.00001)) * (-2.97652 + (a / max(alpha, 0.00001)) * (-2.01276 + (a / max(alpha, 0.00001)) * (4.2672))))) + (b / max(alpha, 0.00001)) * (0.45478 + (a / max(alpha, 0.00001)) * (-1.9677 + (a / max(alpha, 0.00001)) * (-4.60308 + (a / max(alpha, 0.00001)) * (7.3612))))))))) a b / 1) l c h);
+      --slotted-tone-info-text: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + 0), 1) min(calc(c * 1), 0.25) h) l c h / c) min(l, calc(0.4996 + alpha * (((0.01749 + (a / max(alpha, 0.00001)) * (0.13486 + (a / max(alpha, 0.00001)) * (0.02804 + (a / max(alpha, 0.00001)) * (-0.15308 + (a / max(alpha, 0.00001)) * (-0.03744))))) + (b / max(alpha, 0.00001)) * (0.01505 + (a / max(alpha, 0.00001)) * (0.0648 + (a / max(alpha, 0.00001)) * (-0.19708 + (a / max(alpha, 0.00001)) * (-0.07824))))) + alpha * (((-0.02211 + (a / max(alpha, 0.00001)) * (-0.28415 + (a / max(alpha, 0.00001)) * (-0.48764 + (a / max(alpha, 0.00001)) * (2.7512 + (a / max(alpha, 0.00001)) * (0.3512))))) + (b / max(alpha, 0.00001)) * (-0.52183 + (a / max(alpha, 0.00001)) * (-0.72802 + (a / max(alpha, 0.00001)) * (3.6514 + (a / max(alpha, 0.00001)) * (0.47536))))) + alpha * ((0.43624 + (a / max(alpha, 0.00001)) * (1.93247 + (a / max(alpha, 0.00001)) * (-0.37886 + (a / max(alpha, 0.00001)) * (-8.72208 + (a / max(alpha, 0.00001)) * (-1.60608))))) + (b / max(alpha, 0.00001)) * (1.44681 + (a / max(alpha, 0.00001)) * (1.13798 + (a / max(alpha, 0.00001)) * (-11.05816 + (a / max(alpha, 0.00001)) * (-1.61624))))))))) a b / 1) l c h);
+      --slotted-data-1: #7368d4;
+      --slotted-data-2: #b46400;
+      --slotted-data-3: #009597;
+      --slotted-data-4: #c6495b;
+      --slotted-data-5: #0083ce;
+      --slotted-data-6: #4d8e16;
+      --slotted-data-7: #ad51a7;
+      --slotted-data-8: #c4530f;
+      --slotted-data-1-on: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
+      --slotted-data-2-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
+      --slotted-data-3-on: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
+      --slotted-data-4-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
+      --slotted-data-5-on: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
+      --slotted-data-6-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
+      --slotted-data-7-on: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
+      --slotted-data-8-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
       --slotted-shadow-xs: 0 1px 2px rgb(15 23 42 / 0.06);
       --slotted-shadow-sm: 0 1px 3px rgb(15 23 42 / 0.08), 0 1px 2px -1px rgb(15 23 42 / 0.08);
       --slotted-shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.08);
@@ -662,14 +746,6 @@
       --slotted-surface-material: color-mix(in oklab, var(--slotted-surface) 84%, transparent);
       --slotted-control-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
       --slotted-scrim: rgb(0 0 0 / 0.41);
-      --slotted-data-1: #7368d4;
-      --slotted-data-2: #b46400;
-      --slotted-data-3: #009597;
-      --slotted-data-4: #c6495b;
-      --slotted-data-5: #0083ce;
-      --slotted-data-6: #4d8e16;
-      --slotted-data-7: #ad51a7;
-      --slotted-data-8: #c4530f;
       --slotted-upload-kind-pdf: #c62828;
       --slotted-upload-kind-document: #1d4ed8;
       --slotted-upload-kind-spreadsheet: #15803d;
@@ -755,7 +831,7 @@
         --slotted-tone-danger-subtle-hover: oklch(from var(--slotted-seed-danger) 0.187 min(calc(c * 0.055), 0.06) h);
         --slotted-tone-danger-subtle-active: oklch(from var(--slotted-seed-danger) 0.209 min(calc(c * 0.1), 0.06) calc(h + -8));
         --slotted-surface: oklch(from var(--slotted-seed-neutral) 0.155 min(calc(c * 0.22), 0.03) h);
-        --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.17 min(calc(c * 0.22), 0.03) h);
+        --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
         --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0.13 min(calc(c * 0.22), 0.03) h);
         --slotted-surface-inverse: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
         --slotted-tone-neutral-solid: var(--slotted-surface-inverse);
@@ -773,6 +849,31 @@
         --slotted-border-strong: oklch(from var(--slotted-seed-neutral) 0.552 min(calc(c * 0.339), 0.06) h);
         --slotted-control-border-color: oklch(from var(--slotted-seed-neutral) 0.36 min(calc(c * 0.332), 0.06) h);
         --slotted-control-surface: var(--slotted-surface);
+        --slotted-tone-info-solid: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + 0.058), 1) min(calc(c * 0.991), 0.25) h) l c h / c) min(l, calc(0.5586 + alpha * (((0.01357 + (a / max(alpha, 0.00001)) * (0.12873 + (a / max(alpha, 0.00001)) * (0.00094 + (a / max(alpha, 0.00001)) * (-0.08492 + (a / max(alpha, 0.00001)) * (0.04896))))) + (b / max(alpha, 0.00001)) * (0.00929 + (a / max(alpha, 0.00001)) * (0.0188 + (a / max(alpha, 0.00001)) * (-0.14544 + (a / max(alpha, 0.00001)) * (0.07248))))) + alpha * (((0.03631 + (a / max(alpha, 0.00001)) * (-0.15883 + (a / max(alpha, 0.00001)) * (-0.01744 + (a / max(alpha, 0.00001)) * (1.45252 + (a / max(alpha, 0.00001)) * (-0.98552))))) + (b / max(alpha, 0.00001)) * (-0.38033 + (a / max(alpha, 0.00001)) * (0.03424 + (a / max(alpha, 0.00001)) * (2.5058 + (a / max(alpha, 0.00001)) * (-1.8248))))) + alpha * ((0.17717 + (a / max(alpha, 0.00001)) * (1.22898 + (a / max(alpha, 0.00001)) * (-1.73714 + (a / max(alpha, 0.00001)) * (-3.70144 + (a / max(alpha, 0.00001)) * (2.99352))))) + (b / max(alpha, 0.00001)) * (0.87033 + (a / max(alpha, 0.00001)) * (-1.33962 + (a / max(alpha, 0.00001)) * (-6.3798 + (a / max(alpha, 0.00001)) * (6.06448))))))))) a b / 1) l c h);
+        --slotted-tone-info-solid-hover: oklch(from oklab(from oklch(from color-mix(in oklch, var(--slotted-tone-info-solid), oklch(from var(--slotted-tone-info-solid) clamp(0, calc((0.9 - l) * 1000000), 1) 0 none) 8%) l c h / c) min(l, calc(0.5586 + alpha * (((0.01357 + (a / max(alpha, 0.00001)) * (0.12873 + (a / max(alpha, 0.00001)) * (0.00094 + (a / max(alpha, 0.00001)) * (-0.08492 + (a / max(alpha, 0.00001)) * (0.04896))))) + (b / max(alpha, 0.00001)) * (0.00929 + (a / max(alpha, 0.00001)) * (0.0188 + (a / max(alpha, 0.00001)) * (-0.14544 + (a / max(alpha, 0.00001)) * (0.07248))))) + alpha * (((0.03631 + (a / max(alpha, 0.00001)) * (-0.15883 + (a / max(alpha, 0.00001)) * (-0.01744 + (a / max(alpha, 0.00001)) * (1.45252 + (a / max(alpha, 0.00001)) * (-0.98552))))) + (b / max(alpha, 0.00001)) * (-0.38033 + (a / max(alpha, 0.00001)) * (0.03424 + (a / max(alpha, 0.00001)) * (2.5058 + (a / max(alpha, 0.00001)) * (-1.8248))))) + alpha * ((0.17717 + (a / max(alpha, 0.00001)) * (1.22898 + (a / max(alpha, 0.00001)) * (-1.73714 + (a / max(alpha, 0.00001)) * (-3.70144 + (a / max(alpha, 0.00001)) * (2.99352))))) + (b / max(alpha, 0.00001)) * (0.87033 + (a / max(alpha, 0.00001)) * (-1.33962 + (a / max(alpha, 0.00001)) * (-6.3798 + (a / max(alpha, 0.00001)) * (6.06448))))))))) a b / 1) l c h);
+        --slotted-tone-info-solid-active: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + -0.064), 1) min(calc(c * 0.833), 0.25) h) l c h / c) min(l, calc(0.5586 + alpha * (((0.01357 + (a / max(alpha, 0.00001)) * (0.12873 + (a / max(alpha, 0.00001)) * (0.00094 + (a / max(alpha, 0.00001)) * (-0.08492 + (a / max(alpha, 0.00001)) * (0.04896))))) + (b / max(alpha, 0.00001)) * (0.00929 + (a / max(alpha, 0.00001)) * (0.0188 + (a / max(alpha, 0.00001)) * (-0.14544 + (a / max(alpha, 0.00001)) * (0.07248))))) + alpha * (((0.03631 + (a / max(alpha, 0.00001)) * (-0.15883 + (a / max(alpha, 0.00001)) * (-0.01744 + (a / max(alpha, 0.00001)) * (1.45252 + (a / max(alpha, 0.00001)) * (-0.98552))))) + (b / max(alpha, 0.00001)) * (-0.38033 + (a / max(alpha, 0.00001)) * (0.03424 + (a / max(alpha, 0.00001)) * (2.5058 + (a / max(alpha, 0.00001)) * (-1.8248))))) + alpha * ((0.17717 + (a / max(alpha, 0.00001)) * (1.22898 + (a / max(alpha, 0.00001)) * (-1.73714 + (a / max(alpha, 0.00001)) * (-3.70144 + (a / max(alpha, 0.00001)) * (2.99352))))) + (b / max(alpha, 0.00001)) * (0.87033 + (a / max(alpha, 0.00001)) * (-1.33962 + (a / max(alpha, 0.00001)) * (-6.3798 + (a / max(alpha, 0.00001)) * (6.06448))))))))) a b / 1) l c h);
+        --slotted-tone-info-on-solid: oklch(from var(--slotted-seed-info) 1 min(calc(c * 0), 0) h);
+        --slotted-tone-info-surface: oklch(from var(--slotted-seed-info) 0.222 min(calc(c * 0.066), 0.06) h);
+        --slotted-tone-info-subtle-hover: oklch(from var(--slotted-seed-info) 0.187 min(calc(c * 0.049), 0.06) h);
+        --slotted-tone-info-subtle-active: oklch(from var(--slotted-seed-info) 0.222 min(calc(c * 0.066), 0.06) h);
+        --slotted-tone-info-border: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + 0.226), 1) min(calc(c * 0.66), 0.25) h) l c h / c) max(l, calc(0.5129 + alpha * (((-0.00004 + (a / max(alpha, 0.00001)) * (0.12718 + (a / max(alpha, 0.00001)) * (0.00012 + (a / max(alpha, 0.00001)) * (0 + (a / max(alpha, 0.00001)) * (-0.00008))))) + (b / max(alpha, 0.00001)) * (-0.01266 + (a / max(alpha, 0.00001)) * (0 + (a / max(alpha, 0.00001)) * (-0.00016)))) + alpha * (((0.22974 + (a / max(alpha, 0.00001)) * (0.00013 + (a / max(alpha, 0.00001)) * (-0.21006 + (a / max(alpha, 0.00001)) * (-0.00012 + (a / max(alpha, 0.00001)) * (0.00136))))) + (b / max(alpha, 0.00001)) * (-0.00264 + (a / max(alpha, 0.00001)) * (0.01022 + (a / max(alpha, 0.00001)) * (0.00348 + (a / max(alpha, 0.00001)) * (0.00016))))) + alpha * ((-0.00413 + (a / max(alpha, 0.00001)) * (0.0196 + (a / max(alpha, 0.00001)) * (0.01032 + (a / max(alpha, 0.00001)) * (-0.0122 + (a / max(alpha, 0.00001)) * (-0.00632))))) + (b / max(alpha, 0.00001)) * (-0.1877 + (a / max(alpha, 0.00001)) * (0.00056 + (a / max(alpha, 0.00001)) * (0.19164 + (a / max(alpha, 0.00001)) * (-0.00064))))))))) a b / 1) l c h);
+        --slotted-tone-info-text: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-info) clamp(0, calc(l + 0.321), 1) min(calc(c * 0.44), 0.25) h) l c h / c) max(l, calc(0.6175 + alpha * (((0.0406 + (a / max(alpha, 0.00001)) * (0.14467 + (a / max(alpha, 0.00001)) * (-0.13242 + (a / max(alpha, 0.00001)) * (-0.01764 + (a / max(alpha, 0.00001)) * (0.09888))))) + (b / max(alpha, 0.00001)) * (-0.04964 + (a / max(alpha, 0.00001)) * (-0.0351 + (a / max(alpha, 0.00001)) * (0.07096 + (a / max(alpha, 0.00001)) * (0.0608))))) + alpha * (((-0.51057 + (a / max(alpha, 0.00001)) * (-0.29433 + (a / max(alpha, 0.00001)) * (2.13382 + (a / max(alpha, 0.00001)) * (0.29916 + (a / max(alpha, 0.00001)) * (-1.72616))))) + (b / max(alpha, 0.00001)) * (0.63433 + (a / max(alpha, 0.00001)) * (0.59642 + (a / max(alpha, 0.00001)) * (-1.21788 + (a / max(alpha, 0.00001)) * (-1.01256))))) + alpha * ((2.66863 + (a / max(alpha, 0.00001)) * (1.10008 + (a / max(alpha, 0.00001)) * (-8.82554 + (a / max(alpha, 0.00001)) * (-1.12128 + (a / max(alpha, 0.00001)) * (6.60888))))) + (b / max(alpha, 0.00001)) * (-2.53673 + (a / max(alpha, 0.00001)) * (-2.15628 + (a / max(alpha, 0.00001)) * (4.73444 + (a / max(alpha, 0.00001)) * (3.6944))))))))) a b / 1) l c h);
+        --slotted-data-1: #8a82e9;
+        --slotted-data-2: #cb7f00;
+        --slotted-data-3: #00a8a8;
+        --slotted-data-4: #de6674;
+        --slotted-data-5: #069ce4;
+        --slotted-data-6: #68a63f;
+        --slotted-data-7: #c46dbd;
+        --slotted-data-8: #db703b;
+        --slotted-data-1-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
+        --slotted-data-2-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
+        --slotted-data-3-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
+        --slotted-data-4-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
+        --slotted-data-5-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
+        --slotted-data-6-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
+        --slotted-data-7-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
+        --slotted-data-8-on: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
         --slotted-shadow-xs: 0 1px 2px rgb(0 0 0 / 0.40);
         --slotted-shadow-sm: 0 1px 3px rgb(0 0 0 / 0.45), 0 1px 2px -1px rgb(0 0 0 / 0.40);
         --slotted-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.50), 0 2px 4px -2px rgb(0 0 0 / 0.45);
@@ -784,14 +885,6 @@
         --slotted-surface-material: color-mix(in oklab, var(--slotted-surface) 68%, transparent);
         --slotted-control-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
         --slotted-scrim: rgb(0 0 0 / 0.62);
-        --slotted-data-1: #8a82e9;
-        --slotted-data-2: #cb7f00;
-        --slotted-data-3: #00a8a8;
-        --slotted-data-4: #de6674;
-        --slotted-data-5: #069ce4;
-        --slotted-data-6: #68a63f;
-        --slotted-data-7: #c46dbd;
-        --slotted-data-8: #db703b;
         --slotted-upload-kind-pdf: #dc2626;
         --slotted-upload-kind-document: #2563eb;
         --slotted-upload-kind-spreadsheet: #15803d;
@@ -1035,6 +1128,15 @@
       --slotted-tone-danger-text: CanvasText;
       --slotted-tone-danger-subtle-hover: Canvas;
       --slotted-tone-danger-subtle-active: Canvas;
+      --slotted-tone-info-solid: ButtonFace;
+      --slotted-tone-info-surface: Canvas;
+      --slotted-tone-info-solid-hover: ButtonFace;
+      --slotted-tone-info-solid-active: ButtonFace;
+      --slotted-tone-info-on-solid: ButtonText;
+      --slotted-tone-info-border: ButtonBorder;
+      --slotted-tone-info-text: CanvasText;
+      --slotted-tone-info-subtle-hover: Canvas;
+      --slotted-tone-info-subtle-active: Canvas;
       --slotted-shadow-xs: none;
       --slotted-shadow-sm: none;
       --slotted-shadow-md: none;
@@ -1064,6 +1166,14 @@
       --slotted-data-6: CanvasText;
       --slotted-data-7: CanvasText;
       --slotted-data-8: CanvasText;
+      --slotted-data-1-on: Canvas;
+      --slotted-data-2-on: Canvas;
+      --slotted-data-3-on: Canvas;
+      --slotted-data-4-on: Canvas;
+      --slotted-data-5-on: Canvas;
+      --slotted-data-6-on: Canvas;
+      --slotted-data-7-on: Canvas;
+      --slotted-data-8-on: Canvas;
       --slotted-upload-kind-pdf: ButtonFace;
       --slotted-upload-kind-document: ButtonFace;
       --slotted-upload-kind-spreadsheet: ButtonFace;
@@ -1154,6 +1264,15 @@
         --slotted-tone-danger-text: CanvasText;
         --slotted-tone-danger-subtle-hover: Canvas;
         --slotted-tone-danger-subtle-active: Canvas;
+        --slotted-tone-info-solid: ButtonFace;
+        --slotted-tone-info-surface: Canvas;
+        --slotted-tone-info-solid-hover: ButtonFace;
+        --slotted-tone-info-solid-active: ButtonFace;
+        --slotted-tone-info-on-solid: ButtonText;
+        --slotted-tone-info-border: ButtonBorder;
+        --slotted-tone-info-text: CanvasText;
+        --slotted-tone-info-subtle-hover: Canvas;
+        --slotted-tone-info-subtle-active: Canvas;
         --slotted-shadow-xs: none;
         --slotted-shadow-sm: none;
         --slotted-shadow-md: none;
@@ -1183,6 +1302,14 @@
         --slotted-data-6: CanvasText;
         --slotted-data-7: CanvasText;
         --slotted-data-8: CanvasText;
+        --slotted-data-1-on: Canvas;
+        --slotted-data-2-on: Canvas;
+        --slotted-data-3-on: Canvas;
+        --slotted-data-4-on: Canvas;
+        --slotted-data-5-on: Canvas;
+        --slotted-data-6-on: Canvas;
+        --slotted-data-7-on: Canvas;
+        --slotted-data-8-on: Canvas;
         --slotted-upload-kind-pdf: ButtonFace;
         --slotted-upload-kind-document: ButtonFace;
         --slotted-upload-kind-spreadsheet: ButtonFace;
@@ -1274,6 +1401,15 @@
         --slotted-tone-danger-text: CanvasText;
         --slotted-tone-danger-subtle-hover: Canvas;
         --slotted-tone-danger-subtle-active: Canvas;
+        --slotted-tone-info-solid: ButtonFace;
+        --slotted-tone-info-surface: Canvas;
+        --slotted-tone-info-solid-hover: ButtonFace;
+        --slotted-tone-info-solid-active: ButtonFace;
+        --slotted-tone-info-on-solid: ButtonText;
+        --slotted-tone-info-border: ButtonBorder;
+        --slotted-tone-info-text: CanvasText;
+        --slotted-tone-info-subtle-hover: Canvas;
+        --slotted-tone-info-subtle-active: Canvas;
         --slotted-shadow-xs: none;
         --slotted-shadow-sm: none;
         --slotted-shadow-md: none;
@@ -1303,6 +1439,14 @@
         --slotted-data-6: CanvasText;
         --slotted-data-7: CanvasText;
         --slotted-data-8: CanvasText;
+        --slotted-data-1-on: Canvas;
+        --slotted-data-2-on: Canvas;
+        --slotted-data-3-on: Canvas;
+        --slotted-data-4-on: Canvas;
+        --slotted-data-5-on: Canvas;
+        --slotted-data-6-on: Canvas;
+        --slotted-data-7-on: Canvas;
+        --slotted-data-8-on: Canvas;
         --slotted-upload-kind-pdf: ButtonFace;
         --slotted-upload-kind-document: ButtonFace;
         --slotted-upload-kind-spreadsheet: ButtonFace;
@@ -1394,6 +1538,15 @@
         --slotted-tone-danger-text: CanvasText;
         --slotted-tone-danger-subtle-hover: Canvas;
         --slotted-tone-danger-subtle-active: Canvas;
+        --slotted-tone-info-solid: ButtonFace;
+        --slotted-tone-info-surface: Canvas;
+        --slotted-tone-info-solid-hover: ButtonFace;
+        --slotted-tone-info-solid-active: ButtonFace;
+        --slotted-tone-info-on-solid: ButtonText;
+        --slotted-tone-info-border: ButtonBorder;
+        --slotted-tone-info-text: CanvasText;
+        --slotted-tone-info-subtle-hover: Canvas;
+        --slotted-tone-info-subtle-active: Canvas;
         --slotted-shadow-xs: none;
         --slotted-shadow-sm: none;
         --slotted-shadow-md: none;
@@ -1423,6 +1576,14 @@
         --slotted-data-6: CanvasText;
         --slotted-data-7: CanvasText;
         --slotted-data-8: CanvasText;
+        --slotted-data-1-on: Canvas;
+        --slotted-data-2-on: Canvas;
+        --slotted-data-3-on: Canvas;
+        --slotted-data-4-on: Canvas;
+        --slotted-data-5-on: Canvas;
+        --slotted-data-6-on: Canvas;
+        --slotted-data-7-on: Canvas;
+        --slotted-data-8-on: Canvas;
         --slotted-upload-kind-pdf: ButtonFace;
         --slotted-upload-kind-document: ButtonFace;
         --slotted-upload-kind-spreadsheet: ButtonFace;
@@ -1514,6 +1675,15 @@
         --slotted-tone-danger-text: CanvasText;
         --slotted-tone-danger-subtle-hover: Canvas;
         --slotted-tone-danger-subtle-active: Canvas;
+        --slotted-tone-info-solid: ButtonFace;
+        --slotted-tone-info-surface: Canvas;
+        --slotted-tone-info-solid-hover: ButtonFace;
+        --slotted-tone-info-solid-active: ButtonFace;
+        --slotted-tone-info-on-solid: ButtonText;
+        --slotted-tone-info-border: ButtonBorder;
+        --slotted-tone-info-text: CanvasText;
+        --slotted-tone-info-subtle-hover: Canvas;
+        --slotted-tone-info-subtle-active: Canvas;
         --slotted-shadow-xs: none;
         --slotted-shadow-sm: none;
         --slotted-shadow-md: none;
@@ -1543,6 +1713,14 @@
         --slotted-data-6: CanvasText;
         --slotted-data-7: CanvasText;
         --slotted-data-8: CanvasText;
+        --slotted-data-1-on: Canvas;
+        --slotted-data-2-on: Canvas;
+        --slotted-data-3-on: Canvas;
+        --slotted-data-4-on: Canvas;
+        --slotted-data-5-on: Canvas;
+        --slotted-data-6-on: Canvas;
+        --slotted-data-7-on: Canvas;
+        --slotted-data-8-on: Canvas;
         --slotted-upload-kind-pdf: ButtonFace;
         --slotted-upload-kind-document: ButtonFace;
         --slotted-upload-kind-spreadsheet: ButtonFace;
@@ -1606,23 +1784,6 @@
     [data-ui="page-header"][data-variant="plain"] [data-part="title-area"] {
       transition:
         background-color var(--slotted-duration-medium) var(--slotted-easing-standard);
-    }
-
-    [data-ui="cascader"][data-part="root"],
-    [data-ui="combobox"][data-part="root"],
-    [data-ui="currency-field"][data-part="root"],
-    [data-ui="date-field"][data-part="root"],
-    [data-ui="datetime-field"][data-part="root"],
-    [data-ui="multi-select"][data-part="root"],
-    [data-ui="number-field"][data-part="root"],
-    [data-ui="otp-input"][data-part="root"],
-    [data-ui="prompt-composer"][data-part="root"],
-    [data-ui="select"][data-part="root"],
-    [data-ui="tags-input"][data-part="root"],
-    [data-ui="text-field"][data-part="root"],
-    [data-ui="textarea"][data-part="root"],
-    [data-ui="time-field"][data-part="root"] {
-      --slotted-focus-ring-offset: calc(var(--slotted-control-border-width) * -1);
     }
 
     [data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:has(> [data-ui="command-palette"]) {

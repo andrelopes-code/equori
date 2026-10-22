@@ -27,7 +27,7 @@ function darkSeedDerivation(token: string) {
 test("the dark ground is near black and each layer steps clear of the one below", () => {
   assert.equal(darkSeedDerivation("--slotted-surface-sunken").l, 0.13);
   assert.equal(darkSeedDerivation("--slotted-surface").l, 0.155);
-  assert.equal(darkSeedDerivation("--slotted-surface-raised").l, 0.17);
+  assert.equal(darkSeedDerivation("--slotted-surface-raised").l, 0.2);
 });
 
 test("the dark accent edge and text keep the indigo's hue", () => {
@@ -69,31 +69,12 @@ test("data series share one lightness per scheme and start at the indigo", () =>
   ]);
 });
 
-const fieldFamilies = [
-  "cascader",
-  "combobox",
-  "currency-field",
-  "date-field",
-  "datetime-field",
-  "multi-select",
-  "number-field",
-  "otp-input",
-  "prompt-composer",
-  "select",
-  "tags-input",
-  "text-field",
-  "textarea",
-  "time-field",
-];
-
 test("a focused field draws one ring over its own edge, with no offset and no glow", () => {
   assert.match(css, /--slotted-control-shadow-focus-geometry: 0 0 0 0;/);
-  for (const family of fieldFamilies) {
-    const rule = new RegExp(
-      `\\[data-ui="${family}"\\]\\[data-part="root"\\][^{]*\\{[^}]*--slotted-focus-ring-offset: calc\\(var\\(--slotted-control-border-width\\) \\* -1\\)`,
-    );
-    assert.match(css, rule, family);
-  }
+  assert.match(
+    css,
+    /--slotted-control-focus-ring-offset: calc\(var\(--slotted-control-border-width\) \* -1\);/,
+  );
 });
 
 // Owner review item 17: the rules under the header and over a total read as heavy lines; both

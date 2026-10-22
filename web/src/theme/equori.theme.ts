@@ -40,32 +40,6 @@ const currentDestinationRule = `
 }
 `;
 
-// Workaround for Slotted finding "A field's focus ring shares its offset with every other
-// element": a focused field draws its ring over its own edge, while a button keeps the gap that
-// separates its ring from a solid fill of the same hue.
-const fieldFamilies = [
-  "cascader",
-  "combobox",
-  "currency-field",
-  "date-field",
-  "datetime-field",
-  "multi-select",
-  "number-field",
-  "otp-input",
-  "prompt-composer",
-  "select",
-  "tags-input",
-  "text-field",
-  "textarea",
-  "time-field",
-];
-
-const fieldFocusRule = `
-${fieldFamilies.map((family) => `[data-ui="${family}"][data-part="root"]`).join(",\n")} {
-  --slotted-focus-ring-offset: calc(var(--slotted-control-border-width) * -1);
-}
-`;
-
 // Workaround for Slotted finding "CommandPalette has no backdrop-filter token for a material
 // surface": the family exposes its surface as a token but not the filter behind it. Chromium
 // draws no backdrop filter while the dialog's content runs its opacity transition, so the blur
@@ -176,7 +150,7 @@ export default extendTheme(
         ),
         "--slotted-surface-sunken": darkNeutral(0.13),
         "--slotted-surface": darkNeutral(0.155),
-        "--slotted-surface-raised": darkNeutral(0.17),
+        "--slotted-surface-raised": darkNeutral(0.2),
         "--slotted-border-subtle": {
           seed: "neutral",
           l: 0.275,
@@ -225,6 +199,10 @@ export default extendTheme(
     },
     base: {
       "--slotted-control-shadow-focus-geometry": "0 0 0 0",
+      // A focused field draws its ring over its own edge; a button keeps the gap that separates
+      // its ring from a solid fill of the same hue.
+      "--slotted-control-focus-ring-offset":
+        "calc(var(--slotted-control-border-width) * -1)",
     },
     // Destinations read muted, the current one in the full text colour over the bar's own
     // ground, underlined.
@@ -269,7 +247,6 @@ export default extendTheme(
       summaryRule,
       currentDestinationRule,
       pageHeaderGroundRule,
-      fieldFocusRule,
       paletteMaterialRule,
       footerMaterialRule,
     ],
