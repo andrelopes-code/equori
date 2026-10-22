@@ -244,3 +244,21 @@ func TestInstitutionISPBChecks(t *testing.T) {
 	_, err = f.pool.Exec(t.Context(), `INSERT INTO ledger_institution (user_id, name, ispb) VALUES ($1, 'Nu', '18236120')`, f.userID)
 	requireViolation(t, err, uniqueViolation, "ispb")
 }
+
+func TestTagNameSchema(t *testing.T) {
+	t.Parallel()
+	f := newSchemaFixture(t)
+	insert := func(name string) error {
+		_, err := f.pool.Exec(t.Context(), `INSERT INTO ledger_tag (user_id, name) VALUES ($1, $2)`, f.userID, name)
+		return err
+	}
+	requireViolation(t, insert("a b"), checkViolation, "")
+	requireViolation(t, insert("-a"), checkViolation, "")
+	requireViolation(t, insert(""), checkViolation, "")
+	requireViolation(t, insert(strings.Repeat("é", 61)), checkViolation, "")
+	for _, ok := range []string{"café", "праздник", strings.Repeat("é", 60)} {
+		if err := insert(ok); err != nil {
+			t.Fatalf("insert %q: %v", ok, err)
+		}
+	}
+}
