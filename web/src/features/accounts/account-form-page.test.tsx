@@ -190,6 +190,7 @@ describe("New account", () => {
     );
   });
 
+  // About 10 s alone; beside the Go tests of the commit gate it passes the 15 s default.
   it("opens the card and names the setup step that failed", async () => {
     const sent: Sent[] = [];
     const { router } = await renderApp("/accounts/new?kind=credit_card", {
@@ -234,7 +235,7 @@ describe("New account", () => {
       screen.getByRole("button", { name: catalogEn["accountSetup.retry"] }),
     ).toBeInTheDocument();
     expect(sent.map((s) => s.route)).toEqual(["POST /accounts", "rule"]);
-  });
+  }, 30_000);
 
   it("keeps what was typed after leaving the form", async () => {
     const { router } = await renderApp("/accounts/new?kind=checking", {
