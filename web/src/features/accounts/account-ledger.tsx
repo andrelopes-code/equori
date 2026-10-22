@@ -39,16 +39,12 @@ import {
 import type { LedgerRow } from "@/features/accounts/running-balance";
 import { payeesQuery } from "@/features/setup";
 import type { MessageKey } from "@/i18n/catalog.en";
-import {
-  formatDayHeader,
-  formatMoney,
-  formatSigned,
-  shiftDate,
-} from "@/i18n/format";
+import { formatDayHeader, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { PeriodControl } from "@/ui/period-control";
 import { useAppLink } from "@/ui/use-app-link";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 
@@ -79,6 +75,7 @@ export function AccountLedger({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const api = useApi();
   const today = useToday();
   const navigate = useNavigate();
@@ -125,7 +122,7 @@ export function AccountLedger({
   }, [rows]);
   const columns = leaf ? 5 : 4;
   const money = (amount: number, currency: string) =>
-    formatMoney({ amount, currency }, scale(currency), locale);
+    fmt.money({ amount, currency }, scale(currency));
 
   return (
     <Stack gap={4}>
@@ -182,10 +179,9 @@ export function AccountLedger({
                 return (
                   <Fragment key={day}>
                     <TableGroupRow
-                      end={formatSigned(
+                      end={fmt.signed(
                         { amount: net, currency },
                         scale(currency),
-                        locale,
                       )}
                     >
                       {formatDayHeader(day, today, locale, {
@@ -281,7 +277,7 @@ export function AccountLedger({
                                     : undefined
                               }
                             >
-                              {formatSigned(
+                              {fmt.signed(
                                 {
                                   amount: row.voided
                                     ? row.transaction.postings
@@ -296,7 +292,6 @@ export function AccountLedger({
                                   currency: row.currency,
                                 },
                                 scale(row.currency),
-                                locale,
                               )}
                             </Text>
                           </TableCell>

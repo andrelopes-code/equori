@@ -19,12 +19,13 @@ import { useApi } from "@/api/api-context";
 import { ProblemError, errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { balanceQuery, useCloseAccount } from "@/features/accounts/api";
-import { formatDate, formatMoney } from "@/i18n/format";
+import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 
@@ -46,6 +47,7 @@ export function CloseAccountDialog({
   const t = useT();
   const overlayOpen = useOverlayOpen();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const today = useToday();
   const api = useApi();
   const close = useCloseAccount();
@@ -92,10 +94,9 @@ export function CloseAccountDialog({
                     {" "}
                     {t("account.balanceOn", {
                       date: formatDate(date, locale),
-                      amount: formatMoney(
+                      amount: fmt.money(
                         balance.data.balance,
                         scale(balance.data.balance.currency),
-                        locale,
                       ),
                     })}
                   </>

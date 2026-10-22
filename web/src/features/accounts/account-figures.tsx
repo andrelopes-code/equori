@@ -9,11 +9,12 @@ import {
   projectionQuery,
   reconciliationQuery,
 } from "@/features/accounts/api";
-import { formatDate, formatMoney, shiftDate } from "@/i18n/format";
+import { formatDate, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 
@@ -32,6 +33,7 @@ export const AccountFigures = memo(function AccountFigures({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const api = useApi();
   const today = useToday();
   const leaf = account.class === "asset" || account.class === "liability";
@@ -49,7 +51,7 @@ export const AccountFigures = memo(function AccountFigures({
   const goals = useQuery(goalsQuery(api));
   const goal = goals.data?.find((g) => g.account_ids.includes(account.id));
   const money = (m: components["schemas"]["Money"]) =>
-    formatMoney(m, scale(m.currency), locale);
+    fmt.money(m, scale(m.currency));
   const last = reconciliation.data?.last_reconciled_on;
   const open = reconciliation.data?.open_difference;
 

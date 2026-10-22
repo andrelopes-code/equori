@@ -43,10 +43,11 @@ import {
   useResolveAssertion,
 } from "@/features/accounts/api";
 import type { MessageKey } from "@/i18n/catalog.en";
-import { formatDate, formatMoney } from "@/i18n/format";
+import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useAppLink } from "@/ui/use-app-link";
 import { Presence } from "@/ui/presence";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 
@@ -77,6 +78,7 @@ export function ReconciliationTab({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const api = useApi();
   const navigate = useNavigate();
   const follow = useAppLink();
@@ -87,7 +89,7 @@ export function ReconciliationTab({
   const [outcome, setOutcome] = useState<AssertionOutcome | null>(null);
   const [remains, setRemains] = useState<string | null>(null);
   const money = (m: components["schemas"]["Money"]) =>
-    formatMoney(m, scale(m.currency), locale);
+    fmt.money(m, scale(m.currency));
   const open = status.data?.open_difference;
   const last = status.data?.last_reconciled_on;
 

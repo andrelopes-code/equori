@@ -15,6 +15,7 @@ import {
 import styles from "@/features/accounts/account-card.module.css";
 import { monogram } from "@/features/accounts/account-mark";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 const hiddenFigure = "••••";
 
@@ -38,7 +39,7 @@ export function AccountCard({
   meter,
   signal,
   label,
-  hidden = false,
+  hidden: hiddenByProp = false,
   loading = false,
   children,
 }: {
@@ -65,11 +66,15 @@ export function AccountCard({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
+  // The card has its own hidden state; the application's privacy mode turns it on.
+  const hidden = hiddenByProp || fmt.hidden;
   const descriptionId = useId();
   const style = (
     color === undefined ? undefined : { "--account-card-color": color }
   ) as CSSProperties | undefined;
-  const parts = (amount: number) => moneyParts(amount, currency, scale, locale);
+  const parts = (amount: number) =>
+    moneyParts(amount, currency, scale, locale, fmt);
   const symbol = parts(0).symbol;
   const hiddenAmount = t("accountCard.hiddenAmount", { symbol });
   const whole = (amount: number) =>

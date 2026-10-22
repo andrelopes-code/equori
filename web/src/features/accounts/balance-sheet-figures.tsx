@@ -1,8 +1,9 @@
 import type { Sides } from "@/features/accounts/balance-sheet";
-import { formatDate, formatMoney } from "@/i18n/format";
+import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 function change(now: number, before: number | undefined): number | undefined {
   if (before === undefined || before === 0) return undefined;
@@ -27,8 +28,8 @@ export function BalanceSheetFigures({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
-  const money = (amount: number) =>
-    formatMoney({ amount, currency }, scale, locale);
+  const fmt = useMoneyFormat();
+  const money = (amount: number) => fmt.money({ amount, currency }, scale);
   const note = (amount: number | undefined) =>
     amount === undefined
       ? t("balanceSheet.noComparison")

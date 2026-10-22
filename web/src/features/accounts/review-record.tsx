@@ -11,8 +11,9 @@ import { useResolveRecord } from "@/features/accounts/api";
 import { CandidateCard } from "@/features/accounts/candidate-card";
 import { linkScore, reviewScore } from "@/features/accounts/candidate-score";
 import type { MessageKey } from "@/i18n/catalog.en";
-import { formatDate, formatSigned } from "@/i18n/format";
+import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type ExternalRecord = components["schemas"]["ExternalRecord"];
 type RecordResolution = components["schemas"]["RecordResolution"];
@@ -41,6 +42,7 @@ export function ReviewRecord({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const resolve = useResolveRecord();
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
@@ -85,7 +87,7 @@ export function ReviewRecord({
             {formatDate(record.date, locale)}
           </Text>
           <Text size="md" weight="semibold">
-            {formatSigned(record.amount, scale(record.amount.currency), locale)}
+            {fmt.signed(record.amount, scale(record.amount.currency))}
           </Text>
         </Inline>
         {record.review_reason !== undefined && (

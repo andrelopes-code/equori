@@ -19,9 +19,10 @@ import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { positionsQuery } from "@/features/accounts/api";
 import { settingsQuery } from "@/features/setup";
-import { formatMoney, formatPlain, formatSigned } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { formatPlain } from "@/i18n/format";
+import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 
@@ -35,7 +36,7 @@ export function PositionsTab({
   scale: (code: string) => number;
 }) {
   const t = useT();
-  const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const api = useApi();
   const today = useToday();
   const positions = useQuery(positionsQuery(api, today));
@@ -44,7 +45,7 @@ export function PositionsTab({
   const ids = new Set(descendants.map((d) => d.id));
   const rows = (positions.data ?? []).filter((p) => ids.has(p.account_id));
   const money = (m: components["schemas"]["Money"]) =>
-    formatMoney(m, scale(m.currency), locale);
+    fmt.money(m, scale(m.currency));
   const valued = rows.filter((p) => p.market_value !== undefined);
   const totalValue = valued.reduce(
     (sum, p) => sum + (p.market_value?.amount ?? 0),
@@ -128,7 +129,7 @@ export function PositionsTab({
                                 : "default"
                           }
                         >
-                          {formatSigned(result, scale(result.currency), locale)}
+                          {fmt.signed(result, scale(result.currency))}
                         </Text>
                       )}
                     </TableCell>
@@ -149,10 +150,9 @@ export function PositionsTab({
                     {money({ amount: totalValue, currency: base })}
                   </TableCell>
                   <TableCell numeric>
-                    {formatSigned(
+                    {fmt.signed(
                       { amount: totalValue - totalCost, currency: base },
                       scale(base),
-                      locale,
                     )}
                   </TableCell>
                 </TableRow>

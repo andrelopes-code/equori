@@ -22,10 +22,11 @@ import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { importBatchesQuery } from "@/features/accounts/api";
 import { ImportCountTags } from "@/features/accounts/import-count-tags";
-import { formatDate, formatMoney } from "@/i18n/format";
+import { formatDate } from "@/i18n/format";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useAppLink } from "@/ui/use-app-link";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 type ImportBatch = components["schemas"]["ImportBatch"];
@@ -46,6 +47,7 @@ export function ImportsTab({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const navigate = useNavigate();
   const follow = useAppLink();
   const batches = useQuery(importBatchesQuery(useApi(), account.id));
@@ -124,10 +126,9 @@ export function ImportsTab({
                       b.balance.amount !== undefined &&
                       b.balance.date !== undefined
                         ? t("imports.balanceRecorded", {
-                            amount: formatMoney(
+                            amount: fmt.money(
                               b.balance.amount,
                               scale(b.balance.amount.currency),
-                              locale,
                             ),
                             date: formatDate(b.balance.date, locale),
                           })

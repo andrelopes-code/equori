@@ -6,8 +6,8 @@ import { useApi } from "@/api/api-context";
 import styles from "@/features/accounts/account-trend.module.css";
 import { seriesQuery } from "@/features/accounts/api";
 import { shiftDate } from "@/i18n/format";
-import { formatMoney } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useT } from "@/i18n/i18n-provider";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 // The last 90 days of an account and its sub-accounts, drawn in minor units: the shape is what
 // the row shows, and the description reads each value as money.
@@ -25,7 +25,7 @@ export function AccountTrend({
   scale: number;
 }) {
   const t = useT();
-  const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const series = useQuery(
     seriesQuery(useApi(), accountId, shiftDate(date, -89), date),
   );
@@ -40,7 +40,7 @@ export function AccountTrend({
           data={series.data.items.map((point) => point.balance.amount)}
           label={t("balanceSheet.trendOf", { name })}
           valueFormatter={(value) =>
-            formatMoney({ amount: value, currency }, scale, locale)
+            fmt.money({ amount: value, currency }, scale)
           }
         />
       )}

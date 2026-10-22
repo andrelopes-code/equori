@@ -4,8 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { reconciliationQuery } from "@/features/accounts/api";
-import { formatDate, formatMoney } from "@/i18n/format";
+import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 
@@ -21,6 +22,7 @@ export function AccountRowStatus({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const status = useQuery({
     ...reconciliationQuery(useApi(), account.id),
     enabled: account.kind !== "credit_card",
@@ -31,11 +33,7 @@ export function AccountRowStatus({
     return (
       <Tag size="sm" tone="warning">
         {t("reconciliation.tag.open", {
-          amount: formatMoney(
-            open.difference,
-            scale(open.difference.currency),
-            locale,
-          ),
+          amount: fmt.money(open.difference, scale(open.difference.currency)),
         })}
       </Tag>
     );

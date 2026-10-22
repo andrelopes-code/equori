@@ -13,8 +13,9 @@ import {
 import { Text } from "@slotted/react/typography";
 
 import type { CsvPreview } from "@/features/accounts/csv-preview";
-import { formatDate, formatMoney } from "@/i18n/format";
+import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 // The first ten lines as the server will read them; a cell it cannot read says so in its place.
 export function CsvPreviewTable({
@@ -28,6 +29,7 @@ export function CsvPreviewTable({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   return (
     <Table columns={3} variant="framed">
       <TableContent>
@@ -62,7 +64,7 @@ export function CsvPreviewTable({
                     {t("importFile.unreadable")}
                   </Text>
                 ) : (
-                  formatMoney({ amount: row.amount, currency }, scale, locale)
+                  fmt.money({ amount: row.amount, currency }, scale)
                 )}
               </TableCell>
             </TableRow>

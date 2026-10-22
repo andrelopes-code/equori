@@ -17,9 +17,10 @@ import { billingPreview } from "@/features/accounts/billing-preview";
 import { billingRuleBody } from "@/features/accounts/create-account-steps";
 import { logoIndexQuery, logoOf } from "@/features/accounts/institution-logo";
 import { institutionsQuery } from "@/features/setup";
-import { formatDate, formatMoney, formatReferenceMonth } from "@/i18n/format";
+import { formatDate, formatReferenceMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 // FM-14: the account as it will be drawn, where it joins and, for a card, where a purchase made
 // today will be billed, before anything is sent.
@@ -32,6 +33,7 @@ export function AccountPreview({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const today = useToday();
   const institutions = useQuery(institutionsQuery(useApi()));
   const index = useQuery(logoIndexQuery);
@@ -88,10 +90,9 @@ export function AccountPreview({
                   ? "accountPreview.owes"
                   : "accountPreview.holds",
                 {
-                  amount: formatMoney(
+                  amount: fmt.money(
                     { amount: draft.opening, currency: draft.currency },
                     scale(draft.currency),
-                    locale,
                   ),
                   date: formatDate(draft.openedOn, locale),
                 },

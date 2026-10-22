@@ -1,5 +1,6 @@
-import { formatMoneyParts, symbolGap } from "@/i18n/format";
+import { symbolGap } from "@/i18n/format";
 import type { MoneyParts } from "@/i18n/format";
+import type { MoneyFormat } from "@/privacy/use-money-format";
 
 export interface CardMoneyParts extends MoneyParts {
   gap: string;
@@ -10,10 +11,11 @@ export function moneyParts(
   currency: string,
   scale: number,
   locale: string,
+  fmt: MoneyFormat,
 ): CardMoneyParts {
   const money = { amount, currency };
   return {
-    ...formatMoneyParts(money, scale, locale),
+    ...fmt.parts(money, scale),
     gap: symbolGap(money, scale, locale),
   };
 }

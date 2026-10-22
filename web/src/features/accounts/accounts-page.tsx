@@ -40,16 +40,18 @@ import { sheetRows, sides } from "@/features/accounts/balance-sheet";
 import styles from "@/features/accounts/balance-sheet.module.css";
 import { BalanceSheetFigures } from "@/features/accounts/balance-sheet-figures";
 import { institutionsQuery, settingsQuery, useScale } from "@/features/setup";
-import { formatDate, formatMoney, shiftDate } from "@/i18n/format";
+import { formatDate, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { HeaderAction } from "@/ui/header-action";
 import { QueryError } from "@/ui/query-error";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 export function AccountsPage() {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const api = useApi();
   const today = useToday();
   const navigate = useNavigate();
@@ -138,10 +140,9 @@ export function AccountsPage() {
         {now === undefined || base === undefined || scale === null
           ? t("accounts.subtitle")
           : t("balanceSheet.subtitle", {
-              amount: formatMoney(
+              amount: fmt.money(
                 { amount: now.net, currency: base },
                 scale(base),
-                locale,
               ),
               date: formatDate(date, locale),
             })}

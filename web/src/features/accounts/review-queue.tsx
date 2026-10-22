@@ -9,9 +9,10 @@ import {
 } from "@slotted/react/list-item";
 
 import type { components } from "@/api/schema.gen";
-import { formatDate, formatSigned } from "@/i18n/format";
+import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useAppLink } from "@/ui/use-app-link";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type ExternalRecord = components["schemas"]["ExternalRecord"];
 
@@ -31,6 +32,7 @@ export function ReviewQueue({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const follow = useAppLink();
   return (
     <List aria-label={t("batch.queue")} variant="framed">
@@ -58,11 +60,7 @@ export function ReviewQueue({
               </ListItemDescription>
             </ListItemBody>
             <ListItemEnd>
-              {formatSigned(
-                record.amount,
-                scale(record.amount.currency),
-                locale,
-              )}
+              {fmt.signed(record.amount, scale(record.amount.currency))}
             </ListItemEnd>
           </ListItemLink>
         </ListItem>

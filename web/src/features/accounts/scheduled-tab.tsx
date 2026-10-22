@@ -21,14 +21,10 @@ import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { projectionQuery } from "@/features/accounts/api";
 import { ScheduleCell } from "@/features/accounts/schedule-cell";
-import {
-  formatDate,
-  formatMoney,
-  formatSigned,
-  shiftDate,
-} from "@/i18n/format";
+import { formatDate, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 
@@ -44,13 +40,14 @@ export function ScheduledTab({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const today = useToday();
   const [days, setDays] = useState<(typeof ranges)[number]>(90);
   const projection = useQuery(
     projectionQuery(useApi(), account.id, shiftDate(today, days)),
   );
   const money = (m: components["schemas"]["Money"]) =>
-    formatMoney(m, scale(m.currency), locale);
+    fmt.money(m, scale(m.currency));
   const points = projection.data?.points ?? [];
   return (
     <Stack gap={3}>
@@ -114,11 +111,7 @@ export function ScheduledTab({
                       <ScheduleCell point={point} />
                     </TableCell>
                     <TableCell numeric>
-                      {formatSigned(
-                        point.amount,
-                        scale(point.amount.currency),
-                        locale,
-                      )}
+                      {fmt.signed(point.amount, scale(point.amount.currency))}
                     </TableCell>
                     <TableCell numeric>{money(point.balance)}</TableCell>
                   </TableRow>

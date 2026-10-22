@@ -9,8 +9,9 @@ import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { transactionSummaryQuery } from "@/features/accounts/api";
 import { CandidateScoreTable } from "@/features/accounts/candidate-score-table";
-import { formatDate, formatSigned } from "@/i18n/format";
+import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type ScoredCandidate = components["schemas"]["ScoredCandidate"];
 
@@ -30,6 +31,7 @@ export function CandidateCard({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const tx = useQuery(
     transactionSummaryQuery(useApi(), candidate.transaction_id),
   );
@@ -59,7 +61,7 @@ export function CandidateCard({
             </Stack>
             {tx.data !== undefined && currency !== undefined && (
               <Text size="sm" weight="semibold">
-                {formatSigned({ amount, currency }, scale(currency), locale)}
+                {fmt.signed({ amount, currency }, scale(currency))}
               </Text>
             )}
           </Inline>

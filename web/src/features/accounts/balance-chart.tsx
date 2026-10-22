@@ -10,9 +10,10 @@ import { projectionQuery, seriesQuery } from "@/features/accounts/api";
 import type { Range } from "@/features/accounts/account-search";
 import { projectionDays } from "@/features/accounts/account-figures";
 import { balanceChartRows } from "@/features/accounts/balance-chart-rows";
-import { formatDayMonth, formatMoney, shiftDate } from "@/i18n/format";
+import { formatDayMonth, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 
@@ -33,6 +34,7 @@ export const BalanceChart = memo(function BalanceChart({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const api = useApi();
   const today = useToday();
   const from = shiftDate(today, -(range - 1));
@@ -55,7 +57,7 @@ export const BalanceChart = memo(function BalanceChart({
   );
 
   const money = (value: number) =>
-    formatMoney({ amount: value, currency: account.currency }, scale, locale);
+    fmt.money({ amount: value, currency: account.currency }, scale);
   const chartSeries: ChartSeries[] = [
     {
       id: "balance",
