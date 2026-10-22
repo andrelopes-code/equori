@@ -1,3 +1,9 @@
+import {
+  EntityPickerOptionDescription,
+  EntityPickerOptionLabel,
+  EntityPickerOptionMedia,
+  EntityPickerOptionMeta,
+} from "@slotted/react/entity-picker";
 import { Highlight } from "@slotted/react/highlight";
 
 import type { components } from "@/api/schema.gen";
@@ -6,9 +12,7 @@ import { AccountAvatar } from "@/features/accounts/account-avatar";
 type Account = components["schemas"]["Account"];
 
 // A candidate parent in the picker: its own mark, so a wallet reads as a wallet and a bank account
-// shows its bank, beside the name, the kind and what it already holds. The parts carry the
-// data-part-* attributes the family lays out (Slotted finding "renderOption example sets
-// data-part, the layout reads data-part-*").
+// shows its bank, beside the name, the kind and what it already holds.
 export function ParentOption({
   account,
   kind,
@@ -22,19 +26,15 @@ export function ParentOption({
 }) {
   return (
     <>
-      <span data-part="media" data-part-media="">
+      <EntityPickerOptionMedia>
         <AccountAvatar account={account} size="sm" />
-      </span>
-      <span data-part="label" data-part-label="">
+      </EntityPickerOptionMedia>
+      <EntityPickerOptionLabel>
         <Highlight text={account.name} query={query} />
-      </span>
-      <span data-part="description" data-part-description="">
-        {kind}
-      </span>
+      </EntityPickerOptionLabel>
+      <EntityPickerOptionDescription>{kind}</EntityPickerOptionDescription>
       {holds !== undefined && (
-        <span data-part="meta" data-part-meta="">
-          {holds}
-        </span>
+        <EntityPickerOptionMeta>{holds}</EntityPickerOptionMeta>
       )}
     </>
   );

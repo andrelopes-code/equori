@@ -91,8 +91,6 @@ export function CategoriesHeader({
           </TabList>
         </Tabs>
       </PageHeaderTabs>
-      {/* Workaround for Slotted finding "PageHeaderProgress before PageHeaderTabs draws between
-          the title and the tabs": it stands after the tabs, on the header's closing line. */}
       {refreshing !== undefined && (
         <HeaderProgress
           loading={refreshing}

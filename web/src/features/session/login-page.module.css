@@ -40,6 +40,11 @@
     }
   }
 
+  /* Form spaces its Fields; the message between the last Field and the actions takes the same step. */
+  .failure {
+    margin-block-start: var(--slotted-space-6);
+  }
+
   .lockup {
     display: inline-flex;
     align-items: center;

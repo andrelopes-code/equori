@@ -95,8 +95,6 @@ export function AccountsHeader({
           </TabList>
         </Tabs>
       </PageHeaderTabs>
-      {/* Workaround for Slotted finding "PageHeaderProgress before PageHeaderTabs draws between
-          the title and the tabs": it stands after the tabs, on the header's closing line. */}
       <HeaderProgress loading={refreshing} delay={0} />
     </PageHeader>
   );

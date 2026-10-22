@@ -81,34 +81,36 @@ export function LoginPage() {
                 <Text tone="muted">{t("login.subtitle")}</Text>
               </Stack>
               <Form onSubmit={submit} loading={login.isPending}>
-                {/* Workaround for Slotted finding "The official Form example produces fields with no gap between them": Form draws no gap between its Field children. */}
-                <Stack gap={6}>
-                  <Field required>
-                    <FieldLabel>{t("login.email")}</FieldLabel>
-                    <TextField
-                      name="email"
-                      type="email"
-                      size="lg"
-                      autoComplete="username"
-                    />
-                  </Field>
-                  <Field required>
-                    <FieldLabel>{t("login.password")}</FieldLabel>
-                    <TextField
-                      ref={passwordRef}
-                      name="password"
-                      type="password"
-                      size="lg"
-                      revealable
-                      autoComplete="current-password"
-                    />
-                  </Field>
-                  {failure !== null && (
-                    <InlineMessage tone="danger" live="assertive" size="md">
-                      {failure}
-                    </InlineMessage>
-                  )}
-                </Stack>
+                <Field required>
+                  <FieldLabel>{t("login.email")}</FieldLabel>
+                  <TextField
+                    name="email"
+                    type="email"
+                    size="lg"
+                    autoComplete="username"
+                  />
+                </Field>
+                <Field required>
+                  <FieldLabel>{t("login.password")}</FieldLabel>
+                  <TextField
+                    ref={passwordRef}
+                    name="password"
+                    type="password"
+                    size="lg"
+                    revealable
+                    autoComplete="current-password"
+                  />
+                </Field>
+                {failure !== null && (
+                  <InlineMessage
+                    tone="danger"
+                    live="assertive"
+                    size="md"
+                    className={styles.failure}
+                  >
+                    {failure}
+                  </InlineMessage>
+                )}
                 <FormActions align="stretch">
                   <Button
                     type="submit"

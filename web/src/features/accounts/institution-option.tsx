@@ -1,14 +1,16 @@
 import type { Entity } from "@slotted/core/entity-picker";
+import {
+  EntityPickerOptionDescription,
+  EntityPickerOptionLabel,
+  EntityPickerOptionMedia,
+  EntityPickerOptionMeta,
+} from "@slotted/react/entity-picker";
 import { Highlight } from "@slotted/react/highlight";
 
 import { AccountMark } from "@/features/accounts/account-mark";
 
-// Workaround for Slotted finding "an avatar paints its tone behind a loaded picture". Bank logos
-// are drawn for a white ground; on the avatar's tinted ground in the dark scheme a dark logo
-// disappears. The option draws the logo on the white plate the account marks use, in the parts
-// the family lays out. The family places the parts by their data-part-* attribute, not by the
-// data-part its renderOption example sets (Slotted finding "renderOption example sets data-part,
-// the layout reads data-part-*").
+// Bank logos are drawn for a white ground; the option draws the logo on the white plate the
+// account marks use.
 export function InstitutionOption({
   entity,
   query,
@@ -18,26 +20,24 @@ export function InstitutionOption({
 }) {
   return (
     <>
-      <span data-part="media" data-part-media="">
+      <EntityPickerOptionMedia>
         <AccountMark
           shape="square"
           name={entity.label}
           logo={entity.avatar?.src}
           size="sm"
         />
-      </span>
-      <span data-part="label" data-part-label="">
+      </EntityPickerOptionMedia>
+      <EntityPickerOptionLabel>
         <Highlight text={entity.label} query={query} />
-      </span>
+      </EntityPickerOptionLabel>
       {entity.description !== undefined && (
-        <span data-part="description" data-part-description="">
+        <EntityPickerOptionDescription>
           {entity.description}
-        </span>
+        </EntityPickerOptionDescription>
       )}
       {entity.meta !== undefined && (
-        <span data-part="meta" data-part-meta="">
-          {entity.meta}
-        </span>
+        <EntityPickerOptionMeta>{entity.meta}</EntityPickerOptionMeta>
       )}
     </>
   );
