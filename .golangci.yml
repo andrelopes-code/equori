@@ -20,6 +20,7 @@ linters:
             - $gostd
             - github.com/andrelopes-code/equori/internal/*/internal/domain
             - github.com/andrelopes-code/equori/internal/platform/money
+            - github.com/andrelopes-code/equori/internal/platform/textfold
             - github.com/google/uuid
         app:
           list-mode: lax
