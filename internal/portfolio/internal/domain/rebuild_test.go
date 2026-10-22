@@ -15,13 +15,33 @@ func day(s string) time.Time {
 	return d
 }
 
+// fixtureJurisdiction stands in for a real jurisdiction: the domain does not import them.
+type fixtureJurisdiction struct{}
+
+func (fixtureJurisdiction) ID() string            { return "fixture" }
+func (fixtureJurisdiction) IncomeTypes() []string { return nil }
+
+func (fixtureJurisdiction) TaxClass(instrumentType, exchange string) string {
+	if instrumentType == "reit" && exchange == "BVMF" {
+		return "fii"
+	}
+	return instrumentType
+}
+
+func (fixtureJurisdiction) Treatment(incomeType string) string {
+	if incomeType == "dividend" {
+		return "exempt"
+	}
+	return "exclusive"
+}
+
 func TestRebuild(t *testing.T) {
 	t.Parallel()
 	mxrf11, petr4 := uuid.New(), uuid.New()
 	buy1, buy2, sale, dividend, jcp := uuid.New(), uuid.New(), uuid.New(), uuid.New(), uuid.New()
 	f := Facts{
 		Currency:   "BRL",
-		Securities: []Security{{AccountID: mxrf11, Instrument: "MXRF11", TaxClass: "fii"}, {AccountID: petr4, Instrument: "PETR4", TaxClass: "stock"}},
+		Securities: []Security{{AccountID: mxrf11, Instrument: "MXRF11", Type: "reit", Exchange: "BVMF"}, {AccountID: petr4, Instrument: "PETR4", Type: "stock", Exchange: "BVMF"}},
 		Postings: []Posting{
 			{AccountID: mxrf11, TransactionID: buy1, Date: day("2026-10-05"), Quantity: 100, Weight: 100000},
 			{AccountID: mxrf11, TransactionID: buy2, Date: day("2026-10-05"), Quantity: 50, Weight: 51240},
@@ -37,7 +57,7 @@ func TestRebuild(t *testing.T) {
 			{TransactionID: jcp, AccountID: petr4, Date: day("2026-10-26"), Type: "jcp", Gross: 4500, Withheld: 675},
 		},
 	}
-	got := Rebuild(f)
+	got := Rebuild(f, fixtureJurisdiction{})
 
 	wantDays := []PositionDay{
 		{AccountID: mxrf11, Instrument: "MXRF11", Date: day("2026-10-05"), Quantity: 150, CostBasis: 151240},
@@ -59,8 +79,8 @@ func TestRebuild(t *testing.T) {
 		t.Fatalf("results = %+v", got.Results)
 	}
 	wantIncomes := []IncomeEvent{
-		{TransactionID: dividend, AccountID: mxrf11, Instrument: "MXRF11", Date: day("2026-10-26"), Type: "dividend", TaxTreatment: TreatmentExempt, Gross: 1000, Currency: "BRL"},
-		{TransactionID: jcp, AccountID: petr4, Instrument: "PETR4", Date: day("2026-10-26"), Type: "jcp", TaxTreatment: TreatmentExclusive, Gross: 4500, Withheld: 675, Currency: "BRL"},
+		{TransactionID: dividend, AccountID: mxrf11, Instrument: "MXRF11", Date: day("2026-10-26"), Type: "dividend", TaxTreatment: "exempt", Gross: 1000, Currency: "BRL"},
+		{TransactionID: jcp, AccountID: petr4, Instrument: "PETR4", Date: day("2026-10-26"), Type: "jcp", TaxTreatment: "exclusive", Gross: 4500, Withheld: 675, Currency: "BRL"},
 	}
 	if len(got.Incomes) != 2 || got.Incomes[0] != wantIncomes[0] || got.Incomes[1] != wantIncomes[1] {
 		t.Fatalf("incomes = %+v", got.Incomes)
@@ -72,13 +92,30 @@ func TestRebuildFullSaleKeepsAZeroRow(t *testing.T) {
 	a := uuid.New()
 	got := Rebuild(Facts{
 		Currency:   "BRL",
-		Securities: []Security{{AccountID: a, Instrument: "MXRF11", TaxClass: "fii"}},
+		Securities: []Security{{AccountID: a, Instrument: "MXRF11", Type: "reit", Exchange: "BVMF"}},
 		Postings: []Posting{
 			{AccountID: a, TransactionID: uuid.New(), Date: day("2026-10-05"), Quantity: 10, Weight: 1000},
 			{AccountID: a, TransactionID: uuid.New(), Date: day("2026-10-06"), Quantity: -10, Weight: -1000},
 		},
-	})
+	}, fixtureJurisdiction{})
 	if len(got.Days) != 2 || got.Days[1].Quantity != 0 || got.Days[1].CostBasis != 0 {
 		t.Fatalf("days = %+v", got.Days)
+	}
+}
+
+func TestRebuildWithoutJurisdiction(t *testing.T) {
+	t.Parallel()
+	a, sale, dividend := uuid.New(), uuid.New(), uuid.New()
+	got := Rebuild(Facts{
+		Currency:   "EUR",
+		Securities: []Security{{AccountID: a, Instrument: "SAP", Type: "stock", Exchange: "XETR"}},
+		Trades:     []Trade{{TransactionID: sale, AccountID: a, Date: day("2026-10-20"), Side: "sell", Quantity: 1, Gross: 200, Cost: 100}},
+		Incomes:    []Income{{TransactionID: dividend, AccountID: a, Date: day("2026-10-26"), Type: "dividend", Gross: 10}},
+	}, nil)
+	if len(got.Results) != 1 || got.Results[0].TaxClass != "" {
+		t.Fatalf("results = %+v", got.Results)
+	}
+	if len(got.Incomes) != 1 || got.Incomes[0].TaxTreatment != "" {
+		t.Fatalf("incomes = %+v", got.Incomes)
 	}
 }

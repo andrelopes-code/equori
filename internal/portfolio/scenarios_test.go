@@ -126,7 +126,7 @@ func TestS64PositionAndRealizedResult(t *testing.T) {
 
 	rs := f.results(t, "2026")
 	if len(rs) != 1 || rs[0].TransactionID != sale || rs[0].Month != "2026-10" || rs[0].Result["amount"] != float64(3377) ||
-		rs[0].Cost["amount"] != float64(50413) || rs[0].Proceeds["amount"] != float64(53790) || rs[0].Quantity["amount"] != float64(50) || rs[0].TaxClass != "reit" {
+		rs[0].Cost["amount"] != float64(50413) || rs[0].Proceeds["amount"] != float64(53790) || rs[0].Quantity["amount"] != float64(50) || rs[0].TaxClass != "fii" {
 		t.Fatalf("results = %+v", rs)
 	}
 }

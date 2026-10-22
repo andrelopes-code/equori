@@ -17,12 +17,15 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/ledger"
 	"github.com/andrelopes-code/equori/internal/marketdata"
+	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
+	"github.com/andrelopes-code/equori/internal/platform/registry"
 	"github.com/andrelopes-code/equori/internal/portfolio/internal/adapter/httpapi"
 	"github.com/andrelopes-code/equori/internal/portfolio/internal/adapter/postgres"
 	"github.com/andrelopes-code/equori/internal/portfolio/internal/app"
 	"github.com/andrelopes-code/equori/internal/portfolio/internal/domain"
+	"github.com/andrelopes-code/equori/internal/portfolio/internal/jurisdiction/br"
 )
 
 // consumer names the module's outbox subscriptions (ADR 006).
@@ -33,14 +36,40 @@ type Module struct {
 	svc  *app.Service
 }
 
-func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, md *marketdata.Module, log *slog.Logger) *Module {
-	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l, md}, marketPort{md})
+// Profiles is the part of identity the module uses to pick a user's jurisdiction.
+type Profiles interface {
+	Profile(ctx context.Context, userID int64) (locale.Locale, error)
+}
+
+type jurisdictions struct {
+	profiles Profiles
+	byID     registry.Registry[domain.Jurisdiction]
+}
+
+func (j jurisdictions) For(ctx context.Context, userID int64) (domain.Jurisdiction, error) {
+	p, err := j.profiles.Profile(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("read profile: %w", err)
+	}
+	id, ok := defaultJurisdiction(p.Region)
+	if !ok {
+		return nil, nil
+	}
+	return j.byID.Get(id)
+}
+
+func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, md *marketdata.Module, profiles Profiles, log *slog.Logger) (*Module, error) {
+	byID, err := registry.New[domain.Jurisdiction]("jurisdiction", registry.Entry[domain.Jurisdiction]{ID: "br", Value: br.New()})
+	if err != nil {
+		return nil, err
+	}
+	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l, md}, marketPort{md}, jurisdictions{profiles, byID})
 	m := &Module{http: httpapi.NewServer(svc, log), svc: svc}
 	// P8 amendment A71: categorization never changes a security account.
 	for _, t := range []string{ledger.EventTransactionRecorded, ledger.EventTransactionCorrected, ledger.EventTransactionVoided} {
 		dispatcher.Subscribe(consumer, t, m.handle)
 	}
-	return m
+	return m, nil
 }
 
 // handle runs in the dispatcher's transaction, so the rebuilt rows commit with the delivery.
@@ -83,7 +112,7 @@ func (p ledgerPort) InvestmentFacts(ctx context.Context, userID int64, brokerage
 		if err != nil {
 			return domain.Facts{}, err
 		}
-		out.Securities = append(out.Securities, domain.Security{AccountID: s.AccountID, Instrument: s.Instrument, TaxClass: in.Type})
+		out.Securities = append(out.Securities, domain.Security{AccountID: s.AccountID, Instrument: s.Instrument, Type: in.Type, Exchange: in.Exchange})
 	}
 	for _, x := range f.Postings {
 		out.Postings = append(out.Postings, domain.Posting{AccountID: x.AccountID, TransactionID: x.TransactionID, Date: x.Date, Quantity: x.Quantity, Weight: x.Weight})

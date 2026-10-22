@@ -13,11 +13,6 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
-const (
-	TreatmentExempt    = "exempt"
-	TreatmentExclusive = "exclusive"
-)
-
 // Facts are the non-voided facts of the security accounts of one brokerage.
 type Facts struct {
 	Currency   money.Currency
@@ -30,7 +25,8 @@ type Facts struct {
 type Security struct {
 	AccountID  uuid.UUID
 	Instrument money.Currency
-	TaxClass   string
+	Type       string
+	Exchange   string
 }
 
 type Posting struct {
@@ -87,8 +83,8 @@ type Rebuilt struct {
 
 // Rebuild derives the Portfolio rows of f (P8 amendment A71): one position row per
 // account and date with postings, one result per sale (proceeds = gross − fees), one
-// event per income (dividends exempt, other types taxed exclusively at source).
-func Rebuild(f Facts) Rebuilt {
+// event per income. Tax class and treatment come from j; a nil j leaves both empty.
+func Rebuild(f Facts, j Jurisdiction) Rebuilt {
 	securities := make(map[uuid.UUID]Security, len(f.Securities))
 	for _, s := range f.Securities {
 		securities[s.AccountID] = s
@@ -123,17 +119,21 @@ func Rebuild(f Facts) Rebuilt {
 		}
 		s := securities[t.AccountID]
 		proceeds := t.Gross - t.Fees
+		var taxClass string
+		if j != nil {
+			taxClass = j.TaxClass(s.Type, s.Exchange)
+		}
 		out.Results = append(out.Results, RealizedResult{
 			TransactionID: t.TransactionID, AccountID: t.AccountID, Instrument: s.Instrument,
 			Date: t.Date, Month: time.Date(t.Date.Year(), t.Date.Month(), 1, 0, 0, 0, 0, time.UTC),
-			Quantity: t.Quantity, Cost: t.Cost, Proceeds: proceeds, Result: proceeds - t.Cost, TaxClass: s.TaxClass, Currency: f.Currency,
+			Quantity: t.Quantity, Cost: t.Cost, Proceeds: proceeds, Result: proceeds - t.Cost, TaxClass: taxClass, Currency: f.Currency,
 		})
 	}
 
 	for _, in := range f.Incomes {
-		treatment := TreatmentExclusive
-		if in.Type == "dividend" {
-			treatment = TreatmentExempt
+		var treatment string
+		if j != nil {
+			treatment = j.Treatment(in.Type)
 		}
 		out.Incomes = append(out.Incomes, IncomeEvent{
 			TransactionID: in.TransactionID, AccountID: in.AccountID, Instrument: securities[in.AccountID].Instrument, Date: in.Date,

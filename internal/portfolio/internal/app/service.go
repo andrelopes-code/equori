@@ -31,6 +31,11 @@ type Ledger interface {
 	BaseCurrency(ctx context.Context, userID int64) (money.Currency, error)
 }
 
+// Jurisdictions gives the tax jurisdiction of a user; a nil result means none applies.
+type Jurisdictions interface {
+	For(ctx context.Context, userID int64) (domain.Jurisdiction, error)
+}
+
 type Price struct {
 	Instrument, Quote money.Currency
 	Date              time.Time
@@ -56,15 +61,16 @@ type Service struct {
 	repo   Repository
 	ledger Ledger
 	md     MarketData
+	juris  Jurisdictions
 }
 
-func NewService(repo Repository, l Ledger, md MarketData) *Service {
-	return &Service{repo: repo, ledger: l, md: md}
+func NewService(repo Repository, l Ledger, md MarketData, juris Jurisdictions) *Service {
+	return &Service{repo: repo, ledger: l, md: md, juris: juris}
 }
 
 // WithRepository returns the service over repo, the dispatcher's transaction.
 func (s *Service) WithRepository(repo Repository) *Service {
-	return &Service{repo: repo, ledger: s.ledger, md: s.md}
+	return &Service{repo: repo, ledger: s.ledger, md: s.md, juris: s.juris}
 }
 
 // HandleTransaction rebuilds every brokerage that has one of accountIDs as a child (A71).
@@ -101,7 +107,11 @@ func (s *Service) rebuild(ctx context.Context, userID int64, brokerageID uuid.UU
 	for i, sec := range facts.Securities {
 		ids[i] = sec.AccountID
 	}
-	return s.repo.Replace(ctx, userID, ids, domain.Rebuild(facts))
+	j, err := s.juris.For(ctx, userID)
+	if err != nil {
+		return err
+	}
+	return s.repo.Replace(ctx, userID, ids, domain.Rebuild(facts, j))
 }
 
 type Position struct {
