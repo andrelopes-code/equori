@@ -14,9 +14,9 @@ import { AccountSheet } from "@/features/transactions/account-sheet";
 import { ConsequenceSentence } from "@/features/transactions/consequence-sentence";
 import { useAccountChoices } from "@/features/transactions/use-account-choices";
 import type { MessageKey } from "@/i18n/catalog.en";
-import { formatMoney } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 
@@ -65,6 +65,7 @@ export function AccountField({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const wide = useMediaQuery(wideQuery);
   const field = useField();
   const register = field?.registerControl;
@@ -126,7 +127,7 @@ export function AccountField({
   }
 
   const category = accounts.find((a) => a.id === categoryId)?.name;
-  const figure = formatMoney({ amount, currency }, scale(currency), locale);
+  const figure = fmt.money({ amount, currency }, scale(currency));
   const context =
     contextText ??
     (kind === "transfer"

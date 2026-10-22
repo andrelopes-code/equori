@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import { fakeApi } from "@/testing/fake-api";
+import { hideAmounts } from "@/testing/privacy";
 import { renderWithProviders } from "@/testing/render-app";
 import { MoneyInput } from "@/ui/money-input";
 
@@ -27,5 +28,22 @@ describe("MoneyInput", () => {
     expect(input).toHaveFocus();
     await userEvent.keyboard("6");
     expect(typed.at(-1)).toBe(123456);
+  });
+
+  // Privacy hides what is shown, not what the person is typing: a hidden field cannot be edited.
+  it("keeps the typed amount readable while the amounts are hidden", () => {
+    localStorage.clear();
+    hideAmounts();
+    renderWithProviders(
+      <MoneyInput
+        value={12345}
+        currency="BRL"
+        scale={2}
+        sign="expense"
+        onChange={() => undefined}
+      />,
+      { fetch: fakeApi({}) },
+    );
+    expect(screen.getByRole("textbox")).toHaveValue("123.45");
   });
 });

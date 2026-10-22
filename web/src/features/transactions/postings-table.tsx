@@ -13,8 +13,9 @@ import { Tag } from "@slotted/react/tag";
 import type { components } from "@/api/schema.gen";
 import type { CategoryEntry } from "@/features/categories";
 import type { MessageKey } from "@/i18n/catalog.en";
-import { formatDate, formatMoney, formatReferenceMonth } from "@/i18n/format";
+import { formatDate, formatReferenceMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 type Posting = components["schemas"]["Posting"];
@@ -45,6 +46,7 @@ export function PostingsTable({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   return (
     <Table columns={5} variant="framed">
       <TableContent>
@@ -81,11 +83,7 @@ export function PostingsTable({
                     })}`}
                 </TableCell>
                 <TableCell numeric>
-                  {formatMoney(
-                    posting.amount,
-                    scale(posting.amount.currency),
-                    locale,
-                  )}
+                  {fmt.money(posting.amount, scale(posting.amount.currency))}
                 </TableCell>
                 <TableCell>
                   <Tag size="sm" tone={statusTone[posting.status ?? "cleared"]}>

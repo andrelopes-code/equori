@@ -40,6 +40,13 @@ describe("useMoneyFormat", () => {
     expect(result.current.parts(brl(123456), 2).integer).toBe(MASK);
   });
 
+  it("keeps the amount in an entry field readable while hidden", () => {
+    localStorage.setItem("equori.privacy", "hidden");
+    const { result } = renderHook(() => useMoneyFormat(), { wrapper });
+    const entry = result.current.entry(brl(123456), 2);
+    expect(entry.integer + entry.fraction).toBe("1.234,56");
+  });
+
   it("keeps the object identity while locale and hidden are unchanged", () => {
     const seen: unknown[] = [];
     function Probe() {

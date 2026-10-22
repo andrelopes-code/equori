@@ -3,8 +3,8 @@ import { Text } from "@slotted/react/typography";
 import styles from "@/features/transactions/transactions-grid.module.css";
 import { periodTotals } from "@/features/transactions/period-totals";
 import type { ListRow } from "@/features/transactions/use-transaction-list";
-import { formatSigned } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useT } from "@/i18n/i18n-provider";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 // A day's group row: the day, then what the day changed — money in less money out of its loaded
 // rows, transfers and voided entries left out (LP-08: the total names what it counts).
@@ -18,15 +18,14 @@ export function DayHeader({
   scale: (code: string) => number;
 }) {
   const t = useT();
-  const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const totals = periodTotals(rows);
   const total =
     totals === null
       ? null
-      : formatSigned(
+      : fmt.signed(
           { amount: totals.income + totals.expense, currency: totals.currency },
           scale(totals.currency),
-          locale,
         );
   return (
     <span className={styles.day}>

@@ -27,6 +27,15 @@ describe("expectNoAmounts", () => {
     }).toThrow(/sete mil/);
   });
 
+  it("passes on the coordinates of a drawing", () => {
+    expect(() => {
+      expectNoAmounts(
+        html('<svg><path d="M10.50 3.25 4.75 4.00"></path></svg>'),
+        [],
+      );
+    }).not.toThrow();
+  });
+
   it("passes on masks, dates and datetime attributes", () => {
     expect(() => {
       expectNoAmounts(

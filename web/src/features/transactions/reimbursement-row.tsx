@@ -2,9 +2,10 @@ import { Checkbox } from "@slotted/react/checkbox";
 import { Field, FieldLabel } from "@slotted/react/field";
 
 import type { components } from "@/api/schema.gen";
-import { formatDate, formatMoney } from "@/i18n/format";
+import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { MoneyInput } from "@/ui/money-input";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Candidate = components["schemas"]["ReimbursementCandidate"];
 
@@ -26,6 +27,7 @@ export function ReimbursementRow({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const { transaction, remaining } = candidate;
   return (
     <div>
@@ -34,7 +36,7 @@ export function ReimbursementRow({
         onCheckedChange={onCheckedChange}
         description={t("reimbursement.option", {
           date: formatDate(transaction.date, locale),
-          remaining: formatMoney(remaining, scale(remaining.currency), locale),
+          remaining: fmt.money(remaining, scale(remaining.currency)),
         })}
       >
         {transaction.description}

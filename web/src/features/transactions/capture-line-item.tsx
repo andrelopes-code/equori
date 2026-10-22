@@ -19,9 +19,10 @@ import type { LineDraft } from "@/features/transactions/capture-draft";
 import { CaptureSegments } from "@/features/transactions/capture-segments";
 import { EntryKindGlyph } from "@/features/transactions/entry-kind-glyph";
 import type { MessageKey } from "@/i18n/catalog.en";
-import { formatDayMonth, formatMoney } from "@/i18n/format";
+import { formatDayMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { MoneyFigure } from "@/ui/money-figure";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 type CaptureLine = components["schemas"]["CaptureLine"];
@@ -62,6 +63,7 @@ export function CaptureLineItem({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const name = (id: string | null) =>
     id === null ? null : (accounts.get(id)?.name ?? null);
   const currency =
@@ -106,7 +108,7 @@ export function CaptureLineItem({
   const choiceLabel = (choice: CaptureChoice) =>
     choice.amount === undefined
       ? (name(choice.account_id ?? null) ?? "")
-      : formatMoney(choice.amount, scale(choice.amount.currency), locale);
+      : fmt.money(choice.amount, scale(choice.amount.currency));
 
   return (
     <ListItem align="start" tone={blocked ? "warning" : "secondary"}>

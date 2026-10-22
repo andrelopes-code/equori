@@ -14,8 +14,8 @@ import { imbalance } from "@/features/transactions/entry-kind";
 import type { EntryRow } from "@/features/transactions/entry-kind";
 import styles from "@/features/transactions/postings-editor.module.css";
 import { majorFromMinor, minorFromMajor } from "@/features/transactions/split";
-import { formatMoney } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 
@@ -37,6 +37,7 @@ export function PostingsEditor({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const entries = useCategoryEntries(accounts);
   const byId = useMemo(
     () => new Map(accounts.map((a) => [a.id, a])),
@@ -157,11 +158,7 @@ export function PostingsEditor({
           {left === 0
             ? t("entry.balanced")
             : t("entry.unbalanced", {
-                amount: formatMoney(
-                  { amount: left, currency },
-                  scale(currency),
-                  locale,
-                ),
+                amount: fmt.money({ amount: left, currency }, scale(currency)),
               })}
         </Text>
       </Inline>

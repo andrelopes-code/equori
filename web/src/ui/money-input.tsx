@@ -1,10 +1,9 @@
 import { useField } from "@slotted/react/field";
 import { useEffect } from "react";
 
-import { formatMoneyParts } from "@/i18n/format";
-import { useAppLocale } from "@/i18n/i18n-provider";
 import { minorFromTyped } from "@/ui/money-entry";
 import styles from "@/ui/money-input.module.css";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 // The integer part of a safe integer: fifteen digits stay exact in a double.
 const maxDigits = 15;
@@ -30,13 +29,13 @@ export function MoneyInput({
   sign: "expense" | "income" | "neutral";
   autoFocus?: boolean;
 }) {
-  const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const field = useField();
   const register = field?.registerControl;
   useEffect(() => {
     register?.();
   }, [register]);
-  const parts = formatMoneyParts({ amount: value, currency }, scale, locale);
+  const parts = fmt.entry({ amount: value, currency }, scale);
   const marks = { expense: "−", income: "+", neutral: "" };
   return (
     // A label around the input: a press anywhere on the panel focuses it, as the platform

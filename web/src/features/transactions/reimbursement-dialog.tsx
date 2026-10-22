@@ -28,9 +28,9 @@ import {
 } from "@/features/transactions/reimbursement";
 import { reimbursementErrorText } from "@/features/transactions/reimbursement-error";
 import { ReimbursementRow } from "@/features/transactions/reimbursement-row";
-import { formatMoney } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useT } from "@/i18n/i18n-provider";
 import { useStableCallback } from "@/ui/use-stable-callback";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 type Transaction = components["schemas"]["Transaction"];
@@ -56,7 +56,7 @@ export function ReimbursementDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useT();
-  const [locale] = useAppLocale();
+  const format = useMoneyFormat();
   const api = useApi();
   const reimburse = useReimburseTransaction();
   const candidates = useQuery({
@@ -100,7 +100,7 @@ export function ReimbursementDialog({
   const hadLinks = items.some((i) => i.allocated.amount > 0);
   const currency = transaction.balancing_currency;
   const fmt = (minor: number) =>
-    formatMoney({ amount: minor, currency }, scale(currency), locale);
+    format.money({ amount: minor, currency }, scale(currency));
 
   const change = useStableCallback((next: boolean) => {
     if (!next) {

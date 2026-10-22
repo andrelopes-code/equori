@@ -3,8 +3,8 @@ import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 
 import type { PeriodTotals } from "@/features/transactions/period-totals";
-import { formatMoney, formatSigned } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useT } from "@/i18n/i18n-provider";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 // Families read: stat-card, description-list. Three figures under a list's title are one line
 // of the header, not three cards: each is a small label over its amount.
@@ -16,10 +16,10 @@ export function PeriodSummary({
   scale: (code: string) => number;
 }) {
   const t = useT();
-  const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const digits = scale(totals.currency);
   const money = (amount: number) =>
-    formatMoney({ amount, currency: totals.currency }, digits, locale);
+    fmt.money({ amount, currency: totals.currency }, digits);
   const figures = [
     {
       key: "income",
@@ -36,10 +36,9 @@ export function PeriodSummary({
     {
       key: "net",
       label: t("transactions.summary.net"),
-      text: formatSigned(
+      text: fmt.signed(
         { amount: totals.income + totals.expense, currency: totals.currency },
         digits,
-        locale,
       ),
       tone: "inherit" as const,
     },

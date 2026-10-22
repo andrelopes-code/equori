@@ -49,9 +49,10 @@ import { transactionRow } from "@/features/transactions/transaction-row";
 import { TransferDialog } from "@/features/transactions/transfer-dialog";
 import { useTransactionData } from "@/features/transactions/use-transaction-data";
 import { VoidDialog } from "@/features/transactions/void-dialog";
-import { formatDate, formatMoney } from "@/i18n/format";
+import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 // One transaction as a page of its own (level 1) or as the pane beside the list.
 export function TransactionDetail({
@@ -65,6 +66,7 @@ export function TransactionDetail({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const data = useTransactionData(id);
   const navigate = useNavigate();
   const wide = useMediaQuery(wideQuery);
@@ -172,11 +174,7 @@ export function TransactionDetail({
   const row = transactionRow(tx, accounts, payees);
   const voided = tx.voided_at !== undefined;
   const pending = tx.postings.some((p) => p.status === "pending");
-  const amount = formatMoney(
-    row.money,
-    ready.scale(row.money.currency),
-    locale,
-  );
+  const amount = fmt.money(row.money, ready.scale(row.money.currency));
   const hasLinks = tx.links.length > 0 || (tx.referenced_by ?? []).length > 0;
 
   return (

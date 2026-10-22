@@ -16,6 +16,9 @@ export interface MoneyFormat {
   money: (m: Money, scale: number, options?: { symbol?: boolean }) => string;
   signed: (m: Money, scale: number, options?: { symbol?: boolean }) => string;
   parts: (m: Money, scale: number) => MoneyParts;
+  // The figure inside a field the person types into. It is never masked: a field that hid its own
+  // value could not be edited. Only a field the person is filling in or correcting uses it.
+  entry: (m: Money, scale: number) => MoneyParts;
 }
 
 // O9: the one way the application writes an amount. While privacy is on, the amount never leaves
@@ -26,9 +29,12 @@ export function useMoneyFormat(): MoneyFormat {
   return useMemo(() => {
     const masked = (m: Money, scale: number) =>
       maskText(formatMoneyParts(m, scale, locale));
+    const entry = (m: Money, scale: number) =>
+      formatMoneyParts(m, scale, locale);
     if (hidden) {
       return {
         hidden,
+        entry,
         money: masked,
         signed: masked,
         parts: (m, scale) => maskParts(formatMoneyParts(m, scale, locale)),
@@ -36,6 +42,7 @@ export function useMoneyFormat(): MoneyFormat {
     }
     return {
       hidden,
+      entry,
       money: (m, scale, options) => formatMoney(m, scale, locale, options),
       signed: (m, scale, options) => formatSigned(m, scale, locale, options),
       parts: (m, scale) => formatMoneyParts(m, scale, locale),

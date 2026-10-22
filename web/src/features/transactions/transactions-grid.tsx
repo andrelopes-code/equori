@@ -18,10 +18,11 @@ import type {
   ListRow,
   TransactionList,
 } from "@/features/transactions/use-transaction-list";
-import { formatDate, formatDayHeader, formatMoney } from "@/i18n/format";
+import { formatDate, formatDayHeader } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useStableCallback } from "@/ui/use-stable-callback";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 export function TransactionsGrid({
   list,
@@ -50,6 +51,7 @@ export function TransactionsGrid({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const today = useToday();
   const handle = useRef<DataGridHandle>(null);
   const current = useRef<GridCell | null>(null);
@@ -159,10 +161,10 @@ export function TransactionsGrid({
         width: 148,
         priority: 1,
         format: (_value, row) =>
-          formatMoney(row.money, scale(row.money.currency), locale),
+          fmt.money(row.money, scale(row.money.currency)),
       },
     ],
-    [t, locale, today, scale],
+    [t, locale, today, scale, fmt],
   );
 
   const titles = useMemo(

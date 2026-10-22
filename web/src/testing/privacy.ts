@@ -11,7 +11,10 @@ export function expectNoAmounts(
   container: HTMLElement,
   known: readonly string[],
 ): void {
-  const markup = container.innerHTML.replace(/datetime="[^"]*"/g, "");
+  // Coordinates of a drawing and machine-readable dates look like amounts and are not.
+  const markup = container.innerHTML
+    .replace(/<svg[\s\S]*?<\/svg>/g, "")
+    .replace(/datetime="[^"]*"/g, "");
   const leaks = [
     ...known.filter((text) => markup.includes(text)),
     ...[...markup.matchAll(amountPattern)].map((m) => {

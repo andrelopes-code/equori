@@ -20,8 +20,8 @@ import {
   splitState,
 } from "@/features/transactions/split";
 import type { SplitPart } from "@/features/transactions/split";
-import { formatMoney } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useT } from "@/i18n/i18n-provider";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 type Transaction = components["schemas"]["Transaction"];
@@ -38,7 +38,7 @@ export function CategorySection({
   scale: (code: string) => number;
 }) {
   const t = useT();
-  const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const categorize = useCategorizeTransaction();
   const parts = currentParts(transaction, accounts);
   const currency = parts[0]?.amount.currency ?? transaction.balancing_currency;
@@ -53,8 +53,7 @@ export function CategorySection({
     return <Text tone="muted">{t("detail.category.none")}</Text>;
   }
 
-  const money = (amount: number) =>
-    formatMoney({ amount, currency }, digits, locale);
+  const money = (amount: number) => fmt.money({ amount, currency }, digits);
 
   if (draft === null) {
     return (

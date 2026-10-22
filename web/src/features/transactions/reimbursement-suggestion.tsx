@@ -17,8 +17,8 @@ import {
 } from "@/features/transactions/api";
 import { reimbursementState } from "@/features/transactions/reimbursement";
 import { reimbursementErrorText } from "@/features/transactions/reimbursement-error";
-import { formatMoney } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useT } from "@/i18n/i18n-provider";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 type Transaction = components["schemas"]["Transaction"];
@@ -37,7 +37,7 @@ export function ReimbursementSuggestion({
   onChooseAnother: () => void;
 }) {
   const t = useT();
-  const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const api = useApi();
   const reimburse = useReimburseTransaction();
   const [error, setError] = useState<string | null>(null);
@@ -57,11 +57,7 @@ export function ReimbursementSuggestion({
   const named = suggested.map((item) =>
     t("reimbursement.item", {
       description: item.transaction.description,
-      amount: formatMoney(
-        item.remaining,
-        scale(item.remaining.currency),
-        locale,
-      ),
+      amount: fmt.money(item.remaining, scale(item.remaining.currency)),
     }),
   );
   return (

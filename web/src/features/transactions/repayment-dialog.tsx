@@ -26,10 +26,11 @@ import {
   fillAllocation,
 } from "@/features/transactions/reimbursement";
 import { reimbursementErrorText } from "@/features/transactions/reimbursement-error";
-import { formatDate, formatMoney } from "@/i18n/format";
+import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { MoneyInput } from "@/ui/money-input";
 import { useStableCallback } from "@/ui/use-stable-callback";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 type Transaction = components["schemas"]["Transaction"];
@@ -51,6 +52,7 @@ export function RepaymentDialog({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const fmt = useMoneyFormat();
   const api = useApi();
   const reimburse = useReimburseTransaction();
   const sources = useQuery({
@@ -109,7 +111,7 @@ export function RepaymentDialog({
                     value={inflow.id}
                     description={t("repayment.option", {
                       date: formatDate(inflow.date, locale),
-                      free: formatMoney(free, scale(free.currency), locale),
+                      free: fmt.money(free, scale(free.currency)),
                     })}
                   >
                     {inflow.description}

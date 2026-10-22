@@ -1,6 +1,5 @@
-import { formatMoneyParts } from "@/i18n/format";
-import { useAppLocale } from "@/i18n/i18n-provider";
 import styles from "@/ui/money-figure.module.css";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 // An amount inside a sentence or a row: tabular figures, with the currency symbol and the
 // fraction a weight lighter than the whole units the reader compares.
@@ -13,8 +12,8 @@ export function MoneyFigure({
   currency: string;
   scale: number;
 }) {
-  const [locale] = useAppLocale();
-  const parts = formatMoneyParts({ amount, currency }, scale, locale);
+  const fmt = useMoneyFormat();
+  const parts = fmt.parts({ amount, currency }, scale);
   return (
     <span className={styles.figure}>
       {parts.sign}
