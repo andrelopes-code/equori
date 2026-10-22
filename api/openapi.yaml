@@ -3941,7 +3941,7 @@ components:
       required: [frequency, interval, start]
       description: |
         A monthly rule takes exactly one of day_of_month, weekday with ordinal, business_day_ordinal; -1 means
-        the last one. Business days follow calendar br_banking. until is inclusive (P7 amendment A48).
+        the last one. Business days follow the calendar of the schedule. until is inclusive (P7 amendment A48).
       properties:
         frequency:
           type: string
@@ -4003,6 +4003,10 @@ components:
           $ref: "#/components/schemas/Money"
         recurrence:
           $ref: "#/components/schemas/Recurrence"
+        calendar:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+          description: Business-day calendar id from GET /calendars; defaults to the calendar of the owner's region.
         match_tolerance_bp:
           type: integer
           minimum: 0
@@ -4038,13 +4042,16 @@ components:
           description: Inclusive.
     Schedule:
       type: object
-      required: [id, kind, account_id, counterpart_id, description, match_tolerance_bp, grace_days, terms, pauses]
+      required: [id, kind, account_id, counterpart_id, description, calendar, match_tolerance_bp, grace_days, terms, pauses]
       properties:
         id:
           type: string
           format: uuid
         kind:
           $ref: "#/components/schemas/ScheduleKind"
+        calendar:
+          type: string
+          description: Business-day calendar id the schedule follows.
         account_id:
           type: string
           format: uuid

@@ -66,7 +66,7 @@ func toScheduleAPI(s domain.Schedule) Schedule {
 	out := Schedule{
 		Id: s.ID, Kind: ScheduleKind(s.Kind), AccountId: s.AccountID, CounterpartId: s.CounterpartID,
 		PayeeId: apiOptUUID(s.PayeeID), Description: s.Description, MatchToleranceBp: s.ToleranceBP,
-		GraceDays: s.GraceDays, EndsOn: apiOptDate(s.EndsOn),
+		GraceDays: s.GraceDays, Calendar: s.Calendar, EndsOn: apiOptDate(s.EndsOn),
 		Terms: make([]ScheduleTerms, len(s.Terms)), Pauses: make([]SchedulePause, len(s.Pauses)),
 	}
 	for i, t := range s.Terms {
@@ -86,7 +86,7 @@ func (s *Server) CreateSchedule(ctx context.Context, req CreateScheduleRequestOb
 	}
 	created, err := s.svc.CreateSchedule(ctx, auth.MustUserID(ctx), app.ScheduleInput{
 		Kind: domain.Kind(b.Kind), AccountID: b.AccountId, CounterpartID: b.CounterpartId, PayeeID: optUUID(b.PayeeId),
-		Description: b.Description, Amount: amount, Rule: fromRecurrenceAPI(b.Recurrence),
+		Description: b.Description, Amount: amount, Rule: fromRecurrenceAPI(b.Recurrence), Calendar: stringOf(b.Calendar),
 		ToleranceBP: b.MatchToleranceBp, GraceDays: b.GraceDays,
 	})
 	if err != nil {
@@ -142,4 +142,11 @@ func (s *Server) ListOccurrences(ctx context.Context, req ListOccurrencesRequest
 		out.Items[i] = toOccurrenceAPI(o)
 	}
 	return out, nil
+}
+
+func stringOf(p *string) string {
+	if p == nil {
+		return ""
+	}
+	return *p
 }

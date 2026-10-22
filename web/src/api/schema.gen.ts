@@ -2247,7 +2247,7 @@ export interface components {
         ScheduleKind: "bill" | "income" | "subscription" | "transfer" | "savings";
         /**
          * @description A monthly rule takes exactly one of day_of_month, weekday with ordinal, business_day_ordinal; -1 means
-         *     the last one. Business days follow calendar br_banking. until is inclusive (P7 amendment A48).
+         *     the last one. Business days follow the calendar of the schedule. until is inclusive (P7 amendment A48).
          */
         Recurrence: {
             /** @enum {string} */
@@ -2280,6 +2280,8 @@ export interface components {
             description: string;
             amount: components["schemas"]["Money"];
             recurrence: components["schemas"]["Recurrence"];
+            /** @description Business-day calendar id from GET /calendars; defaults to the calendar of the owner's region. */
+            calendar?: string;
             /** @default 1000 */
             match_tolerance_bp: number;
             /** @default 3 */
@@ -2304,6 +2306,8 @@ export interface components {
             /** Format: uuid */
             id: string;
             kind: components["schemas"]["ScheduleKind"];
+            /** @description Business-day calendar id the schedule follows. */
+            calendar: string;
             /** Format: uuid */
             account_id: string;
             /** Format: uuid */

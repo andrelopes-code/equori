@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,15 +15,16 @@ import (
 )
 
 type Service struct {
-	repo   Repository
-	ledger Ledger
-	cal    Calendar
-	prices Prices
-	clk    clock.Clock
+	repo     Repository
+	ledger   Ledger
+	cal      Calendar
+	profiles Profiles
+	prices   Prices
+	clk      clock.Clock
 }
 
-func NewService(repo Repository, l Ledger, cal Calendar, prices Prices, clk clock.Clock) *Service {
-	return &Service{repo: repo, ledger: l, cal: cal, prices: prices, clk: clk}
+func NewService(repo Repository, l Ledger, cal Calendar, profiles Profiles, prices Prices, clk clock.Clock) *Service {
+	return &Service{repo: repo, ledger: l, cal: cal, profiles: profiles, prices: prices, clk: clk}
 }
 
 // WithRepository returns the service on another repository, as outbox handlers need.
@@ -38,6 +41,8 @@ type ScheduleInput struct {
 	Description              string
 	Amount                   money.Money
 	Rule                     domain.Rule
+	// Calendar defaults to the calendar of the owner's region when empty.
+	Calendar string
 	// ToleranceBP and GraceDays take their defaults when nil.
 	ToleranceBP, GraceDays *int
 }
@@ -46,7 +51,19 @@ func (s *Service) CreateSchedule(ctx context.Context, userID int64, in ScheduleI
 	if in.Rule.Adjustment == "" {
 		in.Rule.Adjustment = "none"
 	}
-	sch := domain.Schedule{
+	if in.Calendar == "" {
+		p, err := s.profiles.Profile(ctx, userID)
+		if err != nil {
+			return domain.Schedule{}, fmt.Errorf("read profile: %w", err)
+		}
+		in.Calendar = s.cal.DefaultCalendar(p.Region)
+	}
+	if _, err := s.cal.Holidays(ctx, in.Calendar, s.clk.Today().Year()); errors.Is(err, ErrUnknownCalendar) {
+		return domain.Schedule{}, &domain.FieldError{Field: "calendar", Message: "is not a known calendar", Err: domain.ErrValidation}
+	} else if err != nil {
+		return domain.Schedule{}, fmt.Errorf("check calendar: %w", err)
+	}
+	sch := domain.Schedule{Calendar: in.Calendar,
 		Kind: in.Kind, AccountID: in.AccountID, CounterpartID: in.CounterpartID, PayeeID: in.PayeeID,
 		Description: in.Description, Currency: in.Amount.Currency(),
 		ToleranceBP: domain.DefaultToleranceBP, GraceDays: domain.DefaultGraceDays,

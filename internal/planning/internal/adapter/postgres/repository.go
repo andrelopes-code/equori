@@ -65,7 +65,7 @@ func (r *Repository) InsertSchedule(ctx context.Context, userID int64, s domain.
 	row, err := r.q.InsertSchedule(ctx, InsertScheduleParams{
 		UserID: userID, Kind: string(s.Kind), AccountID: s.AccountID, CounterpartID: s.CounterpartID,
 		PayeeID: nullUUID(s.PayeeID), Description: s.Description, Currency: string(s.Currency),
-		MatchToleranceBp: int32(s.ToleranceBP), GraceDays: int32(s.GraceDays), GeneratedUntil: s.GeneratedUntil, //nolint:gosec // validated to 0-10000 and 0-31
+		MatchToleranceBp: int32(s.ToleranceBP), GraceDays: int32(s.GraceDays), GeneratedUntil: s.GeneratedUntil, Calendar: s.Calendar, //nolint:gosec // validated to 0-10000 and 0-31
 	})
 	if err != nil {
 		return domain.Schedule{}, fmt.Errorf("insert schedule: %w", err)
@@ -90,8 +90,7 @@ func (r *Repository) insertTerms(ctx context.Context, userID int64, scheduleID u
 	err := r.q.InsertTerms(ctx, InsertTermsParams{
 		UserID: userID, ScheduleID: scheduleID, EffectiveFrom: t.EffectiveFrom, Frequency: string(rule.Frequency),
 		Interval: int32(rule.Interval), DayOfMonth: intPtr(rule.DayOfMonth), Weekday: weekday, Ordinal: intPtr(rule.Ordinal), //nolint:gosec // interval is at most 120 (contract)
-		BusinessDayOrdinal: intPtr(rule.BusinessDayOrdinal), Adjustment: rule.Adjustment, Calendar: "br_banking",
-		Start: rule.Start, Until: rule.Until, Count: intPtr(rule.Count), Amount: t.Amount, FirstSequence: intPtr(t.FirstSequence),
+		BusinessDayOrdinal: intPtr(rule.BusinessDayOrdinal), Adjustment: rule.Adjustment, Start: rule.Start, Until: rule.Until, Count: intPtr(rule.Count), Amount: t.Amount, FirstSequence: intPtr(t.FirstSequence),
 	})
 	if err != nil {
 		return fmt.Errorf("insert schedule terms: %w", err)
@@ -103,7 +102,7 @@ func toSchedule(row PlanningSchedule) domain.Schedule {
 	return domain.Schedule{
 		ID: row.ID, Kind: domain.Kind(row.Kind), AccountID: row.AccountID, CounterpartID: row.CounterpartID,
 		PayeeID: row.PayeeID.UUID, Description: row.Description, Currency: money.Currency(row.Currency),
-		ToleranceBP: int(row.MatchToleranceBp), GraceDays: int(row.GraceDays), EndsOn: row.EndsOn, GeneratedUntil: row.GeneratedUntil,
+		ToleranceBP: int(row.MatchToleranceBp), GraceDays: int(row.GraceDays), Calendar: row.Calendar, EndsOn: row.EndsOn, GeneratedUntil: row.GeneratedUntil,
 	}
 }
 

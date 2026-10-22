@@ -42,7 +42,9 @@ type Schedule struct {
 	Description              string
 	Currency                 money.Currency
 	ToleranceBP, GraceDays   int
-	EndsOn                   *time.Time
+	// Calendar is the business-day calendar id, fixed at creation.
+	Calendar string
+	EndsOn   *time.Time
 	// GeneratedUntil is the last date occurrences were generated through.
 	GeneratedUntil time.Time
 	Terms          []Terms

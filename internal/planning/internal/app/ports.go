@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/planning/internal/domain"
+	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/page"
 )
@@ -78,9 +79,18 @@ type Ledger interface {
 	Commitment(ctx context.Context, userID int64, cardID uuid.UUID, month time.Time) (int64, error)
 }
 
+// ErrUnknownCalendar is returned by Calendar.Holidays for an id no calendar answers to.
+var ErrUnknownCalendar = errors.New("unknown calendar")
+
 // Calendar returns the holiday dates of a calendar in a year.
 type Calendar interface {
 	Holidays(ctx context.Context, name string, year int) ([]time.Time, error)
+	DefaultCalendar(region string) string
+}
+
+// Profiles gives the language and region of a user (identity).
+type Profiles interface {
+	Profile(ctx context.Context, userID int64) (locale.Locale, error)
 }
 
 // IDKey is the sort key of lists in creation order.

@@ -67,6 +67,7 @@ type PlanningSchedule struct {
 	GeneratedUntil   time.Time
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
+	Calendar         string
 }
 
 type PlanningScheduleTerm struct {

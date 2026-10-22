@@ -8,9 +8,6 @@ import (
 	"github.com/andrelopes-code/equori/internal/planning/internal/domain"
 )
 
-// calendarName is the business-day calendar of every schedule (P7 amendment A48).
-const calendarName = "br_banking"
-
 // horizonMonths bounds generation: occurrences reach today + 12 months (A49).
 const horizonMonths = 12
 
@@ -28,10 +25,10 @@ func (b businessDays) IsBusinessDay(d time.Time) bool {
 
 // days loads the holidays of the years [from, to] touches, plus one year on each side for
 // adjustments that cross a year boundary.
-func (s *Service) days(ctx context.Context, from, to time.Time) (businessDays, error) {
+func (s *Service) days(ctx context.Context, calendar string, from, to time.Time) (businessDays, error) {
 	out := businessDays{}
 	for y := from.Year() - 1; y <= to.Year()+1; y++ {
-		hs, err := s.cal.Holidays(ctx, calendarName, y)
+		hs, err := s.cal.Holidays(ctx, calendar, y)
 		if err != nil {
 			return nil, fmt.Errorf("load holidays %d: %w", y, err)
 		}
@@ -49,7 +46,7 @@ func (s *Service) generate(ctx context.Context, repo Repository, userID int64, s
 	if !sch.GeneratedUntil.Before(horizon) {
 		return nil
 	}
-	days, err := s.days(ctx, sch.Terms[0].Rule.Start, horizon)
+	days, err := s.days(ctx, sch.Calendar, sch.Terms[0].Rule.Start, horizon)
 	if err != nil {
 		return err
 	}

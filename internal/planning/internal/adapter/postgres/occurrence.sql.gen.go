@@ -318,7 +318,7 @@ func (q *Queries) ReleaseOccurrence(ctx context.Context, arg ReleaseOccurrencePa
 }
 
 const schedulesTouching = `-- name: SchedulesTouching :many
-SELECT id, user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at FROM planning_schedule
+SELECT id, user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar FROM planning_schedule
 WHERE user_id = $1 AND (account_id = ANY($2::uuid[]) OR counterpart_id = ANY($2::uuid[]))
 ORDER BY id
 `
@@ -353,6 +353,7 @@ func (q *Queries) SchedulesTouching(ctx context.Context, arg SchedulesTouchingPa
 			&i.GeneratedUntil,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Calendar,
 		); err != nil {
 			return nil, err
 		}

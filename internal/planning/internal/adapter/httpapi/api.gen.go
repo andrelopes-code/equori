@@ -376,7 +376,7 @@ type RealizeInput struct {
 }
 
 // Recurrence A monthly rule takes exactly one of day_of_month, weekday with ordinal, business_day_ordinal; -1 means
-// the last one. Business days follow calendar br_banking. until is inclusive (P7 amendment A48).
+// the last one. Business days follow the calendar of the schedule. until is inclusive (P7 amendment A48).
 type Recurrence struct {
 	Adjustment         *RecurrenceAdjustment `json:"adjustment,omitempty"`
 	BusinessDayOrdinal *int                  `json:"business_day_ordinal,omitempty"`
@@ -401,7 +401,10 @@ type RecurrenceWeekday string
 
 // Schedule defines model for Schedule.
 type Schedule struct {
-	AccountId     openapi_types.UUID `json:"account_id"`
+	AccountId openapi_types.UUID `json:"account_id"`
+
+	// Calendar Business-day calendar id the schedule follows.
+	Calendar      string             `json:"calendar"`
 	CounterpartId openapi_types.UUID `json:"counterpart_id"`
 	Description   string             `json:"description"`
 
@@ -420,8 +423,11 @@ type Schedule struct {
 
 // ScheduleInput defines model for ScheduleInput.
 type ScheduleInput struct {
-	AccountId        openapi_types.UUID  `json:"account_id"`
-	Amount           Money               `json:"amount"`
+	AccountId openapi_types.UUID `json:"account_id"`
+	Amount    Money              `json:"amount"`
+
+	// Calendar Business-day calendar id from GET /calendars; defaults to the calendar of the owner's region.
+	Calendar         *string             `json:"calendar,omitempty"`
 	CounterpartId    openapi_types.UUID  `json:"counterpart_id"`
 	Description      string              `json:"description"`
 	GraceDays        *int                `json:"grace_days,omitempty"`
@@ -430,7 +436,7 @@ type ScheduleInput struct {
 	PayeeId          *openapi_types.UUID `json:"payee_id,omitempty"`
 
 	// Recurrence A monthly rule takes exactly one of day_of_month, weekday with ordinal, business_day_ordinal; -1 means
-	// the last one. Business days follow calendar br_banking. until is inclusive (P7 amendment A48).
+	// the last one. Business days follow the calendar of the schedule. until is inclusive (P7 amendment A48).
 	Recurrence Recurrence `json:"recurrence"`
 }
 
@@ -459,7 +465,7 @@ type ScheduleTerms struct {
 	EffectiveFrom openapi_types.Date `json:"effective_from"`
 
 	// Recurrence A monthly rule takes exactly one of day_of_month, weekday with ordinal, business_day_ordinal; -1 means
-	// the last one. Business days follow calendar br_banking. until is inclusive (P7 amendment A48).
+	// the last one. Business days follow the calendar of the schedule. until is inclusive (P7 amendment A48).
 	Recurrence Recurrence `json:"recurrence"`
 }
 
@@ -474,7 +480,7 @@ type TermsInput struct {
 	EffectiveFrom openapi_types.Date `json:"effective_from"`
 
 	// Recurrence A monthly rule takes exactly one of day_of_month, weekday with ordinal, business_day_ordinal; -1 means
-	// the last one. Business days follow calendar br_banking. until is inclusive (P7 amendment A48).
+	// the last one. Business days follow the calendar of the schedule. until is inclusive (P7 amendment A48).
 	Recurrence *Recurrence `json:"recurrence,omitempty"`
 }
 

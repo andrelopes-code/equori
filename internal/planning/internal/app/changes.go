@@ -154,7 +154,7 @@ func (s *Service) firstSequence(ctx context.Context, repo Repository, userID int
 			until = g
 		}
 	}
-	days, err := s.days(ctx, sch.Terms[0].Rule.Start, until)
+	days, err := s.days(ctx, sch.Calendar, sch.Terms[0].Rule.Start, until)
 	if err != nil {
 		return 0, err
 	}
@@ -216,7 +216,7 @@ func (s *Service) End(ctx context.Context, userID int64, id uuid.UUID, from time
 
 // regenerate inserts the occurrences of sch from from to its GeneratedUntil that are missing.
 func (s *Service) regenerate(ctx context.Context, repo Repository, userID int64, sch domain.Schedule, from time.Time) error {
-	days, err := s.days(ctx, sch.Terms[0].Rule.Start, sch.GeneratedUntil)
+	days, err := s.days(ctx, sch.Calendar, sch.Terms[0].Rule.Start, sch.GeneratedUntil)
 	if err != nil {
 		return err
 	}

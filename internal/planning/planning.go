@@ -22,6 +22,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/planning/internal/app"
 	"github.com/andrelopes-code/equori/internal/planning/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
+	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 )
@@ -35,8 +36,8 @@ type Module struct {
 // consumer names the module's outbox subscriptions (ADR 006).
 const consumer = "planning"
 
-func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, md *marketdata.Module, clk clock.Clock, log *slog.Logger) *Module {
-	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l}, calendarPort{md}, pricesPort{md}, clk)
+func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, md *marketdata.Module, profiles Profiles, clk clock.Clock, log *slog.Logger) *Module {
+	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l}, calendarPort{md}, profiles, pricesPort{md}, clk)
 	m := &Module{http: httpapi.NewServer(svc, log), svc: svc, log: log}
 	// P7 amendment A51: every change of a transaction can change the occurrence it realizes.
 	for _, t := range []string{ledger.EventTransactionRecorded, ledger.EventTransactionCorrected, ledger.EventTransactionCategorized, ledger.EventTransactionVoided} {
@@ -181,10 +182,20 @@ func (p ledgerPort) CategoryMonthlyTotals(ctx context.Context, userID int64, cat
 	return out, err
 }
 
+// Profiles is the part of identity the module uses to default a schedule's calendar.
+type Profiles interface {
+	Profile(ctx context.Context, userID int64) (locale.Locale, error)
+}
+
 type calendarPort struct{ md *marketdata.Module }
+
+func (c calendarPort) DefaultCalendar(region string) string { return c.md.DefaultCalendar(region) }
 
 func (c calendarPort) Holidays(ctx context.Context, name string, year int) ([]time.Time, error) {
 	hs, err := c.md.Holidays(ctx, name, year)
+	if errors.Is(err, marketdata.ErrUnknownCalendar) {
+		return nil, fmt.Errorf("%w: %w", app.ErrUnknownCalendar, err)
+	}
 	out := make([]time.Time, len(hs))
 	for i, h := range hs {
 		out[i] = h.Date
