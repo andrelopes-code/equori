@@ -24,6 +24,9 @@ var ErrNotFound = errors.New("not found")
 // HolidayLister is provided by the module root, which owns the calendar rules.
 type HolidayLister func(ctx context.Context, calendar string, year int) ([]Holiday, error)
 
+// CalendarLister is provided by the module root, which owns the calendar registry.
+type CalendarLister func() []Calendar
+
 // Service is the module root: instruments and prices (P8 amendments A59, A60).
 type Service interface {
 	DefineInstrument(ctx context.Context, in domain.Instrument) (domain.Instrument, error)
@@ -37,13 +40,14 @@ type Service interface {
 var _ StrictServerInterface = (*Server)(nil)
 
 type Server struct {
-	holidays HolidayLister
-	svc      Service
-	errs     httpserver.ErrorWriter
+	holidays  HolidayLister
+	calendars CalendarLister
+	svc       Service
+	errs      httpserver.ErrorWriter
 }
 
-func NewServer(holidays HolidayLister, svc Service, log *slog.Logger) *Server {
-	return &Server{holidays: holidays, svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: toProblem}}
+func NewServer(holidays HolidayLister, calendars CalendarLister, svc Service, log *slog.Logger) *Server {
+	return &Server{holidays: holidays, calendars: calendars, svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: toProblem}}
 }
 
 func (s *Server) Register(mux *http.ServeMux) {
@@ -60,6 +64,10 @@ func (s *Server) ListHolidays(ctx context.Context, req ListHolidaysRequestObject
 		return nil, err
 	}
 	return ListHolidays200JSONResponse{Items: hs}, nil
+}
+
+func (s *Server) ListCalendars(_ context.Context, _ ListCalendarsRequestObject) (ListCalendarsResponseObject, error) {
+	return ListCalendars200JSONResponse{Items: s.calendars()}, nil
 }
 
 // NewHoliday builds the API representation; the module root uses it in its HolidayLister.

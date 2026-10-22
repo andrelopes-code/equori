@@ -1249,6 +1249,20 @@ paths:
           $ref: "#/components/responses/Problem"
         "401":
           $ref: "#/components/responses/Problem"
+  /calendars:
+    get:
+      tags: [marketdata]
+      operationId: listCalendars
+      summary: Business-day calendars of the instance in identifier order.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarList"
+        "401":
+          $ref: "#/components/responses/Problem"
   /calendars/{name}/holidays:
     get:
       tags: [marketdata]
@@ -5451,6 +5465,27 @@ components:
           $ref: "#/components/schemas/Money"
         available_limit:
           $ref: "#/components/schemas/Money"
+    CalendarList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Calendar"
+    Calendar:
+      type: object
+      additionalProperties: false
+      required: [id, weekend]
+      properties:
+        id:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+        weekend:
+          type: array
+          items:
+            type: string
+            enum: [sunday, monday, tuesday, wednesday, thursday, friday, saturday]
     HolidayList:
       type: object
       required: [items]

@@ -2,9 +2,11 @@ package marketdata_test
 
 import (
 	"errors"
+	"net/http"
 	"testing"
 	"time"
 
+	"github.com/andrelopes-code/equori/internal/apitest"
 	"github.com/andrelopes-code/equori/internal/marketdata"
 	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
 )
@@ -109,5 +111,44 @@ func TestUnknownCalendar(t *testing.T) {
 	m := marketdata.New(pgtest.New(t))
 	if _, err := m.IsBusinessDay(t.Context(), "mars", day("2026-01-02")); !errors.Is(err, marketdata.ErrUnknownCalendar) {
 		t.Fatalf("err = %v, want ErrUnknownCalendar", err)
+	}
+}
+
+func TestWeekendCalendar(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	for d, want := range map[string]bool{"2026-04-21": true, "2026-04-25": false} {
+		got, err := h.App.Marketdata.IsBusinessDay(t.Context(), "weekend", day(d))
+		if err != nil || got != want {
+			t.Errorf("IsBusinessDay(weekend, %s) = %v, %v; want %v", d, got, err, want)
+		}
+	}
+}
+
+func TestListCalendars(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	var out struct {
+		Items []struct {
+			ID      string   `json:"id"`
+			Weekend []string `json:"weekend"`
+		} `json:"items"`
+	}
+	h.MustDo(http.MethodGet, "/api/v1/calendars", nil, http.StatusOK, &out)
+	if len(out.Items) != 2 || out.Items[0].ID != "br_banking" || out.Items[1].ID != "weekend" {
+		t.Fatalf("calendars = %+v", out.Items)
+	}
+	if got := out.Items[1].Weekend; len(got) != 2 || got[0] != "saturday" || got[1] != "sunday" {
+		t.Fatalf("weekend = %v", got)
+	}
+}
+
+func TestDefaultCalendar(t *testing.T) {
+	t.Parallel()
+	m := marketdata.New(pgtest.New(t))
+	for region, want := range map[string]string{"BR": "br_banking", "DE": "weekend"} {
+		if got := m.DefaultCalendar(region); got != want {
+			t.Errorf("DefaultCalendar(%s) = %q, want %q", region, got, want)
+		}
 	}
 }

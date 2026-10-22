@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/adapter/postgres"
+	"github.com/andrelopes-code/equori/internal/marketdata/internal/calendar"
 )
 
-// CalendarBRBanking is the Brazilian banking calendar: non-business days of
-// Resolução CMN 4.880/2020 plus instance-defined holidays (P2 plan, A4).
+// CalendarBRBanking identifies the Brazilian banking calendar.
 const CalendarBRBanking = "br_banking"
 
 var ErrUnknownCalendar = errors.New("unknown calendar")
@@ -40,56 +40,29 @@ type Calendar interface {
 
 var _ Calendar = (*Module)(nil)
 
-// Easter returns Easter Sunday of the Gregorian calendar (Meeus/Jones/Butcher algorithm).
-func Easter(year int) time.Time {
-	a := year % 19
-	b, c := year/100, year%100
-	d, e := b/4, b%4
-	f := (b + 8) / 25
-	g := (b - f + 1) / 3
-	h := (19*a + b - d - g + 15) % 30
-	i, k := c/4, c%4
-	l := (32 + 2*e + 2*i - h - k) % 7
-	m := (a + 11*h + 22*l) / 451
-	month := (h + l - 7*m + 114) / 31
-	day := (h+l-7*m+114)%31 + 1
-	return time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
-}
+// Easter returns Easter Sunday of the Gregorian calendar.
+func Easter(year int) time.Time { return calendar.Easter(year) }
 
-func ruleHolidays(year int) []Holiday {
-	fixed := func(m time.Month, d int, name string) Holiday {
-		return Holiday{Date: time.Date(year, m, d, 0, 0, 0, 0, time.UTC), Name: name, Source: "rule"}
+// Calendars returns the identifiers of the registered calendars in ascending order.
+func (m *Module) Calendars() []string { return m.calendars.IDs() }
+
+func (m *Module) calendar(name string) (calendar.Calendar, error) {
+	c, err := m.calendars.Get(name)
+	if err != nil {
+		return calendar.Calendar{}, fmt.Errorf("%w: %q", ErrUnknownCalendar, name)
 	}
-	easter := Easter(year)
-	moving := func(offset int, name string) Holiday {
-		return Holiday{Date: easter.AddDate(0, 0, offset), Name: name, Source: "rule"}
-	}
-	hs := []Holiday{
-		fixed(time.January, 1, "New Year's Day"),
-		moving(-48, "Carnival Monday"),
-		moving(-47, "Carnival Tuesday"),
-		moving(-2, "Good Friday"),
-		fixed(time.April, 21, "Tiradentes"),
-		fixed(time.May, 1, "Labour Day"),
-		moving(60, "Corpus Christi"),
-		fixed(time.September, 7, "Independence Day"),
-		fixed(time.October, 12, "Our Lady of Aparecida"),
-		fixed(time.November, 2, "All Souls' Day"),
-		fixed(time.November, 15, "Republic Proclamation Day"),
-		fixed(time.December, 25, "Christmas Day"),
-	}
-	if year >= 2024 { // Lei 14.759/2023
-		hs = append(hs, fixed(time.November, 20, "Black Consciousness Day"))
-	}
-	slices.SortFunc(hs, func(a, b Holiday) int { return a.Date.Compare(b.Date) })
-	return hs
+	return c, nil
 }
 
 func (m *Module) Holidays(ctx context.Context, name string, year int) ([]Holiday, error) {
-	if name != CalendarBRBanking {
-		return nil, fmt.Errorf("%w: %q", ErrUnknownCalendar, name)
+	cal, err := m.calendar(name)
+	if err != nil {
+		return nil, err
 	}
-	hs := ruleHolidays(year)
+	var hs []Holiday
+	for _, h := range cal.Holidays(year) {
+		hs = append(hs, Holiday{Date: h.Date, Name: h.Name, Source: "rule"})
+	}
 	rows, err := m.q.ListInstanceHolidays(ctx, postgres.ListInstanceHolidaysParams{
 		Calendar: name,
 		FromDate: time.Date(year, time.January, 1, 0, 0, 0, 0, time.UTC),
@@ -106,13 +79,14 @@ func (m *Module) Holidays(ctx context.Context, name string, year int) ([]Holiday
 }
 
 func (m *Module) IsBusinessDay(ctx context.Context, name string, d time.Time) (bool, error) {
-	if name != CalendarBRBanking {
-		return false, fmt.Errorf("%w: %q", ErrUnknownCalendar, name)
+	cal, err := m.calendar(name)
+	if err != nil {
+		return false, err
 	}
-	if wd := d.Weekday(); wd == time.Saturday || wd == time.Sunday {
+	if cal.IsWeekend(d) {
 		return false, nil
 	}
-	for _, h := range ruleHolidays(d.Year()) {
+	for _, h := range cal.Holidays(d.Year()) {
 		if h.Date.Equal(d) {
 			return false, nil
 		}

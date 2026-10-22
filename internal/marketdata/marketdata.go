@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -14,8 +15,10 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/adapter/httpapi"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/adapter/postgres"
+	"github.com/andrelopes-code/equori/internal/marketdata/internal/calendar"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/money"
+	"github.com/andrelopes-code/equori/internal/platform/registry"
 )
 
 var (
@@ -33,14 +36,23 @@ type Module struct {
 	pool  *pgxpool.Pool
 	q     *postgres.Queries
 	feeds FeedConfig
+
+	calendars registry.Registry[calendar.Calendar]
 }
 
 func New(pool *pgxpool.Pool) *Module {
-	return &Module{pool: pool, q: postgres.New(pool)}
+	calendars, err := registry.New("calendar",
+		registry.Entry[calendar.Calendar]{ID: "br_banking", Value: calendar.BRBanking()},
+		registry.Entry[calendar.Calendar]{ID: "weekend", Value: calendar.Weekend()},
+	)
+	if err != nil {
+		panic(fmt.Sprintf("marketdata: %v", err)) // the entries are literals; a failure is a programming error
+	}
+	return &Module{pool: pool, q: postgres.New(pool), calendars: calendars}
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux, log *slog.Logger) {
-	httpapi.NewServer(m.listHolidays, m, log).Register(mux)
+	httpapi.NewServer(m.listHolidays, m.listCalendars, m, log).Register(mux)
 }
 
 func (m *Module) listHolidays(ctx context.Context, calendar string, year int) ([]httpapi.Holiday, error) {
@@ -56,6 +68,20 @@ func (m *Module) listHolidays(ctx context.Context, calendar string, year int) ([
 		out[i] = httpapi.NewHoliday(openapi_types.Date{Time: h.Date}, h.Name, h.Source)
 	}
 	return out, nil
+}
+
+func (m *Module) listCalendars() []httpapi.Calendar {
+	ids := m.calendars.IDs()
+	out := make([]httpapi.Calendar, len(ids))
+	for i, id := range ids {
+		cal, _ := m.calendars.Get(id)
+		weekend := make([]httpapi.CalendarWeekend, len(cal.Weekend))
+		for j, wd := range cal.Weekend {
+			weekend[j] = httpapi.CalendarWeekend(strings.ToLower(wd.String()))
+		}
+		out[i] = httpapi.Calendar{Id: id, Weekend: weekend}
+	}
+	return out
 }
 
 func (m *Module) Instrument(ctx context.Context, code string) (Instrument, error) {

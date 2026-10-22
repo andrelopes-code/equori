@@ -687,6 +687,11 @@ export const operations: Record<GroupKey, readonly Operation[]> = {
       }),
     },
     {
+      id: "listCalendars",
+      method: "GET",
+      path: "/calendars",
+    },
+    {
       id: "listHolidays",
       method: "GET",
       path: "/calendars/{name}/holidays",

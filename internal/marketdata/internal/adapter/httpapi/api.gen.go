@@ -18,6 +18,39 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for CalendarWeekend.
+const (
+	Friday    CalendarWeekend = "friday"
+	Monday    CalendarWeekend = "monday"
+	Saturday  CalendarWeekend = "saturday"
+	Sunday    CalendarWeekend = "sunday"
+	Thursday  CalendarWeekend = "thursday"
+	Tuesday   CalendarWeekend = "tuesday"
+	Wednesday CalendarWeekend = "wednesday"
+)
+
+// Valid indicates whether the value is a known member of the CalendarWeekend enum.
+func (e CalendarWeekend) Valid() bool {
+	switch e {
+	case Friday:
+		return true
+	case Monday:
+		return true
+	case Saturday:
+		return true
+	case Sunday:
+		return true
+	case Thursday:
+		return true
+	case Tuesday:
+		return true
+	case Wednesday:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for HolidaySource.
 const (
 	Instance HolidaySource = "instance"
@@ -124,6 +157,20 @@ func (e PriceSource) Valid() bool {
 	default:
 		return false
 	}
+}
+
+// Calendar defines model for Calendar.
+type Calendar struct {
+	Id      string            `json:"id"`
+	Weekend []CalendarWeekend `json:"weekend"`
+}
+
+// CalendarWeekend defines model for Calendar.Weekend.
+type CalendarWeekend string
+
+// CalendarList defines model for CalendarList.
+type CalendarList struct {
+	Items []Calendar `json:"items"`
 }
 
 // FieldError defines model for FieldError.
@@ -281,6 +328,9 @@ type ImportPricesMultipartRequestBody ImportPricesMultipartBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// ListCalendars Business-day calendars of the instance in identifier order.
+	// (GET /calendars)
+	ListCalendars(w http.ResponseWriter, r *http.Request)
 	// ListHolidays Non-business days of a calendar in a year, weekends excluded.
 	// (GET /calendars/{name}/holidays)
 	ListHolidays(w http.ResponseWriter, r *http.Request, name string, params ListHolidaysParams)
@@ -312,6 +362,20 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// ListCalendars operation middleware
+func (siw *ServerInterfaceWrapper) ListCalendars(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCalendars(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // ListHolidays operation middleware
 func (siw *ServerInterfaceWrapper) ListHolidays(w http.ResponseWriter, r *http.Request) {
@@ -648,6 +712,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/calendars", wrapper.ListCalendars)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/calendars/{name}/holidays", wrapper.ListHolidays)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instruments", wrapper.ListInstruments)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/instruments", wrapper.DefineInstrument)
@@ -660,6 +725,43 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 }
 
 type ProblemApplicationProblemPlusJSONResponse Problem
+
+type ListCalendarsRequestObject struct {
+}
+
+type ListCalendarsResponseObject interface {
+	VisitListCalendarsResponse(w http.ResponseWriter) error
+}
+
+type ListCalendars200JSONResponse CalendarList
+
+func (response ListCalendars200JSONResponse) VisitListCalendarsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCalendars401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListCalendars401ApplicationProblemPlusJSONResponse) VisitListCalendarsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
 
 type ListHolidaysRequestObject struct {
 	Name   string `json:"name"`
@@ -1136,6 +1238,9 @@ func (response ImportPrices422ApplicationProblemPlusJSONResponse) VisitImportPri
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// ListCalendars Business-day calendars of the instance in identifier order.
+	// (GET /calendars)
+	ListCalendars(ctx context.Context, request ListCalendarsRequestObject) (ListCalendarsResponseObject, error)
 	// ListHolidays Non-business days of a calendar in a year, weekends excluded.
 	// (GET /calendars/{name}/holidays)
 	ListHolidays(ctx context.Context, request ListHolidaysRequestObject) (ListHolidaysResponseObject, error)
@@ -1196,6 +1301,30 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// ListCalendars operation middleware
+func (sh *strictHandler) ListCalendars(w http.ResponseWriter, r *http.Request) {
+	var request ListCalendarsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCalendars(ctx, request.(ListCalendarsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCalendars")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListCalendarsResponseObject); ok {
+		if err := validResponse.VisitListCalendarsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // ListHolidays operation middleware

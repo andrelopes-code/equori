@@ -51,6 +51,7 @@ var exposure = map[string]string{
 	"getBalanceSeries":             "-pending",
 	"getAccountFlows":              "-pending",
 	"getCategoryTotals":            "get_category_totals",
+	"listCalendars":                "-pending",
 	"listHolidays":                 "-pending",
 	"listInstruments":              "-pending",
 	"defineInstrument":             "-write",

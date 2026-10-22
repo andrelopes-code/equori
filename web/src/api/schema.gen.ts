@@ -704,6 +704,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/calendars": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Business-day calendars of the instance in identifier order. */
+        get: operations["listCalendars"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/calendars/{name}/holidays": {
         parameters: {
             query?: never;
@@ -3045,6 +3062,13 @@ export interface components {
             credit_limit?: components["schemas"]["Money"];
             available_limit?: components["schemas"]["Money"];
         };
+        CalendarList: {
+            items: components["schemas"]["Calendar"][];
+        };
+        Calendar: {
+            id: string;
+            weekend: ("sunday" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday")[];
+        };
         HolidayList: {
             items: components["schemas"]["Holiday"][];
         };
@@ -5207,6 +5231,27 @@ export interface operations {
                 };
             };
             400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+        };
+    };
+    listCalendars: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarList"];
+                };
+            };
             401: components["responses"]["Problem"];
         };
     };
