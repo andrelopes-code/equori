@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"strings"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/capture/internal/domain"
+	"github.com/andrelopes-code/equori/internal/platform/locale"
 )
 
 // MaxSuggestions is the most descriptions one request asks about (ADR 014 L5).
@@ -39,7 +41,7 @@ type CategoryOption struct {
 
 // Suggester names, per item, the index of one option or −1 for none.
 type Suggester interface {
-	Suggest(ctx context.Context, options []CategoryOption, items []SuggestItem) ([]int, error)
+	Suggest(ctx context.Context, l locale.Locale, options []CategoryOption, items []SuggestItem) ([]int, error)
 }
 
 // Hint is a kept answer; CategoryID is zero for "none".
@@ -119,7 +121,11 @@ func (s *Service) Suggest(ctx context.Context, userID int64, items []SuggestItem
 	if s.suggester == nil || len(options) == 0 {
 		return out, s.suggester != nil, nil
 	}
-	chosen, err := s.suggester.Suggest(ctx, options, ask)
+	profile, err := s.profiles.Profile(ctx, userID)
+	if err != nil {
+		return nil, false, fmt.Errorf("read profile: %w", err)
+	}
+	chosen, err := s.suggester.Suggest(ctx, profile, options, ask)
 	if errors.Is(err, ErrSuggesterUnavailable) {
 		return out, false, nil
 	}

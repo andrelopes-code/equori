@@ -12,7 +12,7 @@ Text capture (`docs/superpowers/specs/2026-10-21-text-capture-design.md`) decide
 | ID | Rule |
 |---|---|
 | L1 | The model is asked only for capture lines of kind expense or income, with a description, an account and an amount, that classification left without a category. A line with an issue is not asked. |
-| L2 | The request carries the line descriptions, each with its class, and the paths of the owner's open categories (`Food › Supermarket`) numbered by position. Amounts, dates, accounts, payees and identifiers are never sent. |
+| L2 | The prompt names the owner's language and region. The request carries the line descriptions, each with its class, and the paths of the owner's open categories (`Food › Supermarket`) numbered by position. Amounts, dates, accounts, payees and identifiers are never sent. |
 | L3 | The answer is one category number per description, constrained by a response schema; a number outside the list or of the other class is no suggestion. The model never writes an identifier, so a description that carries instructions cannot change what is recorded beyond the choice of a listed category. |
 | L4 | Answers are kept in `capture_category_hint` per user, class and normalized description. A kept category is served without a call while it is open and of the class; a kept "none" is served for 30 days. The same description therefore costs at most one call. |
 | L5 | One request covers at most 40 descriptions. The client asks after the text has been still for 1.2 seconds, so a pause inside a word is not a request. |
