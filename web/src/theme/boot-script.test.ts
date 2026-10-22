@@ -96,6 +96,15 @@ describe("index.html boot script", () => {
     );
   });
 
+  it("takes the splash out of the flow and locks the document scroll while it shows", () => {
+    expect(bootCSS).toMatch(
+      /html:has\(\.boot-splash\)\s*\{[^}]*overflow:\s*hidden/,
+    );
+    expect(bootCSS).toMatch(
+      /\.boot-splash\s*\{[^}]*position:\s*fixed;[^}]*inset:\s*0/,
+    );
+  });
+
   it("holds no inline script, inline style or style attribute, which the CSP of ADR 008 blocks", () => {
     expect(html).not.toMatch(/<script(?![^>]*\bsrc=)[^>]*>/);
     expect(html).not.toMatch(/<style[\s>]/);

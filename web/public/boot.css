@@ -23,11 +23,18 @@ body {
   block-size: 100dvh;
 }
 
+/* The splash is the only content of the page: no scrollbar shows while it does. The page reaches
+   its own scroll again when React replaces the splash. */
+html:has(.boot-splash) {
+  overflow: hidden;
+}
+
 .boot-splash {
+  position: fixed;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  block-size: 100%;
   animation: boot-enter 0.4s ease-out both;
 }
 
