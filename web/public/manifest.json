@@ -1,6 +1,9 @@
 {
   "name": "equori",
   "short_name": "equori",
+  "id": "/",
+  "lang": "en",
+  "description": "Self-hosted personal finance manager.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -25,6 +28,10 @@
       "type": "image/png",
       "purpose": "maskable"
     },
-    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
   ]
 }

@@ -43,6 +43,12 @@ describe("manifest.json", () => {
     expect(manifest.start_url).toBe("/");
   });
 
+  it("keeps the identity of an installed app at its start URL and states its language and purpose", () => {
+    expect(manifest.id).toBe("/");
+    expect(manifest.lang).toBe("en");
+    expect(manifest.description).toBe("Self-hosted personal finance manager.");
+  });
+
   it("declares the PNG icons an installed app needs, a maskable one, and the SVG icon", () => {
     expect(manifest.icons).toEqual([
       {
