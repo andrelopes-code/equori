@@ -6,13 +6,12 @@ import { accountsQuery } from "@/features/accounts";
 import type { RuleWords } from "@/features/categories/rule-sentence";
 import { useCategoryEntries } from "@/features/categories/use-category-entries";
 import { payeesQuery, useScale } from "@/features/setup";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 // The words a rule is read in: payees, accounts and category paths by id, money by its scale.
 export function useRuleWords(): RuleWords {
   const t = useT();
-  const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
   const api = useApi();
   const accounts = useQuery(accountsQuery(api));
