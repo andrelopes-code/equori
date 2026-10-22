@@ -16,6 +16,14 @@
     scrollbar-color: var(--slotted-border-strong) transparent;
   }
 
+  /* A finger scrolls by dragging, so a scrollbar adds nothing there, as in a native app. The rule reaches the library's own scroll regions too, which is why it sits in the app layer. Scrolling itself is unchanged. */
+  @media (hover: none) and (pointer: coarse) {
+    html,
+    * {
+      scrollbar-width: none;
+    }
+  }
+
   /* A press or a long press on a control selects its label and opens the system callout, which reads as a web page. The library clears the selection on some of its controls only; text content and fields stay selectable so a value can be copied. */
   button,
   a[href],

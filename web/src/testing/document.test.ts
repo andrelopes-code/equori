@@ -159,3 +159,14 @@ describe("app.css scrollbar", () => {
     );
   });
 });
+
+describe("app.css scrollbar on touch", () => {
+  const touch =
+    /@media\s*\(hover:\s*none\)\s*and\s*\(pointer:\s*coarse\)\s*\{([\s\S]*?\})\s*\}/.exec(
+      appCSS,
+    )?.[1] ?? "";
+
+  it("hides every scrollbar where the primary input is a finger", () => {
+    expect(touch).toMatch(/html,\s*\*\s*\{[^}]*scrollbar-width:\s*none/);
+  });
+});
