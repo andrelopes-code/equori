@@ -9,6 +9,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
+import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { fakeApi, json } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 import { setViewport } from "@/testing/viewport";
@@ -445,57 +446,100 @@ describe("phone dock", () => {
     ).toBeNull();
   });
 
+  it("leaves the screen to the keyboard while a field has focus", async () => {
+    const { container } = await renderApp("/transactions", {
+      width: 390,
+      fetch: uncategorizedFetch(0),
+    });
+    const main = container.querySelector("main");
+    if (main === null) throw new Error("no main");
+    const field = await within(main).findAllByRole("searchbox");
+    act(() => {
+      field[0]?.focus();
+    });
+    expect(document.querySelector('[data-own="navigation-bar"]')).toBeNull();
+    act(() => {
+      field[0]?.blur();
+    });
+    expect(navigationBar()).toBeInTheDocument();
+  });
+
+  it("draws the floating button as its mark alone", async () => {
+    await renderApp("/", { width: 390, fetch: newFetch() });
+    const fab = screen.getByRole("button", {
+      name: catalogEn["nav.entry.long"],
+    });
+    expect(fab).toHaveTextContent(/^$/);
+  });
+
+  async function openMore() {
+    const user = userEvent.setup();
+    await user.click(
+      within(navigationBar()).getByRole("button", {
+        name: catalogEn["nav.more"],
+      }),
+    );
+    return { user, sheet: await screen.findByRole("dialog") };
+  }
+
+  it("opens More as a bottom sheet with a drag handle", async () => {
+    await renderApp("/", { width: 390, fetch: newFetch() });
+    const { sheet } = await openMore();
+    expect(sheet.closest('[data-ui="drawer"]')).toHaveAttribute(
+      "data-side",
+      "bottom",
+    );
+    expect(within(sheet).getByRole("separator")).toBeInTheDocument();
+  });
+
   it.each([
     ["nav.goals", "/goals"],
     ["nav.admin", "/admin"],
     ["more.settings", "/settings"],
   ] as const)("opens %s from More", async (label, path) => {
-    const user = userEvent.setup();
     const { router } = await renderApp("/", { width: 390, fetch: newFetch() });
+    const { user, sheet } = await openMore();
     await user.click(
-      within(navigationBar()).getByRole("button", {
-        name: catalogEn["nav.more"],
-      }),
-    );
-    await user.click(
-      await screen.findByRole("menuitem", { name: catalogEn[label] }),
+      within(sheet).getByRole("link", { name: catalogEn[label] }),
     );
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(path);
     });
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
   });
 
-  it("switches the density from More", async () => {
-    const user = userEvent.setup();
+  it("switches the density in More without leaving the sheet", async () => {
     await renderApp("/", { width: 390, fetch: newFetch() });
+    const { user, sheet } = await openMore();
     await user.click(
-      within(navigationBar()).getByRole("button", {
-        name: catalogEn["nav.more"],
-      }),
-    );
-    await user.click(
-      await screen.findByRole("menuitem", { name: catalogEn["more.density"] }),
-    );
-    await user.click(
-      await screen.findByRole("menuitem", { name: catalogEn["density.dense"] }),
+      within(sheet).getByRole("radio", { name: catalogEn["density.dense"] }),
     );
     expect(html).toHaveAttribute("data-slotted-density", "dense");
+    expect(screen.getByRole("dialog")).toBe(sheet);
   });
 
-  it("switches the scheme from More", async () => {
-    const user = userEvent.setup();
+  it("switches the scheme in More without leaving the sheet", async () => {
     await renderApp("/", { width: 390, fetch: newFetch() });
+    const { user, sheet } = await openMore();
     await user.click(
-      within(navigationBar()).getByRole("button", {
-        name: catalogEn["nav.more"],
-      }),
-    );
-    await user.click(
-      await screen.findByRole("menuitem", { name: catalogEn["more.scheme"] }),
-    );
-    await user.click(
-      await screen.findByRole("menuitem", { name: catalogEn["scheme.light"] }),
+      within(sheet).getByRole("radio", { name: catalogEn["scheme.light"] }),
     );
     expect(html).toHaveAttribute("data-slotted-scheme", "light");
+    expect(screen.getByRole("dialog")).toBe(sheet);
+  });
+
+  it("switches the language in More", async () => {
+    await renderApp("/", { width: 390, fetch: newFetch() });
+    const { user, sheet } = await openMore();
+    await user.click(
+      within(sheet).getByRole("radio", { name: catalogEn["locale.pt-BR"] }),
+    );
+    expect(
+      await within(navigationBar()).findByRole("button", {
+        name: catalogPtBR["nav.more"],
+      }),
+    ).toBeInTheDocument();
   });
 });

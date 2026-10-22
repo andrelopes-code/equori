@@ -3,11 +3,12 @@ import {
   ActionBarAction,
   ActionBarActions,
 } from "@slotted/react/action-bar";
-import { Button } from "@slotted/react/button";
+import { Button, ButtonLink } from "@slotted/react/button";
 import { InlineMessage } from "@slotted/react/inline-message";
 import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import {
   PageHeader,
+  PageHeaderActions,
   PageHeaderBack,
   PageHeaderHeading,
   PageHeaderNav,
@@ -25,6 +26,7 @@ import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import { accountsQuery } from "@/features/accounts";
 import { payeesQuery, settingsQuery, useScale } from "@/features/setup";
 import { tagsQuery, useCreateTransaction } from "@/features/transactions/api";
+import { writeEntryForm } from "@/features/transactions/capture-store";
 import { emptyDraft, inputFromDraft } from "@/features/transactions/entry-kind";
 import type { EntryDraft } from "@/features/transactions/entry-kind";
 import { draftProblems } from "@/features/transactions/entry-validation";
@@ -65,6 +67,9 @@ export function NewTransactionPage() {
   useEffect(() => {
     writeDraft(draftKey, draft);
   }, [draft]);
+  useEffect(() => {
+    writeEntryForm("form");
+  }, []);
 
   const accountsById = useMemo(
     () => new Map((accounts.data ?? []).map((a) => [a.id, a])),
@@ -203,6 +208,30 @@ export function NewTransactionPage() {
             <PageHeaderTitle>
               <PageHeaderHeading>{t("nav.new")}</PageHeaderHeading>
             </PageHeaderTitle>
+            <PageHeaderActions>
+              <ButtonLink
+                variant="outline"
+                tone="secondary"
+                href="/transactions/capture"
+                // Workaround for Slotted finding "ButtonLink render props cannot be spread onto a
+                // router link": the anchor keeps its href for a modified click, and a plain click
+                // navigates inside the application.
+                onClick={(event) => {
+                  if (
+                    event.button !== 0 ||
+                    event.metaKey ||
+                    event.ctrlKey ||
+                    event.shiftKey ||
+                    event.altKey
+                  )
+                    return;
+                  event.preventDefault();
+                  void navigate({ to: "/transactions/capture" });
+                }}
+              >
+                {t("capture.useText")}
+              </ButtonLink>
+            </PageHeaderActions>
           </PageHeaderTitleRow>
         </PageHeaderTitleArea>
       </PageHeader>

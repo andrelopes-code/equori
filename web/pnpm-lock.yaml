@@ -173,17 +173,17 @@ importers:
         specifier: 5.3.0
         version: 5.3.0
       '@slotted/core':
-        specifier: 0.1.0-beta.8
-        version: 0.1.0-beta.8(echarts@6.1.0)
+        specifier: 0.1.0-beta.9
+        version: 0.1.0-beta.9(echarts@6.1.0)
       '@slotted/react':
-        specifier: 0.1.0-beta.8
-        version: 0.1.0-beta.8(@slotted/core@0.1.0-beta.8(echarts@6.1.0))(@slotted/theme@0.1.0-beta.8)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+        specifier: 0.1.0-beta.9
+        version: 0.1.0-beta.9(@slotted/core@0.1.0-beta.9(echarts@6.1.0))(@slotted/theme@0.1.0-beta.9)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@slotted/theme':
-        specifier: 0.1.0-beta.8
-        version: 0.1.0-beta.8
+        specifier: 0.1.0-beta.9
+        version: 0.1.0-beta.9
       '@slotted/themes':
-        specifier: 0.1.0-beta.8
-        version: 0.1.0-beta.8(@slotted/theme@0.1.0-beta.8)
+        specifier: 0.1.0-beta.9
+        version: 0.1.0-beta.9(@slotted/theme@0.1.0-beta.9)
       '@tanstack/react-query':
         specifier: 5.104.1
         version: 5.104.1(react@19.3.1)
@@ -193,6 +193,9 @@ importers:
       echarts:
         specifier: 6.1.0
         version: 6.1.0
+      logos-bancos-br:
+        specifier: 0.8.2
+        version: 0.8.2
       openapi-fetch:
         specifier: 0.17.0
         version: 0.17.0
@@ -608,31 +611,31 @@ packages:
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
-  '@slotted/core@0.1.0-beta.8':
-    resolution: {integrity: sha512-L7hwmSXamtGtnEJQ0vsmXJPNP1nlkALZpK6swA3PJU/aE0T3T6lHHWOUCI/6d56c6vYh1PZ8RoFknfmhuLHhtQ==}
+  '@slotted/core@0.1.0-beta.9':
+    resolution: {integrity: sha512-vno1ZTo3wkUEtWwGrlSu6goKZIRSAI3D5KrjJd/lWButQcAZeAaaOt/NrGYL3b0WH0jF4gFgIdEsRdZOlFVhKg==}
     peerDependencies:
       echarts: ^6.1.0
     peerDependenciesMeta:
       echarts:
         optional: true
 
-  '@slotted/react@0.1.0-beta.8':
-    resolution: {integrity: sha512-8i53N9t8hytTMwx4ti5sV60uJZDbGy+3xW3BBaZT5/fYzqsji5Oumn6Opa37/V2YYuT/7IA2rGUFey4A8/ZSAQ==}
+  '@slotted/react@0.1.0-beta.9':
+    resolution: {integrity: sha512-GWr3nzYmQyE4MEsQli3wGX5WJoM4ifMGHGBkmSBhmARXkt4kp6CodifU5ihOvU3g1gEpqvUU0puOx5P/VHVKyA==}
     hasBin: true
     peerDependencies:
-      '@slotted/core': 0.1.0-beta.8
-      '@slotted/theme': 0.1.0-beta.8
+      '@slotted/core': 0.1.0-beta.9
+      '@slotted/theme': 0.1.0-beta.9
       react: '>=19.2.0 <20'
       react-dom: '>=19.2.0 <20'
 
-  '@slotted/theme@0.1.0-beta.8':
-    resolution: {integrity: sha512-UH5+S+i4r/eQCw1Iv4tStaC7Tx4ZJThAbdOfsP78I2DDEoYcFdW0l00pwEiM8vitcx8CV3HSPi5j8y7FhD7X+Q==}
+  '@slotted/theme@0.1.0-beta.9':
+    resolution: {integrity: sha512-LwZ8qhhtLBZx0QeHdNhGFrQPHH94KBqGkzsM+yvRKy/ZZP/uwlK1CAc6JIT3E74vf/vSorVf/JwHSxiMw0Nc4A==}
     hasBin: true
 
-  '@slotted/themes@0.1.0-beta.8':
-    resolution: {integrity: sha512-X/H98gghm/zxFVx+LQhpt6qt+PZffdTk8W6mXtLBctok8GdIzJTnYJIEMvF75xNlw4+B4qpCOa26OhqcuikZYg==}
+  '@slotted/themes@0.1.0-beta.9':
+    resolution: {integrity: sha512-IAX9dyGMicMQUj687cW0KvT5huRbS5u5J777TUu+GuIoCmQawKYv8I2Yvq1n/UbIhtizs3B2uSmczCGgTnWpBQ==}
     peerDependencies:
-      '@slotted/theme': 0.1.0-beta.8
+      '@slotted/theme': 0.1.0-beta.9
     peerDependenciesMeta:
       '@slotted/theme':
         optional: true
@@ -1555,6 +1558,11 @@ packages:
   locate-path@6.0.0:
     resolution: {integrity: sha512-iPZK6eYjbxRu3uB4/WZ3EsEIMJFMqAoopl3R+zuq0UjcAm/MO6KCweDgPfP3elTztoKP3KtnVHxTn2NHBSDVUw==}
     engines: {node: '>=10'}
+
+  logos-bancos-br@0.8.2:
+    resolution: {integrity: sha512-jFuz87uJiU6DHoTu0FrkqAgwBQQrEjvq/MgQBOtsIyISLX+IeYLhbkLJdjQnI0R34wDwpzMb5Kok0/G4suAUUg==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   loose-envify@1.4.0:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
@@ -2488,26 +2496,26 @@ snapshots:
 
   '@rolldown/pluginutils@1.0.1': {}
 
-  '@slotted/core@0.1.0-beta.8(echarts@6.1.0)':
+  '@slotted/core@0.1.0-beta.9(echarts@6.1.0)':
     dependencies:
       '@floating-ui/dom': 1.8.0
     optionalDependencies:
       echarts: 6.1.0
 
-  '@slotted/react@0.1.0-beta.8(@slotted/core@0.1.0-beta.8(echarts@6.1.0))(@slotted/theme@0.1.0-beta.8)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+  '@slotted/react@0.1.0-beta.9(@slotted/core@0.1.0-beta.9(echarts@6.1.0))(@slotted/theme@0.1.0-beta.9)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
-      '@slotted/core': 0.1.0-beta.8(echarts@6.1.0)
-      '@slotted/theme': 0.1.0-beta.8
+      '@slotted/core': 0.1.0-beta.9(echarts@6.1.0)
+      '@slotted/theme': 0.1.0-beta.9
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
 
-  '@slotted/theme@0.1.0-beta.8':
+  '@slotted/theme@0.1.0-beta.9':
     dependencies:
       lightningcss: 1.33.0
 
-  '@slotted/themes@0.1.0-beta.8(@slotted/theme@0.1.0-beta.8)':
+  '@slotted/themes@0.1.0-beta.9(@slotted/theme@0.1.0-beta.9)':
     optionalDependencies:
-      '@slotted/theme': 0.1.0-beta.8
+      '@slotted/theme': 0.1.0-beta.9
 
   '@tanstack/history@1.162.4': {}
 
@@ -3573,6 +3581,8 @@ snapshots:
   locate-path@6.0.0:
     dependencies:
       p-locate: 5.0.0
+
+  logos-bancos-br@0.8.2: {}
 
   loose-envify@1.4.0:
     dependencies:

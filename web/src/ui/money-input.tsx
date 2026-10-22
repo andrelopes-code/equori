@@ -39,7 +39,9 @@ export function MoneyInput({
   const parts = formatMoneyParts({ amount: value, currency }, scale, locale);
   const marks = { expense: "−", income: "+", neutral: "" };
   return (
-    <div
+    // A label around the input: a press anywhere on the panel focuses it, as the platform
+    // does for a label; the field's own label still names it through aria-labelledby.
+    <label
       className={styles.panel}
       data-sign={sign}
       data-empty={value === 0 ? "" : undefined}
@@ -76,6 +78,6 @@ export function MoneyInput({
       <span className={styles.code} aria-hidden="true">
         {currency}
       </span>
-    </div>
+    </label>
   );
 }

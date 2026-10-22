@@ -18,6 +18,7 @@ import { CommandMenu } from "@/app/shell/command-menu";
 import { DesktopNav } from "@/app/shell/desktop-nav";
 import { PhoneDock } from "@/app/shell/phone-dock";
 import { TopAppBar } from "@/app/shell/top-app-bar";
+import { useEditing } from "@/app/shell/use-editing";
 import { useEntry, useEntryShortcut } from "@/app/shell/use-entry";
 import { useNavPreference } from "@/app/shell/use-nav-preference";
 import { useScrollState } from "@/app/shell/use-scroll-state";
@@ -34,6 +35,7 @@ export function AppFrame() {
   const [navOpen, setNavOpen] = useNavPreference();
   const palette = useRef<CommandPaletteHandle>(null);
   const scroll = useScrollState(main);
+  const editing = useEditing();
   const openEntry = useEntry();
   useEntryShortcut(openEntry);
   const openPalette = useCallback(() => {
@@ -91,13 +93,13 @@ export function AppFrame() {
           </PageHeaderDefaultsProvider>
         </PageDefaultsProvider>
       </AppShellMain>
-      {wide ? null : (
+      {wide || editing ? null : (
         // A div: the dock is navigation, not the page's contentinfo.
         <AppShellFooter
           className={styles.footer}
           render={(props) => <div {...props} />}
         >
-          <PhoneDock down={scroll.down} onReselect={scrollToTop} />
+          <PhoneDock onReselect={scrollToTop} />
         </AppShellFooter>
       )}
       <CommandMenu ref={palette} />

@@ -445,11 +445,70 @@ const PATHS: Record<CategoryIconName, readonly string[]> = {
   ],
 };
 
+// The body of a two-tone icon: the shape filled behind the strokes. A number takes that path of
+// the icon; a string is a closed outline drawn for the body alone, where the stroke path is open.
+// An icon without an entry fills its closed paths.
+const BODY: Partial<Record<CategoryIconName, readonly (number | string)[]>> = {
+  "shopping-cart": [
+    "M5.12 7H22l-1.65 7.43A2 2 0 0 1 18.4 16H8.71a2 2 0 0 1-2-1.58Z",
+  ],
+  "shopping-basket": [
+    "M3.5 11h17l-1.7 7.4a2 2 0 0 1-2 1.6H7.1a2 2 0 0 1-2-1.6Z",
+  ],
+  utensils: [
+    "M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2Z",
+    "M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Z",
+  ],
+  coffee: ["M4 8h13v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1Z"],
+  fuel: ["M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18Z"],
+  hospital: ["M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18Z"],
+  laptop: ["M6 5h12a2 2 0 0 1 2 2v9H4V7a2 2 0 0 1 2-2Z"],
+  wallet: [
+    "M3 5a2 2 0 0 0 2 2h15a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2Z",
+  ],
+  tent: ["M12 6.4 3.5 21h17Z"],
+  hammer: [2],
+  baby: [3],
+  car: [0],
+  bus: [3],
+  "party-popper": [0],
+  palette: [4],
+  users: [0, 1],
+  dog: [2],
+  stethoscope: [2],
+  luggage: [0],
+  school: [1],
+  beer: [4, 3],
+};
+
+function isClosed(d: string): boolean {
+  // A circle written as a path is two half arcs and ends without "z".
+  return /z\s*$/i.test(d) || /a[\d.]+ [\d.]+ 0 1 0 [-\d.]+ 0a/.test(d);
+}
+
+function bodyOf(name: CategoryIconName): string[] {
+  const paths = PATHS[name];
+  const parts = BODY[name];
+  if (parts === undefined) return paths.filter(isClosed);
+  return parts
+    .map((part) => (typeof part === "number" ? (paths[part] ?? "") : part))
+    .filter((d) => d !== "");
+}
+
 export const categoryIconNames = Object.keys(PATHS) as CategoryIconName[];
 
 // Families read: icon. The glyph set holds no category artwork, so the app draws Lucide's
-// geometry inside the family's box.
-export function CategoryIcon({ name }: { name: CategoryIconName }) {
+// geometry inside the family's box. A bodyClassName adds the two-tone body behind the strokes;
+// the class paints its fill.
+export function CategoryIcon({
+  name,
+  strokeWidth = 2,
+  bodyClassName,
+}: {
+  name: CategoryIconName;
+  strokeWidth?: number;
+  bodyClassName?: string | undefined;
+}) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -457,12 +516,19 @@ export function CategoryIcon({ name }: { name: CategoryIconName }) {
       height="100%"
       fill="none"
       stroke="currentColor"
-      strokeWidth={2}
+      strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
       focusable="false"
     >
+      {bodyClassName !== undefined && (
+        <g className={bodyClassName} stroke="none">
+          {bodyOf(name).map((d) => (
+            <path key={d} d={d} />
+          ))}
+        </g>
+      )}
       {PATHS[name].map((d) => (
         <path key={d} d={d} />
       ))}

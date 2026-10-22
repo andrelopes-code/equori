@@ -1,0 +1,9 @@
+@layer app {
+  .voided {
+    text-decoration: line-through;
+  }
+
+  .positive {
+    color: var(--slotted-tone-success-text);
+  }
+}

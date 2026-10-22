@@ -6,11 +6,9 @@ import {
   CategoryIcon,
   categoryIconNames,
 } from "@/features/categories/category-icon";
-import { CategoryMark } from "@/features/categories/category-mark";
 import type { CategoryIconName } from "@/features/categories/category-paths";
 import { useT } from "@/i18n/i18n-provider";
-
-const colors = [1, 2, 3, 4, 5, 6, 7, 8] as const;
+import { ColorSwatches } from "@/ui/color-swatches";
 
 // Families read: radio-group, toggle-group, color-picker. None draws a choice as a swatch of a
 // data slot or as a glyph tile, so the two groups are the app's own over native radios: the
@@ -31,55 +29,17 @@ export function AppearancePicker({
 }) {
   const t = useT();
   return (
-    <Stack gap={4}>
-      <div className={styles.preview}>
-        <CategoryMark
-          name={name || "?"}
-          color={color ?? undefined}
-          icon={icon ?? undefined}
-          size="lg"
-        />
-      </div>
+    <Stack gap={5}>
       <Field>
         <FieldLabel>{t("appearance.color")}</FieldLabel>
-        <div
-          role="radiogroup"
-          aria-label={t("appearance.color")}
-          className={styles.swatches}
-        >
-          <label className={styles.option} title={t("appearance.noColor")}>
-            <input
-              type="radio"
-              name="color"
-              className={styles.radio}
-              checked={color === null}
-              onChange={() => {
-                onChange({ color: null, icon });
-              }}
-              aria-label={t("appearance.noColor")}
-            />
-            <span className={styles.swatch} data-color="none" />
-          </label>
-          {colors.map((slot) => (
-            <label
-              key={slot}
-              className={styles.option}
-              title={t("appearance.colorN", { n: slot })}
-            >
-              <input
-                type="radio"
-                name="color"
-                className={styles.radio}
-                checked={color === slot}
-                onChange={() => {
-                  onChange({ color: slot, icon });
-                }}
-                aria-label={t("appearance.colorN", { n: slot })}
-              />
-              <span className={styles.swatch} data-color={slot} />
-            </label>
-          ))}
-        </div>
+        <ColorSwatches
+          name="color"
+          label={t("appearance.color")}
+          value={color}
+          onChange={(next) => {
+            onChange({ color: next, icon });
+          }}
+        />
       </Field>
       <Field>
         <FieldLabel>{t("appearance.icon")}</FieldLabel>

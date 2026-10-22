@@ -21,7 +21,7 @@ import {
 import { Fragment } from "react";
 
 import { AccountMenu } from "@/app/shell/account-menu";
-import { BrandMark } from "@/app/shell/brand-mark";
+import { BrandMark } from "@/ui/brand-mark";
 import styles from "@/app/shell/desktop-nav.module.css";
 import { destinations } from "@/app/shell/destinations";
 import { ShellIcon } from "@/app/shell/shell-icon";

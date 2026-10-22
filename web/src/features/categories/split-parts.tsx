@@ -6,7 +6,7 @@ import { Stack } from "@slotted/react/stack";
 
 import type { components } from "@/api/schema.gen";
 import { CategoryPicker } from "@/features/categories/category-picker";
-import { ChoiceSelect } from "@/features/categories/choice-select";
+import { ChoiceSelect } from "@/ui/choice-select";
 import styles from "@/features/categories/split-parts.module.css";
 import { limits } from "@/features/categories/rule-draft";
 import { useT } from "@/i18n/i18n-provider";

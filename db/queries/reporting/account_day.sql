@@ -13,12 +13,15 @@ SELECT user_id, id FROM ledger_account ORDER BY user_id, id;
 DELETE FROM reporting_account_day WHERE account_id = $1 AND date >= $2;
 
 -- name: InsertAccountDaysFrom :exec
-INSERT INTO reporting_account_day (user_id, account_id, date, delta_booked, delta_settled, balance_booked, balance_settled)
+INSERT INTO reporting_account_day (user_id, account_id, date, delta_booked, delta_settled, balance_booked, balance_settled, inflow_booked, outflow_booked)
 SELECT @user_id::bigint, @account_id::uuid, d.date, d.delta_booked, d.delta_settled,
        base.booked + sum(d.delta_booked) OVER w,
-       base.settled + sum(d.delta_settled) OVER w
+       base.settled + sum(d.delta_settled) OVER w,
+       d.inflow, d.outflow
 FROM (
-    SELECT x.date, sum(x.booked)::bigint AS delta_booked, sum(x.settled)::bigint AS delta_settled
+    SELECT x.date, sum(x.booked)::bigint AS delta_booked, sum(x.settled)::bigint AS delta_settled,
+           coalesce(sum(x.booked) FILTER (WHERE x.booked > 0), 0)::bigint AS inflow,
+           coalesce(-sum(x.booked) FILTER (WHERE x.booked < 0), 0)::bigint AS outflow
     FROM (
         SELECT p.booked_on AS date, p.amount AS booked, 0::bigint AS settled
         FROM ledger_posting p
@@ -30,7 +33,7 @@ FROM (
           AND coalesce(p.settled_on, p.booked_on) >= @from_date::date
     ) x
     GROUP BY x.date
-    HAVING sum(x.booked) <> 0 OR sum(x.settled) <> 0
+    HAVING sum(x.booked) <> 0 OR sum(x.settled) <> 0 OR bool_or(x.booked <> 0)
 ) d
 CROSS JOIN (
     SELECT coalesce(sum(p.amount) FILTER (WHERE p.booked_on < @from_date::date), 0)::bigint AS booked,
@@ -50,6 +53,17 @@ SELECT r.date, sum(r.delta_booked)::bigint AS delta_booked, sum(r.delta_settled)
 FROM reporting_account_day r
 WHERE r.account_id IN (SELECT id FROM tree) AND r.date <= @to_date
 GROUP BY r.date
+ORDER BY r.date;
+
+-- name: AccountInstrument :one
+SELECT instrument FROM ledger_account WHERE user_id = @user_id AND id = @account_id;
+
+-- name: AccountFlows :many
+-- A119: the booked inflow and outflow of the account itself, one row per day with a posting.
+SELECT r.date, r.inflow_booked, r.outflow_booked
+FROM reporting_account_day r
+WHERE r.user_id = @user_id AND r.account_id = @account_id AND r.date BETWEEN @from_date::date AND @to_date::date
+  AND (r.inflow_booked <> 0 OR r.outflow_booked <> 0)
 ORDER BY r.date;
 
 -- name: CategoryTotals :many

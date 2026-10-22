@@ -19,9 +19,9 @@ function metaContent(name: string): string | undefined {
 }
 
 describe("index.html", () => {
-  it("sets the phone viewport with viewport-fit=cover", () => {
+  it("sets the phone viewport with viewport-fit=cover, resized by the keyboard", () => {
     expect(metaContent("viewport")).toBe(
-      "width=device-width, initial-scale=1, viewport-fit=cover",
+      "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content",
     );
   });
 

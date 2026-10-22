@@ -190,8 +190,8 @@ func (s *Service) decideAssertion(ctx context.Context, r Repository, a domain.Ac
 
 // ResolveAssertion settles the open difference of an assertion chosen by the owner (F6, S26).
 func (s *Service) ResolveAssertion(ctx context.Context, userID int64, id uuid.UUID, resolution domain.Resolution) (AssertionResult, error) {
-	if resolution != domain.ResolutionAdjustment && resolution != domain.ResolutionTransactionsAdded {
-		return AssertionResult{}, validationError("resolution", "must be adjustment or transactions_added")
+	if resolution != domain.ResolutionAdjustment && resolution != domain.ResolutionYield && resolution != domain.ResolutionTransactionsAdded {
+		return AssertionResult{}, validationError("resolution", "must be adjustment, yield or transactions_added")
 	}
 	found, err := s.repo.BalanceAssertion(ctx, userID, id)
 	if err != nil {
@@ -228,7 +228,12 @@ func (s *Service) ResolveAssertion(ctx context.Context, userID int64, id uuid.UU
 			if resolution == domain.ResolutionTransactionsAdded {
 				return fmt.Errorf("%w: %s", ErrDifferenceRemains, res.Difference)
 			}
-			if res.ResolutionTransactionID, err = s.recordAdjustment(ctx, r, a, res.Assertion.Date, res.Difference); err != nil {
+			if resolution == domain.ResolutionYield {
+				res.ResolutionTransactionID, err = s.resolveAsYield(ctx, r, a, res.Assertion.Date, res.Difference)
+			} else {
+				res.ResolutionTransactionID, err = s.recordAdjustment(ctx, r, a, res.Assertion.Date, res.Difference)
+			}
+			if err != nil {
 				return err
 			}
 		}
@@ -385,6 +390,27 @@ func (s *Service) yieldStart(ctx context.Context, r Repository, a domain.Account
 		return nil, err
 	}
 	return first, nil
+}
+
+// resolveAsYield books the positive difference chosen by the owner as yield, whatever the
+// account's yield mode: the owner states that the institution credited it. A negative
+// difference is a loss and resolves only as an adjustment.
+func (s *Service) resolveAsYield(ctx context.Context, r Repository, a domain.Account, date time.Time, diff money.Money) (uuid.UUID, error) {
+	if diff.Amount() < 0 {
+		return uuid.Nil, validationError("resolution", "yield needs a positive difference; use adjustment")
+	}
+	prev, err := s.previousAssertionDate(ctx, r, a.UserID, a.ID, date)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	start, err := s.yieldStart(ctx, r, a, date, prev)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	if start == nil {
+		start = &date
+	}
+	return s.recordYield(ctx, r, a, *start, date, diff.Amount())
 }
 
 func (s *Service) recordYield(ctx context.Context, r Repository, a domain.Account, start, end time.Time, amount int64) (uuid.UUID, error) {

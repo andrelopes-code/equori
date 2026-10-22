@@ -213,6 +213,43 @@ func TestAdjustmentResolvesDifference(t *testing.T) {
 	h.ExpectProblem(resolve(h, assertion, "adjustment"), http.StatusConflict, "already_reconciled", "")
 }
 
+func TestYieldResolvesPositiveDifference(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t, apitest.Today("2026-11-05"))
+	checking := h.Account("Nubank checking", "asset", "checking", nil)
+	salary := h.Account("Salary", "income", "", nil)
+	h.Record("2026-10-01", apitest.Posting(checking, 320327), apitest.Posting(salary, -320327))
+	var asserted assertionResult
+	assertBalance(h, checking, "2026-10-31", 320337).Decode(t, &asserted)
+
+	var res assertionResult
+	resp := resolve(h, asserted.Assertion.ID, "yield")
+	if resp.Status != http.StatusOK {
+		t.Fatalf("status %d: %s", resp.Status, resp.Body)
+	}
+	resp.Decode(t, &res)
+	tx := h.Transaction(res.ResolutionTransactionID)
+	r := amountsByAccount(tx)
+	if res.Resolution != "yield" || res.Difference.Amount != 10 || r[checking] != 10 || len(r) != 2 {
+		t.Fatalf("result = %+v, postings = %v", res, r)
+	}
+	if tx.Description != "Yield 2026-10-01 to 2026-10-31" {
+		t.Fatalf("description = %q", tx.Description)
+	}
+	if s := reconciliationOf(h, checking); s.LastReconciledOn != "2026-10-31" || s.OpenDifference != nil {
+		t.Fatalf("status after = %+v", s)
+	}
+}
+
+func TestYieldRejectsNegativeDifference(t *testing.T) {
+	t.Parallel()
+	h, checking, assertion := newDifference(t)
+	h.ExpectProblem(resolve(h, assertion, "yield"), http.StatusUnprocessableEntity, "validation_failed", "")
+	if s := reconciliationOf(h, checking); s.LastReconciledOn != "" || s.OpenDifference == nil {
+		t.Fatalf("status after = %+v", s)
+	}
+}
+
 func TestTransactionsAddedNeedsMatchingBalance(t *testing.T) {
 	t.Parallel()
 	h, checking, assertion := newDifference(t)

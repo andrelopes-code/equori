@@ -1,5 +1,6 @@
 import {
   infiniteQueryOptions,
+  keepPreviousData,
   queryOptions,
   useMutation,
   useQueryClient,
@@ -8,7 +9,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { Client } from "openapi-fetch";
 
 import { useApi } from "@/api/api-context";
-import { unwrap } from "@/api/problem";
+import { ProblemError, unwrap } from "@/api/problem";
 import type { components, paths } from "@/api/schema.gen";
 import { accountKeys, balanceKeys } from "@/features/accounts";
 import { setupKeys } from "@/features/setup";
@@ -388,6 +389,54 @@ export function useTransferTransaction() {
   });
 }
 
+export function reimbursementCandidatesQuery(api: Client<paths>, id: string) {
+  return queryOptions({
+    queryKey: [...transactionKeys.all, "reimbursement-candidates", id] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/transactions/{id}/reimbursement-candidates", {
+          params: { path: { id } },
+        }),
+      ),
+  });
+}
+
+export function reimbursementSourcesQuery(api: Client<paths>, id: string) {
+  return queryOptions({
+    queryKey: [...transactionKeys.all, "reimbursement-sources", id] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/transactions/{id}/reimbursement-sources", {
+          params: { path: { id } },
+        }),
+      ),
+  });
+}
+
+export type ReimbursementAllocation =
+  components["schemas"]["ReimbursementAllocation"];
+
+export function useReimburseTransaction() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      current,
+      allocations,
+    }: {
+      current: Transaction;
+      allocations: ReimbursementAllocation[];
+    }) =>
+      unwrap(
+        await api.POST("/transactions/{id}/reimbursement", {
+          params: { path: { id: current.id } },
+          body: { expected_version: current.version, allocations },
+        }),
+      ),
+    onSuccess: (result, { current }) => mutated(queryClient, current, result),
+  });
+}
+
 export function useCreateTransaction() {
   const api = useApi();
   const queryClient = useQueryClient();
@@ -398,6 +447,77 @@ export function useCreateTransaction() {
       transactionMutated(
         queryClient,
         created.postings.map((p) => p.account_id),
+      ),
+  });
+}
+
+// The text read as drafts (A106). It records nothing, so it is a query keyed by what it
+// reads; the drafts on screen stay while the next answer is on its way (AF-02).
+export function capturePreviewQuery(
+  api: Client<paths>,
+  text: string,
+  defaultAccountId: string | null,
+) {
+  return queryOptions({
+    queryKey: [
+      ...transactionKeys.all,
+      "capture",
+      text,
+      defaultAccountId,
+    ] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.POST("/capture/preview", {
+          body: {
+            text,
+            ...(defaultAccountId === null
+              ? {}
+              : { default_account_id: defaultAccountId }),
+          },
+        }),
+      ),
+    enabled: text.trim() !== "",
+    placeholderData: keepPreviousData,
+  });
+}
+
+// Categories a language model names for drafts classification left without one (ADR 014).
+// The server keeps every answer, so the query never goes stale on its own.
+export function captureSuggestionsQuery(
+  api: Client<paths>,
+  items: components["schemas"]["CaptureSuggestionItem"][],
+) {
+  return queryOptions({
+    queryKey: ["capture-suggestions", items] as const,
+    // Each answer travels with the item it answers, so a previous answer shown while the next
+    // is on its way never lands on another description.
+    queryFn: async () => {
+      const answer = await unwrap(
+        await api.POST("/capture/suggestions", { body: { items } }),
+      );
+      return items.map((item, i) => ({
+        ...item,
+        categoryId: answer.items[i]?.category_id ?? null,
+      }));
+    },
+    enabled: items.length > 0,
+    staleTime: Infinity,
+    placeholderData: keepPreviousData,
+  });
+}
+
+// Records every entry or none (A114).
+export function useRecordBatch() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (
+      entries: components["schemas"]["TransactionBatchEntry"][],
+    ) => unwrap(await api.POST("/transaction-batches", { body: { entries } })),
+    onSuccess: (batch) =>
+      transactionMutated(
+        queryClient,
+        batch.items.flatMap((t) => t.postings.map((p) => p.account_id)),
       ),
   });
 }
@@ -420,5 +540,48 @@ export function useCorrectTransaction() {
         }),
       ),
     onSuccess: (next, { current }) => mutated(queryClient, current, next),
+  });
+}
+
+// The statement a card purchase on date would be billed on; null when the card has no billing
+// rule for it, which leaves the entry without that consequence.
+export function statementPlacementQuery(
+  api: Client<paths>,
+  cardId: string,
+  date: string,
+) {
+  return queryOptions({
+    queryKey: [...accountKeys.detail(cardId), "placement", date] as const,
+    queryFn: async () => {
+      try {
+        return await unwrap(
+          await api.GET("/accounts/{id}/statement-placement", {
+            params: { path: { id: cardId }, query: { date } },
+          }),
+        );
+      } catch (error) {
+        if (error instanceof ProblemError && error.status === 422) return null;
+        throw error;
+      }
+    },
+  });
+}
+
+// The latest transactions of a category or of a payee, for the account suggestion.
+export function recentTransactionsQuery(
+  api: Client<paths>,
+  filter: { account_id: string } | { payee_id: string },
+  limit: number,
+) {
+  return queryOptions({
+    queryKey: [...transactionKeys.all, "recent", filter, limit] as const,
+    queryFn: async () =>
+      (
+        await unwrap(
+          await api.GET("/transactions", {
+            params: { query: { ...filter, limit } },
+          }),
+        )
+      ).items,
   });
 }

@@ -114,6 +114,7 @@ type LedgerInstitution struct {
 	UserID int64
 	Name   string
 	Code   *string
+	Ispb   *string
 }
 
 type LedgerInvestmentIncome struct {
@@ -133,6 +134,7 @@ type LedgerLink struct {
 	FromTransactionID uuid.UUID
 	ToTransactionID   uuid.UUID
 	LinkType          string
+	Amount            *int64
 }
 
 type LedgerPayee struct {

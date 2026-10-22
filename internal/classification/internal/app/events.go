@@ -24,6 +24,7 @@ const (
 	stateNone          = "none"
 	stateUncategorized = "uncategorized"
 	originImport       = "import"
+	originManual       = "manual"
 	originSystem       = "system"
 )
 

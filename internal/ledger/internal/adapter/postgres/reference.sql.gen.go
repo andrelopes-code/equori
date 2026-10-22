@@ -44,23 +44,30 @@ func (q *Queries) GetSettings(ctx context.Context, userID int64) (LedgerSetting,
 }
 
 const insertInstitution = `-- name: InsertInstitution :one
-INSERT INTO ledger_institution (user_id, name, code) VALUES ($1, $2, $3) RETURNING id, user_id, name, code
+INSERT INTO ledger_institution (user_id, name, code, ispb) VALUES ($1, $2, $3, $4) RETURNING id, user_id, name, code, ispb
 `
 
 type InsertInstitutionParams struct {
 	UserID int64
 	Name   string
 	Code   *string
+	Ispb   *string
 }
 
 func (q *Queries) InsertInstitution(ctx context.Context, arg InsertInstitutionParams) (LedgerInstitution, error) {
-	row := q.db.QueryRow(ctx, insertInstitution, arg.UserID, arg.Name, arg.Code)
+	row := q.db.QueryRow(ctx, insertInstitution,
+		arg.UserID,
+		arg.Name,
+		arg.Code,
+		arg.Ispb,
+	)
 	var i LedgerInstitution
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
 		&i.Name,
 		&i.Code,
+		&i.Ispb,
 	)
 	return i, err
 }
@@ -87,7 +94,7 @@ func (q *Queries) InsertPayee(ctx context.Context, arg InsertPayeeParams) (Ledge
 }
 
 const listInstitutions = `-- name: ListInstitutions :many
-SELECT id, user_id, name, code, lower(name)::text AS sort_name FROM ledger_institution
+SELECT id, user_id, name, code, ispb, lower(name)::text AS sort_name FROM ledger_institution
 WHERE user_id = $1
   AND ($2::text IS NULL OR (lower(name), id) > ($2::text, $3::uuid))
 ORDER BY lower(name), id
@@ -106,6 +113,7 @@ type ListInstitutionsRow struct {
 	UserID   int64
 	Name     string
 	Code     *string
+	Ispb     *string
 	SortName string
 }
 
@@ -128,6 +136,7 @@ func (q *Queries) ListInstitutions(ctx context.Context, arg ListInstitutionsPara
 			&i.UserID,
 			&i.Name,
 			&i.Code,
+			&i.Ispb,
 			&i.SortName,
 		); err != nil {
 			return nil, err
@@ -326,6 +335,29 @@ func (q *Queries) RenamePayee(ctx context.Context, arg RenamePayeeParams) (Ledge
 		&i.UserID,
 		&i.Name,
 		&i.MergedInto,
+	)
+	return i, err
+}
+
+const setInstitutionISPB = `-- name: SetInstitutionISPB :one
+UPDATE ledger_institution SET ispb = $1 WHERE user_id = $2 AND id = $3 RETURNING id, user_id, name, code, ispb
+`
+
+type SetInstitutionISPBParams struct {
+	Ispb   *string
+	UserID int64
+	ID     uuid.UUID
+}
+
+func (q *Queries) SetInstitutionISPB(ctx context.Context, arg SetInstitutionISPBParams) (LedgerInstitution, error) {
+	row := q.db.QueryRow(ctx, setInstitutionISPB, arg.Ispb, arg.UserID, arg.ID)
+	var i LedgerInstitution
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.Code,
+		&i.Ispb,
 	)
 	return i, err
 }

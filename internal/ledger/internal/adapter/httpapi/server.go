@@ -76,11 +76,19 @@ func (s *Server) ListInstitutions(ctx context.Context, req ListInstitutionsReque
 }
 
 func (s *Server) CreateInstitution(ctx context.Context, req CreateInstitutionRequestObject) (CreateInstitutionResponseObject, error) {
-	i, err := s.svc.CreateInstitution(ctx, auth.MustUserID(ctx), req.Body.Name, optString(req.Body.Code))
+	i, err := s.svc.CreateInstitution(ctx, auth.MustUserID(ctx), app.Institution{Name: req.Body.Name, Code: optString(req.Body.Code), ISPB: optString(req.Body.Ispb)})
 	if err != nil {
 		return nil, err
 	}
 	return CreateInstitution201JSONResponse(toInstitutionAPI(i)), nil
+}
+
+func (s *Server) SetInstitutionISPB(ctx context.Context, req SetInstitutionISPBRequestObject) (SetInstitutionISPBResponseObject, error) {
+	i, err := s.svc.SetInstitutionISPB(ctx, auth.MustUserID(ctx), req.Id, optString(req.Body.Ispb))
+	if err != nil {
+		return nil, err
+	}
+	return SetInstitutionISPB200JSONResponse(toInstitutionAPI(i)), nil
 }
 
 func (s *Server) ListPayees(ctx context.Context, req ListPayeesRequestObject) (ListPayeesResponseObject, error) {
@@ -127,13 +135,16 @@ func (s *Server) ListAccounts(ctx context.Context, req ListAccountsRequestObject
 	if err != nil {
 		return nil, err
 	}
-	rows, next, err := s.svc.ListAccounts(ctx, auth.MustUserID(ctx), p)
+	userID := auth.MustUserID(ctx)
+	rows, next, err := s.svc.ListAccounts(ctx, userID, p)
 	if err != nil {
 		return nil, err
 	}
 	out := ListAccounts200JSONResponse{Items: make([]Account, len(rows))}
 	for i, r := range rows {
-		out.Items[i] = toAccountAPI(r)
+		if out.Items[i], err = s.accountAPI(ctx, userID, r); err != nil {
+			return nil, err
+		}
 	}
 	out.NextCursor, err = page.Next(next)
 	return out, err
@@ -153,16 +164,25 @@ func (s *Server) GetAccount(ctx context.Context, req GetAccountRequestObject) (G
 	if err != nil {
 		return nil, err
 	}
+	out, err := s.accountAPI(ctx, userID, a)
+	if err != nil {
+		return nil, err
+	}
+	return GetAccount200JSONResponse(out), nil
+}
+
+// accountAPI is an account with the limits of a card, when it is one with a credit limit.
+func (s *Server) accountAPI(ctx context.Context, userID int64, a domain.Account) (Account, error) {
 	out := toAccountAPI(a)
 	summary, err := s.svc.CardSummary(ctx, userID, a)
 	if err != nil {
-		return nil, err
+		return Account{}, err
 	}
 	if summary != nil {
 		limit, available := toMoneyAPI(summary.CreditLimit), toMoneyAPI(summary.AvailableLimit)
 		out.Card = &CardSummary{CreditLimit: &limit, AvailableLimit: &available}
 	}
-	return GetAccount200JSONResponse(out), nil
+	return out, nil
 }
 
 func (s *Server) UpdateAccount(ctx context.Context, req UpdateAccountRequestObject) (UpdateAccountResponseObject, error) {
@@ -344,7 +364,7 @@ func (s *Server) GetTransaction(ctx context.Context, req GetTransactionRequestOb
 	out := toTransactionAPI(t)
 	referencedBy := make([]LinkReference, len(refs))
 	for i, r := range refs {
-		referencedBy[i] = LinkReference{Type: LinkReferenceType(r.Type), Source: r.Source}
+		referencedBy[i] = LinkReference{Type: LinkReferenceType(r.Type), Source: r.Source, Amount: linkAmountAPI(r.Amount, r.Currency)}
 	}
 	out.ReferencedBy = &referencedBy
 	return GetTransaction200JSONResponse(out), nil
@@ -463,6 +483,62 @@ func (s *Server) TransferTransaction(ctx context.Context, req TransferTransactio
 	out := TransferTransaction200JSONResponse{Transaction: toTransactionAPI(t)}
 	if res.Voided != uuid.Nil {
 		out.VoidedTransactionId = &res.Voided
+	}
+	return out, nil
+}
+
+func (s *Server) ReimburseTransaction(ctx context.Context, req ReimburseTransactionRequestObject) (ReimburseTransactionResponseObject, error) {
+	userID := auth.MustUserID(ctx)
+	in := app.ReimbursementRequest{
+		TransactionID: req.Id, ExpectedVersion: req.Body.ExpectedVersion, Cause: app.Cause{Method: app.MethodManual},
+		Allocations: make([]app.AllocationRequest, len(req.Body.Allocations)),
+	}
+	for i, a := range req.Body.Allocations {
+		amount, err := fromMoneyAPI(fmt.Sprintf("allocations[%d].amount", i), a.Amount)
+		if err != nil {
+			return nil, err
+		}
+		in.Allocations[i] = app.AllocationRequest{OriginalID: a.OriginalId, Amount: amount}
+		if a.CategoryId != nil {
+			in.Allocations[i].CategoryID = *a.CategoryId
+		}
+	}
+	done, err := s.svc.Reimburse(ctx, userID, in)
+	if err != nil {
+		return nil, err
+	}
+	t, err := s.svc.Transaction(ctx, userID, done.ID)
+	if err != nil {
+		return nil, err
+	}
+	return ReimburseTransaction200JSONResponse(toTransactionAPI(t)), nil
+}
+
+func (s *Server) ListReimbursementCandidates(ctx context.Context, req ListReimbursementCandidatesRequestObject) (ListReimbursementCandidatesResponseObject, error) {
+	candidates, suggestion, err := s.svc.ReimbursementCandidates(ctx, auth.MustUserID(ctx), req.Id)
+	if err != nil {
+		return nil, err
+	}
+	out := ListReimbursementCandidates200JSONResponse{Items: make([]ReimbursementCandidate, len(candidates))}
+	for i, c := range candidates {
+		out.Items[i] = ReimbursementCandidate{
+			Transaction: toTransactionAPI(c.Transaction), Remaining: toMoneyAPI(c.Remaining), Allocated: toMoneyAPI(c.Allocated),
+		}
+	}
+	if len(suggestion) > 0 {
+		out.Suggestion = &suggestion
+	}
+	return out, nil
+}
+
+func (s *Server) ListReimbursementSources(ctx context.Context, req ListReimbursementSourcesRequestObject) (ListReimbursementSourcesResponseObject, error) {
+	sources, err := s.svc.ReimbursementSources(ctx, auth.MustUserID(ctx), req.Id)
+	if err != nil {
+		return nil, err
+	}
+	out := ListReimbursementSources200JSONResponse{Items: make([]ReimbursementSource, len(sources))}
+	for i, c := range sources {
+		out.Items[i] = ReimbursementSource{Transaction: toTransactionAPI(c.Transaction), Free: toMoneyAPI(c.Free)}
 	}
 	return out, nil
 }

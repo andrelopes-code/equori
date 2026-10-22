@@ -12,6 +12,69 @@ import (
 	"github.com/google/uuid"
 )
 
+const accountFlows = `-- name: AccountFlows :many
+SELECT r.date, r.inflow_booked, r.outflow_booked
+FROM reporting_account_day r
+WHERE r.user_id = $1 AND r.account_id = $2 AND r.date BETWEEN $3::date AND $4::date
+  AND (r.inflow_booked <> 0 OR r.outflow_booked <> 0)
+ORDER BY r.date
+`
+
+type AccountFlowsParams struct {
+	UserID    int64
+	AccountID uuid.UUID
+	FromDate  time.Time
+	ToDate    time.Time
+}
+
+type AccountFlowsRow struct {
+	Date          time.Time
+	InflowBooked  int64
+	OutflowBooked int64
+}
+
+// A119: the booked inflow and outflow of the account itself, one row per day with a posting.
+func (q *Queries) AccountFlows(ctx context.Context, arg AccountFlowsParams) ([]AccountFlowsRow, error) {
+	rows, err := q.db.Query(ctx, accountFlows,
+		arg.UserID,
+		arg.AccountID,
+		arg.FromDate,
+		arg.ToDate,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AccountFlowsRow
+	for rows.Next() {
+		var i AccountFlowsRow
+		if err := rows.Scan(&i.Date, &i.InflowBooked, &i.OutflowBooked); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const accountInstrument = `-- name: AccountInstrument :one
+SELECT instrument FROM ledger_account WHERE user_id = $1 AND id = $2
+`
+
+type AccountInstrumentParams struct {
+	UserID    int64
+	AccountID uuid.UUID
+}
+
+func (q *Queries) AccountInstrument(ctx context.Context, arg AccountInstrumentParams) (string, error) {
+	row := q.db.QueryRow(ctx, accountInstrument, arg.UserID, arg.AccountID)
+	var instrument string
+	err := row.Scan(&instrument)
+	return instrument, err
+}
+
 const categoryTotals = `-- name: CategoryTotals :many
 SELECT a.id, a.parent_id, a.name, a.instrument, a.closed_on, coalesce(sum(r.delta_booked), 0)::bigint AS total
 FROM ledger_account a
@@ -85,12 +148,15 @@ func (q *Queries) DeleteAccountDaysFrom(ctx context.Context, arg DeleteAccountDa
 }
 
 const insertAccountDaysFrom = `-- name: InsertAccountDaysFrom :exec
-INSERT INTO reporting_account_day (user_id, account_id, date, delta_booked, delta_settled, balance_booked, balance_settled)
+INSERT INTO reporting_account_day (user_id, account_id, date, delta_booked, delta_settled, balance_booked, balance_settled, inflow_booked, outflow_booked)
 SELECT $1::bigint, $2::uuid, d.date, d.delta_booked, d.delta_settled,
        base.booked + sum(d.delta_booked) OVER w,
-       base.settled + sum(d.delta_settled) OVER w
+       base.settled + sum(d.delta_settled) OVER w,
+       d.inflow, d.outflow
 FROM (
-    SELECT x.date, sum(x.booked)::bigint AS delta_booked, sum(x.settled)::bigint AS delta_settled
+    SELECT x.date, sum(x.booked)::bigint AS delta_booked, sum(x.settled)::bigint AS delta_settled,
+           coalesce(sum(x.booked) FILTER (WHERE x.booked > 0), 0)::bigint AS inflow,
+           coalesce(-sum(x.booked) FILTER (WHERE x.booked < 0), 0)::bigint AS outflow
     FROM (
         SELECT p.booked_on AS date, p.amount AS booked, 0::bigint AS settled
         FROM ledger_posting p
@@ -102,7 +168,7 @@ FROM (
           AND coalesce(p.settled_on, p.booked_on) >= $3::date
     ) x
     GROUP BY x.date
-    HAVING sum(x.booked) <> 0 OR sum(x.settled) <> 0
+    HAVING sum(x.booked) <> 0 OR sum(x.settled) <> 0 OR bool_or(x.booked <> 0)
 ) d
 CROSS JOIN (
     SELECT coalesce(sum(p.amount) FILTER (WHERE p.booked_on < $3::date), 0)::bigint AS booked,

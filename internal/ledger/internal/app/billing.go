@@ -120,3 +120,74 @@ func (s *Service) statementSummaries(ctx context.Context, r Repository, userID i
 	}
 	return out, nil
 }
+
+// StatementPlacement is the statement a card purchase would be billed on, and the statement
+// before it when a rule or a stored statement gives its dates.
+type StatementPlacement struct {
+	Reference domain.ReferenceMonth
+	Closing   time.Time
+	Due       time.Time
+	Previous  *StatementDates
+}
+
+type StatementDates struct {
+	Closing time.Time
+	Due     time.Time
+}
+
+// PlaceStatement resolves the statement of a purchase dated d as bill would, without
+// storing it: a stored statement keeps its dates, a new one gets the rule's adjusted dates.
+func (s *Service) PlaceStatement(ctx context.Context, userID int64, cardID uuid.UUID, d time.Time) (StatementPlacement, error) {
+	if _, err := s.card(ctx, userID, cardID); err != nil {
+		return StatementPlacement{}, err
+	}
+	rules, err := s.repo.BillingRules(ctx, userID, cardID)
+	if err != nil {
+		return StatementPlacement{}, err
+	}
+	ref, err := s.statementOn(ctx, s.repo, userID, cardID, d, rules)
+	if errors.Is(err, domain.ErrNoBillingRule) {
+		return StatementPlacement{}, validationError("date", "card has no billing cycle rule for the date")
+	}
+	if err != nil {
+		return StatementPlacement{}, err
+	}
+	stored, err := s.repo.Statements(ctx, userID, cardID)
+	if err != nil {
+		return StatementPlacement{}, err
+	}
+	dates, err := s.statementDates(ctx, ref, rules, stored)
+	if errors.Is(err, domain.ErrNoBillingRule) {
+		return StatementPlacement{}, validationError("date", "no billing cycle rule covers the statement")
+	}
+	if err != nil {
+		return StatementPlacement{}, err
+	}
+	out := StatementPlacement{Reference: ref, Closing: dates.Closing, Due: dates.Due}
+	previous, err := s.statementDates(ctx, ref.Add(-1), rules, stored)
+	switch {
+	case err == nil:
+		out.Previous = &previous
+	case !errors.Is(err, domain.ErrNoBillingRule):
+		return StatementPlacement{}, err
+	}
+	return out, nil
+}
+
+func (s *Service) statementDates(ctx context.Context, ref domain.ReferenceMonth, rules domain.Rules, stored []Statement) (StatementDates, error) {
+	for _, st := range stored {
+		if st.Input.Reference == ref {
+			return StatementDates{Closing: st.Input.Closing, Due: st.Input.Due}, nil
+		}
+	}
+	rule, err := rules.For(ref)
+	if err != nil {
+		return StatementDates{}, err
+	}
+	dates := domain.DatesFor(ref, rule)
+	due, err := s.cal.Adjust(ctx, rule.Calendar, dates.DueUnadjusted, rule.Adjustment)
+	if err != nil {
+		return StatementDates{}, err
+	}
+	return StatementDates{Closing: s.shiftClosing(ctx, dates.Closing, rule), Due: due}, nil
+}

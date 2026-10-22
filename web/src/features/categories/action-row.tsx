@@ -4,8 +4,8 @@ import { Glyph, Icon } from "@slotted/react/icon";
 import { Text } from "@slotted/react/typography";
 
 import { CategoryPicker } from "@/features/categories/category-picker";
-import { ChoiceSelect } from "@/features/categories/choice-select";
-import type { Choice } from "@/features/categories/choice-select";
+import { ChoiceSelect } from "@/ui/choice-select";
+import type { Choice } from "@/ui/choice-select";
 import styles from "@/features/categories/action-row.module.css";
 import { emptyAction } from "@/features/categories/rule-draft";
 import type { RuleActionInput } from "@/features/categories/rule-draft";

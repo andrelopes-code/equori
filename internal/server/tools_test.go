@@ -24,6 +24,7 @@ var exclusions = map[string]bool{
 	"-write":   true, // the operation changes data; no write tool exists yet
 	"-binary":  true, // file content
 	"-pending": true, // a read operation without a tool yet
+	"-capture": true, // the capture screen's typing loop; a language model reads text without it (capture A116)
 }
 
 func operationIDs(t *testing.T) []string {
@@ -58,7 +59,7 @@ func TestToolExposure(t *testing.T) {
 		}
 		if strings.HasPrefix(v, "-") {
 			if !exclusions[v] {
-				t.Errorf("operation %s has exclusion %q, not one of -session, -write, -binary, -pending", op, v)
+				t.Errorf("operation %s has exclusion %q, not one of -session, -write, -binary, -pending, -capture", op, v)
 			}
 			continue
 		}

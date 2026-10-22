@@ -131,25 +131,24 @@
     pointer-events: none;
   }
 
-  /* Android's extended floating action button, 56 px high, over the bar's inline end. */
+  /* Android's floating action button: a 56 px square of 16 px corners holding the mark alone,
+     16 px above the bar's inline end. */
   .fab {
     position: absolute;
     inset-block-end: calc(100% + var(--slotted-space-6));
     inset-inline-end: max(var(--slotted-space-6), env(safe-area-inset-right));
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     block-size: 3.5rem;
-    min-inline-size: 3.5rem;
+    inline-size: 3.5rem;
     box-sizing: border-box;
-    padding-inline: var(--slotted-space-6);
+    padding: 0;
     border: 0;
     border-radius: 1rem;
     background: var(--slotted-tone-accent-solid);
     box-shadow: var(--slotted-shadow-md);
     color: var(--slotted-tone-accent-on-solid);
-    font: inherit;
-    font-size: var(--slotted-font-size-md);
-    font-weight: var(--slotted-font-weight-semibold);
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
@@ -177,25 +176,5 @@
     outline: var(--slotted-focus-ring-width) solid
       var(--slotted-focus-ring-color);
     outline-offset: var(--slotted-focus-ring-offset);
-  }
-
-  /* Folded, the label keeps its place in the accessibility tree and gives up its width. */
-  .fabLabel {
-    display: inline-block;
-    max-inline-size: 12rem;
-    overflow: hidden;
-    padding-inline-start: var(--slotted-space-5);
-    white-space: nowrap;
-    transition:
-      max-inline-size var(--slotted-duration-medium)
-        var(--slotted-easing-standard),
-      padding var(--slotted-duration-medium) var(--slotted-easing-standard),
-      opacity var(--slotted-duration-short) var(--slotted-easing-standard);
-  }
-
-  .fab[data-folded] .fabLabel {
-    max-inline-size: 0;
-    padding-inline-start: 0;
-    opacity: 0;
   }
 }

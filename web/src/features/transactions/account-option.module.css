@@ -1,0 +1,85 @@
+@layer app {
+  /* One row: the mark, the account in a tight block, and what choosing it does on the right.
+     The row is as tall as its content; the radio's tile keeps the target size. */
+  .option {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: var(--slotted-space-5);
+    min-inline-size: 0;
+    padding-block: var(--slotted-space-2);
+    padding-inline: var(--slotted-space-1) var(--slotted-space-3);
+    text-align: start;
+  }
+
+  .text {
+    display: grid;
+    min-inline-size: 0;
+    line-height: var(--slotted-line-height-sm);
+  }
+
+  .title {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-3);
+    min-inline-size: 0;
+  }
+
+  .name {
+    overflow: hidden;
+    font-weight: var(--slotted-font-weight-semibold);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The tag keeps its word whole; the name gives way first. */
+  .tag {
+    display: inline-flex;
+    flex: none;
+  }
+
+  .detail {
+    overflow: hidden;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .detail::first-letter {
+    text-transform: uppercase;
+  }
+
+  .note {
+    margin-block-start: var(--slotted-space-1);
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+  }
+
+  /* A state is told by its words and their weight; the tone only adds to them. */
+  .note[data-warning] {
+    color: var(--slotted-tone-warning-text);
+  }
+
+  .figure {
+    display: grid;
+    justify-items: end;
+    line-height: var(--slotted-line-height-sm);
+    text-align: end;
+  }
+
+  .label {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+  }
+
+  .value {
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--slotted-font-weight-semibold);
+    white-space: nowrap;
+  }
+
+  .figure[data-warning] .value {
+    color: var(--slotted-tone-warning-text);
+  }
+}

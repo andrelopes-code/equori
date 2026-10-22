@@ -85,6 +85,7 @@ func requireViolation(t *testing.T, err error, code, contains string) {
 const (
 	checkViolation      = "23514"
 	foreignKeyViolation = "23503"
+	uniqueViolation     = "23505"
 )
 
 // A73: the account tree has no cycle.
@@ -228,4 +229,18 @@ func TestDBRejectsSaleWithoutCost(t *testing.T) {
 	_, err = f.pool.Exec(ctx, `INSERT INTO ledger_trade (transaction_id, user_id, account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, currency)
 		VALUES ($1, $2, $3, $4, 'buy', 1, 1, 100, 0, 5, 'BRL')`, id, f.userID, other, cash)
 	requireViolation(t, err, checkViolation, "")
+}
+
+// ADR 013: the ISPB has eight digits and names one institution of a user.
+func TestInstitutionISPBChecks(t *testing.T) {
+	t.Parallel()
+	f := newSchemaFixture(t)
+	_, err := f.pool.Exec(t.Context(), `INSERT INTO ledger_institution (user_id, name, ispb) VALUES ($1, 'Bad', '1823612A')`, f.userID)
+	requireViolation(t, err, checkViolation, "ispb")
+	_, err = f.pool.Exec(t.Context(), `INSERT INTO ledger_institution (user_id, name, ispb) VALUES ($1, 'Nubank', '18236120')`, f.userID)
+	if err != nil {
+		t.Fatalf("insert institution: %v", err)
+	}
+	_, err = f.pool.Exec(t.Context(), `INSERT INTO ledger_institution (user_id, name, ispb) VALUES ($1, 'Nu', '18236120')`, f.userID)
+	requireViolation(t, err, uniqueViolation, "ispb")
 }

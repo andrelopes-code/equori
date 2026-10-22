@@ -2,12 +2,16 @@
 <html lang="en" data-slotted-theme="equori" data-slotted-scheme="dark">
   <head>
     <meta charset="UTF-8" />
+    <!-- resizes-content: the on-screen keyboard shrinks the layout, as Android's adjustResize
+         does, so a full-screen layer such as the command palette ends above the keys and its
+         list scrolls in its own box. It also covers the Slotted finding "A full-screen dialog
+         does not recede by the on-screen keyboard". -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
     />
-    <!-- #111417 is --slotted-surface in the dark scheme (equori.gen.css). -->
-    <meta name="theme-color" content="#111417" />
+    <!-- #0c0c0f is --slotted-surface in the dark scheme (equori.gen.css). -->
+    <meta name="theme-color" content="#0c0c0f" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <title>equori</title>

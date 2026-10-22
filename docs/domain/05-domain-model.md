@@ -195,7 +195,8 @@ classDiagram
 | `installment`, `installmentPlan` | Set together, only on card postings that belong to a plan. |
 | `originalAmount` | Amount in the currency of the original charge when it differs from the account instrument (foreign purchase on a BRL card, M11). Informational; the rate is `amount / originalAmount`. A currency other than the account instrument, non-zero, with the sign of the amount (P8 amendment A64). |
 | Correction | A correction creates version n+1 of the same transaction and keeps version n in history. Allowed while no posting of the transaction is `reconciled` (I05). Otherwise the change is a new transaction linked `correction_of`. |
-| Void | Sets `voidedAt`; the transaction stops counting in every balance. Same restrictions as correction. |
+| Void | Sets `voidedAt`; the transaction stops counting in every balance and leaves the uncategorized queue, since it cannot be categorized (A105). Same restrictions as correction. |
+| Reimbursement | The repayment of recorded expenses by an inflow (A117). The inflow holds a list of allocations, one per expense, each stored as a `reimbursement_of` link with the amount it repays. The category side of the inflow is, for each allocation, negative postings on the expense categories of that expense, in proportion to their amounts, plus the unallocated rest on Uncategorized income. The non-voided reimbursements of an expense never total more than its expense category amounts. The list is replaced as a whole. A correction that names no links keeps the ones the transaction has; an empty list clears them. Recategorizing an expense afterwards does not move the reimbursements. |
 | Origin | `manual`, `import`, `schedule`, `system` (yield, adjustment, revolving). Informational. |
 
 Example of I01 with two currencies (exchange of 5,483.00 BRL into 1,000.00 USD):

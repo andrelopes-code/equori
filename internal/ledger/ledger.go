@@ -308,6 +308,16 @@ func (m *Module) BaseCurrency(ctx context.Context, userID int64) (money.Currency
 	return s.BaseCurrency, err
 }
 
+// CaptureAccount is a balance account with the names a capture line may use for it.
+type CaptureAccount = app.CaptureAccount
+
+type CapturePayee = app.CapturePayee
+
+// CaptureVocabulary returns the balance accounts and the live payees a capture reads against.
+func (m *Module) CaptureVocabulary(ctx context.Context, userID int64) ([]CaptureAccount, []CapturePayee, error) {
+	return m.svc.CaptureVocabulary(ctx, userID)
+}
+
 func (m *Module) AccountFacts(ctx context.Context, userID int64) ([]AccountFact, error) {
 	return m.svc.AccountFacts(ctx, userID)
 }

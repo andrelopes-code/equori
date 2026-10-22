@@ -59,6 +59,13 @@ sql:
         out: internal/classification/internal/adapter/postgres
   - engine: postgresql
     schema: db/migrations
+    queries: db/queries/capture
+    gen:
+      go:
+        <<: *go
+        out: internal/capture/internal/adapter/postgres
+  - engine: postgresql
+    schema: db/migrations
     queries: db/queries/portfolio
     gen:
       go:

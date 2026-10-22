@@ -1,15 +1,22 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect } from "react";
 
+import { readEntryForm } from "@/features/transactions";
+
 const editable =
   'input, textarea, select, [contenteditable=""], [contenteditable="true"]';
 const overlay = '[role="dialog"], [role="alertdialog"], [role="menu"]';
 
-// Opens the form of a new transaction.
+// Opens the entry form the owner used last: the transaction form or the text (A115).
 export function useEntry(): () => void {
   const navigate = useNavigate();
   return useCallback(() => {
-    void navigate({ to: "/transactions/new" });
+    void navigate({
+      to:
+        readEntryForm() === "text"
+          ? "/transactions/capture"
+          : "/transactions/new",
+    });
   }, [navigate]);
 }
 

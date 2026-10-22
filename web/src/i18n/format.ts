@@ -191,6 +191,20 @@ export function formatDayMonth(iso: string, locale: Locale): string {
     : `${p.day ?? ""} ${p.month ?? ""}`;
 }
 
+// "05/11" / "11/05".
+export function formatDayMonthNumeric(iso: string, locale: Locale): string {
+  return dateFormat(locale, { day: "2-digit", month: "2-digit" }).format(
+    utcDate(iso),
+  );
+}
+
+// "5 de novembro" / "November 5".
+export function formatDayMonthLong(iso: string, locale: Locale): string {
+  return dateFormat(locale, { day: "numeric", month: "long" }).format(
+    utcDate(iso),
+  );
+}
+
 export function formatDayHeader(
   iso: string,
   today: string,

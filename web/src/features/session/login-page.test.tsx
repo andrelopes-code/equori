@@ -41,13 +41,14 @@ function sessionApi(opts: {
   return { fetch, state };
 }
 
-// The required mark is part of the label text, so the label matches by substring.
+// The required mark is part of the label text, so the label matches by substring. The selector
+// excludes the password's reveal button, whose name also contains the label.
 function getField(label: string) {
-  return screen.getByLabelText(label, { exact: false });
+  return screen.getByLabelText(label, { exact: false, selector: "input" });
 }
 
 function findField(label: string) {
-  return screen.findByLabelText(label, { exact: false });
+  return screen.findByLabelText(label, { exact: false, selector: "input" });
 }
 
 async function signIn(email: string, password: string) {

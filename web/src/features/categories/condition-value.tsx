@@ -6,8 +6,8 @@ import { Switch } from "@slotted/react/switch";
 import { TextField } from "@slotted/react/text-field";
 
 import type { components } from "@/api/schema.gen";
-import { ChoiceSelect } from "@/features/categories/choice-select";
-import type { Choice } from "@/features/categories/choice-select";
+import { ChoiceSelect } from "@/ui/choice-select";
+import type { Choice } from "@/ui/choice-select";
 import type { RuleCondition } from "@/features/categories/rule-draft";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";

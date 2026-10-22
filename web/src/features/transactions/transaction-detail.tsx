@@ -16,7 +16,6 @@ import {
   PageHeaderTitle,
   PageHeaderTitleArea,
   PageHeaderTitleRow,
-  PageHeaderVisual,
 } from "@slotted/react/page-header";
 import {
   ResultState,
@@ -25,18 +24,26 @@ import {
   ResultStateDescription,
   ResultStateTitle,
 } from "@slotted/react/result-state";
+import { SectionDefaultsProvider } from "@slotted/react/section";
 import { Tag } from "@slotted/react/tag";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
 import { ProblemError, errorText } from "@/api/problem";
-import { CategoryMark, useCategoryEntries } from "@/features/categories";
+import { useCategoryEntries } from "@/features/categories";
 import { DetailActions } from "@/features/transactions/detail-actions";
 import { AttachmentsSection } from "@/features/transactions/attachments-section";
 import { CategorySection } from "@/features/transactions/category-section";
 import { HistorySection } from "@/features/transactions/history-section";
 import { LinksSection } from "@/features/transactions/links-section";
 import { PostingsTable } from "@/features/transactions/postings-table";
+import { ReimbursementDialog } from "@/features/transactions/reimbursement-dialog";
+import {
+  expenseState,
+  reimbursementState,
+} from "@/features/transactions/reimbursement";
+import { RepaymentDialog } from "@/features/transactions/repayment-dialog";
+import { ReimbursementSuggestion } from "@/features/transactions/reimbursement-suggestion";
 import { TransactionFacts } from "@/features/transactions/transaction-facts";
 import { transactionRow } from "@/features/transactions/transaction-row";
 import { TransferDialog } from "@/features/transactions/transfer-dialog";
@@ -63,6 +70,8 @@ export function TransactionDetail({
   const wide = useMediaQuery(wideQuery);
   const [voiding, setVoiding] = useState(false);
   const [transferring, setTransferring] = useState(false);
+  const [reimbursing, setReimbursing] = useState(false);
+  const [repaying, setRepaying] = useState(false);
 
   const ready = data.status === "ready" ? data : undefined;
   const entries = useCategoryEntries(ready?.accounts);
@@ -161,7 +170,6 @@ export function TransactionDetail({
   const tx = ready.transaction;
   const payees = new Map(ready.payees.map((p) => [p.id, p.name]));
   const row = transactionRow(tx, accounts, payees);
-  const first = categories.get(row.categoryIds[0] ?? "");
   const voided = tx.voided_at !== undefined;
   const pending = tx.postings.some((p) => p.status === "pending");
   const amount = formatMoney(
@@ -181,14 +189,6 @@ export function TransactionDetail({
         <PageHeaderTitleArea>
           {back}
           <PageHeaderTitleRow>
-            <PageHeaderVisual>
-              <CategoryMark
-                name={first?.name ?? row.title}
-                color={first?.color}
-                icon={first?.icon}
-                size="lg"
-              />
-            </PageHeaderVisual>
             <PageHeaderTitle>
               <PageHeaderHeading>
                 {row.title || t("transactions.untitled")}
@@ -216,6 +216,8 @@ export function TransactionDetail({
                 host={host}
                 voided={voided}
                 transfer={row.transfer}
+                inflow={reimbursementState(tx, accounts).inflow}
+                expense={expenseState(tx, accounts).expense}
                 onCorrect={() => {
                   void navigate({
                     to: "/transactions/$id/correct",
@@ -224,6 +226,12 @@ export function TransactionDetail({
                 }}
                 onTransfer={() => {
                   setTransferring(true);
+                }}
+                onReimburse={() => {
+                  setReimbursing(true);
+                }}
+                onRepay={() => {
+                  setRepaying(true);
                 }}
                 onVoid={() => {
                   setVoiding(true);
@@ -240,51 +248,80 @@ export function TransactionDetail({
           </PageHeaderTitleRow>
         </PageHeaderTitleArea>
       </PageHeader>
-      <DetailPanelBody
-        aside={
-          <TransactionFacts
-            transaction={tx}
-            payee={
-              tx.payee_id === undefined ? undefined : payees.get(tx.payee_id)
-            }
-          />
-        }
-      >
-        {!row.transfer && (
-          <DetailPanelSection name="category" label={t("detail.category")}>
-            <CategorySection
+      <SectionDefaultsProvider sticky>
+        <DetailPanelBody
+          aside={
+            <TransactionFacts
               transaction={tx}
+              payee={
+                tx.payee_id === undefined ? undefined : payees.get(tx.payee_id)
+              }
+            />
+          }
+        >
+          {!voided && (
+            <ReimbursementSuggestion
+              transaction={tx}
+              accounts={accounts}
+              scale={ready.scale}
+              onChooseAnother={() => {
+                setReimbursing(true);
+              }}
+            />
+          )}
+          {!row.transfer && (
+            <DetailPanelSection name="category" label={t("detail.category")}>
+              <CategorySection
+                transaction={tx}
+                accounts={accounts}
+                categories={categories}
+                scale={ready.scale}
+              />
+            </DetailPanelSection>
+          )}
+          <DetailPanelSection
+            name="postings"
+            label={t("detail.postings")}
+            count={tx.postings.length}
+          >
+            <PostingsTable
+              postings={tx.postings}
               accounts={accounts}
               categories={categories}
               scale={ready.scale}
             />
           </DetailPanelSection>
-        )}
-        <DetailPanelSection
-          name="postings"
-          label={t("detail.postings")}
-          count={tx.postings.length}
-        >
-          <PostingsTable
-            postings={tx.postings}
-            accounts={accounts}
-            categories={categories}
-            scale={ready.scale}
-          />
-        </DetailPanelSection>
-        {hasLinks && (
-          <DetailPanelSection name="links" label={t("detail.links")}>
-            <LinksSection transaction={tx} />
+          {hasLinks && (
+            <DetailPanelSection name="links" label={t("detail.links")}>
+              <LinksSection transaction={tx} />
+            </DetailPanelSection>
+          )}
+          <DetailPanelSection
+            name="attachments"
+            label={t("detail.attachments")}
+          >
+            <AttachmentsSection transactionId={tx.id} readOnly={voided} />
           </DetailPanelSection>
-        )}
-        <DetailPanelSection name="attachments" label={t("detail.attachments")}>
-          <AttachmentsSection transactionId={tx.id} readOnly={voided} />
-        </DetailPanelSection>
-        <DetailPanelSection name="history" label={t("detail.history")}>
-          <HistorySection transaction={tx} />
-        </DetailPanelSection>
-      </DetailPanelBody>
+          <DetailPanelSection name="history" label={t("detail.history")}>
+            <HistorySection transaction={tx} />
+          </DetailPanelSection>
+        </DetailPanelBody>
+      </SectionDefaultsProvider>
       <VoidDialog transaction={tx} open={voiding} onOpenChange={setVoiding} />
+      <RepaymentDialog
+        transaction={tx}
+        accounts={ready.accounts}
+        scale={ready.scale}
+        open={repaying}
+        onOpenChange={setRepaying}
+      />
+      <ReimbursementDialog
+        transaction={tx}
+        accounts={ready.accounts}
+        scale={ready.scale}
+        open={reimbursing}
+        onOpenChange={setReimbursing}
+      />
       <TransferDialog
         transaction={tx}
         accounts={ready.accounts}

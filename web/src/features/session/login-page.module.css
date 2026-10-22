@@ -1,0 +1,141 @@
+@layer app {
+  /* Phone: the brand is a band above the form. From 60rem it is a column beside it. */
+  .shell {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    min-block-size: 100%;
+  }
+
+  @media (min-width: 60rem) {
+    .shell {
+      grid-template-columns: minmax(0, 11fr) minmax(0, 9fr);
+      grid-template-rows: minmax(0, 1fr);
+      min-block-size: 100dvh;
+    }
+  }
+
+  /* The highlight is a gradient that ends inside the panel's own box, so no edge cuts it. */
+  .brand {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: var(--slotted-space-8);
+    padding: var(--slotted-space-6) var(--slotted-space-6)
+      var(--slotted-space-8);
+    background-color: var(--slotted-tone-accent-solid);
+    background-image: radial-gradient(
+      ellipse 90% 70% at 0% 0%,
+      color-mix(in oklch, var(--slotted-tone-accent-on-solid) 16%, transparent),
+      transparent
+    );
+    color: var(--slotted-tone-accent-on-solid);
+  }
+
+  @media (min-width: 60rem) {
+    .brand {
+      padding: var(--slotted-space-12);
+    }
+  }
+
+  .lockup {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--slotted-space-3);
+  }
+
+  .wordmark {
+    font-family: var(--slotted-font-family-heading);
+    font-size: var(--slotted-font-size-xl);
+    font-weight: var(--slotted-font-weight-semibold);
+    /* Optical tracking of the wordmark, as in the navigation's. */
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+
+  .statement {
+    display: grid;
+    gap: var(--slotted-space-5);
+    justify-items: start;
+  }
+
+  .tagline {
+    margin: 0;
+    font-family: var(--slotted-font-family-heading);
+    /* A measure in em, so the line breaks follow the type size. */
+    max-inline-size: 13em;
+    letter-spacing: -0.02em;
+  }
+
+  /* The accountant's double rule under a closed total. */
+  .rule {
+    display: block;
+    inline-size: 3.5rem;
+    block-size: 0.25rem;
+    border-block: var(--slotted-border-width-thin) solid currentColor;
+    opacity: 0.6;
+  }
+
+  .caption {
+    opacity: 0.8;
+  }
+
+  .watermark {
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    color: var(--slotted-tone-accent-on-solid);
+    opacity: 0.09;
+    /* Geometry of the crop: the mark is larger than the panel and bleeds off its lower end. */
+    inline-size: 16rem;
+    inset-block-start: -4rem;
+    inset-inline-end: -5rem;
+  }
+
+  @media (min-width: 60rem) {
+    .watermark {
+      inline-size: 44rem;
+      inset-block: auto -14rem;
+      inset-inline-end: -12rem;
+    }
+  }
+
+  .watermark svg {
+    display: block;
+    inline-size: 100%;
+    block-size: auto;
+  }
+
+  .formArea {
+    display: grid;
+    place-items: center;
+    min-block-size: 100%;
+    padding-block: var(--slotted-space-10);
+  }
+
+  /* 24rem is the measure of a two-field credential form; no token holds a form measure. */
+  .panel {
+    inline-size: min(100%, 24rem);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .panel {
+      animation: rise var(--slotted-duration-long)
+        var(--slotted-easing-standard) both;
+    }
+
+    .statement {
+      animation: rise var(--slotted-duration-long)
+        var(--slotted-easing-standard) 60ms both;
+    }
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(var(--slotted-space-3));
+    }
+  }
+}

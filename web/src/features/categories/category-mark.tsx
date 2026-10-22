@@ -1,35 +1,32 @@
-import { CategoryIcon } from "@/features/categories/category-icon";
-import styles from "@/features/categories/category-mark.module.css";
+import { CategoryAvatar } from "@/features/categories/category-avatar";
+import type { CategoryAvatarVariant } from "@/features/categories/category-avatar";
 import type { CategoryIconName } from "@/features/categories/category-paths";
 
-// Families read: avatar, icon. An avatar draws a person's face or initials; a category is
-// told apart by the colour and the icon its owner chose (A83), so the mark is the app's own.
-// It repeats the category's name beside it and stays out of the accessibility tree.
+const avatarSize = { sm: "sm", md: "md", xl: "lg" } as const;
+
+// The category's mark wherever a category is named, at the step of the place that holds it.
+// A long list draws it duotone; a category shown alone, as the subject of its place, draws it
+// solid.
 export function CategoryMark({
   name,
   color,
   icon,
   size = "sm",
+  variant = "duotone",
 }: {
   name: string;
   color?: number | undefined;
   icon?: CategoryIconName | undefined;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "xl";
+  variant?: Extract<CategoryAvatarVariant, "solid" | "duotone">;
 }) {
   return (
-    <span
-      className={styles.mark}
-      data-size={size}
-      data-color={color}
-      aria-hidden="true"
-    >
-      {icon === undefined ? (
-        Array.from(name.trim())[0]?.toLocaleUpperCase()
-      ) : (
-        <span className={styles.glyph}>
-          <CategoryIcon name={icon} />
-        </span>
-      )}
-    </span>
+    <CategoryAvatar
+      name={name}
+      variant={variant}
+      color={color}
+      icon={icon}
+      size={avatarSize[size]}
+    />
   );
 }

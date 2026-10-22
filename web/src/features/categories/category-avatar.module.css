@@ -1,0 +1,175 @@
+@layer app {
+  .avatar {
+    --avatar-size: var(--slotted-avatar-size-lg);
+    --avatar-color: var(--slotted-text-muted);
+    /* The tints of the category's colour: no token holds them, and the owner registers only one
+       colour per category. White lightens the colour as the stroke of a two-tone icon. */
+    --avatar-light: color-mix(in oklch, var(--avatar-color) 72%, white);
+    --avatar-body: color-mix(in oklch, var(--avatar-color) 38%, transparent);
+    --avatar-glow: color-mix(in oklch, var(--avatar-color) 60%, transparent);
+    --avatar-glyph: 50%;
+
+    position: relative;
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    box-sizing: border-box;
+    inline-size: var(--avatar-size);
+    block-size: var(--avatar-size);
+    /* A squircle: the corner follows the size, which no radius step does. */
+    border-radius: 32%;
+    font-size: calc(var(--avatar-size) * 0.4);
+    font-weight: var(--slotted-font-weight-semibold);
+    line-height: 1;
+  }
+
+  .avatar[data-size="sm"] {
+    --avatar-size: var(--slotted-avatar-size-md);
+  }
+
+  .avatar[data-size="lg"] {
+    --avatar-size: var(--slotted-avatar-size-xl);
+  }
+
+  .avatar[data-color="1"] {
+    --avatar-color: var(--slotted-data-1);
+  }
+
+  .avatar[data-color="2"] {
+    --avatar-color: var(--slotted-data-2);
+  }
+
+  .avatar[data-color="3"] {
+    --avatar-color: var(--slotted-data-3);
+  }
+
+  .avatar[data-color="4"] {
+    --avatar-color: var(--slotted-data-4);
+  }
+
+  .avatar[data-color="5"] {
+    --avatar-color: var(--slotted-data-5);
+  }
+
+  .avatar[data-color="6"] {
+    --avatar-color: var(--slotted-data-6);
+  }
+
+  .avatar[data-color="7"] {
+    --avatar-color: var(--slotted-data-7);
+  }
+
+  .avatar[data-color="8"] {
+    --avatar-color: var(--slotted-data-8);
+  }
+
+  .glyph {
+    display: block;
+    inline-size: var(--avatar-glyph);
+    block-size: var(--avatar-glyph);
+  }
+
+  /* Solid: the colour is the ground. The 1px light edge on top, the dark edge below and the
+     coloured glow are the finish of a raised tile; no shadow step draws an inset edge or a
+     coloured shadow. White is the ink on every data slot. */
+  .avatar[data-variant="solid"] {
+    background: var(--avatar-color);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.3),
+      inset 0 -1px 0 rgb(0 0 0 / 0.2),
+      var(--slotted-shadow-xs),
+      0 4px 10px -4px var(--avatar-glow);
+    color: white;
+  }
+
+  /* Duotone and dot: a neutral tile one step above the page, edged on the inside; the 5% white
+     line on top is the tile's light edge. */
+  .avatar[data-variant="duotone"],
+  .avatar[data-variant="dot"] {
+    background: var(--slotted-surface-raised);
+    box-shadow:
+      inset 0 0 0 var(--slotted-border-width-thin) var(--slotted-border-subtle),
+      inset 0 1px 0 rgb(255 255 255 / 0.05);
+  }
+
+  .avatar[data-variant="duotone"] {
+    color: var(--avatar-light);
+  }
+
+  .body {
+    fill: var(--avatar-body);
+  }
+
+  .avatar[data-variant="dot"] {
+    --avatar-glyph: 46%;
+
+    color: var(--slotted-text);
+  }
+
+  /* The dot is cut out of the ground it stands on; a holder on another ground sets
+     --category-avatar-ground. The 2px offset puts it past the tile's corner. */
+  .dot {
+    position: absolute;
+    inset-block-start: -2px;
+    inset-inline-end: -2px;
+    box-sizing: border-box;
+    inline-size: max(10px, calc(var(--avatar-size) * 0.28));
+    block-size: max(10px, calc(var(--avatar-size) * 0.28));
+    border: var(--slotted-border-width-thick) solid
+      var(--category-avatar-ground, var(--slotted-surface));
+    border-radius: var(--slotted-radius-full);
+    background: var(--avatar-color);
+  }
+
+  .avatar[data-variant="budget"] {
+    --avatar-glyph: 42%;
+
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-surface);
+    color: var(--avatar-light);
+  }
+
+  .ring {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    fill: none;
+    stroke-width: 2;
+  }
+
+  .track {
+    stroke: var(--slotted-border-subtle);
+  }
+
+  /* The arc starts at twelve o'clock and runs clockwise. */
+  .arc {
+    stroke: var(--avatar-color);
+    stroke-linecap: round;
+    transform: rotate(-90deg);
+    transform-origin: center;
+  }
+
+  @media (forced-colors: active) {
+    .avatar {
+      border: var(--slotted-border-width-thin) solid CanvasText;
+      forced-color-adjust: none;
+      background: Canvas;
+      color: CanvasText;
+    }
+
+    .body {
+      fill: none;
+    }
+
+    .track {
+      stroke: GrayText;
+    }
+
+    .arc,
+    .dot {
+      stroke: CanvasText;
+      background: CanvasText;
+    }
+  }
+}

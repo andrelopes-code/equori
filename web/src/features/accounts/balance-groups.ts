@@ -7,7 +7,7 @@ type Money = components["schemas"]["Money"];
 
 export type Group = "available" | "reserves" | "cards" | "loans";
 
-interface BalanceGroup {
+export interface BalanceGroup {
   group: Group;
   items: { account: Account; balance: Money }[];
   total: Money;
@@ -34,6 +34,8 @@ export function groupBalances(
   accounts: Account[],
   balances: Balance[],
   base: string,
+  // A closed account stays while it holds money; with includeClosed every closed one shows.
+  includeClosed = false,
 ): BalanceGroup[] {
   const balanceOf = new Map(balances.map((b) => [b.account_id, b.balance]));
   const byGroup = new Map<Group, BalanceGroup>();
@@ -43,7 +45,12 @@ export function groupBalances(
       amount: 0,
       currency: account.currency,
     };
-    if (account.closed_on !== undefined && balance.amount === 0) continue;
+    if (
+      account.closed_on !== undefined &&
+      balance.amount === 0 &&
+      !includeClosed
+    )
+      continue;
     const group = groupOfKind[account.kind];
     let entry = byGroup.get(group);
     if (entry === undefined) {

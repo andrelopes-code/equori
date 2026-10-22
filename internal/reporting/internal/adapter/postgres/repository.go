@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -49,6 +50,26 @@ func (r *Repository) Rebuild(ctx context.Context, userID int64, accountID uuid.U
 		}
 		return q.InsertAccountDaysFrom(ctx, InsertAccountDaysFromParams{UserID: userID, AccountID: accountID, FromDate: from})
 	})
+}
+
+func (r *Repository) AccountInstrument(ctx context.Context, userID int64, accountID uuid.UUID) (string, error) {
+	instrument, err := r.q.AccountInstrument(ctx, AccountInstrumentParams{UserID: userID, AccountID: accountID})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", app.ErrNotFound
+	}
+	return instrument, err
+}
+
+func (r *Repository) AccountFlows(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]app.Flow, error) {
+	rows, err := r.q.AccountFlows(ctx, AccountFlowsParams{UserID: userID, AccountID: accountID, FromDate: from, ToDate: to})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]app.Flow, len(rows))
+	for i, row := range rows {
+		out[i] = app.Flow{Date: row.Date, Inflow: row.InflowBooked, Outflow: row.OutflowBooked}
+	}
+	return out, nil
 }
 
 func (r *Repository) TreeDailyDeltas(ctx context.Context, userID int64, accountID uuid.UUID, to time.Time) ([]app.DayDelta, error) {

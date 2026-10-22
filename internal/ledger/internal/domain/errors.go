@@ -30,3 +30,13 @@ func (e *FieldError) Unwrap() error { return e.Err }
 func invalid(field, message string) *FieldError {
 	return &FieldError{Field: field, Message: message, Err: ErrValidation}
 }
+
+// WithFieldPrefix returns err with prefix before its field when err is a *FieldError, and err
+// unchanged otherwise; a batch uses it to name the entry that broke a rule (A114).
+func WithFieldPrefix(prefix string, err error) error {
+	fe, ok := errors.AsType[*FieldError](err)
+	if !ok {
+		return err
+	}
+	return &FieldError{Field: prefix + fe.Field, Message: fe.Message, Err: fe.Err}
+}

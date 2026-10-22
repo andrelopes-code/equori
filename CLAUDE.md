@@ -11,7 +11,7 @@ Decisions: `docs/adr/`. Read the relevant ADR before changing what it covers.
 | `make check` | Everything: format, tidy and generated-code checks, lint, `make web-check`, Go tests with `-race`. CI runs it on every pull request. |
 | `make check-commit` | The pre-commit gate: the static checks, then at once the Go tests without `-race` (cached for unchanged packages) and, when the commit touches `web/` or `api/openapi.yaml`, the web checks. Must pass before every commit. |
 | `make test` / `make test-race` | Go tests, without or with `-race`, on the test server `db-test` (`127.0.0.1:54339`, data in memory) |
-| `make db-up` / `make dev` | Start local Postgres on `127.0.0.1:54329`, run the app on `:8080` |
+| `make db-up` / `make dev` | Start local Postgres on `127.0.0.1:54329`, run the app on `:8080`; reads `dev.env`, then `~/.config/equori/local.env` (`LOCAL_ENV`) when present, then `.env` |
 | `make web-dev` | Vite dev server for `web/`, proxying `/api` to `make dev` |
 | `make run-dev` | `make dev` and `make web-dev` together |
 | `make run-prod` | Production build served by the binary on `:8091` (`PROD_ADDR`), beside `make run-dev` |

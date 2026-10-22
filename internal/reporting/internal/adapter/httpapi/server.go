@@ -49,6 +49,20 @@ func (s *Server) GetBalanceSeries(ctx context.Context, req GetBalanceSeriesReque
 	return out, nil
 }
 
+func (s *Server) GetAccountFlows(ctx context.Context, req GetAccountFlowsRequestObject) (GetAccountFlowsResponseObject, error) {
+	flows, instrument, err := s.svc.Flows(ctx, auth.MustUserID(ctx), req.Params.AccountId, req.Params.From.Time, req.Params.To.Time)
+	if err != nil {
+		return nil, err
+	}
+	out := GetAccountFlows200JSONResponse{Items: make([]FlowDay, len(flows))}
+	for i, f := range flows {
+		out.Items[i] = FlowDay{
+			Date: flowDate(f), Inflow: Money{Amount: f.Inflow, Currency: instrument}, Outflow: Money{Amount: f.Outflow, Currency: instrument},
+		}
+	}
+	return out, nil
+}
+
 func (s *Server) GetCategoryTotals(ctx context.Context, req GetCategoryTotalsRequestObject) (GetCategoryTotalsResponseObject, error) {
 	totals, err := s.svc.CategoryTotals(ctx, auth.MustUserID(ctx), string(req.Params.Class), req.Params.From.Time, req.Params.To.Time)
 	if err != nil {
@@ -72,6 +86,10 @@ func ToProblem(err error) (problem.Details, bool) {
 		return d, true
 	case errors.Is(err, app.ErrInvalidCategoryRange):
 		d := problem.New(http.StatusBadRequest, "invalid_request", "from must not be after to, and the period must not exceed 366 days")
+		d.Errors = []problem.FieldError{{Field: "to", Message: "must be on or after from and at most 365 days after it"}}
+		return d, true
+	case errors.Is(err, app.ErrInvalidFlowRange):
+		d := problem.New(http.StatusBadRequest, "invalid_request", "from must not be after to, and the range must not exceed 366 days")
 		d.Errors = []problem.FieldError{{Field: "to", Message: "must be on or after from and at most 365 days after it"}}
 		return d, true
 	case errors.Is(err, app.ErrNotFound):

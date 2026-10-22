@@ -167,6 +167,8 @@ type Institution struct {
 	UserID int64
 	Name   string
 	Code   string
+	// ISPB keys the institution's logo (ADR 013); empty when unknown.
+	ISPB string
 }
 
 type Payee struct {
@@ -274,6 +276,7 @@ type Repository interface {
 	CountTransactions(ctx context.Context, userID int64) (int64, error)
 
 	InsertInstitution(ctx context.Context, i Institution) (Institution, error)
+	SetInstitutionISPB(ctx context.Context, userID int64, id uuid.UUID, ispb string) (Institution, error)
 	// List methods return the page and the key of its last row when more rows follow.
 	ListInstitutions(ctx context.Context, userID int64, p page.Request[InstitutionKey]) ([]Institution, *InstitutionKey, error)
 	InsertPayee(ctx context.Context, p Payee) (Payee, error)
@@ -354,6 +357,14 @@ type Repository interface {
 	// AnticipatedReferences returns the statements credited by non-voided anticipations of the origin purchase.
 	AnticipatedReferences(ctx context.Context, userID int64, originID uuid.UUID) (map[domain.ReferenceMonth]struct{}, error)
 	RefundedTotal(ctx context.Context, userID int64, originID uuid.UUID) (int64, error)
+	// ReimbursedTotal returns what the non-voided transactions other than exceptFrom repay of the origin expense (A117).
+	ReimbursedTotal(ctx context.Context, userID int64, originID, exceptFrom uuid.UUID) (int64, error)
+	// ReimbursementCandidates returns the expenses with an amount left to reimburse, ranked as the query asks (A117).
+	ReimbursementCandidates(ctx context.Context, q CandidateQuery) ([]CandidateRow, error)
+	// ReimbursementSources returns the inflows that can repay an expense, oldest first (A117).
+	ReimbursementSources(ctx context.Context, q SourceQuery) ([]SourceRow, error)
+	// SetReimbursementLinks replaces the reimbursement_of links of a transaction with links (A117).
+	SetReimbursementLinks(ctx context.Context, userID int64, from uuid.UUID, links []domain.Link) error
 	InsertDispute(ctx context.Context, d Dispute) (Dispute, error)
 	Disputes(ctx context.Context, userID int64, transactionID uuid.UUID) ([]Dispute, error)
 	// LinksTo returns the non-voided transactions that link to id, ordered by link type, then source.

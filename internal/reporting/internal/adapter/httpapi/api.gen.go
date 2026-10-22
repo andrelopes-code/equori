@@ -53,6 +53,11 @@ func (e GetCategoryTotalsParamsClass) Valid() bool {
 	}
 }
 
+// AccountFlows defines model for AccountFlows.
+type AccountFlows struct {
+	Items []FlowDay `json:"items"`
+}
+
 // BalancePoint defines model for BalancePoint.
 type BalancePoint struct {
 	Balance Money              `json:"balance"`
@@ -80,6 +85,13 @@ type CategoryTotals struct {
 type FieldError struct {
 	Field   string `json:"field"`
 	Message string `json:"message"`
+}
+
+// FlowDay defines model for FlowDay.
+type FlowDay struct {
+	Date    openapi_types.Date `json:"date"`
+	Inflow  Money              `json:"inflow"`
+	Outflow Money              `json:"outflow"`
 }
 
 // Money defines model for Money.
@@ -135,6 +147,13 @@ type GetCategoryTotalsParams struct {
 // GetCategoryTotalsParamsClass defines parameters for GetCategoryTotals.
 type GetCategoryTotalsParamsClass string
 
+// GetAccountFlowsParams defines parameters for GetAccountFlows.
+type GetAccountFlowsParams struct {
+	AccountId openapi_types.UUID `form:"account_id" json:"account_id"`
+	From      openapi_types.Date `form:"from" json:"from"`
+	To        openapi_types.Date `form:"to" json:"to"`
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// GetBalanceSeries Daily balance of an account and its sub-accounts, one item per day in [from, to].
@@ -143,6 +162,9 @@ type ServerInterface interface {
 	// GetCategoryTotals Booked totals of each category of a class in [from, to], at most 366 days (A77).
 	// (GET /reports/categories)
 	GetCategoryTotals(w http.ResponseWriter, r *http.Request, params GetCategoryTotalsParams)
+	// GetAccountFlows Booked inflow and outflow of one account, one item per day in [from, to] that has a posting (A119).
+	// (GET /reports/flows)
+	GetAccountFlows(w http.ResponseWriter, r *http.Request, params GetAccountFlowsParams)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -285,6 +307,65 @@ func (siw *ServerInterfaceWrapper) GetCategoryTotals(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// GetAccountFlows operation middleware
+func (siw *ServerInterfaceWrapper) GetAccountFlows(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAccountFlowsParams
+
+	// ------------- Required query parameter "account_id" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "account_id", r.URL.Query(), &params.AccountId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "account_id"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAccountFlows(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -406,6 +487,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	}
 
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/balances", wrapper.GetBalanceSeries)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/flows", wrapper.GetAccountFlows)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/categories", wrapper.GetCategoryTotals)
 
 	return m
@@ -545,6 +627,72 @@ func (response GetCategoryTotals401ApplicationProblemPlusJSONResponse) VisitGetC
 	return err
 }
 
+type GetAccountFlowsRequestObject struct {
+	Params GetAccountFlowsParams
+}
+
+type GetAccountFlowsResponseObject interface {
+	VisitGetAccountFlowsResponse(w http.ResponseWriter) error
+}
+
+type GetAccountFlows200JSONResponse AccountFlows
+
+func (response GetAccountFlows200JSONResponse) VisitGetAccountFlowsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAccountFlows400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetAccountFlows400ApplicationProblemPlusJSONResponse) VisitGetAccountFlowsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAccountFlows401ApplicationProblemPlusJSONResponse Problem
+
+func (response GetAccountFlows401ApplicationProblemPlusJSONResponse) VisitGetAccountFlowsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAccountFlows404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetAccountFlows404ApplicationProblemPlusJSONResponse) VisitGetAccountFlowsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// GetBalanceSeries Daily balance of an account and its sub-accounts, one item per day in [from, to].
@@ -553,6 +701,9 @@ type StrictServerInterface interface {
 	// GetCategoryTotals Booked totals of each category of a class in [from, to], at most 366 days (A77).
 	// (GET /reports/categories)
 	GetCategoryTotals(ctx context.Context, request GetCategoryTotalsRequestObject) (GetCategoryTotalsResponseObject, error)
+	// GetAccountFlows Booked inflow and outflow of one account, one item per day in [from, to] that has a posting (A119).
+	// (GET /reports/flows)
+	GetAccountFlows(ctx context.Context, request GetAccountFlowsRequestObject) (GetAccountFlowsResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -639,6 +790,32 @@ func (sh *strictHandler) GetCategoryTotals(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetCategoryTotalsResponseObject); ok {
 		if err := validResponse.VisitGetCategoryTotalsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAccountFlows operation middleware
+func (sh *strictHandler) GetAccountFlows(w http.ResponseWriter, r *http.Request, params GetAccountFlowsParams) {
+	var request GetAccountFlowsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAccountFlows(ctx, request.(GetAccountFlowsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAccountFlows")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAccountFlowsResponseObject); ok {
+		if err := validResponse.VisitGetAccountFlowsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

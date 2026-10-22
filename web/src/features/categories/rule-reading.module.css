@@ -8,7 +8,6 @@
     border-inline-start: var(--slotted-border-width-thick) solid
       var(--slotted-border-strong);
     background: var(--slotted-surface-sunken);
-    border-radius: var(--slotted-radius-md);
   }
 
   .lines {

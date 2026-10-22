@@ -63,7 +63,7 @@ describe("NewTransactionPage", () => {
       name: catalogEn["entry.amount"],
     });
     await userEvent.type(amount, "12000");
-    await chooseAccount(catalogEn["entry.account"], "Itau");
+    await chooseAccount(catalogEn["entry.payWith"], "Itau");
     await pick(catalogEn["category.label"], "Mercado");
     await pick(catalogEn["facts.payee"], "Padaria");
     await userEvent.type(
@@ -157,7 +157,7 @@ describe("NewTransactionPage", () => {
       }),
       "100",
     );
-    await chooseAccount(catalogEn["entry.account"], "Itau");
+    await chooseAccount(catalogEn["entry.payWith"], "Itau");
     await pick(catalogEn["category.label"], "Lazer");
     await userEvent.click(
       screen.getByRole("button", { name: catalogEn["entry.save"] }),

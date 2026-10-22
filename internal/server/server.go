@@ -13,6 +13,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/andrelopes-code/equori/internal/capture"
 	"github.com/andrelopes-code/equori/internal/classification"
 	"github.com/andrelopes-code/equori/internal/identity"
 	"github.com/andrelopes-code/equori/internal/ingestion"
@@ -85,6 +86,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	ledgerModule := ledger.New(pool, dispatcher, marketdataModule, clk, log)
 	reportingModule := reporting.New(pool, dispatcher, log)
 	classificationModule := classification.New(pool, dispatcher, ledgerModule, log)
+	captureModule := capture.New(pool, ledgerModule, classificationModule, cfg.LLM, clk, log)
 	ingestionModule, err := ingestion.New(pool, dispatcher, ledgerModule, classificationModule, ingestion.Config{
 		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, PluggyURL: cfg.PluggyURL, Clock: clk,
 	}, log)
@@ -108,6 +110,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	reportingModule.RegisterRoutes(mux)
 	ingestionModule.RegisterRoutes(mux)
 	classificationModule.RegisterRoutes(mux)
+	captureModule.RegisterRoutes(mux)
 	planningModule.RegisterRoutes(mux)
 	portfolioModule.RegisterRoutes(mux)
 	marketdataModule.RegisterRoutes(mux, log)

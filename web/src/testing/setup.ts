@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
 import { afterEach, beforeEach } from "vitest";
 
 import { setViewport } from "@/testing/viewport";
@@ -20,7 +20,13 @@ class NoopResizeObserver implements ResizeObserver {
   }
 }
 
+// A page renders its regions after its requests answer; on a loaded machine that takes longer than
+// Testing Library's one second, so a find waits up to four within the 15 s test timeout.
+configure({ asyncUtilTimeout: 4000 });
+
 beforeEach(() => {
+  // A test file under the node environment (request bodies Node builds itself) has no window.
+  if (typeof window === "undefined") return;
   globalThis.ResizeObserver = NoopResizeObserver;
   // jsdom does not implement scrollTo; the router restores scroll on navigation.
   window.scrollTo = () => undefined;

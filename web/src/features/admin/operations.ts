@@ -143,6 +143,12 @@ export const operations: Record<GroupKey, readonly Operation[]> = {
       query: ["account_id", "from", "to", "basis"],
     },
     {
+      id: "getAccountFlows",
+      method: "GET",
+      path: "/reports/flows",
+      query: ["account_id", "from", "to"],
+    },
+    {
       id: "getProjection",
       method: "GET",
       path: "/accounts/{id}/projection",
@@ -175,6 +181,36 @@ export const operations: Record<GroupKey, readonly Operation[]> = {
         payee_id: "",
         tags: [],
         postings: postings(r),
+      }),
+    },
+    {
+      id: "createTransactionBatch",
+      method: "POST",
+      path: "/transaction-batches",
+      body: (r) => ({
+        entries: [
+          {
+            transaction: {
+              date: r.today,
+              description: "Groceries",
+              postings: postings(r),
+            },
+          },
+        ],
+      }),
+    },
+    {
+      id: "previewCapture",
+      method: "POST",
+      path: "/capture/preview",
+      body: () => ({ text: "ontem mercado 230\nuber 32,50" }),
+    },
+    {
+      id: "suggestCaptureCategories",
+      method: "POST",
+      path: "/capture/suggestions",
+      body: () => ({
+        items: [{ description: "Padaria São João", kind: "expense" }],
       }),
     },
     { id: "getTransaction", method: "GET", path: "/transactions/{id}" },
@@ -217,6 +253,22 @@ export const operations: Record<GroupKey, readonly Operation[]> = {
         account_id: r.account("savings"),
         pair_with: "",
       }),
+    },
+    {
+      id: "reimburseTransaction",
+      method: "POST",
+      path: "/transactions/{id}/reimbursement",
+      body: () => ({ expected_version: 1, allocations: [] }),
+    },
+    {
+      id: "listReimbursementCandidates",
+      method: "GET",
+      path: "/transactions/{id}/reimbursement-candidates",
+    },
+    {
+      id: "listReimbursementSources",
+      method: "GET",
+      path: "/transactions/{id}/reimbursement-sources",
     },
     {
       id: "listTransactionVersions",
@@ -370,6 +422,12 @@ export const operations: Record<GroupKey, readonly Operation[]> = {
       method: "GET",
       path: "/accounts/{id}/commitments",
       query: ["month"],
+    },
+    {
+      id: "getStatementPlacement",
+      method: "GET",
+      path: "/accounts/{id}/statement-placement",
+      query: ["date"],
     },
     {
       id: "payStatement",
@@ -558,6 +616,12 @@ export const operations: Record<GroupKey, readonly Operation[]> = {
       method: "POST",
       path: "/institutions",
       body: () => ({ name: "Bank", code: "001" }),
+    },
+    {
+      id: "setInstitutionISPB",
+      method: "PUT",
+      path: "/institutions/{id}/ispb",
+      body: () => ({ ispb: "00000000" }),
     },
     { id: "listPayees", method: "GET", path: "/payees", query: page },
     {

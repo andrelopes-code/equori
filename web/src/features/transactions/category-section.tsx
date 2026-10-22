@@ -69,6 +69,7 @@ export function CategorySection({
                   color={entry?.color}
                   icon={entry?.icon}
                   size="md"
+                  variant="solid"
                 />
                 <Text
                   className={styles.name}

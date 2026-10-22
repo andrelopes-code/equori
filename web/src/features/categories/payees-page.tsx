@@ -24,7 +24,7 @@ import { AliasesDrawer } from "@/features/categories/aliases-drawer";
 import { payeeAliasesQuery, useRenamePayee } from "@/features/categories/api";
 import { CategoriesHeader } from "@/features/categories/categories-header";
 import styles from "@/features/categories/categories-page.module.css";
-import { HeaderAction } from "@/features/categories/header-action";
+import { HeaderAction } from "@/ui/header-action";
 import { MergePayeesDialog } from "@/features/categories/merge-payees-dialog";
 import { NewPayeeDialog } from "@/features/categories/new-payee-dialog";
 import { payeesQuery } from "@/features/setup";

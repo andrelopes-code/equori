@@ -45,6 +45,7 @@ type Point struct {
 
 // Repository reads Ledger tables only through SELECT (ADR 002).
 type Repository interface {
+	FlowRepository
 	AccountCurrency(ctx context.Context, userID int64, accountID uuid.UUID) (string, error)
 	Rebuild(ctx context.Context, userID int64, accountID uuid.UUID, from time.Time) error
 	TreeDailyDeltas(ctx context.Context, userID int64, accountID uuid.UUID, to time.Time) ([]DayDelta, error)

@@ -48,5 +48,9 @@ export default defineConfig({
   build: {
     // web/dist/.gitkeep must survive the build; make web-build cleans the rest.
     emptyOutDir: false,
+    // ADR 008 serves the page under default-src 'self', which refuses data: images; an
+    // institution logo (ADR 013) is always emitted as a file, however small.
+    assetsInlineLimit: (file) =>
+      file.includes("/logos-bancos-br/") ? false : undefined,
   },
 });

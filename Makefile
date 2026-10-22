@@ -9,6 +9,10 @@ export EQUORI_TEST_DB_PORT ?= 54339
 export EQUORI_TEST_DB_SERVICE ?= db-test
 export EQUORI_TEST_DATABASE_URL ?= postgres://equori:equori@127.0.0.1:$(EQUORI_TEST_DB_PORT)/postgres?sslmode=disable
 COMPOSE := docker compose -f compose.yaml -f compose.dev.yaml
+# Secrets and personal settings kept outside the repository (secret key, timezone, owner); read
+# after dev.env and before .env by the targets that run the app.
+LOCAL_ENV ?= $(HOME)/.config/equori/local.env
+LOAD_ENV := set -a && . ./dev.env && { [ ! -f "$(LOCAL_ENV)" ] || . "$(LOCAL_ENV)"; } && { [ ! -f .env ] || . ./.env; } && set +a
 
 .PHONY: check check-commit static fmt fmt-check lint tidy-check gen gen-check test test-race vuln build dev db-up db-down db-test-up run-dev run-prod hooks tools web-deps web-build web-check web-static web-test web-dev
 
@@ -69,7 +73,7 @@ build: web-build
 	CGO_ENABLED=0 go build -trimpath -o $(BIN)/equori ./cmd/equori
 
 dev: db-up
-	set -a && . ./dev.env && { [ ! -f .env ] || . ./.env; } && set +a && go run ./cmd/equori
+	$(LOAD_ENV) && go run ./cmd/equori
 
 # The app and the Vite dev server together; Ctrl-C stops both.
 run-dev: $(WEB_DEPS)
@@ -79,7 +83,7 @@ run-dev: $(WEB_DEPS)
 # An empty EQUORI_WEB_DEV_PORT makes the binary serve web/dist instead of proxying to Vite.
 PROD_ADDR ?= :8091
 run-prod: build db-up
-	set -a && . ./dev.env && { [ ! -f .env ] || . ./.env; } && set +a \
+	$(LOAD_ENV) \
 		&& EQUORI_WEB_DEV_PORT= EQUORI_HTTP_ADDR=$(PROD_ADDR) $(BIN)/equori
 
 db-up:

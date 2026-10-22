@@ -1,0 +1,11 @@
+@layer app {
+  .figure {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* Attenuated by weight, never by colour: the figure keeps the contrast of the text it sits in. */
+  .minor {
+    font-weight: var(--slotted-font-weight-regular);
+  }
+}

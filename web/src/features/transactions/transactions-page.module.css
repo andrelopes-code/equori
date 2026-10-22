@@ -21,12 +21,15 @@
     grid-template-columns: minmax(0, 1fr) clamp(24rem, 34%, 32rem);
   }
 
+  /* The pane is a ground of its own; a sticky section header inside it paints the published
+     page ground, which the Page around it sets to sunken. */
   .pane {
+    --slotted-page-ground: var(--slotted-surface);
     overflow: hidden;
     min-block-size: 0;
     border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
     border-radius: var(--slotted-radius-lg);
-    background: var(--slotted-surface);
+    background: var(--slotted-page-ground);
   }
 
   @media (max-width: 599px) {

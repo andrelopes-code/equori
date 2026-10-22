@@ -26,6 +26,14 @@ func fromMoneyAPI(field string, m Money) (money.Money, error) {
 	return v, nil
 }
 
+// linkAmountAPI is nil for a link that holds no amount.
+func linkAmountAPI(amount int64, currency string) *Money {
+	if amount == 0 {
+		return nil
+	}
+	return &Money{Amount: amount, Currency: currency}
+}
+
 func dateOf(d openapi_types.Date) time.Time { return d.Time }
 
 // location is the Location header of a created record (ADR 007, C6).
@@ -135,8 +143,14 @@ func fromTransactionInput(ctx context.Context, in TransactionInput, amounts amou
 		t.Tags = *in.Tags
 	}
 	if in.Links != nil {
+		// An empty list is not an omitted one: a correction clears the first and keeps the second.
+		t.Links = []domain.Link{}
 		for _, l := range *in.Links {
-			t.Links = append(t.Links, domain.Link{Type: domain.LinkType(l.Type), Target: l.Target})
+			link := domain.Link{Type: domain.LinkType(l.Type), Target: l.Target}
+			if l.Amount != nil {
+				link.Amount = l.Amount.Amount
+			}
+			t.Links = append(t.Links, link)
 		}
 	}
 	for i, p := range in.Postings {
@@ -186,7 +200,7 @@ func toTransactionAPI(t domain.Transaction) Transaction {
 		Tags: append([]string{}, t.Tags...), Links: []Link{}, Postings: make([]Posting, 0, len(t.Postings)),
 	}
 	for _, l := range t.Links {
-		out.Links = append(out.Links, Link{Type: LinkType(l.Type), Target: l.Target})
+		out.Links = append(out.Links, Link{Type: LinkType(l.Type), Target: l.Target, Amount: linkAmountAPI(l.Amount, string(t.BalancingCurrency))})
 	}
 	if in := t.Income; in != nil {
 		out.InvestmentIncome = &InvestmentIncome{
@@ -230,7 +244,7 @@ func toTransactionAPI(t domain.Transaction) Transaction {
 }
 
 func toInstitutionAPI(i app.Institution) Institution {
-	return Institution{Id: i.ID, Name: i.Name, Code: apiOptString(i.Code)}
+	return Institution{Id: i.ID, Name: i.Name, Code: apiOptString(i.Code), Ispb: apiOptString(i.ISPB)}
 }
 
 func toPayeeAPI(p app.Payee) Payee { return Payee{Id: p.ID, Name: p.Name} }

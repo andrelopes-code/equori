@@ -36,70 +36,83 @@ func validationError(field, message string) error {
 
 // InstallmentPurchase records the full expense now and one card charge per statement (S06, S07, DM2, DM3).
 func (s *Service) InstallmentPurchase(ctx context.Context, userID int64, in InstallmentPurchaseInput) (domain.Transaction, uuid.UUID, error) {
+	var (
+		created domain.Transaction
+		planID  uuid.UUID
+	)
+	err := s.repo.InTx(ctx, func(r Repository) error {
+		var err error
+		created, planID, err = s.installmentPurchase(ctx, r, userID, in)
+		return err
+	})
+	return created, planID, err
+}
+
+// installmentPurchase records the purchase and its plan inside the caller's database transaction.
+func (s *Service) installmentPurchase(ctx context.Context, r Repository, userID int64, in InstallmentPurchaseInput) (domain.Transaction, uuid.UUID, error) {
 	if in.Count < 2 || in.Count > maxInstallments {
 		return domain.Transaction{}, uuid.Nil, validationError("installment_count", "must be between 2 and 420")
 	}
 	if len(in.Splits) == 0 {
 		return domain.Transaction{}, uuid.Nil, validationError("splits", "at least one split is required")
 	}
-	var created domain.Transaction
 	planID := uuid.Must(uuid.NewV7())
-	err := s.repo.InTx(ctx, func(r Repository) error {
-		card, err := r.Account(ctx, userID, in.CardAccountID)
+	card, err := r.Account(ctx, userID, in.CardAccountID)
+	if err != nil {
+		return domain.Transaction{}, uuid.Nil, err
+	}
+	if err := domain.RequireCard(card); err != nil {
+		return domain.Transaction{}, uuid.Nil, &domain.FieldError{Field: "card_account_id", Message: "must be a credit card account", Err: domain.ErrValidation}
+	}
+	principal, interest, err := purchaseTotals(card.Instrument, in)
+	if err != nil {
+		return domain.Transaction{}, uuid.Nil, err
+	}
+	total, err := principal.Add(interest)
+	if err != nil {
+		return domain.Transaction{}, uuid.Nil, err
+	}
+	parts, err := installmentParts(total, in)
+	if err != nil {
+		return domain.Transaction{}, uuid.Nil, err
+	}
+	first, err := s.firstStatement(ctx, r, userID, card.ID, in)
+	if err != nil {
+		return domain.Transaction{}, uuid.Nil, err
+	}
+	postings := append([]domain.Posting{}, in.Splits...)
+	if !interest.IsZero() {
+		interestAccount, err := r.SystemAccount(ctx, userID, domain.RoleInterest)
 		if err != nil {
-			return err
+			return domain.Transaction{}, uuid.Nil, err
 		}
-		if err := domain.RequireCard(card); err != nil {
-			return &domain.FieldError{Field: "card_account_id", Message: "must be a credit card account", Err: domain.ErrValidation}
+		postings = append(postings, domain.Posting{AccountID: interestAccount.ID, Amount: interest})
+	}
+	for k, part := range parts {
+		ref := domain.InstallmentStatement(first, k+1)
+		p := domain.Posting{
+			AccountID: card.ID, Amount: part.Neg(), CardRole: domain.RoleCharge, Statement: &ref,
+			Installment: &domain.InstallmentRef{PlanID: planID, Number: k + 1, Count: in.Count},
 		}
-		principal, interest, err := purchaseTotals(card.Instrument, in)
-		if err != nil {
-			return err
+		if k+1 == in.RecordNumber {
+			p.ExternalRecordID = in.Record
 		}
-		total, err := principal.Add(interest)
-		if err != nil {
-			return err
-		}
-		parts, err := installmentParts(total, in)
-		if err != nil {
-			return err
-		}
-		first, err := s.firstStatement(ctx, r, userID, card.ID, in)
-		if err != nil {
-			return err
-		}
-		postings := append([]domain.Posting{}, in.Splits...)
-		if !interest.IsZero() {
-			interestAccount, err := r.SystemAccount(ctx, userID, domain.RoleInterest)
-			if err != nil {
-				return err
-			}
-			postings = append(postings, domain.Posting{AccountID: interestAccount.ID, Amount: interest})
-		}
-		for k, part := range parts {
-			ref := domain.InstallmentStatement(first, k+1)
-			p := domain.Posting{
-				AccountID: card.ID, Amount: part.Neg(), CardRole: domain.RoleCharge, Statement: &ref,
-				Installment: &domain.InstallmentRef{PlanID: planID, Number: k + 1, Count: in.Count},
-			}
-			if k+1 == in.RecordNumber {
-				p.ExternalRecordID = in.Record
-			}
-			postings = append(postings, p)
-		}
-		created, err = s.insert(ctx, r, domain.Transaction{
-			UserID: userID, Date: in.Date, Description: in.Description, PayeeID: in.PayeeID, Tags: in.Tags, Postings: postings,
-			Origin: in.Origin,
-		})
-		if err != nil {
-			return err
-		}
-		return r.InsertPlan(ctx, domain.InstallmentPlan{
-			ID: planID, UserID: userID, AccountID: card.ID, OriginTransactionID: created.ID, Kind: domain.PlanPurchase,
-			Count: in.Count, Principal: principal, Interest: interest, FirstStatementID: firstCardStatement(created, card.ID),
-		})
+		postings = append(postings, p)
+	}
+	created, err := s.insert(ctx, r, domain.Transaction{
+		UserID: userID, Date: in.Date, Description: in.Description, PayeeID: in.PayeeID, Tags: in.Tags, Postings: postings,
+		Origin: in.Origin,
 	})
-	return created, planID, err
+	if err != nil {
+		return domain.Transaction{}, uuid.Nil, err
+	}
+	if err := r.InsertPlan(ctx, domain.InstallmentPlan{
+		ID: planID, UserID: userID, AccountID: card.ID, OriginTransactionID: created.ID, Kind: domain.PlanPurchase,
+		Count: in.Count, Principal: principal, Interest: interest, FirstStatementID: firstCardStatement(created, card.ID),
+	}); err != nil {
+		return domain.Transaction{}, uuid.Nil, err
+	}
+	return created, planID, nil
 }
 
 func purchaseTotals(c money.Currency, in InstallmentPurchaseInput) (principal, interest money.Money, err error) {

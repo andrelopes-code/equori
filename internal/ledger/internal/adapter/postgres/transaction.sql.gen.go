@@ -55,6 +55,20 @@ func (q *Queries) DeletePostingsByID(ctx context.Context, arg DeletePostingsByID
 	return err
 }
 
+const deleteReimbursementLinksFrom = `-- name: DeleteReimbursementLinksFrom :exec
+DELETE FROM ledger_link WHERE user_id = $1 AND from_transaction_id = $2 AND link_type = 'reimbursement_of'
+`
+
+type DeleteReimbursementLinksFromParams struct {
+	UserID            int64
+	FromTransactionID uuid.UUID
+}
+
+func (q *Queries) DeleteReimbursementLinksFrom(ctx context.Context, arg DeleteReimbursementLinksFromParams) error {
+	_, err := q.db.Exec(ctx, deleteReimbursementLinksFrom, arg.UserID, arg.FromTransactionID)
+	return err
+}
+
 const deleteTransactionTags = `-- name: DeleteTransactionTags :exec
 DELETE FROM ledger_transaction_tag WHERE transaction_id = $1
 `
@@ -123,7 +137,7 @@ func (q *Queries) GetTransactionForUpdate(ctx context.Context, arg GetTransactio
 }
 
 const insertLink = `-- name: InsertLink :exec
-INSERT INTO ledger_link (user_id, from_transaction_id, to_transaction_id, link_type) VALUES ($1, $2, $3, $4)
+INSERT INTO ledger_link (user_id, from_transaction_id, to_transaction_id, link_type, amount) VALUES ($1, $2, $3, $4, $5)
 `
 
 type InsertLinkParams struct {
@@ -131,6 +145,7 @@ type InsertLinkParams struct {
 	FromTransactionID uuid.UUID
 	ToTransactionID   uuid.UUID
 	LinkType          string
+	Amount            *int64
 }
 
 func (q *Queries) InsertLink(ctx context.Context, arg InsertLinkParams) error {
@@ -139,6 +154,7 @@ func (q *Queries) InsertLink(ctx context.Context, arg InsertLinkParams) error {
 		arg.FromTransactionID,
 		arg.ToTransactionID,
 		arg.LinkType,
+		arg.Amount,
 	)
 	return err
 }
@@ -226,7 +242,7 @@ func (q *Queries) InsertVersion(ctx context.Context, arg InsertVersionParams) er
 }
 
 const listLinksFrom = `-- name: ListLinksFrom :many
-SELECT id, user_id, from_transaction_id, to_transaction_id, link_type FROM ledger_link WHERE user_id = $1 AND from_transaction_id = ANY($2::uuid[])
+SELECT id, user_id, from_transaction_id, to_transaction_id, link_type, amount FROM ledger_link WHERE user_id = $1 AND from_transaction_id = ANY($2::uuid[])
 ORDER BY from_transaction_id, link_type, to_transaction_id
 `
 
@@ -250,6 +266,7 @@ func (q *Queries) ListLinksFrom(ctx context.Context, arg ListLinksFromParams) ([
 			&i.FromTransactionID,
 			&i.ToTransactionID,
 			&i.LinkType,
+			&i.Amount,
 		); err != nil {
 			return nil, err
 		}
@@ -262,7 +279,7 @@ func (q *Queries) ListLinksFrom(ctx context.Context, arg ListLinksFromParams) ([
 }
 
 const listLinksTo = `-- name: ListLinksTo :many
-SELECT l.link_type, l.from_transaction_id FROM ledger_link l
+SELECT l.link_type, l.from_transaction_id, l.amount, t.balancing_currency FROM ledger_link l
 JOIN ledger_transaction t ON t.id = l.from_transaction_id
 WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND t.voided_at IS NULL
 ORDER BY l.link_type, l.from_transaction_id
@@ -276,6 +293,8 @@ type ListLinksToParams struct {
 type ListLinksToRow struct {
 	LinkType          string
 	FromTransactionID uuid.UUID
+	Amount            *int64
+	BalancingCurrency string
 }
 
 func (q *Queries) ListLinksTo(ctx context.Context, arg ListLinksToParams) ([]ListLinksToRow, error) {
@@ -287,7 +306,12 @@ func (q *Queries) ListLinksTo(ctx context.Context, arg ListLinksToParams) ([]Lis
 	var items []ListLinksToRow
 	for rows.Next() {
 		var i ListLinksToRow
-		if err := rows.Scan(&i.LinkType, &i.FromTransactionID); err != nil {
+		if err := rows.Scan(
+			&i.LinkType,
+			&i.FromTransactionID,
+			&i.Amount,
+			&i.BalancingCurrency,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -383,6 +407,140 @@ func (q *Queries) ListPostings(ctx context.Context, arg ListPostingsParams) ([]L
 	return items, nil
 }
 
+const listReimbursementCandidates = `-- name: ListReimbursementCandidates :many
+SELECT e.id, (e.spent - e.held)::bigint AS remaining, e.allocated::bigint AS allocated
+FROM (
+  SELECT t.id, t.date, sum(p.amount) AS spent,
+    coalesce((SELECT sum(l.amount) FROM ledger_link l
+              JOIN ledger_transaction f ON f.user_id = l.user_id AND f.id = l.from_transaction_id AND f.voided_at IS NULL
+              WHERE l.user_id = $1 AND l.to_transaction_id = t.id AND l.link_type = 'reimbursement_of'
+                AND l.from_transaction_id <> $2), 0) AS held,
+    coalesce((SELECT sum(l.amount) FROM ledger_link l
+              WHERE l.user_id = $1 AND l.to_transaction_id = t.id AND l.link_type = 'reimbursement_of'
+                AND l.from_transaction_id = $2), 0) AS allocated
+  FROM ledger_transaction t
+  JOIN ledger_posting p ON p.user_id = t.user_id AND p.transaction_id = t.id AND p.amount > 0 AND NOT p.voided
+  JOIN ledger_account a ON a.user_id = p.user_id AND a.id = p.account_id
+    AND a.account_class = 'expense' AND a.instrument = $3::text
+  WHERE t.user_id = $1 AND t.id <> $2 AND t.voided_at IS NULL
+  GROUP BY t.id, t.date
+) e
+WHERE e.spent - e.held > 0 AND (e.date BETWEEN $4::date AND $5::date OR e.allocated > 0)
+ORDER BY (e.allocated > 0) DESC, (e.spent - e.held = $6::bigint) DESC, e.date DESC, e.id DESC
+LIMIT $7::int
+`
+
+type ListReimbursementCandidatesParams struct {
+	UserID        int64
+	TransactionID uuid.UUID
+	Instrument    string
+	FromDate      time.Time
+	ToDate        time.Time
+	Amount        int64
+	MaxRows       int32
+}
+
+type ListReimbursementCandidatesRow struct {
+	ID        uuid.UUID
+	Remaining int64
+	Allocated int64
+}
+
+// A117: expenses with an amount left once the other transactions are counted, dated in the window or
+// repaid by @transaction_id; those it repays first, then the one whose remaining amount equals @amount.
+func (q *Queries) ListReimbursementCandidates(ctx context.Context, arg ListReimbursementCandidatesParams) ([]ListReimbursementCandidatesRow, error) {
+	rows, err := q.db.Query(ctx, listReimbursementCandidates,
+		arg.UserID,
+		arg.TransactionID,
+		arg.Instrument,
+		arg.FromDate,
+		arg.ToDate,
+		arg.Amount,
+		arg.MaxRows,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListReimbursementCandidatesRow
+	for rows.Next() {
+		var i ListReimbursementCandidatesRow
+		if err := rows.Scan(&i.ID, &i.Remaining, &i.Allocated); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listReimbursementSources = `-- name: ListReimbursementSources :many
+SELECT s.id, (s.inflow - s.allocated)::bigint AS free
+FROM (
+  SELECT t.id, t.date, (-sum(p.amount))::bigint AS inflow,
+    coalesce((SELECT sum(l.amount) FROM ledger_link l
+              WHERE l.user_id = $1 AND l.from_transaction_id = t.id AND l.link_type = 'reimbursement_of'), 0) AS allocated
+  FROM ledger_transaction t
+  JOIN ledger_posting p ON p.user_id = t.user_id AND p.transaction_id = t.id AND NOT p.voided
+  JOIN ledger_account a ON a.user_id = p.user_id AND a.id = p.account_id AND a.account_class IN ('income', 'expense')
+  WHERE t.user_id = $1 AND t.id <> $2 AND t.voided_at IS NULL
+    AND t.date BETWEEN $3::date AND $4::date AND a.instrument = $5::text
+    AND NOT EXISTS (SELECT 1 FROM ledger_link l
+                    WHERE l.user_id = $1 AND l.from_transaction_id = t.id AND l.to_transaction_id = $2
+                      AND l.link_type = 'reimbursement_of')
+  GROUP BY t.id, t.date
+  HAVING sum(p.amount) < 0
+     AND bool_and((a.account_class = 'income' AND a.system_role = 'uncategorized_income') OR (a.account_class = 'expense' AND p.amount < 0))
+) s
+WHERE s.inflow - s.allocated > 0
+ORDER BY s.date, s.id
+LIMIT $6::int
+`
+
+type ListReimbursementSourcesParams struct {
+	UserID        int64
+	TransactionID uuid.UUID
+	FromDate      time.Time
+	ToDate        time.Time
+	Instrument    string
+	MaxRows       int32
+}
+
+type ListReimbursementSourcesRow struct {
+	ID   uuid.UUID
+	Free int64
+}
+
+// A117: inflows after an expense whose category side holds only uncategorized income and reimbursements.
+func (q *Queries) ListReimbursementSources(ctx context.Context, arg ListReimbursementSourcesParams) ([]ListReimbursementSourcesRow, error) {
+	rows, err := q.db.Query(ctx, listReimbursementSources,
+		arg.UserID,
+		arg.TransactionID,
+		arg.FromDate,
+		arg.ToDate,
+		arg.Instrument,
+		arg.MaxRows,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListReimbursementSourcesRow
+	for rows.Next() {
+		var i ListReimbursementSourcesRow
+		if err := rows.Scan(&i.ID, &i.Free); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listTransactionTags = `-- name: ListTransactionTags :many
 SELECT tt.transaction_id, g.name
 FROM ledger_transaction_tag tt
@@ -438,8 +596,9 @@ WHERE t.user_id = $1
   AND ($5::date IS NULL OR t.date >= $5::date)
   AND ($6::date IS NULL OR t.date <= $6::date)
   -- P5 amendment A17: every category posting is on an uncategorized system account.
+  -- A voided transaction cannot be categorized, so the queue leaves it out.
   AND (NOT $7::boolean OR (
-      EXISTS (SELECT 1 FROM ledger_posting p JOIN ledger_account a ON a.id = p.account_id
+      t.voided_at IS NULL AND EXISTS (SELECT 1 FROM ledger_posting p JOIN ledger_account a ON a.id = p.account_id
               WHERE p.transaction_id = t.id AND a.system_role IN ('uncategorized_expense', 'uncategorized_income'))
       AND NOT EXISTS (SELECT 1 FROM ledger_posting p JOIN ledger_account a ON a.id = p.account_id
               WHERE p.transaction_id = t.id AND a.account_class IN ('income', 'expense')
@@ -560,6 +719,28 @@ SELECT (coalesce(max(position), -1) + 1)::smallint FROM ledger_posting WHERE tra
 func (q *Queries) NextPostingPosition(ctx context.Context, transactionID uuid.UUID) (int16, error) {
 	row := q.db.QueryRow(ctx, nextPostingPosition, transactionID)
 	var column_1 int16
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const reimbursedTotal = `-- name: ReimbursedTotal :one
+SELECT coalesce(sum(l.amount), 0)::bigint
+FROM ledger_link l
+JOIN ledger_transaction t ON t.user_id = l.user_id AND t.id = l.from_transaction_id
+WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND l.link_type = 'reimbursement_of'
+  AND l.from_transaction_id <> $3 AND t.voided_at IS NULL
+`
+
+type ReimbursedTotalParams struct {
+	UserID     int64
+	OriginID   uuid.UUID
+	ExceptFrom uuid.UUID
+}
+
+// A117: what the non-voided transactions other than @except_from repay of the expense.
+func (q *Queries) ReimbursedTotal(ctx context.Context, arg ReimbursedTotalParams) (int64, error) {
+	row := q.db.QueryRow(ctx, reimbursedTotal, arg.UserID, arg.OriginID, arg.ExceptFrom)
+	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
 }

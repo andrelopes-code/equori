@@ -1,0 +1,47 @@
+@layer app {
+  /* The line as written, so the reader sees which words were read as what; spaces are kept
+     because the segments join back to the exact line. */
+  .line {
+    margin: 0;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  /* A recognized part is marked like a highlighter, in the tone of what it was read as. */
+  .part {
+    --part-tone: var(--slotted-tone-secondary-text);
+
+    padding-inline: var(--slotted-space-1);
+    border-radius: var(--slotted-radius-xs);
+    background: color-mix(
+      in oklab,
+      var(--part-tone) calc(var(--slotted-highlight-tint-opacity) * 200%),
+      transparent
+    );
+    color: var(--slotted-text);
+    box-decoration-break: clone;
+  }
+
+  .part[data-role="amount"] {
+    --part-tone: var(--slotted-tone-accent-text);
+
+    font-weight: var(--slotted-font-weight-semibold);
+  }
+
+  .part[data-role="account"] {
+    --part-tone: var(--slotted-tone-success-text);
+  }
+
+  .part[data-role="tag"],
+  .part[data-role="kind"] {
+    --part-tone: var(--slotted-tone-neutral-text);
+  }
+
+  @media (forced-colors: active) {
+    .part {
+      outline: var(--slotted-border-width-thin) solid CanvasText;
+    }
+  }
+}

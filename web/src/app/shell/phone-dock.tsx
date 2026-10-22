@@ -13,16 +13,9 @@ import { useT } from "@/i18n/i18n-provider";
 const tabs = destinations.filter((d) => d.phone === "bar");
 
 // Families read: app-shell, tabs, side-navigation, top-navigation, button, badge. The dock is
-// equori's own by choice, drawn as Android's navigation bar and extended floating action
-// button, which no family is meant to imitate.
-export function PhoneDock({
-  down,
-  onReselect,
-}: {
-  // The page is scrolling down: the floating button folds to its mark.
-  down: boolean;
-  onReselect: () => void;
-}) {
+// equori's own by choice, drawn as Android's navigation bar and floating action button, which
+// no family is meant to imitate.
+export function PhoneDock({ onReselect }: { onReselect: () => void }) {
   const t = useT();
   const [moreOpen, setMoreOpen] = useState(false);
   const openEntry = useEntry();
@@ -39,12 +32,11 @@ export function PhoneDock({
         <button
           type="button"
           data-own="entry-fab"
+          aria-label={t("nav.entry.long")}
           className={styles.fab}
-          data-folded={down || undefined}
           onClick={openEntry}
         >
           <ShellIcon name="plus" size={24} weight={2} />
-          <span className={styles.fabLabel}>{t("nav.entry.long")}</span>
         </button>
       )}
       <nav

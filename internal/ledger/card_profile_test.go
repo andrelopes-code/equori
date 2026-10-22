@@ -70,6 +70,51 @@ func TestCreditLimitAndAvailableLimit(t *testing.T) {
 	}
 }
 
+// The account list carries each card's limits, as the account itself does: a picker of
+// accounts shows the free limit of every card without one request per card.
+func TestAccountListCarriesCardLimits(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	card := h.Card("Itaú Visa", 3, 10, "next")
+	h.Account("Nubank", "asset", "checking", nil)
+	h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/credit-limits",
+		map[string]any{"effective_from": "2026-01-01", "amount": apitest.BRL(1000000)}, http.StatusCreated, nil)
+	food := h.Account("Food", "expense", "", nil)
+	h.Record("2026-03-02", apitest.Posting(food, 28640), apitest.Posting(card, -28640))
+
+	var list struct {
+		Items []struct {
+			Name string `json:"name"`
+			Card *struct {
+				CreditLimit struct {
+					Amount int64 `json:"amount"`
+				} `json:"credit_limit"`
+				AvailableLimit struct {
+					Amount int64 `json:"amount"`
+				} `json:"available_limit"`
+			} `json:"card"`
+		} `json:"items"`
+	}
+	h.MustDo(http.MethodGet, "/api/v1/accounts", nil, http.StatusOK, &list)
+	cards := map[string]bool{}
+	for _, a := range list.Items {
+		switch a.Name {
+		case "Itaú Visa":
+			if a.Card == nil || a.Card.CreditLimit.Amount != 1000000 || a.Card.AvailableLimit.Amount != 971360 {
+				t.Fatalf("Itaú Visa card = %+v, want limit 1000000 and 971360 free", a.Card)
+			}
+			cards[a.Name] = true
+		case "Nubank", "Food":
+			if a.Card != nil {
+				t.Fatalf("%s card = %+v, want none", a.Name, a.Card)
+			}
+		}
+	}
+	if !cards["Itaú Visa"] {
+		t.Fatalf("items = %+v, want Itaú Visa", list.Items)
+	}
+}
+
 func TestCards(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)

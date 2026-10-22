@@ -30,13 +30,19 @@
     --money-ink: var(--slotted-text-muted);
   }
 
+  /* Focus is drawn as the text field draws it: the edge keeps its colour, an outline of the ring
+     stands off it by the ring's offset, under the control's focus shadow. */
   .panel:focus-within {
-    border-color: var(--slotted-focus-ring-color);
-    box-shadow: 0 0 0 var(--slotted-focus-ring-width)
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+    box-shadow: var(--slotted-control-shadow-focus-geometry)
       var(--slotted-focus-ring-color);
   }
 
   .panel[data-invalid] {
+    --slotted-focus-ring-color: var(--slotted-focus-ring-color-invalid);
+
     border-color: var(--slotted-tone-danger-border);
   }
 

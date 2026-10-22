@@ -1,0 +1,9 @@
+@layer app {
+  /* As many cards per line as fit at the account card's smallest width, 280 px. */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+    gap: var(--slotted-space-6);
+    align-items: start;
+  }
+}

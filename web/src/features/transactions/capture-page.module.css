@@ -1,0 +1,22 @@
+@layer app {
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-8);
+  }
+
+  /* 1024 px is the guidelines' desktop size class (ui/use-media-query wideQuery); a media
+     query cannot read a custom property, so the number is written here. */
+  @media (min-width: 1024px) {
+    .layout {
+      grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+      align-items: start;
+    }
+
+    /* The text stays in view while the drafts beside it scroll (LA-06). */
+    .writer {
+      position: sticky;
+      inset-block-start: var(--slotted-page-sticky-top, 0);
+    }
+  }
+}

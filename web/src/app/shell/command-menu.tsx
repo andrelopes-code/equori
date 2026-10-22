@@ -5,12 +5,16 @@ import type {
   CommandPaletteItem,
 } from "@slotted/react/command-palette";
 import { Icon } from "@slotted/react/icon";
-import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import type { Ref } from "react";
+
+import { useApi } from "@/api/api-context";
 
 import { destinations } from "@/app/shell/destinations";
 import { ShellIcon } from "@/app/shell/shell-icon";
 import { useEntry } from "@/app/shell/use-entry";
+import { accountsQuery } from "@/features/accounts";
 import { useLogout } from "@/features/session";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import type { Locale } from "@/i18n/locale";
@@ -32,10 +36,17 @@ export function CommandMenu({ ref }: { ref: Ref<CommandPaletteHandle> }) {
   const [, setScheme] = useScheme();
   const [, setDensity] = useDensity();
   const [locale, setLocale] = useAppLocale();
+  // The accounts are read the first time the palette opens, not on every page load.
+  const [opened, setOpened] = useState(false);
+  const accounts = useQuery({
+    ...accountsQuery(useApi()),
+    enabled: opened,
+  });
 
   const groups = useMemo(
     () => [
       { id: "go", label: t("palette.go") },
+      { id: "accounts", label: t("palette.accounts") },
       { id: "actions", label: t("palette.actions") },
       { id: "account", label: t("palette.account") },
     ],
@@ -47,6 +58,9 @@ export function CommandMenu({ ref }: { ref: Ref<CommandPaletteHandle> }) {
       <Icon size="sm">
         <ShellIcon name={name} />
       </Icon>
+    );
+    const open = (accounts.data ?? []).filter(
+      (a) => a.kind !== undefined && a.closed_on === undefined,
     );
     return [
       ...destinations.map((destination) => ({
@@ -68,12 +82,64 @@ export function CommandMenu({ ref }: { ref: Ref<CommandPaletteHandle> }) {
           }),
       },
       {
+        id: "go.institutions",
+        label: t("palette.institutions"),
+        group: "go",
+        icon: icon("accounts"),
+        onSelect: () => void navigate({ to: "/accounts/institutions" }),
+      },
+      {
+        id: "go.links",
+        label: t("palette.links"),
+        group: "go",
+        icon: icon("accounts"),
+        onSelect: () => void navigate({ to: "/accounts/links" }),
+      },
+      ...open.map((account) => ({
+        id: `account.${account.id}`,
+        label: account.name,
+        group: "accounts",
+        icon: icon(account.kind === "credit_card" ? "cards" : "accounts"),
+        onSelect: () =>
+          void (account.kind === "credit_card"
+            ? navigate({
+                to: "/cards/$accountId",
+                params: { accountId: account.id },
+              })
+            : navigate({ to: "/accounts/$id", params: { id: account.id } })),
+      })),
+      {
         id: "entry",
         label: t("nav.entry.long"),
         group: "actions",
         icon: icon("plus"),
         shortcut: "n",
         onSelect: openEntry,
+      },
+      {
+        id: "account.new",
+        label: t("palette.newAccount"),
+        group: "actions",
+        icon: icon("plus"),
+        onSelect: () => void navigate({ to: "/accounts/new" }),
+      },
+      {
+        id: "import",
+        label: t("palette.importStatement"),
+        group: "actions",
+        icon: icon("accounts"),
+        children: open
+          .filter((a) => a.class === "asset" || a.class === "liability")
+          .map((account) => ({
+            id: `import.${account.id}`,
+            label: account.name,
+            icon: icon(account.kind === "credit_card" ? "cards" : "accounts"),
+            onSelect: () =>
+              void navigate({
+                to: "/accounts/$id/import",
+                params: { id: account.id },
+              }),
+          })),
       },
       ...schemes.map((scheme) => ({
         id: `scheme.${scheme}`,
@@ -113,6 +179,7 @@ export function CommandMenu({ ref }: { ref: Ref<CommandPaletteHandle> }) {
       },
     ];
   }, [
+    accounts.data,
     t,
     navigate,
     openEntry,
@@ -123,5 +190,15 @@ export function CommandMenu({ ref }: { ref: Ref<CommandPaletteHandle> }) {
     logout,
   ]);
 
-  return <CommandPalette ref={ref} items={items} groups={groups} />;
+  return (
+    <CommandPalette
+      ref={ref}
+      items={items}
+      groups={groups}
+      loading={opened && accounts.isPending}
+      onOpenChange={(next) => {
+        if (next) setOpened(true);
+      }}
+    />
+  );
 }

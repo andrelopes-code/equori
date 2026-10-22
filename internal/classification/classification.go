@@ -20,6 +20,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/classification/internal/app"
 	"github.com/andrelopes-code/equori/internal/classification/internal/domain"
 	"github.com/andrelopes-code/equori/internal/ledger"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 )
 
@@ -105,17 +106,59 @@ func (m *Module) DecideImport(ctx context.Context, userID int64, lines []ImportL
 	}
 	out := make([]*ledger.ImportDecision, len(decisions))
 	for i, d := range decisions {
-		if d == nil {
-			continue
-		}
-		out[i] = &ledger.ImportDecision{
-			PayeeID: d.PayeeID, AddTags: d.AddTags, TransferTo: d.TransferTo, Cause: ledger.Cause{Method: d.Method, RuleID: d.RuleID},
-		}
-		for _, a := range d.Parts {
-			out[i].Parts = append(out[i].Parts, ledger.CategoryPart{AccountID: a.CategoryID, Amount: a.Amount})
+		if d != nil {
+			out[i] = importDecision(*d)
 		}
 	}
 	return out, nil
+}
+
+// importDecisions keeps nil for a decision without payee, tags or category.
+func importDecisions(ds []domain.Decision) []*ledger.ImportDecision {
+	out := make([]*ledger.ImportDecision, len(ds))
+	for i, d := range ds {
+		if d.Method != "" || d.PayeeID != uuid.Nil || len(d.AddTags) > 0 {
+			out[i] = importDecision(d)
+		}
+	}
+	return out
+}
+
+func importDecision(d domain.Decision) *ledger.ImportDecision {
+	out := &ledger.ImportDecision{
+		PayeeID: d.PayeeID, AddTags: d.AddTags, TransferTo: d.TransferTo, Cause: ledger.Cause{Method: d.Method, RuleID: d.RuleID},
+	}
+	for _, a := range d.Parts {
+		out.Parts = append(out.Parts, ledger.CategoryPart{AccountID: a.CategoryID, Amount: a.Amount})
+	}
+	return out
+}
+
+// ManualLine is a line the owner writes, before the ledger records it. NamedPayee is the
+// payee whose name equals the description, the line's payee when no alias resolves one.
+type ManualLine struct {
+	AccountID   uuid.UUID
+	Date        time.Time
+	Amount      money.Money
+	Description string
+	NamedPayee  uuid.UUID
+}
+
+// DecideManual decides payee, tags and category of each line with the precedence of F5 for
+// origin manual (capture A113); the decision of a line with nothing to set is nil.
+func (m *Module) DecideManual(ctx context.Context, userID int64, lines []ManualLine) ([]*ledger.ImportDecision, error) {
+	in := make([]app.ManualLine, len(lines))
+	for i, l := range lines {
+		in[i] = app.ManualLine{
+			ImportLine: app.ImportLine{AccountID: l.AccountID, Date: l.Date, Amount: l.Amount, Description: l.Description},
+			NamedPayee: l.NamedPayee,
+		}
+	}
+	decisions, err := m.svc.DecideManual(ctx, userID, in)
+	if err != nil {
+		return nil, err
+	}
+	return importDecisions(decisions), nil
 }
 
 type ledgerPort struct{ l *ledger.Module }

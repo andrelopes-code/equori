@@ -222,7 +222,11 @@ export function TransactionsGrid({
       mode="client"
       hasMore={list.hasMore}
       onLoadMore={list.loadMore}
-      loading={list.pending || list.refreshing}
+      // Workaround for Slotted finding "Toggling aria-busy restyles every element below it": the
+      // grid's loading writes aria-busy, which costs 340 ms at 70 rows, so it covers the first
+      // read only and the header's bar shows a refresh. Workaround for Slotted finding "A data-grid
+      // with zero rows draws placeholders on every reload": an empty answer stays on screen.
+      loading={list.pending}
       error={list.error === null ? null : t("transactions.loadFailed")}
       onRetry={list.retry}
       showRange={false}

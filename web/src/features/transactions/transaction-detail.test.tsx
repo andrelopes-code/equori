@@ -159,6 +159,24 @@ describe("transaction detail", () => {
     },
   );
 
+  it("keeps each section's heading under the pane's header while the pane scrolls", async () => {
+    await renderApp(`/transactions?selected=${txID}`, {
+      width: 1280,
+      fetch: api(),
+    });
+    const heading = await screen.findByRole("heading", {
+      level: 3,
+      name: new RegExp(`^${catalogEn["detail.postings"]}`),
+    });
+    const panel = heading.closest('[data-ui="detail-panel"]');
+    expect(panel).not.toBeNull();
+    const sections = panel?.querySelectorAll('[data-ui="section"]') ?? [];
+    expect(sections.length).toBeGreaterThan(0);
+    for (const section of sections) {
+      expect(section).toHaveAttribute("data-sticky");
+    }
+  });
+
   it("voids with the reason the reader writes", async () => {
     const sent: Sent[] = [];
     await renderApp(`/transactions/${txID}`, { fetch: api(sent) });

@@ -1,0 +1,38 @@
+@layer app {
+  .sentence {
+    margin: 0;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+  }
+
+  .sentence:empty {
+    display: none;
+  }
+
+  /* The key figure is marked like a highlighter: twice the band a matched span gets, since it
+     marks one figure and not a query, in the tone's ink, behind the full text colour. */
+  .key {
+    --key-tone: var(--slotted-tone-accent-text);
+
+    padding-inline: var(--slotted-space-1);
+    border-radius: var(--slotted-radius-xs);
+    background: color-mix(
+      in oklab,
+      var(--key-tone) calc(var(--slotted-highlight-tint-opacity) * 200%),
+      transparent
+    );
+    color: var(--slotted-text);
+    font-weight: var(--slotted-font-weight-semibold);
+    box-decoration-break: clone;
+  }
+
+  .key[data-warning] {
+    --key-tone: var(--slotted-tone-warning-text);
+  }
+
+  @media (forced-colors: active) {
+    .key {
+      outline: var(--slotted-border-width-thin) solid CanvasText;
+    }
+  }
+}

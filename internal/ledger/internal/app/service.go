@@ -96,11 +96,17 @@ func (s *Service) SetBaseCurrency(ctx context.Context, userID int64, c money.Cur
 	})
 }
 
-func (s *Service) CreateInstitution(ctx context.Context, userID int64, name, code string) (Institution, error) {
-	if name == "" || len([]rune(name)) > 120 {
+func (s *Service) CreateInstitution(ctx context.Context, userID int64, i Institution) (Institution, error) {
+	if i.Name == "" || len([]rune(i.Name)) > 120 {
 		return Institution{}, &domain.FieldError{Field: "name", Message: "must have 1 to 120 characters", Err: domain.ErrValidation}
 	}
-	return s.repo.InsertInstitution(ctx, Institution{UserID: userID, Name: name, Code: code})
+	i.UserID = userID
+	return s.repo.InsertInstitution(ctx, i)
+}
+
+// SetInstitutionISPB sets the ISPB of an institution, or clears it when ispb is empty (ADR 013).
+func (s *Service) SetInstitutionISPB(ctx context.Context, userID int64, id uuid.UUID, ispb string) (Institution, error) {
+	return s.repo.SetInstitutionISPB(ctx, userID, id, ispb)
 }
 
 func (s *Service) ListInstitutions(ctx context.Context, userID int64, p page.Request[InstitutionKey]) ([]Institution, *InstitutionKey, error) {
@@ -531,9 +537,13 @@ func (s *Service) Versions(ctx context.Context, userID int64, id uuid.UUID) ([]V
 }
 
 // Reference is an inbound link: Source is the transaction that links to another one.
+// Reference is an inbound link: Source links to another transaction. Amount, when not zero, is what a
+// reimbursement_of link repays, in Currency.
 type Reference struct {
-	Type   domain.LinkType
-	Source uuid.UUID
+	Type     domain.LinkType
+	Source   uuid.UUID
+	Amount   int64
+	Currency string
 }
 
 // ReferencedBy returns the non-voided transactions that link to the transaction.

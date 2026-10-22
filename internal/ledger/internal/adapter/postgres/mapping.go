@@ -72,7 +72,7 @@ func originalInstrument(m *money.Money) *string {
 }
 
 func toInstitution(row LedgerInstitution) app.Institution {
-	return app.Institution{ID: row.ID, UserID: row.UserID, Name: row.Name, Code: deref(row.Code)}
+	return app.Institution{ID: row.ID, UserID: row.UserID, Name: row.Name, Code: deref(row.Code), ISPB: deref(row.Ispb)}
 }
 
 func toPayee(row LedgerPayee) app.Payee {
@@ -162,6 +162,7 @@ type snapshot struct {
 type snapshotLink struct {
 	Type   string    `json:"type"`
 	Target uuid.UUID `json:"target"`
+	Amount int64     `json:"amount,omitempty"`
 }
 
 type snapshotPosting struct {
@@ -186,7 +187,7 @@ func toSnapshot(t domain.Transaction) snapshot {
 		BalancingCurrency: string(t.BalancingCurrency), Origin: string(t.Origin), Version: t.Version, Tags: t.Tags,
 	}
 	for _, l := range t.Links {
-		s.Links = append(s.Links, snapshotLink{Type: string(l.Type), Target: l.Target})
+		s.Links = append(s.Links, snapshotLink{Type: string(l.Type), Target: l.Target, Amount: l.Amount})
 	}
 	for _, p := range t.Postings {
 		sp := snapshotPosting{
@@ -215,7 +216,7 @@ func (s snapshot) transaction(ctx context.Context, ins app.Instruments) (domain.
 		BalancingCurrency: money.Currency(s.BalancingCurrency), Origin: domain.Origin(s.Origin), Version: s.Version, Tags: s.Tags,
 	}
 	for _, l := range s.Links {
-		t.Links = append(t.Links, domain.Link{Type: domain.LinkType(l.Type), Target: l.Target})
+		t.Links = append(t.Links, domain.Link{Type: domain.LinkType(l.Type), Target: l.Target, Amount: l.Amount})
 	}
 	for _, sp := range s.Postings {
 		amount, err := app.AmountOf(ctx, ins, sp.Amount, money.Currency(sp.Currency))

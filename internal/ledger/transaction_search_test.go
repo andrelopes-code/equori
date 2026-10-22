@@ -230,3 +230,34 @@ func TestAccountFilterSubtreeWithCursorAndUncategorized(t *testing.T) {
 		t.Fatalf("uncategorized subtree = %v, want none", got)
 	}
 }
+
+// S98 (A105): a voided transaction cannot be categorized, so the uncategorized queue leaves it
+// out; the unfiltered list still shows it as history.
+func TestUncategorizedLeavesOutVoided(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	var accounts struct {
+		Items []struct {
+			ID         string `json:"id"`
+			SystemRole string `json:"system_role"`
+		} `json:"items"`
+	}
+	h.MustDo(http.MethodGet, "/api/v1/accounts?limit=200", nil, http.StatusOK, &accounts)
+	var uncategorized string
+	for _, a := range accounts.Items {
+		if a.SystemRole == "uncategorized_expense" {
+			uncategorized = a.ID
+		}
+	}
+	checking := h.Account("Checking", "asset", "checking", nil)
+	open := h.Record("2026-10-01", apitest.Posting(checking, -100), apitest.Posting(uncategorized, 100))
+	voided := h.Record("2026-10-02", apitest.Posting(checking, -200), apitest.Posting(uncategorized, 200))
+	h.MustDo(http.MethodPost, "/api/v1/transactions/"+voided+"/void", map[string]string{"reason": "paired"}, http.StatusOK, nil)
+
+	if got := transactionIDs(t, h, "uncategorized=true"); !slices.Equal(got, []string{open}) {
+		t.Fatalf("uncategorized = %v, want [%s]", got, open)
+	}
+	if got := transactionIDs(t, h, "limit=50"); !slices.Equal(got, []string{voided, open}) {
+		t.Fatalf("all = %v, want [%s %s]", got, voided, open)
+	}
+}

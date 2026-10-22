@@ -1,0 +1,123 @@
+@layer app {
+  /* The composer reads this radius; the halo is the same shape, one medium edge wider. The
+     ring is the composer's edge and its focus mark: the family's own edge and focus outline
+     give way to it (forced colours bring them back below). */
+  .halo {
+    --slotted-prompt-composer-radius: var(--slotted-radius-lg);
+    --slotted-prompt-composer-border-color: transparent;
+    --slotted-prompt-composer-hover-border-color: transparent;
+    /* Workaround for Slotted finding "Prompt composer's focus outline fades in from the text
+       colour": with no width the outline draws nothing, white flash included. */
+    --slotted-focus-ring-width: 0px;
+    /* The lift's shadow falls over the ring's lower edge; the glow takes its place. */
+    --slotted-prompt-composer-raised-shadow: none;
+    --slotted-prompt-composer-raised-focus-shadow: none;
+
+    position: relative;
+    isolation: isolate;
+    border-radius: calc(
+      var(--slotted-radius-lg) + var(--slotted-border-width-medium)
+    );
+  }
+
+  /* The ring and the glow are the same turning disc of the data hues, clipped to the halo's
+     shape: the composer covers its middle, so the ring shows as the edge; the glow is the
+     same disc blurred behind it. */
+  .ring,
+  .glow {
+    position: absolute;
+    inset: calc(-1 * var(--slotted-border-width-medium));
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+    transition: opacity var(--slotted-duration-medium)
+      var(--slotted-easing-standard);
+  }
+
+  .ring {
+    z-index: -1;
+    opacity: 0.55;
+  }
+
+  .glow {
+    z-index: -2;
+    filter: blur(var(--slotted-space-8));
+    opacity: 0.12;
+  }
+
+  .halo:focus-within .ring,
+  .halo[data-busy] .ring {
+    opacity: 1;
+  }
+
+  .halo:focus-within .glow {
+    opacity: 0.45;
+  }
+
+  /* Reading or recording lights the glow fully; the speed never changes, so the hues never
+     jump. */
+  .halo[data-busy] .glow {
+    opacity: 0.7;
+  }
+
+  /* A square wider than the halo's diagonal for a halo up to its width tall, turned by
+     transform, which the compositor runs while the page renders drafts. One lap takes six
+     slow loops: no duration token is as slow as an ambient turn. */
+  .disc {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    inline-size: 150%;
+    aspect-ratio: 1;
+    background: conic-gradient(
+      var(--slotted-data-1),
+      var(--slotted-data-3),
+      var(--slotted-data-5),
+      var(--slotted-data-2),
+      var(--slotted-data-1)
+    );
+    translate: -50% -50%;
+    will-change: rotate;
+    animation: capture-halo-turn calc(var(--slotted-duration-loop-slow) * 6)
+      linear infinite;
+  }
+
+  @keyframes capture-halo-turn {
+    to {
+      rotate: 1turn;
+    }
+  }
+
+  .hint {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--slotted-space-2);
+    margin-inline-end: auto;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    white-space: nowrap;
+  }
+
+  .spark {
+    color: var(--slotted-data-3);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .disc {
+      animation: none;
+    }
+  }
+
+  /* Forced colours keep the composer's own edge and focus outline; the hues carry no state. */
+  @media (forced-colors: active) {
+    .halo {
+      --slotted-prompt-composer-border-color: CanvasText;
+      --slotted-focus-ring-width: var(--slotted-border-width-medium);
+    }
+
+    .ring,
+    .glow {
+      display: none;
+    }
+  }
+}

@@ -46,7 +46,7 @@ import {
   useDeleteRule,
   useReplaceRule,
 } from "@/features/categories/api";
-import type { Choice } from "@/features/categories/choice-select";
+import type { Choice } from "@/ui/choice-select";
 import { ConditionRow } from "@/features/categories/condition-row";
 import {
   draftFromRule,

@@ -158,4 +158,23 @@ describe("CorrectTransactionPage", () => {
       ],
     });
   });
+
+  it("names a reconciled transaction instead of reporting a stale version", async () => {
+    const sent: unknown[] = [];
+    await renderApp(`/transactions/${txID}/correct`, {
+      fetch: api(sent, [() => problem(409, "posting_reconciled")]),
+    });
+    await userEvent.type(
+      await screen.findByRole("textbox", { name: catalogEn["correct.reason"] }),
+      "Fix",
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["correct.save"] }),
+    );
+    expect(
+      await screen.findByText(catalogEn["problem.posting_reconciled"]),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(catalogEn["conflict.title"])).toBeNull();
+    expect(sent).toHaveLength(1);
+  });
 });

@@ -23,6 +23,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/identity"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
+	"github.com/andrelopes-code/equori/internal/platform/llm"
 	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
 	"github.com/andrelopes-code/equori/internal/server"
 )
@@ -70,6 +71,17 @@ func Today(date string) Option {
 	}
 	clk := clock.New(time.UTC, func() time.Time { return d.Add(12 * time.Hour) })
 	return func(c *server.Config) { c.Clock = &clk }
+}
+
+// LLM routes language model calls to providers, on the harness clock when Today came first.
+func LLM(providers ...llm.Provider) Option {
+	return func(c *server.Config) {
+		clk := clock.New(time.UTC, time.Now)
+		if c.Clock != nil {
+			clk = *c.Clock
+		}
+		c.LLM = llm.NewRouter(&clk, slog.New(slog.DiscardHandler), providers...)
+	}
 }
 
 // Web serves fsys as the single-page application outside /api/.

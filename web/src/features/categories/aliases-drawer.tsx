@@ -30,7 +30,7 @@ import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import styles from "@/features/categories/aliases-drawer.module.css";
 import { useCreateAlias, useDeleteAlias } from "@/features/categories/api";
-import { ChoiceSelect } from "@/features/categories/choice-select";
+import { ChoiceSelect } from "@/ui/choice-select";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
 

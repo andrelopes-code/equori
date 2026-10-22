@@ -12,6 +12,7 @@ A bounded context is a part of the domain with its own model and its own data, i
 | Schedules, subscriptions, budgets, goals, projections | Core | Planning | Commitments and projections are the main differentiator (G2, G4). |
 | Categorization rules and payees | Core | Classification | Categorization quality decides the value of every report (G7). |
 | File import and aggregator sync | Supporting | Ingestion | Translates external formats; no rules of its own beyond deduplication and matching. |
+| Text capture | Supporting | Capture | Reads text the owner writes into transaction drafts; records nothing itself. |
 | Positions, average cost, tax data | Supporting | Portfolio | Derived from ledger postings by Receita Federal rules (D1). |
 | Instruments and prices | Supporting | Market data | Reference data used by Ledger and Portfolio. |
 | Reports and analytics | Supporting | Reporting | Read-only views over the other contexts (G11). |
@@ -29,6 +30,7 @@ flowchart TB
   PL[Planning]
   PF[Portfolio]
   RP[Reporting]
+  CP[Capture]
   PLG[[Pluggy / Open Finance]]
   OFX[[OFX / CSV files]]
   FEED[[Price feeds]]
@@ -41,6 +43,8 @@ flowchart TB
   OFX -- "ACL" --> IN
   IN -- "commands: record, match, assert balance" --> LG
   LG -- "events" --> CL
+  CP -- "query: vocabulary" --> LG
+  CP -- "query: decide manual lines" --> CL
   CL -- "command: categorize" --> LG
   LG -- "events" --> PL
   PL -- "query: transactions" --> LG
@@ -57,6 +61,7 @@ flowchart TB
 | Price feeds → Market data | Anti-corruption layer | Same, for prices. |
 | Ingestion → Ledger | Customer / supplier | Ingestion uses Ledger commands; Ledger keeps its invariants. |
 | Classification → Ledger | Customer / supplier | Classification decides categories; Ledger records them. |
+| Capture → Ledger, Classification | Customer / supplier | Capture reads accounts, payees and decisions; the client records the drafts through the Ledger batch. |
 | Planning, Portfolio → Ledger | Conformist | They adopt Ledger's events and identifiers as they are. |
 | Reporting → Ledger, Planning, Portfolio | Read-only shared database | Reporting reads tables of other contexts with `SELECT` only (ADR 002). |
 | Identity → all | Upstream | Every context stores `user_id` and receives it from the request (ADR 003). |
@@ -69,7 +74,7 @@ flowchart TB
 |---|---|
 | Responsibility | Accounts of every class, transactions, postings, links, card statements, billing cycle rules, installment plans, balance assertions, reconciliation, payees, tags, attachments. |
 | Invariants | I01–I06, I08–I09 (chapter 3). |
-| Commands | `RecordTransaction`, `CorrectTransaction`, `VoidTransaction`, `RecordCardPurchase`, `PayStatement`, `FinanceStatement`, `RefundPurchase`, `CancelInstallments`, `AnticipateInstallments`, `ChangeBillingCycleRule`, `AssertBalance`, `Reconcile`, `RecordYield`, `AdjustBalance`, `Categorize`, `AttachFile`, `RecordForeignPurchase`, `ExchangeCurrency`, `RecordTrade`, `RecordInvestmentIncome` (P8 amendments A66–A70), account and payee management. |
+| Commands | `RecordTransaction`, `RecordBatch` (capture A114), `CorrectTransaction`, `VoidTransaction`, `RecordCardPurchase`, `PayStatement`, `FinanceStatement`, `RefundPurchase`, `CancelInstallments`, `AnticipateInstallments`, `ChangeBillingCycleRule`, `AssertBalance`, `Reconcile`, `RecordYield`, `AdjustBalance`, `Categorize`, `AttachFile`, `RecordForeignPurchase`, `ExchangeCurrency`, `RecordTrade`, `RecordInvestmentIncome` (P8 amendments A66–A70), account and payee management. |
 | Queries | Balance at a date, balance series, statements, postings by account and period, transaction by id, installment plans. |
 | Events published | `TransactionRecorded`, `TransactionCorrected`, `TransactionCategorized`, `TransactionVoided`, `StatementClosed`, `StatementOverdue`, `BalanceAsserted`, `DifferenceFound`, `AccountReconciled`, `AccountOpened`, `AccountClosed`. |
 
@@ -132,6 +137,15 @@ Trades and investment income are Ledger transactions. Portfolio derives everythi
 | Responsibility | Spending by category and period (accrual and cash views), net worth series, statement analytics, commitments, budget progress, export (SC6). |
 | Data | Read-only queries over Ledger, Planning and Portfolio tables; derived tables (B08) rebuilt from facts. |
 
+### 4.3.8 Capture
+
+| Item | Content |
+|---|---|
+| Responsibility | The grammar that reads a line of text into a transaction draft and its issues (`docs/superpowers/specs/2026-10-21-text-capture-design.md`, A106–A116). No tables. |
+| Commands | None; `PreviewCapture` is a query. Drafts are recorded with Ledger `RecordBatch` (`POST /transaction-batches`). |
+| Events published | None. |
+| Calls | Ledger `CaptureVocabulary`, `BaseCurrency`, `Today`; Classification `DecideManual`. |
+
 ## 4.4 Communication between contexts
 
 | Mechanism | Used for | Guarantee |
@@ -168,6 +182,7 @@ Consequence: a view may show a transaction as uncategorized for the time between
 | Ledger | `internal/ledger` | `ledger_` |
 | Classification | `internal/classification` | `classification_` |
 | Ingestion | `internal/ingestion` | `ingestion_` |
+| Capture | `internal/capture` | none |
 | Planning | `internal/planning` | `planning_` |
 | Portfolio | `internal/portfolio` | `portfolio_` |
 | Market data | `internal/marketdata` | `marketdata_` |

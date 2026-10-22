@@ -1,5 +1,5 @@
 import { Glyph, Icon } from "@slotted/react/icon";
-import { Button, IconButton } from "@slotted/react/button";
+import { Button } from "@slotted/react/button";
 import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import {
   PageHeader,
@@ -19,6 +19,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useDeferredValue, useMemo, useState } from "react";
 
+import { HeaderProgress } from "@/ui/header-progress";
+import { RefreshButton } from "@/ui/refresh-button";
+import { useRefresh } from "@/ui/use-refresh";
 import { useApi } from "@/api/api-context";
 import { errorText } from "@/api/problem";
 import { accountsQuery } from "@/features/accounts";
@@ -31,7 +34,7 @@ import {
 } from "@/features/transactions/api";
 import { validateTransactionSearch } from "@/features/transactions/search";
 import type { TransactionSearchDraft } from "@/features/transactions/search";
-import { PeriodControl } from "@/features/transactions/period-control";
+import { PeriodControl } from "@/ui/period-control";
 import { PeriodSummary } from "@/features/transactions/period-summary";
 import { SelectionBar } from "@/features/transactions/selection-bar";
 import { TransactionFilters } from "@/features/transactions/transaction-filters";
@@ -132,6 +135,11 @@ export function TransactionsPage() {
             : uncategorized.data.count,
         });
 
+  const refresh = useRefresh(() =>
+    queryClient.invalidateQueries({
+      queryKey: transactionKeys.all,
+    }),
+  );
   return (
     <Page
       width="full"
@@ -180,21 +188,11 @@ export function TransactionsPage() {
                   });
                 }}
               />
-              <IconButton
-                aria-label={t("transactions.refresh")}
-                variant="ghost"
-                tone="secondary"
-                loading={list.refreshing}
-                onClick={() => {
-                  void queryClient.invalidateQueries({
-                    queryKey: transactionKeys.all,
-                  });
-                }}
-              >
-                <Icon>
-                  <Glyph name="rotate-ccw" />
-                </Icon>
-              </IconButton>
+              <RefreshButton
+                label={t("transactions.refresh")}
+                refreshing={refresh.refreshing}
+                onRefresh={refresh.refresh}
+              />
               {!compact && (
                 <Button
                   start={
@@ -241,6 +239,12 @@ export function TransactionsPage() {
             </TabList>
           </Tabs>
         </PageHeaderTabs>
+        {/* Workaround for Slotted finding "PageHeaderProgress before PageHeaderTabs draws between
+            the title and the tabs": it stands after the tabs, on the header's closing line. */}
+        <HeaderProgress
+          loading={refresh.refreshing || list.refreshing}
+          {...(refresh.refreshing ? { delay: 0 } : {})}
+        />
       </PageHeader>
       <PageBody id={listID}>
         <div className={styles.region} aria-busy={shown !== search}>

@@ -1,0 +1,20 @@
+@layer app {
+  /* Android's modal sheet: 28 px upper corners and no rule under its header. */
+  .sheet {
+    --slotted-drawer-radius: 1.75rem;
+    --slotted-drawer-rule-color: transparent;
+  }
+
+  /* Families read: drawer, list, list-item, field, segmented-control. The destinations, the
+     display choices and the way out stand one step apart, as the groups of an Android sheet. */
+  .body {
+    display: grid;
+    gap: var(--slotted-space-6);
+    padding-block-end: env(safe-area-inset-bottom, 0px);
+  }
+
+  .choices {
+    display: grid;
+    gap: var(--slotted-space-5);
+  }
+}

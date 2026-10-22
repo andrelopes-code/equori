@@ -8,6 +8,10 @@
     margin: 0;
   }
 
+  .text-trim {
+    text-box: trim-both cap alphabetic;
+  }
+
   #root {
     block-size: 100dvh;
   }

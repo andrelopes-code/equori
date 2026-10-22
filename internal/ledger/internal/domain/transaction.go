@@ -51,9 +51,12 @@ const (
 
 var linkTypes = []LinkType{LinkRefundOf, LinkReimbursementOf, LinkCancellationOf, LinkAnticipationOf, LinkChargebackOf, LinkCorrectionOf}
 
+// Link relates a transaction to another. Amount, when not zero, is the part of the target that a
+// reimbursement_of link repays (A117), in the balancing currency of the transaction.
 type Link struct {
 	Type   LinkType
 	Target uuid.UUID
+	Amount int64
 }
 
 type Posting struct {
@@ -173,6 +176,9 @@ func NewTransaction(t Transaction, accounts map[uuid.UUID]Account) (Transaction,
 		if l.Target == uuid.Nil || l.Target == t.ID {
 			return Transaction{}, invalid(fmt.Sprintf("links[%d].target", i), "must reference another transaction")
 		}
+		if l.Amount < 0 || (l.Amount != 0 && l.Type != LinkReimbursementOf) {
+			return Transaction{}, invalid(fmt.Sprintf("links[%d].amount", i), "must be positive and only on a reimbursement_of link")
+		}
 	}
 	return t, nil
 }
@@ -256,6 +262,10 @@ func (t Transaction) Correct(next Transaction, expectedVersion int, accounts map
 	next.ID = t.ID
 	next.UserID = t.UserID
 	next.Version = t.Version + 1
+	// A correction that names no links keeps the ones t has; an empty list clears them.
+	if next.Links == nil {
+		next.Links = t.Links
+	}
 	postings, err := keepRecordLinks(t.Postings, next.Postings)
 	if err != nil {
 		return Transaction{}, err

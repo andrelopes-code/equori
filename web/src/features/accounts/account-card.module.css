@@ -1,0 +1,346 @@
+@layer app {
+  /* The card is a physical object drawn on its own material: a dark ground derived from the
+     account's colour (OKLCH lightness fixed at 0.40, so white text keeps at least 4.5:1 with any
+     hue) and white ink at fixed alphas. No token holds a ground, an ink or a measure of that
+     object; the literals below are its specification. */
+  .root {
+    /* The shadow hue of an account without a colour; the inline style of the root replaces it. */
+    --account-card-color: oklch(0.26 0.012 265);
+
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-5);
+    min-inline-size: 0;
+  }
+
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-sizing: border-box;
+    inline-size: 100%;
+    /* The physical card is drawn between 280 and 400 px wide, at the ID-1 ratio. */
+    min-inline-size: 280px;
+    max-inline-size: 400px;
+    aspect-ratio: 1.586;
+    padding: 20px 22px;
+    overflow: hidden;
+    border: var(--slotted-border-width-thin) solid rgb(255 255 255 / 8%);
+    border-radius: 14px;
+    background: var(--account-card-color);
+    background: oklch(from var(--account-card-color) 0.4 c h);
+    /* The first shadow is the light caught by the top edge: inset, it follows the corner radius
+       and fades along the curves. */
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 18%),
+      0 1px 2px rgb(15 23 42 / 20%),
+      0 14px 28px -12px rgb(0 0 0 / 40%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 18%),
+      0 1px 2px rgb(15 23 42 / 20%),
+      0 14px 28px -12px oklch(from var(--account-card-color) 0.3 c h / 55%);
+    color: white;
+    font-family: var(--slotted-font-family-sans);
+    font-variant-numeric: tabular-nums;
+    text-decoration: none;
+    transition:
+      translate var(--slotted-duration-short) var(--slotted-easing-standard),
+      box-shadow var(--slotted-duration-short) var(--slotted-easing-standard);
+  }
+
+  /* An account without a colour is a graphite card: a near-black ground lit from the top left,
+     darker than any slot at L = 0.40, so it reads as no colour rather than as a grey one. */
+  .root:not([data-colour]) .card {
+    background: linear-gradient(
+      135deg,
+      oklch(0.34 0.012 265) 0%,
+      oklch(0.22 0.01 265) 60%,
+      oklch(0.18 0.008 265) 100%
+    );
+  }
+
+  /* A card that is a link rises under the pointer and draws the focus ring of the page. */
+  a.card:hover {
+    translate: 0 -2px;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 18%),
+      0 1px 2px rgb(15 23 42 / 20%),
+      0 18px 32px -12px oklch(from var(--account-card-color) 0.3 c h / 70%);
+  }
+
+  a.card:active {
+    translate: 0;
+  }
+
+  a.card:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  /* The art covers the card; its own mask keeps it on the right, away from the text. */
+  .art {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  .header,
+  .chip,
+  .value,
+  .meter {
+    position: relative;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-4);
+    min-inline-size: 0;
+  }
+
+  .tile {
+    display: grid;
+    flex: none;
+    place-items: center;
+    box-sizing: border-box;
+    inline-size: 22px;
+    block-size: 22px;
+    overflow: hidden;
+    border: var(--slotted-border-width-thin) solid rgb(255 255 255 / 18%);
+    border-radius: var(--slotted-radius-md);
+    background: rgb(255 255 255 / 16%);
+    /* A two-letter monogram inside a 22 px tile; the type scale stops at 12 px. */
+    font-size: 9px;
+    font-weight: var(--slotted-font-weight-semibold);
+    line-height: 1;
+  }
+
+  /* Bank logos are drawn for a light ground: the tile turns opaque white under one. */
+  .tile[data-logo] {
+    padding: 2px;
+    background: white;
+  }
+
+  .logo {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: contain;
+  }
+
+  .title {
+    flex: 1;
+    min-inline-size: 0;
+    overflow: hidden;
+    font-size: var(--slotted-font-size-sm);
+    font-weight: var(--slotted-font-weight-semibold);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .kind {
+    flex: none;
+    color: rgb(255 255 255 / 78%);
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-medium);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .secondary {
+    color: rgb(255 255 255 / 75%);
+  }
+
+  .chip {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-5);
+    font-size: var(--slotted-font-size-xs);
+    line-height: var(--slotted-line-height-xs);
+  }
+
+  .chipBox {
+    display: flex;
+    flex: none;
+    align-items: flex-end;
+    gap: 2px;
+    box-sizing: border-box;
+    inline-size: 40px;
+    block-size: 30px;
+    padding: 6px 6px 5px;
+    border: var(--slotted-border-width-thin) solid rgb(255 255 255 / 22%);
+    border-radius: var(--slotted-radius-md);
+    background: rgb(255 255 255 / 10%);
+  }
+
+  .chipBar {
+    flex: 1;
+    border-radius: 1px;
+    background: white;
+    opacity: 0.7;
+  }
+
+  .chipBar[data-last] {
+    opacity: 1;
+  }
+
+  .chipText {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .chipSum {
+    font-weight: var(--slotted-font-weight-medium);
+  }
+
+  .value {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-1);
+    font-size: var(--slotted-font-size-xs);
+  }
+
+  .amount {
+    /* The card's figure: 30 px, between the 4xl step and a display size, and its minor parts at
+       60% of it. */
+    --account-card-figure: 30px;
+
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .symbol {
+    color: rgb(255 255 255 / 75%);
+    font-size: var(--slotted-font-size-md);
+    font-weight: var(--slotted-font-weight-medium);
+  }
+
+  .integer {
+    font-size: var(--account-card-figure);
+    font-weight: var(--slotted-font-weight-semibold);
+    letter-spacing: var(--slotted-letter-spacing-tight);
+  }
+
+  .fraction {
+    color: rgb(255 255 255 / 75%);
+    font-size: calc(var(--account-card-figure) * 0.6);
+    font-weight: var(--slotted-font-weight-medium);
+  }
+
+  .meter {
+    --meter-ink: white;
+
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-3);
+    font-size: var(--slotted-font-size-xs);
+  }
+
+  .meter[data-state="alert"] {
+    --meter-ink: var(--slotted-tone-warning-solid);
+  }
+
+  .meter[data-state="over"] {
+    --meter-ink: var(--slotted-tone-danger-text);
+  }
+
+  .meter[data-state="reached"] {
+    --meter-ink: var(--slotted-tone-success-text);
+  }
+
+  .meterLabels {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--slotted-space-4);
+    white-space: nowrap;
+  }
+
+  .meterLeft {
+    overflow: hidden;
+    color: rgb(255 255 255 / 82%);
+    text-overflow: ellipsis;
+  }
+
+  .meterRight {
+    color: var(--meter-ink);
+    font-weight: var(--slotted-font-weight-semibold);
+  }
+
+  /* The glyph stands on the baseline at the height of a capital letter. */
+  .warning {
+    block-size: 0.7em;
+    block-size: 1cap;
+    inline-size: auto;
+    margin-inline-end: var(--slotted-space-2);
+    fill: currentcolor;
+    vertical-align: baseline;
+  }
+
+  .segments {
+    display: grid;
+    grid-template-columns: repeat(20, 1fr);
+    gap: 2px;
+    block-size: 5px;
+  }
+
+  .segment {
+    border-radius: 1px;
+    background: rgb(255 255 255 / 18%);
+  }
+
+  .segment[data-segment="filled"] {
+    background: var(--meter-ink);
+  }
+
+  .segment[data-segment="risk"] {
+    background: color-mix(
+      in srgb,
+      var(--slotted-tone-warning-solid) 28%,
+      transparent
+    );
+  }
+
+  .placeholder {
+    display: block;
+    border-radius: var(--slotted-radius-sm);
+    background: rgb(255 255 255 / 14%);
+  }
+
+  .placeholder[data-size="title"] {
+    inline-size: 96px;
+    block-size: 10px;
+  }
+
+  .placeholder[data-size="label"] {
+    inline-size: 72px;
+    block-size: 8px;
+  }
+
+  .placeholder[data-size="amount"] {
+    inline-size: 160px;
+    block-size: 26px;
+  }
+
+  .placeholder[data-size="meter"] {
+    block-size: 5px;
+  }
+
+  .card[aria-busy="true"] .tile {
+    border: 0;
+    background: rgb(255 255 255 / 14%);
+  }
+
+  @media (forced-colors: active) {
+    .segment[data-segment="filled"] {
+      background: CanvasText;
+    }
+
+    a.card:hover {
+      outline: var(--slotted-border-width-thin) solid LinkText;
+    }
+  }
+}

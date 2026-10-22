@@ -14,6 +14,7 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { useT } from "@/i18n/i18n-provider";
+import { HeaderProgress } from "@/ui/header-progress";
 
 export type CategoriesTab = "categories" | "rules" | "payees";
 
@@ -34,11 +35,17 @@ export function CategoriesHeader({
   current,
   actions,
   rulesLabel,
+  refreshing,
+  requested = false,
 }: {
   current: CategoriesTab;
   actions?: ReactNode;
   // The rules tab names the pending suggestions when there are any.
   rulesLabel?: string | undefined;
+  // A page that reads again while its figures are on screen shows the wait on the header's bar.
+  refreshing?: boolean | undefined;
+  // A refresh the reader asked for paints the bar at once.
+  requested?: boolean;
 }) {
   const t = useT();
   const navigate = useNavigate();
@@ -84,6 +91,14 @@ export function CategoriesHeader({
           </TabList>
         </Tabs>
       </PageHeaderTabs>
+      {/* Workaround for Slotted finding "PageHeaderProgress before PageHeaderTabs draws between
+          the title and the tabs": it stands after the tabs, on the header's closing line. */}
+      {refreshing !== undefined && (
+        <HeaderProgress
+          loading={refreshing}
+          {...(requested ? { delay: 0 } : {})}
+        />
+      )}
     </PageHeader>
   );
 }

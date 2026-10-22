@@ -20,10 +20,32 @@ import { useSessionExpiry } from "@/app/providers";
 import { RouteError } from "@/app/route-error";
 import { RouteNotFound } from "@/app/route-not-found";
 import { AppFrame } from "@/app/shell/app-frame";
-import { AccountPage, AccountsPage } from "@/features/accounts";
+import {
+  AccountPage,
+  AccountsLayout,
+  AccountsPage,
+  BatchPage,
+  EditAccountPage,
+  ImportPage,
+  InstitutionsPage,
+  LinksPage,
+  NewAccountPage,
+  validateAccountFormSearch,
+  validateAccountSearch,
+  validateBatchSearch,
+  validateLinksSearch,
+  validateAccountsSearch,
+  AccountCardPreview,
+} from "@/features/accounts";
 import { AdminPage } from "@/features/admin";
 import { OverviewPage } from "@/features/overview";
-import { CardOverviewPage, CardsPage } from "@/features/cards";
+import {
+  CardPage,
+  CardsPage,
+  StatementPage,
+  validateCardSearch,
+  validateStatementSearch,
+} from "@/features/cards";
 import {
   CategoriesPage,
   PayeesPage,
@@ -36,6 +58,7 @@ import { GoalsPage } from "@/features/goals";
 import { LoginPage, meQuery } from "@/features/session";
 import { SettingsPage } from "@/features/setup";
 import {
+  CapturePage,
   CorrectTransactionPage,
   NewTransactionPage,
   TransactionPage,
@@ -101,9 +124,49 @@ const settingsRoute = createRoute({
 const accountRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "accounts/$id",
+  validateSearch: validateAccountSearch,
   // A failed chunk load falls to the Chart error state instead of the route error screen.
   loader: () => preloadChartEngine(["line"]).catch(() => undefined),
   component: AccountPage,
+});
+
+const institutionsRoute = createRoute({
+  getParentRoute: () => accountsLayoutRoute,
+  path: "institutions",
+  component: InstitutionsPage,
+});
+
+const newAccountRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "accounts/new",
+  validateSearch: validateAccountFormSearch,
+  component: NewAccountPage,
+});
+
+const editAccountRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "accounts/$id/edit",
+  component: EditAccountPage,
+});
+
+const importRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "accounts/$id/import",
+  component: ImportPage,
+});
+
+const batchRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "accounts/$id/imports/$batchId",
+  validateSearch: validateBatchSearch,
+  component: BatchPage,
+});
+
+const linksRoute = createRoute({
+  getParentRoute: () => accountsLayoutRoute,
+  path: "links",
+  validateSearch: validateLinksSearch,
+  component: LinksPage,
 });
 
 const cardsRoute = createRoute({
@@ -115,12 +178,15 @@ const cardsRoute = createRoute({
 const cardRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "cards/$accountId",
-  validateSearch: (search): { from?: string } =>
-    typeof search.from === "string" &&
-    /^\d{4}-(0[1-9]|1[0-2])$/.test(search.from)
-      ? { from: search.from }
-      : {},
-  component: CardOverviewPage,
+  validateSearch: validateCardSearch,
+  component: CardPage,
+});
+
+const statementRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "cards/$accountId/statements/$statementId",
+  validateSearch: validateStatementSearch,
+  component: StatementPage,
 });
 
 const homeRoute = createRoute({
@@ -185,9 +251,16 @@ const adminRoute = createRoute({
   component: AdminPage,
 });
 
-const accountsRoute = createRoute({
+const accountsLayoutRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "accounts",
+  component: AccountsLayout,
+});
+
+const accountsRoute = createRoute({
+  getParentRoute: () => accountsLayoutRoute,
+  path: "/",
+  validateSearch: validateAccountsSearch,
   component: AccountsPage,
 });
 
@@ -199,6 +272,12 @@ const newTransactionRoute = createRoute({
     return account_id === undefined ? {} : { account_id };
   },
   component: NewTransactionPage,
+});
+
+const captureRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "transactions/capture",
+  component: CapturePage,
 });
 
 const transactionRoute = createRoute({
@@ -213,12 +292,25 @@ const correctTransactionRoute = createRoute({
   component: CorrectTransactionPage,
 });
 
+// Pages that check an element in isolation; a production build drops the branch and the pages.
+const previewRoutes = import.meta.env.DEV
+  ? [
+      createRoute({
+        getParentRoute: () => rootRoute,
+        path: "/preview/account-card",
+        component: AccountCardPreview,
+      }),
+    ]
+  : [];
+
 export const routeTree = rootRoute.addChildren([
   loginRoute,
+  ...previewRoutes,
   authedRoute.addChildren([
     homeRoute,
     transactionsRoute,
     newTransactionRoute,
+    captureRoute,
     transactionRoute,
     correctTransactionRoute,
     categoriesRoute,
@@ -227,10 +319,19 @@ export const routeTree = rootRoute.addChildren([
     ruleRoute,
     payeesRoute,
     goalsRoute,
-    accountsRoute,
+    accountsLayoutRoute.addChildren([
+      accountsRoute,
+      institutionsRoute,
+      linksRoute,
+    ]),
+    newAccountRoute,
     accountRoute,
+    editAccountRoute,
+    importRoute,
+    batchRoute,
     cardsRoute,
     cardRoute,
+    statementRoute,
     settingsRoute,
     adminRoute,
   ]),

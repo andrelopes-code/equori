@@ -66,7 +66,7 @@ interface Seen {
 
 function api(
   seen: Seen,
-  answer: (query: URLSearchParams) => Response = (query) =>
+  answer: (query: URLSearchParams) => Response | Promise<Response> = (query) =>
     query.get("cursor") === "page-2"
       ? json(200, { items: [older] })
       : json(200, { items: [groceries, uncategorized], next_cursor: "page-2" }),
@@ -126,6 +126,46 @@ describe("TransactionsPage", () => {
     expect(seen.queries.map((q) => q.get("cursor"))).toEqual([null, "page-2"]);
   });
 
+  // A refresh reads the whole page again, so the header's bar waits on it, not the button.
+  it("shows a refresh on its button and the page header's bar and keeps the rows", async () => {
+    const seen: Seen = { queries: [] };
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await renderApp("/transactions", {
+      fetch: api(seen, (query) => {
+        const page =
+          query.get("cursor") === "page-2"
+            ? json(200, { items: [older] })
+            : json(200, {
+                items: [groceries, uncategorized],
+                next_cursor: "page-2",
+              });
+        return seen.queries.length > 2 ? held.then(() => page) : page;
+      }),
+      today: "2026-10-17",
+    });
+    await screen.findByText("Year end");
+    const refresh = screen.getByRole("button", {
+      name: catalogEn["transactions.refresh"],
+    });
+    await userEvent.click(refresh);
+    const header = document.querySelector('[data-ui="page-header"]');
+    if (!(header instanceof HTMLElement)) throw new Error("no page header");
+    // The button waits on the refresh (AF-03) and the header's bar shows it at once.
+    expect(within(refresh).getByRole("progressbar")).toBeInTheDocument();
+    expect(await within(header).findAllByRole("progressbar")).toHaveLength(2);
+    expect(screen.getByText("Padaria")).toBeInTheDocument();
+    release();
+    await waitFor(
+      () => {
+        expect(within(header).queryByRole("progressbar")).toBeNull();
+      },
+      { timeout: 2000 },
+    );
+  });
+
   it("names the uncategorized tab with its count and opens the queue", async () => {
     const seen: Seen = { queries: [] };
     const { router } = await renderApp("/transactions", { fetch: api(seen) });
@@ -167,6 +207,32 @@ describe("TransactionsPage", () => {
       screen.getByRole("group", { name: /^Category: / }),
     ).toBeInTheDocument();
     expect(seen.queries[0]?.get("account_id")).toBe(foodID);
+  });
+
+  // AF-02: a list that answered with zero rows keeps its empty state while a refresh runs.
+  it("keeps the empty state on screen during a refresh", async () => {
+    const seen: Seen = { queries: [] };
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await renderApp("/transactions", {
+      fetch: api(seen, () => {
+        const page = json(200, { items: [] });
+        return seen.queries.length > 1 ? held.then(() => page) : page;
+      }),
+    });
+    await screen.findByText(catalogEn["transactions.empty"]);
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["transactions.refresh"] }),
+    );
+    const header = document.querySelector('[data-ui="page-header"]');
+    if (!(header instanceof HTMLElement)) throw new Error("no page header");
+    expect(await within(header).findAllByRole("progressbar")).toHaveLength(2);
+    expect(
+      screen.getByText(catalogEn["transactions.empty"]),
+    ).toBeInTheDocument();
+    release();
   });
 
   it("states an empty ledger, and a filtered empty list with a way back", async () => {

@@ -17,8 +17,12 @@ export function DetailActions({
   host,
   voided,
   transfer,
+  inflow,
+  expense,
   onCorrect,
   onTransfer,
+  onReimburse,
+  onRepay,
   onVoid,
   onOpenPage,
   onClose,
@@ -26,8 +30,12 @@ export function DetailActions({
   host: "page" | "pane";
   voided: boolean;
   transfer: boolean;
+  inflow: boolean;
+  expense: boolean;
   onCorrect: () => void;
   onTransfer: () => void;
+  onReimburse: () => void;
+  onRepay: () => void;
   onVoid: () => void;
   onOpenPage: () => void;
   onClose?: (() => void) | undefined;
@@ -53,6 +61,26 @@ export function DetailActions({
             onClick={onTransfer}
           >
             {t("detail.transfer")}
+          </Button>
+        )}
+        {expense && (
+          <Button
+            size="sm"
+            variant="outline"
+            tone="secondary"
+            onClick={onRepay}
+          >
+            {t("detail.repay")}
+          </Button>
+        )}
+        {inflow && (
+          <Button
+            size="sm"
+            variant="outline"
+            tone="secondary"
+            onClick={onReimburse}
+          >
+            {t("detail.reimburse")}
           </Button>
         )}
         <Button size="sm" variant="ghost" tone="danger" onClick={onVoid}>
@@ -84,6 +112,12 @@ export function DetailActions({
           )}
           {!voided && !transfer && (
             <MenuItem onSelect={onTransfer}>{t("detail.transfer")}</MenuItem>
+          )}
+          {!voided && expense && (
+            <MenuItem onSelect={onRepay}>{t("detail.repay")}</MenuItem>
+          )}
+          {!voided && inflow && (
+            <MenuItem onSelect={onReimburse}>{t("detail.reimburse")}</MenuItem>
           )}
           <MenuItem onSelect={onOpenPage}>{t("detail.openPage")}</MenuItem>
           {!voided && <MenuSeparator />}

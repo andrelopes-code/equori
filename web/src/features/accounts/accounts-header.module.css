@@ -1,0 +1,6 @@
+@layer app {
+  /* A slot the page below fills: its children stand in the header part as if written there. */
+  .slot {
+    display: contents;
+  }
+}

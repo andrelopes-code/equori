@@ -1,0 +1,8 @@
+@layer app {
+  .row {
+    display: grid;
+    /* A card's least measure: no token holds it. Four fit at 1280, one stacks on a phone. */
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: var(--slotted-space-4);
+  }
+}

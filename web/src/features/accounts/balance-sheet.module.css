@@ -1,0 +1,34 @@
+@layer app {
+  .groups {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-8);
+  }
+
+  /* A sub-account steps in by one space step per level behind its parent (BD-05's reading). */
+  .indent {
+    padding-inline-start: calc(var(--depth, 0) * var(--slotted-space-6));
+  }
+
+  /* A column that takes only its content's width: in a table of automatic layout the one
+     column without it, the account's name, takes the room the page leaves (1% is the table
+     algorithm's way to say "as narrow as the content"). */
+  .fit {
+    inline-size: 1%;
+    white-space: nowrap;
+  }
+
+  /* A date field holds ten characters and its calendar button; 11rem keeps it to that, so the
+     basis control stands beside it instead of under it. No token holds a measure. */
+  .date {
+    inline-size: 11rem;
+  }
+
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-4);
+  }
+}

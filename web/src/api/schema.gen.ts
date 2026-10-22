@@ -75,6 +75,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/institutions/{id}/ispb": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set or clear the ISPB of an institution, the key of its logo (ADR 013). */
+        put: operations["setInstitutionISPB"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/payees": {
         parameters: {
             query?: never;
@@ -538,6 +555,79 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/transactions/{id}/reimbursement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Make an incoming transaction the reimbursement of a recorded expense (A117).
+         * @description Replaces the reimbursements of the incoming transaction with allocations. For each allocation the
+         *     category side takes negative postings on the expense categories of the expense, allocated by their
+         *     amounts, and a reimbursement_of link holds the amount; what is not allocated stays on the
+         *     uncategorized income account. With category_id, that expense and its reimbursement move to the expense
+         *     category. The total of the non-voided reimbursements of an expense never exceeds its category total.
+         *     An empty list takes the reimbursements back and is valid only when there are some.
+         */
+        post: operations["reimburseTransaction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transactions/{id}/reimbursement-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Expenses an incoming transaction can reimburse (A117).
+         * @description Non-voided expenses in the currency of the transaction dated from 90 days before it through its date,
+         *     or already repaid by it, each with an amount left to reimburse once the other transactions are counted.
+         *     The expenses it repays come first, then the one whose remaining amount equals the inflow, then the
+         *     newest. At most 15. suggestion lists the only combination of items whose remaining amounts add up to the
+         *     inflow; it is absent when there is none, when there are several and when the transaction already repays
+         *     an expense. Empty when the transaction is voided or has no inflow on its category side.
+         */
+        get: operations["listReimbursementCandidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transactions/{id}/reimbursement-sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Incoming transactions that can repay an expense (A117).
+         * @description Non-voided inflows in the currency of the expense dated from its date through 90 days after, whose
+         *     category side holds only uncategorized income and reimbursements and that do not repay this expense yet,
+         *     each with the amount not allocated. Oldest first, at most 10. Empty when the transaction is voided or
+         *     has no expense category.
+         */
+        get: operations["listReimbursementSources"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/transactions/{id}/versions": {
         parameters: {
             query?: never;
@@ -564,6 +654,26 @@ export interface paths {
         };
         /** Daily balance of an account and its sub-accounts, one item per day in [from, to]. */
         get: operations["getBalanceSeries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/flows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Booked inflow and outflow of one account, one item per day in [from, to] that has a posting (A119).
+         * @description Inflow is the sum of the positive amounts of the account's non-voided postings booked on the date; outflow is the sum of the absolute values of the negative ones. Sub-accounts are not included. The range holds at most 366 days.
+         */
+        get: operations["getAccountFlows"];
         put?: never;
         post?: never;
         delete?: never;
@@ -702,6 +812,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/{id}/statement-placement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Statement a card purchase dated date would be billed on, with its dates adjusted by the rule's calendar; nothing is stored. */
+        get: operations["getStatementPlacement"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/{id}/credit-limits": {
         parameters: {
             query?: never;
@@ -800,6 +927,60 @@ export interface paths {
         put?: never;
         /** Record a card purchase in installments. */
         post: operations["createInstallmentPurchase"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/capture/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read each line of a text as a transaction draft; records nothing (A106). */
+        post: operations["previewCapture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/capture/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Name a category for descriptions classification left uncategorized (ADR 014).
+         * @description Kept answers are served without a model call; the others are asked of a language model in one request.
+         */
+        post: operations["suggestCaptureCategories"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transaction-batches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record several transactions and installment purchases at once, or none (A114). */
+        post: operations["createTransactionBatch"];
         delete?: never;
         options?: never;
         head?: never;
@@ -994,8 +1175,10 @@ export interface paths {
         put?: never;
         /**
          * Resolve the open difference of an assertion and reconcile the account.
-         * @description adjustment records the difference against the equity account Adjustments; transactions_added
-         *     requires the settled balance to match the assertion after the missing transactions were recorded.
+         * @description adjustment records the difference against the equity account Adjustments; yield records a
+         *     positive difference as income against the account Yield and is rejected for a negative one;
+         *     transactions_added requires the settled balance to match the assertion after the missing
+         *     transactions were recorded.
          */
         post: operations["resolveBalanceAssertion"];
         delete?: never;
@@ -2557,7 +2740,7 @@ export interface components {
         };
         AssertionResolutionInput: {
             /** @enum {string} */
-            resolution: "adjustment" | "transactions_added";
+            resolution: "adjustment" | "yield" | "transactions_added";
         };
         ReconciliationStatus: {
             /** Format: date */
@@ -2818,6 +3001,18 @@ export interface components {
             due_date_adjustment?: "none" | "following" | "preceding" | "modified_following";
             calendar?: string;
         };
+        /** @description previous_closing_date and previous_due_date are the dates of the statement before, present when a rule or a stored statement gives them. */
+        StatementPlacement: {
+            /** Format: date */
+            previous_closing_date?: string;
+            /** Format: date */
+            previous_due_date?: string;
+            reference: string;
+            /** Format: date */
+            closing_date: string;
+            /** Format: date */
+            due_date: string;
+        };
         BillingCycleRuleList: {
             items: components["schemas"]["BillingCycleRule"][];
         };
@@ -2913,6 +3108,15 @@ export interface components {
         BalanceSeries: {
             items: components["schemas"]["BalancePoint"][];
         };
+        AccountFlows: {
+            items: components["schemas"]["FlowDay"][];
+        };
+        FlowDay: {
+            /** Format: date */
+            date: string;
+            inflow: components["schemas"]["Money"];
+            outflow: components["schemas"]["Money"];
+        };
         BalancePoint: {
             /** Format: date */
             date: string;
@@ -2936,6 +3140,12 @@ export interface components {
         InstitutionInput: {
             name: string;
             code?: string;
+            /** @description Identifier of the institution in the Brazilian payment system, unique per user (ADR 013). */
+            ispb?: string;
+        };
+        /** @description null clears the ISPB. */
+        InstitutionISPB: {
+            ispb: string | null;
         };
         Institution: components["schemas"]["InstitutionInput"] & {
             /** Format: uuid */
@@ -3258,18 +3468,21 @@ export interface components {
             id: string;
             installment?: components["schemas"]["Installment"];
         };
+        /** @description A relation to another transaction. amount is the part of the target that a reimbursement_of link repays (A117); other types carry none. */
         Link: {
             /** @enum {string} */
             type: "refund_of" | "reimbursement_of" | "cancellation_of" | "anticipation_of" | "chargeback_of" | "correction_of";
             /** Format: uuid */
             target: string;
+            amount?: components["schemas"]["Money"];
         };
-        /** @description An inbound link; source is the non-voided transaction that links to this one. */
+        /** @description An inbound link; source is the non-voided transaction that links to this one. amount is the part of this transaction that a reimbursement_of link repays (A117). */
         LinkReference: {
             /** @enum {string} */
             type: "refund_of" | "reimbursement_of" | "cancellation_of" | "anticipation_of" | "chargeback_of" | "correction_of";
             /** Format: uuid */
             source: string;
+            amount?: components["schemas"]["Money"];
         };
         TransactionInput: {
             /** Format: date */
@@ -3280,6 +3493,102 @@ export interface components {
             tags?: string[];
             links?: components["schemas"]["Link"][];
             postings: components["schemas"]["PostingInput"][];
+        };
+        CapturePreviewInput: {
+            text: string;
+            /**
+             * Format: uuid
+             * @description Account of a line that names none (A111).
+             */
+            default_account_id?: string;
+        };
+        CapturePreview: {
+            lines: components["schemas"]["CaptureLine"][];
+        };
+        CaptureLine: {
+            /** @description 1-based position among the pieces of the text cut at line breaks and semicolons (A107). */
+            line: number;
+            text: string;
+            /** @description The line cut by what each part was read as; the texts joined equal the line. */
+            segments: components["schemas"]["CaptureSegment"][];
+            /** @enum {string} */
+            kind: "expense" | "income" | "transfer";
+            amount?: components["schemas"]["Money"];
+            /** Format: date */
+            date: string;
+            /** Format: uuid */
+            account_id?: string;
+            /** @enum {string} */
+            account_source?: "text" | "default";
+            /** Format: uuid */
+            to_account_id?: string;
+            /** @description Installment count of a card purchase; absent for one payment. */
+            installments?: number;
+            description: string;
+            /** Format: uuid */
+            payee_id?: string;
+            /** Format: uuid */
+            category_id?: string;
+            /** @enum {string} */
+            category_source?: "rule" | "history";
+            tags: string[];
+            /** @description Why the draft cannot be recorded as read; empty when it can. */
+            issues: components["schemas"]["CaptureIssue"][];
+        };
+        CaptureSegment: {
+            text: string;
+            /** @enum {string} */
+            role: "amount" | "date" | "installments" | "account" | "kind" | "tag" | "text";
+        };
+        CaptureIssue: {
+            /** @enum {string} */
+            code: "missing_amount" | "ambiguous_amount" | "invalid_amount" | "invalid_date" | "ambiguous_date" | "invalid_installments" | "installments_not_allowed" | "missing_account" | "ambiguous_account" | "unknown_account" | "missing_destination" | "ambiguous_transfer" | "too_many_accounts" | "same_account" | "currency_mismatch" | "possible_account";
+            /** @enum {string} */
+            field: "amount" | "date" | "installments" | "account" | "to_account";
+            choices: components["schemas"]["CaptureChoice"][];
+        };
+        /** @description An account for an account issue; an amount for an amount issue; the description the line has once the choice is made. */
+        CaptureChoice: {
+            /** Format: uuid */
+            account_id?: string;
+            amount?: components["schemas"]["Money"];
+            description?: string;
+        };
+        CaptureSuggestionInput: {
+            items: components["schemas"]["CaptureSuggestionItem"][];
+        };
+        CaptureSuggestionItem: {
+            description: string;
+            /** @enum {string} */
+            kind: "expense" | "income";
+        };
+        CaptureSuggestions: {
+            /** @description False when the language model could not be asked; the items then hold kept answers only. */
+            available: boolean;
+            items: components["schemas"]["CaptureSuggestion"][];
+        };
+        CaptureSuggestion: {
+            /**
+             * Format: uuid
+             * @description Absent when no category is named.
+             */
+            category_id?: string;
+            /**
+             * @description Absent when no category is named.
+             * @enum {string}
+             */
+            source?: "kept" | "model";
+        };
+        TransactionBatchInput: {
+            entries: components["schemas"]["TransactionBatchEntry"][];
+        };
+        /** @description Exactly one member is set. */
+        TransactionBatchEntry: {
+            transaction?: components["schemas"]["TransactionInput"];
+            installment_purchase?: components["schemas"]["InstallmentPurchaseInput"];
+        };
+        TransactionBatch: {
+            items: components["schemas"]["Transaction"][];
         };
         CorrectionInput: {
             /** Format: date */
@@ -3478,6 +3787,39 @@ export interface components {
              * @description The pairing candidate to use when there are several.
              */
             pair_with?: string;
+        };
+        ReimbursementInput: {
+            expected_version: number;
+            allocations: components["schemas"]["ReimbursementAllocation"][];
+        };
+        ReimbursementAllocation: {
+            /**
+             * Format: uuid
+             * @description The expense this transaction repays.
+             */
+            original_id: string;
+            amount: components["schemas"]["Money"];
+            /**
+             * Format: uuid
+             * @description Expense category that replaces the categories of the expense and takes the reimbursement.
+             */
+            category_id?: string;
+        };
+        ReimbursementCandidate: {
+            transaction: components["schemas"]["Transaction"];
+            remaining: components["schemas"]["Money"];
+            allocated: components["schemas"]["Money"];
+        };
+        ReimbursementCandidateList: {
+            items: components["schemas"]["ReimbursementCandidate"][];
+            suggestion?: string[];
+        };
+        ReimbursementSource: {
+            transaction: components["schemas"]["Transaction"];
+            free: components["schemas"]["Money"];
+        };
+        ReimbursementSourceList: {
+            items: components["schemas"]["ReimbursementSource"][];
         };
         TransferResult: {
             transaction: components["schemas"]["Transaction"];
@@ -3759,6 +4101,35 @@ export interface operations {
                 };
             };
             401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    setInstitutionISPB: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstitutionISPB"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Institution"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };
     };
@@ -4621,6 +4992,85 @@ export interface operations {
             422: components["responses"]["Problem"];
         };
     };
+    reimburseTransaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReimbursementInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transaction"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    listReimbursementCandidates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReimbursementCandidateList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    listReimbursementSources: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReimbursementSourceList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
     listTransactionVersions: {
         parameters: {
             query?: never;
@@ -4672,6 +5122,33 @@ export interface operations {
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    getAccountFlows: {
+        parameters: {
+            query: {
+                account_id: string;
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The days with a posting, in date order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountFlows"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
         };
     };
     getCategoryTotals: {
@@ -4944,6 +5421,34 @@ export interface operations {
             422: components["responses"]["Problem"];
         };
     };
+    getStatementPlacement: {
+        parameters: {
+            query: {
+                date: string;
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementPlacement"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
     listCreditLimits: {
         parameters: {
             query?: never;
@@ -5155,6 +5660,86 @@ export interface operations {
                     "application/json": components["schemas"]["InstallmentPurchase"];
                 };
             };
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    previewCapture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CapturePreviewInput"];
+            };
+        };
+        responses: {
+            /** @description One draft per non-blank line, in text order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapturePreview"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    suggestCaptureCategories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaptureSuggestionInput"];
+            };
+        };
+        responses: {
+            /** @description One suggestion per item, in input order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaptureSuggestions"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+        };
+    };
+    createTransactionBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransactionBatchInput"];
+            };
+        };
+        responses: {
+            /** @description Created, in input order. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionBatch"];
+                };
+            };
+            400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };

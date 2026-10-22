@@ -1,0 +1,88 @@
+@layer app {
+  .field {
+    display: grid;
+    gap: var(--slotted-space-4);
+  }
+
+  /* A field that opens the sheet: it stands with the form's controls, at the row height of an
+     option so the chosen account reads the same here and in the list. */
+  .trigger {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--slotted-space-5);
+    min-block-size: calc(
+      var(--slotted-target-comfortable) + var(--slotted-space-7)
+    );
+    padding-block: var(--slotted-space-4);
+    padding-inline: var(--slotted-space-5);
+    border: var(--slotted-control-border-width) solid
+      var(--slotted-control-border-color);
+    border-radius: var(--slotted-control-radius);
+    background: var(--slotted-control-surface);
+    color: var(--slotted-text);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+    transition: border-color var(--slotted-control-transition-duration)
+      var(--slotted-control-transition-easing);
+  }
+
+  .trigger:hover {
+    border-color: var(--slotted-border-strong);
+  }
+
+  .trigger:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  .trigger[aria-invalid="true"] {
+    --slotted-focus-ring-color: var(--slotted-focus-ring-color-invalid);
+
+    border-color: var(--slotted-tone-danger-border);
+  }
+
+  .placeholder {
+    grid-column: 1 / 3;
+    color: var(--slotted-text-muted);
+  }
+
+  .text {
+    display: grid;
+    min-inline-size: 0;
+  }
+
+  .name {
+    overflow: hidden;
+    font-weight: var(--slotted-font-weight-semibold);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .detail {
+    overflow: hidden;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .detail::first-letter {
+    text-transform: uppercase;
+  }
+
+  .change {
+    color: var(--slotted-tone-accent-text);
+    font-size: var(--slotted-font-size-sm);
+    font-weight: var(--slotted-font-weight-medium);
+    white-space: nowrap;
+  }
+
+  @media (forced-colors: active) {
+    .trigger {
+      border-color: ButtonText;
+    }
+  }
+}

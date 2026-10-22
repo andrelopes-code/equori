@@ -1,0 +1,12 @@
+@layer app {
+  .section {
+    display: grid;
+    gap: var(--slotted-space-4);
+  }
+
+  /* Group headings read as labels: capitals spaced by 6 % of the type size, which no token holds. */
+  .heading {
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+}

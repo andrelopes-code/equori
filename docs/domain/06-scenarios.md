@@ -223,6 +223,30 @@ Then the weights sum to 0.00; the Wise USD balance is 1,000.00 USD; net worth in
 
 Then the expense is only 100.00, in the month of the write-off.
 
+### S113 Reimbursement of a recorded expense (M13, A117)
+
+| Step | Postings |
+|---|---|
+| Owner pays 15.00 by PIX on 2026-10-17 | Mercado Pago checking −15.00; Car +15.00 |
+| The payee returns 15.00 on 2026-10-20 | Nubank checking +15.00; Uncategorized income −15.00 |
+| Owner allocates 15.00 of the expense to the second | Nubank checking +15.00; Car −15.00; link `reimbursement_of` holding 15.00 |
+
+Car totals 0.00 for October. `POST /transactions/{id}/reimbursement` replaces the reimbursements of the incoming transaction with the list of allocations it receives. Tests: `internal/ledger/reimbursement_test.go`.
+
+### S114 Reimbursement allocations (M13, A117)
+
+| Case | Allocations of the incoming transaction |
+|---|---|
+| Two expenses of 50.00, 100.00 received | 50.00 to each; Car is repaid in full |
+| One expense of 200.00, two transfers of 100.00 | Each transfer allocates 100.00 to the expense; a further 1.00 is refused, naming 201.00 and 200.00 |
+| One expense of 100.00, 120.00 received | 100.00 to the expense; 20.00 stays on Uncategorized income |
+| Replacing the list of a transaction | The amounts held by the other transactions count; the replaced ones do not |
+| Empty list | The incoming transaction returns to Uncategorized income; refused when it has no reimbursement |
+| Voiding the incoming transaction | The amounts it held are free again |
+| An allocation names a category | The expense and its reimbursement move to it |
+
+Recategorizing an expense afterwards leaves the reimbursements on the previous category. Tests: `internal/ledger/reimbursement_test.go`.
+
 ### S19 Shared expense (M14)
 
 | Step | Postings |
@@ -293,6 +317,8 @@ When 2,000.00 is redeemed from the reserve, of which 40.00 is yield held for 45 
 ### S26 Balance adjustment (M20)
 
 Given a derived balance of 3,203.27 and an assertion of 3,201.17, when the owner resolves the difference as an adjustment: Nubank checking −2.10; Adjustments +2.10. Then the account is reconciled.
+
+Given a derived balance of 3,203.27 and an assertion of 3,203.37, when the owner resolves the difference as yield: Nubank checking +0.10; Yield −0.10. Then the account is reconciled. A negative difference does not resolve as yield. Tests: `TestYieldResolvesPositiveDifference`, `TestYieldRejectsNegativeDifference`.
 
 ## 6.8 Schedules and subscriptions
 
@@ -410,7 +436,7 @@ An OFX credit card statement for Itaú Visa: −230.00 on 2026-10-14 is a `charg
 | M28 | S02 |
 | M29 | S31 |
 
-The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44; the category tree and its tools by S72–S79 (amendments A73–A84 of `docs/superpowers/specs/2026-10-19-categorization-design.md`); transfers from imports by S45–S50; aggregator sync by S51–S59, S68–S71 and S90; matching by score by S91–S97 (amendments A98–A104); card statements from the institution by S80–S89 (amendments A85–A93); schedules (F7) by S27–S29 and the planning views by S60–S63; currencies and investments (F9) by S16, S17, S21, S22 and S64–S67.
+The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44 and S98 (amendment A105); the category tree and its tools by S72–S79 (amendments A73–A84 of `docs/superpowers/specs/2026-10-19-categorization-design.md`); transfers from imports by S45–S50; aggregator sync by S51–S59, S68–S71 and S90; matching by score by S91–S97 (amendments A98–A104); card statements from the institution by S80–S89 (amendments A85–A93); schedules (F7) by S27–S29 and the planning views by S60–S63; currencies and investments (F9) by S16, S17, S21, S22 and S64–S67; reimbursement of recorded expenses by S113 and S114 (amendment A117); text capture and the transaction batch by S99–S112 (amendments A106–A116 of `docs/superpowers/specs/2026-10-21-text-capture-design.md`).
 
 ## 6.13 Classification
 
@@ -479,6 +505,10 @@ With the S41 data, previewing "description contains `uber`" → Ride-hailing ret
 ### S79 Payee merge
 
 Payees "iFood" and "IFOOD SP" merged into "iFood": the S38 alias names the destination, the transactions of "IFOOD SP" get version + 1, `GET /payees` lists one of the two (A82).
+
+### S98 Voided transactions leave the uncategorized queue (A105)
+
+Two checking transactions stand against Uncategorized expense, and the owner voids one of them, as the S47 pairing voids a card transaction. `GET /transactions?uncategorized=true` returns the other alone, and `GET /transactions` returns both.
 
 ## 6.14 Transfers from imports
 
@@ -656,3 +686,26 @@ A subscription of 9.99 USD per month on Wise USD, Subscriptions, from 2026-12-10
 
 Goal "Trip" of 2,000.00 USD over Wise USD (1,000.00 USD) and Nubank checking (2,750.00 BRL) with USD/BRL 5.5000: current 1,500.00 USD, remaining 500.00 USD, progress 7500 basis points.
 
+## 6.18 Text capture
+
+The scenarios, their fixture and the grammar they exercise are in `docs/superpowers/specs/2026-10-21-text-capture-design.md`, section Scenarios: S99–S110 read text through `POST /capture/preview` (`internal/capture/preview_test.go`); S111 and S112 record through `POST /transaction-batches` (`internal/ledger/transaction_batch_test.go`).
+
+## 6.19 Daily flows
+
+Amendment A119 of `docs/superpowers/specs/2026-10-21-account-card-design.md`: `GET /reports/flows` returns the booked inflow and outflow of one account per day. Tests in `internal/reporting/flows_test.go`.
+
+### S115 Inflow and outflow of a checking account
+
+On 2026-10-05, Nubank checking receives a salary of 1,000.00, pays a purchase of 25.00 and transfers 100.00 to savings; on 2026-10-07 it pays 8.00. Flows of October: 2026-10-05 inflow 1,000.00 and outflow 125.00; 2026-10-07 outflow 8.00. Savings: 2026-10-05 inflow 100.00.
+
+### S116 Flows of a credit card
+
+Purchases of 30.00 and 20.00 on 2026-10-12, a refund of 10.00 and a statement payment of 40.00 on 2026-10-13: outflow 50.00 on 2026-10-12, inflow 50.00 on 2026-10-13.
+
+### S117 Day with a zero net delta
+
+An income of 7.00 and a purchase of 7.00 on the same day are listed as inflow 7.00 and outflow 7.00, and the balance series is unchanged.
+
+### S118 Flow problems
+
+A voided transaction has no flow. `to` before `from`, or a range longer than 366 days, returns 400 `invalid_request` on `to`; another user's account returns 404 `not_found`.

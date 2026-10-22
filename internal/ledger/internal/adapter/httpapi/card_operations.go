@@ -11,7 +11,18 @@ import (
 )
 
 func (s *Server) CreateInstallmentPurchase(ctx context.Context, req CreateInstallmentPurchaseRequestObject) (CreateInstallmentPurchaseResponseObject, error) {
-	b := req.Body
+	in, err := fromInstallmentPurchaseInput(*req.Body)
+	if err != nil {
+		return nil, err
+	}
+	t, planID, err := s.svc.InstallmentPurchase(ctx, auth.MustUserID(ctx), in)
+	if err != nil {
+		return nil, err
+	}
+	return CreateInstallmentPurchase201JSONResponse{Transaction: toTransactionAPI(t), PlanId: planID}, nil
+}
+
+func fromInstallmentPurchaseInput(b InstallmentPurchaseInput) (app.InstallmentPurchaseInput, error) {
 	in := app.InstallmentPurchaseInput{
 		CardAccountID: b.CardAccountId, Date: dateOf(b.Date), Description: optString(b.Description),
 		PayeeID: optUUID(b.PayeeId), Count: b.InstallmentCount,
@@ -22,14 +33,14 @@ func (s *Server) CreateInstallmentPurchase(ctx context.Context, req CreateInstal
 	for i, sp := range b.Splits {
 		amount, err := fromMoneyAPI(fmt.Sprintf("splits[%d].amount", i), sp.Amount)
 		if err != nil {
-			return nil, err
+			return app.InstallmentPurchaseInput{}, err
 		}
 		in.Splits = append(in.Splits, domain.Posting{AccountID: sp.AccountId, Amount: amount})
 	}
 	if b.Interest != nil {
 		interest, err := fromMoneyAPI("interest", *b.Interest)
 		if err != nil {
-			return nil, err
+			return app.InstallmentPurchaseInput{}, err
 		}
 		in.Interest = &interest
 	}
@@ -37,21 +48,17 @@ func (s *Server) CreateInstallmentPurchase(ctx context.Context, req CreateInstal
 		for i, a := range *b.InstallmentAmounts {
 			amount, err := fromMoneyAPI(fmt.Sprintf("installment_amounts[%d]", i), a)
 			if err != nil {
-				return nil, err
+				return app.InstallmentPurchaseInput{}, err
 			}
 			in.Amounts = append(in.Amounts, amount)
 		}
 	}
 	first, err := optMonth("first_statement", b.FirstStatement)
 	if err != nil {
-		return nil, err
+		return app.InstallmentPurchaseInput{}, err
 	}
 	in.FirstStatement = first
-	t, planID, err := s.svc.InstallmentPurchase(ctx, auth.MustUserID(ctx), in)
-	if err != nil {
-		return nil, err
-	}
-	return CreateInstallmentPurchase201JSONResponse{Transaction: toTransactionAPI(t), PlanId: planID}, nil
+	return in, nil
 }
 
 func (s *Server) GetCommitment(ctx context.Context, req GetCommitmentRequestObject) (GetCommitmentResponseObject, error) {
@@ -154,6 +161,19 @@ func (s *Server) GetInstallmentPlan(ctx context.Context, req GetInstallmentPlanR
 			return nil, err
 		}
 		out.Installments[i] = ScheduledInstallment{Number: in.Number, Statement: in.Reference.String(), Amount: toMoneyAPI(amount), Reversed: in.Reversed}
+	}
+	return out, nil
+}
+
+func (s *Server) GetStatementPlacement(ctx context.Context, req GetStatementPlacementRequestObject) (GetStatementPlacementResponseObject, error) {
+	p, err := s.svc.PlaceStatement(ctx, auth.MustUserID(ctx), req.Id, dateOf(req.Params.Date))
+	if err != nil {
+		return nil, err
+	}
+	out := GetStatementPlacement200JSONResponse{Reference: p.Reference.String(), ClosingDate: apiDate(p.Closing), DueDate: apiDate(p.Due)}
+	if p.Previous != nil {
+		closing, due := apiDate(p.Previous.Closing), apiDate(p.Previous.Due)
+		out.PreviousClosingDate, out.PreviousDueDate = &closing, &due
 	}
 	return out, nil
 }

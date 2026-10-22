@@ -195,6 +195,7 @@ func (e AccountPatchYieldMode) Valid() bool {
 const (
 	AssertionResolutionInputResolutionAdjustment        AssertionResolutionInputResolution = "adjustment"
 	AssertionResolutionInputResolutionTransactionsAdded AssertionResolutionInputResolution = "transactions_added"
+	AssertionResolutionInputResolutionYield             AssertionResolutionInputResolution = "yield"
 )
 
 // Valid indicates whether the value is a known member of the AssertionResolutionInputResolution enum.
@@ -203,6 +204,8 @@ func (e AssertionResolutionInputResolution) Valid() bool {
 	case AssertionResolutionInputResolutionAdjustment:
 		return true
 	case AssertionResolutionInputResolutionTransactionsAdded:
+		return true
+	case AssertionResolutionInputResolutionYield:
 		return true
 	default:
 		return false
@@ -1552,12 +1555,23 @@ type InstallmentPurchaseInput struct {
 type Institution struct {
 	Code *string            `json:"code,omitempty"`
 	Id   openapi_types.UUID `json:"id"`
-	Name string             `json:"name"`
+
+	// Ispb Identifier of the institution in the Brazilian payment system, unique per user (ADR 013).
+	Ispb *string `json:"ispb,omitempty"`
+	Name string  `json:"name"`
+}
+
+// InstitutionISPB null clears the ISPB.
+type InstitutionISPB struct {
+	Ispb *string `json:"ispb"`
 }
 
 // InstitutionInput defines model for InstitutionInput.
 type InstitutionInput struct {
 	Code *string `json:"code,omitempty"`
+
+	// Ispb Identifier of the institution in the Brazilian payment system, unique per user (ADR 013).
+	Ispb *string `json:"ispb,omitempty"`
 	Name string  `json:"name"`
 }
 
@@ -1600,8 +1614,9 @@ type InvestmentIncomeInput struct {
 	WithheldCategoryId *openapi_types.UUID `json:"withheld_category_id,omitempty"`
 }
 
-// Link defines model for Link.
+// Link A relation to another transaction. amount is the part of the target that a reimbursement_of link repays (A117); other types carry none.
 type Link struct {
+	Amount *Money             `json:"amount,omitempty"`
 	Target openapi_types.UUID `json:"target"`
 	Type   LinkType           `json:"type"`
 }
@@ -1609,8 +1624,9 @@ type Link struct {
 // LinkType defines model for Link.Type.
 type LinkType string
 
-// LinkReference An inbound link; source is the non-voided transaction that links to this one.
+// LinkReference An inbound link; source is the non-voided transaction that links to this one. amount is the part of this transaction that a reimbursement_of link repays (A117).
 type LinkReference struct {
+	Amount *Money             `json:"amount,omitempty"`
 	Source openapi_types.UUID `json:"source"`
 	Type   LinkReferenceType  `json:"type"`
 }
@@ -1768,6 +1784,47 @@ type RefundInput struct {
 	Statement *string            `json:"statement,omitempty"`
 }
 
+// ReimbursementAllocation defines model for ReimbursementAllocation.
+type ReimbursementAllocation struct {
+	Amount Money `json:"amount"`
+
+	// CategoryId Expense category that replaces the categories of the expense and takes the reimbursement.
+	CategoryId *openapi_types.UUID `json:"category_id,omitempty"`
+
+	// OriginalId The expense this transaction repays.
+	OriginalId openapi_types.UUID `json:"original_id"`
+}
+
+// ReimbursementCandidate defines model for ReimbursementCandidate.
+type ReimbursementCandidate struct {
+	Allocated   Money       `json:"allocated"`
+	Remaining   Money       `json:"remaining"`
+	Transaction Transaction `json:"transaction"`
+}
+
+// ReimbursementCandidateList defines model for ReimbursementCandidateList.
+type ReimbursementCandidateList struct {
+	Items      []ReimbursementCandidate `json:"items"`
+	Suggestion *[]openapi_types.UUID    `json:"suggestion,omitempty"`
+}
+
+// ReimbursementInput defines model for ReimbursementInput.
+type ReimbursementInput struct {
+	Allocations     []ReimbursementAllocation `json:"allocations"`
+	ExpectedVersion int                       `json:"expected_version"`
+}
+
+// ReimbursementSource defines model for ReimbursementSource.
+type ReimbursementSource struct {
+	Free        Money       `json:"free"`
+	Transaction Transaction `json:"transaction"`
+}
+
+// ReimbursementSourceList defines model for ReimbursementSourceList.
+type ReimbursementSourceList struct {
+	Items []ReimbursementSource `json:"items"`
+}
+
 // ScheduledInstallment defines model for ScheduledInstallment.
 type ScheduledInstallment struct {
 	Amount Money `json:"amount"`
@@ -1862,6 +1919,15 @@ type StatementPaymentInput struct {
 	Amount        Money              `json:"amount"`
 	Date          openapi_types.Date `json:"date"`
 	FromAccountId openapi_types.UUID `json:"from_account_id"`
+}
+
+// StatementPlacement previous_closing_date and previous_due_date are the dates of the statement before, present when a rule or a stored statement gives them.
+type StatementPlacement struct {
+	ClosingDate         openapi_types.Date  `json:"closing_date"`
+	DueDate             openapi_types.Date  `json:"due_date"`
+	PreviousClosingDate *openapi_types.Date `json:"previous_closing_date,omitempty"`
+	PreviousDueDate     *openapi_types.Date `json:"previous_due_date,omitempty"`
+	Reference           string              `json:"reference"`
 }
 
 // StatementPosting defines model for StatementPosting.
@@ -1989,6 +2055,22 @@ type Transaction struct {
 // TransactionOrigin defines model for Transaction.Origin.
 type TransactionOrigin string
 
+// TransactionBatch defines model for TransactionBatch.
+type TransactionBatch struct {
+	Items []Transaction `json:"items"`
+}
+
+// TransactionBatchEntry Exactly one member is set.
+type TransactionBatchEntry struct {
+	InstallmentPurchase *InstallmentPurchaseInput `json:"installment_purchase,omitempty"`
+	Transaction         *TransactionInput         `json:"transaction,omitempty"`
+}
+
+// TransactionBatchInput defines model for TransactionBatchInput.
+type TransactionBatchInput struct {
+	Entries []TransactionBatchEntry `json:"entries"`
+}
+
 // TransactionInput defines model for TransactionInput.
 type TransactionInput struct {
 	Date        openapi_types.Date  `json:"date"`
@@ -2081,6 +2163,11 @@ type ListBalanceAssertionsParams struct {
 // GetCommitmentParams defines parameters for GetCommitment.
 type GetCommitmentParams struct {
 	Month string `form:"month" json:"month"`
+}
+
+// GetStatementPlacementParams defines parameters for GetStatementPlacement.
+type GetStatementPlacementParams struct {
+	Date openapi_types.Date `form:"date" json:"date"`
 }
 
 // ListStatementsParams defines parameters for ListStatements.
@@ -2208,6 +2295,9 @@ type CreateInstallmentPurchaseJSONRequestBody = InstallmentPurchaseInput
 // CreateInstitutionJSONRequestBody defines body for CreateInstitution for application/json ContentType.
 type CreateInstitutionJSONRequestBody = InstitutionInput
 
+// SetInstitutionISPBJSONRequestBody defines body for SetInstitutionISPB for application/json ContentType.
+type SetInstitutionISPBJSONRequestBody = InstitutionISPB
+
 // RecordInvestmentIncomeJSONRequestBody defines body for RecordInvestmentIncome for application/json ContentType.
 type RecordInvestmentIncomeJSONRequestBody = InvestmentIncomeInput
 
@@ -2238,6 +2328,9 @@ type ReconcileStatementJSONRequestBody = StatementReconciliationInput
 // RecordTradeJSONRequestBody defines body for RecordTrade for application/json ContentType.
 type RecordTradeJSONRequestBody = TradeInput
 
+// CreateTransactionBatchJSONRequestBody defines body for CreateTransactionBatch for application/json ContentType.
+type CreateTransactionBatchJSONRequestBody = TransactionBatchInput
+
 // CreateTransactionJSONRequestBody defines body for CreateTransaction for application/json ContentType.
 type CreateTransactionJSONRequestBody = TransactionInput
 
@@ -2258,6 +2351,9 @@ type OpenDisputeJSONRequestBody = DisputeInput
 
 // RefundTransactionJSONRequestBody defines body for RefundTransaction for application/json ContentType.
 type RefundTransactionJSONRequestBody = RefundInput
+
+// ReimburseTransactionJSONRequestBody defines body for ReimburseTransaction for application/json ContentType.
+type ReimburseTransactionJSONRequestBody = ReimbursementInput
 
 // TransferTransactionJSONRequestBody defines body for TransferTransaction for application/json ContentType.
 type TransferTransactionJSONRequestBody = TransferInput
@@ -2327,6 +2423,9 @@ type ServerInterface interface {
 	// ReopenAccount Reopen a closed account and its closed ancestors (A74).
 	// (POST /accounts/{id}/reopen)
 	ReopenAccount(w http.ResponseWriter, r *http.Request, id ID)
+	// GetStatementPlacement Statement a card purchase dated date would be billed on, with its dates adjusted by the rule's calendar; nothing is stored.
+	// (GET /accounts/{id}/statement-placement)
+	GetStatementPlacement(w http.ResponseWriter, r *http.Request, id ID, params GetStatementPlacementParams)
 	// ListStatements Statements of a card with amounts and status derived from its postings.
 	// (GET /accounts/{id}/statements)
 	ListStatements(w http.ResponseWriter, r *http.Request, id ID, params ListStatementsParams)
@@ -2375,6 +2474,9 @@ type ServerInterface interface {
 	// CreateInstitution Create an institution.
 	// (POST /institutions)
 	CreateInstitution(w http.ResponseWriter, r *http.Request)
+	// SetInstitutionISPB Set or clear the ISPB of an institution, the key of its logo (ADR 013).
+	// (PUT /institutions/{id}/ispb)
+	SetInstitutionISPB(w http.ResponseWriter, r *http.Request, id ID)
 	// RecordInvestmentIncome Record income paid on a security into cash of the same brokerage (P8 amendment A70).
 	// (POST /investment-income)
 	RecordInvestmentIncome(w http.ResponseWriter, r *http.Request)
@@ -2420,6 +2522,9 @@ type ServerInterface interface {
 	// RecordTrade Buy or sell a security for cash of the same brokerage at average cost (P8 amendment A68).
 	// (POST /trades)
 	RecordTrade(w http.ResponseWriter, r *http.Request)
+	// CreateTransactionBatch Record several transactions and installment purchases at once, or none (A114).
+	// (POST /transaction-batches)
+	CreateTransactionBatch(w http.ResponseWriter, r *http.Request)
 	// ListTransactions List transactions, newest first.
 	// (GET /transactions)
 	ListTransactions(w http.ResponseWriter, r *http.Request, params ListTransactionsParams)
@@ -2453,6 +2558,15 @@ type ServerInterface interface {
 	// RefundTransaction Refund all or part of a card purchase.
 	// (POST /transactions/{id}/refunds)
 	RefundTransaction(w http.ResponseWriter, r *http.Request, id ID)
+	// ReimburseTransaction Make an incoming transaction the reimbursement of a recorded expense (A117).
+	// (POST /transactions/{id}/reimbursement)
+	ReimburseTransaction(w http.ResponseWriter, r *http.Request, id ID)
+	// ListReimbursementCandidates Expenses an incoming transaction can reimburse (A117).
+	// (GET /transactions/{id}/reimbursement-candidates)
+	ListReimbursementCandidates(w http.ResponseWriter, r *http.Request, id ID)
+	// ListReimbursementSources Incoming transactions that can repay an expense (A117).
+	// (GET /transactions/{id}/reimbursement-sources)
+	ListReimbursementSources(w http.ResponseWriter, r *http.Request, id ID)
 	// TransferTransaction Replace the category side with a posting on another of the owner's accounts, pairing with its imported other side (P5b amendments A28, A29).
 	// (POST /transactions/{id}/transfer)
 	TransferTransaction(w http.ResponseWriter, r *http.Request, id ID)
@@ -3088,6 +3202,48 @@ func (siw *ServerInterfaceWrapper) ReopenAccount(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
+// GetStatementPlacement operation middleware
+func (siw *ServerInterfaceWrapper) GetStatementPlacement(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetStatementPlacementParams
+
+	// ------------- Required query parameter "date" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "date", r.URL.Query(), &params.Date, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "date"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "date", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetStatementPlacement(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListStatements operation middleware
 func (siw *ServerInterfaceWrapper) ListStatements(w http.ResponseWriter, r *http.Request) {
 
@@ -3551,6 +3707,32 @@ func (siw *ServerInterfaceWrapper) CreateInstitution(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// SetInstitutionISPB operation middleware
+func (siw *ServerInterfaceWrapper) SetInstitutionISPB(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetInstitutionISPB(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // RecordInvestmentIncome operation middleware
 func (siw *ServerInterfaceWrapper) RecordInvestmentIncome(w http.ResponseWriter, r *http.Request) {
 
@@ -3912,6 +4094,20 @@ func (siw *ServerInterfaceWrapper) RecordTrade(w http.ResponseWriter, r *http.Re
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RecordTrade(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateTransactionBatch operation middleware
+func (siw *ServerInterfaceWrapper) CreateTransactionBatch(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateTransactionBatch(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -4323,6 +4519,84 @@ func (siw *ServerInterfaceWrapper) RefundTransaction(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// ReimburseTransaction operation middleware
+func (siw *ServerInterfaceWrapper) ReimburseTransaction(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReimburseTransaction(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListReimbursementCandidates operation middleware
+func (siw *ServerInterfaceWrapper) ListReimbursementCandidates(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListReimbursementCandidates(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListReimbursementSources operation middleware
+func (siw *ServerInterfaceWrapper) ListReimbursementSources(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListReimbursementSources(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // TransferTransaction operation middleware
 func (siw *ServerInterfaceWrapper) TransferTransaction(w http.ResponseWriter, r *http.Request) {
 
@@ -4525,6 +4799,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/settings", wrapper.UpdateSettings)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/institutions", wrapper.ListInstitutions)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/institutions", wrapper.CreateInstitution)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/institutions/{id}/ispb", wrapper.SetInstitutionISPB)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/payees", wrapper.ListPayees)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/payees", wrapper.CreatePayee)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/payees/{id}", wrapper.RenamePayee)
@@ -4553,9 +4828,13 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/categorize", wrapper.CategorizeTransactions)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/categorize", wrapper.CategorizeTransaction)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/transfer", wrapper.TransferTransaction)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/{id}/reimbursement", wrapper.ReimburseTransaction)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions/{id}/reimbursement-candidates", wrapper.ListReimbursementCandidates)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions/{id}/reimbursement-sources", wrapper.ListReimbursementSources)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions/{id}/versions", wrapper.ListTransactionVersions)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/billing-cycle-rules", wrapper.ListBillingCycleRules)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/billing-cycle-rules", wrapper.CreateBillingCycleRule)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/statement-placement", wrapper.GetStatementPlacement)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/credit-limits", wrapper.ListCreditLimits)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/credit-limits", wrapper.CreateCreditLimit)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/cards", wrapper.ListCards)
@@ -4564,6 +4843,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/statements", wrapper.ListStatements)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statements/{id}", wrapper.GetStatement)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/installment-purchases", wrapper.CreateInstallmentPurchase)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transaction-batches", wrapper.CreateTransactionBatch)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/commitments", wrapper.GetCommitment)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/statements/{id}/payments", wrapper.PayStatement)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/statements/{id}/financing", wrapper.FinanceStatement)
@@ -5850,6 +6130,87 @@ func (response ReopenAccount422ApplicationProblemPlusJSONResponse) VisitReopenAc
 	return err
 }
 
+type GetStatementPlacementRequestObject struct {
+	Id     ID `json:"id"`
+	Params GetStatementPlacementParams
+}
+
+type GetStatementPlacementResponseObject interface {
+	VisitGetStatementPlacementResponse(w http.ResponseWriter) error
+}
+
+type GetStatementPlacement200JSONResponse StatementPlacement
+
+func (response GetStatementPlacement200JSONResponse) VisitGetStatementPlacementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetStatementPlacement400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetStatementPlacement400ApplicationProblemPlusJSONResponse) VisitGetStatementPlacementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetStatementPlacement401ApplicationProblemPlusJSONResponse Problem
+
+func (response GetStatementPlacement401ApplicationProblemPlusJSONResponse) VisitGetStatementPlacementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetStatementPlacement404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetStatementPlacement404ApplicationProblemPlusJSONResponse) VisitGetStatementPlacementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetStatementPlacement422ApplicationProblemPlusJSONResponse Problem
+
+func (response GetStatementPlacement422ApplicationProblemPlusJSONResponse) VisitGetStatementPlacementResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListStatementsRequestObject struct {
 	Id     ID `json:"id"`
 	Params ListStatementsParams
@@ -6878,6 +7239,73 @@ func (response CreateInstitution422ApplicationProblemPlusJSONResponse) VisitCrea
 	return err
 }
 
+type SetInstitutionISPBRequestObject struct {
+	Id   ID `json:"id"`
+	Body *SetInstitutionISPBJSONRequestBody
+}
+
+type SetInstitutionISPBResponseObject interface {
+	VisitSetInstitutionISPBResponse(w http.ResponseWriter) error
+}
+
+type SetInstitutionISPB200JSONResponse Institution
+
+func (response SetInstitutionISPB200JSONResponse) VisitSetInstitutionISPBResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetInstitutionISPB401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetInstitutionISPB401ApplicationProblemPlusJSONResponse) VisitSetInstitutionISPBResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetInstitutionISPB404ApplicationProblemPlusJSONResponse Problem
+
+func (response SetInstitutionISPB404ApplicationProblemPlusJSONResponse) VisitSetInstitutionISPBResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetInstitutionISPB422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetInstitutionISPB422ApplicationProblemPlusJSONResponse) VisitSetInstitutionISPBResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type RecordInvestmentIncomeRequestObject struct {
 	Body *RecordInvestmentIncomeJSONRequestBody
 }
@@ -7827,6 +8255,72 @@ func (response RecordTrade422ApplicationProblemPlusJSONResponse) VisitRecordTrad
 	return err
 }
 
+type CreateTransactionBatchRequestObject struct {
+	Body *CreateTransactionBatchJSONRequestBody
+}
+
+type CreateTransactionBatchResponseObject interface {
+	VisitCreateTransactionBatchResponse(w http.ResponseWriter) error
+}
+
+type CreateTransactionBatch201JSONResponse TransactionBatch
+
+func (response CreateTransactionBatch201JSONResponse) VisitCreateTransactionBatchResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateTransactionBatch400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateTransactionBatch400ApplicationProblemPlusJSONResponse) VisitCreateTransactionBatchResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateTransactionBatch401ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateTransactionBatch401ApplicationProblemPlusJSONResponse) VisitCreateTransactionBatchResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateTransactionBatch422ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateTransactionBatch422ApplicationProblemPlusJSONResponse) VisitCreateTransactionBatchResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListTransactionsRequestObject struct {
 	Params ListTransactionsParams
 }
@@ -8565,6 +9059,205 @@ func (response RefundTransaction422ApplicationProblemPlusJSONResponse) VisitRefu
 	return err
 }
 
+type ReimburseTransactionRequestObject struct {
+	Id   ID `json:"id"`
+	Body *ReimburseTransactionJSONRequestBody
+}
+
+type ReimburseTransactionResponseObject interface {
+	VisitReimburseTransactionResponse(w http.ResponseWriter) error
+}
+
+type ReimburseTransaction200JSONResponse Transaction
+
+func (response ReimburseTransaction200JSONResponse) VisitReimburseTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReimburseTransaction400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ReimburseTransaction400ApplicationProblemPlusJSONResponse) VisitReimburseTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReimburseTransaction401ApplicationProblemPlusJSONResponse Problem
+
+func (response ReimburseTransaction401ApplicationProblemPlusJSONResponse) VisitReimburseTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReimburseTransaction404ApplicationProblemPlusJSONResponse Problem
+
+func (response ReimburseTransaction404ApplicationProblemPlusJSONResponse) VisitReimburseTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReimburseTransaction409ApplicationProblemPlusJSONResponse Problem
+
+func (response ReimburseTransaction409ApplicationProblemPlusJSONResponse) VisitReimburseTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReimburseTransaction422ApplicationProblemPlusJSONResponse Problem
+
+func (response ReimburseTransaction422ApplicationProblemPlusJSONResponse) VisitReimburseTransactionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListReimbursementCandidatesRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type ListReimbursementCandidatesResponseObject interface {
+	VisitListReimbursementCandidatesResponse(w http.ResponseWriter) error
+}
+
+type ListReimbursementCandidates200JSONResponse ReimbursementCandidateList
+
+func (response ListReimbursementCandidates200JSONResponse) VisitListReimbursementCandidatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListReimbursementCandidates401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListReimbursementCandidates401ApplicationProblemPlusJSONResponse) VisitListReimbursementCandidatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListReimbursementCandidates404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListReimbursementCandidates404ApplicationProblemPlusJSONResponse) VisitListReimbursementCandidatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListReimbursementSourcesRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type ListReimbursementSourcesResponseObject interface {
+	VisitListReimbursementSourcesResponse(w http.ResponseWriter) error
+}
+
+type ListReimbursementSources200JSONResponse ReimbursementSourceList
+
+func (response ListReimbursementSources200JSONResponse) VisitListReimbursementSourcesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListReimbursementSources401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListReimbursementSources401ApplicationProblemPlusJSONResponse) VisitListReimbursementSourcesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListReimbursementSources404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListReimbursementSources404ApplicationProblemPlusJSONResponse) VisitListReimbursementSourcesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type TransferTransactionRequestObject struct {
 	Id   ID `json:"id"`
 	Body *TransferTransactionJSONRequestBody
@@ -8855,6 +9548,9 @@ type StrictServerInterface interface {
 	// ReopenAccount Reopen a closed account and its closed ancestors (A74).
 	// (POST /accounts/{id}/reopen)
 	ReopenAccount(ctx context.Context, request ReopenAccountRequestObject) (ReopenAccountResponseObject, error)
+	// GetStatementPlacement Statement a card purchase dated date would be billed on, with its dates adjusted by the rule's calendar; nothing is stored.
+	// (GET /accounts/{id}/statement-placement)
+	GetStatementPlacement(ctx context.Context, request GetStatementPlacementRequestObject) (GetStatementPlacementResponseObject, error)
 	// ListStatements Statements of a card with amounts and status derived from its postings.
 	// (GET /accounts/{id}/statements)
 	ListStatements(ctx context.Context, request ListStatementsRequestObject) (ListStatementsResponseObject, error)
@@ -8903,6 +9599,9 @@ type StrictServerInterface interface {
 	// CreateInstitution Create an institution.
 	// (POST /institutions)
 	CreateInstitution(ctx context.Context, request CreateInstitutionRequestObject) (CreateInstitutionResponseObject, error)
+	// SetInstitutionISPB Set or clear the ISPB of an institution, the key of its logo (ADR 013).
+	// (PUT /institutions/{id}/ispb)
+	SetInstitutionISPB(ctx context.Context, request SetInstitutionISPBRequestObject) (SetInstitutionISPBResponseObject, error)
 	// RecordInvestmentIncome Record income paid on a security into cash of the same brokerage (P8 amendment A70).
 	// (POST /investment-income)
 	RecordInvestmentIncome(ctx context.Context, request RecordInvestmentIncomeRequestObject) (RecordInvestmentIncomeResponseObject, error)
@@ -8948,6 +9647,9 @@ type StrictServerInterface interface {
 	// RecordTrade Buy or sell a security for cash of the same brokerage at average cost (P8 amendment A68).
 	// (POST /trades)
 	RecordTrade(ctx context.Context, request RecordTradeRequestObject) (RecordTradeResponseObject, error)
+	// CreateTransactionBatch Record several transactions and installment purchases at once, or none (A114).
+	// (POST /transaction-batches)
+	CreateTransactionBatch(ctx context.Context, request CreateTransactionBatchRequestObject) (CreateTransactionBatchResponseObject, error)
 	// ListTransactions List transactions, newest first.
 	// (GET /transactions)
 	ListTransactions(ctx context.Context, request ListTransactionsRequestObject) (ListTransactionsResponseObject, error)
@@ -8981,6 +9683,15 @@ type StrictServerInterface interface {
 	// RefundTransaction Refund all or part of a card purchase.
 	// (POST /transactions/{id}/refunds)
 	RefundTransaction(ctx context.Context, request RefundTransactionRequestObject) (RefundTransactionResponseObject, error)
+	// ReimburseTransaction Make an incoming transaction the reimbursement of a recorded expense (A117).
+	// (POST /transactions/{id}/reimbursement)
+	ReimburseTransaction(ctx context.Context, request ReimburseTransactionRequestObject) (ReimburseTransactionResponseObject, error)
+	// ListReimbursementCandidates Expenses an incoming transaction can reimburse (A117).
+	// (GET /transactions/{id}/reimbursement-candidates)
+	ListReimbursementCandidates(ctx context.Context, request ListReimbursementCandidatesRequestObject) (ListReimbursementCandidatesResponseObject, error)
+	// ListReimbursementSources Incoming transactions that can repay an expense (A117).
+	// (GET /transactions/{id}/reimbursement-sources)
+	ListReimbursementSources(ctx context.Context, request ListReimbursementSourcesRequestObject) (ListReimbursementSourcesResponseObject, error)
 	// TransferTransaction Replace the category side with a posting on another of the owner's accounts, pairing with its imported other side (P5b amendments A28, A29).
 	// (POST /transactions/{id}/transfer)
 	TransferTransaction(ctx context.Context, request TransferTransactionRequestObject) (TransferTransactionResponseObject, error)
@@ -9622,6 +10333,33 @@ func (sh *strictHandler) ReopenAccount(w http.ResponseWriter, r *http.Request, i
 	}
 }
 
+// GetStatementPlacement operation middleware
+func (sh *strictHandler) GetStatementPlacement(w http.ResponseWriter, r *http.Request, id ID, params GetStatementPlacementParams) {
+	var request GetStatementPlacementRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetStatementPlacement(ctx, request.(GetStatementPlacementRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetStatementPlacement")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetStatementPlacementResponseObject); ok {
+		if err := validResponse.VisitGetStatementPlacementResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListStatements operation middleware
 func (sh *strictHandler) ListStatements(w http.ResponseWriter, r *http.Request, id ID, params ListStatementsParams) {
 	var request ListStatementsRequestObject
@@ -10101,6 +10839,39 @@ func (sh *strictHandler) CreateInstitution(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// SetInstitutionISPB operation middleware
+func (sh *strictHandler) SetInstitutionISPB(w http.ResponseWriter, r *http.Request, id ID) {
+	var request SetInstitutionISPBRequestObject
+
+	request.Id = id
+
+	var body SetInstitutionISPBJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetInstitutionISPB(ctx, request.(SetInstitutionISPBRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetInstitutionISPB")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetInstitutionISPBResponseObject); ok {
+		if err := validResponse.VisitSetInstitutionISPBResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // RecordInvestmentIncome operation middleware
 func (sh *strictHandler) RecordInvestmentIncome(w http.ResponseWriter, r *http.Request) {
 	var request RecordInvestmentIncomeRequestObject
@@ -10551,6 +11322,37 @@ func (sh *strictHandler) RecordTrade(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// CreateTransactionBatch operation middleware
+func (sh *strictHandler) CreateTransactionBatch(w http.ResponseWriter, r *http.Request) {
+	var request CreateTransactionBatchRequestObject
+
+	var body CreateTransactionBatchJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateTransactionBatch(ctx, request.(CreateTransactionBatchRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateTransactionBatch")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateTransactionBatchResponseObject); ok {
+		if err := validResponse.VisitCreateTransactionBatchResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListTransactions operation middleware
 func (sh *strictHandler) ListTransactions(w http.ResponseWriter, r *http.Request, params ListTransactionsParams) {
 	var request ListTransactionsRequestObject
@@ -10876,6 +11678,91 @@ func (sh *strictHandler) RefundTransaction(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RefundTransactionResponseObject); ok {
 		if err := validResponse.VisitRefundTransactionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReimburseTransaction operation middleware
+func (sh *strictHandler) ReimburseTransaction(w http.ResponseWriter, r *http.Request, id ID) {
+	var request ReimburseTransactionRequestObject
+
+	request.Id = id
+
+	var body ReimburseTransactionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReimburseTransaction(ctx, request.(ReimburseTransactionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReimburseTransaction")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReimburseTransactionResponseObject); ok {
+		if err := validResponse.VisitReimburseTransactionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListReimbursementCandidates operation middleware
+func (sh *strictHandler) ListReimbursementCandidates(w http.ResponseWriter, r *http.Request, id ID) {
+	var request ListReimbursementCandidatesRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListReimbursementCandidates(ctx, request.(ListReimbursementCandidatesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListReimbursementCandidates")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListReimbursementCandidatesResponseObject); ok {
+		if err := validResponse.VisitListReimbursementCandidatesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListReimbursementSources operation middleware
+func (sh *strictHandler) ListReimbursementSources(w http.ResponseWriter, r *http.Request, id ID) {
+	var request ListReimbursementSourcesRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListReimbursementSources(ctx, request.(ListReimbursementSourcesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListReimbursementSources")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListReimbursementSourcesResponseObject); ok {
+		if err := validResponse.VisitListReimbursementSourcesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

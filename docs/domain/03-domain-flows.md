@@ -226,7 +226,7 @@ flowchart LR
 |---|---|---|
 | `BalanceAsserted` | account, date, amount, source | Stored as a fact (B03). Several assertions per account and date are allowed; the latest recorded wins for that date. Leaf balance accounts only (P3 amendment A9). |
 | `YieldRecorded` | transaction, account, period | Account yield mode `auto` (default for kinds `reserve` and accounts marked as remunerated): a positive difference becomes one transaction: account +difference, income "Yield". Dated on the assertion date; the period starts the day after the previous assertion, or at the account's first posting when there is none (P3 amendment A10). An account with no posting up to the date keeps the difference open. A negative difference never becomes yield. |
-| `DifferenceFound` | account, date, difference | Shown until resolved by recording the missing transactions or by `BalanceAdjusted`. |
+| `DifferenceFound` | account, date, difference | Shown until resolved by recording the missing transactions, by `BalanceAdjusted` or, for a positive difference, by the owner booking it as yield, which needs no automatic yield mode (S26). |
 | `BalanceAdjusted` | transaction, difference | Transaction against the equity account "Adjustments" (M20). |
 | `AccountReconciled` | account, date | Postings of the account up to the date become `reconciled`. For a card, the owner confirms a closed statement's amount due instead, and the statement's postings become `reconciled` (P3 amendment A7). |
 | `AccountUnlocked` | account, from | Reconciliations dated on or after `from` are deleted and their postings return to `cleared` (P3 amendment A8). |
@@ -286,7 +286,7 @@ flowchart LR
 | Event | Data | Rules |
 |---|---|---|
 | `ReimbursableExpenseRecorded` | transaction, counterparty, expected amount | The reimbursable part posts to the counterparty's receivable, not to an expense. A non-reimbursable part posts to an expense category. |
-| `ReimbursementReceived` | transaction, receivable, amount | Linked `reimbursement_of`. Partial amounts allowed. A remainder that will not be paid is written off to an expense category by the owner. |
+| `ReimbursementReceived` | transaction, receivable, amount | Linked `reimbursement_of`. Partial amounts allowed. A remainder that will not be paid is written off to an expense category by the owner. An expense recorded without a receivable is reimbursed by an inflow whose allocations take negative postings on its expense categories (A117, S113, S114). |
 | `SharedExpenseRecorded` | transaction, shares | Own share to the expense category; each other share to the counterparty's receivable. Shares sum to the paid amount. |
 | `CounterpartySettled` | transaction, counterparty, amount | Payment between the owner and a counterparty, settling receivables and payables in any combination. |
 | `LoanRecorded` | loan account, principal, rate, installment plan | Loan taken: liability. Loan given: receivable. |

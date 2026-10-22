@@ -64,14 +64,14 @@ ORDER BY g.name;
 DELETE FROM ledger_link WHERE from_transaction_id = $1;
 
 -- name: InsertLink :exec
-INSERT INTO ledger_link (user_id, from_transaction_id, to_transaction_id, link_type) VALUES ($1, $2, $3, $4);
+INSERT INTO ledger_link (user_id, from_transaction_id, to_transaction_id, link_type, amount) VALUES ($1, $2, $3, $4, sqlc.narg(amount));
 
 -- name: ListLinksFrom :many
 SELECT * FROM ledger_link WHERE user_id = $1 AND from_transaction_id = ANY(@transaction_ids::uuid[])
 ORDER BY from_transaction_id, link_type, to_transaction_id;
 
 -- name: ListLinksTo :many
-SELECT l.link_type, l.from_transaction_id FROM ledger_link l
+SELECT l.link_type, l.from_transaction_id, l.amount, t.balancing_currency FROM ledger_link l
 JOIN ledger_transaction t ON t.id = l.from_transaction_id
 WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND t.voided_at IS NULL
 ORDER BY l.link_type, l.from_transaction_id;
@@ -103,8 +103,9 @@ WHERE t.user_id = @user_id
   AND (sqlc.narg(from_date)::date IS NULL OR t.date >= sqlc.narg(from_date)::date)
   AND (sqlc.narg(to_date)::date IS NULL OR t.date <= sqlc.narg(to_date)::date)
   -- P5 amendment A17: every category posting is on an uncategorized system account.
+  -- A voided transaction cannot be categorized, so the queue leaves it out.
   AND (NOT @uncategorized::boolean OR (
-      EXISTS (SELECT 1 FROM ledger_posting p JOIN ledger_account a ON a.id = p.account_id
+      t.voided_at IS NULL AND EXISTS (SELECT 1 FROM ledger_posting p JOIN ledger_account a ON a.id = p.account_id
               WHERE p.transaction_id = t.id AND a.system_role IN ('uncategorized_expense', 'uncategorized_income'))
       AND NOT EXISTS (SELECT 1 FROM ledger_posting p JOIN ledger_account a ON a.id = p.account_id
               WHERE p.transaction_id = t.id AND a.account_class IN ('income', 'expense')
@@ -124,3 +125,61 @@ DELETE FROM ledger_posting WHERE transaction_id = @transaction_id AND id = ANY(@
 
 -- name: NextPostingPosition :one
 SELECT (coalesce(max(position), -1) + 1)::smallint FROM ledger_posting WHERE transaction_id = $1;
+
+-- name: ReimbursedTotal :one
+-- A117: what the non-voided transactions other than @except_from repay of the expense.
+SELECT coalesce(sum(l.amount), 0)::bigint
+FROM ledger_link l
+JOIN ledger_transaction t ON t.user_id = l.user_id AND t.id = l.from_transaction_id
+WHERE l.user_id = @user_id AND l.to_transaction_id = @origin_id AND l.link_type = 'reimbursement_of'
+  AND l.from_transaction_id <> @except_from AND t.voided_at IS NULL;
+
+-- name: DeleteReimbursementLinksFrom :exec
+DELETE FROM ledger_link WHERE user_id = $1 AND from_transaction_id = $2 AND link_type = 'reimbursement_of';
+
+-- name: ListReimbursementCandidates :many
+-- A117: expenses with an amount left once the other transactions are counted, dated in the window or
+-- repaid by @transaction_id; those it repays first, then the one whose remaining amount equals @amount.
+SELECT e.id, (e.spent - e.held)::bigint AS remaining, e.allocated::bigint AS allocated
+FROM (
+  SELECT t.id, t.date, sum(p.amount) AS spent,
+    coalesce((SELECT sum(l.amount) FROM ledger_link l
+              JOIN ledger_transaction f ON f.user_id = l.user_id AND f.id = l.from_transaction_id AND f.voided_at IS NULL
+              WHERE l.user_id = @user_id AND l.to_transaction_id = t.id AND l.link_type = 'reimbursement_of'
+                AND l.from_transaction_id <> @transaction_id), 0) AS held,
+    coalesce((SELECT sum(l.amount) FROM ledger_link l
+              WHERE l.user_id = @user_id AND l.to_transaction_id = t.id AND l.link_type = 'reimbursement_of'
+                AND l.from_transaction_id = @transaction_id), 0) AS allocated
+  FROM ledger_transaction t
+  JOIN ledger_posting p ON p.user_id = t.user_id AND p.transaction_id = t.id AND p.amount > 0 AND NOT p.voided
+  JOIN ledger_account a ON a.user_id = p.user_id AND a.id = p.account_id
+    AND a.account_class = 'expense' AND a.instrument = @instrument::text
+  WHERE t.user_id = @user_id AND t.id <> @transaction_id AND t.voided_at IS NULL
+  GROUP BY t.id, t.date
+) e
+WHERE e.spent - e.held > 0 AND (e.date BETWEEN @from_date::date AND @to_date::date OR e.allocated > 0)
+ORDER BY (e.allocated > 0) DESC, (e.spent - e.held = @amount::bigint) DESC, e.date DESC, e.id DESC
+LIMIT @max_rows::int;
+
+-- name: ListReimbursementSources :many
+-- A117: inflows after an expense whose category side holds only uncategorized income and reimbursements.
+SELECT s.id, (s.inflow - s.allocated)::bigint AS free
+FROM (
+  SELECT t.id, t.date, (-sum(p.amount))::bigint AS inflow,
+    coalesce((SELECT sum(l.amount) FROM ledger_link l
+              WHERE l.user_id = @user_id AND l.from_transaction_id = t.id AND l.link_type = 'reimbursement_of'), 0) AS allocated
+  FROM ledger_transaction t
+  JOIN ledger_posting p ON p.user_id = t.user_id AND p.transaction_id = t.id AND NOT p.voided
+  JOIN ledger_account a ON a.user_id = p.user_id AND a.id = p.account_id AND a.account_class IN ('income', 'expense')
+  WHERE t.user_id = @user_id AND t.id <> @transaction_id AND t.voided_at IS NULL
+    AND t.date BETWEEN @from_date::date AND @to_date::date AND a.instrument = @instrument::text
+    AND NOT EXISTS (SELECT 1 FROM ledger_link l
+                    WHERE l.user_id = @user_id AND l.from_transaction_id = t.id AND l.to_transaction_id = @transaction_id
+                      AND l.link_type = 'reimbursement_of')
+  GROUP BY t.id, t.date
+  HAVING sum(p.amount) < 0
+     AND bool_and((a.account_class = 'income' AND a.system_role = 'uncategorized_income') OR (a.account_class = 'expense' AND p.amount < 0))
+) s
+WHERE s.inflow - s.allocated > 0
+ORDER BY s.date, s.id
+LIMIT @max_rows::int;

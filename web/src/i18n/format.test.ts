@@ -4,6 +4,8 @@ import {
   formatDate,
   formatDayHeader,
   formatDayMonth,
+  formatDayMonthLong,
+  formatDayMonthNumeric,
   formatMoney,
   formatMoneyParts,
   formatMonthName,
@@ -161,6 +163,20 @@ describe("short dates", () => {
     ["2026-10-16", "en", "Oct 16"],
   ] as const)("day and month of %s in %s", (iso, locale, want) => {
     expect(formatDayMonth(iso, locale)).toBe(want);
+  });
+
+  it.each([
+    ["2026-11-05", "pt-BR", "05/11"],
+    ["2026-11-05", "en", "11/05"],
+  ] as const)("numeric day and month of %s in %s", (iso, locale, want) => {
+    expect(formatDayMonthNumeric(iso, locale)).toBe(want);
+  });
+
+  it.each([
+    ["2026-11-05", "pt-BR", "5 de novembro"],
+    ["2026-11-05", "en", "November 5"],
+  ] as const)("long day and month of %s in %s", (iso, locale, want) => {
+    expect(formatDayMonthLong(iso, locale)).toBe(want);
   });
 
   const words = { today: "Hoje", yesterday: "Ontem" };

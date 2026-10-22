@@ -129,7 +129,10 @@ export function CorrectionForm({
         params: { id: transaction.id },
       });
     } catch (error) {
-      if (error instanceof ProblemError && error.status === 409) {
+      if (
+        error instanceof ProblemError &&
+        error.problem.code === "version_conflict"
+      ) {
         // ER-02: the record is read again before the message is shown.
         const fresh = await queryClient.query({
           ...transactionQuery(api, transaction.id),

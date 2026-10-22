@@ -1,0 +1,230 @@
+@layer app {
+  /* No token holds an avatar measure: the sizes are the 24 px target and its 1.5 and 2
+     multiples (24, 36 and 48 px). */
+  .mark {
+    --mark-size: var(--slotted-target-min);
+    --mark-ink: var(--slotted-text-muted);
+    --mark-font: var(--slotted-font-size-xs);
+    --mark-radius: 28%;
+
+    position: relative;
+    display: inline-grid;
+    flex: none;
+    box-sizing: border-box;
+    inline-size: var(--mark-size);
+    block-size: var(--mark-size);
+    line-height: 1;
+  }
+
+  .mark[data-size="md"] {
+    --mark-size: calc(var(--slotted-target-min) * 1.5);
+    --mark-font: var(--slotted-font-size-sm);
+  }
+
+  .mark[data-size="lg"] {
+    --mark-size: calc(var(--slotted-target-min) * 2);
+    --mark-font: var(--slotted-font-size-lg);
+  }
+
+  /* A rounded square, its corner 28 % of its side as on an app icon, holds money at hand and a
+     card; a circle holds money set aside. */
+  .mark[data-shape="circle"] {
+    --mark-radius: var(--slotted-radius-full);
+  }
+
+  .mark[data-color="1"] {
+    --mark-ink: var(--slotted-data-1);
+  }
+
+  .mark[data-color="2"] {
+    --mark-ink: var(--slotted-data-2);
+  }
+
+  .mark[data-color="3"] {
+    --mark-ink: var(--slotted-data-3);
+  }
+
+  .mark[data-color="4"] {
+    --mark-ink: var(--slotted-data-4);
+  }
+
+  .mark[data-color="5"] {
+    --mark-ink: var(--slotted-data-5);
+  }
+
+  .mark[data-color="6"] {
+    --mark-ink: var(--slotted-data-6);
+  }
+
+  .mark[data-color="7"] {
+    --mark-ink: var(--slotted-data-7);
+  }
+
+  .mark[data-color="8"] {
+    --mark-ink: var(--slotted-data-8);
+  }
+
+  /* The monogram stands on the ink at a fifth of its strength over the surface, as in the
+     category mark: the data slots are tuned as ink and no token holds their soft ground. A
+     hairline in the ink outlines the shape on any ground. */
+  .face {
+    display: grid;
+    place-items: center;
+    border-radius: var(--mark-radius);
+    background: color-mix(
+      in oklab,
+      var(--mark-ink) 18%,
+      var(--slotted-surface)
+    );
+    box-shadow: inset 0 0 0 var(--slotted-border-width-thin)
+      color-mix(in oklab, var(--mark-ink) 30%, transparent);
+    color: var(--mark-ink);
+    font-size: var(--mark-font);
+    font-weight: var(--slotted-font-weight-semibold);
+    letter-spacing: -0.02em;
+  }
+
+  /* An institution's logo is artwork drawn for a white ground, in either scheme; no token holds
+     a white that stays white in the dark scheme. In the light scheme a hairline separates the
+     plate from the white surface; in the dark scheme the edge is the plate's own white, since a
+     grey line between a white plate and a dark ground reads as a seam. */
+  .plate {
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border-radius: var(--mark-radius);
+    background: #fff;
+    box-shadow: inset 0 0 0 var(--slotted-border-width-thin)
+      light-dark(var(--slotted-border-subtle), #fff);
+  }
+
+  .logo {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: contain;
+  }
+
+  /* A credit card carries a small card over the plate's corner: the ID-1 ratio, 70 % of the side
+     wide, tilted 8 degrees as if laid on the plate, cut from it by a ring of the surface. The
+     body is the ink stepped darker along the diagonal, under a brushed grain, a band of light
+     and two network discs; its edge is embossed, light above and shade below. The literal
+     whites and blacks are light and shade on a material, which no token holds. */
+  .badge {
+    --badge-ink: color-mix(in oklab, var(--mark-ink) 80%, black);
+
+    position: absolute;
+    inset-block-end: -16%;
+    inset-inline-end: -26%;
+    overflow: hidden;
+    inline-size: 70%;
+    aspect-ratio: 1.586;
+    border-radius: 14% / 22%;
+    background:
+      radial-gradient(
+        circle at 73% 74%,
+        rgb(255 255 255 / 0.5) 0 8.5%,
+        transparent 9.5%
+      ),
+      radial-gradient(
+        circle at 83% 74%,
+        rgb(255 255 255 / 0.3) 0 8.5%,
+        transparent 9.5%
+      ),
+      linear-gradient(
+        118deg,
+        transparent 0 38%,
+        rgb(255 255 255 / 0.16) 44%,
+        transparent 58%
+      ),
+      repeating-linear-gradient(
+        90deg,
+        rgb(255 255 255 / 0.035) 0 1px,
+        transparent 1px 2px
+      ),
+      linear-gradient(
+        135deg,
+        color-mix(in oklab, var(--badge-ink) 85%, white),
+        var(--badge-ink) 45%,
+        color-mix(in oklab, var(--badge-ink) 62%, black)
+      );
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.28),
+      inset 0 -1px 0 rgb(0 0 0 / 0.3),
+      inset 0 0 0 var(--slotted-border-width-thin) rgb(255 255 255 / 0.1),
+      0 0 0 var(--slotted-border-width-medium) var(--slotted-surface),
+      var(--slotted-shadow-sm);
+    transform: rotate(-8deg);
+  }
+
+  /* A card without a colour is graphite in either scheme: the muted text it would take turns
+     light in the dark scheme, and a light card reads as a blank. */
+  .mark:not([data-color]) .badge {
+    --badge-ink: color-mix(in oklab, var(--mark-ink) 25%, #2a2a30);
+  }
+
+  /* The chip: gold, a metal no token holds, its contacts drawn as a cross of fine lines over a
+     brushed face, with a darker rim. */
+  .badge::before {
+    position: absolute;
+    inset-block-start: 30%;
+    inset-inline-start: 13%;
+    inline-size: 23%;
+    block-size: 33%;
+    box-sizing: border-box;
+    border: 0.5px solid rgb(110 80 20 / 0.7);
+    border-radius: 24%;
+    background:
+      linear-gradient(
+        to bottom,
+        transparent 32%,
+        rgb(110 80 20 / 0.55) 32% 38%,
+        transparent 38% 62%,
+        rgb(110 80 20 / 0.55) 62% 68%,
+        transparent 68%
+      ),
+      linear-gradient(
+        to right,
+        transparent 46%,
+        rgb(110 80 20 / 0.55) 46% 54%,
+        transparent 54%
+      ),
+      linear-gradient(135deg, #f6e3a1, #d4ad55 55%, #b88c35);
+    content: "";
+  }
+
+  .mark[data-size="sm"] .badge::before {
+    display: none;
+  }
+
+  /* The ring shows a goal's progress around a reserve; the plate shrinks inside it by the
+     ring's width and a gap of the page's ground. */
+  .mark[data-ring] {
+    padding: var(--slotted-border-width-thick);
+    border-radius: var(--slotted-radius-full);
+    background: conic-gradient(
+      var(--slotted-tone-accent-solid) var(--mark-progress),
+      var(--slotted-border-subtle) 0
+    );
+  }
+
+  .mark[data-ring] > :first-child {
+    box-shadow: 0 0 0 var(--slotted-border-width-thin) var(--slotted-surface);
+  }
+
+  /* An unavailable account fades to 45 % and loses its colour; no disabled token holds an
+     opacity for an image. */
+  .mark[data-disabled] {
+    opacity: 0.45;
+    filter: grayscale(1);
+  }
+
+  @media (forced-colors: active) {
+    .face,
+    .plate,
+    .badge,
+    .mark[data-ring] {
+      border: var(--slotted-border-width-thin) solid CanvasText;
+    }
+  }
+}

@@ -92,11 +92,27 @@ func (r *Repository) CountTransactions(ctx context.Context, userID int64) (int64
 }
 
 func (r *Repository) InsertInstitution(ctx context.Context, i app.Institution) (app.Institution, error) {
-	row, err := r.q.InsertInstitution(ctx, InsertInstitutionParams{UserID: i.UserID, Name: i.Name, Code: nullString(i.Code)})
+	row, err := r.q.InsertInstitution(ctx, InsertInstitutionParams{UserID: i.UserID, Name: i.Name, Code: nullString(i.Code), Ispb: nullString(i.ISPB)})
 	if err != nil {
-		return app.Institution{}, duplicate(err, "name")
+		return app.Institution{}, duplicateInstitution(err)
 	}
 	return toInstitution(row), nil
+}
+
+func (r *Repository) SetInstitutionISPB(ctx context.Context, userID int64, id uuid.UUID, ispb string) (app.Institution, error) {
+	row, err := r.q.SetInstitutionISPB(ctx, SetInstitutionISPBParams{UserID: userID, ID: id, Ispb: nullString(ispb)})
+	if err != nil {
+		return app.Institution{}, duplicateInstitution(notFound(err))
+	}
+	return toInstitution(row), nil
+}
+
+// duplicateInstitution names the field of the unique index an institution violated.
+func duplicateInstitution(err error) error {
+	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.ConstraintName == "ledger_institution_ispb_key" {
+		return duplicate(err, "ispb")
+	}
+	return duplicate(err, "name")
 }
 
 func (r *Repository) ListInstitutions(ctx context.Context, userID int64, p page.Request[app.InstitutionKey]) ([]app.Institution, *app.InstitutionKey, error) {
@@ -110,7 +126,7 @@ func (r *Repository) ListInstitutions(ctx context.Context, userID int64, p page.
 	}
 	items, next := pageOf(rows, p.Limit,
 		func(row ListInstitutionsRow) app.Institution {
-			return toInstitution(LedgerInstitution{ID: row.ID, UserID: row.UserID, Name: row.Name, Code: row.Code})
+			return toInstitution(LedgerInstitution{ID: row.ID, UserID: row.UserID, Name: row.Name, Code: row.Code, Ispb: row.Ispb})
 		},
 		func(row ListInstitutionsRow) app.InstitutionKey {
 			return app.InstitutionKey{Name: row.SortName, ID: row.ID}
@@ -345,7 +361,7 @@ func (r *Repository) completeAll(ctx context.Context, userID int64, rows []Ledge
 	}
 	for _, l := range links {
 		t := byID[l.FromTransactionID]
-		t.Links = append(t.Links, domain.Link{Type: domain.LinkType(l.LinkType), Target: l.ToTransactionID})
+		t.Links = append(t.Links, domain.Link{Type: domain.LinkType(l.LinkType), Target: l.ToTransactionID, Amount: storedAmount(l.Amount)})
 	}
 	trades, err := r.q.ListTrades(ctx, ListTradesParams{UserID: userID, TransactionIds: ids})
 	if err != nil {
@@ -573,7 +589,7 @@ func (r *Repository) writeChildren(ctx context.Context, t domain.Transaction) er
 		return err
 	}
 	for _, l := range t.Links {
-		if err := r.q.InsertLink(ctx, InsertLinkParams{UserID: t.UserID, FromTransactionID: t.ID, ToTransactionID: l.Target, LinkType: string(l.Type)}); err != nil {
+		if err := r.q.InsertLink(ctx, InsertLinkParams{UserID: t.UserID, FromTransactionID: t.ID, ToTransactionID: l.Target, LinkType: string(l.Type), Amount: linkAmount(l.Amount)}); err != nil {
 			return referenceError(err)
 		}
 	}
@@ -1022,6 +1038,53 @@ func (r *Repository) RefundedTotal(ctx context.Context, userID int64, originID u
 	return r.q.RefundedTotal(ctx, RefundedTotalParams{UserID: userID, ToTransactionID: originID})
 }
 
+func (r *Repository) ReimbursedTotal(ctx context.Context, userID int64, originID, exceptFrom uuid.UUID) (int64, error) {
+	return r.q.ReimbursedTotal(ctx, ReimbursedTotalParams{UserID: userID, OriginID: originID, ExceptFrom: exceptFrom})
+}
+
+func (r *Repository) ReimbursementCandidates(ctx context.Context, q app.CandidateQuery) ([]app.CandidateRow, error) {
+	rows, err := r.q.ListReimbursementCandidates(ctx, ListReimbursementCandidatesParams{
+		Instrument: string(q.Instrument), UserID: q.UserID, TransactionID: q.ExcludeID, FromDate: q.From, ToDate: q.To,
+		Amount: q.Amount, MaxRows: int32(q.MaxRows), //nolint:gosec // the limit is a small constant.
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]app.CandidateRow, len(rows))
+	for i, row := range rows {
+		out[i] = app.CandidateRow{ID: row.ID, Remaining: row.Remaining, Allocated: row.Allocated}
+	}
+	return out, nil
+}
+
+func (r *Repository) ReimbursementSources(ctx context.Context, q app.SourceQuery) ([]app.SourceRow, error) {
+	rows, err := r.q.ListReimbursementSources(ctx, ListReimbursementSourcesParams{
+		Instrument: string(q.Instrument), UserID: q.UserID, TransactionID: q.ExcludeID, FromDate: q.From, ToDate: q.To,
+		MaxRows: int32(q.MaxRows), //nolint:gosec // the limit is a small constant.
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]app.SourceRow, len(rows))
+	for i, row := range rows {
+		out[i] = app.SourceRow{ID: row.ID, Free: row.Free}
+	}
+	return out, nil
+}
+
+func (r *Repository) SetReimbursementLinks(ctx context.Context, userID int64, from uuid.UUID, links []domain.Link) error {
+	if err := r.q.DeleteReimbursementLinksFrom(ctx, DeleteReimbursementLinksFromParams{UserID: userID, FromTransactionID: from}); err != nil {
+		return err
+	}
+	for _, l := range links {
+		err := r.q.InsertLink(ctx, InsertLinkParams{UserID: userID, FromTransactionID: from, ToTransactionID: l.Target, LinkType: string(l.Type), Amount: linkAmount(l.Amount)})
+		if err != nil {
+			return referenceError(err)
+		}
+	}
+	return nil
+}
+
 func toDispute(row LedgerDispute) app.Dispute {
 	return app.Dispute{
 		ID: row.ID, UserID: row.UserID, TransactionID: row.TransactionID, OpenedOn: row.OpenedOn,
@@ -1052,6 +1115,21 @@ func (r *Repository) Disputes(ctx context.Context, userID int64, transactionID u
 	return out, nil
 }
 
+// linkAmount stores no amount for a link that holds none.
+func linkAmount(amount int64) *int64 {
+	if amount == 0 {
+		return nil
+	}
+	return &amount
+}
+
+func storedAmount(v *int64) int64 {
+	if v == nil {
+		return 0
+	}
+	return *v
+}
+
 func (r *Repository) LinksTo(ctx context.Context, userID int64, id uuid.UUID) ([]app.Reference, error) {
 	rows, err := r.q.ListLinksTo(ctx, ListLinksToParams{UserID: userID, ToTransactionID: id})
 	if err != nil {
@@ -1059,7 +1137,7 @@ func (r *Repository) LinksTo(ctx context.Context, userID int64, id uuid.UUID) ([
 	}
 	out := make([]app.Reference, len(rows))
 	for i, row := range rows {
-		out[i] = app.Reference{Type: domain.LinkType(row.LinkType), Source: row.FromTransactionID}
+		out[i] = app.Reference{Type: domain.LinkType(row.LinkType), Source: row.FromTransactionID, Amount: storedAmount(row.Amount), Currency: row.BalancingCurrency}
 	}
 	return out, nil
 }

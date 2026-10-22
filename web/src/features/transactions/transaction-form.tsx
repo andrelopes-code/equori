@@ -1,33 +1,25 @@
 import { parseISODate, toISODate } from "@slotted/core/date";
 import { DatePicker } from "@slotted/react/date-picker";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
-import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import type { ReactNode } from "react";
 
 import type { components } from "@/api/schema.gen";
 import { CategoryPicker } from "@/features/categories";
-import { AccountPicker } from "@/features/transactions/account-picker";
-import { DateShortcuts } from "@/features/transactions/date-shortcuts";
+import { AccountField } from "@/features/transactions/account-field";
+import { DateShortcuts } from "@/ui/date-shortcuts";
+import { EntryKindPicker } from "@/features/transactions/entry-kind-picker";
 import type { EntryDraft, EntryKind } from "@/features/transactions/entry-kind";
 import { PayeeField } from "@/features/transactions/payee-field";
 import { PostingsEditor } from "@/features/transactions/postings-editor";
 import { TagsField } from "@/features/transactions/tags-field";
 import styles from "@/features/transactions/transaction-form.module.css";
-import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
 import { MoneyInput } from "@/ui/money-input";
 
 type Account = components["schemas"]["Account"];
 type Payee = components["schemas"]["Payee"];
-
-const kinds: { value: EntryKind; label: MessageKey }[] = [
-  { value: "expense", label: "entry.kind.expense" },
-  { value: "income", label: "entry.kind.income" },
-  { value: "transfer", label: "entry.kind.transfer" },
-  { value: "advanced", label: "entry.kind.advanced" },
-];
 
 // The request's posting field names, read back into the field that wrote them (FM-02).
 export function fieldOf(kind: EntryKind, field: string): string {
@@ -76,24 +68,22 @@ export function TransactionForm({
   const digits = scale(currency);
   const error = (name: string) => errors[name];
   const simple = draft.kind !== "advanced";
+  const simpleKind = draft.kind === "advanced" ? null : draft.kind;
+  const accountLabel =
+    draft.kind === "transfer"
+      ? t("entry.from")
+      : draft.kind === "income"
+        ? t("entry.receiveIn")
+        : t("entry.payWith");
 
   return (
     <Stack gap={6}>
-      <SegmentedControl
-        aria-label={t("entry.kind")}
+      <EntryKindPicker
         value={draft.kind}
-        fullWidth
-        onValueChange={(value) => {
-          const next = kinds.find((k) => k.value === value);
-          if (next !== undefined) set({ kind: next.value });
+        onChange={(kind) => {
+          set({ kind });
         }}
-      >
-        {kinds.map((kind) => (
-          <Segment key={kind.value} value={kind.value}>
-            {t(kind.label)}
-          </Segment>
-        ))}
-      </SegmentedControl>
+      />
 
       {simple && (
         <Field invalid={error("amount") !== undefined}>
@@ -120,16 +110,23 @@ export function TransactionForm({
         </Field>
       )}
 
-      {simple && (
+      {simpleKind !== null && (
         <Field invalid={error("account") !== undefined}>
-          <FieldLabel>
-            {draft.kind === "transfer" ? t("entry.from") : t("entry.account")}
-          </FieldLabel>
-          <AccountPicker
+          <FieldLabel>{accountLabel}</FieldLabel>
+          <AccountField
             name="account"
+            title={accountLabel}
             accounts={accounts}
             value={draft.accountId}
             exclude={draft.kind === "transfer" ? draft.toAccountId : null}
+            amount={draft.amount}
+            direction={draft.kind === "income" ? "in" : "out"}
+            date={draft.date}
+            categoryId={draft.kind === "transfer" ? null : draft.categoryId}
+            payeeId={draft.kind === "transfer" ? null : draft.payeeId}
+            kind={simpleKind}
+            currency={currency}
+            scale={scale}
             onChange={(id) => {
               set({ accountId: id });
             }}
@@ -143,11 +140,20 @@ export function TransactionForm({
       {draft.kind === "transfer" && (
         <Field invalid={error("to") !== undefined}>
           <FieldLabel>{t("entry.to")}</FieldLabel>
-          <AccountPicker
+          <AccountField
             name="to"
+            title={t("entry.to")}
             accounts={accounts}
             value={draft.toAccountId}
             exclude={draft.accountId}
+            amount={draft.amount}
+            direction="in"
+            date={draft.date}
+            categoryId={null}
+            payeeId={null}
+            kind="transfer"
+            currency={currency}
+            scale={scale}
             onChange={(id) => {
               set({ toAccountId: id });
             }}

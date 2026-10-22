@@ -39,7 +39,7 @@ import {
 } from "@/features/categories/api";
 import { CategoriesHeader } from "@/features/categories/categories-header";
 import { Coverage } from "@/features/categories/coverage";
-import { HeaderAction } from "@/features/categories/header-action";
+import { HeaderAction } from "@/ui/header-action";
 import { RuleList } from "@/features/categories/rule-list";
 import type { RuleAction } from "@/features/categories/rule-list";
 import styles from "@/features/categories/rules-page.module.css";

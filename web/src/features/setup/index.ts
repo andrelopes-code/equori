@@ -4,6 +4,7 @@ export {
   payeesQuery,
   settingsQuery,
   setupKeys,
+  useCreateInstitution,
   useCreatePayee,
 } from "@/features/setup/api";
 export { SettingsPage } from "@/features/setup/settings-page";

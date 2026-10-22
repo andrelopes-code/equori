@@ -1,0 +1,98 @@
+@layer app {
+  .swatches {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  /* Each swatch stands in a box of the comfortable target: the 28 px disc, its 2 px ring and the
+     2 px gap between them (36 px) stay inside it, so a ring never covers a neighbour. */
+  .option {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    inline-size: var(--slotted-target-comfortable);
+    block-size: var(--slotted-target-comfortable);
+    cursor: pointer;
+  }
+
+  /* The radio stays in the accessibility tree and takes focus; the drawing is its label. */
+  .radio {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .swatch {
+    box-sizing: border-box;
+    inline-size: var(--slotted-control-inner-size-lg);
+    block-size: var(--slotted-control-inner-size-lg);
+    border-radius: var(--slotted-radius-full);
+    outline: var(--slotted-border-width-thick) solid transparent;
+    outline-offset: var(--slotted-border-width-thick);
+    transition: outline-color var(--slotted-control-transition-duration)
+      var(--slotted-control-transition-easing);
+  }
+
+  /* No colour: an empty ring struck through, so it does not read as a dark colour. */
+  .swatch[data-color="none"] {
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-strong);
+    background: linear-gradient(
+      135deg,
+      transparent calc(50% - var(--slotted-border-width-thin)),
+      var(--slotted-text-muted) calc(50% - var(--slotted-border-width-thin))
+        calc(50% + var(--slotted-border-width-thin)),
+      transparent calc(50% + var(--slotted-border-width-thin))
+    );
+  }
+  .swatch[data-color="1"] {
+    background: var(--slotted-data-1);
+  }
+  .swatch[data-color="2"] {
+    background: var(--slotted-data-2);
+  }
+  .swatch[data-color="3"] {
+    background: var(--slotted-data-3);
+  }
+  .swatch[data-color="4"] {
+    background: var(--slotted-data-4);
+  }
+  .swatch[data-color="5"] {
+    background: var(--slotted-data-5);
+  }
+  .swatch[data-color="6"] {
+    background: var(--slotted-data-6);
+  }
+  .swatch[data-color="7"] {
+    background: var(--slotted-data-7);
+  }
+  .swatch[data-color="8"] {
+    background: var(--slotted-data-8);
+  }
+
+  .option:hover .swatch {
+    outline-color: var(--slotted-border-strong);
+  }
+
+  /* checked: the accent ring, the colour every chosen control of the theme takes. */
+  .radio:checked + .swatch {
+    outline-color: var(--slotted-tone-accent-text);
+  }
+
+  .radio:focus-visible + .swatch {
+    outline-color: var(--slotted-focus-ring-color);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .swatch {
+      transition: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .radio:checked + .swatch {
+      outline-color: Highlight;
+    }
+  }
+}

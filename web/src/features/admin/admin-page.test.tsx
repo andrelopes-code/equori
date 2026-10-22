@@ -466,8 +466,8 @@ describe("AdminPage", () => {
         name: catalogEn["admin.tab.transactions"],
       }),
     );
-    await chooseOperation(user, /createTransaction/);
-    const form = screen.getByRole("form", { name: /createTransaction/ });
+    await chooseOperation(user, / createTransaction$/);
+    const form = screen.getByRole("form", { name: / createTransaction$/ });
     const [amount] = within(form).getAllByRole("textbox", { name: "amount" });
     if (amount === undefined) throw new Error("no amount field");
     await user.clear(amount);

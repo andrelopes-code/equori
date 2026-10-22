@@ -6,7 +6,10 @@ INSERT INTO ledger_settings (user_id, base_currency) VALUES ($1, $2)
 ON CONFLICT (user_id) DO UPDATE SET base_currency = EXCLUDED.base_currency;
 
 -- name: InsertInstitution :one
-INSERT INTO ledger_institution (user_id, name, code) VALUES ($1, $2, $3) RETURNING *;
+INSERT INTO ledger_institution (user_id, name, code, ispb) VALUES ($1, $2, $3, $4) RETURNING *;
+
+-- name: SetInstitutionISPB :one
+UPDATE ledger_institution SET ispb = sqlc.narg(ispb) WHERE user_id = @user_id AND id = @id RETURNING *;
 
 -- name: ListInstitutions :many
 SELECT *, lower(name)::text AS sort_name FROM ledger_institution
