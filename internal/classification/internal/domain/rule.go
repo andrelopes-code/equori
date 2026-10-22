@@ -78,7 +78,7 @@ var (
 	accountKinds = []string{"checking", "savings", "cash", "wallet", "benefit", "reserve", "brokerage", "receivable", "credit_card", "loan", "payable"}
 	sources      = []string{"manual", "import", "schedule"}
 	weekdays     = []string{"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"}
-	tagPattern   = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,59}$`)
+	tagPattern   = regexp.MustCompile(`^[\p{Ll}\p{Lm}\p{Lo}\p{N}][\p{Ll}\p{Lm}\p{Lo}\p{N}-]{0,59}$`)
 )
 
 // Condition is one test on a subject (P5 amendment A21). The value lives in the member
@@ -283,7 +283,7 @@ func checkAction(field string, a Action) (Action, error) {
 		}
 		for i, t := range a.Tags {
 			if !tagPattern.MatchString(t) {
-				return Action{}, invalid(fmt.Sprintf("%s.tags[%d]", field, i), "must use letters a-z, digits and hyphens, up to 60 characters")
+				return Action{}, invalid(fmt.Sprintf("%s.tags[%d]", field, i), "must use lowercase letters, digits and hyphens, up to 60 characters")
 			}
 		}
 	case ActionSplit:

@@ -103,6 +103,17 @@ func TestRuleLifecycle(t *testing.T) {
 	}
 }
 
+func TestRuleTagsInAnyScript(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	rule := createRule(t, h, "Café", []map[string]any{contains("cafe")}, []map[string]any{{"type": "add_tags", "tags": []any{"café", "праздник"}}})
+	if tags := rule.Actions[0]["tags"].([]any); len(tags) != 2 || tags[0] != "café" || tags[1] != "праздник" {
+		t.Fatalf("tags = %v", tags)
+	}
+	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/rules", map[string]any{"name": "r", "conditions": []any{contains("x")}, "actions": []any{map[string]any{"type": "add_tags", "tags": []any{"Café"}}}}),
+		http.StatusBadRequest, "invalid_request", "actions[0].tags[0]")
+}
+
 func TestRuleRejections(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)

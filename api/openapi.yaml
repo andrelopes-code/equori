@@ -6700,7 +6700,7 @@ components:
           maxItems: 10
           items:
             type: string
-            pattern: "^[a-z0-9][a-z0-9-]{0,59}$"
+            pattern: '^[\p{Ll}\p{Lm}\p{Lo}\p{N}][\p{Ll}\p{Lm}\p{Lo}\p{N}-]{0,59}$'
         parts:
           type: array
           minItems: 2

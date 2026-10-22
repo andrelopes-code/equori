@@ -22,7 +22,8 @@ const types: RuleActionInput["type"][] = [
   "mark_reimbursable",
 ];
 
-const tagPattern = /^[a-z0-9][a-z0-9-]{0,59}$/;
+const tagPattern =
+  /^[\p{Ll}\p{Lm}\p{Lo}\p{N}][\p{Ll}\p{Lm}\p{Lo}\p{N}-]{0,59}$/u;
 
 export function ActionRow({
   index,
