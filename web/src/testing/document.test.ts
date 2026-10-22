@@ -19,9 +19,9 @@ function metaContent(name: string): string | undefined {
 }
 
 describe("index.html", () => {
-  it("sets the phone viewport with viewport-fit=cover, resized by the keyboard", () => {
+  it("sets the phone viewport with viewport-fit=cover, resized by the keyboard, without zoom", () => {
     expect(metaContent("viewport")).toBe(
-      "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content",
+      "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content",
     );
   });
 
@@ -179,6 +179,10 @@ describe("app.css document behaviour on a phone", () => {
 
   it("contains the overscroll, which removes pull-to-refresh and keeps the edge glow", () => {
     expect(html).toMatch(/overscroll-behavior-y:\s*contain/);
+  });
+
+  it("leaves the browser only the pan gestures, so a pinch does not zoom the page", () => {
+    expect(html).toMatch(/touch-action:\s*pan-x pan-y/);
   });
 
   it("stops the browser from rescaling text", () => {

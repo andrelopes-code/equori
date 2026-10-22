@@ -16,6 +16,8 @@
     scrollbar-color: var(--slotted-border-strong) transparent;
     /* Pulling the page down at its top reloads an installed app, which a native app does not do; contain keeps the edge glow. */
     overscroll-behavior-y: contain;
+    /* The viewport meta tag disables zoom; this keeps a pinch from scaling the page where a browser ignores the tag. */
+    touch-action: pan-x pan-y;
     /* Chrome on Android enlarges text blocks it judges small; the layout sets its own sizes. */
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
