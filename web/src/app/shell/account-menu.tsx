@@ -4,6 +4,7 @@ import { Avatar } from "@slotted/react/avatar";
 import { Icon } from "@slotted/react/icon";
 import {
   Menu,
+  MenuCheckboxItem,
   MenuContent,
   MenuGroup,
   MenuItem,
@@ -19,6 +20,7 @@ import { ShellIcon } from "@/app/shell/shell-icon";
 import { meQuery, useChooseLanguage, useLogout } from "@/features/session";
 import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
 import { isLanguage, languages } from "@/i18n/languages";
+import { usePrivacy } from "@/privacy/privacy-provider";
 import { densities, useDensity } from "@/theme/density";
 import type { Density } from "@/theme/density";
 import { useScheme } from "@/theme/scheme";
@@ -42,6 +44,7 @@ export function AccountMenu({ compact }: { compact: boolean }) {
   const { logout, failed } = useLogout();
   const [scheme, setScheme] = useScheme();
   const [density, setDensity] = useDensity();
+  const { hidden, setHidden } = usePrivacy();
   const { language } = useAppLocaleState();
   const chooseLanguage = useChooseLanguage();
   // The session guard has loaded /me; the menu reads that answer without asking again.
@@ -84,6 +87,17 @@ export function AccountMenu({ compact }: { compact: boolean }) {
           >
             {t("more.settings")}
           </MenuItem>
+          <MenuCheckboxItem
+            icon={
+              <Icon size="sm">
+                <ShellIcon name={hidden ? "eye-off" : "eye"} />
+              </Icon>
+            }
+            checked={hidden}
+            onCheckedChange={setHidden}
+          >
+            {t("privacy.hide")}
+          </MenuCheckboxItem>
           <MenuSeparator />
           <MenuGroup label={t("more.scheme")}>
             <MenuRadioGroup

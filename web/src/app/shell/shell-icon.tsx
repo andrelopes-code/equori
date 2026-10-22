@@ -17,11 +17,13 @@ export type ShellIconName =
   | "language"
   | "logout"
   | "chevrons"
-  | "density";
+  | "density"
+  | "eye"
+  | "eye-off";
 
 // Lucide geometry (ISC licence) on its 24-unit grid: house, arrow-left-right, tags, credit-card,
 // wallet, target, shield, settings, plus, square-pen, text, search, layout-grid, arrow-left,
-// moon, globe, log-out, chevrons-up-down and rows-3.
+// moon, globe, log-out, chevrons-up-down, rows-3, eye and eye-off.
 const PATHS: Record<ShellIconName, readonly string[]> = {
   overview: [
     "M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8",
@@ -67,6 +69,16 @@ const PATHS: Record<ShellIconName, readonly string[]> = {
     "M4 14h5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1z",
   ],
   back: ["m12 19-7-7 7-7", "M19 12H5"],
+  eye: [
+    "M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0",
+    "M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z",
+  ],
+  "eye-off": [
+    "M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49",
+    "M14.084 14.158a3 3 0 0 1-4.242-4.242",
+    "M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143",
+    "m2 2 20 20",
+  ],
   scheme: ["M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"],
   language: [
     "M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z",

@@ -18,6 +18,7 @@ import { accountsQuery } from "@/features/accounts";
 import { useChooseLanguage, useLogout } from "@/features/session";
 import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
 import { languages } from "@/i18n/languages";
+import { usePrivacy } from "@/privacy/privacy-provider";
 import { densities, useDensity } from "@/theme/density";
 import { useScheme } from "@/theme/scheme";
 import type { Scheme } from "@/theme/scheme";
@@ -34,6 +35,7 @@ export function CommandMenu({ ref }: { ref: Ref<CommandPaletteHandle> }) {
   const { logout } = useLogout();
   const [, setScheme] = useScheme();
   const [, setDensity] = useDensity();
+  const { hidden, toggle: togglePrivacy } = usePrivacy();
   const { language } = useAppLocaleState();
   const chooseLanguage = useChooseLanguage();
   // The accounts are read the first time the palette opens, not on every page load.
@@ -141,6 +143,13 @@ export function CommandMenu({ ref }: { ref: Ref<CommandPaletteHandle> }) {
               }),
           })),
       },
+      {
+        id: "privacy",
+        label: t(hidden ? "privacy.show" : "privacy.hide"),
+        group: "actions",
+        icon: icon(hidden ? "eye" : "eye-off"),
+        onSelect: togglePrivacy,
+      },
       ...schemes.map((scheme) => ({
         id: `scheme.${scheme}`,
         label: t("palette.scheme", { name: t(`scheme.${scheme}`) }),
@@ -185,6 +194,8 @@ export function CommandMenu({ ref }: { ref: Ref<CommandPaletteHandle> }) {
     openEntry,
     setScheme,
     setDensity,
+    hidden,
+    togglePrivacy,
     language,
     chooseLanguage,
     logout,

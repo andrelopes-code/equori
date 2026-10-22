@@ -225,6 +225,7 @@ describe("desktop column", () => {
       ),
     ).toEqual([
       catalogEn["more.settings"],
+      catalogEn["privacy.hide"],
       catalogEn["scheme.dark"],
       catalogEn["scheme.light"],
       catalogEn["scheme.system"],
@@ -241,6 +242,41 @@ describe("desktop column", () => {
       }),
     );
     expect(html).toHaveAttribute("data-slotted-scheme", "light");
+  });
+
+  it("hides the amounts from the account menu", async () => {
+    const user = userEvent.setup();
+    await renderApp("/", { fetch: newFetch() });
+    await user.click(
+      screen.getByRole("button", { name: catalogEn["nav.user"] }),
+    );
+    const item = await screen.findByRole("menuitemcheckbox", {
+      name: catalogEn["privacy.hide"],
+    });
+    expect(item).toHaveAttribute("aria-checked", "false");
+    await user.click(item);
+    expect(localStorage.getItem("equori.privacy")).toBe("hidden");
+  });
+
+  it("toggles the amounts from the palette", async () => {
+    const user = userEvent.setup();
+    await renderApp("/", { fetch: newFetch() });
+    await user.keyboard("{Control>}k{/Control}");
+    const dialog = await screen.findByRole("dialog");
+    await user.type(
+      within(dialog).getByRole("combobox"),
+      catalogEn["privacy.hide"],
+    );
+    await user.keyboard("{Enter}");
+    expect(localStorage.getItem("equori.privacy")).toBe("hidden");
+    await user.keyboard("{Control>}k{/Control}");
+    const reopened = await screen.findByRole("dialog");
+    await user.type(
+      within(reopened).getByRole("combobox"),
+      catalogEn["privacy.show"],
+    );
+    await user.keyboard("{Enter}");
+    expect(localStorage.getItem("equori.privacy")).toBeNull();
   });
 
   it("opens the account menu as wide as its trigger", async () => {
@@ -367,6 +403,18 @@ describe("phone top app bar", () => {
       expect(router.state.location.pathname).toBe("/transactions");
     });
     expect(router.history.length).toBe(2);
+  });
+
+  it("hides the amounts from the bar", async () => {
+    const user = userEvent.setup();
+    await renderApp("/", { width: 390, fetch: newFetch() });
+    const button = screen.getByRole("button", {
+      name: catalogEn["privacy.hide"],
+    });
+    expect(button).toHaveAttribute("aria-pressed", "false");
+    await user.click(button);
+    expect(button).toHaveAttribute("aria-pressed", "true");
+    expect(localStorage.getItem("equori.privacy")).toBe("hidden");
   });
 
   it("opens the palette from search", async () => {
@@ -642,6 +690,9 @@ describe("phone bars as materials", () => {
     expect(main.style.paddingBlockStart).toBe("56px");
     expect(main.style.paddingBlockEnd).toBe("93.796875px");
     expect(main.style.scrollPaddingBlock).toBe("56px 93.796875px");
+    expect(main.style.scrollPaddingBlock).toBe(
+      "56px calc(93.796875px + var(--slotted-page-sticky-bottom, 0px))",
+    );
   });
 
   it("reserves nothing at the column's width, where no bar lies over the content", async () => {
@@ -649,5 +700,12 @@ describe("phone bars as materials", () => {
     const main = region("main");
     expect(main.style.paddingBlockStart).toBe("");
     expect(main.style.paddingBlockEnd).toBe("");
+  });
+
+  it("keeps a focused field clear of the page's sticky footer at every width", async () => {
+    await renderApp("/", { width: 1280, fetch: newFetch() });
+    expect(region("main").style.scrollPaddingBlockEnd).toBe(
+      "var(--slotted-page-sticky-bottom, 0px)",
+    );
   });
 });

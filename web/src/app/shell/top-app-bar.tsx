@@ -3,6 +3,7 @@ import { IconButton } from "@slotted/react/button";
 import { Icon } from "@slotted/react/icon";
 
 import { matchDestination } from "@/app/shell/match-destination";
+import { PrivacyToggle } from "@/app/shell/privacy-toggle";
 import { ShellIcon } from "@/app/shell/shell-icon";
 import styles from "@/app/shell/top-app-bar.module.css";
 import { useT } from "@/i18n/i18n-provider";
@@ -50,6 +51,7 @@ export function TopAppBar({
         {topLevel && destination !== undefined ? t(destination.label) : null}
       </p>
       <div className={styles.end}>
+        <PrivacyToggle />
         <IconButton aria-label={t("nav.search")} size="lg" onClick={onSearch}>
           <Icon>
             <ShellIcon name="search" />
