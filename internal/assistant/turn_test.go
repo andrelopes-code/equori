@@ -153,7 +153,7 @@ func TestTurnRead(t *testing.T) {
 	if !slices.Equal(got, want) {
 		t.Fatalf("tools = %v, want %v", got, want)
 	}
-	// S139 shares this flow's log line check: steps and tool calls are counted, content is not logged.
+	// The turn's log line counts steps and tool calls and carries no content (spec 14).
 	line := lastTurnLog(h)
 	if !strings.Contains(line, "steps=2") || !strings.Contains(line, "tool_calls=1") || !strings.Contains(line, "outcome=answered") {
 		t.Fatalf("turn log = %q", line)
