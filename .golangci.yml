@@ -38,6 +38,29 @@ linters:
               desc: inverted dependency; adapter imports app, never the reverse
             - pkg: github.com/andrelopes-code/equori/internal/platform/problem
               desc: HTTP error mapping belongs to adapter/httpapi (ADR 004)
+        platform:
+          list-mode: lax
+          files:
+            - "**/internal/platform/**"
+          deny:
+            - pkg: github.com/andrelopes-code/equori/internal/identity
+              desc: platform must not depend on business modules (ADR 002)
+            - pkg: github.com/andrelopes-code/equori/internal/ledger
+              desc: platform must not depend on business modules (ADR 002)
+            - pkg: github.com/andrelopes-code/equori/internal/marketdata
+              desc: platform must not depend on business modules (ADR 002)
+            - pkg: github.com/andrelopes-code/equori/internal/reporting
+              desc: platform must not depend on business modules (ADR 002)
+            - pkg: github.com/andrelopes-code/equori/internal/ingestion
+              desc: platform must not depend on business modules (ADR 002)
+            - pkg: github.com/andrelopes-code/equori/internal/classification
+              desc: platform must not depend on business modules (ADR 002)
+            - pkg: github.com/andrelopes-code/equori/internal/capture
+              desc: platform must not depend on business modules (ADR 002)
+            - pkg: github.com/andrelopes-code/equori/internal/planning
+              desc: platform must not depend on business modules (ADR 002)
+            - pkg: github.com/andrelopes-code/equori/internal/portfolio
+              desc: platform must not depend on business modules (ADR 002)
   exclusions:
     presets:
       - std-error-handling

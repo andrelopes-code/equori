@@ -19,8 +19,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andrelopes-code/equori/db"
-	"github.com/andrelopes-code/equori/internal/marketdata"
-	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/postgres"
 )
 
@@ -66,9 +64,6 @@ func buildTemplate() (string, error) {
 	}); err != nil {
 		return "", err
 	}
-	for _, c := range money.Currencies() {
-		fmt.Fprintf(sum, "%s %d %s\n", c, c.MinorUnits(), money.Name(c))
-	}
 	name := "template_" + hex.EncodeToString(sum.Sum(nil))[:16]
 	ctx := context.Background()
 	admin, err := connectAdmin(ctx)
@@ -100,9 +95,6 @@ func buildTemplate() (string, error) {
 		return "", err
 	}
 	err = postgres.Migrate(ctx, pool, slog.New(slog.NewTextHandler(io.Discard, nil)))
-	if err == nil {
-		err = marketdata.New(pool).ReconcileCurrencies(ctx)
-	}
 	pool.Close()
 	if err != nil {
 		return "", fmt.Errorf("prepare template: %w", err)

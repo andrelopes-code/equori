@@ -12,6 +12,9 @@ import (
 func TestCurrenciesMatchMoneyPackage(t *testing.T) {
 	t.Parallel()
 	m := marketdata.New(pgtest.New(t))
+	if err := m.ReconcileCurrencies(t.Context()); err != nil {
+		t.Fatal(err)
+	}
 
 	rows, err := m.Currencies(t.Context())
 	if err != nil {
