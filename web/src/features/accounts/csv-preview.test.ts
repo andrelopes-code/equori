@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { previewCsv, splitCsv } from "@/features/accounts/csv-preview";
+import {
+  minorUnits,
+  previewCsv,
+  splitCsv,
+} from "@/features/accounts/csv-preview";
 
 const base = {
   delimiter: "semicolon" as const,
@@ -115,5 +119,46 @@ describe("previewCsv", () => {
     expect(
       previewCsv(`Data;Descrição;Valor\n${lines.join("\n")}`, base, 2).rows,
     ).toHaveLength(10);
+  });
+});
+
+describe("minorUnits", () => {
+  it.each([
+    ["1.234,56", ",", ".", 2, 123456],
+    ["1 234.56", ".", " ", 2, 123456],
+    ["1'234.5", ".", "'", 2, 123450],
+    ["1.234,56", ",", "", 2, undefined],
+    ["1,234.56", ",", ".", 2, undefined],
+    ["1.234", ",", "", 2, undefined],
+    ["1234,56", ",", "", 2, 123456],
+  ] as const)(
+    "reads %j (decimal %j, group %j)",
+    (text, decimal, group, scale, want) => {
+      expect(minorUnits(text, decimal, group, scale)).toBe(want);
+    },
+  );
+});
+
+describe("previewCsv group separator", () => {
+  const sheet = (amount: string) =>
+    `Data;Descrição;Valor\n05/10/2026;Padaria;${amount}\n`;
+  const first = (amount: string, group: string) =>
+    previewCsv(sheet(amount), { ...base, group_separator: group }, 2).rows[0];
+
+  it("rejects a group separator the profile does not declare", () => {
+    expect(first("1.234,56", " ")?.problems).toEqual(["amount"]);
+  });
+  it("reads the declared group separator", () => {
+    expect(first("1'234,56", "'")).toMatchObject({
+      amount: 123456,
+      problems: [],
+    });
+  });
+  it("treats an empty group separator as none", () => {
+    expect(first("1.234,56", "")?.problems).toEqual(["amount"]);
+  });
+  it("defaults to the separator that is not decimal", () => {
+    const rows = previewCsv(sheet("1.234,56"), base, 2).rows;
+    expect(rows[0]).toMatchObject({ amount: 123456, problems: [] });
   });
 });

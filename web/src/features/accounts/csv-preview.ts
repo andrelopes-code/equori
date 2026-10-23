@@ -91,19 +91,15 @@ function parseDate(
     : undefined;
 }
 
-// domain.MinorUnits: the other separator groups thousands; "R$" and spaces are dropped.
+// domain.MinorUnits: the profile's group separator ("" for none), "R$" and whitespace are dropped.
 export function minorUnits(
   text: string,
   decimal: "," | ".",
+  group: string,
   scale: number,
 ): number | undefined {
-  const thousands = decimal === "," ? "." : ",";
-  let v = text
-    .trim()
-    .replaceAll(" ", "")
-    .replaceAll("\u00a0", "")
-    .replaceAll("R$", "");
-  v = v.split(thousands).join("");
+  let v = text.trim().replaceAll("R$", "").replace(/\s/gu, "");
+  if (group !== "") v = v.split(group).join("");
   if (v === "") return undefined;
   let sign = 1;
   if (v.startsWith("-")) {
@@ -134,6 +130,7 @@ export function previewCsv(
   limit = 10,
 ): CsvPreview {
   const decimal = profile.decimal_separator ?? ",";
+  const group = profile.group_separator ?? (decimal === "," ? "." : ",");
   const all = splitCsv(
     text.replace(/^\uFEFF/u, ""),
     delimiters[profile.delimiter ?? "comma"],
@@ -171,12 +168,12 @@ export function previewCsv(
     if (day === undefined) problems.push("date");
     let value: number | undefined;
     if (profile.amount_column !== undefined && profile.amount_column !== "") {
-      value = minorUnits(cell(row, amount), decimal, scale);
+      value = minorUnits(cell(row, amount), decimal, group, scale);
     } else if (cell(row, debit) !== "") {
-      const v = minorUnits(cell(row, debit), decimal, scale);
+      const v = minorUnits(cell(row, debit), decimal, group, scale);
       value = v === undefined ? undefined : -Math.abs(v);
     } else {
-      const v = minorUnits(cell(row, credit), decimal, scale);
+      const v = minorUnits(cell(row, credit), decimal, group, scale);
       value = v === undefined ? undefined : Math.abs(v);
     }
     if (value === undefined) problems.push("amount");
