@@ -1,4 +1,8 @@
-import { queryOptions, useMutation } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import type { Client } from "openapi-fetch";
 
 import { useApi } from "@/api/api-context";
@@ -34,13 +38,17 @@ export function useDeleteSession() {
   });
 }
 
-// Applies the language at once and stores it in the profile.
+// Applies the language at once and stores it in the profile; the answer replaces the cached
+// profile so a remount of ProfileLocale does not reapply the old one.
 export function useChooseLanguage(): (language: Language) => void {
   const api = useApi();
+  const queryClient = useQueryClient();
   const [, setLanguage] = useAppLocale();
   const update = useMutation({
-    mutationFn: async (language: Language) => {
-      await unwrap(await api.PATCH("/me", { body: { language } }));
+    mutationFn: async (language: Language) =>
+      unwrap(await api.PATCH("/me", { body: { language } })),
+    onSuccess: (me) => {
+      queryClient.setQueryData(meQuery(api).queryKey, me);
     },
   });
   return (language) => {
