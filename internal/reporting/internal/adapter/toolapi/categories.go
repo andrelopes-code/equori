@@ -25,6 +25,7 @@ type categoryView struct {
 	AccountID    string     `json:"account_id"`
 	Name         string     `json:"name"`
 	ParentID     string     `json:"parent_id,omitzero"`
+	ParentName   string     `json:"parent_name,omitzero"`
 	Total        tool.Money `json:"total" jsonschema:"postings on the category itself"`
 	SubtreeTotal tool.Money `json:"subtree_total" jsonschema:"postings on the category and its descendants"`
 }
@@ -40,12 +41,18 @@ func getCategoryTotals(svc *app.Service) tool.Tool {
 	return tool.New(tool.Spec{
 		Name: "get_category_totals",
 		Description: "Totals the income or expense categories in a period, each with its own total and the total of its subtree, " +
-			"in category name order. Only categories with postings in the period and their ancestors are listed.",
+			"in category name order; only categories with postings and their ancestors are listed. " +
+			"Use it for how much was spent or earned by category. " +
+			"Do not use it for the transactions behind a total: search_transactions with account_id lists them.",
 		Effect: tool.ReadOnly,
 	}, func(ctx context.Context, userID int64, in getCategoryTotalsIn) (getCategoryTotalsOut, error) {
 		totals, err := svc.CategoryTotals(ctx, userID, string(in.Class), in.From.Time, in.To.Time)
 		if err != nil {
 			return getCategoryTotalsOut{}, err
+		}
+		names := make(map[uuid.UUID]string, len(totals))
+		for _, t := range totals {
+			names[t.AccountID] = t.Name
 		}
 		views := []categoryView{}
 		for _, t := range active(totals) {
@@ -59,7 +66,7 @@ func getCategoryTotals(svc *app.Service) tool.Tool {
 			}
 			v := categoryView{AccountID: t.AccountID.String(), Name: t.Name, Total: tool.MoneyOf(total), SubtreeTotal: tool.MoneyOf(subtree)}
 			if t.ParentID != uuid.Nil {
-				v.ParentID = t.ParentID.String()
+				v.ParentID, v.ParentName = t.ParentID.String(), names[t.ParentID]
 			}
 			views = append(views, v)
 		}

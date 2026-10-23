@@ -35,8 +35,11 @@ type listAccountsOut struct {
 func listAccounts(svc *app.Service) tool.Tool {
 	return tool.New(tool.Spec{
 		Name: "list_accounts",
-		Description: "Lists the user's accounts by class and then name, with the IDs the other tools take. " +
-			"Income and expense accounts are the categories of transactions; a child account carries its parent.",
+		Description: "Lists the user's accounts and categories by class and then name, with the IDs the other tools take, " +
+			"each account's institution, and the user's base currency. " +
+			"Income and expense accounts are the categories of transactions; a child account carries its parent. " +
+			"Use it to find the ID of an account or category named by the user. " +
+			"Do not use it for balances: get_balances returns them.",
 		Effect: tool.ReadOnly,
 	}, func(ctx context.Context, userID int64, in listAccountsIn) (listAccountsOut, error) {
 		byID, all, err := allAccounts(ctx, svc, userID)
@@ -95,8 +98,11 @@ type getBalancesOut struct {
 func getBalances(svc *app.Service) tool.Tool {
 	return tool.New(tool.Spec{
 		Name: "get_balances",
-		Description: "Returns the balance of every asset, liability and equity account at a date, by class and then account name. " +
-			"Accounts with a zero balance are omitted. Totals of income and expense categories come from get_category_totals.",
+		Description: "Returns the balance of every asset, liability and equity account at a date, by class and then account name; " +
+			"accounts with a zero balance are omitted. " +
+			"Use it for how much is in accounts, cards owed or net position at a date. " +
+			"Do not use it for spending by category: get_category_totals returns it; " +
+			"nor for a balance over time: get_account_history returns it.",
 		Effect: tool.ReadOnly,
 	}, func(ctx context.Context, userID int64, in getBalancesIn) (getBalancesOut, error) {
 		date := in.Date.Time

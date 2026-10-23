@@ -12,7 +12,7 @@ import (
 
 type searchTransactionsIn struct {
 	Query         string    `json:"query,omitzero" jsonschema:"case-insensitive text found in the description, the payee name or a posting memo"`
-	AccountID     string    `json:"account_id,omitzero" jsonschema:"keep transactions with a posting on this account; IDs come from list_accounts"`
+	AccountID     string    `json:"account_id,omitzero" jsonschema:"keep transactions with a posting on this account or category; IDs come from list_accounts"`
 	Tag           string    `json:"tag,omitzero" jsonschema:"keep transactions with this tag"`
 	From          tool.Date `json:"from,omitzero" jsonschema:"first date, inclusive"`
 	To            tool.Date `json:"to,omitzero" jsonschema:"last date, inclusive"`
@@ -46,7 +46,11 @@ type searchTransactionsOut struct {
 func searchTransactions(svc *app.Service) tool.Tool {
 	return tool.New(tool.Spec{
 		Name: "search_transactions",
-		Description: "Searches the user's transactions, newest first, with their payee, tags and postings. " +
+		Description: "Searches the user's transactions, newest first, with their payee, tags and postings; " +
+			"each posting names its account or category. " +
+			"Use it to find transactions by text, account, category, tag, period or missing category, " +
+			"and to get the transaction_id other tools take. " +
+			"Do not use it for totals by category: get_category_totals adds them up. " +
 			"Filters combine; narrow them instead of reading many pages.",
 		Effect: tool.ReadOnly,
 	}, func(ctx context.Context, userID int64, in searchTransactionsIn) (searchTransactionsOut, error) {

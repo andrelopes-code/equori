@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"flag"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -18,14 +19,23 @@ import (
 
 var update = flag.Bool("update", false, "rewrite testdata/tools.json from the registry")
 
-// exclusions are the reasons an operation has no tool (ADR 012 T14).
+// exclusions are the reasons an operation has no tool (ADR 012 T14, amended by spec 7.2).
 var exclusions = map[string]bool{
 	"-session": true, // authentication
-	"-write":   true, // the operation changes data; no write tool exists yet
 	"-binary":  true, // file content
-	"-pending": true, // a read operation without a tool yet
 	"-capture": true, // the capture screen's typing loop; a language model reads text without it (capture A116)
-	"-llm":     true, // language model credentials and endpoints are never handed to a language model (ADR 019)
+	"-llm":     true, // language model credentials, endpoints and the chat itself are never handed to a language model (ADR 019)
+	"-secret":  true, // credentials and the aggregator's connect flow
+	"-file":    true, // file content or the reading of files
+	"-visual":  true, // colour, icon and logo identifiers chosen by looking at them
+	"-setup":   true, // the base currency changes only before the first transaction, during provisioning
+	"-write":   true, // the operation changes data; no write tool exists yet (removed by the tools tasks)
+	"-pending": true, // a read operation without a tool yet (removed by the tools tasks)
+}
+
+// withoutOperation are the tools that map to no operation, with the reason.
+var withoutOperation = map[string]string{
+	"get_help": "answers from the guide and the navigation map, not from an operation",
 }
 
 func operationIDs(t *testing.T) []string {
@@ -60,7 +70,7 @@ func TestToolExposure(t *testing.T) {
 		}
 		if strings.HasPrefix(v, "-") {
 			if !exclusions[v] {
-				t.Errorf("operation %s has exclusion %q, not one of -session, -write, -binary, -pending, -capture", op, v)
+				t.Errorf("operation %s has exclusion %q, not one of %v", op, v, slices.Sorted(maps.Keys(exclusions)))
 			}
 			continue
 		}
@@ -72,7 +82,7 @@ func TestToolExposure(t *testing.T) {
 		}
 	}
 	for _, tl := range h.App.Tools.Tools() {
-		if name := tl.Spec().Name; !referenced[name] {
+		if name := tl.Spec().Name; !referenced[name] && withoutOperation[name] == "" {
 			t.Errorf("tool %s maps to no operation in tool_exposure_test.go", name)
 		}
 	}

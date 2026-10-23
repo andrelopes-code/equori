@@ -1,7 +1,7 @@
 [
   {
     "name": "get_balances",
-    "description": "Returns the balance of every asset, liability and equity account at a date, by class and then account name. Accounts with a zero balance are omitted. Totals of income and expense categories come from get_category_totals.",
+    "description": "Returns the balance of every asset, liability and equity account at a date, by class and then account name; accounts with a zero balance are omitted. Use it for how much is in accounts, cards owed or net position at a date. Do not use it for spending by category: get_category_totals returns it; nor for a balance over time: get_account_history returns it.",
     "effect": "read_only",
     "idempotent": false,
     "input_schema": {
@@ -107,7 +107,7 @@
   },
   {
     "name": "get_category_totals",
-    "description": "Totals the income or expense categories in a period, each with its own total and the total of its subtree, in category name order. Only categories with postings in the period and their ancestors are listed.",
+    "description": "Totals the income or expense categories in a period, each with its own total and the total of its subtree, in category name order; only categories with postings and their ancestors are listed. Use it for how much was spent or earned by category. Do not use it for the transactions behind a total: search_transactions with account_id lists them.",
     "effect": "read_only",
     "idempotent": false,
     "input_schema": {
@@ -170,6 +170,9 @@
                 "type": "string"
               },
               "parent_id": {
+                "type": "string"
+              },
+              "parent_name": {
                 "type": "string"
               },
               "total": {
@@ -235,7 +238,7 @@
   },
   {
     "name": "list_accounts",
-    "description": "Lists the user's accounts by class and then name, with the IDs the other tools take. Income and expense accounts are the categories of transactions; a child account carries its parent.",
+    "description": "Lists the user's accounts and categories by class and then name, with the IDs the other tools take, each account's institution, and the user's base currency. Income and expense accounts are the categories of transactions; a child account carries its parent. Use it to find the ID of an account or category named by the user. Do not use it for balances: get_balances returns them.",
     "effect": "read_only",
     "idempotent": false,
     "input_schema": {
@@ -328,7 +331,7 @@
   },
   {
     "name": "search_transactions",
-    "description": "Searches the user's transactions, newest first, with their payee, tags and postings. Filters combine; narrow them instead of reading many pages.",
+    "description": "Searches the user's transactions, newest first, with their payee, tags and postings; each posting names its account or category. Use it to find transactions by text, account, category, tag, period or missing category, and to get the transaction_id other tools take. Do not use it for totals by category: get_category_totals adds them up. Filters combine; narrow them instead of reading many pages.",
     "effect": "read_only",
     "idempotent": false,
     "input_schema": {
@@ -340,7 +343,7 @@
         },
         "account_id": {
           "type": "string",
-          "description": "keep transactions with a posting on this account; IDs come from list_accounts"
+          "description": "keep transactions with a posting on this account or category; IDs come from list_accounts"
         },
         "tag": {
           "type": "string",

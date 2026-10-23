@@ -15,6 +15,7 @@ type toolCategory struct {
 	AccountID    string     `json:"account_id"`
 	Name         string     `json:"name"`
 	ParentID     string     `json:"parent_id"`
+	ParentName   string     `json:"parent_name"`
 	Total        tool.Money `json:"total"`
 	SubtreeTotal tool.Money `json:"subtree_total"`
 }
@@ -54,10 +55,10 @@ func TestCategoryTotalsTool(t *testing.T) {
 	}
 	brl := func(amount string) tool.Money { return tool.Money{Amount: amount, Currency: "BRL"} }
 	want := output{From: "2026-10-01", To: "2026-10-31", Categories: []toolCategory{
-		{AccountID: flights, Name: "Flights", ParentID: travel, Total: brl("10.00"), SubtreeTotal: brl("10.00")},
+		{AccountID: flights, Name: "Flights", ParentID: travel, ParentName: "Travel", Total: brl("10.00"), SubtreeTotal: brl("10.00")},
 		{AccountID: food, Name: "Food", Total: brl("0.00"), SubtreeTotal: brl("10.00")},
-		{AccountID: groceries, Name: "Groceries", ParentID: food, Total: brl("10.00"), SubtreeTotal: brl("10.00")},
-		{AccountID: hotel, Name: "Hotel", ParentID: travel, Total: brl("-10.00"), SubtreeTotal: brl("-10.00")},
+		{AccountID: groceries, Name: "Groceries", ParentID: food, ParentName: "Food", Total: brl("10.00"), SubtreeTotal: brl("10.00")},
+		{AccountID: hotel, Name: "Hotel", ParentID: travel, ParentName: "Travel", Total: brl("-10.00"), SubtreeTotal: brl("-10.00")},
 		{AccountID: travel, Name: "Travel", Total: brl("0.00"), SubtreeTotal: brl("0.00")},
 	}}
 	if !reflect.DeepEqual(got, want) {
