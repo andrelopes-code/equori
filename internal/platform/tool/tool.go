@@ -2,6 +2,7 @@
 package tool
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -44,6 +45,7 @@ type Tool struct {
 	input, output *jsonschema.Schema
 	in, out       *jsonschema.Resolved
 	call          func(ctx context.Context, userID int64, args []byte) (any, error)
+	preview       func(ctx context.Context, userID int64, args []byte) (Preview, error)
 }
 
 var namePattern = regexp.MustCompile(`^[a-z][a-z0-9_]{0,63}$`)
@@ -78,6 +80,24 @@ func New[In, Out any](s Spec, h func(ctx context.Context, userID int64, in In) (
 			return h(ctx, userID, v)
 		},
 	}
+}
+
+// validate normalizes empty arguments to {} and checks them against the input schema.
+func (t Tool) validate(args json.RawMessage) (json.RawMessage, *Error) {
+	if trimmed := bytes.TrimSpace(args); len(trimmed) == 0 || string(trimmed) == "null" {
+		args = json.RawMessage(`{}`)
+	}
+	var v any
+	if err := json.Unmarshal(args, &v); err != nil {
+		return nil, invalidArguments("arguments are not valid JSON: " + err.Error())
+	}
+	if _, ok := v.(map[string]any); !ok {
+		return nil, invalidArguments("arguments must be a JSON object")
+	}
+	if err := t.in.Validate(v); err != nil {
+		return nil, invalidArguments(err.Error())
+	}
+	return args, nil
 }
 
 func (t Tool) Spec() Spec                       { return t.spec }

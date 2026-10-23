@@ -1,7 +1,6 @@
 package tool
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -103,33 +102,16 @@ func (r *Registry) Call(ctx context.Context, name string, args json.RawMessage) 
 
 func (r *Registry) call(ctx context.Context, e entry, userID int64, args json.RawMessage) (Result, string, error) {
 	name := e.tool.spec.Name
-	if trimmed := bytes.TrimSpace(args); len(trimmed) == 0 || string(trimmed) == "null" {
-		args = json.RawMessage(`{}`)
-	}
-	var v any
-	if err := json.Unmarshal(args, &v); err != nil {
-		return failure(*invalidArguments("arguments are not valid JSON: " + err.Error()))
-	}
-	if _, ok := v.(map[string]any); !ok {
-		return failure(*invalidArguments("arguments must be a JSON object"))
-	}
-	if err := e.tool.in.Validate(v); err != nil {
-		return failure(*invalidArguments(err.Error()))
+	args, bad := e.tool.validate(args)
+	if bad != nil {
+		return failure(*bad)
 	}
 	out, err := e.tool.call(ctx, userID, args)
 	if err != nil {
 		if ctx.Err() != nil || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			return Result{}, "", fmt.Errorf("call tool %s: %w", name, err)
 		}
-		if te, ok := errors.AsType[*Error](err); ok {
-			return failure(*te)
-		}
-		if e.errors != nil {
-			if te, ok := e.errors(err); ok {
-				return failure(te)
-			}
-		}
-		return r.internal(ctx, name, err)
+		return r.mapError(ctx, e, err)
 	}
 	b, err := json.Marshal(out)
 	if err != nil {
@@ -140,6 +122,22 @@ func (r *Registry) call(ctx context.Context, e entry, userID int64, args json.Ra
 			"the result has %d bytes, over the limit of %d; narrow the filters or lower limit", len(b), MaxResultBytes)})
 	}
 	return Result{Content: b}, "ok", nil
+}
+
+// mapError turns a handler error into a tool error, or into internal_error when unmapped.
+func (r *Registry) mapError(ctx context.Context, e entry, err error) (Result, string, error) {
+	if ctx.Err() != nil || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return Result{}, "", fmt.Errorf("tool %s: %w", e.tool.spec.Name, err)
+	}
+	if te, ok := errors.AsType[*Error](err); ok {
+		return failure(*te)
+	}
+	if e.errors != nil {
+		if te, ok := e.errors(err); ok {
+			return failure(te)
+		}
+	}
+	return r.internal(ctx, e.tool.spec.Name, err)
 }
 
 func (r *Registry) internal(ctx context.Context, name string, err error) (Result, string, error) {
