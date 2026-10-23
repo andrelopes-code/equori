@@ -1,5 +1,168 @@
 [
   {
+    "name": "categorize_transactions",
+    "description": "Proposes giving one category to one or more transactions, and optionally a payee. Use it when the user asks to categorize, classify or recategorize transactions, including every uncategorized transaction found by search_transactions. Do not use it to split a transaction among categories: change_transaction does. The user confirms before categories change.",
+    "effect": "write",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "transaction_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "IDs of the transactions, from search_transactions; at most 50"
+        },
+        "category_id": {
+          "type": "string",
+          "description": "income or expense category from list_accounts"
+        },
+        "payee_id": {
+          "type": "string",
+          "description": "payee to set on each transaction, from list_payees_and_tags"
+        }
+      },
+      "required": [
+        "transaction_ids",
+        "category_id"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "transaction_id": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "description": "categorized, not_found, version_conflict, transaction_voided or not_categorizable"
+              }
+            },
+            "required": [
+              "transaction_id",
+              "status"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "results"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "change_transaction",
+    "description": "Proposes a change to an existing transaction: correct its date, description, payee, tags, amount or accounts; turn its category side into a transfer to another own account; or make this incoming transaction the reimbursement of recorded expenses. Use it when the user asks to fix, edit or relink a transaction. Do not use it to set a category: categorize_transactions does; nor to void: void_transaction does; nor for card refunds: handle_card_purchase does. The user confirms before the change applies.",
+    "effect": "write",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "transaction_id": {
+          "type": "string",
+          "description": "ID of the transaction, from search_transactions"
+        },
+        "action": {
+          "type": "string",
+          "description": "correct changes the fields given; make_transfer replaces the category side with another own account; reimburse links this incoming transaction to the expenses it repays",
+          "enum": [
+            "correct",
+            "make_transfer",
+            "reimburse"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "description": "for correct: why the transaction changes, kept in its history"
+        },
+        "date": {
+          "type": "string",
+          "description": "for correct: new date",
+          "format": "date"
+        },
+        "description": {
+          "type": "string",
+          "description": "for correct: new description"
+        },
+        "payee_id": {
+          "type": "string",
+          "description": "for correct: new payee from list_payees_and_tags"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "for correct: the complete new list of tags"
+        },
+        "amount": {
+          "type": "string",
+          "description": "for correct: new positive amount of a transaction with one source and one destination"
+        },
+        "from_account_id": {
+          "type": "string",
+          "description": "for correct: new source account or category"
+        },
+        "to_account_id": {
+          "type": "string",
+          "description": "for correct: new destination account or category; for make_transfer: the own account that receives the money"
+        },
+        "allocations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "expense_id": {
+                "type": "string",
+                "description": "transaction_id of the expense repaid"
+              },
+              "amount": {
+                "type": "string",
+                "description": "positive decimal amount allocated to it"
+              }
+            },
+            "required": [
+              "expense_id",
+              "amount"
+            ],
+            "additionalProperties": false
+          },
+          "description": "for reimburse: the expenses repaid and the part of this transaction each takes"
+        }
+      },
+      "required": [
+        "transaction_id",
+        "action"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "transaction_id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "transaction_id",
+        "version"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "get_account_details",
     "description": "Returns one account in depth: reconciliation state and recorded institution balances; for a credit card account, its plastic cards, current credit limit and available limit, billing cycle, statements, the statement a purchase date falls on and the installments already committed to a month. Use it for questions about one account or card. Do not use it for a statement's lines: get_statement returns them.",
     "effect": "read_only",
@@ -2240,6 +2403,119 @@
     }
   },
   {
+    "name": "record_transaction",
+    "description": "Proposes a new transaction: money moves from one account or category to another. A purchase moves from a checking, cash or card account to an expense category; income moves from an income category to an asset account; a transfer moves between two own accounts. With installments on a card it records an installment purchase; with original_amount on a card it records a foreign purchase; with to_amount between two currencies it records an exchange. Use it when the user asks to record, add or log a transaction. Do not use it to change an existing transaction: change_transaction does. The user confirms the proposal before anything is recorded.",
+    "effect": "write",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string",
+          "description": "transaction date",
+          "format": "date"
+        },
+        "description": {
+          "type": "string",
+          "description": "short description, such as the merchant or the purpose"
+        },
+        "amount": {
+          "type": "string",
+          "description": "positive decimal amount in the currency of from_account_id, such as 125.90"
+        },
+        "from_account_id": {
+          "type": "string",
+          "description": "account or category the money leaves: a checking, cash or card account for a purchase, an income category for income"
+        },
+        "to_account_id": {
+          "type": "string",
+          "description": "account or category the money reaches: an expense category for a purchase, an asset account for income or a transfer; absent when splits is set"
+        },
+        "splits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "to_account_id": {
+                "type": "string",
+                "description": "expense category or account receiving this part"
+              },
+              "amount": {
+                "type": "string",
+                "description": "positive decimal amount of this part"
+              }
+            },
+            "required": [
+              "to_account_id",
+              "amount"
+            ],
+            "additionalProperties": false
+          },
+          "description": "several destinations whose amounts add up to amount"
+        },
+        "payee_id": {
+          "type": "string",
+          "description": "payee from list_payees_and_tags"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "tags of the transaction"
+        },
+        "installments": {
+          "type": "integer",
+          "description": "number of installments, 2 to 48, for a purchase on a credit card account"
+        },
+        "original_amount": {
+          "type": "string",
+          "description": "for a foreign purchase on a card: positive amount charged in original_currency"
+        },
+        "original_currency": {
+          "type": "string",
+          "description": "for a foreign purchase on a card: ISO 4217 code of the charged currency"
+        },
+        "exchange_rate": {
+          "type": "string",
+          "description": "for a foreign purchase: decimal rate from original_currency to the card's currency, such as 5.4830"
+        },
+        "to_amount": {
+          "type": "string",
+          "description": "for an exchange between accounts in two currencies: positive amount received in the currency of to_account_id"
+        }
+      },
+      "required": [
+        "date",
+        "description",
+        "amount",
+        "from_account_id"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "transaction_id": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "transaction_id",
+        "date",
+        "description"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "search_transactions",
     "description": "Searches the user's transactions, newest first, with their payee, tags and postings; each posting names its account or category. Use it to find transactions by text, account, category, tag, period or missing category, and to get the transaction_id other tools take. Do not use it for totals by category: get_category_totals adds them up. Filters combine; narrow them instead of reading many pages.",
     "effect": "read_only",
@@ -2413,6 +2689,46 @@
       "required": [
         "language",
         "region"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "void_transaction",
+    "description": "Proposes voiding a transaction: it stops counting in balances and reports and stays in history with the reason. Use it when the user asks to delete, remove, cancel or void a transaction. Do not use it to change values: change_transaction does. The user confirms before the transaction is voided.",
+    "effect": "destructive",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "transaction_id": {
+          "type": "string",
+          "description": "ID of the transaction, from search_transactions"
+        },
+        "reason": {
+          "type": "string",
+          "description": "why the transaction is voided, kept in its history"
+        }
+      },
+      "required": [
+        "transaction_id",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "transaction_id": {
+          "type": "string"
+        },
+        "voided": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "transaction_id",
+        "voided"
       ],
       "additionalProperties": false
     }
