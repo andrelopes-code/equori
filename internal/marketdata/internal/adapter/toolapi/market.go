@@ -138,7 +138,7 @@ func getMarketData(svc Service, cals Calendars) tool.Tool {
 		case "calendars":
 			out := getMarketDataOut{Calendars: []calendarView{}}
 			for _, c := range cals.List() {
-				out.Calendars = append(out.Calendars, calendarView{ID: c.ID, Weekend: c.Weekend})
+				out.Calendars = append(out.Calendars, calendarView(c))
 			}
 			return out, nil
 		}
