@@ -75,6 +75,22 @@ func (q *Queries) AccountInstrument(ctx context.Context, arg AccountInstrumentPa
 	return instrument, err
 }
 
+const accountName = `-- name: AccountName :one
+SELECT name FROM ledger_account WHERE user_id = $1 AND id = $2
+`
+
+type AccountNameParams struct {
+	UserID    int64
+	AccountID uuid.UUID
+}
+
+func (q *Queries) AccountName(ctx context.Context, arg AccountNameParams) (string, error) {
+	row := q.db.QueryRow(ctx, accountName, arg.UserID, arg.AccountID)
+	var name string
+	err := row.Scan(&name)
+	return name, err
+}
+
 const categoryTotals = `-- name: CategoryTotals :many
 SELECT a.id, a.parent_id, a.name, a.instrument, a.closed_on, coalesce(sum(r.delta_booked), 0)::bigint AS total
 FROM ledger_account a

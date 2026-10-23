@@ -60,6 +60,14 @@ func (r *Repository) AccountInstrument(ctx context.Context, userID int64, accoun
 	return instrument, err
 }
 
+func (r *Repository) AccountName(ctx context.Context, userID int64, accountID uuid.UUID) (string, error) {
+	name, err := r.q.AccountName(ctx, AccountNameParams{UserID: userID, AccountID: accountID})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", app.ErrNotFound
+	}
+	return name, err
+}
+
 func (r *Repository) AccountFlows(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]app.Flow, error) {
 	rows, err := r.q.AccountFlows(ctx, AccountFlowsParams{UserID: userID, AccountID: accountID, FromDate: from, ToDate: to})
 	if err != nil {

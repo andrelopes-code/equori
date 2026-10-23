@@ -7,5 +7,5 @@ import (
 )
 
 func Tools(svc *app.Service) []tool.Tool {
-	return []tool.Tool{getCategoryTotals(svc)}
+	return []tool.Tool{getCategoryTotals(svc), getAccountHistory(svc)}
 }

@@ -47,6 +47,7 @@ type Point struct {
 type Repository interface {
 	FlowRepository
 	AccountCurrency(ctx context.Context, userID int64, accountID uuid.UUID) (string, error)
+	AccountName(ctx context.Context, userID int64, accountID uuid.UUID) (string, error)
 	Rebuild(ctx context.Context, userID int64, accountID uuid.UUID, from time.Time) error
 	TreeDailyDeltas(ctx context.Context, userID int64, accountID uuid.UUID, to time.Time) ([]DayDelta, error)
 	AllAccounts(ctx context.Context) ([]AccountRef, error)
@@ -94,6 +95,11 @@ func (d DayDelta) pick(b Basis) int64 {
 		return d.Settled
 	}
 	return d.Booked
+}
+
+// AccountName returns the name of one of the user's accounts, or ErrNotFound.
+func (s *Service) AccountName(ctx context.Context, userID int64, accountID uuid.UUID) (string, error) {
+	return s.repo.AccountName(ctx, userID, accountID)
 }
 
 // RebuildAccounts recomputes the series of each account from the given date on.

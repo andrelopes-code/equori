@@ -74,3 +74,6 @@ LEFT JOIN reporting_account_day r ON r.account_id = a.id AND r.date BETWEEN @fro
 WHERE a.user_id = @user_id AND a.account_class = @account_class
 GROUP BY a.id
 ORDER BY a.name, a.id;
+
+-- name: AccountName :one
+SELECT name FROM ledger_account WHERE user_id = @user_id AND id = @account_id;

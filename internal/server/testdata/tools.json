@@ -1,5 +1,164 @@
 [
   {
+    "name": "get_account_history",
+    "description": "Returns the daily balance of an account and its sub-accounts over a period, or its booked inflow and outflow per day. Use it for how a balance evolved or how much entered and left an account. Do not use it for a balance at one date: get_balances does; nor for the future: project_balance does.",
+    "effect": "read_only",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "type": "string",
+          "description": "account from list_accounts"
+        },
+        "view": {
+          "type": "string",
+          "description": "balances gives the balance each day; flows gives inflow and outflow each day with postings",
+          "enum": [
+            "balances",
+            "flows"
+          ]
+        },
+        "from": {
+          "type": "string",
+          "description": "first date, inclusive",
+          "format": "date"
+        },
+        "to": {
+          "type": "string",
+          "description": "last date, inclusive; at most 366 days after from",
+          "format": "date"
+        }
+      },
+      "required": [
+        "account_id",
+        "view",
+        "from",
+        "to"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "type": "string"
+        },
+        "account_name": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string",
+          "description": "currency or instrument code of the account"
+        },
+        "view": {
+          "type": "string"
+        },
+        "granularity": {
+          "type": "string",
+          "description": "day lists every day; week, for periods over 92 days, lists each Sunday and the last day"
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "balance": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "date",
+              "balance"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "days": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "inflow": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "outflow": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "date",
+              "inflow",
+              "outflow"
+            ],
+            "additionalProperties": false
+          },
+          "description": "only days with postings"
+        }
+      },
+      "required": [
+        "account_id",
+        "account_name",
+        "currency",
+        "view"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "get_balances",
     "description": "Returns the balance of every asset, liability and equity account at a date, by class and then account name; accounts with a zero balance are omitted. Use it for how much is in accounts, cards owed or net position at a date. Do not use it for spending by category: get_category_totals returns it; nor for a balance over time: get_account_history returns it.",
     "effect": "read_only",
