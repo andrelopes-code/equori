@@ -1,5 +1,5 @@
 import type { components } from "@/api/schema.gen";
-import { completionMonth } from "@/features/goals/goal-plan";
+import { completionWithReturn } from "@/features/goals/goal-plan";
 
 export type Goal = components["schemas"]["Goal"];
 
@@ -20,9 +20,16 @@ export function goalLine(
   major: number,
   scale: number,
   today: string,
+  annualPercent = 0,
 ): GoalLine {
   const unit = 10 ** scale;
-  const ready = completionMonth(today, goal.remaining.amount, major * unit);
+  const ready = completionWithReturn(
+    today,
+    goal.remaining.amount,
+    major * unit,
+    annualPercent,
+    goal.current.amount,
+  );
   return {
     goal,
     major,

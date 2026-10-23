@@ -603,6 +603,13 @@ export const operations: Record<GroupKey, readonly Operation[]> = {
       }),
     },
     { id: "getGoal", method: "GET", path: "/goals/{id}" },
+    {
+      id: "updateGoal",
+      method: "PATCH",
+      path: "/goals/{id}",
+      body: () => ({ name: "Renamed goal" }),
+    },
+    { id: "deleteGoal", method: "DELETE", path: "/goals/{id}" },
   ],
   registry: [
     { id: "getCurrentUser", method: "GET", path: "/me" },
@@ -983,6 +990,48 @@ export const operations: Record<GroupKey, readonly Operation[]> = {
       id: "listInvestmentIncomeTypes",
       method: "GET",
       path: "/investment-income-types",
+    },
+    {
+      id: "listInstrumentSubtypes",
+      method: "GET",
+      path: "/instrument-subtypes",
+      query: ["type"],
+    },
+    {
+      id: "getAllocation",
+      method: "GET",
+      path: "/reports/allocation",
+      query: ["date", "by", "value_in"],
+    },
+    {
+      id: "getNetWorth",
+      method: "GET",
+      path: "/reports/net-worth",
+      query: ["date", "value_in"],
+    },
+    {
+      id: "getInstrumentTerms",
+      method: "GET",
+      path: "/instruments/{code}/terms",
+    },
+    {
+      id: "putInstrumentTerms",
+      method: "PUT",
+      path: "/instruments/{code}/terms",
+      body: (r) => ({
+        issued_on: r.today,
+        matures_on: "2099-01-01",
+        index_id: "cdi",
+        percent_of_index_bp: 10000,
+        day_count: "bus252",
+        face_value: 100000,
+      }),
+    },
+    {
+      id: "getReturn",
+      method: "GET",
+      path: "/reports/return",
+      query: ["account_id", "from", "to", "value_in"],
     },
     {
       id: "recordTrade",

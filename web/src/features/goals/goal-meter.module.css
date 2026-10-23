@@ -1,0 +1,23 @@
+@layer app {
+  .segments {
+    display: grid;
+    grid-template-columns: repeat(20, 1fr);
+    gap: 2px;
+    block-size: 6px;
+  }
+
+  .segment {
+    border-radius: 1px;
+    background: var(--slotted-border-subtle);
+  }
+
+  .segment[data-filled] {
+    background: var(--goal-tone, var(--slotted-tone-accent-text));
+  }
+
+  @media (forced-colors: active) {
+    .segment[data-filled] {
+      background: CanvasText;
+    }
+  }
+}

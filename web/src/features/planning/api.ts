@@ -1,8 +1,9 @@
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions, useMutation } from "@tanstack/react-query";
 import type { Client } from "openapi-fetch";
 
+import { useApi } from "@/api/api-context";
 import { unwrap } from "@/api/problem";
-import type { paths } from "@/api/schema.gen";
+import type { components, paths } from "@/api/schema.gen";
 
 export const planningKeys = {
   all: ["planning"] as const,
@@ -126,5 +127,44 @@ export function goalsQuery(api: Client<paths>) {
           }),
         ),
       ),
+  });
+}
+
+export function useCreateGoal() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (goal: components["schemas"]["GoalInput"]) =>
+      unwrap(await api.POST("/goals", { body: goal })),
+  });
+}
+
+export function useUpdateGoal() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      goal,
+    }: {
+      id: string;
+      goal: components["schemas"]["GoalPatch"];
+    }) =>
+      unwrap(
+        await api.PATCH("/goals/{id}", {
+          params: { path: { id } },
+          body: goal,
+        }),
+      ),
+  });
+}
+
+export function useDeleteGoal() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const result = await api.DELETE("/goals/{id}", {
+        params: { path: { id } },
+      });
+      if (result.error !== undefined) await unwrap(result);
+    },
   });
 }

@@ -1,0 +1,95 @@
+@layer app {
+  .page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-6);
+  }
+
+  /* On a phone the goals come first and the figures that add them up follow. */
+  @media (max-width: 599px) {
+    .summary {
+      order: 2;
+    }
+  }
+
+  /* As many goals per line as fit at 320 px; one column on a phone. */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+    gap: var(--slotted-space-6);
+    align-items: start;
+  }
+
+  .progress {
+    --goal-tone: var(--slotted-tone-accent-text);
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-3);
+    margin-block-end: var(--slotted-space-5);
+  }
+
+  .progress[data-tone="success"] {
+    --goal-tone: var(--slotted-tone-success-text);
+  }
+
+  .progress[data-tone="danger"] {
+    --goal-tone: var(--slotted-tone-danger-text);
+  }
+
+  .saved {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--slotted-space-4);
+  }
+
+  .savedText {
+    display: grid;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .percent {
+    color: var(--goal-tone);
+  }
+
+  .figures {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--slotted-space-3);
+    margin: 0 0 var(--slotted-space-5);
+    padding-block: var(--slotted-space-3);
+    border-block: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  .figure {
+    min-width: 0;
+  }
+
+  .value {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .parts {
+    display: grid;
+    gap: var(--slotted-space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .parts li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto 3ch;
+    align-items: baseline;
+    gap: var(--slotted-space-3);
+  }
+
+  .partName {
+    display: grid;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
