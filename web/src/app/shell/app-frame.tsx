@@ -27,6 +27,8 @@ import { useWide } from "@/app/shell/use-wide";
 import { useT } from "@/i18n/i18n-provider";
 import { applyDensity, readDensity } from "@/theme/density";
 
+const stickyFooter = "var(--slotted-page-sticky-bottom, 0px)";
+
 // One AppShell holds both layouts, so the routed page keeps its place in the tree when the
 // width crosses the desktop step: the regions of the other layout render as null beside it.
 export function AppFrame() {
@@ -90,13 +92,16 @@ export function AppFrame() {
       <AppShellMain
         ref={main}
         className={wide ? undefined : styles.main}
+        // The page sets --slotted-page-sticky-bottom on this scroller to the height of its sticky
+        // footer. A field the browser scrolls into view above the keyboard stops at the scroller's
+        // edge, under that footer, unless the scroll padding holds the footer too.
         style={
           wide
-            ? undefined
+            ? { scrollPaddingBlockEnd: stickyFooter }
             : {
                 paddingBlockStart: barExtent,
                 paddingBlockEnd: dockExtent,
-                scrollPaddingBlock: `${String(barExtent)}px ${String(dockExtent)}px`,
+                scrollPaddingBlock: `${String(barExtent)}px calc(${String(dockExtent)}px + ${stickyFooter})`,
               }
         }
       >
