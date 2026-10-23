@@ -508,7 +508,7 @@ func TestSecretRotation(t *testing.T) {
 }
 
 // A Pluggy that does not answer is a 502, not an internal error.
-func TestProviderUnavailable(t *testing.T) {
+func TestAggregatorUnavailable(t *testing.T) {
 	t.Parallel()
 	closed := httptest.NewServer(http.NotFoundHandler())
 	closed.Close()
