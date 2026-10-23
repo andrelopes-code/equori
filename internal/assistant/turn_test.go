@@ -329,12 +329,9 @@ func TestTurnClientDisconnect(t *testing.T) {
 	cancel()
 	_, _ = io.Copy(io.Discard, resp.Body)
 	_ = resp.Body.Close()
-	deadline := time.Now().Add(10 * time.Second)
-	for !strings.Contains(lastTurnLog(h), "outcome=canceled") {
-		if time.Now().After(deadline) {
-			t.Fatalf("no canceled turn log: %q", lastTurnLog(h))
-		}
-		time.Sleep(5 * time.Millisecond)
+	h.Close()
+	if line := lastTurnLog(h); !strings.Contains(line, "outcome=canceled") {
+		t.Fatalf("turn log = %q, want outcome=canceled", line)
 	}
 	var count int
 	if err := h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM assistant_message WHERE role = 'assistant'`).Scan(&count); err != nil || count != 0 {

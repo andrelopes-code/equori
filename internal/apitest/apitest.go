@@ -187,6 +187,10 @@ func (h *Harness) Restart(opts ...Option) {
 	h.start(opts)
 }
 
+// Close stops the server after the requests in flight finish, so a test can read what a
+// request left behind after its client went away; the harness serves no request afterwards.
+func (h *Harness) Close() { h.server.Close() }
+
 // Logs returns every log line written so far, at debug level and above.
 func (h *Harness) Logs() string { return h.logs.String() }
 
