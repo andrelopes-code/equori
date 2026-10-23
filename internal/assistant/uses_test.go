@@ -71,7 +71,7 @@ func TestListUsesA5(t *testing.T) {
 		!equal(suggest.chain(), []string{"aistudio/gemini-3.5-flash-lite/trains"}) {
 		t.Fatalf("capture.suggest = %+v", suggest)
 	}
-	if !chat.Default || !equal(chat.chain(), []string{"aistudio/gemini-3.5-flash/trains", "Groq/openai/gpt-oss-120b/provider_terms"}) {
+	if !chat.Default || !equal(chat.chain(), []string{"aistudio/gemini-3.5-flash-lite/trains", "aistudio/gemini-3.5-flash/trains", "Groq/openai/gpt-oss-120b/provider_terms"}) {
 		t.Fatalf("assistant.chat = %+v", chat)
 	}
 }
@@ -99,13 +99,13 @@ func TestSetUseChainA6A11(t *testing.T) {
 		t.Fatalf("set chain = %+v", set)
 	}
 	h.MustDo(http.MethodPut, path, map[string]any{"targets": []any{}}, http.StatusOK, &set)
-	if !set.Default || !equal(set.chain(), []string{"aistudio/gemini-3.5-flash/trains"}) {
+	if !set.Default || !equal(set.chain(), []string{"aistudio/gemini-3.5-flash-lite/trains", "aistudio/gemini-3.5-flash/trains"}) {
 		t.Fatalf("restored chain = %+v", set)
 	}
 
 	h.MustDo(http.MethodPut, path, map[string]any{"targets": []any{target("llama", "tools")}}, http.StatusOK, &set)
 	h.MustDo(http.MethodDelete, "/api/v1/assistant/providers/"+p.ID, nil, http.StatusNoContent, nil)
-	if chat := uses(t, h)["assistant.chat"]; !chat.Default || !equal(chat.chain(), []string{"aistudio/gemini-3.5-flash/trains"}) {
+	if chat := uses(t, h)["assistant.chat"]; !chat.Default || !equal(chat.chain(), []string{"aistudio/gemini-3.5-flash-lite/trains", "aistudio/gemini-3.5-flash/trains"}) {
 		t.Fatalf("chain after delete = %+v", chat)
 	}
 }

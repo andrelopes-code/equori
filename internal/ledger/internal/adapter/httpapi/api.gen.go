@@ -1732,9 +1732,12 @@ type Problem struct {
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`
 	RequestId *string       `json:"request_id,omitempty"`
-	Status    int           `json:"status"`
-	Title     string        `json:"title"`
-	Type      string        `json:"type"`
+
+	// RetryAt Instant after which the same request can succeed.
+	RetryAt *time.Time `json:"retry_at,omitempty"`
+	Status  int        `json:"status"`
+	Title   string     `json:"title"`
+	Type    string     `json:"type"`
 }
 
 // Rate Positive exact decimal with at most 12 decimals (ADR 005).

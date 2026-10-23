@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/oapi-codegen/runtime"
 )
@@ -61,9 +62,12 @@ type Problem struct {
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`
 	RequestId *string       `json:"request_id,omitempty"`
-	Status    int           `json:"status"`
-	Title     string        `json:"title"`
-	Type      string        `json:"type"`
+
+	// RetryAt Instant after which the same request can succeed.
+	RetryAt *time.Time `json:"retry_at,omitempty"`
+	Status  int        `json:"status"`
+	Title   string     `json:"title"`
+	Type    string     `json:"type"`
 }
 
 // UpdateUserInput defines model for UpdateUserInput.

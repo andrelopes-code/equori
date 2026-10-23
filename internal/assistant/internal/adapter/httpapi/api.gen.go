@@ -59,6 +59,15 @@ func (e Notice) Valid() bool {
 	}
 }
 
+// AssistantChat defines model for AssistantChat.
+type AssistantChat struct {
+	Available    bool       `json:"available"`
+	Model        *string    `json:"model,omitempty"`
+	Notice       *string    `json:"notice,omitempty"`
+	ProviderName *string    `json:"provider_name,omitempty"`
+	RetryAt      *time.Time `json:"retry_at,omitempty"`
+}
+
 // Capability defines model for Capability.
 type Capability string
 
@@ -125,9 +134,12 @@ type Problem struct {
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`
 	RequestId *string       `json:"request_id,omitempty"`
-	Status    int           `json:"status"`
-	Title     string        `json:"title"`
-	Type      string        `json:"type"`
+
+	// RetryAt Instant after which the same request can succeed.
+	RetryAt *time.Time `json:"retry_at,omitempty"`
+	Status  int        `json:"status"`
+	Title   string     `json:"title"`
+	Type    string     `json:"type"`
 }
 
 // Provider defines model for Provider.
@@ -260,6 +272,9 @@ type SetUseChainJSONRequestBody = ChainInput
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// GetAssistantChat Whether the conversation can be used now, with the target it would reach and when to retry.
+	// (GET /assistant/chat)
+	GetAssistantChat(w http.ResponseWriter, r *http.Request)
 	// ListPresets Known language model services, their notices and suggested models.
 	// (GET /assistant/presets)
 	ListPresets(w http.ResponseWriter, r *http.Request)
@@ -300,6 +315,20 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// GetAssistantChat operation middleware
+func (siw *ServerInterfaceWrapper) GetAssistantChat(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAssistantChat(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // ListPresets operation middleware
 func (siw *ServerInterfaceWrapper) ListPresets(w http.ResponseWriter, r *http.Request) {
@@ -617,6 +646,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/assistant/providers/{id}/models", wrapper.ListProviderModels)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/assistant/usage", wrapper.ListUsage)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/assistant/usage/limits", wrapper.SetUsageLimit)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/assistant/chat", wrapper.GetAssistantChat)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/assistant/uses", wrapper.ListUses)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/assistant/uses/{use}/chain", wrapper.SetUseChain)
 
@@ -624,6 +654,43 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 }
 
 type ProblemApplicationProblemPlusJSONResponse Problem
+
+type GetAssistantChatRequestObject struct {
+}
+
+type GetAssistantChatResponseObject interface {
+	VisitGetAssistantChatResponse(w http.ResponseWriter) error
+}
+
+type GetAssistantChat200JSONResponse AssistantChat
+
+func (response GetAssistantChat200JSONResponse) VisitGetAssistantChatResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAssistantChat401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetAssistantChat401ApplicationProblemPlusJSONResponse) VisitGetAssistantChatResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
 
 type ListPresetsRequestObject struct {
 }
@@ -1175,6 +1242,9 @@ func (response SetUseChain422ApplicationProblemPlusJSONResponse) VisitSetUseChai
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// GetAssistantChat Whether the conversation can be used now, with the target it would reach and when to retry.
+	// (GET /assistant/chat)
+	GetAssistantChat(ctx context.Context, request GetAssistantChatRequestObject) (GetAssistantChatResponseObject, error)
 	// ListPresets Known language model services, their notices and suggested models.
 	// (GET /assistant/presets)
 	ListPresets(ctx context.Context, request ListPresetsRequestObject) (ListPresetsResponseObject, error)
@@ -1244,6 +1314,30 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// GetAssistantChat operation middleware
+func (sh *strictHandler) GetAssistantChat(w http.ResponseWriter, r *http.Request) {
+	var request GetAssistantChatRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAssistantChat(ctx, request.(GetAssistantChatRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAssistantChat")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAssistantChatResponseObject); ok {
+		if err := validResponse.VisitGetAssistantChatResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // ListPresets operation middleware

@@ -35,6 +35,8 @@ ADR 009 reads one Gemini key from the environment, and every use names its chain
 - A user who enters a key on the settings screen consents to sending the data of the uses that resolve to that provider (ADR 014 consequence).
 - A member may point a provider at any host the server reaches; failure bodies are not returned, so the response says only whether the host answered.
 
+Amended by ADR 020 (P14): daily limits are enforced at resolution, for every use; a target whose limit is reached is skipped.
+
 ## Revisit criterion
 
 A provider whose API is neither Gemini nor chat completions, or an administrator who must set providers for every user.

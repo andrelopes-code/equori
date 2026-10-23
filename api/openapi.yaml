@@ -2145,6 +2145,20 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /assistant/chat:
+    get:
+      tags: [assistant]
+      operationId: getAssistantChat
+      summary: Whether the conversation can be used now, with the target it would reach and when to retry.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantChat"
+        "401":
+          $ref: "#/components/responses/Problem"
   /assistant/uses:
     get:
       tags: [assistant]
@@ -4621,6 +4635,16 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/UsageRow"
+    AssistantChat:
+      type: object
+      additionalProperties: false
+      required: [available]
+      properties:
+        available: {type: boolean}
+        provider_name: {type: string}
+        model: {type: string}
+        notice: {type: string, pattern: "^[a-z0-9_]{2,40}$"}
+        retry_at: {type: string, format: date-time}
     UsageLimitInput:
       type: object
       required: [provider_id, model]
@@ -8280,6 +8304,10 @@ components:
             investment_transaction, system_account.
         request_id:
           type: string
+        retry_at:
+          type: string
+          format: date-time
+          description: Instant after which the same request can succeed.
         errors:
           type: array
           items:

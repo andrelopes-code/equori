@@ -193,3 +193,6 @@ func (s *Service) use(id string) (Use, bool) {
 	}
 	return s.uses[i], true
 }
+
+// UseByID returns the declared use with the given ID.
+func (s *Service) UseByID(id string) (Use, bool) { return s.use(id) }

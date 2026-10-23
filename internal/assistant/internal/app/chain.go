@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -45,7 +46,7 @@ func (s *Service) Uses(ctx context.Context, userID int64) ([]UseView, error) {
 	out := make([]UseView, 0, len(s.uses))
 	for _, u := range s.uses {
 		targets, err := s.Resolve(ctx, userID, true, u)
-		if err != nil {
+		if err != nil && !errors.Is(err, ErrLimitReached) {
 			return nil, err
 		}
 		for i := range targets {

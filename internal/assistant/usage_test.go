@@ -90,8 +90,9 @@ func TestUsageA1A3(t *testing.T) {
 func TestUsageWithoutUseOrUserA2(t *testing.T) {
 	t.Parallel()
 	answer := structured(`{}`)
-	answer.Model = "gemini-3.5-flash"
+	answer.Model = "gemini-3.5-flash-lite"
 	fixed := answer
+	fixed.Model = "gemini-3.5-flash"
 	h := apitest.New(t, apitest.LLM(llmtest.New("aistudio", answer, fixed)))
 	if err := call(t.Context(), h, assistant.ChatUse); err != nil {
 		t.Fatalf("call without a user: %v", err)

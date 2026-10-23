@@ -83,6 +83,9 @@ func (r *Resolver) Record(ctx context.Context, a llm.Attempt) {
 func (r *Resolver) Resolve(ctx context.Context, use llm.Use) ([]llm.Binding, error) {
 	userID, hasUser := auth.UserID(ctx)
 	targets, err := r.svc.Resolve(ctx, userID, hasUser, ToUse(use))
+	if le, ok := errors.AsType[*app.LimitError](err); ok {
+		return nil, &llm.ExhaustedError{RetryAt: le.RetryAt}
+	}
 	if err != nil {
 		return nil, err
 	}

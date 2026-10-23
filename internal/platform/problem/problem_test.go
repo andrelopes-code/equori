@@ -4,7 +4,9 @@ import (
 	"encoding/json/v2"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 )
 
 func TestWrite(t *testing.T) {
@@ -40,5 +42,20 @@ func TestWrite(t *testing.T) {
 	}
 	if _, ok := got["errors"]; ok {
 		t.Errorf("errors present without field errors")
+	}
+}
+
+func TestRetryAt(t *testing.T) {
+	t.Parallel()
+	at := time.Date(2026, 10, 23, 15, 4, 5, 0, time.UTC)
+	rec := httptest.NewRecorder()
+	Write(rec, WithRetryAt(New(http.StatusTooManyRequests, "assistant_exhausted", ""), at))
+	if body := rec.Body.String(); !strings.Contains(body, `"retry_at":"2026-10-23T15:04:05Z"`) {
+		t.Fatalf("body = %s", body)
+	}
+	rec = httptest.NewRecorder()
+	Write(rec, New(http.StatusTooManyRequests, "assistant_exhausted", ""))
+	if body := rec.Body.String(); strings.Contains(body, "retry_at") {
+		t.Fatalf("body = %s", body)
 	}
 }

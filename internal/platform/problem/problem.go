@@ -5,6 +5,7 @@ import (
 	"encoding/json/v2"
 	"errors"
 	"net/http"
+	"time"
 )
 
 const ContentType = "application/problem+json"
@@ -17,6 +18,7 @@ type Details struct {
 	Code      string       `json:"code"`
 	RequestID string       `json:"request_id,omitempty"`
 	Errors    []FieldError `json:"errors,omitempty"`
+	RetryAt   *time.Time   `json:"retry_at,omitempty"`
 }
 
 type FieldError struct {
@@ -32,6 +34,12 @@ func New(status int, code, detail string) Details {
 		Detail: detail,
 		Code:   code,
 	}
+}
+
+// WithRetryAt sets the instant after which the request can succeed.
+func WithRetryAt(d Details, at time.Time) Details {
+	d.RetryAt = &at
+	return d
 }
 
 // Transport maps errors raised while reading the request, before any module logic runs.

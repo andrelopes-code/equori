@@ -1240,6 +1240,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/assistant/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whether the conversation can be used now, with the target it would reach and when to retry. */
+        get: operations["getAssistantChat"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/assistant/uses": {
         parameters: {
             query?: never;
@@ -2663,6 +2680,14 @@ export interface components {
         };
         UsageList: {
             items: components["schemas"]["UsageRow"][];
+        };
+        AssistantChat: {
+            available: boolean;
+            provider_name?: string;
+            model?: string;
+            notice?: string;
+            /** Format: date-time */
+            retry_at?: string;
         };
         UsageLimitInput: {
             provider_id: string;
@@ -4508,6 +4533,11 @@ export interface components {
              */
             code: string;
             request_id?: string;
+            /**
+             * Format: date-time
+             * @description Instant after which the same request can succeed.
+             */
+            retry_at?: string;
             errors?: components["schemas"]["FieldError"][];
         };
         FieldError: {
@@ -6761,6 +6791,27 @@ export interface operations {
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    getAssistantChat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantChat"];
+                };
+            };
+            401: components["responses"]["Problem"];
         };
     };
     listUses: {
