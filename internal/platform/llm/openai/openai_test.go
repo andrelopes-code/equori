@@ -250,3 +250,24 @@ func TestModelsUnauthorized(t *testing.T) {
 		t.Fatalf("err = %v, want ErrUnauthorized", err)
 	}
 }
+
+func TestGenerateToolChoiceNone(t *testing.T) {
+	t.Parallel()
+	tools := []llm.Tool{{Name: "f", Parameters: json.RawMessage(`{"type":"object"}`)}}
+	for _, tt := range []struct {
+		choice llm.ToolChoice
+		want   string
+	}{{llm.ToolChoiceNone, "none"}, {llm.ToolChoiceAuto, ""}} {
+		var got received
+		srv := serve(t, http.StatusOK, nil, textAnswer, &got)
+		_, err := openai.New(srv.URL, "", http.DefaultClient).Generate(context.Background(), "m1",
+			llm.Request{Messages: []llm.Message{user("hi")}, Tools: tools, ToolChoice: tt.choice})
+		if err != nil {
+			t.Fatalf("Generate: %v", err)
+		}
+		v, ok := got.body["tool_choice"]
+		if tt.want == "" && ok || tt.want != "" && v != tt.want {
+			t.Fatalf("choice %q: tool_choice = %v (present %v)", tt.choice, v, ok)
+		}
+	}
+}

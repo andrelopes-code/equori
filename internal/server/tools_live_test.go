@@ -59,4 +59,14 @@ func TestToolsLive(t *testing.T) {
 	if !strings.Contains(h.Logs(), "tool=list_accounts") || !strings.Contains(resp.Text(), "Checking") {
 		t.Fatalf("answer %q; logs:\n%s", resp.Text(), h.Logs())
 	}
+
+	forced, err := llm.Run(auth.WithUserID(t.Context(), h.OwnerID()), client, llm.Request{
+		Tools: tools,
+		Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{
+			Text: "Call list_accounts, then call get_balances, then answer.",
+		}}}},
+	}, handlers, llm.LoopOptions{MaxSteps: 2, ForceAnswer: true})
+	if err != nil || strings.TrimSpace(forced.Response.Text()) == "" {
+		t.Fatalf("forced answer %q: %v", forced.Response.Text(), err)
+	}
 }

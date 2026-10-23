@@ -124,6 +124,10 @@ func toWire(req llm.Request) generateRequest {
 			decls = append(decls, functionDeclaration{Name: t.Name, Description: t.Description, ParametersJSONSchema: t.Parameters})
 		}
 		w.Tools = []tool{{FunctionDeclarations: decls}}
+		if req.ToolChoice == llm.ToolChoiceNone {
+			w.ToolConfig = &toolConfig{}
+			w.ToolConfig.FunctionCallingConfig.Mode = "NONE"
+		}
 	}
 	if req.Schema != nil || req.MaxOutputTokens > 0 || req.Temperature != nil {
 		cfg := &generationConfig{MaxOutputTokens: req.MaxOutputTokens, Temperature: req.Temperature}

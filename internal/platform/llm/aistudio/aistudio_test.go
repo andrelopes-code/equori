@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/platform/llm"
@@ -220,5 +221,26 @@ func TestModels(t *testing.T) {
 	}
 	if !reflect.DeepEqual(models, []string{"gemini-a", "gemini-b"}) {
 		t.Fatalf("models = %v, want [gemini-a gemini-b]", models)
+	}
+}
+
+func TestGenerateToolChoiceNone(t *testing.T) {
+	t.Parallel()
+	tools := []llm.Tool{{Name: "f", Parameters: json.RawMessage(`{"type":"object"}`)}}
+	for _, tt := range []struct {
+		choice llm.ToolChoice
+		want   bool
+	}{{llm.ToolChoiceNone, true}, {llm.ToolChoiceAuto, false}} {
+		var got received
+		srv := serve(t, http.StatusOK, "text.json", &got)
+		_, err := aistudio.New(srv.URL, "k", http.DefaultClient).Generate(context.Background(), "m1",
+			llm.Request{Messages: []llm.Message{user("hi")}, Tools: tools, ToolChoice: tt.choice})
+		if err != nil {
+			t.Fatalf("Generate: %v", err)
+		}
+		has := strings.Contains(string(got.body), `"toolConfig":{"functionCallingConfig":{"mode":"NONE"}}`)
+		if has != tt.want || (!tt.want && strings.Contains(string(got.body), "toolConfig")) {
+			t.Fatalf("choice %q: body %s", tt.choice, got.body)
+		}
 	}
 }

@@ -21,31 +21,101 @@ func (e *ToolError) Error() string { return string(e.Content) }
 // keeps every signature for a later turn. A handler error goes back to the model as an
 // error result; only a context error stops the loop.
 func RunTools(ctx context.Context, client *Client, req Request, handlers map[string]ToolHandler, maxSteps int) (Response, []Message, error) {
-	history := slices.Clone(req.Messages)
-	for range maxSteps {
+	res, err := Run(ctx, client, req, handlers, LoopOptions{MaxSteps: maxSteps})
+	return res.Response, res.History, err
+}
+
+// LoopOptions tunes Run. MaxSteps bounds the model calls of one attempt. ForceAnswer makes the
+// last allowed call a ToolChoiceNone call whose response is never executed. Pin keeps every
+// call after the first on the target that answered the first. OnToolCall runs before each
+// tool; OnRestart runs when a pinned call finds its target exhausted.
+type LoopOptions struct {
+	MaxSteps    int
+	ForceAnswer bool
+	Pin         bool
+	OnToolCall  func(ToolCall)
+	OnRestart   func()
+}
+
+// Result is the outcome of Run. Steps counts the model calls of the final attempt, Usage
+// sums every call, and StepLimit reports an answer forced by ForceAnswer.
+type Result struct {
+	Response  Response
+	History   []Message
+	Steps     int
+	Usage     Usage
+	Restarted bool
+	StepLimit bool
+}
+
+// Run is RunTools with step-limit forcing, target pinning and one restart. With Pin, a pinned
+// call that finds its target exhausted restarts the whole turn once, from req.Messages, on the
+// chain again.
+func Run(ctx context.Context, client *Client, req Request, handlers map[string]ToolHandler, opts LoopOptions) (Result, error) {
+	var res Result
+	start := slices.Clone(req.Messages)
+	history := slices.Clone(start)
+	var pin Target
+	step := 0
+	for step < opts.MaxSteps {
+		step++
 		req.Messages = history
+		req.Pin = pin
+		req.ToolChoice = ToolChoiceAuto
+		forced := opts.ForceAnswer && step == opts.MaxSteps
+		if forced {
+			req.ToolChoice = ToolChoiceNone
+		}
 		resp, err := client.Generate(ctx, req)
 		if err != nil {
-			return Response{}, history, err
+			if pin != (Target{}) && !res.Restarted && errors.Is(err, ErrExhausted) {
+				if opts.OnRestart != nil {
+					opts.OnRestart()
+				}
+				history, pin, step, res.Restarted = slices.Clone(start), Target{}, 0, true
+				continue
+			}
+			res.History = history
+			return res, err
+		}
+		res.Usage.InputTokens += resp.Usage.InputTokens
+		res.Usage.OutputTokens += resp.Usage.OutputTokens
+		if opts.Pin && pin == (Target{}) {
+			pin = resp.Target
+		}
+		for i, p := range resp.Message.Parts {
+			if p.ToolCall != nil && p.ToolCall.ID == "" {
+				p.ToolCall.ID = fmt.Sprintf("call_%d_%d", step, i)
+			}
 		}
 		history = append(history, resp.Message)
+		res.Response, res.History, res.Steps = resp, history, step
+		if forced {
+			res.StepLimit = true
+			return res, nil
+		}
 		var results []Part
 		for _, p := range resp.Message.Parts {
 			if p.ToolCall == nil {
 				continue
 			}
+			if opts.OnToolCall != nil {
+				opts.OnToolCall(*p.ToolCall)
+			}
 			result, err := runTool(ctx, handlers, *p.ToolCall)
 			if err != nil {
-				return Response{}, history, err
+				res.Response = Response{}
+				return res, err
 			}
 			results = append(results, Part{ToolResult: &result})
 		}
 		if len(results) == 0 {
-			return resp, history, nil
+			return res, nil
 		}
 		history = append(history, Message{Role: RoleTool, Parts: results})
 	}
-	return Response{}, history, ErrTooManySteps
+	res.Response, res.History = Response{}, history
+	return res, ErrTooManySteps
 }
 
 func runTool(ctx context.Context, handlers map[string]ToolHandler, call ToolCall) (ToolResult, error) {

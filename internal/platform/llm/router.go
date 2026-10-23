@@ -94,6 +94,12 @@ func (c *Client) Generate(ctx context.Context, req Request) (Response, error) {
 	if err != nil {
 		return Response{}, err
 	}
+	if req.Pin != (Target{}) {
+		bindings = slices.DeleteFunc(bindings, func(b Binding) bool { return b.Target != req.Pin })
+		if len(bindings) == 0 {
+			return Response{}, &ExhaustedError{RetryAt: r.clk.Now()}
+		}
+	}
 	for _, b := range bindings {
 		t, p := b.Target, b.Provider
 		if r.coolingDown(t) {

@@ -8,6 +8,7 @@ type generateRequest struct {
 	SystemInstruction *content          `json:"systemInstruction,omitempty"`
 	Contents          []content         `json:"contents"`
 	Tools             []tool            `json:"tools,omitempty"`
+	ToolConfig        *toolConfig       `json:"toolConfig,omitempty"`
 	GenerationConfig  *generationConfig `json:"generationConfig,omitempty"`
 }
 
@@ -39,6 +40,12 @@ type functionResponse struct {
 
 type tool struct {
 	FunctionDeclarations []functionDeclaration `json:"functionDeclarations"`
+}
+
+type toolConfig struct {
+	FunctionCallingConfig struct {
+		Mode string `json:"mode"`
+	} `json:"functionCallingConfig"`
 }
 
 type functionDeclaration struct {

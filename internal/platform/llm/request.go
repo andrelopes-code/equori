@@ -14,7 +14,18 @@ type Request struct {
 	// MaxOutputTokens of 0 leaves the provider default.
 	MaxOutputTokens int
 	Temperature     *float64
+	// ToolChoice of ToolChoiceNone forbids tool calls while Tools stay declared.
+	ToolChoice ToolChoice
+	// Pin restricts Client.Generate to one target; the zero value allows any target.
+	Pin Target
 }
+
+type ToolChoice string
+
+const (
+	ToolChoiceAuto ToolChoice = ""
+	ToolChoiceNone ToolChoice = "none"
+)
 
 type Tool struct {
 	Name        string

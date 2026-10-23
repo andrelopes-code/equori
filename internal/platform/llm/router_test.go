@@ -491,3 +491,39 @@ func TestClientUseRecords(t *testing.T) {
 		t.Fatalf("a fixed chain recorded %d attempts", len(res.attempts)-2)
 	}
 }
+
+func TestClientPin(t *testing.T) {
+	t.Parallel()
+	a := llmtest.New("a")
+	b := llmtest.New("b", llmtest.Step{Model: "m1", Response: text("from b")})
+	f := newFixture(a, b)
+	req := prompt()
+	req.Pin = target("b/m1")
+	resp, err := f.router.Client(target("a/m1"), target("b/m1")).Generate(context.Background(), req)
+	if err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+	if resp.Target != target("b/m1") || len(a.Requests()) != 0 {
+		t.Fatalf("Target = %v, calls to a = %d", resp.Target, len(a.Requests()))
+	}
+}
+
+func TestClientPinCooling(t *testing.T) {
+	t.Parallel()
+	a := llmtest.New("a", llmtest.Step{Model: "m1", Err: &llm.QuotaError{RetryAfter: time.Minute}})
+	b := llmtest.New("b")
+	f := newFixture(a, b)
+	client := f.router.Client(target("a/m1"))
+	if _, err := client.Generate(context.Background(), prompt()); !errors.Is(err, llm.ErrExhausted) {
+		t.Fatalf("first err = %v, want ErrExhausted", err)
+	}
+	req := prompt()
+	req.Pin = target("a/m1")
+	_, err := f.router.Client(target("a/m1"), target("b/m1")).Generate(context.Background(), req)
+	if !errors.Is(err, llm.ErrExhausted) {
+		t.Fatalf("err = %v, want ErrExhausted", err)
+	}
+	if len(b.Requests()) != 0 {
+		t.Fatalf("calls to b = %d, want 0", len(b.Requests()))
+	}
+}

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/platform/llm"
 	"github.com/andrelopes-code/equori/internal/platform/llm/llmtest"
@@ -166,5 +167,166 @@ func TestRunToolsParallelCalls(t *testing.T) {
 	}
 	if got := toolMessage(t, history, 2); !reflect.DeepEqual(got, want) {
 		t.Fatalf("results = %+v, want %+v", got, want)
+	}
+}
+
+func twoCalls() llm.Response {
+	return calls(llm.ToolCall{ID: "c1", Name: "balance", Args: json.RawMessage(`{}`)})
+}
+
+func TestRunForcesAnswer(t *testing.T) {
+	t.Parallel()
+	a := llmtest.New("a",
+		llmtest.Step{Model: "m1", Response: calls(llm.ToolCall{ID: "c1", Name: "balance"})},
+		llmtest.Step{Model: "m1", Response: calls(llm.ToolCall{ID: "c2", Name: "balance"})},
+		llmtest.Step{Model: "m1", Response: text("done")},
+	)
+	f := newFixture(a)
+	handlers := map[string]llm.ToolHandler{"balance": handler(`{}`, nil)}
+	res, err := llm.Run(context.Background(), f.router.Client(target("a/m1")), prompt(), handlers, llm.LoopOptions{MaxSteps: 3, ForceAnswer: true})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	reqs := a.Requests()
+	if reqs[0].Request.ToolChoice != llm.ToolChoiceAuto || reqs[1].Request.ToolChoice != llm.ToolChoiceAuto || reqs[2].Request.ToolChoice != llm.ToolChoiceNone {
+		t.Fatalf("tool choices = %q %q %q", reqs[0].Request.ToolChoice, reqs[1].Request.ToolChoice, reqs[2].Request.ToolChoice)
+	}
+	if !res.StepLimit || res.Steps != 3 || res.Response.Text() != "done" {
+		t.Fatalf("result = StepLimit %v, Steps %d, Text %q", res.StepLimit, res.Steps, res.Response.Text())
+	}
+}
+
+func TestRunForcedStepStillCalling(t *testing.T) {
+	t.Parallel()
+	a := llmtest.New("a",
+		llmtest.Step{Model: "m1", Response: calls(llm.ToolCall{ID: "c1", Name: "balance"})},
+		llmtest.Step{Model: "m1", Response: calls(llm.ToolCall{ID: "c2", Name: "balance"})},
+	)
+	f := newFixture(a)
+	n := 0
+	handlers := map[string]llm.ToolHandler{"balance": func(context.Context, json.RawMessage) (json.RawMessage, error) {
+		n++
+		return json.RawMessage(`{}`), nil
+	}}
+	res, err := llm.Run(context.Background(), f.router.Client(target("a/m1")), prompt(), handlers, llm.LoopOptions{MaxSteps: 2, ForceAnswer: true})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if n != 1 || !res.StepLimit {
+		t.Fatalf("handler calls = %d, StepLimit = %v, want 1, true", n, res.StepLimit)
+	}
+}
+
+func TestRunWithoutForceKeepsLimit(t *testing.T) {
+	t.Parallel()
+	a := llmtest.New("a", llmtest.Step{Model: "m1", Response: calls(llm.ToolCall{ID: "c1", Name: "balance"})})
+	f := newFixture(a)
+	handlers := map[string]llm.ToolHandler{"balance": handler(`{}`, nil)}
+	_, err := llm.Run(context.Background(), f.router.Client(target("a/m1")), prompt(), handlers, llm.LoopOptions{MaxSteps: 1})
+	if !errors.Is(err, llm.ErrTooManySteps) {
+		t.Fatalf("err = %v, want ErrTooManySteps", err)
+	}
+}
+
+func TestRunAssignsCallIDs(t *testing.T) {
+	t.Parallel()
+	a := llmtest.New("a",
+		llmtest.Step{Model: "m1", Response: calls(llm.ToolCall{Name: "balance", Args: json.RawMessage(`{}`)})},
+		llmtest.Step{Model: "m1", Response: text("ok")},
+	)
+	f := newFixture(a)
+	handlers := map[string]llm.ToolHandler{"balance": handler(`{}`, nil)}
+	res, err := llm.Run(context.Background(), f.router.Client(target("a/m1")), prompt(), handlers, llm.LoopOptions{MaxSteps: 3})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if got := res.History[1].Parts[0].ToolCall.ID; got != "call_1_0" {
+		t.Fatalf("call ID = %q, want call_1_0", got)
+	}
+	if got := res.History[2].Parts[0].ToolResult.CallID; got != "call_1_0" {
+		t.Fatalf("result CallID = %q, want call_1_0", got)
+	}
+}
+
+func TestRunOnToolCall(t *testing.T) {
+	t.Parallel()
+	a := llmtest.New("a",
+		llmtest.Step{Model: "m1", Response: calls(llm.ToolCall{ID: "c1", Name: "balance"}, llm.ToolCall{ID: "c2", Name: "rate"})},
+		llmtest.Step{Model: "m1", Response: text("ok")},
+	)
+	f := newFixture(a)
+	handlers := map[string]llm.ToolHandler{"balance": handler(`{}`, nil), "rate": handler(`{}`, nil)}
+	var names []string
+	opts := llm.LoopOptions{MaxSteps: 3, OnToolCall: func(c llm.ToolCall) { names = append(names, c.Name) }}
+	if _, err := llm.Run(context.Background(), f.router.Client(target("a/m1")), prompt(), handlers, opts); err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if !reflect.DeepEqual(names, []string{"balance", "rate"}) {
+		t.Fatalf("names = %v", names)
+	}
+}
+
+func TestRunPinsAndRestarts(t *testing.T) {
+	t.Parallel()
+	a := llmtest.New("a",
+		llmtest.Step{Model: "m1", Response: twoCalls()},
+		llmtest.Step{Model: "m1", Err: &llm.QuotaError{RetryAfter: time.Minute}},
+	)
+	b := llmtest.New("b",
+		llmtest.Step{Model: "m1", Response: twoCalls()},
+		llmtest.Step{Model: "m1", Response: text("from b")},
+	)
+	f := newFixture(a, b)
+	handlers := map[string]llm.ToolHandler{"balance": handler(`{}`, nil)}
+	restarts := 0
+	opts := llm.LoopOptions{MaxSteps: 5, Pin: true, OnRestart: func() { restarts++ }}
+	res, err := llm.Run(context.Background(), f.router.Client(target("a/m1"), target("b/m1")), prompt(), handlers, opts)
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if !res.Restarted || restarts != 1 || res.Steps != 2 || res.Response.Text() != "from b" {
+		t.Fatalf("Restarted %v, restarts %d, Steps %d, Text %q", res.Restarted, restarts, res.Steps, res.Response.Text())
+	}
+	if got := len(b.Requests()[0].Request.Messages); got != 1 {
+		t.Fatalf("first request after restart has %d messages, want 1", got)
+	}
+	if got := a.Requests()[1].Request.Pin; got != target("a/m1") {
+		t.Fatalf("pin = %v, want a/m1", got)
+	}
+}
+
+func TestRunRestartsOnce(t *testing.T) {
+	t.Parallel()
+	a := llmtest.New("a",
+		llmtest.Step{Model: "m1", Response: twoCalls()},
+		llmtest.Step{Model: "m1", Err: &llm.QuotaError{RetryAfter: time.Minute}},
+	)
+	b := llmtest.New("b",
+		llmtest.Step{Model: "m1", Response: twoCalls()},
+		llmtest.Step{Model: "m1", Err: &llm.QuotaError{RetryAfter: time.Minute}},
+	)
+	f := newFixture(a, b)
+	handlers := map[string]llm.ToolHandler{"balance": handler(`{}`, nil)}
+	_, err := llm.Run(context.Background(), f.router.Client(target("a/m1"), target("b/m1")), prompt(), handlers, llm.LoopOptions{MaxSteps: 5, Pin: true})
+	if !errors.Is(err, llm.ErrExhausted) {
+		t.Fatalf("err = %v, want ErrExhausted", err)
+	}
+}
+
+func TestRunSumsUsage(t *testing.T) {
+	t.Parallel()
+	first := twoCalls()
+	first.Usage = llm.Usage{InputTokens: 10, OutputTokens: 2}
+	last := text("ok")
+	last.Usage = llm.Usage{InputTokens: 20, OutputTokens: 3}
+	a := llmtest.New("a", llmtest.Step{Model: "m1", Response: first}, llmtest.Step{Model: "m1", Response: last})
+	f := newFixture(a)
+	handlers := map[string]llm.ToolHandler{"balance": handler(`{}`, nil)}
+	res, err := llm.Run(context.Background(), f.router.Client(target("a/m1")), prompt(), handlers, llm.LoopOptions{MaxSteps: 3})
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	if want := (llm.Usage{InputTokens: 30, OutputTokens: 5}); res.Usage != want {
+		t.Fatalf("Usage = %+v, want %+v", res.Usage, want)
 	}
 }

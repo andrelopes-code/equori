@@ -11,6 +11,7 @@ type chatRequest struct {
 	Model          string          `json:"model"`
 	Messages       []message       `json:"messages"`
 	Tools          []tool          `json:"tools,omitempty"`
+	ToolChoice     string          `json:"tool_choice,omitempty"`
 	ResponseFormat *responseFormat `json:"response_format,omitempty"`
 	MaxTokens      int             `json:"max_tokens,omitzero"`
 	Temperature    *float64        `json:"temperature,omitempty"`
@@ -84,6 +85,9 @@ func toWire(model string, req llm.Request) chatRequest {
 	}
 	for _, t := range req.Tools {
 		w.Tools = append(w.Tools, tool{Type: "function", Function: functionDef{Name: t.Name, Description: t.Description, Parameters: t.Parameters}})
+	}
+	if len(w.Tools) > 0 && req.ToolChoice == llm.ToolChoiceNone {
+		w.ToolChoice = "none"
 	}
 	if req.Schema != nil {
 		w.ResponseFormat = &responseFormat{Type: "json_schema", JSONSchema: jsonSchema{Name: "answer", Schema: req.Schema}}
