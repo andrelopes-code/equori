@@ -2054,6 +2054,78 @@
     }
   },
   {
+    "name": "handle_card_purchase",
+    "description": "Proposes an event on a card purchase: a full or partial refund, opening or resolving a dispute, cancelling the remaining installments, or paying installments early. Use it when the user reports a refund, a chargeback, a cancelled installment purchase or an early payment of installments. Do not use it to record a new purchase: record_transaction does. The user confirms first.",
+    "effect": "write",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "transaction_id": {
+          "type": "string",
+          "description": "the card purchase, from search_transactions"
+        },
+        "action": {
+          "type": "string",
+          "description": "operation to propose",
+          "enum": [
+            "refund",
+            "open_dispute",
+            "resolve_dispute",
+            "cancel_installments",
+            "anticipate_installments"
+          ]
+        },
+        "date": {
+          "type": "string",
+          "description": "date of the event; today when absent",
+          "format": "date"
+        },
+        "amount": {
+          "type": "string",
+          "description": "for refund and anticipate_installments: positive amount in the card's currency"
+        },
+        "outcome": {
+          "type": "string",
+          "description": "for resolve_dispute: won refunds the remaining charged amount",
+          "enum": [
+            "won",
+            "lost"
+          ]
+        },
+        "from_installment": {
+          "type": "integer",
+          "description": "for anticipate_installments: first installment number paid early"
+        },
+        "to_installment": {
+          "type": "integer",
+          "description": "for anticipate_installments: last installment number paid early"
+        },
+        "statement": {
+          "type": "string",
+          "description": "statement month the credit or the anticipated installments go to; the next open statement when absent; written YYYY-MM"
+        }
+      },
+      "required": [
+        "transaction_id",
+        "action"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "transaction_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "transaction_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "list_accounts",
     "description": "Lists the user's accounts and categories by class and then name, with the IDs the other tools take, each account's institution, and the user's base currency. Income and expense accounts are the categories of transactions; a child account carries its parent. Use it to find the ID of an account or category named by the user. Do not use it for balances: get_balances returns them.",
     "effect": "read_only",
@@ -2351,6 +2423,93 @@
         "action",
         "id",
         "name"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "manage_card",
+    "description": "Proposes a change to a credit card account's setup: add a plastic or virtual card, activate or deactivate one, set a new credit limit or a new billing cycle. Use it when the user changes card details. Do not use it for purchases or statements: handle_card_purchase and settle_statement do. The user confirms every change.",
+    "effect": "write",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "type": "string",
+          "description": "credit card account, from list_accounts"
+        },
+        "action": {
+          "type": "string",
+          "description": "operation to propose",
+          "enum": [
+            "add_card",
+            "set_card_active",
+            "set_credit_limit",
+            "set_billing_cycle"
+          ]
+        },
+        "card_id": {
+          "type": "string",
+          "description": "for set_card_active: card from get_account_details"
+        },
+        "holder": {
+          "type": "string",
+          "description": "for add_card: name printed on the card"
+        },
+        "last_four": {
+          "type": "string",
+          "description": "for add_card: last four digits"
+        },
+        "virtual": {
+          "type": "boolean",
+          "description": "for add_card: the card is virtual"
+        },
+        "active": {
+          "type": "boolean",
+          "description": "for set_card_active: true activates, false deactivates"
+        },
+        "amount": {
+          "type": "string",
+          "description": "for set_credit_limit: positive limit in the card's currency"
+        },
+        "effective_from": {
+          "type": "string",
+          "description": "for set_credit_limit: first date of the limit; for set_billing_cycle: any date of the first statement month it applies to",
+          "format": "date"
+        },
+        "closing_day": {
+          "type": "integer",
+          "description": "for set_billing_cycle: day of the month the statement closes"
+        },
+        "due_day": {
+          "type": "integer",
+          "description": "for set_billing_cycle: day of the month the statement is due"
+        }
+      },
+      "required": [
+        "account_id",
+        "action"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "type": "string"
+        },
+        "action": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "account_id",
+        "action",
+        "id"
       ],
       "additionalProperties": false
     }
@@ -2928,6 +3087,83 @@
       },
       "required": [
         "transactions"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "settle_statement",
+    "description": "Proposes an action on a credit card statement: pay it from an account, finance its unpaid amount in installments, confirm the amount the institution charges, or record or remove the institution's due date and total. Use it when the user pays a card bill or reports what the bank's statement says. Do not use it for one purchase: handle_card_purchase does. The user confirms first.",
+    "effect": "write",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "statement_id": {
+          "type": "string",
+          "description": "statement from get_account_details"
+        },
+        "action": {
+          "type": "string",
+          "description": "operation to propose",
+          "enum": [
+            "pay",
+            "finance",
+            "confirm_amount_due",
+            "set_facts",
+            "remove_facts"
+          ]
+        },
+        "date": {
+          "type": "string",
+          "description": "for pay and finance: date of the operation; today when absent",
+          "format": "date"
+        },
+        "amount": {
+          "type": "string",
+          "description": "for pay: amount paid; for confirm_amount_due and set_facts: the institution's total; positive, in the card's currency"
+        },
+        "from_account_id": {
+          "type": "string",
+          "description": "for pay: account the payment leaves"
+        },
+        "installment_count": {
+          "type": "integer",
+          "description": "for finance: number of installments"
+        },
+        "installment_amount": {
+          "type": "string",
+          "description": "for finance: positive amount of each installment"
+        },
+        "due_date": {
+          "type": "string",
+          "description": "for set_facts: due date the institution states",
+          "format": "date"
+        },
+        "closing_date": {
+          "type": "string",
+          "description": "for set_facts: closing date the institution states",
+          "format": "date"
+        }
+      },
+      "required": [
+        "statement_id",
+        "action"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "statement_id": {
+          "type": "string"
+        },
+        "transaction_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "statement_id"
       ],
       "additionalProperties": false
     }
