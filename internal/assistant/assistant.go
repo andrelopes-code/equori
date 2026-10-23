@@ -12,7 +12,9 @@ import (
 	"github.com/andrelopes-code/equori/internal/assistant/internal/adapter/httpapi"
 	"github.com/andrelopes-code/equori/internal/assistant/internal/adapter/llmapi"
 	"github.com/andrelopes-code/equori/internal/assistant/internal/adapter/postgres"
+	"github.com/andrelopes-code/equori/internal/assistant/internal/adapter/toolapi"
 	"github.com/andrelopes-code/equori/internal/assistant/internal/app"
+	"github.com/andrelopes-code/equori/internal/assistant/internal/guide"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/llm"
 	"github.com/andrelopes-code/equori/internal/platform/secret"
@@ -38,7 +40,9 @@ type Config struct {
 	// Instance are the providers configured through the environment, shared by every user.
 	Instance []llm.Provider
 	Uses     []llm.Use
-	Clock    clock.Clock
+	// Navigation is web/src/navigation/navigation-map.json (spec 9); empty means no screens.
+	Navigation []byte
+	Clock      clock.Clock
 	// NewProvider builds a user's provider; nil builds the real adapters.
 	NewProvider func(api, baseURL, key string) llm.Provider
 }
@@ -47,6 +51,7 @@ type Module struct {
 	svc      *app.Service
 	resolver *llmapi.Resolver
 	http     *httpapi.Server
+	screens  []guide.Screen
 }
 
 // instancePreset maps an environment provider to its preset; only the Gemini adapter is
@@ -83,9 +88,19 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
 	for _, u := range cfg.Uses {
 		uses = append(uses, llmapi.ToUse(u))
 	}
+	var screens []guide.Screen
+	if len(cfg.Navigation) > 0 {
+		var err error
+		if screens, err = guide.ParseMap(cfg.Navigation); err != nil {
+			return nil, err
+		}
+	}
 	svc := app.NewService(postgres.NewRepository(pool), box, llmapi.NewModels(build), instance, uses, cfg.Clock.Now, cfg.Clock.Today, log)
-	return &Module{svc: svc, resolver: llmapi.NewResolver(svc, cfg.Instance, build, log), http: httpapi.NewServer(svc, log)}, nil
+	return &Module{svc: svc, resolver: llmapi.NewResolver(svc, cfg.Instance, build, log), http: httpapi.NewServer(svc, log), screens: screens}, nil
 }
+
+// Tools returns the assistant's own tools for language models (ADR 012).
+func (m *Module) Tools() tool.Group { return tool.Group{Tools: toolapi.Tools(m.screens)} }
 
 // UseTools sets the chat's tools; it fails when a tool that writes has no preview (spec 8.1).
 func (m *Module) UseTools(set tool.Set) error {

@@ -31,6 +31,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 	"github.com/andrelopes-code/equori/internal/portfolio"
 	"github.com/andrelopes-code/equori/internal/reporting"
+	"github.com/andrelopes-code/equori/web"
 )
 
 type Config struct {
@@ -109,7 +110,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	classificationModule := classification.New(pool, dispatcher, ledgerModule, log)
 	assistantModule, err := assistant.New(pool, assistant.Config{
 		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, Instance: cfg.LLMProviders,
-		Uses: []llm.Use{capture.SuggestUse, assistant.ChatUse}, Clock: clk, NewProvider: cfg.LLMFactory,
+		Uses: []llm.Use{capture.SuggestUse, assistant.ChatUse}, Navigation: web.NavigationMap(), Clock: clk, NewProvider: cfg.LLMFactory,
 	}, log)
 	if err != nil {
 		return nil, err
@@ -127,7 +128,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		return nil, err
 	}
 	planningModule := planning.New(pool, dispatcher, ledgerModule, marketdataModule, identityModule, portfolioModule, clk, log)
-	tools, err := tool.NewRegistry(log, append([]tool.Group{ledgerModule.Tools(), reportingModule.Tools()}, cfg.ExtraTools...)...)
+	tools, err := tool.NewRegistry(log, append([]tool.Group{ledgerModule.Tools(), reportingModule.Tools(), assistantModule.Tools()}, cfg.ExtraTools...)...)
 	if err != nil {
 		return nil, err
 	}

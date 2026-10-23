@@ -20,3 +20,9 @@ func Dist() fs.FS {
 	}
 	return dist
 }
+
+//go:embed src/navigation/navigation-map.json
+var navigationMap []byte
+
+// NavigationMap returns the screens the assistant links to (spec 9).
+func NavigationMap() []byte { return navigationMap }

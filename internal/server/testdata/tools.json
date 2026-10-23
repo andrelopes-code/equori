@@ -396,6 +396,94 @@
     }
   },
   {
+    "name": "get_help",
+    "description": "Returns an article of the equori guide: what a concept means in this app, how a task is done, and the screens where it is done with their paths. Use it for how-to and where-is questions, for concepts such as postings, statements or reconciliation, and for tasks the assistant cannot do, such as adding bank credentials or importing a file. Do not use it for the user's own data: the other tools return it.",
+    "effect": "read_only",
+    "idempotent": true,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "topic": {
+          "type": "string",
+          "description": "article to return",
+          "enum": [
+            "getting_started",
+            "accounts_and_categories",
+            "transactions_and_postings",
+            "capture",
+            "credit_cards_and_statements",
+            "installments",
+            "foreign_purchases_and_exchange",
+            "refunds_reimbursements_and_disputes",
+            "transfers",
+            "imports_and_bank_connections",
+            "categorization_rules_and_payees",
+            "reconciliation",
+            "schedules_and_occurrences",
+            "budgets",
+            "goals",
+            "investments",
+            "reports",
+            "privacy_and_the_assistant",
+            "settings_language_and_region"
+          ]
+        }
+      },
+      "required": [
+        "topic"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "topic": {
+          "type": "string"
+        },
+        "article": {
+          "type": "string",
+          "description": "Markdown text of the article"
+        },
+        "screens": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "route of the screen; a $name segment stands for an ID"
+              },
+              "screen": {
+                "type": "string",
+                "description": "English name of the screen"
+              },
+              "tasks": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "what is done there"
+              }
+            },
+            "required": [
+              "path",
+              "screen",
+              "tasks"
+            ],
+            "additionalProperties": false
+          },
+          "description": "screens of the topic; empty when the topic has none"
+        }
+      },
+      "required": [
+        "topic",
+        "article",
+        "screens"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "list_accounts",
     "description": "Lists the user's accounts and categories by class and then name, with the IDs the other tools take, each account's institution, and the user's base currency. Income and expense accounts are the categories of transactions; a child account carries its parent. Use it to find the ID of an account or category named by the user. Do not use it for balances: get_balances returns them.",
     "effect": "read_only",
