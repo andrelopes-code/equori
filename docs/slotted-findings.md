@@ -60,3 +60,5 @@ Registry of the findings reported to the Slotted owner (`web/CLAUDE.md`, "Slotte
 | LP-12 makes a phone's grid as tall as its rows, which defeats windowing and scroll loading          | reported |
 | compose-screen's performance check covers only region switches                                      | reported |
 | PageHeader keeps a toolbar on the title row beside a rich title                                     | reported |
+| Chart card actions sit lower than the toolbar beside them                                           | open     |
+| The splitter docs list no props, anatomy, events or example                                         | reported |

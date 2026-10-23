@@ -1,0 +1,13 @@
+@layer app {
+  /* Same offset as the chart's own toolbar, which centres its buttons on the title's line. */
+  .range {
+    display: flex;
+    margin-block: calc(
+      (
+          var(--slotted-font-size-lg) * var(--slotted-line-height-lg) -
+            var(--slotted-control-height-sm)
+        ) /
+        2
+    );
+  }
+}
