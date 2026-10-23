@@ -36,6 +36,11 @@ func (s *Service) Records(ctx context.Context, userID int64, batchID uuid.UUID, 
 
 // Resolve settles a record that needs review with the owner's choice (chapter 4, 4.3.3,
 // ResolveMatch) and moves it between the batch counts.
+// Record returns one of the user's external records.
+func (s *Service) Record(ctx context.Context, userID int64, id uuid.UUID) (domain.ExternalRecord, error) {
+	return s.repo.Record(ctx, userID, id)
+}
+
 func (s *Service) Resolve(ctx context.Context, userID int64, recordID uuid.UUID, action string, txID uuid.UUID) (domain.ExternalRecord, domain.Batch, error) {
 	if action != ActionMatch && action != ActionCreate && action != ActionDiscard {
 		return domain.ExternalRecord{}, domain.Batch{}, &domain.FieldError{Field: "action", Message: "must be match, create or discard"}

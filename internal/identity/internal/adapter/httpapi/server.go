@@ -30,7 +30,7 @@ type Server struct {
 }
 
 func NewServer(svc *app.Service, secureCookies bool, log *slog.Logger) *Server {
-	return &Server{svc: svc, secureCookies: secureCookies, log: log, errs: httpserver.ErrorWriter{Log: log, Map: toProblem}}
+	return &Server{svc: svc, secureCookies: secureCookies, log: log, errs: httpserver.ErrorWriter{Log: log, Map: ToProblem}}
 }
 
 func (s *Server) Register(mux *http.ServeMux) {
@@ -157,8 +157,8 @@ func (s *Server) cookie(value string, expires time.Time) string {
 
 var errInvalidRequest = errors.New("invalid request")
 
-// toProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).
-func toProblem(err error) (problem.Details, bool) {
+// ToProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).
+func ToProblem(err error) (problem.Details, bool) {
 	if fe, ok := errors.AsType[*domain.FieldError](err); ok {
 		d := problem.New(http.StatusUnprocessableEntity, "validation_failed", fe.Error())
 		d.Errors = []problem.FieldError{{Field: fe.Field, Message: fe.Message}}

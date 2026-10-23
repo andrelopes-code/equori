@@ -12,10 +12,12 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/identity/internal/adapter/httpapi"
 	"github.com/andrelopes-code/equori/internal/identity/internal/adapter/postgres"
+	"github.com/andrelopes-code/equori/internal/identity/internal/adapter/toolapi"
 	"github.com/andrelopes-code/equori/internal/identity/internal/app"
 	"github.com/andrelopes-code/equori/internal/identity/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/money"
+	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
 const (
@@ -53,6 +55,11 @@ func (m *Module) Profile(ctx context.Context, userID int64) (locale.Locale, erro
 }
 
 // RequireSession must wrap the whole HTTP handler: it is the single authentication gate for /api/.
+// Tools returns the identity module's tools for language models (ADR 012).
+func (m *Module) Tools() tool.Group {
+	return tool.Group{Tools: toolapi.Tools(m.svc), Errors: tool.FromProblem(httpapi.ToProblem)}
+}
+
 func (m *Module) RequireSession(next http.Handler) http.Handler { return m.http.RequireSession(next) }
 
 func (m *Module) CreateUser(ctx context.Context, email, password, role string, l locale.Locale, baseCurrency money.Currency) (User, error) {

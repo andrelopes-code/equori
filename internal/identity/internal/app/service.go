@@ -107,6 +107,23 @@ func (s *Service) Profile(ctx context.Context, userID int64) (locale.Locale, err
 	return locale.Locale{Language: user.Language, Region: user.Region}, nil
 }
 
+// ProfileChange returns a user's language and region before and after UpdateProfile with the
+// same arguments, validated, without storing anything.
+func (s *Service) ProfileChange(ctx context.Context, userID int64, language, region string) (before, after locale.Locale, err error) {
+	before, err = s.Profile(ctx, userID)
+	if err != nil {
+		return locale.Locale{}, locale.Locale{}, err
+	}
+	after = before
+	if language != "" {
+		after.Language = language
+	}
+	if region != "" {
+		after.Region = region
+	}
+	return before, after, validateLocale(after)
+}
+
 // UpdateProfile changes the language and region of a user; an empty field keeps the stored value.
 func (s *Service) UpdateProfile(ctx context.Context, current domain.User, language, region string) (domain.User, error) {
 	l := locale.Locale{Language: current.Language, Region: current.Region}

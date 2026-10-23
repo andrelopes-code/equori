@@ -18,6 +18,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/classification"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/adapter/httpapi"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/adapter/postgres"
+	"github.com/andrelopes-code/equori/internal/ingestion/internal/adapter/toolapi"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/aggregator/pluggy"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/app"
 	"github.com/andrelopes-code/equori/internal/ingestion/internal/domain"
@@ -28,12 +29,14 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 	"github.com/andrelopes-code/equori/internal/platform/registry"
 	"github.com/andrelopes-code/equori/internal/platform/secret"
+	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
 type Module struct {
-	http *httpapi.Server
-	svc  *app.Service
-	log  *slog.Logger
+	http   *httpapi.Server
+	svc    *app.Service
+	ledger *ledger.Module
+	log    *slog.Logger
 }
 
 type Config struct {
@@ -74,7 +77,24 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, c 
 	}
 	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l, c}, in)
 	dispatcher.Subscribe("ingestion", ledger.EventTransactionsPaired, followPairing)
-	return &Module{http: httpapi.NewServer(svc, log), svc: svc, log: log}, nil
+	return &Module{http: httpapi.NewServer(svc, log), svc: svc, ledger: l, log: log}, nil
+}
+
+// Tools returns the ingestion module's tools for language models (ADR 012).
+func (m *Module) Tools() tool.Group {
+	return tool.Group{Tools: toolapi.Tools(m.svc, m.accountNames), Errors: tool.FromProblem(httpapi.ToProblem)}
+}
+
+func (m *Module) accountNames(ctx context.Context, userID int64) (map[uuid.UUID]string, error) {
+	accounts, _, err := m.ledger.CaptureVocabulary(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	names := make(map[uuid.UUID]string, len(accounts))
+	for _, a := range accounts {
+		names[a.ID] = a.Name
+	}
+	return names, nil
 }
 
 // SyncConnection syncs every mapped account of a connection now (P6 amendment A36).
