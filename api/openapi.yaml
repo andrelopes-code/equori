@@ -26,6 +26,8 @@ tags:
     description: Schedules and their occurrences, budgets, goals, projections and committed amounts.
   - name: capture
     description: Transaction drafts read from text the owner writes.
+  - name: assistant
+    description: Language model providers of each user and the chain of each use (ADR 019).
 paths:
   /session:
     post:
@@ -1989,6 +1991,205 @@ paths:
         "400":
           $ref: "#/components/responses/Problem"
         "401":
+          $ref: "#/components/responses/Problem"
+  /assistant/presets:
+    get:
+      tags: [assistant]
+      operationId: listPresets
+      summary: Known language model services, their notices and suggested models.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PresetList"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /assistant/providers:
+    get:
+      tags: [assistant]
+      operationId: listProviders
+      summary: The user's providers in creation order, then the instance providers; never a key.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderList"
+        "401":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [assistant]
+      operationId: createProvider
+      summary: Store a provider; its key is sealed under EQUORI_SECRET_KEY (ADR 008).
+      description: |
+        422 key_required when the preset requires a key and none is sent; 409 secret_key_missing
+        when a key is sent and EQUORI_SECRET_KEY is not set.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProviderInput"
+      responses:
+        "201":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Provider"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /assistant/providers/{id}:
+    patch:
+      tags: [assistant]
+      operationId: updateProvider
+      summary: Change a provider's name, base URL or key; an absent key keeps the stored one.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProviderPatch"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Provider"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [assistant]
+      operationId: deleteProvider
+      summary: Delete a provider and its chain targets; their uses fall back to the default.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /assistant/providers/{id}/models:
+    get:
+      tags: [assistant]
+      operationId: listProviderModels
+      summary: Ask the provider's API for its models, which also checks its key.
+      description: 502 provider_unauthorized when the provider rejects the key; 502 provider_unavailable otherwise.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderModels"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "502":
+          $ref: "#/components/responses/Problem"
+  /assistant/usage:
+    get:
+      tags: [assistant]
+      operationId: listUsage
+      summary: The user's usage per provider and model today and over the last 30 days, with declared limits (ADR 019 U6).
+      description: Today is the instance's date; a provider resets its quota on its own schedule.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsageList"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /assistant/usage/limits:
+    put:
+      tags: [assistant]
+      operationId: setUsageLimit
+      summary: Declare the daily limits of a provider and model; absent quotas remove them.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UsageLimitInput"
+      responses:
+        "204":
+          description: Stored.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /assistant/uses:
+    get:
+      tags: [assistant]
+      operationId: listUses
+      summary: Every declared use with its effective chain for the user.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UseList"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /assistant/uses/{use}/chain:
+    put:
+      tags: [assistant]
+      operationId: setUseChain
+      summary: Replace the user's chain of a use; an empty list restores the default.
+      description: 422 capability_missing when a model lacks a capability the use needs.
+      parameters:
+        - name: use
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-z0-9_.]{2,40}$"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChainInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Use"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
           $ref: "#/components/responses/Problem"
   /transaction-batches:
     post:
@@ -4208,6 +4409,262 @@ components:
           schema:
             $ref: "#/components/schemas/Problem"
   schemas:
+    Capability:
+      type: string
+      enum: [tools, structured_output, image_input]
+    Notice:
+      type: string
+      description: trains, the free tier uses submitted content; local, data stays on the configured host; provider_terms, read the provider's terms.
+      enum: [trains, local, provider_terms]
+    PresetModel:
+      type: object
+      required: [id, capabilities]
+      properties:
+        id:
+          type: string
+        capabilities:
+          type: array
+          items:
+            $ref: "#/components/schemas/Capability"
+    Preset:
+      type: object
+      required: [id, api, base_url, key_required, notice, models]
+      properties:
+        id:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+        api:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+        base_url:
+          type: string
+          description: Empty for custom.
+        key_required:
+          type: boolean
+        notice:
+          $ref: "#/components/schemas/Notice"
+        models:
+          type: array
+          items:
+            $ref: "#/components/schemas/PresetModel"
+    PresetList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Preset"
+    Provider:
+      type: object
+      required: [id, preset, name, base_url, has_key, notice, instance]
+      properties:
+        id:
+          type: string
+          description: A UUID, or the adapter name of an instance provider.
+        preset:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+        name:
+          type: string
+        base_url:
+          type: string
+          description: Empty for an instance provider.
+        has_key:
+          type: boolean
+        notice:
+          $ref: "#/components/schemas/Notice"
+        instance:
+          type: boolean
+          description: Configured through the environment for every user; read-only.
+    ProviderList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Provider"
+    ProviderInput:
+      type: object
+      required: [preset, name]
+      properties:
+        preset:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+        name:
+          type: string
+        base_url:
+          type: string
+          description: Absent takes the preset's.
+        key:
+          type: string
+          writeOnly: true
+    ProviderPatch:
+      type: object
+      properties:
+        name:
+          type: string
+        base_url:
+          type: string
+        key:
+          type: string
+          writeOnly: true
+          description: Absent keeps the stored key; empty removes it.
+    ProviderModels:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: string
+    UseTarget:
+      type: object
+      required: [provider_id, provider_name, preset, notice, model, capabilities]
+      properties:
+        provider_id:
+          type: string
+        provider_name:
+          type: string
+        preset:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+        notice:
+          $ref: "#/components/schemas/Notice"
+        model:
+          type: string
+        capabilities:
+          type: array
+          items:
+            $ref: "#/components/schemas/Capability"
+    Use:
+      type: object
+      required: [id, needs, sends_financial_data, default, targets]
+      properties:
+        id:
+          type: string
+          pattern: "^[a-z0-9_.]{2,40}$"
+        needs:
+          type: array
+          items:
+            $ref: "#/components/schemas/Capability"
+        sends_financial_data:
+          type: boolean
+        default:
+          type: boolean
+          description: The chain comes from the use's declaration.
+        targets:
+          type: array
+          items:
+            $ref: "#/components/schemas/UseTarget"
+    UseList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Use"
+    UsageRow:
+      type: object
+      required: [provider_id, provider_name, preset, instance, model, today_requests, today_errors, today_tokens,
+        period_requests, period_tokens, period_days]
+      properties:
+        provider_id:
+          type: string
+        provider_name:
+          type: string
+        preset:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+        instance:
+          type: boolean
+        model:
+          type: string
+        today_requests:
+          type: integer
+          format: int64
+          description: Requests sent today, answered or not.
+        today_errors:
+          type: integer
+          format: int64
+        today_tokens:
+          type: integer
+          format: int64
+          description: Input and output tokens of today's answers.
+        period_requests:
+          type: integer
+          format: int64
+        period_tokens:
+          type: integer
+          format: int64
+        period_days:
+          type: integer
+          description: Days summed in the period figures, today included.
+        requests_per_day:
+          type: integer
+          format: int64
+          description: Absent when the owner declared none.
+        tokens_per_day:
+          type: integer
+          format: int64
+        cooling_until:
+          type: string
+          format: date-time
+          description: Present while the model cools down after a refusal.
+    UsageList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/UsageRow"
+    UsageLimitInput:
+      type: object
+      required: [provider_id, model]
+      properties:
+        provider_id:
+          type: string
+          minLength: 1
+          maxLength: 60
+        model:
+          type: string
+          minLength: 1
+          maxLength: 200
+        requests_per_day:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 2147483647
+        tokens_per_day:
+          type: integer
+          format: int64
+          minimum: 1
+    ChainTargetInput:
+      type: object
+      required: [provider_id, model]
+      properties:
+        provider_id:
+          type: string
+          format: uuid
+        model:
+          type: string
+        capabilities:
+          type: array
+          description: Asserted for a model its preset does not name.
+          items:
+            $ref: "#/components/schemas/Capability"
+    ChainInput:
+      type: object
+      required: [targets]
+      properties:
+        targets:
+          type: array
+          maxItems: 10
+          items:
+            $ref: "#/components/schemas/ChainTargetInput"
     ScheduleKind:
       type: string
       enum: [bill, income, subscription, transfer, savings]

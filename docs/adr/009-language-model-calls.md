@@ -1,6 +1,6 @@
 # ADR 009: Language model calls
 
-- Status: accepted
+- Status: accepted, amended by ADR 019 (M2, M3, M6)
 - Date: 2026-10-16
 
 ## Context
@@ -28,3 +28,9 @@ Classification, reporting, ingestion and a future conversational channel will ca
 ## Revisit criterion
 
 More than one process serving the instance, which would need a shared cooldown table, or a provider whose quota signal is not an HTTP status.
+
+## Amendment (ADR 019)
+
+- M2: a use is declared as an `llm.Use` with default targets by preset; each user may replace its chain. `Router.Client(chain...)` remains for fixed chains over the instance providers.
+- M3: the cooldown key is (provider row ID, model); the in-memory table is still shared by every chain.
+- M6: the environment key is the instance provider; each user adds providers whose keys are sealed under ADR 008, and requests go only to each provider's configured URL.

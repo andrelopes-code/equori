@@ -1126,6 +1126,157 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/assistant/presets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Known language model services, their notices and suggested models. */
+        get: operations["listPresets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assistant/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The user's providers in creation order, then the instance providers; never a key. */
+        get: operations["listProviders"];
+        put?: never;
+        /**
+         * Store a provider; its key is sealed under EQUORI_SECRET_KEY (ADR 008).
+         * @description 422 key_required when the preset requires a key and none is sent; 409 secret_key_missing
+         *     when a key is sent and EQUORI_SECRET_KEY is not set.
+         */
+        post: operations["createProvider"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assistant/providers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a provider and its chain targets; their uses fall back to the default. */
+        delete: operations["deleteProvider"];
+        options?: never;
+        head?: never;
+        /** Change a provider's name, base URL or key; an absent key keeps the stored one. */
+        patch: operations["updateProvider"];
+        trace?: never;
+    };
+    "/assistant/providers/{id}/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ask the provider's API for its models, which also checks its key.
+         * @description 502 provider_unauthorized when the provider rejects the key; 502 provider_unavailable otherwise.
+         */
+        get: operations["listProviderModels"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assistant/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The user's usage per provider and model today and over the last 30 days, with declared limits (ADR 019 U6).
+         * @description Today is the instance's date; a provider resets its quota on its own schedule.
+         */
+        get: operations["listUsage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assistant/usage/limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Declare the daily limits of a provider and model; absent quotas remove them. */
+        put: operations["setUsageLimit"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assistant/uses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every declared use with its effective chain for the user. */
+        get: operations["listUses"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assistant/uses/{use}/chain": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Replace the user's chain of a use; an empty list restores the default.
+         * @description 422 capability_missing when a model lacks a capability the use needs.
+         */
+        put: operations["setUseChain"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/transaction-batches": {
         parameters: {
             query?: never;
@@ -2400,6 +2551,137 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @enum {string} */
+        Capability: "tools" | "structured_output" | "image_input";
+        /**
+         * @description trains, the free tier uses submitted content; local, data stays on the configured host; provider_terms, read the provider's terms.
+         * @enum {string}
+         */
+        Notice: "trains" | "local" | "provider_terms";
+        PresetModel: {
+            id: string;
+            capabilities: components["schemas"]["Capability"][];
+        };
+        Preset: {
+            id: string;
+            api: string;
+            /** @description Empty for custom. */
+            base_url: string;
+            key_required: boolean;
+            notice: components["schemas"]["Notice"];
+            models: components["schemas"]["PresetModel"][];
+        };
+        PresetList: {
+            items: components["schemas"]["Preset"][];
+        };
+        Provider: {
+            /** @description A UUID, or the adapter name of an instance provider. */
+            id: string;
+            preset: string;
+            name: string;
+            /** @description Empty for an instance provider. */
+            base_url: string;
+            has_key: boolean;
+            notice: components["schemas"]["Notice"];
+            /** @description Configured through the environment for every user; read-only. */
+            instance: boolean;
+        };
+        ProviderList: {
+            items: components["schemas"]["Provider"][];
+        };
+        ProviderInput: {
+            preset: string;
+            name: string;
+            /** @description Absent takes the preset's. */
+            base_url?: string;
+            key?: string;
+        };
+        ProviderPatch: {
+            name?: string;
+            base_url?: string;
+            /** @description Absent keeps the stored key; empty removes it. */
+            key?: string;
+        };
+        ProviderModels: {
+            items: string[];
+        };
+        UseTarget: {
+            provider_id: string;
+            provider_name: string;
+            preset: string;
+            notice: components["schemas"]["Notice"];
+            model: string;
+            capabilities: components["schemas"]["Capability"][];
+        };
+        Use: {
+            id: string;
+            needs: components["schemas"]["Capability"][];
+            sends_financial_data: boolean;
+            /** @description The chain comes from the use's declaration. */
+            default: boolean;
+            targets: components["schemas"]["UseTarget"][];
+        };
+        UseList: {
+            items: components["schemas"]["Use"][];
+        };
+        UsageRow: {
+            provider_id: string;
+            provider_name: string;
+            preset: string;
+            instance: boolean;
+            model: string;
+            /**
+             * Format: int64
+             * @description Requests sent today, answered or not.
+             */
+            today_requests: number;
+            /** Format: int64 */
+            today_errors: number;
+            /**
+             * Format: int64
+             * @description Input and output tokens of today's answers.
+             */
+            today_tokens: number;
+            /** Format: int64 */
+            period_requests: number;
+            /** Format: int64 */
+            period_tokens: number;
+            /** @description Days summed in the period figures, today included. */
+            period_days: number;
+            /**
+             * Format: int64
+             * @description Absent when the owner declared none.
+             */
+            requests_per_day?: number;
+            /** Format: int64 */
+            tokens_per_day?: number;
+            /**
+             * Format: date-time
+             * @description Present while the model cools down after a refusal.
+             */
+            cooling_until?: string;
+        };
+        UsageList: {
+            items: components["schemas"]["UsageRow"][];
+        };
+        UsageLimitInput: {
+            provider_id: string;
+            model: string;
+            /** Format: int64 */
+            requests_per_day?: number;
+            /** Format: int64 */
+            tokens_per_day?: number;
+        };
+        ChainTargetInput: {
+            /** Format: uuid */
+            provider_id: string;
+            model: string;
+            /** @description Asserted for a model its preset does not name. */
+            capabilities?: components["schemas"]["Capability"][];
+        };
+        ChainInput: {
+            targets: components["schemas"]["ChainTargetInput"][];
+        };
         /** @enum {string} */
         ScheduleKind: "bill" | "income" | "subscription" | "transfer" | "savings";
         /**
@@ -6286,6 +6568,249 @@ export interface operations {
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
+        };
+    };
+    listPresets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PresetList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    listProviders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProviderList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    createProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProviderInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Provider"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    deleteProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    updateProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProviderPatch"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Provider"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    listProviderModels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProviderModels"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            502: components["responses"]["Problem"];
+        };
+    };
+    listUsage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsageList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    setUsageLimit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UsageLimitInput"];
+            };
+        };
+        responses: {
+            /** @description Stored. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    listUses: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UseList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    setUseChain: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                use: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChainInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Use"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     createTransactionBatch: {

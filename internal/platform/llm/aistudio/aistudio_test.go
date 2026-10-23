@@ -199,3 +199,26 @@ func TestName(t *testing.T) {
 		t.Fatalf("Name() = %q, want aistudio", got)
 	}
 }
+
+func TestModels(t *testing.T) {
+	t.Parallel()
+	var got received
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got = received{method: r.Method, path: r.URL.Path, key: r.Header.Get("x-goog-api-key")}
+		_, _ = io.WriteString(w, `{"models":[`+
+			`{"name":"models/gemini-b","supportedGenerationMethods":["generateContent","countTokens"]},`+
+			`{"name":"models/embed","supportedGenerationMethods":["embedContent"]},`+
+			`{"name":"models/gemini-a","supportedGenerationMethods":["generateContent"]}]}`)
+	}))
+	t.Cleanup(srv.Close)
+	models, err := aistudio.New(srv.URL, "k", http.DefaultClient).Models(context.Background())
+	if err != nil {
+		t.Fatalf("Models: %v", err)
+	}
+	if got.method != http.MethodGet || got.path != "/v1beta/models" || got.key != "k" {
+		t.Fatalf("request = %+v", got)
+	}
+	if !reflect.DeepEqual(models, []string{"gemini-a", "gemini-b"}) {
+		t.Fatalf("models = %v, want [gemini-a gemini-b]", models)
+	}
+}

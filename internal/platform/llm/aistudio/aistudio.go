@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 
 	"github.com/andrelopes-code/equori/internal/platform/llm"
@@ -59,6 +60,45 @@ func (p *Provider) Generate(ctx context.Context, model string, req llm.Request) 
 		return llm.Response{}, fmt.Errorf("aistudio %s: decode response: %w", model, err)
 	}
 	return fromWire(wire), nil
+}
+
+// Models returns the IDs of the models that serve generateContent, sorted.
+func (p *Provider) Models(ctx context.Context) ([]string, error) {
+	// pageSize 1000 is the API maximum, above the number of listed models.
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, p.baseURL+"/v1beta/models?pageSize=1000", nil)
+	if err != nil {
+		return nil, fmt.Errorf("build request: %w", err)
+	}
+	httpReq.Header.Set("x-goog-api-key", p.apiKey)
+	resp, err := p.client.Do(httpReq)
+	if err != nil {
+		if ctx.Err() != nil {
+			return nil, fmt.Errorf("aistudio models: %w", ctx.Err())
+		}
+		return nil, fmt.Errorf("aistudio models: %w: %w", llm.ErrTransient, err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		errBody, _ := io.ReadAll(io.LimitReader(resp.Body, 64<<10))
+		return nil, statusError("models", resp.StatusCode, errBody)
+	}
+	var wire struct {
+		Models []struct {
+			Name    string   `json:"name"`
+			Methods []string `json:"supportedGenerationMethods"`
+		} `json:"models"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&wire); err != nil {
+		return nil, fmt.Errorf("aistudio models: decode response: %w", err)
+	}
+	var ids []string
+	for _, m := range wire.Models {
+		if slices.Contains(m.Methods, "generateContent") {
+			ids = append(ids, strings.TrimPrefix(m.Name, "models/"))
+		}
+	}
+	slices.Sort(ids)
+	return ids, nil
 }
 
 func toWire(req llm.Request) generateRequest {

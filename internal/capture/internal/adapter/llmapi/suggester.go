@@ -12,8 +12,13 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 )
 
-// Chain is the targets of ADR 014 L6.
-var Chain = []llm.Target{{Provider: "aistudio", Model: "gemini-3.5-flash-lite"}}
+// Use is the use of ADR 014 L6; each user may replace its chain (ADR 019).
+var Use = llm.Use{
+	ID:                 "capture.suggest",
+	Needs:              []llm.Capability{llm.CapStructuredOutput},
+	SendsFinancialData: true,
+	Default:            []llm.DefaultTarget{{Preset: "gemini", Model: "gemini-3.5-flash-lite"}},
+}
 
 func systemPrompt(l locale.Locale) string {
 	return `You assign transaction descriptions of a personal finance app to the owner's categories.
@@ -29,7 +34,7 @@ var schema = json.RawMessage(`{"type":"object","properties":{"items":{"type":"ar
 
 type Suggester struct{ client *llm.Client }
 
-func New(r *llm.Router) *Suggester { return &Suggester{client: r.Client(Chain...)} }
+func New(r *llm.Router) *Suggester { return &Suggester{client: r.Use(Use)} }
 
 func (s *Suggester) Suggest(ctx context.Context, l locale.Locale, options []app.CategoryOption, items []app.SuggestItem) ([]int, error) {
 	var b strings.Builder

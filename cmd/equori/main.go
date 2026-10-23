@@ -79,9 +79,7 @@ func serve() error {
 	defer pool.Close()
 
 	clk := clock.New(cfg.TimeZone, time.Now)
-	router := llmRouter(cfg, &clk, log)
-	log.Info("llm providers", "providers", router.Providers())
-	scfg := serverConfig(cfg, &clk, router)
+	scfg := serverConfig(cfg, &clk)
 	scfg.Web, scfg.WebDevPort = web.Dist(), cfg.WebDevPort
 	app, err := server.New(pool, scfg, log)
 	if err != nil {
@@ -172,11 +170,11 @@ func portfolioCommand(args []string) error {
 	return app.Portfolio.RebuildAll(ctx)
 }
 
-func serverConfig(cfg config.Config, clk *clock.Clock, router *llm.Router) server.Config {
+func serverConfig(cfg config.Config, clk *clock.Clock) server.Config {
 	return server.Config{
 		SecureCookies: !cfg.InsecureCookies, Clock: clk, APIDocs: cfg.APIDocs,
 		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, AggregatorURLs: aggregatorURLs(os.Getenv),
-		LLM: router, PriceFeeds: cfg.PriceFeeds, IndexFeeds: cfg.IndexFeeds, FeedURLs: feedURLs(os.Getenv),
+		LLMProviders: llmProviders(cfg), PriceFeeds: cfg.PriceFeeds, IndexFeeds: cfg.IndexFeeds, FeedURLs: feedURLs(os.Getenv),
 	}
 }
 
@@ -202,13 +200,13 @@ func feedURLs(getenv func(string) string) map[string]string {
 	return urls
 }
 
-// llmRouter registers the language model providers whose credentials are configured.
-func llmRouter(cfg config.Config, clk *clock.Clock, log *slog.Logger) *llm.Router {
-	var providers []llm.Provider
-	if cfg.GeminiAPIKey != "" {
-		providers = append(providers, aistudio.New(cfg.GeminiURL, cfg.GeminiAPIKey, &http.Client{Timeout: 2 * time.Minute}))
+// llmProviders returns the providers the environment configures for the whole instance;
+// each user adds their own on the settings screen (ADR 019).
+func llmProviders(cfg config.Config) []llm.Provider {
+	if cfg.GeminiAPIKey == "" {
+		return nil
 	}
-	return llm.NewRouter(clk, log, providers...)
+	return []llm.Provider{aistudio.New(cfg.GeminiURL, cfg.GeminiAPIKey, &http.Client{Timeout: 2 * time.Minute})}
 }
 
 func setup() (config.Config, *slog.Logger, error) {

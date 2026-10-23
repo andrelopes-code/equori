@@ -45,7 +45,7 @@ func TestToolsLive(t *testing.T) {
 	tools, handlers := set.LLM()
 	clk := clock.New(time.UTC, time.Now)
 	p := aistudio.New("https://generativelanguage.googleapis.com", key, &http.Client{Timeout: time.Minute})
-	client := llm.NewRouter(&clk, slog.New(slog.NewTextHandler(os.Stderr, nil)), p).Client(llm.Target{Provider: "aistudio", Model: model})
+	client := llm.NewRouter(&clk, slog.New(slog.NewTextHandler(os.Stderr, nil)), nil, p).Client(llm.Target{Provider: "aistudio", Model: model})
 	req := llm.Request{
 		Tools: tools,
 		Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{

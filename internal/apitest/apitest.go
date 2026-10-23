@@ -76,15 +76,14 @@ func Today(date string) Option {
 	return func(c *server.Config) { c.Clock = &clk }
 }
 
-// LLM routes language model calls to providers, on the harness clock when Today came first.
+// LLM configures providers for the whole instance, as EQUORI_GEMINI_API_KEY does.
 func LLM(providers ...llm.Provider) Option {
-	return func(c *server.Config) {
-		clk := clock.New(time.UTC, time.Now)
-		if c.Clock != nil {
-			clk = *c.Clock
-		}
-		c.LLM = llm.NewRouter(&clk, slog.New(slog.DiscardHandler), providers...)
-	}
+	return func(c *server.Config) { c.LLMProviders = providers }
+}
+
+// LLMFactory builds the providers users configure, in place of the real adapters.
+func LLMFactory(f func(api, baseURL, key string) llm.Provider) Option {
+	return func(c *server.Config) { c.LLMFactory = f }
 }
 
 // Web serves fsys as the single-page application outside /api/.

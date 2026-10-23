@@ -28,10 +28,26 @@ type fixture struct {
 }
 
 func newFixture(providers ...llm.Provider) *fixture {
+	return newResolvingFixture(nil, providers...)
+}
+
+func newResolvingFixture(res llm.Resolver, providers ...llm.Provider) *fixture {
 	f := &fixture{now: start}
 	clk := clock.New(time.UTC, func() time.Time { return f.now })
-	f.router = llm.NewRouter(&clk, slog.New(slog.NewJSONHandler(&f.logs, nil)), providers...)
+	f.router = llm.NewRouter(&clk, slog.New(slog.NewJSONHandler(&f.logs, nil)), res, providers...)
 	return f
+}
+
+// resolver answers every use with its bindings, or with err.
+type resolver struct {
+	bindings []llm.Binding
+	err      error
+	uses     []string
+}
+
+func (r *resolver) Resolve(_ context.Context, u llm.Use) ([]llm.Binding, error) {
+	r.uses = append(r.uses, u.ID)
+	return r.bindings, r.err
 }
 
 func target(s string) llm.Target {
@@ -388,5 +404,90 @@ func TestRouterProviders(t *testing.T) {
 	f := newFixture(llmtest.New("b"), llmtest.New("a"))
 	if got, want := f.router.Providers(), []string{"a", "b"}; !slices.Equal(got, want) {
 		t.Fatalf("Providers() = %v, want %v", got, want)
+	}
+}
+
+var chatUse = llm.Use{ID: "test.chat", Needs: []llm.Capability{llm.CapTools}}
+
+func TestClientUse(t *testing.T) {
+	t.Parallel()
+	a := llmtest.New("openai", llmtest.Step{Model: "m1", Err: &llm.QuotaError{RetryAfter: 30 * time.Second}})
+	b := llmtest.New("openai", llmtest.Step{Model: "m1", Response: text("ok")}, llmtest.Step{Model: "m1", Response: text("ok")})
+	res := &resolver{bindings: []llm.Binding{{Target: target("u1/m1"), Provider: a}, {Target: target("u2/m1"), Provider: b}}}
+	f := newResolvingFixture(res)
+	client := f.router.Use(chatUse)
+	for range 2 {
+		resp, err := client.Generate(context.Background(), prompt())
+		if err != nil {
+			t.Fatalf("Generate: %v", err)
+		}
+		if resp.Target != target("u2/m1") {
+			t.Fatalf("Target = %v, want u2/m1", resp.Target)
+		}
+	}
+	if got := len(a.Requests()); got != 1 {
+		t.Fatalf("calls to the cooling target = %d, want 1", got)
+	}
+	if !slices.Equal(res.uses, []string{"test.chat", "test.chat"}) {
+		t.Fatalf("resolved uses = %v, want two test.chat", res.uses)
+	}
+}
+
+func TestClientUseUnavailable(t *testing.T) {
+	t.Parallel()
+	sentinel := errors.New("resolve failed")
+	tests := []struct {
+		name    string
+		res     llm.Resolver
+		wantErr error
+	}{
+		{name: "resolver error", res: &resolver{err: sentinel}, wantErr: sentinel},
+		{name: "no binding", res: &resolver{}, wantErr: llm.ErrUnavailable},
+		{name: "no resolver", wantErr: llm.ErrUnavailable},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := newResolvingFixture(tt.res, llmtest.New("a"))
+			_, err := f.router.Use(chatUse).Generate(context.Background(), prompt())
+			if !errors.Is(err, tt.wantErr) {
+				t.Fatalf("err = %v, want %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+// recordingResolver is a resolver that also records attempts (ADR 019 U1).
+type recordingResolver struct {
+	resolver
+	attempts []llm.Attempt
+}
+
+func (r *recordingResolver) Record(_ context.Context, a llm.Attempt) {
+	r.attempts = append(r.attempts, a)
+}
+
+func TestClientUseRecords(t *testing.T) {
+	t.Parallel()
+	a := llmtest.New("openai", llmtest.Step{Model: "m1", Err: &llm.QuotaError{RetryAfter: 30 * time.Second}})
+	b := llmtest.New("openai", llmtest.Step{Model: "m1", Response: text("ok")})
+	res := &recordingResolver{resolver: resolver{bindings: []llm.Binding{{Target: target("u1/m1"), Provider: a}, {Target: target("u2/m1"), Provider: b}}}}
+	f := newResolvingFixture(res)
+	if _, err := f.router.Use(chatUse).Generate(context.Background(), prompt()); err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+	want := []llm.Attempt{
+		{Use: "test.chat", Target: target("u1/m1"), Outcome: "quota", CooldownUntil: start.Add(30 * time.Second)},
+		{Use: "test.chat", Target: target("u2/m1"), Outcome: "ok", Usage: llm.Usage{InputTokens: 3, OutputTokens: 5}},
+	}
+	if !slices.Equal(res.attempts, want) {
+		t.Fatalf("attempts = %+v\nwant       %+v", res.attempts, want)
+	}
+
+	fixed := newResolvingFixture(res, llmtest.New("c", llmtest.Step{Model: "m", Response: text("ok")}))
+	if _, err := fixed.router.Client(target("c/m")).Generate(context.Background(), prompt()); err != nil {
+		t.Fatalf("fixed chain: %v", err)
+	}
+	if len(res.attempts) != 2 {
+		t.Fatalf("a fixed chain recorded %d attempts", len(res.attempts)-2)
 	}
 }

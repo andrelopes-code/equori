@@ -25,6 +25,7 @@ var exclusions = map[string]bool{
 	"-binary":  true, // file content
 	"-pending": true, // a read operation without a tool yet
 	"-capture": true, // the capture screen's typing loop; a language model reads text without it (capture A116)
+	"-llm":     true, // language model credentials and endpoints are never handed to a language model (ADR 019)
 }
 
 func operationIDs(t *testing.T) []string {

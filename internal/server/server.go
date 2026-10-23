@@ -13,6 +13,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/andrelopes-code/equori/internal/assistant"
 	"github.com/andrelopes-code/equori/internal/capture"
 	"github.com/andrelopes-code/equori/internal/classification"
 	"github.com/andrelopes-code/equori/internal/identity"
@@ -47,8 +48,11 @@ type Config struct {
 	SecretKey, PreviousSecretKey string
 	// AggregatorURLs overrides the base URL of an aggregator, by identifier.
 	AggregatorURLs map[string]string
-	// LLM routes language model calls (ADR 009); modules take clients from it.
-	LLM *llm.Router
+	// LLMProviders are the language model providers configured for the whole instance
+	// (ADR 009); each user adds their own (ADR 019).
+	LLMProviders []llm.Provider
+	// LLMFactory builds a user's provider; nil builds the real adapters. Tests replace it.
+	LLMFactory func(api, baseURL, key string) llm.Provider
 	// PriceFeeds names the enabled price feeds; FeedURLs overrides their base URLs by identifier.
 	PriceFeeds []string
 	// IndexFeeds names the enabled index feeds; FeedURLs overrides their base URLs too.
@@ -60,8 +64,11 @@ type App struct {
 	Handler    http.Handler
 	Dispatcher *outbox.Dispatcher
 	// Tools holds every module's tools for language models (ADR 012).
-	Tools      *tool.Registry
-	Identity   *identity.Module
+	Tools     *tool.Registry
+	Identity  *identity.Module
+	Assistant *assistant.Module
+	// LLM routes language model calls of every use (ADR 009).
+	LLM        *llm.Router
 	Marketdata *marketdata.Module
 	Ledger     *ledger.Module
 	Reporting  *reporting.Module
@@ -97,7 +104,15 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	ledgerModule := ledger.New(pool, dispatcher, marketdataModule, identityModule, clk, log)
 	reportingModule := reporting.New(pool, dispatcher, log)
 	classificationModule := classification.New(pool, dispatcher, ledgerModule, log)
-	captureModule := capture.New(pool, ledgerModule, classificationModule, identityModule, cfg.LLM, clk, log)
+	assistantModule, err := assistant.New(pool, assistant.Config{
+		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, Instance: cfg.LLMProviders,
+		Uses: []llm.Use{capture.SuggestUse, assistant.ChatUse}, Clock: clk, NewProvider: cfg.LLMFactory,
+	}, log)
+	if err != nil {
+		return nil, err
+	}
+	router := llm.NewRouter(&clk, log, assistantModule.Resolver(), cfg.LLMProviders...)
+	captureModule := capture.New(pool, ledgerModule, classificationModule, identityModule, router, clk, log)
 	ingestionModule, err := ingestion.New(pool, dispatcher, ledgerModule, classificationModule, ingestion.Config{
 		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, URLs: cfg.AggregatorURLs, Clock: clk,
 	}, log)
@@ -120,6 +135,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		apidoc.Register(mux, api.Contract)
 	}
 	identityModule.RegisterRoutes(mux)
+	assistantModule.RegisterRoutes(mux)
 	ledgerModule.RegisterRoutes(mux)
 	reportingModule.RegisterRoutes(mux)
 	ingestionModule.RegisterRoutes(mux)
@@ -142,6 +158,8 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		Dispatcher: dispatcher,
 		Tools:      tools,
 		Identity:   identityModule,
+		Assistant:  assistantModule,
+		LLM:        router,
 		Ledger:     ledgerModule,
 		Reporting:  reportingModule,
 		Ingestion:  ingestionModule,

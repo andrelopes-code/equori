@@ -33,13 +33,13 @@ type Profiles interface {
 	Profile(ctx context.Context, userID int64) (locale.Locale, error)
 }
 
-// New wires the module; router is nil when no language model is configured, and category
-// suggestions then serve kept answers only (ADR 014 L6).
+// SuggestUse is the language model use of category suggestions (ADR 014 L6).
+var SuggestUse = llmapi.Use
+
+// New wires the module. Without a resolvable target, category suggestions serve kept answers
+// only (ADR 014 L6).
 func New(pool *pgxpool.Pool, l *ledger.Module, c *classification.Module, profiles Profiles, router *llm.Router, clk clock.Clock, log *slog.Logger) *Module {
-	var suggester app.Suggester
-	if router != nil {
-		suggester = llmapi.New(router)
-	}
+	suggester := llmapi.New(router)
 	svc := app.NewService(ledgerPort{l}, classifierPort{c}, postgres.NewRepository(pool), profiles, suggester, clk)
 	return &Module{http: httpapi.NewServer(svc, log)}
 }

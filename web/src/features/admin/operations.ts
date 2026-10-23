@@ -626,6 +626,48 @@ export const operations: Record<GroupKey, readonly Operation[]> = {
       path: "/settings",
       body: (r) => ({ base_currency: r.currency }),
     },
+    { id: "listPresets", method: "GET", path: "/assistant/presets" },
+    { id: "listProviders", method: "GET", path: "/assistant/providers" },
+    {
+      id: "createProvider",
+      method: "POST",
+      path: "/assistant/providers",
+      body: () => ({ preset: "ollama", name: "Local", base_url: "", key: "" }),
+    },
+    {
+      id: "updateProvider",
+      method: "PATCH",
+      path: "/assistant/providers/{id}",
+      body: () => ({ name: "Local" }),
+    },
+    {
+      id: "deleteProvider",
+      method: "DELETE",
+      path: "/assistant/providers/{id}",
+    },
+    {
+      id: "listProviderModels",
+      method: "GET",
+      path: "/assistant/providers/{id}/models",
+    },
+    { id: "listUses", method: "GET", path: "/assistant/uses" },
+    { id: "listUsage", method: "GET", path: "/assistant/usage" },
+    {
+      id: "setUsageLimit",
+      method: "PUT",
+      path: "/assistant/usage/limits",
+      body: () => ({
+        provider_id: "aistudio",
+        model: "gemini-3.5-flash",
+        requests_per_day: 250,
+      }),
+    },
+    {
+      id: "setUseChain",
+      method: "PUT",
+      path: "/assistant/uses/{use}/chain",
+      body: () => ({ targets: [] }),
+    },
     {
       id: "listInstitutions",
       method: "GET",

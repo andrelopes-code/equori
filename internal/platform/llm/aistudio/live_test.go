@@ -31,7 +31,7 @@ func TestLive(t *testing.T) {
 	}
 	clk := clock.New(time.UTC, time.Now)
 	p := aistudio.New("https://generativelanguage.googleapis.com", key, &http.Client{Timeout: time.Minute})
-	client := llm.NewRouter(&clk, slog.New(slog.NewTextHandler(os.Stderr, nil)), p).Client(llm.Target{Provider: "aistudio", Model: model})
+	client := llm.NewRouter(&clk, slog.New(slog.NewTextHandler(os.Stderr, nil)), nil, p).Client(llm.Target{Provider: "aistudio", Model: model})
 	ctx := context.Background()
 
 	t.Run("text", func(t *testing.T) {
