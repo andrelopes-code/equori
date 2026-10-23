@@ -8,8 +8,8 @@ SELECT * FROM marketdata_instrument WHERE instrument_type = $1 ORDER BY code;
 SELECT * FROM marketdata_instrument ORDER BY code;
 
 -- name: InsertInstrument :execrows
-INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, exchange)
-VALUES (@code, @instrument_type, @scale, @name, @quote_currency, sqlc.narg(exchange))
+INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, exchange, subtype)
+VALUES (@code, @instrument_type, @scale, @name, @quote_currency, sqlc.narg(exchange), sqlc.narg(subtype))
 ON CONFLICT (code) DO NOTHING;
 
 -- name: InsertMissingCurrencies :exec

@@ -13,6 +13,9 @@ func (s *Server) DefineInstrument(ctx context.Context, req DefineInstrumentReque
 	if b.Exchange != nil {
 		in.Exchange = string(*b.Exchange)
 	}
+	if b.Subtype != nil {
+		in.Subtype = string(*b.Subtype)
+	}
 	out, err := s.svc.DefineInstrument(ctx, in)
 	if err != nil {
 		return nil, err
@@ -54,6 +57,10 @@ func toInstrumentAPI(in domain.Instrument) Instrument {
 	if in.Exchange != "" {
 		e := in.Exchange
 		out.Exchange = &e
+	}
+	if in.Subtype != "" {
+		sub := in.Subtype
+		out.Subtype = &sub
 	}
 	return out
 }

@@ -25,7 +25,11 @@ var (
 	ErrUnknownInstrument = domain.ErrUnknownInstrument
 	ErrInstrumentExists  = domain.ErrInstrumentExists
 	ErrPriceMissing      = domain.ErrPriceMissing
+	ErrNoTerms           = domain.ErrNoTerms
 )
+
+// sourceAccrual is the source of the prices computed from the terms of a fixed income security.
+const sourceAccrual = "accrual"
 
 type (
 	Instrument = domain.Instrument
@@ -134,7 +138,7 @@ func (m *Module) DefineInstrument(ctx context.Context, in Instrument) (Instrumen
 	quoteCode := string(in.QuoteCurrency)
 	n, err := m.q.InsertInstrument(ctx, postgres.InsertInstrumentParams{
 		Code: string(in.Code), InstrumentType: in.Type, Scale: int16(in.Scale), //nolint:gosec // G115: Validate bounds the scale to 0–12
-		Name: in.Name, QuoteCurrency: &quoteCode, Exchange: optional(in.Exchange),
+		Name: in.Name, QuoteCurrency: &quoteCode, Exchange: optional(in.Exchange), Subtype: optional(in.Subtype),
 	})
 	if err != nil {
 		return Instrument{}, fmt.Errorf("insert instrument: %w", err)
@@ -159,6 +163,9 @@ func toInstrument(r postgres.MarketdataInstrument) Instrument {
 	}
 	if r.Exchange != nil {
 		in.Exchange = *r.Exchange
+	}
+	if r.Subtype != nil {
+		in.Subtype = *r.Subtype
 	}
 	return in
 }

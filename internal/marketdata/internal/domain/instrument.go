@@ -16,6 +16,8 @@ var SecurityTypes = []string{"stock", "etf", "reit", "depositary_receipt", "fixe
 
 var micPattern = regexp.MustCompile(`^[A-Z0-9]{4}$`)
 
+var subtypePattern = regexp.MustCompile(`^[a-z0-9_]{2,40}$`)
+
 var codePattern = regexp.MustCompile(`^[A-Z0-9.]{2,20}$`)
 
 type Instrument struct {
@@ -25,6 +27,7 @@ type Instrument struct {
 	Name          string
 	QuoteCurrency money.Currency // empty for currencies
 	Exchange      string         // ISO 10383 MIC or empty
+	Subtype       string         // refines Type for the owner's jurisdiction; empty when none
 }
 
 // Validate checks a security definition (P8 amendment A59); the quote currency is
@@ -44,6 +47,8 @@ func (in Instrument) Validate() (Instrument, error) {
 		return in, invalid("name", "must have 1 to 120 characters")
 	case in.Exchange != "" && !micPattern.MatchString(in.Exchange):
 		return in, invalid("exchange", "must be an ISO 10383 MIC")
+	case in.Subtype != "" && !subtypePattern.MatchString(in.Subtype):
+		return in, invalid("subtype", "must match ^[a-z0-9_]{2,40}$")
 	}
 	return in, nil
 }

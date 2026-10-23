@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/fs"
 	"log/slog"
+	"maps"
 	"mime/multipart"
 	"net/http"
 	"net/http/cookiejar"
@@ -117,6 +118,17 @@ func Aggregator(id, url string) Option {
 // PriceFeeds enables the price feeds ids against the base URLs of a test server.
 func PriceFeeds(ids []string, urls map[string]string) Option {
 	return func(c *server.Config) { c.PriceFeeds, c.FeedURLs = ids, urls }
+}
+
+// IndexFeeds enables the index feeds ids against the base URLs of a test server.
+func IndexFeeds(ids []string, urls map[string]string) Option {
+	return func(c *server.Config) {
+		c.IndexFeeds = ids
+		if c.FeedURLs == nil {
+			c.FeedURLs = map[string]string{}
+		}
+		maps.Copy(c.FeedURLs, urls)
+	}
 }
 
 // SecretKeys replaces the integration keys; pass it after Aggregator.

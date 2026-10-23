@@ -27,6 +27,7 @@ func TestSchemaRejectsInvalidPrices(t *testing.T) {
 		{name: "currency with quote currency", sql: `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency) VALUES ('SEK', 'currency', 2, 'Krona', 'BRL')`},
 		{name: "unknown exchange", sql: `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, exchange) VALUES ('AAPL', 'stock', 0, 'Apple', 'USD', 'NASDAQ')`},
 		{name: "legacy exchange", sql: `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, exchange) VALUES ('AAPL', 'stock', 0, 'Apple', 'USD', 'B3')`},
+		{name: "subtype outside the identifier pattern", sql: `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, subtype) VALUES ('CRIXPTO', 'fixed_income', 2, 'CRI', 'BRL', 'Bad-Value')`},
 		{name: "legacy type", sql: `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency) VALUES ('HGLG11', 'fii', 0, 'CSHG', 'BRL')`},
 	}
 	for _, tt := range tests {

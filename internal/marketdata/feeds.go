@@ -10,6 +10,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/adapter/postgres"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed"
+	"github.com/andrelopes-code/equori/internal/marketdata/internal/index"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
@@ -20,6 +21,8 @@ const feedWindowDays = 30
 // FeedConfig lists the price sources TickFeeds runs.
 type FeedConfig struct {
 	Sources []feed.Source
+	// Indexes are the index sources TickIndexes runs (investments design 4.2).
+	Indexes []index.Source
 	Client  *http.Client
 	Clock   clock.Clock
 	Log     *slog.Logger
@@ -52,6 +55,8 @@ func (m *Module) TickFeeds(ctx context.Context) {
 	for _, src := range m.feeds.Sources {
 		m.tick(ctx, src)
 	}
+	m.TickIndexes(ctx)
+	m.TickAccrual(ctx)
 }
 
 func (m *Module) tick(ctx context.Context, src feed.Source) {

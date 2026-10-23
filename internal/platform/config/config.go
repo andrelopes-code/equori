@@ -35,6 +35,8 @@ type Config struct {
 	GeminiURL string
 	// PriceFeeds are the identifiers listed in EQUORI_PRICE_FEEDS; the marketdata module validates them.
 	PriceFeeds []string
+	// IndexFeeds are the identifiers listed in EQUORI_INDEX_FEEDS; the marketdata module validates them.
+	IndexFeeds []string
 }
 
 func Load(getenv func(string) string) (Config, error) {
@@ -47,6 +49,11 @@ func Load(getenv func(string) string) (Config, error) {
 	for name := range strings.SplitSeq(getenv("EQUORI_PRICE_FEEDS"), ",") {
 		if name = strings.TrimSpace(name); name != "" {
 			cfg.PriceFeeds = append(cfg.PriceFeeds, name)
+		}
+	}
+	for name := range strings.SplitSeq(getenv("EQUORI_INDEX_FEEDS"), ",") {
+		if name = strings.TrimSpace(name); name != "" {
+			cfg.IndexFeeds = append(cfg.IndexFeeds, name)
 		}
 	}
 	if cfg.GeminiURL == "" {

@@ -807,6 +807,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/instruments/{code}/terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        /** The terms of a fixed income instrument (investments design 4.2). */
+        get: operations["getInstrumentTerms"];
+        /** Set the terms of a fixed income instrument, replacing the earlier ones and the prices accrued from them. */
+        put: operations["putInstrumentTerms"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/prices": {
         parameters: {
             query?: never;
@@ -3165,6 +3185,7 @@ export interface components {
             /** @description Absent for currencies. */
             quote_currency?: string;
             exchange?: string;
+            subtype?: string;
         };
         InstrumentInput: {
             code: string;
@@ -3173,10 +3194,44 @@ export interface components {
             name: string;
             quote_currency: string;
             exchange?: string;
+            /** @description Refines the type for the owner's jurisdiction, such as cri, cdb or equity_fund (investments design 4.1). */
+            subtype?: string;
         };
         InstrumentList: {
             items: components["schemas"]["Instrument"][];
         };
+        FixedIncomeTermsInput: {
+            /** Format: date */
+            issued_on: string;
+            /** Format: date */
+            matures_on: string;
+            /** @description The index the security follows; absent for a pre-fixed security. */
+            index_id?: string;
+            /** @description 10000 is 100% of the index; 10000 when omitted. */
+            percent_of_index_bp?: number;
+            /** @description Annual spread over the index, or the annual rate of a pre-fixed security; 0 when omitted. */
+            spread_bp?: number;
+            day_count: components["schemas"]["TermsDayCount"];
+            /**
+             * Format: int64
+             * @description Price of one unit on issued_on, in minor units of the quote currency.
+             */
+            face_value: number;
+        };
+        FixedIncomeTerms: {
+            /** Format: date */
+            issued_on: string;
+            /** Format: date */
+            matures_on: string;
+            index_id?: string;
+            percent_of_index_bp: number;
+            spread_bp: number;
+            day_count: components["schemas"]["TermsDayCount"];
+            /** Format: int64 */
+            face_value: number;
+        };
+        /** @enum {string} */
+        TermsDayCount: "bus252" | "act365";
         /**
          * @description Positive exact decimal with at most 12 decimals (ADR 005).
          * @example 5.4830
@@ -5494,6 +5549,60 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+        };
+    };
+    getInstrumentTerms: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FixedIncomeTerms"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    putInstrumentTerms: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FixedIncomeTermsInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FixedIncomeTerms"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     listPrices: {

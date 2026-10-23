@@ -51,6 +51,8 @@ type Config struct {
 	LLM *llm.Router
 	// PriceFeeds names the enabled price feeds; FeedURLs overrides their base URLs by identifier.
 	PriceFeeds []string
+	// IndexFeeds names the enabled index feeds; FeedURLs overrides their base URLs too.
+	IndexFeeds []string
 	FeedURLs   map[string]string
 }
 
@@ -85,8 +87,12 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
+	indexSources, err := marketdata.NewIndexSources(cfg.IndexFeeds, cfg.FeedURLs, feedClient)
+	if err != nil {
+		return nil, err
+	}
 	marketdataModule := marketdata.New(pool).WithFeeds(marketdata.FeedConfig{
-		Sources: sources, Client: feedClient, Clock: clk, Log: log,
+		Sources: sources, Indexes: indexSources, Client: feedClient, Clock: clk, Log: log,
 	})
 	ledgerModule := ledger.New(pool, dispatcher, marketdataModule, identityModule, clk, log)
 	reportingModule := reporting.New(pool, dispatcher, log)

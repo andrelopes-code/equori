@@ -176,7 +176,7 @@ func serverConfig(cfg config.Config, clk *clock.Clock, router *llm.Router) serve
 	return server.Config{
 		SecureCookies: !cfg.InsecureCookies, Clock: clk, APIDocs: cfg.APIDocs,
 		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, AggregatorURLs: aggregatorURLs(os.Getenv),
-		LLM: router, PriceFeeds: cfg.PriceFeeds, FeedURLs: feedURLs(os.Getenv),
+		LLM: router, PriceFeeds: cfg.PriceFeeds, IndexFeeds: cfg.IndexFeeds, FeedURLs: feedURLs(os.Getenv),
 	}
 }
 
@@ -194,7 +194,7 @@ func aggregatorURLs(getenv func(string) string) map[string]string {
 // feedURLs reads EQUORI_FEED_<ID>_URL for each price feed the marketdata module offers.
 func feedURLs(getenv func(string) string) map[string]string {
 	urls := make(map[string]string)
-	for _, id := range marketdata.SourceIDs() {
+	for _, id := range append(marketdata.SourceIDs(), marketdata.IndexSourceIDs()...) {
 		if v := getenv("EQUORI_FEED_" + strings.ToUpper(id) + "_URL"); v != "" {
 			urls[id] = v
 		}

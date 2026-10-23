@@ -32,6 +32,8 @@ type Service interface {
 	DefineInstrument(ctx context.Context, in domain.Instrument) (domain.Instrument, error)
 	ListInstruments(ctx context.Context, typ string) ([]domain.Instrument, error)
 	Instrument(ctx context.Context, code string) (domain.Instrument, error)
+	PutTerms(ctx context.Context, code string, t domain.Terms) (domain.Terms, error)
+	Terms(ctx context.Context, code string) (domain.Terms, error)
 	RecordPrices(ctx context.Context, ps []domain.Price) error
 	ImportPrices(ctx context.Context, content []byte) (int, error)
 	ListPrices(ctx context.Context, instrument, quote money.Currency, from, to time.Time) ([]domain.Price, error)
@@ -87,6 +89,8 @@ func toProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusNotFound, "not_found", "unknown calendar"), true
 	case errors.Is(err, domain.ErrUnknownInstrument):
 		return problem.New(http.StatusNotFound, "not_found", "unknown instrument"), true
+	case errors.Is(err, domain.ErrNoTerms):
+		return problem.New(http.StatusNotFound, "not_found", "the instrument has no terms"), true
 	case errors.Is(err, domain.ErrInstrumentExists):
 		return problem.New(http.StatusConflict, "instrument_exists", err.Error()), true
 	}

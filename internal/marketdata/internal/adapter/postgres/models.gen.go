@@ -10,6 +10,17 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type MarketdataFixedIncomeTerm struct {
+	InstrumentCode   string
+	IssuedOn         time.Time
+	MaturesOn        time.Time
+	IndexID          *string
+	PercentOfIndexBp int32
+	SpreadBp         int32
+	DayCount         string
+	FaceValue        int64
+}
+
 type MarketdataHoliday struct {
 	Calendar string
 	Date     time.Time
@@ -23,6 +34,7 @@ type MarketdataInstrument struct {
 	Name           string
 	QuoteCurrency  *string
 	Exchange       *string
+	Subtype        *string
 }
 
 type MarketdataPrice struct {

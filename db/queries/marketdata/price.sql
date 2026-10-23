@@ -35,3 +35,6 @@ JOIN best t ON t.other = f.other AND t.side = @to_code::text
 WHERE f.side = @from_code::text AND f.other NOT IN (@from_code::text, @to_code::text)
 ORDER BY least(f.latest, t.latest) DESC, f.other
 LIMIT 1;
+
+-- name: DeletePricesBySource :exec
+DELETE FROM marketdata_price WHERE source = @source AND instrument = @instrument;

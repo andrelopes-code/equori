@@ -42,6 +42,20 @@ func (q *Queries) ConversionIntermediate(ctx context.Context, arg ConversionInte
 	return code, err
 }
 
+const deletePricesBySource = `-- name: DeletePricesBySource :exec
+DELETE FROM marketdata_price WHERE source = $1 AND instrument = $2
+`
+
+type DeletePricesBySourceParams struct {
+	Source     string
+	Instrument string
+}
+
+func (q *Queries) DeletePricesBySource(ctx context.Context, arg DeletePricesBySourceParams) error {
+	_, err := q.db.Exec(ctx, deletePricesBySource, arg.Source, arg.Instrument)
+	return err
+}
+
 const latestSourceDate = `-- name: LatestSourceDate :one
 SELECT coalesce(max(date), DATE '1970-01-01')::date AS latest FROM marketdata_price
 WHERE source = $1 AND ($2::text IS NULL OR instrument = $2)

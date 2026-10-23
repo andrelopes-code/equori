@@ -40,6 +40,8 @@ var exposure = map[string]string{
 	"listRealizedResults":              "-pending",
 	"listIncomeEvents":                 "-pending",
 	"listInvestmentIncomeTypes":        "-pending",
+	"getInstrumentTerms":               "-pending",
+	"putInstrumentTerms":               "-write",
 	"listReimbursementSources":         "-pending",
 	"listReimbursementCandidates":      "-pending",
 	"reimburseTransaction":             "-write",

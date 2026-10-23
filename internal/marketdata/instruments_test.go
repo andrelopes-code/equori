@@ -16,6 +16,7 @@ type instrumentAPI struct {
 	Name          string `json:"name"`
 	QuoteCurrency string `json:"quote_currency"`
 	Exchange      string `json:"exchange"`
+	Subtype       string `json:"subtype"`
 }
 
 func mxrf11() map[string]any {
@@ -125,5 +126,37 @@ func TestReconcileCurrencies(t *testing.T) {
 	}
 	if name != "Custom" {
 		t.Errorf("EUR name = %q, want Custom", name)
+	}
+}
+
+func TestInstrumentSubtype(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	cri := map[string]any{"code": "CRIXPTO", "type": "fixed_income", "scale": 2, "name": "CRI Xpto", "quote_currency": "BRL", "subtype": "cri"}
+	var got instrumentAPI
+	h.MustDo(http.MethodPost, "/api/v1/instruments", cri, http.StatusCreated, &got)
+	if got.Subtype != "cri" {
+		t.Fatalf("created = %+v", got)
+	}
+	var read instrumentAPI
+	h.MustDo(http.MethodGet, "/api/v1/instruments/CRIXPTO", nil, http.StatusOK, &read)
+	if read.Subtype != "cri" {
+		t.Fatalf("read = %+v", read)
+	}
+
+	var plain instrumentAPI
+	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, &plain)
+	if plain.Subtype != "" {
+		t.Fatalf("an instrument without subtype read %+v", plain)
+	}
+	var raw map[string]any
+	h.MustDo(http.MethodGet, "/api/v1/instruments/MXRF11", nil, http.StatusOK, &raw)
+	if _, ok := raw["subtype"]; ok {
+		t.Fatalf("subtype present on an instrument without one: %v", raw)
+	}
+
+	for _, bad := range []string{"CRI", "a-b", "x", ""} {
+		body := map[string]any{"code": "BADONE", "type": "fixed_income", "scale": 2, "name": "Bad", "quote_currency": "BRL", "subtype": bad}
+		h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/instruments", body), http.StatusBadRequest, "invalid_request", "subtype")
 	}
 }

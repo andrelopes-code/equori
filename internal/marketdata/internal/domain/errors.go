@@ -8,6 +8,7 @@ var (
 	ErrUnknownInstrument = errors.New("unknown instrument")
 	ErrInstrumentExists  = errors.New("instrument exists")
 	ErrPriceMissing      = errors.New("price missing")
+	ErrNoTerms           = errors.New("no terms")
 )
 
 // FieldError names the request field that failed validation, as in the API.

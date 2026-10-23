@@ -129,6 +129,24 @@ func (e PriceSource) Valid() bool {
 	}
 }
 
+// Defines values for TermsDayCount.
+const (
+	Act365 TermsDayCount = "act365"
+	Bus252 TermsDayCount = "bus252"
+)
+
+// Valid indicates whether the value is a known member of the TermsDayCount enum.
+func (e TermsDayCount) Valid() bool {
+	switch e {
+	case Act365:
+		return true
+	case Bus252:
+		return true
+	default:
+		return false
+	}
+}
+
 // Calendar defines model for Calendar.
 type Calendar struct {
 	Id      string            `json:"id"`
@@ -147,6 +165,36 @@ type CalendarList struct {
 type FieldError struct {
 	Field   string `json:"field"`
 	Message string `json:"message"`
+}
+
+// FixedIncomeTerms defines model for FixedIncomeTerms.
+type FixedIncomeTerms struct {
+	DayCount         TermsDayCount      `json:"day_count"`
+	FaceValue        int64              `json:"face_value"`
+	IndexId          *string            `json:"index_id,omitempty"`
+	IssuedOn         openapi_types.Date `json:"issued_on"`
+	MaturesOn        openapi_types.Date `json:"matures_on"`
+	PercentOfIndexBp int                `json:"percent_of_index_bp"`
+	SpreadBp         int                `json:"spread_bp"`
+}
+
+// FixedIncomeTermsInput defines model for FixedIncomeTermsInput.
+type FixedIncomeTermsInput struct {
+	DayCount TermsDayCount `json:"day_count"`
+
+	// FaceValue Price of one unit on issued_on, in minor units of the quote currency.
+	FaceValue int64 `json:"face_value"`
+
+	// IndexId The index the security follows; absent for a pre-fixed security.
+	IndexId   *string            `json:"index_id,omitempty"`
+	IssuedOn  openapi_types.Date `json:"issued_on"`
+	MaturesOn openapi_types.Date `json:"matures_on"`
+
+	// PercentOfIndexBp 10000 is 100% of the index; 10000 when omitted.
+	PercentOfIndexBp *int `json:"percent_of_index_bp,omitempty"`
+
+	// SpreadBp Annual spread over the index, or the annual rate of a pre-fixed security; 0 when omitted.
+	SpreadBp *int `json:"spread_bp,omitempty"`
 }
 
 // Holiday defines model for Holiday.
@@ -173,17 +221,21 @@ type Instrument struct {
 	// QuoteCurrency Absent for currencies.
 	QuoteCurrency *string        `json:"quote_currency,omitempty"`
 	Scale         int            `json:"scale"`
+	Subtype       *string        `json:"subtype,omitempty"`
 	Type          InstrumentType `json:"type"`
 }
 
 // InstrumentInput defines model for InstrumentInput.
 type InstrumentInput struct {
-	Code          string         `json:"code"`
-	Exchange      *string        `json:"exchange,omitempty"`
-	Name          string         `json:"name"`
-	QuoteCurrency string         `json:"quote_currency"`
-	Scale         int            `json:"scale"`
-	Type          InstrumentType `json:"type"`
+	Code          string  `json:"code"`
+	Exchange      *string `json:"exchange,omitempty"`
+	Name          string  `json:"name"`
+	QuoteCurrency string  `json:"quote_currency"`
+	Scale         int     `json:"scale"`
+
+	// Subtype Refines the type for the owner's jurisdiction, such as cri, cdb or equity_fund (investments design 4.1).
+	Subtype *string        `json:"subtype,omitempty"`
+	Type    InstrumentType `json:"type"`
 }
 
 // InstrumentList defines model for InstrumentList.
@@ -258,6 +310,9 @@ type Problem struct {
 // Example: 5.4830
 type Rate = string
 
+// TermsDayCount defines model for TermsDayCount.
+type TermsDayCount string
+
 // ListHolidaysParams defines parameters for ListHolidays.
 type ListHolidaysParams struct {
 	Year int `form:"year" json:"year"`
@@ -284,6 +339,9 @@ type ImportPricesMultipartBody struct {
 // DefineInstrumentJSONRequestBody defines body for DefineInstrument for application/json ContentType.
 type DefineInstrumentJSONRequestBody = InstrumentInput
 
+// PutInstrumentTermsJSONRequestBody defines body for PutInstrumentTerms for application/json ContentType.
+type PutInstrumentTermsJSONRequestBody = FixedIncomeTermsInput
+
 // RecordPriceJSONRequestBody defines body for RecordPrice for application/json ContentType.
 type RecordPriceJSONRequestBody = PriceInput
 
@@ -307,6 +365,12 @@ type ServerInterface interface {
 	// GetInstrument One instrument.
 	// (GET /instruments/{code})
 	GetInstrument(w http.ResponseWriter, r *http.Request, code string)
+	// GetInstrumentTerms The terms of a fixed income instrument (investments design 4.2).
+	// (GET /instruments/{code}/terms)
+	GetInstrumentTerms(w http.ResponseWriter, r *http.Request, code string)
+	// PutInstrumentTerms Set the terms of a fixed income instrument, replacing the earlier ones and the prices accrued from them.
+	// (PUT /instruments/{code}/terms)
+	PutInstrumentTerms(w http.ResponseWriter, r *http.Request, code string)
 	// ListPrices The chosen price of each date with prices in [from, to], at most 366 days (P8 amendment A60).
 	// (GET /prices)
 	ListPrices(w http.ResponseWriter, r *http.Request, params ListPricesParams)
@@ -447,6 +511,58 @@ func (siw *ServerInterfaceWrapper) GetInstrument(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetInstrument(w, r, code)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetInstrumentTerms operation middleware
+func (siw *ServerInterfaceWrapper) GetInstrumentTerms(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "code" -------------
+	var code string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "code", r.PathValue("code"), &code, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "code", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetInstrumentTerms(w, r, code)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PutInstrumentTerms operation middleware
+func (siw *ServerInterfaceWrapper) PutInstrumentTerms(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "code" -------------
+	var code string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "code", r.PathValue("code"), &code, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "code", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PutInstrumentTerms(w, r, code)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -681,6 +797,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instruments", wrapper.ListInstruments)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/instruments", wrapper.DefineInstrument)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instruments/{code}", wrapper.GetInstrument)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instruments/{code}/terms", wrapper.GetInstrumentTerms)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/instruments/{code}/terms", wrapper.PutInstrumentTerms)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/prices", wrapper.ListPrices)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/prices", wrapper.RecordPrice)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/prices/import", wrapper.ImportPrices)
@@ -988,6 +1106,139 @@ func (response GetInstrument404ApplicationProblemPlusJSONResponse) VisitGetInstr
 	return err
 }
 
+type GetInstrumentTermsRequestObject struct {
+	Code string `json:"code"`
+}
+
+type GetInstrumentTermsResponseObject interface {
+	VisitGetInstrumentTermsResponse(w http.ResponseWriter) error
+}
+
+type GetInstrumentTerms200JSONResponse FixedIncomeTerms
+
+func (response GetInstrumentTerms200JSONResponse) VisitGetInstrumentTermsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetInstrumentTerms401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetInstrumentTerms401ApplicationProblemPlusJSONResponse) VisitGetInstrumentTermsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetInstrumentTerms404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetInstrumentTerms404ApplicationProblemPlusJSONResponse) VisitGetInstrumentTermsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutInstrumentTermsRequestObject struct {
+	Code string `json:"code"`
+	Body *PutInstrumentTermsJSONRequestBody
+}
+
+type PutInstrumentTermsResponseObject interface {
+	VisitPutInstrumentTermsResponse(w http.ResponseWriter) error
+}
+
+type PutInstrumentTerms200JSONResponse FixedIncomeTerms
+
+func (response PutInstrumentTerms200JSONResponse) VisitPutInstrumentTermsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutInstrumentTerms400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response PutInstrumentTerms400ApplicationProblemPlusJSONResponse) VisitPutInstrumentTermsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutInstrumentTerms401ApplicationProblemPlusJSONResponse Problem
+
+func (response PutInstrumentTerms401ApplicationProblemPlusJSONResponse) VisitPutInstrumentTermsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutInstrumentTerms404ApplicationProblemPlusJSONResponse Problem
+
+func (response PutInstrumentTerms404ApplicationProblemPlusJSONResponse) VisitPutInstrumentTermsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PutInstrumentTerms422ApplicationProblemPlusJSONResponse Problem
+
+func (response PutInstrumentTerms422ApplicationProblemPlusJSONResponse) VisitPutInstrumentTermsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListPricesRequestObject struct {
 	Params ListPricesParams
 }
@@ -1217,6 +1468,12 @@ type StrictServerInterface interface {
 	// GetInstrument One instrument.
 	// (GET /instruments/{code})
 	GetInstrument(ctx context.Context, request GetInstrumentRequestObject) (GetInstrumentResponseObject, error)
+	// GetInstrumentTerms The terms of a fixed income instrument (investments design 4.2).
+	// (GET /instruments/{code}/terms)
+	GetInstrumentTerms(ctx context.Context, request GetInstrumentTermsRequestObject) (GetInstrumentTermsResponseObject, error)
+	// PutInstrumentTerms Set the terms of a fixed income instrument, replacing the earlier ones and the prices accrued from them.
+	// (PUT /instruments/{code}/terms)
+	PutInstrumentTerms(ctx context.Context, request PutInstrumentTermsRequestObject) (PutInstrumentTermsResponseObject, error)
 	// ListPrices The chosen price of each date with prices in [from, to], at most 366 days (P8 amendment A60).
 	// (GET /prices)
 	ListPrices(ctx context.Context, request ListPricesRequestObject) (ListPricesResponseObject, error)
@@ -1394,6 +1651,65 @@ func (sh *strictHandler) GetInstrument(w http.ResponseWriter, r *http.Request, c
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetInstrumentResponseObject); ok {
 		if err := validResponse.VisitGetInstrumentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetInstrumentTerms operation middleware
+func (sh *strictHandler) GetInstrumentTerms(w http.ResponseWriter, r *http.Request, code string) {
+	var request GetInstrumentTermsRequestObject
+
+	request.Code = code
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetInstrumentTerms(ctx, request.(GetInstrumentTermsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetInstrumentTerms")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetInstrumentTermsResponseObject); ok {
+		if err := validResponse.VisitGetInstrumentTermsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PutInstrumentTerms operation middleware
+func (sh *strictHandler) PutInstrumentTerms(w http.ResponseWriter, r *http.Request, code string) {
+	var request PutInstrumentTermsRequestObject
+
+	request.Code = code
+
+	var body PutInstrumentTermsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PutInstrumentTerms(ctx, request.(PutInstrumentTermsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PutInstrumentTerms")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PutInstrumentTermsResponseObject); ok {
+		if err := validResponse.VisitPutInstrumentTermsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

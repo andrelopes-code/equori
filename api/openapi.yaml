@@ -1396,6 +1396,53 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /instruments/{code}/terms:
+    parameters:
+      - name: code
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [marketdata]
+      operationId: getInstrumentTerms
+      summary: The terms of a fixed income instrument (investments design 4.2).
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FixedIncomeTerms"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    put:
+      tags: [marketdata]
+      operationId: putInstrumentTerms
+      summary: Set the terms of a fixed income instrument, replacing the earlier ones and the prices accrued from them.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FixedIncomeTermsInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FixedIncomeTerms"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /prices:
     get:
       tags: [marketdata]
@@ -5608,6 +5655,9 @@ components:
         exchange:
           type: string
           pattern: "^[A-Z0-9]{4}$"
+        subtype:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
     InstrumentInput:
       type: object
       additionalProperties: false
@@ -5631,6 +5681,10 @@ components:
         exchange:
           type: string
           pattern: "^[A-Z0-9]{4}$"
+        subtype:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+          description: Refines the type for the owner's jurisdiction, such as cri, cdb or equity_fund (investments design 4.1).
     InstrumentList:
       type: object
       required: [items]
@@ -5639,6 +5693,61 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Instrument"
+    FixedIncomeTermsInput:
+      type: object
+      additionalProperties: false
+      required: [issued_on, matures_on, day_count, face_value]
+      properties:
+        issued_on:
+          type: string
+          format: date
+        matures_on:
+          type: string
+          format: date
+        index_id:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+          description: The index the security follows; absent for a pre-fixed security.
+        percent_of_index_bp:
+          type: integer
+          minimum: 1
+          description: 10000 is 100% of the index; 10000 when omitted.
+        spread_bp:
+          type: integer
+          minimum: 0
+          description: Annual spread over the index, or the annual rate of a pre-fixed security; 0 when omitted.
+        day_count:
+          $ref: "#/components/schemas/TermsDayCount"
+        face_value:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Price of one unit on issued_on, in minor units of the quote currency.
+    FixedIncomeTerms:
+      type: object
+      required: [issued_on, matures_on, percent_of_index_bp, spread_bp, day_count, face_value]
+      properties:
+        issued_on:
+          type: string
+          format: date
+        matures_on:
+          type: string
+          format: date
+        index_id:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+        percent_of_index_bp:
+          type: integer
+        spread_bp:
+          type: integer
+        day_count:
+          $ref: "#/components/schemas/TermsDayCount"
+        face_value:
+          type: integer
+          format: int64
+    TermsDayCount:
+      type: string
+      enum: [bus252, act365]
     Rate:
       type: string
       description: Positive exact decimal with at most 12 decimals (ADR 005).
