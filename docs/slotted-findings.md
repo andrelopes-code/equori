@@ -19,6 +19,7 @@ Registry of the findings reported to the Slotted owner (`web/CLAUDE.md`, "Slotte
 | AppShellFooter drops its ref when render is given                                                   | open     |
 | Autofill tint is painted on the input element, over the frame's border                              | open     |
 | ButtonLink render props cannot be spread onto a router link                                         | open     |
+| Closing a drawer to navigate is undone by the drawer's history step back                            | open     |
 | CommandPalette has no backdrop-filter token for a material surface                                  | open     |
 | currency-field holds the amount as a float in major units                                           | open     |
 | Data-grid re-renders every row when messages or a renderer changes identity                         | open     |

@@ -23,7 +23,7 @@ import {
   ListItemStart,
 } from "@slotted/react/list-item";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import { useApi } from "@/api/api-context";
@@ -78,6 +78,12 @@ export function MoreSheet({
   const { language } = useAppLocaleState();
   const chooseLanguage = useChooseLanguage();
   const [open, setOpen] = useState(false);
+  // Workaround for Slotted finding "Closing a drawer to navigate is undone by the drawer's history step back":
+  // the drawer holds one history entry while it is open and releases it with a step back once it
+  // has left, so a navigation made before that step is undone by it. The destination waits.
+  const destination = useRef<(typeof listed)[number]["to"] | undefined>(
+    undefined,
+  );
   const { data: me } = useQuery({ ...meQuery(useApi()), staleTime: Infinity });
 
   const change = (next: boolean) => {
@@ -86,7 +92,17 @@ export function MoreSheet({
   };
 
   return (
-    <Drawer side="bottom" open={open} onOpenChange={change}>
+    <Drawer
+      side="bottom"
+      open={open}
+      onOpenChange={change}
+      onOpenChangeComplete={(settledOpen) => {
+        if (settledOpen || destination.current === undefined) return;
+        const to = destination.current;
+        destination.current = undefined;
+        void navigate({ to });
+      }}
+    >
       <DrawerTrigger render={trigger} />
       <DrawerPanel className={styles.sheet}>
         <DrawerResizer />
@@ -99,19 +115,19 @@ export function MoreSheet({
         <DrawerBody>
           <div className={styles.body}>
             <List aria-label={t("more.title")} inset>
-              {listed.map((destination) => (
-                <ListItem key={destination.key} size="lg">
+              {listed.map((target) => (
+                <ListItem key={target.key} size="lg">
                   <ListItemLink
-                    href={destination.to}
+                    href={target.to}
                     onClick={(event) => {
                       event.preventDefault();
+                      destination.current = target.to;
                       change(false);
-                      void navigate({ to: destination.to });
                     }}
                   >
-                    {mark(destination.icon)}
+                    {mark(target.icon)}
                     <ListItemBody>
-                      <ListItemLabel>{t(destination.label)}</ListItemLabel>
+                      <ListItemLabel>{t(target.label)}</ListItemLabel>
                     </ListItemBody>
                   </ListItemLink>
                 </ListItem>
