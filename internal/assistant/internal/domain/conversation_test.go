@@ -1,11 +1,9 @@
-package domain_test
+package domain
 
 import (
 	"strings"
 	"testing"
 	"unicode/utf8"
-
-	"github.com/andrelopes-code/equori/internal/assistant/internal/domain"
 )
 
 func TestTitle(t *testing.T) {
@@ -22,7 +20,7 @@ func TestTitle(t *testing.T) {
 			}
 		}},
 		{"cuts at a word boundary", words, func(t *testing.T, got string) {
-			if n := utf8.RuneCountInString(got); n > domain.MaxTitle || strings.HasSuffix(got, " ") || !strings.HasPrefix(words, got+" ") {
+			if n := utf8.RuneCountInString(got); n > MaxTitle || strings.HasSuffix(got, " ") || !strings.HasPrefix(words, got+" ") {
 				t.Errorf("got %q (%d runes)", got, n)
 			}
 		}},
@@ -33,6 +31,6 @@ func TestTitle(t *testing.T) {
 		}},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) { tt.check(t, domain.Title(tt.in)) })
+		t.Run(tt.name, func(t *testing.T) { tt.check(t, Title(tt.in)) })
 	}
 }

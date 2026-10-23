@@ -1,21 +1,19 @@
-package domain_test
+package domain
 
 import (
 	"testing"
 	"time"
-
-	"github.com/andrelopes-code/equori/internal/assistant/internal/domain"
 )
 
 func TestExpired(t *testing.T) {
 	t.Parallel()
 	at := func(h, m, s int) time.Time { return time.Date(2026, 10, 23, h, m, s, 0, time.UTC) }
-	pending := domain.Proposal{Status: domain.ProposalPending, CreatedAt: at(10, 0, 0), ExpiresAt: at(10, 15, 0)}
+	pending := Proposal{Status: ProposalPending, CreatedAt: at(10, 0, 0), ExpiresAt: at(10, 15, 0)}
 	executed := pending
-	executed.Status = domain.ProposalExecuted
+	executed.Status = ProposalExecuted
 	tests := []struct {
 		name string
-		p    domain.Proposal
+		p    Proposal
 		now  time.Time
 		want bool
 	}{
