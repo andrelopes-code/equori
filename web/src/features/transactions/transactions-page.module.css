@@ -16,8 +16,12 @@
     min-block-size: 0;
   }
 
+  /* One track that may shrink: with the implicit auto track the grid's own width, which is the
+     sum of its columns until it drops one, sets the track and pushes the list past the page, so
+     the grid never measures a width narrow enough to drop a column. */
   .list {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     min-block-size: 0;
     min-inline-size: 0;
   }
