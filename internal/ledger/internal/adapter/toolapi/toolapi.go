@@ -17,7 +17,7 @@ func Tools(svc *app.Service) []tool.Tool {
 	return []tool.Tool{
 		listAccounts(svc), getBalances(svc), searchTransactions(svc), getTransaction(svc), listPayeesAndTags(svc),
 		getAccountDetails(svc), getStatement(svc), recordTransaction(svc), changeTransaction(svc),
-		categorizeTransactions(svc), voidTransaction(svc),
+		categorizeTransactions(svc), voidTransaction(svc), manageAccountsAndPayees(svc), reconcileAccount(svc), recordInvestment(svc),
 	}
 }
 
