@@ -19,18 +19,22 @@ import (
 	"github.com/andrelopes-code/equori/internal/marketdata"
 	"github.com/andrelopes-code/equori/internal/planning/internal/adapter/httpapi"
 	"github.com/andrelopes-code/equori/internal/planning/internal/adapter/postgres"
+	"github.com/andrelopes-code/equori/internal/planning/internal/adapter/toolapi"
 	"github.com/andrelopes-code/equori/internal/planning/internal/app"
 	"github.com/andrelopes-code/equori/internal/planning/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
+	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
 type Module struct {
-	http *httpapi.Server
-	svc  *app.Service
-	log  *slog.Logger
+	http   *httpapi.Server
+	svc    *app.Service
+	log    *slog.Logger
+	ledger *ledger.Module
+	clk    clock.Clock
 }
 
 // consumer names the module's outbox subscriptions (ADR 006).
@@ -38,7 +42,7 @@ const consumer = "planning"
 
 func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, md *marketdata.Module, profiles Profiles, returns app.Returns, clk clock.Clock, log *slog.Logger) *Module {
 	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l}, calendarPort{md}, profiles, pricesPort{md}, returns, clk)
-	m := &Module{http: httpapi.NewServer(svc, log), svc: svc, log: log}
+	m := &Module{http: httpapi.NewServer(svc, log), svc: svc, log: log, ledger: l, clk: clk}
 	// P7 amendment A51: every change of a transaction can change the occurrence it realizes.
 	for _, t := range []string{ledger.EventTransactionRecorded, ledger.EventTransactionCorrected, ledger.EventTransactionCategorized, ledger.EventTransactionVoided} {
 		dispatcher.Subscribe(consumer, t, m.handle)
@@ -75,6 +79,30 @@ func (m *Module) handlePayeeMerge(ctx context.Context, tx pgx.Tx, e outbox.Deliv
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
 	return m.svc.WithRepository(postgres.NewTxRepository(tx)).HandlePayeesMerged(ctx, e.UserID, payload.From, payload.Into)
+}
+
+// Tools returns the planning module's tools for language models (ADR 012).
+func (m *Module) Tools() tool.Group {
+	return tool.Group{Tools: toolapi.Tools(m.svc, toolLedger{m.ledger}, m.clk), Errors: tool.FromProblem(httpapi.ToProblem)}
+}
+
+// toolLedger gives the tools the names and instruments of the user's accounts and categories.
+type toolLedger struct{ l *ledger.Module }
+
+func (t toolLedger) Accounts(ctx context.Context, userID int64) (map[uuid.UUID]toolapi.Account, error) {
+	accounts, _, err := t.l.CaptureVocabulary(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[uuid.UUID]toolapi.Account, len(accounts))
+	for _, a := range accounts {
+		out[a.ID] = toolapi.Account{Name: a.Name, Instrument: a.Instrument}
+	}
+	return out, nil
+}
+
+func (t toolLedger) BaseCurrency(ctx context.Context, userID int64) (money.Currency, error) {
+	return t.l.BaseCurrency(ctx, userID)
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }

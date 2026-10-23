@@ -45,6 +45,19 @@ func TestToolOutputBudget(t *testing.T) {
 		}
 	}
 
+	h.MustDo(http.MethodPost, "/api/v1/budgets", map[string]any{
+		"category_id": categories[0], "amount": apitest.BRL(180000), "effective_from": "2026-10", "rollover": true,
+	}, http.StatusCreated, nil)
+	h.MustDo(http.MethodPost, "/api/v1/goals", map[string]any{
+		"name": "Emergency fund", "target": apitest.BRL(3000000), "due_on": "2027-06-30", "account_ids": []string{checking},
+	}, http.StatusCreated, nil)
+	for i := range 6 {
+		h.MustDo(http.MethodPost, "/api/v1/schedules", map[string]any{
+			"kind": "bill", "account_id": checking, "counterpart_id": categories[i], "description": fmt.Sprintf("Assinatura mensal %02d", i),
+			"amount": apitest.BRL(3990), "recurrence": map[string]any{"frequency": "monthly", "interval": 1, "day_of_month": 5 + i, "start": "2026-10-23"},
+		}, http.StatusCreated, nil)
+	}
+
 	h.Dispatch()
 
 	tests := []struct {
@@ -59,6 +72,8 @@ func TestToolOutputBudget(t *testing.T) {
 		{"get_transaction", map[string]any{"transaction_id": first}},
 		{"get_account_details", map[string]any{"account_id": checking}},
 		{"get_account_history", map[string]any{"account_id": checking, "view": "balances", "from": "2026-09-01", "to": "2026-10-30"}},
+		{"list_schedules", map[string]any{}},
+		{"get_budgets_and_goals", map[string]any{}},
 	}
 	for _, tt := range tests {
 		r := h.Tool(tt.tool, tt.args)

@@ -27,7 +27,7 @@ type Server struct {
 }
 
 func NewServer(svc *app.Service, log *slog.Logger) *Server {
-	return &Server{svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: toProblem}}
+	return &Server{svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: ToProblem}}
 }
 
 func (s *Server) Register(mux *http.ServeMux) {
@@ -49,8 +49,8 @@ func fieldProblem(status int, code string, field, message string) problem.Detail
 	return d
 }
 
-// toProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).
-func toProblem(err error) (problem.Details, bool) {
+// ToProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).
+func ToProblem(err error) (problem.Details, bool) {
 	if pe, ok := errors.AsType[*paramError](err); ok {
 		return fieldProblem(http.StatusBadRequest, "invalid_request", pe.field, pe.message), true
 	}

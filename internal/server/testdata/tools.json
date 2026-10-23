@@ -956,6 +956,232 @@
     }
   },
   {
+    "name": "get_budgets_and_goals",
+    "description": "Returns the monthly budgets with planned, carried, spent and available amounts for a month, and the goals with their target, current value, progress and trailing return. Use it for how a budget or goal is going. Do not use it for spending by category without a budget: get_category_totals does.",
+    "effect": "read_only",
+    "idempotent": true,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "month": {
+          "type": "string",
+          "description": "month of the budget progress; the current month when absent; written YYYY-MM"
+        },
+        "kind": {
+          "type": "string",
+          "description": "budgets, goals or both; both when absent",
+          "enum": [
+            "budgets",
+            "goals",
+            "both"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "month": {
+          "type": "string"
+        },
+        "budgets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "budget_id": {
+                "type": "string"
+              },
+              "category_name": {
+                "type": "string"
+              },
+              "planned": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "carried": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "spent": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "available": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "rollover": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "budget_id",
+              "category_name",
+              "planned",
+              "carried",
+              "spent",
+              "available",
+              "rollover"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "goals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "goal_id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "target": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "current": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "remaining": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "progress_bp": {
+                "type": "integer"
+              },
+              "due_on": {
+                "type": "string",
+                "format": "date"
+              },
+              "trailing_return_bp": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "goal_id",
+              "name",
+              "target",
+              "current",
+              "remaining",
+              "progress_bp",
+              "due_on"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "month",
+        "budgets",
+        "goals"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "get_category_totals",
     "description": "Totals the income or expense categories in a period, each with its own total and the total of its subtree, in category name order; only categories with postings and their ancestors are listed. Use it for how much was spent or earned by category. Do not use it for the transactions behind a total: search_transactions with account_id lists them.",
     "effect": "read_only",
@@ -3443,6 +3669,316 @@
     }
   },
   {
+    "name": "list_schedules",
+    "description": "Lists recurring schedules (bills, income, subscriptions, transfers, savings) with their terms, the occurrences expected or realized in a period, or the total committed to a month. Use it for upcoming bills, subscriptions and what is due. Do not use it for budgets or goals: get_budgets_and_goals does.",
+    "effect": "read_only",
+    "idempotent": true,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "schedule_id": {
+          "type": "string",
+          "description": "one schedule, with its terms versions and pauses"
+        },
+        "from": {
+          "type": "string",
+          "description": "first date of the occurrences listed; today when absent",
+          "format": "date"
+        },
+        "to": {
+          "type": "string",
+          "description": "last date of the occurrences listed; 31 days after from when absent; at most 366 days after from",
+          "format": "date"
+        },
+        "state": {
+          "type": "string",
+          "description": "keep occurrences in this state",
+          "enum": [
+            "expected",
+            "overdue",
+            "realized",
+            "skipped"
+          ]
+        },
+        "month": {
+          "type": "string",
+          "description": "return the installments and expected occurrences committed to this month; written YYYY-MM"
+        },
+        "limit": {
+          "type": "integer",
+          "description": "items per page, 1 to 50; 20 when absent"
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor of the previous page; absent for the first page"
+        }
+      },
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "schedules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "schedule_id": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string"
+              },
+              "account_name": {
+                "type": "string"
+              },
+              "counterpart_name": {
+                "type": "string"
+              },
+              "amount": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "frequency": {
+                "type": "string"
+              },
+              "next_expected_on": {
+                "type": "string",
+                "format": "date"
+              },
+              "terms": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "effective_from": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "amount": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "description": "decimal amount in the instrument's scale, such as -1234.56"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "description": "currency or instrument code"
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "frequency": {
+                      "type": "string"
+                    },
+                    "interval": {
+                      "type": "integer"
+                    },
+                    "day_of_month": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "effective_from",
+                    "amount",
+                    "frequency",
+                    "interval"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "pauses": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "from": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "to": {
+                      "type": "string",
+                      "format": "date"
+                    }
+                  },
+                  "required": [
+                    "from",
+                    "to"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "schedule_id",
+              "description",
+              "kind",
+              "account_name",
+              "counterpart_name",
+              "amount",
+              "frequency"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "occurrences": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "occurrence_id": {
+                "type": "string"
+              },
+              "schedule_id": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "expected_on": {
+                "type": "string",
+                "format": "date"
+              },
+              "expected_amount": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "state": {
+                "type": "string"
+              },
+              "transaction_id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "occurrence_id",
+              "schedule_id",
+              "description",
+              "expected_on",
+              "expected_amount",
+              "state"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "committed": {
+          "type": "object",
+          "properties": {
+            "month": {
+              "type": "string"
+            },
+            "installments": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
+            "occurrences": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
+            "total": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "month",
+            "installments",
+            "occurrences",
+            "total"
+          ],
+          "additionalProperties": false
+        },
+        "next_cursor": {
+          "type": "string",
+          "description": "present when more occurrences follow; pass it as cursor"
+        }
+      },
+      "required": [
+        "schedules",
+        "occurrences"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "manage_accounts_and_payees",
     "description": "Proposes a change to accounts, categories, payees or institutions: create, rename or move an account or category, close or reopen it, merge a category or payee into another, create or rename a payee, create an institution. Use it when the user asks to organize accounts, categories or payees. Do not use it for card settings: manage_card does. Merging cannot be undone; the user confirms every change.",
     "effect": "destructive",
@@ -3550,6 +4086,87 @@
         "id",
         "name"
       ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "manage_budget_or_goal",
+    "description": "Proposes creating a monthly budget for a category, setting a budget's amount from a month on, or creating, changing or deleting a goal. Use it when the user sets a spending limit or a savings target. Do not use it for recurring payments: manage_schedule does. Deleting a goal cannot be undone; the user confirms every change.",
+    "effect": "destructive",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "description": "operation to propose",
+          "enum": [
+            "create_budget",
+            "set_budget_amount",
+            "create_goal",
+            "update_goal",
+            "delete_goal"
+          ]
+        },
+        "budget_id": {
+          "type": "string",
+          "description": "for set_budget_amount: budget from get_budgets_and_goals"
+        },
+        "goal_id": {
+          "type": "string",
+          "description": "for update_goal and delete_goal: goal from get_budgets_and_goals"
+        },
+        "category_id": {
+          "type": "string",
+          "description": "for create_budget: expense category from list_accounts"
+        },
+        "amount": {
+          "type": "string",
+          "description": "for create_budget and set_budget_amount: positive monthly amount; for create_goal and update_goal: positive target"
+        },
+        "month": {
+          "type": "string",
+          "description": "for create_budget and set_budget_amount: first month the amount applies to; written YYYY-MM"
+        },
+        "rollover": {
+          "type": "boolean",
+          "description": "for create_budget: the unspent amount carries to the next month"
+        },
+        "name": {
+          "type": "string",
+          "description": "for create_goal and update_goal: goal name"
+        },
+        "due_on": {
+          "type": "string",
+          "description": "for create_goal and update_goal: date the target should be reached",
+          "format": "date"
+        },
+        "account_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "for create_goal and update_goal: balance accounts whose value counts toward the goal"
+        }
+      },
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "budget_id": {
+          "type": "string"
+        },
+        "goal_id": {
+          "type": "string"
+        },
+        "deleted": {
+          "type": "boolean"
+        }
+      },
       "additionalProperties": false
     }
   },
@@ -4046,6 +4663,73 @@
     }
   },
   {
+    "name": "manage_occurrence",
+    "description": "Proposes an action on one occurrence of a schedule: link it to the transaction that paid it, skip it, move it to another date, or release a linked transaction. Use it when the user says a bill was paid, will be skipped or moved. Do not use it to change every future occurrence: manage_schedule does. The user confirms first.",
+    "effect": "write",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "occurrence_id": {
+          "type": "string",
+          "description": "occurrence from list_schedules"
+        },
+        "action": {
+          "type": "string",
+          "description": "operation to propose",
+          "enum": [
+            "realize",
+            "skip",
+            "move",
+            "unrealize"
+          ]
+        },
+        "transaction_id": {
+          "type": "string",
+          "description": "for realize: the transaction that fulfilled the occurrence, from search_transactions"
+        },
+        "date": {
+          "type": "string",
+          "description": "for move: new date",
+          "format": "date"
+        },
+        "reason": {
+          "type": "string",
+          "description": "for skip: why it is skipped"
+        }
+      },
+      "required": [
+        "occurrence_id",
+        "action"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "occurrence_id": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "expected_on": {
+          "type": "string",
+          "format": "date"
+        },
+        "transaction_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "occurrence_id",
+        "state",
+        "expected_on"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "manage_rule",
     "description": "Proposes a change to automatic categorization: create, change, reorder or delete a rule; accept or dismiss a suggested rule; run the rules over uncategorized transactions; map an aggregator's category; create, change or delete a payee alias. Use it when the user wants future transactions categorized automatically. Do not use it for transactions already recorded one by one: categorize_transactions does. The user confirms every change.",
     "effect": "destructive",
@@ -4153,6 +4837,370 @@
           "type": "boolean"
         }
       },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "manage_schedule",
+    "description": "Proposes creating a recurring schedule or changing one: new terms from a date, a pause, or an end. Use it when the user sets up or changes a recurring bill, income, subscription, transfer or saving. Do not use it for one occurrence: manage_occurrence does. The user confirms first.",
+    "effect": "write",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "description": "operation to propose",
+          "enum": [
+            "create",
+            "change_terms",
+            "pause",
+            "end"
+          ]
+        },
+        "schedule_id": {
+          "type": "string",
+          "description": "for change_terms, pause and end: schedule from list_schedules"
+        },
+        "kind": {
+          "type": "string",
+          "description": "for create: kind of schedule",
+          "enum": [
+            "bill",
+            "income",
+            "subscription",
+            "transfer",
+            "savings"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "description": "for create: description of each transaction"
+        },
+        "account_id": {
+          "type": "string",
+          "description": "for create: balance account the money leaves or reaches"
+        },
+        "counterpart_id": {
+          "type": "string",
+          "description": "for create: category, or the other account of a transfer"
+        },
+        "payee_id": {
+          "type": "string",
+          "description": "for create: payee from list_payees_and_tags"
+        },
+        "amount": {
+          "type": "string",
+          "description": "for create and change_terms: positive amount of each occurrence"
+        },
+        "frequency": {
+          "type": "string",
+          "description": "for create and change_terms: repetition unit",
+          "enum": [
+            "daily",
+            "weekly",
+            "monthly",
+            "yearly"
+          ]
+        },
+        "interval": {
+          "type": "integer",
+          "description": "for create and change_terms: repeat every this many units; 1 when absent"
+        },
+        "day_of_month": {
+          "type": "integer",
+          "description": "for monthly schedules: day of the month"
+        },
+        "start": {
+          "type": "string",
+          "description": "for create: date of the first occurrence",
+          "format": "date"
+        },
+        "until": {
+          "type": "string",
+          "description": "for create: last possible date; absent for no end",
+          "format": "date"
+        },
+        "from": {
+          "type": "string",
+          "description": "for change_terms: first date the new terms apply; for pause: first paused date; for end: first date without occurrences",
+          "format": "date"
+        },
+        "to": {
+          "type": "string",
+          "description": "for pause: last paused date",
+          "format": "date"
+        }
+      },
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "schedule_id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "account_name": {
+          "type": "string"
+        },
+        "counterpart_name": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "description": "decimal amount in the instrument's scale, such as -1234.56"
+            },
+            "currency": {
+              "type": "string",
+              "description": "currency or instrument code"
+            }
+          },
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        "frequency": {
+          "type": "string"
+        },
+        "next_expected_on": {
+          "type": "string",
+          "format": "date"
+        },
+        "terms": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "effective_from": {
+                "type": "string",
+                "format": "date"
+              },
+              "amount": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "frequency": {
+                "type": "string"
+              },
+              "interval": {
+                "type": "integer"
+              },
+              "day_of_month": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "effective_from",
+              "amount",
+              "frequency",
+              "interval"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "pauses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string",
+                "format": "date"
+              },
+              "to": {
+                "type": "string",
+                "format": "date"
+              }
+            },
+            "required": [
+              "from",
+              "to"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "schedule_id",
+        "description",
+        "kind",
+        "account_name",
+        "counterpart_name",
+        "amount",
+        "frequency"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "project_balance",
+    "description": "Projects the balance of an account to a future date from its schedules, with each expected occurrence on the way. Use it for will there be enough money on a date. Do not use it for past balances: get_account_history does.",
+    "effect": "read_only",
+    "idempotent": true,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "type": "string",
+          "description": "balance account from list_accounts"
+        },
+        "to": {
+          "type": "string",
+          "description": "last date projected, after today and at most 12 months ahead",
+          "format": "date"
+        }
+      },
+      "required": [
+        "account_id",
+        "to"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "account_name": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string",
+          "format": "date"
+        },
+        "to": {
+          "type": "string",
+          "format": "date"
+        },
+        "opening": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "description": "decimal amount in the instrument's scale, such as -1234.56"
+            },
+            "currency": {
+              "type": "string",
+              "description": "currency or instrument code"
+            }
+          },
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        "closing": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "description": "decimal amount in the instrument's scale, such as -1234.56"
+            },
+            "currency": {
+              "type": "string",
+              "description": "currency or instrument code"
+            }
+          },
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "description": {
+                "type": "string"
+              },
+              "amount": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "balance": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "date",
+              "description",
+              "amount",
+              "balance"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "account_name",
+        "from",
+        "to",
+        "opening",
+        "closing",
+        "points"
+      ],
       "additionalProperties": false
     }
   },

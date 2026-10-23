@@ -149,3 +149,16 @@ func (s *Service) Unrealize(ctx context.Context, userID int64, id uuid.UUID) (Oc
 func (s *Service) view(o domain.Occurrence, sch domain.Schedule) OccurrenceView {
 	return OccurrenceView{Occurrence: o, Shown: o.Shown(s.clk.Today(), sch.GraceDays), Currency: sch.Currency}
 }
+
+// Occurrence reads one occurrence of the user.
+func (s *Service) Occurrence(ctx context.Context, userID int64, id uuid.UUID) (OccurrenceView, error) {
+	o, err := s.repo.LockOccurrence(ctx, userID, id)
+	if err != nil {
+		return OccurrenceView{}, err
+	}
+	sch, err := s.repo.Schedule(ctx, userID, o.ScheduleID)
+	if err != nil {
+		return OccurrenceView{}, err
+	}
+	return s.view(o, sch), nil
+}
