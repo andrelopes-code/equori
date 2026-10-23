@@ -3358,8 +3358,7 @@ export interface components {
             /** Format: date */
             date: string;
             value: components["schemas"]["Rate"];
-            /** @enum {string} */
-            source: "manual" | "csv" | "bcb_ptax" | "b3_cotahist";
+            source: string;
         };
         PriceInput: {
             instrument: string;

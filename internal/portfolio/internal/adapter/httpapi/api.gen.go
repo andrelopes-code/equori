@@ -53,30 +53,6 @@ func (e InstrumentType) Valid() bool {
 	}
 }
 
-// Defines values for PriceSource.
-const (
-	B3Cotahist PriceSource = "b3_cotahist"
-	BcbPtax    PriceSource = "bcb_ptax"
-	Csv        PriceSource = "csv"
-	Manual     PriceSource = "manual"
-)
-
-// Valid indicates whether the value is a known member of the PriceSource enum.
-func (e PriceSource) Valid() bool {
-	switch e {
-	case B3Cotahist:
-		return true
-	case BcbPtax:
-		return true
-	case Csv:
-		return true
-	case Manual:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for GetAllocationParamsBy.
 const (
 	GetAllocationParamsByCurrency    GetAllocationParamsBy = "currency"
@@ -188,16 +164,13 @@ type Price struct {
 	Date            openapi_types.Date `json:"date"`
 	Instrument      string             `json:"instrument"`
 	QuoteInstrument string             `json:"quote_instrument"`
-	Source          PriceSource        `json:"source"`
+	Source          string             `json:"source"`
 
 	// Value Positive exact decimal with at most 12 decimals (ADR 005).
 	//
 	// Example: 5.4830
 	Value Rate `json:"value"`
 }
-
-// PriceSource defines model for Price.Source.
-type PriceSource string
 
 // Problem defines model for Problem.
 type Problem struct {

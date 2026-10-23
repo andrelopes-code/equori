@@ -6011,7 +6011,7 @@ components:
           $ref: "#/components/schemas/Rate"
         source:
           type: string
-          enum: [manual, csv, bcb_ptax, b3_cotahist]
+          pattern: "^[a-z0-9_]{2,40}$"
     PriceInput:
       type: object
       additionalProperties: false

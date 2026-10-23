@@ -67,6 +67,6 @@ func (s *Server) ListPrices(ctx context.Context, req ListPricesRequestObject) (L
 func toPriceAPI(p domain.Price) Price {
 	return Price{
 		Instrument: string(p.Instrument), QuoteInstrument: string(p.Quote), Date: openapi_types.Date{Time: p.Date},
-		Value: p.Value.Reduced().String(), Source: PriceSource(p.Source),
+		Value: p.Value.Reduced().String(), Source: p.Source,
 	}
 }

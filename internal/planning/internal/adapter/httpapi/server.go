@@ -100,7 +100,7 @@ func toPricesAPI(ps []app.Price) *[]Price {
 	for i, p := range ps {
 		out[i] = Price{
 			Instrument: string(p.Instrument), QuoteInstrument: string(p.Quote), Date: apiDate(p.Date),
-			Value: p.Value.Reduced().String(), Source: PriceSource(p.Source),
+			Value: p.Value.Reduced().String(), Source: p.Source,
 		}
 	}
 	return &out

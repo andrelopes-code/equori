@@ -308,7 +308,7 @@ func (s *Server) GetAccountBalance(ctx context.Context, req GetAccountBalanceReq
 		for i, p := range c.Prices {
 			prices[i] = Price{
 				Instrument: string(p.Instrument), QuoteInstrument: string(p.Quote), Date: apiDate(p.Date),
-				Value: p.Value.Reduced().String(), Source: PriceSource(p.Source),
+				Value: p.Value.Reduced().String(), Source: p.Source,
 			}
 		}
 		return GetAccountBalance200JSONResponse{

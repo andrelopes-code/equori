@@ -857,30 +857,6 @@ func (e PostingInputStatus) Valid() bool {
 	}
 }
 
-// Defines values for PriceSource.
-const (
-	PriceSourceB3Cotahist PriceSource = "b3_cotahist"
-	PriceSourceBcbPtax    PriceSource = "bcb_ptax"
-	PriceSourceCsv        PriceSource = "csv"
-	PriceSourceManual     PriceSource = "manual"
-)
-
-// Valid indicates whether the value is a known member of the PriceSource enum.
-func (e PriceSource) Valid() bool {
-	switch e {
-	case PriceSourceB3Cotahist:
-		return true
-	case PriceSourceBcbPtax:
-		return true
-	case PriceSourceCsv:
-		return true
-	case PriceSourceManual:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for StatementDetailStatus.
 const (
 	StatementDetailStatusClosed        StatementDetailStatus = "closed"
@@ -1732,16 +1708,13 @@ type Price struct {
 	Date            openapi_types.Date `json:"date"`
 	Instrument      string             `json:"instrument"`
 	QuoteInstrument string             `json:"quote_instrument"`
-	Source          PriceSource        `json:"source"`
+	Source          string             `json:"source"`
 
 	// Value Positive exact decimal with at most 12 decimals (ADR 005).
 	//
 	// Example: 5.4830
 	Value Rate `json:"value"`
 }
-
-// PriceSource defines model for Price.Source.
-type PriceSource string
 
 // Problem defines model for Problem.
 type Problem struct {

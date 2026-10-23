@@ -55,7 +55,7 @@ func (s *Server) ListPositions(ctx context.Context, req ListPositionsRequestObje
 			v := toMoney(*p.MarketValue)
 			prices := make([]Price, len(p.Prices))
 			for j, x := range p.Prices {
-				prices[j] = Price{Instrument: string(x.Instrument), QuoteInstrument: string(x.Quote), Date: date(x.Date), Value: x.Value.Reduced().String(), Source: PriceSource(x.Source)}
+				prices[j] = Price{Instrument: string(x.Instrument), QuoteInstrument: string(x.Quote), Date: date(x.Date), Value: x.Value.Reduced().String(), Source: x.Source}
 			}
 			items[i].MarketValue, items[i].Prices = &v, &prices
 		}
