@@ -16,6 +16,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/llm"
 	"github.com/andrelopes-code/equori/internal/platform/secret"
+	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
 // ChatUse is the conversational agent's use, consumed by the agent project.
@@ -84,6 +85,16 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
 	}
 	svc := app.NewService(postgres.NewRepository(pool), box, llmapi.NewModels(build), instance, uses, cfg.Clock.Now, cfg.Clock.Today, log)
 	return &Module{svc: svc, resolver: llmapi.NewResolver(svc, cfg.Instance, build, log), http: httpapi.NewServer(svc, log)}, nil
+}
+
+// UseTools sets the chat's tools; it fails when a tool that writes has no preview (spec 8.1).
+func (m *Module) UseTools(set tool.Set) error {
+	tools, err := llmapi.NewChatSet(set)
+	if err != nil {
+		return err
+	}
+	m.svc.UseTools(tools)
+	return nil
 }
 
 func (m *Module) Resolver() llm.Resolver { return m.resolver }

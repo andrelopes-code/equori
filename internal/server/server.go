@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/andrelopes-code/equori/api"
@@ -58,6 +59,8 @@ type Config struct {
 	// IndexFeeds names the enabled index feeds; FeedURLs overrides their base URLs too.
 	IndexFeeds []string
 	FeedURLs   map[string]string
+	// ExtraTools join the registry and the chat set; production passes none.
+	ExtraTools []tool.Group
 }
 
 type App struct {
@@ -124,8 +127,21 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		return nil, err
 	}
 	planningModule := planning.New(pool, dispatcher, ledgerModule, marketdataModule, identityModule, portfolioModule, clk, log)
-	tools, err := tool.NewRegistry(log, ledgerModule.Tools(), reportingModule.Tools())
+	tools, err := tool.NewRegistry(log, append([]tool.Group{ledgerModule.Tools(), reportingModule.Tools()}, cfg.ExtraTools...)...)
 	if err != nil {
+		return nil, err
+	}
+	chatTools, err := tools.Select(slices.Collect(func(yield func(string) bool) {
+		for _, t := range tools.Tools() {
+			if !yield(t.Spec().Name) {
+				return
+			}
+		}
+	})...)
+	if err != nil {
+		return nil, err
+	}
+	if err := assistantModule.UseTools(chatTools); err != nil {
 		return nil, err
 	}
 

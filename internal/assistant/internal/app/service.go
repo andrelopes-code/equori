@@ -21,6 +21,7 @@ type Service struct {
 	now      func() time.Time
 	today    func() time.Time
 	log      *slog.Logger
+	tools    Tools
 }
 
 // NewService takes the clock as now (an instant) and today (the instance's date).
@@ -196,3 +197,6 @@ func (s *Service) use(id string) (Use, bool) {
 
 // UseByID returns the declared use with the given ID.
 func (s *Service) UseByID(id string) (Use, bool) { return s.use(id) }
+
+// Now is the service clock's current instant.
+func (s *Service) Now() time.Time { return s.now() }

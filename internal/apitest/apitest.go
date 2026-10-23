@@ -28,6 +28,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
+	"github.com/andrelopes-code/equori/internal/platform/tool"
 	"github.com/andrelopes-code/equori/internal/server"
 )
 
@@ -74,6 +75,17 @@ func Today(date string) Option {
 	}
 	clk := clock.New(time.UTC, func() time.Time { return d.Add(12 * time.Hour) })
 	return func(c *server.Config) { c.Clock = &clk }
+}
+
+// Clock replaces the instance clock with now.
+func Clock(now func() time.Time) Option {
+	clk := clock.New(time.UTC, now)
+	return func(c *server.Config) { c.Clock = &clk }
+}
+
+// ExtraTools adds tool groups to the registry and the chat set.
+func ExtraTools(groups ...tool.Group) Option {
+	return func(c *server.Config) { c.ExtraTools = append(c.ExtraTools, groups...) }
 }
 
 // LLM configures providers for the whole instance, as EQUORI_GEMINI_API_KEY does.

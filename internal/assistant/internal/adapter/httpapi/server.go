@@ -57,6 +57,14 @@ func toProblem(err error) (problem.Details, bool) {
 		return d, true
 	case errors.Is(err, domain.ErrProviderNotFound):
 		return problem.New(http.StatusNotFound, "provider_not_found", err.Error()), true
+	case errors.Is(err, domain.ErrProposalNotFound):
+		return problem.New(http.StatusNotFound, "proposal_not_found", "proposal not found"), true
+	case errors.Is(err, app.ErrProposalClosed):
+		return problem.New(http.StatusConflict, "proposal_closed", "the proposal was already decided"), true
+	case errors.Is(err, app.ErrProposalExpired):
+		return problem.New(http.StatusConflict, "proposal_expired", "the proposal expired; ask the assistant again"), true
+	case errors.Is(err, app.ErrProposalStale):
+		return problem.New(http.StatusConflict, "proposal_stale", "the data changed after the proposal; ask the assistant again"), true
 	case errors.Is(err, domain.ErrUseNotFound):
 		return problem.New(http.StatusNotFound, "use_not_found", err.Error()), true
 	case errors.Is(err, app.ErrSecretKeyMissing):

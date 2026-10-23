@@ -2159,6 +2159,46 @@ paths:
                 $ref: "#/components/schemas/AssistantChat"
         "401":
           $ref: "#/components/responses/Problem"
+  /assistant/proposals/{id}/confirm:
+    post:
+      tags: [assistant]
+      operationId: confirmAssistantProposal
+      summary: Execute a pending proposal once, after checking that its data did not change.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantProposal"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+  /assistant/proposals/{id}/reject:
+    post:
+      tags: [assistant]
+      operationId: rejectAssistantProposal
+      summary: Reject a pending proposal.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantProposal"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
   /assistant/uses:
     get:
       tags: [assistant]
@@ -4645,6 +4685,45 @@ components:
         model: {type: string}
         notice: {type: string, pattern: "^[a-z0-9_]{2,40}$"}
         retry_at: {type: string, format: date-time}
+    AssistantProposal:
+      type: object
+      additionalProperties: false
+      required: [id, tool, status, preview, created_at, expires_at]
+      properties:
+        id: {type: string, format: uuid}
+        tool: {type: string, pattern: "^[a-z][a-z0-9_]{0,63}$"}
+        status: {type: string, enum: [pending, executing, executed, failed, rejected, stale, discarded, expired]}
+        preview: {$ref: "#/components/schemas/AssistantPreview"}
+        result: {description: "Tool output when executed, tool error when failed."}
+        created_at: {type: string, format: date-time}
+        expires_at: {type: string, format: date-time}
+        decided_at: {type: string, format: date-time}
+    AssistantPreview:
+      type: object
+      additionalProperties: false
+      required: [action, changes]
+      properties:
+        action: {type: string}
+        target: {type: string}
+        destructive: {type: boolean}
+        changes:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [field]
+            properties:
+              field: {type: string, pattern: "^[a-z_]{2,40}$"}
+              before: {$ref: "#/components/schemas/AssistantValue"}
+              after: {$ref: "#/components/schemas/AssistantValue"}
+    AssistantValue:
+      type: object
+      additionalProperties: false
+      properties:
+        text: {type: string}
+        amount: {type: string}
+        currency: {type: string}
+        date: {type: string, format: date}
     UsageLimitInput:
       type: object
       required: [provider_id, model]

@@ -11,6 +11,8 @@ var exposure = map[string]string{
 	"deleteProvider":                   "-llm",
 	"listProviderModels":               "-llm",
 	"getAssistantChat":                 "-llm",
+	"confirmAssistantProposal":         "-llm",
+	"rejectAssistantProposal":          "-llm",
 	"listUses":                         "-llm",
 	"setUseChain":                      "-llm",
 	"listUsage":                        "-llm",

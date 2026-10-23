@@ -4,12 +4,14 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/assistant/internal/domain"
+	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
 var (
@@ -68,4 +70,11 @@ type ConversationRepository interface {
 	RejectProposal(ctx context.Context, userID int64, id uuid.UUID, now time.Time) (bool, error)
 	AttachProposals(ctx context.Context, userID int64, messageID uuid.UUID, ids []uuid.UUID) error
 	DiscardProposals(ctx context.Context, userID int64, ids []uuid.UUID, at time.Time) error
+}
+
+// Tools is the chat's tool set: what a proposal previews, executes and classifies.
+type Tools interface {
+	Preview(ctx context.Context, name string, args json.RawMessage) (tool.Preview, tool.Result, error)
+	Call(ctx context.Context, name string, args json.RawMessage) (tool.Result, error)
+	Effect(name string) (tool.Effect, bool)
 }

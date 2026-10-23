@@ -17,6 +17,42 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for AssistantProposalStatus.
+const (
+	Discarded AssistantProposalStatus = "discarded"
+	Executed  AssistantProposalStatus = "executed"
+	Executing AssistantProposalStatus = "executing"
+	Expired   AssistantProposalStatus = "expired"
+	Failed    AssistantProposalStatus = "failed"
+	Pending   AssistantProposalStatus = "pending"
+	Rejected  AssistantProposalStatus = "rejected"
+	Stale     AssistantProposalStatus = "stale"
+)
+
+// Valid indicates whether the value is a known member of the AssistantProposalStatus enum.
+func (e AssistantProposalStatus) Valid() bool {
+	switch e {
+	case Discarded:
+		return true
+	case Executed:
+		return true
+	case Executing:
+		return true
+	case Expired:
+		return true
+	case Failed:
+		return true
+	case Pending:
+		return true
+	case Rejected:
+		return true
+	case Stale:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for Capability.
 const (
 	ImageInput       Capability = "image_input"
@@ -66,6 +102,43 @@ type AssistantChat struct {
 	Notice       *string    `json:"notice,omitempty"`
 	ProviderName *string    `json:"provider_name,omitempty"`
 	RetryAt      *time.Time `json:"retry_at,omitempty"`
+}
+
+// AssistantPreview defines model for AssistantPreview.
+type AssistantPreview struct {
+	Action  string `json:"action"`
+	Changes []struct {
+		After  *AssistantValue `json:"after,omitempty"`
+		Before *AssistantValue `json:"before,omitempty"`
+		Field  string          `json:"field"`
+	} `json:"changes"`
+	Destructive *bool   `json:"destructive,omitempty"`
+	Target      *string `json:"target,omitempty"`
+}
+
+// AssistantProposal defines model for AssistantProposal.
+type AssistantProposal struct {
+	CreatedAt time.Time          `json:"created_at"`
+	DecidedAt *time.Time         `json:"decided_at,omitempty"`
+	ExpiresAt time.Time          `json:"expires_at"`
+	Id        openapi_types.UUID `json:"id"`
+	Preview   AssistantPreview   `json:"preview"`
+
+	// Result Tool output when executed, tool error when failed.
+	Result interface{}             `json:"result,omitempty"`
+	Status AssistantProposalStatus `json:"status"`
+	Tool   string                  `json:"tool"`
+}
+
+// AssistantProposalStatus defines model for AssistantProposal.Status.
+type AssistantProposalStatus string
+
+// AssistantValue defines model for AssistantValue.
+type AssistantValue struct {
+	Amount   *string             `json:"amount,omitempty"`
+	Currency *string             `json:"currency,omitempty"`
+	Date     *openapi_types.Date `json:"date,omitempty"`
+	Text     *string             `json:"text,omitempty"`
 }
 
 // Capability defines model for Capability.
@@ -278,6 +351,12 @@ type ServerInterface interface {
 	// ListPresets Known language model services, their notices and suggested models.
 	// (GET /assistant/presets)
 	ListPresets(w http.ResponseWriter, r *http.Request)
+	// ConfirmAssistantProposal Execute a pending proposal once, after checking that its data did not change.
+	// (POST /assistant/proposals/{id}/confirm)
+	ConfirmAssistantProposal(w http.ResponseWriter, r *http.Request, id ID)
+	// RejectAssistantProposal Reject a pending proposal.
+	// (POST /assistant/proposals/{id}/reject)
+	RejectAssistantProposal(w http.ResponseWriter, r *http.Request, id ID)
 	// ListProviders The user's providers in creation order, then the instance providers; never a key.
 	// (GET /assistant/providers)
 	ListProviders(w http.ResponseWriter, r *http.Request)
@@ -335,6 +414,58 @@ func (siw *ServerInterfaceWrapper) ListPresets(w http.ResponseWriter, r *http.Re
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListPresets(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ConfirmAssistantProposal operation middleware
+func (siw *ServerInterfaceWrapper) ConfirmAssistantProposal(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ConfirmAssistantProposal(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RejectAssistantProposal operation middleware
+func (siw *ServerInterfaceWrapper) RejectAssistantProposal(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RejectAssistantProposal(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -647,6 +778,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/assistant/usage", wrapper.ListUsage)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/assistant/usage/limits", wrapper.SetUsageLimit)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/assistant/chat", wrapper.GetAssistantChat)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/assistant/proposals/{id}/confirm", wrapper.ConfirmAssistantProposal)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/assistant/proposals/{id}/reject", wrapper.RejectAssistantProposal)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/assistant/uses", wrapper.ListUses)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/assistant/uses/{use}/chain", wrapper.SetUseChain)
 
@@ -725,6 +858,138 @@ func (response ListPresets401ApplicationProblemPlusJSONResponse) VisitListPreset
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmAssistantProposalRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type ConfirmAssistantProposalResponseObject interface {
+	VisitConfirmAssistantProposalResponse(w http.ResponseWriter) error
+}
+
+type ConfirmAssistantProposal200JSONResponse AssistantProposal
+
+func (response ConfirmAssistantProposal200JSONResponse) VisitConfirmAssistantProposalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmAssistantProposal401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ConfirmAssistantProposal401ApplicationProblemPlusJSONResponse) VisitConfirmAssistantProposalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmAssistantProposal404ApplicationProblemPlusJSONResponse Problem
+
+func (response ConfirmAssistantProposal404ApplicationProblemPlusJSONResponse) VisitConfirmAssistantProposalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmAssistantProposal409ApplicationProblemPlusJSONResponse Problem
+
+func (response ConfirmAssistantProposal409ApplicationProblemPlusJSONResponse) VisitConfirmAssistantProposalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectAssistantProposalRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type RejectAssistantProposalResponseObject interface {
+	VisitRejectAssistantProposalResponse(w http.ResponseWriter) error
+}
+
+type RejectAssistantProposal200JSONResponse AssistantProposal
+
+func (response RejectAssistantProposal200JSONResponse) VisitRejectAssistantProposalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectAssistantProposal401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RejectAssistantProposal401ApplicationProblemPlusJSONResponse) VisitRejectAssistantProposalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectAssistantProposal404ApplicationProblemPlusJSONResponse Problem
+
+func (response RejectAssistantProposal404ApplicationProblemPlusJSONResponse) VisitRejectAssistantProposalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectAssistantProposal409ApplicationProblemPlusJSONResponse Problem
+
+func (response RejectAssistantProposal409ApplicationProblemPlusJSONResponse) VisitRejectAssistantProposalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -1248,6 +1513,12 @@ type StrictServerInterface interface {
 	// ListPresets Known language model services, their notices and suggested models.
 	// (GET /assistant/presets)
 	ListPresets(ctx context.Context, request ListPresetsRequestObject) (ListPresetsResponseObject, error)
+	// ConfirmAssistantProposal Execute a pending proposal once, after checking that its data did not change.
+	// (POST /assistant/proposals/{id}/confirm)
+	ConfirmAssistantProposal(ctx context.Context, request ConfirmAssistantProposalRequestObject) (ConfirmAssistantProposalResponseObject, error)
+	// RejectAssistantProposal Reject a pending proposal.
+	// (POST /assistant/proposals/{id}/reject)
+	RejectAssistantProposal(ctx context.Context, request RejectAssistantProposalRequestObject) (RejectAssistantProposalResponseObject, error)
 	// ListProviders The user's providers in creation order, then the instance providers; never a key.
 	// (GET /assistant/providers)
 	ListProviders(ctx context.Context, request ListProvidersRequestObject) (ListProvidersResponseObject, error)
@@ -1357,6 +1628,58 @@ func (sh *strictHandler) ListPresets(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListPresetsResponseObject); ok {
 		if err := validResponse.VisitListPresetsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ConfirmAssistantProposal operation middleware
+func (sh *strictHandler) ConfirmAssistantProposal(w http.ResponseWriter, r *http.Request, id ID) {
+	var request ConfirmAssistantProposalRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ConfirmAssistantProposal(ctx, request.(ConfirmAssistantProposalRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ConfirmAssistantProposal")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ConfirmAssistantProposalResponseObject); ok {
+		if err := validResponse.VisitConfirmAssistantProposalResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RejectAssistantProposal operation middleware
+func (sh *strictHandler) RejectAssistantProposal(w http.ResponseWriter, r *http.Request, id ID) {
+	var request RejectAssistantProposalRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RejectAssistantProposal(ctx, request.(RejectAssistantProposalRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RejectAssistantProposal")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RejectAssistantProposalResponseObject); ok {
+		if err := validResponse.VisitRejectAssistantProposalResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

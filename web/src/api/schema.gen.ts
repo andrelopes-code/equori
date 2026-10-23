@@ -1257,6 +1257,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/assistant/proposals/{id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Execute a pending proposal once, after checking that its data did not change. */
+        post: operations["confirmAssistantProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assistant/proposals/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject a pending proposal. */
+        post: operations["rejectAssistantProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/assistant/uses": {
         parameters: {
             query?: never;
@@ -2688,6 +2722,39 @@ export interface components {
             notice?: string;
             /** Format: date-time */
             retry_at?: string;
+        };
+        AssistantProposal: {
+            /** Format: uuid */
+            id: string;
+            tool: string;
+            /** @enum {string} */
+            status: "pending" | "executing" | "executed" | "failed" | "rejected" | "stale" | "discarded" | "expired";
+            preview: components["schemas"]["AssistantPreview"];
+            /** @description Tool output when executed, tool error when failed. */
+            result?: unknown;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** Format: date-time */
+            decided_at?: string;
+        };
+        AssistantPreview: {
+            action: string;
+            target?: string;
+            destructive?: boolean;
+            changes: {
+                field: string;
+                before?: components["schemas"]["AssistantValue"];
+                after?: components["schemas"]["AssistantValue"];
+            }[];
+        };
+        AssistantValue: {
+            text?: string;
+            amount?: string;
+            currency?: string;
+            /** Format: date */
+            date?: string;
         };
         UsageLimitInput: {
             provider_id: string;
@@ -6812,6 +6879,56 @@ export interface operations {
                 };
             };
             401: components["responses"]["Problem"];
+        };
+    };
+    confirmAssistantProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantProposal"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    rejectAssistantProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantProposal"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
         };
     };
     listUses: {
