@@ -110,12 +110,13 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	classificationModule := classification.New(pool, dispatcher, ledgerModule, log)
 	assistantModule, err := assistant.New(pool, assistant.Config{
 		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, Instance: cfg.LLMProviders,
-		Uses: []llm.Use{capture.SuggestUse, assistant.ChatUse}, Navigation: web.NavigationMap(), Clock: clk, NewProvider: cfg.LLMFactory,
+		Uses: []llm.Use{capture.SuggestUse, assistant.ChatUse}, Navigation: web.NavigationMap(), Locale: identityModule.Profile, Clock: clk, NewProvider: cfg.LLMFactory,
 	}, log)
 	if err != nil {
 		return nil, err
 	}
 	router := llm.NewRouter(&clk, log, assistantModule.Resolver(), cfg.LLMProviders...)
+	assistantModule.UseRouter(router)
 	captureModule := capture.New(pool, ledgerModule, classificationModule, identityModule, router, clk, log)
 	ingestionModule, err := ingestion.New(pool, dispatcher, ledgerModule, classificationModule, ingestion.Config{
 		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, URLs: cfg.AggregatorURLs, Clock: clk,

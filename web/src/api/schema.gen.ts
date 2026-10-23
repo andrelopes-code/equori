@@ -1257,6 +1257,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/assistant/turns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run one conversation turn and stream its progress as Server-Sent Events.
+         * @description Events: turn {conversation_id, message_id}, step {tool}, answer (AssistantMessage) and error (Problem).
+         *     The stream ends after answer or error. Problems before the stream: 404 conversation_not_found,
+         *     429 assistant_exhausted with retry_at, 503 assistant_unavailable, 400 invalid_request for text that is
+         *     empty or over 4000 characters after trimming. An error event carries assistant_exhausted,
+         *     assistant_unavailable or assistant_failed.
+         */
+        post: operations["sendAssistantMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assistant/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The user's conversations, most recently updated first. */
+        get: operations["listAssistantConversations"];
+        put?: never;
+        post?: never;
+        /** Delete every conversation of the user with its messages and proposals. */
+        delete: operations["deleteAssistantConversations"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assistant/conversations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A conversation with its messages and their proposals. */
+        get: operations["getAssistantConversation"];
+        put?: never;
+        post?: never;
+        /** Delete a conversation with its messages and proposals; 404 conversation_not_found. */
+        delete: operations["deleteAssistantConversation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/assistant/proposals/{id}/confirm": {
         parameters: {
             query?: never;
@@ -2722,6 +2782,48 @@ export interface components {
             notice?: string;
             /** Format: date-time */
             retry_at?: string;
+        };
+        AssistantTurnInput: {
+            /** Format: uuid */
+            conversation_id?: string;
+            text: string;
+            page?: string;
+        };
+        AssistantConversation: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        AssistantConversationPage: {
+            items: components["schemas"]["AssistantConversation"][];
+            /** @description Absent on the last page. */
+            next_cursor?: string;
+        };
+        AssistantMessage: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            role: "user" | "assistant";
+            content: string;
+            /** @enum {string} */
+            outcome?: "answered" | "step_limit" | "failed";
+            /** Format: date-time */
+            created_at: string;
+            proposals: components["schemas"]["AssistantProposal"][];
+        };
+        AssistantConversationDetail: {
+            /** Format: uuid */
+            id: string;
+            title: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            messages: components["schemas"]["AssistantMessage"][];
         };
         AssistantProposal: {
             /** Format: uuid */
@@ -6879,6 +6981,125 @@ export interface operations {
                 };
             };
             401: components["responses"]["Problem"];
+        };
+    };
+    sendAssistantMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistantTurnInput"];
+            };
+        };
+        responses: {
+            /** @description Event stream. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            429: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
+        };
+    };
+    listAssistantConversations: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantConversationPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    deleteAssistantConversations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    getAssistantConversation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantConversationDetail"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    deleteAssistantConversation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
         };
     };
     confirmAssistantProposal: {

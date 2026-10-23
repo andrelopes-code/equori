@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/assistant/internal/domain"
+	"github.com/andrelopes-code/equori/internal/platform/locale"
 )
 
 type Service struct {
@@ -22,6 +23,8 @@ type Service struct {
 	today    func() time.Time
 	log      *slog.Logger
 	tools    Tools
+	agent    Agent
+	profile  func(context.Context, int64) (locale.Locale, error)
 }
 
 // NewService takes the clock as now (an instant) and today (the instance's date).

@@ -2159,6 +2159,99 @@ paths:
                 $ref: "#/components/schemas/AssistantChat"
         "401":
           $ref: "#/components/responses/Problem"
+  /assistant/turns:
+    post:
+      tags: [assistant]
+      operationId: sendAssistantMessage
+      summary: Run one conversation turn and stream its progress as Server-Sent Events.
+      description: |
+        Events: turn {conversation_id, message_id}, step {tool}, answer (AssistantMessage) and error (Problem).
+        The stream ends after answer or error. Problems before the stream: 404 conversation_not_found,
+        429 assistant_exhausted with retry_at, 503 assistant_unavailable, 400 invalid_request for text that is
+        empty or over 4000 characters after trimming. An error event carries assistant_exhausted,
+        assistant_unavailable or assistant_failed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssistantTurnInput"
+      responses:
+        "200":
+          description: Event stream.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
+  /assistant/conversations:
+    get:
+      tags: [assistant]
+      operationId: listAssistantConversations
+      summary: The user's conversations, most recently updated first.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantConversationPage"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [assistant]
+      operationId: deleteAssistantConversations
+      summary: Delete every conversation of the user with its messages and proposals.
+      responses:
+        "204":
+          description: Deleted.
+        "401":
+          $ref: "#/components/responses/Problem"
+  /assistant/conversations/{id}:
+    get:
+      tags: [assistant]
+      operationId: getAssistantConversation
+      summary: A conversation with its messages and their proposals.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantConversationDetail"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [assistant]
+      operationId: deleteAssistantConversation
+      summary: Delete a conversation with its messages and proposals; 404 conversation_not_found.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
   /assistant/proposals/{id}/confirm:
     post:
       tags: [assistant]
@@ -4685,6 +4778,62 @@ components:
         model: {type: string}
         notice: {type: string, pattern: "^[a-z0-9_]{2,40}$"}
         retry_at: {type: string, format: date-time}
+    AssistantTurnInput:
+      type: object
+      additionalProperties: false
+      required: [text]
+      properties:
+        conversation_id: {type: string, format: uuid}
+        text: {type: string, minLength: 1, maxLength: 4000}
+        page: {type: string, pattern: "^/[A-Za-z0-9/_$.-]{0,199}$"}
+    AssistantConversation:
+      type: object
+      additionalProperties: false
+      required: [id, title, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        title: {type: string}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    AssistantConversationPage:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantConversation"
+        next_cursor:
+          type: string
+          description: Absent on the last page.
+    AssistantMessage:
+      type: object
+      additionalProperties: false
+      required: [id, role, content, created_at, proposals]
+      properties:
+        id: {type: string, format: uuid}
+        role: {type: string, enum: [user, assistant]}
+        content: {type: string}
+        outcome: {type: string, enum: [answered, step_limit, failed]}
+        created_at: {type: string, format: date-time}
+        proposals:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantProposal"
+    AssistantConversationDetail:
+      type: object
+      additionalProperties: false
+      required: [id, title, created_at, updated_at, messages]
+      properties:
+        id: {type: string, format: uuid}
+        title: {type: string}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssistantMessage"
     AssistantProposal:
       type: object
       additionalProperties: false

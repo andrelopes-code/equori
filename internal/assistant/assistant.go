@@ -17,6 +17,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/assistant/internal/guide"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/llm"
+	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/secret"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
@@ -42,7 +43,9 @@ type Config struct {
 	Uses     []llm.Use
 	// Navigation is web/src/navigation/navigation-map.json (spec 9); empty means no screens.
 	Navigation []byte
-	Clock      clock.Clock
+	// Locale returns a user's language and region for the system prompt.
+	Locale func(context.Context, int64) (locale.Locale, error)
+	Clock  clock.Clock
 	// NewProvider builds a user's provider; nil builds the real adapters.
 	NewProvider func(api, baseURL, key string) llm.Provider
 }
@@ -52,6 +55,12 @@ type Module struct {
 	resolver *llmapi.Resolver
 	http     *httpapi.Server
 	screens  []guide.Screen
+
+	// The agent needs the chat set and the router, which are built after the module.
+	chat   tool.Set
+	tools  app.Tools
+	locale func(context.Context, int64) (locale.Locale, error)
+	router *llm.Router
 }
 
 // instancePreset maps an environment provider to its preset; only the Gemini adapter is
@@ -96,7 +105,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
 		}
 	}
 	svc := app.NewService(postgres.NewRepository(pool), box, llmapi.NewModels(build), instance, uses, cfg.Clock.Now, cfg.Clock.Today, log)
-	return &Module{svc: svc, resolver: llmapi.NewResolver(svc, cfg.Instance, build, log), http: httpapi.NewServer(svc, log), screens: screens}, nil
+	return &Module{svc: svc, resolver: llmapi.NewResolver(svc, cfg.Instance, build, log), http: httpapi.NewServer(svc, log), screens: screens, locale: cfg.Locale}, nil
 }
 
 // Tools returns the assistant's own tools for language models (ADR 012).
@@ -109,7 +118,25 @@ func (m *Module) UseTools(set tool.Set) error {
 		return err
 	}
 	m.svc.UseTools(tools)
+	m.chat = set
+	m.bindAgent(tools)
 	return nil
+}
+
+// UseRouter sets the router the chat calls models through.
+func (m *Module) UseRouter(r *llm.Router) {
+	m.router = r
+	m.bindAgent(nil)
+}
+
+func (m *Module) bindAgent(tools app.Tools) {
+	if tools != nil {
+		m.tools = tools
+	}
+	if m.tools == nil || m.router == nil {
+		return
+	}
+	m.svc.UseAgent(llmapi.NewAgent(m.router.Use(ChatUse), m.svc, m.tools, m.chat), m.locale)
 }
 
 func (m *Module) Resolver() llm.Resolver { return m.resolver }

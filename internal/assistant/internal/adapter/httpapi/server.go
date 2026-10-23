@@ -24,10 +24,11 @@ var _ StrictServerInterface = (*Server)(nil)
 type Server struct {
 	svc  *app.Service
 	errs httpserver.ErrorWriter
+	log  *slog.Logger
 }
 
 func NewServer(svc *app.Service, log *slog.Logger) *Server {
-	return &Server{svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: toProblem}}
+	return &Server{svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: toProblem}, log: log}
 }
 
 func (s *Server) Register(mux *http.ServeMux) {
@@ -50,7 +51,19 @@ func toProblem(err error) (problem.Details, bool) {
 		d.Errors = []problem.FieldError{{Field: "targets", Message: ce.Error()}}
 		return d, true
 	}
+	if le, ok := errors.AsType[*app.LimitError](err); ok {
+		return problem.WithRetryAt(problem.New(http.StatusTooManyRequests, "assistant_exhausted",
+			"every language model of the assistant is cooling down or over its daily limit until retry_at"), le.RetryAt), true
+	}
 	switch {
+	case errors.Is(err, app.ErrChatUnavailable):
+		return problem.New(http.StatusServiceUnavailable, "assistant_unavailable", "no language model provider serves the assistant; add one in Settings"), true
+	case errors.Is(err, app.ErrTurnFailed):
+		return problem.New(http.StatusBadGateway, "assistant_failed", "the language model provider refused the request"), true
+	case errors.Is(err, app.ErrInvalidText):
+		return problem.New(http.StatusBadRequest, "invalid_request", err.Error()), true
+	case errors.Is(err, domain.ErrConversationNotFound):
+		return problem.New(http.StatusNotFound, "conversation_not_found", "conversation not found"), true
 	case errors.Is(err, domain.ErrKeyRequired):
 		d := problem.New(http.StatusUnprocessableEntity, "key_required", err.Error())
 		d.Errors = []problem.FieldError{{Field: "key", Message: "is required by the preset"}}

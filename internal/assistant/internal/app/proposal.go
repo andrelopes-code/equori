@@ -53,6 +53,9 @@ func (s *Service) Propose(ctx context.Context, userID int64, conversationID uuid
 		return nil, err
 	}
 	s.logProposal(ctx, userID, p.ID, name, "created")
+	if t, ok := ctx.Value(turnKey{}).(*turnState); ok {
+		t.add(p.ID)
+	}
 	return json.Marshal(map[string]any{"proposal_id": p.ID, "status": "awaiting_confirmation", "preview": json.RawMessage(preview)})
 }
 

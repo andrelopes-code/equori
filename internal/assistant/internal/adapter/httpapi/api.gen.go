@@ -9,7 +9,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -17,36 +19,75 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for AssistantMessageOutcome.
+const (
+	AssistantMessageOutcomeAnswered  AssistantMessageOutcome = "answered"
+	AssistantMessageOutcomeFailed    AssistantMessageOutcome = "failed"
+	AssistantMessageOutcomeStepLimit AssistantMessageOutcome = "step_limit"
+)
+
+// Valid indicates whether the value is a known member of the AssistantMessageOutcome enum.
+func (e AssistantMessageOutcome) Valid() bool {
+	switch e {
+	case AssistantMessageOutcomeAnswered:
+		return true
+	case AssistantMessageOutcomeFailed:
+		return true
+	case AssistantMessageOutcomeStepLimit:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AssistantMessageRole.
+const (
+	Assistant AssistantMessageRole = "assistant"
+	User      AssistantMessageRole = "user"
+)
+
+// Valid indicates whether the value is a known member of the AssistantMessageRole enum.
+func (e AssistantMessageRole) Valid() bool {
+	switch e {
+	case Assistant:
+		return true
+	case User:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AssistantProposalStatus.
 const (
-	Discarded AssistantProposalStatus = "discarded"
-	Executed  AssistantProposalStatus = "executed"
-	Executing AssistantProposalStatus = "executing"
-	Expired   AssistantProposalStatus = "expired"
-	Failed    AssistantProposalStatus = "failed"
-	Pending   AssistantProposalStatus = "pending"
-	Rejected  AssistantProposalStatus = "rejected"
-	Stale     AssistantProposalStatus = "stale"
+	AssistantProposalStatusDiscarded AssistantProposalStatus = "discarded"
+	AssistantProposalStatusExecuted  AssistantProposalStatus = "executed"
+	AssistantProposalStatusExecuting AssistantProposalStatus = "executing"
+	AssistantProposalStatusExpired   AssistantProposalStatus = "expired"
+	AssistantProposalStatusFailed    AssistantProposalStatus = "failed"
+	AssistantProposalStatusPending   AssistantProposalStatus = "pending"
+	AssistantProposalStatusRejected  AssistantProposalStatus = "rejected"
+	AssistantProposalStatusStale     AssistantProposalStatus = "stale"
 )
 
 // Valid indicates whether the value is a known member of the AssistantProposalStatus enum.
 func (e AssistantProposalStatus) Valid() bool {
 	switch e {
-	case Discarded:
+	case AssistantProposalStatusDiscarded:
 		return true
-	case Executed:
+	case AssistantProposalStatusExecuted:
 		return true
-	case Executing:
+	case AssistantProposalStatusExecuting:
 		return true
-	case Expired:
+	case AssistantProposalStatusExpired:
 		return true
-	case Failed:
+	case AssistantProposalStatusFailed:
 		return true
-	case Pending:
+	case AssistantProposalStatusPending:
 		return true
-	case Rejected:
+	case AssistantProposalStatusRejected:
 		return true
-	case Stale:
+	case AssistantProposalStatusStale:
 		return true
 	default:
 		return false
@@ -104,6 +145,47 @@ type AssistantChat struct {
 	RetryAt      *time.Time `json:"retry_at,omitempty"`
 }
 
+// AssistantConversation defines model for AssistantConversation.
+type AssistantConversation struct {
+	CreatedAt time.Time          `json:"created_at"`
+	Id        openapi_types.UUID `json:"id"`
+	Title     string             `json:"title"`
+	UpdatedAt time.Time          `json:"updated_at"`
+}
+
+// AssistantConversationDetail defines model for AssistantConversationDetail.
+type AssistantConversationDetail struct {
+	CreatedAt time.Time          `json:"created_at"`
+	Id        openapi_types.UUID `json:"id"`
+	Messages  []AssistantMessage `json:"messages"`
+	Title     string             `json:"title"`
+	UpdatedAt time.Time          `json:"updated_at"`
+}
+
+// AssistantConversationPage defines model for AssistantConversationPage.
+type AssistantConversationPage struct {
+	Items []AssistantConversation `json:"items"`
+
+	// NextCursor Absent on the last page.
+	NextCursor *string `json:"next_cursor,omitempty"`
+}
+
+// AssistantMessage defines model for AssistantMessage.
+type AssistantMessage struct {
+	Content   string                   `json:"content"`
+	CreatedAt time.Time                `json:"created_at"`
+	Id        openapi_types.UUID       `json:"id"`
+	Outcome   *AssistantMessageOutcome `json:"outcome,omitempty"`
+	Proposals []AssistantProposal      `json:"proposals"`
+	Role      AssistantMessageRole     `json:"role"`
+}
+
+// AssistantMessageOutcome defines model for AssistantMessage.Outcome.
+type AssistantMessageOutcome string
+
+// AssistantMessageRole defines model for AssistantMessage.Role.
+type AssistantMessageRole string
+
 // AssistantPreview defines model for AssistantPreview.
 type AssistantPreview struct {
 	Action  string `json:"action"`
@@ -132,6 +214,13 @@ type AssistantProposal struct {
 
 // AssistantProposalStatus defines model for AssistantProposal.Status.
 type AssistantProposalStatus string
+
+// AssistantTurnInput defines model for AssistantTurnInput.
+type AssistantTurnInput struct {
+	ConversationId *openapi_types.UUID `json:"conversation_id,omitempty"`
+	Page           *string             `json:"page,omitempty"`
+	Text           string              `json:"text"`
+}
 
 // AssistantValue defines model for AssistantValue.
 type AssistantValue struct {
@@ -328,14 +417,29 @@ type UseTarget struct {
 	ProviderName string `json:"provider_name"`
 }
 
+// Cursor defines model for Cursor.
+type Cursor = string
+
 // ID defines model for ID.
 type ID = openapi_types.UUID
+
+// Limit defines model for Limit.
+type Limit = int
+
+// ListAssistantConversationsParams defines parameters for ListAssistantConversations.
+type ListAssistantConversationsParams struct {
+	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
 
 // CreateProviderJSONRequestBody defines body for CreateProvider for application/json ContentType.
 type CreateProviderJSONRequestBody = ProviderInput
 
 // UpdateProviderJSONRequestBody defines body for UpdateProvider for application/json ContentType.
 type UpdateProviderJSONRequestBody = ProviderPatch
+
+// SendAssistantMessageJSONRequestBody defines body for SendAssistantMessage for application/json ContentType.
+type SendAssistantMessageJSONRequestBody = AssistantTurnInput
 
 // SetUsageLimitJSONRequestBody defines body for SetUsageLimit for application/json ContentType.
 type SetUsageLimitJSONRequestBody = UsageLimitInput
@@ -348,6 +452,18 @@ type ServerInterface interface {
 	// GetAssistantChat Whether the conversation can be used now, with the target it would reach and when to retry.
 	// (GET /assistant/chat)
 	GetAssistantChat(w http.ResponseWriter, r *http.Request)
+	// DeleteAssistantConversations Delete every conversation of the user with its messages and proposals.
+	// (DELETE /assistant/conversations)
+	DeleteAssistantConversations(w http.ResponseWriter, r *http.Request)
+	// ListAssistantConversations The user's conversations, most recently updated first.
+	// (GET /assistant/conversations)
+	ListAssistantConversations(w http.ResponseWriter, r *http.Request, params ListAssistantConversationsParams)
+	// DeleteAssistantConversation Delete a conversation with its messages and proposals; 404 conversation_not_found.
+	// (DELETE /assistant/conversations/{id})
+	DeleteAssistantConversation(w http.ResponseWriter, r *http.Request, id ID)
+	// GetAssistantConversation A conversation with its messages and their proposals.
+	// (GET /assistant/conversations/{id})
+	GetAssistantConversation(w http.ResponseWriter, r *http.Request, id ID)
 	// ListPresets Known language model services, their notices and suggested models.
 	// (GET /assistant/presets)
 	ListPresets(w http.ResponseWriter, r *http.Request)
@@ -372,6 +488,9 @@ type ServerInterface interface {
 	// ListProviderModels Ask the provider's API for its models, which also checks its key.
 	// (GET /assistant/providers/{id}/models)
 	ListProviderModels(w http.ResponseWriter, r *http.Request, id ID)
+	// SendAssistantMessage Run one conversation turn and stream its progress as Server-Sent Events.
+	// (POST /assistant/turns)
+	SendAssistantMessage(w http.ResponseWriter, r *http.Request)
 	// ListUsage The user's usage per provider and model today and over the last 30 days, with declared limits (ADR 019 U6).
 	// (GET /assistant/usage)
 	ListUsage(w http.ResponseWriter, r *http.Request)
@@ -400,6 +519,118 @@ func (siw *ServerInterfaceWrapper) GetAssistantChat(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetAssistantChat(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteAssistantConversations operation middleware
+func (siw *ServerInterfaceWrapper) DeleteAssistantConversations(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteAssistantConversations(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListAssistantConversations operation middleware
+func (siw *ServerInterfaceWrapper) ListAssistantConversations(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListAssistantConversationsParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListAssistantConversations(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteAssistantConversation operation middleware
+func (siw *ServerInterfaceWrapper) DeleteAssistantConversation(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteAssistantConversation(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAssistantConversation operation middleware
+func (siw *ServerInterfaceWrapper) GetAssistantConversation(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAssistantConversation(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -572,6 +803,20 @@ func (siw *ServerInterfaceWrapper) ListProviderModels(w http.ResponseWriter, r *
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListProviderModels(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SendAssistantMessage operation middleware
+func (siw *ServerInterfaceWrapper) SendAssistantMessage(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SendAssistantMessage(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -778,6 +1023,11 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/assistant/usage", wrapper.ListUsage)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/assistant/usage/limits", wrapper.SetUsageLimit)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/assistant/chat", wrapper.GetAssistantChat)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/assistant/turns", wrapper.SendAssistantMessage)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/assistant/conversations", wrapper.DeleteAssistantConversations)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/assistant/conversations", wrapper.ListAssistantConversations)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/assistant/conversations/{id}", wrapper.DeleteAssistantConversation)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/assistant/conversations/{id}", wrapper.GetAssistantConversation)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/assistant/proposals/{id}/confirm", wrapper.ConfirmAssistantProposal)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/assistant/proposals/{id}/reject", wrapper.RejectAssistantProposal)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/assistant/uses", wrapper.ListUses)
@@ -821,6 +1071,187 @@ func (response GetAssistantChat401ApplicationProblemPlusJSONResponse) VisitGetAs
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteAssistantConversationsRequestObject struct {
+}
+
+type DeleteAssistantConversationsResponseObject interface {
+	VisitDeleteAssistantConversationsResponse(w http.ResponseWriter) error
+}
+
+type DeleteAssistantConversations204Response struct {
+}
+
+func (response DeleteAssistantConversations204Response) VisitDeleteAssistantConversationsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteAssistantConversations401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteAssistantConversations401ApplicationProblemPlusJSONResponse) VisitDeleteAssistantConversationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAssistantConversationsRequestObject struct {
+	Params ListAssistantConversationsParams
+}
+
+type ListAssistantConversationsResponseObject interface {
+	VisitListAssistantConversationsResponse(w http.ResponseWriter) error
+}
+
+type ListAssistantConversations200JSONResponse AssistantConversationPage
+
+func (response ListAssistantConversations200JSONResponse) VisitListAssistantConversationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAssistantConversations401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListAssistantConversations401ApplicationProblemPlusJSONResponse) VisitListAssistantConversationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAssistantConversations422ApplicationProblemPlusJSONResponse Problem
+
+func (response ListAssistantConversations422ApplicationProblemPlusJSONResponse) VisitListAssistantConversationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteAssistantConversationRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type DeleteAssistantConversationResponseObject interface {
+	VisitDeleteAssistantConversationResponse(w http.ResponseWriter) error
+}
+
+type DeleteAssistantConversation204Response struct {
+}
+
+func (response DeleteAssistantConversation204Response) VisitDeleteAssistantConversationResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteAssistantConversation401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteAssistantConversation401ApplicationProblemPlusJSONResponse) VisitDeleteAssistantConversationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteAssistantConversation404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteAssistantConversation404ApplicationProblemPlusJSONResponse) VisitDeleteAssistantConversationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAssistantConversationRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type GetAssistantConversationResponseObject interface {
+	VisitGetAssistantConversationResponse(w http.ResponseWriter) error
+}
+
+type GetAssistantConversation200JSONResponse AssistantConversationDetail
+
+func (response GetAssistantConversation200JSONResponse) VisitGetAssistantConversationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAssistantConversation401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetAssistantConversation401ApplicationProblemPlusJSONResponse) VisitGetAssistantConversationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAssistantConversation404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetAssistantConversation404ApplicationProblemPlusJSONResponse) VisitGetAssistantConversationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -1304,6 +1735,129 @@ func (response ListProviderModels502ApplicationProblemPlusJSONResponse) VisitLis
 	return err
 }
 
+type SendAssistantMessageRequestObject struct {
+	Body *SendAssistantMessageJSONRequestBody
+}
+
+type SendAssistantMessageResponseObject interface {
+	VisitSendAssistantMessageResponse(w http.ResponseWriter) error
+}
+
+type SendAssistantMessage200TexteventStreamResponse struct {
+	Body          io.Reader
+	ContentLength int64
+}
+
+func (response SendAssistantMessage200TexteventStreamResponse) VisitSendAssistantMessageResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
+	w.WriteHeader(200)
+
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		// If w doesn't support flushing, fall back to io.Copy.
+		_, err := io.Copy(w, response.Body)
+		return err
+	}
+	// text/event-stream messages are typically small; use a
+	// modest buffer and flush after each chunk so clients see
+	// events immediately instead of waiting on OS buffering.
+	buf := make([]byte, 4096)
+	for {
+		n, err := response.Body.Read(buf)
+		if n > 0 {
+			if _, writeErr := w.Write(buf[:n]); writeErr != nil {
+				return writeErr
+			}
+			flusher.Flush()
+		}
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			return err
+		}
+	}
+}
+
+type SendAssistantMessage400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SendAssistantMessage400ApplicationProblemPlusJSONResponse) VisitSendAssistantMessageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SendAssistantMessage401ApplicationProblemPlusJSONResponse Problem
+
+func (response SendAssistantMessage401ApplicationProblemPlusJSONResponse) VisitSendAssistantMessageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SendAssistantMessage404ApplicationProblemPlusJSONResponse Problem
+
+func (response SendAssistantMessage404ApplicationProblemPlusJSONResponse) VisitSendAssistantMessageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SendAssistantMessage429ApplicationProblemPlusJSONResponse Problem
+
+func (response SendAssistantMessage429ApplicationProblemPlusJSONResponse) VisitSendAssistantMessageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(429)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SendAssistantMessage503ApplicationProblemPlusJSONResponse Problem
+
+func (response SendAssistantMessage503ApplicationProblemPlusJSONResponse) VisitSendAssistantMessageResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(503)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListUsageRequestObject struct {
 }
 
@@ -1510,6 +2064,18 @@ type StrictServerInterface interface {
 	// GetAssistantChat Whether the conversation can be used now, with the target it would reach and when to retry.
 	// (GET /assistant/chat)
 	GetAssistantChat(ctx context.Context, request GetAssistantChatRequestObject) (GetAssistantChatResponseObject, error)
+	// DeleteAssistantConversations Delete every conversation of the user with its messages and proposals.
+	// (DELETE /assistant/conversations)
+	DeleteAssistantConversations(ctx context.Context, request DeleteAssistantConversationsRequestObject) (DeleteAssistantConversationsResponseObject, error)
+	// ListAssistantConversations The user's conversations, most recently updated first.
+	// (GET /assistant/conversations)
+	ListAssistantConversations(ctx context.Context, request ListAssistantConversationsRequestObject) (ListAssistantConversationsResponseObject, error)
+	// DeleteAssistantConversation Delete a conversation with its messages and proposals; 404 conversation_not_found.
+	// (DELETE /assistant/conversations/{id})
+	DeleteAssistantConversation(ctx context.Context, request DeleteAssistantConversationRequestObject) (DeleteAssistantConversationResponseObject, error)
+	// GetAssistantConversation A conversation with its messages and their proposals.
+	// (GET /assistant/conversations/{id})
+	GetAssistantConversation(ctx context.Context, request GetAssistantConversationRequestObject) (GetAssistantConversationResponseObject, error)
 	// ListPresets Known language model services, their notices and suggested models.
 	// (GET /assistant/presets)
 	ListPresets(ctx context.Context, request ListPresetsRequestObject) (ListPresetsResponseObject, error)
@@ -1534,6 +2100,9 @@ type StrictServerInterface interface {
 	// ListProviderModels Ask the provider's API for its models, which also checks its key.
 	// (GET /assistant/providers/{id}/models)
 	ListProviderModels(ctx context.Context, request ListProviderModelsRequestObject) (ListProviderModelsResponseObject, error)
+	// SendAssistantMessage Run one conversation turn and stream its progress as Server-Sent Events.
+	// (POST /assistant/turns)
+	SendAssistantMessage(ctx context.Context, request SendAssistantMessageRequestObject) (SendAssistantMessageResponseObject, error)
 	// ListUsage The user's usage per provider and model today and over the last 30 days, with declared limits (ADR 019 U6).
 	// (GET /assistant/usage)
 	ListUsage(ctx context.Context, request ListUsageRequestObject) (ListUsageResponseObject, error)
@@ -1604,6 +2173,108 @@ func (sh *strictHandler) GetAssistantChat(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetAssistantChatResponseObject); ok {
 		if err := validResponse.VisitGetAssistantChatResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteAssistantConversations operation middleware
+func (sh *strictHandler) DeleteAssistantConversations(w http.ResponseWriter, r *http.Request) {
+	var request DeleteAssistantConversationsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteAssistantConversations(ctx, request.(DeleteAssistantConversationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteAssistantConversations")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteAssistantConversationsResponseObject); ok {
+		if err := validResponse.VisitDeleteAssistantConversationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListAssistantConversations operation middleware
+func (sh *strictHandler) ListAssistantConversations(w http.ResponseWriter, r *http.Request, params ListAssistantConversationsParams) {
+	var request ListAssistantConversationsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListAssistantConversations(ctx, request.(ListAssistantConversationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListAssistantConversations")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListAssistantConversationsResponseObject); ok {
+		if err := validResponse.VisitListAssistantConversationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteAssistantConversation operation middleware
+func (sh *strictHandler) DeleteAssistantConversation(w http.ResponseWriter, r *http.Request, id ID) {
+	var request DeleteAssistantConversationRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteAssistantConversation(ctx, request.(DeleteAssistantConversationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteAssistantConversation")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteAssistantConversationResponseObject); ok {
+		if err := validResponse.VisitDeleteAssistantConversationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAssistantConversation operation middleware
+func (sh *strictHandler) GetAssistantConversation(w http.ResponseWriter, r *http.Request, id ID) {
+	var request GetAssistantConversationRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAssistantConversation(ctx, request.(GetAssistantConversationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAssistantConversation")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAssistantConversationResponseObject); ok {
+		if err := validResponse.VisitGetAssistantConversationResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -1820,6 +2491,37 @@ func (sh *strictHandler) ListProviderModels(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListProviderModelsResponseObject); ok {
 		if err := validResponse.VisitListProviderModelsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SendAssistantMessage operation middleware
+func (sh *strictHandler) SendAssistantMessage(w http.ResponseWriter, r *http.Request) {
+	var request SendAssistantMessageRequestObject
+
+	var body SendAssistantMessageJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SendAssistantMessage(ctx, request.(SendAssistantMessageRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SendAssistantMessage")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SendAssistantMessageResponseObject); ok {
+		if err := validResponse.VisitSendAssistantMessageResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

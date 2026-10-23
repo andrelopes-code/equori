@@ -13,7 +13,7 @@ import (
 func (s *Server) toProposal(p domain.Proposal) (AssistantProposal, error) {
 	out := AssistantProposal{Id: p.ID, Tool: p.Tool, Status: AssistantProposalStatus(p.Status), CreatedAt: p.CreatedAt, ExpiresAt: p.ExpiresAt}
 	if p.Expired(s.svc.Now()) {
-		out.Status = Expired
+		out.Status = AssistantProposalStatusExpired
 	}
 	if err := json.Unmarshal(p.Preview, &out.Preview); err != nil {
 		return AssistantProposal{}, fmt.Errorf("decode preview of proposal %s: %w", p.ID, err)
