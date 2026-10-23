@@ -17,16 +17,19 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/classification/internal/adapter/httpapi"
 	"github.com/andrelopes-code/equori/internal/classification/internal/adapter/postgres"
+	"github.com/andrelopes-code/equori/internal/classification/internal/adapter/toolapi"
 	"github.com/andrelopes-code/equori/internal/classification/internal/app"
 	"github.com/andrelopes-code/equori/internal/classification/internal/domain"
 	"github.com/andrelopes-code/equori/internal/ledger"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
+	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
 type Module struct {
-	http *httpapi.Server
-	svc  *app.Service
+	http   *httpapi.Server
+	svc    *app.Service
+	ledger *ledger.Module
 }
 
 // consumer names the module's outbox subscriptions (ADR 006).
@@ -48,7 +51,7 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, lo
 	}
 	dispatcher.Subscribe(consumer, ledger.EventCategoriesMerged, port.handleMerge)
 	dispatcher.Subscribe(consumer, ledger.EventPayeesMerged, port.handlePayeeMerge)
-	return &Module{http: httpapi.NewServer(svc, log), svc: svc}
+	return &Module{http: httpapi.NewServer(svc, log), svc: svc, ledger: l}
 }
 
 // handleMerge follows a category merge in the dispatcher's transaction (A75).
@@ -87,6 +90,26 @@ func (p ledgerPort) handle(ctx context.Context, tx pgx.Tx, e outbox.Delivered) e
 		event.Cause = app.Cause{Method: payload.Cause.Method, RuleID: payload.Cause.RuleID}
 	}
 	return app.NewService(postgres.NewTxRepository(tx), p).HandleEvent(ctx, event)
+}
+
+// Tools returns the classification module's tools for language models (ADR 012).
+func (m *Module) Tools() tool.Group {
+	return tool.Group{Tools: toolapi.Tools(m.svc, m.names, m.ledger.Today), Errors: tool.FromProblem(httpapi.ToProblem)}
+}
+
+func (m *Module) names(ctx context.Context, userID int64) (categories, payees map[uuid.UUID]string, err error) {
+	accounts, ps, err := m.ledger.CaptureVocabulary(ctx, userID)
+	if err != nil {
+		return nil, nil, err
+	}
+	categories, payees = make(map[uuid.UUID]string, len(accounts)), make(map[uuid.UUID]string, len(ps))
+	for _, a := range accounts {
+		categories[a.ID] = a.Name
+	}
+	for _, p := range ps {
+		payees[p.ID] = p.Name
+	}
+	return categories, payees, nil
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }

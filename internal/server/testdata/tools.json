@@ -163,6 +163,148 @@
     }
   },
   {
+    "name": "explain_categorization",
+    "description": "Explains how transactions got their categories (rule, source category, history or manual), counts transactions by categorization method in a period, or previews what a rule would categorize. Use it for why a transaction has a category, how much is categorized automatically, or before proposing a rule. Do not use it to change a category: categorize_transactions does.",
+    "effect": "read_only",
+    "idempotent": true,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "view": {
+          "type": "string",
+          "description": "what to return",
+          "enum": [
+            "transactions",
+            "statistics",
+            "rule_preview"
+          ]
+        },
+        "transaction_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "for transactions: IDs from search_transactions; at most 50"
+        },
+        "from": {
+          "type": "string",
+          "description": "for statistics: first date",
+          "format": "date"
+        },
+        "to": {
+          "type": "string",
+          "description": "for statistics: last date",
+          "format": "date"
+        },
+        "description_contains": {
+          "type": "string",
+          "description": "for rule_preview: text the description must contain"
+        },
+        "category_id": {
+          "type": "string",
+          "description": "for rule_preview: category the rule would set"
+        }
+      },
+      "required": [
+        "view"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "transaction_id": {
+                "type": "string"
+              },
+              "method": {
+                "type": "string"
+              },
+              "rule_name": {
+                "type": "string"
+              },
+              "decided_at": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "transaction_id",
+              "decided_at"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "statistics": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string",
+              "format": "date"
+            },
+            "to": {
+              "type": "string",
+              "format": "date"
+            },
+            "total": {
+              "type": "integer"
+            },
+            "rule": {
+              "type": "integer"
+            },
+            "source": {
+              "type": "integer"
+            },
+            "history": {
+              "type": "integer"
+            },
+            "manual": {
+              "type": "integer"
+            },
+            "uncategorized": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "from",
+            "to",
+            "total",
+            "rule",
+            "source",
+            "history",
+            "manual",
+            "uncategorized"
+          ],
+          "additionalProperties": false
+        },
+        "rule_preview": {
+          "type": "object",
+          "properties": {
+            "description_contains": {
+              "type": "string"
+            },
+            "would_categorize": {
+              "type": "integer"
+            },
+            "conflicts": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "description_contains",
+            "would_categorize",
+            "conflicts"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "get_account_details",
     "description": "Returns one account in depth: reconciliation state and recorded institution balances; for a credit card account, its plastic cards, current credit limit and available limit, billing cycle, statements, the statement a purchase date falls on and the installments already committed to a month. Use it for questions about one account or card. Do not use it for a statement's lines: get_statement returns them.",
     "effect": "read_only",
@@ -3128,6 +3270,179 @@
     }
   },
   {
+    "name": "list_rules",
+    "description": "Lists categorization rules by priority, rules suggested from the user's repeated corrections, the categories an aggregator assigned to imported lines, or payee aliases. Use it to see why transactions get a category automatically or what suggestions are waiting. Do not use it for one transaction's categorization: explain_categorization does.",
+    "effect": "read_only",
+    "idempotent": true,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "what to list",
+          "enum": [
+            "rules",
+            "suggestions",
+            "source_categories",
+            "payee_aliases"
+          ]
+        },
+        "rule_id": {
+          "type": "string",
+          "description": "for rules: return only this rule"
+        },
+        "limit": {
+          "type": "integer",
+          "description": "items per page, 1 to 50; 20 when absent"
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor of the previous page; absent for the first page"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "rule_id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "priority": {
+                "type": "integer"
+              },
+              "enabled": {
+                "type": "boolean"
+              },
+              "conditions_text": {
+                "type": "string"
+              },
+              "actions_text": {
+                "type": "string"
+              },
+              "categorized_count": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "rule_id",
+              "name",
+              "priority",
+              "enabled",
+              "conditions_text",
+              "actions_text",
+              "categorized_count"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "suggestions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "suggestion_id": {
+                "type": "string"
+              },
+              "conditions_text": {
+                "type": "string"
+              },
+              "actions_text": {
+                "type": "string"
+              },
+              "example_transaction_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "suggestion_id",
+              "conditions_text",
+              "actions_text",
+              "example_transaction_ids"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "source_categories": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "source_category_id": {
+                "type": "string"
+              },
+              "aggregator": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "count": {
+                "type": "integer"
+              },
+              "category_name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "source_category_id",
+              "aggregator",
+              "name",
+              "count"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "payee_aliases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "alias_id": {
+                "type": "string"
+              },
+              "pattern": {
+                "type": "string"
+              },
+              "match_type": {
+                "type": "string"
+              },
+              "payee_name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "alias_id",
+              "pattern",
+              "match_type",
+              "payee_name"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "next_cursor": {
+          "type": "string",
+          "description": "present when more items follow; pass it as cursor"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "manage_accounts_and_payees",
     "description": "Proposes a change to accounts, categories, payees or institutions: create, rename or move an account or category, close or reopen it, merge a category or payee into another, create or rename a payee, create an institution. Use it when the user asks to organize accounts, categories or payees. Do not use it for card settings: manage_card does. Merging cannot be undone; the user confirms every change.",
     "effect": "destructive",
@@ -3725,6 +4040,117 @@
             "face_value"
           ],
           "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "manage_rule",
+    "description": "Proposes a change to automatic categorization: create, change, reorder or delete a rule; accept or dismiss a suggested rule; run the rules over uncategorized transactions; map an aggregator's category; create, change or delete a payee alias. Use it when the user wants future transactions categorized automatically. Do not use it for transactions already recorded one by one: categorize_transactions does. The user confirms every change.",
+    "effect": "destructive",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "description": "operation to propose",
+          "enum": [
+            "create_rule",
+            "change_rule",
+            "delete_rule",
+            "reorder_rules",
+            "accept_suggestion",
+            "dismiss_suggestion",
+            "run_rules",
+            "map_source_category",
+            "create_alias",
+            "change_alias",
+            "delete_alias"
+          ]
+        },
+        "rule_id": {
+          "type": "string",
+          "description": "for change_rule and delete_rule: rule from list_rules"
+        },
+        "suggestion_id": {
+          "type": "string",
+          "description": "for accept_suggestion and dismiss_suggestion: suggestion from list_rules"
+        },
+        "source_category_id": {
+          "type": "string",
+          "description": "for map_source_category: source category from list_rules"
+        },
+        "alias_id": {
+          "type": "string",
+          "description": "for change_alias and delete_alias: alias from list_rules"
+        },
+        "name": {
+          "type": "string",
+          "description": "for create_rule, change_rule and accept_suggestion: rule name"
+        },
+        "description_contains": {
+          "type": "string",
+          "description": "for create_rule and change_rule: text the description must contain"
+        },
+        "category_id": {
+          "type": "string",
+          "description": "for create_rule, change_rule and map_source_category: category to set"
+        },
+        "payee_id": {
+          "type": "string",
+          "description": "for create_rule and change_rule: payee to set; for create_alias and change_alias: payee the alias names"
+        },
+        "pattern": {
+          "type": "string",
+          "description": "for create_alias and change_alias: text matched against imported descriptions"
+        },
+        "match_type": {
+          "type": "string",
+          "description": "for create_alias and change_alias: how pattern matches",
+          "enum": [
+            "equals",
+            "starts_with",
+            "contains"
+          ]
+        },
+        "rule_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "for reorder_rules: every rule ID in the new priority order"
+        }
+      },
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "rule_id": {
+          "type": "string"
+        },
+        "suggestion_id": {
+          "type": "string"
+        },
+        "source_category_id": {
+          "type": "string"
+        },
+        "alias_id": {
+          "type": "string"
+        },
+        "examined": {
+          "type": "integer"
+        },
+        "categorized": {
+          "type": "integer"
+        },
+        "deleted": {
+          "type": "boolean"
         }
       },
       "additionalProperties": false
