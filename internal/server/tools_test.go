@@ -29,8 +29,6 @@ var exclusions = map[string]bool{
 	"-file":    true, // file content or the reading of files
 	"-visual":  true, // colour, icon and logo identifiers chosen by looking at them
 	"-setup":   true, // the base currency changes only before the first transaction, during provisioning
-	"-write":   true, // the operation changes data; no write tool exists yet (removed by the tools tasks)
-	"-pending": true, // a read operation without a tool yet (removed by the tools tasks)
 }
 
 // withoutOperation are the tools that map to no operation, with the reason.
