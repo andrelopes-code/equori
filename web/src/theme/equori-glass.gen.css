@@ -1007,6 +1007,42 @@
     --slotted-avatar-size-xl: 48px;
   }
 
+  [data-slotted-theme="equori-glass"][data-slotted-corners="square"],
+  [data-slotted-theme="equori-glass"] [data-slotted-corners="square"] {
+    --slotted-radius-xs: 0px;
+    --slotted-radius-sm: 0px;
+    --slotted-radius-md: 0px;
+    --slotted-radius-lg: 0px;
+    --slotted-control-radius: var(--slotted-radius-sm);
+  }
+
+  [data-slotted-theme="equori-glass"][data-slotted-corners="soft"],
+  [data-slotted-theme="equori-glass"] [data-slotted-corners="soft"] {
+    --slotted-radius-xs: 1px;
+    --slotted-radius-sm: 2px;
+    --slotted-radius-md: 3px;
+    --slotted-radius-lg: 4px;
+    --slotted-control-radius: var(--slotted-radius-sm);
+  }
+
+  [data-slotted-theme="equori-glass"][data-slotted-corners="standard"],
+  [data-slotted-theme="equori-glass"] [data-slotted-corners="standard"] {
+    --slotted-radius-xs: 2px;
+    --slotted-radius-sm: 4px;
+    --slotted-radius-md: 6px;
+    --slotted-radius-lg: 8px;
+    --slotted-control-radius: var(--slotted-radius-sm);
+  }
+
+  [data-slotted-theme="equori-glass"][data-slotted-corners="round"],
+  [data-slotted-theme="equori-glass"] [data-slotted-corners="round"] {
+    --slotted-radius-xs: 4px;
+    --slotted-radius-sm: 8px;
+    --slotted-radius-md: 12px;
+    --slotted-radius-lg: 16px;
+    --slotted-control-radius: var(--slotted-radius-sm);
+  }
+
   @media (pointer: coarse) {
     [data-slotted-theme="equori-glass"][data-slotted-density="comfortable"],
     [data-slotted-theme="equori-glass"] [data-slotted-density="comfortable"] {
@@ -1820,12 +1856,12 @@
       transition: opacity var(--slotted-duration-long) var(--slotted-easing-standard);
     }
 
-    [data-slotted-scheme="light"] [data-ui="dialog"]:has([data-ui="command-palette"]) {
+    &[data-slotted-scheme="light"] [data-ui="dialog"]:has([data-ui="command-palette"]) {
       --slotted-dialog-scrim: color-mix(in srgb, var(--slotted-scrim) 30%, transparent);
     }
 
     @media not (prefers-reduced-transparency: reduce) {
-      [data-slotted-scheme="light"] [data-ui="dialog"][data-open] > [data-part="viewport"] > [data-part="content"]:has(> [data-ui="command-palette"]) {
+      &[data-slotted-scheme="light"] [data-ui="dialog"][data-open] > [data-part="viewport"] > [data-part="content"]:has(> [data-ui="command-palette"]) {
         -webkit-backdrop-filter: saturate(1.8) blur(6px);
         backdrop-filter: saturate(1.8) blur(6px);
       }

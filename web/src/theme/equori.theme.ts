@@ -71,12 +71,12 @@ const paletteMaterialRule = `
   transition: opacity var(--slotted-duration-long) var(--slotted-easing-standard);
 }
 
-[data-slotted-scheme="light"] [data-ui="dialog"]:has([data-ui="command-palette"]) {
+&[data-slotted-scheme="light"] [data-ui="dialog"]:has([data-ui="command-palette"]) {
   --slotted-dialog-scrim: color-mix(in srgb, var(--slotted-scrim) 30%, transparent);
 }
 
 @media not (prefers-reduced-transparency: reduce) {
-  [data-slotted-scheme="light"] [data-ui="dialog"][data-open] > [data-part="viewport"] > [data-part="content"]:has(> [data-ui="command-palette"]) {
+  &[data-slotted-scheme="light"] [data-ui="dialog"][data-open] > [data-part="viewport"] > [data-part="content"]:has(> [data-ui="command-palette"]) {
     -webkit-backdrop-filter: saturate(1.8) blur(6px);
     backdrop-filter: saturate(1.8) blur(6px);
   }
