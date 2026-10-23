@@ -312,7 +312,7 @@ func TestSyncUpdateOfAReconciledPosting(t *testing.T) {
 		t.Fatal(err)
 	}
 	if change == nil || *change == "" {
-		t.Fatal("the record keeps no trace of the provider's change")
+		t.Fatal("the record keeps no trace of the aggregator's change")
 	}
 	if b := f.batches(card)[0]; b.Counts.Updated != 1 {
 		t.Fatalf("batch = %+v", b)

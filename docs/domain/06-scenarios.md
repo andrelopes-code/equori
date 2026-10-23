@@ -568,7 +568,7 @@ Pluggy category "Food Delivery" mapped to Food › Delivery categorizes a line w
 
 ### S57 Blocked item and rejected credentials
 
-An item in `LOGIN_ERROR` is not synced; the connection reports the status and no batch is created. Wrong credentials return 422 `provider_unauthorized` on `client_secret` and store nothing.
+An item in `LOGIN_ERROR` is not synced; the connection reports the status and no batch is created. Wrong credentials return 422 `aggregator_unauthorized` on `client_secret` and store nothing.
 
 ### S58 Two users
 

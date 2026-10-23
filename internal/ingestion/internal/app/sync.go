@@ -40,7 +40,7 @@ func (s *Service) sync(ctx context.Context, userID int64, connectionID uuid.UUID
 	if saveErr := s.repo.SaveConnectionState(ctx, c); saveErr != nil {
 		return c, batches, errors.Join(err, saveErr)
 	}
-	if errors.Is(err, ErrProviderUnauthorized) {
+	if errors.Is(err, ErrAggregatorUnauthorized) {
 		err = &UnauthorizedError{Field: "integration_id"}
 	}
 	return c, batches, err
@@ -55,11 +55,11 @@ func (s *Service) syncItem(ctx context.Context, c *domain.Connection, force bool
 	if err != nil {
 		return nil, err
 	}
-	agg, err := s.aggregator(i.Provider)
+	agg, err := s.aggregator(i.Aggregator)
 	if err != nil {
 		return nil, err
 	}
-	state, err := agg.ItemState(ctx, i.ID, creds, c.ItemID)
+	state, err := agg.ItemState(ctx, i.ID, creds, c.ExternalID)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func reserveRank(ext domain.ExternalAccount) int {
 // that the connection lacks (A73), and the name the item now reports for a stored account
 // it renamed; the mapping of a stored account is not changed (A94).
 func (s *Service) addMissingAccounts(ctx context.Context, agg Aggregator, c *domain.Connection, creds domain.Credentials) error {
-	listed, err := agg.Accounts(ctx, c.IntegrationID, creds, c.ItemID)
+	listed, err := agg.Accounts(ctx, c.IntegrationID, creds, c.ExternalID)
 	if err != nil {
 		return err
 	}
@@ -165,7 +165,7 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 	if first {
 		readFrom = from.AddDate(0, 0, -cycleLookback)
 	}
-	read, err := agg.ReadAccount(ctx, c.IntegrationID, creds, c.ItemID, ext.ExternalID, readFrom, to, target.Currency.MinorUnits())
+	read, err := agg.ReadAccount(ctx, c.IntegrationID, creds, c.ExternalID, ext.ExternalID, readFrom, to, target.Currency.MinorUnits())
 	if errors.Is(err, ErrAccountGone) && ext.Subtype == domain.SubtypeReservedBalance {
 		// A reserved balance the item stopped reporting syncs without a balance (D2).
 		read, err = domain.AccountRead{}, nil

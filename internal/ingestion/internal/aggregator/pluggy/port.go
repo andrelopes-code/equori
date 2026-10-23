@@ -68,14 +68,14 @@ func (p Port) translate(err error) error {
 	case err == nil:
 		return nil
 	case errors.Is(err, client.ErrUnauthorized):
-		return app.ErrProviderUnauthorized
+		return app.ErrAggregatorUnauthorized
 	case errors.Is(err, client.ErrNotFound):
 		return app.ErrItemNotFound
 	}
-	return fmt.Errorf("%w: %w", app.ErrProviderUnavailable, err)
+	return fmt.Errorf("%w: %w", app.ErrAggregatorUnavailable, err)
 }
 
-// session runs fn with the integration's cached API key; a key the provider no longer
+// session runs fn with the integration's cached API key; a key the aggregator no longer
 // accepts is replaced once.
 func (p Port) session(ctx context.Context, id uuid.UUID, c domain.Credentials, fn func(*client.Session) error) error {
 	key := id.String()
@@ -128,7 +128,7 @@ func (p Port) Accounts(ctx context.Context, id uuid.UUID, c domain.Credentials, 
 		return err
 	})
 	if errors.Is(err, app.ErrItemNotFound) {
-		return nil, fmt.Errorf("%w: the item is gone", app.ErrProviderUnavailable)
+		return nil, fmt.Errorf("%w: the item is gone", app.ErrAggregatorUnavailable)
 	}
 	return out, err
 }
@@ -176,7 +176,7 @@ func (p Port) ItemState(ctx context.Context, id uuid.UUID, c domain.Credentials,
 		return err
 	})
 	if errors.Is(err, app.ErrItemNotFound) {
-		return app.ItemState{}, fmt.Errorf("%w: the item is gone", app.ErrProviderUnavailable)
+		return app.ItemState{}, fmt.Errorf("%w: the item is gone", app.ErrAggregatorUnavailable)
 	}
 	return state, err
 }
@@ -253,7 +253,7 @@ func (p Port) ReadAccount(ctx context.Context, id uuid.UUID, c domain.Credential
 		return nil
 	})
 	if errors.Is(err, app.ErrItemNotFound) {
-		return out, fmt.Errorf("%w: the item is gone", app.ErrProviderUnavailable)
+		return out, fmt.Errorf("%w: the item is gone", app.ErrAggregatorUnavailable)
 	}
 	return out, err
 }

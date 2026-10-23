@@ -50,8 +50,8 @@ func toProblem(err error) (problem.Details, bool) {
 		return d, true
 	}
 	if ue, ok := errors.AsType[*app.UnauthorizedError](err); ok {
-		d := problem.New(http.StatusUnprocessableEntity, "provider_unauthorized", ue.Error())
-		d.Errors = []problem.FieldError{{Field: ue.Field, Message: "rejected by the provider"}}
+		d := problem.New(http.StatusUnprocessableEntity, "aggregator_unauthorized", ue.Error())
+		d.Errors = []problem.FieldError{{Field: ue.Field, Message: "rejected by the aggregator"}}
 		return d, true
 	}
 	if fe, ok := errors.AsType[*domain.FieldError](err); ok {
@@ -74,9 +74,9 @@ func toProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusConflict, "integration_unavailable", err.Error()), true
 	case errors.Is(err, app.ErrIntegrationInUse):
 		return problem.New(http.StatusConflict, "integration_in_use", "delete the integration's connections first"), true
-	case errors.Is(err, app.ErrProviderUnavailable):
-		// The cause stays out of the response: it may name the provider's address.
-		return problem.New(http.StatusBadGateway, "provider_unavailable", app.ErrProviderUnavailable.Error()), true
+	case errors.Is(err, app.ErrAggregatorUnavailable):
+		// The cause stays out of the response: it may name the aggregator's address.
+		return problem.New(http.StatusBadGateway, "aggregator_unavailable", app.ErrAggregatorUnavailable.Error()), true
 	}
 	return problem.Details{}, false
 }

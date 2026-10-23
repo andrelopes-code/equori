@@ -418,8 +418,9 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "problem.already_matched": "Essa transação já confirma outra linha.",
   "problem.integration_unavailable":
     "A integração Open Finance não está configurada.",
-  "problem.provider_unauthorized": "O provedor recusou as credenciais.",
-  "problem.provider_unavailable": "O provedor não respondeu. Tente mais tarde.",
+  "problem.aggregator_unauthorized": "O agregador recusou as credenciais.",
+  "problem.aggregator_unavailable":
+    "O agregador não respondeu. Tente mais tarde.",
   "problem.already_reconciled": "Esta fatura já está reconciliada.",
   "batch.title": "Importação",
   "batch.subtitle": "O que aconteceu com cada linha do arquivo.",

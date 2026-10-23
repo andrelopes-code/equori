@@ -89,7 +89,7 @@ func TestTickSyncsOnlyUpdatedItems(t *testing.T) {
 	}
 }
 
-// A95: each check records when the provider will next update the item, also when the item
+// A95: each check records when the aggregator will next update the item, also when the item
 // has no new data; the connection reports it.
 func TestCheckRecordsNextItemUpdate(t *testing.T) {
 	t.Parallel()
@@ -193,7 +193,7 @@ func TestTickWithTwoIntegrations(t *testing.T) {
 	if ok := f.connection(f.h.Client, f.conn.ID); ok.LastError != "" || ok.LastSyncedAt == "" {
 		t.Fatalf("synced connection = %+v", ok)
 	}
-	f.h.ExpectProblem(f.syncNow(f.h.Client, second.ID), http.StatusUnprocessableEntity, "provider_unauthorized", "integration_id")
+	f.h.ExpectProblem(f.syncNow(f.h.Client, second.ID), http.StatusUnprocessableEntity, "aggregator_unauthorized", "integration_id")
 	logs := f.h.Logs()
 	if !strings.Contains(logs, "sync failed") || !strings.Contains(logs, second.ID) {
 		t.Fatalf("the failed sync is not logged with its connection id")
@@ -254,7 +254,7 @@ func TestInterruptedSyncCompletes(t *testing.T) {
 	f.mapTo(pluggy.SubtypeCard, card)
 	f.p.FailTransactions(nubankItem+"-card", http.StatusBadRequest)
 
-	f.h.ExpectProblem(f.syncNow(f.h.Client, f.conn.ID), http.StatusBadGateway, "provider_unavailable", "")
+	f.h.ExpectProblem(f.syncNow(f.h.Client, f.conn.ID), http.StatusBadGateway, "aggregator_unavailable", "")
 	if got := f.connection(f.h.Client, f.conn.ID); got.LastError == "" || len(f.batches(f.checking)) != 1 || len(f.batches(card)) != 0 {
 		t.Fatalf("after the failure: connection %+v, batches %d/%d", got, len(f.batches(f.checking)), len(f.batches(card)))
 	}

@@ -382,12 +382,12 @@ type Connection struct {
 	IntegrationId openapi_types.UUID `json:"integration_id"`
 	LastError     *string            `json:"last_error,omitempty"`
 
-	// LastItemUpdateAt When the provider last updated the item from the institution, as of the last sync; the ledger holds the data of this update.
+	// LastItemUpdateAt When the aggregator last updated the item from the institution, as of the last sync; the ledger holds the data of this update.
 	LastItemUpdateAt *time.Time `json:"last_item_update_at,omitempty"`
 	LastSyncedAt     *time.Time `json:"last_synced_at,omitempty"`
 	Name             string     `json:"name"`
 
-	// NextItemUpdateAt When the provider will next update the item, as the last check read it (A95). The owner cannot bring it forward.
+	// NextItemUpdateAt When the aggregator will next update the item, as the last check read it (A95). The owner cannot bring it forward.
 	NextItemUpdateAt *time.Time `json:"next_item_update_at,omitempty"`
 
 	// ProviderStatus The item status the aggregator reported, verbatim.
@@ -627,7 +627,7 @@ type Problem struct {
 	// account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
 	// already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
 	// record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
-	// integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
+	// integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
 	// currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
 	// budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
 	// investment_transaction, system_account.
@@ -815,7 +815,7 @@ type ServerInterface interface {
 	// GetIntegration Return an integration, without its credentials.
 	// (GET /integrations/{id})
 	GetIntegration(w http.ResponseWriter, r *http.Request, id ID)
-	// UpdateIntegrationCredentials Replace the credentials of an integration after the provider validates them.
+	// UpdateIntegrationCredentials Replace the credentials of an integration after the aggregator validates them.
 	// (PUT /integrations/{id}/credentials)
 	UpdateIntegrationCredentials(w http.ResponseWriter, r *http.Request, id ID)
 }
@@ -2973,7 +2973,7 @@ type StrictServerInterface interface {
 	// GetIntegration Return an integration, without its credentials.
 	// (GET /integrations/{id})
 	GetIntegration(ctx context.Context, request GetIntegrationRequestObject) (GetIntegrationResponseObject, error)
-	// UpdateIntegrationCredentials Replace the credentials of an integration after the provider validates them.
+	// UpdateIntegrationCredentials Replace the credentials of an integration after the aggregator validates them.
 	// (PUT /integrations/{id}/credentials)
 	UpdateIntegrationCredentials(ctx context.Context, request UpdateIntegrationCredentialsRequestObject) (UpdateIntegrationCredentialsResponseObject, error)
 }

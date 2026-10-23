@@ -307,7 +307,7 @@ func TestIntegrationCredentials(t *testing.T) {
 	a.serveItem(pluggyClient, nubankItem, "Nubank")
 
 	a.h.ExpectProblem(a.h.Do(http.MethodPost, "/api/v1/integrations", integrationBody("Meu Pluggy", pluggyClient, "wrong-secret-77")),
-		http.StatusUnprocessableEntity, "provider_unauthorized", "client_secret")
+		http.StatusUnprocessableEntity, "aggregator_unauthorized", "client_secret")
 	var stored int
 	if err := a.h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM ingestion_integration`).Scan(&stored); err != nil || stored != 0 {
 		t.Fatalf("stored = %d, %v", stored, err)
@@ -318,7 +318,7 @@ func TestIntegrationCredentials(t *testing.T) {
 		http.StatusUnprocessableEntity, "validation_failed", "name")
 	credentials := "/api/v1/integrations/" + in.ID + "/credentials"
 	a.h.ExpectProblem(a.h.Do(http.MethodPut, credentials, map[string]any{"client_id": pluggyClient, "client_secret": "wrong-secret-77"}),
-		http.StatusUnprocessableEntity, "provider_unauthorized", "client_secret")
+		http.StatusUnprocessableEntity, "aggregator_unauthorized", "client_secret")
 	conn := a.mustConnect(a.h.Client, in.ID, nubankItem)
 
 	a.p.SetCredentials(pluggyClient, "secret-rotated-19")
@@ -408,7 +408,7 @@ func TestTwoIntegrations(t *testing.T) {
 
 	a.p.SetCredentials("client-2b7d", "secret-2c91")
 	a.p.RevokeKeys()
-	a.h.ExpectProblem(a.connect(a.h.Client, second.ID, "item-second-3"), http.StatusUnprocessableEntity, "provider_unauthorized", "integration_id")
+	a.h.ExpectProblem(a.connect(a.h.Client, second.ID, "item-second-3"), http.StatusUnprocessableEntity, "aggregator_unauthorized", "integration_id")
 	a.serveItem(pluggyClient, "item-first-5", "Bank 9")
 	a.mustConnect(a.h.Client, first.ID, "item-first-5")
 	assertNoSecrets(t, a.h, "secret-2c90", "secret-2c91")
@@ -514,5 +514,5 @@ func TestProviderUnavailable(t *testing.T) {
 	closed.Close()
 	h := apitest.New(t, apitest.Aggregator("pluggy", closed.URL))
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/integrations", integrationBody("Meu Pluggy", pluggyClient, pluggySecret)),
-		http.StatusBadGateway, "provider_unavailable", "")
+		http.StatusBadGateway, "aggregator_unavailable", "")
 }

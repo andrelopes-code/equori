@@ -1,6 +1,6 @@
 -- name: InsertConnection :one
-INSERT INTO ingestion_connection (user_id, integration_id, external_item_id, name, provider_status, last_item_update_at)
-VALUES (@user_id, @integration_id, @external_item_id, @name, @provider_status, sqlc.narg(last_item_update_at))
+INSERT INTO ingestion_connection (user_id, integration_id, external_id, name, provider_status, last_item_update_at)
+VALUES (@user_id, @integration_id, @external_id, @name, @provider_status, sqlc.narg(last_item_update_at))
 RETURNING *;
 
 -- name: InsertExternalAccount :one

@@ -442,10 +442,10 @@ func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRec
 		err := s.ledger.UpdateImportedPosting(ctx, rec.UserID, rec.ID, r.Pending, r.DueDate, r.Kind)
 		switch {
 		case errors.Is(err, ErrReconciled):
-			notes = append(notes, "the provider reports the line "+strings.ToLower(domain.ExternalStatusOf(r))+billNote(r.DueDate)+"; the posting is reconciled and keeps its status and statement")
+			notes = append(notes, "the aggregator reports the line "+strings.ToLower(domain.ExternalStatusOf(r))+billNote(r.DueDate)+"; the posting is reconciled and keeps its status and statement")
 			retype = false
 		case errors.Is(err, ErrNotRetypable):
-			notes = append(notes, "the provider reports the line as a card payment; the transaction changed since its import and keeps its categories")
+			notes = append(notes, "the aggregator reports the line as a card payment; the transaction changed since its import and keeps its categories")
 			retype = false
 		case err != nil && !errors.Is(err, ErrNotFound):
 			return false, err
@@ -473,7 +473,7 @@ func (s *Service) update(ctx context.Context, sync bool, rec *domain.ExternalRec
 // (A102). A reconciled posting keeps them: the record describes the change and is flagged
 // with review reason changed. An installment keeps the amount its plan fixes.
 func (s *Service) followLine(ctx context.Context, rec *domain.ExternalRecord, r domain.NormalizedRecord) (string, error) {
-	kept := fmt.Sprintf("the provider reports %d minor units on %s; the ledger keeps %d on %s",
+	kept := fmt.Sprintf("the aggregator reports %d minor units on %s; the ledger keeps %d on %s",
 		r.Amount, r.Date.Format(time.DateOnly), rec.Amount, rec.Date.Format(time.DateOnly))
 	if rec.Installment != nil || rec.TransactionID == uuid.Nil {
 		return kept, nil
@@ -502,7 +502,7 @@ func (s *Service) billMatched(ctx context.Context, rec *domain.ExternalRecord, p
 	err := s.ledger.UpdateImportedPosting(ctx, rec.UserID, rec.ID, pending, rec.DueDate, "")
 	switch {
 	case errors.Is(err, ErrReconciled):
-		rec.UnappliedChange = "the provider reports the line" + billNote(rec.DueDate) + "; the posting is reconciled and keeps its status and statement"
+		rec.UnappliedChange = "the aggregator reports the line" + billNote(rec.DueDate) + "; the posting is reconciled and keeps its status and statement"
 	case err != nil && !errors.Is(err, ErrNotFound):
 		return err
 	}

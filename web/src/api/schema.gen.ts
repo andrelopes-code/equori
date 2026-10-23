@@ -1819,10 +1819,10 @@ export interface paths {
         put?: never;
         /**
          * Store the credentials of an aggregator application (P6 amendment A34).
-         * @description The provider validates the credentials before they are stored, sealed under
+         * @description The aggregator validates the credentials before they are stored, sealed under
          *     EQUORI_SECRET_KEY (ADR 008); no response returns them. 409 integration_unavailable
-         *     without the key; 422 provider_unauthorized when the provider rejects them; 502
-         *     provider_unavailable when it does not answer.
+         *     without the key; 422 aggregator_unauthorized when the aggregator rejects them; 502
+         *     aggregator_unavailable when it does not answer.
          */
         post: operations["createIntegration"];
         delete?: never;
@@ -1857,7 +1857,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Replace the credentials of an integration after the provider validates them. */
+        /** Replace the credentials of an integration after the aggregator validates them. */
         put: operations["updateIntegrationCredentials"];
         post?: never;
         delete?: never;
@@ -2608,12 +2608,12 @@ export interface components {
             provider_status: string;
             /**
              * Format: date-time
-             * @description When the provider last updated the item from the institution, as of the last sync; the ledger holds the data of this update.
+             * @description When the aggregator last updated the item from the institution, as of the last sync; the ledger holds the data of this update.
              */
             last_item_update_at?: string;
             /**
              * Format: date-time
-             * @description When the provider will next update the item, as the last check read it (A95). The owner cannot bring it forward.
+             * @description When the aggregator will next update the item, as the last check read it (A95). The owner cannot bring it forward.
              */
             next_item_update_at?: string;
             /** Format: date-time */
@@ -4022,7 +4022,7 @@ export interface components {
              *     account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
              *     already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
              *     record_resolved, already_matched, not_categorizable, suggestion_closed, pairing_ambiguous,
-             *     integration_unavailable, provider_unauthorized, provider_unavailable, integration_in_use,
+             *     integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
              *     currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
              *     budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
              *     investment_transaction, system_account.

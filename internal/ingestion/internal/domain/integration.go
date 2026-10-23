@@ -11,14 +11,14 @@ import (
 	"github.com/google/uuid"
 )
 
-type Provider string
+type AggregatorID string
 
 // Integration is one aggregator application of a user (P6 amendment A34). Its credentials
 // travel only sealed (ADR 008).
 type Integration struct {
 	ID                uuid.UUID
 	UserID            int64
-	Provider          Provider
+	Aggregator        AggregatorID
 	Name              string
 	SealedCredentials []byte
 	UpdatedAt         time.Time
@@ -26,12 +26,12 @@ type Integration struct {
 
 const maxNameLength = 60
 
-func NewIntegration(id uuid.UUID, userID int64, p Provider, name string) (Integration, error) {
+func NewIntegration(id uuid.UUID, userID int64, p AggregatorID, name string) (Integration, error) {
 	name = strings.TrimSpace(name)
 	if name == "" || utf8.RuneCountInString(name) > maxNameLength {
 		return Integration{}, invalid("name", "must have 1 to 60 characters")
 	}
-	return Integration{ID: id, UserID: userID, Provider: p, Name: name}, nil
+	return Integration{ID: id, UserID: userID, Aggregator: p, Name: name}, nil
 }
 
 // Credentials of an aggregator application, one value per declared field. String,

@@ -101,7 +101,7 @@ func TestConnectionSchemaInvariants(t *testing.T) {
 	if err := h.Pool.QueryRow(ctx, `INSERT INTO ingestion_integration (id, user_id, aggregator, name, credential_ciphertext) VALUES (uuidv7(), $1, 'pluggy', 'Meu Pluggy', '\x01') RETURNING id`, uid).Scan(&integration); err != nil {
 		t.Fatal(err)
 	}
-	if err := h.Pool.QueryRow(ctx, `INSERT INTO ingestion_connection (user_id, integration_id, external_item_id, name, provider_status) VALUES ($1, $2, 'item-1', 'Nubank', 'UPDATED') RETURNING id`, uid, integration).Scan(&connection); err != nil {
+	if err := h.Pool.QueryRow(ctx, `INSERT INTO ingestion_connection (user_id, integration_id, external_id, name, provider_status) VALUES ($1, $2, 'item-1', 'Nubank', 'UPDATED') RETURNING id`, uid, integration).Scan(&connection); err != nil {
 		t.Fatal(err)
 	}
 	external := func(id string, account any, syncFrom any, ignored bool) error {
@@ -125,7 +125,7 @@ func TestConnectionSchemaInvariants(t *testing.T) {
 	}{
 		{"A34: an integration name once per user", exec(`INSERT INTO ingestion_integration (id, user_id, aggregator, name, credential_ciphertext) VALUES (uuidv7(), $1, 'pluggy', 'Meu Pluggy', '\x01')`, uid)},
 		{"A34: an integration with connections is not deleted", exec(`DELETE FROM ingestion_integration WHERE id = $1`, integration)},
-		{"an item once per integration", exec(`INSERT INTO ingestion_connection (user_id, integration_id, external_item_id, name, provider_status) VALUES ($1, $2, 'item-1', 'Again', 'UPDATED')`, uid, integration)},
+		{"an item once per integration", exec(`INSERT INTO ingestion_connection (user_id, integration_id, external_id, name, provider_status) VALUES ($1, $2, 'item-1', 'Again', 'UPDATED')`, uid, integration)},
 		{"A35: one feed per ledger account", external("acc-2", checking, "2026-10-01", false)},
 		{"A35: a mapped account has a start date", external("acc-3", savings, nil, false)},
 		{"A35: an ignored account is not mapped", external("acc-4", savings, "2026-10-01", true)},

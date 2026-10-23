@@ -50,11 +50,11 @@ Pluggy plan; check Pluggy's terms before splitting banks across accounts.
 `EQUORI_AGGREGATOR_PLUGGY_URL` overrides the Pluggy API address (default `https://api.pluggy.ai`). `GET /api/v1/aggregators` lists the credential fields of each aggregator.
 
 ```sh
-# Integration: Pluggy validates the credentials before equori stores them (422 provider_unauthorized otherwise).
+# Integration: Pluggy validates the credentials before equori stores them (422 aggregator_unauthorized otherwise).
 POST /api/v1/integrations {"provider": "pluggy", "name": "Meu Pluggy", "credentials": {"client_id": "...", "client_secret": "..."}}
 
 # One connection per item id; the response lists the item's accounts, all pending.
-POST /api/v1/connections {"integration_id": "<integration>", "item_id": "<item id>"}
+POST /api/v1/connections {"integration_id": "<integration>", "external_id": "<item id>"}
 
 # Map each account to a leaf balance account of the same currency, from a start date, or ignore it.
 PUT /api/v1/connections/<connection>/accounts/<external account> {"account_id": "<ledger account>", "sync_from": "2026-10-01"}

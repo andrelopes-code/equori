@@ -40,7 +40,7 @@ type IngestionConnection struct {
 	ID               uuid.UUID
 	UserID           int64
 	IntegrationID    uuid.UUID
-	ExternalItemID   string
+	ExternalID       string
 	Name             string
 	ProviderStatus   string
 	LastItemUpdateAt *time.Time

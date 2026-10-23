@@ -18,17 +18,17 @@ var (
 	ErrIntegrationUnavailable = errors.New("integrations need EQUORI_SECRET_KEY")
 	ErrCredentialsUnreadable  = fmt.Errorf("%w: the stored credentials do not open with the configured key; enter them again", ErrIntegrationUnavailable)
 	ErrIntegrationInUse       = errors.New("the integration has connections")
-	ErrProviderUnauthorized   = errors.New("the provider rejected the credentials")
-	ErrProviderUnavailable    = errors.New("the provider did not answer")
-	ErrItemNotFound           = errors.New("the provider has no such item for these credentials")
-	ErrAccountGone            = errors.New("the provider no longer lists a mapped account")
+	ErrAggregatorUnauthorized = errors.New("the aggregator rejected the credentials")
+	ErrAggregatorUnavailable  = errors.New("the aggregator did not answer")
+	ErrItemNotFound           = errors.New("the aggregator has no such item for these credentials")
+	ErrAccountGone            = errors.New("the aggregator no longer lists a mapped account")
 )
 
-// UnauthorizedError names the request field whose credentials the provider rejected.
+// UnauthorizedError names the request field whose credentials the aggregator rejected.
 type UnauthorizedError struct{ Field string }
 
-func (e *UnauthorizedError) Error() string { return e.Field + ": " + ErrProviderUnauthorized.Error() }
-func (e *UnauthorizedError) Unwrap() error { return ErrProviderUnauthorized }
+func (e *UnauthorizedError) Error() string { return e.Field + ": " + ErrAggregatorUnauthorized.Error() }
+func (e *UnauthorizedError) Unwrap() error { return ErrAggregatorUnauthorized }
 
 // Sealer seals values bound to their row (ADR 008).
 type Sealer interface {
@@ -39,8 +39,8 @@ type Sealer interface {
 }
 
 // Aggregator reads an aggregator application with an integration's credentials and may
-// cache one API key per integration. Errors: ErrProviderUnauthorized, ErrItemNotFound, or
-// one wrapping ErrProviderUnavailable; none names an identifier (A44).
+// cache one API key per integration. Errors: ErrAggregatorUnauthorized, ErrItemNotFound, or
+// one wrapping ErrAggregatorUnavailable; none names an identifier (A44).
 type Aggregator interface {
 	ID() string
 	Name() string
@@ -113,7 +113,7 @@ func (s *Service) Aggregators() []Aggregator {
 	return out
 }
 
-func (s *Service) aggregator(p domain.Provider) (Aggregator, error) {
+func (s *Service) aggregator(p domain.AggregatorID) (Aggregator, error) {
 	a, err := s.aggs.Get(string(p))
 	if err != nil {
 		return nil, &domain.FieldError{Field: "aggregator", Message: "is not an aggregator of this instance"}
@@ -137,14 +137,14 @@ func (s *Service) verify(ctx context.Context, agg Aggregator, id uuid.UUID, c do
 		return err
 	}
 	err := agg.Verify(ctx, id, c)
-	if errors.Is(err, ErrProviderUnauthorized) {
+	if errors.Is(err, ErrAggregatorUnauthorized) {
 		return &UnauthorizedError{Field: secretField(agg.CredentialFields())}
 	}
 	return err
 }
 
-// CreateIntegration stores credentials the provider accepts; rejected ones store nothing (S57).
-func (s *Service) CreateIntegration(ctx context.Context, userID int64, p domain.Provider, name string, c domain.Credentials) (domain.Integration, error) {
+// CreateIntegration stores credentials the aggregator accepts; rejected ones store nothing (S57).
+func (s *Service) CreateIntegration(ctx context.Context, userID int64, p domain.AggregatorID, name string, c domain.Credentials) (domain.Integration, error) {
 	if err := s.available(); err != nil {
 		return domain.Integration{}, err
 	}
@@ -184,7 +184,7 @@ func (s *Service) ListIntegrations(ctx context.Context, userID int64, p page.Req
 	return s.repo.ListIntegrations(ctx, userID, p)
 }
 
-// UpdateCredentials replaces the credentials after the provider accepts them; rejected ones
+// UpdateCredentials replaces the credentials after the aggregator accepts them; rejected ones
 // leave the stored ones in place.
 func (s *Service) UpdateCredentials(ctx context.Context, userID int64, id uuid.UUID, c domain.Credentials) (domain.Integration, error) {
 	if err := s.available(); err != nil {
@@ -194,7 +194,7 @@ func (s *Service) UpdateCredentials(ctx context.Context, userID int64, id uuid.U
 	if err != nil {
 		return domain.Integration{}, err
 	}
-	agg, err := s.aggregator(i.Provider)
+	agg, err := s.aggregator(i.Aggregator)
 	if err != nil {
 		return domain.Integration{}, err
 	}
@@ -220,7 +220,7 @@ func (s *Service) DeleteIntegration(ctx context.Context, userID int64, id uuid.U
 	if err := s.repo.DeleteIntegration(ctx, userID, id); err != nil {
 		return err
 	}
-	if agg, err := s.aggregator(i.Provider); err == nil {
+	if agg, err := s.aggregator(i.Aggregator); err == nil {
 		agg.Forget(id)
 	}
 	return nil
@@ -246,7 +246,7 @@ func (s *Service) RotateSecrets(ctx context.Context) (int, error) {
 	})
 }
 
-// ItemState is what the provider reports about an item.
+// ItemState is what the aggregator reports about an item.
 type ItemState struct {
 	Status       string
 	UpdatedAt    *time.Time

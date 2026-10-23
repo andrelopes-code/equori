@@ -136,7 +136,7 @@ func (q *Queries) ExternalAccountsOf(ctx context.Context, arg ExternalAccountsOf
 }
 
 const getConnection = `-- name: GetConnection :one
-SELECT id, user_id, integration_id, external_item_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at FROM ingestion_connection WHERE user_id = $1 AND id = $2
+SELECT id, user_id, integration_id, external_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at FROM ingestion_connection WHERE user_id = $1 AND id = $2
 `
 
 type GetConnectionParams struct {
@@ -151,7 +151,7 @@ func (q *Queries) GetConnection(ctx context.Context, arg GetConnectionParams) (I
 		&i.ID,
 		&i.UserID,
 		&i.IntegrationID,
-		&i.ExternalItemID,
+		&i.ExternalID,
 		&i.Name,
 		&i.ProviderStatus,
 		&i.LastItemUpdateAt,
@@ -164,15 +164,15 @@ func (q *Queries) GetConnection(ctx context.Context, arg GetConnectionParams) (I
 }
 
 const insertConnection = `-- name: InsertConnection :one
-INSERT INTO ingestion_connection (user_id, integration_id, external_item_id, name, provider_status, last_item_update_at)
+INSERT INTO ingestion_connection (user_id, integration_id, external_id, name, provider_status, last_item_update_at)
 VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, user_id, integration_id, external_item_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at
+RETURNING id, user_id, integration_id, external_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at
 `
 
 type InsertConnectionParams struct {
 	UserID           int64
 	IntegrationID    uuid.UUID
-	ExternalItemID   string
+	ExternalID       string
 	Name             string
 	ProviderStatus   string
 	LastItemUpdateAt *time.Time
@@ -182,7 +182,7 @@ func (q *Queries) InsertConnection(ctx context.Context, arg InsertConnectionPara
 	row := q.db.QueryRow(ctx, insertConnection,
 		arg.UserID,
 		arg.IntegrationID,
-		arg.ExternalItemID,
+		arg.ExternalID,
 		arg.Name,
 		arg.ProviderStatus,
 		arg.LastItemUpdateAt,
@@ -192,7 +192,7 @@ func (q *Queries) InsertConnection(ctx context.Context, arg InsertConnectionPara
 		&i.ID,
 		&i.UserID,
 		&i.IntegrationID,
-		&i.ExternalItemID,
+		&i.ExternalID,
 		&i.Name,
 		&i.ProviderStatus,
 		&i.LastItemUpdateAt,
@@ -316,7 +316,7 @@ func (q *Queries) ListAllConnections(ctx context.Context) ([]ListAllConnectionsR
 }
 
 const listConnections = `-- name: ListConnections :many
-SELECT id, user_id, integration_id, external_item_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at FROM ingestion_connection
+SELECT id, user_id, integration_id, external_id, name, provider_status, last_item_update_at, last_synced_at, last_error, created_at, next_item_update_at FROM ingestion_connection
 WHERE user_id = $1
   AND ($2::text IS NULL OR (name, id) > ($2::text, $3::uuid))
 ORDER BY name, id
@@ -348,7 +348,7 @@ func (q *Queries) ListConnections(ctx context.Context, arg ListConnectionsParams
 			&i.ID,
 			&i.UserID,
 			&i.IntegrationID,
-			&i.ExternalItemID,
+			&i.ExternalID,
 			&i.Name,
 			&i.ProviderStatus,
 			&i.LastItemUpdateAt,

@@ -175,7 +175,7 @@ describe("Account links", () => {
     await renderApp("/accounts/links", {
       fetch: api([], {
         [`POST /api/v1/connections/${connectionID}/sync`]: () =>
-          problem(502, "provider_unauthorized"),
+          problem(502, "aggregator_unauthorized"),
       }),
     });
     await userEvent.click(
@@ -184,7 +184,7 @@ describe("Account links", () => {
       }),
     );
     expect(
-      await screen.findByText(catalogEn["problem.provider_unauthorized"]),
+      await screen.findByText(catalogEn["problem.aggregator_unauthorized"]),
     ).toBeInTheDocument();
   });
 });

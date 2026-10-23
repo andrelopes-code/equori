@@ -52,7 +52,7 @@ type ExternalRecord struct {
 	BalanceAfter   *int64
 	// LineKind is the card line type the ledger was given (A88).
 	LineKind string
-	// UnappliedChange describes a provider change the ledger did not take.
+	// UnappliedChange describes an aggregator change the ledger did not take.
 	UnappliedChange string
 }
 

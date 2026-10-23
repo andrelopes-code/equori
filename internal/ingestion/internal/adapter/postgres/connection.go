@@ -15,7 +15,7 @@ import (
 
 func toConnection(row IngestionConnection) domain.Connection {
 	return domain.Connection{
-		ID: row.ID, UserID: row.UserID, IntegrationID: row.IntegrationID, ItemID: row.ExternalItemID, Name: row.Name,
+		ID: row.ID, UserID: row.UserID, IntegrationID: row.IntegrationID, ExternalID: row.ExternalID, Name: row.Name,
 		ProviderStatus: row.ProviderStatus, LastItemUpdateAt: row.LastItemUpdateAt, NextItemUpdateAt: row.NextItemUpdateAt,
 		LastSyncedAt: row.LastSyncedAt,
 		LastError:    value(row.LastError), CreatedAt: row.CreatedAt,
@@ -43,7 +43,7 @@ func (r *Repository) InsertConnection(ctx context.Context, c domain.Connection) 
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
 		q := r.q.WithTx(tx)
 		row, err := q.InsertConnection(ctx, InsertConnectionParams{
-			UserID: c.UserID, IntegrationID: c.IntegrationID, ExternalItemID: c.ItemID, Name: c.Name,
+			UserID: c.UserID, IntegrationID: c.IntegrationID, ExternalID: c.ExternalID, Name: c.Name,
 			ProviderStatus: c.ProviderStatus, LastItemUpdateAt: c.LastItemUpdateAt,
 		})
 		if err != nil {

@@ -27,13 +27,13 @@ func (s *Service) CreateConnection(ctx context.Context, userID int64, integratio
 	if err != nil {
 		return domain.Connection{}, err
 	}
-	agg, err := s.aggregator(i.Provider)
+	agg, err := s.aggregator(i.Aggregator)
 	if err != nil {
 		return domain.Connection{}, err
 	}
 	c, err := agg.Item(ctx, i.ID, creds, itemID)
 	switch {
-	case errors.Is(err, ErrProviderUnauthorized):
+	case errors.Is(err, ErrAggregatorUnauthorized):
 		return domain.Connection{}, &UnauthorizedError{Field: "integration_id"}
 	case errors.Is(err, ErrItemNotFound):
 		return domain.Connection{}, &domain.FieldError{Field: "external_id", Message: "is not an item of this integration's application"}
@@ -43,7 +43,7 @@ func (s *Service) CreateConnection(ctx context.Context, userID int64, integratio
 	if c.Name, err = domain.ConnectionName(name, c.Name); err != nil {
 		return domain.Connection{}, err
 	}
-	c.UserID, c.IntegrationID, c.ItemID = userID, i.ID, itemID
+	c.UserID, c.IntegrationID, c.ExternalID = userID, i.ID, itemID
 	stored, err := s.repo.InsertConnection(ctx, c)
 	if err != nil {
 		return domain.Connection{}, err
@@ -61,7 +61,7 @@ func (s *Service) withState(ctx context.Context, c *domain.Connection, aggs map[
 		if err != nil {
 			return err
 		}
-		agg, _ = s.aggregator(i.Provider)
+		agg, _ = s.aggregator(i.Aggregator)
 		aggs[c.IntegrationID] = agg
 	}
 	if agg == nil {

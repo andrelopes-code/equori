@@ -420,9 +420,9 @@ export const accountsEn = {
   "problem.already_matched": "That transaction already confirms another line.",
   "problem.integration_unavailable":
     "The Open Finance integration is not configured.",
-  "problem.provider_unauthorized": "The provider refused the credentials.",
-  "problem.provider_unavailable":
-    "The provider did not answer. Try again later.",
+  "problem.aggregator_unauthorized": "The aggregator refused the credentials.",
+  "problem.aggregator_unavailable":
+    "The aggregator did not answer. Try again later.",
   "problem.already_reconciled": "This statement is already reconciled.",
   "batch.title": "Import",
   "batch.subtitle": "What became of each line of the file.",

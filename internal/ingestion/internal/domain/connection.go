@@ -17,13 +17,13 @@ type Connection struct {
 	ID             uuid.UUID
 	UserID         int64
 	IntegrationID  uuid.UUID
-	ItemID         string
+	ExternalID     string
 	Name           string
 	ProviderStatus string
 	// State is the aggregator's reading of ProviderStatus; the repository does not store it.
 	State            ConnectionState
 	LastItemUpdateAt *time.Time
-	// NextItemUpdateAt is when the provider will next update the item, as the last check read
+	// NextItemUpdateAt is when the aggregator will next update the item, as the last check read
 	// it (A95).
 	NextItemUpdateAt *time.Time
 	LastSyncedAt     *time.Time
