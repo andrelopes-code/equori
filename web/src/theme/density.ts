@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 export type Density = "comfortable" | "compact" | "dense";
 
@@ -24,20 +24,36 @@ export function readDensity(): Density {
   }
 }
 
+const listeners = new Set<() => void>();
+// Holds the choice for this page load only while storage refuses the write.
+let held: Density | undefined;
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+function snapshot(): Density {
+  return held ?? readDensity();
+}
+
 export function applyDensity(density: Density): void {
   try {
     localStorage.setItem(STORAGE_KEY, density);
+    held = undefined;
   } catch {
     // The density still applies to this page load when storage is unavailable.
+    held = density;
   }
   document.documentElement.setAttribute("data-slotted-density", density);
+  listeners.forEach((listener) => {
+    listener();
+  });
 }
 
+// Every reader sees the choice at once, so the menu and the settings page never disagree.
 export function useDensity(): [Density, (density: Density) => void] {
-  const [density, setDensity] = useState<Density>(readDensity);
-  const update = useCallback((next: Density) => {
-    applyDensity(next);
-    setDensity(next);
-  }, []);
-  return [density, update];
+  return [useSyncExternalStore(subscribe, snapshot), applyDensity];
 }

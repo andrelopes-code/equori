@@ -29,6 +29,8 @@ pre-commit:
         - "api/openapi.yaml"
         - "**/oapi-codegen.yaml"
         - "web/src/theme/equori.theme.ts"
+        - "web/src/theme/equori-glass.theme.ts"
+        - "web/src/theme/glass/**"
       run: make gen-check
 
 pre-push:
@@ -60,4 +62,4 @@ pre-push:
     - name: web-node-test
       root: web/
       glob: "web/src/**"
-      run: node --test src/theme/equori.theme.test.ts src/testing/slotted-findings.test.ts
+      run: node --test src/theme/equori.theme.test.ts src/theme/equori-glass.theme.test.ts src/testing/slotted-findings.test.ts

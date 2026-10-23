@@ -50,7 +50,8 @@
     min-block-size: 0;
     border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
     border-radius: var(--slotted-radius-lg);
-    background: var(--slotted-page-ground);
+    /* A section's surface, which a theme that draws surfaces as a material sets on the shell. */
+    background: var(--slotted-section-surface, var(--slotted-page-ground));
   }
 
   @media (max-width: 599px) {

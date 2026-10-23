@@ -149,8 +149,14 @@ export default defineConfig(
     },
   },
   {
-    // Node runs this test without the @/ alias, so it imports ./equori.theme.ts.
-    files: ["src/theme/equori.theme.test.ts"],
+    // Node runs the theme compiler and this test without the @/ alias, so the theme files import
+    // each other by relative path.
+    files: [
+      "src/theme/equori.theme.test.ts",
+      "src/theme/equori-glass.theme.ts",
+      "src/theme/equori-glass.theme.test.ts",
+      "src/theme/glass/**",
+    ],
     rules: {
       "no-restricted-imports": restrict({
         patterns: [featureInternals],

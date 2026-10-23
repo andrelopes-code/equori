@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 export type Scheme = "dark" | "light" | "system";
 
@@ -18,11 +18,28 @@ export function readScheme(): Scheme {
   }
 }
 
+const listeners = new Set<() => void>();
+// Holds the choice for this page load only while storage refuses the write.
+let held: Scheme | undefined;
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+function snapshot(): Scheme {
+  return held ?? readScheme();
+}
+
 export function applyScheme(scheme: Scheme): void {
   try {
     localStorage.setItem(STORAGE_KEY, scheme);
+    held = undefined;
   } catch {
     // The scheme still applies to this page load when storage is unavailable.
+    held = scheme;
   }
   const resolved =
     scheme === "system"
@@ -32,6 +49,9 @@ export function applyScheme(scheme: Scheme): void {
       : scheme;
   document.documentElement.setAttribute("data-slotted-scheme", resolved);
   paintThemeColor();
+  listeners.forEach((listener) => {
+    listener();
+  });
 }
 
 // Android paints its status bar, and an installed app its title bar, in theme-color; the
@@ -55,11 +75,7 @@ function paintThemeColor(): void {
   if (color !== "" && !color.includes("var(")) meta.content = color;
 }
 
+// Every reader sees the choice at once, so the menu and the settings page never disagree.
 export function useScheme(): [Scheme, (scheme: Scheme) => void] {
-  const [scheme, setScheme] = useState<Scheme>(readScheme);
-  const update = useCallback((next: Scheme) => {
-    applyScheme(next);
-    setScheme(next);
-  }, []);
-  return [scheme, update];
+  return [useSyncExternalStore(subscribe, snapshot), applyScheme];
 }

@@ -47,6 +47,7 @@ export default defineConfig({
     exclude: [
       ...configDefaults.exclude,
       "src/theme/equori.theme.test.ts",
+      "src/theme/equori-glass.theme.test.ts",
       "src/testing/slotted-findings.test.ts",
     ],
   },

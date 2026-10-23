@@ -1,0 +1,163 @@
+@layer app {
+  /* A neutral ground with four tinted lights on it, still. The component places the lights once
+     when it mounts (--accent-x, --accent-rx and the like). Every light is a tone of the theme at
+     a strength of single digits, so the ground still reads as graphite. The glass theme is made
+     for the dark scheme and the component is only mounted there (theme/visual.ts). */
+  .aurora {
+    --aurora-strength: 11%;
+
+    /* One light's falloff: an eased curve with no visible rings. */
+    --fall-accent:
+      color-mix(
+          in oklab,
+          var(--slotted-tone-accent-solid) var(--aurora-strength),
+          transparent
+        )
+        0%,
+      color-mix(
+          in oklab,
+          var(--slotted-tone-accent-solid) calc(var(--aurora-strength) * 0.78),
+          transparent
+        )
+        22%,
+      color-mix(
+          in oklab,
+          var(--slotted-tone-accent-solid) calc(var(--aurora-strength) * 0.44),
+          transparent
+        )
+        48%,
+      color-mix(
+          in oklab,
+          var(--slotted-tone-accent-solid) calc(var(--aurora-strength) * 0.16),
+          transparent
+        )
+        74%,
+      transparent 100%;
+    --fall-info:
+      color-mix(
+          in oklab,
+          var(--slotted-tone-info-solid) var(--aurora-strength),
+          transparent
+        )
+        0%,
+      color-mix(
+          in oklab,
+          var(--slotted-tone-info-solid) calc(var(--aurora-strength) * 0.78),
+          transparent
+        )
+        22%,
+      color-mix(
+          in oklab,
+          var(--slotted-tone-info-solid) calc(var(--aurora-strength) * 0.44),
+          transparent
+        )
+        48%,
+      color-mix(
+          in oklab,
+          var(--slotted-tone-info-solid) calc(var(--aurora-strength) * 0.16),
+          transparent
+        )
+        74%,
+      transparent 100%;
+    --fall-secondary:
+      color-mix(
+          in oklab,
+          var(--slotted-tone-secondary-solid) var(--aurora-strength),
+          transparent
+        )
+        0%,
+      color-mix(
+          in oklab,
+          var(--slotted-tone-secondary-solid)
+            calc(var(--aurora-strength) * 0.78),
+          transparent
+        )
+        22%,
+      color-mix(
+          in oklab,
+          var(--slotted-tone-secondary-solid)
+            calc(var(--aurora-strength) * 0.44),
+          transparent
+        )
+        48%,
+      color-mix(
+          in oklab,
+          var(--slotted-tone-secondary-solid)
+            calc(var(--aurora-strength) * 0.16),
+          transparent
+        )
+        74%,
+      transparent 100%;
+    --fall-success:
+      color-mix(
+          in oklab,
+          var(--slotted-tone-success-solid) calc(var(--aurora-strength) * 0.55),
+          transparent
+        )
+        0%,
+      color-mix(
+          in oklab,
+          var(--slotted-tone-success-solid) calc(var(--aurora-strength) * 0.43),
+          transparent
+        )
+        22%,
+      color-mix(
+          in oklab,
+          var(--slotted-tone-success-solid) calc(var(--aurora-strength) * 0.24),
+          transparent
+        )
+        48%,
+      color-mix(
+          in oklab,
+          var(--slotted-tone-success-solid) calc(var(--aurora-strength) * 0.09),
+          transparent
+        )
+        74%,
+      transparent 100%;
+
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    contain: strict;
+
+    /* Painted in one raster. The grain dithers the gradients: a shallow gradient steps one 8-bit
+       level at a time, and zero-mean grain spreads each step across its neighbours. Overlay leaves
+       the mean of the ground unchanged. The vignette falls back to the sunken ground, which
+       frames the lights and keeps the corners quiet behind the navigation and the page. */
+    background:
+      url("/aurora-grain-soft.svg") 0 0 / 96px 96px,
+      radial-gradient(
+        130% 110% at 50% 45%,
+        transparent 48%,
+        color-mix(in oklab, var(--slotted-surface-sunken) 62%, transparent) 100%
+      ),
+      radial-gradient(
+        in oklab var(--accent-rx) var(--accent-ry) at var(--accent-x)
+          var(--accent-y),
+        var(--fall-accent)
+      ),
+      radial-gradient(
+        in oklab var(--info-rx) var(--info-ry) at var(--info-x) var(--info-y),
+        var(--fall-info)
+      ),
+      radial-gradient(
+        in oklab var(--secondary-rx) var(--secondary-ry) at var(--secondary-x)
+          var(--secondary-y),
+        var(--fall-secondary)
+      ),
+      radial-gradient(
+        in oklab var(--success-rx) var(--success-ry) at var(--success-x)
+          var(--success-y),
+        var(--fall-success)
+      );
+    background-color: var(--slotted-surface-sunken);
+    background-blend-mode: overlay, normal, normal, normal, normal, normal;
+  }
+
+  @media (forced-colors: active) {
+    .aurora {
+      display: none;
+    }
+  }
+}

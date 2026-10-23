@@ -15,6 +15,8 @@ Registry of the findings reported to the Slotted owner (`web/CLAUDE.md`, "Slotte
 | A data-grid editor cannot commit the value it sets in the same event                                | open     |
 | a dialog or drawer mounted open plays no enter transition, and one unmounted on close plays no exit | open     |
 | A server-mode data-grid does not group the rows it is given                                         | open     |
+| A sticky section header exposes no stuck state                                                      | open     |
+| A theme rule's bare scheme attribute matches nothing on the theme root                              | open     |
 | An edge progress bar shown again during its exit resumes its sweep mid-track                        | open     |
 | AppShellFooter drops its ref when render is given                                                   | open     |
 | Autofill tint is painted on the input element, over the frame's border                              | open     |
@@ -34,6 +36,7 @@ Registry of the findings reported to the Slotted owner (`web/CLAUDE.md`, "Slotte
 | No command keeps the agent instruction snippet in sync with the installed version                   | open     |
 | No command makes the skills available to a coding agent                                             | open     |
 | No hook gives an element of the application's own the menu's roving focus                           | reported |
+| Overlay surfaces have no backdrop-filter token for a material surface                               | open     |
 | PageHeader offers no material ground over scrolling content                                         | open     |
 | PageHeader paints its stuck ground without a transition                                             | open     |
 | Prompt composer's focus outline fades in from the text colour                                       | open     |
@@ -63,3 +66,8 @@ Registry of the findings reported to the Slotted owner (`web/CLAUDE.md`, "Slotte
 | PageHeader keeps a toolbar on the title row beside a rich title                                     | reported |
 | Chart card actions sit lower than the toolbar beside them                                           | open     |
 | The splitter docs list no props, anatomy, events or example                                         | reported |
+| A bottom sheet drags at a low frame rate and a fast downward fling ends without a continuous exit   | reported |
+| No runtime axis for the corner radius                                                               | open     |
+| The section anatomy does not say the description belongs inside the title                           | reported |
+| A soft key cap has no surface token of its own                                                      | open     |
+| A popup's positioner fade suppresses its content's backdrop blur until the fade ends                | open     |
