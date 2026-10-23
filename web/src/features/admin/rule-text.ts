@@ -1,6 +1,7 @@
 import type { components } from "@/api/schema.gen";
 import { cellText } from "@/features/admin/cell-text";
 import type { CellContext } from "@/features/admin/cell-text";
+// eslint-disable-next-line @typescript-eslint/no-restricted-imports -- writes a percentage, not an amount
 import { formatPlain } from "@/i18n/format";
 
 type RuleCondition = components["schemas"]["RuleCondition"];

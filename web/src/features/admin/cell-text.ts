@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-restricted-imports -- fallback for a context without plain(); the application's context sets it
 import { formatPlain } from "@/i18n/format";
 
 export interface CellContext {

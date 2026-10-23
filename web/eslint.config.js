@@ -25,6 +25,18 @@ const apiClient = {
     "Only features/*/api.ts, features/session and app/providers.tsx use the API client.",
 };
 
+// O9: an amount reaches the screen through useMoneyFormat, which masks it while privacy is on.
+const unmaskedMoney = [
+  "formatMoney",
+  "formatMoneyParts",
+  "formatSigned",
+  "formatPlain",
+].map((importName) => ({
+  name: "@/i18n/format",
+  importNames: [importName],
+  message: `Write amounts through useMoneyFormat() so privacy mode can mask them (O9). ${importName} is for @/i18n and @/privacy.`,
+}));
+
 // Flat-config rule options replace instead of merging: every block below
 // restates the full option list for its files.
 const restrict = ({ patterns, paths = [] }) => ["error", { patterns, paths }];
@@ -111,6 +123,23 @@ export default defineConfig(
     },
   },
   ...featureBlocks,
+  {
+    // A separate rule key, so it merges with the blocks above instead of replacing their options.
+    files: ["src/**"],
+    ignores: [
+      "src/i18n/**",
+      "src/privacy/**",
+      "src/testing/**",
+      "**/*.test.ts",
+      "**/*.test.tsx",
+    ],
+    rules: {
+      "@typescript-eslint/no-restricted-imports": [
+        "error",
+        { paths: unmaskedMoney },
+      ],
+    },
+  },
   {
     files: ["src/app/providers.tsx", "src/api/**", "src/testing/**"],
     rules: {

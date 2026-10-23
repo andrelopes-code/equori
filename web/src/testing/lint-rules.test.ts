@@ -12,6 +12,7 @@ const filePaths = [
   "src/ui/y.tsx",
   "src/ui/z.tsx",
   "src/ui/w.test.tsx",
+  "src/privacy/x.ts",
 ];
 
 // ESLint defaults to the working directory; Vitest runs from web/, which holds eslint.config.js.
@@ -21,6 +22,8 @@ const eslint = new ESLint({
       parserOptions: {
         projectService: {
           allowDefaultProject: filePaths,
+          // The default allows 8 files; the rows below lint 9.
+          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 9,
           defaultProject: "tsconfig.json",
         },
       },
@@ -73,6 +76,38 @@ const rows = [
     filePath: "src/features/accounts/x.ts",
     code: importFromAccounts("@/app/router"),
     rule: "no-restricted-imports",
+  },
+  ...["formatMoney", "formatMoneyParts", "formatSigned", "formatPlain"].map(
+    (name) => ({
+      name: `O9 ${name} in a screen`,
+      filePath: "src/features/accounts/x.ts",
+      code: `import { ${name} } from "@/i18n/format";\nexport { ${name} };\n`,
+      rule: "@typescript-eslint/no-restricted-imports",
+    }),
+  ),
+  {
+    name: "O9 formatMoney in a shared component",
+    filePath: "src/ui/x.tsx",
+    code: 'import { formatMoney } from "@/i18n/format";\nexport { formatMoney };\n',
+    rule: "@typescript-eslint/no-restricted-imports",
+  },
+  {
+    name: "O9 formatMoney in the privacy module",
+    filePath: "src/privacy/x.ts",
+    code: 'import { formatMoney } from "@/i18n/format";\nexport { formatMoney };\n',
+    rule: undefined,
+  },
+  {
+    name: "O9 formatMoney in a test",
+    filePath: "src/ui/w.test.tsx",
+    code: 'import { formatMoney } from "@/i18n/format";\nexport { formatMoney };\n',
+    rule: undefined,
+  },
+  {
+    name: "O9 formatDate in a screen",
+    filePath: "src/features/accounts/x.ts",
+    code: 'import { formatDate } from "@/i18n/format";\nexport { formatDate };\n',
+    rule: undefined,
   },
   {
     name: "O6 literal text in JSX",

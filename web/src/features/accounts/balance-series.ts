@@ -1,4 +1,5 @@
 import type { components } from "@/api/schema.gen";
+// eslint-disable-next-line @typescript-eslint/no-restricted-imports -- chart points are numbers to draw; the chart's texts go through useMoneyFormat
 import { formatPlain } from "@/i18n/format";
 
 type BalanceSeries = components["schemas"]["BalanceSeries"];

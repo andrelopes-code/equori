@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-restricted-imports -- the edit form shows the value the person is changing, as a money field does
 import { formatPlain, parseAmount } from "@/i18n/format";
 
 // A draft is a body template under edit: money amounts are decimal text, numbers may be text.
