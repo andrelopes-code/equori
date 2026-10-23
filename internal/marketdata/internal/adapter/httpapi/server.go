@@ -49,7 +49,7 @@ type Server struct {
 }
 
 func NewServer(holidays HolidayLister, calendars CalendarLister, svc Service, log *slog.Logger) *Server {
-	return &Server{holidays: holidays, calendars: calendars, svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: toProblem}}
+	return &Server{holidays: holidays, calendars: calendars, svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: ToProblem}}
 }
 
 func (s *Server) Register(mux *http.ServeMux) {
@@ -77,8 +77,8 @@ func NewHoliday(date openapi_types.Date, name, source string) Holiday {
 	return Holiday{Date: date, Name: name, Source: HolidaySource(source)}
 }
 
-// toProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).
-func toProblem(err error) (problem.Details, bool) {
+// ToProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).
+func ToProblem(err error) (problem.Details, bool) {
 	if fe, ok := errors.AsType[*domain.FieldError](err); ok {
 		d := problem.New(http.StatusUnprocessableEntity, "validation_failed", fe.Error())
 		d.Errors = []problem.FieldError{{Field: fe.Field, Message: fe.Message}}

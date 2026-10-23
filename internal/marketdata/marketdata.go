@@ -15,10 +15,12 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/adapter/httpapi"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/adapter/postgres"
+	"github.com/andrelopes-code/equori/internal/marketdata/internal/adapter/toolapi"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/calendar"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/registry"
+	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
 var (
@@ -53,6 +55,32 @@ func New(pool *pgxpool.Pool) *Module {
 		panic(fmt.Sprintf("marketdata: %v", err)) // the entries are literals; a failure is a programming error
 	}
 	return &Module{pool: pool, q: postgres.New(pool), calendars: calendars}
+}
+
+// Tools returns the marketdata module's tools for language models (ADR 012).
+func (m *Module) Tools() tool.Group {
+	cals := toolapi.Calendars{
+		List: func() []toolapi.Calendar {
+			var out []toolapi.Calendar
+			for _, c := range m.listCalendars() {
+				weekend := make([]string, len(c.Weekend))
+				for i, d := range c.Weekend {
+					weekend[i] = string(d)
+				}
+				out = append(out, toolapi.Calendar{ID: c.Id, Weekend: weekend})
+			}
+			return out
+		},
+		Holidays: func(ctx context.Context, calendar string, year int) ([]toolapi.Holiday, error) {
+			hs, err := m.listHolidays(ctx, calendar, year)
+			out := make([]toolapi.Holiday, len(hs))
+			for i, h := range hs {
+				out[i] = toolapi.Holiday{Date: h.Date.Time, Name: h.Name, Source: string(h.Source)}
+			}
+			return out, err
+		},
+	}
+	return tool.Group{Tools: toolapi.Tools(m, cals), Errors: tool.FromProblem(httpapi.ToProblem)}
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux, log *slog.Logger) {

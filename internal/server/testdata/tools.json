@@ -1350,6 +1350,297 @@
     }
   },
   {
+    "name": "get_market_data",
+    "description": "Returns market data of the instance: instruments with their type and scale, one instrument with its fixed income terms, prices of an instrument in a period, business-day calendars or a calendar's holidays in a year. Use it for prices, securities and holidays. Do not use it for the user's holdings: get_portfolio does.",
+    "effect": "read_only",
+    "idempotent": true,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "view": {
+          "type": "string",
+          "description": "what to return",
+          "enum": [
+            "instruments",
+            "instrument",
+            "prices",
+            "calendars",
+            "holidays"
+          ]
+        },
+        "code": {
+          "type": "string",
+          "description": "for instrument and prices: instrument code, such as a ticker or currency code"
+        },
+        "quote": {
+          "type": "string",
+          "description": "for prices: code of the currency the price is quoted in"
+        },
+        "from": {
+          "type": "string",
+          "description": "for prices: first date",
+          "format": "date"
+        },
+        "to": {
+          "type": "string",
+          "description": "for prices: last date; at most 366 days after from",
+          "format": "date"
+        },
+        "calendar": {
+          "type": "string",
+          "description": "for holidays: calendar identifier from the calendars view"
+        },
+        "year": {
+          "type": "integer",
+          "description": "for holidays: calendar year"
+        }
+      },
+      "required": [
+        "view"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "instruments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "subtype": {
+                "type": "string"
+              },
+              "quote_currency": {
+                "type": "string"
+              },
+              "scale": {
+                "type": "integer"
+              },
+              "terms": {
+                "type": "object",
+                "properties": {
+                  "issued_on": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "matures_on": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "index_id": {
+                    "type": "string"
+                  },
+                  "percent_of_index_bp": {
+                    "type": "integer"
+                  },
+                  "spread_bp": {
+                    "type": "integer"
+                  },
+                  "day_count": {
+                    "type": "string"
+                  },
+                  "face_value": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "issued_on",
+                  "matures_on",
+                  "percent_of_index_bp",
+                  "spread_bp",
+                  "day_count",
+                  "face_value"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "code",
+              "name",
+              "type",
+              "scale"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "instrument": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            },
+            "subtype": {
+              "type": "string"
+            },
+            "quote_currency": {
+              "type": "string"
+            },
+            "scale": {
+              "type": "integer"
+            },
+            "terms": {
+              "type": "object",
+              "properties": {
+                "issued_on": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "matures_on": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "index_id": {
+                  "type": "string"
+                },
+                "percent_of_index_bp": {
+                  "type": "integer"
+                },
+                "spread_bp": {
+                  "type": "integer"
+                },
+                "day_count": {
+                  "type": "string"
+                },
+                "face_value": {
+                  "type": "object",
+                  "properties": {
+                    "amount": {
+                      "type": "string",
+                      "description": "decimal amount in the instrument's scale, such as -1234.56"
+                    },
+                    "currency": {
+                      "type": "string",
+                      "description": "currency or instrument code"
+                    }
+                  },
+                  "required": [
+                    "amount",
+                    "currency"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "issued_on",
+                "matures_on",
+                "percent_of_index_bp",
+                "spread_bp",
+                "day_count",
+                "face_value"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "code",
+            "name",
+            "type",
+            "scale"
+          ],
+          "additionalProperties": false
+        },
+        "prices": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "date",
+              "value"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "calendars": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "weekend": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "id",
+              "weekend"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "holidays": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "name": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "date",
+              "name",
+              "source"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "get_portfolio",
     "description": "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period. Also lists the income types and instrument subtypes the user's tax jurisdiction accepts. Use it for questions about investments and net worth. Do not use it for cash balances only: get_balances does; nor for a tax year: get_tax_year does.",
     "effect": "read_only",
@@ -3187,6 +3478,253 @@
         },
         "deleted": {
           "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "manage_instrument",
+    "description": "Proposes defining a security for the whole instance, recording a manual price, or setting the terms of a fixed income instrument. Use it when the user needs a security that does not exist yet or a price that is missing. Do not use it to buy or sell: record_investment does. Instruments and prices are shared by every user of the instance; the user confirms first.",
+    "effect": "write",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "description": "operation to propose",
+          "enum": [
+            "define",
+            "record_price",
+            "set_terms"
+          ]
+        },
+        "code": {
+          "type": "string",
+          "description": "instrument code"
+        },
+        "name": {
+          "type": "string",
+          "description": "for define: instrument name"
+        },
+        "type": {
+          "type": "string",
+          "description": "for define: instrument type",
+          "enum": [
+            "currency",
+            "stock",
+            "etf",
+            "reit",
+            "depositary_receipt",
+            "fixed_income",
+            "fund",
+            "crypto"
+          ]
+        },
+        "quote_currency": {
+          "type": "string",
+          "description": "for define: currency the instrument is priced in"
+        },
+        "scale": {
+          "type": "integer",
+          "description": "for define: decimal places of a quantity"
+        },
+        "date": {
+          "type": "string",
+          "description": "for record_price: price date",
+          "format": "date"
+        },
+        "price": {
+          "type": "string",
+          "description": "for record_price: decimal price of one unit in quote_currency"
+        },
+        "issued_on": {
+          "type": "string",
+          "description": "for set_terms: issue date",
+          "format": "date"
+        },
+        "matures_on": {
+          "type": "string",
+          "description": "for set_terms: maturity date",
+          "format": "date"
+        },
+        "face_value": {
+          "type": "string",
+          "description": "for set_terms: face value"
+        },
+        "index_id": {
+          "type": "string",
+          "description": "for set_terms: index identifier; absent for a fixed rate"
+        },
+        "percent_of_index_bp": {
+          "type": "integer",
+          "description": "for set_terms: percentage of the index in basis points, 11000 for 110%"
+        },
+        "spread_bp": {
+          "type": "integer",
+          "description": "for set_terms: annual spread in basis points"
+        }
+      },
+      "required": [
+        "action",
+        "code"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "instrument": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            },
+            "subtype": {
+              "type": "string"
+            },
+            "quote_currency": {
+              "type": "string"
+            },
+            "scale": {
+              "type": "integer"
+            },
+            "terms": {
+              "type": "object",
+              "properties": {
+                "issued_on": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "matures_on": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "index_id": {
+                  "type": "string"
+                },
+                "percent_of_index_bp": {
+                  "type": "integer"
+                },
+                "spread_bp": {
+                  "type": "integer"
+                },
+                "day_count": {
+                  "type": "string"
+                },
+                "face_value": {
+                  "type": "object",
+                  "properties": {
+                    "amount": {
+                      "type": "string",
+                      "description": "decimal amount in the instrument's scale, such as -1234.56"
+                    },
+                    "currency": {
+                      "type": "string",
+                      "description": "currency or instrument code"
+                    }
+                  },
+                  "required": [
+                    "amount",
+                    "currency"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "issued_on",
+                "matures_on",
+                "percent_of_index_bp",
+                "spread_bp",
+                "day_count",
+                "face_value"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "code",
+            "name",
+            "type",
+            "scale"
+          ],
+          "additionalProperties": false
+        },
+        "price": {
+          "type": "object",
+          "properties": {
+            "date": {
+              "type": "string",
+              "format": "date"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "date",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        "terms": {
+          "type": "object",
+          "properties": {
+            "issued_on": {
+              "type": "string",
+              "format": "date"
+            },
+            "matures_on": {
+              "type": "string",
+              "format": "date"
+            },
+            "index_id": {
+              "type": "string"
+            },
+            "percent_of_index_bp": {
+              "type": "integer"
+            },
+            "spread_bp": {
+              "type": "integer"
+            },
+            "day_count": {
+              "type": "string"
+            },
+            "face_value": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "issued_on",
+            "matures_on",
+            "percent_of_index_bp",
+            "spread_bp",
+            "day_count",
+            "face_value"
+          ],
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
