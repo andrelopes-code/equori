@@ -54,11 +54,33 @@ type Prices interface {
 	Convert(ctx context.Context, q money.Money, to money.Currency, date time.Time) (money.Money, []Price, error)
 }
 
+// Returns gives the money-weighted return of accounts taken as one tree over the last 12 months
+// (Portfolio, investments design 4.4); ok is false when there is too little history or no flow.
+type Returns interface {
+	TrailingReturn(ctx context.Context, userID int64, accountIDs []uuid.UUID, today time.Time, in money.Currency) (bp, months int, ok bool, err error)
+}
+
 // Account is the part of a ledger account Planning checks.
 type Account struct {
-	ID          uuid.UUID
-	Class, Kind string
-	Instrument  money.Currency
+	ID, ParentID uuid.UUID
+	Class, Kind  string
+	Instrument   money.Currency
+}
+
+// Valuation is the value of an account tree in one currency, the prices it used and the value
+// of each instrument held.
+type Valuation struct {
+	Value  money.Money
+	Prices []Price
+	Parts  []ValuedPart
+}
+
+// ValuedPart is a quantity of one instrument held in a goal account and its value.
+type ValuedPart struct {
+	AccountID  uuid.UUID
+	Instrument money.Currency
+	Quantity   money.Money
+	Value      money.Money
 }
 
 // Ledger is the part of the ledger module Planning reads (ADR 002).
@@ -75,6 +97,9 @@ type Ledger interface {
 	CategoryMonthlyTotals(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (map[time.Time]int64, error)
 	// Balance is the booked balance of an account at the end of date, in its instrument.
 	Balance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time) (money.Money, error)
+	// ValuedBalance values the account and its sub-accounts in currency in; the error wraps
+	// ErrPriceMissing when no stored price values an instrument.
+	ValuedBalance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, in money.Currency) (Valuation, error)
 	// Commitment sums the installments of a card billed on the statement of month while it is open.
 	Commitment(ctx context.Context, userID int64, cardID uuid.UUID, month time.Time) (int64, error)
 }
@@ -159,4 +184,8 @@ type Repository interface {
 	InsertGoal(ctx context.Context, userID int64, g domain.Goal) (domain.Goal, error)
 	Goal(ctx context.Context, userID int64, id uuid.UUID) (domain.Goal, error)
 	ListGoals(ctx context.Context, userID int64, p page.Request[IDKey]) ([]domain.Goal, *IDKey, error)
+	// UpdateGoal replaces the fields and the accounts of g.ID; ErrNotFound when it is not the user's.
+	UpdateGoal(ctx context.Context, userID int64, g domain.Goal) (domain.Goal, error)
+	// DeleteGoal removes the goal with its accounts; ErrNotFound when it is not the user's.
+	DeleteGoal(ctx context.Context, userID int64, id uuid.UUID) error
 }

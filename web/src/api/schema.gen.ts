@@ -2333,10 +2333,12 @@ export interface paths {
         get: operations["getGoal"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete a goal; its accounts are not touched. */
+        delete: operations["deleteGoal"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** Change the name, target, due date or accounts of a goal; fields not sent stay as they are. */
+        patch: operations["updateGoal"];
         trace?: never;
     };
     "/accounts/{id}/projection": {
@@ -2552,6 +2554,13 @@ export interface components {
             due_on: string;
             account_ids: string[];
         };
+        GoalPatch: {
+            name?: string;
+            target?: components["schemas"]["Money"];
+            /** Format: date */
+            due_on?: string;
+            account_ids?: string[];
+        };
         /**
          * @description current is the sum of the booked balances of the accounts today, valued in the target currency with
          *     stored prices (P8 amendment A72); remaining is max(target - current, 0); progress_bp is current / target
@@ -2570,6 +2579,28 @@ export interface components {
             progress_bp: number;
             /** @description Prices that value accounts in another currency (P8 amendment A72). */
             prices?: components["schemas"]["Price"][];
+            /**
+             * @description What current is made of: for each goal account, each instrument held in it and its sub-accounts with a
+             *     non-zero quantity, in instrument order, valued in the target currency (P8 amendment A121).
+             */
+            parts?: components["schemas"]["GoalPart"][];
+            trailing_return?: components["schemas"]["TrailingReturn"];
+        };
+        /**
+         * @description The money-weighted return of the goal's accounts, taken as one tree, over the last 12 months or since their
+         *     first posting if shorter, valued in the target currency (investments design 4.4). Absent with less than three
+         *     months of postings or no external flow in the window.
+         */
+        TrailingReturn: {
+            period_months: number;
+            annual_bp: number;
+        };
+        GoalPart: {
+            /** Format: uuid */
+            account_id: string;
+            instrument: string;
+            quantity: components["schemas"]["Money"];
+            value: components["schemas"]["Money"];
         };
         GoalPage: {
             items: components["schemas"]["Goal"][];
@@ -8491,6 +8522,58 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+        };
+    };
+    deleteGoal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    updateGoal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoalPatch"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Goal"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     getProjection: {

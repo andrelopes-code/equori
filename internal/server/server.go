@@ -104,11 +104,11 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	planningModule := planning.New(pool, dispatcher, ledgerModule, marketdataModule, identityModule, clk, log)
 	portfolioModule, err := portfolio.New(pool, dispatcher, ledgerModule, marketdataModule, identityModule, log)
 	if err != nil {
 		return nil, err
 	}
+	planningModule := planning.New(pool, dispatcher, ledgerModule, marketdataModule, identityModule, portfolioModule, clk, log)
 	tools, err := tool.NewRegistry(log, ledgerModule.Tools(), reportingModule.Tools())
 	if err != nil {
 		return nil, err

@@ -20,11 +20,12 @@ type Service struct {
 	cal      Calendar
 	profiles Profiles
 	prices   Prices
+	returns  Returns
 	clk      clock.Clock
 }
 
-func NewService(repo Repository, l Ledger, cal Calendar, profiles Profiles, prices Prices, clk clock.Clock) *Service {
-	return &Service{repo: repo, ledger: l, cal: cal, profiles: profiles, prices: prices, clk: clk}
+func NewService(repo Repository, l Ledger, cal Calendar, profiles Profiles, prices Prices, returns Returns, clk clock.Clock) *Service {
+	return &Service{repo: repo, ledger: l, cal: cal, profiles: profiles, prices: prices, returns: returns, clk: clk}
 }
 
 // WithRepository returns the service on another repository, as outbox handlers need.

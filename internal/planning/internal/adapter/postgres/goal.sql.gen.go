@@ -12,6 +12,37 @@ import (
 	"github.com/google/uuid"
 )
 
+const deleteGoal = `-- name: DeleteGoal :execrows
+DELETE FROM planning_goal WHERE user_id = $1 AND id = $2
+`
+
+type DeleteGoalParams struct {
+	UserID int64
+	ID     uuid.UUID
+}
+
+func (q *Queries) DeleteGoal(ctx context.Context, arg DeleteGoalParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteGoal, arg.UserID, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const deleteGoalAccounts = `-- name: DeleteGoalAccounts :exec
+DELETE FROM planning_goal_account WHERE user_id = $1 AND goal_id = $2
+`
+
+type DeleteGoalAccountsParams struct {
+	UserID int64
+	GoalID uuid.UUID
+}
+
+func (q *Queries) DeleteGoalAccounts(ctx context.Context, arg DeleteGoalAccountsParams) error {
+	_, err := q.db.Exec(ctx, deleteGoalAccounts, arg.UserID, arg.GoalID)
+	return err
+}
+
 const getGoal = `-- name: GetGoal :one
 SELECT id, user_id, name, target, currency, due_on, created_at FROM planning_goal WHERE user_id = $1 AND id = $2
 `
@@ -160,4 +191,41 @@ func (q *Queries) ListGoals(ctx context.Context, arg ListGoalsParams) ([]Plannin
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateGoal = `-- name: UpdateGoal :one
+UPDATE planning_goal SET name = $1, target = $2, currency = $3, due_on = $4
+WHERE user_id = $5 AND id = $6
+RETURNING id, user_id, name, target, currency, due_on, created_at
+`
+
+type UpdateGoalParams struct {
+	Name     string
+	Target   int64
+	Currency string
+	DueOn    time.Time
+	UserID   int64
+	ID       uuid.UUID
+}
+
+func (q *Queries) UpdateGoal(ctx context.Context, arg UpdateGoalParams) (PlanningGoal, error) {
+	row := q.db.QueryRow(ctx, updateGoal,
+		arg.Name,
+		arg.Target,
+		arg.Currency,
+		arg.DueOn,
+		arg.UserID,
+		arg.ID,
+	)
+	var i PlanningGoal
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.Target,
+		&i.Currency,
+		&i.DueOn,
+		&i.CreatedAt,
+	)
+	return i, err
 }

@@ -4041,6 +4041,46 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+    patch:
+      tags: [planning]
+      operationId: updateGoal
+      summary: Change the name, target, due date or accounts of a goal; fields not sent stay as they are.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoalPatch"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [planning]
+      operationId: deleteGoal
+      summary: Delete a goal; its accounts are not touched.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
   /accounts/{id}/projection:
     get:
       tags: [planning]
@@ -4449,6 +4489,28 @@ components:
           items:
             type: string
             format: uuid
+    GoalPatch:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 60
+        target:
+          $ref: "#/components/schemas/Money"
+        due_on:
+          type: string
+          format: date
+        account_ids:
+          type: array
+          minItems: 1
+          maxItems: 20
+          uniqueItems: true
+          items:
+            type: string
+            format: uuid
     Goal:
       type: object
       required: [id, name, target, due_on, account_ids, current, remaining, progress_bp]
@@ -4483,6 +4545,40 @@ components:
           description: Prices that value accounts in another currency (P8 amendment A72).
           items:
             $ref: "#/components/schemas/Price"
+        parts:
+          type: array
+          description: |
+            What current is made of: for each goal account, each instrument held in it and its sub-accounts with a
+            non-zero quantity, in instrument order, valued in the target currency (P8 amendment A121).
+          items:
+            $ref: "#/components/schemas/GoalPart"
+        trailing_return:
+          $ref: "#/components/schemas/TrailingReturn"
+    TrailingReturn:
+      type: object
+      required: [period_months, annual_bp]
+      description: |
+        The money-weighted return of the goal's accounts, taken as one tree, over the last 12 months or since their
+        first posting if shorter, valued in the target currency (investments design 4.4). Absent with less than three
+        months of postings or no external flow in the window.
+      properties:
+        period_months:
+          type: integer
+        annual_bp:
+          type: integer
+    GoalPart:
+      type: object
+      required: [account_id, instrument, quantity, value]
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        instrument:
+          type: string
+        quantity:
+          $ref: "#/components/schemas/Money"
+        value:
+          $ref: "#/components/schemas/Money"
     GoalPage:
       type: object
       required: [items]

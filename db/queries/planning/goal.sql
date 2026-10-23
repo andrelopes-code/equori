@@ -18,3 +18,14 @@ LIMIT @row_limit;
 
 -- name: ListGoalAccounts :many
 SELECT goal_id, account_id FROM planning_goal_account WHERE user_id = @user_id AND goal_id = ANY(@goal_ids::uuid[]) ORDER BY goal_id, account_id;
+
+-- name: UpdateGoal :one
+UPDATE planning_goal SET name = @name, target = @target, currency = @currency, due_on = @due_on
+WHERE user_id = @user_id AND id = @id
+RETURNING *;
+
+-- name: DeleteGoalAccounts :exec
+DELETE FROM planning_goal_account WHERE user_id = @user_id AND goal_id = @goal_id;
+
+-- name: DeleteGoal :execrows
+DELETE FROM planning_goal WHERE user_id = @user_id AND id = @id;

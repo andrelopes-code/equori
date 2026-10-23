@@ -36,8 +36,8 @@ type Module struct {
 // consumer names the module's outbox subscriptions (ADR 006).
 const consumer = "planning"
 
-func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, md *marketdata.Module, profiles Profiles, clk clock.Clock, log *slog.Logger) *Module {
-	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l}, calendarPort{md}, profiles, pricesPort{md}, clk)
+func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, md *marketdata.Module, profiles Profiles, returns app.Returns, clk clock.Clock, log *slog.Logger) *Module {
+	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l}, calendarPort{md}, profiles, pricesPort{md}, returns, clk)
 	m := &Module{http: httpapi.NewServer(svc, log), svc: svc, log: log}
 	// P7 amendment A51: every change of a transaction can change the occurrence it realizes.
 	for _, t := range []string{ledger.EventTransactionRecorded, ledger.EventTransactionCorrected, ledger.EventTransactionCategorized, ledger.EventTransactionVoided} {
@@ -112,7 +112,7 @@ func (p ledgerPort) AccountFacts(ctx context.Context, userID int64) ([]app.Accou
 	facts, err := p.l.AccountFacts(ctx, userID)
 	out := make([]app.Account, len(facts))
 	for i, a := range facts {
-		out[i] = app.Account{ID: a.ID, Class: a.Class, Kind: a.Kind, Instrument: a.Instrument}
+		out[i] = app.Account{ID: a.ID, ParentID: a.ParentID, Class: a.Class, Kind: a.Kind, Instrument: a.Instrument}
 	}
 	return out, err
 }
@@ -149,6 +149,24 @@ func (p ledgerPort) Balance(ctx context.Context, userID int64, accountID uuid.UU
 		return money.Money{}, fmt.Errorf("%w: %w", app.ErrMixedInstruments, err)
 	}
 	return m, err
+}
+
+func (p ledgerPort) ValuedBalance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, in money.Currency) (app.Valuation, error) {
+	c, err := p.l.ValuedBalance(ctx, userID, accountID, date, in)
+	if errors.Is(err, ledger.ErrPriceMissing) {
+		return app.Valuation{}, fmt.Errorf("%w: %w", app.ErrPriceMissing, err)
+	}
+	if err != nil {
+		return app.Valuation{}, err
+	}
+	out := app.Valuation{Value: c.Value, Prices: make([]app.Price, len(c.Prices)), Parts: make([]app.ValuedPart, len(c.Parts))}
+	for i, x := range c.Prices {
+		out.Prices[i] = app.Price{Instrument: x.Instrument, Quote: x.Quote, Date: x.Date, Value: x.Value, Source: x.Source}
+	}
+	for i, x := range c.Parts {
+		out.Parts[i] = app.ValuedPart{AccountID: accountID, Instrument: x.Instrument, Quantity: x.Quantity, Value: x.Value}
+	}
+	return out, nil
 }
 
 type pricesPort struct{ md *marketdata.Module }

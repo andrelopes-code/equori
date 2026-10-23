@@ -134,37 +134,66 @@ func TestS67GoalInForeignCurrency(t *testing.T) {
 	}
 }
 
-// Final review: a parent whose children hold several instruments has no single balance.
-func TestMixedParentInGoalsAndProjections(t *testing.T) {
+// S121: a goal over a brokerage account sums the value of its cash and of each security it
+// holds, at the stored prices (P8 amendment A72; amendment A120 lets a parent hold several
+// instruments).
+func TestS121GoalOverBrokerage(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	h := f.h
 	h.MustDo(http.MethodPost, "/api/v1/instruments", map[string]any{"code": "MXRF11", "type": "reit", "scale": 0, "name": "MXRF11", "quote_currency": "BRL"}, http.StatusCreated, nil)
 	xp := h.Account("XP", "asset", "brokerage", nil)
-	h.Account("XP cash", "asset", "brokerage", map[string]any{"parent_id": xp})
+	cash := h.Account("XP cash", "asset", "brokerage", map[string]any{"parent_id": xp})
+	shares := h.Account("XP MXRF11", "asset", "brokerage", map[string]any{"parent_id": xp, "currency": "MXRF11"})
+	h.Record("2026-10-14", apitest.Posting(f.checking, -50000), apitest.Posting(cash, 50000))
+	h.Record("2026-10-15",
+		map[string]any{"account_id": shares, "amount": map[string]any{"amount": 10, "currency": "MXRF11"}, "weight": apitest.BRL(10000)},
+		apitest.Posting(f.checking, -10000),
+	)
+	post := func(name string, accounts ...string) apitest.Response {
+		return h.Do(http.MethodPost, "/api/v1/goals", map[string]any{"name": name, "target": apitest.BRL(100000), "due_on": "2027-06-30", "account_ids": accounts})
+	}
+	h.ExpectProblem(post("Broker", xp), http.StatusUnprocessableEntity, "price_missing", "")
+	h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "MXRF11", "quote_instrument": "BRL", "date": "2026-10-30", "value": "10.5"}, http.StatusCreated, nil)
 
 	var g struct {
-		ID string `json:"id"`
+		Current    map[string]any `json:"current"`
+		ProgressBP int            `json:"progress_bp"`
+		Prices     []struct {
+			Instrument string `json:"instrument"`
+			Value      string `json:"value"`
+		} `json:"prices"`
+		Parts []struct {
+			AccountID  string         `json:"account_id"`
+			Instrument string         `json:"instrument"`
+			Quantity   map[string]any `json:"quantity"`
+			Value      map[string]any `json:"value"`
+		} `json:"parts"`
 	}
-	h.MustDo(http.MethodPost, "/api/v1/goals", map[string]any{"name": "Broker", "target": apitest.BRL(100), "due_on": "2027-06-30", "account_ids": []string{xp}}, http.StatusCreated, &g)
-	h.Account("XP MXRF11", "asset", "brokerage", map[string]any{"parent_id": xp, "currency": "MXRF11"})
-
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/goals", map[string]any{"name": "Mixed", "target": apitest.BRL(100), "due_on": "2027-06-30", "account_ids": []string{xp}}),
-		http.StatusUnprocessableEntity, "currency_unsupported", "account_ids")
-	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/goals/"+g.ID, nil), http.StatusUnprocessableEntity, "mixed_instruments", "")
-	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/accounts/"+xp+"/projection?to=2026-12-31", nil), http.StatusUnprocessableEntity, "currency_unsupported", "id")
+	post("Broker", xp).Decode(t, &g)
+	// The cash and the shares of the brokerage, each with its quantity and its value in the goal currency.
+	if len(g.Parts) != 2 ||
+		g.Parts[0].AccountID != xp || g.Parts[0].Instrument != "BRL" || g.Parts[0].Quantity["amount"] != float64(50000) || g.Parts[0].Value["amount"] != float64(50000) ||
+		g.Parts[1].AccountID != xp || g.Parts[1].Instrument != "MXRF11" || g.Parts[1].Quantity["amount"] != float64(10) || g.Parts[1].Quantity["currency"] != "MXRF11" ||
+		g.Parts[1].Value["amount"] != float64(10500) || g.Parts[1].Value["currency"] != "BRL" {
+		t.Fatalf("parts = %+v", g.Parts)
+	}
+	if g.Current["amount"] != float64(60500) || g.Current["currency"] != "BRL" || g.ProgressBP != 6050 || len(g.Prices) != 1 || g.Prices[0].Instrument != "MXRF11" || g.Prices[0].Value != "10.5" {
+		t.Fatalf("goal over the brokerage = %+v", g)
+	}
 	var list struct {
 		Items []struct {
 			Name string `json:"name"`
 		} `json:"items"`
 	}
-	r := h.Do(http.MethodGet, "/api/v1/goals", nil)
-	if r.Status != http.StatusUnprocessableEntity {
-		r.Decode(t, &list)
-		for _, it := range list.Items {
-			if it.Name == "Mixed" {
-				t.Fatalf("a refused goal was stored: %+v", list.Items)
-			}
-		}
+	h.MustDo(http.MethodGet, "/api/v1/goals", nil, http.StatusOK, &list)
+	if len(list.Items) != 1 {
+		t.Fatalf("goals = %+v", list.Items)
 	}
+	h.ExpectProblem(post("Both", xp, shares), http.StatusUnprocessableEntity, "validation_failed", "account_ids")
+	h.MustDo(http.MethodPost, "/api/v1/goals", map[string]any{"name": "Shares only", "target": apitest.BRL(100000), "due_on": "2027-06-30", "account_ids": []string{shares}}, http.StatusCreated, &g)
+	if g.Current["amount"] != float64(10500) {
+		t.Errorf("goal over the securities = %+v", g)
+	}
+	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/accounts/"+xp+"/projection?to=2026-12-31", nil), http.StatusUnprocessableEntity, "currency_unsupported", "id")
 }

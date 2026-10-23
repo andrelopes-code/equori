@@ -161,6 +161,8 @@ var exposure = map[string]string{
 	"listGoals":                        "-pending",
 	"createGoal":                       "-write",
 	"getGoal":                          "-pending",
+	"updateGoal":                       "-write",
+	"deleteGoal":                       "-write",
 	"getProjection":                    "-pending",
 	"getCommitted":                     "-pending",
 	"unrealizeOccurrence":              "-write",

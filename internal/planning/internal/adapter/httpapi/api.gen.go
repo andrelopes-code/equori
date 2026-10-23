@@ -246,11 +246,20 @@ type Goal struct {
 	Id         openapi_types.UUID   `json:"id"`
 	Name       string               `json:"name"`
 
+	// Parts What current is made of: for each goal account, each instrument held in it and its sub-accounts with a
+	// non-zero quantity, in instrument order, valued in the target currency (P8 amendment A121).
+	Parts *[]GoalPart `json:"parts,omitempty"`
+
 	// Prices Prices that value accounts in another currency (P8 amendment A72).
 	Prices     *[]Price `json:"prices,omitempty"`
 	ProgressBp int      `json:"progress_bp"`
 	Remaining  Money    `json:"remaining"`
 	Target     Money    `json:"target"`
+
+	// TrailingReturn The money-weighted return of the goal's accounts, taken as one tree, over the last 12 months or since their
+	// first posting if shorter, valued in the target currency (investments design 4.4). Absent with less than three
+	// months of postings or no external flow in the window.
+	TrailingReturn *TrailingReturn `json:"trailing_return,omitempty"`
 }
 
 // GoalInput defines model for GoalInput.
@@ -267,6 +276,22 @@ type GoalPage struct {
 
 	// NextCursor Absent on the last page.
 	NextCursor *string `json:"next_cursor,omitempty"`
+}
+
+// GoalPart defines model for GoalPart.
+type GoalPart struct {
+	AccountId  openapi_types.UUID `json:"account_id"`
+	Instrument string             `json:"instrument"`
+	Quantity   Money              `json:"quantity"`
+	Value      Money              `json:"value"`
+}
+
+// GoalPatch defines model for GoalPatch.
+type GoalPatch struct {
+	AccountIds *[]openapi_types.UUID `json:"account_ids,omitempty"`
+	DueOn      *openapi_types.Date   `json:"due_on,omitempty"`
+	Name       *string               `json:"name,omitempty"`
+	Target     *Money                `json:"target,omitempty"`
 }
 
 // Money defines model for Money.
@@ -484,6 +509,14 @@ type TermsInput struct {
 	Recurrence *Recurrence `json:"recurrence,omitempty"`
 }
 
+// TrailingReturn The money-weighted return of the goal's accounts, taken as one tree, over the last 12 months or since their
+// first posting if shorter, valued in the target currency (investments design 4.4). Absent with less than three
+// months of postings or no external flow in the window.
+type TrailingReturn struct {
+	AnnualBp     int `json:"annual_bp"`
+	PeriodMonths int `json:"period_months"`
+}
+
 // Cursor defines model for Cursor.
 type Cursor = string
 
@@ -543,6 +576,9 @@ type AddBudgetAmountJSONRequestBody = BudgetAmount
 // CreateGoalJSONRequestBody defines body for CreateGoal for application/json ContentType.
 type CreateGoalJSONRequestBody = GoalInput
 
+// UpdateGoalJSONRequestBody defines body for UpdateGoal for application/json ContentType.
+type UpdateGoalJSONRequestBody = GoalPatch
+
 // MoveOccurrenceJSONRequestBody defines body for MoveOccurrence for application/json ContentType.
 type MoveOccurrenceJSONRequestBody = MoveInput
 
@@ -593,9 +629,15 @@ type ServerInterface interface {
 	// CreateGoal Create a target balance over balance accounts by a date (P7 amendment A55).
 	// (POST /goals)
 	CreateGoal(w http.ResponseWriter, r *http.Request)
+	// DeleteGoal Delete a goal; its accounts are not touched.
+	// (DELETE /goals/{id})
+	DeleteGoal(w http.ResponseWriter, r *http.Request, id ID)
 	// GetGoal A goal with its progress today.
 	// (GET /goals/{id})
 	GetGoal(w http.ResponseWriter, r *http.Request, id ID)
+	// UpdateGoal Change the name, target, due date or accounts of a goal; fields not sent stay as they are.
+	// (PATCH /goals/{id})
+	UpdateGoal(w http.ResponseWriter, r *http.Request, id ID)
 	// ListOccurrences Occurrences with expected date in [from, to], at most 366 days, by date.
 	// (GET /occurrences)
 	ListOccurrences(w http.ResponseWriter, r *http.Request, params ListOccurrencesParams)
@@ -929,6 +971,32 @@ func (siw *ServerInterfaceWrapper) CreateGoal(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r)
 }
 
+// DeleteGoal operation middleware
+func (siw *ServerInterfaceWrapper) DeleteGoal(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteGoal(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetGoal operation middleware
 func (siw *ServerInterfaceWrapper) GetGoal(w http.ResponseWriter, r *http.Request) {
 
@@ -946,6 +1014,32 @@ func (siw *ServerInterfaceWrapper) GetGoal(w http.ResponseWriter, r *http.Reques
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetGoal(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateGoal operation middleware
+func (siw *ServerInterfaceWrapper) UpdateGoal(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateGoal(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1432,7 +1526,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/budgets/{id}/progress", wrapper.GetBudgetProgress)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/goals", wrapper.ListGoals)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/goals", wrapper.CreateGoal)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/goals/{id}", wrapper.DeleteGoal)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/goals/{id}", wrapper.GetGoal)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/goals/{id}", wrapper.UpdateGoal)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/projection", wrapper.GetProjection)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/commitments", wrapper.GetCommitted)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/occurrences/{id}/unrealize", wrapper.UnrealizeOccurrence)
@@ -2059,6 +2155,52 @@ func (response CreateGoal422ApplicationProblemPlusJSONResponse) VisitCreateGoalR
 	return err
 }
 
+type DeleteGoalRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type DeleteGoalResponseObject interface {
+	VisitDeleteGoalResponse(w http.ResponseWriter) error
+}
+
+type DeleteGoal204Response struct {
+}
+
+func (response DeleteGoal204Response) VisitDeleteGoalResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteGoal401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteGoal401ApplicationProblemPlusJSONResponse) VisitDeleteGoalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteGoal404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteGoal404ApplicationProblemPlusJSONResponse) VisitDeleteGoalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetGoalRequestObject struct {
 	Id ID `json:"id"`
 }
@@ -2107,6 +2249,87 @@ func (response GetGoal404ApplicationProblemPlusJSONResponse) VisitGetGoalRespons
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateGoalRequestObject struct {
+	Id   ID `json:"id"`
+	Body *UpdateGoalJSONRequestBody
+}
+
+type UpdateGoalResponseObject interface {
+	VisitUpdateGoalResponse(w http.ResponseWriter) error
+}
+
+type UpdateGoal200JSONResponse Goal
+
+func (response UpdateGoal200JSONResponse) VisitUpdateGoalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateGoal400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response UpdateGoal400ApplicationProblemPlusJSONResponse) VisitUpdateGoalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateGoal401ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateGoal401ApplicationProblemPlusJSONResponse) VisitUpdateGoalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateGoal404ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateGoal404ApplicationProblemPlusJSONResponse) VisitUpdateGoalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateGoal422ApplicationProblemPlusJSONResponse Problem
+
+func (response UpdateGoal422ApplicationProblemPlusJSONResponse) VisitUpdateGoalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -2980,9 +3203,15 @@ type StrictServerInterface interface {
 	// CreateGoal Create a target balance over balance accounts by a date (P7 amendment A55).
 	// (POST /goals)
 	CreateGoal(ctx context.Context, request CreateGoalRequestObject) (CreateGoalResponseObject, error)
+	// DeleteGoal Delete a goal; its accounts are not touched.
+	// (DELETE /goals/{id})
+	DeleteGoal(ctx context.Context, request DeleteGoalRequestObject) (DeleteGoalResponseObject, error)
 	// GetGoal A goal with its progress today.
 	// (GET /goals/{id})
 	GetGoal(ctx context.Context, request GetGoalRequestObject) (GetGoalResponseObject, error)
+	// UpdateGoal Change the name, target, due date or accounts of a goal; fields not sent stay as they are.
+	// (PATCH /goals/{id})
+	UpdateGoal(ctx context.Context, request UpdateGoalRequestObject) (UpdateGoalResponseObject, error)
 	// ListOccurrences Occurrences with expected date in [from, to], at most 366 days, by date.
 	// (GET /occurrences)
 	ListOccurrences(ctx context.Context, request ListOccurrencesRequestObject) (ListOccurrencesResponseObject, error)
@@ -3310,6 +3539,32 @@ func (sh *strictHandler) CreateGoal(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// DeleteGoal operation middleware
+func (sh *strictHandler) DeleteGoal(w http.ResponseWriter, r *http.Request, id ID) {
+	var request DeleteGoalRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteGoal(ctx, request.(DeleteGoalRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteGoal")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteGoalResponseObject); ok {
+		if err := validResponse.VisitDeleteGoalResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetGoal operation middleware
 func (sh *strictHandler) GetGoal(w http.ResponseWriter, r *http.Request, id ID) {
 	var request GetGoalRequestObject
@@ -3329,6 +3584,39 @@ func (sh *strictHandler) GetGoal(w http.ResponseWriter, r *http.Request, id ID) 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetGoalResponseObject); ok {
 		if err := validResponse.VisitGetGoalResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateGoal operation middleware
+func (sh *strictHandler) UpdateGoal(w http.ResponseWriter, r *http.Request, id ID) {
+	var request UpdateGoalRequestObject
+
+	request.Id = id
+
+	var body UpdateGoalJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateGoal(ctx, request.(UpdateGoalRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateGoal")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateGoalResponseObject); ok {
+		if err := validResponse.VisitUpdateGoalResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -489,6 +489,34 @@ func (r *Repository) InsertGoal(ctx context.Context, userID int64, g domain.Goal
 	return r.oneGoal(ctx, row, nil)
 }
 
+func (r *Repository) UpdateGoal(ctx context.Context, userID int64, g domain.Goal) (domain.Goal, error) {
+	row, err := r.q.UpdateGoal(ctx, UpdateGoalParams{UserID: userID, ID: g.ID, Name: g.Name, Target: g.Target, Currency: string(g.Currency), DueOn: g.DueOn})
+	if pe, ok := errors.AsType[*pgconn.PgError](err); ok && pe.Code == uniqueViolation {
+		return domain.Goal{}, &domain.FieldError{Field: "name", Message: "is the name of another goal", Err: domain.ErrValidation}
+	}
+	if err != nil {
+		return r.oneGoal(ctx, row, err)
+	}
+	if err := r.q.DeleteGoalAccounts(ctx, DeleteGoalAccountsParams{UserID: userID, GoalID: g.ID}); err != nil {
+		return domain.Goal{}, fmt.Errorf("delete goal accounts: %w", err)
+	}
+	if err := r.q.InsertGoalAccounts(ctx, InsertGoalAccountsParams{UserID: userID, GoalID: g.ID, AccountIds: g.AccountIDs}); err != nil {
+		return domain.Goal{}, fmt.Errorf("insert goal accounts: %w", err)
+	}
+	return r.oneGoal(ctx, row, nil)
+}
+
+func (r *Repository) DeleteGoal(ctx context.Context, userID int64, id uuid.UUID) error {
+	n, err := r.q.DeleteGoal(ctx, DeleteGoalParams{UserID: userID, ID: id})
+	if err != nil {
+		return fmt.Errorf("delete goal: %w", err)
+	}
+	if n == 0 {
+		return app.ErrNotFound
+	}
+	return nil
+}
+
 func (r *Repository) completeGoals(ctx context.Context, rows []PlanningGoal) ([]domain.Goal, error) {
 	if len(rows) == 0 {
 		return nil, nil
