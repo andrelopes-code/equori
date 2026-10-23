@@ -185,3 +185,10 @@ test("a closing popup's positioner slides while its content fades", () => {
     /\[data-ui="select"\]\[data-part="positioner"\] > \[data-part="content"\] \{[^}]*opacity: 0;[^}]*transition: opacity var\(--slotted-duration-short\) var\(--slotted-easing-exit\)/,
   );
 });
+
+test("a chart's tooltip blurs what is behind it", () => {
+  assert.match(
+    css,
+    /\[data-ui="chart"\] \[data-part="tooltip"\][^{]*\{[^}]*backdrop-filter: blur\(var\(--glass-blur\)\)/,
+  );
+});

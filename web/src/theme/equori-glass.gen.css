@@ -2116,6 +2116,7 @@
     &[data-slotted-scheme="dark"] [data-ui="date-picker"] [data-part="content"],
     &[data-slotted-scheme="dark"] [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"],
     &[data-slotted-scheme="dark"] [data-ui="action-bar"],
+    &[data-slotted-scheme="dark"] [data-ui="chart"] [data-part="tooltip"],
     &[data-slotted-scheme="dark"] [data-ui="chart"] [data-part="menu"],
     &[data-slotted-scheme="dark"] [data-ui="chart"] [data-part="help-content"] {
       -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
@@ -2566,6 +2567,7 @@
       &[data-slotted-scheme="dark"] [data-ui="date-picker"] [data-part="content"],
       &[data-slotted-scheme="dark"] [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"],
       &[data-slotted-scheme="dark"] [data-ui="action-bar"],
+      &[data-slotted-scheme="dark"] [data-ui="chart"] [data-part="tooltip"],
       &[data-slotted-scheme="dark"] [data-ui="chart"] [data-part="menu"],
       &[data-slotted-scheme="dark"] [data-ui="chart"] [data-part="help-content"],
       &[data-slotted-scheme="dark"] [data-ui="section"][data-sticky] > [data-part="header"],

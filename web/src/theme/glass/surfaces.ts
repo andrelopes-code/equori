@@ -174,7 +174,8 @@ export const surfaces: readonly Surface[] = [
   {
     family: "chart",
     // The chart's own surface stays opaque: the library mixes its series colours with it. Only
-    // the card variant's ground and the tooltip are glass.
+    // the card variant's ground and the tooltip are glass; the tooltip's fill is a token, so only its
+    // blur is declared here.
     tokens: { "--slotted-chart-tooltip-surface": fill("overlay") },
     paint: [
       {
@@ -192,7 +193,7 @@ export const surfaces: readonly Surface[] = [
         },
       })),
     ],
-    blur: ["menu", "help-content"].map(
+    blur: ["tooltip", "menu", "help-content"].map(
       (name) => `${family("chart")} [data-part="${name}"]`,
     ),
   },
