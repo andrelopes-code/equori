@@ -21,8 +21,9 @@ type searchTransactionsIn struct {
 	tool.PageArgs
 }
 
+// postingView names its account without the ID: list_accounts gives the IDs other tools take,
+// and twenty transactions with two IDs each would pass the output budget of spec 7.4.
 type postingView struct {
-	AccountID    string     `json:"account_id"`
 	AccountName  string     `json:"account_name"`
 	AccountClass string     `json:"account_class" jsonschema:"a posting on an income or expense account is the category of the transaction"`
 	Amount       tool.Money `json:"amount"`
@@ -101,7 +102,7 @@ func viewOf(t domain.Transaction, accounts map[uuid.UUID]domain.Account, payees 
 	for j, p := range t.Postings {
 		a := accounts[p.AccountID]
 		v.Postings[j] = postingView{
-			AccountID: p.AccountID.String(), AccountName: a.Name, AccountClass: string(a.Class),
+			AccountName: a.Name, AccountClass: string(a.Class),
 			Amount: tool.MoneyOf(p.Amount), Memo: p.Memo,
 		}
 	}

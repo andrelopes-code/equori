@@ -11,7 +11,6 @@ import (
 )
 
 type toolPosting struct {
-	AccountID    string     `json:"account_id"`
 	AccountName  string     `json:"account_name"`
 	AccountClass string     `json:"account_class"`
 	Amount       tool.Money `json:"amount"`
@@ -59,8 +58,8 @@ func TestSearchTransactionsTool(t *testing.T) {
 	want := searchOutput{Transactions: []toolTransaction{{
 		ID: bakery.ID, Date: "2026-10-02", Description: "x", PayeeName: "Padaria Real", Tags: []string{"trip"},
 		Postings: []toolPosting{
-			{AccountID: checking, AccountName: "Checking", AccountClass: "asset", Amount: tool.Money{Amount: "-2.50", Currency: "BRL"}},
-			{AccountID: food, AccountName: "Food", AccountClass: "expense", Amount: tool.Money{Amount: "2.50", Currency: "BRL"}},
+			{AccountName: "Checking", AccountClass: "asset", Amount: tool.Money{Amount: "-2.50", Currency: "BRL"}},
+			{AccountName: "Food", AccountClass: "expense", Amount: tool.Money{Amount: "2.50", Currency: "BRL"}},
 		},
 	}}}
 	if !reflect.DeepEqual(got, want) {

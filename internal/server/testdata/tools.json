@@ -1694,9 +1694,6 @@
               "items": {
                 "type": "object",
                 "properties": {
-                  "account_id": {
-                    "type": "string"
-                  },
                   "account_name": {
                     "type": "string"
                   },
@@ -1727,7 +1724,6 @@
                   }
                 },
                 "required": [
-                  "account_id",
                   "account_name",
                   "account_class",
                   "amount"
@@ -3029,9 +3025,6 @@
                 "items": {
                   "type": "object",
                   "properties": {
-                    "account_id": {
-                      "type": "string"
-                    },
                     "account_name": {
                       "type": "string"
                     },
@@ -3062,7 +3055,6 @@
                     }
                   },
                   "required": [
-                    "account_id",
                     "account_name",
                     "account_class",
                     "amount"
