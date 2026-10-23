@@ -35,7 +35,7 @@ Status snapshot: 2026-10-23, commit `60fbf59`.
 | 13 | Calendars and holidays | No screen | — |
 | 14 | Language model settings: usage and privacy | Partial | — |
 | 15 | Category suggestions outside capture | Needs ADR amendment | 14 |
-| 16 | Assistant chat | Needs backend | 14 |
+| 16 | Assistant chat | Delivered | 14 |
 | 17 | Data export | Needs backend | 12 |
 
 ## Delivered screens
@@ -326,26 +326,20 @@ Candidate function: in `/transactions` with the uncategorized filter, a bulk act
 
 ## 16. Assistant chat
 
-Status: Needs backend. `internal/assistant/assistant.go` declares the use `assistant.chat` with the capability `tools`. The tool registry exposes four read-only tools: `list_accounts`, `get_balances`, `search_transactions` and `get_category_totals`. `internal/server/tool_exposure_test.go` marks 65 operations `-pending`. `api/openapi.yaml` declares no conversation operation. ADR 020 records the design before the screen exists.
-
-Backend prerequisites:
-- Conversation and message operations, persisted per user; deletion follows the retention rule of ADR 020.
-- A turn operation that runs the tool loop of `assistant.chat`, with response streaming when ADR 020 adopts it.
-- Write tools that return a proposal; a separate operation confirms or rejects a proposal by its identifier.
-- A business knowledge tool, and a navigation map of the routes of `web/` with a test against the route table.
-- Turn usage counted against `assistant_usage_limit`; an exhausted chain (`llm.ErrExhausted`) returned as a problem that carries the time of return.
-- Records of tool calls per turn, without arguments or results (ADR 012 T13).
+Status: Delivered. ADR 020 and `docs/superpowers/specs/2026-10-23-assistant-chat-design.md`. Operations: `getAssistantChat`, `sendAssistantMessage` (Server-Sent Events), `listAssistantConversations`, `getAssistantConversation`, `deleteAssistantConversation`, `deleteAssistantConversations`, `confirmAssistantProposal`, `rejectAssistantProposal` (`features/assistant/`). The use `assistant.chat` runs over 36 tools that cover every operation of `api/openapi.yaml` or exclude it with a reason (`internal/server/tool_exposure_test.go`).
 
 Functions:
-- Conversation panel: side panel on desktop beside the current page; full screen on phone width.
-- Notice of the provider in use, shown before the first message, from the chain of `assistant.chat` (item 14). A target with notice `trains` states that the provider uses the content sent.
-- Messages with tool results rendered as data: account and transaction lists link to their screens; category totals render as a table or chart.
-- Navigation answers link to the route named by the navigation map.
-- Proposal card per write: the operation, the values it changes, confirm and reject actions. An expired or invalidated proposal shows its state and accepts no confirmation.
-- Exhausted quota: the panel states the limit reached and the time of return, and disables the input until then.
-- Context of the current page (account, period, filters) offered as a starting point of the question.
-- Conversation history list.
-- Privacy mode (ADR 018) masks amounts in the panel, proposal cards included.
+- Conversation panel: a drawer beside the current page on desktop, full screen at phone width; opened from the top app bar, the desktop column, the command palette and the key A.
+- Notice of the provider and model in use before the first message; a target with notice `trains` states that the provider uses the content sent.
+- Answers in a Markdown subset; links to routes of the navigation map navigate in the app, any other link renders as text.
+- Progress line per tool step during a turn.
+- Proposal card per write: action, target, each change before and after, Confirm and Reject; executed, failed, rejected, stale, discarded, executing and expired proposals show their state without actions.
+- Exhausted quota: the time of return in the user's locale, with the input disabled until then.
+- Conversation history list with delete and delete all.
+- The current route is sent with each message as the page of the question.
+- Privacy mode (ADR 018) masks amounts in answers and proposal cards.
+
+Not delivered: tool results rendered as tables or charts inside an answer.
 
 ## 17. Data export
 

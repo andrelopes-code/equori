@@ -1,6 +1,6 @@
 # ADR 020: Assistant conversation
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-10-23
 - Amends: ADR 004 (member `retry_at`), ADR 012 (T9, T10, T14), ADR 019 (P14)
 - Design: `docs/superpowers/specs/2026-10-23-assistant-chat-design.md`

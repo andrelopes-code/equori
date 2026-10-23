@@ -436,7 +436,7 @@ An OFX credit card statement for Itaú Visa: −230.00 on 2026-10-14 is a `charg
 | M28 | S02 |
 | M29 | S31 |
 
-The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44 and S98 (amendment A105); the category tree and its tools by S72–S79 (amendments A73–A84 of `docs/superpowers/specs/2026-10-19-categorization-design.md`); transfers from imports by S45–S50; aggregator sync by S51–S59, S68–S71 and S90; matching by score by S91–S97 (amendments A98–A104); card statements from the institution by S80–S89 (amendments A85–A93); schedules (F7) by S27–S29 and the planning views by S60–S63; currencies and investments (F9) by S16, S17, S21, S22 and S64–S67; editing and deleting goals by S119 and S120; goals over brokerage accounts by S121; tax treatment by instrument subtype by S122; the return of an account tree by S126 and S127 and of a goal by S130; allocation and net worth by S128 and S129; fixed income accrual by S123 to S125; reimbursement of recorded expenses by S113 and S114 (amendment A117); text capture and the transaction batch by S99–S112 (amendments A106–A116 of `docs/superpowers/specs/2026-10-21-text-capture-design.md`).
+The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44 and S98 (amendment A105); the category tree and its tools by S72–S79 (amendments A73–A84 of `docs/superpowers/specs/2026-10-19-categorization-design.md`); transfers from imports by S45–S50; aggregator sync by S51–S59, S68–S71 and S90; matching by score by S91–S97 (amendments A98–A104); card statements from the institution by S80–S89 (amendments A85–A93); schedules (F7) by S27–S29 and the planning views by S60–S63; currencies and investments (F9) by S16, S17, S21, S22 and S64–S67; editing and deleting goals by S119 and S120; goals over brokerage accounts by S121; tax treatment by instrument subtype by S122; the return of an account tree by S126 and S127 and of a goal by S130; allocation and net worth by S128 and S129; fixed income accrual by S123 to S125; reimbursement of recorded expenses by S113 and S114 (amendment A117); text capture and the transaction batch by S99–S112 (amendments A106–A116 of `docs/superpowers/specs/2026-10-21-text-capture-design.md`); the assistant by S131–S142 (section 6.20).
 
 ## 6.13 Classification
 
@@ -757,3 +757,55 @@ An income of 7.00 and a purchase of 7.00 on the same day are listed as inflow 7.
 ### S118 Flow problems
 
 A voided transaction has no flow. `to` before `from`, or a range longer than 366 days, returns 400 `invalid_request` on `to`; another user's account returns 404 `not_found`.
+
+## 6.20 Assistant
+
+`docs/superpowers/specs/2026-10-23-assistant-chat-design.md`, section 16, and ADR 020. A scripted `llmtest` provider stands in for the language model. Tests in `internal/assistant`.
+
+### S131 Read question
+
+The model calls `get_balances`; the stream sends `turn`, `step` `get_balances` and `answer`, and the answer is stored with outcome `answered`. Test: `TestTurnRead`.
+
+### S132 Write proposal
+
+The model calls a write tool; a pending proposal exists and nothing is written until confirmation. Test: `TestProposeStoresPending`.
+
+### S133 Confirmation executes once
+
+The first confirm answers 200 `executed` and writes once; a second confirm answers 409 `proposal_closed`. Tests: `TestConfirmExecutesOnce`, `TestConfirmConcurrent`.
+
+### S134 Expiry
+
+A proposal confirmed 15 minutes after its creation answers 409 `proposal_expired`. Test: `TestConfirmExpired`.
+
+### S135 Stale proposal
+
+A proposal whose previewed data changed before confirmation answers 409 `proposal_stale`. Test: `TestConfirmStale`.
+
+### S136 Isolation
+
+User B gets 404 for user A's conversation and proposal, and A's IDs passed to B's tools return not found. Tests: `TestProposalOtherUser`, `TestTurnOtherUserConversation` and the `OtherUser` test of each tool.
+
+### S137 Exhausted
+
+With every target cooling down, the turn answers 429 `assistant_exhausted` with `retry_at` and sends no request. Test: `TestTurnExhausted`.
+
+### S138 Declared limit
+
+A target over its declared requests per day is skipped; with no other target the call fails as exhausted, and another user is not affected. Test: `TestDailyLimitS138`.
+
+### S139 Fallback within a turn
+
+The first target answers a tool call, then fails for quota; the turn restarts on the next target and answers once. Test: `TestTurnFallback`.
+
+### S140 Step limit
+
+A model that keeps calling tools gets tool choice none on step 6; that step's answer is stored with outcome `step_limit`. Test: `TestTurnStepLimit`.
+
+### S141 Deletion
+
+Deleting a conversation deletes its messages and proposals; deleting all leaves the user with none and another user's conversations untouched. Tests: `TestConversationListAndDelete`, `TestConversationDeleteAll`.
+
+### S142 Injection
+
+A payee named with an instruction to void transactions reaches the model only inside a tool result; the scripted void stays a pending proposal, and a rejection leaves the transaction intact. Test: `TestInjectedPayeeNeedsConfirmation`.

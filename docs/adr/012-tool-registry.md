@@ -2,6 +2,7 @@
 
 - Status: accepted
 - Date: 2026-10-20
+- Amended by ADR 020: T9, T10, T14
 
 ## Context
 
