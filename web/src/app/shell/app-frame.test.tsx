@@ -322,6 +322,25 @@ describe("desktop column", () => {
   });
 });
 
+describe("assistant shortcut", () => {
+  it.each(["A", "a"])("opens the assistant on %s", async (key) => {
+    await renderApp("/", { fetch: newFetch() });
+    fireEvent.keyDown(document.body, { key });
+    expect(
+      await screen.findByRole("dialog", { name: "Assistant" }),
+    ).toBeInTheDocument();
+  });
+
+  it("leaves Ctrl+A to the browser", async () => {
+    await renderApp("/", { fetch: newFetch() });
+    fireEvent.keyDown(document.body, { key: "a", ctrlKey: true });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.queryByRole("dialog", { name: "Assistant" })).toBeNull();
+  });
+});
+
 describe("entry shortcut", () => {
   it.each(["N", "n"])("opens the new transaction on %s", async (key) => {
     const { router } = await renderApp("/", { fetch: newFetch() });

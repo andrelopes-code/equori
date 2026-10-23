@@ -55,9 +55,11 @@ function keys(shortcut: string) {
 // reader reaches for first, the destinations and, at the foot, the account.
 export function DesktopNav({
   onSearch,
+  onAssistant,
   onReselect,
 }: {
   onSearch: () => void;
+  onAssistant: () => void;
   onReselect: () => void;
 }) {
   const t = useT();
@@ -66,6 +68,7 @@ export function DesktopNav({
   const count = useUncategorizedCount();
   const { selected, press } = useDestinationPress(onReselect);
   const entryKey = t("nav.entry.key");
+  const assistantKey = t("assistant.key");
 
   return (
     <>
@@ -122,6 +125,22 @@ export function DesktopNav({
               >
                 {t("nav.search")}
               </Button>
+              <Button
+                fullWidth
+                justify="between"
+                tone="secondary"
+                variant="outline"
+                aria-keyshortcuts={assistantKey}
+                start={
+                  <Icon size="sm">
+                    <ShellIcon name="assistant" />
+                  </Icon>
+                }
+                end={keys(assistantKey)}
+                onClick={onAssistant}
+              >
+                {t("assistant.title")}
+              </Button>
             </>
           ) : (
             <>
@@ -143,6 +162,15 @@ export function DesktopNav({
               >
                 <Icon>
                   <ShellIcon name="search" />
+                </Icon>
+              </IconButton>
+              <IconButton
+                aria-label={t("assistant.open")}
+                aria-keyshortcuts={assistantKey}
+                onClick={onAssistant}
+              >
+                <Icon>
+                  <ShellIcon name="assistant" />
                 </Icon>
               </IconButton>
             </>

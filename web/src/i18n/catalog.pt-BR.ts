@@ -1052,6 +1052,7 @@ export const catalogPtBR: Catalog = {
   "capture.problem.rows": "Os lançamentos precisam citar uma conta e fechar.",
   "assistant.title": "Assistente",
   "assistant.open": "Abrir o assistente",
+  "assistant.key": "A",
   "assistant.new_conversation": "Nova conversa",
   "assistant.conversations": "Conversas",
   "assistant.delete_conversation": "Apagar conversa",

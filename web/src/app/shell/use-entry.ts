@@ -20,12 +20,12 @@ export function useEntry(): () => void {
   }, [navigate]);
 }
 
-// N opens the entry from any authenticated route, unless a field takes the key, a modifier
-// makes it a command, or an overlay holds the reader.
-export function useEntryShortcut(open: () => void): void {
+// A single key opens a command from any authenticated route, unless a field takes the key, a
+// modifier makes it a command, or an overlay holds the reader.
+export function useKeyShortcut(key: string, open: () => void): void {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() !== "n") return;
+      if (event.key.toLowerCase() !== key) return;
       if (event.isComposing || event.defaultPrevented) return;
       if (event.ctrlKey || event.metaKey || event.altKey) return;
       if (event.target instanceof Element && event.target.closest(editable)) {
@@ -39,5 +39,10 @@ export function useEntryShortcut(open: () => void): void {
     return () => {
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [open]);
+  }, [key, open]);
+}
+
+// N opens the entry.
+export function useEntryShortcut(open: () => void): void {
+  useKeyShortcut("n", open);
 }

@@ -132,6 +132,7 @@ export function CommandMenu({
               label: t("assistant.title"),
               group: "actions",
               icon: icon("assistant"),
+              shortcut: "a",
               onSelect: onAssistant,
             },
           ]),

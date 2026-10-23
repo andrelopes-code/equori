@@ -1045,6 +1045,7 @@ export const catalogEn = {
   "capture.problem.rows": "The postings must name an account and balance.",
   "assistant.title": "Assistant",
   "assistant.open": "Open the assistant",
+  "assistant.key": "A",
   "assistant.new_conversation": "New conversation",
   "assistant.conversations": "Conversations",
   "assistant.delete_conversation": "Delete conversation",

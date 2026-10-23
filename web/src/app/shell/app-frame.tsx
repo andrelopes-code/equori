@@ -19,7 +19,11 @@ import { DesktopNav } from "@/app/shell/desktop-nav";
 import { PhoneDock } from "@/app/shell/phone-dock";
 import { TopAppBar } from "@/app/shell/top-app-bar";
 import { useEditing } from "@/app/shell/use-editing";
-import { useEntry, useEntryShortcut } from "@/app/shell/use-entry";
+import {
+  useEntry,
+  useEntryShortcut,
+  useKeyShortcut,
+} from "@/app/shell/use-entry";
 import { useNavPreference } from "@/app/shell/use-nav-preference";
 import { useExtent } from "@/app/shell/use-extent";
 import { useScrollState } from "@/app/shell/use-scroll-state";
@@ -48,6 +52,7 @@ export function AppFrame() {
   const editing = useEditing();
   const openEntry = useEntry();
   useEntryShortcut(openEntry);
+  useKeyShortcut("a", openAssistant);
   const openPalette = useCallback(() => {
     palette.current?.open();
   }, []);
@@ -84,7 +89,11 @@ export function AppFrame() {
     >
       {wide ? (
         <AppShellNav>
-          <DesktopNav onSearch={openPalette} onReselect={scrollToTop} />
+          <DesktopNav
+            onSearch={openPalette}
+            onAssistant={openAssistant}
+            onReselect={scrollToTop}
+          />
         </AppShellNav>
       ) : (
         <AppShellBanner
