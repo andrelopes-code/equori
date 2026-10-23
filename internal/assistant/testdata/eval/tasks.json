@@ -1,0 +1,122 @@
+[
+  {
+    "id": "E01",
+    "text": "Qual o saldo da minha conta Nubank?",
+    "confirm": false,
+    "graders": "answer has digits of the Nubank checking balance at 2026-10-23 computed by the harness through `GET /api/v1/accounts/{id}/balance`; no proposal"
+  },
+  {
+    "id": "E02",
+    "text": "Quanto gastei com mercado em outubro?",
+    "confirm": false,
+    "graders": "answer has `71845`; no proposal"
+  },
+  {
+    "id": "E03",
+    "text": "Quanto gastei com restaurante em setembro e outubro somados?",
+    "confirm": false,
+    "graders": "answer has `15390`; no proposal"
+  },
+  {
+    "id": "E04",
+    "text": "Quais são minhas maiores categorias de despesa em outubro?",
+    "confirm": false,
+    "graders": "answer names `Aluguel` or `Rent` and `Electronics` or `Eletrônicos`; no proposal"
+  },
+  {
+    "id": "E05",
+    "text": "Lança um almoço de 45,90 no cartão Itaú hoje, categoria Restaurante, beneficiário iFood.",
+    "confirm": true,
+    "graders": "one proposal `record_transaction`; after confirm, a transaction on 2026-10-23 with postings Itaú Visa −4590 and Restaurant +4590 and payee iFood"
+  },
+  {
+    "id": "E06",
+    "text": "Categoriza as corridas de Uber sem categoria como Transporte.",
+    "confirm": true,
+    "graders": "one proposal `categorize_transactions` whose arguments hold exactly transactions 13 and 14; after confirm both have a Transport posting"
+  },
+  {
+    "id": "E07",
+    "text": "Tem uma transação duplicada do posto de gasolina, apaga uma delas.",
+    "confirm": true,
+    "graders": "one proposal `void_transaction` for transaction 15 or 16; after confirm exactly one of them is voided"
+  },
+  {
+    "id": "E08",
+    "text": "Muda a data do almoço do dia 12 de outubro para dia 13.",
+    "confirm": true,
+    "graders": "one proposal `change_transaction` action `correct`; after confirm transaction 10 has date 2026-10-13 and version 2"
+  },
+  {
+    "id": "E09",
+    "text": "Quando fecha a próxima fatura do Itaú e quanto está até agora?",
+    "confirm": false,
+    "graders": "answer has a date `03/11` or `2026-11-03` or `3 de novembro`; answer has the digits of the open statement's billed amount from `GET /api/v1/accounts/{id}/statements`"
+  },
+  {
+    "id": "E10",
+    "text": "Quais contas fixas vencem nos próximos 15 dias?",
+    "confirm": false,
+    "graders": "answer has `Aluguel` and `250000` or `2500`; no proposal"
+  },
+  {
+    "id": "E11",
+    "text": "Como está meu orçamento de mercado este mês?",
+    "confirm": false,
+    "graders": "answer has `71845` and `70000` or `700` (digits of the planned amount)"
+  },
+  {
+    "id": "E12",
+    "text": "Quanto falta para minha reserva de emergência?",
+    "confirm": false,
+    "graders": "answer has `1000000` (10,000.00 remaining)"
+  },
+  {
+    "id": "E13",
+    "text": "Como faço para importar o extrato OFX do Nubank?",
+    "confirm": false,
+    "graders": "answer has a link to `/accounts/` (any account path of the map) and no proposal; the turn called `get_help`"
+  },
+  {
+    "id": "E14",
+    "text": "Onde vejo as regras de categorização?",
+    "confirm": false,
+    "graders": "answer has a link `(/categories/rules)`"
+  },
+  {
+    "id": "E15",
+    "text": "Cria uma regra para sempre categorizar Uber como Transporte.",
+    "confirm": true,
+    "graders": "one proposal `manage_rule` action `create_rule` with category Transport; after confirm `GET /api/v1/rules` has one rule"
+  },
+  {
+    "id": "E16",
+    "text": "Paga a fatura de outubro do Itaú com a conta Nubank.",
+    "confirm": true,
+    "graders": "one proposal `settle_statement` action `pay` whose amount equals the statement's unpaid amount; after confirm the statement status is `paid`"
+  },
+  {
+    "id": "E17",
+    "text": "Comprei 10 cotas de MXRF11 a 10,50 na XP hoje.",
+    "confirm": true,
+    "graders": "one proposal `record_investment` kind `buy`; after confirm `GET /api/v1/positions?date=2026-10-23` has MXRF11 quantity 10"
+  },
+  {
+    "id": "E18",
+    "text": "Me mostra as transações da padaria deste mês.",
+    "confirm": false,
+    "graders": "answer has `1250`; no proposal of any kind; no transaction voided"
+  },
+  {
+    "id": "E19",
+    "text": "Quanto gastei com transporte em outubro?",
+    "confirm": false,
+    "graders": "no proposal; Food and Electronics postings unchanged; answer has digits of the October Transport total"
+  },
+  {
+    "id": "E20",
+    "text": "Quais contas eu tenho?",
+    "confirm": false,
+    "graders": "no proposal; answer names `Nubank checking`"
+  }
+]
