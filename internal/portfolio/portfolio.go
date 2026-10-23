@@ -21,8 +21,10 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 	"github.com/andrelopes-code/equori/internal/platform/registry"
+	"github.com/andrelopes-code/equori/internal/platform/tool"
 	"github.com/andrelopes-code/equori/internal/portfolio/internal/adapter/httpapi"
 	"github.com/andrelopes-code/equori/internal/portfolio/internal/adapter/postgres"
+	"github.com/andrelopes-code/equori/internal/portfolio/internal/adapter/toolapi"
 	"github.com/andrelopes-code/equori/internal/portfolio/internal/app"
 	"github.com/andrelopes-code/equori/internal/portfolio/internal/domain"
 	"github.com/andrelopes-code/equori/internal/portfolio/internal/jurisdiction/br"
@@ -32,8 +34,9 @@ import (
 const consumer = "portfolio"
 
 type Module struct {
-	http *httpapi.Server
-	svc  *app.Service
+	http   *httpapi.Server
+	svc    *app.Service
+	ledger *ledger.Module
 }
 
 // Profiles is the part of identity the module uses to pick a user's jurisdiction.
@@ -64,7 +67,7 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, md
 		return nil, err
 	}
 	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l, md}, marketPort{md}, jurisdictions{profiles, byID})
-	m := &Module{http: httpapi.NewServer(svc, log), svc: svc}
+	m := &Module{http: httpapi.NewServer(svc, log), svc: svc, ledger: l}
 	// P8 amendment A71: categorization never changes a security account.
 	for _, t := range []string{ledger.EventTransactionRecorded, ledger.EventTransactionCorrected, ledger.EventTransactionVoided} {
 		dispatcher.Subscribe(consumer, t, m.handle)
@@ -89,6 +92,23 @@ func (m *Module) RebuildAll(ctx context.Context) error { return m.svc.RebuildAll
 // ok is false when there is too little history or no flow (investments design 4.4).
 func (m *Module) TrailingReturn(ctx context.Context, userID int64, accountIDs []uuid.UUID, today time.Time, in money.Currency) (bp, months int, ok bool, err error) {
 	return m.svc.TrailingReturn(ctx, userID, accountIDs, today, in)
+}
+
+// Tools returns the portfolio module's tools for language models (ADR 012).
+func (m *Module) Tools() tool.Group {
+	return tool.Group{Tools: toolapi.Tools(m.svc, m.accountNames, m.ledger.Today), Errors: tool.FromProblem(httpapi.ToProblem)}
+}
+
+func (m *Module) accountNames(ctx context.Context, userID int64) (map[uuid.UUID]string, error) {
+	accounts, _, err := m.ledger.CaptureVocabulary(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	names := make(map[uuid.UUID]string, len(accounts))
+	for _, a := range accounts {
+		names[a.ID] = a.Name
+	}
+	return names, nil
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }

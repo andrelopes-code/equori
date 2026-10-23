@@ -1350,6 +1350,324 @@
     }
   },
   {
+    "name": "get_portfolio",
+    "description": "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period. Also lists the income types and instrument subtypes the user's tax jurisdiction accepts. Use it for questions about investments and net worth. Do not use it for cash balances only: get_balances does; nor for a tax year: get_tax_year does.",
+    "effect": "read_only",
+    "idempotent": true,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "view": {
+          "type": "string",
+          "description": "what to return",
+          "enum": [
+            "positions",
+            "allocation",
+            "net_worth",
+            "return",
+            "income_types",
+            "subtypes"
+          ]
+        },
+        "date": {
+          "type": "string",
+          "description": "for positions, allocation and net_worth: valuation date; today when absent",
+          "format": "date"
+        },
+        "by": {
+          "type": "string",
+          "description": "for allocation: grouping",
+          "enum": [
+            "type",
+            "currency",
+            "institution"
+          ]
+        },
+        "account_id": {
+          "type": "string",
+          "description": "for return: account or brokerage from list_accounts"
+        },
+        "from": {
+          "type": "string",
+          "description": "for return: first date",
+          "format": "date"
+        },
+        "to": {
+          "type": "string",
+          "description": "for return: last date",
+          "format": "date"
+        },
+        "instrument_type": {
+          "type": "string",
+          "description": "for subtypes: instrument type",
+          "enum": [
+            "currency",
+            "stock",
+            "etf",
+            "reit",
+            "depositary_receipt",
+            "fixed_income",
+            "fund",
+            "crypto"
+          ]
+        }
+      },
+      "required": [
+        "view"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "positions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "account_id": {
+                "type": "string"
+              },
+              "account_name": {
+                "type": "string"
+              },
+              "instrument": {
+                "type": "string"
+              },
+              "quantity": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "average_cost": {
+                "type": "string"
+              },
+              "cost_basis": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "market_value": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "account_id",
+              "account_name",
+              "instrument",
+              "quantity",
+              "cost_basis"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "total": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "description": "decimal amount in the instrument's scale, such as -1234.56"
+            },
+            "currency": {
+              "type": "string",
+              "description": "currency or instrument code"
+            }
+          },
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "value": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "share_bp": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "key",
+              "value",
+              "share_bp"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "assets": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "description": "decimal amount in the instrument's scale, such as -1234.56"
+            },
+            "currency": {
+              "type": "string",
+              "description": "currency or instrument code"
+            }
+          },
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        "liabilities": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "description": "decimal amount in the instrument's scale, such as -1234.56"
+            },
+            "currency": {
+              "type": "string",
+              "description": "currency or instrument code"
+            }
+          },
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        "net": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "description": "decimal amount in the instrument's scale, such as -1234.56"
+            },
+            "currency": {
+              "type": "string",
+              "description": "currency or instrument code"
+            }
+          },
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        "annual_bp": {
+          "type": "integer"
+        },
+        "opening": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "description": "decimal amount in the instrument's scale, such as -1234.56"
+            },
+            "currency": {
+              "type": "string",
+              "description": "currency or instrument code"
+            }
+          },
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        "closing": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "description": "decimal amount in the instrument's scale, such as -1234.56"
+            },
+            "currency": {
+              "type": "string",
+              "description": "currency or instrument code"
+            }
+          },
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        "income_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "subtypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "get_statement",
     "description": "Returns one credit card statement with its amounts, status, dates and every line: charges, credits, payments and installments. Use it to explain a statement or check its lines. Do not use it to list statements: get_account_details lists them with their IDs.",
     "effect": "read_only",
@@ -1636,6 +1954,212 @@
         "reconciled",
         "lines"
       ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "get_tax_year",
+    "description": "Returns a tax year of investments: realized results of sales at average cost with their tax class, and investment income with its tax treatment. Use it to prepare a tax return or answer what was gained or received in a year. Do not use it for current positions: get_portfolio does.",
+    "effect": "read_only",
+    "idempotent": true,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "year": {
+          "type": "integer",
+          "description": "calendar year"
+        },
+        "view": {
+          "type": "string",
+          "description": "sales gives realized results, income gives income events; both when absent",
+          "enum": [
+            "sales",
+            "income",
+            "both"
+          ]
+        }
+      },
+      "required": [
+        "year"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "sales": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "account_name": {
+                "type": "string"
+              },
+              "instrument": {
+                "type": "string"
+              },
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "quantity": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "cost": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "proceeds": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "result": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "tax_class": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "account_name",
+              "instrument",
+              "date",
+              "quantity",
+              "cost",
+              "proceeds",
+              "result"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "income": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "account_name": {
+                "type": "string"
+              },
+              "instrument": {
+                "type": "string"
+              },
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "income_type": {
+                "type": "string"
+              },
+              "tax_treatment": {
+                "type": "string"
+              },
+              "gross": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "withheld": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "account_name",
+              "instrument",
+              "date",
+              "income_type",
+              "gross",
+              "withheld"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
       "additionalProperties": false
     }
   },

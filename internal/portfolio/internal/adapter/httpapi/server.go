@@ -26,7 +26,7 @@ type Server struct {
 }
 
 func NewServer(svc *app.Service, log *slog.Logger) *Server {
-	return &Server{svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: toProblem}}
+	return &Server{svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: ToProblem}}
 }
 
 func (s *Server) Register(mux *http.ServeMux) {
@@ -171,9 +171,9 @@ func toMoney(m money.Money) Money { return Money{Amount: m.Amount(), Currency: s
 
 func date(t time.Time) openapi_types.Date { return openapi_types.Date{Time: t} }
 
-// toProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004);
+// ToProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004);
 // the module returns none of its own.
-func toProblem(err error) (problem.Details, bool) {
+func ToProblem(err error) (problem.Details, bool) {
 	switch {
 	case errors.Is(err, app.ErrInvalidReturnRange):
 		d := problem.New(http.StatusBadRequest, "invalid_request", "from must not be after to, and the period must not exceed 366 days")
