@@ -16,9 +16,26 @@
     min-block-size: 0;
   }
 
-  /* The pane takes a third of the room, between 24 and 32 rem, and scrolls on its own. */
+  .list {
+    display: grid;
+    min-block-size: 0;
+    min-inline-size: 0;
+  }
+
+  /* The splitter writes the list's share of the row as --slotted-splitter-value on .list; the pane
+     takes the rest and never narrower than 20 rem. */
   .listing[data-pane] {
-    grid-template-columns: minmax(0, 1fr) clamp(24rem, 34%, 32rem);
+    display: flex;
+    gap: 0;
+  }
+
+  .listing[data-pane] > .list {
+    flex: 0 1 calc(var(--slotted-splitter-value, 0.66) * 100%);
+  }
+
+  .listing[data-pane] > .pane {
+    flex: 1 1 0;
+    min-inline-size: 20rem;
   }
 
   /* The pane is a ground of its own; a sticky section header inside it paints the published

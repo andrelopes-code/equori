@@ -245,6 +245,7 @@ export const catalogEn = {
   "transactions.tab.all": "All",
   "transactions.tab.uncategorized": "Uncategorized",
   "transactions.tab.uncategorizedCount": "Uncategorized ({count})",
+  "transactions.paneResize": "Resize the detail panel",
   "transactions.noResults": "No transaction matches",
   "transactions.noResultsHint": "Remove a filter or change the search.",
   "transactions.clearFilters": "Clear filters",

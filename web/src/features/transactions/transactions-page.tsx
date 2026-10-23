@@ -14,6 +14,7 @@ import {
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
 import { Tab, TabList, Tabs } from "@slotted/react/tabs";
+import { Splitter } from "@slotted/react/splitter";
 import { toast } from "@slotted/react/toast";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
@@ -80,6 +81,8 @@ export function TransactionsPage() {
   };
   const [selection, setSelection] = useState<readonly string[]>([]);
   const [picking, setPicking] = useState(false);
+  // The share of the row the list takes beside the open pane; it holds while a row opens and closes.
+  const [split, setSplit] = useState(0.66);
   const [bulkBusy, setBulkBusy] = useState(false);
 
   const categories = useCategoryEntries(accounts.data);
@@ -261,47 +264,61 @@ export function TransactionsPage() {
             className={styles.listing}
             data-pane={selected === undefined ? undefined : ""}
           >
-            {scale !== null && (
-              <TransactionsGrid
-                list={list}
-                categories={categoriesById}
-                scale={scale}
-                height={compact ? undefined : "100%"}
-                selection={selection}
-                onSelectionChange={setSelection}
-                onCategoryCommit={async (row, categoryId) => {
-                  const category = categoriesById.get(categoryId);
-                  if (category === undefined) return;
-                  try {
-                    await actions.categorizeOne(row.transaction, category);
-                  } catch (error) {
-                    throw new Error(errorText(error, t), { cause: error });
-                  }
-                }}
-                onCategorizeSelection={() => {
-                  setPicking(true);
-                }}
-                onOpen={(id) => {
-                  if (wide) {
-                    void navigate({
-                      search: { ...search, selected: id },
-                      replace: pageSearch.selected !== undefined,
-                    });
-                  } else {
-                    void navigate({ to: "/transactions/$id", params: { id } });
-                  }
-                }}
-                empty={(status) => (
-                  <TransactionsEmpty
-                    status={status}
-                    onRetry={list.retry}
-                    filtered={filtered}
-                    queue={queue}
-                    onClear={() => {
-                      setSearch(queue ? { uncategorized: true } : {});
-                    }}
-                  />
-                )}
+            <div className={styles.list}>
+              {scale !== null && (
+                <TransactionsGrid
+                  list={list}
+                  categories={categoriesById}
+                  scale={scale}
+                  height={compact ? undefined : "100%"}
+                  selection={selection}
+                  onSelectionChange={setSelection}
+                  onCategoryCommit={async (row, categoryId) => {
+                    const category = categoriesById.get(categoryId);
+                    if (category === undefined) return;
+                    try {
+                      await actions.categorizeOne(row.transaction, category);
+                    } catch (error) {
+                      throw new Error(errorText(error, t), { cause: error });
+                    }
+                  }}
+                  onCategorizeSelection={() => {
+                    setPicking(true);
+                  }}
+                  onOpen={(id) => {
+                    if (wide) {
+                      void navigate({
+                        search: { ...search, selected: id },
+                        replace: pageSearch.selected !== undefined,
+                      });
+                    } else {
+                      void navigate({
+                        to: "/transactions/$id",
+                        params: { id },
+                      });
+                    }
+                  }}
+                  empty={(status) => (
+                    <TransactionsEmpty
+                      status={status}
+                      onRetry={list.retry}
+                      filtered={filtered}
+                      queue={queue}
+                      onClear={() => {
+                        setSearch(queue ? { uncategorized: true } : {});
+                      }}
+                    />
+                  )}
+                />
+              )}
+            </div>
+            {selected !== undefined && (
+              <Splitter
+                aria-label={t("transactions.paneResize")}
+                value={split}
+                onValueChange={setSplit}
+                min={0.4}
+                max="calc(100% - 20rem)"
               />
             )}
             {selected !== undefined && (

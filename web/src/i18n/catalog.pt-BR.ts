@@ -250,6 +250,7 @@ export const catalogPtBR: Catalog = {
   "transactions.tab.all": "Todas",
   "transactions.tab.uncategorized": "Sem categoria",
   "transactions.tab.uncategorizedCount": "Sem categoria ({count})",
+  "transactions.paneResize": "Redimensionar o painel de detalhes",
   "transactions.noResults": "Nenhuma transação encontrada",
   "transactions.noResultsHint": "Remova um filtro ou mude a busca.",
   "transactions.clearFilters": "Limpar filtros",

@@ -156,6 +156,44 @@ describe("TransactionsPage", () => {
     expect([...titles.rendered]).toEqual(["Padaria"]);
   });
 
+  // Owner request 2026-10-22: a splitter between the list and the pane sets how wide each is.
+  it("resizes the list and the pane with the splitter beside them", async () => {
+    await renderApp(`/transactions?selected=${String(groceries.id)}`, {
+      width: 1280,
+      fetch: api({ queries: [] }),
+      today: "2026-10-17",
+    });
+    const bar = await screen.findByRole("separator", {
+      name: catalogEn["transactions.paneResize"],
+    });
+    expect(bar).toHaveAttribute("aria-valuenow", "66");
+    bar.focus();
+    // jsdom lays nothing out; the bar measures its container, so the container is 1000 px wide.
+    const measure = vi
+      .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockReturnValue(new DOMRect(0, 0, 1000, 600));
+    try {
+      await userEvent.keyboard("{ArrowLeft}");
+    } finally {
+      measure.mockRestore();
+    }
+    expect(bar).toHaveAttribute("aria-valuenow", "64");
+  });
+
+  it("shows no splitter while no row is open", async () => {
+    await renderApp("/transactions", {
+      width: 1280,
+      fetch: api({ queries: [] }),
+      today: "2026-10-17",
+    });
+    await screen.findByText("Year end");
+    expect(
+      screen.queryByRole("separator", {
+        name: catalogEn["transactions.paneResize"],
+      }),
+    ).toBeNull();
+  });
+
   // A refresh reads the whole page again, so the header's bar waits on it, not the button.
   it("shows a refresh on its button and the page header's bar and keeps the rows", async () => {
     const seen: Seen = { queries: [] };
