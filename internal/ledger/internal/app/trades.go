@@ -3,6 +3,7 @@ package app
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"slices"
 	"time"
 
@@ -83,6 +84,13 @@ func (s *Service) RecordIncome(ctx context.Context, userID int64, o domain.Incom
 			return err
 		}
 		o.WithheldCategoryID = accts.Taxes
+		if o.Withheld == nil {
+			profile, err := s.profiles.Profile(ctx, userID)
+			if err != nil {
+				return fmt.Errorf("read profile: %w", err)
+			}
+			o.DefaultWithholdingBP = s.defaults.WithholdingBP(profile.Region, string(o.Type))
+		}
 		postings, income, err := domain.BuildIncome(o)
 		if err != nil {
 			return err

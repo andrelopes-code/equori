@@ -19,3 +19,11 @@ func DefaultForeignChargeBP(region string) int {
 	}
 	return 0
 }
+
+// DefaultWithholdingBP returns the income tax withheld, in basis points, on an income type of a region when none is given (F9).
+func DefaultWithholdingBP(region, incomeType string) int {
+	if region == "BR" && incomeType == "jcp" {
+		return 1500
+	}
+	return 0
+}

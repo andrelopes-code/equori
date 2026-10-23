@@ -87,6 +87,7 @@ type Profiles interface {
 // RegionDefaults gives the values a record takes from the region of its owner.
 type RegionDefaults interface {
 	ForeignChargeBP(region string) int
+	WithholdingBP(region, incomeType string) int
 }
 
 type CreditLimit struct {

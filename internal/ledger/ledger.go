@@ -150,6 +150,10 @@ type regionDefaults struct{}
 
 func (regionDefaults) ForeignChargeBP(region string) int { return DefaultForeignChargeBP(region) }
 
+func (regionDefaults) WithholdingBP(region, incomeType string) int {
+	return DefaultWithholdingBP(region, incomeType)
+}
+
 type pricesAdapter struct{ md MarketData }
 
 func (p pricesAdapter) Convert(ctx context.Context, q money.Money, to money.Currency, date time.Time) (app.Conversion, error) {

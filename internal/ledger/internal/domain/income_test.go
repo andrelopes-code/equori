@@ -20,11 +20,11 @@ func TestBuildIncome(t *testing.T) {
 		withheld int64
 	}{
 		{name: "S22 dividend", order: IncomeOrder{Type: IncomeDividend, Gross: brl(t, 1000)}, want: [][2]any{{cash, int64(1000)}, {category, int64(-1000)}}},
-		{name: "S22 JCP withholds 15 percent by default", order: IncomeOrder{Type: IncomeJCP, Gross: brl(t, 4500)},
+		{name: "S22 JCP withholds 15 percent by default", order: IncomeOrder{Type: "jcp", DefaultWithholdingBP: 1500, Gross: brl(t, 4500)},
 			want: [][2]any{{cash, int64(3825)}, {taxes, int64(675)}, {category, int64(-4500)}}, withheld: 675},
-		{name: "JCP withholding rounds half to even", order: IncomeOrder{Type: IncomeJCP, Gross: brl(t, 1030)},
+		{name: "JCP withholding rounds half to even", order: IncomeOrder{Type: "jcp", DefaultWithholdingBP: 1500, Gross: brl(t, 1030)},
 			want: [][2]any{{cash, int64(876)}, {taxes, int64(154)}, {category, int64(-1030)}}, withheld: 154},
-		{name: "JCP with explicit zero", order: IncomeOrder{Type: IncomeJCP, Gross: brl(t, 4500), Withheld: amount(0)},
+		{name: "JCP with explicit zero", order: IncomeOrder{Type: "jcp", Gross: brl(t, 4500), Withheld: amount(0)},
 			want: [][2]any{{cash, int64(4500)}, {category, int64(-4500)}}},
 		{name: "coupon with withholding", order: IncomeOrder{Type: IncomeCoupon, Gross: brl(t, 10000), Withheld: amount(1500)},
 			want: [][2]any{{cash, int64(8500)}, {taxes, int64(1500)}, {category, int64(-10000)}}, withheld: 1500},
@@ -61,9 +61,9 @@ func TestBuildIncomeRejects(t *testing.T) {
 	}{
 		{name: "malformed type", order: IncomeOrder{Type: "Bad!", Gross: brl(t, 100)}, field: "income_type"},
 		{name: "zero gross", order: IncomeOrder{Type: IncomeDividend, Gross: brl(t, 0)}, field: "gross"},
-		{name: "withheld equal to gross", order: IncomeOrder{Type: IncomeJCP, Gross: brl(t, 100), Withheld: amount(100)}, field: "withheld"},
-		{name: "negative withheld", order: IncomeOrder{Type: IncomeJCP, Gross: brl(t, 100), Withheld: amount(-1)}, field: "withheld"},
-		{name: "withheld in another currency", order: IncomeOrder{Type: IncomeJCP, Gross: brl(t, 100), Withheld: func() *money.Money { m := mustMoney(t, 1, "USD"); return &m }()}, field: "withheld"},
+		{name: "withheld equal to gross", order: IncomeOrder{Type: "jcp", Gross: brl(t, 100), Withheld: amount(100)}, field: "withheld"},
+		{name: "negative withheld", order: IncomeOrder{Type: "jcp", Gross: brl(t, 100), Withheld: amount(-1)}, field: "withheld"},
+		{name: "withheld in another currency", order: IncomeOrder{Type: "jcp", Gross: brl(t, 100), Withheld: func() *money.Money { m := mustMoney(t, 1, "USD"); return &m }()}, field: "withheld"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -13,13 +13,9 @@ type IncomeType string
 
 const (
 	IncomeDividend IncomeType = "dividend"
-	IncomeJCP      IncomeType = "jcp"
 	IncomeInterest IncomeType = "interest"
 	IncomeCoupon   IncomeType = "coupon"
 )
-
-// JCPWithholdingBP is the income tax withheld on JCP when none is given (F9).
-const JCPWithholdingBP = 1500
 
 // IncomeOrder is investment income paid on a security into cash of the same brokerage (M18).
 type IncomeOrder struct {
@@ -28,7 +24,9 @@ type IncomeOrder struct {
 	Date                                                     time.Time
 	Gross                                                    money.Money
 	Withheld                                                 *money.Money
-	Description                                              string
+	// DefaultWithholdingBP is the withholding, in basis points of Gross, applied when Withheld is nil.
+	DefaultWithholdingBP int
+	Description          string
 }
 
 // Income is the D1 detail stored with an income transaction (P8 amendment A70).
@@ -53,8 +51,8 @@ func BuildIncome(o IncomeOrder) ([]Posting, Income, error) {
 	switch {
 	case o.Withheld != nil:
 		withheld = *o.Withheld
-	case o.Type == IncomeJCP:
-		if withheld, err = money.Fraction(o.Gross, JCPWithholdingBP, 10000); err != nil {
+	case o.DefaultWithholdingBP > 0:
+		if withheld, err = money.Fraction(o.Gross, int64(o.DefaultWithholdingBP), 10000); err != nil {
 			return nil, Income{}, err
 		}
 	}
