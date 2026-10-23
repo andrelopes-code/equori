@@ -67,6 +67,16 @@ Everything is in English: identifiers, files, packages, comments, log messages, 
 - `*.gen.go` files are generated; never edit them. A new module adds an entry to `sqlc.yaml`, `db/queries/<module>/`, a tag in `api/openapi.yaml` and `adapter/httpapi/oapi-codegen.yaml`.
 - Every business table has `user_id`; every query on it filters by `user_id` (ADR 003).
 
+## Regions
+
+equori serves users of any country. `docs/contributing/regions.md` lists the extension points.
+
+- No regional value (currency, calendar, exchange, aggregator, identifier scheme, tax rule, word, number or date format) is a literal or a default outside the implementation of its region.
+- Behavior that differs by country or language is an extension point under ADR 016. A value chosen by region is a case of a `switch` in `<module>/region_defaults.go`; a region without a case gets the neutral value.
+- A value set that grows with regions is `^[a-z0-9_]{2,40}$` in SQL and a `pattern` in `api/openapi.yaml`, never a closed `IN` or `enum`.
+- A new extension point adds its row to `docs/contributing/regions.md` in the same change.
+- A spec or plan names each region-dependent value it introduces and the extension point that serves it.
+
 ## Tests
 
 The suite is the safety net against regressions; agents change code only behind it.
