@@ -100,3 +100,21 @@ func TestRebuildAllRestoresTaxData(t *testing.T) {
 		t.Fatalf("events = %+v", es)
 	}
 }
+
+func TestRebuildAllRestoresUserWithoutDerivedRows(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	f.income(t, f.mxrf11, "dividend", 1000, f.dividends)
+	f.incomeEvents(t)
+	for _, table := range []string{"portfolio_position_day", "portfolio_realized_result", "portfolio_income_event"} {
+		if _, err := f.h.Pool.Exec(t.Context(), "DELETE FROM "+table); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := f.h.App.Portfolio.RebuildAll(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if es := f.incomeEvents(t); len(es) != 1 {
+		t.Fatalf("events = %+v", es)
+	}
+}

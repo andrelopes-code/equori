@@ -100,7 +100,7 @@ func (s *Service) HandleTransaction(ctx context.Context, userID int64, accountID
 	return nil
 }
 
-// RebuildAll rebuilds every brokerage of every user that has derived rows (equori portfolio rebuild).
+// RebuildAll rebuilds every brokerage of every user that has one or has derived rows (equori portfolio rebuild).
 func (s *Service) RebuildAll(ctx context.Context) error {
 	users, err := s.repo.RebuildUsers(ctx)
 	if err != nil {

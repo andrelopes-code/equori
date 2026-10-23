@@ -104,7 +104,8 @@ func (q *Queries) ListIncomeEvents(ctx context.Context, arg ListIncomeEventsPara
 }
 
 const listRebuildUsers = `-- name: ListRebuildUsers :many
-SELECT user_id FROM portfolio_position_day
+SELECT user_id FROM ledger_account WHERE kind = 'brokerage'
+UNION SELECT user_id FROM portfolio_position_day
 UNION SELECT user_id FROM portfolio_realized_result
 UNION SELECT user_id FROM portfolio_income_event
 ORDER BY user_id
