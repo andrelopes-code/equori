@@ -1,0 +1,174 @@
+@layer app {
+  .frame {
+    container-name: settings;
+    container-type: inline-size;
+  }
+
+  /* One column of sections in reading order. From 60 rem of the page's own width the contents
+     stand at the start; the sections keep a measure of 52 rem, where a row's label and its control
+     still read as one line. Neither measure has a token. */
+  .layout {
+    display: grid;
+    align-items: start;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .contents {
+    display: none;
+  }
+
+  .sections {
+    display: flex;
+    min-inline-size: 0;
+    flex-direction: column;
+    gap: var(--slotted-space-6);
+  }
+
+  @container settings (min-width: 60rem) {
+    .layout {
+      gap: var(--slotted-space-9);
+      grid-template-columns: 12rem minmax(0, 52rem);
+    }
+
+    /* Workaround for Slotted finding "A sticky table of contents has no inset under the page chrome":
+       the list is pinned by its column, the inset of a section's padding under the header. */
+    .contents {
+      position: sticky;
+      display: block;
+      inset-block-start: calc(
+        var(--slotted-page-sticky-top, 0px) + var(--slotted-space-6)
+      );
+    }
+  }
+
+  /* The account block opens with a band of the accent fading out: the reader's mark on a page that
+     is otherwise controls, in the colour the reader chose. A tint is a mix of a token with
+     transparent. */
+  .identity {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--slotted-space-4);
+    padding: var(--slotted-space-4);
+    border-radius: var(--slotted-radius-lg);
+    background:
+      linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--slotted-tone-accent-solid) 22%, transparent),
+        color-mix(in srgb, var(--slotted-tone-accent-solid) 6%, transparent) 60%,
+        transparent
+      ),
+      var(--slotted-section-surface, var(--slotted-surface-sunken));
+  }
+
+  .who {
+    display: flex;
+    min-inline-size: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--slotted-space-2);
+  }
+
+  .email {
+    inline-size: 100%;
+    margin: 0;
+    overflow: hidden;
+    color: var(--slotted-text);
+    font-size: var(--slotted-font-size-lg);
+    font-weight: var(--slotted-font-weight-semibold);
+    line-height: var(--slotted-line-height-lg);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The action stands under the identity on a phone and fills its width, a target a thumb reaches. */
+  .signOut {
+    grid-column: 1 / -1;
+  }
+
+  @container settings (min-width: 40rem) {
+    .signOut {
+      grid-column: 3;
+      grid-row: 1;
+    }
+
+    .identity {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+  }
+
+  /* The groups of a section, each apart from the one before by a rule that spans the body. */
+  .groups {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .groups > * + * {
+    margin-block-start: var(--slotted-space-6);
+    padding-block-start: var(--slotted-space-6);
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  .choice {
+    display: flex;
+    min-inline-size: 0;
+    flex-direction: column;
+    gap: var(--slotted-space-3);
+  }
+
+  .legend {
+    margin: 0;
+    color: var(--slotted-text);
+    font-size: var(--slotted-font-size-md);
+    font-weight: var(--slotted-font-weight-medium);
+    line-height: var(--slotted-line-height-md);
+  }
+
+  .hint {
+    margin: calc(-1 * var(--slotted-space-2)) 0 0;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+    line-height: var(--slotted-line-height-sm);
+  }
+
+  .fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-4);
+  }
+
+  .example {
+    display: grid;
+    gap: var(--slotted-space-3);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sample {
+    display: flex;
+    min-inline-size: 0;
+    flex-direction: column;
+    gap: var(--slotted-space-1);
+    padding: var(--slotted-space-3);
+    border-radius: var(--slotted-radius-md);
+    background: var(--slotted-section-surface, var(--slotted-surface-sunken));
+  }
+
+  .sampleLabel {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    line-height: var(--slotted-line-height-xs);
+  }
+
+  .sampleValue {
+    overflow: hidden;
+    color: var(--slotted-text);
+    font-size: var(--slotted-font-size-xl);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--slotted-font-weight-semibold);
+    line-height: var(--slotted-line-height-xl);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

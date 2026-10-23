@@ -1,123 +1,63 @@
-import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { Page, PageBody } from "@slotted/react/page";
 import {
   PageHeader,
   PageHeaderHeading,
+  PageHeaderSubheading,
   PageHeaderTitle,
   PageHeaderTitleArea,
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
-import { Stack } from "@slotted/react/stack";
-import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { TableOfContents } from "@slotted/react/table-of-contents";
 
-import { useApi } from "@/api/api-context";
-import { ProblemError, problemMessage } from "@/api/problem";
-import {
-  instrumentsQuery,
-  settingsQuery,
-  useChooseRegion,
-  useUpdateSettings,
-} from "@/features/setup/api";
-import { useChooseLanguage } from "@/features/session";
-import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
-import { languages } from "@/i18n/languages";
-import { regions } from "@/i18n/regions";
-import { ChoiceSelect } from "@/ui/choice-select";
-import type { Choice } from "@/ui/choice-select";
-
-const languageChoices: readonly Choice[] = languages.map((l) => ({
-  value: l.language,
-  label: l.nativeName,
-}));
+import { SettingsAccount } from "@/features/setup/settings-account";
+import { SettingsAppearance } from "@/features/setup/settings-appearance";
+import { SettingsAssistant } from "@/features/setup/settings-assistant";
+import { SettingsLanguage } from "@/features/setup/settings-language";
+import { SettingsLedger } from "@/features/setup/settings-ledger";
+import { SettingsPrivacy } from "@/features/setup/settings-privacy";
+import styles from "@/features/setup/settings-page.module.css";
+import { settingsTopics } from "@/features/setup/settings-topics";
+import { useT } from "@/i18n/i18n-provider";
 
 export function SettingsPage() {
   const t = useT();
-  const api = useApi();
-  const { tag, language, locale } = useAppLocaleState();
-  const chooseLanguage = useChooseLanguage();
-  const chooseRegion = useChooseRegion();
-  const settings = useQuery(settingsQuery(api));
-  const instruments = useQuery(instrumentsQuery(api));
-  const update = useUpdateSettings();
-
-  const regionChoices = useMemo(() => {
-    const names = new Intl.DisplayNames([tag], { type: "region" });
-    return regions
-      .map((code) => ({ value: code, label: names.of(code) ?? code }))
-      .sort((a, b) => a.label.localeCompare(b.label, tag));
-  }, [tag]);
-
-  const currencyChoices = useMemo(
-    () =>
-      (instruments.data?.items ?? [])
-        .filter((i) => i.type === "currency")
-        .map((i) => ({ value: i.code, label: `${i.code} ${i.name}` })),
-    [instruments.data],
-  );
-
-  const currencyError =
-    update.error instanceof ProblemError
-      ? problemMessage(update.error.problem, t)
-      : undefined;
-
   return (
-    <Page width="wide">
+    <Page width="full">
       <PageHeader size="lg">
         <PageHeaderTitleArea>
           <PageHeaderTitleRow>
             <PageHeaderTitle>
               <PageHeaderHeading>{t("more.settings")}</PageHeaderHeading>
+              <PageHeaderSubheading>
+                {t("settings.subtitle")}
+              </PageHeaderSubheading>
             </PageHeaderTitle>
           </PageHeaderTitleRow>
         </PageHeaderTitleArea>
       </PageHeader>
       <PageBody>
-        <Stack gap={4}>
-          <Field>
-            <FieldLabel>{t("settings.language")}</FieldLabel>
-            <ChoiceSelect
-              label={t("settings.language")}
-              choices={languageChoices}
-              value={language}
-              multiple={false}
-              onChange={(next) => {
-                const chosen = languages.find((l) => l.language === next);
-                if (chosen !== undefined) chooseLanguage(chosen.language);
-              }}
-            />
-          </Field>
-          <Field>
-            <FieldLabel>{t("settings.region")}</FieldLabel>
-            <ChoiceSelect
-              label={t("settings.region")}
-              choices={regionChoices}
-              value={locale.region}
-              multiple={false}
-              onChange={(next) => {
-                if (typeof next === "string") chooseRegion(next);
-              }}
-            />
-          </Field>
-          <Field invalid={currencyError !== undefined}>
-            <FieldLabel>{t("settings.baseCurrency")}</FieldLabel>
-            <ChoiceSelect
-              label={t("settings.baseCurrency")}
-              choices={currencyChoices}
-              value={settings.data?.base_currency ?? null}
-              multiple={false}
-              invalid={currencyError !== undefined}
-              onChange={(next) => {
-                if (typeof next === "string") {
-                  update.mutate({ base_currency: next });
-                }
-              }}
-            />
-            {currencyError !== undefined && (
-              <FieldError>{currencyError}</FieldError>
-            )}
-          </Field>
-        </Stack>
+        <div className={styles.frame}>
+          <div className={styles.layout}>
+            <div className={styles.contents}>
+              <TableOfContents
+                label={t("settings.contents")}
+                history="replace"
+                items={settingsTopics.map((topic) => ({
+                  id: topic.id,
+                  label: t(topic.title),
+                }))}
+              />
+            </div>
+            <div className={styles.sections}>
+              <SettingsAccount />
+              <SettingsAppearance />
+              <SettingsLanguage />
+              <SettingsPrivacy />
+              <SettingsLedger />
+              <SettingsAssistant />
+            </div>
+          </div>
+        </div>
       </PageBody>
     </Page>
   );

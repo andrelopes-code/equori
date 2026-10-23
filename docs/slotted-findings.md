@@ -68,6 +68,8 @@ Registry of the findings reported to the Slotted owner (`web/CLAUDE.md`, "Slotte
 | The splitter docs list no props, anatomy, events or example                                         | reported |
 | A bottom sheet drags at a low frame rate and a fast downward fling ends without a continuous exit   | reported |
 | No runtime axis for the corner radius                                                               | open     |
+| A sticky table of contents has no inset under the page chrome                                       | open     |
+| A section divider on a surface stops at the inset                                                   | open     |
 | The section anatomy does not say the description belongs inside the title                           | reported |
 | A soft key cap has no surface token of its own                                                      | open     |
 | A popup's positioner fade suppresses its content's backdrop blur until the fade ends                | open     |

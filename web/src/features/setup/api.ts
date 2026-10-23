@@ -151,3 +151,127 @@ export function useChooseRegion(): (region: string) => void {
     update.mutate(region);
   };
 }
+
+export type ModelProvider = components["schemas"]["Provider"];
+export type ModelPreset = components["schemas"]["Preset"];
+export type ModelUse = components["schemas"]["Use"];
+export type ChainTargetInput = components["schemas"]["ChainTargetInput"];
+export type UsageRow = components["schemas"]["UsageRow"];
+
+export const assistantKeys = {
+  presets: ["assistant", "presets"] as const,
+  providers: ["assistant", "providers"] as const,
+  uses: ["assistant", "uses"] as const,
+  usage: ["assistant", "usage"] as const,
+  models: (id: string) => ["assistant", "providers", id, "models"] as const,
+};
+
+// Presets are fixed in the server's code, so the list is cached for the session.
+export function presetsQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: assistantKeys.presets,
+    queryFn: async () => unwrap(await api.GET("/assistant/presets")),
+    staleTime: Infinity,
+  });
+}
+
+export function providersQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: assistantKeys.providers,
+    queryFn: async () => unwrap(await api.GET("/assistant/providers")),
+  });
+}
+
+export function usesQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: assistantKeys.uses,
+    queryFn: async () => unwrap(await api.GET("/assistant/uses")),
+  });
+}
+
+// The listing calls the provider, so a failure is not retried: it is the answer the reader asked for.
+export function providerModelsQuery(api: Client<paths>, id: string) {
+  return queryOptions({
+    queryKey: assistantKeys.models(id),
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/assistant/providers/{id}/models", {
+          params: { path: { id } },
+        }),
+      ),
+    retry: false,
+  });
+}
+
+export function useCreateProvider() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (body: components["schemas"]["ProviderInput"]) =>
+      unwrap(await api.POST("/assistant/providers", { body })),
+  });
+}
+
+export function useUpdateProvider() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      body,
+    }: {
+      id: string;
+      body: components["schemas"]["ProviderPatch"];
+    }) =>
+      unwrap(
+        await api.PATCH("/assistant/providers/{id}", {
+          params: { path: { id } },
+          body,
+        }),
+      ),
+  });
+}
+
+export function useDeleteProvider() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      unwrap(
+        await api.DELETE("/assistant/providers/{id}", {
+          params: { path: { id } },
+        }),
+      ),
+  });
+}
+
+export function useSetUseChain() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async ({
+      use,
+      targets,
+    }: {
+      use: string;
+      targets: ChainTargetInput[];
+    }) =>
+      unwrap(
+        await api.PUT("/assistant/uses/{use}/chain", {
+          params: { path: { use } },
+          body: { targets },
+        }),
+      ),
+  });
+}
+
+export function usageQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: assistantKeys.usage,
+    queryFn: async () => unwrap(await api.GET("/assistant/usage")),
+  });
+}
+
+export function useSetUsageLimit() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (body: components["schemas"]["UsageLimitInput"]) =>
+      unwrap(await api.PUT("/assistant/usage/limits", { body })),
+  });
+}

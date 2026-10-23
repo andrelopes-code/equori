@@ -1,0 +1,160 @@
+@layer app {
+  .frame {
+    container-name: choice-cards;
+    container-type: inline-size;
+  }
+
+  .group {
+    display: grid;
+    gap: var(--slotted-space-3);
+    /* A card's least measure: no token holds it. Three fit a 375 px phone, and the row spreads to
+       its container's width on a desktop. */
+    grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+  }
+
+  /* Four cards stand two by two where a row holds fewer than four, so no card is left alone on a
+     row of its own. */
+  .group[data-count="4"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @container choice-cards (min-width: 30rem) {
+    .group[data-count="4"] {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .option {
+    position: relative;
+    display: block;
+    min-inline-size: 0;
+    cursor: pointer;
+  }
+
+  /* The radio stays in the accessibility tree and takes focus; the drawing is its label. */
+  .radio {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-3);
+    box-sizing: border-box;
+    block-size: 100%;
+    min-block-size: var(--slotted-target-comfortable);
+    padding: var(--slotted-space-2);
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-lg);
+    background: var(--slotted-surface-raised);
+    outline: var(--slotted-border-width-medium) solid transparent;
+    transition:
+      border-color var(--slotted-duration-short) var(--slotted-easing-standard),
+      outline-color var(--slotted-duration-short) var(--slotted-easing-standard);
+  }
+
+  .preview {
+    display: block;
+    overflow: hidden;
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-md);
+  }
+
+  .caption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-2);
+    padding-inline: var(--slotted-space-1);
+    padding-block-end: var(--slotted-space-1);
+    color: var(--slotted-text);
+    font-size: var(--slotted-font-size-sm);
+    font-weight: var(--slotted-font-weight-medium);
+    line-height: var(--slotted-line-height-sm);
+  }
+
+  .label {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The mark is an empty ring at rest and the filled accent ring when chosen. */
+  .mark {
+    flex: none;
+    box-sizing: border-box;
+    inline-size: var(--slotted-control-inner-size-md);
+    block-size: var(--slotted-control-inner-size-md);
+    border: var(--slotted-border-width-medium) solid
+      var(--slotted-border-strong);
+    border-radius: var(--slotted-radius-full);
+    transition:
+      background-color var(--slotted-duration-short)
+        var(--slotted-easing-standard),
+      border-color var(--slotted-duration-short) var(--slotted-easing-standard);
+  }
+
+  .option:hover .card {
+    border-color: var(--slotted-border-strong);
+  }
+
+  .radio:checked + .card {
+    border-color: var(--slotted-tone-accent-text);
+    outline-color: var(--slotted-tone-accent-text);
+  }
+
+  /* The dot inside the ring is two gradient stops (a 45 % disc with a 5 % edge): no token draws a
+     dot, and a gradient keeps it centred at every density. */
+  .radio:checked + .card .mark {
+    border-color: var(--slotted-tone-accent-text);
+    background: radial-gradient(
+      circle,
+      var(--slotted-tone-accent-text) 45%,
+      transparent 50%
+    );
+  }
+
+  .radio:focus-visible + .card {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  /* Three cards in a phone's width leave a label no room beside the ring; the border and the
+     outline of the chosen card carry the choice there. */
+  @container choice-cards (max-width: 30rem) {
+    .mark {
+      display: none;
+    }
+  }
+
+  @media (pointer: coarse) {
+    .card {
+      min-block-size: var(--slotted-target-comfortable);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card,
+    .mark {
+      transition: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .radio:checked + .card {
+      border-color: Highlight;
+      outline-color: Highlight;
+    }
+
+    .radio:checked + .card .mark {
+      border-color: Highlight;
+      background: Highlight;
+    }
+  }
+}

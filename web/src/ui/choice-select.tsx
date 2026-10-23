@@ -18,6 +18,7 @@ export function ChoiceSelect({
   value,
   multiple,
   invalid,
+  readOnly,
   placeholder,
   onChange,
 }: {
@@ -26,6 +27,7 @@ export function ChoiceSelect({
   value: string | readonly string[] | null;
   multiple: boolean;
   invalid?: boolean;
+  readOnly?: boolean;
   placeholder?: string;
   onChange: (value: string | string[] | null) => void;
 }) {
@@ -37,6 +39,7 @@ export function ChoiceSelect({
         onChange(typeof next === "string" || next === null ? next : [...next]);
       }}
       {...(invalid === undefined ? {} : { invalid })}
+      {...(readOnly === undefined ? {} : { readOnly })}
     >
       <SelectTrigger aria-label={label}>
         <SelectValue {...(placeholder === undefined ? {} : { placeholder })} />

@@ -1,0 +1,69 @@
+@layer app {
+  /* Eight boxes on one row: each is the comfortable target wide and narrows on a phone, where eight
+     of 44 px do not fit. At 390 px a box is 40 px, room for the 36 px of a swatch and its ring. */
+  .swatches {
+    display: grid;
+    grid-template-columns: repeat(
+      8,
+      minmax(0, var(--slotted-target-comfortable))
+    );
+  }
+
+  /* The ring stays inside the box, so it never covers a neighbour. */
+  .option {
+    position: relative;
+    display: grid;
+    place-items: center;
+    block-size: var(--slotted-target-comfortable);
+    cursor: pointer;
+  }
+
+  /* The radio stays in the accessibility tree and takes focus; the drawing is its label. */
+  .radio {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .swatch {
+    box-sizing: border-box;
+    inline-size: var(--slotted-control-inner-size-lg);
+    block-size: var(--slotted-control-inner-size-lg);
+    border-radius: var(--slotted-radius-full);
+    outline: var(--slotted-border-width-thick) solid transparent;
+    outline-offset: var(--slotted-border-width-thick);
+    transition: outline-color var(--slotted-control-transition-duration)
+      var(--slotted-control-transition-easing);
+  }
+
+  .option:hover .swatch {
+    outline-color: var(--slotted-border-strong);
+  }
+
+  /* checked: the ring takes the text colour, so it stays distinct from every swatch it surrounds. */
+  .radio:checked + .swatch {
+    outline-color: var(--slotted-text);
+  }
+
+  .radio:focus-visible + .swatch {
+    outline-color: var(--slotted-focus-ring-color);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .swatch {
+      transition: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .swatch {
+      forced-color-adjust: none;
+    }
+
+    .radio:checked + .swatch {
+      outline-color: Highlight;
+    }
+  }
+}

@@ -1,0 +1,221 @@
+@layer app {
+  /* One proportion for every preview, so the cards of a row stay level. */
+  .scheme,
+  .density {
+    position: relative;
+    display: block;
+    box-sizing: border-box;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+  }
+
+  /* A layer paints with the tokens of its own scheme: the attribute on it switches them. */
+  .layer {
+    position: absolute;
+    inset: 0;
+    display: block;
+    background: var(--slotted-surface);
+    color: var(--slotted-text);
+  }
+
+  /* The dark half of the system preview shows the right half of the drawing. A half has no token. */
+  .scheme[data-split] .layer[data-layer="dark"] {
+    clip-path: inset(0 0 0 50%);
+  }
+
+  .scheme[data-split]::after {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 50%;
+    inline-size: var(--slotted-border-width-thin);
+    background: var(--slotted-border-strong);
+    content: "";
+  }
+
+  .drawing {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .ground {
+    fill: var(--slotted-surface);
+  }
+  .rail {
+    fill: var(--slotted-surface-raised);
+  }
+  .ink {
+    fill: var(--slotted-text);
+  }
+  .muted {
+    fill: var(--slotted-text-muted);
+  }
+  .accent,
+  .action {
+    fill: var(--slotted-tone-accent-text);
+  }
+  .pill {
+    fill: var(--slotted-border-subtle);
+  }
+  /* A tint of the accent: a fill opacity over the token, as no token holds the mix. */
+  .pillOn {
+    fill: var(--slotted-tone-accent-text);
+    fill-opacity: 0.25;
+  }
+  .card {
+    fill: var(--slotted-surface-raised);
+    stroke: var(--slotted-border-subtle);
+    stroke-width: 0.6;
+  }
+  .line {
+    fill: none;
+    stroke: var(--slotted-data-1);
+    stroke-linejoin: round;
+    stroke-width: 1.6;
+  }
+  .area {
+    fill: var(--slotted-data-1);
+    fill-opacity: 0.2;
+  }
+  .seriesTwo {
+    fill: var(--slotted-data-2);
+  }
+  .seriesThree {
+    fill: var(--slotted-data-3);
+  }
+  .seriesFour {
+    fill: var(--slotted-data-4);
+  }
+
+  .density {
+    display: flex;
+    flex-direction: column;
+    background: var(--slotted-surface);
+  }
+
+  .head {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-2);
+    padding: var(--slotted-space-2) var(--slotted-space-3);
+    background: var(--slotted-surface-raised);
+    border-block-end: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  .headText,
+  .headAmount {
+    block-size: var(--slotted-space-1);
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-text-muted);
+  }
+
+  .headText {
+    inline-size: 30%;
+  }
+
+  .headAmount {
+    inline-size: 14%;
+  }
+
+  .row {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: var(--slotted-space-2);
+    min-block-size: 0;
+    padding-inline: var(--slotted-space-3);
+    border-block-end: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  .row:last-child {
+    border-block-end: 0;
+  }
+
+  .mark {
+    flex: none;
+    inline-size: var(--slotted-space-2);
+    aspect-ratio: 1;
+    border-radius: var(--slotted-radius-full);
+  }
+
+  .mark[data-series="1"] {
+    background: var(--slotted-data-1);
+  }
+  .mark[data-series="2"] {
+    background: var(--slotted-data-2);
+  }
+  .mark[data-series="3"] {
+    background: var(--slotted-data-3);
+  }
+  .mark[data-series="4"] {
+    background: var(--slotted-data-4);
+  }
+
+  .text {
+    flex: none;
+    max-inline-size: 60%;
+    block-size: var(--slotted-space-1);
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-text);
+  }
+
+  .amount {
+    inline-size: 14%;
+    margin-inline-start: auto;
+    block-size: var(--slotted-space-1);
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-text-muted);
+  }
+}
+
+@layer app {
+  /* The corner preview: a card holding a field and a button on the page's ground. The radii come
+     from the choice, written on each element. */
+  .corners {
+    position: relative;
+    display: grid;
+    box-sizing: border-box;
+    aspect-ratio: 16 / 10;
+    place-items: center;
+    padding: var(--slotted-space-3);
+    background: var(--slotted-surface);
+  }
+
+  .panel {
+    display: flex;
+    box-sizing: border-box;
+    inline-size: 100%;
+    flex-direction: column;
+    gap: var(--slotted-space-2);
+    padding: var(--slotted-space-3);
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    background: var(--slotted-surface-raised);
+  }
+
+  .field {
+    display: flex;
+    align-items: center;
+    block-size: var(--slotted-space-6);
+    padding-inline: var(--slotted-space-2);
+    border: var(--slotted-border-width-thin) solid
+      var(--slotted-control-border-color);
+  }
+
+  .fieldText {
+    inline-size: 50%;
+    block-size: var(--slotted-space-1);
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-text-muted);
+  }
+
+  .button {
+    align-self: flex-end;
+    inline-size: 40%;
+    block-size: var(--slotted-space-6);
+    background: var(--slotted-tone-accent-solid);
+  }
+}
