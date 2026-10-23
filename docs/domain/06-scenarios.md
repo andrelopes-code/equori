@@ -436,7 +436,7 @@ An OFX credit card statement for Itaú Visa: −230.00 on 2026-10-14 is a `charg
 | M28 | S02 |
 | M29 | S31 |
 
-The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44 and S98 (amendment A105); the category tree and its tools by S72–S79 (amendments A73–A84 of `docs/superpowers/specs/2026-10-19-categorization-design.md`); transfers from imports by S45–S50; aggregator sync by S51–S59, S68–S71 and S90; matching by score by S91–S97 (amendments A98–A104); card statements from the institution by S80–S89 (amendments A85–A93); schedules (F7) by S27–S29 and the planning views by S60–S63; currencies and investments (F9) by S16, S17, S21, S22 and S64–S67; reimbursement of recorded expenses by S113 and S114 (amendment A117); text capture and the transaction batch by S99–S112 (amendments A106–A116 of `docs/superpowers/specs/2026-10-21-text-capture-design.md`).
+The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44 and S98 (amendment A105); the category tree and its tools by S72–S79 (amendments A73–A84 of `docs/superpowers/specs/2026-10-19-categorization-design.md`); transfers from imports by S45–S50; aggregator sync by S51–S59, S68–S71 and S90; matching by score by S91–S97 (amendments A98–A104); card statements from the institution by S80–S89 (amendments A85–A93); schedules (F7) by S27–S29 and the planning views by S60–S63; currencies and investments (F9) by S16, S17, S21, S22 and S64–S67; editing and deleting goals by S119 and S120; goals over brokerage accounts by S121; tax treatment by instrument subtype by S122; the return of an account tree by S126 and S127 and of a goal by S130; allocation and net worth by S128 and S129; fixed income accrual by S123 to S125; reimbursement of recorded expenses by S113 and S114 (amendment A117); text capture and the transaction batch by S99–S112 (amendments A106–A116 of `docs/superpowers/specs/2026-10-21-text-capture-design.md`).
 
 ## 6.13 Classification
 
@@ -685,6 +685,54 @@ A subscription of 9.99 USD per month on Wise USD, Subscriptions, from 2026-12-10
 ### S67 Goal in another currency
 
 Goal "Trip" of 2,000.00 USD over Wise USD (1,000.00 USD) and Nubank checking (2,750.00 BRL) with USD/BRL 5.5000: current 1,500.00 USD, remaining 500.00 USD, progress 7500 basis points.
+
+### S119 Edit a goal
+
+Goal "Emergency" of 30,000.00 over Emergency fund (10,083.41), edited with `PATCH /goals/{id}` to name "Reserve" and target 20,166.82: current 10,083.41, remaining 10,083.41, progress 5000 basis points. A second edit sets the due date 2028-01-31 and the accounts Emergency fund and Nubank checking, which net to zero: current 0.00, progress 0; the name stays "Reserve". A name used by another goal, a target of zero, an account that is not a balance account and an empty body are rejected; another user's goal is a 404. A goal that cannot be measured, such as a target in a currency without a stored price, is not stored by either `POST` or `PATCH`.
+
+### S120 Delete a goal
+
+`DELETE /goals/{id}` returns 204; the goal then reads as 404 from `GET` and from a second `DELETE`, the list no longer holds it, and its accounts stay. Another user's goal is a 404. The name is free for a new goal.
+
+### S121 Goal over a brokerage
+
+Amendment A120: a goal sums the value of an account and of its sub-accounts, each instrument at its stored price, so a brokerage parent holding cash and securities is a valid goal account. XP cash holds 500.00, XP MXRF11 holds 10 shares and MXRF11/BRL is 10.5 on 2026-10-30: a goal of 1,000.00 over XP shows current 605.00, progress 6050 basis points, and lists the price. Without the price the goal is refused with `price_missing` and not stored. A goal that holds an account and one of its sub-accounts is refused with `validation_failed` on `account_ids`. The goal lists what current is made of (amendment A121): XP cash 500.00 (value 500.00) and 10 MXRF11 (value 105.00), one part per goal account and instrument with a non-zero quantity. A projection of the brokerage parent stays refused (`currency_unsupported`).
+
+### S122 Tax treatment by subtype
+
+Amendment A122: an instrument has an optional subtype, an identifier of 2 to 40 lowercase letters, digits and underscores. The jurisdiction of the owner derives the tax class from type, subtype and exchange. For `br`, a coupon of a `fixed_income` instrument with subtype `cri` reads `tax_treatment` `exempt` in `GET /income-events`; with `cdb`, with no subtype, or on a `stock` with an unknown subtype it reads `exclusive`, as before. `GET /instrument-subtypes?type=fixed_income` lists `cdb`, `cra`, `cri`, `debenture_incentivada`, `lca`, `lci`, `rdb`, `tesouro`; `type=fund` lists `equity_fund`, `fixed_income_fund`, `multimarket`; a type without subtypes, and any type for an owner without a jurisdiction, lists none. A subtype outside the identifier pattern is a 400.
+
+### S126 Return of a brokerage
+
+Amendment A123: `GET /reports/return?account_id=&from=&to=&value_in=` returns the money-weighted annual return of an account and its sub-accounts over at most 366 days. XP cash receives 1,000.00 from checking on 2025-10-15 and a dividend of 50.00 arrives on 2026-10-26: over 2025-11-01 to 2026-10-31 the opening is 1,000.00, the closing 1,050.00, there is no flow and `annual_bp` is 500. A further contribution of 1,000.00 on 2026-04-30 gives the flow list with that date and amount, a closing of 2,050.00 and `annual_bp` 333. Valued in USD with a constant price the rate is the same; without a price the request is 422 `price_missing`.
+
+### S127 Return undefined
+
+A period in which the opening value and every contribution are zero returns 422 `return_undefined`. A period over 366 days and `from` after `to` are 400 on `to`; an unknown account is 404.
+
+### S130 Trailing return of a goal
+
+Amendment A124: a goal reads `trailing_return` (`period_months`, `annual_bp`), the money-weighted return of its accounts taken as one tree over the last 12 months, valued in the goal currency. On 2026-11-12, Emergency fund receives 1,000.00 on 2025-10-15 and on 2026-04-30 and 50.00 of income on 2026-10-26, and moves 30,000 to Reserve B on 2026-06-10: a goal over both accounts has opening 1,000.00 on 2025-11-11, one flow of 1,000.00, closing 2,050.00, `period_months` 12 and `annual_bp` 326; the transfer between its accounts is not a flow. A goal whose accounts have no posting, only two months of postings, or no flow in the window has no `trailing_return`.
+
+### S128 Allocation of the assets
+
+Amendment A125: `GET /reports/allocation?date=&by=&value_in=` groups the value of the asset accounts at a date, each account counting its own balance valued with the stored prices of the date. Checking 500.00, XP cash 400.00 and 10 MXRF11 at 10.50 (105.00): by `type` the groups are `currency` 900.00 (8955 basis points) and `reit` 105.00 (1045), the total 1,005.00; by `currency` one group `BRL` of 10000; by `institution` XP 505.00 (5024) and the account without institution, key empty, 500.00 (4976). Groups are ordered by value, largest first, shares are rounded down and the last group takes the remainder. A `by` outside type, currency and institution is 400 on `by`; a value currency without a price is 422 `price_missing`; a date before any posting has total 0.00 and no group.
+
+### S129 Net worth
+
+`GET /reports/net-worth?date=&value_in=` returns the assets, the liabilities as a positive amount and their difference. With the accounts of S128 and a loan of 1,200.00 received into checking: assets 2,205.00, liabilities 1,200.00, net 1,005.00.
+
+### S123 Accrued CDB
+
+Amendment A126: a `fixed_income` instrument with terms gets a price a business day with source `accrual`. A CDB of 1,000.00 at 110% of the CDI issued on 2026-01-02, with the CDI at 0.055131% a day on the five following business days, is priced 1,000.00 on the issue date, then 1,000.606441, 1,001.213249770686, 1,001.820426535091, 1,002.427971516379 and 1,003.035884937853. A manual price of the same day wins over the accrued one. New terms delete the accrued prices; the next tick accrues them again (face value 2,000.00 prices 2,006.071769875707 on 2026-01-09). After maturity nothing is priced.
+
+### S124 Accrued Tesouro IPCA+
+
+A security issued on 2026-01-01 with a spread of 600 basis points over the IPCA, with the monthly IPCA of 0.42% (January) and -0.30% (February), is priced 1,004.640317564163 on 2026-01-30 (only the spread accrues), 1,009.343088309557 on 2026-02-02 (January applied from the day after its last day) and 1,010.823298922241 on 2026-03-02.
+
+### S125 Terms
+
+`PUT /instruments/{code}/terms` stores the face value, the issue and maturity dates, the index, its percent in basis points, the annual spread and the day count of a `fixed_income` instrument. Terms on another type are refused (`validation_failed` on `code`), as are a maturity not after the issue, `bus252` without the `cdi` index and values outside the contract.
 
 ## 6.18 Text capture
 
