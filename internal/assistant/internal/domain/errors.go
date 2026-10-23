@@ -9,6 +9,9 @@ var (
 	ErrCapabilityMissing = errors.New("a model lacks a capability the use needs")
 	ErrProviderNotFound  = errors.New("provider not found")
 	ErrUseNotFound       = errors.New("use not found")
+
+	ErrConversationNotFound = errors.New("conversation not found")
+	ErrProposalNotFound     = errors.New("proposal not found")
 )
 
 // FieldError names the request field a rule rejected.

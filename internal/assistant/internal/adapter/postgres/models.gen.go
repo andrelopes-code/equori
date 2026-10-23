@@ -19,6 +19,41 @@ type AssistantChainTarget struct {
 	Capabilities []string
 }
 
+type AssistantConversation struct {
+	ID        uuid.UUID
+	UserID    int64
+	Title     string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type AssistantMessage struct {
+	ID             uuid.UUID
+	UserID         int64
+	ConversationID uuid.UUID
+	Seq            int32
+	Role           string
+	Content        string
+	Outcome        *string
+	CreatedAt      time.Time
+}
+
+type AssistantProposal struct {
+	ID             uuid.UUID
+	UserID         int64
+	ConversationID uuid.UUID
+	MessageID      uuid.NullUUID
+	Tool           string
+	Arguments      []byte
+	Preview        []byte
+	Basis          string
+	Status         string
+	Result         []byte
+	CreatedAt      time.Time
+	ExpiresAt      time.Time
+	DecidedAt      *time.Time
+}
+
 type AssistantProvider struct {
 	ID        uuid.UUID
 	UserID    int64
