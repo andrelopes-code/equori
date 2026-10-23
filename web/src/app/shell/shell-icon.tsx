@@ -11,6 +11,7 @@ export type ShellIconName =
   | "form"
   | "text"
   | "search"
+  | "assistant"
   | "more"
   | "back"
   | "scheme"
@@ -25,6 +26,13 @@ export type ShellIconName =
 // wallet, target, shield, settings, plus, square-pen, text, search, layout-grid, arrow-left,
 // moon, globe, log-out, chevrons-up-down, rows-3, eye and eye-off.
 const PATHS: Record<ShellIconName, readonly string[]> = {
+  assistant: [
+    "M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z",
+    "M20 3v4",
+    "M22 5h-4",
+    "M4 17v2",
+    "M5 18H3",
+  ],
   overview: [
     "M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8",
     "M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",

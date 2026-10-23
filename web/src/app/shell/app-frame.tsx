@@ -11,7 +11,7 @@ import { PageHeaderDefaultsProvider } from "@slotted/react/page-header";
 import { SectionDefaultsProvider } from "@slotted/react/section";
 import { ToastRegion } from "@slotted/react/toast";
 import type { CommandPaletteHandle } from "@slotted/react/command-palette";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import styles from "@/app/shell/app-frame.module.css";
 import { CommandMenu } from "@/app/shell/command-menu";
@@ -24,6 +24,7 @@ import { useNavPreference } from "@/app/shell/use-nav-preference";
 import { useExtent } from "@/app/shell/use-extent";
 import { useScrollState } from "@/app/shell/use-scroll-state";
 import { useWide } from "@/app/shell/use-wide";
+import { AssistantPanel } from "@/features/assistant";
 import { useT } from "@/i18n/i18n-provider";
 import { applyDensity, readDensity } from "@/theme/density";
 
@@ -40,6 +41,10 @@ export function AppFrame() {
   const scroll = useScrollState(main);
   const [barExtent, barRef] = useExtent();
   const [dockExtent, dockRef] = useExtent();
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const openAssistant = useCallback(() => {
+    setAssistantOpen(true);
+  }, []);
   const editing = useEditing();
   const openEntry = useEntry();
   useEntryShortcut(openEntry);
@@ -86,7 +91,11 @@ export function AppFrame() {
           ref={barRef}
           className={scroll.scrolled ? styles.bannerScrolled : styles.banner}
         >
-          <TopAppBar scrolled={scroll.scrolled} onSearch={openPalette} />
+          <TopAppBar
+            scrolled={scroll.scrolled}
+            onSearch={openPalette}
+            onAssistant={openAssistant}
+          />
         </AppShellBanner>
       )}
       <AppShellMain
@@ -124,7 +133,8 @@ export function AppFrame() {
           <PhoneDock onReselect={scrollToTop} extent={dockExtent} />
         </AppShellFooter>
       )}
-      <CommandMenu ref={palette} />
+      <CommandMenu ref={palette} onAssistant={openAssistant} />
+      <AssistantPanel open={assistantOpen} onOpenChange={setAssistantOpen} />
       <ToastRegion />
     </AppShell>
   );

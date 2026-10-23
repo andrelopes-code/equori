@@ -28,7 +28,13 @@ const schemes: readonly Scheme[] = ["dark", "light", "system"];
 // The one palette of the application: every destination and every account action, opened by
 // Ctrl+K anywhere, by the column's search control and by the phone's search, through its
 // handle.
-export function CommandMenu({ ref }: { ref: Ref<CommandPaletteHandle> }) {
+export function CommandMenu({
+  ref,
+  onAssistant,
+}: {
+  ref: Ref<CommandPaletteHandle>;
+  onAssistant?: () => void;
+}) {
   const t = useT();
   const navigate = useNavigate();
   const openEntry = useEntry();
@@ -118,6 +124,17 @@ export function CommandMenu({ ref }: { ref: Ref<CommandPaletteHandle> }) {
         shortcut: "n",
         onSelect: openEntry,
       },
+      ...(onAssistant === undefined
+        ? []
+        : [
+            {
+              id: "assistant",
+              label: t("assistant.title"),
+              group: "actions",
+              icon: icon("assistant"),
+              onSelect: onAssistant,
+            },
+          ]),
       {
         id: "account.new",
         label: t("palette.newAccount"),
@@ -198,6 +215,7 @@ export function CommandMenu({ ref }: { ref: Ref<CommandPaletteHandle> }) {
     language,
     chooseLanguage,
     logout,
+    onAssistant,
   ]);
 
   return (

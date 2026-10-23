@@ -1,3 +1,4 @@
+export { AssistantPanel } from "@/features/assistant/assistant-panel";
 export {
   assistantKeys,
   chatStateQuery,

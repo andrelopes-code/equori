@@ -14,9 +14,11 @@ import { useT } from "@/i18n/i18n-provider";
 export function TopAppBar({
   scrolled,
   onSearch,
+  onAssistant,
 }: {
   scrolled: boolean;
   onSearch: () => void;
+  onAssistant: () => void;
 }) {
   const t = useT();
   const router = useRouter();
@@ -52,6 +54,15 @@ export function TopAppBar({
       </p>
       <div className={styles.end}>
         <PrivacyToggle />
+        <IconButton
+          aria-label={t("assistant.open")}
+          size="lg"
+          onClick={onAssistant}
+        >
+          <Icon>
+            <ShellIcon name="assistant" />
+          </Icon>
+        </IconButton>
         <IconButton aria-label={t("nav.search")} size="lg" onClick={onSearch}>
           <Icon>
             <ShellIcon name="search" />

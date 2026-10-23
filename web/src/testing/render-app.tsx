@@ -1,7 +1,10 @@
 import { act, render } from "@testing-library/react";
 import type { RenderResult } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { createMemoryHistory } from "@tanstack/react-router";
+import {
+  RouterContextProvider,
+  createMemoryHistory,
+} from "@tanstack/react-router";
 
 import { AppProviders } from "@/app/providers";
 import { AppRouterProvider, newRouter } from "@/app/router";
@@ -46,4 +49,25 @@ export function renderWithProviders(
     </AppProviders>,
     { reactStrictMode: true },
   );
+}
+
+// Renders one component under the application's providers and a router context, without loading routes.
+export function renderWithRouter(
+  ui: ReactNode,
+  opts: { path: string; today?: string; fetch: typeof fetch },
+): RenderResult & { router: AppRouter } {
+  const router = newRouter(
+    createMemoryHistory({ initialEntries: [opts.path] }),
+  );
+  const result = render(
+    <AppProviders
+      fetchImpl={opts.fetch}
+      today={opts.today ?? "2026-10-17"}
+      retryDelay={0}
+    >
+      <RouterContextProvider router={router}>{ui}</RouterContextProvider>
+    </AppProviders>,
+    { reactStrictMode: true },
+  );
+  return { ...result, router };
 }

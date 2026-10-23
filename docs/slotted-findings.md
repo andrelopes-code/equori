@@ -73,3 +73,4 @@ Registry of the findings reported to the Slotted owner (`web/CLAUDE.md`, "Slotte
 | The section anatomy does not say the description belongs inside the title                           | reported |
 | A soft key cap has no surface token of its own                                                      | open     |
 | A popup's positioner fade suppresses its content's backdrop blur until the fade ends                | open     |
+| The markdown family needs an outside parser for plain CommonMark                                      | open     |
