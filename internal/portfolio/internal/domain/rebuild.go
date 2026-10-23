@@ -26,6 +26,7 @@ type Security struct {
 	AccountID  uuid.UUID
 	Instrument money.Currency
 	Type       string
+	Subtype    string
 	Exchange   string
 }
 
@@ -121,7 +122,7 @@ func Rebuild(f Facts, j Jurisdiction) Rebuilt {
 		proceeds := t.Gross - t.Fees
 		var taxClass string
 		if j != nil {
-			taxClass = j.TaxClass(s.Type, s.Exchange)
+			taxClass = j.TaxClass(s.Type, s.Subtype, s.Exchange)
 		}
 		out.Results = append(out.Results, RealizedResult{
 			TransactionID: t.TransactionID, AccountID: t.AccountID, Instrument: s.Instrument,
@@ -133,7 +134,8 @@ func Rebuild(f Facts, j Jurisdiction) Rebuilt {
 	for _, in := range f.Incomes {
 		var treatment string
 		if j != nil {
-			treatment = j.Treatment(in.Type)
+			s := securities[in.AccountID]
+			treatment = j.Treatment(in.Type, j.TaxClass(s.Type, s.Subtype, s.Exchange))
 		}
 		out.Incomes = append(out.Incomes, IncomeEvent{
 			TransactionID: in.TransactionID, AccountID: in.AccountID, Instrument: securities[in.AccountID].Instrument, Date: in.Date,

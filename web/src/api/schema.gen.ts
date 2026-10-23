@@ -500,6 +500,90 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/reports/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Money-weighted annual return of an account and its sub-accounts over a period of at most 366 days (investments design 4.3).
+         * @description The flows are the money that entered or left the tree in transactions that also touch a balance account
+         *     outside it; income, expense and tax postings are performance. Opening is valued on the day before from, closing
+         *     on to, flows on their dates, all in value_in (the base currency by default). annual_bp is the internal rate of
+         *     return, days over 365, rounded half to even to basis points. 422 return_undefined when no money was invested.
+         */
+        get: operations["getReturn"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/allocation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Value of the asset accounts at a date grouped by instrument type, currency or institution (investments design 4.3).
+         * @description Each account counts its own balance, valued in value_in (the base currency by default) with the stored prices
+         *     of the date. type groups by the type of the instrument held (currency for cash); currency by the quotation
+         *     currency of a security or the currency itself; institution by the institution id, empty without one. Groups are
+         *     ordered by value, largest first; shares are in basis points, rounded down, and the last group takes the
+         *     remainder so they add up to 10000. A total that is not positive has no shares.
+         */
+        get: operations["getAllocation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/net-worth": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Assets, liabilities and their difference at a date (investments design 4.3).
+         * @description Liabilities are the balances of the liability accounts as a positive amount, valued like the assets.
+         */
+        get: operations["getNetWorth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instrument-subtypes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Subtypes of an instrument type that the user's jurisdiction knows; none without a jurisdiction. */
+        get: operations["listInstrumentSubtypes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/transactions/{id}": {
         parameters: {
             query?: never;
@@ -3487,6 +3571,34 @@ export interface components {
         IncomeTypeList: {
             items: components["schemas"]["IncomeType"][];
         };
+        AllocationGroup: {
+            key: string;
+            value: components["schemas"]["Money"];
+            share_bp: number;
+        };
+        Allocation: {
+            total: components["schemas"]["Money"];
+            groups: components["schemas"]["AllocationGroup"][];
+        };
+        NetWorth: {
+            assets: components["schemas"]["Money"];
+            liabilities: components["schemas"]["Money"];
+            net: components["schemas"]["Money"];
+        };
+        ReturnFlow: {
+            /** Format: date */
+            date: string;
+            amount: components["schemas"]["Money"];
+        };
+        ReturnReport: {
+            annual_bp: number;
+            flows: components["schemas"]["ReturnFlow"][];
+            opening: components["schemas"]["Money"];
+            closing: components["schemas"]["Money"];
+        };
+        SubtypeList: {
+            items: string[];
+        };
         InvestmentIncomeInput: {
             /**
              * Format: uuid
@@ -5065,6 +5177,112 @@ export interface operations {
                     "application/json": components["schemas"]["IncomeTypeList"];
                 };
             };
+            401: components["responses"]["Problem"];
+        };
+    };
+    getReturn: {
+        parameters: {
+            query: {
+                account_id: string;
+                from: string;
+                to: string;
+                value_in?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReturnReport"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getAllocation: {
+        parameters: {
+            query: {
+                date: string;
+                by: "type" | "currency" | "institution";
+                value_in?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Allocation"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getNetWorth: {
+        parameters: {
+            query: {
+                date: string;
+                value_in?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NetWorth"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    listInstrumentSubtypes: {
+        parameters: {
+            query: {
+                type: components["schemas"]["InstrumentType"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubtypeList"];
+                };
+            };
+            400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
         };
     };

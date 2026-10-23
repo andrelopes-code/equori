@@ -21,8 +21,8 @@ const averageCostDecimals = 4
 var ErrPriceMissing = errors.New("price missing")
 
 type Account struct {
-	ID, ParentID uuid.UUID
-	Kind         string
+	ID, ParentID, InstitutionID uuid.UUID
+	Class, Kind                 string
 }
 
 // Ledger is read through ledger.Module (ADR 002).
@@ -30,6 +30,15 @@ type Ledger interface {
 	AccountFacts(ctx context.Context, userID int64) ([]Account, error)
 	InvestmentFacts(ctx context.Context, userID int64, brokerageID uuid.UUID) (domain.Facts, error)
 	BaseCurrency(ctx context.Context, userID int64) (money.Currency, error)
+	// ValuedBalance values the account and its sub-accounts at the end of date in currency in; the
+	// error wraps ErrNotFound for an unknown account and ErrPriceMissing for a missing price.
+	ValuedBalance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, in money.Currency) (money.Money, error)
+	// ExternalFlows takes the accounts as one tree; FirstPosting is the earliest booked date of it.
+	ExternalFlows(ctx context.Context, userID int64, accountIDs []uuid.UUID, from, to time.Time) ([]Flow, error)
+	FirstPosting(ctx context.Context, userID int64, accountIDs []uuid.UUID) (time.Time, bool, error)
+	// Balances is the balance of every asset and liability account at the end of date, each in
+	// its own instrument and counting its own postings only.
+	Balances(ctx context.Context, userID int64, date time.Time) ([]AccountBalance, error)
 }
 
 // Jurisdictions gives the tax jurisdiction of a user; a nil result means none applies.
@@ -48,6 +57,9 @@ type Price struct {
 // price path exists.
 type MarketData interface {
 	Scale(ctx context.Context, code money.Currency) (int, error)
+	// InstrumentOf returns the type and the quotation currency of an instrument; a currency
+	// has no quotation currency.
+	InstrumentOf(ctx context.Context, code money.Currency) (InstrumentInfo, error)
 	Convert(ctx context.Context, q money.Money, to money.Currency, date time.Time) (money.Money, []Price, error)
 }
 
@@ -136,6 +148,16 @@ func (s *Service) IncomeTypes(ctx context.Context, userID int64) ([]string, erro
 	}
 	slices.Sort(types)
 	return slices.Compact(types), nil
+}
+
+// Subtypes returns the subtypes of an instrument type that the user's jurisdiction knows; none
+// when the user has no jurisdiction.
+func (s *Service) Subtypes(ctx context.Context, userID int64, instrumentType string) ([]string, error) {
+	j, err := s.juris.For(ctx, userID)
+	if err != nil || j == nil {
+		return []string{}, err
+	}
+	return j.Subtypes(instrumentType), nil
 }
 
 func (s *Service) rebuild(ctx context.Context, userID int64, brokerageID uuid.UUID) error {

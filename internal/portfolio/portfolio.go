@@ -84,6 +84,13 @@ func (m *Module) handle(ctx context.Context, tx pgx.Tx, e outbox.Delivered) erro
 // RebuildAll recomputes every derived row from the ledger (equori portfolio rebuild).
 func (m *Module) RebuildAll(ctx context.Context) error { return m.svc.RebuildAll(ctx) }
 
+// TrailingReturn is the money-weighted return, in basis points, of the accounts taken as one tree
+// over the last 12 months up to today, valued in in, with the whole months the window covers;
+// ok is false when there is too little history or no flow (investments design 4.4).
+func (m *Module) TrailingReturn(ctx context.Context, userID int64, accountIDs []uuid.UUID, today time.Time, in money.Currency) (bp, months int, ok bool, err error) {
+	return m.svc.TrailingReturn(ctx, userID, accountIDs, today, in)
+}
+
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 
 type ledgerPort struct {
@@ -95,7 +102,7 @@ func (p ledgerPort) AccountFacts(ctx context.Context, userID int64) ([]app.Accou
 	facts, err := p.l.AccountFacts(ctx, userID)
 	out := make([]app.Account, len(facts))
 	for i, a := range facts {
-		out[i] = app.Account{ID: a.ID, ParentID: a.ParentID, Kind: a.Kind}
+		out[i] = app.Account{ID: a.ID, ParentID: a.ParentID, InstitutionID: a.InstitutionID, Class: a.Class, Kind: a.Kind}
 	}
 	return out, err
 }
@@ -115,7 +122,7 @@ func (p ledgerPort) InvestmentFacts(ctx context.Context, userID int64, brokerage
 		if err != nil {
 			return domain.Facts{}, err
 		}
-		out.Securities = append(out.Securities, domain.Security{AccountID: s.AccountID, Instrument: s.Instrument, Type: in.Type, Exchange: in.Exchange})
+		out.Securities = append(out.Securities, domain.Security{AccountID: s.AccountID, Instrument: s.Instrument, Type: in.Type, Subtype: in.Subtype, Exchange: in.Exchange})
 	}
 	for _, x := range f.Postings {
 		out.Postings = append(out.Postings, domain.Posting{AccountID: x.AccountID, TransactionID: x.TransactionID, Date: x.Date, Quantity: x.Quantity, Weight: x.Weight})
@@ -132,11 +139,56 @@ func (p ledgerPort) InvestmentFacts(ctx context.Context, userID int64, brokerage
 	return out, nil
 }
 
+func (p ledgerPort) ValuedBalance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, in money.Currency) (money.Money, error) {
+	c, err := p.l.ValuedBalance(ctx, userID, accountID, date, in)
+	switch {
+	case errors.Is(err, ledger.ErrNotFound):
+		return money.Money{}, fmt.Errorf("%w: %w", app.ErrNotFound, err)
+	case errors.Is(err, ledger.ErrPriceMissing):
+		return money.Money{}, fmt.Errorf("%w: %w", app.ErrPriceMissing, err)
+	}
+	return c.Value, err
+}
+
+func (p ledgerPort) FirstPosting(ctx context.Context, userID int64, accountIDs []uuid.UUID) (time.Time, bool, error) {
+	first, found, err := p.l.FirstPosting(ctx, userID, accountIDs)
+	if errors.Is(err, ledger.ErrNotFound) {
+		return time.Time{}, false, fmt.Errorf("%w: %w", app.ErrNotFound, err)
+	}
+	return first, found, err
+}
+
+func (p ledgerPort) Balances(ctx context.Context, userID int64, date time.Time) ([]app.AccountBalance, error) {
+	bs, err := p.l.Balances(ctx, userID, date)
+	out := make([]app.AccountBalance, len(bs))
+	for i, b := range bs {
+		out[i] = app.AccountBalance{AccountID: b.AccountID, Amount: b.Amount}
+	}
+	return out, err
+}
+
+func (p ledgerPort) ExternalFlows(ctx context.Context, userID int64, accountIDs []uuid.UUID, from, to time.Time) ([]app.Flow, error) {
+	fs, err := p.l.ExternalFlows(ctx, userID, accountIDs, from, to)
+	if errors.Is(err, ledger.ErrNotFound) {
+		return nil, fmt.Errorf("%w: %w", app.ErrNotFound, err)
+	}
+	out := make([]app.Flow, len(fs))
+	for i, f := range fs {
+		out[i] = app.Flow{Date: f.Date, Value: f.Value}
+	}
+	return out, err
+}
+
 type marketPort struct{ md *marketdata.Module }
 
 func (p marketPort) Scale(ctx context.Context, code money.Currency) (int, error) {
 	in, err := p.md.Instrument(ctx, string(code))
 	return in.Scale, err
+}
+
+func (p marketPort) InstrumentOf(ctx context.Context, code money.Currency) (app.InstrumentInfo, error) {
+	in, err := p.md.Instrument(ctx, string(code))
+	return app.InstrumentInfo{Type: in.Type, QuoteCurrency: in.QuoteCurrency}, err
 }
 
 func (p marketPort) Convert(ctx context.Context, q money.Money, to money.Currency, date time.Time) (money.Money, []app.Price, error) {

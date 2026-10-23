@@ -21,14 +21,16 @@ type fixtureJurisdiction struct{}
 func (fixtureJurisdiction) ID() string            { return "fixture" }
 func (fixtureJurisdiction) IncomeTypes() []string { return nil }
 
-func (fixtureJurisdiction) TaxClass(instrumentType, exchange string) string {
+func (fixtureJurisdiction) Subtypes(string) []string { return nil }
+
+func (fixtureJurisdiction) TaxClass(instrumentType, _, exchange string) string {
 	if instrumentType == "reit" && exchange == "BVMF" {
 		return "fii"
 	}
 	return instrumentType
 }
 
-func (fixtureJurisdiction) Treatment(incomeType string) string {
+func (fixtureJurisdiction) Treatment(incomeType, _ string) string {
 	if incomeType == "dividend" {
 		return "exempt"
 	}

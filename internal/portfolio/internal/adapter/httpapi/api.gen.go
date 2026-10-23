@@ -17,6 +17,42 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for InstrumentType.
+const (
+	InstrumentTypeCrypto            InstrumentType = "crypto"
+	InstrumentTypeCurrency          InstrumentType = "currency"
+	InstrumentTypeDepositaryReceipt InstrumentType = "depositary_receipt"
+	InstrumentTypeEtf               InstrumentType = "etf"
+	InstrumentTypeFixedIncome       InstrumentType = "fixed_income"
+	InstrumentTypeFund              InstrumentType = "fund"
+	InstrumentTypeReit              InstrumentType = "reit"
+	InstrumentTypeStock             InstrumentType = "stock"
+)
+
+// Valid indicates whether the value is a known member of the InstrumentType enum.
+func (e InstrumentType) Valid() bool {
+	switch e {
+	case InstrumentTypeCrypto:
+		return true
+	case InstrumentTypeCurrency:
+		return true
+	case InstrumentTypeDepositaryReceipt:
+		return true
+	case InstrumentTypeEtf:
+		return true
+	case InstrumentTypeFixedIncome:
+		return true
+	case InstrumentTypeFund:
+		return true
+	case InstrumentTypeReit:
+		return true
+	case InstrumentTypeStock:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PriceSource.
 const (
 	B3Cotahist PriceSource = "b3_cotahist"
@@ -39,6 +75,40 @@ func (e PriceSource) Valid() bool {
 	default:
 		return false
 	}
+}
+
+// Defines values for GetAllocationParamsBy.
+const (
+	GetAllocationParamsByCurrency    GetAllocationParamsBy = "currency"
+	GetAllocationParamsByInstitution GetAllocationParamsBy = "institution"
+	GetAllocationParamsByType        GetAllocationParamsBy = "type"
+)
+
+// Valid indicates whether the value is a known member of the GetAllocationParamsBy enum.
+func (e GetAllocationParamsBy) Valid() bool {
+	switch e {
+	case GetAllocationParamsByCurrency:
+		return true
+	case GetAllocationParamsByInstitution:
+		return true
+	case GetAllocationParamsByType:
+		return true
+	default:
+		return false
+	}
+}
+
+// Allocation defines model for Allocation.
+type Allocation struct {
+	Groups []AllocationGroup `json:"groups"`
+	Total  Money             `json:"total"`
+}
+
+// AllocationGroup defines model for AllocationGroup.
+type AllocationGroup struct {
+	Key     string `json:"key"`
+	ShareBp int    `json:"share_bp"`
+	Value   Money  `json:"value"`
 }
 
 // FieldError defines model for FieldError.
@@ -72,6 +142,9 @@ type IncomeTypeList struct {
 	Items []IncomeType `json:"items"`
 }
 
+// InstrumentType defines model for InstrumentType.
+type InstrumentType string
+
 // Money defines model for Money.
 type Money struct {
 	// Amount Integer units of the instrument scale (ADR 005).
@@ -81,6 +154,13 @@ type Money struct {
 	//
 	// Example: BRL
 	Currency string `json:"currency"`
+}
+
+// NetWorth defines model for NetWorth.
+type NetWorth struct {
+	Assets      Money `json:"assets"`
+	Liabilities Money `json:"liabilities"`
+	Net         Money `json:"net"`
 }
 
 // Position defines model for Position.
@@ -164,12 +244,36 @@ type RealizedResultList struct {
 	Items []RealizedResult `json:"items"`
 }
 
+// ReturnFlow defines model for ReturnFlow.
+type ReturnFlow struct {
+	Amount Money              `json:"amount"`
+	Date   openapi_types.Date `json:"date"`
+}
+
+// ReturnReport defines model for ReturnReport.
+type ReturnReport struct {
+	AnnualBp int          `json:"annual_bp"`
+	Closing  Money        `json:"closing"`
+	Flows    []ReturnFlow `json:"flows"`
+	Opening  Money        `json:"opening"`
+}
+
+// SubtypeList defines model for SubtypeList.
+type SubtypeList struct {
+	Items []string `json:"items"`
+}
+
 // Year defines model for Year.
 type Year = int
 
 // ListIncomeEventsParams defines parameters for ListIncomeEvents.
 type ListIncomeEventsParams struct {
 	Year Year `form:"year" json:"year"`
+}
+
+// ListInstrumentSubtypesParams defines parameters for ListInstrumentSubtypes.
+type ListInstrumentSubtypesParams struct {
+	Type InstrumentType `form:"type" json:"type"`
 }
 
 // ListPositionsParams defines parameters for ListPositions.
@@ -182,11 +286,38 @@ type ListRealizedResultsParams struct {
 	Year Year `form:"year" json:"year"`
 }
 
+// GetAllocationParams defines parameters for GetAllocation.
+type GetAllocationParams struct {
+	Date    openapi_types.Date    `form:"date" json:"date"`
+	By      GetAllocationParamsBy `form:"by" json:"by"`
+	ValueIn *string               `form:"value_in,omitempty" json:"value_in,omitempty"`
+}
+
+// GetAllocationParamsBy defines parameters for GetAllocation.
+type GetAllocationParamsBy string
+
+// GetNetWorthParams defines parameters for GetNetWorth.
+type GetNetWorthParams struct {
+	Date    openapi_types.Date `form:"date" json:"date"`
+	ValueIn *string            `form:"value_in,omitempty" json:"value_in,omitempty"`
+}
+
+// GetReturnParams defines parameters for GetReturn.
+type GetReturnParams struct {
+	AccountId openapi_types.UUID `form:"account_id" json:"account_id"`
+	From      openapi_types.Date `form:"from" json:"from"`
+	To        openapi_types.Date `form:"to" json:"to"`
+	ValueIn   *string            `form:"value_in,omitempty" json:"value_in,omitempty"`
+}
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// ListIncomeEvents Investment income of a year by tax treatment (D1).
 	// (GET /income-events)
 	ListIncomeEvents(w http.ResponseWriter, r *http.Request, params ListIncomeEventsParams)
+	// ListInstrumentSubtypes Subtypes of an instrument type that the user's jurisdiction knows; none without a jurisdiction.
+	// (GET /instrument-subtypes)
+	ListInstrumentSubtypes(w http.ResponseWriter, r *http.Request, params ListInstrumentSubtypesParams)
 	// ListInvestmentIncomeTypes Income types the user's jurisdiction accepts.
 	// (GET /investment-income-types)
 	ListInvestmentIncomeTypes(w http.ResponseWriter, r *http.Request)
@@ -196,6 +327,15 @@ type ServerInterface interface {
 	// ListRealizedResults Results of the sales of a year at average cost (D1).
 	// (GET /realized-results)
 	ListRealizedResults(w http.ResponseWriter, r *http.Request, params ListRealizedResultsParams)
+	// GetAllocation Value of the asset accounts at a date grouped by instrument type, currency or institution (investments design 4.3).
+	// (GET /reports/allocation)
+	GetAllocation(w http.ResponseWriter, r *http.Request, params GetAllocationParams)
+	// GetNetWorth Assets, liabilities and their difference at a date (investments design 4.3).
+	// (GET /reports/net-worth)
+	GetNetWorth(w http.ResponseWriter, r *http.Request, params GetNetWorthParams)
+	// GetReturn Money-weighted annual return of an account and its sub-accounts over a period of at most 366 days (investments design 4.3).
+	// (GET /reports/return)
+	GetReturn(w http.ResponseWriter, r *http.Request, params GetReturnParams)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -231,6 +371,39 @@ func (siw *ServerInterfaceWrapper) ListIncomeEvents(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListIncomeEvents(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListInstrumentSubtypes operation middleware
+func (siw *ServerInterfaceWrapper) ListInstrumentSubtypes(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListInstrumentSubtypesParams
+
+	// ------------- Required query parameter "type" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "type", r.URL.Query(), &params.Type, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "type"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "type", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListInstrumentSubtypes(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -311,6 +484,183 @@ func (siw *ServerInterfaceWrapper) ListRealizedResults(w http.ResponseWriter, r 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListRealizedResults(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAllocation operation middleware
+func (siw *ServerInterfaceWrapper) GetAllocation(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAllocationParams
+
+	// ------------- Required query parameter "date" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "date", r.URL.Query(), &params.Date, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "date"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "date", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "by" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "by", r.URL.Query(), &params.By, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "by"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "by", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "value_in" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "value_in", r.URL.Query(), &params.ValueIn, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "value_in"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "value_in", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAllocation(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetNetWorth operation middleware
+func (siw *ServerInterfaceWrapper) GetNetWorth(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNetWorthParams
+
+	// ------------- Required query parameter "date" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "date", r.URL.Query(), &params.Date, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "date"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "date", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "value_in" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "value_in", r.URL.Query(), &params.ValueIn, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "value_in"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "value_in", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetNetWorth(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetReturn operation middleware
+func (siw *ServerInterfaceWrapper) GetReturn(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetReturnParams
+
+	// ------------- Required query parameter "account_id" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "account_id", r.URL.Query(), &params.AccountId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "account_id"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "value_in" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "value_in", r.URL.Query(), &params.ValueIn, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "value_in"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "value_in", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetReturn(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -444,6 +794,10 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/realized-results", wrapper.ListRealizedResults)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/income-events", wrapper.ListIncomeEvents)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/investment-income-types", wrapper.ListInvestmentIncomeTypes)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/return", wrapper.GetReturn)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/allocation", wrapper.GetAllocation)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/net-worth", wrapper.GetNetWorth)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instrument-subtypes", wrapper.ListInstrumentSubtypes)
 
 	return m
 }
@@ -491,6 +845,58 @@ func (response ListIncomeEvents400ApplicationProblemPlusJSONResponse) VisitListI
 type ListIncomeEvents401ApplicationProblemPlusJSONResponse Problem
 
 func (response ListIncomeEvents401ApplicationProblemPlusJSONResponse) VisitListIncomeEventsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListInstrumentSubtypesRequestObject struct {
+	Params ListInstrumentSubtypesParams
+}
+
+type ListInstrumentSubtypesResponseObject interface {
+	VisitListInstrumentSubtypesResponse(w http.ResponseWriter) error
+}
+
+type ListInstrumentSubtypes200JSONResponse SubtypeList
+
+func (response ListInstrumentSubtypes200JSONResponse) VisitListInstrumentSubtypesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListInstrumentSubtypes400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListInstrumentSubtypes400ApplicationProblemPlusJSONResponse) VisitListInstrumentSubtypesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListInstrumentSubtypes401ApplicationProblemPlusJSONResponse Problem
+
+func (response ListInstrumentSubtypes401ApplicationProblemPlusJSONResponse) VisitListInstrumentSubtypesResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -643,11 +1049,226 @@ func (response ListRealizedResults401ApplicationProblemPlusJSONResponse) VisitLi
 	return err
 }
 
+type GetAllocationRequestObject struct {
+	Params GetAllocationParams
+}
+
+type GetAllocationResponseObject interface {
+	VisitGetAllocationResponse(w http.ResponseWriter) error
+}
+
+type GetAllocation200JSONResponse Allocation
+
+func (response GetAllocation200JSONResponse) VisitGetAllocationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAllocation400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetAllocation400ApplicationProblemPlusJSONResponse) VisitGetAllocationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAllocation401ApplicationProblemPlusJSONResponse Problem
+
+func (response GetAllocation401ApplicationProblemPlusJSONResponse) VisitGetAllocationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAllocation422ApplicationProblemPlusJSONResponse Problem
+
+func (response GetAllocation422ApplicationProblemPlusJSONResponse) VisitGetAllocationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetNetWorthRequestObject struct {
+	Params GetNetWorthParams
+}
+
+type GetNetWorthResponseObject interface {
+	VisitGetNetWorthResponse(w http.ResponseWriter) error
+}
+
+type GetNetWorth200JSONResponse NetWorth
+
+func (response GetNetWorth200JSONResponse) VisitGetNetWorthResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetNetWorth400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetNetWorth400ApplicationProblemPlusJSONResponse) VisitGetNetWorthResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetNetWorth401ApplicationProblemPlusJSONResponse Problem
+
+func (response GetNetWorth401ApplicationProblemPlusJSONResponse) VisitGetNetWorthResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetNetWorth422ApplicationProblemPlusJSONResponse Problem
+
+func (response GetNetWorth422ApplicationProblemPlusJSONResponse) VisitGetNetWorthResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetReturnRequestObject struct {
+	Params GetReturnParams
+}
+
+type GetReturnResponseObject interface {
+	VisitGetReturnResponse(w http.ResponseWriter) error
+}
+
+type GetReturn200JSONResponse ReturnReport
+
+func (response GetReturn200JSONResponse) VisitGetReturnResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetReturn400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetReturn400ApplicationProblemPlusJSONResponse) VisitGetReturnResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetReturn401ApplicationProblemPlusJSONResponse Problem
+
+func (response GetReturn401ApplicationProblemPlusJSONResponse) VisitGetReturnResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetReturn404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetReturn404ApplicationProblemPlusJSONResponse) VisitGetReturnResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetReturn422ApplicationProblemPlusJSONResponse Problem
+
+func (response GetReturn422ApplicationProblemPlusJSONResponse) VisitGetReturnResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// ListIncomeEvents Investment income of a year by tax treatment (D1).
 	// (GET /income-events)
 	ListIncomeEvents(ctx context.Context, request ListIncomeEventsRequestObject) (ListIncomeEventsResponseObject, error)
+	// ListInstrumentSubtypes Subtypes of an instrument type that the user's jurisdiction knows; none without a jurisdiction.
+	// (GET /instrument-subtypes)
+	ListInstrumentSubtypes(ctx context.Context, request ListInstrumentSubtypesRequestObject) (ListInstrumentSubtypesResponseObject, error)
 	// ListInvestmentIncomeTypes Income types the user's jurisdiction accepts.
 	// (GET /investment-income-types)
 	ListInvestmentIncomeTypes(ctx context.Context, request ListInvestmentIncomeTypesRequestObject) (ListInvestmentIncomeTypesResponseObject, error)
@@ -657,6 +1278,15 @@ type StrictServerInterface interface {
 	// ListRealizedResults Results of the sales of a year at average cost (D1).
 	// (GET /realized-results)
 	ListRealizedResults(ctx context.Context, request ListRealizedResultsRequestObject) (ListRealizedResultsResponseObject, error)
+	// GetAllocation Value of the asset accounts at a date grouped by instrument type, currency or institution (investments design 4.3).
+	// (GET /reports/allocation)
+	GetAllocation(ctx context.Context, request GetAllocationRequestObject) (GetAllocationResponseObject, error)
+	// GetNetWorth Assets, liabilities and their difference at a date (investments design 4.3).
+	// (GET /reports/net-worth)
+	GetNetWorth(ctx context.Context, request GetNetWorthRequestObject) (GetNetWorthResponseObject, error)
+	// GetReturn Money-weighted annual return of an account and its sub-accounts over a period of at most 366 days (investments design 4.3).
+	// (GET /reports/return)
+	GetReturn(ctx context.Context, request GetReturnRequestObject) (GetReturnResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -717,6 +1347,32 @@ func (sh *strictHandler) ListIncomeEvents(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListIncomeEventsResponseObject); ok {
 		if err := validResponse.VisitListIncomeEventsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListInstrumentSubtypes operation middleware
+func (sh *strictHandler) ListInstrumentSubtypes(w http.ResponseWriter, r *http.Request, params ListInstrumentSubtypesParams) {
+	var request ListInstrumentSubtypesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListInstrumentSubtypes(ctx, request.(ListInstrumentSubtypesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListInstrumentSubtypes")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListInstrumentSubtypesResponseObject); ok {
+		if err := validResponse.VisitListInstrumentSubtypesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -793,6 +1449,84 @@ func (sh *strictHandler) ListRealizedResults(w http.ResponseWriter, r *http.Requ
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListRealizedResultsResponseObject); ok {
 		if err := validResponse.VisitListRealizedResultsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAllocation operation middleware
+func (sh *strictHandler) GetAllocation(w http.ResponseWriter, r *http.Request, params GetAllocationParams) {
+	var request GetAllocationRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAllocation(ctx, request.(GetAllocationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAllocation")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAllocationResponseObject); ok {
+		if err := validResponse.VisitGetAllocationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetNetWorth operation middleware
+func (sh *strictHandler) GetNetWorth(w http.ResponseWriter, r *http.Request, params GetNetWorthParams) {
+	var request GetNetWorthRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetNetWorth(ctx, request.(GetNetWorthRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetNetWorth")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetNetWorthResponseObject); ok {
+		if err := validResponse.VisitGetNetWorthResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetReturn operation middleware
+func (sh *strictHandler) GetReturn(w http.ResponseWriter, r *http.Request, params GetReturnParams) {
+	var request GetReturnRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetReturn(ctx, request.(GetReturnRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetReturn")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetReturnResponseObject); ok {
+		if err := validResponse.VisitGetReturnResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
