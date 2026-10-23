@@ -168,17 +168,16 @@ export function CommandMenu({ ref }: { ref: Ref<CommandPaletteHandle> }) {
           setDensity(d);
         },
       })),
-      ...languages
-        .filter((l) => l.language !== language)
-        .map((l) => ({
-          id: `language.${l.language}`,
-          label: t("palette.language", { name: l.nativeName }),
-          group: "actions",
-          icon: icon("language"),
-          onSelect: () => {
-            chooseLanguage(l.language);
-          },
-        })),
+      ...languages.map((l) => ({
+        id: `language.${l.language}`,
+        label: t("palette.language", { name: l.nativeName }),
+        group: "actions",
+        icon: icon("language"),
+        disabled: l.language === language,
+        onSelect: () => {
+          chooseLanguage(l.language);
+        },
+      })),
       {
         id: "logout",
         label: t("more.logout"),

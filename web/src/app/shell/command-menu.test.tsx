@@ -96,3 +96,18 @@ describe("CommandMenu accounts", () => {
     });
   });
 });
+
+describe("CommandMenu languages", () => {
+  it("lists English and Português and disables the one in use", async () => {
+    const { user, dialog } = await palette();
+    await user.type(within(dialog).getByRole("combobox"), "Language");
+    const english = await within(dialog).findByRole("option", {
+      name: /English/,
+    });
+    const portuguese = within(dialog).getByRole("option", {
+      name: /Português/,
+    });
+    expect(english).toHaveAttribute("aria-disabled", "true");
+    expect(portuguese).not.toHaveAttribute("aria-disabled", "true");
+  });
+});
