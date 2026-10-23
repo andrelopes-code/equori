@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
+	"github.com/andrelopes-code/equori/internal/platform/page"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
@@ -16,20 +17,22 @@ type listAccountsIn struct {
 }
 
 type accountView struct {
-	ID         string `json:"id"`
-	Name       string `json:"name"`
-	Class      string `json:"class"`
-	Kind       string `json:"kind,omitzero" jsonschema:"kind of an asset or liability account, such as checking or credit_card"`
-	Currency   string `json:"currency" jsonschema:"currency or instrument code of the account"`
-	ParentID   string `json:"parent_id,omitzero"`
-	ParentName string `json:"parent_name,omitzero"`
-	SystemRole string `json:"system_role,omitzero" jsonschema:"set on accounts the ledger creates, such as uncategorized_expense"`
-	Closed     bool   `json:"closed,omitzero"`
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	Class           string `json:"class"`
+	Kind            string `json:"kind,omitzero" jsonschema:"kind of an asset or liability account, such as checking or credit_card"`
+	Currency        string `json:"currency" jsonschema:"currency or instrument code of the account"`
+	ParentID        string `json:"parent_id,omitzero"`
+	ParentName      string `json:"parent_name,omitzero"`
+	InstitutionName string `json:"institution_name,omitzero"`
+	SystemRole      string `json:"system_role,omitzero" jsonschema:"set on accounts the ledger creates, such as uncategorized_expense"`
+	Closed          bool   `json:"closed,omitzero"`
 }
 
 type listAccountsOut struct {
-	Accounts   []accountView `json:"accounts"`
-	NextCursor string        `json:"next_cursor,omitzero" jsonschema:"present when more accounts follow; pass it as cursor"`
+	BaseCurrency string        `json:"base_currency" jsonschema:"currency of the user's totals"`
+	Accounts     []accountView `json:"accounts"`
+	NextCursor   string        `json:"next_cursor,omitzero" jsonschema:"present when more accounts follow; pass it as cursor"`
 }
 
 func listAccounts(svc *app.Service) tool.Tool {
@@ -46,6 +49,20 @@ func listAccounts(svc *app.Service) tool.Tool {
 		if err != nil {
 			return listAccountsOut{}, err
 		}
+		institutions, err := allPages(func(p page.Request[app.InstitutionKey]) ([]app.Institution, *app.InstitutionKey, error) {
+			return svc.ListInstitutions(ctx, userID, p)
+		})
+		if err != nil {
+			return listAccountsOut{}, err
+		}
+		names := make(map[uuid.UUID]string, len(institutions))
+		for _, i := range institutions {
+			names[i.ID] = i.Name
+		}
+		settings, err := svc.Settings(ctx, userID)
+		if err != nil {
+			return listAccountsOut{}, err
+		}
 		views := []accountView{}
 		for _, a := range all {
 			if (in.Class != "" && string(a.Class) != string(in.Class)) || (a.ClosedOn != nil && !in.IncludeClosed) {
@@ -53,14 +70,14 @@ func listAccounts(svc *app.Service) tool.Tool {
 			}
 			v := accountView{
 				ID: a.ID.String(), Name: a.Name, Class: string(a.Class), Kind: string(a.Kind), Currency: string(a.Instrument),
-				SystemRole: string(a.SystemRole), Closed: a.ClosedOn != nil,
+				SystemRole: string(a.SystemRole), Closed: a.ClosedOn != nil, InstitutionName: names[a.InstitutionID],
 			}
 			if a.ParentID != uuid.Nil {
 				v.ParentID, v.ParentName = a.ParentID.String(), byID[a.ParentID].Name
 			}
 			views = append(views, v)
 		}
-		var out listAccountsOut
+		out := listAccountsOut{BaseCurrency: string(settings.BaseCurrency)}
 		out.Accounts, out.NextCursor, err = tool.PageOf(views, func(v accountView) string { return v.ID }, in.PageArgs)
 		return out, err
 	})

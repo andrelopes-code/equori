@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
+	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/page"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
@@ -78,21 +79,7 @@ func searchTransactions(svc *app.Service) tool.Tool {
 		}
 		out := searchTransactionsOut{Transactions: make([]transactionView, len(rows))}
 		for i, t := range rows {
-			v := transactionView{
-				ID: t.ID.String(), Date: tool.DateOf(t.Date), Description: t.Description, PayeeName: payees[t.PayeeID],
-				Voided: t.VoidedAt != nil, Postings: make([]postingView, len(t.Postings)),
-			}
-			if len(t.Tags) > 0 {
-				v.Tags = t.Tags
-			}
-			for j, p := range t.Postings {
-				a := accounts[p.AccountID]
-				v.Postings[j] = postingView{
-					AccountID: p.AccountID.String(), AccountName: a.Name, AccountClass: string(a.Class),
-					Amount: tool.MoneyOf(p.Amount), Memo: p.Memo,
-				}
-			}
-			out.Transactions[i] = v
+			out.Transactions[i] = viewOf(t, accounts, payees)
 		}
 		if next != nil {
 			if out.NextCursor, err = page.EncodeCursor(next); err != nil {
@@ -101,6 +88,24 @@ func searchTransactions(svc *app.Service) tool.Tool {
 		}
 		return out, nil
 	})
+}
+
+func viewOf(t domain.Transaction, accounts map[uuid.UUID]domain.Account, payees map[uuid.UUID]string) transactionView {
+	v := transactionView{
+		ID: t.ID.String(), Date: tool.DateOf(t.Date), Description: t.Description, PayeeName: payees[t.PayeeID],
+		Voided: t.VoidedAt != nil, Postings: make([]postingView, len(t.Postings)),
+	}
+	if len(t.Tags) > 0 {
+		v.Tags = t.Tags
+	}
+	for j, p := range t.Postings {
+		a := accounts[p.AccountID]
+		v.Postings[j] = postingView{
+			AccountID: p.AccountID.String(), AccountName: a.Name, AccountClass: string(a.Class),
+			Amount: tool.MoneyOf(p.Amount), Memo: p.Memo,
+		}
+	}
+	return v
 }
 
 // transactionQuery checks the argument values the schema cannot: identifiers, limit and cursor.

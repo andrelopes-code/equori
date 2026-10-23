@@ -8,12 +8,16 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
 	"github.com/andrelopes-code/equori/internal/ledger/internal/domain"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/page"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
 func Tools(svc *app.Service) []tool.Tool {
-	return []tool.Tool{listAccounts(svc), getBalances(svc), searchTransactions(svc)}
+	return []tool.Tool{
+		listAccounts(svc), getBalances(svc), searchTransactions(svc), getTransaction(svc), listPayeesAndTags(svc),
+		getAccountDetails(svc), getStatement(svc),
+	}
 }
 
 type accountClass string
@@ -42,4 +46,27 @@ func allAccounts(ctx context.Context, svc *app.Service, userID int64) (map[uuid.
 		byID[a.ID] = a
 	}
 	return byID, all, nil
+}
+
+// allPages reads every page of a listing at the largest page size.
+func allPages[T, K any](list func(page.Request[K]) ([]T, *K, error)) ([]T, error) {
+	var all []T
+	p := page.Request[K]{Limit: page.MaxLimit}
+	for {
+		rows, next, err := list(p)
+		if err != nil {
+			return nil, err
+		}
+		all = append(all, rows...)
+		if next == nil {
+			return all, nil
+		}
+		p.After = next
+	}
+}
+
+// minorMoney builds an amount in minor units of the instrument of unit.
+func minorMoney(unit money.Money, amount int64) (tool.Money, error) {
+	m, err := money.NewOf(amount, unit.Currency(), unit.Scale())
+	return tool.MoneyOf(m), err
 }

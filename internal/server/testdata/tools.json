@@ -1,5 +1,391 @@
 [
   {
+    "name": "get_account_details",
+    "description": "Returns one account in depth: reconciliation state and recorded institution balances; for a credit card account, its plastic cards, current credit limit and available limit, billing cycle, statements, the statement a purchase date falls on and the installments already committed to a month. Use it for questions about one account or card. Do not use it for a statement's lines: get_statement returns them.",
+    "effect": "read_only",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "type": "string",
+          "description": "ID of the account, from list_accounts"
+        },
+        "purchase_date": {
+          "type": "string",
+          "description": "for a card: return the statement a purchase on this date is billed on",
+          "format": "date"
+        },
+        "month": {
+          "type": "string",
+          "description": "for a card: return the installments committed to the statement of this month; written YYYY-MM"
+        },
+        "statements_from": {
+          "type": "string",
+          "description": "for a card: first statement month to list; the last 6 months when absent; written YYYY-MM"
+        }
+      },
+      "required": [
+        "account_id"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "account": {
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "class": {
+              "type": "string"
+            },
+            "kind": {
+              "type": "string"
+            },
+            "currency": {
+              "type": "string"
+            },
+            "closed": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "account_id",
+            "name",
+            "class",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        "reconciliation": {
+          "type": "object",
+          "properties": {
+            "last_reconciled_on": {
+              "type": "string",
+              "format": "date"
+            },
+            "open_difference": {
+              "type": "object",
+              "properties": {
+                "assertion_id": {
+                  "type": "string"
+                },
+                "date": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "difference": {
+                  "type": "object",
+                  "properties": {
+                    "amount": {
+                      "type": "string",
+                      "description": "decimal amount in the instrument's scale, such as -1234.56"
+                    },
+                    "currency": {
+                      "type": "string",
+                      "description": "currency or instrument code"
+                    }
+                  },
+                  "required": [
+                    "amount",
+                    "currency"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "assertion_id",
+                "date",
+                "difference"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "balance_assertions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "amount": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "reconciled": {
+                "type": "boolean"
+              },
+              "source": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "date",
+              "amount",
+              "reconciled",
+              "source"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "card": {
+          "type": "object",
+          "properties": {
+            "cards": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "card_id": {
+                    "type": "string"
+                  },
+                  "holder": {
+                    "type": "string"
+                  },
+                  "last_four": {
+                    "type": "string"
+                  },
+                  "virtual": {
+                    "type": "boolean"
+                  },
+                  "active": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "card_id",
+                  "holder",
+                  "last_four",
+                  "active"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "credit_limit": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
+            "available_limit": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
+            "billing_cycle": {
+              "type": "object",
+              "properties": {
+                "closing_day": {
+                  "type": "integer"
+                },
+                "due_day": {
+                  "type": "integer"
+                },
+                "effective_from": {
+                  "type": "string",
+                  "description": "YYYY-MM"
+                }
+              },
+              "required": [
+                "closing_day",
+                "due_day",
+                "effective_from"
+              ],
+              "additionalProperties": false
+            },
+            "statements": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "statement_id": {
+                    "type": "string"
+                  },
+                  "reference": {
+                    "type": "string",
+                    "description": "YYYY-MM"
+                  },
+                  "closing_date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "due_date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "amount_due": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "unpaid": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "statement_id",
+                  "reference",
+                  "closing_date",
+                  "due_date",
+                  "status",
+                  "amount_due",
+                  "unpaid"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "placement": {
+              "type": "object",
+              "properties": {
+                "reference": {
+                  "type": "string",
+                  "description": "YYYY-MM"
+                },
+                "closing_date": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "due_date": {
+                  "type": "string",
+                  "format": "date"
+                }
+              },
+              "required": [
+                "reference",
+                "closing_date",
+                "due_date"
+              ],
+              "additionalProperties": false
+            },
+            "committed": {
+              "type": "object",
+              "properties": {
+                "month": {
+                  "type": "string",
+                  "description": "YYYY-MM"
+                },
+                "amount": {
+                  "type": "object",
+                  "properties": {
+                    "amount": {
+                      "type": "string",
+                      "description": "decimal amount in the instrument's scale, such as -1234.56"
+                    },
+                    "currency": {
+                      "type": "string",
+                      "description": "currency or instrument code"
+                    }
+                  },
+                  "required": [
+                    "amount",
+                    "currency"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "month",
+                "amount"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "cards",
+            "statements"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "account",
+        "reconciliation",
+        "balance_assertions"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "get_account_history",
     "description": "Returns the daily balance of an account and its sub-accounts over a period, or its booked inflow and outflow per day. Use it for how a balance evolved or how much entered and left an account. Do not use it for a balance at one date: get_balances does; nor for the future: project_balance does.",
     "effect": "read_only",
@@ -801,6 +1187,710 @@
     }
   },
   {
+    "name": "get_statement",
+    "description": "Returns one credit card statement with its amounts, status, dates and every line: charges, credits, payments and installments. Use it to explain a statement or check its lines. Do not use it to list statements: get_account_details lists them with their IDs.",
+    "effect": "read_only",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "statement_id": {
+          "type": "string",
+          "description": "ID of the statement, from get_account_details"
+        },
+        "limit": {
+          "type": "integer",
+          "description": "items per page, 1 to 50; 20 when absent"
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor of the previous page; absent for the first page"
+        }
+      },
+      "required": [
+        "statement_id"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "statement_id": {
+          "type": "string"
+        },
+        "account_id": {
+          "type": "string"
+        },
+        "account_name": {
+          "type": "string"
+        },
+        "reference": {
+          "type": "string",
+          "description": "YYYY-MM"
+        },
+        "status": {
+          "type": "string"
+        },
+        "closing_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "due_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "opening": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "description": "decimal amount in the instrument's scale, such as -1234.56"
+            },
+            "currency": {
+              "type": "string",
+              "description": "currency or instrument code"
+            }
+          },
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        "charges": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "description": "decimal amount in the instrument's scale, such as -1234.56"
+            },
+            "currency": {
+              "type": "string",
+              "description": "currency or instrument code"
+            }
+          },
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        "credits": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "description": "decimal amount in the instrument's scale, such as -1234.56"
+            },
+            "currency": {
+              "type": "string",
+              "description": "currency or instrument code"
+            }
+          },
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        "payments": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "description": "decimal amount in the instrument's scale, such as -1234.56"
+            },
+            "currency": {
+              "type": "string",
+              "description": "currency or instrument code"
+            }
+          },
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        "amount_due": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "description": "decimal amount in the instrument's scale, such as -1234.56"
+            },
+            "currency": {
+              "type": "string",
+              "description": "currency or instrument code"
+            }
+          },
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        "unpaid": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "description": "decimal amount in the instrument's scale, such as -1234.56"
+            },
+            "currency": {
+              "type": "string",
+              "description": "currency or instrument code"
+            }
+          },
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        "reconciled": {
+          "type": "boolean"
+        },
+        "institution": {
+          "type": "object",
+          "properties": {
+            "due_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "total": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
+            "minimum": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "due_date",
+            "total"
+          ],
+          "additionalProperties": false
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "transaction_id": {
+                "type": "string"
+              },
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "description": {
+                "type": "string"
+              },
+              "card_role": {
+                "type": "string"
+              },
+              "amount": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "installment": {
+                "type": "string",
+                "description": "n/N for an installment"
+              }
+            },
+            "required": [
+              "transaction_id",
+              "date",
+              "description",
+              "card_role",
+              "amount"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "next_cursor": {
+          "type": "string",
+          "description": "present when more lines follow; pass it as cursor"
+        }
+      },
+      "required": [
+        "statement_id",
+        "account_id",
+        "account_name",
+        "reference",
+        "status",
+        "closing_date",
+        "due_date",
+        "opening",
+        "charges",
+        "credits",
+        "payments",
+        "amount_due",
+        "unpaid",
+        "reconciled",
+        "lines"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "get_transaction",
+    "description": "Returns one transaction in full: postings, links to refunds and reimbursements, earlier versions with their reasons, attachment names, disputes and, for an installment purchase, its plan. Use it before changing a transaction or to explain its history. Do not use it to find transactions: search_transactions does.",
+    "effect": "read_only",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "transaction_id": {
+          "type": "string",
+          "description": "ID of the transaction, from search_transactions"
+        },
+        "include_reimbursement": {
+          "type": "boolean",
+          "description": "also list the incoming transactions that can repay this expense, or the expenses this incoming transaction can repay"
+        }
+      },
+      "required": [
+        "transaction_id"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "transaction": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "date": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": {
+              "type": "string"
+            },
+            "payee_name": {
+              "type": "string"
+            },
+            "voided": {
+              "type": "boolean"
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "postings": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "account_id": {
+                    "type": "string"
+                  },
+                  "account_name": {
+                    "type": "string"
+                  },
+                  "account_class": {
+                    "type": "string",
+                    "description": "a posting on an income or expense account is the category of the transaction"
+                  },
+                  "amount": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "memo": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "account_id",
+                  "account_name",
+                  "account_class",
+                  "amount"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "version": {
+              "type": "integer"
+            },
+            "links": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string"
+                  },
+                  "transaction_id": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "type",
+                  "transaction_id"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "referenced_by": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string"
+                  },
+                  "transaction_id": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "type",
+                  "transaction_id"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "id",
+            "date",
+            "description",
+            "postings",
+            "version",
+            "links",
+            "referenced_by"
+          ],
+          "additionalProperties": false
+        },
+        "history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "integer"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "replaced_at": {
+                "type": "string",
+                "description": "RFC 3339 timestamp"
+              }
+            },
+            "required": [
+              "version",
+              "replaced_at"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "file_name": {
+                "type": "string"
+              },
+              "size": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "file_name",
+              "size"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "disputes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "dispute_id": {
+                "type": "string"
+              },
+              "opened_on": {
+                "type": "string",
+                "format": "date"
+              },
+              "outcome": {
+                "type": "string"
+              },
+              "resolved_on": {
+                "type": "string",
+                "format": "date"
+              }
+            },
+            "required": [
+              "dispute_id",
+              "opened_on"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "installment_plan": {
+          "type": "object",
+          "properties": {
+            "plan_id": {
+              "type": "string"
+            },
+            "count": {
+              "type": "integer"
+            },
+            "status": {
+              "type": "string"
+            },
+            "installments": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "number": {
+                    "type": "integer"
+                  },
+                  "amount": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "statement": {
+                    "type": "string",
+                    "description": "reference month of the statement, YYYY-MM"
+                  },
+                  "reversed": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "number",
+                  "amount",
+                  "statement",
+                  "reversed"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "plan_id",
+            "count",
+            "status",
+            "installments"
+          ],
+          "additionalProperties": false
+        },
+        "reimbursement_candidates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "transaction_id": {
+                "type": "string"
+              },
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "description": {
+                "type": "string"
+              },
+              "remaining": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "transaction_id",
+              "date",
+              "description",
+              "remaining"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "reimbursement_sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "transaction_id": {
+                "type": "string"
+              },
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "description": {
+                "type": "string"
+              },
+              "free": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "transaction_id",
+              "date",
+              "description",
+              "free"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "transaction",
+        "history",
+        "attachments",
+        "disputes"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "list_accounts",
     "description": "Lists the user's accounts and categories by class and then name, with the IDs the other tools take, each account's institution, and the user's base currency. Income and expense accounts are the categories of transactions; a child account carries its parent. Use it to find the ID of an account or category named by the user. Do not use it for balances: get_balances returns them.",
     "effect": "read_only",
@@ -837,6 +1927,10 @@
     "output_schema": {
       "type": "object",
       "properties": {
+        "base_currency": {
+          "type": "string",
+          "description": "currency of the user's totals"
+        },
         "accounts": {
           "type": "array",
           "items": {
@@ -865,6 +1959,9 @@
               "parent_name": {
                 "type": "string"
               },
+              "institution_name": {
+                "type": "string"
+              },
               "system_role": {
                 "type": "string",
                 "description": "set on accounts the ledger creates, such as uncategorized_expense"
@@ -888,8 +1985,99 @@
         }
       },
       "required": [
+        "base_currency",
         "accounts"
       ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "list_payees_and_tags",
+    "description": "Lists the user's payees, the tags in use or the institutions, by name, with IDs. Use it to find the payee_id a write takes or to check whether a payee, tag or institution exists. Do not use it for transactions of a payee: search_transactions with query does that.",
+    "effect": "read_only",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "what to list",
+          "enum": [
+            "payees",
+            "tags",
+            "institutions"
+          ]
+        },
+        "query": {
+          "type": "string",
+          "description": "case-insensitive text the name must contain"
+        },
+        "limit": {
+          "type": "integer",
+          "description": "items per page, 1 to 50; 20 when absent"
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor of the previous page; absent for the first page"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "payees": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "payee_id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "payee_id",
+              "name"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "institutions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "institution_id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "institution_id",
+              "name"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "next_cursor": {
+          "type": "string",
+          "description": "present when more items follow; pass it as cursor"
+        }
+      },
       "additionalProperties": false
     }
   },
