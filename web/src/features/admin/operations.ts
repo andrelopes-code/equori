@@ -668,6 +668,38 @@ export const operations: Record<GroupKey, readonly Operation[]> = {
       path: "/assistant/uses/{use}/chain",
       body: () => ({ targets: [] }),
     },
+    { id: "getAssistantChat", method: "GET", path: "/assistant/chat" },
+    {
+      id: "listAssistantConversations",
+      method: "GET",
+      path: "/assistant/conversations",
+      query: page,
+    },
+    {
+      id: "getAssistantConversation",
+      method: "GET",
+      path: "/assistant/conversations/{id}",
+    },
+    {
+      id: "deleteAssistantConversation",
+      method: "DELETE",
+      path: "/assistant/conversations/{id}",
+    },
+    {
+      id: "deleteAssistantConversations",
+      method: "DELETE",
+      path: "/assistant/conversations",
+    },
+    {
+      id: "confirmAssistantProposal",
+      method: "POST",
+      path: "/assistant/proposals/{id}/confirm",
+    },
+    {
+      id: "rejectAssistantProposal",
+      method: "POST",
+      path: "/assistant/proposals/{id}/reject",
+    },
     {
       id: "listInstitutions",
       method: "GET",

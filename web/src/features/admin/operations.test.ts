@@ -13,8 +13,8 @@ const contract = readFileSync(
   "utf8",
 );
 
-// The session's own operations, and the ones that send or return a file, which the
-// console's JSON forms cannot carry.
+// The session's own operations, the ones that send or return a file, and the assistant's
+// event stream, which the console's JSON forms cannot carry.
 const outside = new Set([
   "createSession",
   "deleteSession",
@@ -22,6 +22,7 @@ const outside = new Set([
   "importPrices",
   "createAttachment",
   "getAttachmentContent",
+  "sendAssistantMessage",
 ]);
 
 describe("operations", () => {
