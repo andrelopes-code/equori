@@ -93,6 +93,17 @@ type (
 	PayeeClass       = app.PayeeClass
 )
 
+// Conversion is a valued amount with the prices it used; Price is one of them (P8 amendment A65).
+type (
+	Conversion = app.Conversion
+	Price      = app.Price
+	ValuedPart = app.ValuedPart
+	// ExternalFlow is money that entered or left an account tree (investments design 4.3).
+	ExternalFlow = app.ExternalFlow
+	// AccountBalance is the balance of one balance-sheet account in its own instrument.
+	AccountBalance = app.Balance
+)
+
 // Match links an external record to the transaction it confirms.
 type Match = app.Match
 
@@ -130,6 +141,7 @@ var (
 	ErrReconciled             = domain.ErrReconciled
 	ErrNotRetypable           = domain.ErrNotRetypable
 	ErrMixedInstruments       = app.ErrMixedInstruments
+	ErrPriceMissing           = app.ErrPriceMissing
 )
 
 // Calendar is the part of marketdata the ledger uses to shift due dates.
@@ -291,6 +303,32 @@ func (m *Module) TransactionFacts(ctx context.Context, userID int64, ids []uuid.
 func (m *Module) Balance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time) (money.Money, error) {
 	b, err := m.svc.BalanceAt(ctx, userID, accountID, date, app.BasisBooked)
 	return b.Amount, err
+}
+
+// ValuedBalance is the booked balance of an account and its sub-accounts at the end of date,
+// each instrument valued in currency in with stored prices (P8 amendment A65).
+func (m *Module) ValuedBalance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, in money.Currency) (Conversion, error) {
+	_, c, err := m.svc.ValuedBalance(ctx, userID, accountID, date, app.BasisBooked, in)
+	return c, err
+}
+
+// Balances is the booked balance of every asset and liability account at the end of date, each
+// in the instrument of the account and counting its own postings only (P1, B2).
+func (m *Module) Balances(ctx context.Context, userID int64, date time.Time) ([]AccountBalance, error) {
+	return m.svc.BalancesAt(ctx, userID, date, app.BasisBooked)
+}
+
+// ExternalFlows is the money that entered (positive) or left (negative) the accounts and their
+// sub-accounts, taken as one tree, between from and to, one item per transaction, in its
+// balancing currency.
+func (m *Module) ExternalFlows(ctx context.Context, userID int64, accountIDs []uuid.UUID, from, to time.Time) ([]ExternalFlow, error) {
+	return m.svc.ExternalFlows(ctx, userID, accountIDs, from, to)
+}
+
+// FirstPosting is the booked date of the earliest posting of the accounts and their sub-accounts;
+// false when they have none.
+func (m *Module) FirstPosting(ctx context.Context, userID int64, accountIDs []uuid.UUID) (time.Time, bool, error) {
+	return m.svc.FirstPosting(ctx, userID, accountIDs)
 }
 
 // Commitment is the sum of installments billed on the statement of month while it is open

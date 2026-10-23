@@ -230,12 +230,43 @@ func (s *Service) ValuedBalance(ctx context.Context, userID int64, accountID uui
 			return Balance{}, Conversion{}, fmt.Errorf("sum valued balances: %w", err)
 		}
 		out.Prices = append(out.Prices, c.Prices...)
+		if !amount.IsZero() {
+			out.Parts = append(out.Parts, ValuedPart{Instrument: code, Quantity: amount, Value: c.Value})
+		}
 	}
 	b := Balance{AccountID: accountID, Date: date, Basis: basis, Amount: out.Value}
 	if len(totals) == 1 {
 		b.Amount = amount
 	}
 	return b, out, nil
+}
+
+// ExternalFlows is the money that entered (positive) or left (negative) the accounts and their
+// sub-accounts, taken as one tree, between from and to, one item per transaction (investments
+// design 4.3).
+func (s *Service) ExternalFlows(ctx context.Context, userID int64, accountIDs []uuid.UUID, from, to time.Time) ([]ExternalFlow, error) {
+	if err := s.ownAccounts(ctx, userID, accountIDs); err != nil {
+		return nil, err
+	}
+	return s.repo.TreeExternalFlows(ctx, userID, accountIDs, from, to)
+}
+
+// FirstPosting is the booked date of the earliest posting of the accounts and their
+// sub-accounts; false when they have none.
+func (s *Service) FirstPosting(ctx context.Context, userID int64, accountIDs []uuid.UUID) (time.Time, bool, error) {
+	if err := s.ownAccounts(ctx, userID, accountIDs); err != nil {
+		return time.Time{}, false, err
+	}
+	return s.repo.TreeFirstPosting(ctx, userID, accountIDs)
+}
+
+func (s *Service) ownAccounts(ctx context.Context, userID int64, accountIDs []uuid.UUID) error {
+	for _, id := range accountIDs {
+		if _, err := s.repo.Account(ctx, userID, id); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func baseCurrency(ctx context.Context, r Repository, userID int64) (money.Currency, error) {

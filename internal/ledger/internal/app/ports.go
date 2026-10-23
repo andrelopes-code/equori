@@ -61,9 +61,25 @@ type Prices interface {
 	Convert(ctx context.Context, q money.Money, to money.Currency, date time.Time) (Conversion, error)
 }
 
+// ExternalFlow is money that entered (positive) or left (negative) an account tree on a date,
+// in the balancing currency of its transaction.
+type ExternalFlow struct {
+	Date  time.Time
+	Value money.Money
+}
+
 type Conversion struct {
 	Value  money.Money
 	Prices []Price
+	// Parts is the value of each instrument held, filled by ValuedBalance in instrument order.
+	Parts []ValuedPart
+}
+
+// ValuedPart is a quantity of one instrument held in a tree of accounts and its value.
+type ValuedPart struct {
+	Instrument money.Currency
+	Quantity   money.Money
+	Value      money.Money
 }
 
 type Price struct {
@@ -457,6 +473,11 @@ type Repository interface {
 	Holding(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time) (quantity, costBasis int64, err error)
 	LaterSaleExists(ctx context.Context, userID int64, accountIDs []uuid.UUID, date time.Time, exclude uuid.UUID) (bool, error)
 	TreeBalancesByInstrument(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis Basis) (map[money.Currency]int64, error)
+	// TreeExternalFlows returns, per transaction of [from, to] that touches the tree of the accounts
+	// and a balance account outside it, the money that entered the tree (negative when it left).
+	TreeExternalFlows(ctx context.Context, userID int64, accountIDs []uuid.UUID, from, to time.Time) ([]ExternalFlow, error)
+	// TreeFirstPosting returns the booked date of the earliest posting of the tree of the accounts.
+	TreeFirstPosting(ctx context.Context, userID int64, accountIDs []uuid.UUID) (time.Time, bool, error)
 	// CategoryTotal sums the weights of the non-voided postings of the account and its
 	// descendants booked in [from, to).
 	CategoryTotal(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) (int64, error)

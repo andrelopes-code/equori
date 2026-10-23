@@ -705,6 +705,30 @@ func (r *Repository) TreeBalancesByInstrument(ctx context.Context, userID int64,
 	return out, err
 }
 
+func (r *Repository) TreeExternalFlows(ctx context.Context, userID int64, accountIDs []uuid.UUID, from, to time.Time) ([]app.ExternalFlow, error) {
+	rows, err := r.q.TreeExternalFlows(ctx, TreeExternalFlowsParams{UserID: userID, AccountIds: accountIDs, FromDate: from, ToDate: to})
+	if err != nil {
+		return nil, fmt.Errorf("tree external flows: %w", err)
+	}
+	out := make([]app.ExternalFlow, len(rows))
+	for i, row := range rows {
+		value, err := money.New(row.Flow, money.Currency(row.BalancingCurrency))
+		if err != nil {
+			return nil, fmt.Errorf("external flow of %s: %w", row.Date.Format(time.DateOnly), err)
+		}
+		out[i] = app.ExternalFlow{Date: row.Date, Value: value}
+	}
+	return out, nil
+}
+
+func (r *Repository) TreeFirstPosting(ctx context.Context, userID int64, accountIDs []uuid.UUID) (time.Time, bool, error) {
+	row, err := r.q.TreeFirstPosting(ctx, TreeFirstPostingParams{UserID: userID, AccountIds: accountIDs})
+	if err != nil {
+		return time.Time{}, false, fmt.Errorf("tree first posting: %w", err)
+	}
+	return row.FirstOn, row.Found, nil
+}
+
 func (r *Repository) BalanceAt(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, basis app.Basis) (int64, error) {
 	if basis == app.BasisSettled {
 		return r.q.BalanceSettledAt(ctx, BalanceSettledAtParams{UserID: userID, AccountID: accountID, OnDate: &date})

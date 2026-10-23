@@ -282,6 +282,97 @@ func (q *Queries) TreeBalancesByInstrument(ctx context.Context, arg TreeBalances
 	return items, nil
 }
 
+const treeExternalFlows = `-- name: TreeExternalFlows :many
+WITH RECURSIVE tree AS (
+    SELECT a.id FROM ledger_account a WHERE a.user_id = $1 AND a.id = ANY($4::uuid[])
+    UNION
+    SELECT c.id FROM ledger_account c JOIN tree ON c.parent_id = tree.id WHERE c.user_id = $1
+)
+SELECT t.date, t.balancing_currency, (-sum(o.weight))::bigint AS flow
+FROM ledger_transaction t
+JOIN ledger_posting o ON o.transaction_id = t.id AND NOT o.voided AND o.account_id NOT IN (SELECT id FROM tree)
+JOIN ledger_account oa ON oa.id = o.account_id AND oa.account_class IN ('asset', 'liability')
+WHERE t.user_id = $1 AND t.voided_at IS NULL AND t.date BETWEEN $2 AND $3
+  AND EXISTS (
+      SELECT 1 FROM ledger_posting p
+      WHERE p.transaction_id = t.id AND NOT p.voided AND p.account_id IN (SELECT id FROM tree)
+  )
+GROUP BY t.id, t.date, t.balancing_currency
+ORDER BY t.date, t.id
+`
+
+type TreeExternalFlowsParams struct {
+	UserID     int64
+	FromDate   time.Time
+	ToDate     time.Time
+	AccountIds []uuid.UUID
+}
+
+type TreeExternalFlowsRow struct {
+	Date              time.Time
+	BalancingCurrency string
+	Flow              int64
+}
+
+// Investments design 4.3: the money that entered (positive) or left (negative) the accounts and
+// their sub-accounts, taken as one tree, in each transaction of [from, to] that also touches a
+// balance account outside it, as the negated weights of the outside postings, in the
+// transaction's balancing currency. A transfer between two roots is internal.
+func (q *Queries) TreeExternalFlows(ctx context.Context, arg TreeExternalFlowsParams) ([]TreeExternalFlowsRow, error) {
+	rows, err := q.db.Query(ctx, treeExternalFlows,
+		arg.UserID,
+		arg.FromDate,
+		arg.ToDate,
+		arg.AccountIds,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []TreeExternalFlowsRow
+	for rows.Next() {
+		var i TreeExternalFlowsRow
+		if err := rows.Scan(&i.Date, &i.BalancingCurrency, &i.Flow); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const treeFirstPosting = `-- name: TreeFirstPosting :one
+WITH RECURSIVE tree AS (
+    SELECT a.id FROM ledger_account a WHERE a.user_id = $1 AND a.id = ANY($2::uuid[])
+    UNION
+    SELECT c.id FROM ledger_account c JOIN tree ON c.parent_id = tree.id WHERE c.user_id = $1
+)
+SELECT coalesce(min(p.booked_on), DATE '0001-01-01')::date AS first_on, (count(*) > 0)::boolean AS found
+FROM ledger_posting p
+WHERE p.user_id = $1 AND NOT p.voided AND p.account_id IN (SELECT id FROM tree)
+`
+
+type TreeFirstPostingParams struct {
+	UserID     int64
+	AccountIds []uuid.UUID
+}
+
+type TreeFirstPostingRow struct {
+	FirstOn time.Time
+	Found   bool
+}
+
+// The booked date of the earliest non-voided posting of the accounts and their sub-accounts;
+// found is false, and first_on meaningless, when there is none.
+func (q *Queries) TreeFirstPosting(ctx context.Context, arg TreeFirstPostingParams) (TreeFirstPostingRow, error) {
+	row := q.db.QueryRow(ctx, treeFirstPosting, arg.UserID, arg.AccountIds)
+	var i TreeFirstPostingRow
+	err := row.Scan(&i.FirstOn, &i.Found)
+	return i, err
+}
+
 const treeInstruments = `-- name: TreeInstruments :many
 WITH RECURSIVE tree AS (
     SELECT a.id, a.instrument FROM ledger_account a WHERE a.user_id = $1 AND a.id = $2
