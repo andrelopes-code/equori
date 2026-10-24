@@ -84,8 +84,48 @@ describe("Budget form", () => {
   });
 });
 
+describe("Budget form prefill", () => {
+  it("starts from the category the month view asked to budget", async () => {
+    const sent: unknown[] = [];
+    await renderApp(`/planning/budgets/new?category=${fuel.id}`, {
+      fetch: budgetApi({
+        "POST /api/v1/budgets": async (req) => {
+          sent.push(await req.json());
+          return json(201, foodBudget);
+        },
+      }),
+    });
+    await userEvent.type(
+      await screen.findByRole("textbox", { name: catalogEn["budget.amount"] }),
+      "40000",
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["budget.create"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toEqual([
+        {
+          category_id: fuel.id,
+          amount: money(40000),
+          effective_from: "2026-10",
+          rollover: false,
+        },
+      ]);
+    });
+  });
+});
+
 describe("Budget page", () => {
   const page = `/planning/budgets/${foodBudget.id}?month=2026-11`;
+
+  it("shows the figures of the month the page reads", async () => {
+    await renderApp(page, { fetch: budgetApi() });
+    const figures = await screen.findByRole("region", {
+      name: catalogEn["budget.monthFigures"],
+    });
+    for (const amount of ["R$1,800.00", "R$300.00", "R$2,300.00", "−R$200.00"])
+      expect(await within(figures).findByText(amount)).toBeInTheDocument();
+  });
 
   it("lists the amounts by month", async () => {
     await renderApp(page, { fetch: budgetApi() });

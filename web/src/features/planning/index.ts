@@ -16,6 +16,7 @@ export { OccurrenceActions } from "@/features/planning/occurrence-actions";
 export { RealizedOccurrences } from "@/features/planning/realized-occurrences";
 export { PlanningPage } from "@/features/planning/planning-page";
 export {
+  validateBudgetFormSearch,
   validateBudgetSearch,
   validatePlanningSearch,
 } from "@/features/planning/planning-search";

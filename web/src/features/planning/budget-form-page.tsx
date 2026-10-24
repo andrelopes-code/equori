@@ -19,7 +19,7 @@ import {
 import { Stack } from "@slotted/react/stack";
 import { Switch } from "@slotted/react/switch";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
@@ -43,7 +43,10 @@ export function BudgetFormPage() {
   const scale = useScale();
   const settings = useQuery(settingsQuery(api));
   const create = useCreateBudget();
-  const [categoryID, setCategoryID] = useState<string | null>(null);
+  const search = useSearch({ from: "/_authed/planning/budgets/new" });
+  const [categoryID, setCategoryID] = useState<string | null>(
+    search.category ?? null,
+  );
   const [amount, setAmount] = useState(0);
   // CP-04: the first month is stepped from the current one, read as its name (ui/month-control).
   const [from, setFrom] = useState(today.slice(0, 7));

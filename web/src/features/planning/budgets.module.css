@@ -1,0 +1,137 @@
+@layer app {
+  .layout,
+  .phone {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-6);
+  }
+
+  .phone {
+    gap: var(--slotted-space-5);
+  }
+
+  /* The summary beside where the spending went; 56rem is where each keeps a readable width side
+     by side, and no token holds a layout step. */
+  .overview {
+    display: grid;
+    gap: var(--slotted-space-4);
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  @media (min-width: 56rem) {
+    .overview {
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    }
+  }
+
+  .groups {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-5);
+  }
+
+  /* A phone's group is one surface of rows, not a stack of cards. */
+  .rows {
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-lg);
+    background: var(--slotted-surface);
+  }
+
+  .row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-2);
+    padding: var(--slotted-space-3) var(--slotted-space-4);
+  }
+
+  .row + .row {
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  .rowHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-2);
+  }
+
+  .title {
+    min-width: 0;
+  }
+
+  .name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-3);
+  }
+
+  .progress {
+    --budget-tone: var(--slotted-tone-accent-text);
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-2);
+  }
+
+  .progress[data-state="near"] {
+    --budget-tone: var(--slotted-tone-warning-text);
+  }
+
+  .progress[data-state="over"] {
+    --budget-tone: var(--slotted-tone-danger-text);
+  }
+
+  /* The figure, what it is out of, and the share at the line's end, on one baseline. */
+  .spent {
+    display: flex;
+    align-items: baseline;
+    gap: var(--slotted-space-2);
+  }
+
+  .spent > :last-child {
+    margin-inline-start: auto;
+  }
+
+  .spentText {
+    display: grid;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .percent {
+    color: var(--budget-tone);
+  }
+
+  .committed {
+    display: grid;
+    gap: var(--slotted-space-1);
+    margin-block-start: var(--slotted-space-5);
+    padding-block-start: var(--slotted-space-4);
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  /* The month's four figures in two columns on a phone, one surface instead of four cards. */
+  .facts dl {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--slotted-space-3) var(--slotted-space-4);
+    margin: 0;
+    padding: var(--slotted-space-4);
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-lg);
+    background: var(--slotted-surface);
+  }
+
+  .facts dd {
+    margin: 0;
+  }
+}

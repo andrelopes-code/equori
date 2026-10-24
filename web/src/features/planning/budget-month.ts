@@ -16,12 +16,46 @@ export interface BudgetRow {
 }
 
 type Figure = "planned" | "carried" | "spent" | "available";
+export type Figures = Pick<Progress, Figure>;
 
 export interface BudgetGroup {
   root: CategoryEntry;
   rows: BudgetRow[];
-  // Present when the group holds more than one budget.
-  subtotal?: Pick<Progress, Figure>;
+  subtotal: Figures;
+}
+
+// From this share of planned plus carried spent, a budget is near its limit.
+export const nearShare = 90;
+
+// Spent as a share of planned plus carried, in percent; nothing left to spend reads as full.
+export function usedShare(p: Omit<Figures, "available">): number {
+  const room = p.planned.amount + p.carried.amount;
+  if (room <= 0) return p.spent.amount > 0 ? 100 : 0;
+  return Math.round((p.spent.amount * 100) / room);
+}
+
+export type BudgetState = "over" | "near" | "within";
+
+export function budgetState(p: Figures): BudgetState {
+  if (p.available.amount < 0) return "over";
+  return usedShare(p) >= nearShare ? "near" : "within";
+}
+
+// The month's figures over every group: each subtotal already leaves out nested budgets.
+export function monthFigures(
+  groups: readonly BudgetGroup[],
+  currency: string,
+): Figures {
+  const add = (key: Figure) => ({
+    currency,
+    amount: groups.reduce((t, g) => t + g.subtotal[key].amount, 0),
+  });
+  return {
+    planned: add("planned"),
+    carried: add("carried"),
+    spent: add("spent"),
+    available: add("available"),
+  };
 }
 
 // A budget answers for its month only from its first amount on; progress before it is a 422.
@@ -65,7 +99,7 @@ export function budgetGroups(
 ): BudgetGroup[] {
   const byId = new Map(entries.map((e) => [e.id, e]));
   const byCategory = new Map(budgets.map((b) => [b.category_id, b]));
-  const groups = new Map<string, BudgetGroup>();
+  const groups = new Map<string, Omit<BudgetGroup, "subtotal">>();
   const tops = new Map<string, BudgetRow[]>();
   for (const entry of entries) {
     const budget = byCategory.get(entry.id);
@@ -93,22 +127,20 @@ export function budgetGroups(
   }
   return [...groups.values()].map((group) => {
     const top = tops.get(group.root.id) ?? [];
-    return group.rows.length < 2
-      ? group
-      : {
-          ...group,
-          subtotal: {
-            planned: sum(top, "planned"),
-            carried: sum(top, "carried"),
-            spent: sum(top, "spent"),
-            available: sum(top, "available"),
-          },
-        };
+    return {
+      ...group,
+      subtotal: {
+        planned: sum(top, "planned"),
+        carried: sum(top, "carried"),
+        spent: sum(top, "spent"),
+        available: sum(top, "available"),
+      },
+    };
   });
 }
 
-// The expense categories that booked an amount of their own in the month with no budget on them
-// or on a category above them, in the tree's order.
+// The expense categories that spent an amount of their own in the month with no budget on them
+// or on a category above them, the largest first; a month of refunds alone is not spending.
 export function unbudgeted(
   entries: readonly CategoryEntry[],
   budgets: readonly Budget[],
@@ -117,15 +149,17 @@ export function unbudgeted(
   const byId = new Map(entries.map((e) => [e.id, e]));
   const budgeted = new Set(budgets.map((b) => b.category_id));
   const own = new Map(totals.map((t) => [t.account_id, t.total]));
-  return entries.flatMap((entry) => {
-    const total = own.get(entry.id);
-    if (entry.class !== "expense" || total === undefined || total.amount === 0)
-      return [];
-    if (
-      budgeted.has(entry.id) ||
-      ancestors(entry, byId).some((a) => budgeted.has(a.id))
-    )
-      return [];
-    return [{ entry, total }];
-  });
+  return entries
+    .flatMap((entry) => {
+      const total = own.get(entry.id);
+      if (entry.class !== "expense" || total === undefined || total.amount <= 0)
+        return [];
+      if (
+        budgeted.has(entry.id) ||
+        ancestors(entry, byId).some((a) => budgeted.has(a.id))
+      )
+        return [];
+      return [{ entry, total }];
+    })
+    .sort((a, b) => b.total.amount - a.total.amount);
 }

@@ -39,3 +39,19 @@ export function validateBudgetSearch(
   const { month } = validatePlanningSearch(raw);
   return month === undefined ? {} : { month };
 }
+
+export interface BudgetFormSearch {
+  // The category the form starts from.
+  category?: string;
+}
+
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function validateBudgetFormSearch(
+  raw: Record<string, unknown>,
+): BudgetFormSearch {
+  return typeof raw.category === "string" && uuidPattern.test(raw.category)
+    ? { category: raw.category }
+    : {};
+}

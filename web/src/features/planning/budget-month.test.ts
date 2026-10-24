@@ -45,7 +45,7 @@ describe("budgetGroups", () => {
     expect(groups.map((g) => g.rows.map((r) => r.label))).toEqual([
       ["Food", "Supermarket"],
     ]);
-    expect(groups[0]?.subtotal?.spent).toEqual(money(60000));
+    expect(groups[0]?.subtotal.spent).toEqual(money(60000));
   });
 });
 

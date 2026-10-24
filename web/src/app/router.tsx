@@ -61,6 +61,7 @@ import {
   PlanningPage,
   ScheduleFormPage,
   SchedulePage,
+  validateBudgetFormSearch,
   validateBudgetSearch,
   validatePlanningSearch,
 } from "@/features/planning";
@@ -276,6 +277,7 @@ const scheduleRoute = createRoute({
 const newBudgetRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "planning/budgets/new",
+  validateSearch: validateBudgetFormSearch,
   component: BudgetFormPage,
 });
 

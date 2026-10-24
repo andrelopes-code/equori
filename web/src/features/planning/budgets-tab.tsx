@@ -1,22 +1,17 @@
-import { ProgressBar } from "@slotted/react/progress-indicator";
-import { Stack } from "@slotted/react/stack";
+import { Button } from "@slotted/react/button";
+import { Grid } from "@slotted/react/grid";
+import { Inline } from "@slotted/react/inline";
 import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableColumnHeader,
-  TableContent,
-  TableEmpty,
-  TableGroupRow,
-  TableHead,
-  TableLoader,
-  TableRow,
-  TableRowHeader,
-} from "@slotted/react/table";
+  ResultState,
+  ResultStateActions,
+  ResultStateContent,
+  ResultStateDescription,
+  ResultStateTitle,
+} from "@slotted/react/result-state";
+import { Skeleton } from "@slotted/react/skeleton";
+import { Heading, Text } from "@slotted/react/typography";
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { Fragment } from "react";
+import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
@@ -28,40 +23,48 @@ import {
   budgetsQuery,
   committedQuery,
 } from "@/features/planning/api";
+import { BudgetCard } from "@/features/planning/budget-card";
 import {
   budgetGroups,
+  budgetState,
+  monthFigures,
   startsBy,
   unbudgeted,
 } from "@/features/planning/budget-month";
-import { useScale } from "@/features/setup";
-import { formatDate } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import type { BudgetState } from "@/features/planning/budget-month";
+import { BudgetAmountDialog } from "@/features/planning/budget-amount-dialog";
+import { BudgetSpendingChart } from "@/features/planning/budget-spending-chart";
+import { BudgetSummary } from "@/features/planning/budget-summary";
+import styles from "@/features/planning/budgets.module.css";
+import { UnbudgetedList } from "@/features/planning/unbudgeted-list";
+import { settingsQuery, useScale } from "@/features/setup";
+import { useT } from "@/i18n/i18n-provider";
+import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { FigureCard } from "@/ui/figure-card";
-import { FigureGrid } from "@/ui/figure-grid";
 import { QueryError } from "@/ui/query-error";
+import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
-type Money = components["schemas"]["Money"];
-type Progress = components["schemas"]["BudgetProgress"];
-type Price = components["schemas"]["Price"];
+type Budget = components["schemas"]["Budget"];
 
-// Spent as a share of planned plus carried; nothing left to spend reads as full.
-function used(p: Pick<Progress, "planned" | "carried" | "spent">): number {
-  const room = p.planned.amount + p.carried.amount;
-  if (room <= 0) return p.spent.amount > 0 ? 100 : 0;
-  return Math.round((p.spent.amount * 100) / room);
-}
-
-// The budgets of a month by category, what the month already commits, and the spending no
-// budget covers.
-export function BudgetsTab({ month }: { month: string }) {
+// The budgets of a month: the month over every budget and where its spending went, one card per
+// budget under its top category, and the spending no budget covers.
+export function BudgetsTab({
+  month,
+  onCreate,
+}: {
+  month: string;
+  onCreate: () => void;
+}) {
   const t = useT();
-  const [locale] = useAppLocale();
   const api = useApi();
+  const today = useToday();
   const fmt = useMoneyFormat();
   const scale = useScale();
+  const compact = useMediaQuery(compactQuery);
+  const [editing, setEditing] = useState<Budget | null>(null);
   const budgets = useQuery(budgetsQuery(api));
   const accounts = useQuery(accountsQuery(api));
+  const settings = useQuery(settingsQuery(api));
   const entries = useCategoryEntries(accounts.data);
   const committed = useQuery(committedQuery(api, month));
   const totals = useQuery(
@@ -82,177 +85,153 @@ export function BudgetsTab({ month }: { month: string }) {
     return (
       <QueryError error={failed.error} onRetry={() => void failed.refetch()} />
     );
-  const pending =
+  if (budgets.data?.length === 0)
+    return (
+      <ResultState status="empty" reach="section">
+        <ResultStateContent>
+          <ResultStateTitle>{t("budget.none")}</ResultStateTitle>
+          <ResultStateDescription>
+            {t("budget.noneHint")}
+          </ResultStateDescription>
+        </ResultStateContent>
+        <ResultStateActions>
+          <Button onClick={onCreate}>{t("budget.new")}</Button>
+        </ResultStateActions>
+      </ResultState>
+    );
+  const currency = settings.data?.base_currency;
+  if (
     budgets.isPending ||
     accounts.isPending ||
     progress.some((p) => p.isPending) ||
-    scale === null;
+    scale === null ||
+    currency === undefined
+  )
+    return (
+      <div className={styles.layout} aria-busy="true">
+        <Skeleton shape="block" blockSize="16rem" />
+        <Skeleton shape="block" blockSize="16rem" />
+      </div>
+    );
   const groups = budgetGroups(entries, shown, byBudget);
   const loose = unbudgeted(entries, budgets.data ?? [], totals.data ?? []);
-  const money = (m: Money) =>
-    scale === null ? "" : fmt.money(m, scale(m.currency));
-  const figure = (m: Money | undefined) =>
-    m === undefined || scale === null ? undefined : money(m);
-  const rate = (p: Price) =>
-    t("budget.price", {
-      instrument: p.instrument,
-      rate: new Intl.NumberFormat(locale, {
-        minimumFractionDigits: p.value.split(".")[1]?.length ?? 0,
-      }).format(Number(p.value)),
-      quote: p.quote_instrument,
-      date: formatDate(p.date, locale),
-    });
-  const prices = committed.data?.prices ?? [];
-  const figures = (
-    p: Pick<Progress, "planned" | "carried" | "spent" | "available">,
-  ) => (
-    <>
-      <TableCell numeric>{money(p.planned)}</TableCell>
-      <TableCell numeric>{money(p.carried)}</TableCell>
-      <TableCell numeric>{money(p.spent)}</TableCell>
-      <TableCell numeric>{money(p.available)}</TableCell>
-    </>
+  const states: Record<BudgetState, number> = { over: 0, near: 0, within: 0 };
+  for (const g of groups)
+    for (const r of g.rows) states[budgetState(r.progress)] += 1;
+  const days = Number(monthEnd(month).slice(8, 10));
+  const elapsed =
+    today.slice(0, 7) === month
+      ? { day: Number(today.slice(8, 10)), days }
+      : undefined;
+  const money = (amount: number) =>
+    fmt.money({ amount, currency }, scale(currency));
+  const slices = [
+    ...groups.map((g) => ({
+      name: g.root.name,
+      spent: g.subtotal.spent.amount,
+      ...(g.root.color === undefined ? {} : { slot: g.root.color }),
+    })),
+    {
+      name: t("budget.unbudgetedSlice"),
+      spent: loose.reduce((sum, r) => sum + r.total.amount, 0),
+    },
+  ];
+  const summary = (
+    <BudgetSummary
+      figures={groups.length === 0 ? undefined : monthFigures(groups, currency)}
+      states={states}
+      committed={committed.data}
+      elapsed={elapsed}
+      scale={scale}
+      compact={compact}
+    />
+  );
+  const chart = (
+    <BudgetSpendingChart
+      slices={slices}
+      currency={currency}
+      scale={scale(currency)}
+      loading={totals.isPending}
+    />
+  );
+  const list = (
+    <div className={styles.groups}>
+      {groups.length === 0 && <Text tone="muted">{t("budget.empty")}</Text>}
+      {groups.map((group) => {
+        const cards = group.rows.map((row) => (
+          <BudgetCard
+            key={row.budget.id}
+            row={row}
+            month={month}
+            scale={scale}
+            compact={compact}
+            onChangeAmount={setEditing}
+          />
+        ));
+        return (
+          <section
+            key={group.root.id}
+            aria-label={group.root.name}
+            className={styles.group}
+          >
+            <Inline gap={3} justify="between" wrap="wrap">
+              <Heading level={3} size="sm">
+                {group.root.name}
+              </Heading>
+              <Text size="sm" tone="muted" numeric="tabular">
+                {t("budget.groupTotal", {
+                  spent: money(group.subtotal.spent.amount),
+                  room: money(
+                    group.subtotal.planned.amount +
+                      group.subtotal.carried.amount,
+                  ),
+                })}
+              </Text>
+            </Inline>
+            {compact ? (
+              <div className={styles.rows}>{cards}</div>
+            ) : (
+              <Grid gap={3} minItemWidth="md">
+                {cards}
+              </Grid>
+            )}
+          </section>
+        );
+      })}
+    </div>
   );
   return (
-    <Stack gap={6}>
-      <FigureGrid label={t("budget.committed")}>
-        <FigureCard
-          label={t("budget.installments")}
-          value={figure(committed.data?.installments)}
-          note={t("budget.installmentsNote")}
-          loading={committed.isPending}
+    <>
+      {/* A phone reads the summary, its budgets, then where the spending went (M2); the desk
+          puts the summary beside the chart. The order is the document's, not only the eye's. */}
+      {compact ? (
+        <div className={styles.phone}>
+          {summary}
+          {list}
+          {chart}
+          <UnbudgetedList rows={loose} scale={scale} />
+        </div>
+      ) : (
+        <div className={styles.layout}>
+          <div className={styles.overview}>
+            {summary}
+            {chart}
+          </div>
+          {list}
+          <UnbudgetedList rows={loose} scale={scale} />
+        </div>
+      )}
+      {editing !== null && (
+        <BudgetAmountDialog
+          budget={editing}
+          onDone={() => {
+            setEditing(null);
+          }}
+          onCancel={() => {
+            setEditing(null);
+          }}
         />
-        <FigureCard
-          label={t("budget.occurrences")}
-          value={figure(committed.data?.occurrences)}
-          note={
-            prices.length === 0
-              ? t("budget.occurrencesNote")
-              : prices.map(rate).join("; ")
-          }
-          loading={committed.isPending}
-        />
-        <FigureCard
-          label={t("budget.committedTotal")}
-          value={figure(committed.data?.total)}
-          note={t("budget.committedNote")}
-          loading={committed.isPending}
-        />
-      </FigureGrid>
-      <Table
-        columns={6}
-        variant="framed"
-        loading={budgets.isFetching && !budgets.isPending}
-      >
-        <TableContent>
-          <TableCaption>{t("budget.caption")}</TableCaption>
-          <TableHead>
-            <TableRow>
-              <TableColumnHeader>{t("budget.category")}</TableColumnHeader>
-              <TableColumnHeader numeric>
-                {t("budget.planned")}
-              </TableColumnHeader>
-              <TableColumnHeader numeric>
-                {t("budget.carried")}
-              </TableColumnHeader>
-              <TableColumnHeader numeric>{t("budget.spent")}</TableColumnHeader>
-              <TableColumnHeader numeric>
-                {t("budget.available")}
-              </TableColumnHeader>
-              <TableColumnHeader>{t("budget.used")}</TableColumnHeader>
-            </TableRow>
-          </TableHead>
-          {pending ? (
-            <TableLoader skeletonRows={4} />
-          ) : (
-            <TableBody>
-              {groups.length === 0 && (
-                <TableEmpty>{t("budget.empty")}</TableEmpty>
-              )}
-              {groups.map((group) => (
-                <Fragment key={group.root.id}>
-                  {/* A lone budget on the top category names the group itself. */}
-                  {(group.rows.length > 1 ||
-                    group.rows[0]?.entry !== group.root) && (
-                    <TableGroupRow>{group.root.name}</TableGroupRow>
-                  )}
-                  {group.rows.map((row) => {
-                    const over = row.progress.available.amount < 0;
-                    return (
-                      <TableRow key={row.budget.id} value={row.budget.id}>
-                        <TableRowHeader text="truncate">
-                          <Link
-                            to="/planning/budgets/$id"
-                            params={{ id: row.budget.id }}
-                            search={{ month }}
-                          >
-                            {row.label}
-                          </Link>
-                        </TableRowHeader>
-                        {figures(row.progress)}
-                        <TableCell>
-                          <ProgressBar
-                            size="sm"
-                            hideLabel
-                            showValue
-                            label={t("budget.meter", { name: row.label })}
-                            value={used(row.progress)}
-                            tone={over ? "danger" : "accent"}
-                            {...(over
-                              ? { valueText: t("budget.overspent") }
-                              : {})}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                  {group.subtotal !== undefined && (
-                    <TableRow>
-                      <TableRowHeader>
-                        {t("budget.subtotal", { name: group.root.name })}
-                      </TableRowHeader>
-                      {figures(group.subtotal)}
-                      <TableCell />
-                    </TableRow>
-                  )}
-                </Fragment>
-              ))}
-            </TableBody>
-          )}
-        </TableContent>
-      </Table>
-      <Table
-        columns={2}
-        variant="framed"
-        // A long category path truncates instead of pushing the amount out of a phone's width.
-        layout="fixed"
-        loading={totals.isFetching && !totals.isPending}
-      >
-        <TableContent>
-          <TableCaption>{t("budget.unbudgeted")}</TableCaption>
-          <TableHead>
-            <TableRow>
-              <TableColumnHeader>{t("budget.category")}</TableColumnHeader>
-              <TableColumnHeader numeric>{t("budget.spent")}</TableColumnHeader>
-            </TableRow>
-          </TableHead>
-          {totals.isPending || pending ? (
-            <TableLoader skeletonRows={2} />
-          ) : (
-            <TableBody>
-              {loose.length === 0 && (
-                <TableEmpty>{t("budget.unbudgetedEmpty")}</TableEmpty>
-              )}
-              {loose.map(({ entry, total }) => (
-                <TableRow key={entry.id} value={entry.id}>
-                  <TableRowHeader text="truncate">{entry.path}</TableRowHeader>
-                  <TableCell numeric>{money(total)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          )}
-        </TableContent>
-      </Table>
-    </Stack>
+      )}
+    </>
   );
 }

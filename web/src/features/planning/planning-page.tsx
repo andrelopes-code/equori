@@ -143,7 +143,9 @@ export function PlanningPage() {
           )}
           {shownTab === "schedules" && <SchedulesTab onCreate={create} />}
           {shownTab === "subscriptions" && <SubscriptionsTab />}
-          {shownTab === "budgets" && <BudgetsTab month={month} />}
+          {shownTab === "budgets" && (
+            <BudgetsTab month={month} onCreate={createBudget} />
+          )}
         </div>
       </PageBody>
     </Page>
