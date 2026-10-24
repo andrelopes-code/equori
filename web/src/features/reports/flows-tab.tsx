@@ -1,6 +1,5 @@
 import type { ChartSeries } from "@slotted/core/chart";
 import { Chart } from "@slotted/react/chart";
-import { Field, FieldLabel } from "@slotted/react/field";
 import { Inline } from "@slotted/react/inline";
 import { InlineMessage } from "@slotted/react/inline-message";
 import {
@@ -174,25 +173,22 @@ export function FlowsTab({
   ] as const;
   const controls = (
     <Inline gap={3} wrap="wrap">
-      <Field>
-        <FieldLabel>{t("report.flows.account")}</FieldLabel>
-        <ChoiceSelect
-          label={t("report.flows.account")}
-          choices={offered.map((o) => ({
-            value: o.account.id,
-            label: o.account.name,
-            group: t(`accountChoice.group.${o.group}`),
-          }))}
-          multiple={false}
-          value={accountID ?? null}
-          onChange={(next) => {
-            if (typeof next === "string")
-              onChange({
-                account: next === offered[0]?.account.id ? undefined : next,
-              });
-          }}
-        />
-      </Field>
+      <ChoiceSelect
+        label={t("report.flows.account")}
+        choices={offered.map((o) => ({
+          value: o.account.id,
+          label: o.account.name,
+          group: t(`accountChoice.group.${o.group}`),
+        }))}
+        multiple={false}
+        value={accountID ?? null}
+        onChange={(next) => {
+          if (typeof next === "string")
+            onChange({
+              account: next === offered[0]?.account.id ? undefined : next,
+            });
+        }}
+      />
       <SegmentedControl
         size="sm"
         aria-label={t("report.flows.by")}

@@ -1,4 +1,3 @@
-import { Field, FieldLabel } from "@slotted/react/field";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
@@ -21,17 +20,14 @@ export function ValuationCurrency({
     .filter((i) => i.type === "currency")
     .map((i) => ({ value: i.code, label: i.code }));
   return (
-    <Field>
-      <FieldLabel>{t("report.valueIn")}</FieldLabel>
-      <ChoiceSelect
-        label={t("report.valueIn")}
-        choices={currencies}
-        multiple={false}
-        value={value ?? null}
-        onChange={(next) => {
-          if (typeof next === "string") onChange(next);
-        }}
-      />
-    </Field>
+    <ChoiceSelect
+      label={t("report.valueIn")}
+      choices={currencies}
+      multiple={false}
+      value={value ?? null}
+      onChange={(next) => {
+        if (typeof next === "string") onChange(next);
+      }}
+    />
   );
 }
