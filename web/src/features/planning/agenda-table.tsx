@@ -13,7 +13,9 @@ import {
   TableRowHeader,
 } from "@slotted/react/table";
 import type { TableHandle } from "@slotted/react/table";
+import { Stack } from "@slotted/react/stack";
 import { Tag } from "@slotted/react/tag";
+import { Text } from "@slotted/react/typography";
 import { Fragment } from "react";
 import type { RefObject } from "react";
 
@@ -81,7 +83,20 @@ export function AgendaTable({
     return (
       <TableRow key={r.occurrence.id} value={r.occurrence.id}>
         <TableRowHeader text="truncate">{name}</TableRowHeader>
-        <TableCell>{formatDate(r.occurrence.expected_on, locale)}</TableCell>
+        <TableCell>
+          <Stack gap={0}>
+            <Text size="sm">
+              {formatDate(r.occurrence.expected_on, locale)}
+            </Text>
+            {r.occurrence.moved_from !== undefined && (
+              <Text size="xs" tone="muted">
+                {t("agenda.movedFrom", {
+                  date: formatDate(r.occurrence.moved_from, locale),
+                })}
+              </Text>
+            )}
+          </Stack>
+        </TableCell>
         <TableCell>
           {r.schedule !== undefined && t(kindLabel[r.schedule.kind])}
         </TableCell>

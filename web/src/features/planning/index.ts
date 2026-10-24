@@ -13,6 +13,7 @@ export {
 } from "@/features/planning/api";
 export { kindLabel } from "@/features/planning/schedule-words";
 export { OccurrenceActions } from "@/features/planning/occurrence-actions";
+export { RealizedOccurrences } from "@/features/planning/realized-occurrences";
 export { PlanningPage } from "@/features/planning/planning-page";
 export { validatePlanningSearch } from "@/features/planning/planning-search";
 export { SchedulePage } from "@/features/planning/schedule-page";

@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
+import { planningApi, rent, rentOctober } from "@/testing/planning-api";
 import {
   foodID,
   leisureID,
@@ -60,6 +61,60 @@ beforeEach(() => {
 });
 
 describe("transaction detail", () => {
+  it("lists the occurrences the transaction realized and releases one", async () => {
+    const sent: string[] = [];
+    const realized = {
+      ...rentOctober,
+      state: "realized",
+      transaction_id: txID,
+    };
+    const base = api();
+    const planning = planningApi({
+      "GET /api/v1/occurrences": () => json(200, { items: [realized] }),
+      [`POST /api/v1/occurrences/${realized.id}/unrealize`]: () => {
+        sent.push("unrealize");
+        return json(200, { ...rentOctober, state: "expected" });
+      },
+    });
+    await renderApp(`/transactions/${txID}`, {
+      fetch: Object.assign(
+        (input: RequestInfo | URL, init?: RequestInit) => {
+          const path = new URL(new Request(input, init).url).pathname;
+          return path.startsWith("/api/v1/occurrences") ||
+            path.startsWith("/api/v1/schedules")
+            ? planning(input, init)
+            : base(input, init);
+        },
+        { calls: [] },
+      ),
+    });
+    const section = await screen.findByRole("region", {
+      name: catalogEn["detail.occurrences"],
+    });
+    expect(
+      await within(section).findByText(rent.description),
+    ).toBeInTheDocument();
+    const user = userEvent.setup();
+    await user.click(
+      within(section).getByRole("button", {
+        name: catalogEn["occurrence.actions"].replace("{name}", "Rent"),
+      }),
+    );
+    await user.click(
+      await screen.findByRole("menuitem", {
+        name: catalogEn["occurrence.unrealize"],
+      }),
+    );
+    await user.click(
+      within(await screen.findByRole("dialog")).getByRole("button", {
+        name: catalogEn["occurrence.unrealize"],
+      }),
+    );
+    await waitFor(() => {
+      expect(sent).toEqual(["unrealize"]);
+    });
+  });
+
   it("shows the transaction as a page with its postings, facts and history", async () => {
     await renderApp(`/transactions/${txID}`, { width: 390, fetch: api() });
     expect(

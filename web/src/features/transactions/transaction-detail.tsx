@@ -31,6 +31,7 @@ import { useMemo, useState } from "react";
 
 import { ProblemError, errorText } from "@/api/problem";
 import { useCategoryEntries } from "@/features/categories";
+import { RealizedOccurrences } from "@/features/planning";
 import { DetailActions } from "@/features/transactions/detail-actions";
 import { AttachmentsSection } from "@/features/transactions/attachments-section";
 import { CategorySection } from "@/features/transactions/category-section";
@@ -294,6 +295,7 @@ export function TransactionDetail({
               <LinksSection transaction={tx} />
             </DetailPanelSection>
           )}
+          <RealizedOccurrences transaction={tx} />
           <DetailPanelSection
             name="attachments"
             label={t("detail.attachments")}

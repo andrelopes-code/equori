@@ -1449,6 +1449,9 @@ export const catalogEn = {
   "subscriptions.total": "Total",
   "subscriptions.empty": "No subscription",
   "subscriptions.actions": "Actions for {name}",
+  "agenda.movedFrom": "Moved from {date}",
+  "detail.occurrences": "Scheduled occurrences",
+  "detail.occurrenceOf": "Expected on {date}, {amount}",
 } as const;
 
 export type Catalog = { [K in keyof typeof catalogEn]: string };

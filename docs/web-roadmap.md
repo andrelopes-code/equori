@@ -126,7 +126,7 @@ Functions:
 
 ## 5. Schedules and occurrences
 
-Status: Delivered. Operations: `listSchedules`, `createSchedule`, `getSchedule`, `listOccurrences`, `realizeOccurrence`, `unrealizeOccurrence`, `skipOccurrence`, `moveOccurrence`, `changeScheduleTerms`, `pauseSchedule`, `endSchedule`, `listCalendars` (`features/planning/`; occurrence actions also in `features/accounts/scheduled-tab.tsx`).
+Status: Delivered. Operations: `listSchedules`, `createSchedule`, `getSchedule`, `listOccurrences`, `realizeOccurrence`, `unrealizeOccurrence`, `skipOccurrence`, `moveOccurrence`, `changeScheduleTerms`, `pauseSchedule`, `endSchedule`, `listCalendars` (`features/planning/`; occurrence actions also in `features/accounts/scheduled-tab.tsx`; occurrences realized by a transaction on its detail, read from the occurrences 31 days either side of its date).
 
 Scenarios: S27, S28, S29, S62. Domain: phase P7.
 
@@ -165,8 +165,6 @@ Integration with other screens:
 Region: the calendar default comes from the user's region (ADR 016); weekday and month names come from the locale.
 
 Not delivered:
-- Moved-from date on a row: `Occurrence` has no field for the date before a move.
-- Occurrences realized by a transaction on its detail: `Occurrence` has no `transaction_id`, so no lookup tells which transaction realized an occurrence.
 - Upcoming rows in `/transactions`: the ledger lists none since commit `8d59d23`; the agenda and the account's scheduled tab carry the row actions.
 - Marks on the calendar's days: Slotted finding "A calendar day cannot carry a mark of what falls on it".
 - The server does not check `match_tolerance_bp` on a manual realize; the realize dialog marks the candidates outside it.

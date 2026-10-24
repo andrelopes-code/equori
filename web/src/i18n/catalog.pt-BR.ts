@@ -1470,4 +1470,7 @@ export const catalogPtBR: Catalog = {
   "subscriptions.total": "Total",
   "subscriptions.empty": "Nenhuma assinatura",
   "subscriptions.actions": "Ações de {name}",
+  "agenda.movedFrom": "Movida de {date}",
+  "detail.occurrences": "Ocorrências agendadas",
+  "detail.occurrenceOf": "Prevista para {date}, {amount}",
 };

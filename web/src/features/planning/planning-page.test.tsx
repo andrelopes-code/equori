@@ -67,6 +67,25 @@ describe("PlanningPage agenda", () => {
     ]);
   });
 
+  it("says where a moved occurrence was expected before", async () => {
+    await renderApp("/planning", {
+      fetch: api({
+        "GET /api/v1/occurrences": (req) =>
+          new URL(req.url).searchParams.get("state") === "overdue"
+            ? json(200, { items: [] })
+            : json(200, {
+                items: [{ ...salary, moved_from: "2026-10-18" }],
+              }),
+      }),
+    });
+    const row = await screen.findByRole("row", { name: /^Salary/ });
+    expect(
+      within(row).getByText(
+        catalogEn["agenda.movedFrom"].replace("{date}", "10/18/2026"),
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("totals the month's expected inflow and outflow", async () => {
     await renderApp("/planning", { fetch: api() });
     const figures = await screen.findByRole("region", {
