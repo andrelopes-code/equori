@@ -49,6 +49,44 @@ export const realizedResults = [
   },
 ];
 
+export const dividendTxID = "d0000000-0000-4000-8000-000000000011";
+export const jcpTxID = "d0000000-0000-4000-8000-000000000012";
+
+// S65: a dividend of 10.00 `exempt` with nothing withheld, a JCP of 45.00 `exclusive` with 6.75
+// withheld, and a payment of a code the catalogs do not know, without a treatment.
+export const incomeEvents = [
+  {
+    transaction_id: dividendTxID,
+    account_id: securityID,
+    instrument: "MXRF11",
+    date: "2026-10-15",
+    income_type: "dividend",
+    tax_treatment: "exempt",
+    gross: brl(1000),
+    withheld: brl(0),
+  },
+  {
+    transaction_id: jcpTxID,
+    account_id: petrID,
+    instrument: "PETR4",
+    date: "2026-10-20",
+    income_type: "jcp",
+    tax_treatment: "exclusive",
+    gross: brl(4500),
+    withheld: brl(675),
+  },
+  {
+    transaction_id: usdSaleID,
+    account_id: petrID,
+    instrument: "PETR4",
+    date: "2026-11-02",
+    income_type: "royalty",
+    tax_treatment: null,
+    gross: usd(2000),
+    withheld: usd(300),
+  },
+];
+
 type Route = Parameters<typeof fakeApi>[0][string];
 
 // Records the `year` of each request in `years`.
@@ -56,8 +94,13 @@ export function taxYearApi(
   years: string[],
   routes: Record<string, Route> = {},
   results: unknown[] = realizedResults,
+  income: unknown[] = incomeEvents,
 ) {
   return portfolioApi({
+    "GET /api/v1/income-events": (req) => {
+      years.push(`income ${new URL(req.url).searchParams.get("year") ?? ""}`);
+      return json(200, { items: income });
+    },
     "GET /api/v1/realized-results": (req) => {
       years.push(new URL(req.url).searchParams.get("year") ?? "");
       return json(200, { items: results });

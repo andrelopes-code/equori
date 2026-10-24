@@ -2,7 +2,7 @@
 
 Sequential guide for the screens of `web/`. Each item names the screens, their functions, the API operations they consume and their dependencies. It is not the source of truth: the implementer of an item reads `api/openapi.yaml`, the ADRs, the scenarios of `docs/domain/06-scenarios.md`, `web/CLAUDE.md` and the existing code before designing the screen. Field lists below are a map of the contract, not a form specification.
 
-Status snapshot: 2026-10-24, commit `27707c0`.
+Status snapshot: 2026-10-24, commit `5afd492`.
 
 ## Status legend
 
@@ -28,7 +28,7 @@ Status snapshot: 2026-10-24, commit `27707c0`.
 | 8 | Instruments and prices | Delivered | — |
 | 9 | Trades and investment income entry | Delivered | 8 |
 | 10 | Portfolio | Delivered | 8, 9 |
-| 11 | Tax year report of investments | No screen | 9 |
+| 11 | Tax year report of investments | Delivered | 9 |
 | 12 | Reports | Delivered | 10 |
 | 13 | Calendars and holidays | No screen | — |
 | 14 | Language model settings: usage and privacy | Partial | — |
@@ -270,7 +270,7 @@ Functions:
 
 ## 11. Tax year report of investments
 
-Status: No screen.
+Status: Delivered. Operations: `listRealizedResults`, `listIncomeEvents` (`features/portfolio/`: `/portfolio/year`, opened from `/portfolio`; the panel and the year are in the address). The report reads the calendar year, 1 January to 31 December, because the contract takes `year` and declares no fiscal year of a jurisdiction. The contract has no net amount of an income event: the screen shows the gross less the withheld. Totals add only amounts of one currency, so a year with two currencies has one total per currency.
 
 Operations: `listRealizedResults`, `listIncomeEvents`.
 

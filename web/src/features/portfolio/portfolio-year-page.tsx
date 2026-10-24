@@ -14,6 +14,7 @@ import {
 import { Tab, TabList, Tabs } from "@slotted/react/tabs";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 
+import { IncomeEventsTab } from "@/features/portfolio/income-events-tab";
 import { RealizedResultsTab } from "@/features/portfolio/realized-results-tab";
 import { maxYear, minYear } from "@/features/portfolio/year-search";
 import type { YearSearch, YearTab } from "@/features/portfolio/year-search";
@@ -103,7 +104,11 @@ export function PortfolioYearPage() {
         </PageHeaderTabs>
       </PageHeader>
       <PageBody>
-        {tab === "realized" && <RealizedResultsTab year={year} />}
+        {tab === "realized" ? (
+          <RealizedResultsTab year={year} />
+        ) : (
+          <IncomeEventsTab year={year} />
+        )}
       </PageBody>
     </Page>
   );
