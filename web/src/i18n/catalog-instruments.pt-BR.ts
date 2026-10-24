@@ -19,6 +19,8 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instruments.type.crypto": "Criptoativos",
   "instruments.col.code": "Código",
   "instruments.col.name": "Nome",
+  "instruments.col.type": "Tipo",
+  "instruments.search": "Buscar por código ou nome",
   "instruments.col.subtype": "Subtipo",
   "instruments.col.quote": "Moeda de cotação",
   "instruments.col.exchange": "Bolsa",

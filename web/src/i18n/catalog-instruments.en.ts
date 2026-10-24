@@ -20,6 +20,8 @@ export const instrumentsEn = {
   "instruments.type.crypto": "Crypto assets",
   "instruments.col.code": "Code",
   "instruments.col.name": "Name",
+  "instruments.col.type": "Type",
+  "instruments.search": "Search by code or name",
   "instruments.col.subtype": "Subtype",
   "instruments.col.quote": "Quote currency",
   "instruments.col.exchange": "Exchange",

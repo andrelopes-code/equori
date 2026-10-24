@@ -21,36 +21,35 @@ import { useMemo, useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { DefineInstrumentDialog } from "@/features/instruments/define-instrument-dialog";
-import { groupByType } from "@/features/instruments/instrument-groups";
-import { InstrumentsList } from "@/features/instruments/instruments-list";
+import { catalogRows } from "@/features/instruments/catalog-rows";
 import { PriceImportDialog } from "@/features/instruments/price-import-dialog";
-import { InstrumentsTable } from "@/features/instruments/instruments-table";
-import { useLatestPrices } from "@/features/instruments/use-latest-prices";
-import { instrumentsQuery } from "@/features/setup";
+import { InstrumentsGrid } from "@/features/instruments/instruments-grid";
+import { instrumentsQuery, settingsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { HeaderAction } from "@/ui/header-action";
 import { QueryError } from "@/ui/query-error";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 // The currencies and securities of the instance by type, each with its latest price.
 export function InstrumentsPage() {
   const t = useT();
   const api = useApi();
-  const compact = useMediaQuery(compactQuery);
   const instruments = useQuery(instrumentsQuery(api));
+  const base = useQuery(settingsQuery(api)).data?.base_currency;
   const items = useMemo(
     () => instruments.data?.items ?? [],
     [instruments.data],
   );
-  const groups = useMemo(() => groupByType(items), [items]);
-  const latest = useLatestPrices(items);
+  const rows = useMemo(
+    () => (base === undefined ? [] : catalogRows(items, base)),
+    [items, base],
+  );
   const [defining, setDefining] = useState(false);
   const [importing, setImporting] = useState(false);
   const define = () => {
     setDefining(true);
   };
   return (
-    <Page width="full">
+    <Page width="full" fill>
       <PageHeader size="lg">
         <PageHeaderTitleArea>
           <PageHeaderTitleRow>
@@ -96,17 +95,10 @@ export function InstrumentsPage() {
               <Button onClick={define}>{t("instruments.define")}</Button>
             </ResultStateActions>
           </ResultState>
-        ) : compact ? (
-          <InstrumentsList
-            groups={groups}
-            latest={latest}
-            loading={instruments.isPending}
-          />
         ) : (
-          <InstrumentsTable
-            groups={groups}
-            latest={latest}
-            loading={instruments.isPending}
+          <InstrumentsGrid
+            rows={rows}
+            loading={instruments.isPending || base === undefined}
           />
         )}
       </PageBody>

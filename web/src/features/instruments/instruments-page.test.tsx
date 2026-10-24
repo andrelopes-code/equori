@@ -7,43 +7,74 @@ import { json, problem } from "@/testing/fake-api";
 import { instrumentsApi as api } from "@/testing/instruments-api";
 import { renderApp } from "@/testing/render-app";
 
+const gridRows = (grid: HTMLElement) =>
+  within(grid)
+    .getAllByRole("row")
+    .map(
+      (row) =>
+        [
+          ...row.querySelectorAll(
+            '[role="rowheader"], [role="gridcell"], [role="columnheader"]',
+          ),
+        ]
+          .map((cell) => cell.textContent)
+          .join("|") || row.textContent,
+    );
+
 describe("Instrument catalog", () => {
   it("lists the instruments by type with the latest price and its date", async () => {
     await renderApp("/instruments", { fetch: api() });
-    const table = await screen.findByRole("table", {
+    const grid = await screen.findByRole("grid", {
       name: catalogEn["instruments.caption"],
     });
-    await within(table).findByText("38.45");
-    const lines = within(table)
-      .getAllByRole("row")
-      .map((row) =>
-        [...row.querySelectorAll("th, td, [role=gridcell]")]
-          .map((cell) => cell.textContent)
-          .join("|"),
-      );
-    const at = (prefix: string) => lines.findIndex((l) => l.startsWith(prefix));
-    expect(lines[at("PETR4")]).toBe(
-      "PETR4|Petrobras PN||BRL|B3SA|38.45|10/16/2026",
-    );
-    expect(lines[at("VALE3")]).toBe("VALE3|Vale ON||BRL|B3SA|61.20|10/10/2026");
-    expect(lines[at("USD")]).toBe("USD|Dollar||||5.4830|10/16/2026");
-    expect(lines[at("CDB1")]).toBe(
+    await within(grid).findByText("38.45");
+    expect(gridRows(grid)).toEqual([
+      "Code|Name|Subtype|Quote currency|Exchange|Latest price|Price date",
+      "Currencies · 2",
+      "BRL|Real|||||",
+      "USD|Dollar||||5.4830|10/16/2026",
+      "Fixed income · 1",
       `CDB1|CDB Bank One|cdb|BRL||${catalogEn["instruments.noPrice"]}|`,
-    );
-    expect(within(table).getByRole("link", { name: "PETR4" })).toHaveAttribute(
-      "href",
-      "/instruments/PETR4",
-    );
-    const heading = (type: string) =>
-      lines.findIndex(
-        (l) => l === catalogEn[`instruments.type.${type}` as never],
+      "Stocks · 2",
+      "PETR4|Petrobras PN||BRL|B3SA|38.45|10/16/2026",
+      "VALE3|Vale ON||BRL|B3SA|61.20|10/10/2026",
+    ]);
+  });
+
+  it("asks for the price of each instrument but not of the base currency", async () => {
+    const asked: string[] = [];
+    const fetch = api({
+      "GET /api/v1/prices": (req) => {
+        asked.push(new URL(req.url).searchParams.get("instrument") ?? "");
+        return json(200, { items: [] });
+      },
+    });
+    await renderApp("/instruments", { fetch });
+    await screen.findByRole("grid", { name: catalogEn["instruments.caption"] });
+    await waitFor(() => {
+      expect(new Set(asked)).toEqual(
+        new Set(["USD", "PETR4", "VALE3", "CDB1"]),
       );
-    expect(heading("currency")).toBeGreaterThan(-1);
-    expect(heading("currency")).toBeLessThan(at("BRL"));
-    expect(at("USD")).toBeLessThan(heading("stock"));
-    expect(heading("stock")).toBeLessThan(at("PETR4"));
-    expect(at("VALE3")).toBeLessThan(heading("fixed_income"));
-    expect(heading("fixed_income")).toBeLessThan(at("CDB1"));
+    });
+  });
+
+  it("searches the instruments by code or name", async () => {
+    await renderApp("/instruments", { fetch: api() });
+    const grid = await screen.findByRole("grid", {
+      name: catalogEn["instruments.caption"],
+    });
+    await within(grid).findByText("38.45");
+    const user = userEvent.setup();
+    await user.type(
+      screen.getByRole("searchbox", { name: catalogEn["instruments.search"] }),
+      "petro",
+    );
+    await waitFor(() => {
+      expect(gridRows(grid).slice(1)).toEqual([
+        "Stocks · 1",
+        "PETR4|Petrobras PN||BRL|B3SA|38.45|10/16/2026",
+      ]);
+    });
   });
 
   it("filters the subtype choices by the chosen type and sends the definition", async () => {

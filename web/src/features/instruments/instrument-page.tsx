@@ -34,7 +34,7 @@ import { PriceHistory } from "@/features/instruments/price-history";
 import { RecordPriceDialog } from "@/features/instruments/record-price-dialog";
 import { TermsDialog } from "@/features/instruments/terms-dialog";
 import { TermsSection } from "@/features/instruments/terms-section";
-import { quoteOf } from "@/features/instruments/use-latest-prices";
+import { quoteOf } from "@/features/instruments/quote";
 import { settingsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { HeaderAction } from "@/ui/header-action";
