@@ -296,6 +296,15 @@
     ]
   },
   {
+    "path": "/portfolio/year",
+    "topics": ["investments"],
+    "screen": "Tax year of investments",
+    "tasks": [
+      "see the sales of a calendar year with cost, proceeds, result and tax class",
+      "see the result of the year by month and by tax class"
+    ]
+  },
+  {
     "path": "/reports",
     "topics": ["reports"],
     "screen": "Reports",

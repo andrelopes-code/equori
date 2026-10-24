@@ -1,3 +1,4 @@
+import { ButtonLink } from "@slotted/react/button";
 import { Field, FieldLabel } from "@slotted/react/field";
 import { Page, PageBody } from "@slotted/react/page";
 import {
@@ -85,6 +86,30 @@ export function PortfolioPage() {
       </Field>
     </>
   );
+  const yearLink = (
+    <ButtonLink
+      variant="outline"
+      tone="secondary"
+      href="/portfolio/year"
+      // Workaround for Slotted finding "ButtonLink render props cannot be spread onto a
+      // router link": the anchor keeps its href for a modified click, and a plain click
+      // navigates inside the application.
+      onClick={(event) => {
+        if (
+          event.button !== 0 ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey
+        )
+          return;
+        event.preventDefault();
+        void navigate({ to: "/portfolio/year" });
+      }}
+    >
+      {t("taxYear.open")}
+    </ButtonLink>
+  );
   return (
     <Page width="full">
       <PageHeader size="lg">
@@ -96,7 +121,10 @@ export function PortfolioPage() {
                 {t("portfolio.subtitle")}
               </PageHeaderSubheading>
             </PageHeaderTitle>
-            <PageHeaderActions>{!compact && controls}</PageHeaderActions>
+            <PageHeaderActions>
+              {!compact && controls}
+              {yearLink}
+            </PageHeaderActions>
           </PageHeaderTitleRow>
         </PageHeaderTitleArea>
       </PageHeader>

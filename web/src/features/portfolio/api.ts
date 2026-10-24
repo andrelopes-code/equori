@@ -55,3 +55,13 @@ export function returnQuery(
     enabled: enabled && accountID !== undefined && valueIn !== undefined,
   });
 }
+
+export function realizedResultsQuery(api: Client<paths>, year: number) {
+  return queryOptions({
+    queryKey: ["realized-results", year] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/realized-results", { params: { query: { year } } }),
+      ),
+  });
+}

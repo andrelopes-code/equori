@@ -1,6 +1,28 @@
 import type { portfolioEn } from "@/i18n/catalog-portfolio.en";
 
 export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
+  "taxYear.title": "Investimentos em {year}",
+  "taxYear.range": "De {from} a {to}.",
+  "taxYear.year": "Ano",
+  "taxYear.tabs": "Seções do ano",
+  "taxYear.tab.realized": "Resultados realizados",
+  "taxYear.tab.income": "Rendimentos",
+  "taxYear.open": "Resultados realizados e rendimentos de um ano",
+  "taxYear.unclassified": "Sem classificação",
+  "taxYear.realized.title": "Resultados realizados",
+  "taxYear.realized.empty": "Nenhuma venda neste ano.",
+  "taxYear.totals.title": "Totais",
+  "taxYear.totals.month": "Resultado por mês",
+  "taxYear.totals.class": "Resultado por classe fiscal",
+  "taxYear.month": "Mês",
+  "taxYear.taxClass": "Classe fiscal",
+  "taxYear.date": "Data",
+  "taxYear.instrument": "Ativo",
+  "taxYear.account": "Conta",
+  "taxYear.quantity": "Quantidade",
+  "taxYear.cost": "Custo",
+  "taxYear.proceeds": "Receita",
+  "taxYear.result": "Resultado",
   "nav.portfolio": "Carteira",
   "portfolio.subtitle":
     "Posições, alocação e retorno das contas de investimento em uma data.",
