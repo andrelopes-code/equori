@@ -25,6 +25,10 @@ export interface ReportsSearch {
   class?: "income" | undefined;
   // The category whose children the categories tab lists; the top level when absent.
   parent?: string | undefined;
+  // The account of the flows tab; the first open account when absent.
+  account?: string | undefined;
+  // The granularity of the flows tab; day when absent.
+  by?: "month" | undefined;
   // The period before is read beside the period.
   compare?: true | undefined;
 }
@@ -59,6 +63,8 @@ export function validateReportsSearch(
     to: period ? to : undefined,
     class: raw.class === "income" ? "income" : undefined,
     parent: matching(raw.parent, uuidPattern),
+    account: matching(raw.account, uuidPattern),
+    by: raw.by === "month" ? "month" : undefined,
     compare: raw.compare === true || raw.compare === "true" ? true : undefined,
   };
 }

@@ -1,5 +1,8 @@
 import { json } from "@/testing/fake-api";
-import { sharedRoutes } from "@/testing/transaction-api";
+import {
+  accounts as sharedAccounts,
+  sharedRoutes,
+} from "@/testing/transaction-api";
 
 export const brl = (amount: number) => ({ amount, currency: "BRL" });
 
@@ -112,6 +115,53 @@ export function categoryReportRoutes() {
         200,
         categoryTotalsAt(q.get("from") ?? "", q.get("class") ?? ""),
       );
+    },
+  };
+}
+
+export const checkingAccountID = "11111111-1111-4111-8111-111111111111";
+export const savingsAccountID = "88888888-8888-4888-8888-888888888888";
+export const visaID = "99999999-9999-4999-8999-999999999999";
+
+const flowDay = (date: string, inflow: number, outflow: number) => ({
+  date,
+  inflow: brl(inflow),
+  outflow: brl(outflow),
+});
+
+// S115 on the checking account: 2026-10-05 inflow 1,000.00 and outflow 125.00; 2026-10-07
+// outflow 8.00. A day in September adds 50.00 of inflow.
+const checkingDays = [
+  flowDay("2026-09-20", 5000, 0),
+  flowDay("2026-10-05", 100000, 12500),
+  flowDay("2026-10-07", 0, 800),
+];
+
+export function flowReportRoutes() {
+  return {
+    ...reportApiRoutes(),
+    "GET /api/v1/accounts": () =>
+      json(200, {
+        items: [
+          ...sharedAccounts,
+          {
+            id: visaID,
+            name: "Visa",
+            class: "liability",
+            kind: "credit_card",
+            currency: "BRL",
+          },
+        ],
+      }),
+    "GET /api/v1/reports/flows": (req: Request) => {
+      const q = new URL(req.url).searchParams;
+      const from = q.get("from") ?? "";
+      const to = q.get("to") ?? "";
+      const days =
+        q.get("account_id") === checkingAccountID ? checkingDays : [];
+      return json(200, {
+        items: days.filter((d) => d.date >= from && d.date <= to),
+      });
     },
   };
 }

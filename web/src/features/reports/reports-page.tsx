@@ -19,6 +19,7 @@ import { useDeferredValue, useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { CategoriesTab } from "@/features/reports/categories-tab";
+import { FlowsTab } from "@/features/reports/flows-tab";
 import { NetWorthTab } from "@/features/reports/net-worth-tab";
 import { periodLabel } from "@/features/reports/period-label";
 import { ReportPeriodControl } from "@/features/reports/report-period-control";
@@ -187,6 +188,15 @@ export function ReportsPage() {
         <div aria-busy={shownTab !== (chosen ?? current) || undefined}>
           {shownTab === "net-worth" && (
             <NetWorthTab count={count} valueIn={valueIn} />
+          )}
+          {shownTab === "flows" && (
+            <FlowsTab
+              period={period}
+              search={search}
+              onChange={(patch) => {
+                void change(patch);
+              }}
+            />
           )}
           {shownTab === "categories" && (
             <CategoriesTab

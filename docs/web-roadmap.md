@@ -2,7 +2,7 @@
 
 Sequential guide for the screens of `web/`. Each item names the screens, their functions, the API operations they consume and their dependencies. It is not the source of truth: the implementer of an item reads `api/openapi.yaml`, the ADRs, the scenarios of `docs/domain/06-scenarios.md`, `web/CLAUDE.md` and the existing code before designing the screen. Field lists below are a map of the contract, not a form specification.
 
-Status snapshot: 2026-10-24, commit `9ba32b8`.
+Status snapshot: 2026-10-24, commit `27707c0`.
 
 `/admin` and `web/src/features/admin/` are temporary and leave the application. This roadmap ignores them: an operation reachable only through `/admin` counts as having no screen. Implementers neither reuse nor extend code from `features/admin/`.
 
@@ -31,7 +31,7 @@ Status snapshot: 2026-10-24, commit `9ba32b8`.
 | 9 | Trades and investment income entry | Delivered | 8 |
 | 10 | Portfolio | Delivered | 8, 9 |
 | 11 | Tax year report of investments | No screen | 9 |
-| 12 | Reports | Partial | 10 |
+| 12 | Reports | Delivered | 10 |
 | 13 | Calendars and holidays | No screen | — |
 | 14 | Language model settings: usage and privacy | Partial | — |
 | 15 | Category suggestions outside capture | Needs ADR amendment | 14 |
@@ -196,7 +196,7 @@ Functions, budget detail:
 
 ## 7. Overview
 
-Status: Delivered. `features/overview/` draws one block per question; each block reads its own queries and fails alone. The net worth block links to Accounts because net worth includes liabilities and `/portfolio` shows none; the attention list links connections to `/accounts/links`.
+Status: Delivered. `features/overview/` draws one block per question; each block reads its own queries and fails alone. The net worth block links to the net worth tab of `/reports`; the attention list links connections to `/accounts/links`.
 
 Operations: `getNetWorth`, `listBalances`, `getBalanceSeries`, `getAccountFlows`, `getCategoryTotals`, `listOccurrences`, `getCommitted`, budgets (item 6), `listStatements`, `listGoals`, `listConnections`, `getReconciliationStatus`, `listTransactions` with `uncategorized`.
 
@@ -288,7 +288,7 @@ Region: tax classes and treatments come from the user's jurisdiction.
 
 ## 12. Reports
 
-Status: Partial. Delivered inside other screens: `getCategoryTotals` (`features/categories/category-charts.tsx`), `getAccountFlows` (`features/cards`), `getBalanceSeries` (`features/accounts`). No screen: `getNetWorth`.
+Status: Delivered. Operations: `getNetWorth`, `getCategoryTotals`, `getAccountFlows` (`features/reports/`: the net worth, categories and flows tabs of `/reports`, state in the address). `getCategoryTotals` and `getAccountFlows` also serve `features/categories/category-charts.tsx` and `features/cards`. The accrual and cash views and the statement analytics (S30) wait for phase P9: no operation is declared.
 
 Route: a reports destination, for example `/reports`.
 
