@@ -2,7 +2,7 @@
 
 Sequential guide for the screens of `web/`. Each item names the screens, their functions, the API operations they consume and their dependencies. It is not the source of truth: the implementer of an item reads `api/openapi.yaml`, the ADRs, the scenarios of `docs/domain/06-scenarios.md`, `web/CLAUDE.md` and the existing code before designing the screen. Field lists below are a map of the contract, not a form specification.
 
-Status snapshot: 2026-10-24, commit `d325617`.
+Status snapshot: 2026-10-24, commit `4051ac5`.
 
 `/admin` and `web/src/features/admin/` are temporary and leave the application. This roadmap ignores them: an operation reachable only through `/admin` counts as having no screen. Implementers neither reuse nor extend code from `features/admin/`.
 
@@ -28,7 +28,7 @@ Status snapshot: 2026-10-24, commit `d325617`.
 | 6 | Budgets | Delivered | 5 |
 | 7 | Overview | Delivered | 5, 6, 10 |
 | 8 | Instruments and prices | Delivered | — |
-| 9 | Trades and investment income entry | No screen | 8 |
+| 9 | Trades and investment income entry | Delivered | 8 |
 | 10 | Portfolio | Partial | 8, 9 |
 | 11 | Tax year report of investments | No screen | 9 |
 | 12 | Reports | Partial | 10 |
@@ -235,7 +235,7 @@ Functions, price import:
 
 ## 9. Trades and investment income entry
 
-Status: No screen.
+Status: Delivered. Operations: `recordTrade`, `recordInvestmentIncome`, `listInvestmentIncomeTypes`, `listPositions`, `listPrices` (`features/transactions/`: the trade and investment income kinds of `/transactions/new`, also opened from the security account page with `?kind=` and `account_id`). `TradeInput` and `InvestmentIncomeInput` have no instrument field: the security account holds the instrument. Withheld is always sent; the jurisdiction default for a type is not assumed.
 
 Operations: `recordTrade`, `recordInvestmentIncome`, `listInvestmentIncomeTypes`, `listPositions`, `listPrices`.
 
