@@ -1,0 +1,7 @@
+@layer app {
+  /* A link takes the size of whatever holds it (12 px in a figure card, 14 px in a chart, 16 px in a section header); every door of the overview reads the same. */
+  .link {
+    font-size: var(--slotted-font-size-sm);
+    line-height: var(--slotted-line-height-sm);
+  }
+}

@@ -2,6 +2,7 @@ import { Chart } from "@slotted/react/chart";
 import type { ChartSeries } from "@slotted/core/chart";
 
 import { OverviewBlock } from "@/features/overview/overview-block";
+import styles from "@/features/overview/spending-chart.module.css";
 import { OverviewLink } from "@/features/overview/overview-link";
 import { useSpending } from "@/features/overview/use-spending";
 import { formatMonthName } from "@/i18n/format";
@@ -49,12 +50,14 @@ export function SpendingChart({ month }: { month: string }) {
       x={{ field: "name" }}
       y={{ format: money }}
       actions={
-        <OverviewLink
-          options={{ to: "/categories" }}
-          label={t("overview.spending.open")}
-        >
-          {t("overview.open")}
-        </OverviewLink>
+        <div className={styles.actions}>
+          <OverviewLink
+            options={{ to: "/categories" }}
+            label={t("overview.spending.open")}
+          >
+            {t("overview.open")}
+          </OverviewLink>
+        </div>
       }
     />
   );

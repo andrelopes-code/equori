@@ -3,6 +3,7 @@ import { useRouter } from "@tanstack/react-router";
 import type { NavigateOptions } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import styles from "@/features/overview/overview-link.module.css";
 import { useAppLink } from "@/ui/use-app-link";
 
 export function OverviewLink({
@@ -19,6 +20,7 @@ export function OverviewLink({
   const follow = useAppLink();
   return (
     <Link
+      className={styles.link}
       href={router.buildLocation(options).href}
       onClick={follow(options)}
       {...(label === undefined ? {} : { "aria-label": label })}
