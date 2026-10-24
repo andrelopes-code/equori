@@ -27,3 +27,15 @@ export function validatePlanningSearch(
     ...(month === undefined ? {} : { month }),
   };
 }
+
+export interface BudgetSearch {
+  // YYYY-MM: the month the page reads; the current month when absent.
+  month?: string;
+}
+
+export function validateBudgetSearch(
+  raw: Record<string, unknown>,
+): BudgetSearch {
+  const { month } = validatePlanningSearch(raw);
+  return month === undefined ? {} : { month };
+}

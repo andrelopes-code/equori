@@ -1474,6 +1474,28 @@ export const catalogEn = {
   "budget.empty": "No budget for this month",
   "budget.unbudgeted": "Spending without a budget",
   "budget.unbudgetedEmpty": "Every expense of the month has a budget",
+  "budget.new": "New budget",
+  "budget.newSubtitle": "A monthly amount for one category",
+  "budget.amount": "Monthly amount",
+  "budget.firstMonth": "First month",
+  "budget.rollover": "Carry the balance to the next month",
+  "budget.rolloverHint":
+    "What is left, or overspent, adds to the next month's available amount",
+  "budget.create": "Create budget",
+  "budget.required.category": "Choose a category",
+  "budget.required.amount": "Enter an amount above zero",
+  "budget.required.after": "Choose a month after {month}",
+  "budget.addAmount": "Add amount",
+  "budget.addAmountHint": "The new amount applies from a month after {month}",
+  "budget.from": "From",
+  "budget.save": "Save amount",
+  "budget.withRollover":
+    "Monthly budget, the balance carries to the next month",
+  "budget.noRollover": "Monthly budget, each month starts anew",
+  "budget.month": "Budget month",
+  "budget.transactions": "Transactions of {month}",
+  "budget.chart": "Planned and spent by month",
+  "budget.amounts": "Amounts by month",
 } as const;
 
 export type Catalog = { [K in keyof typeof catalogEn]: string };

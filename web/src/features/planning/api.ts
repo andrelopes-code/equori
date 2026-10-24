@@ -17,6 +17,7 @@ export const planningKeys = {
     ["planning", "projection", accountID, to] as const,
   calendars: ["planning", "calendars"] as const,
   budgets: ["planning", "budgets"] as const,
+  budget: (id: string) => ["planning", "budget", id] as const,
   progress: (budgetID: string, month: string) =>
     ["planning", "budget-progress", budgetID, month] as const,
   goals: ["planning", "goals"] as const,
@@ -148,6 +149,41 @@ export function budgetsQuery(api: Client<paths>) {
             },
           }),
         ),
+      ),
+  });
+}
+
+export function budgetQuery(api: Client<paths>, id: string) {
+  return queryOptions({
+    queryKey: planningKeys.budget(id),
+    queryFn: async () =>
+      unwrap(await api.GET("/budgets/{id}", { params: { path: { id } } })),
+  });
+}
+
+export function useCreateBudget() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (budget: components["schemas"]["BudgetInput"]) =>
+      unwrap(await api.POST("/budgets", { body: budget })),
+  });
+}
+
+export function useAddBudgetAmount() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      amount,
+    }: {
+      id: string;
+      amount: components["schemas"]["BudgetAmount"];
+    }) =>
+      unwrap(
+        await api.POST("/budgets/{id}/amounts", {
+          params: { path: { id } },
+          body: amount,
+        }),
       ),
   });
 }

@@ -247,6 +247,24 @@
     ]
   },
   {
+    "path": "/planning/budgets/new",
+    "topics": ["budgets"],
+    "screen": "New budget",
+    "tasks": [
+      "create the monthly budget of a category with its first month and rollover"
+    ]
+  },
+  {
+    "path": "/planning/budgets/$id",
+    "topics": ["budgets"],
+    "screen": "Budget",
+    "tasks": [
+      "see the amounts of a budget by month and add one from a later month",
+      "compare planned and spent over the last months",
+      "open the transactions of the budget's category in a month"
+    ]
+  },
+  {
     "path": "/settings",
     "topics": ["settings_language_and_region", "privacy_and_the_assistant"],
     "screen": "Settings",

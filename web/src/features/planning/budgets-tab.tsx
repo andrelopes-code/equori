@@ -15,6 +15,7 @@ import {
   TableRowHeader,
 } from "@slotted/react/table";
 import { useQueries, useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { Fragment } from "react";
 
 import { useApi } from "@/api/api-context";
@@ -180,7 +181,13 @@ export function BudgetsTab({ month }: { month: string }) {
                     return (
                       <TableRow key={row.budget.id} value={row.budget.id}>
                         <TableRowHeader text="truncate">
-                          {row.label}
+                          <Link
+                            to="/planning/budgets/$id"
+                            params={{ id: row.budget.id }}
+                            search={{ month }}
+                          >
+                            {row.label}
+                          </Link>
                         </TableRowHeader>
                         {figures(row.progress)}
                         <TableCell>

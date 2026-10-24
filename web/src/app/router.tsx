@@ -56,9 +56,12 @@ import {
 } from "@/features/categories";
 import { GoalsPage } from "@/features/goals";
 import {
+  BudgetFormPage,
+  BudgetPage,
   PlanningPage,
   ScheduleFormPage,
   SchedulePage,
+  validateBudgetSearch,
   validatePlanningSearch,
 } from "@/features/planning";
 import { LoginPage, meQuery } from "@/features/session";
@@ -270,6 +273,19 @@ const scheduleRoute = createRoute({
   component: SchedulePage,
 });
 
+const newBudgetRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "planning/budgets/new",
+  component: BudgetFormPage,
+});
+
+const budgetRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "planning/budgets/$id",
+  validateSearch: validateBudgetSearch,
+  component: BudgetPage,
+});
+
 const adminRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "admin",
@@ -347,6 +363,8 @@ export const routeTree = rootRoute.addChildren([
     planningRoute,
     newScheduleRoute,
     scheduleRoute,
+    newBudgetRoute,
+    budgetRoute,
     accountsLayoutRoute.addChildren([
       accountsRoute,
       institutionsRoute,

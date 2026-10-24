@@ -60,6 +60,9 @@ export function PlanningPage() {
   const create = () => {
     void navigate({ to: "/planning/schedules/new" });
   };
+  const createBudget = () => {
+    void navigate({ to: "/planning/budgets/new" });
+  };
   const changeMonth = (next: string) => {
     void navigate({
       to: "/planning",
@@ -96,9 +99,9 @@ export function PlanningPage() {
               />
               <HeaderAction
                 primary
-                label={t("planning.new")}
+                label={t(current === "budgets" ? "budget.new" : "planning.new")}
                 glyph="plus"
-                onClick={create}
+                onClick={current === "budgets" ? createBudget : create}
               />
             </PageHeaderActions>
           </PageHeaderTitleRow>

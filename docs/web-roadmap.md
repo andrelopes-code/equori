@@ -2,7 +2,7 @@
 
 Sequential guide for the screens of `web/`. Each item names the screens, their functions, the API operations they consume and their dependencies. It is not the source of truth: the implementer of an item reads `api/openapi.yaml`, the ADRs, the scenarios of `docs/domain/06-scenarios.md`, `web/CLAUDE.md` and the existing code before designing the screen. Field lists below are a map of the contract, not a form specification.
 
-Status snapshot: 2026-10-24, commit `ac547c8`.
+Status snapshot: 2026-10-24, commit `22743fa`.
 
 `/admin` and `web/src/features/admin/` are temporary and leave the application. This roadmap ignores them: an operation reachable only through `/admin` counts as having no screen. Implementers neither reuse nor extend code from `features/admin/`.
 
@@ -25,7 +25,7 @@ Status snapshot: 2026-10-24, commit `ac547c8`.
 | 3 | Aggregator integrations and connections | Partial | — |
 | 4 | Institution identifiers | Partial | — |
 | 5 | Schedules and occurrences | Delivered | — |
-| 6 | Budgets | No screen | 5 |
+| 6 | Budgets | Delivered | 5 |
 | 7 | Overview | Shell | 5, 6, 10 |
 | 8 | Instruments and prices | Partial | — |
 | 9 | Trades and investment income entry | No screen | 8 |
@@ -171,7 +171,7 @@ Not delivered:
 
 ## 6. Budgets
 
-Status: No screen. Queries without a consumer exist in `features/planning/api.ts` for `listBudgets` and `getBudgetProgress`.
+Status: Delivered. Operations: `listBudgets`, `createBudget`, `getBudget`, `addBudgetAmount`, `getBudgetProgress`, `getCommitted`, `getCategoryTotals` (`features/planning/`: the budgets tab of `/planning`, `/planning/budgets/new`, `/planning/budgets/$id`). The month view leaves out a budget whose first month follows the chosen month.
 
 Operations: `listBudgets`, `createBudget`, `getBudget`, `addBudgetAmount`, `getBudgetProgress`, `getCommitted`, `getCategoryTotals`.
 
