@@ -53,6 +53,42 @@ export const positions = [
   },
 ];
 
+// S128: checking 500.00, XP cash 400.00 and 10 MXRF11 at 10.50.
+export const allocations = {
+  type: {
+    total: brl(100500),
+    groups: [
+      { key: "currency", value: brl(90000), share_bp: 8955 },
+      { key: "reit", value: brl(10500), share_bp: 1045 },
+    ],
+  },
+  currency: {
+    total: brl(100500),
+    groups: [{ key: "BRL", value: brl(100500), share_bp: 10000 }],
+  },
+  institution: {
+    total: brl(100500),
+    groups: [
+      { key: "XP", value: brl(50500), share_bp: 5024 },
+      { key: "", value: brl(50000), share_bp: 4976 },
+    ],
+  },
+};
+
+// S126: the first answer of the scenario, 500 basis points, and the one with a contribution, 333.
+export const plainReturn = {
+  annual_bp: 500,
+  flows: [],
+  opening: brl(100000),
+  closing: brl(105000),
+};
+export const contributionReturn = {
+  annual_bp: 333,
+  flows: [{ date: "2026-04-30", amount: brl(100000) }],
+  opening: brl(100000),
+  closing: brl(205000),
+};
+
 type Route = Parameters<typeof fakeApi>[0][string];
 
 export function portfolioApi(routes: Record<string, Route> = {}) {
@@ -61,6 +97,14 @@ export function portfolioApi(routes: Record<string, Route> = {}) {
     "GET /api/v1/accounts": () => json(200, { items: accounts }),
     "GET /api/v1/instruments": () => json(200, { items: instruments }),
     "GET /api/v1/positions": () => json(200, { items: positions }),
+    "GET /api/v1/reports/allocation": (req) =>
+      json(
+        200,
+        allocations[
+          new URL(req.url).searchParams.get("by") as keyof typeof allocations
+        ],
+      ),
+    "GET /api/v1/reports/return": () => json(200, plainReturn),
     ...routes,
   });
 }

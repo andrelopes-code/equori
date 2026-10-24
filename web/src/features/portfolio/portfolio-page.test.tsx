@@ -142,6 +142,15 @@ describe("Portfolio positions", () => {
     );
     const fetch = portfolioApi({
       "GET /api/v1/settings": () => json(200, { base_currency: "EUR" }),
+      "GET /api/v1/reports/allocation": () =>
+        json(200, { total: { amount: 0, currency: "EUR" }, groups: [] }),
+      "GET /api/v1/reports/return": () =>
+        json(200, {
+          annual_bp: 0,
+          flows: [],
+          opening: { amount: 0, currency: "EUR" },
+          closing: { amount: 0, currency: "EUR" },
+        }),
       "GET /api/v1/instruments": () =>
         json(200, {
           items: [

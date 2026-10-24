@@ -1,0 +1,15 @@
+@layer app {
+  /* Allocation and return side by side; each track states a zero minimum so a table scrolls in its own region (CP-03). */
+  .pair {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-6);
+    align-items: start;
+  }
+
+  @media (min-width: 1024px) {
+    .pair {
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    }
+  }
+}

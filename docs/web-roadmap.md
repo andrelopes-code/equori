@@ -2,7 +2,7 @@
 
 Sequential guide for the screens of `web/`. Each item names the screens, their functions, the API operations they consume and their dependencies. It is not the source of truth: the implementer of an item reads `api/openapi.yaml`, the ADRs, the scenarios of `docs/domain/06-scenarios.md`, `web/CLAUDE.md` and the existing code before designing the screen. Field lists below are a map of the contract, not a form specification.
 
-Status snapshot: 2026-10-24, commit `4051ac5`.
+Status snapshot: 2026-10-24, commit `9ba32b8`.
 
 `/admin` and `web/src/features/admin/` are temporary and leave the application. This roadmap ignores them: an operation reachable only through `/admin` counts as having no screen. Implementers neither reuse nor extend code from `features/admin/`.
 
@@ -29,7 +29,7 @@ Status snapshot: 2026-10-24, commit `4051ac5`.
 | 7 | Overview | Delivered | 5, 6, 10 |
 | 8 | Instruments and prices | Delivered | — |
 | 9 | Trades and investment income entry | Delivered | 8 |
-| 10 | Portfolio | Partial | 8, 9 |
+| 10 | Portfolio | Delivered | 8, 9 |
 | 11 | Tax year report of investments | No screen | 9 |
 | 12 | Reports | Partial | 10 |
 | 13 | Calendars and holidays | No screen | — |
@@ -196,7 +196,7 @@ Functions, budget detail:
 
 ## 7. Overview
 
-Status: Delivered. `features/overview/` draws one block per question; each block reads its own queries and fails alone. The net worth block links to Accounts because `/portfolio` does not exist; the attention list links connections to `/accounts/links`.
+Status: Delivered. `features/overview/` draws one block per question; each block reads its own queries and fails alone. The net worth block links to Accounts because net worth includes liabilities and `/portfolio` shows none; the attention list links connections to `/accounts/links`.
 
 Operations: `getNetWorth`, `listBalances`, `getBalanceSeries`, `getAccountFlows`, `getCategoryTotals`, `listOccurrences`, `getCommitted`, budgets (item 6), `listStatements`, `listGoals`, `listConnections`, `getReconciliationStatus`, `listTransactions` with `uncategorized`.
 
@@ -256,7 +256,7 @@ Region: income types and tax treatment come from the user's jurisdiction; no lit
 
 ## 10. Portfolio
 
-Status: Partial. Delivered: `listPositions` (`features/accounts/positions-tab.tsx`, per account). No screen: `getAllocation`, `getReturn`.
+Status: Delivered. Operations: `listPositions`, `getAllocation`, `getReturn` (`features/portfolio/`: `/portfolio`; `listPositions` also per account in `features/accounts/positions-tab.tsx`). `listPositions` takes no `value_in`, so the positions stay in the base currency and the valuation currency applies to the allocation and the return only. The return has no whole-portfolio form: the contract takes one account tree, so the screen offers the investment accounts and their parents.
 
 Reference: investments design section 4.3.
 

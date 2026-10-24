@@ -32,6 +32,7 @@ import {
   accountsQuery,
   positionsQuery,
 } from "@/features/accounts";
+import { accountLabel } from "@/features/portfolio/account-label";
 import { groupPositions } from "@/features/portfolio/portfolio-groups";
 import type {
   Position,
@@ -81,17 +82,11 @@ export function PortfolioPositions({ date }: { date: string }) {
   const byID = new Map<string, Account>(
     (accounts.data ?? []).map((a) => [a.id, a]),
   );
-  const accountLabel = (id: string) => {
-    const a = byID.get(id);
-    if (a === undefined) return id;
-    const parent =
-      a.parent_id === undefined ? undefined : byID.get(a.parent_id);
-    return parent === undefined ? a.name : `${parent.name} / ${a.name}`;
-  };
+  const labelOf = (id: string) => accountLabel(byID, id);
   const { groups, total, unvalued } = groupPositions(
     positions.data ?? [],
     by,
-    (p) => accountLabel(p.account_id),
+    (p) => labelOf(p.account_id),
     tag,
   );
   const digits = (code: string) => scale?.(code) ?? 0;
@@ -99,9 +94,9 @@ export function PortfolioPositions({ date }: { date: string }) {
   const accountCell = (p: Position) => {
     const a = byID.get(p.account_id);
     return a === undefined ? (
-      accountLabel(p.account_id)
+      labelOf(p.account_id)
     ) : (
-      <AccountLink account={a}>{accountLabel(p.account_id)}</AccountLink>
+      <AccountLink account={a}>{labelOf(p.account_id)}</AccountLink>
     );
   };
   const instrumentCell = (p: Position) => (
