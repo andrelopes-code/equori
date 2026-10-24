@@ -55,6 +55,7 @@ import {
   validateRulePrefill,
 } from "@/features/categories";
 import { GoalsPage } from "@/features/goals";
+import { PlanningPage, validatePlanningSearch } from "@/features/planning";
 import { LoginPage, meQuery } from "@/features/session";
 import { SettingsPage } from "@/features/setup";
 import {
@@ -245,6 +246,13 @@ const goalsRoute = createRoute({
   component: GoalsPage,
 });
 
+const planningRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "planning",
+  validateSearch: validatePlanningSearch,
+  component: PlanningPage,
+});
+
 const adminRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "admin",
@@ -319,6 +327,7 @@ export const routeTree = rootRoute.addChildren([
     ruleRoute,
     payeesRoute,
     goalsRoute,
+    planningRoute,
     accountsLayoutRoute.addChildren([
       accountsRoute,
       institutionsRoute,

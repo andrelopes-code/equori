@@ -3,6 +3,7 @@ export {
   budgetsQuery,
   goalsQuery,
   occurrencesQuery,
+  scheduleQuery,
   planningKeys,
   projectionQuery,
   schedulesQuery,
@@ -10,3 +11,7 @@ export {
   useDeleteGoal,
   useUpdateGoal,
 } from "@/features/planning/api";
+export { kindLabel } from "@/features/planning/schedule-words";
+export { OccurrenceActions } from "@/features/planning/occurrence-actions";
+export { PlanningPage } from "@/features/planning/planning-page";
+export { validatePlanningSearch } from "@/features/planning/planning-search";

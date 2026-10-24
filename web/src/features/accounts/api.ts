@@ -246,15 +246,6 @@ export function positionsQuery(api: Client<paths>, date: string) {
   });
 }
 
-export function scheduleQuery(api: Client<paths>, id: string) {
-  return queryOptions({
-    queryKey: ["schedules", "detail", id] as const,
-    queryFn: async () =>
-      unwrap(await api.GET("/schedules/{id}", { params: { path: { id } } })),
-    staleTime: 60_000,
-  });
-}
-
 // An account without a profile answers 404: the import page then asks for one.
 export function csvProfileQuery(api: Client<paths>, id: string) {
   return queryOptions({

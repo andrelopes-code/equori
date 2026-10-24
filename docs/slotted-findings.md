@@ -12,6 +12,7 @@ Registry of the findings reported to the Slotted owner (`web/CLAUDE.md`, "Slotte
 
 | Title                                                                                               | State    |
 | --------------------------------------------------------------------------------------------------- | -------- |
+| A calendar day cannot carry a mark of what falls on it                                              | reported |
 | A data-grid editor cannot commit the value it sets in the same event                                | open     |
 | a dialog or drawer mounted open plays no enter transition, and one unmounted on close plays no exit | open     |
 | A server-mode data-grid does not group the rows it is given                                         | open     |

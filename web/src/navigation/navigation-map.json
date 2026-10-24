@@ -16,8 +16,7 @@
     "tasks": [
       "list transactions by day",
       "filter by account, category, payee, tag, period, text or missing category",
-      "categorize several transactions at once",
-      "see upcoming scheduled occurrences"
+      "categorize several transactions at once"
     ]
   },
   {
@@ -213,6 +212,16 @@
     "tasks": [
       "create, change and delete goals",
       "see progress and what-if values"
+    ]
+  },
+  {
+    "path": "/planning",
+    "topics": ["schedules_and_occurrences"],
+    "screen": "Planning",
+    "tasks": [
+      "see the occurrences of a month by day, overdue ones first",
+      "realize, unrealize, skip or move an occurrence",
+      "see the month's expected inflow and outflow"
     ]
   },
   {

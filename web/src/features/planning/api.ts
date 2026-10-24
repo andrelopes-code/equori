@@ -8,8 +8,11 @@ import type { components, paths } from "@/api/schema.gen";
 export const planningKeys = {
   all: ["planning"] as const,
   schedules: ["planning", "schedules"] as const,
-  occurrences: (from: string, to: string) =>
-    ["planning", "occurrences", from, to] as const,
+  schedule: (id: string) => ["planning", "schedule", id] as const,
+  occurrences: (from: string, to: string, filter: OccurrenceFilter) =>
+    ["planning", "occurrences", from, to, filter] as const,
+  transactions: (accountID: string, from: string, to: string) =>
+    ["planning", "transactions", accountID, from, to] as const,
   projection: (accountID: string, to: string) =>
     ["planning", "projection", accountID, to] as const,
   budgets: ["planning", "budgets"] as const,
@@ -17,6 +20,11 @@ export const planningKeys = {
     ["planning", "budget-progress", budgetID, month] as const,
   goals: ["planning", "goals"] as const,
 };
+
+type OccurrenceFilter = Pick<
+  NonNullable<paths["/occurrences"]["get"]["parameters"]["query"]>,
+  "schedule_id" | "state"
+>;
 
 const pageLimit = 200;
 
@@ -54,15 +62,59 @@ export function schedulesQuery(api: Client<paths>) {
   });
 }
 
-export function occurrencesQuery(api: Client<paths>, from: string, to: string) {
+export function scheduleQuery(api: Client<paths>, id: string) {
   return queryOptions({
-    queryKey: planningKeys.occurrences(from, to),
+    queryKey: planningKeys.schedule(id),
+    queryFn: async () =>
+      unwrap(await api.GET("/schedules/{id}", { params: { path: { id } } })),
+    staleTime: 60_000,
+  });
+}
+
+export function occurrencesQuery(
+  api: Client<paths>,
+  from: string,
+  to: string,
+  filter: OccurrenceFilter = {},
+) {
+  return queryOptions({
+    queryKey: planningKeys.occurrences(from, to, filter),
     queryFn: async () => {
       const list = await unwrap(
-        await api.GET("/occurrences", { params: { query: { from, to } } }),
+        await api.GET("/occurrences", {
+          params: { query: { from, to, ...filter } },
+        }),
       );
       return list.items;
     },
+  });
+}
+
+// The transactions of one account in a few days around an occurrence: the ones that can realize it.
+export function accountTransactionsQuery(
+  api: Client<paths>,
+  accountID: string,
+  from: string,
+  to: string,
+) {
+  return queryOptions({
+    queryKey: planningKeys.transactions(accountID, from, to),
+    queryFn: () =>
+      everyPage(async (cursor) =>
+        unwrap(
+          await api.GET("/transactions", {
+            params: {
+              query: {
+                account_id: accountID,
+                from,
+                to,
+                limit: pageLimit,
+                ...(cursor ? { cursor } : {}),
+              },
+            },
+          }),
+        ),
+      ),
   });
 }
 
@@ -166,5 +218,62 @@ export function useDeleteGoal() {
       });
       if (result.error !== undefined) await unwrap(result);
     },
+  });
+}
+
+export function useRealizeOccurrence() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      transactionID,
+    }: {
+      id: string;
+      transactionID: string;
+    }) =>
+      unwrap(
+        await api.POST("/occurrences/{id}/realize", {
+          params: { path: { id } },
+          body: { transaction_id: transactionID },
+        }),
+      ),
+  });
+}
+
+export function useUnrealizeOccurrence() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      unwrap(
+        await api.POST("/occurrences/{id}/unrealize", {
+          params: { path: { id } },
+        }),
+      ),
+  });
+}
+
+export function useSkipOccurrence() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async ({ id, reason }: { id: string; reason: string }) =>
+      unwrap(
+        await api.POST("/occurrences/{id}/skip", {
+          params: { path: { id } },
+          body: reason === "" ? {} : { reason },
+        }),
+      ),
+  });
+}
+
+export function useMoveOccurrence() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async ({ id, date }: { id: string; date: string }) =>
+      unwrap(
+        await api.POST("/occurrences/{id}/move", {
+          params: { path: { id } },
+          body: { date },
+        }),
+      ),
   });
 }

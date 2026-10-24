@@ -1,0 +1,19 @@
+@layer app {
+  /* The list takes the width the calendar leaves (CP-03). */
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-6);
+    align-items: start;
+  }
+
+  @media (min-width: 1024px) {
+    .layout {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+  }
+
+  .list {
+    min-inline-size: 0;
+  }
+}

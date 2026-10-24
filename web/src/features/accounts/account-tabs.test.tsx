@@ -136,6 +136,66 @@ describe("Scheduled tab", () => {
       expect(tos).toContain("2027-01-15");
     });
   });
+  it("skips an expected entry from its row", async () => {
+    const sent: unknown[] = [];
+    await renderApp(`/accounts/${checkingID}?tab=scheduled`, {
+      fetch: api({
+        [`GET /api/v1/accounts/${checkingID}/projection`]: () =>
+          json(200, {
+            account_id: checkingID,
+            from: "2026-10-17",
+            to: "2027-01-15",
+            opening: money(524055),
+            closing: money(374055),
+            points: [
+              {
+                date: "2026-11-05",
+                occurrence_id: "o1",
+                schedule_id: "s1",
+                amount: money(-150000),
+                balance: money(374055),
+              },
+            ],
+          }),
+        "GET /api/v1/schedules/s1": () =>
+          json(200, {
+            id: "s1",
+            kind: "bill",
+            account_id: checkingID,
+            counterpart_id: "x",
+            description: "Aluguel",
+            match_tolerance_bp: 0,
+            grace_days: 3,
+            terms: [],
+            pauses: [],
+          }),
+        "POST /api/v1/occurrences/o1/skip": async (req) => {
+          sent.push(await req.json());
+          return json(200, {});
+        },
+      }),
+    });
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole("button", {
+        name: words("occurrence.actions", { name: "Aluguel" }),
+      }),
+    );
+    await user.click(
+      await screen.findByRole("menuitem", {
+        name: catalogEn["occurrence.skip"],
+      }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    await user.click(
+      within(dialog).getByRole("button", {
+        name: catalogEn["occurrence.skip"],
+      }),
+    );
+    await waitFor(() => {
+      expect(sent).toEqual([{}]);
+    });
+  });
 });
 
 describe("Positions tab", () => {

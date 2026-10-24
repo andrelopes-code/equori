@@ -21,6 +21,7 @@ import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { projectionQuery } from "@/features/accounts/api";
 import { ScheduleCell } from "@/features/accounts/schedule-cell";
+import { OccurrenceActions } from "@/features/planning";
 import { formatDate, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
@@ -71,7 +72,7 @@ export function ScheduledTab({
         </SegmentedControl>
       </div>
       <Table
-        columns={4}
+        columns={5}
         variant="framed"
         loading={projection.isFetching && !projection.isPending}
       >
@@ -86,6 +87,9 @@ export function ScheduledTab({
               </TableColumnHeader>
               <TableColumnHeader numeric>
                 {t("ledger.balanceAfter")}
+              </TableColumnHeader>
+              <TableColumnHeader sticky="end">
+                {t("agenda.actions")}
               </TableColumnHeader>
             </TableRow>
           </TableHead>
@@ -114,6 +118,21 @@ export function ScheduledTab({
                       {fmt.signed(point.amount, scale(point.amount.currency))}
                     </TableCell>
                     <TableCell numeric>{money(point.balance)}</TableCell>
+                    <TableCell sticky="end">
+                      <OccurrenceActions
+                        occurrence={{
+                          id: point.occurrence_id,
+                          schedule_id: point.schedule_id,
+                          expected_on: point.date,
+                          expected_amount: {
+                            amount: Math.abs(point.amount.amount),
+                            currency: point.amount.currency,
+                          },
+                          // A projection holds only open occurrences; an overdue one is dated today.
+                          state: "expected",
+                        }}
+                      />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -128,6 +147,7 @@ export function ScheduledTab({
                     <TableCell numeric>
                       {money(projection.data.closing)}
                     </TableCell>
+                    <TableCell sticky="end" />
                   </TableRow>
                 </TableSummary>
               )}
