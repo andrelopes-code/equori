@@ -214,7 +214,12 @@ export function PortfolioPositions({ date }: { date: string }) {
                       t("positions.costBasis"),
                       money(row.position.cost_basis),
                     ].join(": "),
-                    [t("positions.marketValue"), marketCell(row.position)],
+                    [
+                      t("positions.marketValue"),
+                      row.position.market_value === undefined
+                        ? t("positions.noPrice")
+                        : money(row.position.market_value),
+                    ].join(": "),
                     row.share === undefined
                       ? ""
                       : [t("portfolio.share"), shareText(row)].join(": "),

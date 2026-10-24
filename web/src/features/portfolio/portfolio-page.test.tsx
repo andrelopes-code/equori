@@ -204,4 +204,16 @@ describe("Portfolio positions", () => {
     amounts.innerHTML = container.innerHTML.replace(/[\d.,]+\s?%/g, "");
     expectNoAmounts(amounts, ["R$105.00", "R$141.00", "10.0000"]);
   });
+
+  it("writes each phone line as a label and its value", async () => {
+    await renderApp("/portfolio", { width: 390, fetch: portfolioApi() });
+    expect(
+      await screen.findByText(
+        `${catalogEn["positions.marketValue"]}: ${catalogEn["positions.noPrice"]}`,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(`${catalogEn["positions.marketValue"]}: R$105.00`),
+    ).toBeInTheDocument();
+  });
 });
