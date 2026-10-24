@@ -54,7 +54,9 @@ export function PriceHistory({
         />
       ) : (
         <>
-          <PriceChart prices={prices.data ?? []} loading={prices.isPending} />
+          {(prices.isPending || prices.data.length > 0) && (
+            <PriceChart prices={prices.data ?? []} loading={prices.isPending} />
+          )}
           <PriceTable prices={prices.data ?? []} loading={prices.isPending} />
         </>
       )}

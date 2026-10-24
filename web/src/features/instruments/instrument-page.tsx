@@ -118,7 +118,6 @@ export function InstrumentPage() {
         <Stack gap={6}>
           <DescriptionList layout="stack" aria-label={t("instrument.facts")}>
             {[
-              [t("instruments.col.code"), i.code],
               [
                 t("instruments.col.subtype"),
                 i.subtype === undefined ? "" : subtypeLabel(t, i.subtype),

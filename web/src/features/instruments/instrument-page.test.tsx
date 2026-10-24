@@ -64,6 +64,17 @@ describe("Instrument page", () => {
     });
   });
 
+  it("states an empty range once, without a chart beside the table", async () => {
+    const fetch = api({
+      "GET /api/v1/prices": () => json(200, { items: [] }),
+    });
+    await renderApp("/instruments/PETR4", { fetch });
+    expect(
+      await screen.findByText(catalogEn["instrument.prices.empty"]),
+    ).toBeInTheDocument();
+    expect(document.querySelector('[data-ui="chart"]')).toBeNull();
+  });
+
   it("never asks for more than 366 days", async () => {
     const queries: URLSearchParams[] = [];
     const fetch = api({
