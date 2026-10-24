@@ -76,3 +76,5 @@ Registry of the findings reported to the Slotted owner (`web/CLAUDE.md`, "Slotte
 | The markdown family needs an outside parser for plain CommonMark                                      | open     |
 | A markdown tree in a message bubble collapses the bubble to its padding                               | open     |
 | A message scroller without items keeps its content hidden                                             | open     |
+| The drawer header has no slot for actions beside the title                                            | open     |
+| The prompt composer has no dictation action                                                           | open     |

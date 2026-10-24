@@ -1,3 +1,4 @@
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Badge } from "@slotted/react/badge";
 import { Button } from "@slotted/react/button";
 import { Card, CardBody, CardFooter, CardHeader } from "@slotted/react/card";
@@ -7,16 +8,18 @@ import {
   DescriptionListItem,
   DescriptionListTerm,
 } from "@slotted/react/description-list";
-import { InlineMessage } from "@slotted/react/inline-message";
+import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 
 import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
+import styles from "@/features/assistant/assistant-panel.module.css";
 import {
   useConfirmProposal,
   useRejectProposal,
 } from "@/features/assistant/api";
 import { maskAmountText } from "@/features/assistant/mask-amounts";
+import { ProposalChange } from "@/features/assistant/proposal-change";
 import { catalogEn } from "@/i18n/catalog.en";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { formatDate } from "@/i18n/format";
@@ -69,6 +72,8 @@ function failureDetail(result: unknown): string | undefined {
   return typeof detail === "string" ? detail : undefined;
 }
 
+// Families read: card, badge, description-list, alert, button. A write the assistant proposes:
+// what it does and to what, each value it changes, and the two decisions while it waits.
 export function ProposalCard({ proposal }: { proposal: Proposal }) {
   const t = useT();
   const valueText = useValueText();
@@ -81,76 +86,98 @@ export function ProposalCard({ proposal }: { proposal: Proposal }) {
   const actionKey = catalogKey(`assistant.action.${preview.action}`);
   const detail =
     shown.status === "failed" ? failureDetail(shown.result) : undefined;
+  const pending = shown.status === "pending";
+  const destructive = preview.destructive === true;
 
   return (
-    <Card>
+    <Card size="sm" fill={pending ? "elevated" : "outline"}>
       <CardHeader>
-        <Text weight="semibold">
-          {actionKey === undefined ? preview.action : t(actionKey)}
-        </Text>
-        <Badge tone={tones[shown.status]}>
-          {t(`assistant.proposal.status.${shown.status}`)}
-        </Badge>
+        <Stack gap={1}>
+          <span className={styles.proposalHead}>
+            <Text weight="semibold">
+              {actionKey === undefined ? preview.action : t(actionKey)}
+            </Text>
+            <Badge tone={tones[shown.status]} size="sm">
+              {t(`assistant.proposal.status.${shown.status}`)}
+            </Badge>
+          </span>
+          {preview.target !== undefined && (
+            <Text size="sm" tone="muted">
+              {valueText({ text: preview.target })}
+            </Text>
+          )}
+        </Stack>
       </CardHeader>
       <CardBody>
-        {preview.target !== undefined && (
-          <Text tone="muted">{preview.target}</Text>
-        )}
-        <DescriptionList layout="stack">
-          {preview.changes.map((change) => {
-            const before = valueText(change.before);
-            const after = valueText(change.after);
-            const fieldKey = catalogKey(`assistant.field.${change.field}`);
-            return (
-              <DescriptionListItem key={change.field}>
-                <DescriptionListTerm>
-                  {fieldKey === undefined ? change.field : t(fieldKey)}
-                </DescriptionListTerm>
-                <DescriptionListDescription>
-                  {before !== undefined && after !== undefined
-                    ? `${before} → ${after}`
-                    : (after ?? before)}
-                </DescriptionListDescription>
-              </DescriptionListItem>
-            );
-          })}
-        </DescriptionList>
-        {preview.destructive === true && shown.status === "pending" && (
-          <InlineMessage tone="warning">
-            {t("assistant.proposal.destructive")}
-          </InlineMessage>
-        )}
-        {detail !== undefined && (
-          <InlineMessage tone="danger">{detail}</InlineMessage>
-        )}
-        {error !== null && (
-          <InlineMessage tone="danger" live="polite">
-            {errorText(error, t)}
-          </InlineMessage>
-        )}
+        <Stack gap={3}>
+          <DescriptionList layout="stack" columns={2}>
+            {preview.changes.map((change, i) => {
+              const fieldKey = catalogKey(`assistant.field.${change.field}`);
+              return (
+                <DescriptionListItem key={`${change.field}-${String(i)}`}>
+                  <DescriptionListTerm>
+                    {fieldKey === undefined ? change.field : t(fieldKey)}
+                  </DescriptionListTerm>
+                  <DescriptionListDescription>
+                    <ProposalChange
+                      before={valueText(change.before)}
+                      after={valueText(change.after)}
+                    />
+                  </DescriptionListDescription>
+                </DescriptionListItem>
+              );
+            })}
+          </DescriptionList>
+          {destructive && pending && (
+            <Alert tone="danger" reach="inline">
+              <AlertContent>
+                <AlertDescription>
+                  {t("assistant.proposal.destructive")}
+                </AlertDescription>
+              </AlertContent>
+            </Alert>
+          )}
+          {detail !== undefined && (
+            <Alert tone="danger" reach="inline">
+              <AlertContent>
+                <AlertDescription>{detail}</AlertDescription>
+              </AlertContent>
+            </Alert>
+          )}
+          {error !== null && (
+            <Alert tone="danger" reach="inline" live="polite">
+              <AlertContent>
+                <AlertDescription>{errorText(error, t)}</AlertDescription>
+              </AlertContent>
+            </Alert>
+          )}
+        </Stack>
       </CardBody>
-      {shown.status === "pending" && (
+      {pending && (
         <CardFooter>
-          <Button
-            variant="ghost"
-            tone="secondary"
-            disabled={busy}
-            onClick={() => {
-              reject.mutate(shown.id);
-            }}
-          >
-            {t("assistant.proposal.reject")}
-          </Button>
-          <Button
-            tone={preview.destructive === true ? "danger" : "accent"}
-            disabled={busy}
-            loading={confirm.isPending}
-            onClick={() => {
-              if (!busy) confirm.mutate(shown.id);
-            }}
-          >
-            {t("assistant.proposal.confirm")}
-          </Button>
+          <span className={styles.proposalActions}>
+            <Button
+              variant="ghost"
+              tone="secondary"
+              disabled={busy}
+              loading={reject.isPending}
+              onClick={() => {
+                reject.mutate(shown.id);
+              }}
+            >
+              {t("assistant.proposal.reject")}
+            </Button>
+            <Button
+              tone={destructive ? "danger" : "accent"}
+              disabled={busy}
+              loading={confirm.isPending}
+              onClick={() => {
+                if (!busy) confirm.mutate(shown.id);
+              }}
+            >
+              {t("assistant.proposal.confirm")}
+            </Button>
+          </span>
         </CardFooter>
       )}
     </Card>

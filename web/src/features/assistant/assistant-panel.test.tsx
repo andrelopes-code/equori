@@ -110,12 +110,33 @@ afterEach(() => {
 describe("AssistantPanel", () => {
   it("names the provider and the training notice before the first message", async () => {
     setup({});
+    const notice = await screen.findByText(
+      /Answers come from Gemini, model flash-lite\./,
+    );
+    expect(notice.textContent).toContain(
+      catalogEn["assistant.chat_notice.trains"],
+    );
+  });
+
+  // A message typed while the history was open went to no visible conversation; the history now
+  // holds no composer, and leaving it brings the composer back.
+  it("hides the composer while the conversation history is open", async () => {
+    setup({
+      "GET /api/v1/assistant/conversations": () => json(200, { items: [] }),
+    });
+    const placeholder = catalogEn["assistant.composer.placeholder"];
+    expect(await screen.findByPlaceholderText(placeholder)).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["assistant.history"] }),
+    );
     expect(
-      await screen.findByText("Answers come from Gemini, model flash-lite."),
+      await screen.findByText(catalogEn["assistant.conversations.empty"]),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(catalogEn["assistant.chat_notice.trains"]),
-    ).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(placeholder)).toBeNull();
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["assistant.back"] }),
+    );
+    expect(await screen.findByPlaceholderText(placeholder)).toBeInTheDocument();
   });
 
   it("disables the composer and says when the assistant returns", async () => {
@@ -124,9 +145,7 @@ describe("AssistantPanel", () => {
         json(200, { available: false, retry_at: "2026-10-24T00:00:00Z" }),
     });
     expect(
-      await screen.findByText(
-        /The daily quota is used up\. The assistant returns at /,
-      ),
+      await screen.findByText(/^The assistant returns at /),
     ).toBeInTheDocument();
     expect(
       screen.getByPlaceholderText(catalogEn["assistant.composer.placeholder"]),
@@ -170,9 +189,7 @@ describe("AssistantPanel", () => {
     });
     await ask("Hello");
     expect(
-      await screen.findByText(
-        /The daily quota is used up\. The assistant returns at /,
-      ),
+      await screen.findByText(/^The assistant returns at /),
     ).toBeInTheDocument();
     expect(
       screen.getByPlaceholderText(catalogEn["assistant.composer.placeholder"]),

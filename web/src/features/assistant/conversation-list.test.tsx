@@ -41,13 +41,14 @@ describe("ConversationList", () => {
     renderWithProviders(<ConversationList onOpen={onOpen} />, {
       fetch: api([]),
     });
-    const rows = await screen.findAllByRole("listitem");
-    expect(
-      rows.map((r) => within(r).getByText(/question$/).textContent),
-    ).toEqual(["Newer question", "Older question"]);
-    await userEvent.click(
-      screen.getByRole("button", { name: "Newer question" }),
-    );
+    const rows = await screen.findAllByRole("button", {
+      name: /^(Newer|Older) question/,
+    });
+    expect(rows.map((r) => r.textContent)).toEqual([
+      expect.stringMatching(/^Newer question/),
+      expect.stringMatching(/^Older question/),
+    ]);
+    await userEvent.click(rows[0] ?? document.body);
     expect(onOpen).toHaveBeenCalledWith("c2");
   });
 
@@ -56,10 +57,9 @@ describe("ConversationList", () => {
     renderWithProviders(<ConversationList onOpen={vi.fn()} />, {
       fetch: api(deleted),
     });
-    const rows = await screen.findAllByRole("listitem");
     await userEvent.click(
-      within(rows[0] ?? document.body).getByRole("button", {
-        name: /Delete conversation/,
+      await screen.findByRole("button", {
+        name: "Delete conversation: Newer question",
       }),
     );
     await waitFor(() => {

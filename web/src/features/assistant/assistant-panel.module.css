@@ -1,27 +1,70 @@
 @layer app {
-  /* The thread takes the panel; the composer stays in the row under it (CV-01). */
+  /* The bar, the thread and the composer stack in the body; only the thread scrolls (CV-01). */
   .thread {
     display: grid;
-    grid-template-rows: minmax(0, 1fr) auto;
-    gap: var(--slotted-space-3);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: var(--slotted-space-4);
     height: 100%;
     min-height: 0;
   }
 
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-2);
+    padding-block-end: var(--slotted-space-3);
+    border-block-end: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  .barTitle {
+    flex: 1;
+    min-inline-size: 0;
+  }
+
   .scroll {
     min-height: 0;
-    display: grid;
+    overflow-y: auto;
   }
 
   .feed {
     display: flex;
     flex-direction: column;
-    gap: var(--slotted-space-3);
+    gap: var(--slotted-space-5);
+    padding-block: var(--slotted-space-2);
   }
 
+  .welcome {
+    padding-block: var(--slotted-space-8) var(--slotted-space-4);
+  }
+
+  .mark {
+    display: inline-grid;
+    place-items: center;
+    inline-size: var(--slotted-target-comfortable);
+    block-size: var(--slotted-target-comfortable);
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-tone-accent-surface);
+    color: var(--slotted-tone-accent-solid);
+  }
+
+  /* A notice that blocks the composer stands right above it, where the reader looks to type. */
   .composer {
-    position: sticky;
-    inset-block-end: 0;
+    display: grid;
+    gap: var(--slotted-space-3);
+    padding-block-start: var(--slotted-space-1);
+  }
+
+  .hint {
+    flex: 1;
+    min-inline-size: 0;
+  }
+
+  /* A coarse pointer types on a screen keyboard, where Enter and Shift+Enter are not at hand. */
+  @media (pointer: coarse) {
+    .hint:not([data-listening]) {
+      visibility: hidden;
+    }
   }
 
   /* Workaround for Slotted finding "A markdown tree in a message bubble collapses the bubble to its padding": the bubble of an answer takes the width its row allows. */
@@ -34,9 +77,38 @@
     align-self: stretch;
   }
 
-  .items {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+  .attached {
+    inline-size: 100%;
+  }
+
+  .proposalHead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-2);
+  }
+
+  .proposalActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--slotted-space-2);
+    inline-size: 100%;
+  }
+
+  .change {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--slotted-space-2);
+  }
+
+  .removed {
+    text-decoration: line-through;
+  }
+
+  .listFoot {
+    display: flex;
+    justify-content: center;
   }
 }

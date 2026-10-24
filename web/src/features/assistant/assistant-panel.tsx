@@ -1,6 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouterState } from "@tanstack/react-router";
-import { Button } from "@slotted/react/button";
+import {
+  Alert,
+  AlertContent,
+  AlertDescription,
+  AlertTitle,
+} from "@slotted/react/alert";
 import {
   Drawer,
   DrawerBody,
@@ -9,7 +14,6 @@ import {
   DrawerPanel,
   DrawerTitle,
 } from "@slotted/react/drawer";
-import { InlineMessage } from "@slotted/react/inline-message";
 import {
   Bubble,
   BubbleContent,
@@ -25,27 +29,26 @@ import {
   MessageScrollerItem,
   MessageScrollerViewport,
 } from "@slotted/react/message-scroller";
-import {
-  PromptComposer,
-  PromptComposerFooter,
-  PromptComposerInput,
-  PromptComposerSubmit,
-} from "@slotted/react/prompt-composer";
-import { Inline } from "@slotted/react/inline";
 import { useState, useSyncExternalStore } from "react";
 
 import { useApi } from "@/api/api-context";
 import { problemMessage } from "@/api/problem";
 import styles from "@/features/assistant/assistant-panel.module.css";
 import { chatStateQuery, conversationQuery } from "@/features/assistant/api";
+import { AssistantComposer } from "@/features/assistant/assistant-composer";
+import { ChatWelcome } from "@/features/assistant/chat-welcome";
 import { ConversationList } from "@/features/assistant/conversation-list";
+import { maskAmountText } from "@/features/assistant/mask-amounts";
 import { MessageItem } from "@/features/assistant/message-item";
 import { catalogKey } from "@/features/assistant/proposal-card";
+import { PanelBar } from "@/features/assistant/panel-bar";
 import { ProviderNotice } from "@/features/assistant/provider-notice";
 import type { AssistantProblem } from "@/features/assistant/sse";
 import { useAssistantTurn } from "@/features/assistant/use-assistant-turn";
+import { speechSupported } from "@/features/assistant/use-speech-input";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import type { TFunction } from "@/i18n/i18n-provider";
+import { usePrivacy } from "@/privacy/privacy-provider";
 
 const PHONE_QUERY = "(max-width: 599px)";
 
@@ -80,7 +83,8 @@ function problemText(
   }
 }
 
-// A side panel beside the page from 600 px; full screen on a phone. Its state outlives closing it.
+// A side panel beside the page from 600 px; a full-height bottom sheet on a phone. Its state
+// outlives closing it.
 export function AssistantPanel({
   open,
   onOpenChange,
@@ -95,6 +99,7 @@ export function AssistantPanel({
   const page = useRouterState({ select: (s) => s.location.pathname });
   const turn = useAssistantTurn(page);
   const [listing, setListing] = useState(false);
+  const { hidden } = usePrivacy();
   const chat = useQuery({ ...chatStateQuery(api), enabled: open });
   const stored = useQuery({
     ...conversationQuery(api, turn.conversationId ?? ""),
@@ -123,11 +128,31 @@ export function AssistantPanel({
           : t("assistant.exhausted", { time: time(chat.data.retry_at) })
         : null;
   const started = messages.length > 0 || turn.pending !== null;
+  const blockedTitle = exhausted
+    ? t("assistant.exhausted.title")
+    : turn.error === null
+      ? t("assistant.unavailable.title")
+      : t("assistant.failed.title");
   const blockedNotice = blockedText !== null && (
-    <InlineMessage tone={exhausted ? "warning" : "danger"} live="polite">
-      {blockedText}
-    </InlineMessage>
+    <Alert tone={exhausted ? "warning" : "danger"} live="polite">
+      <AlertContent>
+        <AlertTitle>{blockedTitle}</AlertTitle>
+        <AlertDescription>{blockedText}</AlertDescription>
+      </AlertContent>
+    </Alert>
   );
+  const send = (text: string) => {
+    setListing(false);
+    turn.send(text);
+  };
+  const storedTitle = stored.data?.title;
+  const title = listing
+    ? t("assistant.conversations")
+    : storedTitle === undefined || turn.conversationId === undefined
+      ? t("assistant.new_conversation")
+      : hidden
+        ? maskAmountText(storedTitle)
+        : storedTitle;
   const stepKey =
     turn.step === null ? undefined : catalogKey(`assistant.step.${turn.step}`);
 
@@ -135,8 +160,8 @@ export function AssistantPanel({
     <Drawer
       open={open}
       onOpenChange={onOpenChange}
-      side="end"
-      size={phone ? "full" : "md"}
+      side={phone ? "bottom" : "end"}
+      size={phone ? "full" : "lg"}
       modal={phone}
       outsidePress="none"
     >
@@ -147,9 +172,24 @@ export function AssistantPanel({
         </DrawerHeader>
         <DrawerBody>
           <div data-own="assistant-panel" className={styles.thread}>
+            <PanelBar
+              title={title}
+              listing={listing}
+              onBack={() => {
+                setListing(false);
+              }}
+              onHistory={() => {
+                setListing(true);
+              }}
+              onNew={() => {
+                turn.reset();
+                setListing(false);
+              }}
+            />
             {listing ? (
               <div className={styles.scroll}>
                 <ConversationList
+                  current={turn.conversationId}
                   onOpen={(id) => {
                     turn.open(id);
                     setListing(false);
@@ -159,12 +199,21 @@ export function AssistantPanel({
             ) : !started ? (
               // Workaround for Slotted finding "A message scroller without items keeps its content hidden": before the first message the notices sit outside the scroller.
               <div className={styles.scroll}>
-                <div className={styles.feed}>
-                  {chat.data !== undefined && (
-                    <ProviderNotice chat={chat.data} />
-                  )}
-                  {blockedNotice}
-                </div>
+                <ChatWelcome
+                  canAsk={!blocked && chat.data !== undefined}
+                  onAsk={send}
+                  notices={
+                    <>
+                      {blockedNotice}
+                      {chat.data !== undefined && (
+                        <ProviderNotice
+                          chat={chat.data}
+                          voice={speechSupported()}
+                        />
+                      )}
+                    </>
+                  }
+                />
               </div>
             ) : (
               <MessageScroller
@@ -211,54 +260,20 @@ export function AssistantPanel({
                         </Message>
                       </>
                     )}
-                    {blockedNotice}
                   </MessageScrollerContent>
                 </MessageScrollerViewport>
               </MessageScroller>
             )}
-            <div className={styles.composer}>
-              <Inline gap={2}>
-                <Button
-                  variant="ghost"
-                  tone="secondary"
-                  size="sm"
-                  onClick={() => {
-                    turn.reset();
-                    setListing(false);
-                  }}
-                >
-                  {t("assistant.new_conversation")}
-                </Button>
-                <Button
-                  variant="ghost"
-                  tone="secondary"
-                  size="sm"
-                  onClick={() => {
-                    setListing((l) => !l);
-                  }}
-                >
-                  {t("assistant.conversations")}
-                </Button>
-              </Inline>
-              <PromptComposer
-                disabled={blocked || chat.data === undefined}
-                status={turn.pending === null ? "ready" : "submitted"}
-                messages={{ send: t("assistant.composer.send") }}
-                onValueSubmit={(value) => {
-                  if (turn.pending === null && value.trim() !== "")
-                    turn.send(value.trim());
-                }}
-              >
-                <PromptComposerInput
-                  aria-label={t("assistant.composer.placeholder")}
-                  placeholder={t("assistant.composer.placeholder")}
-                  maxLength={4000}
+            {!listing && (
+              <div className={styles.composer}>
+                {started && blockedNotice}
+                <AssistantComposer
+                  disabled={blocked || chat.data === undefined}
+                  busy={turn.pending !== null}
+                  onSend={send}
                 />
-                <PromptComposerFooter>
-                  <PromptComposerSubmit />
-                </PromptComposerFooter>
-              </PromptComposer>
-            </div>
+              </div>
+            )}
           </div>
         </DrawerBody>
       </DrawerPanel>

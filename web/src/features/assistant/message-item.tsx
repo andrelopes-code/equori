@@ -5,9 +5,10 @@ import {
   Message,
   MessageBody,
 } from "@slotted/react/message";
-import { InlineMessage } from "@slotted/react/inline-message";
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Markdown } from "@slotted/react/markdown";
 import type { MarkdownRenderers } from "@slotted/react/markdown";
+import { Stack } from "@slotted/react/stack";
 import { useMemo } from "react";
 
 import styles from "@/features/assistant/assistant-panel.module.css";
@@ -53,17 +54,31 @@ export function MessageItem({ message }: { message: AssistantMessage }) {
             )}
           </BubbleContent>
         </Bubble>
-        {message.outcome === "step_limit" && (
-          <InlineMessage tone="warning">
-            {t("assistant.step_limit")}
-          </InlineMessage>
+        {(message.outcome === "step_limit" ||
+          message.outcome === "failed" ||
+          message.proposals.length > 0) && (
+          <Stack gap={3} className={styles.attached}>
+            {message.outcome === "step_limit" && (
+              <Alert tone="warning" reach="inline">
+                <AlertContent>
+                  <AlertDescription>
+                    {t("assistant.step_limit")}
+                  </AlertDescription>
+                </AlertContent>
+              </Alert>
+            )}
+            {message.outcome === "failed" && (
+              <Alert tone="danger" reach="inline">
+                <AlertContent>
+                  <AlertDescription>{t("assistant.failed")}</AlertDescription>
+                </AlertContent>
+              </Alert>
+            )}
+            {message.proposals.map((proposal) => (
+              <ProposalCard key={proposal.id} proposal={proposal} />
+            ))}
+          </Stack>
         )}
-        {message.outcome === "failed" && (
-          <InlineMessage tone="danger">{t("assistant.failed")}</InlineMessage>
-        )}
-        {message.proposals.map((proposal) => (
-          <ProposalCard key={proposal.id} proposal={proposal} />
-        ))}
       </MessageBody>
     </Message>
   );

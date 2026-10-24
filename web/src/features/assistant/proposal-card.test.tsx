@@ -42,9 +42,11 @@ describe("ProposalCard", () => {
     expect(screen.getByText("Checking")).toBeInTheDocument();
     expect(screen.getByText("Amount")).toBeInTheDocument();
     expect(screen.getByText("Lunch")).toBeInTheDocument();
-    expect(
-      screen.getByText(/10[.,]00.* → .*1[.,]234[.,]56/),
-    ).toBeInTheDocument();
+    // The value it replaces is struck through, then the new one.
+    const before = screen.getByText(/10[.,]00/);
+    const after = screen.getByText(/1[.,]234[.,]56/);
+    expect(before.textContent).toMatch(/^was /);
+    expect(after.textContent).toMatch(/^becomes /);
     expect(screen.getByRole("button", { name: "Confirm" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Reject" })).toBeInTheDocument();
   });

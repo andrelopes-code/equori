@@ -1063,10 +1063,36 @@ export const catalogEn = {
     "What the provider does with your data depends on its terms.",
   "assistant.unavailable":
     "No language model serves the assistant. Add a provider in Settings.",
-  "assistant.exhausted":
-    "The daily quota is used up. The assistant returns at {time}.",
+  "assistant.exhausted": "The assistant returns at {time}.",
   "assistant.failed": "The provider refused this request. Try again.",
   "assistant.empty_answer": "The assistant returned no text.",
+  "assistant.back": "Back",
+  "assistant.history": "Conversation history",
+  "assistant.welcome.title": "How can I help?",
+  "assistant.welcome.body":
+    "Ask about balances, spending and statements, have a transaction recorded or fixed, or ask where something is in the app. Nothing changes until you confirm it.",
+  "assistant.suggestion.balance": "What are my account balances?",
+  "assistant.suggestion.spending":
+    "How much did I spend by category this month?",
+  "assistant.suggestion.statement": "When does my next card statement close?",
+  "assistant.composer.hint": "Enter sends · Shift+Enter adds a line",
+  "assistant.voice.start": "Dictate a message",
+  "assistant.voice.stop": "Stop dictating",
+  "assistant.voice.listening": "Listening… speak your question",
+  "assistant.voice.notice":
+    "Dictation uses your browser's speech recognition, which may send the audio to the browser's maker.",
+  "assistant.notice.title": "About your data",
+  "assistant.exhausted.title": "Usage limit reached",
+  "assistant.unavailable.title": "Assistant unavailable",
+  "assistant.failed.title": "No answer",
+  "assistant.conversations.today": "Today",
+  "assistant.conversations.week": "Last 7 days",
+  "assistant.conversations.older": "Earlier",
+  "assistant.conversations.empty":
+    "No conversations yet. Your questions and their answers are kept here.",
+  "assistant.proposal.review": "Review before confirming",
+  "assistant.change.before": "was ",
+  "assistant.change.after": "becomes ",
   "assistant.step_limit":
     "The assistant stopped at its step limit; the answer may be incomplete.",
   "assistant.proposal.confirm": "Confirm",
