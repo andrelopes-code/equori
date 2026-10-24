@@ -53,6 +53,8 @@ export const positions = [
   },
 ];
 
+export const xpInstitutionID = "c0000000-0000-4000-8000-000000000001";
+
 // S128: checking 500.00, XP cash 400.00 and 10 MXRF11 at 10.50.
 export const allocations = {
   type: {
@@ -69,7 +71,7 @@ export const allocations = {
   institution: {
     total: brl(100500),
     groups: [
-      { key: "XP", value: brl(50500), share_bp: 5024 },
+      { key: xpInstitutionID, value: brl(50500), share_bp: 5024 },
       { key: "", value: brl(50000), share_bp: 4976 },
     ],
   },
@@ -96,6 +98,8 @@ export function portfolioApi(routes: Record<string, Route> = {}) {
     ...sharedRoutes,
     "GET /api/v1/accounts": () => json(200, { items: accounts }),
     "GET /api/v1/instruments": () => json(200, { items: instruments }),
+    "GET /api/v1/institutions": () =>
+      json(200, { items: [{ id: xpInstitutionID, name: "XP" }] }),
     "GET /api/v1/positions": () => json(200, { items: positions }),
     "GET /api/v1/reports/allocation": (req) =>
       json(

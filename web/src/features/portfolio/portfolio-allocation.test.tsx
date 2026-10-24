@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { json, problem } from "@/testing/fake-api";
-import { portfolioApi } from "@/testing/portfolio-api";
+import { portfolioApi, xpInstitutionID } from "@/testing/portfolio-api";
 import { hideAmounts } from "@/testing/privacy";
 import { renderApp } from "@/testing/render-app";
 
@@ -68,6 +68,7 @@ describe("Portfolio allocation", () => {
       `${catalogEn["portfolio.allocation.noInstitution"]}|R$500.00|49.76%`,
       "Total|R$1,005.00|100.00%",
     ]);
+    expect(document.body.textContent).not.toContain(xpInstitutionID);
   });
 
   it("groups by currency by the ISO code", async () => {

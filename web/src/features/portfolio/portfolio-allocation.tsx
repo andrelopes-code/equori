@@ -30,7 +30,7 @@ import { allocationQuery } from "@/features/portfolio/api";
 import { allocationBys } from "@/features/portfolio/portfolio-search";
 import type { AllocationBy } from "@/features/portfolio/portfolio-search";
 import { PortfolioProblem } from "@/features/portfolio/portfolio-problem";
-import { catalogLabel, useScale } from "@/features/setup";
+import { catalogLabel, institutionsQuery, useScale } from "@/features/setup";
 import { formatBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import type { TFunction } from "@/i18n/i18n-provider";
@@ -38,12 +38,19 @@ import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Group = components["schemas"]["AllocationGroup"];
 
-// The key of a group is a type, a currency code or an institution name; the empty key is the
-// accounts without an institution. A type the catalog does not name reads as its code.
-function keyLabel(t: TFunction, by: AllocationBy, key: string): string {
+// The key of a group is a type, a currency code or an institution id; the empty key is the
+// accounts without an institution. A type the catalog does not name reads as its code, and an
+// institution not yet loaded reads as its id.
+function keyLabel(
+  t: TFunction,
+  by: AllocationBy,
+  key: string,
+  institutions: ReadonlyMap<string, string>,
+): string {
   if (by === "type") return catalogLabel(t, `instruments.type.${key}`, key);
   if (by === "institution" && key === "")
     return t("portfolio.allocation.noInstitution");
+  if (by === "institution") return institutions.get(key) ?? key;
   return key;
 }
 
@@ -66,6 +73,14 @@ export function PortfolioAllocation({
   const fmt = useMoneyFormat();
   const scale = useScale();
   const allocation = useQuery(allocationQuery(api, date, by, valueIn));
+  const institutions = useQuery({
+    ...institutionsQuery(api),
+    enabled: by === "institution",
+  });
+  const institutionNames = useMemo(
+    () => new Map((institutions.data ?? []).map((i) => [i.id, i.name])),
+    [institutions.data],
+  );
   const digits = (code: string) => scale?.(code) ?? 0;
   const money = (m: components["schemas"]["Money"]) =>
     fmt.money(m, digits(m.currency));
@@ -74,7 +89,10 @@ export function PortfolioAllocation({
     [allocation.data],
   );
   const title = t(`portfolio.allocation.title.${by}`);
-  const pending = allocation.isPending || scale === null;
+  const pending =
+    allocation.isPending ||
+    scale === null ||
+    (by === "institution" && institutions.isPending);
   const series: ChartSeries[] = [
     {
       id: "value",
@@ -89,7 +107,7 @@ export function PortfolioAllocation({
     },
   ];
   const data = groups.map((g) => ({
-    name: keyLabel(t, by, g.key),
+    name: keyLabel(t, by, g.key, institutionNames),
     value: g.value.amount,
   }));
   return (
@@ -166,7 +184,7 @@ export function PortfolioAllocation({
                     {groups.map((g) => (
                       <TableRow key={g.key} value={g.key}>
                         <TableRowHeader>
-                          {keyLabel(t, by, g.key)}
+                          {keyLabel(t, by, g.key, institutionNames)}
                         </TableRowHeader>
                         <TableCell numeric>{money(g.value)}</TableCell>
                         <TableCell numeric>
