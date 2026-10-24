@@ -568,6 +568,30 @@ describe("phone dock", () => {
     expect(navigationBar()).toBeInTheDocument();
   });
 
+  // A tap on the form's Save moves focus on press; the bar returning then shifted the layout
+  // under the finger and the tap ended off the button.
+  it("keeps the navigation bar away until a press that left a field ends", async () => {
+    const { container } = await renderApp("/transactions", {
+      width: 390,
+      fetch: uncategorizedFetch(0),
+    });
+    const main = container.querySelector("main");
+    if (main === null) throw new Error("no main");
+    const field = await within(main).findAllByRole("searchbox");
+    act(() => {
+      field[0]?.focus();
+    });
+    act(() => {
+      fireEvent.pointerDown(document.body);
+      field[0]?.blur();
+    });
+    expect(document.querySelector('[data-own="navigation-bar"]')).toBeNull();
+    act(() => {
+      fireEvent.pointerUp(document.body);
+    });
+    expect(navigationBar()).toBeInTheDocument();
+  });
+
   it("draws the floating button as its mark alone", async () => {
     await renderApp("/", { width: 390, fetch: newFetch() });
     const fab = screen.getByRole("button", {
