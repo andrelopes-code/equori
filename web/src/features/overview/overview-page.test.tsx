@@ -7,10 +7,19 @@ import { renderApp } from "@/testing/render-app";
 import {
   accountFixtures,
   accountRoutes,
+  cardRoutes,
   checkingID,
   foodID,
   money,
 } from "@/testing/account-api";
+import {
+  categories,
+  budgets,
+  foodBudget,
+  fuelBudget,
+  parkingBudget,
+} from "@/testing/budget-api";
+import { occurrence, salaryID, schedules } from "@/testing/planning-api";
 
 const incomeID = "a1000000-0000-4000-8000-0000000000f1";
 const accounts = [
@@ -77,6 +86,9 @@ function api(overrides: Record<string, (req: Request) => Response> = {}) {
         () => json(200, { opening: money(0), points: [] }),
       ]),
     ),
+    ...cardRoutes(),
+    "GET /api/v1/schedules": () => json(200, { items: schedules }),
+    "GET /api/v1/occurrences": () => json(200, { items: [] }),
     "GET /api/v1/budgets": () => json(200, { items: [] }),
     "GET /api/v1/reports/net-worth": netWorth,
     "GET /api/v1/reports/categories": () =>
@@ -190,5 +202,123 @@ describe("overview page", () => {
       attention.compareDocumentPosition(worth) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+
+  describe("second row", () => {
+    const upcoming = [
+      occurrence(
+        "1",
+        "e1000000-0000-4000-8000-000000000001",
+        "2026-09-05",
+        210000,
+        "overdue",
+      ),
+      occurrence(
+        "2",
+        "e1000000-0000-4000-8000-000000000001",
+        "2026-10-05",
+        210000,
+        "overdue",
+      ),
+      occurrence("4", salaryID, "2026-10-20", 500000, "expected"),
+      occurrence("5", salaryID, "2026-10-30", 500000, "expected"),
+    ];
+    const progress: Record<string, [number, number]> = {
+      [foodBudget.id]: [180000, 190000],
+      [fuelBudget.id]: [40000, 36000],
+      [parkingBudget.id]: [10000, 4000],
+    };
+    const goal = {
+      id: "g1",
+      name: "Trip",
+      target: money(1000000),
+      due_on: "2027-06-01",
+      account_ids: [],
+      current: money(250000),
+      remaining: money(750000),
+      progress_bp: 2500,
+    };
+    const full = () =>
+      api({
+        "GET /api/v1/accounts": () =>
+          json(200, {
+            items: [...accounts, ...categoryAccounts, ...categories],
+          }),
+        "GET /api/v1/occurrences": () => json(200, { items: upcoming }),
+        "GET /api/v1/budgets": () => json(200, { items: budgets }),
+        "GET /api/v1/goals": () => json(200, { items: [goal] }),
+        ...Object.fromEntries(
+          [foodBudget, fuelBudget, parkingBudget].map((b) => [
+            `GET /api/v1/budgets/${b.id}/progress`,
+            () => {
+              const [planned, spent] = progress[b.id] ?? [0, 0];
+              return json(200, {
+                month: "2026-10",
+                planned: money(planned),
+                carried: money(0),
+                spent: money(spent),
+                available: money(planned - spent),
+              });
+            },
+          ]),
+        ),
+      });
+
+    it("lists the overdue occurrences and those of the next 7 days", async () => {
+      await renderApp("/", { fetch: full() });
+      const region = await screen.findByRole("region", { name: "Upcoming" });
+      await waitFor(() => {
+        expect(within(region).getAllByRole("listitem")).toHaveLength(3);
+      });
+      expect(region).toHaveTextContent("Rent");
+      expect(region).toHaveTextContent("Salary");
+    });
+
+    it("lists the open and the unpaid closed statements with amount and due date", async () => {
+      await renderApp("/", { fetch: full() });
+      const region = await screen.findByRole("region", { name: "Cards" });
+      await waitFor(() => {
+        expect(within(region).getAllByRole("listitem")).toHaveLength(2);
+      });
+      expect(region).toHaveTextContent("1,800.00");
+      expect(region).toHaveTextContent("2,500.00");
+    });
+
+    it("lists the overspent and the near-limit budgets only", async () => {
+      await renderApp("/", { fetch: full() });
+      const region = await screen.findByRole("region", { name: "Budgets" });
+      await waitFor(() => {
+        expect(within(region).getAllByRole("listitem")).toHaveLength(2);
+      });
+      expect(region).toHaveTextContent("Food");
+      expect(region).toHaveTextContent("Fuel");
+      expect(region).not.toHaveTextContent("Parking");
+    });
+
+    it("shows the progress of each goal", async () => {
+      await renderApp("/", { fetch: full() });
+      const region = await screen.findByRole("region", { name: "Goals" });
+      await waitFor(() => {
+        expect(region).toHaveTextContent("Trip");
+      });
+      expect(region).toHaveTextContent("25%");
+    });
+
+    it("keeps the goals when the occurrences fail", async () => {
+      await renderApp("/", {
+        fetch: api({
+          "GET /api/v1/occurrences": () => problem(500, "internal_error"),
+          "GET /api/v1/goals": () => json(200, { items: [goal] }),
+        }),
+      });
+      const upcomingRegion = await screen.findByRole("region", {
+        name: "Upcoming",
+      });
+      await within(upcomingRegion).findByRole("button", { name: "Try again" });
+      const goals = await screen.findByRole("region", { name: "Goals" });
+      await waitFor(() => {
+        expect(goals).toHaveTextContent("Trip");
+      });
+    });
   });
 });

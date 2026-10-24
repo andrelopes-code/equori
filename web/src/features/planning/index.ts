@@ -11,6 +11,12 @@ export {
   useDeleteGoal,
   useUpdateGoal,
 } from "@/features/planning/api";
+export {
+  budgetState,
+  startsBy,
+  usedShare,
+} from "@/features/planning/budget-month";
+export type { BudgetState, Figures } from "@/features/planning/budget-month";
 export { kindLabel } from "@/features/planning/schedule-words";
 export { OccurrenceActions } from "@/features/planning/occurrence-actions";
 export { RealizedOccurrences } from "@/features/planning/realized-occurrences";

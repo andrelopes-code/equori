@@ -9,10 +9,14 @@ import {
 } from "@slotted/react/page-header";
 
 import { AttentionBlock } from "@/features/overview/attention-block";
+import { BudgetsBlock } from "@/features/overview/budgets-block";
+import { CardsBlock } from "@/features/overview/cards-block";
+import { GoalsBlock } from "@/features/overview/goals-block";
 import { MonthFlowsBlock } from "@/features/overview/month-flows-block";
 import { NetWorthBlock } from "@/features/overview/net-worth-block";
 import styles from "@/features/overview/overview-page.module.css";
 import { SpendingBlock } from "@/features/overview/spending-block";
+import { UpcomingBlock } from "@/features/overview/upcoming-block";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 
@@ -42,6 +46,10 @@ export function OverviewPage() {
           <NetWorthBlock month={month} />
           <MonthFlowsBlock month={month} />
           <SpendingBlock month={month} />
+          <UpcomingBlock />
+          <CardsBlock />
+          <BudgetsBlock month={month} />
+          <GoalsBlock />
         </div>
       </PageBody>
     </Page>
