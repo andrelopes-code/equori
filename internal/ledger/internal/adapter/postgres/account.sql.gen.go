@@ -51,6 +51,51 @@ func (q *Queries) AccountTotals(ctx context.Context, arg AccountTotalsParams) (A
 	return i, err
 }
 
+const accountTransactionsBetween = `-- name: AccountTransactionsBetween :many
+SELECT t.id FROM ledger_transaction t
+WHERE t.user_id = $1 AND t.voided_at IS NULL
+  AND t.date BETWEEN $2::date AND $3::date
+  AND EXISTS (
+    SELECT 1 FROM ledger_posting p
+    WHERE p.user_id = $1 AND p.transaction_id = t.id AND p.account_id = $4
+  )
+ORDER BY t.date, t.id
+`
+
+type AccountTransactionsBetweenParams struct {
+	UserID    int64
+	FromDate  time.Time
+	ToDate    time.Time
+	AccountID uuid.UUID
+}
+
+// The non-voided transactions with a posting on the account dated in [from, to], by date:
+// the ones that may realize the occurrences of a schedule (P7 amendment A127).
+func (q *Queries) AccountTransactionsBetween(ctx context.Context, arg AccountTransactionsBetweenParams) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, accountTransactionsBetween,
+		arg.UserID,
+		arg.FromDate,
+		arg.ToDate,
+		arg.AccountID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAccount = `-- name: GetAccount :one
 SELECT id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon FROM ledger_account WHERE user_id = $1 AND id = $2
 `

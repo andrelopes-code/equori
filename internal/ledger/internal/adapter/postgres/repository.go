@@ -297,6 +297,10 @@ func (r *Repository) AccountTotals(ctx context.Context, userID int64, id uuid.UU
 	return app.AccountTotals{Total: row.Total, LastBookedOn: row.LastBookedOn}, nil
 }
 
+func (r *Repository) AccountTransactionsBetween(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]uuid.UUID, error) {
+	return r.q.AccountTransactionsBetween(ctx, AccountTransactionsBetweenParams{UserID: userID, AccountID: accountID, FromDate: from, ToDate: to})
+}
+
 func (r *Repository) TransactionsWithAccount(ctx context.Context, userID int64, accountID uuid.UUID) ([]uuid.UUID, error) {
 	return r.q.TransactionsWithAccount(ctx, TransactionsWithAccountParams{UserID: userID, AccountID: accountID})
 }

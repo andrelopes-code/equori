@@ -90,6 +90,9 @@ type Ledger interface {
 	BaseCurrency(ctx context.Context, userID int64) (money.Currency, error)
 	// TransactionFacts returns the user's transactions among ids; unknown ids are omitted.
 	TransactionFacts(ctx context.Context, userID int64, ids []uuid.UUID) ([]domain.Transaction, error)
+	// AccountTransactionsBetween returns the non-voided transactions with a posting on the
+	// account dated in [from, to], by date.
+	AccountTransactionsBetween(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]uuid.UUID, error)
 	// CategoryTotal sums the postings of a category subtree booked in [from, to), in minor
 	// units of the base currency.
 	CategoryTotal(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (int64, error)
@@ -143,6 +146,8 @@ type Repository interface {
 	ListSchedules(ctx context.Context, userID int64, p page.Request[IDKey]) ([]domain.Schedule, *IDKey, error)
 	Schedules(ctx context.Context, userID int64) ([]domain.Schedule, error)
 	SchedulesBehind(ctx context.Context, horizon time.Time) ([]ScheduleRef, error)
+	// ScheduleRefs returns every schedule across users.
+	ScheduleRefs(ctx context.Context) ([]ScheduleRef, error)
 	SetGeneratedUntil(ctx context.Context, userID int64, id uuid.UUID, d time.Time) error
 	InsertOccurrences(ctx context.Context, userID int64, scheduleID uuid.UUID, ps []domain.Planned) error
 	// Occurrences returns the occurrences with expected date in [from, to]; scheduleID uuid.Nil

@@ -38,6 +38,10 @@ FROM planning_schedule_pause WHERE user_id = @user_id AND schedule_id = ANY(@sch
 -- name: SetGeneratedUntil :exec
 UPDATE planning_schedule SET generated_until = @generated_until, updated_at = now() WHERE user_id = @user_id AND id = @id;
 
+-- name: ScheduleRefs :many
+-- Every schedule across users: what a backfill of their history reads (P7 amendment A127).
+SELECT user_id, id FROM planning_schedule ORDER BY user_id, id;
+
 -- name: SchedulesBehind :many
 -- A53: schedules whose occurrences stop before the horizon, across users.
 SELECT user_id, id FROM planning_schedule

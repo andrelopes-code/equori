@@ -408,6 +408,36 @@ func (q *Queries) LockSchedule(ctx context.Context, arg LockScheduleParams) (Pla
 	return i, err
 }
 
+const scheduleRefs = `-- name: ScheduleRefs :many
+SELECT user_id, id FROM planning_schedule ORDER BY user_id, id
+`
+
+type ScheduleRefsRow struct {
+	UserID int64
+	ID     uuid.UUID
+}
+
+// Every schedule across users: what a backfill of their history reads (P7 amendment A127).
+func (q *Queries) ScheduleRefs(ctx context.Context) ([]ScheduleRefsRow, error) {
+	rows, err := q.db.Query(ctx, scheduleRefs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ScheduleRefsRow
+	for rows.Next() {
+		var i ScheduleRefsRow
+		if err := rows.Scan(&i.UserID, &i.ID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const schedulesBehind = `-- name: SchedulesBehind :many
 SELECT user_id, id FROM planning_schedule
 WHERE generated_until < $1 AND (ends_on IS NULL OR generated_until < ends_on)

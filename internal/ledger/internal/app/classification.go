@@ -31,6 +31,12 @@ type TransactionFacts struct {
 	Postings                    []FactPosting
 }
 
+// AccountTransactionsBetween returns the non-voided transactions with a posting on the account
+// dated in [from, to], by date.
+func (s *Service) AccountTransactionsBetween(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]uuid.UUID, error) {
+	return s.repo.AccountTransactionsBetween(ctx, userID, accountID, from, to)
+}
+
 // TransactionFacts returns the facts of the user's transactions among ids, in the order of
 // ids; unknown ids are omitted.
 func (s *Service) TransactionFacts(ctx context.Context, userID int64, ids []uuid.UUID) ([]TransactionFacts, error) {

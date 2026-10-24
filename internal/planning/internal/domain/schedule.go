@@ -47,6 +47,7 @@ type Schedule struct {
 	EndsOn   *time.Time
 	// GeneratedUntil is the last date occurrences were generated through.
 	GeneratedUntil time.Time
+	CreatedAt      time.Time
 	Terms          []Terms
 	Pauses         []Pause
 }

@@ -103,6 +103,7 @@ func toSchedule(row PlanningSchedule) domain.Schedule {
 		ID: row.ID, Kind: domain.Kind(row.Kind), AccountID: row.AccountID, CounterpartID: row.CounterpartID,
 		PayeeID: row.PayeeID.UUID, Description: row.Description, Currency: money.Currency(row.Currency),
 		ToleranceBP: int(row.MatchToleranceBp), GraceDays: int(row.GraceDays), Calendar: row.Calendar, EndsOn: row.EndsOn, GeneratedUntil: row.GeneratedUntil,
+		CreatedAt: row.CreatedAt,
 	}
 }
 
@@ -214,6 +215,18 @@ func (r *Repository) SchedulesBehind(ctx context.Context, horizon time.Time) ([]
 	rows, err := r.q.SchedulesBehind(ctx, horizon)
 	if err != nil {
 		return nil, fmt.Errorf("list schedules behind: %w", err)
+	}
+	out := make([]app.ScheduleRef, len(rows))
+	for i, row := range rows {
+		out[i] = app.ScheduleRef{UserID: row.UserID, ID: row.ID}
+	}
+	return out, nil
+}
+
+func (r *Repository) ScheduleRefs(ctx context.Context) ([]app.ScheduleRef, error) {
+	rows, err := r.q.ScheduleRefs(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list schedules: %w", err)
 	}
 	out := make([]app.ScheduleRef, len(rows))
 	for i, row := range rows {

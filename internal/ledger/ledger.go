@@ -292,6 +292,12 @@ func (m *Module) Categorize(ctx context.Context, userID int64, cs []Categorizati
 	return m.svc.Categorize(ctx, userID, cs)
 }
 
+// AccountTransactionsBetween returns the user's non-voided transactions with a posting on the
+// account dated in [from, to], by date.
+func (m *Module) AccountTransactionsBetween(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]uuid.UUID, error) {
+	return m.svc.AccountTransactionsBetween(ctx, userID, accountID, from, to)
+}
+
 // TransactionFacts returns the facts of the user's transactions among ids in the order of
 // ids; unknown ids are omitted.
 func (m *Module) TransactionFacts(ctx context.Context, userID int64, ids []uuid.UUID) ([]TransactionFacts, error) {

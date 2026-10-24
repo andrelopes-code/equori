@@ -327,6 +327,9 @@ type Repository interface {
 	AccountTotals(ctx context.Context, userID int64, id uuid.UUID) (AccountTotals, error)
 	// TransactionsWithAccount returns the non-voided transactions with a posting on the account.
 	TransactionsWithAccount(ctx context.Context, userID int64, accountID uuid.UUID) ([]uuid.UUID, error)
+	// AccountTransactionsBetween returns the non-voided transactions with a posting on the
+	// account dated in [from, to], by date.
+	AccountTransactionsBetween(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]uuid.UUID, error)
 	// RenamePayee returns ErrValidation on name for a name in use.
 	RenamePayee(ctx context.Context, userID int64, id uuid.UUID, name string) (Payee, error)
 	// TransactionsWithPayee returns the non-voided transactions of the payee.

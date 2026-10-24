@@ -51,3 +51,15 @@ SELECT DISTINCT t.id FROM ledger_transaction t
 JOIN ledger_posting p ON p.transaction_id = t.id
 WHERE t.user_id = @user_id AND p.account_id = @account_id AND t.voided_at IS NULL
 ORDER BY t.id;
+
+-- name: AccountTransactionsBetween :many
+-- The non-voided transactions with a posting on the account dated in [from, to], by date:
+-- the ones that may realize the occurrences of a schedule (P7 amendment A127).
+SELECT t.id FROM ledger_transaction t
+WHERE t.user_id = @user_id AND t.voided_at IS NULL
+  AND t.date BETWEEN @from_date::date AND @to_date::date
+  AND EXISTS (
+    SELECT 1 FROM ledger_posting p
+    WHERE p.user_id = @user_id AND p.transaction_id = t.id AND p.account_id = @account_id
+  )
+ORDER BY t.date, t.id;

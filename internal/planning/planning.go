@@ -120,6 +120,12 @@ func (m *Module) Tick(ctx context.Context) {
 	}
 }
 
+// Backfill generates the occurrences every schedule lacks before its first generated one, as
+// creation does since P7 amendment A127; a second run changes nothing.
+func (m *Module) Backfill(ctx context.Context) error {
+	return m.svc.Backfill(ctx)
+}
+
 // RunScheduler ticks now and then every interval until ctx ends.
 func (m *Module) RunScheduler(ctx context.Context, interval time.Duration) {
 	t := time.NewTicker(interval)
@@ -151,6 +157,10 @@ func (p ledgerPort) MissingPayees(ctx context.Context, userID int64, ids []uuid.
 
 func (p ledgerPort) BaseCurrency(ctx context.Context, userID int64) (money.Currency, error) {
 	return p.l.BaseCurrency(ctx, userID)
+}
+
+func (p ledgerPort) AccountTransactionsBetween(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]uuid.UUID, error) {
+	return p.l.AccountTransactionsBetween(ctx, userID, accountID, from, to)
 }
 
 func (p ledgerPort) TransactionFacts(ctx context.Context, userID int64, ids []uuid.UUID) ([]domain.Transaction, error) {

@@ -46,6 +46,8 @@ func main() {
 		err = reportingCommand(os.Args[2:])
 	case "portfolio":
 		err = portfolioCommand(os.Args[2:])
+	case "planning":
+		err = planningCommand(os.Args[2:])
 	case "secrets":
 		err = secretsCommand(os.Args[2:])
 	case "healthcheck":
@@ -53,7 +55,7 @@ func main() {
 	case "version":
 		fmt.Println(buildVersion())
 	default:
-		fmt.Fprintf(os.Stderr, "unknown command %q; available: serve, user, reporting, portfolio, secrets, healthcheck, version\n", cmd)
+		fmt.Fprintf(os.Stderr, "unknown command %q; available: serve, user, reporting, portfolio, planning, secrets, healthcheck, version\n", cmd)
 		os.Exit(2)
 	}
 	if err != nil {
@@ -145,6 +147,29 @@ func reportingCommand(args []string) error {
 		return err
 	}
 	return app.Reporting.RebuildAll(ctx)
+}
+
+// planningCommand generates the occurrences schedules created before P7 amendment A127 lack.
+func planningCommand(args []string) error {
+	if len(args) != 1 || args[0] != "backfill" {
+		fmt.Fprintln(os.Stderr, "usage: equori planning backfill")
+		return errUsage
+	}
+	cfg, log, err := setup()
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+	pool, err := openDatabase(ctx, cfg, log)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+	app, err := server.New(pool, server.Config{}, log)
+	if err != nil {
+		return err
+	}
+	return app.Planning.Backfill(ctx)
 }
 
 // portfolioCommand rebuilds every derived position, result and income event from the ledger.

@@ -24,7 +24,11 @@ type TransactionChanged struct {
 // HandleTransaction re-evaluates which occurrence the transaction realizes. It returns at
 // once when no schedule names one of its accounts; a redelivered event changes nothing.
 func (s *Service) HandleTransaction(ctx context.Context, e TransactionChanged) error {
-	schedules, err := s.repo.SchedulesTouching(ctx, e.UserID, e.AccountIDs)
+	return s.reevaluate(ctx, s.repo, e)
+}
+
+func (s *Service) reevaluate(ctx context.Context, repo Repository, e TransactionChanged) error {
+	schedules, err := repo.SchedulesTouching(ctx, e.UserID, e.AccountIDs)
 	if err != nil || len(schedules) == 0 {
 		return err
 	}
@@ -36,7 +40,7 @@ func (s *Service) HandleTransaction(ctx context.Context, e TransactionChanged) e
 	if len(facts) == 1 {
 		t = facts[0]
 	}
-	current, err := s.repo.OccurrenceByTransaction(ctx, e.UserID, e.TransactionID)
+	current, err := repo.OccurrenceByTransaction(ctx, e.UserID, e.TransactionID)
 	hasCurrent := err == nil
 	if err != nil && !errors.Is(err, ErrNotFound) {
 		return err
@@ -45,7 +49,7 @@ func (s *Service) HandleTransaction(ctx context.Context, e TransactionChanged) e
 		if !t.Voided {
 			return nil
 		}
-		_, err = s.repo.Release(ctx, e.UserID, current.ID, false)
+		_, err = repo.Release(ctx, e.UserID, current.ID, false)
 		return err
 	}
 	var best domain.Candidate
@@ -56,7 +60,7 @@ func (s *Service) HandleTransaction(ctx context.Context, e TransactionChanged) e
 		for i, sch := range schedules {
 			byID[sch.ID], ids[i] = sch, sch.ID
 		}
-		os, err := s.repo.ExpectedOccurrences(ctx, e.UserID, ids,
+		os, err := repo.ExpectedOccurrences(ctx, e.UserID, ids,
 			t.Date.AddDate(0, 0, -domain.MatchWindowDays), t.Date.AddDate(0, 0, domain.MatchWindowDays))
 		if err != nil {
 			return err
@@ -74,14 +78,14 @@ func (s *Service) HandleTransaction(ctx context.Context, e TransactionChanged) e
 		if found && best.Occurrence.ID == current.ID {
 			return nil
 		}
-		if _, err := s.repo.Release(ctx, e.UserID, current.ID, false); err != nil {
+		if _, err := repo.Release(ctx, e.UserID, current.ID, false); err != nil {
 			return err
 		}
 	}
 	if !found {
 		return nil
 	}
-	_, err = s.repo.Realize(ctx, e.UserID, best.Occurrence.ID, t.ID, realizedAuto)
+	_, err = repo.Realize(ctx, e.UserID, best.Occurrence.ID, t.ID, realizedAuto)
 	return err
 }
 

@@ -2,6 +2,7 @@ package planning_test
 
 import (
 	"net/http"
+	"slices"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
@@ -48,15 +49,16 @@ func TestRuleChangeAfterAnEarlyPayment(t *testing.T) {
 	}
 }
 
-// Final review, finding 3: a terms change effective before the schedule existed creates no
-// occurrence dated before its creation.
+// Final review, finding 3, as amended by A127: a terms change effective before the schedule
+// existed leaves the occurrences dated before its creation skipped.
 func TestTermsChangeBeforeCreation(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.schedule("bill", f.checking, f.rent, 210000, monthly("2026-01-05", 5, ""), nil)
 	f.h.MustDo(http.MethodPost, "/api/v1/schedules/"+id+"/terms", map[string]any{"effective_from": "2026-02-01", "amount": apitest.BRL(220000)}, http.StatusCreated, nil)
-	if past := f.occurrences("from=2026-01-01&to=2026-10-31&schedule_id=" + id); len(past) != 0 {
-		t.Fatalf("occurrences before creation = %v", dates(past))
+	past := f.occurrences("from=2026-01-01&to=2026-10-31&schedule_id=" + id)
+	if len(past) != 10 || slices.ContainsFunc(past, func(o occurrenceView) bool { return o.State != "skipped" }) {
+		t.Fatalf("occurrences before creation = %v %v", dates(past), states(past))
 	}
 	if o := f.bySequence(id, "2026-11-01", "2026-11-30")[11]; o.ExpectedOn != "2026-11-05" || o.ExpectedAmount.Amount != 220000 {
 		t.Fatalf("2026-11 = %+v", o)
