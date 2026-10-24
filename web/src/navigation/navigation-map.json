@@ -266,6 +266,15 @@
     ]
   },
   {
+    "path": "/instruments",
+    "topics": ["investments"],
+    "screen": "Instruments",
+    "tasks": [
+      "list the currencies and securities by type with their latest price",
+      "define an instrument with its type, subtype, quote currency and exchange"
+    ]
+  },
+  {
     "path": "/settings",
     "topics": ["settings_language_and_region", "privacy_and_the_assistant"],
     "screen": "Settings",

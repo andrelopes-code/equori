@@ -37,6 +37,7 @@ import {
   validateAccountsSearch,
   AccountCardPreview,
 } from "@/features/accounts";
+import { InstrumentsPage } from "@/features/instruments";
 import { AdminPage } from "@/features/admin";
 import { OverviewPage } from "@/features/overview";
 import {
@@ -294,6 +295,12 @@ const adminRoute = createRoute({
   component: AdminPage,
 });
 
+const instrumentsRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "instruments",
+  component: InstrumentsPage,
+});
+
 const accountsLayoutRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "accounts",
@@ -380,6 +387,7 @@ export const routeTree = rootRoute.addChildren([
     cardsRoute,
     cardRoute,
     statementRoute,
+    instrumentsRoute,
     settingsRoute,
     adminRoute,
   ]),

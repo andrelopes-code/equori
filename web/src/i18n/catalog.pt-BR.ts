@@ -1,8 +1,10 @@
 import { accountsPtBR } from "@/i18n/catalog-accounts.pt-BR";
+import { instrumentsPtBR } from "@/i18n/catalog-instruments.pt-BR";
 import type { Catalog } from "@/i18n/catalog.en";
 
 export const catalogPtBR: Catalog = {
   ...accountsPtBR,
+  ...instrumentsPtBR,
   "nav.home": "Início",
   "nav.label": "Navegação principal",
   "nav.transactions": "Transações",

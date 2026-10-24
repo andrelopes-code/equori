@@ -5,6 +5,7 @@ import {
   FieldLabel,
 } from "@slotted/react/field";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 
 import { useApi } from "@/api/api-context";
@@ -74,6 +75,7 @@ export function SettingsLedger() {
           <FieldError>{currencyError}</FieldError>
         )}
       </Field>
+      <Link to="/instruments">{t("settings.ledger.instruments")}</Link>
     </SettingsSection>
   );
 }

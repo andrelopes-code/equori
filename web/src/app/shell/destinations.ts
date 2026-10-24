@@ -9,6 +9,7 @@ export type DestinationKey =
   | "accounts"
   | "goals"
   | "planning"
+  | "instruments"
   | "admin"
   | "settings";
 
@@ -22,6 +23,7 @@ export interface Destination {
     | "/accounts"
     | "/goals"
     | "/planning"
+    | "/instruments"
     | "/admin"
     | "/settings";
   label: MessageKey;
@@ -78,6 +80,13 @@ export const destinations: readonly Destination[] = [
     to: "/planning",
     label: "nav.planning",
     icon: "planning",
+    phone: "more",
+  },
+  {
+    key: "instruments",
+    to: "/instruments",
+    label: "nav.instruments",
+    icon: "instruments",
     phone: "more",
   },
   {
