@@ -10,6 +10,7 @@ import { Markdown } from "@slotted/react/markdown";
 import type { MarkdownRenderers } from "@slotted/react/markdown";
 import { useMemo } from "react";
 
+import styles from "@/features/assistant/assistant-panel.module.css";
 import type { AssistantMessage } from "@/features/assistant/sse";
 import { parseAnswer } from "@/features/assistant/answer-markdown";
 import { maskAmounts, maskMatch } from "@/features/assistant/mask-amounts";
@@ -41,8 +42,8 @@ export function MessageItem({ message }: { message: AssistantMessage }) {
   return (
     <Message align={own ? "end" : "start"}>
       <MessageBody>
-        <Bubble>
-          <BubbleContent>
+        <Bubble className={own ? undefined : styles.answer}>
+          <BubbleContent className={own ? undefined : styles.answerContent}>
             {own ? (
               message.content
             ) : tree === null ? (

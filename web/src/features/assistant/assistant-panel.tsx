@@ -123,6 +123,11 @@ export function AssistantPanel({
           : t("assistant.exhausted", { time: time(chat.data.retry_at) })
         : null;
   const started = messages.length > 0 || turn.pending !== null;
+  const blockedNotice = blockedText !== null && (
+    <InlineMessage tone={exhausted ? "warning" : "danger"} live="polite">
+      {blockedText}
+    </InlineMessage>
+  );
   const stepKey =
     turn.step === null ? undefined : catalogKey(`assistant.step.${turn.step}`);
 
@@ -151,6 +156,16 @@ export function AssistantPanel({
                   }}
                 />
               </div>
+            ) : !started ? (
+              // Workaround for Slotted finding "A message scroller without items keeps its content hidden": before the first message the notices sit outside the scroller.
+              <div className={styles.scroll}>
+                <div className={styles.feed}>
+                  {chat.data !== undefined && (
+                    <ProviderNotice chat={chat.data} />
+                  )}
+                  {blockedNotice}
+                </div>
+              </div>
             ) : (
               <MessageScroller
                 follow
@@ -159,9 +174,6 @@ export function AssistantPanel({
               >
                 <MessageScrollerViewport>
                   <MessageScrollerContent className={styles.feed}>
-                    {!started && chat.data !== undefined && (
-                      <ProviderNotice chat={chat.data} />
-                    )}
                     {messages.map((m) => (
                       <MessageScrollerItem
                         key={m.id}
@@ -199,14 +211,7 @@ export function AssistantPanel({
                         </Message>
                       </>
                     )}
-                    {blockedText !== null && (
-                      <InlineMessage
-                        tone={exhausted ? "warning" : "danger"}
-                        live="polite"
-                      >
-                        {blockedText}
-                      </InlineMessage>
-                    )}
+                    {blockedNotice}
                   </MessageScrollerContent>
                 </MessageScrollerViewport>
               </MessageScroller>
