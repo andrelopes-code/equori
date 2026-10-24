@@ -1528,6 +1528,28 @@ export const catalogEn = {
   "budget.deleteHint":
     "Its amounts go with it. The category and its transactions stay.",
   "budget.more": "More budget actions",
+  "overview.subtitle":
+    "Where the money stands, what is coming and what needs a decision",
+  "overview.attention.title": "Attention",
+  "overview.netWorth.title": "Net worth",
+  "overview.netWorth.open": "Open accounts",
+  "overview.netWorth.assets": "Assets",
+  "overview.netWorth.liabilities": "Liabilities",
+  "overview.netWorth.net": "Net",
+  "overview.netWorth.figures": "Net worth figures",
+  "overview.netWorth.since": "{change} since {date}",
+  "overview.flows.title": "Month flows",
+  "overview.flows.open": "Open transactions",
+  "overview.flows.income": "Income",
+  "overview.flows.outflow": "Outflow",
+  "overview.flows.result": "Result",
+  "overview.flows.figures": "Month flow figures",
+  "overview.flows.in": "Booked in {month}",
+  "overview.flows.resultNote": "Income minus outflow",
+  "overview.flows.forecast": "Forecast balance on {date}: {amount}",
+  "overview.spending.title": "Spending by category",
+  "overview.spending.open": "Open categories",
+  "overview.spending.empty": "No spending in {month}",
 } as const;
 
 export type Catalog = { [K in keyof typeof catalogEn]: string };
