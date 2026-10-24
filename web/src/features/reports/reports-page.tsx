@@ -9,9 +9,6 @@ import {
   PageHeaderTitleArea,
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
-import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
-import { Stack } from "@slotted/react/stack";
-import { Switch } from "@slotted/react/switch";
 import { Tab, TabList, Tabs } from "@slotted/react/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
@@ -22,21 +19,19 @@ import { CategoriesTab } from "@/features/reports/categories-tab";
 import { FlowsTab } from "@/features/reports/flows-tab";
 import { NetWorthTab } from "@/features/reports/net-worth-tab";
 import { periodLabel } from "@/features/reports/period-label";
-import { ReportPeriodControl } from "@/features/reports/report-period-control";
 import { defaultPeriod } from "@/features/reports/report-period";
-import { netWorthSpans, reportsTabs } from "@/features/reports/reports-search";
+import { reportsTabs } from "@/features/reports/reports-search";
 import type {
   NetWorthMonths,
   ReportsPatch,
   ReportsTab,
 } from "@/features/reports/reports-search";
-import { ValuationCurrency } from "@/features/reports/valuation-currency";
 import { settingsQuery } from "@/features/setup";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { HeaderProgress } from "@/ui/header-progress";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
+import { PeriodControl } from "@/ui/period-control";
 
 const tabLabels: Record<ReportsTab, MessageKey> = {
   "net-worth": "report.tab.netWorth",
@@ -45,12 +40,12 @@ const tabLabels: Record<ReportsTab, MessageKey> = {
 };
 
 // What the books held and moved over time, one tab per report. The state of the tab lives in
-// the address, so a link reopens the same report.
+// the address, so a link reopens the same report. The period stands in the header as on the
+// transactions page; each tab's own controls stand in the first row of its body.
 export function ReportsPage() {
   const t = useT();
   const [tag] = useAppLocale();
   const today = useToday();
-  const compact = useMediaQuery(compactQuery);
   const api = useApi();
   const search = useSearch({ from: "/_authed/reports" });
   const navigate = useNavigate();
@@ -74,76 +69,9 @@ export function ReportsPage() {
     );
     return navigate({ to: "/reports", search: next, replace: true });
   };
-  const controls = (
-    <>
-      {current === "net-worth" && (
-        <>
-          <ValuationCurrency
-            value={valueIn}
-            onChange={(code) => {
-              void change({ value_in: code === base ? undefined : code });
-            }}
-          />
-          <SegmentedControl
-            size="sm"
-            aria-label={t("report.netWorth.span")}
-            value={String(count)}
-            onValueChange={(value) => {
-              const next = netWorthSpans.find((n) => String(n) === value);
-              if (next !== undefined)
-                void change({ months: next === 12 ? undefined : next });
-            }}
-          >
-            {netWorthSpans.map((n) => (
-              <Segment key={n} value={String(n)}>
-                {t("report.netWorth.months", { count: n })}
-              </Segment>
-            ))}
-          </SegmentedControl>
-        </>
-      )}
-      {current !== "net-worth" && (
-        <>
-          <ReportPeriodControl
-            value={period}
-            onChange={(next) => {
-              const isDefault =
-                next.from === fallback.from && next.to === fallback.to;
-              void change({
-                from: isDefault ? undefined : next.from,
-                to: isDefault ? undefined : next.to,
-                parent: undefined,
-              });
-            }}
-          />
-          {current === "categories" && (
-            <SegmentedControl
-              size="sm"
-              aria-label={t("report.class")}
-              value={search.class ?? "expense"}
-              onValueChange={(value) => {
-                void change({
-                  class: value === "income" ? "income" : undefined,
-                  parent: undefined,
-                });
-              }}
-            >
-              <Segment value="expense">{t("report.class.expense")}</Segment>
-              <Segment value="income">{t("report.class.income")}</Segment>
-            </SegmentedControl>
-          )}
-          <Switch
-            checked={search.compare === true}
-            onCheckedChange={(checked) => {
-              void change({ compare: checked ? true : undefined });
-            }}
-          >
-            {t("report.compare")}
-          </Switch>
-        </>
-      )}
-    </>
-  );
+  const onChange = (patch: ReportsPatch) => {
+    void change(patch);
+  };
   return (
     <Page width="full">
       <PageHeader size="lg">
@@ -155,7 +83,25 @@ export function ReportsPage() {
                 {t("report.subtitle")}
               </PageHeaderSubheading>
             </PageHeaderTitle>
-            <PageHeaderActions>{!compact && controls}</PageHeaderActions>
+            {current !== "net-worth" && (
+              <PageHeaderActions>
+                <PeriodControl
+                  quarters
+                  allowAll={false}
+                  value={period}
+                  onChange={(next) => {
+                    if (next === undefined) return;
+                    const isDefault =
+                      next.from === fallback.from && next.to === fallback.to;
+                    onChange({
+                      from: isDefault ? undefined : next.from,
+                      to: isDefault ? undefined : next.to,
+                      parent: undefined,
+                    });
+                  }}
+                />
+              </PageHeaderActions>
+            )}
           </PageHeaderTitleRow>
         </PageHeaderTitleArea>
         <PageHeaderTabs>
@@ -184,17 +130,16 @@ export function ReportsPage() {
         <HeaderProgress loading={shownTab !== (chosen ?? current)} />
       </PageHeader>
       <PageBody>
-        {compact && <Stack gap={3}>{controls}</Stack>}
         <div aria-busy={shownTab !== (chosen ?? current) || undefined}>
           {shownTab === "net-worth" && (
-            <NetWorthTab count={count} valueIn={valueIn} />
-          )}
-          {shownTab === "flows" && (
-            <FlowsTab
-              period={period}
-              search={search}
-              onChange={(patch) => {
-                void change(patch);
+            <NetWorthTab
+              count={count}
+              valueIn={valueIn}
+              onCount={(next) => {
+                onChange({ months: next === 12 ? undefined : next });
+              }}
+              onValueIn={(code) => {
+                onChange({ value_in: code === base ? undefined : code });
               }}
             />
           )}
@@ -203,7 +148,11 @@ export function ReportsPage() {
               period={period}
               search={search}
               label={periodLabel(period, t, tag)}
+              onChange={onChange}
             />
+          )}
+          {shownTab === "flows" && (
+            <FlowsTab period={period} search={search} onChange={onChange} />
           )}
         </div>
       </PageBody>

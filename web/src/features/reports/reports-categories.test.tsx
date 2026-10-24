@@ -18,6 +18,19 @@ const rowTexts = (table: HTMLElement) =>
 const categoriesTable = () =>
   screen.findByRole("table", { name: catalogEn["report.categories.title"] });
 
+async function choosePreset(
+  user: ReturnType<typeof userEvent.setup>,
+  label: string,
+) {
+  const group = screen.getByRole("group", {
+    name: catalogEn["transactions.filter.period"],
+  });
+  const [, trigger] = within(group).getAllByRole("button");
+  if (trigger === undefined) throw new Error("period trigger not found");
+  await user.click(trigger);
+  await user.click(await screen.findByRole("button", { name: label }));
+}
+
 const none = catalogEn["report.none"];
 
 function api(overrides: Record<string, (req: Request) => Response> = {}) {
@@ -170,18 +183,14 @@ describe("Reports categories", () => {
     await waitFor(() => {
       expect(router.state.location.search).toMatchObject({ class: "income" });
     });
-    await user.click(
-      screen.getByRole("radio", { name: catalogEn["report.period.quarter"] }),
-    );
+    await choosePreset(user, catalogEn["report.period.thisQuarter"]);
     await waitFor(() => {
       expect(router.state.location.search).toMatchObject({
         from: "2026-10-01",
         to: "2026-12-31",
       });
     });
-    await user.click(
-      screen.getByRole("radio", { name: catalogEn["report.period.year"] }),
-    );
+    await choosePreset(user, catalogEn["transactions.period.thisYear"]);
     await waitFor(() => {
       expect(router.state.location.search).toMatchObject({
         from: "2026-01-01",

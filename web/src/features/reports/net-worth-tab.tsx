@@ -1,6 +1,7 @@
 import type { ChartSeries } from "@slotted/core/chart";
 import { Chart } from "@slotted/react/chart";
 import { InlineMessage } from "@slotted/react/inline-message";
+import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { Stack } from "@slotted/react/stack";
 import {
   Table,
@@ -20,6 +21,10 @@ import { useMemo } from "react";
 import { useApi } from "@/api/api-context";
 import { netWorthQuery } from "@/features/overview";
 import { monthEnds, netWorthRows } from "@/features/reports/net-worth-months";
+import { ReportControls } from "@/features/reports/report-controls";
+import { netWorthSpans } from "@/features/reports/reports-search";
+import type { NetWorthMonths } from "@/features/reports/reports-search";
+import { ValuationCurrency } from "@/features/reports/valuation-currency";
 import { useScale } from "@/features/setup";
 import { formatReferenceMonth, formatSignedBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -32,9 +37,13 @@ import { useMoneyFormat } from "@/privacy/use-money-format";
 export function NetWorthTab({
   count,
   valueIn,
+  onCount,
+  onValueIn,
 }: {
-  count: number;
+  count: NetWorthMonths;
   valueIn: string | undefined;
+  onCount: (count: NetWorthMonths) => void;
+  onValueIn: (code: string) => void;
 }) {
   const t = useT();
   const api = useApi();
@@ -95,6 +104,25 @@ export function NetWorthTab({
   }));
   return (
     <Stack gap={4}>
+      <ReportControls
+        start={
+          <SegmentedControl
+            aria-label={t("report.netWorth.span")}
+            value={String(count)}
+            onValueChange={(value) => {
+              const next = netWorthSpans.find((n) => String(n) === value);
+              if (next !== undefined) onCount(next);
+            }}
+          >
+            {netWorthSpans.map((n) => (
+              <Segment key={n} value={String(n)}>
+                {t("report.netWorth.months", { count: n })}
+              </Segment>
+            ))}
+          </SegmentedControl>
+        }
+        end={<ValuationCurrency value={valueIn} onChange={onValueIn} />}
+      />
       {!pending && (
         <Chart
           variant="card"

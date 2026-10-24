@@ -1,0 +1,7 @@
+@layer app {
+  /* A select states a measure of its own beside a switch; no token holds a measure. It shrinks to the row on a phone. */
+  .select {
+    inline-size: 16rem;
+    max-inline-size: 100%;
+  }
+}

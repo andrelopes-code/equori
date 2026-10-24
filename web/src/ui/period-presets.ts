@@ -23,12 +23,21 @@ function monthStart(year: number, month: number): string {
   return `${String(year)}-${String(month).padStart(2, "0")}-01`;
 }
 
-export function periodPresets(today: string): PeriodPreset[] {
+// `quarters` adds the quarter holding today and the one before, for a screen that reads calendar
+// quarters (the reports); the civil quarters start in January, April, July and October.
+export function periodPresets(today: string, quarters = false): PeriodPreset[] {
   const year = Number(today.slice(0, 4));
   const month = Number(today.slice(5, 7));
   const lastYear = month === 1 ? year - 1 : year;
   const lastMonth = month === 1 ? 12 : month - 1;
-  return [
+  const quarterStart = month - ((month - 1) % 3);
+  const quarter = (offset: number) => {
+    const index = year * 12 + (quarterStart - 1) + offset * 3;
+    const y = Math.floor(index / 12);
+    const m = (index % 12) + 1;
+    return { from: monthStart(y, m), to: monthEnd(y, m + 2) };
+  };
+  const all: PeriodPreset[] = [
     {
       key: "this-month",
       label: "transactions.period.thisMonth",
@@ -66,9 +75,17 @@ export function periodPresets(today: string): PeriodPreset[] {
       to: `${String(year - 1)}-12-31`,
     },
   ];
+  if (!quarters) return all;
+  all.splice(
+    2,
+    0,
+    { key: "this-quarter", label: "report.period.thisQuarter", ...quarter(0) },
+    { key: "last-quarter", label: "report.period.lastQuarter", ...quarter(-1) },
+  );
+  return all;
 }
 
-export type PeriodKind = "month" | "year" | "range";
+export type PeriodKind = "month" | "quarter" | "year" | "range";
 
 // A whole calendar month or year reads and steps as one; any other run is a plain range.
 export function periodKind(from: string, to: string): PeriodKind {
@@ -76,6 +93,12 @@ export function periodKind(from: string, to: string): PeriodKind {
   const month = Number(from.slice(5, 7));
   if (from.endsWith("-01-01") && to === `${String(year)}-12-31`) return "year";
   if (from.endsWith("-01") && to === monthEnd(year, month)) return "month";
+  if (
+    from.endsWith("-01") &&
+    (month - 1) % 3 === 0 &&
+    to === monthEnd(year, month + 2)
+  )
+    return "quarter";
   return "range";
 }
 
@@ -102,6 +125,12 @@ export function stepPeriod(
       const m = (index % 12) + 1;
       return { from: monthStart(y, m), to: monthEnd(y, m) };
     }
+    case "quarter": {
+      const index = year * 12 + (month - 1) + direction * 3;
+      const y = Math.floor(index / 12);
+      const m = (index % 12) + 1;
+      return { from: monthStart(y, m), to: monthEnd(y, m + 2) };
+    }
     case "range": {
       const length = daysBetween(from, to) + 1;
       return {
@@ -124,6 +153,7 @@ export function periodLabel(
       return formatMonthTitle(from.slice(0, 7), locale);
     case "year":
       return from.slice(0, 4);
+    case "quarter":
     case "range": {
       const year = today.slice(0, 4);
       const short = from.startsWith(year) && to.startsWith(year);

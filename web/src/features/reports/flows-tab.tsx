@@ -1,6 +1,5 @@
 import type { ChartSeries } from "@slotted/core/chart";
 import { Chart } from "@slotted/react/chart";
-import { Inline } from "@slotted/react/inline";
 import { InlineMessage } from "@slotted/react/inline-message";
 import {
   ResultState,
@@ -31,6 +30,9 @@ import { flowsQuery } from "@/features/cards";
 import { periodProblem } from "@/features/portfolio";
 import { flowRows, flowTotals } from "@/features/reports/flow-rows";
 import type { FlowBy, FlowRow } from "@/features/reports/flow-rows";
+import { CompareSwitch } from "@/features/reports/compare-switch";
+import { ReportSelect } from "@/features/reports/report-select";
+import { ReportControls } from "@/features/reports/report-controls";
 import { changeBP } from "@/features/reports/report-change";
 import { previousPeriod } from "@/features/reports/report-period";
 import type { ReportPeriod } from "@/features/reports/report-period";
@@ -172,35 +174,48 @@ export function FlowsTab({
     ["result", t("report.flows.result")],
   ] as const;
   const controls = (
-    <Inline gap={3} wrap="wrap">
-      <ChoiceSelect
-        label={t("report.flows.account")}
-        choices={offered.map((o) => ({
-          value: o.account.id,
-          label: o.account.name,
-          group: t(`accountChoice.group.${o.group}`),
-        }))}
-        multiple={false}
-        value={accountID ?? null}
-        onChange={(next) => {
-          if (typeof next === "string")
-            onChange({
-              account: next === offered[0]?.account.id ? undefined : next,
-            });
-        }}
-      />
-      <SegmentedControl
-        size="sm"
-        aria-label={t("report.flows.by")}
-        value={by}
-        onValueChange={(value) => {
-          onChange({ by: value === "month" ? "month" : undefined });
-        }}
-      >
-        <Segment value="day">{t("report.flows.byDay")}</Segment>
-        <Segment value="month">{t("report.flows.byMonth")}</Segment>
-      </SegmentedControl>
-    </Inline>
+    <ReportControls
+      start={
+        <SegmentedControl
+          aria-label={t("report.flows.by")}
+          value={by}
+          onValueChange={(value) => {
+            onChange({ by: value === "month" ? "month" : undefined });
+          }}
+        >
+          <Segment value="day">{t("report.flows.byDay")}</Segment>
+          <Segment value="month">{t("report.flows.byMonth")}</Segment>
+        </SegmentedControl>
+      }
+      end={
+        <>
+          <ReportSelect>
+            <ChoiceSelect
+              label={t("report.flows.account")}
+              choices={offered.map((o) => ({
+                value: o.account.id,
+                label: o.account.name,
+                group: t(`accountChoice.group.${o.group}`),
+              }))}
+              multiple={false}
+              value={accountID ?? null}
+              onChange={(next) => {
+                if (typeof next === "string")
+                  onChange({
+                    account: next === offered[0]?.account.id ? undefined : next,
+                  });
+              }}
+            />
+          </ReportSelect>
+          <CompareSwitch
+            checked={compare}
+            onChange={(checked) => {
+              onChange({ compare: checked ? true : undefined });
+            }}
+          />
+        </>
+      }
+    />
   );
   let body;
   if (problem !== undefined)

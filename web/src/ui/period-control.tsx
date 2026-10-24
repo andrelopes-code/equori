@@ -35,16 +35,22 @@ export interface Period {
 export function PeriodControl({
   value,
   onChange,
+  quarters = false,
+  allowAll = true,
 }: {
   value: Period | undefined;
   onChange: (next: Period | undefined) => void;
+  // Offers the quarter holding today and the one before; a quarter then steps as a quarter.
+  quarters?: boolean;
+  // False for a screen that always reads a period: no "all" choice.
+  allowAll?: boolean;
 }) {
   const t = useT();
   const [locale] = useAppLocale();
   const today = useToday();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<CalendarValue>(null);
-  const presets = periodPresets(today);
+  const presets = periodPresets(today, quarters);
   const [thisMonth] = presets;
 
   const step = (direction: -1 | 1) => {
@@ -110,17 +116,19 @@ export function PeriodControl({
             <PopoverBody>
               <Stack gap={4}>
                 <Inline gap={2} wrap="wrap">
-                  <Button
-                    size="sm"
-                    variant={value === undefined ? "solid" : "outline"}
-                    tone={value === undefined ? "accent" : "secondary"}
-                    aria-pressed={value === undefined}
-                    onClick={() => {
-                      choose(undefined);
-                    }}
-                  >
-                    {t("transactions.period.all")}
-                  </Button>
+                  {allowAll && (
+                    <Button
+                      size="sm"
+                      variant={value === undefined ? "solid" : "outline"}
+                      tone={value === undefined ? "accent" : "secondary"}
+                      aria-pressed={value === undefined}
+                      onClick={() => {
+                        choose(undefined);
+                      }}
+                    >
+                      {t("transactions.period.all")}
+                    </Button>
+                  )}
                   {presets.map((preset) => {
                     const on = preset.key === current?.key;
                     return (

@@ -86,3 +86,43 @@ describe("periodLabel", () => {
     expect(periodLabel(from, to, "2026-10-21", "pt-BR")).toBe(label);
   });
 });
+
+describe("quarters", () => {
+  it("adds the quarter of today and the one before only when asked", () => {
+    const keys = (quarters: boolean) =>
+      periodPresets("2026-01-10", quarters).map((p) => p.key);
+    expect(keys(false)).not.toContain("this-quarter");
+    expect(keys(true)).toEqual([
+      "this-month",
+      "last-month",
+      "this-quarter",
+      "last-quarter",
+      "last-30-days",
+      "last-90-days",
+      "this-year",
+      "last-year",
+    ]);
+    const quarter = (key: string) =>
+      periodPresets("2026-01-10", true).find((p) => p.key === key);
+    expect(quarter("this-quarter")).toMatchObject({
+      from: "2026-01-01",
+      to: "2026-03-31",
+    });
+    expect(quarter("last-quarter")).toMatchObject({
+      from: "2025-10-01",
+      to: "2025-12-31",
+    });
+  });
+
+  it("reads a whole calendar quarter and steps it by a quarter", () => {
+    expect(periodKind("2026-10-01", "2026-12-31")).toBe("quarter");
+    expect(stepPeriod("2026-10-01", "2026-12-31", 1)).toEqual({
+      from: "2027-01-01",
+      to: "2027-03-31",
+    });
+    expect(stepPeriod("2026-01-01", "2026-03-31", -1)).toEqual({
+      from: "2025-10-01",
+      to: "2025-12-31",
+    });
+  });
+});

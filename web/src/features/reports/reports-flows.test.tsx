@@ -23,6 +23,19 @@ const rowTexts = (table: HTMLElement) =>
 const flowsTable = () =>
   screen.findByRole("table", { name: catalogEn["report.flows.title"] });
 
+async function choosePreset(
+  user: ReturnType<typeof userEvent.setup>,
+  label: string,
+) {
+  const group = screen.getByRole("group", {
+    name: catalogEn["transactions.filter.period"],
+  });
+  const [, trigger] = within(group).getAllByRole("button");
+  if (trigger === undefined) throw new Error("period trigger not found");
+  await user.click(trigger);
+  await user.click(await screen.findByRole("button", { name: label }));
+}
+
 const none = catalogEn["report.none"];
 
 function api(overrides: Record<string, (req: Request) => Response> = {}) {
@@ -153,9 +166,7 @@ describe("Reports flows", () => {
     await waitFor(() => {
       expect(router.state.location.search).toMatchObject({ by: "month" });
     });
-    await user.click(
-      screen.getByRole("radio", { name: catalogEn["report.period.year"] }),
-    );
+    await choosePreset(user, catalogEn["transactions.period.thisYear"]);
     await waitFor(() => {
       expect(router.state.location.search).toMatchObject({
         from: "2026-01-01",

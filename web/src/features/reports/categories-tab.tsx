@@ -14,6 +14,7 @@ import {
   ResultStateContent,
   ResultStateTitle,
 } from "@slotted/react/result-state";
+import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { Stack } from "@slotted/react/stack";
 import {
   Table,
@@ -37,6 +38,8 @@ import { categoryTotalsQuery, useCategoryEntries } from "@/features/categories";
 import { periodProblem } from "@/features/portfolio";
 import { categoryRows } from "@/features/reports/category-rows";
 import type { CategoryRow } from "@/features/reports/category-rows";
+import { CompareSwitch } from "@/features/reports/compare-switch";
+import { ReportControls } from "@/features/reports/report-controls";
 import { previousPeriod } from "@/features/reports/report-period";
 import type { ReportPeriod } from "@/features/reports/report-period";
 import type { ReportsSearch } from "@/features/reports/reports-search";
@@ -57,9 +60,11 @@ export function CategoriesTab({
   period,
   search,
   label,
+  onChange,
 }: {
   period: ReportPeriod;
   search: ReportsSearch;
+  onChange: (patch: ReportsSearch) => void;
   // The words of the period, for the chart's series.
   label: string;
 }) {
@@ -226,6 +231,31 @@ export function CategoriesTab({
     );
   return (
     <Stack gap={4}>
+      <ReportControls
+        start={
+          <SegmentedControl
+            aria-label={t("report.class")}
+            value={cls}
+            onValueChange={(value) => {
+              onChange({
+                class: value === "income" ? "income" : undefined,
+                parent: undefined,
+              });
+            }}
+          >
+            <Segment value="expense">{t("report.class.expense")}</Segment>
+            <Segment value="income">{t("report.class.income")}</Segment>
+          </SegmentedControl>
+        }
+        end={
+          <CompareSwitch
+            checked={compare}
+            onChange={(checked) => {
+              onChange({ compare: checked ? true : undefined });
+            }}
+          />
+        }
+      />
       {open !== undefined && (
         <Breadcrumb aria-label={t("report.categories.trail")}>
           <BreadcrumbList>

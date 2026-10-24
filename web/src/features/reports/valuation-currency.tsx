@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
+import { ReportSelect } from "@/features/reports/report-select";
 import { instrumentsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
@@ -20,14 +21,16 @@ export function ValuationCurrency({
     .filter((i) => i.type === "currency")
     .map((i) => ({ value: i.code, label: i.code }));
   return (
-    <ChoiceSelect
-      label={t("report.valueIn")}
-      choices={currencies}
-      multiple={false}
-      value={value ?? null}
-      onChange={(next) => {
-        if (typeof next === "string") onChange(next);
-      }}
-    />
+    <ReportSelect>
+      <ChoiceSelect
+        label={t("report.valueIn")}
+        choices={currencies}
+        multiple={false}
+        value={value ?? null}
+        onChange={(next) => {
+          if (typeof next === "string") onChange(next);
+        }}
+      />
+    </ReportSelect>
   );
 }
