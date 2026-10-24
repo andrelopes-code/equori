@@ -296,6 +296,14 @@
     ]
   },
   {
+    "path": "/reports",
+    "topics": ["reports"],
+    "screen": "Reports",
+    "tasks": [
+      "see the net worth at each month end over 6, 12 or 24 months, in a chosen currency"
+    ]
+  },
+  {
     "path": "/settings",
     "topics": ["settings_language_and_region", "privacy_and_the_assistant"],
     "screen": "Settings",

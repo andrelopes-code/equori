@@ -82,7 +82,7 @@ export function DesktopFigures({ month }: { month: string }) {
               })
         }
         action={
-          <OverviewLink options={{ to: "/accounts" }}>
+          <OverviewLink options={{ to: "/reports" }}>
             {t("overview.netWorth.open")}
           </OverviewLink>
         }

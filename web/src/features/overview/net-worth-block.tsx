@@ -13,8 +13,8 @@ import { useMoneyFormat } from "@/privacy/use-money-format";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
 
-// Assets, liabilities and net, each against the end of the month before. The link goes to
-// Accounts: the portfolio screen does not exist yet.
+// Assets, liabilities and net, each against the end of the month before. The link goes to the
+// net worth report.
 export function NetWorthBlock({ month }: { month: string }) {
   const t = useT();
   const api = useApi();
@@ -76,7 +76,7 @@ export function NetWorthBlock({ month }: { month: string }) {
       title={t("overview.netWorth.title")}
       link={{
         label: t("overview.netWorth.open"),
-        options: { to: "/accounts" },
+        options: { to: "/reports" },
       }}
       loading={false}
       error={error}

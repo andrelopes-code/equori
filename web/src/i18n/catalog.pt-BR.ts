@@ -1,12 +1,14 @@
 import { accountsPtBR } from "@/i18n/catalog-accounts.pt-BR";
 import { instrumentsPtBR } from "@/i18n/catalog-instruments.pt-BR";
 import { portfolioPtBR } from "@/i18n/catalog-portfolio.pt-BR";
+import { reportsPtBR } from "@/i18n/catalog-reports.pt-BR";
 import type { Catalog } from "@/i18n/catalog.en";
 
 export const catalogPtBR: Catalog = {
   ...accountsPtBR,
   ...instrumentsPtBR,
   ...portfolioPtBR,
+  ...reportsPtBR,
   "nav.home": "Início",
   "nav.label": "Navegação principal",
   "nav.transactions": "Transações",
@@ -1613,7 +1615,7 @@ export const catalogPtBR: Catalog = {
     "Onde o dinheiro está, o que vem pela frente e o que pede decisão",
   "overview.attention.title": "Atenção",
   "overview.netWorth.title": "Patrimônio líquido",
-  "overview.netWorth.open": "Abrir contas",
+  "overview.netWorth.open": "Abrir patrimônio líquido",
   "overview.netWorth.assets": "Ativos",
   "overview.netWorth.liabilities": "Passivos",
   "overview.netWorth.net": "Líquido",

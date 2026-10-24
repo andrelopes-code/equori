@@ -104,6 +104,7 @@ describe("desktop column", () => {
       catalogEn["nav.planning"],
       catalogEn["nav.instruments"],
       catalogEn["nav.portfolio"],
+      catalogEn["nav.reports"],
       catalogEn["nav.admin"],
     ]);
     expect(links[1]).toHaveAttribute("aria-current", "page");
@@ -626,6 +627,7 @@ describe("phone dock", () => {
     ["nav.planning", "/planning"],
     ["nav.instruments", "/instruments"],
     ["nav.portfolio", "/portfolio"],
+    ["nav.reports", "/reports"],
     ["nav.admin", "/admin"],
     ["more.settings", "/settings"],
   ] as const)("opens %s from More", async (label, path) => {

@@ -1,11 +1,13 @@
 import { accountsEn } from "@/i18n/catalog-accounts.en";
 import { instrumentsEn } from "@/i18n/catalog-instruments.en";
 import { portfolioEn } from "@/i18n/catalog-portfolio.en";
+import { reportsEn } from "@/i18n/catalog-reports.en";
 
 export const catalogEn = {
   ...accountsEn,
   ...instrumentsEn,
   ...portfolioEn,
+  ...reportsEn,
   "nav.home": "Home",
   "nav.label": "Main navigation",
   "nav.transactions": "Transactions",
@@ -1592,7 +1594,7 @@ export const catalogEn = {
     "Where the money stands, what is coming and what needs a decision",
   "overview.attention.title": "Attention",
   "overview.netWorth.title": "Net worth",
-  "overview.netWorth.open": "Open accounts",
+  "overview.netWorth.open": "Open net worth",
   "overview.netWorth.assets": "Assets",
   "overview.netWorth.liabilities": "Liabilities",
   "overview.netWorth.net": "Net",

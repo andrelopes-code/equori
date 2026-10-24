@@ -299,3 +299,13 @@ export function formatBasisPoints(bp: number, locale: string): string {
     maximumFractionDigits: 2,
   }).format(bp / 10000);
 }
+
+// A change in basis points as a signed percentage of the locale: 688 reads "+6.88%" in en-US.
+export function formatSignedBasisPoints(bp: number, locale: string): string {
+  return new Intl.NumberFormat(locale, {
+    style: "percent",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    signDisplay: "exceptZero",
+  }).format(bp / 10000);
+}

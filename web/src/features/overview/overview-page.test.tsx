@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { expectNoAmounts, hideAmounts } from "@/testing/privacy";
 import { renderApp } from "@/testing/render-app";
@@ -153,6 +154,17 @@ describe("overview page", () => {
     expect(worth).toHaveTextContent("1,005.00");
     expect(worth).toHaveTextContent("+17.5%");
   });
+
+  it.each([800, 1280])(
+    "links the net worth to the reports tab at %i px",
+    async (width) => {
+      await renderApp("/", { width, fetch: api() });
+      const link = await screen.findByRole("link", {
+        name: catalogEn["overview.netWorth.open"],
+      });
+      expect(link).toHaveAttribute("href", "/reports");
+    },
+  );
 
   it("shows the income, outflow and result of the month", async () => {
     await renderApp("/", { width: 800, fetch: api() });
