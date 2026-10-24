@@ -2,7 +2,7 @@
 
 Sequential guide for the screens of `web/`. Each item names the screens, their functions, the API operations they consume and their dependencies. It is not the source of truth: the implementer of an item reads `api/openapi.yaml`, the ADRs, the scenarios of `docs/domain/06-scenarios.md`, `web/CLAUDE.md` and the existing code before designing the screen. Field lists below are a map of the contract, not a form specification.
 
-Status snapshot: 2026-10-24, commit `22743fa`.
+Status snapshot: 2026-10-24, commit `98f25f8`.
 
 `/admin` and `web/src/features/admin/` are temporary and leave the application. This roadmap ignores them: an operation reachable only through `/admin` counts as having no screen. Implementers neither reuse nor extend code from `features/admin/`.
 
@@ -26,7 +26,7 @@ Status snapshot: 2026-10-24, commit `22743fa`.
 | 4 | Institution identifiers | Partial | — |
 | 5 | Schedules and occurrences | Delivered | — |
 | 6 | Budgets | Delivered | 5 |
-| 7 | Overview | Shell | 5, 6, 10 |
+| 7 | Overview | Delivered | 5, 6, 10 |
 | 8 | Instruments and prices | Partial | — |
 | 9 | Trades and investment income entry | No screen | 8 |
 | 10 | Portfolio | Partial | 8, 9 |
@@ -196,7 +196,7 @@ Functions, budget detail:
 
 ## 7. Overview
 
-Status: Shell. `features/overview/overview-page.tsx` renders a header; `use-overview.ts`, `forecast.ts` and `month-flows.ts` hold data hooks without a consumer.
+Status: Delivered. `features/overview/` draws one block per question; each block reads its own queries and fails alone. The net worth block links to Accounts because `/portfolio` does not exist; the attention list links connections to `/accounts/links`.
 
 Operations: `getNetWorth`, `listBalances`, `getBalanceSeries`, `getAccountFlows`, `getCategoryTotals`, `listOccurrences`, `getCommitted`, budgets (item 6), `listStatements`, `listGoals`, `listConnections`, `getReconciliationStatus`, `listTransactions` with `uncategorized`.
 

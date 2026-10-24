@@ -1568,6 +1568,11 @@ export const catalogEn = {
   "overview.goals.open": "Open goals",
   "overview.goals.of": "{current} of {target}",
   "overview.goals.empty": "No goals yet",
+  "overview.attention.uncategorized": "Uncategorized transactions",
+  "overview.attention.unconfirmed": "Unconfirmed records",
+  "overview.attention.connections": "Connections that need action",
+  "overview.attention.difference": "Open reconciliation difference",
+  "overview.attention.atLeast": "{count}+",
 } as const;
 
 export type Catalog = { [K in keyof typeof catalogEn]: string };

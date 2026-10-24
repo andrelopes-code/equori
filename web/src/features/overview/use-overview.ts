@@ -2,7 +2,6 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
 import { useApi } from "@/api/api-context";
-import type { components } from "@/api/schema.gen";
 import {
   accountsQuery,
   seriesQuery,
@@ -10,53 +9,24 @@ import {
 } from "@/features/accounts";
 import {
   buildForecast,
-  lowestAhead,
   mergeEvents,
-  monthDays,
   monthEnd,
   sumByDate,
 } from "@/features/overview/forecast";
-import type { ForecastDay, ForecastEvent } from "@/features/overview/forecast";
 import { monthFlows } from "@/features/overview/month-flows";
 import type { MonthFlows } from "@/features/overview/month-flows";
-import {
-  budgetProgressQuery,
-  budgetsQuery,
-  projectionQuery,
-  schedulesQuery,
-} from "@/features/planning";
+import { projectionQuery, schedulesQuery } from "@/features/planning";
 import { settingsQuery } from "@/features/setup";
 import { periodTransactionsQuery } from "@/features/transactions";
 import { useToday } from "@/i18n/today";
 
-type Account = components["schemas"]["Account"];
-
-export interface BudgetLine {
-  id: string;
-  category: string;
-  spent: number;
-  planned: number;
-  available: number;
-}
-
 export interface Overview {
-  // No account exists yet: the page leads to Accounts instead of a forecast.
-  noAccounts: boolean;
   month: string;
   current: boolean;
   base: string;
-  scope: Account[];
-  days: ForecastDay[];
-  ahead: ForecastEvent[];
-  today: number;
-  opening: number;
+  // Minor units: the booked balance at month end, or the forecast for the current month.
   closing: number;
-  lowest: ReturnType<typeof lowestAhead>;
-  lowestRealized: { date: string; balance: number } | null;
   flows: MonthFlows;
-  budgets: BudgetLine[];
-  // The share of the month gone by: 1 for a past month.
-  elapsed: number;
 }
 
 // The forecast covers the Available accounts in the base currency.
@@ -99,25 +69,14 @@ export function useOverview(month: string): {
   const transactions = useQuery(
     periodTransactionsQuery(api, start, realizedTo),
   );
-  const budgets = useQuery(budgetsQuery(api));
-  const activeBudgets = (budgets.data ?? []).filter((budget) =>
-    budget.amounts.some((amount) => amount.effective_from <= month),
-  );
-  const progress = useQueries({
-    queries: activeBudgets.map((budget) =>
-      budgetProgressQuery(api, budget.id, month),
-    ),
-  });
 
   const all = [
     settings,
     accounts,
     schedules,
     transactions,
-    budgets,
     ...series,
     ...projections,
-    ...progress,
   ];
   const failed =
     groupsFailed ?? all.find((query) => query.error !== null)?.error ?? null;
@@ -159,56 +118,19 @@ export function useOverview(month: string): {
       todayBalance,
       events,
     });
-    const realizedDays = days.filter((d) => d.realized !== undefined);
-    const lowestRealized = realizedDays.reduce<{
-      date: string;
-      balance: number;
-    } | null>(
-      (low, d) =>
-        d.realized !== undefined && (low === null || d.realized < low.balance)
-          ? { date: d.date, balance: d.realized }
-          : low,
-      null,
-    );
     const accountsById = new Map(
       (accounts.data ?? []).map((account) => [account.id, account]),
     );
-    const names = new Map(
-      (accounts.data ?? []).map((account) => [account.id, account.name]),
-    );
-    const dayOfMonth = Number(todayISO.slice(8, 10));
     overview = {
-      noAccounts: groups.length === 0,
       month,
       current,
       base,
-      scope,
-      days,
-      ahead: events.filter((event) => event.date > todayISO),
-      today: todayBalance,
-      opening: realizedDays[0]?.realized ?? 0,
       closing: days.at(-1)?.forecast ?? days.at(-1)?.realized ?? 0,
-      lowest: current ? lowestAhead(days) : null,
-      lowestRealized,
       flows: monthFlows(
         transactions.data ?? [],
         new Set(scope.map((account) => account.id)),
         accountsById,
       ),
-      budgets: activeBudgets.flatMap((budget, i) => {
-        const data = progress[i]?.data;
-        if (data === undefined) return [];
-        return [
-          {
-            id: budget.id,
-            category: names.get(budget.category_id) ?? "",
-            spent: data.spent.amount,
-            planned: data.planned.amount + data.carried.amount,
-            available: data.available.amount,
-          },
-        ];
-      }),
-      elapsed: current ? dayOfMonth / monthDays(month).length : 1,
     };
   }
   return {

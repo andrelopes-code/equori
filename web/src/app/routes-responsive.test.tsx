@@ -76,6 +76,17 @@ function newFetch() {
     "GET /api/v1/institutions": () => json(200, { items: [] }),
     "GET /api/v1/schedules": () => json(200, { items: [] }),
     "GET /api/v1/budgets": () => json(200, { items: [] }),
+    "GET /api/v1/goals": () => json(200, { items: [] }),
+    "GET /api/v1/connections": () => json(200, { items: [] }),
+    "GET /api/v1/occurrences": () => json(200, { items: [] }),
+    "GET /api/v1/reports/net-worth": () => {
+      const zero = { amount: 0, currency: "BRL" };
+      return json(200, { assets: zero, liabilities: zero, net: zero });
+    },
+    "GET /api/v1/reports/categories": () => json(200, { items: [] }),
+    [`GET /api/v1/accounts/${checkingID}/reconciliation`]: () => json(200, {}),
+    [`GET /api/v1/accounts/${checkingID}/unconfirmed`]: () =>
+      json(200, { items: [] }),
     [`GET /api/v1/accounts/${checkingID}/projection`]: () =>
       json(200, {
         account_id: checkingID,

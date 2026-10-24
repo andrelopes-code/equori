@@ -8,6 +8,8 @@ import {
   accountFixtures,
   accountRoutes,
   cardRoutes,
+  reserveID,
+  connectionFixture,
   checkingID,
   foodID,
   money,
@@ -87,6 +89,15 @@ function api(overrides: Record<string, (req: Request) => Response> = {}) {
       ]),
     ),
     ...cardRoutes(),
+    ...Object.fromEntries(
+      accountFixtures.flatMap((a) => [
+        [`GET /api/v1/accounts/${a.id}/reconciliation`, () => json(200, {})],
+        [
+          `GET /api/v1/accounts/${a.id}/unconfirmed`,
+          () => json(200, { items: [] }),
+        ],
+      ]),
+    ),
     "GET /api/v1/schedules": () => json(200, { items: schedules }),
     "GET /api/v1/occurrences": () => json(200, { items: [] }),
     "GET /api/v1/budgets": () => json(200, { items: [] }),
@@ -318,6 +329,84 @@ describe("overview page", () => {
       const goals = await screen.findByRole("region", { name: "Goals" });
       await waitFor(() => {
         expect(goals).toHaveTextContent("Trip");
+      });
+    });
+  });
+
+  describe("attention list", () => {
+    const uncategorized = (items: unknown[]) => (req: Request) =>
+      new URL(req.url).searchParams.get("uncategorized") === "true"
+        ? json(200, { items })
+        : json(200, { items: [] });
+    const stuck = { ...connectionFixture, state: "failed" };
+    const reconciliation = {
+      open_difference: {
+        assertion_id: "as1",
+        date: "2026-10-15",
+        difference: money(-1500),
+      },
+    };
+
+    it("counts what needs a decision and links each count", async () => {
+      await renderApp("/", {
+        fetch: api({
+          "GET /api/v1/transactions": uncategorized([{}, {}, {}]),
+          [`GET /api/v1/accounts/${checkingID}/unconfirmed`]: () =>
+            json(200, { items: [{}, {}] }),
+          "GET /api/v1/connections": () =>
+            json(200, { items: [connectionFixture, stuck] }),
+          [`GET /api/v1/accounts/${reserveID}/reconciliation`]: () =>
+            json(200, reconciliation),
+        }),
+      });
+      const region = await screen.findByRole("region", { name: "Attention" });
+      await waitFor(() => {
+        expect(within(region).getAllByRole("listitem")).toHaveLength(4);
+      });
+      const rows = within(region)
+        .getAllByRole("listitem")
+        .map((row) => row.textContent);
+      expect(rows[0]).toMatch(/Uncategorized transactions.*3/);
+      expect(rows[1]).toMatch(/Unconfirmed records.*Nubank.*2/);
+      expect(rows[2]).toMatch(/Connections that need action.*1/);
+      expect(rows[3]).toMatch(/Reserva de emergência.*15\.00/);
+      expect(
+        within(region)
+          .getAllByRole("link")
+          .map((link) => link.getAttribute("href")),
+      ).toEqual(
+        expect.arrayContaining([
+          "/transactions?uncategorized=true",
+          "/accounts/links",
+          `/accounts/${reserveID}?tab=reconciliation`,
+        ]),
+      );
+    });
+
+    it("draws no block when nothing needs attention", async () => {
+      await renderApp("/", {
+        fetch: api({ "GET /api/v1/transactions": uncategorized([]) }),
+      });
+      await waitFor(() => {
+        expect(screen.getByRole("region", { name: "Goals" })).toHaveTextContent(
+          "No goals yet",
+        );
+      });
+      await waitFor(() => {
+        expect(screen.queryByRole("region", { name: "Attention" })).toBeNull();
+      });
+    });
+
+    it("fails alone when the connections cannot be read", async () => {
+      await renderApp("/", {
+        fetch: api({
+          "GET /api/v1/connections": () => problem(500, "internal_error"),
+        }),
+      });
+      const region = await screen.findByRole("region", { name: "Attention" });
+      await within(region).findByRole("button", { name: "Try again" });
+      await waitFor(() => {
+        expect(block("Net worth")).toHaveTextContent("2,205.00");
       });
     });
   });
