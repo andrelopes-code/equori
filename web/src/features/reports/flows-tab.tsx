@@ -138,35 +138,33 @@ export function FlowsTab({
   const error =
     accounts.error ?? current.error ?? (compare ? previous.error : null);
   const title = t("report.flows.title");
+  // Inflow rises above zero and outflow hangs below it in one stack, so the two never hide each
+  // other; the result stays in the table and the tooltip, not as a third mark.
+  const shown = (value: number) => money(Math.abs(value));
   const series: ChartSeries[] = [
     {
       id: "inflow",
       kind: "bar",
       field: "inflow",
       label: t("report.flows.inflow"),
-      format: money,
+      stack: "flow",
+      tone: "success",
+      format: shown,
     },
     {
       id: "outflow",
       kind: "bar",
       field: "outflow",
       label: t("report.flows.outflow"),
-      tone: "neutral",
-      format: money,
-    },
-    {
-      id: "result",
-      kind: "line",
-      field: "result",
-      label: t("report.flows.result"),
-      format: money,
+      stack: "flow",
+      tone: "danger",
+      format: shown,
     },
   ];
   const data = rows.map((r) => ({
     label: chartLabel(r.key),
     inflow: r.inflow,
-    outflow: r.outflow,
-    result: r.result,
+    outflow: -r.outflow,
   }));
   const metrics = [
     ["inflow", t("report.flows.inflow")],
@@ -254,7 +252,7 @@ export function FlowsTab({
             data={data}
             series={series}
             x={{ field: "label" }}
-            y={{ format: money }}
+            y={{ format: shown }}
           />
         )}
         <Table columns={4} variant="framed">
