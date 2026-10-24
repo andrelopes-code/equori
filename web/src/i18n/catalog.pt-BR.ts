@@ -1302,6 +1302,7 @@ export const catalogPtBR: Catalog = {
   "agenda.kind": "Tipo",
   "agenda.any": "Qualquer",
   "agenda.description": "Descrição",
+  "agenda.amount": "Valor previsto",
   "agenda.actions": "Ações",
   "agenda.caption": "Ocorrências do mês",
   "agenda.overdue": "Atrasadas",

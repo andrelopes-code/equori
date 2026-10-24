@@ -1,7 +1,6 @@
 import { parseISODate, toISODate, toISOYearMonth } from "@slotted/core/date";
 import type { PlainDate } from "@slotted/core/date";
 import { Calendar } from "@slotted/react/calendar";
-import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
 import type { TableHandle } from "@slotted/react/table";
 import { useQuery } from "@tanstack/react-query";
@@ -103,7 +102,11 @@ export function AgendaTab({
   const anyChoice = { value: any, label: t("agenda.any") };
   return (
     <Stack gap={6}>
-      <Inline gap={3} aria-label={t("agenda.filters")} role="group">
+      <div
+        className={styles.filters}
+        aria-label={t("agenda.filters")}
+        role="group"
+      >
         <MonthControl
           value={month}
           onChange={onMonth}
@@ -176,7 +179,7 @@ export function AgendaTab({
             }));
           }}
         />
-      </Inline>
+      </div>
       <FigureGrid label={t("agenda.figures")}>
         <FigureCard
           label={t("agenda.inflow")}

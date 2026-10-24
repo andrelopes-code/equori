@@ -98,7 +98,7 @@ export function AgendaTable({
         <TableCell numeric>
           {fmt.signed(r.money, scale(r.money.currency))}
         </TableCell>
-        <TableCell sticky="end">
+        <TableCell>
           <OccurrenceActions occurrence={r.occurrence} name={name} />
         </TableCell>
       </TableRow>
@@ -116,10 +116,9 @@ export function AgendaTable({
             <TableColumnHeader>{t("agenda.kind")}</TableColumnHeader>
             <TableColumnHeader>{t("agenda.account")}</TableColumnHeader>
             <TableColumnHeader>{t("agenda.state")}</TableColumnHeader>
-            <TableColumnHeader numeric>{t("ledger.amount")}</TableColumnHeader>
-            <TableColumnHeader sticky="end">
-              {t("agenda.actions")}
-            </TableColumnHeader>
+            <TableColumnHeader numeric>{t("agenda.amount")}</TableColumnHeader>
+            {/* Workaround for Slotted finding "A pinned table cell has no ground, so the cells that scroll under it show through": the actions column is not pinned. */}
+            <TableColumnHeader>{t("agenda.actions")}</TableColumnHeader>
           </TableRow>
         </TableHead>
         {loading ? (

@@ -1278,6 +1278,7 @@ export const catalogEn = {
   "agenda.kind": "Kind",
   "agenda.any": "Any",
   "agenda.description": "Description",
+  "agenda.amount": "Expected amount",
   "agenda.actions": "Actions",
   "agenda.caption": "Occurrences of the month",
   "agenda.overdue": "Overdue",

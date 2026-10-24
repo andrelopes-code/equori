@@ -88,9 +88,8 @@ export function ScheduledTab({
               <TableColumnHeader numeric>
                 {t("ledger.balanceAfter")}
               </TableColumnHeader>
-              <TableColumnHeader sticky="end">
-                {t("agenda.actions")}
-              </TableColumnHeader>
+              {/* Workaround for Slotted finding "A pinned table cell has no ground, so the cells that scroll under it show through": the actions column is not pinned. */}
+              <TableColumnHeader>{t("agenda.actions")}</TableColumnHeader>
             </TableRow>
           </TableHead>
           {projection.isPending ? (
@@ -118,7 +117,7 @@ export function ScheduledTab({
                       {fmt.signed(point.amount, scale(point.amount.currency))}
                     </TableCell>
                     <TableCell numeric>{money(point.balance)}</TableCell>
-                    <TableCell sticky="end">
+                    <TableCell>
                       <OccurrenceActions
                         occurrence={{
                           id: point.occurrence_id,
@@ -147,7 +146,7 @@ export function ScheduledTab({
                     <TableCell numeric>
                       {money(projection.data.closing)}
                     </TableCell>
-                    <TableCell sticky="end" />
+                    <TableCell />
                   </TableRow>
                 </TableSummary>
               )}

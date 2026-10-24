@@ -15,6 +15,7 @@ Registry of the findings reported to the Slotted owner (`web/CLAUDE.md`, "Slotte
 | A calendar day cannot carry a mark of what falls on it                                              | reported |
 | A data-grid editor cannot commit the value it sets in the same event                                | open     |
 | a dialog or drawer mounted open plays no enter transition, and one unmounted on close plays no exit | open     |
+| A pinned table cell has no ground, so the cells that scroll under it show through                   | open     |
 | A server-mode data-grid does not group the rows it is given                                         | open     |
 | A sticky section header exposes no stuck state                                                      | open     |
 | A theme rule's bare scheme attribute matches nothing on the theme root                              | open     |
