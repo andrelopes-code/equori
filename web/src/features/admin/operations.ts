@@ -578,6 +578,7 @@ export const operations: Record<GroupKey, readonly Operation[]> = {
       }),
     },
     { id: "getBudget", method: "GET", path: "/budgets/{id}" },
+    { id: "deleteBudget", method: "DELETE", path: "/budgets/{id}" },
     {
       id: "addBudgetAmount",
       method: "POST",
