@@ -32,7 +32,7 @@ export function attentionItems(input: {
       })),
     ...(stuck > 0 ? [{ kind: "connections" as const, count: stuck }] : []),
     ...input.differences.flatMap((d) =>
-      d.difference === undefined
+      d.difference === undefined || d.difference.amount === 0
         ? []
         : [
             {

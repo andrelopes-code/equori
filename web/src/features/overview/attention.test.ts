@@ -31,6 +31,17 @@ describe("attentionItems", () => {
     ]);
   });
 
+  it("ignores an open assertion whose difference is zero", () => {
+    expect(
+      attentionItems({
+        uncategorized: 0,
+        unconfirmed: [],
+        connections: [],
+        differences: [{ account: account("a"), difference: money(0) }],
+      }),
+    ).toEqual([]);
+  });
+
   it("is empty when nothing needs attention", () => {
     expect(
       attentionItems({
