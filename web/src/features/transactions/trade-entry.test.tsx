@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
+import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { problem } from "@/testing/fake-api";
 import {
   cashID,
@@ -158,6 +159,19 @@ describe("trade entry", () => {
       await screen.findByText("The position on this date is 100."),
     ).toBeInTheDocument();
     expect(sent).toHaveLength(0);
+  });
+
+  it("writes the suggested price with the decimal separator of the language", async () => {
+    localStorage.setItem(
+      "equori.locale",
+      JSON.stringify({ language: "pt", region: "BR" }),
+    );
+    await renderApp(path, { fetch: api([], { price: "9.36" }) });
+    await waitFor(() => {
+      expect(
+        screen.getByRole("textbox", { name: catalogPtBR["trade.unitPrice"] }),
+      ).toHaveValue("9,36");
+    });
   });
 
   it("shows the problem the server returns on its field", async () => {

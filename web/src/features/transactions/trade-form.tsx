@@ -144,7 +144,12 @@ export function TradeForm({
             name="unit_price"
             inputMode="decimal"
             autoComplete="off"
-            value={view.price}
+            value={
+              draft.unitPrice ??
+              (view.storedPrice === undefined
+                ? ""
+                : formatRate(view.storedPrice, locale))
+            }
             onChange={(event) => {
               set({ unitPrice: event.target.value });
             }}
