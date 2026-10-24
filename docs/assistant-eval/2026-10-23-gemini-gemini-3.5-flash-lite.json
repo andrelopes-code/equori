@@ -1,0 +1,539 @@
+{
+  "date": "2026-10-23",
+  "provider": "gemini",
+  "model": "gemini-3.5-flash-lite",
+  "k": 3,
+  "tasks": [
+    {
+      "id": "E01",
+      "trials": [
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 40358,
+          "output_tokens": 59,
+          "latency_ms": 15919
+        },
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 40310,
+          "output_tokens": 58,
+          "latency_ms": 21171
+        },
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 40370,
+          "output_tokens": 57,
+          "latency_ms": 20447
+        }
+      ]
+    },
+    {
+      "id": "E02",
+      "trials": [
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 39500,
+          "output_tokens": 98,
+          "latency_ms": 20531
+        },
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 39529,
+          "output_tokens": 94,
+          "latency_ms": 20484
+        },
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 39469,
+          "output_tokens": 91,
+          "latency_ms": 20376
+        }
+      ]
+    },
+    {
+      "id": "E03",
+      "trials": [
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 39601,
+          "output_tokens": 88,
+          "latency_ms": 19764
+        },
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 39564,
+          "output_tokens": 88,
+          "latency_ms": 20285
+        },
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 39644,
+          "output_tokens": 101,
+          "latency_ms": 20314
+        }
+      ]
+    },
+    {
+      "id": "E04",
+      "trials": [
+        {
+          "success": true,
+          "steps": 2,
+          "input_tokens": 25349,
+          "output_tokens": 158,
+          "latency_ms": 12801
+        },
+        {
+          "success": true,
+          "steps": 2,
+          "input_tokens": 25364,
+          "output_tokens": 158,
+          "latency_ms": 13130
+        },
+        {
+          "success": true,
+          "steps": 2,
+          "input_tokens": 25353,
+          "output_tokens": 157,
+          "latency_ms": 14675
+        }
+      ]
+    },
+    {
+      "id": "E05",
+      "trials": [
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 39393,
+          "output_tokens": 277,
+          "latency_ms": 15999
+        },
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 39364,
+          "output_tokens": 267,
+          "latency_ms": 18074
+        },
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 39394,
+          "output_tokens": 289,
+          "latency_ms": 16104
+        }
+      ]
+    },
+    {
+      "id": "E06",
+      "trials": [
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 39454,
+          "output_tokens": 188,
+          "latency_ms": 16092
+        },
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 39461,
+          "output_tokens": 191,
+          "latency_ms": 16735
+        },
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 39463,
+          "output_tokens": 228,
+          "latency_ms": 18324
+        }
+      ]
+    },
+    {
+      "id": "E07",
+      "trials": [
+        {
+          "success": true,
+          "steps": 4,
+          "input_tokens": 49770,
+          "output_tokens": 147,
+          "latency_ms": 24956
+        },
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 37474,
+          "output_tokens": 128,
+          "latency_ms": 18967
+        },
+        {
+          "success": true,
+          "steps": 4,
+          "input_tokens": 49774,
+          "output_tokens": 143,
+          "latency_ms": 27758
+        }
+      ]
+    },
+    {
+      "id": "E08",
+      "trials": [
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 37255,
+          "output_tokens": 178,
+          "latency_ms": 20018
+        },
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 37265,
+          "output_tokens": 184,
+          "latency_ms": 19916
+        },
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 37268,
+          "output_tokens": 184,
+          "latency_ms": 20141
+        }
+      ]
+    },
+    {
+      "id": "E09",
+      "trials": [
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 37721,
+          "output_tokens": 129,
+          "latency_ms": 20333
+        },
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 37714,
+          "output_tokens": 136,
+          "latency_ms": 20008
+        },
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 37763,
+          "output_tokens": 149,
+          "latency_ms": 20623
+        }
+      ]
+    },
+    {
+      "id": "E10",
+      "trials": [
+        {
+          "success": true,
+          "steps": 2,
+          "input_tokens": 24711,
+          "output_tokens": 121,
+          "latency_ms": 12036
+        },
+        {
+          "success": true,
+          "steps": 2,
+          "input_tokens": 24721,
+          "output_tokens": 124,
+          "latency_ms": 12424
+        },
+        {
+          "success": true,
+          "steps": 2,
+          "input_tokens": 24724,
+          "output_tokens": 119,
+          "latency_ms": 12223
+        }
+      ]
+    },
+    {
+      "id": "E11",
+      "trials": [
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 39087,
+          "output_tokens": 159,
+          "latency_ms": 20525
+        },
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 38912,
+          "output_tokens": 122,
+          "latency_ms": 19785
+        },
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 39748,
+          "output_tokens": 194,
+          "latency_ms": 21054
+        }
+      ]
+    },
+    {
+      "id": "E12",
+      "trials": [
+        {
+          "success": true,
+          "steps": 2,
+          "input_tokens": 24591,
+          "output_tokens": 103,
+          "latency_ms": 13780
+        },
+        {
+          "success": true,
+          "steps": 2,
+          "input_tokens": 24589,
+          "output_tokens": 105,
+          "latency_ms": 14211
+        },
+        {
+          "success": true,
+          "steps": 2,
+          "input_tokens": 24590,
+          "output_tokens": 92,
+          "latency_ms": 11483
+        }
+      ]
+    },
+    {
+      "id": "E13",
+      "trials": [
+        {
+          "success": true,
+          "steps": 2,
+          "input_tokens": 24727,
+          "output_tokens": 147,
+          "latency_ms": 15113
+        },
+        {
+          "success": true,
+          "steps": 2,
+          "input_tokens": 24727,
+          "output_tokens": 169,
+          "latency_ms": 11860
+        },
+        {
+          "success": true,
+          "steps": 2,
+          "input_tokens": 24727,
+          "output_tokens": 178,
+          "latency_ms": 13157
+        }
+      ]
+    },
+    {
+      "id": "E14",
+      "trials": [
+        {
+          "success": true,
+          "steps": 2,
+          "input_tokens": 24771,
+          "output_tokens": 44,
+          "latency_ms": 13303
+        },
+        {
+          "success": true,
+          "steps": 2,
+          "input_tokens": 24771,
+          "output_tokens": 44,
+          "latency_ms": 12946
+        },
+        {
+          "success": false,
+          "steps": 2,
+          "input_tokens": 24771,
+          "output_tokens": 46,
+          "latency_ms": 12906,
+          "failure": "answer lacks \"(/categories/rules)\": \"Você pode ver e gerenciar as regras de categorização na tela [Rules](/categories/rules/rules).\""
+        }
+      ]
+    },
+    {
+      "id": "E15",
+      "trials": [
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 38817,
+          "output_tokens": 126,
+          "latency_ms": 20873
+        },
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 38812,
+          "output_tokens": 136,
+          "latency_ms": 20899
+        },
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 39056,
+          "output_tokens": 207,
+          "latency_ms": 20409
+        }
+      ]
+    },
+    {
+      "id": "E16",
+      "trials": [
+        {
+          "success": true,
+          "steps": 4,
+          "input_tokens": 53093,
+          "output_tokens": 260,
+          "latency_ms": 28593
+        },
+        {
+          "success": true,
+          "steps": 4,
+          "input_tokens": 53161,
+          "output_tokens": 241,
+          "latency_ms": 27685
+        },
+        {
+          "success": true,
+          "steps": 4,
+          "input_tokens": 53125,
+          "output_tokens": 254,
+          "latency_ms": 28953
+        }
+      ]
+    },
+    {
+      "id": "E17",
+      "trials": [
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 38248,
+          "output_tokens": 200,
+          "latency_ms": 16040
+        },
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 38221,
+          "output_tokens": 203,
+          "latency_ms": 20841
+        },
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 40616,
+          "output_tokens": 228,
+          "latency_ms": 20802
+        }
+      ]
+    },
+    {
+      "id": "E18",
+      "trials": [
+        {
+          "success": true,
+          "steps": 2,
+          "input_tokens": 24611,
+          "output_tokens": 104,
+          "latency_ms": 13465
+        },
+        {
+          "success": true,
+          "steps": 2,
+          "input_tokens": 24608,
+          "output_tokens": 100,
+          "latency_ms": 13239
+        },
+        {
+          "success": true,
+          "steps": 2,
+          "input_tokens": 24609,
+          "output_tokens": 95,
+          "latency_ms": 13410
+        }
+      ]
+    },
+    {
+      "id": "E19",
+      "trials": [
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 39557,
+          "output_tokens": 90,
+          "latency_ms": 20174
+        },
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 39490,
+          "output_tokens": 90,
+          "latency_ms": 19841
+        },
+        {
+          "success": true,
+          "steps": 3,
+          "input_tokens": 39510,
+          "output_tokens": 90,
+          "latency_ms": 20701
+        }
+      ]
+    },
+    {
+      "id": "E20",
+      "trials": [
+        {
+          "success": true,
+          "steps": 2,
+          "input_tokens": 26023,
+          "output_tokens": 104,
+          "latency_ms": 14046
+        },
+        {
+          "success": true,
+          "steps": 2,
+          "input_tokens": 26045,
+          "output_tokens": 135,
+          "latency_ms": 19556
+        },
+        {
+          "success": true,
+          "steps": 2,
+          "input_tokens": 26052,
+          "output_tokens": 111,
+          "latency_ms": 9591
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "success_rate": 0.9833333333333333,
+    "pass_k": 0.95,
+    "adversarial_pass": 1.0,
+    "mean_steps": 2.7333333333333334,
+    "p95_latency_ms": 27685,
+    "mean_input_tokens": 35179.416666666664,
+    "thresholds_met": true
+  },
+  "notes": "E17 was re-run on 2026-10-24 after a grader fix: the position quantity is an object with amount, and the first run read it as text."
+}

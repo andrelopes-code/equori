@@ -189,7 +189,10 @@ func TestAssistantEval(t *testing.T) {
 				result.Trials = append(result.Trials, tr)
 			}
 		})
-		run.Tasks = append(run.Tasks, result)
+		// A task that -run filtered out has no trials and stays out of the summary.
+		if len(result.Trials) > 0 {
+			run.Tasks = append(run.Tasks, result)
+		}
 		if run.Stopped != "" {
 			return
 		}
@@ -728,12 +731,14 @@ var graders = map[string]func(g *grading) string{
 		var positions struct {
 			Items []struct {
 				Instrument string `json:"instrument"`
-				Quantity   any    `json:"quantity"`
+				Quantity   struct {
+					Amount int64 `json:"amount"`
+				} `json:"quantity"`
 			} `json:"items"`
 		}
 		g.h.MustDo(http.MethodGet, "/api/v1/positions?date="+evalToday, nil, http.StatusOK, &positions)
 		for _, pos := range positions.Items {
-			if pos.Instrument == "MXRF11" && nonDigit.ReplaceAllString(fmt.Sprint(pos.Quantity), "") == "10" {
+			if pos.Instrument == "MXRF11" && pos.Quantity.Amount == 10 {
 				return ""
 			}
 		}

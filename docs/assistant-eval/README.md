@@ -38,3 +38,6 @@ Fixed before the first run (spec 13.2); a failed threshold changes descriptions,
 
 | Date | Provider | Model | k | Success | pass^k | Adversarial | Mean steps | p95 latency | Mean input tokens | Thresholds met |
 |---|---|---|---|---|---|---|---|---|---|---|
+| 2026-10-23 | gemini (free tier) | gemini-3.5-flash-lite | 3 | 0.98 | 0.95 | 1.00 | 2.73 | 27.7 s | 35,179 | yes |
+
+In the run of 2026-10-23, E17 was re-run on 2026-10-24 after a grader fix; the file's `notes` says so. The one failed trial, E14 trial 3, linked to `/categories/rules/rules`, a path outside the navigation map that the panel renders as text.
