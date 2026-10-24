@@ -37,7 +37,7 @@ import {
   validateAccountsSearch,
   AccountCardPreview,
 } from "@/features/accounts";
-import { InstrumentsPage } from "@/features/instruments";
+import { InstrumentPage, InstrumentsPage } from "@/features/instruments";
 import { AdminPage } from "@/features/admin";
 import { OverviewPage } from "@/features/overview";
 import {
@@ -301,6 +301,14 @@ const instrumentsRoute = createRoute({
   component: InstrumentsPage,
 });
 
+const instrumentRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "instruments/$code",
+  // A failed chunk load falls to the Chart error state instead of the route error screen.
+  loader: () => preloadChartEngine(["line"]).catch(() => undefined),
+  component: InstrumentPage,
+});
+
 const accountsLayoutRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "accounts",
@@ -388,6 +396,7 @@ export const routeTree = rootRoute.addChildren([
     cardRoute,
     statementRoute,
     instrumentsRoute,
+    instrumentRoute,
     settingsRoute,
     adminRoute,
   ]),

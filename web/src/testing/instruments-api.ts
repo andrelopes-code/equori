@@ -1,4 +1,4 @@
-import { accountRoutes } from "@/testing/account-api";
+import { accountRoutes, money, stockID } from "@/testing/account-api";
 import { fakeApi, json } from "@/testing/fake-api";
 
 type Route = (req: Request) => Response | Promise<Response>;
@@ -49,6 +49,23 @@ export const priceFixtures = [
   price("USD", "2026-10-16", "5.4830", "bcb_ptax"),
 ];
 
+export const positionFixtures = [
+  {
+    account_id: stockID,
+    instrument: "PETR4",
+    quantity: money(100, "PETR4"),
+    cost_basis: money(350000),
+    average_cost: "35.00",
+    market_value: money(384500),
+  },
+  {
+    account_id: stockID,
+    instrument: "VALE3",
+    quantity: money(10, "VALE3"),
+    cost_basis: money(60000),
+  },
+];
+
 const subtypes: Record<string, string[]> = {
   fixed_income: ["cdb", "lci"],
   fund: ["multimarket"],
@@ -58,6 +75,13 @@ export function instrumentsApi(overrides: Record<string, Route> = {}) {
   return fakeApi(
     accountRoutes({
       "GET /api/v1/instruments": () => json(200, { items: instrumentFixtures }),
+      ...Object.fromEntries(
+        instrumentFixtures.map((i) => [
+          `GET /api/v1/instruments/${i.code}`,
+          () => json(200, i),
+        ]),
+      ),
+      "GET /api/v1/positions": () => json(200, { items: positionFixtures }),
       "GET /api/v1/instrument-subtypes": (req) =>
         json(200, {
           items:

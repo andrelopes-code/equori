@@ -11,6 +11,7 @@ import {
   TableRow,
   TableRowHeader,
 } from "@slotted/react/table";
+import { Link } from "@tanstack/react-router";
 import { Fragment } from "react";
 
 import type { InstrumentGroup } from "@/features/instruments/instrument-groups";
@@ -70,7 +71,11 @@ export function InstrumentsTable({
                   const price = latest.get(i.code)?.price;
                   return (
                     <TableRow key={i.code} value={i.code}>
-                      <TableRowHeader text="truncate">{i.code}</TableRowHeader>
+                      <TableRowHeader text="truncate">
+                        <Link to="/instruments/$code" params={{ code: i.code }}>
+                          {i.code}
+                        </Link>
+                      </TableRowHeader>
                       <TableCell text="truncate">{i.name}</TableCell>
                       <TableCell>
                         {i.subtype === undefined

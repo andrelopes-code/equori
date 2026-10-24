@@ -275,6 +275,16 @@
     ]
   },
   {
+    "path": "/instruments/$code",
+    "topics": ["investments"],
+    "screen": "Instrument",
+    "tasks": [
+      "see the price history of an instrument over up to 366 days",
+      "record a manual price for a date",
+      "see the positions that hold the instrument"
+    ]
+  },
+  {
     "path": "/settings",
     "topics": ["settings_language_and_region", "privacy_and_the_assistant"],
     "screen": "Settings",

@@ -8,6 +8,8 @@ export {
   seriesQuery,
   unconfirmedQuery,
 } from "@/features/accounts/api";
+export { positionsQuery } from "@/features/accounts/api";
+export { AccountLink } from "@/features/accounts/account-link";
 export { shapeOf } from "@/features/accounts/account-shape";
 export { AccountMark } from "@/features/accounts/account-mark";
 export { AccountCard } from "@/features/accounts/account-card";

@@ -30,6 +30,10 @@ describe("Instrument catalog", () => {
     expect(lines[at("CDB1")]).toBe(
       `CDB1|CDB Bank One|cdb|BRL||${catalogEn["instruments.noPrice"]}|`,
     );
+    expect(within(table).getByRole("link", { name: "PETR4" })).toHaveAttribute(
+      "href",
+      "/instruments/PETR4",
+    );
     const heading = (type: string) =>
       lines.findIndex(
         (l) => l === catalogEn[`instruments.type.${type}` as never],

@@ -11,6 +11,7 @@ import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { PhoneGroup } from "@/ui/phone-group";
 import { PhoneList } from "@/ui/phone-list";
+import { useAppLink } from "@/ui/use-app-link";
 
 // Below 600 px the instruments are rows grouped by type (mobile.md M1): code and name, the
 // subtype and exchange under them, the latest price at the end.
@@ -25,6 +26,7 @@ export function InstrumentsList({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
+  const follow = useAppLink();
   if (loading)
     return (
       <PhoneList
@@ -48,6 +50,11 @@ export function InstrumentsList({
                 const price = latest.get(i.code)?.price;
                 return {
                   key: i.code,
+                  href: `/instruments/${i.code}`,
+                  onOpen: follow({
+                    to: "/instruments/$code",
+                    params: { code: i.code },
+                  }),
                   title: `${i.code} · ${i.name}`,
                   lines: [
                     [

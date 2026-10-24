@@ -9,6 +9,7 @@ import { priceWindow } from "@/features/instruments/price-window";
 
 export const instrumentKeys = {
   all: ["instruments"] as const,
+  instrument: (code: string) => ["instruments", "instrument", code] as const,
   subtypes: (type: string) => ["instruments", "subtypes", type] as const,
   prices: (instrument: string, quote: string, from: string, to: string) =>
     ["instruments", "prices", instrument, quote, from, to] as const,
@@ -82,5 +83,23 @@ export function useDefineInstrument() {
   return useMutation({
     mutationFn: async (input: components["schemas"]["InstrumentInput"]) =>
       unwrap(await api.POST("/instruments", { body: input })),
+  });
+}
+
+export function instrumentQuery(api: Client<paths>, code: string) {
+  return queryOptions({
+    queryKey: instrumentKeys.instrument(code),
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/instruments/{code}", { params: { path: { code } } }),
+      ),
+  });
+}
+
+export function useRecordPrice() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (input: components["schemas"]["PriceInput"]) =>
+      unwrap(await api.POST("/prices", { body: input })),
   });
 }
