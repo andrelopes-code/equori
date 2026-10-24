@@ -50,7 +50,10 @@ export function MoneyInput({
         {marks[sign] !== "" && (
           <span className={styles.sign}>{marks[sign]}</span>
         )}
-        <span className={styles.symbol}>{parts.symbol}</span>
+        {/* An instrument with no symbol of its own is named by the code on the right. */}
+        {parts.symbol !== currency && (
+          <span className={styles.symbol}>{parts.symbol}</span>
+        )}
       </span>
       <input
         id={field?.ids.control}

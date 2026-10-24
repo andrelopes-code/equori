@@ -46,4 +46,19 @@ describe("MoneyInput", () => {
     );
     expect(screen.getByRole("textbox")).toHaveValue("123.45");
   });
+
+  // Smoke of trade entry: a quantity of a security drew its code before and after the digits.
+  it("names an instrument that is not a currency once", () => {
+    const { container } = renderWithProviders(
+      <MoneyInput
+        value={150}
+        currency="MXRF11"
+        scale={0}
+        sign="neutral"
+        onChange={() => undefined}
+      />,
+      { fetch: fakeApi({}) },
+    );
+    expect(container.textContent.match(/MXRF11/g)).toHaveLength(1);
+  });
 });
