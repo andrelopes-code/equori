@@ -78,6 +78,19 @@ describe("Tax year income events", () => {
     ]);
   });
 
+  it("writes each total as lines on a phone, with every figure visible", async () => {
+    await renderApp("/portfolio/year?tab=income", {
+      fetch: taxYearApi([]),
+      today: "2026-10-24",
+      width: 390,
+    });
+    const group = await screen.findByRole("group", {
+      name: catalogEn["taxYear.income.totals.treatment"],
+    });
+    expect(within(group).getByText("Net: R$38.25")).toBeInTheDocument();
+    expect(within(group).getByText("Withheld: R$6.75")).toBeInTheDocument();
+  });
+
   it("reads the year of the address and says an empty year", async () => {
     const years: string[] = [];
     await renderApp("/portfolio/year?year=2025&tab=income", {
