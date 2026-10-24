@@ -1438,6 +1438,16 @@ export const catalogEn = {
   "recurrence.countField": "Times",
   "problem.schedule_ended": "The schedule already ends on or before this date.",
   "problem.pause_overlap": "The pause overlaps another pause.",
+  "planning.tab.subscriptions": "Subscriptions",
+  "subscriptions.caption": "Subscriptions and what they cost",
+  "subscriptions.price": "Price",
+  "subscriptions.monthly": "Per month",
+  "subscriptions.yearly": "Per year",
+  "subscriptions.history": "Price history",
+  "subscriptions.priceFrom": "{amount} from {date}",
+  "subscriptions.total": "Total",
+  "subscriptions.empty": "No subscription",
+  "subscriptions.actions": "Actions for {name}",
 } as const;
 
 export type Catalog = { [K in keyof typeof catalogEn]: string };

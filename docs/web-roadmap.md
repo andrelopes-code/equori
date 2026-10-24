@@ -2,7 +2,7 @@
 
 Sequential guide for the screens of `web/`. Each item names the screens, their functions, the API operations they consume and their dependencies. It is not the source of truth: the implementer of an item reads `api/openapi.yaml`, the ADRs, the scenarios of `docs/domain/06-scenarios.md`, `web/CLAUDE.md` and the existing code before designing the screen. Field lists below are a map of the contract, not a form specification.
 
-Status snapshot: 2026-10-23, commit `60fbf59`.
+Status snapshot: 2026-10-24, commit `ac547c8`.
 
 `/admin` and `web/src/features/admin/` are temporary and leave the application. This roadmap ignores them: an operation reachable only through `/admin` counts as having no screen. Implementers neither reuse nor extend code from `features/admin/`.
 
@@ -24,7 +24,7 @@ Status snapshot: 2026-10-23, commit `60fbf59`.
 | 2 | Foreign purchase and currency exchange entry | No screen | — |
 | 3 | Aggregator integrations and connections | Partial | — |
 | 4 | Institution identifiers | Partial | — |
-| 5 | Schedules and occurrences | Partial | — |
+| 5 | Schedules and occurrences | Delivered | — |
 | 6 | Budgets | No screen | 5 |
 | 7 | Overview | Shell | 5, 6, 10 |
 | 8 | Instruments and prices | Partial | — |
@@ -40,18 +40,19 @@ Status snapshot: 2026-10-23, commit `60fbf59`.
 
 ## Delivered screens
 
-Outside the sequence. Items 1, 3, 4, 5, 8 and 14 extend some of them.
+Outside the sequence. Items 1, 3, 4, 8 and 14 extend some of them.
 
 | Area | Routes | Functions |
 |---|---|---|
 | Session | `/login` | Sign in, sign out, session expiry. |
 | Settings | `/settings` | Sections account, appearance, assistant, finances (base currency, currencies), language and region, privacy mode (ADR 018). |
-| Accounts | `/accounts`, `/accounts/new`, `/accounts/$id`, `/accounts/$id/edit`, `/institutions`, `/links` | Balance sheet by group, account page with balance chart and projection, figures, ledger, positions, scheduled, reconciliation and balance assertions, sync, imports; create, edit, close, reopen, merge, parent, appearance and logo. |
+| Accounts | `/accounts`, `/accounts/new`, `/accounts/$id`, `/accounts/$id/edit`, `/institutions`, `/links` | Balance sheet by group, account page with balance chart and projection, figures, ledger, positions, scheduled with occurrence actions, reconciliation and balance assertions, sync, imports; create, edit, close, reopen, merge, parent, appearance and logo. |
 | Imports | `/accounts/$id/import`, `/accounts/$id/imports/$batchId` | OFX and CSV import, CSV profile, batch records, review queue of unconfirmed records. |
 | Cards | `/cards`, `/cards/$accountId`, `/cards/$accountId/statements/$statementId` | Card list, card page with statements chart, plastic cards, installment plans, settings (billing cycle rules, credit limits); statement page with lines, payment, financing, refunds, anticipation, disputes, statement facts and reconciliation. |
-| Transactions | `/transactions`, `/transactions/new`, `/transactions/$id`, `/transactions/$id/correct`, `/transactions/capture` | Ledger by day with filters (account, category, payee, tag, period, text, uncategorized) and upcoming occurrences; detail with postings, categorization, links, history, attachments upload; create, correct, void, transfer, reimburse, bulk categorize; text capture with category suggestions. |
+| Transactions | `/transactions`, `/transactions/new`, `/transactions/$id`, `/transactions/$id/correct`, `/transactions/capture` | Ledger by day with filters (account, category, payee, tag, period, text, uncategorized); detail with postings, categorization, links, history, attachments upload; create, correct, void, transfer, reimburse, bulk categorize; text capture with category suggestions. |
 | Categories | `/categories`, `/categories/rules`, `/categories/rules/new`, `/categories/rules/$id`, `/categories/payees` | Category tree with totals and coverage, merge; rules with conditions, preview, run, reorder; rule suggestions; payees with aliases, rename, merge; source categories mapping. |
 | Goals | `/goals` | Goal cards with meter, what-if, create, edit, delete. |
+| Planning | `/planning`, `/planning/schedules/new`, `/planning/schedules/$id` | Agenda of a month with overdue group, filters, month totals and calendar; occurrence actions (realize, unrealize, skip, move); schedules by kind; schedule creation with recurrence builder; schedule page with terms versions, change terms, pauses, end and occurrences; subscriptions with monthly and yearly cost and price history. |
 
 ---
 
@@ -125,7 +126,7 @@ Functions:
 
 ## 5. Schedules and occurrences
 
-Status: Partial. Delivered: `listSchedules`, `createSchedule`, `getSchedule`, `listOccurrences` (`features/accounts/scheduled-tab.tsx`; upcoming rows in `/transactions` through `features/transactions/upcoming-row.ts`). No screen: `realizeOccurrence`, `unrealizeOccurrence`, `skipOccurrence`, `moveOccurrence`, `changeScheduleTerms`, `pauseSchedule`, `endSchedule`.
+Status: Delivered. Operations: `listSchedules`, `createSchedule`, `getSchedule`, `listOccurrences`, `realizeOccurrence`, `unrealizeOccurrence`, `skipOccurrence`, `moveOccurrence`, `changeScheduleTerms`, `pauseSchedule`, `endSchedule`, `listCalendars` (`features/planning/`; occurrence actions also in `features/accounts/scheduled-tab.tsx`).
 
 Scenarios: S27, S28, S29, S62. Domain: phase P7.
 
@@ -162,6 +163,13 @@ Integration with other screens:
 - `/transactions` upcoming rows and `/accounts/$id` scheduled tab gain the row actions of the agenda.
 
 Region: the calendar default comes from the user's region (ADR 016); weekday and month names come from the locale.
+
+Not delivered:
+- Moved-from date on a row: `Occurrence` has no field for the date before a move.
+- Occurrences realized by a transaction on its detail: `Occurrence` has no `transaction_id`, so no lookup tells which transaction realized an occurrence.
+- Upcoming rows in `/transactions`: the ledger lists none since commit `8d59d23`; the agenda and the account's scheduled tab carry the row actions.
+- Marks on the calendar's days: Slotted finding "A calendar day cannot carry a mark of what falls on it".
+- The server does not check `match_tolerance_bp` on a manual realize; the realize dialog marks the candidates outside it.
 
 ## 6. Budgets
 

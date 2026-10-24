@@ -16,6 +16,7 @@ import { useDeferredValue, useState } from "react";
 
 import { AgendaTab } from "@/features/planning/agenda-tab";
 import { SchedulesTab } from "@/features/planning/schedules-tab";
+import { SubscriptionsTab } from "@/features/planning/subscriptions-tab";
 import type {
   PlanningSearch,
   PlanningTab,
@@ -31,6 +32,7 @@ import { useRefresh } from "@/ui/use-refresh";
 const tabs: readonly { tab: PlanningTab; label: MessageKey }[] = [
   { tab: "agenda", label: "planning.tab.agenda" },
   { tab: "schedules", label: "planning.tab.schedules" },
+  { tab: "subscriptions", label: "planning.tab.subscriptions" },
 ];
 
 function withTab(prev: PlanningSearch, tab: PlanningTab): PlanningSearch {
@@ -129,6 +131,7 @@ export function PlanningPage() {
             />
           )}
           {shownTab === "schedules" && <SchedulesTab onCreate={create} />}
+          {shownTab === "subscriptions" && <SubscriptionsTab />}
         </div>
       </PageBody>
     </Page>

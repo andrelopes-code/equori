@@ -123,3 +123,20 @@ export function currentTerms(
 ): ScheduleTerms | undefined {
   return terms.filter((v) => v.effective_from <= date).at(-1) ?? terms[0];
 }
+
+// Occurrences in a year of each frequency at interval 1; a week counts 52 times.
+const perYear: Record<Recurrence["frequency"], number> = {
+  daily: 365,
+  weekly: 52,
+  monthly: 12,
+  yearly: 1,
+};
+
+// What a subscription costs a month and a year, in minor units of its amount.
+export function subscriptionCost(
+  r: Recurrence,
+  amount: number,
+): { monthly: number; yearly: number } {
+  const yearly = Math.round((amount * perYear[r.frequency]) / r.interval);
+  return { monthly: Math.round(yearly / 12), yearly };
+}

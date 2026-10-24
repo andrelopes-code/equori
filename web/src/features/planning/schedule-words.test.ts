@@ -4,6 +4,7 @@ import type { components } from "@/api/schema.gen";
 import {
   currentTerms,
   recurrenceWords,
+  subscriptionCost,
 } from "@/features/planning/schedule-words";
 import { catalogEn } from "@/i18n/catalog.en";
 import type { MessageKey } from "@/i18n/catalog.en";
@@ -119,5 +120,32 @@ describe("currentTerms", () => {
     expect(currentTerms(terms, "2027-01-01")?.amount.amount).toBe(4490);
     expect(currentTerms(terms, "2026-01-01")?.amount.amount).toBe(3990);
     expect(currentTerms([], "2026-01-01")).toBeUndefined();
+  });
+});
+
+describe("subscriptionCost", () => {
+  const rule = (
+    frequency: Recurrence["frequency"],
+    interval = 1,
+  ): Recurrence => ({
+    frequency,
+    interval,
+    adjustment: "none",
+    start: "2026-01-01",
+  });
+
+  it.each<[string, Recurrence, number, { monthly: number; yearly: number }]>([
+    ["monthly (S29)", rule("monthly"), 4490, { monthly: 4490, yearly: 53880 }],
+    [
+      "every two months",
+      rule("monthly", 2),
+      3000,
+      { monthly: 1500, yearly: 18000 },
+    ],
+    ["weekly", rule("weekly"), 1000, { monthly: 4333, yearly: 52000 }],
+    ["yearly", rule("yearly"), 12000, { monthly: 1000, yearly: 12000 }],
+    ["daily", rule("daily"), 100, { monthly: 3042, yearly: 36500 }],
+  ])("costs a %s subscription per month and per year", (_, r, amount, cost) => {
+    expect(subscriptionCost(r, amount)).toEqual(cost);
   });
 });
