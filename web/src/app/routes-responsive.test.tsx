@@ -147,7 +147,7 @@ interface RouteCase {
   authenticated: boolean;
 }
 
-// The product screens hold only their header until they are rebuilt; /admin loads data.
+// The product screens hold only their header until they are rebuilt.
 const routes: RouteCase[] = [
   {
     path: "/",
@@ -184,12 +184,6 @@ const routes: RouteCase[] = [
     path: `/accounts/${checkingID}`,
     heading: catalogPtBR["nav.accounts"],
     loaded: catalogPtBR["nav.accounts"],
-    authenticated: true,
-  },
-  {
-    path: "/admin",
-    heading: catalogPtBR["nav.admin"],
-    loaded: "1234.56 BRL",
     authenticated: true,
   },
   {

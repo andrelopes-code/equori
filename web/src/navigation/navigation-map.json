@@ -317,11 +317,5 @@
       "set language model providers, chains and daily limits",
       "see language model usage"
     ]
-  },
-  {
-    "path": "/admin",
-    "topics": ["getting_started"],
-    "screen": "Operations",
-    "tasks": ["run any API operation and see its raw response"]
   }
 ]

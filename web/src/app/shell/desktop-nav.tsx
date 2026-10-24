@@ -11,14 +11,12 @@ import { Shortcut } from "@slotted/react/kbd";
 import {
   SideNavigation,
   SideNavigationCount,
-  SideNavigationDivider,
   SideNavigationIcon,
   SideNavigationItem,
   SideNavigationLabel,
   SideNavigationLink,
   SideNavigationList,
 } from "@slotted/react/side-navigation";
-import { Fragment } from "react";
 
 import { AccountMenu } from "@/app/shell/account-menu";
 import { BrandMark } from "@/ui/brand-mark";
@@ -35,7 +33,7 @@ const paletteChord = /Mac|iPhone|iPad/.test(navigator.userAgent)
   ? "Meta+K"
   : "Control+K";
 
-// Settings is reached from the account menu; the column lists the rest, Admin after a rule.
+// Settings is reached from the account menu; the column lists the rest.
 const listed = destinations.filter((d) => d.key !== "settings");
 
 // A command's key legend. It is decoration: aria-keyshortcuts on the command names the key.
@@ -179,26 +177,23 @@ export function DesktopNav({
         <SideNavigation value={selected ?? null}>
           <SideNavigationList>
             {listed.map((destination) => (
-              <Fragment key={destination.key}>
-                {destination.key === "admin" && <SideNavigationDivider />}
-                <SideNavigationItem value={destination.key}>
-                  <SideNavigationLink
-                    href={destination.to}
-                    onClick={press(destination)}
-                  >
-                    <SideNavigationIcon>
-                      <ShellIcon name={destination.icon} />
-                    </SideNavigationIcon>
-                    <SideNavigationLabel>
-                      {t(destination.label)}
-                    </SideNavigationLabel>
-                    {destination.key === "transactions" &&
-                      count !== undefined && (
-                        <SideNavigationCount>{count}</SideNavigationCount>
-                      )}
-                  </SideNavigationLink>
-                </SideNavigationItem>
-              </Fragment>
+              <SideNavigationItem key={destination.key} value={destination.key}>
+                <SideNavigationLink
+                  href={destination.to}
+                  onClick={press(destination)}
+                >
+                  <SideNavigationIcon>
+                    <ShellIcon name={destination.icon} />
+                  </SideNavigationIcon>
+                  <SideNavigationLabel>
+                    {t(destination.label)}
+                  </SideNavigationLabel>
+                  {destination.key === "transactions" &&
+                    count !== undefined && (
+                      <SideNavigationCount>{count}</SideNavigationCount>
+                    )}
+                </SideNavigationLink>
+              </SideNavigationItem>
             ))}
           </SideNavigationList>
         </SideNavigation>

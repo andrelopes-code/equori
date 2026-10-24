@@ -40,7 +40,6 @@ import {
 import { InstrumentPage, InstrumentsPage } from "@/features/instruments";
 import { PortfolioPage, validatePortfolioSearch } from "@/features/portfolio";
 import { ReportsPage, validateReportsSearch } from "@/features/reports";
-import { AdminPage } from "@/features/admin";
 import { OverviewPage } from "@/features/overview";
 import {
   CardPage,
@@ -291,12 +290,6 @@ const budgetRoute = createRoute({
   component: BudgetPage,
 });
 
-const adminRoute = createRoute({
-  getParentRoute: () => authedRoute,
-  path: "admin",
-  component: AdminPage,
-});
-
 const instrumentsRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "instruments",
@@ -423,7 +416,6 @@ export const routeTree = rootRoute.addChildren([
     reportsRoute,
     instrumentRoute,
     settingsRoute,
-    adminRoute,
   ]),
 ]);
 

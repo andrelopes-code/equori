@@ -13,7 +13,6 @@ describe("matchDestination", () => {
     ["/cards", "cards", true],
     ["/cards/x", "cards", false],
     ["/goals", "goals", true],
-    ["/admin", "admin", true],
     ["/settings", "settings", true],
   ])("matches %s to %s (top level: %s)", (pathname, key, topLevel) => {
     const match = matchDestination(pathname);

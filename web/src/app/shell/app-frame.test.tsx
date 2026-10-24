@@ -105,7 +105,6 @@ describe("desktop column", () => {
       catalogEn["nav.instruments"],
       catalogEn["nav.portfolio"],
       catalogEn["nav.reports"],
-      catalogEn["nav.admin"],
     ]);
     expect(links[1]).toHaveAttribute("aria-current", "page");
     expect(links.filter((link) => link.hasAttribute("aria-current"))).toEqual([
@@ -479,17 +478,14 @@ describe("phone dock", () => {
     ).toHaveAttribute("aria-current", "page");
   });
 
-  it.each(["/goals", "/admin", "/settings"])(
-    "marks More current on %s",
-    async (path) => {
-      await renderApp(path, { width: 390, fetch: newFetch() });
-      expect(
-        within(navigationBar()).getByRole("button", {
-          name: catalogEn["nav.more"],
-        }),
-      ).toHaveAttribute("data-selected");
-    },
-  );
+  it.each(["/goals", "/settings"])("marks More current on %s", async (path) => {
+    await renderApp(path, { width: 390, fetch: newFetch() });
+    expect(
+      within(navigationBar()).getByRole("button", {
+        name: catalogEn["nav.more"],
+      }),
+    ).toHaveAttribute("data-selected");
+  });
 
   it("scrolls to the top on a tap of the current tab", async () => {
     const user = userEvent.setup();
@@ -628,7 +624,6 @@ describe("phone dock", () => {
     ["nav.instruments", "/instruments"],
     ["nav.portfolio", "/portfolio"],
     ["nav.reports", "/reports"],
-    ["nav.admin", "/admin"],
     ["more.settings", "/settings"],
   ] as const)("opens %s from More", async (label, path) => {
     const { router } = await renderApp("/", { width: 390, fetch: newFetch() });

@@ -4,8 +4,6 @@ Sequential guide for the screens of `web/`. Each item names the screens, their f
 
 Status snapshot: 2026-10-24, commit `27707c0`.
 
-`/admin` and `web/src/features/admin/` are temporary and leave the application. This roadmap ignores them: an operation reachable only through `/admin` counts as having no screen. Implementers neither reuse nor extend code from `features/admin/`.
-
 ## Status legend
 
 | Status | Meaning |
