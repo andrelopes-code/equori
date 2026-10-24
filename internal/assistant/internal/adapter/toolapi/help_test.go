@@ -58,7 +58,7 @@ func TestGetHelp(t *testing.T) {
 	}
 
 	r := h.Tool("get_help", map[string]string{"topic": "budgets"})
-	if r.IsError || !strings.Contains(string(r.Content), `"screens":[]`) {
+	if r.IsError || !strings.Contains(string(r.Content), `"path":"/planning/budgets/$id"`) {
 		t.Fatalf("budgets = %s", r.Content)
 	}
 	h.ExpectToolError(h.Tool("get_help", map[string]string{"topic": "nope"}), "invalid_arguments", "")
