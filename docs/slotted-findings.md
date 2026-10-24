@@ -81,3 +81,8 @@ Registry of the findings reported to the Slotted owner (`web/CLAUDE.md`, "Slotte
 | The drawer header has no slot for actions beside the title                                          | open     |
 | The prompt composer's ring glow is cut by its own mask and overflows its container                  | open     |
 | The prompt composer has no dictation action                                                         | open     |
+| Dashboard-grid picks its column class from its own width, so a 1280 px window loses the layout      | reported |
+| Dashboard-grid rows have a fixed height and a widget cannot size to its content                     | reported |
+| Dashboard-grid widget headings default to level 3 under a page heading of level 1                   | reported |
+| Dashboard-grid widget detail link cannot render a router link                                       | reported |
+| A link in a card, chart or section action takes the slot's font size and has no size axis           | open     |
