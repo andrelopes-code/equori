@@ -56,11 +56,11 @@ function speechError(code: string): SpeechError | null {
 }
 
 export interface SpeechInput {
-  // False where the browser has no recognition engine (Firefox), or once its engine proved to
-  // have no speech service: the composer offers no dictation.
+  // False where the browser has no recognition engine (Firefox): the composer offers no dictation.
   supported: boolean;
+  // True once the engine proved to have no speech service: the microphone stays, struck and off.
+  unavailable: boolean;
   listening: boolean;
-  error: SpeechError | null;
   toggle: () => void;
 }
 
@@ -70,11 +70,13 @@ export interface SpeechInput {
 export function useSpeechInput(
   lang: string,
   onText: (text: string) => void,
+  onError: (error: SpeechError) => void,
 ): SpeechInput {
   const [listening, setListening] = useState(false);
-  const [error, setError] = useState<SpeechError | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
   const engine = useRef<Recognition | null>(null);
   const deliver = useStableCallback(onText);
+  const fail = useStableCallback(onError);
 
   useEffect(
     () => () => {
@@ -108,18 +110,15 @@ export function useSpeechInput(
       setListening(false);
     };
     r.onerror = (event) => {
-      setError(speechError(event.error));
+      const error = speechError(event.error);
+      if (error === null) return;
+      if (error === "unavailable") setUnavailable(true);
+      fail(error);
     };
     engine.current = r;
-    setError(null);
     r.start();
     setListening(true);
-  }, [lang, deliver]);
+  }, [lang, deliver, fail]);
 
-  return {
-    supported: speechSupported() && error !== "unavailable",
-    listening,
-    error,
-    toggle,
-  };
+  return { supported: speechSupported(), unavailable, listening, toggle };
 }

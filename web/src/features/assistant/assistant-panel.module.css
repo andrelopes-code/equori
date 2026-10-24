@@ -1,3 +1,15 @@
+@property --halo-turn {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes halo-turn {
+  to {
+    --halo-turn: 360deg;
+  }
+}
+
 @layer app {
   /* The thread and the composer stack in the body; only the thread scrolls (CV-01). */
   .thread {
@@ -41,14 +53,6 @@
   }
 
   /* A notice that blocks the composer stands right above it, where the reader looks to type. */
-  /* Workaround for Slotted finding "The prompt composer's ring glow is cut by its own mask and overflows its container": the hue ring stays, its glow has no reach and no opacity. */
-  .ring {
-    --slotted-prompt-composer-ring-glow-reach: 0px;
-    --slotted-prompt-composer-ring-glow-opacity: 0;
-    --slotted-prompt-composer-ring-glow-opacity-focus: 0;
-    --slotted-prompt-composer-ring-glow-opacity-busy: 0;
-  }
-
   .composer {
     display: grid;
     gap: var(--slotted-space-3);
@@ -64,6 +68,70 @@
   @media (pointer: coarse) {
     .hint:not([data-note]) {
       visibility: hidden;
+    }
+  }
+
+  /* Workaround for Slotted finding "The prompt composer's ring glow is cut by its own mask and overflows its container": the hue ring stays, its glow has no reach and no opacity, and the halo below takes its place. One turn takes four slow loops: the default loop spins a ring the reader keeps in view too fast. */
+  .ring {
+    --slotted-prompt-composer-ring-glow-reach: 0px;
+    --slotted-prompt-composer-ring-glow-opacity: 0;
+    --slotted-prompt-composer-ring-glow-opacity-focus: 0;
+    --slotted-prompt-composer-ring-glow-opacity-busy: 0;
+    --slotted-prompt-composer-ring-duration: calc(
+      var(--slotted-duration-loop-slow) * 4
+    );
+  }
+
+  /* Families read: prompt-composer, whose glow is the finding above; no other family draws a
+     halo. The halo sits inside the composer's box, so only the blur's ink leaves it and no
+     ancestor gains overflow; it turns with the ring through the data hues the ring draws. */
+  .halo {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .halo::before {
+    content: "";
+    position: absolute;
+    inset-block: var(--slotted-space-4);
+    inset-inline: var(--slotted-space-8);
+    z-index: -1;
+    border-radius: var(--slotted-radius-full);
+    background: conic-gradient(
+      from var(--halo-turn),
+      var(--slotted-data-1),
+      var(--slotted-data-3),
+      var(--slotted-data-5),
+      var(--slotted-data-2),
+      var(--slotted-data-1)
+    );
+    filter: blur(var(--slotted-space-6));
+    /* The halo's strength at rest, while typing and while a turn runs: no token states the
+       strength of a decorative light. */
+    opacity: 0.35;
+    animation: halo-turn calc(var(--slotted-duration-loop-slow) * 4) linear
+      infinite;
+    transition: opacity var(--slotted-duration-medium)
+      var(--slotted-easing-standard);
+  }
+
+  .halo:focus-within::before {
+    opacity: 0.55;
+  }
+
+  .halo[data-busy]::before {
+    opacity: 0.75;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .halo::before {
+      animation: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .halo::before {
+      display: none;
     }
   }
 

@@ -1,10 +1,18 @@
-export type AssistantIconName = "mic" | "new" | "history" | "spark";
+export type AssistantIconName = "mic" | "mic-off" | "new" | "history" | "spark";
 
-// Lucide geometry (ISC licence) on its 24-unit grid: mic, square-pen, history and sparkles.
+// Lucide geometry (ISC licence) on its 24-unit grid: mic, mic-off, square-pen, history and sparkles.
 const PATHS: Record<AssistantIconName, readonly string[]> = {
   mic: [
     "M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z",
     "M19 10v2a7 7 0 0 1-14 0v-2",
+    "M12 19v3",
+  ],
+  "mic-off": [
+    "m2 2 20 20",
+    "M18.89 13.23A7.12 7.12 0 0 0 19 12v-2",
+    "M5 10v2a7 7 0 0 0 12 5",
+    "M15 9.34V5a3 3 0 0 0-5.68-1.33",
+    "M9 9v3a3 3 0 0 0 5.12 2.12",
     "M12 19v3",
   ],
   new: [

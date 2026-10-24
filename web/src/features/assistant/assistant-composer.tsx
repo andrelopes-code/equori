@@ -6,6 +6,7 @@ import {
   PromptComposerInput,
   PromptComposerSubmit,
 } from "@slotted/react/prompt-composer";
+import { toast } from "@slotted/react/toast";
 import { Text } from "@slotted/react/typography";
 import { useState } from "react";
 
@@ -15,9 +16,12 @@ import { useSpeechInput } from "@/features/assistant/use-speech-input";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 const voiceError = {
-  denied: "assistant.voice.denied",
-  unavailable: "assistant.voice.unavailable",
-  silence: "assistant.voice.silence",
+  denied: ["assistant.voice.denied.title", "assistant.voice.denied"],
+  unavailable: [
+    "assistant.voice.unavailable.title",
+    "assistant.voice.unavailable",
+  ],
+  silence: ["assistant.voice.silence.title", "assistant.voice.silence"],
 } as const;
 
 // Families read: prompt-composer, icon, typography. The field keeps what the reader typed or
@@ -35,75 +39,82 @@ export function AssistantComposer({
   const [locale] = useAppLocale();
   const [value, setValue] = useState("");
   // Workaround for Slotted finding "The prompt composer has no dictation action": the panel runs the browser's speech recognition and draws the microphone itself.
-  const speech = useSpeechInput(locale, (text) => {
-    setValue((current) =>
-      current.trim() === "" ? text : `${current} ${text}`,
-    );
-  });
+  const speech = useSpeechInput(
+    locale,
+    (text) => {
+      setValue((current) =>
+        current.trim() === "" ? text : `${current} ${text}`,
+      );
+    },
+    (error) => {
+      const [title, description] = voiceError[error];
+      toast.show({
+        tone: "warning",
+        title: t(title),
+        description: t(description),
+      });
+    },
+  );
 
   return (
-    <PromptComposer
-      value={value}
-      onValueChange={(next) => {
-        setValue(next);
-      }}
-      disabled={disabled}
-      status={busy ? "submitted" : "ready"}
-      emphasis="ring"
-      className={styles.ring}
-      messages={{ send: t("assistant.composer.send") }}
-      onValueSubmit={(next, request) => {
-        if (busy || next.trim() === "") {
-          request.cancel();
-          return;
-        }
-        onSend(next.trim());
-      }}
-    >
-      <PromptComposerInput
-        aria-label={t("assistant.composer.placeholder")}
-        placeholder={t("assistant.composer.placeholder")}
-        maxLength={4000}
-        maxRows={6}
-      />
-      <PromptComposerFooter>
-        {speech.supported && (
-          <PromptComposerAction
-            aria-label={
-              speech.listening
-                ? t("assistant.voice.stop")
-                : t("assistant.voice.start")
-            }
-            aria-pressed={speech.listening}
-            disabled={disabled}
-            onClick={speech.toggle}
-          >
-            <Icon>
-              <AssistantIcon name="mic" />
-            </Icon>
-          </PromptComposerAction>
-        )}
-        <Text
-          size="xs"
-          tone={
-            speech.listening
-              ? "accent"
-              : speech.error === null
-                ? "muted"
-                : "warning"
+    <div className={styles.halo} data-busy={busy || undefined}>
+      <PromptComposer
+        value={value}
+        onValueChange={(next) => {
+          setValue(next);
+        }}
+        disabled={disabled}
+        status={busy ? "submitted" : "ready"}
+        emphasis="ring"
+        className={styles.ring}
+        messages={{ send: t("assistant.composer.send") }}
+        onValueSubmit={(next, request) => {
+          if (busy || next.trim() === "") {
+            request.cancel();
+            return;
           }
-          className={styles.hint}
-          data-note={speech.listening || speech.error !== null || undefined}
-          aria-live="polite"
-        >
-          {speech.listening
-            ? t("assistant.voice.listening")
-            : speech.error === null
-              ? t("assistant.composer.hint")
-              : t(voiceError[speech.error])}
-        </Text>
-        <PromptComposerSubmit />
-      </PromptComposerFooter>
-    </PromptComposer>
+          onSend(next.trim());
+        }}
+      >
+        <PromptComposerInput
+          aria-label={t("assistant.composer.placeholder")}
+          placeholder={t("assistant.composer.placeholder")}
+          maxLength={4000}
+          maxRows={6}
+        />
+        <PromptComposerFooter>
+          {speech.supported && (
+            <PromptComposerAction
+              aria-label={
+                speech.unavailable
+                  ? t("assistant.voice.unavailable.title")
+                  : speech.listening
+                    ? t("assistant.voice.stop")
+                    : t("assistant.voice.start")
+              }
+              aria-pressed={speech.listening}
+              disabled={disabled || speech.unavailable}
+              onClick={speech.toggle}
+            >
+              <Icon>
+                <AssistantIcon name={speech.unavailable ? "mic-off" : "mic"} />
+              </Icon>
+            </PromptComposerAction>
+          )}
+          <Text
+            size="xs"
+            tone={speech.listening ? "accent" : "muted"}
+            className={styles.hint}
+            data-note={speech.listening || undefined}
+            aria-live="polite"
+          >
+            {speech.listening
+              ? t("assistant.voice.listening")
+              : t("assistant.composer.hint")}
+          </Text>
+          <PromptComposerSubmit />
+        </PromptComposerFooter>
+      </PromptComposer>
+    </div>
   );
 }
