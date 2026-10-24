@@ -23,13 +23,16 @@ import {
 } from "@slotted/react/page-header";
 import { Tab, TabList, Tabs } from "@slotted/react/tabs";
 import { Tag } from "@slotted/react/tag";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 
+import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { kindTitle } from "@/features/accounts/account-kinds";
 import { AccountAvatar } from "@/features/accounts/account-avatar";
 import { AccountRowStatus } from "@/features/accounts/account-row-status";
 import type { AccountTab } from "@/features/accounts/account-search";
+import { instrumentsQuery } from "@/features/setup";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { HeaderProgress } from "@/ui/header-progress";
@@ -74,6 +77,17 @@ export function AccountHeader({
   const t = useT();
   const [locale] = useAppLocale();
   const navigate = useNavigate();
+  const instruments = useQuery(instrumentsQuery(useApi()));
+  // A trade is recorded on the account that holds the security.
+  const security = (instruments.data?.items ?? []).some(
+    (i) => i.code === account.currency && i.type !== "currency",
+  );
+  const recordTrade = () => {
+    void navigate({
+      to: "/transactions/new",
+      search: { account_id: account.id, kind: "trade" },
+    });
+  };
   const wide = useMediaQuery(wideQuery);
   const compact = useMediaQuery(compactQuery);
   const closed = account.closed_on !== undefined;
@@ -160,6 +174,15 @@ export function AccountHeader({
                 >
                   {t("account.recordBalance")}
                 </Button>
+                {security && (
+                  <Button
+                    variant="outline"
+                    tone="secondary"
+                    onClick={recordTrade}
+                  >
+                    {t("trade.record")}
+                  </Button>
+                )}
               </>
             )}
             {!closed && (
@@ -238,6 +261,11 @@ export function AccountHeader({
                     >
                       {t("account.recordBalance")}
                     </MenuItem>
+                    {security && (
+                      <MenuItem onSelect={recordTrade}>
+                        {t("trade.record")}
+                      </MenuItem>
+                    )}
                   </>
                 )}
                 <MenuItem onSelect={onUnlock}>{t("account.unlock")}</MenuItem>

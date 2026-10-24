@@ -19,18 +19,21 @@ function isDraft(value: unknown): value is EntryDraft {
 
 // FM-05: what was typed outlives leaving the form, for the browser tab's session. Storage may
 // refuse access; the form then starts empty.
-export function readDraft(key: string): EntryDraft | null {
+export function readStored(key: string): unknown {
   try {
     const raw = sessionStorage.getItem(prefix + key);
-    if (raw === null) return null;
-    const value: unknown = JSON.parse(raw);
-    return isDraft(value) ? value : null;
+    return raw === null ? null : (JSON.parse(raw) as unknown);
   } catch {
     return null;
   }
 }
 
-export function writeDraft(key: string, draft: EntryDraft): void {
+export function readDraft(key: string): EntryDraft | null {
+  const value = readStored(key);
+  return isDraft(value) ? value : null;
+}
+
+export function writeDraft(key: string, draft: unknown): void {
   try {
     sessionStorage.setItem(prefix + key, JSON.stringify(draft));
   } catch {

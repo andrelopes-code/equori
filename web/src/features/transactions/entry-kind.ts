@@ -5,7 +5,10 @@ type Transaction = components["schemas"]["Transaction"];
 type TransactionInput = components["schemas"]["TransactionInput"];
 type PostingInput = components["schemas"]["PostingInput"];
 
-export type EntryKind = "expense" | "income" | "transfer" | "advanced";
+export type PostingKind = "expense" | "income" | "transfer" | "advanced";
+
+// The kinds the entry flow offers: the four that post by shape, and the two the server builds.
+export type EntryKind = PostingKind | "trade" | "investment_income";
 
 export interface EntryRow {
   accountId: string | null;
@@ -15,7 +18,7 @@ export interface EntryRow {
 }
 
 export interface EntryDraft {
-  kind: EntryKind;
+  kind: PostingKind;
   // Minor units, positive; the kind gives the signs.
   amount: number;
   date: string;

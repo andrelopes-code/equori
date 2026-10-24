@@ -7,7 +7,7 @@
 
   .kinds {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--kind-count, 4), minmax(0, 1fr));
     gap: var(--slotted-space-3);
   }
 
@@ -69,6 +69,42 @@
     --kind-ink: color-mix(
       in oklab,
       var(--slotted-data-1) 70%,
+      var(--slotted-text)
+    );
+  }
+
+  .kind[data-kind="trade"] {
+    --kind-surface: color-mix(
+      in oklab,
+      var(--slotted-data-3) 12%,
+      var(--slotted-surface)
+    );
+    --kind-border: color-mix(
+      in oklab,
+      var(--slotted-data-3) 60%,
+      var(--slotted-surface)
+    );
+    --kind-ink: color-mix(
+      in oklab,
+      var(--slotted-data-3) 70%,
+      var(--slotted-text)
+    );
+  }
+
+  .kind[data-kind="investment_income"] {
+    --kind-surface: color-mix(
+      in oklab,
+      var(--slotted-data-4) 12%,
+      var(--slotted-surface)
+    );
+    --kind-border: color-mix(
+      in oklab,
+      var(--slotted-data-4) 60%,
+      var(--slotted-surface)
+    );
+    --kind-ink: color-mix(
+      in oklab,
+      var(--slotted-data-4) 70%,
       var(--slotted-text)
     );
   }

@@ -31,13 +31,15 @@ import { payeesQuery, settingsQuery, useScale } from "@/features/setup";
 import { tagsQuery, useCreateTransaction } from "@/features/transactions/api";
 import { writeEntryForm } from "@/features/transactions/capture-store";
 import { emptyDraft, inputFromDraft } from "@/features/transactions/entry-kind";
-import type { EntryDraft } from "@/features/transactions/entry-kind";
+import type { EntryDraft, EntryKind } from "@/features/transactions/entry-kind";
 import { draftProblems } from "@/features/transactions/entry-validation";
 import {
   clearDraft,
   readDraft,
   writeDraft,
 } from "@/features/transactions/form-draft";
+import { TradeForm } from "@/features/transactions/trade-form";
+import { useTradeEntry } from "@/features/transactions/use-trade-entry";
 import {
   TransactionForm,
   fieldOf,
@@ -53,7 +55,7 @@ export function NewTransactionPage() {
   const api = useApi();
   const today = useToday();
   const navigate = useNavigate();
-  const { account_id } = useSearch({ from: "/_authed/transactions/new" });
+  const { account_id, kind } = useSearch({ from: "/_authed/transactions/new" });
   const accounts = useQuery(accountsQuery(api));
   const payees = useQuery(payeesQuery(api));
   const tags = useQuery(tagsQuery(api));
@@ -66,6 +68,17 @@ export function NewTransactionPage() {
   const [draft, setDraft] = useState<EntryDraft>(
     () => readDraft(draftKey) ?? emptyDraft(today, account_id ?? null),
   );
+  // A trade is built by the server from its own fields; the posting form holds the other kinds.
+  const [investment, setInvestment] = useState<"trade" | null>(kind ?? null);
+  const trade = useTradeEntry(account_id ?? null);
+  const pickKind = (next: EntryKind) => {
+    if (next === "trade") {
+      setInvestment(next);
+    } else if (next !== "investment_income") {
+      setInvestment(null);
+      setDraft({ ...draft, kind: next });
+    }
+  };
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [summary, setSummary] = useState<string | null>(null);
   useEffect(() => {
@@ -81,9 +94,46 @@ export function NewTransactionPage() {
   );
   const base = settings.data?.base_currency;
   const ready =
-    accounts.data !== undefined && base !== undefined && scale !== null;
+    investment === "trade"
+      ? trade.view.ready
+      : accounts.data !== undefined && base !== undefined && scale !== null;
+  const pending = investment === "trade" ? trade.pending : create.isPending;
+
+  const announce = (id: string, title: string) => {
+    toast.show({
+      tone: "success",
+      title,
+      actions: (
+        <Button
+          size="sm"
+          variant="ghost"
+          tone="secondary"
+          onClick={() => {
+            void navigate({ to: "/transactions/$id", params: { id } });
+          }}
+        >
+          {t("entry.view")}
+        </Button>
+      ),
+    });
+  };
+
+  const submitTrade = async (next: "list" | "another") => {
+    const created = await trade.submit();
+    if (created === null) return;
+    if (next === "list") {
+      void navigate({ to: "/transactions/$id", params: { id: created.id } });
+      return;
+    }
+    announce(created.id, t("trade.created"));
+    trade.reset();
+  };
 
   const submit = async (next: "list" | "another") => {
+    if (investment === "trade") {
+      await submitTrade(next);
+      return;
+    }
     const problems = draftProblems(draft);
     if (Object.keys(problems).length > 0) {
       setErrors(
@@ -102,25 +152,7 @@ export function NewTransactionPage() {
         inputFromDraft(draft, accountsById, base),
       );
       clearDraft(draftKey);
-      toast.show({
-        tone: "success",
-        title: t("entry.created"),
-        actions: (
-          <Button
-            size="sm"
-            variant="ghost"
-            tone="secondary"
-            onClick={() => {
-              void navigate({
-                to: "/transactions/$id",
-                params: { id: created.id },
-              });
-            }}
-          >
-            {t("entry.view")}
-          </Button>
-        ),
-      });
+      announce(created.id, t("entry.created"));
       if (next === "list") {
         void navigate({ to: "/transactions" });
       } else {
@@ -148,6 +180,7 @@ export function NewTransactionPage() {
   };
 
   const discard = () => {
+    trade.discard();
     clearDraft(draftKey);
     void navigate({ to: "/transactions" });
   };
@@ -158,7 +191,7 @@ export function NewTransactionPage() {
     <Button
       fullWidth={compact}
       disabled={!ready}
-      loading={create.isPending}
+      loading={pending}
       aria-keyshortcuts="Control+Enter"
       onClick={() => {
         void submit("list");
@@ -220,7 +253,7 @@ export function NewTransactionPage() {
                       variant="outline"
                       tone="secondary"
                       disabled={!ready}
-                      loading={create.isPending}
+                      loading={pending}
                       onClick={saveAnother}
                     >
                       {t("entry.saveAnother")}
@@ -291,23 +324,40 @@ export function NewTransactionPage() {
             void submit("list");
           }}
         >
-          {summary !== null && (
-            <InlineMessage tone="danger">{summary}</InlineMessage>
+          {(investment === "trade" ? trade.summary : summary) !== null && (
+            <InlineMessage tone="danger">
+              {investment === "trade" ? trade.summary : summary}
+            </InlineMessage>
           )}
-          {ready && (
-            <TransactionForm
-              draft={draft}
-              onChange={setDraft}
-              accounts={accounts.data}
-              payees={payees.data ?? []}
-              tags={tags.data ?? []}
-              baseCurrency={base}
+          {ready && investment === "trade" && scale !== null && (
+            <TradeForm
+              draft={trade.draft}
+              onChange={trade.setDraft}
+              view={trade.view}
+              errors={trade.errors}
               scale={scale}
-              errors={errors}
-              // A phone would open its keyboard over the form before the reader chose to type.
-              autoFocusAmount={wide}
+              onKind={pickKind}
             />
           )}
+          {ready &&
+            investment === null &&
+            base !== undefined &&
+            scale !== null &&
+            accounts.data !== undefined && (
+              <TransactionForm
+                draft={draft}
+                onChange={setDraft}
+                accounts={accounts.data}
+                payees={payees.data ?? []}
+                tags={tags.data ?? []}
+                baseCurrency={base}
+                scale={scale}
+                errors={errors}
+                // A phone would open its keyboard over the form before the reader chose to type.
+                autoFocusAmount={wide}
+                onInvestment={pickKind}
+              />
+            )}
         </form>
       </PageBody>
     </Page>

@@ -437,6 +437,20 @@ export function useReimburseTransaction() {
   });
 }
 
+export function useRecordTrade() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: components["schemas"]["TradeInput"]) =>
+      unwrap(await api.POST("/trades", { body })),
+    onSuccess: (created) =>
+      transactionMutated(
+        queryClient,
+        created.postings.map((p) => p.account_id),
+      ),
+  });
+}
+
 export function useCreateTransaction() {
   const api = useApi();
   const queryClient = useQueryClient();

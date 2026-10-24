@@ -37,4 +37,32 @@ describe("EntryKindPicker", () => {
     );
     expect(chosen).toEqual(["income"]);
   });
+
+  it("offers the trade only when the flow records investments", async () => {
+    const { unmount } = renderWithProviders(
+      <EntryKindPicker value="expense" onChange={() => undefined} />,
+      { fetch: fakeApi({}) },
+    );
+    expect(
+      screen.queryByRole("radio", { name: catalogEn["entry.kind.trade"] }),
+    ).toBeNull();
+    unmount();
+    const chosen: EntryKind[] = [];
+    renderWithProviders(
+      <EntryKindPicker
+        value="expense"
+        investments
+        onChange={(kind) => chosen.push(kind)}
+      />,
+      { fetch: fakeApi({}) },
+    );
+    const trade = screen.getByRole("radio", {
+      name: catalogEn["entry.kind.trade"],
+    });
+    expect(trade).toHaveAccessibleDescription(
+      catalogEn["entry.kindHint.trade"],
+    );
+    await userEvent.click(trade);
+    expect(chosen).toEqual(["trade"]);
+  });
 });

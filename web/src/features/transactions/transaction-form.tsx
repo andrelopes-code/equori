@@ -10,7 +10,11 @@ import { CategoryPicker } from "@/features/categories";
 import { AccountField } from "@/features/transactions/account-field";
 import { DateShortcuts } from "@/ui/date-shortcuts";
 import { EntryKindPicker } from "@/features/transactions/entry-kind-picker";
-import type { EntryDraft, EntryKind } from "@/features/transactions/entry-kind";
+import type {
+  EntryDraft,
+  EntryKind,
+  PostingKind,
+} from "@/features/transactions/entry-kind";
 import { PayeeField } from "@/features/transactions/payee-field";
 import { PostingsEditor } from "@/features/transactions/postings-editor";
 import { TagsField } from "@/features/transactions/tags-field";
@@ -22,7 +26,7 @@ type Account = components["schemas"]["Account"];
 type Payee = components["schemas"]["Payee"];
 
 // The request's posting field names, read back into the field that wrote them (FM-02).
-export function fieldOf(kind: EntryKind, field: string): string {
+export function fieldOf(kind: PostingKind, field: string): string {
   if (kind === "advanced") return field;
   if (field.startsWith("postings[0]")) return "account";
   if (field.startsWith("postings[1]"))
@@ -41,6 +45,7 @@ export function TransactionForm({
   scale,
   errors,
   autoFocusAmount = false,
+  onInvestment,
   children,
 }: {
   draft: EntryDraft;
@@ -53,6 +58,8 @@ export function TransactionForm({
   errors: Record<string, string>;
   // A new entry starts at its amount; a correction leaves focus where the page puts it.
   autoFocusAmount?: boolean;
+  // The new-entry flow also offers the trade; the page switches forms when it is chosen.
+  onInvestment?: (kind: EntryKind) => void;
   // Fields only one of the forms has, such as the reason of a correction.
   children?: ReactNode;
 }) {
@@ -80,8 +87,13 @@ export function TransactionForm({
     <Stack gap={6}>
       <EntryKindPicker
         value={draft.kind}
+        investments={onInvestment !== undefined}
         onChange={(kind) => {
-          set({ kind });
+          if (kind === "trade" || kind === "investment_income") {
+            onInvestment?.(kind);
+          } else {
+            set({ kind });
+          }
         }}
       />
 

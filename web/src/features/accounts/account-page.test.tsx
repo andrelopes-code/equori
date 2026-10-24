@@ -12,6 +12,7 @@ import {
   closedID,
   money,
   reserveID,
+  stockID,
 } from "@/testing/account-api";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
@@ -259,5 +260,31 @@ describe("AccountPage", () => {
     await waitFor(() => {
       expect(sent).toEqual(["reopen"]);
     });
+  });
+
+  it("records a trade from the page of a security account, with the account chosen", async () => {
+    const { router } = await renderApp(`/accounts/${stockID}`, {
+      fetch: api(),
+    });
+    await userEvent.click(
+      await screen.findByRole("button", { name: catalogEn["trade.record"] }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/transactions/new");
+    });
+    expect(router.state.location.search).toEqual({
+      account_id: stockID,
+      kind: "trade",
+    });
+  });
+
+  it("offers no trade on an account that holds a currency", async () => {
+    await renderApp(`/accounts/${checkingID}`, { fetch: api() });
+    await screen.findByRole("button", {
+      name: catalogEn["account.recordBalance"],
+    });
+    expect(
+      screen.queryByRole("button", { name: catalogEn["trade.record"] }),
+    ).toBeNull();
   });
 });
