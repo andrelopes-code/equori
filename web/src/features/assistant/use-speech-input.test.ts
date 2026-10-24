@@ -17,7 +17,7 @@ class FakeRecognition {
     ((event: { resultIndex: number; results: FakeResult[] }) => void) | null =
     null;
   onend: (() => void) | null = null;
-  onerror: (() => void) | null = null;
+  onerror: ((event: { error: string }) => void) | null = null;
   start = vi.fn();
   stop = vi.fn(() => this.onend?.());
   abort = vi.fn();
@@ -77,5 +77,54 @@ describe("useSpeechInput", () => {
     });
     expect(FakeRecognition.last?.stop).toHaveBeenCalledOnce();
     expect(result.current.listening).toBe(false);
+  });
+
+  it("says the microphone is blocked when the browser denies it", () => {
+    install();
+    const { result } = renderHook(() => useSpeechInput("pt-BR", vi.fn()));
+    act(() => {
+      result.current.toggle();
+    });
+    act(() => {
+      FakeRecognition.last?.onerror?.({ error: "not-allowed" });
+      FakeRecognition.last?.onend?.();
+    });
+    expect(result.current.listening).toBe(false);
+    expect(result.current.error).toBe("denied");
+    expect(result.current.supported).toBe(true);
+  });
+
+  // Chromium builds without the speech service (Brave, Chromium on Linux) expose the API and
+  // fail at once with "network": dictation is withdrawn instead of flickering on each press.
+  it("withdraws dictation when the browser has no speech service", () => {
+    install();
+    const { result } = renderHook(() => useSpeechInput("pt-BR", vi.fn()));
+    act(() => {
+      result.current.toggle();
+    });
+    act(() => {
+      FakeRecognition.last?.onerror?.({ error: "network" });
+      FakeRecognition.last?.onend?.();
+    });
+    expect(result.current.error).toBe("unavailable");
+    expect(result.current.supported).toBe(false);
+  });
+
+  it("clears the error on the next start", () => {
+    install();
+    const { result } = renderHook(() => useSpeechInput("pt-BR", vi.fn()));
+    act(() => {
+      result.current.toggle();
+    });
+    act(() => {
+      FakeRecognition.last?.onerror?.({ error: "no-speech" });
+      FakeRecognition.last?.onend?.();
+    });
+    expect(result.current.error).toBe("silence");
+    act(() => {
+      result.current.toggle();
+    });
+    expect(result.current.error).toBeNull();
+    expect(result.current.listening).toBe(true);
   });
 });

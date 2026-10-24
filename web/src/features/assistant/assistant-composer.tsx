@@ -14,6 +14,12 @@ import styles from "@/features/assistant/assistant-panel.module.css";
 import { useSpeechInput } from "@/features/assistant/use-speech-input";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
+const voiceError = {
+  denied: "assistant.voice.denied",
+  unavailable: "assistant.voice.unavailable",
+  silence: "assistant.voice.silence",
+} as const;
+
 // Families read: prompt-composer, icon, typography. The field keeps what the reader typed or
 // dictated until a send is accepted; a send while a turn runs is refused and the text stays.
 export function AssistantComposer({
@@ -44,6 +50,7 @@ export function AssistantComposer({
       disabled={disabled}
       status={busy ? "submitted" : "ready"}
       emphasis="ring"
+      className={styles.ring}
       messages={{ send: t("assistant.composer.send") }}
       onValueSubmit={(next, request) => {
         if (busy || next.trim() === "") {
@@ -78,14 +85,22 @@ export function AssistantComposer({
         )}
         <Text
           size="xs"
-          tone={speech.listening ? "accent" : "muted"}
+          tone={
+            speech.listening
+              ? "accent"
+              : speech.error === null
+                ? "muted"
+                : "warning"
+          }
           className={styles.hint}
-          data-listening={speech.listening || undefined}
+          data-note={speech.listening || speech.error !== null || undefined}
           aria-live="polite"
         >
           {speech.listening
             ? t("assistant.voice.listening")
-            : t("assistant.composer.hint")}
+            : speech.error === null
+              ? t("assistant.composer.hint")
+              : t(voiceError[speech.error])}
         </Text>
         <PromptComposerSubmit />
       </PromptComposerFooter>

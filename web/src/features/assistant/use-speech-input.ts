@@ -15,7 +15,7 @@ interface Recognition {
       }) => void)
     | null;
   onend: (() => void) | null;
-  onerror: (() => void) | null;
+  onerror: ((event: { error: string }) => void) | null;
   start: () => void;
   stop: () => void;
   abort: () => void;
@@ -36,10 +36,31 @@ export function speechSupported(): boolean {
   return recognitionClass() !== undefined;
 }
 
+// Why the last dictation ended early: the reader blocked the microphone, the browser has no
+// speech service behind its API, or no speech was heard.
+export type SpeechError = "denied" | "unavailable" | "silence";
+
+// The engine's error codes (Web Speech API, SpeechRecognitionErrorEvent.error) by what the
+// reader can do about them; "aborted" is a stop the panel asked for.
+function speechError(code: string): SpeechError | null {
+  switch (code) {
+    case "not-allowed":
+      return "denied";
+    case "no-speech":
+      return "silence";
+    case "aborted":
+      return null;
+    default:
+      return "unavailable";
+  }
+}
+
 export interface SpeechInput {
-  // False where the browser has no recognition engine (Firefox): the composer offers no dictation.
+  // False where the browser has no recognition engine (Firefox), or once its engine proved to
+  // have no speech service: the composer offers no dictation.
   supported: boolean;
   listening: boolean;
+  error: SpeechError | null;
   toggle: () => void;
 }
 
@@ -51,6 +72,7 @@ export function useSpeechInput(
   onText: (text: string) => void,
 ): SpeechInput {
   const [listening, setListening] = useState(false);
+  const [error, setError] = useState<SpeechError | null>(null);
   const engine = useRef<Recognition | null>(null);
   const deliver = useStableCallback(onText);
 
@@ -81,16 +103,23 @@ export function useSpeechInput(
         }
       }
     };
-    const end = () => {
+    r.onend = () => {
       engine.current = null;
       setListening(false);
     };
-    r.onend = end;
-    r.onerror = end;
+    r.onerror = (event) => {
+      setError(speechError(event.error));
+    };
     engine.current = r;
+    setError(null);
     r.start();
     setListening(true);
   }, [lang, deliver]);
 
-  return { supported: speechSupported(), listening, toggle };
+  return {
+    supported: speechSupported() && error !== "unavailable",
+    listening,
+    error,
+    toggle,
+  };
 }

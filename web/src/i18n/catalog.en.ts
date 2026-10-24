@@ -1079,6 +1079,11 @@ export const catalogEn = {
   "assistant.voice.start": "Dictate a message",
   "assistant.voice.stop": "Stop dictating",
   "assistant.voice.listening": "Listening… speak your question",
+  "assistant.voice.denied":
+    "The browser blocked the microphone. Allow it in this site's settings.",
+  "assistant.voice.unavailable":
+    "This browser offers no speech recognition, so dictation is off.",
+  "assistant.voice.silence": "No speech heard. Press the microphone and speak.",
   "assistant.voice.notice":
     "Dictation uses your browser's speech recognition, which may send the audio to the browser's maker.",
   "assistant.notice.title": "About your data",

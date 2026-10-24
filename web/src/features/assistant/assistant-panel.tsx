@@ -9,7 +9,7 @@ import {
 import {
   Drawer,
   DrawerBody,
-  DrawerClose,
+  DrawerDescription,
   DrawerHeader,
   DrawerPanel,
   DrawerTitle,
@@ -29,6 +29,7 @@ import {
   MessageScrollerItem,
   MessageScrollerViewport,
 } from "@slotted/react/message-scroller";
+import { Text } from "@slotted/react/typography";
 import { useState, useSyncExternalStore } from "react";
 
 import { useApi } from "@/api/api-context";
@@ -41,7 +42,7 @@ import { ConversationList } from "@/features/assistant/conversation-list";
 import { maskAmountText } from "@/features/assistant/mask-amounts";
 import { MessageItem } from "@/features/assistant/message-item";
 import { catalogKey } from "@/features/assistant/proposal-card";
-import { PanelBar } from "@/features/assistant/panel-bar";
+import { HeaderActions } from "@/features/assistant/header-actions";
 import { ProviderNotice } from "@/features/assistant/provider-notice";
 import type { AssistantProblem } from "@/features/assistant/sse";
 import { useAssistantTurn } from "@/features/assistant/use-assistant-turn";
@@ -161,31 +162,35 @@ export function AssistantPanel({
       open={open}
       onOpenChange={onOpenChange}
       side={phone ? "bottom" : "end"}
-      size={phone ? "full" : "lg"}
+      size={phone ? "full" : "xl"}
       modal={phone}
       outsidePress="none"
     >
       <DrawerPanel>
         <DrawerHeader>
           <DrawerTitle>{t("assistant.title")}</DrawerTitle>
-          <DrawerClose />
+          <DrawerDescription>
+            <Text truncate>{title}</Text>
+          </DrawerDescription>
+          <HeaderActions
+            listing={listing}
+            onBack={() => {
+              setListing(false);
+            }}
+            onHistory={() => {
+              setListing(true);
+            }}
+            onNew={() => {
+              turn.reset();
+              setListing(false);
+            }}
+            onClose={() => {
+              onOpenChange(false);
+            }}
+          />
         </DrawerHeader>
         <DrawerBody>
           <div data-own="assistant-panel" className={styles.thread}>
-            <PanelBar
-              title={title}
-              listing={listing}
-              onBack={() => {
-                setListing(false);
-              }}
-              onHistory={() => {
-                setListing(true);
-              }}
-              onNew={() => {
-                turn.reset();
-                setListing(false);
-              }}
-            />
             {listing ? (
               <div className={styles.scroll}>
                 <ConversationList

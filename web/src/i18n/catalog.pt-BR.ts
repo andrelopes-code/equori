@@ -1086,6 +1086,12 @@ export const catalogPtBR: Catalog = {
   "assistant.voice.start": "Ditar mensagem",
   "assistant.voice.stop": "Parar o ditado",
   "assistant.voice.listening": "Ouvindo… fale a sua pergunta",
+  "assistant.voice.denied":
+    "O navegador bloqueou o microfone. Permita o acesso nas configurações do site.",
+  "assistant.voice.unavailable":
+    "Este navegador não oferece reconhecimento de fala, então o ditado foi desativado.",
+  "assistant.voice.silence":
+    "Nenhuma fala detectada. Toque no microfone e fale.",
   "assistant.voice.notice":
     "O ditado usa o reconhecimento de fala do navegador, que pode enviar o áudio ao fabricante do navegador.",
   "assistant.notice.title": "Sobre os seus dados",

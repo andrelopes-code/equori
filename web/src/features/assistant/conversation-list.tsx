@@ -16,7 +16,7 @@ import {
   ListItemActions,
   ListItemBody,
   ListItemButton,
-  ListItemEnd,
+  ListItemDescription,
   ListItemLabel,
 } from "@slotted/react/list-item";
 import { Stack } from "@slotted/react/stack";
@@ -90,7 +90,7 @@ export function ConversationList({
           </AlertContent>
         </Alert>
       )}
-      <List aria-label={t("assistant.conversations")} size="sm">
+      <List aria-label={t("assistant.conversations")}>
         {list.isSuccess && items.length === 0 && (
           <ListEmpty>{t("assistant.conversations.empty")}</ListEmpty>
         )}
@@ -108,10 +108,10 @@ export function ConversationList({
                   >
                     <ListItemBody>
                       <ListItemLabel>{title}</ListItemLabel>
+                      <ListItemDescription>
+                        {g === "today" ? time.format(at) : day.format(at)}
+                      </ListItemDescription>
                     </ListItemBody>
-                    <ListItemEnd>
-                      {g === "today" ? time.format(at) : day.format(at)}
-                    </ListItemEnd>
                   </ListItemButton>
                   <ListItemActions>
                     <IconButton

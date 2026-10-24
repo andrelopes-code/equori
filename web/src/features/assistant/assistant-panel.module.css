@@ -1,25 +1,17 @@
 @layer app {
-  /* The bar, the thread and the composer stack in the body; only the thread scrolls (CV-01). */
+  /* The thread and the composer stack in the body; only the thread scrolls (CV-01). */
   .thread {
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr) auto;
     gap: var(--slotted-space-4);
     height: 100%;
     min-height: 0;
   }
 
-  .bar {
+  .headerActions {
     display: flex;
     align-items: center;
-    gap: var(--slotted-space-2);
-    padding-block-end: var(--slotted-space-3);
-    border-block-end: var(--slotted-border-width-thin) solid
-      var(--slotted-border-subtle);
-  }
-
-  .barTitle {
-    flex: 1;
-    min-inline-size: 0;
+    gap: var(--slotted-space-1);
   }
 
   .scroll {
@@ -49,6 +41,14 @@
   }
 
   /* A notice that blocks the composer stands right above it, where the reader looks to type. */
+  /* Workaround for Slotted finding "The prompt composer's ring glow is cut by its own mask and overflows its container": the hue ring stays, its glow has no reach and no opacity. */
+  .ring {
+    --slotted-prompt-composer-ring-glow-reach: 0px;
+    --slotted-prompt-composer-ring-glow-opacity: 0;
+    --slotted-prompt-composer-ring-glow-opacity-focus: 0;
+    --slotted-prompt-composer-ring-glow-opacity-busy: 0;
+  }
+
   .composer {
     display: grid;
     gap: var(--slotted-space-3);
@@ -62,7 +62,7 @@
 
   /* A coarse pointer types on a screen keyboard, where Enter and Shift+Enter are not at hand. */
   @media (pointer: coarse) {
-    .hint:not([data-listening]) {
+    .hint:not([data-note]) {
       visibility: hidden;
     }
   }
