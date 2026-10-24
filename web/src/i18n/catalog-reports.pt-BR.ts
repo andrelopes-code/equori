@@ -33,7 +33,7 @@ export const reportsPtBR: Record<keyof typeof reportsEn, string> = {
   "report.period.month": "Mês",
   "report.period.quarter": "Trimestre",
   "report.period.year": "Ano",
-  "report.period.custom": "Personalizado",
+  "report.period.custom": "Outro",
   "report.period.from": "De",
   "report.period.to": "Até",
   "report.period.previous": "Período anterior",
