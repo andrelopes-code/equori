@@ -191,7 +191,7 @@ export function BudgetsTab({
             {compact ? (
               <div className={styles.rows}>{cards}</div>
             ) : (
-              <Grid gap={3} minItemWidth="md">
+              <Grid gap={3} minItemWidth="md" align="stretch">
                 {cards}
               </Grid>
             )}

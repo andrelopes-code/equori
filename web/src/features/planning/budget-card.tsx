@@ -55,6 +55,10 @@ export function BudgetCard({
           amount: money({ ...p.available, amount: -p.available.amount }),
         })
       : t("budget.left", { amount: money(p.available) });
+  const status =
+    p.carried.amount === 0
+      ? rest
+      : t("budget.restCarried", { rest, carried: money(p.carried) });
   const title = (
     <Inline gap={3} wrap="nowrap" className={styles.title}>
       <CategoryMark
@@ -153,13 +157,10 @@ export function BudgetCard({
         size="sm"
         tone={state === "over" ? "danger" : "muted"}
         numeric="tabular"
+        className={styles.status}
+        title={status}
       >
-        {p.carried.amount === 0
-          ? rest
-          : t("budget.restCarried", {
-              rest,
-              carried: money(p.carried),
-            })}
+        {status}
       </Text>
     </div>
   );

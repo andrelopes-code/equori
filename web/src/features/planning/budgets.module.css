@@ -16,7 +16,6 @@
     display: grid;
     gap: var(--slotted-space-4);
     grid-template-columns: minmax(0, 1fr);
-    align-items: start;
   }
 
   @media (min-width: 56rem) {
@@ -108,6 +107,14 @@
 
   .percent {
     color: var(--budget-tone);
+  }
+
+  /* Cards of one row keep one height: a status longer than the card is cut, and read whole from
+     its title. */
+  .status {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .committed {
