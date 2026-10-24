@@ -290,3 +290,12 @@ export function shiftDate(iso: string, days: number): string {
     .toISOString()
     .slice(0, 10);
 }
+
+// A share in basis points as a percentage of the locale: 5024 reads "50.24%" in en-US.
+export function formatBasisPoints(bp: number, locale: string): string {
+  return new Intl.NumberFormat(locale, {
+    style: "percent",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(bp / 10000);
+}

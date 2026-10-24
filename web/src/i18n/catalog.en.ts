@@ -1,9 +1,11 @@
 import { accountsEn } from "@/i18n/catalog-accounts.en";
 import { instrumentsEn } from "@/i18n/catalog-instruments.en";
+import { portfolioEn } from "@/i18n/catalog-portfolio.en";
 
 export const catalogEn = {
   ...accountsEn,
   ...instrumentsEn,
+  ...portfolioEn,
   "nav.home": "Home",
   "nav.label": "Main navigation",
   "nav.transactions": "Transactions",

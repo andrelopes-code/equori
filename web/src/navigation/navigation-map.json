@@ -287,6 +287,15 @@
     ]
   },
   {
+    "path": "/portfolio",
+    "topics": ["investments"],
+    "screen": "Portfolio",
+    "tasks": [
+      "see the positions of every account at a valuation date, grouped by account or by security",
+      "see the share of each valued position in the total"
+    ]
+  },
+  {
     "path": "/settings",
     "topics": ["settings_language_and_region", "privacy_and_the_assistant"],
     "screen": "Settings",
