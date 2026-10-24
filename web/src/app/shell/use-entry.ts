@@ -20,6 +20,19 @@ export function useEntry(): () => void {
   }, [navigate]);
 }
 
+// A closed popover (a chart's toolbar menu) stays in the document with the role of its content
+// and holds nobody; jsdom has no :popover-open and reads as closed.
+function overlayOpen(): boolean {
+  return [...document.querySelectorAll(overlay)].some((element) => {
+    if (!element.hasAttribute("popover")) return true;
+    try {
+      return element.matches(":popover-open");
+    } catch {
+      return false;
+    }
+  });
+}
+
 // A single key opens a command from any authenticated route, unless a field takes the key, a
 // modifier makes it a command, or an overlay holds the reader.
 export function useKeyShortcut(key: string, open: () => void): void {
@@ -31,7 +44,7 @@ export function useKeyShortcut(key: string, open: () => void): void {
       if (event.target instanceof Element && event.target.closest(editable)) {
         return;
       }
-      if (document.querySelector(overlay) !== null) return;
+      if (overlayOpen()) return;
       event.preventDefault();
       open();
     };
