@@ -24,7 +24,7 @@ import { Link, useParams } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
-import { instrumentQuery } from "@/features/instruments/api";
+import { instrumentQuery, termsQuery } from "@/features/instruments/api";
 import { InstrumentPositions } from "@/features/instruments/instrument-positions";
 import {
   subtypeLabel,
@@ -32,6 +32,8 @@ import {
 } from "@/features/instruments/instrument-labels";
 import { PriceHistory } from "@/features/instruments/price-history";
 import { RecordPriceDialog } from "@/features/instruments/record-price-dialog";
+import { TermsDialog } from "@/features/instruments/terms-dialog";
+import { TermsSection } from "@/features/instruments/terms-section";
 import { quoteOf } from "@/features/instruments/use-latest-prices";
 import { settingsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
@@ -46,6 +48,9 @@ export function InstrumentPage() {
   const instrument = useQuery(instrumentQuery(api, code));
   const base = useQuery(settingsQuery(api)).data?.base_currency;
   const [recording, setRecording] = useState(false);
+  const [editingTerms, setEditingTerms] = useState(false);
+  const fixedIncome = instrument.data?.type === "fixed_income";
+  const terms = useQuery({ ...termsQuery(api, code), enabled: fixedIncome });
   if (instrument.isError)
     return (
       <Page width="full">
@@ -85,6 +90,16 @@ export function InstrumentPage() {
               <PageHeaderSubheading>{subheading}</PageHeaderSubheading>
             </PageHeaderTitle>
             <PageHeaderActions>
+              {fixedIncome && quote !== null && terms.data !== undefined && (
+                <HeaderAction
+                  label={t(terms.data === null ? "terms.set" : "terms.change")}
+                  glyph="calendar"
+                  wordsOnly
+                  onClick={() => {
+                    setEditingTerms(true);
+                  }}
+                />
+              )}
               {quote !== null && (
                 <HeaderAction
                   primary
@@ -132,6 +147,15 @@ export function InstrumentPage() {
               <PriceHistory instrument={i.code} quote={quote} />
             )}
           </Stack>
+          {fixedIncome && terms.isError && (
+            <QueryError
+              error={terms.error}
+              onRetry={() => void terms.refetch()}
+            />
+          )}
+          {fixedIncome && quote !== null && terms.data !== undefined && (
+            <TermsSection terms={terms.data} quote={quote} />
+          )}
           <Stack gap={3}>
             <Heading level={2} size="md">
               {t("instrument.positions.title")}
@@ -149,6 +173,20 @@ export function InstrumentPage() {
           }}
           onCancel={() => {
             setRecording(false);
+          }}
+        />
+      )}
+      {editingTerms && quote !== null && terms.data !== undefined && (
+        <TermsDialog
+          code={i.code}
+          quote={quote}
+          scale={i.scale}
+          terms={terms.data}
+          onDone={() => {
+            setEditingTerms(false);
+          }}
+          onCancel={() => {
+            setEditingTerms(false);
           }}
         />
       )}

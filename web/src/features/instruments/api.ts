@@ -2,7 +2,7 @@ import { queryOptions, useMutation } from "@tanstack/react-query";
 import type { Client } from "openapi-fetch";
 
 import { useApi } from "@/api/api-context";
-import { unwrap } from "@/api/problem";
+import { ProblemError, unwrap } from "@/api/problem";
 import type { components, paths } from "@/api/schema.gen";
 import { latestPrice } from "@/features/instruments/instrument-groups";
 import { priceWindow } from "@/features/instruments/price-window";
@@ -10,6 +10,7 @@ import { priceWindow } from "@/features/instruments/price-window";
 export const instrumentKeys = {
   all: ["instruments"] as const,
   instrument: (code: string) => ["instruments", "instrument", code] as const,
+  terms: (code: string) => ["instruments", "terms", code] as const,
   subtypes: (type: string) => ["instruments", "subtypes", type] as const,
   prices: (instrument: string, quote: string, from: string, to: string) =>
     ["instruments", "prices", instrument, quote, from, to] as const,
@@ -101,5 +102,61 @@ export function useRecordPrice() {
   return useMutation({
     mutationFn: async (input: components["schemas"]["PriceInput"]) =>
       unwrap(await api.POST("/prices", { body: input })),
+  });
+}
+
+// An instrument without terms answers 404, which reads as "no terms yet".
+export function termsQuery(api: Client<paths>, code: string) {
+  return queryOptions({
+    queryKey: instrumentKeys.terms(code),
+    queryFn: async () => {
+      try {
+        return await unwrap(
+          await api.GET("/instruments/{code}/terms", {
+            params: { path: { code } },
+          }),
+        );
+      } catch (error) {
+        if (error instanceof ProblemError && error.problem.status === 404)
+          return null;
+        throw error;
+      }
+    },
+  });
+}
+
+export function usePutTerms() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async ({
+      code,
+      terms,
+    }: {
+      code: string;
+      terms: components["schemas"]["FixedIncomeTermsInput"];
+    }) =>
+      unwrap(
+        await api.PUT("/instruments/{code}/terms", {
+          params: { path: { code } },
+          body: terms,
+        }),
+      ),
+  });
+}
+
+export function useImportPrices() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const body = new FormData();
+      body.append("file", file);
+      return unwrap(
+        await api.POST("/prices/import", {
+          // openapi-fetch sends FormData as it is, with the boundary the browser writes.
+          body: body as unknown as { file: string },
+          bodySerializer: (value) => value as unknown as FormData,
+        }),
+      );
+    },
   });
 }

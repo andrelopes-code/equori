@@ -271,7 +271,8 @@
     "screen": "Instruments",
     "tasks": [
       "list the currencies and securities by type with their latest price",
-      "define an instrument with its type, subtype, quote currency and exchange"
+      "define an instrument with its type, subtype, quote currency and exchange",
+      "import prices from a CSV file, all or nothing"
     ]
   },
   {
@@ -281,7 +282,8 @@
     "tasks": [
       "see the price history of an instrument over up to 366 days",
       "record a manual price for a date",
-      "see the positions that hold the instrument"
+      "see the positions that hold the instrument",
+      "set the terms of a fixed income instrument, replacing the earlier terms and their accrued prices"
     ]
   },
   {

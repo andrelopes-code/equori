@@ -2,7 +2,7 @@
 
 Sequential guide for the screens of `web/`. Each item names the screens, their functions, the API operations they consume and their dependencies. It is not the source of truth: the implementer of an item reads `api/openapi.yaml`, the ADRs, the scenarios of `docs/domain/06-scenarios.md`, `web/CLAUDE.md` and the existing code before designing the screen. Field lists below are a map of the contract, not a form specification.
 
-Status snapshot: 2026-10-24, commit `98f25f8`.
+Status snapshot: 2026-10-24, commit `d325617`.
 
 `/admin` and `web/src/features/admin/` are temporary and leave the application. This roadmap ignores them: an operation reachable only through `/admin` counts as having no screen. Implementers neither reuse nor extend code from `features/admin/`.
 
@@ -27,7 +27,7 @@ Status snapshot: 2026-10-24, commit `98f25f8`.
 | 5 | Schedules and occurrences | Delivered | — |
 | 6 | Budgets | Delivered | 5 |
 | 7 | Overview | Delivered | 5, 6, 10 |
-| 8 | Instruments and prices | Partial | — |
+| 8 | Instruments and prices | Delivered | — |
 | 9 | Trades and investment income entry | No screen | 8 |
 | 10 | Portfolio | Partial | 8, 9 |
 | 11 | Tax year report of investments | No screen | 9 |
@@ -214,7 +214,7 @@ Layout: desktop shows a grid of blocks; phone width shows one column ordered by 
 
 ## 8. Instruments and prices
 
-Status: Partial. Delivered in settings: `listInstruments`, `defineInstrument`. No screen: `getInstrument`, `getInstrumentTerms`, `putInstrumentTerms`, `listPrices`, `recordPrice`, `importPrices`, `listInstrumentSubtypes`.
+Status: Delivered. `features/instruments/` holds the catalog (`/instruments`), the instrument page (`/instruments/$code`), the price import and the fixed income terms. The ledger section of settings links to the catalog; `defineInstrument` had no screen there. The catalog reads the latest price of each instrument with one `listPrices` call over 366 days, because the contract has no latest-price operation. `listPositions` answers for every account, so the instrument page filters it by instrument code.
 
 Reference: `docs/superpowers/specs/2026-10-23-investments-design.md` sections 4.1 and 4.2, `docs/operations/price-feeds.md`.
 

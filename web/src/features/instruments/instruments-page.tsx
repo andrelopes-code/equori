@@ -23,6 +23,7 @@ import { useApi } from "@/api/api-context";
 import { DefineInstrumentDialog } from "@/features/instruments/define-instrument-dialog";
 import { groupByType } from "@/features/instruments/instrument-groups";
 import { InstrumentsList } from "@/features/instruments/instruments-list";
+import { PriceImportDialog } from "@/features/instruments/price-import-dialog";
 import { InstrumentsTable } from "@/features/instruments/instruments-table";
 import { useLatestPrices } from "@/features/instruments/use-latest-prices";
 import { instrumentsQuery } from "@/features/setup";
@@ -44,6 +45,7 @@ export function InstrumentsPage() {
   const groups = useMemo(() => groupByType(items), [items]);
   const latest = useLatestPrices(items);
   const [defining, setDefining] = useState(false);
+  const [importing, setImporting] = useState(false);
   const define = () => {
     setDefining(true);
   };
@@ -59,6 +61,13 @@ export function InstrumentsPage() {
               </PageHeaderSubheading>
             </PageHeaderTitle>
             <PageHeaderActions>
+              <HeaderAction
+                label={t("prices.import")}
+                glyph="upload"
+                onClick={() => {
+                  setImporting(true);
+                }}
+              />
               <HeaderAction
                 primary
                 label={t("instruments.define")}
@@ -108,6 +117,13 @@ export function InstrumentsPage() {
           }}
           onCancel={() => {
             setDefining(false);
+          }}
+        />
+      )}
+      {importing && (
+        <PriceImportDialog
+          onClose={() => {
+            setImporting(false);
           }}
         />
       )}

@@ -49,6 +49,17 @@ export const priceFixtures = [
   price("USD", "2026-10-16", "5.4830", "bcb_ptax"),
 ];
 
+// S123: a CDB of 1,000.00 at 110% of the CDI issued on 2026-01-02.
+export const cdbTerms = {
+  issued_on: "2026-01-02",
+  matures_on: "2027-01-02",
+  index_id: "cdi",
+  percent_of_index_bp: 11000,
+  spread_bp: 0,
+  day_count: "bus252",
+  face_value: 100000,
+};
+
 export const positionFixtures = [
   {
     account_id: stockID,
@@ -81,6 +92,7 @@ export function instrumentsApi(overrides: Record<string, Route> = {}) {
           () => json(200, i),
         ]),
       ),
+      "GET /api/v1/instruments/CDB1/terms": () => json(200, cdbTerms),
       "GET /api/v1/positions": () => json(200, { items: positionFixtures }),
       "GET /api/v1/instrument-subtypes": (req) =>
         json(200, {
