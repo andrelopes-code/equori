@@ -278,6 +278,22 @@ describe("AccountPage", () => {
     });
   });
 
+  it("records an income from the page of a security account, with the account chosen", async () => {
+    const { router } = await renderApp(`/accounts/${stockID}`, {
+      fetch: api(),
+    });
+    await userEvent.click(
+      await screen.findByRole("button", { name: catalogEn["income.record"] }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/transactions/new");
+    });
+    expect(router.state.location.search).toEqual({
+      account_id: stockID,
+      kind: "investment_income",
+    });
+  });
+
   it("offers no trade on an account that holds a currency", async () => {
     await renderApp(`/accounts/${checkingID}`, { fetch: api() });
     await screen.findByRole("button", {

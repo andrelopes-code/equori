@@ -82,10 +82,10 @@ export function AccountHeader({
   const security = (instruments.data?.items ?? []).some(
     (i) => i.code === account.currency && i.type !== "currency",
   );
-  const recordTrade = () => {
+  const recordInvestment = (kind: "trade" | "investment_income") => () => {
     void navigate({
       to: "/transactions/new",
-      search: { account_id: account.id, kind: "trade" },
+      search: { account_id: account.id, kind },
     });
   };
   const wide = useMediaQuery(wideQuery);
@@ -178,9 +178,18 @@ export function AccountHeader({
                   <Button
                     variant="outline"
                     tone="secondary"
-                    onClick={recordTrade}
+                    onClick={recordInvestment("trade")}
                   >
                     {t("trade.record")}
+                  </Button>
+                )}
+                {security && (
+                  <Button
+                    variant="outline"
+                    tone="secondary"
+                    onClick={recordInvestment("investment_income")}
+                  >
+                    {t("income.record")}
                   </Button>
                 )}
               </>
@@ -262,9 +271,16 @@ export function AccountHeader({
                       {t("account.recordBalance")}
                     </MenuItem>
                     {security && (
-                      <MenuItem onSelect={recordTrade}>
-                        {t("trade.record")}
-                      </MenuItem>
+                      <>
+                        <MenuItem onSelect={recordInvestment("trade")}>
+                          {t("trade.record")}
+                        </MenuItem>
+                        <MenuItem
+                          onSelect={recordInvestment("investment_income")}
+                        >
+                          {t("income.record")}
+                        </MenuItem>
+                      </>
                     )}
                   </>
                 )}

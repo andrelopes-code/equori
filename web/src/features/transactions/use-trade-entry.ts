@@ -1,12 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { accountsQuery, positionsQuery } from "@/features/accounts";
 import { parseRate, pricesQuery } from "@/features/instruments";
-import { instrumentsQuery, settingsQuery, useScale } from "@/features/setup";
+import { settingsQuery, useScale } from "@/features/setup";
 import { useRecordTrade } from "@/features/transactions/api";
 import {
   clearDraft,
@@ -15,6 +15,7 @@ import {
 } from "@/features/transactions/form-draft";
 import { emptyTrade, isTradeDraft } from "@/features/transactions/trade-draft";
 import type { TradeDraft } from "@/features/transactions/trade-draft";
+import { useBrokerageAccounts } from "@/features/transactions/use-brokerage-accounts";
 import {
   cashEffect,
   estimatedResult,
@@ -56,7 +57,6 @@ export function useTradeEntry(accountId: string | null) {
   const scale = useScale();
   const record = useRecordTrade();
   const accounts = useQuery(accountsQuery(api));
-  const instruments = useQuery(instrumentsQuery(api));
   const settings = useQuery(settingsQuery(api));
   const base = settings.data?.base_currency;
 
@@ -71,44 +71,8 @@ export function useTradeEntry(accountId: string | null) {
     writeDraft(draftKey, draft);
   }, [draft]);
 
-  const securities = useMemo(() => {
-    const kinds = new Map(
-      (instruments.data?.items ?? []).map((i) => [i.code, i.type]),
-    );
-    const all = accounts.data ?? [];
-    const parents = new Set(all.map((a) => a.parent_id));
-    return all.filter(
-      (a) =>
-        a.closed_on === undefined &&
-        !parents.has(a.id) &&
-        kinds.has(a.currency) &&
-        kinds.get(a.currency) !== "currency",
-    );
-  }, [accounts.data, instruments.data]);
-  const security =
-    securities.find((a) => a.id === draft.accountId) ??
-    (draft.accountId === null && securities.length === 1
-      ? securities[0]
-      : undefined);
-  const cashChoices = useMemo(
-    () =>
-      security?.parent_id === undefined
-        ? []
-        : (accounts.data ?? []).filter(
-            (a) =>
-              a.parent_id === security.parent_id &&
-              a.class === "asset" &&
-              a.currency === base &&
-              a.closed_on === undefined,
-          ),
-    [accounts.data, security, base],
-  );
-  // One cash account leaves nothing to choose.
-  const cashAccountId = cashChoices.some((a) => a.id === draft.cashAccountId)
-    ? draft.cashAccountId
-    : cashChoices.length === 1
-      ? (cashChoices[0]?.id ?? null)
-      : null;
+  const { securities, security, cashChoices, cashAccountId } =
+    useBrokerageAccounts(draft.accountId, draft.cashAccountId);
 
   const instrument = security?.currency;
   const prices = useQuery({

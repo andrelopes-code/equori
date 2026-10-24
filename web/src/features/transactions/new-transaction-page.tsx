@@ -38,7 +38,9 @@ import {
   readDraft,
   writeDraft,
 } from "@/features/transactions/form-draft";
+import { IncomeForm } from "@/features/transactions/income-form";
 import { TradeForm } from "@/features/transactions/trade-form";
+import { useIncomeEntry } from "@/features/transactions/use-income-entry";
 import { useTradeEntry } from "@/features/transactions/use-trade-entry";
 import {
   TransactionForm,
@@ -68,13 +70,23 @@ export function NewTransactionPage() {
   const [draft, setDraft] = useState<EntryDraft>(
     () => readDraft(draftKey) ?? emptyDraft(today, account_id ?? null),
   );
-  // A trade is built by the server from its own fields; the posting form holds the other kinds.
-  const [investment, setInvestment] = useState<"trade" | null>(kind ?? null);
+  // A trade and an income are built by the server from their own fields; the posting form holds
+  // the other kinds.
+  const [investment, setInvestment] = useState<
+    "trade" | "investment_income" | null
+  >(kind ?? null);
   const trade = useTradeEntry(account_id ?? null);
+  const income = useIncomeEntry(account_id ?? null);
+  const entry =
+    investment === "trade"
+      ? trade
+      : investment === "investment_income"
+        ? income
+        : null;
   const pickKind = (next: EntryKind) => {
-    if (next === "trade") {
+    if (next === "trade" || next === "investment_income") {
       setInvestment(next);
-    } else if (next !== "investment_income") {
+    } else {
       setInvestment(null);
       setDraft({ ...draft, kind: next });
     }
@@ -94,10 +106,10 @@ export function NewTransactionPage() {
   );
   const base = settings.data?.base_currency;
   const ready =
-    investment === "trade"
-      ? trade.view.ready
+    entry !== null
+      ? entry.view.ready
       : accounts.data !== undefined && base !== undefined && scale !== null;
-  const pending = investment === "trade" ? trade.pending : create.isPending;
+  const pending = entry?.pending ?? create.isPending;
 
   const announce = (id: string, title: string) => {
     toast.show({
@@ -118,20 +130,26 @@ export function NewTransactionPage() {
     });
   };
 
-  const submitTrade = async (next: "list" | "another") => {
-    const created = await trade.submit();
+  const submitInvestment = async (
+    next: "list" | "another",
+    active: NonNullable<typeof entry>,
+  ) => {
+    const created = await active.submit();
     if (created === null) return;
     if (next === "list") {
       void navigate({ to: "/transactions/$id", params: { id: created.id } });
       return;
     }
-    announce(created.id, t("trade.created"));
-    trade.reset();
+    announce(
+      created.id,
+      t(active === trade ? "trade.created" : "income.created"),
+    );
+    active.reset();
   };
 
   const submit = async (next: "list" | "another") => {
-    if (investment === "trade") {
-      await submitTrade(next);
+    if (entry !== null) {
+      await submitInvestment(next, entry);
       return;
     }
     const problems = draftProblems(draft);
@@ -181,6 +199,7 @@ export function NewTransactionPage() {
 
   const discard = () => {
     trade.discard();
+    income.discard();
     clearDraft(draftKey);
     void navigate({ to: "/transactions" });
   };
@@ -324,10 +343,20 @@ export function NewTransactionPage() {
             void submit("list");
           }}
         >
-          {(investment === "trade" ? trade.summary : summary) !== null && (
+          {(entry?.summary ?? summary) !== null && (
             <InlineMessage tone="danger">
-              {investment === "trade" ? trade.summary : summary}
+              {entry?.summary ?? summary}
             </InlineMessage>
+          )}
+          {ready && investment === "investment_income" && scale !== null && (
+            <IncomeForm
+              draft={income.draft}
+              onChange={income.setDraft}
+              view={income.view}
+              errors={income.errors}
+              scale={scale}
+              onKind={pickKind}
+            />
           )}
           {ready && investment === "trade" && scale !== null && (
             <TradeForm

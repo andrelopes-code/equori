@@ -7,7 +7,7 @@ import styles from "@/features/transactions/entry-kind-picker.module.css";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
 
-const investmentKinds = new Set<EntryKind>(["trade"]);
+const investmentKinds = new Set<EntryKind>(["trade", "investment_income"]);
 
 const kinds: {
   value: EntryKind;
@@ -33,6 +33,11 @@ const kinds: {
     value: "trade",
     label: "entry.kind.trade",
     hint: "entry.kindHint.trade",
+  },
+  {
+    value: "investment_income",
+    label: "entry.kind.investment_income",
+    hint: "entry.kindHint.investment_income",
   },
   {
     value: "advanced",

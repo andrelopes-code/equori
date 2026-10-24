@@ -325,11 +325,15 @@ const accountsRoute = createRoute({
 const newTransactionRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "transactions/new",
-  validateSearch: (search): { account_id?: string; kind?: "trade" } => {
+  validateSearch: (
+    search,
+  ): { account_id?: string; kind?: "trade" | "investment_income" } => {
     const { account_id } = validateTransactionSearch(search);
     return {
       ...(account_id === undefined ? {} : { account_id }),
-      ...(search.kind === "trade" ? { kind: "trade" as const } : {}),
+      ...(search.kind === "trade" || search.kind === "investment_income"
+        ? { kind: search.kind }
+        : {}),
     };
   },
   component: NewTransactionPage,

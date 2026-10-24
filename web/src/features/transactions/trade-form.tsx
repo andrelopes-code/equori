@@ -6,14 +6,13 @@ import {
   FieldError,
   FieldLabel,
 } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 
 import { CategoryPicker } from "@/features/categories";
 import { formatRate } from "@/features/instruments";
-import { AccountField } from "@/features/transactions/account-field";
+import { BrokerageAccountFields } from "@/features/transactions/brokerage-account-fields";
 import { EntryKindPicker } from "@/features/transactions/entry-kind-picker";
 import type { EntryKind } from "@/features/transactions/entry-kind";
 import type { TradeDraft } from "@/features/transactions/trade-draft";
@@ -82,70 +81,24 @@ export function TradeForm({
         </SegmentedControl>
       </Field>
 
-      {view.ready && view.securities.length === 0 && (
-        <InlineMessage tone="info">
-          {t("trade.noSecurityAccount")}
-        </InlineMessage>
-      )}
-
-      <Field invalid={errors.account_id !== undefined}>
-        <FieldLabel>{t("trade.securityAccount")}</FieldLabel>
-        <AccountField
-          compact
-          name="security"
-          title={t("trade.securityAccount")}
-          context={t("trade.securityAccountContext")}
-          accounts={view.securities}
-          value={security?.id ?? null}
-          exclude={null}
-          amount={0}
-          direction={sell ? "out" : "in"}
-          date={draft.date}
-          categoryId={null}
-          payeeId={null}
-          kind="transfer"
-          currency={instrument ?? base ?? ""}
-          scale={scale}
-          onChange={(id) => {
-            set({ accountId: id });
-          }}
-        />
-        {errors.account_id !== undefined && (
-          <FieldError>{errors.account_id}</FieldError>
-        )}
-      </Field>
-
-      <Field invalid={errors.cash_account_id !== undefined}>
-        <FieldLabel>{t("trade.cashAccount")}</FieldLabel>
-        <AccountField
-          compact
-          name="cash"
-          title={t("trade.cashAccount")}
-          context={t("trade.cashAccountContext", { currency: base ?? "" })}
-          accounts={view.cashChoices}
-          value={view.cashAccountId}
-          exclude={null}
-          amount={0}
-          direction={sell ? "in" : "out"}
-          date={draft.date}
-          categoryId={null}
-          payeeId={null}
-          kind="transfer"
-          currency={base ?? ""}
-          scale={scale}
-          onChange={(id) => {
-            set({ cashAccountId: id });
-          }}
-        />
-        {security !== undefined && view.cashChoices.length === 0 && (
-          <FieldDescription>
-            {t("trade.noCashAccount", { currency: base ?? "" })}
-          </FieldDescription>
-        )}
-        {errors.cash_account_id !== undefined && (
-          <FieldError>{errors.cash_account_id}</FieldError>
-        )}
-      </Field>
+      <BrokerageAccountFields
+        securities={view.securities}
+        security={security}
+        cashChoices={view.cashChoices}
+        cashAccountId={view.cashAccountId}
+        base={base}
+        ready={view.ready}
+        date={draft.date}
+        money={sell ? "in" : "out"}
+        errors={errors}
+        scale={scale}
+        onSecurity={(id) => {
+          set({ accountId: id });
+        }}
+        onCash={(id) => {
+          set({ cashAccountId: id });
+        }}
+      />
 
       <Field invalid={errors.date !== undefined}>
         <FieldLabel>{t("entry.date")}</FieldLabel>

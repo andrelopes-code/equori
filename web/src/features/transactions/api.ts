@@ -451,6 +451,30 @@ export function useRecordTrade() {
   });
 }
 
+export function useRecordInvestmentIncome() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: components["schemas"]["InvestmentIncomeInput"]) =>
+      unwrap(await api.POST("/investment-income", { body })),
+    onSuccess: (created) =>
+      transactionMutated(
+        queryClient,
+        created.postings.map((p) => p.account_id),
+      ),
+  });
+}
+
+// The types the user's jurisdiction accepts; the list changes only with the jurisdiction.
+export function incomeTypesQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: ["income-types"] as const,
+    queryFn: async () =>
+      (await unwrap(await api.GET("/investment-income-types"))).items,
+    staleTime: Infinity,
+  });
+}
+
 export function useCreateTransaction() {
   const api = useApi();
   const queryClient = useQueryClient();
