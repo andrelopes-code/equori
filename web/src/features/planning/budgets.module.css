@@ -117,13 +117,33 @@
     white-space: nowrap;
   }
 
+  /* What is left and the day of the month at the two ends of one line. */
+  .statusRow {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--slotted-space-3);
+    white-space: nowrap;
+  }
+
+  /* The committed total and its two parts as three labelled figures, never a sentence. */
   .committed {
     display: grid;
-    gap: var(--slotted-space-1);
-    margin-block-start: var(--slotted-space-5);
-    padding-block-start: var(--slotted-space-4);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--slotted-space-3);
+    margin: var(--slotted-space-4) 0 0;
+    padding-block-start: var(--slotted-space-3);
     border-block-start: var(--slotted-border-width-thin) solid
       var(--slotted-border-subtle);
+  }
+
+  .figure {
+    min-width: 0;
+  }
+
+  .value {
+    margin: 0;
+    overflow-wrap: anywhere;
   }
 
   /* The month's four figures in two columns on a phone, one surface instead of four cards. */

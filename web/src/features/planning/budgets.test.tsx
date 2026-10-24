@@ -98,10 +98,12 @@ describe("PlanningPage budgets", () => {
     ).toBeInTheDocument();
     expect(within(summary).getByText("R$2,450.00")).toBeInTheDocument();
     expect(
-      within(summary).getByText(
-        words("budget.states", { over: "1", near: "0", within: "2" }),
-      ),
+      within(summary).getByText(catalogEn["budget.overOne"]),
     ).toBeInTheDocument();
+    expect(
+      within(summary).getByText(words("budget.withinMany", { count: "2" })),
+    ).toBeInTheDocument();
+    expect(within(summary).queryByText(catalogEn["budget.nearOne"])).toBeNull();
   });
 
   it("lists the spending of categories no budget covers, each with a way to budget it", async () => {
@@ -127,15 +129,20 @@ describe("PlanningPage budgets", () => {
     const summary = await screen.findByRole("region", {
       name: catalogEn["budget.summary"],
     });
-    expect(await within(summary).findByText("R$388.27")).toBeInTheDocument();
+    await within(summary).findByText("R$388.27");
+    const terms = within(summary).getAllByRole("term");
     expect(
-      within(summary).getByText(
-        words("budget.committedParts", {
-          installments: "R$333.33",
-          occurrences: "R$54.94",
-        }),
+      Object.fromEntries(
+        terms.map((term) => [
+          term.textContent,
+          term.nextElementSibling?.textContent,
+        ]),
       ),
-    ).toBeInTheDocument();
+    ).toEqual({
+      [catalogEn["budget.committedTotal"]]: "R$388.27",
+      [catalogEn["budget.installments"]]: "R$333.33",
+      [catalogEn["budget.expected"]]: "R$54.94",
+    });
     expect(
       within(summary).getByText(
         words("budget.price", {
@@ -197,10 +204,6 @@ describe("PlanningPage budgets", () => {
       transport.compareDocumentPosition(chart) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    expect(
-      screen.queryByText(
-        words("budget.states", { over: "1", near: "0", within: "2" }),
-      ),
-    ).toBeNull();
+    expect(screen.queryByText(catalogEn["budget.overOne"])).toBeNull();
   });
 });

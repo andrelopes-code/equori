@@ -1,7 +1,8 @@
 import { Card, CardBody, CardHeader } from "@slotted/react/card";
 import { ProgressBar } from "@slotted/react/progress-indicator";
 import { SkeletonText } from "@slotted/react/skeleton";
-import { Stack } from "@slotted/react/stack";
+import { Inline } from "@slotted/react/inline";
+import { Tag } from "@slotted/react/tag";
 import { Heading, Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
@@ -16,7 +17,12 @@ type Money = components["schemas"]["Money"];
 type Committed = components["schemas"]["Committed"];
 type Price = components["schemas"]["Price"];
 
-const tones = { over: "danger", near: "warning", within: "accent" } as const;
+const tones = { over: "danger", near: "warning", within: "secondary" } as const;
+const meterTones = {
+  over: "danger",
+  near: "warning",
+  within: "accent",
+} as const;
 
 // CP-04, after goal-card: the month over every budget, how far into the month the reader is, and
 // what installments and expected occurrences still commit. On a phone it keeps the figure, the bar
@@ -54,6 +60,11 @@ export function BudgetSummary({
       date: formatDate(p.date, locale),
     });
   const state = figures === undefined ? "within" : budgetState(figures);
+  const counts = [
+    ["over", states.over, "budget.overOne", "budget.overMany"],
+    ["near", states.near, "budget.nearOne", "budget.nearMany"],
+    ["within", states.within, "budget.withinOne", "budget.withinMany"],
+  ] as const;
   const share = figures === undefined ? 0 : usedShare(figures);
   return (
     <Card
@@ -110,11 +121,12 @@ export function BudgetSummary({
               hideLabel
               label={t("budget.summaryMeter")}
               value={share}
-              tone={tones[state]}
+              tone={meterTones[state]}
             />
-            <Stack gap={1}>
+            <div className={styles.statusRow}>
               <Text
                 size="sm"
+                weight="medium"
                 tone={state === "over" ? "danger" : "default"}
                 numeric="tabular"
               >
@@ -127,64 +139,69 @@ export function BudgetSummary({
                     })
                   : t("budget.left", { amount: money(figures.available) })}
               </Text>
-              {!compact && elapsed !== undefined && (
-                <Text size="sm" tone="muted">
-                  {t("budget.pace", {
+              {elapsed !== undefined && (
+                <Text size="sm" tone="muted" numeric="tabular">
+                  {t("budget.day", {
                     day: String(elapsed.day),
                     days: String(elapsed.days),
-                    share: percent(
-                      Math.round((elapsed.day * 100) / elapsed.days),
-                    ),
                   })}
                 </Text>
               )}
-              {!compact && (
-                <Text size="sm" tone="muted">
-                  {t("budget.states", {
-                    over: String(states.over),
-                    near: String(states.near),
-                    within: String(states.within),
-                  })}
-                </Text>
-              )}
-            </Stack>
+            </div>
+            {!compact && states.over + states.near + states.within > 0 && (
+              <Inline gap={2} wrap="wrap">
+                {counts.map(([state, count, one, many]) =>
+                  count === 0 ? null : (
+                    <Tag key={state} tone={tones[state]} size="sm">
+                      {count === 1 ? t(one) : t(many, { count: String(count) })}
+                    </Tag>
+                  ),
+                )}
+              </Inline>
+            )}
           </div>
         )}
-        <div className={styles.committed}>
-          {!compact && (
-            <Text size="sm" tone="muted">
-              {t("budget.committed")}
-            </Text>
-          )}
-          {committed === undefined ? (
-            <SkeletonText lines={compact ? 1 : 2} />
-          ) : compact ? (
-            <Text size="sm" numeric="tabular">
-              {t("budget.committedLine", {
-                total: money(committed.total),
-                installments: money(committed.installments),
-                occurrences: money(committed.occurrences),
-              })}
-            </Text>
-          ) : (
-            <Stack gap={1}>
-              <Text size="lg" weight="semibold" numeric="tabular">
-                {money(committed.total)}
-              </Text>
-              <Text size="sm" tone="muted" numeric="tabular">
-                {t("budget.committedParts", {
-                  installments: money(committed.installments),
-                  occurrences: money(committed.occurrences),
-                })}
-              </Text>
-              {(committed.prices ?? []).map((p) => (
-                <Text key={`${p.instrument}-${p.date}`} size="xs" tone="muted">
-                  {rate(p)}
-                </Text>
+        {committed === undefined ? (
+          <div className={styles.committed}>
+            <SkeletonText lines={1} />
+          </div>
+        ) : (
+          <>
+            <dl className={styles.committed}>
+              {(
+                [
+                  ["budget.committedTotal", committed.total],
+                  ["budget.installments", committed.installments],
+                  ["budget.expected", committed.occurrences],
+                ] as const
+              ).map(([key, value], index) => (
+                <div key={key} className={styles.figure}>
+                  <Text
+                    size="xs"
+                    tone="muted"
+                    render={(props) => <dt {...props} />}
+                  >
+                    {t(key)}
+                  </Text>
+                  <Text
+                    size={index === 0 ? "md" : "sm"}
+                    weight={index === 0 ? "semibold" : "medium"}
+                    numeric="tabular"
+                    className={styles.value}
+                    render={(props) => <dd {...props} />}
+                  >
+                    {money(value)}
+                  </Text>
+                </div>
               ))}
-            </Stack>
-          )}
-        </div>
+            </dl>
+            {(committed.prices ?? []).map((p) => (
+              <Text key={`${p.instrument}-${p.date}`} size="xs" tone="muted">
+                {rate(p)}
+              </Text>
+            ))}
+          </>
+        )}
       </CardBody>
     </Card>
   );

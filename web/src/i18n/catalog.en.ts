@@ -1453,7 +1453,6 @@ export const catalogEn = {
   "detail.occurrences": "Scheduled occurrences",
   "detail.occurrenceOf": "Expected on {date}, {amount}",
   "planning.tab.budgets": "Budgets",
-  "budget.committed": "Committed in the month",
   "budget.price": "{instrument} at {rate} {quote} on {date}",
   "budget.category": "Category",
   "budget.planned": "Planned",
@@ -1493,10 +1492,6 @@ export const catalogEn = {
   "budget.summaryMeter": "Spent of every budget",
   "budget.left": "{amount} left",
   "budget.over": "{amount} over the budget",
-  "budget.pace": "Day {day} of {days}: {share} of the month gone",
-  "budget.states": "Over: {over} · Near the limit: {near} · Within: {within}",
-  "budget.committedParts":
-    "Installments {installments} · expected {occurrences}",
   "budget.near": "Near the limit",
   "budget.groupTotal": "{spent} of {room}",
   "budget.spendingChart": "Where the spending went",
@@ -1518,8 +1513,16 @@ export const catalogEn = {
   "budget.seeTransactions": "See transactions",
   "budget.ofPlanned": "of {planned}",
   "budget.restCarried": "{rest} · {carried} carried",
-  "budget.committedLine":
-    "Committed {total}: installments {installments}, expected {occurrences}",
+  "budget.day": "Day {day} of {days}",
+  "budget.committedTotal": "Committed",
+  "budget.installments": "Installments",
+  "budget.expected": "Expected",
+  "budget.overOne": "1 over",
+  "budget.overMany": "{count} over",
+  "budget.nearOne": "1 near the limit",
+  "budget.nearMany": "{count} near the limit",
+  "budget.withinOne": "1 within",
+  "budget.withinMany": "{count} within",
 } as const;
 
 export type Catalog = { [K in keyof typeof catalogEn]: string };
