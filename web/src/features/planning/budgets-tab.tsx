@@ -224,6 +224,8 @@ export function BudgetsTab({ month }: { month: string }) {
       <Table
         columns={2}
         variant="framed"
+        // A long category path truncates instead of pushing the amount out of a phone's width.
+        layout="fixed"
         loading={totals.isFetching && !totals.isPending}
       >
         <TableContent>

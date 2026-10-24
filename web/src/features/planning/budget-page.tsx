@@ -1,5 +1,6 @@
 import { ButtonLink } from "@slotted/react/button";
 import { Chart } from "@slotted/react/chart";
+import { Inline } from "@slotted/react/inline";
 import { Page, PageBody } from "@slotted/react/page";
 import {
   PageHeader,
@@ -157,17 +158,6 @@ export function BudgetPage() {
                   });
                 }}
               />
-              {/* Workaround for Slotted finding "ButtonLink render props cannot be spread onto a router link": the anchor keeps its href, a plain click navigates inside the application. */}
-              <ButtonLink
-                variant="outline"
-                tone="secondary"
-                href={`/transactions?${new URLSearchParams(transactions).toString()}`}
-                onClick={follow({ to: "/transactions", search: transactions })}
-              >
-                {t("budget.transactions", {
-                  month: formatMonthTitle(month, locale),
-                })}
-              </ButtonLink>
               <HeaderAction
                 primary
                 label={t("budget.addAmount")}
@@ -207,6 +197,20 @@ export function BudgetPage() {
             x={{ field: "label" }}
             y={{ format: (value) => money(value) }}
           />
+          {/* The header keeps one row at 360 px (LA-03): the door to the records stands in the body. */}
+          {/* Workaround for Slotted finding "ButtonLink render props cannot be spread onto a router link": the anchor keeps its href, a plain click navigates inside the application. */}
+          <Inline>
+            <ButtonLink
+              variant="outline"
+              tone="secondary"
+              href={`/transactions?${new URLSearchParams(transactions).toString()}`}
+              onClick={follow({ to: "/transactions", search: transactions })}
+            >
+              {t("budget.transactions", {
+                month: formatMonthTitle(month, locale),
+              })}
+            </ButtonLink>
+          </Inline>
           <Table columns={2} variant="framed">
             <TableContent>
               <TableCaption>{t("budget.amounts")}</TableCaption>
