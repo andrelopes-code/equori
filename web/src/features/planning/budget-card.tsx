@@ -2,7 +2,13 @@ import { IconButton } from "@slotted/react/button";
 import { Card, CardActions, CardBody, CardHeader } from "@slotted/react/card";
 import { Glyph, Icon } from "@slotted/react/icon";
 import { Inline } from "@slotted/react/inline";
-import { Menu, MenuContent, MenuItem, MenuTrigger } from "@slotted/react/menu";
+import {
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuSeparator,
+  MenuTrigger,
+} from "@slotted/react/menu";
 import { ProgressBar } from "@slotted/react/progress-indicator";
 import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
@@ -31,12 +37,14 @@ export function BudgetCard({
   scale,
   compact,
   onChangeAmount,
+  onDelete,
 }: {
   row: BudgetRow;
   month: string;
   scale: (code: string) => number;
   compact: boolean;
   onChangeAmount: (budget: Budget) => void;
+  onDelete: (budget: Budget, name: string) => void;
 }) {
   const t = useT();
   const [locale] = useAppLocale();
@@ -121,6 +129,15 @@ export function BudgetCard({
             }}
           >
             {t("budget.seeTransactions")}
+          </MenuItem>
+          <MenuSeparator />
+          <MenuItem
+            tone="danger"
+            onSelect={() => {
+              onDelete(row.budget, row.label);
+            }}
+          >
+            {t("budget.delete")}
           </MenuItem>
         </MenuContent>
       </Menu>

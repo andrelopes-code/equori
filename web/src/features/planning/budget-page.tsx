@@ -1,4 +1,6 @@
-import { ButtonLink } from "@slotted/react/button";
+import { ButtonLink, IconButton } from "@slotted/react/button";
+import { Glyph, Icon } from "@slotted/react/icon";
+import { Menu, MenuContent, MenuItem, MenuTrigger } from "@slotted/react/menu";
 import { Chart } from "@slotted/react/chart";
 import { Inline } from "@slotted/react/inline";
 import { Page, PageBody } from "@slotted/react/page";
@@ -43,6 +45,7 @@ import { useCategoryEntries } from "@/features/categories";
 import { monthEnd } from "@/features/planning/agenda";
 import { budgetProgressQuery, budgetQuery } from "@/features/planning/api";
 import { BudgetAmountDialog } from "@/features/planning/budget-amount-dialog";
+import { DeleteBudgetDialog } from "@/features/planning/delete-budget-dialog";
 import { budgetState, usedShare } from "@/features/planning/budget-month";
 import { useScale } from "@/features/setup";
 import { formatMonthName, formatMonthTitle } from "@/i18n/format";
@@ -79,6 +82,7 @@ export function BudgetPage() {
   const accounts = useQuery(accountsQuery(api));
   const entries = useCategoryEntries(accounts.data);
   const [adding, setAdding] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const compact = useMediaQuery(compactQuery);
   const first = budget.data?.amounts[0]?.effective_from;
   const months = Array.from({ length: chartMonths }, (_, i) =>
@@ -169,6 +173,32 @@ export function BudgetPage() {
                   });
                 }}
               />
+              <Menu>
+                <MenuTrigger
+                  render={(props) => (
+                    <IconButton
+                      {...props}
+                      variant="outline"
+                      tone="secondary"
+                      aria-label={t("budget.more")}
+                    >
+                      <Icon>
+                        <Glyph name="ellipsis" />
+                      </Icon>
+                    </IconButton>
+                  )}
+                />
+                <MenuContent>
+                  <MenuItem
+                    tone="danger"
+                    onSelect={() => {
+                      setDeleting(true);
+                    }}
+                  >
+                    {t("budget.delete")}
+                  </MenuItem>
+                </MenuContent>
+              </Menu>
               <HeaderAction
                 primary
                 label={t("budget.addAmount")}
@@ -323,6 +353,21 @@ export function BudgetPage() {
           </Table>
         </Stack>
       </PageBody>
+      {deleting && (
+        <DeleteBudgetDialog
+          budget={b}
+          name={name}
+          onDone={() => {
+            void navigate({
+              to: "/planning",
+              search: { tab: "budgets", month },
+            });
+          }}
+          onCancel={() => {
+            setDeleting(false);
+          }}
+        />
+      )}
       {adding && (
         <BudgetAmountDialog
           budget={b}

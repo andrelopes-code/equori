@@ -206,4 +206,35 @@ describe("PlanningPage budgets", () => {
     ).toBeTruthy();
     expect(screen.queryByText(catalogEn["budget.overOne"])).toBeNull();
   });
+
+  it("deletes a budget from its card after a confirmation (S144)", async () => {
+    const deleted: string[] = [];
+    await renderApp(november, {
+      fetch: budgetApi({
+        [`DELETE /api/v1/budgets/${foodBudget.id}`]: () => {
+          deleted.push(foodBudget.id);
+          return new Response(null, { status: 204 });
+        },
+      }),
+    });
+    const food = await screen.findByRole("article", { name: "Food" });
+    await userEvent.click(
+      within(food).getByRole("button", {
+        name: words("budget.actions", { name: "Food" }),
+      }),
+    );
+    await userEvent.click(
+      await screen.findByRole("menuitem", { name: catalogEn["budget.delete"] }),
+    );
+    const dialog = await screen.findByRole("dialog", {
+      name: words("budget.deleteTitle", { name: "Food" }),
+    });
+    expect(deleted).toEqual([]);
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: catalogEn["budget.delete"] }),
+    );
+    await waitFor(() => {
+      expect(deleted).toEqual([foodBudget.id]);
+    });
+  });
 });

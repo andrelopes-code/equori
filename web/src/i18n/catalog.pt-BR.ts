@@ -1544,4 +1544,9 @@ export const catalogPtBR: Catalog = {
   "budget.nearMany": "{count} perto do limite",
   "budget.withinOne": "1 dentro do orçado",
   "budget.withinMany": "{count} dentro do orçado",
+  "budget.delete": "Excluir orçamento",
+  "budget.deleteTitle": "Excluir o orçamento de {name}?",
+  "budget.deleteHint":
+    "Os valores do orçamento vão junto. A categoria e suas transações ficam.",
+  "budget.more": "Mais ações do orçamento",
 };

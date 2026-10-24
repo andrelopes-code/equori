@@ -1523,6 +1523,11 @@ export const catalogEn = {
   "budget.nearMany": "{count} near the limit",
   "budget.withinOne": "1 within",
   "budget.withinMany": "{count} within",
+  "budget.delete": "Delete budget",
+  "budget.deleteTitle": "Delete the budget of {name}?",
+  "budget.deleteHint":
+    "Its amounts go with it. The category and its transactions stay.",
+  "budget.more": "More budget actions",
 } as const;
 
 export type Catalog = { [K in keyof typeof catalogEn]: string };

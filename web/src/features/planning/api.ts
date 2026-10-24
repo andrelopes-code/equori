@@ -169,6 +169,18 @@ export function useCreateBudget() {
   });
 }
 
+export function useDeleteBudget() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const result = await api.DELETE("/budgets/{id}", {
+        params: { path: { id } },
+      });
+      if (result.error !== undefined) await unwrap(result);
+    },
+  });
+}
+
 export function useAddBudgetAmount() {
   const api = useApi();
   return useMutation({

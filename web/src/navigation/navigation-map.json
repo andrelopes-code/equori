@@ -261,7 +261,8 @@
     "tasks": [
       "see the amounts of a budget by month and add one from a later month",
       "compare planned and spent over the last months",
-      "open the transactions of the budget's category in a month"
+      "open the transactions of the budget's category in a month",
+      "delete a budget created by mistake"
     ]
   },
   {

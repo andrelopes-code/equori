@@ -201,4 +201,36 @@ describe("Budget page", () => {
       `/transactions?account_id=${food.id}&from=2026-11-01&to=2026-11-30`,
     );
   });
+
+  it("deletes the budget from its page and returns to the month (S144)", async () => {
+    const deleted: string[] = [];
+    const { router } = await renderApp(page, {
+      fetch: budgetApi({
+        [`DELETE /api/v1/budgets/${foodBudget.id}`]: () => {
+          deleted.push(foodBudget.id);
+          return new Response(null, { status: 204 });
+        },
+      }),
+    });
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["budget.more"],
+      }),
+    );
+    await userEvent.click(
+      await screen.findByRole("menuitem", { name: catalogEn["budget.delete"] }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: catalogEn["budget.delete"] }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/planning");
+    });
+    expect(deleted).toEqual([foodBudget.id]);
+    expect(router.state.location.search).toEqual({
+      tab: "budgets",
+      month: "2026-11",
+    });
+  });
 });

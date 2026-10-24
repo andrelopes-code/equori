@@ -33,6 +33,7 @@ import {
 } from "@/features/planning/budget-month";
 import type { BudgetState } from "@/features/planning/budget-month";
 import { BudgetAmountDialog } from "@/features/planning/budget-amount-dialog";
+import { DeleteBudgetDialog } from "@/features/planning/delete-budget-dialog";
 import { BudgetSpendingChart } from "@/features/planning/budget-spending-chart";
 import { BudgetSummary } from "@/features/planning/budget-summary";
 import styles from "@/features/planning/budgets.module.css";
@@ -62,6 +63,10 @@ export function BudgetsTab({
   const scale = useScale();
   const compact = useMediaQuery(compactQuery);
   const [editing, setEditing] = useState<Budget | null>(null);
+  const [deleting, setDeleting] = useState<{
+    budget: Budget;
+    name: string;
+  } | null>(null);
   const budgets = useQuery(budgetsQuery(api));
   const accounts = useQuery(accountsQuery(api));
   const settings = useQuery(settingsQuery(api));
@@ -166,6 +171,9 @@ export function BudgetsTab({
             scale={scale}
             compact={compact}
             onChangeAmount={setEditing}
+            onDelete={(budget, name) => {
+              setDeleting({ budget, name });
+            }}
           />
         ));
         return (
@@ -220,6 +228,18 @@ export function BudgetsTab({
           {list}
           <UnbudgetedList rows={loose} scale={scale} />
         </div>
+      )}
+      {deleting !== null && (
+        <DeleteBudgetDialog
+          budget={deleting.budget}
+          name={deleting.name}
+          onDone={() => {
+            setDeleting(null);
+          }}
+          onCancel={() => {
+            setDeleting(null);
+          }}
+        />
       )}
       {editing !== null && (
         <BudgetAmountDialog
