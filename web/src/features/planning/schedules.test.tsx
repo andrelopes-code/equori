@@ -171,6 +171,14 @@ describe("Schedule page", () => {
     expect(within(pauses).getByText("03/31/2027")).toBeInTheDocument();
   });
 
+  it("labels the change of terms with words alone on a desktop", async () => {
+    await renderApp(`/planning/schedules/${rentID}`, { fetch: api() });
+    const button = await screen.findByRole("button", {
+      name: catalogEn["schedule.changeTerms"],
+    });
+    expect(button.querySelector('[data-ui="icon"]')).toBeNull();
+  });
+
   it("changes the amount from a date after the latest version", async () => {
     const sent: unknown[] = [];
     await renderApp(`/planning/schedules/${rentID}`, {

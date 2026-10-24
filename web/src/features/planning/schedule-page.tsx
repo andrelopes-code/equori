@@ -145,6 +145,7 @@ export function SchedulePage() {
                 primary
                 label={t("schedule.changeTerms")}
                 glyph="calendar"
+                wordsOnly
                 onClick={() => {
                   setDialog("terms");
                 }}

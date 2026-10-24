@@ -11,12 +11,15 @@ export function HeaderAction({
   onClick,
   loading = false,
   primary = false,
+  wordsOnly = false,
 }: {
   label: string;
   glyph: GlyphName;
   onClick: () => void;
   loading?: boolean;
   primary?: boolean;
+  // From 600 px the button shows its label without the glyph; the glyph still names it below.
+  wordsOnly?: boolean;
 }) {
   const compact = useMediaQuery(compactQuery);
   const variant = primary ? "solid" : "outline";
@@ -39,9 +42,11 @@ export function HeaderAction({
       tone={tone}
       loading={loading}
       start={
-        <Icon size="sm">
-          <Glyph name={glyph} />
-        </Icon>
+        wordsOnly ? undefined : (
+          <Icon size="sm">
+            <Glyph name={glyph} />
+          </Icon>
+        )
       }
       onClick={onClick}
     >
