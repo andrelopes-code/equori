@@ -1,4 +1,5 @@
 import type { components } from "@/api/schema.gen";
+import { changeBP } from "@/features/reports/report-change";
 
 type NetWorth = components["schemas"]["NetWorth"];
 
@@ -53,11 +54,7 @@ export function netWorthRows(
     const before = i > 0 ? results[i - 1] : undefined;
     if (before === undefined) return row;
     const change = worth.net.amount - before.net.amount;
-    const base = Math.abs(before.net.amount);
-    return {
-      ...row,
-      change,
-      ...(base === 0 ? {} : { changeBP: Math.round((change * 10000) / base) }),
-    };
+    const bp = changeBP(change, before.net.amount);
+    return { ...row, change, ...(bp === undefined ? {} : { changeBP: bp }) };
   });
 }

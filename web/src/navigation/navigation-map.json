@@ -300,7 +300,10 @@
     "topics": ["reports"],
     "screen": "Reports",
     "tasks": [
-      "see the net worth at each month end over 6, 12 or 24 months, in a chosen currency"
+      "see the net worth at each month end over 6, 12 or 24 months, in a chosen currency",
+      "see the income or expense totals of each category in a month, quarter, year or custom period of at most 366 days",
+      "open the subcategories of a category and the transactions behind a total",
+      "compare a period with the one before it"
     ]
   },
   {
