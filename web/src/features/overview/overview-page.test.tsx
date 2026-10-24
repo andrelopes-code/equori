@@ -101,6 +101,13 @@ function api(overrides: Record<string, (req: Request) => Response> = {}) {
     "GET /api/v1/schedules": () => json(200, { items: schedules }),
     "GET /api/v1/occurrences": () => json(200, { items: [] }),
     "GET /api/v1/budgets": () => json(200, { items: [] }),
+    "GET /api/v1/commitments": () =>
+      json(200, {
+        month: "2026-10",
+        installments: money(100000),
+        occurrences: money(200000),
+        total: money(300000),
+      }),
     "GET /api/v1/reports/net-worth": netWorth,
     "GET /api/v1/reports/categories": () =>
       json(200, {
@@ -137,7 +144,7 @@ function block(name: string) {
 
 describe("overview page", () => {
   it("S129: shows assets, liabilities, net and the change against the previous month end", async () => {
-    await renderApp("/", { fetch: api() });
+    await renderApp("/", { width: 800, fetch: api() });
     const worth = await screen.findByRole("region", { name: "Net worth" });
     await waitFor(() => {
       expect(worth).toHaveTextContent("2,205.00");
@@ -148,7 +155,7 @@ describe("overview page", () => {
   });
 
   it("shows the income, outflow and result of the month", async () => {
-    await renderApp("/", { fetch: api() });
+    await renderApp("/", { width: 800, fetch: api() });
     const flows = await screen.findByRole("region", { name: "Month flows" });
     await waitFor(() => {
       expect(flows).toHaveTextContent("1,000.00");
@@ -158,7 +165,7 @@ describe("overview page", () => {
   });
 
   it("lists the five largest categories of the month", async () => {
-    await renderApp("/", { fetch: api() });
+    await renderApp("/", { width: 800, fetch: api() });
     const spending = await screen.findByRole("region", {
       name: "Spending by category",
     });
@@ -176,6 +183,7 @@ describe("overview page", () => {
 
   it("keeps the other blocks when one operation fails", async () => {
     await renderApp("/", {
+      width: 800,
       fetch: api({
         "GET /api/v1/reports/net-worth": () => problem(500, "internal_error"),
       }),
@@ -192,7 +200,7 @@ describe("overview page", () => {
 
   it("masks every amount in privacy mode", async () => {
     hideAmounts();
-    const { container } = await renderApp("/", { fetch: api() });
+    const { container } = await renderApp("/", { width: 800, fetch: api() });
     const spending = await screen.findByRole("region", {
       name: "Spending by category",
     });
@@ -399,6 +407,7 @@ describe("overview page", () => {
 
     it("fails alone when the connections cannot be read", async () => {
       await renderApp("/", {
+        width: 800,
         fetch: api({
           "GET /api/v1/connections": () => problem(500, "internal_error"),
         }),
@@ -408,6 +417,83 @@ describe("overview page", () => {
       await waitFor(() => {
         expect(block("Net worth")).toHaveTextContent("2,205.00");
       });
+    });
+  });
+
+  describe("desktop", () => {
+    const projection = {
+      [`GET /api/v1/accounts/${checkingID}/projection`]: () =>
+        json(200, {
+          opening: money(524055),
+          points: [
+            {
+              date: "2026-10-25",
+              occurrence_id: "o1",
+              schedule_id: "e1000000-0000-4000-8000-000000000001",
+              amount: money(-210000),
+            },
+          ],
+        }),
+    };
+
+    it("leads with net worth, month result, month-end balance and committed", async () => {
+      await renderApp("/", { fetch: api(projection) });
+      const figures = await screen.findByRole("region", {
+        name: "Overview figures",
+      });
+      await waitFor(() => {
+        expect(figures).toHaveTextContent("3,140.55");
+      });
+      expect(figures).toHaveTextContent("1,005.00");
+      expect(figures).toHaveTextContent("975.00");
+      expect(figures).toHaveTextContent("3,000.00");
+    });
+
+    it("draws the balance of the month as a chart", async () => {
+      await renderApp("/", { fetch: api(projection) });
+      expect(await screen.findByText("Balance of the month")).toBeVisible();
+    });
+
+    it("masks the figures in privacy mode", async () => {
+      hideAmounts();
+      const { container } = await renderApp("/", { fetch: api(projection) });
+      await screen.findByText("Balance of the month");
+      await waitFor(() => {
+        expect(
+          screen.getByRole("region", { name: "Overview figures" }),
+        ).toHaveTextContent("•");
+      });
+      expectNoAmounts(container, ["3,140.55", "1,005.00", "975.00"]);
+    });
+
+    it("keeps the attention list to four rows and counts the rest", async () => {
+      await renderApp("/", {
+        fetch: api({
+          "GET /api/v1/transactions": (req) =>
+            new URL(req.url).searchParams.get("uncategorized") === "true"
+              ? json(200, { items: [{}, {}, {}] })
+              : json(200, { items: [] }),
+          [`GET /api/v1/accounts/${checkingID}/unconfirmed`]: () =>
+            json(200, { items: [{}, {}] }),
+          [`GET /api/v1/accounts/${reserveID}/unconfirmed`]: () =>
+            json(200, { items: [{}] }),
+          "GET /api/v1/connections": () =>
+            json(200, { items: [{ ...connectionFixture, state: "failed" }] }),
+          [`GET /api/v1/accounts/${reserveID}/reconciliation`]: () =>
+            json(200, {
+              open_difference: {
+                assertion_id: "as1",
+                date: "2026-10-15",
+                difference: money(-1500),
+              },
+            }),
+        }),
+      });
+      const region = await screen.findByRole("region", { name: "Attention" });
+      await waitFor(() => {
+        expect(within(region).getAllByRole("listitem")).toHaveLength(5);
+      });
+      expect(region).toHaveTextContent("1 more");
     });
   });
 });

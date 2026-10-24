@@ -76,6 +76,15 @@ function newFetch() {
     "GET /api/v1/institutions": () => json(200, { items: [] }),
     "GET /api/v1/schedules": () => json(200, { items: [] }),
     "GET /api/v1/budgets": () => json(200, { items: [] }),
+    "GET /api/v1/commitments": () => {
+      const zero = { amount: 0, currency: "BRL" };
+      return json(200, {
+        month: "2026-10",
+        installments: zero,
+        occurrences: zero,
+        total: zero,
+      });
+    },
     "GET /api/v1/goals": () => json(200, { items: [] }),
     "GET /api/v1/connections": () => json(200, { items: [] }),
     "GET /api/v1/occurrences": () => json(200, { items: [] }),

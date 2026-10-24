@@ -1573,6 +1573,22 @@ export const catalogEn = {
   "overview.attention.connections": "Connections that need action",
   "overview.attention.difference": "Open reconciliation difference",
   "overview.attention.atLeast": "{count}+",
+  "overview.figures.label": "Overview figures",
+  "overview.figures.net": "Net worth",
+  "overview.figures.result": "Month result",
+  "overview.figures.resultNote": "Income {income}, outflow {outflow}",
+  "overview.figures.balance": "Month-end balance",
+  "overview.figures.lowest": "Lowest {amount} on {date}",
+  "overview.figures.booked": "Booked balance",
+  "overview.figures.committed": "Committed",
+  "overview.figures.committedNote": "Installments {installments}",
+  "overview.balance.title": "Balance of the month",
+  "overview.balance.balance": "Balance",
+  "overview.balance.projection": "Forecast",
+  "overview.balance.today": "Today",
+  "overview.spending.amount": "Spent",
+  "overview.attention.more": "{count} more",
+  "overview.open": "Open",
 } as const;
 
 export type Catalog = { [K in keyof typeof catalogEn]: string };

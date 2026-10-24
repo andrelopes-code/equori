@@ -1,3 +1,4 @@
+import { ProgressBar } from "@slotted/react/progress-indicator";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
@@ -7,6 +8,7 @@ import { useBase } from "@/features/overview/use-base";
 import { goalsQuery } from "@/features/planning";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
 
 export function GoalsBlock() {
   const t = useT();
@@ -14,6 +16,7 @@ export function GoalsBlock() {
   const fmt = useMoneyFormat();
   const [locale] = useAppLocale();
   const { scale } = useBase();
+  const wide = useMediaQuery(wideQuery);
   const goals = useQuery(goalsQuery(api));
   const loading = goals.data === undefined || scale === null;
   const percent = new Intl.NumberFormat(locale, {
@@ -26,10 +29,22 @@ export function GoalsBlock() {
       : goals.data.map((goal) => ({
           key: goal.id,
           title: goal.name,
-          line: t("overview.goals.of", {
-            current: fmt.money(goal.current, scale(goal.current.currency)),
-            target: fmt.money(goal.target, scale(goal.target.currency)),
-          }),
+          line: (
+            <>
+              {t("overview.goals.of", {
+                current: fmt.money(goal.current, scale(goal.current.currency)),
+                target: fmt.money(goal.target, scale(goal.target.currency)),
+              })}
+              {wide && (
+                <ProgressBar
+                  size="sm"
+                  hideLabel
+                  label={goal.name}
+                  value={goal.progress_bp / 100}
+                />
+              )}
+            </>
+          ),
           end: percent.format(goal.progress_bp / 10000),
         }));
   return (

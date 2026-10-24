@@ -19,7 +19,7 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { MoneyFigure } from "@/ui/money-figure";
 
 // What waits for a decision. The block is not drawn when nothing does.
-export function AttentionBlock() {
+export function AttentionBlock({ limit }: { limit?: number }) {
   const t = useT();
   const api = useApi();
   const [locale] = useAppLocale();
@@ -65,7 +65,9 @@ export function AttentionBlock() {
         });
   if (!loading && error === null && items.length === 0) return null;
   const number = new Intl.NumberFormat(locale);
-  const rows = items.map((item) => ({
+  const shown = limit === undefined ? items : items.slice(0, limit);
+  const hidden = items.length - shown.length;
+  const rows = shown.map((item) => ({
     key: `${item.kind}-${item.account?.id ?? ""}`,
     title: t(`overview.attention.${item.kind}`),
     ...(item.account === undefined ? {} : { line: item.account.name }),
@@ -85,6 +87,11 @@ export function AttentionBlock() {
       ),
     to: destination(item),
   }));
+  if (hidden > 0)
+    rows.push({
+      key: "more",
+      title: t("overview.attention.more", { count: hidden }),
+    } as (typeof rows)[number]);
   return (
     <OverviewBlock
       title={t("overview.attention.title")}

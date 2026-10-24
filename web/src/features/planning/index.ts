@@ -1,6 +1,7 @@
 export {
   budgetProgressQuery,
   budgetsQuery,
+  committedQuery,
   goalsQuery,
   occurrencesQuery,
   scheduleQuery,

@@ -14,4 +14,27 @@
       grid-column: 1 / -1;
     }
   }
+
+  .desk {
+    display: grid;
+    gap: var(--slotted-space-4);
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    /* A block holds a chart or a list: rows share the height of their tallest block. */
+    align-items: stretch;
+  }
+  .full {
+    grid-column: span 12;
+  }
+  .chart {
+    grid-column: span 8;
+  }
+  .side {
+    grid-column: span 4;
+  }
+  .third {
+    grid-column: span 4;
+  }
+  .half {
+    grid-column: span 6;
+  }
 }

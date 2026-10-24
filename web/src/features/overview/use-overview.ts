@@ -9,10 +9,12 @@ import {
 } from "@/features/accounts";
 import {
   buildForecast,
+  lowestAhead,
   mergeEvents,
   monthEnd,
   sumByDate,
 } from "@/features/overview/forecast";
+import type { ForecastDay } from "@/features/overview/forecast";
 import { monthFlows } from "@/features/overview/month-flows";
 import type { MonthFlows } from "@/features/overview/month-flows";
 import { projectionQuery, schedulesQuery } from "@/features/planning";
@@ -26,6 +28,9 @@ export interface Overview {
   base: string;
   // Minor units: the booked balance at month end, or the forecast for the current month.
   closing: number;
+  days: ForecastDay[];
+  // The lowest forecast balance from today on; null for a past month.
+  lowest: ReturnType<typeof lowestAhead>;
   flows: MonthFlows;
 }
 
@@ -126,6 +131,8 @@ export function useOverview(month: string): {
       current,
       base,
       closing: days.at(-1)?.forecast ?? days.at(-1)?.realized ?? 0,
+      days,
+      lowest: current ? lowestAhead(days) : null,
       flows: monthFlows(
         transactions.data ?? [],
         new Set(scope.map((account) => account.id)),

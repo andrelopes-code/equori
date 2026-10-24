@@ -1,3 +1,4 @@
+import { ProgressBar } from "@slotted/react/progress-indicator";
 import { useQueries, useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
@@ -11,6 +12,7 @@ import {
   startsBy,
 } from "@/features/planning";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
 
 // The budgets of the month that are over their amount or at 90 % of it, the state the
 // budgets tab of Planning draws.
@@ -18,6 +20,7 @@ export function BudgetsBlock({ month }: { month: string }) {
   const t = useT();
   const api = useApi();
   const [locale] = useAppLocale();
+  const wide = useMediaQuery(wideQuery);
   const budgets = useQuery(budgetsQuery(api));
   const accounts = useQuery(accountsQuery(api));
   const active = (budgets.data ?? []).filter((budget) =>
@@ -61,10 +64,23 @@ export function BudgetsBlock({ month }: { month: string }) {
         ).map((alert) => ({
           key: alert.id,
           title: alert.name,
-          line: t(
-            alert.state === "over"
-              ? "overview.budgets.over"
-              : "overview.budgets.near",
+          line: (
+            <>
+              {t(
+                alert.state === "over"
+                  ? "overview.budgets.over"
+                  : "overview.budgets.near",
+              )}
+              {wide && (
+                <ProgressBar
+                  size="sm"
+                  hideLabel
+                  label={alert.name}
+                  value={Math.min(alert.share, 100)}
+                  tone={alert.state === "over" ? "danger" : "warning"}
+                />
+              )}
+            </>
           ),
           end: percent.format(alert.share / 100),
         }));
