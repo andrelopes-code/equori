@@ -184,6 +184,8 @@ type Repository interface {
 	Budget(ctx context.Context, userID int64, id uuid.UUID) (domain.Budget, error)
 	LockBudget(ctx context.Context, userID int64, id uuid.UUID) (domain.Budget, error)
 	ListBudgets(ctx context.Context, userID int64, p page.Request[IDKey]) ([]domain.Budget, *IDKey, error)
+	// DeleteBudget removes the budget with its amounts; ErrNotFound when it is not the user's.
+	DeleteBudget(ctx context.Context, userID int64, id uuid.UUID) error
 
 	// InsertGoal stores g with its accounts; a used name is a field error on name.
 	InsertGoal(ctx context.Context, userID int64, g domain.Goal) (domain.Goal, error)

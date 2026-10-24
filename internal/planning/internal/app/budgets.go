@@ -103,6 +103,11 @@ func (s *Service) ListBudgets(ctx context.Context, userID int64, p page.Request[
 }
 
 // BudgetProgress reports the month of a budget; spending of an income category is positive (A54).
+// DeleteBudget removes a budget with its amounts (S144).
+func (s *Service) DeleteBudget(ctx context.Context, userID int64, id uuid.UUID) error {
+	return s.repo.InTx(ctx, func(repo Repository) error { return repo.DeleteBudget(ctx, userID, id) })
+}
+
 func (s *Service) BudgetProgress(ctx context.Context, userID int64, id uuid.UUID, month time.Time) (domain.Progress, money.Currency, error) {
 	b, err := s.repo.Budget(ctx, userID, id)
 	if err != nil {

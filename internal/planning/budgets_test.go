@@ -115,3 +115,26 @@ func TestBudgetErrors(t *testing.T) {
 		t.Errorf("budgets = %+v", list.Items)
 	}
 }
+
+// S144: a budget created by mistake is deleted with its amounts; its category and postings stay,
+// and the category takes a new budget.
+func TestS144DeleteBudget(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-12")
+	food := f.h.Account("Food", "expense", "", nil)
+	f.h.Record("2026-11-10", apitest.Posting(f.checking, -5000), apitest.Posting(food, 5000))
+	id := f.budget(food, 180000, "2026-10", true)
+	other := f.h.Login("other@example.com")
+	if r := f.h.Call(other, http.MethodDelete, "/api/v1/budgets/"+id, nil); r.Status != http.StatusNotFound {
+		t.Fatalf("other user's delete = %d", r.Status)
+	}
+	f.h.MustDo(http.MethodDelete, "/api/v1/budgets/"+id, nil, http.StatusNoContent, nil)
+	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/budgets/"+id, nil), http.StatusNotFound, "not_found", "")
+	f.h.ExpectProblem(f.h.Do(http.MethodDelete, "/api/v1/budgets/"+id, nil), http.StatusNotFound, "not_found", "")
+	if list := f.budgets(); len(list.Items) != 0 {
+		t.Errorf("budgets after delete = %+v", list.Items)
+	}
+	f.h.MustDo(http.MethodGet, "/api/v1/accounts/"+food, nil, http.StatusOK, nil)
+	again := f.budget(food, 150000, "2026-11", false)
+	checkProgress(t, f.progress(again, "2026-11"), 150000, 0, 5000, 145000)
+}

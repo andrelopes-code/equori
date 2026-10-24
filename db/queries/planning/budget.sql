@@ -21,3 +21,7 @@ SELECT * FROM planning_budget_amount WHERE user_id = @user_id AND budget_id = AN
 
 -- name: LockBudget :one
 SELECT * FROM planning_budget WHERE user_id = @user_id AND id = @id FOR UPDATE;
+
+-- name: DeleteBudget :execrows
+-- S144: the amounts go with the budget (ON DELETE CASCADE).
+DELETE FROM planning_budget WHERE user_id = @user_id AND id = @id;

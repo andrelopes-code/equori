@@ -588,6 +588,9 @@ type ServerInterface interface {
 	// CreateBudget Create the monthly budget of a category (P7 amendment A54; 409 budget_exists when it has one).
 	// (POST /budgets)
 	CreateBudget(w http.ResponseWriter, r *http.Request)
+	// DeleteBudget Delete a budget with its amounts; its category and postings are not touched (S144).
+	// (DELETE /budgets/{id})
+	DeleteBudget(w http.ResponseWriter, r *http.Request, id ID)
 	// GetBudget A budget with its amounts by month.
 	// (GET /budgets/{id})
 	GetBudget(w http.ResponseWriter, r *http.Request, id ID)
@@ -752,6 +755,32 @@ func (siw *ServerInterfaceWrapper) CreateBudget(w http.ResponseWriter, r *http.R
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateBudget(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteBudget operation middleware
+func (siw *ServerInterfaceWrapper) DeleteBudget(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteBudget(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1498,6 +1527,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/schedules/{id}/end", wrapper.EndSchedule)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/budgets", wrapper.ListBudgets)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/budgets", wrapper.CreateBudget)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/budgets/{id}", wrapper.DeleteBudget)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/budgets/{id}", wrapper.GetBudget)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/budgets/{id}/amounts", wrapper.AddBudgetAmount)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/budgets/{id}/progress", wrapper.GetBudgetProgress)
@@ -1720,6 +1750,52 @@ func (response CreateBudget422ApplicationProblemPlusJSONResponse) VisitCreateBud
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteBudgetRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type DeleteBudgetResponseObject interface {
+	VisitDeleteBudgetResponse(w http.ResponseWriter) error
+}
+
+type DeleteBudget204Response struct {
+}
+
+func (response DeleteBudget204Response) VisitDeleteBudgetResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteBudget401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteBudget401ApplicationProblemPlusJSONResponse) VisitDeleteBudgetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteBudget404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteBudget404ApplicationProblemPlusJSONResponse) VisitDeleteBudgetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -3162,6 +3238,9 @@ type StrictServerInterface interface {
 	// CreateBudget Create the monthly budget of a category (P7 amendment A54; 409 budget_exists when it has one).
 	// (POST /budgets)
 	CreateBudget(ctx context.Context, request CreateBudgetRequestObject) (CreateBudgetResponseObject, error)
+	// DeleteBudget Delete a budget with its amounts; its category and postings are not touched (S144).
+	// (DELETE /budgets/{id})
+	DeleteBudget(ctx context.Context, request DeleteBudgetRequestObject) (DeleteBudgetResponseObject, error)
 	// GetBudget A budget with its amounts by month.
 	// (GET /budgets/{id})
 	GetBudget(ctx context.Context, request GetBudgetRequestObject) (GetBudgetResponseObject, error)
@@ -3340,6 +3419,32 @@ func (sh *strictHandler) CreateBudget(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CreateBudgetResponseObject); ok {
 		if err := validResponse.VisitCreateBudgetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteBudget operation middleware
+func (sh *strictHandler) DeleteBudget(w http.ResponseWriter, r *http.Request, id ID) {
+	var request DeleteBudgetRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteBudget(ctx, request.(DeleteBudgetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteBudget")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteBudgetResponseObject); ok {
+		if err := validResponse.VisitDeleteBudgetResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

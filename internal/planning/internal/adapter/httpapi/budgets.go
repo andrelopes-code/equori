@@ -53,6 +53,13 @@ func (s *Server) GetBudget(ctx context.Context, req GetBudgetRequestObject) (Get
 	return GetBudget200JSONResponse(toBudgetAPI(b)), nil
 }
 
+func (s *Server) DeleteBudget(ctx context.Context, req DeleteBudgetRequestObject) (DeleteBudgetResponseObject, error) {
+	if err := s.svc.DeleteBudget(ctx, auth.MustUserID(ctx), req.Id); err != nil {
+		return nil, err
+	}
+	return DeleteBudget204Response{}, nil
+}
+
 func (s *Server) ListBudgets(ctx context.Context, req ListBudgetsRequestObject) (ListBudgetsResponseObject, error) {
 	p, err := listPage[app.IDKey](req.Params.Limit, req.Params.Cursor)
 	if err != nil {

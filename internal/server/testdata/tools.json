@@ -4091,7 +4091,7 @@
   },
   {
     "name": "manage_budget_or_goal",
-    "description": "Proposes creating a monthly budget for a category, setting a budget's amount from a month on, or creating, changing or deleting a goal. Use it when the user sets a spending limit or a savings target. Do not use it for recurring payments: manage_schedule does. Deleting a goal cannot be undone; the user confirms every change.",
+    "description": "Proposes creating a monthly budget for a category, setting a budget's amount from a month on, deleting a budget, or creating, changing or deleting a goal. Use it when the user sets a spending limit or a savings target. Do not use it for recurring payments: manage_schedule does. Deleting a budget or a goal cannot be undone; the user confirms every change.",
     "effect": "destructive",
     "idempotent": false,
     "input_schema": {
@@ -4103,6 +4103,7 @@
           "enum": [
             "create_budget",
             "set_budget_amount",
+            "delete_budget",
             "create_goal",
             "update_goal",
             "delete_goal"
@@ -4110,7 +4111,7 @@
         },
         "budget_id": {
           "type": "string",
-          "description": "for set_budget_amount: budget from get_budgets_and_goals"
+          "description": "for set_budget_amount and delete_budget: budget from get_budgets_and_goals"
         },
         "goal_id": {
           "type": "string",

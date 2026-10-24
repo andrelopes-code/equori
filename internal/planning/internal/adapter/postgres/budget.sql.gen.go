@@ -12,6 +12,24 @@ import (
 	"github.com/google/uuid"
 )
 
+const deleteBudget = `-- name: DeleteBudget :execrows
+DELETE FROM planning_budget WHERE user_id = $1 AND id = $2
+`
+
+type DeleteBudgetParams struct {
+	UserID int64
+	ID     uuid.UUID
+}
+
+// S144: the amounts go with the budget (ON DELETE CASCADE).
+func (q *Queries) DeleteBudget(ctx context.Context, arg DeleteBudgetParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteBudget, arg.UserID, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const getBudget = `-- name: GetBudget :one
 SELECT id, user_id, category_account_id, period_type, rollover, currency, created_at FROM planning_budget WHERE user_id = $1 AND id = $2
 `

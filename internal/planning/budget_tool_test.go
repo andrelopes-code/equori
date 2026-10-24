@@ -153,6 +153,28 @@ func TestManageGoal(t *testing.T) {
 	f.h.ExpectToolError(f.h.Tool("manage_budget_or_goal", del), "not_found", "")
 }
 
+// S144 through the assistant: a budget is deleted after a destructive preview.
+func TestManageBudgetDelete(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-12")
+	food := f.h.Account("Food", "expense", "", nil)
+	id := f.budget(food, 180000, "2026-10", false)
+	del := map[string]any{"action": "delete_budget", "budget_id": id}
+	p, _ := preview(t, f.h, "manage_budget_or_goal", del)
+	if p.Target != "Budget Food" || !p.Destructive || !reflect.DeepEqual(p.Changes, []tool.Change{{Field: "budget", Before: tool.TextValue("Food")}}) {
+		t.Errorf("delete preview = %+v", p)
+	}
+	var deleted toolManaged
+	toolOutput(t, f.h, "manage_budget_or_goal", del, &deleted)
+	if !deleted.Deleted || deleted.BudgetID != id {
+		t.Errorf("delete = %+v", deleted)
+	}
+	if list := f.budgets(); len(list.Items) != 0 {
+		t.Errorf("budgets after delete = %+v", list.Items)
+	}
+	f.h.ExpectToolError(f.h.Tool("manage_budget_or_goal", del), "not_found", "")
+}
+
 func TestManageBudgetOrGoalInvalidArguments(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-12")
@@ -170,6 +192,8 @@ func TestManageBudgetOrGoalInvalidArguments(t *testing.T) {
 		{"create_goal with a bad account", map[string]any{"action": "create_goal", "name": "G", "amount": "10.00", "due_on": "2027-01-01", "account_ids": []string{"x"}}, "account_ids"},
 		{"delete_goal without goal_id", map[string]any{"action": "delete_goal"}, "goal_id"},
 		{"delete_goal with name", map[string]any{"action": "delete_goal", "goal_id": food, "name": "G"}, "name"},
+		{"delete_budget without budget_id", map[string]any{"action": "delete_budget"}, "budget_id"},
+		{"delete_budget with amount", map[string]any{"action": "delete_budget", "budget_id": food, "amount": "10.00"}, "amount"},
 		{"set_budget_amount with a bad id", map[string]any{"action": "set_budget_amount", "budget_id": "x", "amount": "10.00", "month": "2026-12"}, "budget_id"},
 	}
 	for _, tt := range tests {

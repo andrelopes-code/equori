@@ -472,6 +472,17 @@ func (r *Repository) Budget(ctx context.Context, userID int64, id uuid.UUID) (do
 	return r.oneBudget(ctx, row, err)
 }
 
+func (r *Repository) DeleteBudget(ctx context.Context, userID int64, id uuid.UUID) error {
+	n, err := r.q.DeleteBudget(ctx, DeleteBudgetParams{UserID: userID, ID: id})
+	if err != nil {
+		return fmt.Errorf("delete budget: %w", err)
+	}
+	if n == 0 {
+		return app.ErrNotFound
+	}
+	return nil
+}
+
 func (r *Repository) LockBudget(ctx context.Context, userID int64, id uuid.UUID) (domain.Budget, error) {
 	row, err := r.q.LockBudget(ctx, LockBudgetParams{UserID: userID, ID: id})
 	return r.oneBudget(ctx, row, err)

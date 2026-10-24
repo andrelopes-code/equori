@@ -2523,7 +2523,8 @@ export interface paths {
         get: operations["getBudget"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete a budget with its amounts; its category and postings are not touched (S144). */
+        delete: operations["deleteBudget"];
         options?: never;
         head?: never;
         patch?: never;
@@ -9296,6 +9297,28 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Budget"];
                 };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    deleteBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];

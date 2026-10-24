@@ -17,12 +17,12 @@ import (
 type manageBudgetOrGoalAction string
 
 func (manageBudgetOrGoalAction) Values() []string {
-	return []string{"create_budget", "set_budget_amount", "create_goal", "update_goal", "delete_goal"}
+	return []string{"create_budget", "set_budget_amount", "delete_budget", "create_goal", "update_goal", "delete_goal"}
 }
 
 type manageBudgetOrGoalIn struct {
 	Action     manageBudgetOrGoalAction `json:"action" jsonschema:"operation to propose"`
-	BudgetID   string                   `json:"budget_id,omitzero" jsonschema:"for set_budget_amount: budget from get_budgets_and_goals"`
+	BudgetID   string                   `json:"budget_id,omitzero" jsonschema:"for set_budget_amount and delete_budget: budget from get_budgets_and_goals"`
 	GoalID     string                   `json:"goal_id,omitzero" jsonschema:"for update_goal and delete_goal: goal from get_budgets_and_goals"`
 	CategoryID string                   `json:"category_id,omitzero" jsonschema:"for create_budget: expense category from list_accounts"`
 	Amount     string                   `json:"amount,omitzero" jsonschema:"for create_budget and set_budget_amount: positive monthly amount; for create_goal and update_goal: positive target"`
@@ -64,6 +64,8 @@ func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, userID
 		err = required(name, fields, []string{"category_id", "amount", "month"}, "rollover")
 	case "set_budget_amount":
 		err = required(name, fields, []string{"budget_id", "amount", "month"})
+	case "delete_budget":
+		err = required(name, fields, []string{"budget_id"})
 	case "create_goal":
 		err = required(name, fields, []string{"name", "amount", "due_on", "account_ids"})
 	case "update_goal":
@@ -113,7 +115,7 @@ func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, userID
 		}
 		p.categoryName = a.Name
 		currency, err = l.BaseCurrency(ctx, userID)
-	case "set_budget_amount":
+	case "set_budget_amount", "delete_budget":
 		if p.budget, err = svc.Budget(ctx, userID, p.budgetID); err == nil {
 			p.categoryName, currency = accounts[p.budget.CategoryID].Name, p.budget.Currency
 		}
@@ -144,10 +146,10 @@ func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, userID
 func manageBudgetOrGoal(svc *app.Service, l Ledger, _ clock.Clock) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_budget_or_goal",
-		Description: "Proposes creating a monthly budget for a category, setting a budget's amount from a month on, or creating, changing or deleting a goal. " +
+		Description: "Proposes creating a monthly budget for a category, setting a budget's amount from a month on, deleting a budget, or creating, changing or deleting a goal. " +
 			"Use it when the user sets a spending limit or a savings target. " +
 			"Do not use it for recurring payments: manage_schedule does. " +
-			"Deleting a goal cannot be undone; the user confirms every change.",
+			"Deleting a budget or a goal cannot be undone; the user confirms every change.",
 		Effect: tool.Destructive,
 	}, func(ctx context.Context, userID int64, in manageBudgetOrGoalIn) (tool.Preview, error) {
 		p, err := prepareBudgetOrGoal(ctx, svc, l, userID, in)
@@ -174,6 +176,9 @@ func manageBudgetOrGoal(svc *app.Service, l Ledger, _ clock.Clock) tool.Tool {
 				{Field: "amount", Before: tool.MoneyValue(latest), After: tool.MoneyValue(*p.amount)},
 				{Field: "date", After: tool.DateValue(p.month)},
 			}
+		case "delete_budget":
+			pv.Target, pv.Destructive = "Budget "+p.categoryName, true
+			pv.Changes = []tool.Change{{Field: "budget", Before: tool.TextValue(p.categoryName)}}
 		case "create_goal":
 			pv.Target = "Goal " + in.Name
 			pv.Changes = []tool.Change{
@@ -215,6 +220,8 @@ func manageBudgetOrGoal(svc *app.Service, l Ledger, _ clock.Clock) tool.Tool {
 		case "set_budget_amount":
 			_, err := svc.AddBudgetAmount(ctx, userID, p.budgetID, p.month, *p.amount)
 			return manageBudgetOrGoalOut{BudgetID: p.budgetID.String()}, err
+		case "delete_budget":
+			return manageBudgetOrGoalOut{BudgetID: p.budgetID.String(), Deleted: true}, svc.DeleteBudget(ctx, userID, p.budgetID)
 		case "create_goal":
 			g, err := svc.CreateGoal(ctx, userID, in.Name, *p.amount, in.DueOn.Time, p.accountIDs)
 			return manageBudgetOrGoalOut{GoalID: g.ID.String()}, err

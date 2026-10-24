@@ -181,6 +181,7 @@ var exposure = map[string]string{
 	"getGoal":                          "get_budgets_and_goals",
 	"updateGoal":                       "manage_budget_or_goal",
 	"deleteGoal":                       "manage_budget_or_goal",
+	"deleteBudget":                     "manage_budget_or_goal",
 	"getProjection":                    "project_balance",
 	"getCommitted":                     "list_schedules",
 	"unrealizeOccurrence":              "manage_occurrence",
