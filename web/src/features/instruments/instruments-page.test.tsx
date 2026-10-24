@@ -58,6 +58,23 @@ describe("Instrument catalog", () => {
     });
   });
 
+  it("opens the instrument from its row", async () => {
+    const { router } = await renderApp("/instruments", { fetch: api() });
+    const user = userEvent.setup();
+    await user.dblClick(await screen.findByText("Petrobras PN"));
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/instruments/PETR4");
+    });
+  });
+
+  it("links the code of a row to its instrument", async () => {
+    await renderApp("/instruments", { fetch: api() });
+    expect(await screen.findByRole("link", { name: "PETR4" })).toHaveAttribute(
+      "href",
+      "/instruments/PETR4",
+    );
+  });
+
   it("searches the instruments by code or name", async () => {
     await renderApp("/instruments", { fetch: api() });
     const grid = await screen.findByRole("grid", {

@@ -4,6 +4,7 @@ import { DataGrid } from "@slotted/react/data-grid";
 import { FilterBar } from "@slotted/react/filter-bar";
 import type { FilterBarField } from "@slotted/react/filter-bar";
 import { Text } from "@slotted/react/typography";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useMemo, useState } from "react";
 
 import type { CatalogRow } from "@/features/instruments/catalog-rows";
@@ -36,6 +37,7 @@ export function InstrumentsGrid({
 }) {
   const t = useT();
   const compact = useMediaQuery(compactQuery);
+  const navigate = useNavigate();
   const [query, setQuery] = useState<GridQuery>(initialQuery);
   const types = useMemo(() => distinct(rows, "type"), [rows]);
   const subtypes = useMemo(() => distinct(rows, "subtype"), [rows]);
@@ -152,6 +154,11 @@ export function InstrumentsGrid({
   // changes identity": the renderers keep their identity across renders of the page.
   const cellRenderers = useMemo(
     () => ({
+      code: ({ row }: { row: CatalogRow }) => (
+        <Link to="/instruments/$code" params={{ code: row.code }}>
+          {row.code}
+        </Link>
+      ),
       price: ({ row }: { row: CatalogRow }) => (
         <LatestPriceCell row={row} part="price" />
       ),
@@ -206,6 +213,13 @@ export function InstrumentsGrid({
           query={query}
           onQueryChange={setQuery}
           height="100%"
+          activatable
+          onActivate={(event) => {
+            void navigate({
+              to: "/instruments/$code",
+              params: { code: event.key },
+            });
+          }}
           cellRenderers={cellRenderers}
           renderGroup={renderGroup}
         />
