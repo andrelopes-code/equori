@@ -15,6 +15,7 @@ export const planningKeys = {
     ["planning", "transactions", accountID, from, to] as const,
   projection: (accountID: string, to: string) =>
     ["planning", "projection", accountID, to] as const,
+  calendars: ["planning", "calendars"] as const,
   budgets: ["planning", "budgets"] as const,
   progress: (budgetID: string, month: string) =>
     ["planning", "budget-progress", budgetID, month] as const,
@@ -273,6 +274,73 @@ export function useMoveOccurrence() {
         await api.POST("/occurrences/{id}/move", {
           params: { path: { id } },
           body: { date },
+        }),
+      ),
+  });
+}
+
+export function calendarsQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: planningKeys.calendars,
+    queryFn: async () => (await unwrap(await api.GET("/calendars"))).items,
+    staleTime: Infinity,
+  });
+}
+
+export function useCreateSchedule() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (schedule: components["schemas"]["ScheduleInput"]) =>
+      unwrap(await api.POST("/schedules", { body: schedule })),
+  });
+}
+
+export function useChangeTerms() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      terms,
+    }: {
+      id: string;
+      terms: components["schemas"]["TermsInput"];
+    }) =>
+      unwrap(
+        await api.POST("/schedules/{id}/terms", {
+          params: { path: { id } },
+          body: terms,
+        }),
+      ),
+  });
+}
+
+export function usePauseSchedule() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      pause,
+    }: {
+      id: string;
+      pause: components["schemas"]["SchedulePause"];
+    }) =>
+      unwrap(
+        await api.POST("/schedules/{id}/pauses", {
+          params: { path: { id } },
+          body: pause,
+        }),
+      ),
+  });
+}
+
+export function useEndSchedule() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async ({ id, from }: { id: string; from: string }) =>
+      unwrap(
+        await api.POST("/schedules/{id}/end", {
+          params: { path: { id } },
+          body: { from },
         }),
       ),
   });

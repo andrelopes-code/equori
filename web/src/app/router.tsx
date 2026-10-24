@@ -55,7 +55,12 @@ import {
   validateRulePrefill,
 } from "@/features/categories";
 import { GoalsPage } from "@/features/goals";
-import { PlanningPage, validatePlanningSearch } from "@/features/planning";
+import {
+  PlanningPage,
+  ScheduleFormPage,
+  SchedulePage,
+  validatePlanningSearch,
+} from "@/features/planning";
 import { LoginPage, meQuery } from "@/features/session";
 import { SettingsPage } from "@/features/setup";
 import {
@@ -253,6 +258,18 @@ const planningRoute = createRoute({
   component: PlanningPage,
 });
 
+const newScheduleRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "planning/schedules/new",
+  component: ScheduleFormPage,
+});
+
+const scheduleRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "planning/schedules/$id",
+  component: SchedulePage,
+});
+
 const adminRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "admin",
@@ -328,6 +345,8 @@ export const routeTree = rootRoute.addChildren([
     payeesRoute,
     goalsRoute,
     planningRoute,
+    newScheduleRoute,
+    scheduleRoute,
     accountsLayoutRoute.addChildren([
       accountsRoute,
       institutionsRoute,

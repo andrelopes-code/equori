@@ -30,6 +30,7 @@ type Money = components["schemas"]["Money"];
 
 // The month's occurrences: the overdue group, then one group per day with its net at the end.
 export function AgendaTable({
+  caption,
   view,
   accountNames,
   scale,
@@ -37,6 +38,7 @@ export function AgendaTable({
   refreshing,
   handleRef,
 }: {
+  caption: string;
   view: Agenda;
   accountNames: ReadonlyMap<string, string>;
   scale: (code: string) => number;
@@ -106,7 +108,7 @@ export function AgendaTable({
   return (
     <Table columns={7} variant="framed" loading={refreshing}>
       <TableContent handleRef={handleRef}>
-        <TableCaption>{t("agenda.caption")}</TableCaption>
+        <TableCaption>{caption}</TableCaption>
         <TableHead>
           <TableRow>
             <TableColumnHeader>{t("agenda.description")}</TableColumnHeader>

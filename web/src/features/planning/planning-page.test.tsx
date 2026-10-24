@@ -4,112 +4,15 @@ import { describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { formatDayHeader } from "@/i18n/format";
-import { accountRoutes, checkingID, money } from "@/testing/account-api";
-import { fakeApi, json, problem } from "@/testing/fake-api";
+import { json, problem } from "@/testing/fake-api";
+import {
+  exactID,
+  planningApi as api,
+  rentOctober,
+  salary,
+  streaming,
+} from "@/testing/planning-api";
 import { renderApp } from "@/testing/render-app";
-
-function schedule(id: string, kind: string, description: string) {
-  return {
-    id,
-    kind,
-    calendar: "br_banking",
-    account_id: checkingID,
-    counterpart_id: "a1000000-0000-4000-8000-00000000000c",
-    description,
-    match_tolerance_bp: 1000,
-    grace_days: 3,
-    terms: [
-      {
-        effective_from: "2026-01-01",
-        amount: money(210000),
-        recurrence: { frequency: "monthly", interval: 1, start: "2026-01-05" },
-      },
-    ],
-    pauses: [],
-  };
-}
-
-const rentID = "e1000000-0000-4000-8000-000000000001";
-const salaryID = "e1000000-0000-4000-8000-000000000002";
-const streamingID = "e1000000-0000-4000-8000-000000000003";
-const schedules = [
-  schedule(rentID, "bill", "Rent"),
-  schedule(salaryID, "income", "Salary"),
-  schedule(streamingID, "subscription", "Streaming"),
-];
-
-function occurrence(
-  id: string,
-  scheduleID: string,
-  date: string,
-  amount: number,
-  state: string,
-) {
-  return {
-    id: `f1000000-0000-4000-8000-00000000000${id}`,
-    schedule_id: scheduleID,
-    sequence: 1,
-    expected_on: date,
-    expected_amount: money(amount),
-    state,
-  };
-}
-
-const rentSeptember = occurrence("1", rentID, "2026-09-05", 210000, "overdue");
-const rentOctober = occurrence("2", rentID, "2026-10-05", 210000, "overdue");
-const streaming = occurrence("3", streamingID, "2026-10-12", 3990, "realized");
-const salary = occurrence("4", salaryID, "2026-10-20", 500000, "expected");
-
-function transaction(id: string, date: string, amount: number) {
-  return {
-    id,
-    date,
-    description: id,
-    balancing_currency: "BRL",
-    origin: "manual",
-    version: 1,
-    tags: [],
-    links: [],
-    postings: [
-      {
-        id: `${id}-1`,
-        account_id: checkingID,
-        amount: money(amount),
-        weight: money(amount),
-        status: "cleared",
-      },
-    ],
-  };
-}
-
-const exactID = "a9000000-0000-4000-8000-000000000001";
-const farID = "a9000000-0000-4000-8000-000000000002";
-
-function api(overrides: Parameters<typeof accountRoutes>[0] = {}) {
-  return fakeApi(
-    accountRoutes({
-      "GET /api/v1/schedules": () => json(200, { items: schedules }),
-      ...Object.fromEntries(
-        schedules.map((s) => [
-          `GET /api/v1/schedules/${s.id}`,
-          () => json(200, s),
-        ]),
-      ),
-      "GET /api/v1/occurrences": (req) =>
-        new URL(req.url).searchParams.get("state") === "overdue"
-          ? json(200, { items: [rentSeptember, rentOctober] })
-          : json(200, { items: [rentOctober, streaming, salary] }),
-      "GET /api/v1/transactions": () =>
-        json(200, {
-          items: [
-            transaction(farID, "2026-10-04", -150000),
-            transaction(exactID, "2026-10-06", -210000),
-          ],
-        }),
-      ...overrides,
-    }),
-  );
-}
 
 async function openAction(row: string, index: number, action: string) {
   const user = userEvent.setup();

@@ -15,3 +15,4 @@ export { TransactionsPage } from "@/features/transactions/transactions-page";
 export { CorrectTransactionPage } from "@/features/transactions/correct-transaction-page";
 export { TransactionPage } from "@/features/transactions/transaction-page";
 export { AccountField } from "@/features/transactions/account-field";
+export { PayeeField } from "@/features/transactions/payee-field";

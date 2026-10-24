@@ -205,6 +205,7 @@ export function AgendaTab({
           aria-busy={shownFilter !== filter || undefined}
         >
           <AgendaTable
+            caption={t("agenda.caption")}
             view={view}
             accountNames={accountNames}
             scale={scale ?? (() => 0)}

@@ -15,6 +15,7 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useDeferredValue, useState } from "react";
 
 import { AgendaTab } from "@/features/planning/agenda-tab";
+import { SchedulesTab } from "@/features/planning/schedules-tab";
 import type {
   PlanningSearch,
   PlanningTab,
@@ -22,12 +23,14 @@ import type {
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { HeaderAction } from "@/ui/header-action";
 import { HeaderProgress } from "@/ui/header-progress";
 import { RefreshButton } from "@/ui/refresh-button";
 import { useRefresh } from "@/ui/use-refresh";
 
 const tabs: readonly { tab: PlanningTab; label: MessageKey }[] = [
   { tab: "agenda", label: "planning.tab.agenda" },
+  { tab: "schedules", label: "planning.tab.schedules" },
 ];
 
 function withTab(prev: PlanningSearch, tab: PlanningTab): PlanningSearch {
@@ -49,6 +52,9 @@ export function PlanningPage() {
   // CP-09: the strip moves at once; the tab's region renders from the deferred value.
   const [chosen, setChosen] = useState<PlanningTab | null>(null);
   const shownTab = useDeferredValue(chosen ?? current);
+  const create = () => {
+    void navigate({ to: "/planning/schedules/new" });
+  };
   const refresh = useRefresh(() =>
     queryClient.invalidateQueries({ queryKey: ["planning"] }),
   );
@@ -68,6 +74,12 @@ export function PlanningPage() {
                 label={t("planning.refresh")}
                 refreshing={refresh.refreshing}
                 onRefresh={refresh.refresh}
+              />
+              <HeaderAction
+                primary
+                label={t("planning.new")}
+                glyph="plus"
+                onClick={create}
               />
             </PageHeaderActions>
           </PageHeaderTitleRow>
@@ -116,6 +128,7 @@ export function PlanningPage() {
               }}
             />
           )}
+          {shownTab === "schedules" && <SchedulesTab onCreate={create} />}
         </div>
       </PageBody>
     </Page>

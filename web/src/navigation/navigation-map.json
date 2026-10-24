@@ -221,7 +221,26 @@
     "tasks": [
       "see the occurrences of a month by day, overdue ones first",
       "realize, unrealize, skip or move an occurrence",
-      "see the month's expected inflow and outflow"
+      "see the month's expected inflow and outflow",
+      "list the schedules by kind with their next occurrence"
+    ]
+  },
+  {
+    "path": "/planning/schedules/new",
+    "topics": ["schedules_and_occurrences"],
+    "screen": "New schedule",
+    "tasks": [
+      "create a bill, income, subscription, transfer or saving that repeats"
+    ]
+  },
+  {
+    "path": "/planning/schedules/$id",
+    "topics": ["schedules_and_occurrences"],
+    "screen": "Schedule",
+    "tasks": [
+      "see the terms versions, pauses and occurrences of a schedule",
+      "change the terms from a date",
+      "pause or end a schedule"
     ]
   },
   {
