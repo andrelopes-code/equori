@@ -23,7 +23,6 @@ import { useMoneyFormat } from "@/privacy/use-money-format";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
-import { MonthControl } from "@/ui/month-control";
 import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
 
 type OccurrenceState = components["schemas"]["OccurrenceState"];
@@ -107,11 +106,6 @@ export function AgendaTab({
         aria-label={t("agenda.filters")}
         role="group"
       >
-        <MonthControl
-          value={month}
-          onChange={onMonth}
-          label={t("agenda.month")}
-        />
         <ChoiceSelect
           label={t("agenda.state")}
           multiple={false}

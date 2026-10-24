@@ -26,6 +26,7 @@ import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { HeaderAction } from "@/ui/header-action";
 import { HeaderProgress } from "@/ui/header-progress";
+import { MonthControl } from "@/ui/month-control";
 import { RefreshButton } from "@/ui/refresh-button";
 import { useRefresh } from "@/ui/use-refresh";
 
@@ -57,6 +58,13 @@ export function PlanningPage() {
   const create = () => {
     void navigate({ to: "/planning/schedules/new" });
   };
+  const changeMonth = (next: string) => {
+    void navigate({
+      to: "/planning",
+      search: { ...search, month: next },
+      replace: true,
+    });
+  };
   const refresh = useRefresh(() =>
     queryClient.invalidateQueries({ queryKey: ["planning"] }),
   );
@@ -72,6 +80,13 @@ export function PlanningPage() {
               </PageHeaderSubheading>
             </PageHeaderTitle>
             <PageHeaderActions>
+              {current === "agenda" && (
+                <MonthControl
+                  label={t("agenda.month")}
+                  value={month}
+                  onChange={changeMonth}
+                />
+              )}
               <RefreshButton
                 label={t("planning.refresh")}
                 refreshing={refresh.refreshing}
@@ -119,16 +134,7 @@ export function PlanningPage() {
       <PageBody>
         <div aria-busy={shownTab !== (chosen ?? current) || undefined}>
           {shownTab === "agenda" && (
-            <AgendaTab
-              month={month}
-              onMonth={(next) => {
-                void navigate({
-                  to: "/planning",
-                  search: { ...search, month: next },
-                  replace: true,
-                });
-              }}
-            />
+            <AgendaTab month={month} onMonth={changeMonth} />
           )}
           {shownTab === "schedules" && <SchedulesTab onCreate={create} />}
           {shownTab === "subscriptions" && <SubscriptionsTab />}

@@ -1,5 +1,5 @@
 @layer app {
-  /* The month and the four filters share rows of controls at least 11rem wide. */
+  /* The four filters share rows of controls at least 11rem wide. */
   .filters {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));

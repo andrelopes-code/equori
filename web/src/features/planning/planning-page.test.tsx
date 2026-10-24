@@ -27,6 +27,24 @@ async function openAction(row: string, index: number, action: string) {
 }
 
 describe("PlanningPage agenda", () => {
+  it("steps the agenda's month from the page header", async () => {
+    const { container, router } = await renderApp("/planning", {
+      fetch: api(),
+    });
+    await screen.findByRole("rowheader", { name: "Salary" });
+    const header = container.querySelector('[data-ui="page-header"]');
+    if (!(header instanceof HTMLElement)) throw new Error("no page header");
+    const month = within(header).getByRole("group", {
+      name: catalogEn["agenda.month"],
+    });
+    await userEvent.click(
+      within(month).getByRole("button", { name: catalogEn["month.next"] }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.search).toEqual({ month: "2026-11" });
+    });
+  });
+
   it("lists the overdue occurrences first in their own group, then the month by day", async () => {
     await renderApp("/planning", { fetch: api() });
     await screen.findByRole("rowheader", { name: "Salary" });
