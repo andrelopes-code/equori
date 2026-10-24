@@ -19,3 +19,4 @@ export { validateCategoriesSearch } from "@/features/categories/categories-searc
 export { useCategoryEntries } from "@/features/categories/use-category-entries";
 export { RuleEditorPage } from "@/features/categories/rule-editor-page";
 export { validateRulePrefill } from "@/features/categories/rule-prefill";
+export { categoryTotalsQuery } from "@/features/categories/api";

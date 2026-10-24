@@ -1,4 +1,4 @@
-export type PlanningTab = "agenda" | "schedules" | "subscriptions";
+export type PlanningTab = "agenda" | "schedules" | "subscriptions" | "budgets";
 
 export interface PlanningSearch {
   tab?: Exclude<PlanningTab, "agenda">;
@@ -6,7 +6,12 @@ export interface PlanningSearch {
   month?: string;
 }
 
-const tabs: readonly PlanningTab[] = ["agenda", "schedules", "subscriptions"];
+const tabs: readonly PlanningTab[] = [
+  "agenda",
+  "schedules",
+  "subscriptions",
+  "budgets",
+];
 
 export function validatePlanningSearch(
   raw: Record<string, unknown>,

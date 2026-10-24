@@ -67,7 +67,7 @@ func TestParseMap(t *testing.T) {
 	}
 }
 
-// A topic without a screen is a gap in the navigation map; budgets has no screen yet (docs/web-roadmap.md item 6).
+// A topic without a screen is a gap in the navigation map.
 func TestGuideTopicsHaveScreens(t *testing.T) {
 	t.Parallel()
 	screens, err := guide.ParseMap(web.NavigationMap())
@@ -81,7 +81,7 @@ func TestGuideTopicsHaveScreens(t *testing.T) {
 		}
 	}
 	for _, topic := range guide.Topics() {
-		if topic != "budgets" && !has[topic] {
+		if !has[topic] {
 			t.Errorf("topic %s has no screen", topic)
 		}
 	}

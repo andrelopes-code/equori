@@ -15,6 +15,7 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useDeferredValue, useState } from "react";
 
 import { AgendaTab } from "@/features/planning/agenda-tab";
+import { BudgetsTab } from "@/features/planning/budgets-tab";
 import { SchedulesTab } from "@/features/planning/schedules-tab";
 import { SubscriptionsTab } from "@/features/planning/subscriptions-tab";
 import type {
@@ -34,6 +35,7 @@ const tabs: readonly { tab: PlanningTab; label: MessageKey }[] = [
   { tab: "agenda", label: "planning.tab.agenda" },
   { tab: "schedules", label: "planning.tab.schedules" },
   { tab: "subscriptions", label: "planning.tab.subscriptions" },
+  { tab: "budgets", label: "planning.tab.budgets" },
 ];
 
 function withTab(prev: PlanningSearch, tab: PlanningTab): PlanningSearch {
@@ -42,8 +44,8 @@ function withTab(prev: PlanningSearch, tab: PlanningTab): PlanningSearch {
   return tab === "agenda" ? next : { ...next, tab };
 }
 
-// What the schedules expect, one tab per view: the agenda of a month, the schedules, the
-// subscriptions.
+// What the schedules expect and what the budgets allow, one tab per view: the agenda of a
+// month, the schedules, the subscriptions, the budgets of a month.
 export function PlanningPage() {
   const t = useT();
   const today = useToday();
@@ -80,7 +82,7 @@ export function PlanningPage() {
               </PageHeaderSubheading>
             </PageHeaderTitle>
             <PageHeaderActions>
-              {current === "agenda" && (
+              {(current === "agenda" || current === "budgets") && (
                 <MonthControl
                   label={t("agenda.month")}
                   value={month}
@@ -138,6 +140,7 @@ export function PlanningPage() {
           )}
           {shownTab === "schedules" && <SchedulesTab onCreate={create} />}
           {shownTab === "subscriptions" && <SubscriptionsTab />}
+          {shownTab === "budgets" && <BudgetsTab month={month} />}
         </div>
       </PageBody>
     </Page>

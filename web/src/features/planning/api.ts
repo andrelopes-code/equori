@@ -20,6 +20,7 @@ export const planningKeys = {
   progress: (budgetID: string, month: string) =>
     ["planning", "budget-progress", budgetID, month] as const,
   goals: ["planning", "goals"] as const,
+  committed: (month: string) => ["planning", "committed", month] as const,
 };
 
 type OccurrenceFilter = Pick<
@@ -164,6 +165,14 @@ export function budgetProgressQuery(
           params: { path: { id: budgetID }, query: { month } },
         }),
       ),
+  });
+}
+
+export function committedQuery(api: Client<paths>, month: string) {
+  return queryOptions({
+    queryKey: planningKeys.committed(month),
+    queryFn: async () =>
+      unwrap(await api.GET("/commitments", { params: { query: { month } } })),
   });
 }
 
