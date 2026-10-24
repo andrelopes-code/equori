@@ -216,4 +216,12 @@ describe("Portfolio positions", () => {
       screen.getByText(`${catalogEn["positions.marketValue"]}: R$105.00`),
     ).toBeInTheDocument();
   });
+
+  it("moves the date and currency out of the header on a phone", async () => {
+    await renderApp("/portfolio", { width: 390, fetch: portfolioApi() });
+    const currency = await screen.findByRole("combobox", {
+      name: catalogEn["portfolio.valueIn"],
+    });
+    expect(currency.closest('[data-ui="page-header"]')).toBeNull();
+  });
 });

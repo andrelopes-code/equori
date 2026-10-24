@@ -24,6 +24,7 @@ import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { DateInput } from "@/ui/date-input";
+import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 import styles from "@/features/portfolio/portfolio-page.module.css";
 
@@ -38,6 +39,7 @@ export function PortfolioPage() {
   const navigate = useNavigate();
   const base = useQuery(settingsQuery(api)).data?.base_currency;
   const instruments = useQuery(instrumentsQuery(api));
+  const compact = useMediaQuery(compactQuery);
   const date = search.date ?? today;
   const valueIn = search.value_in ?? base;
   const currencies = (instruments.data?.items ?? [])
@@ -55,6 +57,34 @@ export function PortfolioPage() {
       replace: true,
     });
   };
+  const controls = (
+    <>
+      <Field>
+        <FieldLabel>{t("portfolio.valueIn")}</FieldLabel>
+        <ChoiceSelect
+          label={t("portfolio.valueIn")}
+          choices={currencies}
+          multiple={false}
+          value={valueIn ?? null}
+          onChange={(next) => {
+            if (typeof next === "string")
+              change({ value_in: next === base ? undefined : next });
+          }}
+        />
+      </Field>
+      <Field>
+        <FieldLabel>{t("portfolio.date")}</FieldLabel>
+        <DateInput
+          name="date"
+          value={date}
+          shortcuts={false}
+          onChange={(next) => {
+            change({ date: next === today ? undefined : next });
+          }}
+        />
+      </Field>
+    </>
+  );
   return (
     <Page width="full">
       <PageHeader size="lg">
@@ -66,37 +96,13 @@ export function PortfolioPage() {
                 {t("portfolio.subtitle")}
               </PageHeaderSubheading>
             </PageHeaderTitle>
-            <PageHeaderActions>
-              <Field>
-                <FieldLabel>{t("portfolio.valueIn")}</FieldLabel>
-                <ChoiceSelect
-                  label={t("portfolio.valueIn")}
-                  choices={currencies}
-                  multiple={false}
-                  value={valueIn ?? null}
-                  onChange={(next) => {
-                    if (typeof next === "string")
-                      change({ value_in: next === base ? undefined : next });
-                  }}
-                />
-              </Field>
-              <Field>
-                <FieldLabel>{t("portfolio.date")}</FieldLabel>
-                <DateInput
-                  name="date"
-                  value={date}
-                  shortcuts={false}
-                  onChange={(next) => {
-                    change({ date: next === today ? undefined : next });
-                  }}
-                />
-              </Field>
-            </PageHeaderActions>
+            <PageHeaderActions>{!compact && controls}</PageHeaderActions>
           </PageHeaderTitleRow>
         </PageHeaderTitleArea>
       </PageHeader>
       <PageBody>
         <Stack gap={6}>
+          {compact && <div className={styles.controls}>{controls}</div>}
           <Stack gap={3}>
             <Heading level={2} size="md">
               {t("portfolio.positions.title")}
