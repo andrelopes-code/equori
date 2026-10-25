@@ -2,7 +2,7 @@
 
 Sequential guide for the screens of `web/`. Each item names the screens, their functions, the API operations they consume and their dependencies. It is not the source of truth: the implementer of an item reads `api/openapi.yaml`, the ADRs, the scenarios of `docs/domain/06-scenarios.md`, `web/CLAUDE.md` and the existing code before designing the screen. Field lists below are a map of the contract, not a form specification.
 
-Status snapshot: 2026-10-24, commit `5afd492`.
+Status snapshot: 2026-10-25, commit `984abb8`.
 
 ## Status legend
 
@@ -19,7 +19,7 @@ Status snapshot: 2026-10-24, commit `5afd492`.
 | # | Item | Status | Depends on |
 |---|---|---|---|
 | 1 | Transaction detail: attachments, investment and foreign currency facts | Partial | — |
-| 2 | Foreign purchase and currency exchange entry | No screen | — |
+| 2 | Foreign purchase and currency exchange entry | Delivered | — |
 | 3 | Aggregator integrations and connections | Partial | — |
 | 4 | Institution identifiers | Partial | — |
 | 5 | Schedules and occurrences | Delivered | — |
@@ -71,7 +71,7 @@ Functions:
 
 ## 2. Foreign purchase and currency exchange entry
 
-Status: No screen.
+Status: Delivered. Operations: `recordForeignPurchase`, `exchangeCurrency`, `getStatementPlacement`, `listPrices` (`features/transactions/`: the foreign purchase and currency exchange kinds of `/transactions/new`; also opened with `?kind=` and `account_id` from the overflow menu of a card page and from the page of an account in a currency other than the base). The foreign charge of the card prefills the charge rate; the form always sends it. The suggested rate is the stored price of the date, read with a one-day `listPrices` window. The exchange fee is in the base currency. The live figures reuse the half-even rounding of `trade-math.ts`.
 
 Operations: `recordForeignPurchase`, `exchangeCurrency`; `listPrices` for a suggested rate.
 

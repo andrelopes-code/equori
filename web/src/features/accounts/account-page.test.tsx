@@ -13,6 +13,7 @@ import {
   money,
   reserveID,
   stockID,
+  usdID,
 } from "@/testing/account-api";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
@@ -292,6 +293,32 @@ describe("AccountPage", () => {
       account_id: stockID,
       kind: "investment_income",
     });
+  });
+
+  it("records a currency exchange from the page of a foreign currency account, with the account chosen", async () => {
+    const { router } = await renderApp(`/accounts/${usdID}`, {
+      fetch: api(),
+    });
+    await userEvent.click(
+      await screen.findByRole("button", { name: catalogEn["exchange.record"] }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/transactions/new");
+    });
+    expect(router.state.location.search).toEqual({
+      account_id: usdID,
+      kind: "exchange",
+    });
+  });
+
+  it("offers no exchange on an account in the base currency", async () => {
+    await renderApp(`/accounts/${checkingID}`, { fetch: api() });
+    await screen.findByRole("button", {
+      name: catalogEn["account.recordBalance"],
+    });
+    expect(
+      screen.queryByRole("button", { name: catalogEn["exchange.record"] }),
+    ).toBeNull();
   });
 
   it("offers no trade on an account that holds a currency", async () => {

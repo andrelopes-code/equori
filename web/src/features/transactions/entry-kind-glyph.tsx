@@ -18,6 +18,7 @@ const PATHS: Record<EntryKind, readonly string[]> = {
     "M2 12h20",
     "M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z",
   ],
+  exchange: ["M3 7h14", "m13 3 4 4-4 4", "M21 17H7", "m11 13-4 4 4 4"],
   advanced: [
     "M21 4h-7",
     "M10 4H3",

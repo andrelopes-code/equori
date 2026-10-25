@@ -32,7 +32,8 @@ import { kindTitle } from "@/features/accounts/account-kinds";
 import { AccountAvatar } from "@/features/accounts/account-avatar";
 import { AccountRowStatus } from "@/features/accounts/account-row-status";
 import type { AccountTab } from "@/features/accounts/account-search";
-import { instrumentsQuery } from "@/features/setup";
+import { instrumentsQuery, settingsQuery } from "@/features/setup";
+import type { BuiltKind } from "@/features/transactions";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { HeaderProgress } from "@/ui/header-progress";
@@ -82,7 +83,15 @@ export function AccountHeader({
   const security = (instruments.data?.items ?? []).some(
     (i) => i.code === account.currency && i.type !== "currency",
   );
-  const recordInvestment = (kind: "trade" | "investment_income") => () => {
+  const base = useQuery(settingsQuery(useApi())).data?.base_currency;
+  // A currency exchange starts from an account that holds a currency other than the base.
+  const foreignCurrency =
+    base !== undefined &&
+    account.currency !== base &&
+    (instruments.data?.items ?? []).some(
+      (i) => i.code === account.currency && i.type === "currency",
+    );
+  const recordInvestment = (kind: BuiltKind) => () => {
     void navigate({
       to: "/transactions/new",
       search: { account_id: account.id, kind },
@@ -174,6 +183,15 @@ export function AccountHeader({
                 >
                   {t("account.recordBalance")}
                 </Button>
+                {foreignCurrency && (
+                  <Button
+                    variant="outline"
+                    tone="secondary"
+                    onClick={recordInvestment("exchange")}
+                  >
+                    {t("exchange.record")}
+                  </Button>
+                )}
                 {security && (
                   <Button
                     variant="outline"
@@ -270,6 +288,11 @@ export function AccountHeader({
                     >
                       {t("account.recordBalance")}
                     </MenuItem>
+                    {foreignCurrency && (
+                      <MenuItem onSelect={recordInvestment("exchange")}>
+                        {t("exchange.record")}
+                      </MenuItem>
+                    )}
                     {security && (
                       <>
                         <MenuItem onSelect={recordInvestment("trade")}>

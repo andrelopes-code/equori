@@ -44,6 +44,11 @@ const kinds: {
     hint: "entry.kindHint.foreign_purchase",
   },
   {
+    value: "exchange",
+    label: "entry.kind.exchange",
+    hint: "entry.kindHint.exchange",
+  },
+  {
     value: "advanced",
     label: "entry.kind.advanced",
     hint: "entry.kindHint.advanced",

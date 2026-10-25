@@ -91,7 +91,8 @@
     );
   }
 
-  .kind[data-kind="foreign_purchase"] {
+  .kind[data-kind="foreign_purchase"],
+  .kind[data-kind="exchange"] {
     --kind-surface: color-mix(
       in oklab,
       var(--slotted-data-5) 12%,

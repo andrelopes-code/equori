@@ -40,6 +40,7 @@ import type {
   EntryDraft,
   EntryKind,
 } from "@/features/transactions/entry-kind";
+import { ExchangeForm } from "@/features/transactions/exchange-form";
 import { ForeignForm } from "@/features/transactions/foreign-form";
 import { draftProblems } from "@/features/transactions/entry-validation";
 import {
@@ -50,6 +51,7 @@ import {
 import { IncomeForm } from "@/features/transactions/income-form";
 import { TradeForm } from "@/features/transactions/trade-form";
 import { useIncomeEntry } from "@/features/transactions/use-income-entry";
+import { useExchangeEntry } from "@/features/transactions/use-exchange-entry";
 import { useForeignEntry } from "@/features/transactions/use-foreign-entry";
 import { useTradeEntry } from "@/features/transactions/use-trade-entry";
 import {
@@ -85,6 +87,7 @@ export function NewTransactionPage() {
   const trade = useTradeEntry(account_id ?? null);
   const income = useIncomeEntry(account_id ?? null);
   const foreign = useForeignEntry(account_id ?? null);
+  const exchange = useExchangeEntry(account_id ?? null);
   const entry =
     investment === "trade"
       ? trade
@@ -92,7 +95,9 @@ export function NewTransactionPage() {
         ? income
         : investment === "foreign_purchase"
           ? foreign
-          : null;
+          : investment === "exchange"
+            ? exchange
+            : null;
   const pickKind = (next: EntryKind) => {
     if (isBuiltKind(next)) {
       setInvestment(next);
@@ -157,7 +162,9 @@ export function NewTransactionPage() {
           ? "trade.created"
           : active === foreign
             ? "foreignPurchase.created"
-            : "income.created",
+            : active === exchange
+              ? "exchange.created"
+              : "income.created",
       ),
     );
     active.reset();
@@ -217,6 +224,7 @@ export function NewTransactionPage() {
     trade.discard();
     income.discard();
     foreign.discard();
+    exchange.discard();
     clearDraft(draftKey);
     void navigate({ to: "/transactions" });
   };
@@ -371,6 +379,16 @@ export function NewTransactionPage() {
               onChange={income.setDraft}
               view={income.view}
               errors={income.errors}
+              scale={scale}
+              onKind={pickKind}
+            />
+          )}
+          {ready && investment === "exchange" && scale !== null && (
+            <ExchangeForm
+              draft={exchange.draft}
+              onChange={exchange.setDraft}
+              view={exchange.view}
+              errors={exchange.errors}
               scale={scale}
               onKind={pickKind}
             />

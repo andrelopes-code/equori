@@ -12,7 +12,7 @@ Source: `docs/web-roadmap.md` item 2. Scenarios: S16, S17. Contract: `recordFore
 - Catalog keys `foreignPurchase.*` in both catalogs.
 
 ## Slice 2: `feat(web): record a currency exchange`
-- `exchange-math.ts`, `exchange-draft.ts`, `use-exchange-entry.ts`, `exchange-form.tsx`: from and to accounts, date, description, amounts, optional fee with category.
+- `exchange-draft.ts`, `use-exchange-entry.ts`, `exchange-form.tsx`: from and to accounts, date, description, amounts, optional fee with category.
 - Destination restricted so one of the two currencies is the base.
 - Live result: effective rate in both directions, total debited with the fee, difference against the stored price of the date.
 - Kind `exchange` in the picker and the account page action for a foreign-currency account.
