@@ -26,6 +26,7 @@ var (
 	ErrStatementFinanced  = errors.New("statement is already financed")
 	ErrDisputeOpen        = errors.New("the transaction already has an open dispute")
 	ErrDisputeResolved    = errors.New("the dispute is already resolved")
+	ErrNotInlineable      = errors.New("only a PDF or an image is shown inline")
 	ErrDifferenceRemains  = errors.New("the settled balance still differs from the assertion")
 	ErrUnknownInstrument  = errors.New("unknown instrument")
 	ErrMixedInstruments   = errors.New("the account and its sub-accounts hold more than one instrument")

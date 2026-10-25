@@ -1754,7 +1754,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Download the attached file. */
+        /**
+         * Download the attached file, or show a PDF or an image in a frame of the application.
+         * @description With disposition=inline the response is shown in place and its Content-Security-Policy
+         *     allows a frame of the application's own origin (ADR 007, C9a); 422
+         *     attachment_not_inlineable for any media type but a PDF or an image. The default is a
+         *     download and no frame may show it.
+         */
         get: operations["getAttachmentContent"];
         put?: never;
         post?: never;
@@ -4766,7 +4772,7 @@ export interface components {
              *     integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
              *     currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
              *     budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
-             *     investment_transaction, system_account.
+             *     investment_transaction, system_account, attachment_not_inlineable.
              */
             code: string;
             request_id?: string;
@@ -7923,7 +7929,9 @@ export interface operations {
     };
     getAttachmentContent: {
         parameters: {
-            query?: never;
+            query?: {
+                disposition?: "attachment" | "inline";
+            };
             header?: never;
             path: {
                 id: components["parameters"]["ID"];
@@ -7936,14 +7944,17 @@ export interface operations {
             200: {
                 headers: {
                     "Content-Disposition"?: string;
+                    "Content-Security-Policy"?: string;
                     [name: string]: unknown;
                 };
                 content: {
                     "*/*": string;
                 };
             };
+            400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     listRules: {

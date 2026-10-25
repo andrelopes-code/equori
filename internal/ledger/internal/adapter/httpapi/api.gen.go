@@ -1016,6 +1016,24 @@ func (e GetAccountBalanceParamsBasis) Valid() bool {
 	}
 }
 
+// Defines values for GetAttachmentContentParamsDisposition.
+const (
+	GetAttachmentContentParamsDispositionAttachment GetAttachmentContentParamsDisposition = "attachment"
+	GetAttachmentContentParamsDispositionInline     GetAttachmentContentParamsDisposition = "inline"
+)
+
+// Valid indicates whether the value is a known member of the GetAttachmentContentParamsDisposition enum.
+func (e GetAttachmentContentParamsDisposition) Valid() bool {
+	switch e {
+	case GetAttachmentContentParamsDispositionAttachment:
+		return true
+	case GetAttachmentContentParamsDispositionInline:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ListBalancesParamsBasis.
 const (
 	ListBalancesParamsBasisBooked  ListBalancesParamsBasis = "booked"
@@ -1727,7 +1745,7 @@ type Problem struct {
 	// integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
 	// currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
 	// budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
-	// investment_transaction, system_account.
+	// investment_transaction, system_account, attachment_not_inlineable.
 	Code      string        `json:"code"`
 	Detail    *string       `json:"detail,omitempty"`
 	Errors    *[]FieldError `json:"errors,omitempty"`
@@ -2152,6 +2170,14 @@ type ListStatementsParams struct {
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
+// GetAttachmentContentParams defines parameters for GetAttachmentContent.
+type GetAttachmentContentParams struct {
+	Disposition *GetAttachmentContentParamsDisposition `form:"disposition,omitempty" json:"disposition,omitempty"`
+}
+
+// GetAttachmentContentParamsDisposition defines parameters for GetAttachmentContent.
+type GetAttachmentContentParamsDisposition string
+
 // ListBalancesParams defines parameters for ListBalances.
 type ListBalancesParams struct {
 	Date  openapi_types.Date       `form:"date" json:"date"`
@@ -2409,9 +2435,9 @@ type ServerInterface interface {
 	// DeleteAttachment Remove an attachment; the stored file is deleted when no attachment references it.
 	// (DELETE /attachments/{id})
 	DeleteAttachment(w http.ResponseWriter, r *http.Request, id ID)
-	// GetAttachmentContent Download the attached file.
+	// GetAttachmentContent Download the attached file, or show a PDF or an image in a frame of the application.
 	// (GET /attachments/{id}/content)
-	GetAttachmentContent(w http.ResponseWriter, r *http.Request, id ID)
+	GetAttachmentContent(w http.ResponseWriter, r *http.Request, id ID, params GetAttachmentContentParams)
 	// ResolveBalanceAssertion Resolve the open difference of an assertion and reconcile the account.
 	// (POST /balance-assertions/{id}/resolve)
 	ResolveBalanceAssertion(w http.ResponseWriter, r *http.Request, id ID)
@@ -3369,8 +3395,24 @@ func (siw *ServerInterfaceWrapper) GetAttachmentContent(w http.ResponseWriter, r
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAttachmentContentParams
+
+	// ------------- Optional query parameter "disposition" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "disposition", r.URL.Query(), &params.Disposition, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "disposition"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "disposition", Err: err})
+		}
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetAttachmentContent(w, r, id)
+		siw.Handler.GetAttachmentContent(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -6384,7 +6426,8 @@ func (response DeleteAttachment404ApplicationProblemPlusJSONResponse) VisitDelet
 }
 
 type GetAttachmentContentRequestObject struct {
-	Id ID `json:"id"`
+	Id     ID `json:"id"`
+	Params GetAttachmentContentParams
 }
 
 type GetAttachmentContentResponseObject interface {
@@ -6392,7 +6435,8 @@ type GetAttachmentContentResponseObject interface {
 }
 
 type GetAttachmentContent200ResponseHeaders struct {
-	ContentDisposition *string
+	ContentDisposition    *string
+	ContentSecurityPolicy *string
 }
 
 type GetAttachmentContent200AsteriskResponse struct {
@@ -6411,6 +6455,9 @@ func (response GetAttachmentContent200AsteriskResponse) VisitGetAttachmentConten
 	if response.Headers.ContentDisposition != nil {
 		w.Header().Set("Content-Disposition", fmt.Sprint(*response.Headers.ContentDisposition))
 	}
+	if response.Headers.ContentSecurityPolicy != nil {
+		w.Header().Set("Content-Security-Policy", fmt.Sprint(*response.Headers.ContentSecurityPolicy))
+	}
 	w.WriteHeader(200)
 
 	if closer, ok := response.Body.(io.ReadCloser); ok {
@@ -6420,9 +6467,23 @@ func (response GetAttachmentContent200AsteriskResponse) VisitGetAttachmentConten
 	return err
 }
 
-type GetAttachmentContent401ApplicationProblemPlusJSONResponse struct {
+type GetAttachmentContent400ApplicationProblemPlusJSONResponse struct {
 	ProblemApplicationProblemPlusJSONResponse
 }
+
+func (response GetAttachmentContent400ApplicationProblemPlusJSONResponse) VisitGetAttachmentContentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAttachmentContent401ApplicationProblemPlusJSONResponse Problem
 
 func (response GetAttachmentContent401ApplicationProblemPlusJSONResponse) VisitGetAttachmentContentResponse(w http.ResponseWriter) error {
 
@@ -6446,6 +6507,20 @@ func (response GetAttachmentContent404ApplicationProblemPlusJSONResponse) VisitG
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAttachmentContent422ApplicationProblemPlusJSONResponse Problem
+
+func (response GetAttachmentContent422ApplicationProblemPlusJSONResponse) VisitGetAttachmentContentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -9589,7 +9664,7 @@ type StrictServerInterface interface {
 	// DeleteAttachment Remove an attachment; the stored file is deleted when no attachment references it.
 	// (DELETE /attachments/{id})
 	DeleteAttachment(ctx context.Context, request DeleteAttachmentRequestObject) (DeleteAttachmentResponseObject, error)
-	// GetAttachmentContent Download the attached file.
+	// GetAttachmentContent Download the attached file, or show a PDF or an image in a frame of the application.
 	// (GET /attachments/{id}/content)
 	GetAttachmentContent(ctx context.Context, request GetAttachmentContentRequestObject) (GetAttachmentContentResponseObject, error)
 	// ResolveBalanceAssertion Resolve the open difference of an assertion and reconcile the account.
@@ -10479,10 +10554,11 @@ func (sh *strictHandler) DeleteAttachment(w http.ResponseWriter, r *http.Request
 }
 
 // GetAttachmentContent operation middleware
-func (sh *strictHandler) GetAttachmentContent(w http.ResponseWriter, r *http.Request, id ID) {
+func (sh *strictHandler) GetAttachmentContent(w http.ResponseWriter, r *http.Request, id ID, params GetAttachmentContentParams) {
 	var request GetAttachmentContentRequestObject
 
 	request.Id = id
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.GetAttachmentContent(ctx, request.(GetAttachmentContentRequestObject))

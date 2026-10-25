@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"mime"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -81,4 +82,9 @@ func (s *Service) AttachmentContent(ctx context.Context, userID int64, id uuid.U
 
 func (s *Service) DeleteAttachment(ctx context.Context, userID int64, id uuid.UUID) error {
 	return s.repo.InTx(ctx, func(r Repository) error { return r.DeleteAttachment(ctx, userID, id) })
+}
+
+// Inlineable reports whether a file of this media type may be shown in place: a PDF or an image.
+func Inlineable(mediaType string) bool {
+	return mediaType == "application/pdf" || strings.HasPrefix(mediaType, "image/")
 }

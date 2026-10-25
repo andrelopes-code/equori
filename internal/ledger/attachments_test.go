@@ -129,3 +129,41 @@ func TestAttachmentOfAnotherUserIs404(t *testing.T) {
 		h.ExpectProblem(r, http.StatusNotFound, "not_found", "")
 	}
 }
+
+func TestAttachmentContentInlineHeaders(t *testing.T) {
+	t.Parallel()
+	h, groceries, _ := newAttachmentSetup(t)
+	doc := mustAttach(t, h, groceries, "receipt.pdf", pdf(1024))
+	png := mustAttach(t, h, groceries, "photo.png", append([]byte("\x89PNG\r\n\x1a\n"), bytes.Repeat([]byte{0}, 64)...))
+	note := mustAttach(t, h, groceries, "note.txt", []byte("paid in cash"))
+	content := func(id, query string) apitest.Response {
+		return h.Do(http.MethodGet, "/api/v1/attachments/"+id+"/content"+query, nil)
+	}
+
+	const attachmentCSP = "default-src 'none'; frame-ancestors 'none'"
+	const inlineCSP = "default-src 'none'; frame-ancestors 'self'"
+	for _, c := range []struct {
+		name, id, query, disposition, csp string
+	}{
+		{"default", doc.ID, "", "attachment;", attachmentCSP},
+		{"explicit attachment", doc.ID, "?disposition=attachment", "attachment;", attachmentCSP},
+		{"inline pdf", doc.ID, "?disposition=inline", "inline;", inlineCSP},
+		{"inline image", png.ID, "?disposition=inline", "inline;", inlineCSP},
+		{"text downloads by default", note.ID, "", "attachment;", attachmentCSP},
+	} {
+		resp := content(c.id, c.query)
+		if resp.Status != http.StatusOK || !strings.HasPrefix(resp.Header.Get("Content-Disposition"), c.disposition) ||
+			resp.Header.Get("Content-Security-Policy") != c.csp {
+			t.Errorf("%s: status %d, disposition %q, csp %q", c.name, resp.Status,
+				resp.Header.Get("Content-Disposition"), resp.Header.Get("Content-Security-Policy"))
+		}
+	}
+
+	h.ExpectProblem(content(note.ID, "?disposition=inline"), http.StatusUnprocessableEntity, "attachment_not_inlineable", "")
+	h.ExpectProblem(content(doc.ID, "?disposition=bogus"), http.StatusBadRequest, "invalid_request", "disposition")
+
+	other := h.Do(http.MethodGet, "/api/v1/accounts", nil)
+	if got := other.Header.Get("Content-Security-Policy"); got != attachmentCSP {
+		t.Fatalf("csp of another operation = %q, want %q", got, attachmentCSP)
+	}
+}

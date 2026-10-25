@@ -80,10 +80,18 @@ func (s *Server) GetAttachmentContent(ctx context.Context, req GetAttachmentCont
 	if err != nil {
 		return nil, err
 	}
-	disposition := mime.FormatMediaType("attachment", map[string]string{"filename": c.FileName})
+	kind, csp := "attachment", "default-src 'none'; frame-ancestors 'none'"
+	if req.Params.Disposition != nil && *req.Params.Disposition == GetAttachmentContentParamsDispositionInline {
+		if !app.Inlineable(c.MediaType) {
+			return nil, app.ErrNotInlineable
+		}
+		// A frame of the application shows the file, so only this response admits one (ADR 007, C9a).
+		kind, csp = "inline", "default-src 'none'; frame-ancestors 'self'"
+	}
+	disposition := mime.FormatMediaType(kind, map[string]string{"filename": c.FileName})
 	return GetAttachmentContent200AsteriskResponse{
 		Body: bytes.NewReader(c.Content), ContentType: c.MediaType, ContentLength: int64(len(c.Content)),
-		Headers: GetAttachmentContent200ResponseHeaders{ContentDisposition: &disposition},
+		Headers: GetAttachmentContent200ResponseHeaders{ContentDisposition: &disposition, ContentSecurityPolicy: &csp},
 	}, nil
 }
 

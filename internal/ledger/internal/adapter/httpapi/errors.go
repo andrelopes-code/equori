@@ -77,6 +77,8 @@ func ToProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusConflict, "dispute_open", err.Error()), true
 	case errors.Is(err, app.ErrDisputeResolved):
 		return problem.New(http.StatusConflict, "dispute_resolved", err.Error()), true
+	case errors.Is(err, app.ErrNotInlineable):
+		return problem.New(http.StatusUnprocessableEntity, "attachment_not_inlineable", err.Error()), true
 	default:
 		return problem.Details{}, false
 	}

@@ -2950,9 +2950,21 @@ paths:
     get:
       tags: [ledger]
       operationId: getAttachmentContent
-      summary: Download the attached file.
+      summary: Download the attached file, or show a PDF or an image in a frame of the application.
+      description: |
+        With disposition=inline the response is shown in place and its Content-Security-Policy
+        allows a frame of the application's own origin (ADR 007, C9a); 422
+        attachment_not_inlineable for any media type but a PDF or an image. The default is a
+        download and no frame may show it.
       parameters:
         - $ref: "#/components/parameters/ID"
+        - name: disposition
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [attachment, inline]
+            default: attachment
       responses:
         "200":
           description: The file, with its stored media type.
@@ -2960,14 +2972,21 @@ paths:
             Content-Disposition:
               schema:
                 type: string
+            Content-Security-Policy:
+              schema:
+                type: string
           content:
             "*/*":
               schema:
                 type: string
                 format: binary
+        "400":
+          $ref: "#/components/responses/Problem"
         "401":
           $ref: "#/components/responses/Problem"
         "404":
+          $ref: "#/components/responses/Problem"
+        "422":
           $ref: "#/components/responses/Problem"
   /rules:
     get:
@@ -8643,7 +8662,7 @@ components:
             integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
             currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
             budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
-            investment_transaction, system_account.
+            investment_transaction, system_account, attachment_not_inlineable.
         request_id:
           type: string
         retry_at:
