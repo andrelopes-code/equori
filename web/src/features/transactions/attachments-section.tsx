@@ -33,6 +33,7 @@ import {
   formatFileSize,
   formatUploaded,
 } from "@/features/transactions/attachment-meta";
+import styles from "@/features/transactions/attachments-section.module.css";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 // The media types the server detects and keeps (N26).
@@ -71,6 +72,7 @@ export function AttachmentsSection({
           aria-label={t("attachments.label")}
           size="sm"
           layout="grid"
+          className={styles.group}
           orientation="vertical"
         >
           {items.map((item) => (
@@ -123,7 +125,7 @@ export function AttachmentsSection({
                     download={item.file_name}
                   />
                 )}
-                <AttachmentDetail>
+                <AttachmentDetail className={styles.detail}>
                   {t("attachment.detail", {
                     size: formatFileSize(item.size, tag),
                     uploaded: formatUploaded(item.created_at, tag),

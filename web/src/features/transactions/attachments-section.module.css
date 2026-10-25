@@ -1,0 +1,15 @@
+@layer app {
+  /* Two thumbnails per row at 390 px: the library's card size would fit three. */
+  @media (max-width: 599px) {
+    .group {
+      --slotted-attachment-card-size: 10.5rem;
+    }
+  }
+
+  /* The size and the upload time wrap onto a second line instead of cutting the date. */
+  .detail {
+    white-space: normal;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+  }
+}
