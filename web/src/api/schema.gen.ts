@@ -4222,6 +4222,16 @@ export interface components {
             tax_class: string | null;
         };
         RealizedResultList: {
+            /**
+             * Format: date
+             * @description First day of the tax year.
+             */
+            from: string;
+            /**
+             * Format: date
+             * @description Last day of the tax year, included.
+             */
+            to: string;
             items: components["schemas"]["RealizedResult"][];
         };
         IncomeEvent: {
@@ -4238,6 +4248,16 @@ export interface components {
             withheld: components["schemas"]["Money"];
         };
         IncomeEventList: {
+            /**
+             * Format: date
+             * @description First day of the tax year.
+             */
+            from: string;
+            /**
+             * Format: date
+             * @description Last day of the tax year, included.
+             */
+            to: string;
             items: components["schemas"]["IncomeEvent"][];
         };
         ForeignPurchaseInput: {
@@ -4774,6 +4794,7 @@ export interface components {
         };
     };
     parameters: {
+        /** @description Year in which the tax year of the owner's jurisdiction starts. */
         Year: number;
         ID: string;
         Limit: number;
@@ -5676,6 +5697,7 @@ export interface operations {
     listRealizedResults: {
         parameters: {
             query: {
+                /** @description Year in which the tax year of the owner's jurisdiction starts. */
                 year: components["parameters"]["Year"];
             };
             header?: never;
@@ -5700,6 +5722,7 @@ export interface operations {
     listIncomeEvents: {
         parameters: {
             query: {
+                /** @description Year in which the tax year of the owner's jurisdiction starts. */
                 year: components["parameters"]["Year"];
             };
             header?: never;

@@ -65,7 +65,12 @@ func (s *Server) ListPositions(ctx context.Context, req ListPositionsRequestObje
 }
 
 func (s *Server) ListRealizedResults(ctx context.Context, req ListRealizedResultsRequestObject) (ListRealizedResultsResponseObject, error) {
-	rs, err := s.svc.RealizedResults(ctx, auth.MustUserID(ctx), req.Params.Year)
+	userID := auth.MustUserID(ctx)
+	from, to, err := s.svc.TaxYear(ctx, userID, req.Params.Year)
+	if err != nil {
+		return nil, err
+	}
+	rs, err := s.svc.RealizedResults(ctx, userID, req.Params.Year)
 	if err != nil {
 		return nil, err
 	}
@@ -77,11 +82,16 @@ func (s *Server) ListRealizedResults(ctx context.Context, req ListRealizedResult
 			Proceeds: toMoney(r.Proceeds), Result: toMoney(r.ResultAmount), TaxClass: optional(r.TaxClass),
 		}
 	}
-	return ListRealizedResults200JSONResponse{Items: items}, nil
+	return ListRealizedResults200JSONResponse{From: date(from), To: date(to.AddDate(0, 0, -1)), Items: items}, nil
 }
 
 func (s *Server) ListIncomeEvents(ctx context.Context, req ListIncomeEventsRequestObject) (ListIncomeEventsResponseObject, error) {
-	es, err := s.svc.IncomeEvents(ctx, auth.MustUserID(ctx), req.Params.Year)
+	userID := auth.MustUserID(ctx)
+	from, to, err := s.svc.TaxYear(ctx, userID, req.Params.Year)
+	if err != nil {
+		return nil, err
+	}
+	es, err := s.svc.IncomeEvents(ctx, userID, req.Params.Year)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +103,7 @@ func (s *Server) ListIncomeEvents(ctx context.Context, req ListIncomeEventsReque
 			Gross: toMoney(e.GrossAmount), Withheld: toMoney(e.WithheldAmount),
 		}
 	}
-	return ListIncomeEvents200JSONResponse{Items: items}, nil
+	return ListIncomeEvents200JSONResponse{From: date(from), To: date(to.AddDate(0, 0, -1)), Items: items}, nil
 }
 
 func (s *Server) ListInvestmentIncomeTypes(ctx context.Context, _ ListInvestmentIncomeTypesRequestObject) (ListInvestmentIncomeTypesResponseObject, error) {

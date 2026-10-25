@@ -4579,6 +4579,7 @@ components:
       name: year
       in: query
       required: true
+      description: Year in which the tax year of the owner's jurisdiction starts.
       schema:
         type: integer
         minimum: 1900
@@ -7553,8 +7554,16 @@ components:
           pattern: "^[a-z0-9_]{2,40}$"
     RealizedResultList:
       type: object
-      required: [items]
+      required: [from, to, items]
       properties:
+        from:
+          type: string
+          format: date
+          description: First day of the tax year.
+        to:
+          type: string
+          format: date
+          description: Last day of the tax year, included.
         items:
           type: array
           items:
@@ -7586,8 +7595,16 @@ components:
           $ref: "#/components/schemas/Money"
     IncomeEventList:
       type: object
-      required: [items]
+      required: [from, to, items]
       properties:
+        from:
+          type: string
+          format: date
+          description: First day of the tax year.
+        to:
+          type: string
+          format: date
+          description: Last day of the tax year, included.
         items:
           type: array
           items:

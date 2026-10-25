@@ -1,7 +1,12 @@
 // Package br is the Brazilian tax jurisdiction of the Portfolio module.
 package br
 
-import "slices"
+import (
+	"slices"
+	"time"
+
+	"github.com/andrelopes-code/equori/internal/portfolio/internal/domain"
+)
 
 const bvmf = "BVMF"
 
@@ -10,6 +15,9 @@ type Jurisdiction struct{}
 func New() Jurisdiction { return Jurisdiction{} }
 
 func (Jurisdiction) ID() string { return "br" }
+
+// TaxYear is the calendar year.
+func (Jurisdiction) TaxYear(year int) (time.Time, time.Time) { return domain.CalendarYear(year) }
 
 func (Jurisdiction) IncomeTypes() []string { return []string{"jcp"} }
 

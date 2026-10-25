@@ -3,6 +3,7 @@ package br
 import (
 	"slices"
 	"testing"
+	"time"
 )
 
 func TestBR(t *testing.T) {
@@ -52,5 +53,16 @@ func TestBR(t *testing.T) {
 	}
 	if got := j.Subtypes("stock"); len(got) != 0 {
 		t.Errorf("Subtypes(stock) = %v, want none", got)
+	}
+}
+
+func TestTaxYear(t *testing.T) {
+	t.Parallel()
+	from, to := New().TaxYear(2026)
+	if want := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC); !from.Equal(want) {
+		t.Errorf("from = %v, want %v", from, want)
+	}
+	if want := time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC); !to.Equal(want) {
+		t.Errorf("to = %v, want %v", to, want)
 	}
 }

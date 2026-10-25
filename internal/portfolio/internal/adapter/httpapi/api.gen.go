@@ -108,7 +108,12 @@ type IncomeEvent struct {
 
 // IncomeEventList defines model for IncomeEventList.
 type IncomeEventList struct {
-	Items []IncomeEvent `json:"items"`
+	// From First day of the tax year.
+	From  openapi_types.Date `json:"from"`
+	Items []IncomeEvent      `json:"items"`
+
+	// To Last day of the tax year, included.
+	To openapi_types.Date `json:"to"`
 }
 
 // IncomeType defines model for IncomeType.
@@ -218,7 +223,12 @@ type RealizedResult struct {
 
 // RealizedResultList defines model for RealizedResultList.
 type RealizedResultList struct {
-	Items []RealizedResult `json:"items"`
+	// From First day of the tax year.
+	From  openapi_types.Date `json:"from"`
+	Items []RealizedResult   `json:"items"`
+
+	// To Last day of the tax year, included.
+	To openapi_types.Date `json:"to"`
 }
 
 // ReturnFlow defines model for ReturnFlow.
@@ -245,6 +255,7 @@ type Year = int
 
 // ListIncomeEventsParams defines parameters for ListIncomeEvents.
 type ListIncomeEventsParams struct {
+	// Year Year in which the tax year of the owner's jurisdiction starts.
 	Year Year `form:"year" json:"year"`
 }
 
@@ -263,6 +274,7 @@ type ListPositionsParams struct {
 
 // ListRealizedResultsParams defines parameters for ListRealizedResults.
 type ListRealizedResultsParams struct {
+	// Year Year in which the tax year of the owner's jurisdiction starts.
 	Year Year `form:"year" json:"year"`
 }
 

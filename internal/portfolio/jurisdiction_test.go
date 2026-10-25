@@ -118,3 +118,24 @@ func TestRebuildAllRestoresUserWithoutDerivedRows(t *testing.T) {
 		t.Fatalf("events = %+v", es)
 	}
 }
+
+func TestTaxYearRangeInResponses(t *testing.T) {
+	t.Parallel()
+	for _, region := range []string{"BR", "DE"} {
+		t.Run(region, func(t *testing.T) {
+			t.Parallel()
+			f := newFixture(t)
+			f.moveToRegion(t, region)
+			for _, path := range []string{"/api/v1/realized-results?year=2026", "/api/v1/income-events?year=2026"} {
+				var out struct {
+					From string `json:"from"`
+					To   string `json:"to"`
+				}
+				f.h.MustDo(http.MethodGet, path, nil, http.StatusOK, &out)
+				if out.From != "2026-01-01" || out.To != "2026-12-31" {
+					t.Errorf("%s range = %s to %s, want 2026-01-01 to 2026-12-31", path, out.From, out.To)
+				}
+			}
+		})
+	}
+}

@@ -1,5 +1,7 @@
 package domain
 
+import "time"
+
 // UniversalIncomeTypes are the income types every jurisdiction accepts.
 var UniversalIncomeTypes = []string{"coupon", "distribution", "dividend", "interest"}
 
@@ -15,4 +17,12 @@ type Jurisdiction interface {
 	Treatment(incomeType, taxClass string) string
 	// Subtypes lists the subtypes the jurisdiction knows for an instrument type, sorted.
 	Subtypes(instrumentType string) []string
+	// TaxYear is the tax year that starts in year: from inclusive, to exclusive, in UTC.
+	TaxYear(year int) (from, to time.Time)
+}
+
+// CalendarYear is the tax year of an owner without a jurisdiction.
+func CalendarYear(year int) (from, to time.Time) {
+	from = time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
+	return from, from.AddDate(1, 0, 0)
 }

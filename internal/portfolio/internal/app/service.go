@@ -240,9 +240,27 @@ type Result struct {
 	CostAmount, Proceeds, ResultAmount money.Money
 }
 
-// RealizedResults returns the sales of year in date order.
+// TaxYear returns the tax year that starts in year under the user's jurisdiction: from inclusive,
+// to exclusive.
+func (s *Service) TaxYear(ctx context.Context, userID int64, year int) (time.Time, time.Time, error) {
+	j, err := s.juris.For(ctx, userID)
+	if err != nil {
+		return time.Time{}, time.Time{}, err
+	}
+	if j == nil {
+		from, to := domain.CalendarYear(year)
+		return from, to, nil
+	}
+	from, to := j.TaxYear(year)
+	return from, to, nil
+}
+
+// RealizedResults returns the sales of the tax year that starts in year, in date order.
 func (s *Service) RealizedResults(ctx context.Context, userID int64, year int) ([]Result, error) {
-	from, to := yearRange(year)
+	from, to, err := s.TaxYear(ctx, userID, year)
+	if err != nil {
+		return nil, err
+	}
 	rows, err := s.repo.RealizedResults(ctx, userID, from, to)
 	if err != nil {
 		return nil, err
@@ -271,9 +289,12 @@ type IncomeEvent struct {
 	GrossAmount, WithheldAmount money.Money
 }
 
-// IncomeEvents returns the income of year in date order.
+// IncomeEvents returns the income of the tax year that starts in year, in date order.
 func (s *Service) IncomeEvents(ctx context.Context, userID int64, year int) ([]IncomeEvent, error) {
-	from, to := yearRange(year)
+	from, to, err := s.TaxYear(ctx, userID, year)
+	if err != nil {
+		return nil, err
+	}
 	rows, err := s.repo.IncomeEvents(ctx, userID, from, to)
 	if err != nil {
 		return nil, err
@@ -298,9 +319,4 @@ func (s *Service) amount(ctx context.Context, units int64, code money.Currency) 
 		return money.Money{}, err
 	}
 	return money.NewOf(units, code, scale)
-}
-
-func yearRange(year int) (time.Time, time.Time) {
-	from := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
-	return from, from.AddDate(1, 0, 0)
 }

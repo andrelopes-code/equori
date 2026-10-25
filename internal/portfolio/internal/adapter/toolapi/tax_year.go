@@ -12,7 +12,7 @@ type getTaxYearView string
 func (getTaxYearView) Values() []string { return []string{"sales", "income", "both"} }
 
 type getTaxYearIn struct {
-	Year int            `json:"year" jsonschema:"calendar year"`
+	Year int            `json:"year" jsonschema:"year in which the owner's tax year starts"`
 	View getTaxYearView `json:"view,omitzero" jsonschema:"sales gives realized results, income gives income events; both when absent"`
 }
 
@@ -38,6 +38,8 @@ type incomeView struct {
 }
 
 type getTaxYearOut struct {
+	From   tool.Date    `json:"from"`
+	To     tool.Date    `json:"to"`
 	Sales  []saleView   `json:"sales,omitzero"`
 	Income []incomeView `json:"income,omitzero"`
 }
@@ -55,7 +57,11 @@ func getTaxYear(svc *app.Service, names AccountNames) tool.Tool {
 		if err != nil {
 			return getTaxYearOut{}, err
 		}
-		var out getTaxYearOut
+		from, to, err := svc.TaxYear(ctx, userID, in.Year)
+		if err != nil {
+			return getTaxYearOut{}, err
+		}
+		out := getTaxYearOut{From: tool.DateOf(from), To: tool.DateOf(to.AddDate(0, 0, -1))}
 		if in.View != "income" {
 			rs, err := svc.RealizedResults(ctx, userID, in.Year)
 			if err != nil {
