@@ -1,9 +1,11 @@
 @layer app {
   /* The result stays above the footer while the fields scroll, so a phone shows the effect of
-     each keystroke. */
+     each keystroke; the page writes the footer's height on the scroller. */
   .result {
     position: sticky;
-    inset-block-end: 0;
+    inset-block-end: var(--slotted-page-sticky-bottom, 0px);
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
     z-index: 1;
     padding-block: var(--slotted-space-4);
     background: var(--slotted-surface);

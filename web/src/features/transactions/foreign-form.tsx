@@ -13,11 +13,11 @@ import { TextField } from "@slotted/react/text-field";
 
 import { CategoryPicker } from "@/features/categories";
 import { sourceLabel, formatRate } from "@/features/instruments";
+import { EntryResult } from "@/features/transactions/entry-result";
 import { AccountField } from "@/features/transactions/account-field";
 import type { EntryKind } from "@/features/transactions/entry-kind";
 import { EntryKindPicker } from "@/features/transactions/entry-kind-picker";
 import type { ForeignDraft } from "@/features/transactions/foreign-draft";
-import styles from "@/features/transactions/foreign-form.module.css";
 import { PayeeField } from "@/features/transactions/payee-field";
 import formStyles from "@/features/transactions/transaction-form.module.css";
 import type { useForeignEntry } from "@/features/transactions/use-foreign-entry";
@@ -26,8 +26,6 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { DateShortcuts } from "@/ui/date-shortcuts";
-import { FigureCard } from "@/ui/figure-card";
-import { FigureGrid } from "@/ui/figure-grid";
 import { MoneyInput } from "@/ui/money-input";
 import type { components } from "@/api/schema.gen";
 
@@ -314,25 +312,17 @@ export function ForeignForm({
         )}
       </Field>
 
-      <div className={styles.result}>
-        <FigureGrid label={t("foreignPurchase.result")}>
-          <FigureCard
-            label={t("foreignPurchase.converted")}
-            value={money(view.converted)}
-            note={null}
-          />
-          <FigureCard
-            label={t("foreignPurchase.charge")}
-            value={money(view.charge)}
-            note={null}
-          />
-          <FigureCard
-            label={t("foreignPurchase.total")}
-            value={money(view.total)}
-            note={null}
-          />
-        </FigureGrid>
-      </div>
+      <EntryResult
+        label={t("foreignPurchase.result")}
+        figures={[
+          {
+            label: t("foreignPurchase.converted"),
+            value: money(view.converted),
+          },
+          { label: t("foreignPurchase.charge"), value: money(view.charge) },
+          { label: t("foreignPurchase.total"), value: money(view.total) },
+        ]}
+      />
     </Stack>
   );
 }

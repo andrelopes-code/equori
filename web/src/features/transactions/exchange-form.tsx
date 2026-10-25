@@ -6,19 +6,17 @@ import { TextField } from "@slotted/react/text-field";
 
 import { CategoryPicker } from "@/features/categories";
 import { formatRate } from "@/features/instruments";
+import { EntryResult } from "@/features/transactions/entry-result";
 import { AccountField } from "@/features/transactions/account-field";
 import type { EntryKind } from "@/features/transactions/entry-kind";
 import { EntryKindPicker } from "@/features/transactions/entry-kind-picker";
 import type { ExchangeDraft } from "@/features/transactions/exchange-draft";
-import styles from "@/features/transactions/foreign-form.module.css";
 import formStyles from "@/features/transactions/transaction-form.module.css";
 import type { useExchangeEntry } from "@/features/transactions/use-exchange-entry";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { DateShortcuts } from "@/ui/date-shortcuts";
-import { FigureCard } from "@/ui/figure-card";
-import { FigureGrid } from "@/ui/figure-grid";
 import { MoneyInput } from "@/ui/money-input";
 
 // Families read: field, text-field, date-picker, stat-card. The accounts and the amounts are the
@@ -215,11 +213,12 @@ export function ExchangeForm({
         )}
       </Field>
 
-      <div className={styles.result}>
-        <FigureGrid label={t("exchange.result")}>
-          <FigureCard
-            label={t("exchange.rate")}
-            value={
+      <EntryResult
+        label={t("exchange.result")}
+        figures={[
+          {
+            label: t("exchange.rate"),
+            value:
               view.rate === null ||
               foreignCode === undefined ||
               base === undefined
@@ -228,13 +227,11 @@ export function ExchangeForm({
                     from: foreignCode,
                     rate: formatRate(view.rate, locale),
                     to: base,
-                  })
-            }
-            note={null}
-          />
-          <FigureCard
-            label={t("exchange.rateInverse")}
-            value={
+                  }),
+          },
+          {
+            label: t("exchange.rateInverse"),
+            value:
               view.inverse === null ||
               foreignCode === undefined ||
               base === undefined
@@ -243,38 +240,32 @@ export function ExchangeForm({
                     from: base,
                     rate: formatRate(view.inverse, locale),
                     to: foreignCode,
-                  })
-            }
-            note={null}
-          />
-          <FigureCard
-            label={t("exchange.totalDebited")}
-            value={
+                  }),
+          },
+          {
+            label: t("exchange.totalDebited"),
+            value:
               view.totalDebited === null || from === undefined
                 ? undefined
                 : fmt.money(
                     { amount: view.totalDebited, currency: from.currency },
                     view.fromScale,
-                  )
-            }
-            note={null}
-          />
-          <FigureCard
-            label={t("exchange.comparison")}
-            value={
-              view.difference === null ? undefined : percent(view.difference)
-            }
-            note={
+                  ),
+          },
+          {
+            label: t("exchange.comparison"),
+            value:
+              view.difference === null ? undefined : percent(view.difference),
+            note:
               view.stored === undefined
                 ? null
                 : t("exchange.comparisonNote", {
                     rate: formatRate(view.stored.value, locale),
                     date: formatDate(view.stored.date, locale),
-                  })
-            }
-          />
-        </FigureGrid>
-      </div>
+                  }),
+          },
+        ]}
+      />
     </Stack>
   );
 }

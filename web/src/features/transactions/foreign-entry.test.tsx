@@ -160,6 +160,23 @@ describe("foreign purchase entry", () => {
     expect(within(result).getByText(/567\.49/)).toBeInTheDocument();
   });
 
+  it("writes the result as lines on a phone, with every figure visible", async () => {
+    await renderApp(path, { fetch: api([]), width: 390 });
+    await fillS16();
+    const result = await screen.findByRole("region", {
+      name: catalogEn["foreignPurchase.result"],
+    });
+    expect(
+      within(result).getByText(/Converted amount: R\$548\.30/),
+    ).toBeInTheDocument();
+    expect(
+      within(result).getByText(/Foreign transaction charge: R\$19\.19/),
+    ).toBeInTheDocument();
+    expect(
+      within(result).getByText(/Total charged: R\$567\.49/),
+    ).toBeInTheDocument();
+  });
+
   it("previews the statement the purchase is billed on", async () => {
     await renderApp(path, { fetch: api([]) });
     expect(await screen.findByText(/November 2026/)).toBeInTheDocument();
