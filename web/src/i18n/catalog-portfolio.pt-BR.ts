@@ -4,6 +4,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "palette.taxYear": "Resultados e rendimentos de um ano",
   "taxYear.title": "Investimentos em {year}",
   "taxYear.range": "De {from} a {to}.",
+  "taxYear.range.pending": "—",
   "taxYear.year": "Ano",
   "taxYear.tabs": "Seções do ano",
   "taxYear.tab.realized": "Resultados realizados",

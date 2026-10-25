@@ -3,6 +3,7 @@ export const portfolioEn = {
   "palette.taxYear": "Investment results and income of a year",
   "taxYear.title": "Investments in {year}",
   "taxYear.range": "From {from} to {to}.",
+  "taxYear.range.pending": "—",
   "taxYear.year": "Year",
   "taxYear.tabs": "Sections of the year",
   "taxYear.tab.realized": "Realized results",

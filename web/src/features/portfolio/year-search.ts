@@ -2,7 +2,7 @@ export type YearTab = "realized" | "income";
 
 // Every key is absent while it holds its default.
 export interface YearSearch {
-  // The calendar year; the year of the app clock when absent.
+  // The year in which the tax year starts; the year of the app clock when absent.
   year?: number | undefined;
   // The panel; the realized results when absent.
   tab?: Exclude<YearTab, "realized"> | undefined;

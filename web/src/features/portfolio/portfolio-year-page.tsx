@@ -13,8 +13,15 @@ import {
 } from "@slotted/react/page-header";
 import { Stack } from "@slotted/react/stack";
 import { Tab, TabList, Tabs } from "@slotted/react/tabs";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 
+import { useApi } from "@/api/api-context";
+
+import {
+  incomeEventsQuery,
+  realizedResultsQuery,
+} from "@/features/portfolio/api";
 import { IncomeEventsTab } from "@/features/portfolio/income-events-tab";
 import { RealizedResultsTab } from "@/features/portfolio/realized-results-tab";
 import { maxYear, minYear } from "@/features/portfolio/year-search";
@@ -26,7 +33,7 @@ import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 // CP-04: a year is stepped one at a time and typed when far away, so the control is a number
 // field with steppers, limited to the range the contract accepts before any request. The year is
-// the calendar year: the contract has no fiscal year of a jurisdiction.
+// the one in which the tax year starts; the range of the tax year is the one the response carries.
 export function PortfolioYearPage() {
   const t = useT();
   const [tag] = useAppLocale();
@@ -36,6 +43,17 @@ export function PortfolioYearPage() {
   const compact = useMediaQuery(compactQuery);
   const year = search.year ?? Number(today.slice(0, 4));
   const tab: YearTab = search.tab ?? "realized";
+  const api = useApi();
+  // Each tab reads the same query: the cache holds one request.
+  const realized = useQuery({
+    ...realizedResultsQuery(api, year),
+    enabled: tab === "realized",
+  });
+  const income = useQuery({
+    ...incomeEventsQuery(api, year),
+    enabled: tab === "income",
+  });
+  const period = tab === "realized" ? realized.data : income.data;
   const change = (patch: YearSearch) => {
     void navigate({
       to: "/portfolio/year",
@@ -79,10 +97,12 @@ export function PortfolioYearPage() {
                 {t("taxYear.title", { year })}
               </PageHeaderHeading>
               <PageHeaderSubheading>
-                {t("taxYear.range", {
-                  from: formatDate(`${String(year)}-01-01`, tag),
-                  to: formatDate(`${String(year)}-12-31`, tag),
-                })}
+                {period === undefined
+                  ? t("taxYear.range.pending")
+                  : t("taxYear.range", {
+                      from: formatDate(period.from, tag),
+                      to: formatDate(period.to, tag),
+                    })}
               </PageHeaderSubheading>
             </PageHeaderTitle>
             <PageHeaderActions>{!compact && yearField}</PageHeaderActions>

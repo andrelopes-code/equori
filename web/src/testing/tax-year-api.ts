@@ -89,21 +89,35 @@ export const incomeEvents = [
 
 type Route = Parameters<typeof fakeApi>[0][string];
 
-// Records the `year` of each request in `years`.
+export interface TaxYearRange {
+  from: string;
+  to: string;
+}
+
+// The range the server answers for a year; the calendar year, as the neutral jurisdiction does.
+const calendarRange = (year: string): TaxYearRange => ({
+  from: `${year}-01-01`,
+  to: `${year}-12-31`,
+});
+
+// Records the `year` of each request in `years`; `range` is the tax year the server answers.
 export function taxYearApi(
   years: string[],
   routes: Record<string, Route> = {},
   results: unknown[] = realizedResults,
   income: unknown[] = incomeEvents,
+  range: (year: string) => TaxYearRange = calendarRange,
 ) {
   return portfolioApi({
     "GET /api/v1/income-events": (req) => {
-      years.push(`income ${new URL(req.url).searchParams.get("year") ?? ""}`);
-      return json(200, { items: income });
+      const year = new URL(req.url).searchParams.get("year") ?? "";
+      years.push(`income ${year}`);
+      return json(200, { ...range(year), items: income });
     },
     "GET /api/v1/realized-results": (req) => {
-      years.push(new URL(req.url).searchParams.get("year") ?? "");
-      return json(200, { items: results });
+      const year = new URL(req.url).searchParams.get("year") ?? "";
+      years.push(year);
+      return json(200, { ...range(year), items: results });
     },
     ...routes,
   });

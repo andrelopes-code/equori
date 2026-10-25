@@ -268,7 +268,7 @@ Functions:
 
 ## 11. Tax year report of investments
 
-Status: Delivered. Operations: `listRealizedResults`, `listIncomeEvents` (`features/portfolio/`: `/portfolio/year`, opened from `/portfolio`; the panel and the year are in the address). The report reads the calendar year, 1 January to 31 December, because the contract takes `year` and declares no fiscal year of a jurisdiction. The contract has no net amount of an income event: the screen shows the gross less the withheld. Totals add only amounts of one currency, so a year with two currencies has one total per currency.
+Status: Delivered. Operations: `listRealizedResults`, `listIncomeEvents` (`features/portfolio/`: `/portfolio/year`, opened from `/portfolio`; the panel and the year are in the address). The tax year comes from the owner's jurisdiction; without one it is the calendar year. The contract takes the year in which the tax year starts and returns `from` and `to`; the page shows that range and never computes it. The contract has no net amount of an income event: the screen shows the gross less the withheld. Totals add only amounts of one currency, so a year with two currencies has one total per currency.
 
 Operations: `listRealizedResults`, `listIncomeEvents`.
 

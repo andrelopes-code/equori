@@ -45,7 +45,7 @@ const net = (e: Event): Money => ({
   currency: e.gross.currency,
 });
 
-// The investment income of a calendar year. The treatment codes come from the user's
+// The investment income of a tax year. The treatment codes come from the user's
 // jurisdiction: a treatment without a catalog key reads as its code, and no treatment reads as
 // unclassified. The contract has no net amount, so it is the gross less the withheld.
 export function IncomeEventsTab({ year }: { year: number }) {

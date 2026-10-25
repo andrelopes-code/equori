@@ -6,7 +6,8 @@ import { catalogEn } from "@/i18n/catalog.en";
 import { json, problem } from "@/testing/fake-api";
 import { hideAmounts, expectNoAmounts } from "@/testing/privacy";
 import { renderApp } from "@/testing/render-app";
-import { saleID, taxYearApi } from "@/testing/tax-year-api";
+import { brl } from "@/testing/investment-api";
+import { realizedResults, saleID, taxYearApi } from "@/testing/tax-year-api";
 
 const rowTexts = (table: HTMLElement) =>
   within(table)
@@ -38,6 +39,65 @@ describe("Tax year of investments", () => {
       screen.getByText("From 01/01/2026 to 12/31/2026."),
     ).toBeInTheDocument();
     expect(screen.queryByText(/fiscal/i)).not.toBeInTheDocument();
+  });
+
+  it("shows the range the api returns and a placeholder, never a computed range, until it arrives", async () => {
+    let answer: (() => void) | undefined;
+    const gate = new Promise<void>((resolve) => {
+      answer = resolve;
+    });
+    const api = taxYearApi([], {}, [], [], () => ({
+      from: "2026-04-06",
+      to: "2027-04-05",
+    }));
+    const delayed = (input: RequestInfo | URL, init?: RequestInit) =>
+      new Request(input, init).url.includes("/realized-results")
+        ? gate.then(() => api(input, init))
+        : api(input, init);
+    await renderApp("/portfolio/year", {
+      fetch: Object.assign(delayed, { calls: api.calls }),
+      today: "2026-10-24",
+    });
+    expect(
+      screen.getByText(catalogEn["taxYear.range.pending"]),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/From /)).not.toBeInTheDocument();
+    answer?.();
+    expect(
+      await screen.findByText("From 04/06/2026 to 04/05/2027."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(catalogEn["taxYear.range.pending"]),
+    ).not.toBeInTheDocument();
+  });
+
+  it("totals the months of the range in order, from the items", async () => {
+    const sale = (month: string, date: string, amount: number) => ({
+      ...realizedResults[0],
+      month,
+      date,
+      result: brl(amount),
+    });
+    await renderApp("/portfolio/year", {
+      fetch: taxYearApi(
+        [],
+        {},
+        [
+          sale("2026-04", "2026-04-10", 100),
+          sale("2027-03", "2027-03-20", 200),
+        ],
+        [],
+        () => ({ from: "2026-04-06", to: "2027-04-05" }),
+      ),
+      today: "2026-10-24",
+    });
+    const byMonth = await screen.findByRole("table", {
+      name: catalogEn["taxYear.totals.month"],
+    });
+    expect(rowTexts(byMonth).slice(1)).toEqual([
+      "April|+R$1.00",
+      "March|+R$2.00",
+    ]);
   });
 
   it("lists a row per sale with cost, proceeds, result and class (S64)", async () => {
@@ -192,6 +252,26 @@ describe("Tax year of investments", () => {
     expect(rowTexts(table)[1]).toContain("+€1,123.45");
     expect(rowTexts(table)[1]).toContain(catalogEn["taxYear.unclassified"]);
     expect(container.textContent).not.toMatch(/R\$|BRL/);
+  });
+
+  it("formats the range of the response by the active language and region", async () => {
+    localStorage.setItem(
+      "equori.locale",
+      JSON.stringify({ language: "en", region: "DE" }),
+    );
+    await renderApp("/portfolio/year", {
+      fetch: taxYearApi(
+        [],
+        { "GET /api/v1/settings": () => json(200, { base_currency: "EUR" }) },
+        [],
+        [],
+        () => ({ from: "2026-04-06", to: "2027-04-05" }),
+      ),
+      today: "2026-10-24",
+    });
+    expect(
+      await screen.findByText("From 06/04/2026 to 05/04/2027."),
+    ).toBeInTheDocument();
   });
 
   it("masks every amount in privacy mode", async () => {

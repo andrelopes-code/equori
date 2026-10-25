@@ -40,7 +40,7 @@ type Result = components["schemas"]["RealizedResult"];
 
 const columns = 8;
 
-// The sales of a calendar year at average cost. The class codes come from the user's
+// The sales of a tax year at average cost. The class codes come from the user's
 // jurisdiction: a class without a catalog key reads as its code, and no class reads as unclassified.
 export function RealizedResultsTab({ year }: { year: number }) {
   const t = useT();
