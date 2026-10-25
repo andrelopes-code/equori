@@ -11,6 +11,7 @@ import type { components } from "@/api/schema.gen";
 import { accountsQuery } from "@/features/accounts";
 import { agenda, monthEnd, monthTotals } from "@/features/planning/agenda";
 import type { AgendaFilter } from "@/features/planning/agenda";
+import { AgendaList } from "@/features/planning/agenda-list";
 import { AgendaTable } from "@/features/planning/agenda-table";
 import styles from "@/features/planning/agenda.module.css";
 import { occurrencesQuery, schedulesQuery } from "@/features/planning/api";
@@ -23,7 +24,7 @@ import { useMoneyFormat } from "@/privacy/use-money-format";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
-import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
+import { compactQuery, useMediaQuery, wideQuery } from "@/ui/use-media-query";
 
 type OccurrenceState = components["schemas"]["OccurrenceState"];
 type ScheduleKind = components["schemas"]["ScheduleKind"];
@@ -53,6 +54,7 @@ export function AgendaTab({
   const fmt = useMoneyFormat();
   const scale = useScale();
   const wide = useMediaQuery(wideQuery);
+  const compact = useMediaQuery(compactQuery);
   const from = `${month}-01`;
   const occurrences = useQuery(occurrencesQuery(api, from, monthEnd(month)));
   // listOccurrences reads at most 366 days.
@@ -99,6 +101,30 @@ export function AgendaTab({
   const chosen = (value: string | string[] | null) =>
     typeof value === "string" && value !== any ? value : undefined;
   const anyChoice = { value: any, label: t("agenda.any") };
+  const figures = (
+    <FigureGrid label={t("agenda.figures")}>
+      <FigureCard
+        label={t("agenda.inflow")}
+        value={
+          totals === undefined || scale === null
+            ? undefined
+            : fmt.money(totals.inflow, scale(totals.inflow.currency))
+        }
+        note={t("agenda.inflowNote")}
+        loading={loading || totals === undefined}
+      />
+      <FigureCard
+        label={t("agenda.outflow")}
+        value={
+          totals === undefined || scale === null
+            ? undefined
+            : fmt.money(totals.outflow, scale(totals.outflow.currency))
+        }
+        note={t("agenda.outflowNote")}
+        loading={loading || totals === undefined}
+      />
+    </FigureGrid>
+  );
   return (
     <Stack gap={6}>
       <div
@@ -174,42 +200,30 @@ export function AgendaTab({
           }}
         />
       </div>
-      <FigureGrid label={t("agenda.figures")}>
-        <FigureCard
-          label={t("agenda.inflow")}
-          value={
-            totals === undefined || scale === null
-              ? undefined
-              : fmt.money(totals.inflow, scale(totals.inflow.currency))
-          }
-          note={t("agenda.inflowNote")}
-          loading={loading || totals === undefined}
-        />
-        <FigureCard
-          label={t("agenda.outflow")}
-          value={
-            totals === undefined || scale === null
-              ? undefined
-              : fmt.money(totals.outflow, scale(totals.outflow.currency))
-          }
-          note={t("agenda.outflowNote")}
-          loading={loading || totals === undefined}
-        />
-      </FigureGrid>
+      {!compact && figures}
       <div className={styles.layout}>
         <div
           className={styles.list}
           aria-busy={shownFilter !== filter || undefined}
         >
-          <AgendaTable
-            caption={t("agenda.caption")}
-            view={view}
-            accountNames={accountNames}
-            scale={scale ?? (() => 0)}
-            loading={loading}
-            refreshing={occurrences.isFetching && !occurrences.isPending}
-            handleRef={table}
-          />
+          {compact ? (
+            <AgendaList
+              view={view}
+              accountNames={accountNames}
+              scale={scale ?? (() => 0)}
+              loading={loading}
+            />
+          ) : (
+            <AgendaTable
+              caption={t("agenda.caption")}
+              view={view}
+              accountNames={accountNames}
+              scale={scale ?? (() => 0)}
+              loading={loading}
+              refreshing={occurrences.isFetching && !occurrences.isPending}
+              handleRef={table}
+            />
+          )}
         </div>
         {wide && (
           <Calendar
@@ -234,6 +248,7 @@ export function AgendaTab({
           />
         )}
       </div>
+      {compact && figures}
     </Stack>
   );
 }

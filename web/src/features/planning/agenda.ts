@@ -33,6 +33,17 @@ export interface Agenda {
   days: { date: string; rows: AgendaRow[] }[];
 }
 
+// The sum of a day's or a group's rows; undefined for none.
+export function netOf(rows: AgendaRow[]): Money | undefined {
+  const first = rows[0];
+  return first === undefined
+    ? undefined
+    : {
+        amount: rows.reduce((sum, r) => sum + r.money.amount, 0),
+        currency: first.money.currency,
+      };
+}
+
 export function signedAmount(
   occurrence: Occurrence,
   schedule: Schedule | undefined,

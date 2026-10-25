@@ -32,12 +32,14 @@ import {
   kindLabel,
   recurrenceWords,
 } from "@/features/planning/schedule-words";
+import { SchedulesList } from "@/features/planning/schedules-list";
 import { useScale } from "@/features/setup";
 import { formatDate, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { QueryError } from "@/ui/query-error";
+import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 type ScheduleKind = components["schemas"]["ScheduleKind"];
 
@@ -51,6 +53,7 @@ export function SchedulesTab({ onCreate }: { onCreate: () => void }) {
   const today = useToday();
   const fmt = useMoneyFormat();
   const scale = useScale();
+  const compact = useMediaQuery(compactQuery);
   const schedules = useQuery(schedulesQuery(api));
   const accounts = useQuery(accountsQuery(api));
   // listOccurrences reads at most 366 days.
@@ -83,6 +86,16 @@ export function SchedulesTab({ onCreate }: { onCreate: () => void }) {
           <Button onClick={onCreate}>{t("planning.new")}</Button>
         </ResultStateActions>
       </ResultState>
+    );
+  if (compact)
+    return (
+      <SchedulesList
+        items={items}
+        names={names}
+        next={next}
+        scale={scale}
+        loading={schedules.isPending}
+      />
     );
   return (
     <Table

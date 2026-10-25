@@ -1,4 +1,3 @@
-import { Stack } from "@slotted/react/stack";
 import {
   Table,
   TableBody,
@@ -16,10 +15,13 @@ import {
 import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { Fragment } from "react";
 
 import { useApi } from "@/api/api-context";
 import { accountsQuery } from "@/features/accounts";
+import styles from "@/features/planning/subscriptions-tab.module.css";
 import { schedulesQuery } from "@/features/planning/api";
+import { SubscriptionsList } from "@/features/planning/subscriptions-list";
 import { ScheduleActions } from "@/features/planning/schedule-actions";
 import {
   currentTerms,
@@ -31,6 +33,7 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { QueryError } from "@/ui/query-error";
+import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 // The subscriptions: what each costs a month and a year at the price in force, and how its price
 // moved from one terms version to the next.
@@ -41,6 +44,7 @@ export function SubscriptionsTab() {
   const today = useToday();
   const fmt = useMoneyFormat();
   const scale = useScale();
+  const compact = useMediaQuery(compactQuery);
   const schedules = useQuery(schedulesQuery(api));
   const accounts = useQuery(accountsQuery(api));
   const settings = useQuery(settingsQuery(api));
@@ -67,6 +71,23 @@ export function SubscriptionsTab() {
       <QueryError
         error={schedules.error}
         onRetry={() => void schedules.refetch()}
+      />
+    );
+  if (compact)
+    return (
+      <SubscriptionsList
+        rows={rows}
+        names={names}
+        scale={scale}
+        loading={schedules.isPending}
+        totals={
+          currency === undefined
+            ? undefined
+            : {
+                monthly: { amount: total("monthly"), currency },
+                yearly: { amount: total("yearly"), currency },
+              }
+        }
       />
     );
   return (
@@ -131,19 +152,18 @@ export function SubscriptionsTab() {
                     <TableCell numeric>{money(cost.monthly)}</TableCell>
                     <TableCell numeric>{money(cost.yearly)}</TableCell>
                     <TableCell>
-                      <Stack gap={0}>
+                      <div className={styles.history}>
                         {schedule.terms.map((v) => (
-                          <Text key={v.effective_from} size="sm">
-                            {t("subscriptions.priceFrom", {
-                              amount: fmt.money(
-                                v.amount,
-                                scale(v.amount.currency),
-                              ),
-                              date: formatDate(v.effective_from, locale),
-                            })}
-                          </Text>
+                          <Fragment key={v.effective_from}>
+                            <Text size="sm" tone="muted" numeric="tabular">
+                              {formatDate(v.effective_from, locale)}
+                            </Text>
+                            <Text size="sm" numeric="tabular">
+                              {fmt.money(v.amount, scale(v.amount.currency))}
+                            </Text>
+                          </Fragment>
                         ))}
-                      </Stack>
+                      </div>
                     </TableCell>
                     <TableCell>
                       {schedule.ends_on === undefined

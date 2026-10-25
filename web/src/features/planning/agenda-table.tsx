@@ -19,7 +19,7 @@ import { Text } from "@slotted/react/typography";
 import { Fragment } from "react";
 import type { RefObject } from "react";
 
-import type { components } from "@/api/schema.gen";
+import { netOf } from "@/features/planning/agenda";
 import type { Agenda, AgendaRow } from "@/features/planning/agenda";
 import { OccurrenceActions } from "@/features/planning/occurrence-actions";
 import { kindLabel, stateTone } from "@/features/planning/schedule-words";
@@ -27,8 +27,6 @@ import { formatDate, formatDayHeader } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-
-type Money = components["schemas"]["Money"];
 
 // The month's occurrences: the overdue group, then one group per day with its net at the end.
 export function AgendaTable({
@@ -52,17 +50,8 @@ export function AgendaTable({
   const [locale] = useAppLocale();
   const today = useToday();
   const fmt = useMoneyFormat();
-  const net = (rows: AgendaRow[]): Money | undefined => {
-    const first = rows[0];
-    return first === undefined
-      ? undefined
-      : {
-          amount: rows.reduce((sum, r) => sum + r.money.amount, 0),
-          currency: first.money.currency,
-        };
-  };
   const group = (label: string, rows: AgendaRow[]) => {
-    const total = net(rows);
+    const total = netOf(rows);
     return (
       <TableGroupRow
         end={

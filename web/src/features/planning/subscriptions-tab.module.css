@@ -1,0 +1,10 @@
+@layer app {
+  /* One price per line: the date and the amount stay in two aligned columns. */
+  .history {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: start;
+    gap: var(--slotted-space-1) var(--slotted-space-4);
+    margin: 0;
+  }
+}

@@ -86,7 +86,7 @@ export function BudgetCard({
     </Inline>
   );
   const actions = (
-    <Inline gap={1} wrap="nowrap">
+    <Inline gap={3} wrap="nowrap">
       {state !== "within" && (
         <Tag tone={tones[state]} size="sm">
           {t(state === "over" ? "budget.overspent" : "budget.near")}

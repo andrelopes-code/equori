@@ -40,7 +40,12 @@ export function DeleteBudgetDialog({
     if (!open) onCancel();
   });
   return (
-    <Dialog open={overlayOpen} size="sm" onOpenChange={change}>
+    <Dialog
+      open={overlayOpen}
+      size="sm"
+      fullScreen="never"
+      onOpenChange={change}
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("budget.deleteTitle", { name })}</DialogTitle>
