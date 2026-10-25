@@ -95,6 +95,29 @@ export function occurrencesQuery(
   });
 }
 
+// The occurrences a transaction realized, whatever their date.
+export function transactionOccurrencesQuery(
+  api: Client<paths>,
+  transactionID: string,
+) {
+  return queryOptions({
+    queryKey: [
+      "planning",
+      "occurrences",
+      "transaction",
+      transactionID,
+    ] as const,
+    queryFn: async () =>
+      (
+        await unwrap(
+          await api.GET("/occurrences", {
+            params: { query: { transaction_id: transactionID } },
+          }),
+        )
+      ).items,
+  });
+}
+
 // The transactions of one account in a few days around an occurrence: the ones that can realize it.
 export function accountTransactionsQuery(
   api: Client<paths>,

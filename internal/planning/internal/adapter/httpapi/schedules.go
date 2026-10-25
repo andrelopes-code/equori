@@ -133,7 +133,18 @@ func (s *Server) ListOccurrences(ctx context.Context, req ListOccurrencesRequest
 	if req.Params.State != nil {
 		state = domain.State(*req.Params.State)
 	}
-	os, err := s.svc.Occurrences(ctx, auth.MustUserID(ctx), req.Params.From.Time, req.Params.To.Time, optUUID(req.Params.ScheduleId), state)
+	var os []app.OccurrenceView
+	var err error
+	switch {
+	case req.Params.TransactionId != nil:
+		os, err = s.svc.OccurrencesOfTransaction(ctx, auth.MustUserID(ctx), *req.Params.TransactionId)
+	case req.Params.From == nil:
+		err = &paramError{field: "from", message: "value is required but missing"}
+	case req.Params.To == nil:
+		err = &paramError{field: "to", message: "value is required but missing"}
+	default:
+		os, err = s.svc.Occurrences(ctx, auth.MustUserID(ctx), req.Params.From.Time, req.Params.To.Time, optUUID(req.Params.ScheduleId), state)
+	}
 	if err != nil {
 		return nil, err
 	}

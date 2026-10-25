@@ -122,7 +122,7 @@ Functions:
 
 ## 5. Schedules and occurrences
 
-Status: Delivered. Operations: `listSchedules`, `createSchedule`, `getSchedule`, `listOccurrences`, `realizeOccurrence`, `unrealizeOccurrence`, `skipOccurrence`, `moveOccurrence`, `changeScheduleTerms`, `pauseSchedule`, `endSchedule`, `listCalendars` (`features/planning/`; occurrence actions also in `features/accounts/scheduled-tab.tsx`; occurrences realized by a transaction on its detail, read from the occurrences 31 days either side of its date).
+Status: Delivered. Operations: `listSchedules`, `createSchedule`, `getSchedule`, `listOccurrences`, `realizeOccurrence`, `unrealizeOccurrence`, `skipOccurrence`, `moveOccurrence`, `changeScheduleTerms`, `pauseSchedule`, `endSchedule`, `listCalendars` (`features/planning/`; occurrence actions also in `features/accounts/scheduled-tab.tsx`; occurrences realized by a transaction on its detail, read by `transaction_id`).
 
 Scenarios: S27, S28, S29, S62. Domain: phase P7.
 
@@ -155,7 +155,7 @@ Functions, subscriptions:
 - Schedules of kind `subscription` with monthly and yearly cost, price change history from the terms versions, pause and end actions.
 
 Integration with other screens:
-- Transaction detail: occurrences realized by the transaction, with unrealize. `listOccurrences` has no `transaction_id` filter; the lookup queries the schedule's occurrences around the transaction date.
+- Transaction detail: occurrences realized by the transaction, with unrealize.
 - `/transactions` upcoming rows and `/accounts/$id` scheduled tab gain the row actions of the agenda.
 
 Region: the calendar default comes from the user's region (ADR 016); weekday and month names come from the locale.

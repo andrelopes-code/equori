@@ -3990,21 +3990,30 @@ paths:
     get:
       tags: [planning]
       operationId: listOccurrences
-      summary: Occurrences with expected date in [from, to], at most 366 days, by date.
-      description: State overdue is derived from expected and the schedule's grace days (P7 amendment A50).
+      summary: Occurrences with expected date in [from, to], at most 366 days, by date, or those a transaction realized.
+      description: |
+        State overdue is derived from expected and the schedule's grace days (P7 amendment A50). With transaction_id the
+        answer is the occurrences that transaction realized, whatever their date, and from, to, schedule_id and state
+        are ignored; without it from and to are required.
       parameters:
         - name: from
           in: query
-          required: true
+          required: false
           schema:
             type: string
             format: date
         - name: to
           in: query
-          required: true
+          required: false
           schema:
             type: string
             format: date
+        - name: transaction_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
         - name: schedule_id
           in: query
           required: false

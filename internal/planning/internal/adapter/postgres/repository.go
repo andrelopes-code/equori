@@ -282,6 +282,18 @@ func (r *Repository) Occurrences(ctx context.Context, userID int64, from, to tim
 	return out, nil
 }
 
+func (r *Repository) OccurrencesOfTransaction(ctx context.Context, userID int64, txID uuid.UUID) ([]domain.Occurrence, error) {
+	rows, err := r.q.ListOccurrencesOfTransaction(ctx, ListOccurrencesOfTransactionParams{UserID: userID, TransactionID: nullUUID(txID)})
+	if err != nil {
+		return nil, fmt.Errorf("list occurrences of a transaction: %w", err)
+	}
+	out := make([]domain.Occurrence, len(rows))
+	for i, row := range rows {
+		out[i] = toOccurrence(row)
+	}
+	return out, nil
+}
+
 func (r *Repository) SchedulesTouching(ctx context.Context, userID int64, accounts []uuid.UUID) ([]domain.Schedule, error) {
 	rows, err := r.q.SchedulesTouching(ctx, SchedulesTouchingParams{UserID: userID, AccountIds: accounts})
 	if err != nil {

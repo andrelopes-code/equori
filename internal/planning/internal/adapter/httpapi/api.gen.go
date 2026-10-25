@@ -532,10 +532,11 @@ type ListGoalsParams struct {
 
 // ListOccurrencesParams defines parameters for ListOccurrences.
 type ListOccurrencesParams struct {
-	From       openapi_types.Date  `form:"from" json:"from"`
-	To         openapi_types.Date  `form:"to" json:"to"`
-	ScheduleId *openapi_types.UUID `form:"schedule_id,omitempty" json:"schedule_id,omitempty"`
-	State      *OccurrenceState    `form:"state,omitempty" json:"state,omitempty"`
+	From          *openapi_types.Date `form:"from,omitempty" json:"from,omitempty"`
+	To            *openapi_types.Date `form:"to,omitempty" json:"to,omitempty"`
+	TransactionId *openapi_types.UUID `form:"transaction_id,omitempty" json:"transaction_id,omitempty"`
+	ScheduleId    *openapi_types.UUID `form:"schedule_id,omitempty" json:"schedule_id,omitempty"`
+	State         *OccurrenceState    `form:"state,omitempty" json:"state,omitempty"`
 }
 
 // ListSchedulesParams defines parameters for ListSchedules.
@@ -618,7 +619,7 @@ type ServerInterface interface {
 	// UpdateGoal Change the name, target, due date or accounts of a goal; fields not sent stay as they are.
 	// (PATCH /goals/{id})
 	UpdateGoal(w http.ResponseWriter, r *http.Request, id ID)
-	// ListOccurrences Occurrences with expected date in [from, to], at most 366 days, by date.
+	// ListOccurrences Occurrences with expected date in [from, to], at most 366 days, by date, or those a transaction realized.
 	// (GET /occurrences)
 	ListOccurrences(w http.ResponseWriter, r *http.Request, params ListOccurrencesParams)
 	// MoveOccurrence Move an expected occurrence to another date; terms changes never regenerate it (P7 amendment A52).
@@ -1064,9 +1065,9 @@ func (siw *ServerInterfaceWrapper) ListOccurrences(w http.ResponseWriter, r *htt
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListOccurrencesParams
 
-	// ------------- Required query parameter "from" -------------
+	// ------------- Optional query parameter "from" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, true, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
 	if err != nil {
 		var requiredError *runtime.RequiredParameterError
 		if errors.As(err, &requiredError) {
@@ -1077,15 +1078,28 @@ func (siw *ServerInterfaceWrapper) ListOccurrences(w http.ResponseWriter, r *htt
 		return
 	}
 
-	// ------------- Required query parameter "to" -------------
+	// ------------- Optional query parameter "to" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, true, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
 	if err != nil {
 		var requiredError *runtime.RequiredParameterError
 		if errors.As(err, &requiredError) {
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "transaction_id" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "transaction_id", r.URL.Query(), &params.TransactionId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "transaction_id"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "transaction_id", Err: err})
 		}
 		return
 	}
@@ -3268,7 +3282,7 @@ type StrictServerInterface interface {
 	// UpdateGoal Change the name, target, due date or accounts of a goal; fields not sent stay as they are.
 	// (PATCH /goals/{id})
 	UpdateGoal(ctx context.Context, request UpdateGoalRequestObject) (UpdateGoalResponseObject, error)
-	// ListOccurrences Occurrences with expected date in [from, to], at most 366 days, by date.
+	// ListOccurrences Occurrences with expected date in [from, to], at most 366 days, by date, or those a transaction realized.
 	// (GET /occurrences)
 	ListOccurrences(ctx context.Context, request ListOccurrencesRequestObject) (ListOccurrencesResponseObject, error)
 	// MoveOccurrence Move an expected occurrence to another date; terms changes never regenerate it (P7 amendment A52).

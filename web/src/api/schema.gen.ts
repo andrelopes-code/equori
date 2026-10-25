@@ -2368,8 +2368,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Occurrences with expected date in [from, to], at most 366 days, by date.
-         * @description State overdue is derived from expected and the schedule's grace days (P7 amendment A50).
+         * Occurrences with expected date in [from, to], at most 366 days, by date, or those a transaction realized.
+         * @description State overdue is derived from expected and the schedule's grace days (P7 amendment A50). With transaction_id the
+         *     answer is the occurrences that transaction realized, whatever their date, and from, to, schedule_id and state
+         *     are ignored; without it from and to are required.
          */
         get: operations["listOccurrences"];
         put?: never;
@@ -9021,9 +9023,10 @@ export interface operations {
     };
     listOccurrences: {
         parameters: {
-            query: {
-                from: string;
-                to: string;
+            query?: {
+                from?: string;
+                to?: string;
+                transaction_id?: string;
                 schedule_id?: string;
                 state?: components["schemas"]["OccurrenceState"];
             };

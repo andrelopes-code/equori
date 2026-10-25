@@ -245,6 +245,50 @@ func (q *Queries) ListOccurrences(ctx context.Context, arg ListOccurrencesParams
 	return items, nil
 }
 
+const listOccurrencesOfTransaction = `-- name: ListOccurrencesOfTransaction :many
+SELECT id, user_id, schedule_id, sequence, expected_on, expected_amount, state, transaction_id, realized_by, moved_from, skip_reason, declined_transaction_id FROM planning_occurrence
+WHERE user_id = $1 AND transaction_id = $2
+ORDER BY expected_on, schedule_id, sequence
+`
+
+type ListOccurrencesOfTransactionParams struct {
+	UserID        int64
+	TransactionID uuid.NullUUID
+}
+
+func (q *Queries) ListOccurrencesOfTransaction(ctx context.Context, arg ListOccurrencesOfTransactionParams) ([]PlanningOccurrence, error) {
+	rows, err := q.db.Query(ctx, listOccurrencesOfTransaction, arg.UserID, arg.TransactionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []PlanningOccurrence
+	for rows.Next() {
+		var i PlanningOccurrence
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.ScheduleID,
+			&i.Sequence,
+			&i.ExpectedOn,
+			&i.ExpectedAmount,
+			&i.State,
+			&i.TransactionID,
+			&i.RealizedBy,
+			&i.MovedFrom,
+			&i.SkipReason,
+			&i.DeclinedTransactionID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPauses = `-- name: ListPauses :many
 SELECT schedule_id, lower(period)::date AS from_date, (upper(period) - 1)::date AS to_date
 FROM planning_schedule_pause WHERE user_id = $1 AND schedule_id = ANY($2::uuid[]) ORDER BY schedule_id, lower(period)

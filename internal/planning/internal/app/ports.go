@@ -153,6 +153,7 @@ type Repository interface {
 	// Occurrences returns the occurrences with expected date in [from, to]; scheduleID uuid.Nil
 	// means every schedule.
 	Occurrences(ctx context.Context, userID int64, from, to time.Time, scheduleID uuid.UUID) ([]domain.Occurrence, error)
+	OccurrencesOfTransaction(ctx context.Context, userID int64, txID uuid.UUID) ([]domain.Occurrence, error)
 	// SchedulesTouching returns the schedules whose account or counterpart is among accounts.
 	SchedulesTouching(ctx context.Context, userID int64, accounts []uuid.UUID) ([]domain.Schedule, error)
 	// OccurrenceByTransaction locks the occurrence the transaction realizes; ErrNotFound when none.

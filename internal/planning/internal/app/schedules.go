@@ -174,6 +174,23 @@ func (s *Service) Occurrences(ctx context.Context, userID int64, from, to time.T
 	if to.Before(from) || to.Sub(from) > maxRangeDays*24*time.Hour {
 		return nil, &domain.FieldError{Field: "to", Message: "must be on or after from, at most 366 days later", Err: domain.ErrValidation}
 	}
+	os, err := s.repo.Occurrences(ctx, userID, from, to, scheduleID)
+	if err != nil {
+		return nil, err
+	}
+	return s.occurrenceViews(ctx, userID, os, state)
+}
+
+// OccurrencesOfTransaction returns the occurrences the transaction realized, whatever their date.
+func (s *Service) OccurrencesOfTransaction(ctx context.Context, userID int64, txID uuid.UUID) ([]OccurrenceView, error) {
+	os, err := s.repo.OccurrencesOfTransaction(ctx, userID, txID)
+	if err != nil {
+		return nil, err
+	}
+	return s.occurrenceViews(ctx, userID, os, "")
+}
+
+func (s *Service) occurrenceViews(ctx context.Context, userID int64, os []domain.Occurrence, state domain.State) ([]OccurrenceView, error) {
 	schedules, err := s.repo.Schedules(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -181,10 +198,6 @@ func (s *Service) Occurrences(ctx context.Context, userID int64, from, to time.T
 	byID := make(map[uuid.UUID]domain.Schedule, len(schedules))
 	for _, sch := range schedules {
 		byID[sch.ID] = sch
-	}
-	os, err := s.repo.Occurrences(ctx, userID, from, to, scheduleID)
-	if err != nil {
-		return nil, err
 	}
 	today := s.clk.Today()
 	out := make([]OccurrenceView, 0, len(os))

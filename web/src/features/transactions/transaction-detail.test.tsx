@@ -115,6 +115,47 @@ describe("transaction detail", () => {
     });
   });
 
+  it("asks for the occurrences by transaction, with no date window, in EUR", async () => {
+    localStorage.setItem(
+      "equori.locale",
+      JSON.stringify({ language: "en", region: "DE" }),
+    );
+    const asked: URLSearchParams[] = [];
+    const realized = {
+      ...rentOctober,
+      state: "realized",
+      transaction_id: txID,
+      expected_amount: { amount: 210000, currency: "EUR" },
+    };
+    const base = api();
+    const planning = planningApi({
+      "GET /api/v1/settings": () => json(200, { base_currency: "EUR" }),
+      "GET /api/v1/occurrences": (req) => {
+        asked.push(new URL(req.url).searchParams);
+        return json(200, { items: [realized] });
+      },
+    });
+    await renderApp(`/transactions/${txID}`, {
+      fetch: Object.assign(
+        (input: RequestInfo | URL, init?: RequestInit) => {
+          const path = new URL(new Request(input, init).url).pathname;
+          return path.startsWith("/api/v1/occurrences") ||
+            path.startsWith("/api/v1/schedules")
+            ? planning(input, init)
+            : base(input, init);
+        },
+        { calls: [] },
+      ),
+    });
+    const section = await screen.findByRole("region", {
+      name: catalogEn["detail.occurrences"],
+    });
+    expect(await within(section).findByText(/€/)).toBeInTheDocument();
+    expect(asked.map((q) => [...q.entries()])).toEqual([
+      [["transaction_id", txID]],
+    ]);
+  });
+
   it("shows the transaction as a page with its postings, facts and history", async () => {
     await renderApp(`/transactions/${txID}`, { width: 390, fetch: api() });
     expect(

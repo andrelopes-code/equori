@@ -214,3 +214,35 @@ func TestManualRealizationRacingAutomaticIs409(t *testing.T) {
 	}
 	f.h.ExpectProblem(<-done, http.StatusConflict, "transaction_in_use", "")
 }
+
+func TestOccurrencesOfATransaction(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-01")
+	id := f.rentSchedule()
+	// The payment is 45 days after the expected date of the occurrence.
+	tx := f.pay("2026-12-20", 150000, f.rent, "")
+	occ := f.occurrence(id, 1)
+	f.h.MustDo(http.MethodPost, "/api/v1/occurrences/"+occ.ID+"/realize", map[string]string{"transaction_id": tx}, http.StatusOK, nil)
+
+	got := f.occurrences("transaction_id=" + tx)
+	if len(got) != 1 || got[0].ID != occ.ID || got[0].State != "realized" || got[0].TransactionID != tx {
+		t.Fatalf("occurrences of the transaction = %+v", got)
+	}
+	unrelated := f.pay("2026-12-21", 1000, f.rent, "")
+	if got := f.occurrences("transaction_id=" + unrelated); len(got) != 0 {
+		t.Fatalf("occurrences of an unrelated transaction = %+v", got)
+	}
+
+	other := f.h.Login("other@example.com")
+	var out struct {
+		Items []occurrenceView `json:"items"`
+	}
+	r := f.h.Call(other, http.MethodGet, "/api/v1/occurrences?transaction_id="+tx, nil)
+	r.Decode(t, &out)
+	if r.Status != http.StatusOK || len(out.Items) != 0 {
+		t.Fatalf("another user's occurrences of the transaction = %d %+v", r.Status, out.Items)
+	}
+
+	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/occurrences?to=2026-12-31", nil), http.StatusBadRequest, "invalid_request", "from")
+	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/occurrences?from=2026-11-01", nil), http.StatusBadRequest, "invalid_request", "to")
+}
