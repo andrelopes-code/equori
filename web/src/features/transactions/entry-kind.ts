@@ -7,8 +7,19 @@ type PostingInput = components["schemas"]["PostingInput"];
 
 export type PostingKind = "expense" | "income" | "transfer" | "advanced";
 
-// The kinds the entry flow offers: the four that post by shape, and the two the server builds.
-export type EntryKind = PostingKind | "trade" | "investment_income";
+// The kinds the server builds from their own fields; the entry flow offers them beside the four
+// that post by shape.
+export const builtKinds = [
+  "trade",
+  "investment_income",
+  "foreign_purchase",
+] as const;
+export type BuiltKind = (typeof builtKinds)[number];
+export type EntryKind = PostingKind | BuiltKind;
+
+export function isBuiltKind(value: unknown): value is BuiltKind {
+  return builtKinds.some((kind) => kind === value);
+}
 
 export interface EntryRow {
   accountId: string | null;

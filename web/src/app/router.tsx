@@ -80,9 +80,11 @@ import {
   NewTransactionPage,
   TransactionPage,
   TransactionsPage,
+  isBuiltKind,
   validateTransactionSearch,
   validateTransactionsPageSearch,
 } from "@/features/transactions";
+import type { BuiltKind } from "@/features/transactions";
 
 export interface RouterContext {
   queryClient: QueryClient;
@@ -346,15 +348,11 @@ const accountsRoute = createRoute({
 const newTransactionRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "transactions/new",
-  validateSearch: (
-    search,
-  ): { account_id?: string; kind?: "trade" | "investment_income" } => {
+  validateSearch: (search): { account_id?: string; kind?: BuiltKind } => {
     const { account_id } = validateTransactionSearch(search);
     return {
       ...(account_id === undefined ? {} : { account_id }),
-      ...(search.kind === "trade" || search.kind === "investment_income"
-        ? { kind: search.kind }
-        : {}),
+      ...(isBuiltKind(search.kind) ? { kind: search.kind } : {}),
     };
   },
   component: NewTransactionPage,

@@ -158,6 +158,21 @@ export function CardHeader({
                     {t("card.installmentPurchase")}
                   </MenuItem>
                 )}
+                {!closed && (
+                  <MenuItem
+                    onSelect={() => {
+                      void navigate({
+                        to: "/transactions/new",
+                        search: {
+                          account_id: account.id,
+                          kind: "foreign_purchase",
+                        },
+                      });
+                    }}
+                  >
+                    {t("foreignPurchase.record")}
+                  </MenuItem>
+                )}
                 <MenuItem
                   onSelect={() => {
                     void navigate({

@@ -30,8 +30,17 @@ import { accountsQuery } from "@/features/accounts";
 import { payeesQuery, settingsQuery, useScale } from "@/features/setup";
 import { tagsQuery, useCreateTransaction } from "@/features/transactions/api";
 import { writeEntryForm } from "@/features/transactions/capture-store";
-import { emptyDraft, inputFromDraft } from "@/features/transactions/entry-kind";
-import type { EntryDraft, EntryKind } from "@/features/transactions/entry-kind";
+import {
+  emptyDraft,
+  inputFromDraft,
+  isBuiltKind,
+} from "@/features/transactions/entry-kind";
+import type {
+  BuiltKind,
+  EntryDraft,
+  EntryKind,
+} from "@/features/transactions/entry-kind";
+import { ForeignForm } from "@/features/transactions/foreign-form";
 import { draftProblems } from "@/features/transactions/entry-validation";
 import {
   clearDraft,
@@ -41,6 +50,7 @@ import {
 import { IncomeForm } from "@/features/transactions/income-form";
 import { TradeForm } from "@/features/transactions/trade-form";
 import { useIncomeEntry } from "@/features/transactions/use-income-entry";
+import { useForeignEntry } from "@/features/transactions/use-foreign-entry";
 import { useTradeEntry } from "@/features/transactions/use-trade-entry";
 import {
   TransactionForm,
@@ -70,21 +80,21 @@ export function NewTransactionPage() {
   const [draft, setDraft] = useState<EntryDraft>(
     () => readDraft(draftKey) ?? emptyDraft(today, account_id ?? null),
   );
-  // A trade and an income are built by the server from their own fields; the posting form holds
-  // the other kinds.
-  const [investment, setInvestment] = useState<
-    "trade" | "investment_income" | null
-  >(kind ?? null);
+  // The kinds the server builds from their own fields; the posting form holds the others.
+  const [investment, setInvestment] = useState<BuiltKind | null>(kind ?? null);
   const trade = useTradeEntry(account_id ?? null);
   const income = useIncomeEntry(account_id ?? null);
+  const foreign = useForeignEntry(account_id ?? null);
   const entry =
     investment === "trade"
       ? trade
       : investment === "investment_income"
         ? income
-        : null;
+        : investment === "foreign_purchase"
+          ? foreign
+          : null;
   const pickKind = (next: EntryKind) => {
-    if (next === "trade" || next === "investment_income") {
+    if (isBuiltKind(next)) {
       setInvestment(next);
     } else {
       setInvestment(null);
@@ -142,7 +152,13 @@ export function NewTransactionPage() {
     }
     announce(
       created.id,
-      t(active === trade ? "trade.created" : "income.created"),
+      t(
+        active === trade
+          ? "trade.created"
+          : active === foreign
+            ? "foreignPurchase.created"
+            : "income.created",
+      ),
     );
     active.reset();
   };
@@ -200,6 +216,7 @@ export function NewTransactionPage() {
   const discard = () => {
     trade.discard();
     income.discard();
+    foreign.discard();
     clearDraft(draftKey);
     void navigate({ to: "/transactions" });
   };
@@ -355,6 +372,17 @@ export function NewTransactionPage() {
               view={income.view}
               errors={income.errors}
               scale={scale}
+              onKind={pickKind}
+            />
+          )}
+          {ready && investment === "foreign_purchase" && scale !== null && (
+            <ForeignForm
+              draft={foreign.draft}
+              onChange={foreign.setDraft}
+              view={foreign.view}
+              errors={foreign.errors}
+              scale={scale}
+              payees={payees.data ?? []}
               onKind={pickKind}
             />
           )}

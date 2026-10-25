@@ -1,6 +1,6 @@
 // A live preview of what the server writes (A68). Every product runs on BigInt, so no float
 // reaches an amount (O7); the server stays the source of the stored value.
-function divideHalfEven(numerator: bigint, denominator: bigint): bigint {
+export function divideHalfEven(numerator: bigint, denominator: bigint): bigint {
   const quotient = numerator / denominator;
   const twice = (numerator % denominator) * 2n;
   if (twice < denominator) return quotient;

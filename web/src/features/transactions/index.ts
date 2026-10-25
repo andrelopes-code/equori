@@ -8,6 +8,8 @@ export {
   validateTransactionSearch,
   validateTransactionsPageSearch,
 } from "@/features/transactions/search";
+export { isBuiltKind } from "@/features/transactions/entry-kind";
+export type { BuiltKind } from "@/features/transactions/entry-kind";
 export { NewTransactionPage } from "@/features/transactions/new-transaction-page";
 export { CapturePage } from "@/features/transactions/capture-page";
 export { readEntryForm } from "@/features/transactions/capture-store";

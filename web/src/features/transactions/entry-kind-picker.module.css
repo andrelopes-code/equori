@@ -91,6 +91,24 @@
     );
   }
 
+  .kind[data-kind="foreign_purchase"] {
+    --kind-surface: color-mix(
+      in oklab,
+      var(--slotted-data-5) 12%,
+      var(--slotted-surface)
+    );
+    --kind-border: color-mix(
+      in oklab,
+      var(--slotted-data-5) 60%,
+      var(--slotted-surface)
+    );
+    --kind-ink: color-mix(
+      in oklab,
+      var(--slotted-data-5) 70%,
+      var(--slotted-text)
+    );
+  }
+
   .kind[data-kind="investment_income"] {
     --kind-surface: color-mix(
       in oklab,

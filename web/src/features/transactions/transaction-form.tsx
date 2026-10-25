@@ -10,6 +10,7 @@ import { CategoryPicker } from "@/features/categories";
 import { AccountField } from "@/features/transactions/account-field";
 import { DateShortcuts } from "@/ui/date-shortcuts";
 import { EntryKindPicker } from "@/features/transactions/entry-kind-picker";
+import { isBuiltKind } from "@/features/transactions/entry-kind";
 import type {
   EntryDraft,
   EntryKind,
@@ -89,7 +90,7 @@ export function TransactionForm({
         value={draft.kind}
         investments={onInvestment !== undefined}
         onChange={(kind) => {
-          if (kind === "trade" || kind === "investment_income") {
+          if (isBuiltKind(kind)) {
             onInvestment?.(kind);
           } else {
             set({ kind });

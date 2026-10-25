@@ -465,6 +465,34 @@ export function useRecordInvestmentIncome() {
   });
 }
 
+export function useRecordForeignPurchase() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: components["schemas"]["ForeignPurchaseInput"]) =>
+      unwrap(await api.POST("/foreign-purchases", { body })),
+    onSuccess: (created) =>
+      transactionMutated(
+        queryClient,
+        created.postings.map((p) => p.account_id),
+      ),
+  });
+}
+
+export function useExchangeCurrency() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: components["schemas"]["ExchangeInput"]) =>
+      unwrap(await api.POST("/exchanges", { body })),
+    onSuccess: (created) =>
+      transactionMutated(
+        queryClient,
+        created.postings.map((p) => p.account_id),
+      ),
+  });
+}
+
 // The types the user's jurisdiction accepts; the list changes only with the jurisdiction.
 export function incomeTypesQuery(api: Client<paths>) {
   return queryOptions({

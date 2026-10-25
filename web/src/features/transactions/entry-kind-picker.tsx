@@ -1,13 +1,12 @@
 import { useId } from "react";
 import type { CSSProperties } from "react";
 
+import { isBuiltKind } from "@/features/transactions/entry-kind";
 import type { EntryKind } from "@/features/transactions/entry-kind";
 import { EntryKindGlyph } from "@/features/transactions/entry-kind-glyph";
 import styles from "@/features/transactions/entry-kind-picker.module.css";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
-
-const investmentKinds = new Set<EntryKind>(["trade", "investment_income"]);
 
 const kinds: {
   value: EntryKind;
@@ -40,6 +39,11 @@ const kinds: {
     hint: "entry.kindHint.investment_income",
   },
   {
+    value: "foreign_purchase",
+    label: "entry.kind.foreign_purchase",
+    hint: "entry.kindHint.foreign_purchase",
+  },
+  {
     value: "advanced",
     label: "entry.kind.advanced",
     hint: "entry.kindHint.advanced",
@@ -58,21 +62,23 @@ export function EntryKindPicker({
 }: {
   value: EntryKind;
   onChange: (kind: EntryKind) => void;
-  // Only the new-entry flow records a trade or an income; a correction keeps its postings.
+  // Only the new-entry flow records a kind the server builds; a correction keeps its postings.
   investments?: boolean;
 }) {
   const t = useT();
   const id = useId();
-  const shown = kinds.filter(
-    (kind) => investments || !investmentKinds.has(kind.value),
-  );
+  const shown = kinds.filter((kind) => investments || !isBuiltKind(kind.value));
   return (
     <div className={styles.frame}>
       <div
         role="radiogroup"
         aria-label={t("entry.kind")}
         className={styles.kinds}
-        style={{ "--kind-count": shown.length > 4 ? 3 : 4 } as CSSProperties}
+        style={
+          {
+            "--kind-count": shown.length > 6 ? 4 : shown.length > 4 ? 3 : 4,
+          } as CSSProperties
+        }
       >
         {shown.map((kind) => (
           <label

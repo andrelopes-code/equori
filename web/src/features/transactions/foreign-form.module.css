@@ -1,0 +1,11 @@
+@layer app {
+  /* The result stays above the footer while the fields scroll, so a phone shows the effect of
+     each keystroke. */
+  .result {
+    position: sticky;
+    inset-block-end: 0;
+    z-index: 1;
+    padding-block: var(--slotted-space-4);
+    background: var(--slotted-surface);
+  }
+}

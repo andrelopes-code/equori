@@ -100,6 +100,25 @@ describe("CardPage", () => {
     });
   });
 
+  it("opens the foreign purchase entry with the card chosen", async () => {
+    const { router } = await renderApp(`/cards/${cardID}`, { fetch: api() });
+    await userEvent.click(
+      await screen.findByRole("button", { name: catalogEn["account.more"] }),
+    );
+    await userEvent.click(
+      await screen.findByRole("menuitem", {
+        name: catalogEn["foreignPurchase.record"],
+      }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/transactions/new");
+    });
+    expect(router.state.location.search).toMatchObject({
+      account_id: cardID,
+      kind: "foreign_purchase",
+    });
+  });
+
   it("reads earlier statements a year at a time", async () => {
     const froms: (string | null)[] = [];
     const { router } = await renderApp(`/cards/${cardID}`, {
