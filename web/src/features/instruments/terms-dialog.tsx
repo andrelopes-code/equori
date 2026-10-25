@@ -1,3 +1,4 @@
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import {
   Dialog,
@@ -152,9 +153,11 @@ export function TermsDialog({
               {summary !== null && (
                 <InlineMessage tone="danger">{summary}</InlineMessage>
               )}
-              <InlineMessage tone="warning">
-                {t("terms.replaceNote")}
-              </InlineMessage>
+              <Alert tone="warning">
+                <AlertContent>
+                  <AlertDescription>{t("terms.replaceNote")}</AlertDescription>
+                </AlertContent>
+              </Alert>
               <Field invalid={errors.issued_on !== undefined} required>
                 <FieldLabel>{t("terms.issuedOn")}</FieldLabel>
                 <DateInput

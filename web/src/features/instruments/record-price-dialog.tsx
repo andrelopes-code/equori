@@ -1,3 +1,4 @@
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import {
   Dialog,
@@ -90,9 +91,13 @@ export function RecordPriceDialog({
               {summary !== null && (
                 <InlineMessage tone="danger">{summary}</InlineMessage>
               )}
-              <InlineMessage tone="info">
-                {t("instrument.price.replaceNote")}
-              </InlineMessage>
+              <Alert tone="info">
+                <AlertContent>
+                  <AlertDescription>
+                    {t("instrument.price.replaceNote")}
+                  </AlertDescription>
+                </AlertContent>
+              </Alert>
               <Field invalid={errors.date !== undefined} required>
                 <FieldLabel>{t("instrument.price.date")}</FieldLabel>
                 <DateInput name="date" value={date} onChange={setDate} />
