@@ -51,6 +51,8 @@ const picker = (name: string): Surface => ({
 // palette rule in equori.theme.ts), so the dialog's ground stays out of it.
 // A drawer over the page: an inline drawer is part of the layout and blurs nothing.
 const OVERLAY_DRAWER = `${family("drawer")}[data-mode="overlay"] > [data-part="panel"]`;
+// The footer is sticky, so the body scrolls under it; the panel's blur reaches only the page behind.
+const OVERLAY_DRAWER_FOOTER = `${OVERLAY_DRAWER} > [data-part="footer"]`;
 
 const NOT_PALETTE = ':not(:has(> [data-ui="command-palette"]))';
 
@@ -148,7 +150,7 @@ export const surfaces: readonly Surface[] = [
         declarations: { "box-shadow": elevation(3) },
       },
     ],
-    blur: [OVERLAY_DRAWER],
+    blur: [OVERLAY_DRAWER, OVERLAY_DRAWER_FOOTER],
   },
   {
     family: "action-sheet",
@@ -156,12 +158,13 @@ export const surfaces: readonly Surface[] = [
   },
   {
     family: "action-bar",
-    // The bar a selection raises over the rows.
+    // The bar a selection raises over the rows. A plain bar stands on a Page footer, which is
+    // already a blurred material, so only the raised bar blurs.
     tokens: {
       "--slotted-action-bar-background": fill("overlay"),
       "--slotted-action-bar-border-color": ring,
     },
-    blur: [family("action-bar")],
+    blur: [`${family("action-bar")}[data-variant="raised"]`],
   },
   byToken("filter-bar", {
     surface: fill("card"),

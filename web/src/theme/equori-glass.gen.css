@@ -1887,6 +1887,35 @@
       backdrop-filter: var(--slotted-material-backdrop);
     }
 
+    [data-ui="dialog"] > [data-part="viewport"] > [data-part="content"] > [data-part="footer"] {
+      grid-row: 3;
+    }
+
+    @media (max-width: 40rem) {
+      [data-ui="drawer"][data-ui="drawer"][data-mode="overlay"][data-side="bottom"] > [data-part="panel"],
+      [data-ui="drawer"][data-ui="drawer"][data-mode="overlay"][data-side="top"] > [data-part="panel"] {
+        border-inline-width: 0;
+      }
+    }
+
+    [data-ui="drawer"][data-ui="drawer"][data-size="full"][data-mode="overlay"] > [data-part="panel"] {
+      border-width: 0;
+    }
+
+    [data-ui="drawer"][data-ui="drawer"][data-mode="overlay"][data-side="bottom"][data-drag]:not([data-dragging]) > [data-part="panel"] {
+      transition:
+        translate 240ms var(--slotted-easing-enter),
+        border-start-start-radius 240ms var(--slotted-easing-enter),
+        border-start-end-radius 240ms var(--slotted-easing-enter);
+    }
+
+    [data-ui="drawer"][data-ui="drawer"][data-mode="overlay"][data-side="bottom"][data-drag]:not([data-open]):not([data-dragging]) > [data-part="panel"] {
+      transition:
+        translate 160ms var(--slotted-easing-exit),
+        border-start-start-radius 160ms var(--slotted-easing-exit),
+        border-start-end-radius 160ms var(--slotted-easing-exit);
+    }
+
     &[data-slotted-scheme="dark"] [data-ui="card"],
     &[data-slotted-scheme="dark"] [data-ui="stat-card"],
     &[data-slotted-scheme="dark"] [data-ui="section"],
@@ -1963,7 +1992,12 @@
     }
 
     &[data-slotted-scheme="dark"] [data-ui="data-grid"][data-variant="framed"] {
-      --slotted-data-grid-surface: var(--glass-fill-card);
+      --slotted-data-grid-surface: var(--glass-fill-page);
+    }
+
+    &[data-slotted-scheme="dark"] [data-ui="data-grid"][data-variant="framed"] [data-part="row"]:not([data-selected]),
+    &[data-slotted-scheme="dark"] [data-ui="data-grid"][data-variant="framed"] [data-part="row"]:not([data-selected]) > [data-part="selection"] {
+      background-color: transparent;
     }
 
     &[data-slotted-scheme="dark"] [data-ui="card"] {
@@ -2115,7 +2149,8 @@
     &[data-slotted-scheme="dark"] [data-ui="entity-picker"] > [data-part="content"],
     &[data-slotted-scheme="dark"] [data-ui="date-picker"] [data-part="content"],
     &[data-slotted-scheme="dark"] [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"],
-    &[data-slotted-scheme="dark"] [data-ui="action-bar"],
+    &[data-slotted-scheme="dark"] [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"] > [data-part="footer"],
+    &[data-slotted-scheme="dark"] [data-ui="action-bar"][data-variant="raised"],
     &[data-slotted-scheme="dark"] [data-ui="chart"] [data-part="tooltip"],
     &[data-slotted-scheme="dark"] [data-ui="chart"] [data-part="menu"],
     &[data-slotted-scheme="dark"] [data-ui="chart"] [data-part="help-content"] {
@@ -2566,7 +2601,8 @@
       &[data-slotted-scheme="dark"] [data-ui="entity-picker"] > [data-part="content"],
       &[data-slotted-scheme="dark"] [data-ui="date-picker"] [data-part="content"],
       &[data-slotted-scheme="dark"] [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"],
-      &[data-slotted-scheme="dark"] [data-ui="action-bar"],
+      &[data-slotted-scheme="dark"] [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"] > [data-part="footer"],
+      &[data-slotted-scheme="dark"] [data-ui="action-bar"][data-variant="raised"],
       &[data-slotted-scheme="dark"] [data-ui="chart"] [data-part="tooltip"],
       &[data-slotted-scheme="dark"] [data-ui="chart"] [data-part="menu"],
       &[data-slotted-scheme="dark"] [data-ui="chart"] [data-part="help-content"],

@@ -132,6 +132,51 @@ const darkNeutral = (l: number) => ({
   c: { scale: 0.22, max: 0.03 },
 });
 
+// Workaround for Slotted finding "A full-screen dialog without a body places its footer in the stretched row": the
+// content grid is header, body (the stretched row), footer. Without a body the footer takes the
+// stretched row and its buttons float mid-screen on a phone. The footer is pinned to its own row.
+const dialogFooterRule = `
+[data-ui="dialog"] > [data-part="viewport"] > [data-part="content"] > [data-part="footer"] {
+  grid-row: 3;
+}
+`;
+
+// Workaround for Slotted finding "An overlay sheet draws side borders at the width of the screen": a
+// bottom or top sheet keeps its side borders while it is as wide as the screen, and the border
+// of size="full" loses to that rule. Below the sheet's own measure no side border shows.
+const sheetBorderRule = `
+@media (max-width: 40rem) {
+  [data-ui="drawer"][data-ui="drawer"][data-mode="overlay"][data-side="bottom"] > [data-part="panel"],
+  [data-ui="drawer"][data-ui="drawer"][data-mode="overlay"][data-side="top"] > [data-part="panel"] {
+    border-inline-width: 0;
+  }
+}
+
+[data-ui="drawer"][data-ui="drawer"][data-size="full"][data-mode="overlay"] > [data-part="panel"] {
+  border-width: 0;
+}
+`;
+
+// Workaround for Slotted finding "A drawer's slide duration has no token": the sheet's slide takes the long
+// duration to open and the medium to close, and the family exposes no token for either. A bottom
+// sheet slides in 240 ms and out in 160 ms; the figures sit between the short and medium steps.
+// A drag keeps its own instant transition.
+const sheetSlideRule = `
+[data-ui="drawer"][data-ui="drawer"][data-mode="overlay"][data-side="bottom"][data-drag]:not([data-dragging]) > [data-part="panel"] {
+  transition:
+    translate 240ms var(--slotted-easing-enter),
+    border-start-start-radius 240ms var(--slotted-easing-enter),
+    border-start-end-radius 240ms var(--slotted-easing-enter);
+}
+
+[data-ui="drawer"][data-ui="drawer"][data-mode="overlay"][data-side="bottom"][data-drag]:not([data-open]):not([data-dragging]) > [data-part="panel"] {
+  transition:
+    translate 160ms var(--slotted-easing-exit),
+    border-start-start-radius 160ms var(--slotted-easing-exit),
+    border-start-end-radius 160ms var(--slotted-easing-exit);
+}
+`;
+
 export default extendTheme(
   defaultTheme,
   {
@@ -261,6 +306,9 @@ export default extendTheme(
       paletteMaterialRule,
       footerMaterialRule,
       toastMaterialRule,
+      dialogFooterRule,
+      sheetBorderRule,
+      sheetSlideRule,
     ],
   },
   { name: "equori" },

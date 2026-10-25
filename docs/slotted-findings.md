@@ -15,6 +15,9 @@ Registry of the findings reported to the Slotted owner (`web/CLAUDE.md`, "Slotte
 | A calendar day cannot carry a mark of what falls on it                                              | reported |
 | A data-grid editor cannot commit the value it sets in the same event                                | open     |
 | a dialog or drawer mounted open plays no enter transition, and one unmounted on close plays no exit | open     |
+| A full-screen dialog without a body places its footer in the stretched row                          | open     |
+| An overlay sheet draws side borders at the width of the screen                                      | open     |
+| A drawer's slide duration has no token                                                              | open     |
 | A pinned table cell has no ground, so the cells that scroll under it show through                   | open     |
 | A server-mode data-grid does not group the rows it is given                                         | open     |
 | A sticky section header exposes no stuck state                                                      | open     |
@@ -79,8 +82,9 @@ Registry of the findings reported to the Slotted owner (`web/CLAUDE.md`, "Slotte
 | A markdown tree in a message bubble collapses the bubble to its padding                             | open     |
 | A message scroller without items keeps its content hidden                                           | open     |
 | The drawer header has no slot for actions beside the title                                          | open     |
+| A message scroller in a bottom sheet keeps a pull at its top from moving the sheet                  | open     |
 | The prompt composer's ring glow is cut by its own mask and overflows its container                  | open     |
-| The prompt composer has no dictation action                                                         | open     |
+| The prompt composer has no dictation action                                                         | reported |
 | Dashboard-grid picks its column class from its own width, so a 1280 px window loses the layout      | reported |
 | Dashboard-grid rows have a fixed height and a widget cannot size to its content                     | reported |
 | Dashboard-grid widget headings default to level 3 under a page heading of level 1                   | reported |

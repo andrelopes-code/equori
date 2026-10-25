@@ -95,6 +95,48 @@ test("a dialog blurs through its own token and a drawer on its panel", () => {
   );
 });
 
+// The footer is sticky inside the panel, so the body scrolls under it; the panel's blur reaches only
+// what is behind the panel.
+test("an overlay drawer's footer blurs the body that scrolls under it", () => {
+  const footer =
+    '[data-ui="drawer"][data-mode="overlay"] > [data-part="panel"] > [data-part="footer"]';
+  const declarationsOf = (selector: string) =>
+    [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+      .filter(([, selectors]) => selectors?.includes(selector))
+      .map(([, , body]) => body ?? "");
+  const bodies = declarationsOf(footer);
+  assert.ok(
+    bodies.some((body) =>
+      body.includes("backdrop-filter: blur(var(--glass-blur)"),
+    ),
+    "the footer is not blurred",
+  );
+  assert.ok(
+    bodies.some((body) => body.includes("backdrop-filter: none")),
+    "reduced transparency keeps the footer's blur",
+  );
+});
+
+// A plain bar stands on the page footer, which is already a blurred material; a second blur inside
+// it samples the footer and reads as a more solid ground.
+test("only a raised action bar blurs what is behind it", () => {
+  const blurs = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter(
+    ([, selectors, body]) =>
+      selectors?.includes('[data-ui="action-bar"]') &&
+      body?.includes("backdrop-filter: blur(var(--glass-blur)"),
+  );
+  assert.ok(blurs.length > 0, "the action bar is not blurred at all");
+  for (const [, selectors] of blurs) {
+    for (const selector of (selectors ?? "").split(",")) {
+      if (!selector.includes('[data-ui="action-bar"]')) continue;
+      assert.ok(
+        selector.includes('[data-variant="raised"]'),
+        `blurs a plain bar: ${selector.trim()}`,
+      );
+    }
+  }
+});
+
 // The transactions pane publishes a solid page ground for the standard theme; a section's header
 // reads it at rest and would paint a solid band over the glass.
 test("a section and a detail panel publish no page ground of their own", () => {
@@ -121,11 +163,20 @@ test("a raised surface carries a lift of light over its tint", () => {
   assert.match(css, /--glass-lift-card: \d+%/);
 });
 
-test("a framed data-grid is a raised surface", () => {
+test("a framed data-grid takes the page fill, not the card's", () => {
   assert.match(
     css,
-    /\[data-ui="data-grid"\]\[data-variant="framed"\] \{[^}]*--slotted-data-grid-surface: var\(--glass-fill-card\)/,
+    /\[data-ui="data-grid"\]\[data-variant="framed"\] \{[^}]*--slotted-data-grid-surface: var\(--glass-fill-page\)/,
   );
+});
+
+// The frame paints the fill once; a row that paints it again stacks a second layer on every line.
+test("a framed grid's rows and selection cells paint nothing at rest", () => {
+  const rows =
+    /\[data-ui="data-grid"\]\[data-variant="framed"\] \[data-part="row"\]:not\(\[data-selected\]\),[^{]*\{([^}]*)\}/.exec(
+      css,
+    )?.[1] ?? "";
+  assert.ok(rows.includes("background-color: transparent;"), rows);
 });
 
 // Chromium draws a backdrop filter as a rectangle that an ancestor's rounded clip does not cut, so
