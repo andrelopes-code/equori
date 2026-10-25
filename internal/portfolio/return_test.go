@@ -21,7 +21,11 @@ type returnOut struct {
 func (f fixture) returnOf(t *testing.T, account, from, to string) (apitest.Response, returnOut) {
 	t.Helper()
 	f.h.Dispatch()
-	r := f.h.Do(http.MethodGet, fmt.Sprintf("/api/v1/reports/return?account_id=%s&from=%s&to=%s&value_in=BRL", account, from, to), nil)
+	query := fmt.Sprintf("from=%s&to=%s&value_in=BRL", from, to)
+	if account != "" {
+		query = "account_id=" + account + "&" + query
+	}
+	r := f.h.Do(http.MethodGet, "/api/v1/reports/return?"+query, nil)
 	var out returnOut
 	if r.Status == http.StatusOK {
 		r.Decode(t, &out)
@@ -53,6 +57,34 @@ func TestS126ReturnOfBrokerage(t *testing.T) {
 	if got.AnnualBP != 333 || got.Closing["amount"] != float64(205000) || len(got.Flows) != 1 || got.Flows[0].Date != "2026-04-30" || got.Flows[0].Amount["amount"] != float64(100000) {
 		t.Fatalf("return with a contribution = %+v", got)
 	}
+}
+
+// The return without account_id covers every brokerage tree of the user as one tree.
+func TestReturnOfTheWholePortfolio(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	checking := f.h.Account("Checking", "asset", "checking", nil)
+	other := f.h.Account("Other broker", "asset", "brokerage", nil)
+	otherCash := f.h.Account("Other cash", "asset", "brokerage", map[string]any{"parent_id": other, "currency": "BRL"})
+	f.h.Record("2025-10-15", apitest.Posting(checking, -100000), apitest.Posting(f.cash, 100000))
+	f.h.Record("2025-10-15", apitest.Posting(checking, -100000), apitest.Posting(otherCash, 100000))
+	f.income(t, f.mxrf11, "dividend", 5000, f.dividends)
+	// A transfer between the two brokerages is internal to the portfolio.
+	f.h.Record("2026-03-01", apitest.Posting(f.cash, -20000), apitest.Posting(otherCash, 20000))
+
+	// Opening 1,000.00 + 1,000.00, a dividend of 50.00, closing 2,050.00 and no flow:
+	// 2050 / 2000 = 1.025 in 365 days is 250 basis points.
+	r, got := f.returnOf(t, "", "2025-11-01", "2026-10-31")
+	if r.Status != http.StatusOK {
+		t.Fatalf("status %d: %s", r.Status, r.Body)
+	}
+	if got.AnnualBP != 250 || got.Opening["amount"] != float64(200000) || got.Closing["amount"] != float64(205000) || len(got.Flows) != 0 {
+		t.Fatalf("portfolio return = %+v", got)
+	}
+
+	// Another user has no brokerage: no money was invested.
+	stranger := f.h.Login("stranger@example.com")
+	f.h.ExpectProblem(f.h.Call(stranger, http.MethodGet, "/api/v1/reports/return?from=2025-11-01&to=2026-10-31", nil), http.StatusUnprocessableEntity, "return_undefined", "")
 }
 
 // S127: a period in which no money was invested has no return (amendment A123).

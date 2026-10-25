@@ -70,6 +70,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.allocation.empty": "Nada a alocar nesta data",
   "portfolio.return.title": "Retorno anual",
   "portfolio.return.account": "Conta do retorno",
+  "portfolio.return.whole": "Carteira inteira",
   "portfolio.return.from": "De",
   "portfolio.return.to": "Até",
   "portfolio.return.opening": "Valor inicial",

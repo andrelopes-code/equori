@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/andrelopes-code/equori/internal/platform/auth"
@@ -120,7 +121,11 @@ func (s *Server) GetReturn(ctx context.Context, req GetReturnRequestObject) (Get
 	if req.Params.ValueIn != nil {
 		in = money.Currency(*req.Params.ValueIn)
 	}
-	r, err := s.svc.Return(ctx, auth.MustUserID(ctx), req.Params.AccountId, req.Params.From.Time, req.Params.To.Time, in)
+	var account uuid.UUID
+	if req.Params.AccountId != nil {
+		account = *req.Params.AccountId
+	}
+	r, err := s.svc.Return(ctx, auth.MustUserID(ctx), account, req.Params.From.Time, req.Params.To.Time, in)
 	if err != nil {
 		return nil, err
 	}

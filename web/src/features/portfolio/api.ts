@@ -31,7 +31,7 @@ export function allocationQuery(
 
 export function returnQuery(
   api: Client<paths>,
-  accountID: string | undefined,
+  accountID: string | null | undefined,
   from: string,
   to: string,
   valueIn: string | undefined,
@@ -44,7 +44,9 @@ export function returnQuery(
         await api.GET("/reports/return", {
           params: {
             query: {
-              account_id: accountID ?? "",
+              ...(accountID === null || accountID === undefined
+                ? {}
+                : { account_id: accountID }),
               from,
               to,
               ...(valueIn === undefined ? {} : { value_in: valueIn }),

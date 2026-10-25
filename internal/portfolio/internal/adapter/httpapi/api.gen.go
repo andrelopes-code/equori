@@ -284,10 +284,10 @@ type GetNetWorthParams struct {
 
 // GetReturnParams defines parameters for GetReturn.
 type GetReturnParams struct {
-	AccountId openapi_types.UUID `form:"account_id" json:"account_id"`
-	From      openapi_types.Date `form:"from" json:"from"`
-	To        openapi_types.Date `form:"to" json:"to"`
-	ValueIn   *string            `form:"value_in,omitempty" json:"value_in,omitempty"`
+	AccountId *openapi_types.UUID `form:"account_id,omitempty" json:"account_id,omitempty"`
+	From      openapi_types.Date  `form:"from" json:"from"`
+	To        openapi_types.Date  `form:"to" json:"to"`
+	ValueIn   *string             `form:"value_in,omitempty" json:"value_in,omitempty"`
 }
 
 // ServerInterface represents all server handlers.
@@ -600,9 +600,9 @@ func (siw *ServerInterfaceWrapper) GetReturn(w http.ResponseWriter, r *http.Requ
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetReturnParams
 
-	// ------------- Required query parameter "account_id" -------------
+	// ------------- Optional query parameter "account_id" -------------
 
-	err = runtime.BindQueryParameterWithOptions("form", true, true, "account_id", r.URL.Query(), &params.AccountId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "account_id", r.URL.Query(), &params.AccountId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
 	if err != nil {
 		var requiredError *runtime.RequiredParameterError
 		if errors.As(err, &requiredError) {

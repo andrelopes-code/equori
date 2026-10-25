@@ -46,8 +46,35 @@ type ReturnReport struct {
 
 // Return values the account tree the day before from and on to, values each external flow at the
 // price of its date, and solves the annual rate of the result. in defaults to the base currency.
+// The nil accountID is every brokerage tree of the user.
 func (s *Service) Return(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time, in money.Currency) (ReturnReport, error) {
-	return s.returnOf(ctx, userID, []uuid.UUID{accountID}, from, to, in)
+	if accountID != uuid.Nil {
+		return s.returnOf(ctx, userID, []uuid.UUID{accountID}, from, to, in)
+	}
+	roots, err := s.brokerageRoots(ctx, userID)
+	if err != nil {
+		return ReturnReport{}, err
+	}
+	return s.returnOf(ctx, userID, roots, from, to, in)
+}
+
+// brokerageRoots lists the brokerage accounts that have no brokerage parent.
+func (s *Service) brokerageRoots(ctx context.Context, userID int64) ([]uuid.UUID, error) {
+	accounts, err := s.ledger.AccountFacts(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	kinds := make(map[uuid.UUID]string, len(accounts))
+	for _, a := range accounts {
+		kinds[a.ID] = a.Kind
+	}
+	var roots []uuid.UUID
+	for _, a := range accounts {
+		if a.Kind == kindBrokerage && kinds[a.ParentID] != kindBrokerage {
+			roots = append(roots, a.ID)
+		}
+	}
+	return roots, nil
 }
 
 // returnOf is Return over the accounts taken as one tree: a flow between two of them is internal.

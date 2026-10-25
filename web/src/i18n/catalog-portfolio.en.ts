@@ -68,6 +68,7 @@ export const portfolioEn = {
   "portfolio.allocation.empty": "Nothing to allocate at this date",
   "portfolio.return.title": "Annual return",
   "portfolio.return.account": "Account of the return",
+  "portfolio.return.whole": "Whole portfolio",
   "portfolio.return.from": "From",
   "portfolio.return.to": "To",
   "portfolio.return.opening": "Opening value",

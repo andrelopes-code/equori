@@ -42,7 +42,10 @@ import { QueryError } from "@/ui/query-error";
 
 type Money = components["schemas"]["Money"];
 
-// The money-weighted annual return of one account tree over a period of at most 366 days; the
+// The option that measures every brokerage tree; an account id never equals it.
+const wholePortfolio = "portfolio";
+
+// The money-weighted annual return of the whole portfolio or of one account tree over a period of at most 366 days; the
 // period starts as the 12 months ending at the valuation date.
 export function PortfolioReturn({
   date,
@@ -71,17 +74,21 @@ export function PortfolioReturn({
         .filter((i) => i.type === "currency")
         .map((i) => i.code),
     );
-    return returnAccounts(
+    const list = returnAccounts(
       accounts.data,
       currencies,
       (a) => accountLabel(byID, a.id),
       tag,
     ).map((a) => ({ value: a.id, label: accountLabel(byID, a.id) }));
-  }, [accounts.data, instruments.data, tag]);
+    return accounts.data.some((a) => a.kind === "brokerage")
+      ? [{ value: wholePortfolio, label: t("portfolio.return.whole") }, ...list]
+      : list;
+  }, [accounts.data, instruments.data, tag, t]);
   const to = search.to ?? date;
   const from = search.from ?? defaultFrom(to);
-  const accountID =
+  const selected =
     options.find((o) => o.value === search.account)?.value ?? options[0]?.value;
+  const accountID = selected === wholePortfolio ? null : selected;
   const problem = periodProblem(from, to);
   const report = useQuery(
     returnQuery(api, accountID, from, to, valueIn, problem === undefined),
@@ -101,7 +108,7 @@ export function PortfolioReturn({
         onRetry={() => void accounts.refetch()}
       />
     );
-  else if (loaded && accountID === undefined)
+  else if (loaded && selected === undefined)
     body = (
       <Text size="sm" tone="muted">
         {t("portfolio.return.noAccount")}
@@ -191,7 +198,7 @@ export function PortfolioReturn({
         label={t("portfolio.return.account")}
         choices={options}
         multiple={false}
-        value={accountID ?? null}
+        value={selected ?? null}
         onChange={(next) => {
           if (typeof next === "string")
             onChange({

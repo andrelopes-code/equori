@@ -46,15 +46,20 @@ describe("Portfolio return", () => {
     ).toEqual(["Date|Amount", "04/30/2026|R$1,000.00"]);
   });
 
-  it("asks for the first parent account over the 12 months ending at the valuation date", async () => {
+  it("asks for the whole portfolio over the 12 months ending at the valuation date, in EUR", async () => {
     const asked: URLSearchParams[] = [];
+    localStorage.setItem(
+      "equori.locale",
+      JSON.stringify({ language: "en", region: "DE" }),
+    );
     const fetch = portfolioApi({
+      "GET /api/v1/settings": () => json(200, { base_currency: "EUR" }),
       "GET /api/v1/reports/return": (req) => {
         asked.push(new URL(req.url).searchParams);
         return json(200, contributionReturn);
       },
     });
-    await renderApp("/portfolio?date=2026-10-31&value_in=USD", { fetch });
+    await renderApp("/portfolio?date=2026-10-31", { fetch });
     await waitFor(() => {
       expect(
         asked.map((q) => [
@@ -63,7 +68,22 @@ describe("Portfolio return", () => {
           q.get("to"),
           q.get("value_in"),
         ]),
-      ).toEqual([[brokerID, "2025-11-01", "2026-10-31", "USD"]]);
+      ).toEqual([[null, "2025-11-01", "2026-10-31", "EUR"]]);
+    });
+    localStorage.removeItem("equori.locale");
+  });
+
+  it("asks for one account when the address names it", async () => {
+    const asked: (string | null)[] = [];
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return": (req) => {
+        asked.push(new URL(req.url).searchParams.get("account_id"));
+        return json(200, contributionReturn);
+      },
+    });
+    await renderApp(`/portfolio?account=${brokerID}`, { fetch });
+    await waitFor(() => {
+      expect(asked).toEqual([brokerID]);
     });
   });
 
@@ -77,7 +97,12 @@ describe("Portfolio return", () => {
     );
     expect(
       (await screen.findAllByRole("option")).map((o) => o.textContent),
-    ).toEqual(["XP", "XP / XP MXRF11", "XP / XP PETR4"]);
+    ).toEqual([
+      catalogEn["portfolio.return.whole"],
+      "XP",
+      "XP / XP MXRF11",
+      "XP / XP PETR4",
+    ]);
   });
 
   it("states that the return is undefined, with the reason (S127)", async () => {

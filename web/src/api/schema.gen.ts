@@ -512,7 +512,9 @@ export interface paths {
          * @description The flows are the money that entered or left the tree in transactions that also touch a balance account
          *     outside it; income, expense and tax postings are performance. Opening is valued on the day before from, closing
          *     on to, flows on their dates, all in value_in (the base currency by default). annual_bp is the internal rate of
-         *     return, days over 365, rounded half to even to basis points. 422 return_undefined when no money was invested.
+         *     return, days over 365, rounded half to even to basis points. Without account_id the tree is every brokerage account
+         *     of the user with its sub-accounts, and a transfer between two of them is not a flow. 422 return_undefined when
+         *     no money was invested.
          */
         get: operations["getReturn"];
         put?: never;
@@ -5700,7 +5702,7 @@ export interface operations {
     getReturn: {
         parameters: {
             query: {
-                account_id: string;
+                account_id?: string;
                 from: string;
                 to: string;
                 value_in?: string;
