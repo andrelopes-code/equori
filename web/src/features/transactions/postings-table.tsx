@@ -13,6 +13,7 @@ import { Tag } from "@slotted/react/tag";
 import type { components } from "@/api/schema.gen";
 import type { CategoryEntry } from "@/features/categories";
 import type { MessageKey } from "@/i18n/catalog.en";
+import { OriginalAmount } from "@/features/transactions/original-amount";
 import { formatDate, formatReferenceMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -84,6 +85,9 @@ export function PostingsTable({
                 </TableCell>
                 <TableCell numeric>
                   {fmt.money(posting.amount, scale(posting.amount.currency))}
+                  {posting.original !== undefined && (
+                    <OriginalAmount posting={posting} scale={scale} />
+                  )}
                 </TableCell>
                 <TableCell>
                   <Tag size="sm" tone={statusTone[posting.status ?? "cleared"]}>

@@ -8,6 +8,8 @@ import { Inline } from "@slotted/react/inline";
 import { Tag } from "@slotted/react/tag";
 
 import type { components } from "@/api/schema.gen";
+import { IncomeFacts } from "@/features/transactions/income-facts";
+import { TradeFacts } from "@/features/transactions/trade-facts";
 import { CategorizationText } from "@/features/transactions/categorization-text";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { formatDate } from "@/i18n/format";
@@ -81,6 +83,12 @@ export function TransactionFacts({
           {String(transaction.version)}
         </DescriptionListDescription>
       </DescriptionListItem>
+      {transaction.trade !== undefined && (
+        <TradeFacts trade={transaction.trade} />
+      )}
+      {transaction.investment_income !== undefined && (
+        <IncomeFacts income={transaction.investment_income} />
+      )}
     </DescriptionList>
   );
 }
