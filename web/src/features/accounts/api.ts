@@ -578,6 +578,12 @@ export function useSyncConnection() {
   );
 }
 
+export function useDeleteConnection() {
+  return useApiMutation(async (api, id: string) =>
+    unwrap(await api.DELETE("/connections/{id}", { params: { path: { id } } })),
+  );
+}
+
 // S23: the opening balance is one transaction against the system account Opening balances.
 export function openingBalanceBody(
   account: Pick<Account, "id" | "currency">,

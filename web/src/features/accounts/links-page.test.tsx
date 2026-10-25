@@ -3,10 +3,12 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
+import { formatDate } from "@/i18n/format";
 import {
   accountFixtures,
   accountRoutes,
   connectionFixture,
+  checkingID,
   connectionID,
   externalReservedID,
   reserveID,
@@ -186,5 +188,126 @@ describe("Account links", () => {
     expect(
       await screen.findByText(catalogEn["problem.aggregator_unauthorized"]),
     ).toBeInTheDocument();
+  });
+  it("states the connection with its provider, bank update, sync and each account's dates", async () => {
+    await renderApp("/accounts/links", { fetch: api([]) });
+    const detail = await screen.findByRole("region", {
+      name: connectionFixture.name,
+    });
+    expect(
+      within(detail).getByText(catalogEn["links.connectionState.ok"]),
+    ).toBeVisible();
+    expect(
+      within(detail).getByText(new RegExp(catalogEn["sync.provider.UPDATED"])),
+    ).toBeVisible();
+    expect(
+      within(detail).getByText(
+        new RegExp(words("links.itemUpdate", { time: "" }).trim()),
+      ),
+    ).toBeVisible();
+    const linked = await row("Conta Corrente");
+    expect(
+      within(linked).getByText(formatDate("2026-09-01", "en")),
+    ).toBeVisible();
+    expect(
+      within(linked).getByText(formatDate("2026-10-17", "en")),
+    ).toBeVisible();
+    const pending = await row("Caixinha Viagem");
+    expect(within(pending).getAllByText(catalogEn["sync.never"])).toHaveLength(
+      2,
+    );
+  });
+
+  it("asks the owner to act at the aggregator when the connection needs the owner", async () => {
+    await renderApp("/accounts/links", {
+      fetch: api([], {
+        "GET /api/v1/connections": () =>
+          json(200, {
+            items: [
+              {
+                ...connectionFixture,
+                state: "needs_owner",
+                provider_status: "WAITING_USER_INPUT",
+              },
+            ],
+          }),
+      }),
+    });
+    expect(
+      await screen.findByText(catalogEn["links.connectionState.needs_owner"]),
+    ).toBeVisible();
+    expect(
+      await screen.findByText(catalogEn["links.needsOwner"]),
+    ).toBeVisible();
+  });
+
+  it("links each batch a sync produced to its import page", async () => {
+    const batch = {
+      id: "e1000000-0000-4000-8000-000000000001",
+      account_id: checkingID,
+      source: "aggregator",
+      counts: {},
+      balance: {},
+      started_at: "2026-10-17T07:00:00Z",
+    };
+    await renderApp("/accounts/links", {
+      fetch: api([], {
+        [`POST /api/v1/connections/${connectionID}/sync`]: () =>
+          json(200, { connection: connectionFixture, batches: [batch] }),
+      }),
+    });
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: words("links.syncOf", { name: connectionFixture.name }),
+      }),
+    );
+    const link = await screen.findByRole("link", {
+      name: words("links.batch", { account: "Nubank" }),
+    });
+    expect(link).toHaveAttribute(
+      "href",
+      `/accounts/${checkingID}/imports/${batch.id}`,
+    );
+  });
+
+  it("deletes a connection after saying what stays", async () => {
+    const log: { route: string; body?: unknown }[] = [];
+    await renderApp("/accounts/links", {
+      fetch: api(log, {
+        "GET /api/v1/me": () =>
+          json(200, {
+            id: 1,
+            email: "a@b.c",
+            role: "admin",
+            language: "en",
+            region: "DE",
+          }),
+        "GET /api/v1/settings": () => json(200, { base_currency: "EUR" }),
+        [`DELETE /api/v1/connections/${connectionID}`]: () => {
+          log.push({ route: "delete" });
+          return new Response(null, { status: 204 });
+        },
+      }),
+    });
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: words("links.deleteOf", { name: connectionFixture.name }),
+      }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    expect(
+      within(dialog).getByText(catalogEn["links.deleteHint"]),
+    ).toBeVisible();
+    await userEvent.click(
+      within(dialog).getByRole("button", {
+        name: catalogEn["links.deleteConfirm"],
+      }),
+    );
+    await waitFor(() => {
+      expect(log).toEqual([{ route: "delete" }]);
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
   });
 });

@@ -92,22 +92,22 @@ Region: currencies and rate sources come from the user's settings and the price 
 
 ## 3. Aggregator integrations and connections
 
-Status: Partial. Delivered: `listConnections`, `createConnection`, `syncConnection`, `mapExternalAccount` (`features/accounts/links-page.tsx`, `link-drawer.tsx`, `sync-tab.tsx`). No screen: `listAggregators`, `listIntegrations`, `createIntegration`, `getIntegration`, `deleteIntegration`, `updateIntegrationCredentials`, `getConnection`, `deleteConnection`.
+Status: Delivered. Operations: `listAggregators`, `listIntegrations`, `createIntegration`, `deleteIntegration`, `updateIntegrationCredentials`, `listConnections`, `createConnection`, `deleteConnection`, `syncConnection`, `mapExternalAccount`. `getIntegration` and `getConnection` have no screen: the list responses carry the same records (`features/setup/settings-integrations.tsx`, `integration-dialog.tsx`, `integration-delete-dialog.tsx`; `features/accounts/links-page.tsx`, `connection-links.tsx`, `connection-delete-dialog.tsx`, `link-drawer.tsx`, `sync-tab.tsx`).
 
 Scenarios: S51, S57, S59. Reference: ADR 008, `docs/operations/pluggy.md`.
 
 Functions, integrations (settings section):
-- List of integrations with aggregator, name, last credentials update and the number of connections that use each.
-- Create: choose an aggregator from `listAggregators`; the form fields come from its `credential_fields`, not from literals. Secret fields are write-only; after saving the screen shows only that a credential exists.
-- Rotate credentials: replace them; the aggregator validates them before the API stores them, and a rejection keeps the earlier credentials.
-- Delete: allowed only without connections (`409 integration_in_use`); the dialog lists the connections that block it.
+- List of integrations with aggregator, name, last credentials update and the number of connections that use each, counted from `listConnections`.
+- Create: aggregator from `listAggregators`; the fields come from its `credential_fields`. Secret fields are write-only.
+- Rotate credentials: a refusal of the aggregator keeps the earlier credentials and shows the Problem.
+- Delete: `409 integration_in_use` lists the connections that block it.
 
-Functions, connection detail (from `/links`):
-- Header: name, state (`ok`, `needs_owner`, `failed`), provider status, last and next aggregator update, last sync, last error.
-- External accounts table: type, subtype, name, last four digits, currency, state (`pending`, `mapped`, `ignored`), mapped account link, sync start date, last synced date; mapping actions.
+Functions, connection detail (a section per connection on `/accounts/links`):
+- Header: name, state (`ok`, `needs_owner`, `failed`), provider status, last bank update, next update, last sync, last error.
+- External accounts table: subtype, name, last four digits, currency, sync start date, last synced date, state and mapping actions.
 - Sync now, with the resulting batches linked to `/accounts/$id/imports/$batchId`.
 - Delete connection: the dialog states that imported records and batches stay.
-- `needs_owner` state: a call to action that tells the owner to act at the aggregator.
+- `needs_owner` state: a call to action to act at the aggregator.
 
 ## 4. Institution identifiers
 

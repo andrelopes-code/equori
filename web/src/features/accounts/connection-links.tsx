@@ -1,6 +1,7 @@
 import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import { Inline } from "@slotted/react/inline";
+import { Link } from "@slotted/react/link";
 import { Stack } from "@slotted/react/stack";
 import {
   Table,
@@ -23,15 +24,26 @@ import {
   useMapExternalAccount,
   useSyncConnection,
 } from "@/features/accounts/api";
+import { ConnectionDeleteDialog } from "@/features/accounts/connection-delete-dialog";
+import { formatDate } from "@/i18n/format";
 import { formatInstant } from "@/features/accounts/instant";
 import { subtypeWords } from "@/features/accounts/sync-tab";
 import type { MessageKey } from "@/i18n/catalog.en";
+import { useAppLink } from "@/ui/use-app-link";
+import { Presence } from "@/ui/presence";
 import { PhoneList } from "@/ui/phone-list";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 type Account = components["schemas"]["Account"];
 type Connection = components["schemas"]["Connection"];
+type ImportBatch = components["schemas"]["ImportBatch"];
+
+const stateTones = {
+  ok: "success",
+  needs_owner: "warning",
+  failed: "danger",
+} as const;
 type ExternalAccount = components["schemas"]["ExternalAccount"];
 
 const providerWords: Record<string, MessageKey> = {
@@ -56,6 +68,9 @@ export function ConnectionLinks({
   const t = useT();
   const [locale] = useAppLocale();
   const sync = useSyncConnection();
+  const follow = useAppLink();
+  const [batches, setBatches] = useState<ImportBatch[]>([]);
+  const [deleting, setDeleting] = useState(false);
   const ignore = useMapExternalAccount();
   const [message, setMessage] = useState<{
     tone: "success" | "danger";
@@ -105,6 +120,11 @@ export function ConnectionLinks({
   const provider = providerWords[connection.provider_status];
   const facts = [
     provider === undefined ? connection.provider_status : t(provider),
+    connection.last_item_update_at === undefined
+      ? undefined
+      : t("links.itemUpdate", {
+          time: formatInstant(connection.last_item_update_at, locale),
+        }),
     connection.last_synced_at === undefined
       ? undefined
       : t("links.syncedAt", {
@@ -117,41 +137,70 @@ export function ConnectionLinks({
         }),
   ].filter((p) => p !== undefined);
   return (
-    <Stack gap={3}>
+    <Stack
+      gap={3}
+      render={(props) => <section {...props} aria-label={connection.name} />}
+    >
       <Inline justify="between" gap={4}>
         <Stack gap={0}>
-          <Heading level={2} size="md">
-            {connection.name}
-          </Heading>
+          <Inline gap={2} align="center">
+            <Heading level={2} size="md">
+              {connection.name}
+            </Heading>
+            <Tag size="sm" tone={stateTones[connection.state]}>
+              {t(`links.connectionState.${connection.state}`)}
+            </Tag>
+          </Inline>
           <Text size="sm" tone="muted">
             {facts.join(" · ")}
           </Text>
         </Stack>
-        <Button
-          variant="outline"
-          loading={sync.isPending}
-          aria-label={t("links.syncOf", { name: connection.name })}
-          onClick={() => {
-            setMessage(null);
-            sync
-              .mutateAsync(connection.id)
-              .then((answer) => {
-                setMessage({
-                  tone: "success",
-                  text:
-                    answer.batches.length === 0
-                      ? t("sync.notSynced")
-                      : t("links.synced", { count: answer.batches.length }),
+        <Inline gap={2}>
+          <Button
+            variant="ghost"
+            tone="danger"
+            aria-label={t("links.deleteOf", { name: connection.name })}
+            onClick={() => {
+              setDeleting(true);
+            }}
+          >
+            {t("links.deleteConfirm")}
+          </Button>
+          <Button
+            variant="outline"
+            loading={sync.isPending}
+            aria-label={t("links.syncOf", { name: connection.name })}
+            onClick={() => {
+              setMessage(null);
+              setBatches([]);
+              sync
+                .mutateAsync(connection.id)
+                .then((answer) => {
+                  setBatches(answer.batches);
+                  setMessage({
+                    tone: "success",
+                    text:
+                      answer.batches.length === 0
+                        ? t("sync.notSynced")
+                        : t("links.synced", { count: answer.batches.length }),
+                  });
+                })
+                .catch((caught: unknown) => {
+                  setMessage({ tone: "danger", text: errorText(caught, t) });
                 });
-              })
-              .catch((caught: unknown) => {
-                setMessage({ tone: "danger", text: errorText(caught, t) });
-              });
-          }}
-        >
-          {t("sync.now")}
-        </Button>
+            }}
+          >
+            {t("sync.now")}
+          </Button>
+        </Inline>
       </Inline>
+      {connection.state === "needs_owner" && (
+        <Alert tone="warning">
+          <AlertContent>
+            <AlertDescription>{t("links.needsOwner")}</AlertDescription>
+          </AlertContent>
+        </Alert>
+      )}
       {(message !== null || connection.last_error !== undefined) && (
         <Alert tone={message?.tone ?? "danger"} live="polite">
           <AlertContent>
@@ -162,6 +211,39 @@ export function ConnectionLinks({
           </AlertContent>
         </Alert>
       )}
+      {batches.length > 0 && (
+        <Stack gap={1}>
+          <Text size="sm" tone="muted">
+            {t("links.batches")}
+          </Text>
+          {batches.map((batch) => (
+            <Link
+              key={batch.id}
+              variant="neutral"
+              underline="hover"
+              href={`/accounts/${batch.account_id}/imports/${batch.id}`}
+              onClick={follow({
+                to: "/accounts/$id/imports/$batchId",
+                params: { id: batch.account_id, batchId: batch.id },
+              })}
+            >
+              {t("links.batch", {
+                account: accounts.get(batch.account_id)?.name ?? "",
+              })}
+            </Link>
+          ))}
+        </Stack>
+      )}
+      <Presence value={deleting ? connection : undefined}>
+        {(target) => (
+          <ConnectionDeleteDialog
+            connection={target}
+            onClose={() => {
+              setDeleting(false);
+            }}
+          />
+        )}
+      </Presence>
       {compact ? (
         <PhoneList
           label={connection.name}
@@ -205,7 +287,7 @@ export function ConnectionLinks({
           })}
         />
       ) : (
-        <Table columns={4} variant="framed">
+        <Table columns={6} variant="framed">
           <TableContent>
             <TableCaption>{connection.name}</TableCaption>
             <TableHead>
@@ -214,6 +296,8 @@ export function ConnectionLinks({
                 <TableColumnHeader>
                   {t("accountForm.currency")}
                 </TableColumnHeader>
+                <TableColumnHeader>{t("sync.from")}</TableColumnHeader>
+                <TableColumnHeader>{t("sync.lastSynced")}</TableColumnHeader>
                 <TableColumnHeader>{t("links.state")}</TableColumnHeader>
                 <TableColumnHeader align="end">
                   {t("links.actions")}
@@ -251,6 +335,16 @@ export function ConnectionLinks({
                       </Stack>
                     </TableRowHeader>
                     <TableCell>{external.currency}</TableCell>
+                    <TableCell>
+                      {external.sync_from === undefined
+                        ? t("sync.never")
+                        : formatDate(external.sync_from, locale)}
+                    </TableCell>
+                    <TableCell>
+                      {external.last_synced_on === undefined
+                        ? t("sync.never")
+                        : formatDate(external.last_synced_on, locale)}
+                    </TableCell>
                     <TableCell>
                       {external.state === "mapped" ? (
                         <Tag size="sm" tone="success">
