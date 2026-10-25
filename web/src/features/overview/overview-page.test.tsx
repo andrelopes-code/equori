@@ -417,6 +417,39 @@ describe("overview page", () => {
       });
     });
 
+    it("asks only the leaf accounts, since an account with sub-accounts has no records of its own", async () => {
+      const groupID = "a1000000-0000-4000-8000-0000000000a1";
+      const childID = "a1000000-0000-4000-8000-0000000000a2";
+      const group = { ...accountFixtures[0], id: groupID, name: "Itaú" };
+      const child = {
+        ...accountFixtures[0],
+        id: childID,
+        name: "Itaú checking",
+        parent_id: groupID,
+      };
+      await renderApp("/", {
+        fetch: api({
+          "GET /api/v1/accounts": () =>
+            json(200, { items: [...accounts, group, child] }),
+          "GET /api/v1/transactions": uncategorized([{}]),
+          [`GET /api/v1/accounts/${groupID}/unconfirmed`]: () =>
+            problem(422, "validation_failed"),
+          [`GET /api/v1/accounts/${childID}/unconfirmed`]: () =>
+            json(200, { items: [{}] }),
+          [`GET /api/v1/accounts/${childID}/reconciliation`]: () =>
+            json(200, {}),
+        }),
+      });
+      const region = await screen.findByRole("region", { name: "Attention" });
+      await waitFor(() => {
+        expect(within(region).getAllByRole("listitem")).toHaveLength(2);
+      });
+      expect(
+        within(region).queryByRole("button", { name: "Try again" }),
+      ).toBeNull();
+      expect(region).toHaveTextContent(/Unconfirmed records.*Itaú checking.*1/);
+    });
+
     it("fails alone when the connections cannot be read", async () => {
       await renderApp("/", {
         width: 800,

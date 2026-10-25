@@ -27,10 +27,14 @@ export function AttentionBlock({ limit }: { limit?: number }) {
   const accounts = useQuery(accountsQuery(api));
   const uncategorized = useQuery(uncategorizedQuery(api));
   const connections = useQuery(connectionsQuery(api));
-  const open = (accounts.data ?? []).filter(
+  const all = accounts.data ?? [];
+  // An account with sub-accounts holds no records: the API refuses its unconfirmed list.
+  const parents = new Set(all.map((account) => account.parent_id));
+  const open = all.filter(
     (account) =>
       (account.class === "asset" || account.class === "liability") &&
-      account.closed_on === undefined,
+      account.closed_on === undefined &&
+      !parents.has(account.id),
   );
   const unconfirmed = useQueries({
     queries: open.map((account) => unconfirmedQuery(api, account.id)),

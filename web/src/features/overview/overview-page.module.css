@@ -22,6 +22,11 @@
     /* A block holds a chart or a list: rows share the height of their tallest block. */
     align-items: stretch;
   }
+  /* A single-cell grid stretches its block to the height of the row. */
+  .desk > * {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
   .full {
     grid-column: span 12;
   }
