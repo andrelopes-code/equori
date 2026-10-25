@@ -72,12 +72,12 @@ export function DesktopNav({
     <>
       <AppShellNavHeader>
         <div className={styles.head} data-open={open || undefined}>
-          {open && (
-            <span className={styles.brand}>
+          <span className={styles.brand} aria-hidden={!open || undefined}>
+            <span className={styles.mark}>
               <BrandMark size={22} />
-              <span className={styles.wordmark}>{t("app.name")}</span>
             </span>
-          )}
+            <span className={styles.wordmark}>{t("app.name")}</span>
+          </span>
           <AppShellNavToggle
             render={(props) => (
               <IconButton {...props} aria-label={props["aria-label"] ?? ""}>

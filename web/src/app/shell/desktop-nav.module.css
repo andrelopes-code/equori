@@ -1,10 +1,62 @@
 @layer app {
+  /* The brand stays mounted so it can arrive and leave: closed, it has no width, no opacity and
+     no place in the tab order or the accessibility tree. Opening, the column widens first, the
+     mark settles into place, then the name follows it; closing, both leave at once. */
   .brand {
     display: inline-flex;
     align-items: center;
     gap: var(--slotted-space-4);
     min-inline-size: 0;
+    max-inline-size: 0;
+    overflow: hidden;
+    visibility: hidden;
     color: var(--slotted-text);
+    transition:
+      max-inline-size var(--slotted-duration-medium)
+        var(--slotted-easing-standard),
+      visibility 0s linear var(--slotted-duration-medium);
+  }
+
+  .head[data-open] .brand {
+    max-inline-size: 14rem;
+    visibility: visible;
+    transition:
+      max-inline-size var(--slotted-duration-long)
+        var(--slotted-easing-standard),
+      visibility 0s;
+  }
+
+  .mark,
+  .wordmark {
+    display: inline-flex;
+    opacity: 0;
+    transition:
+      opacity var(--slotted-duration-short) var(--slotted-easing-standard),
+      transform var(--slotted-duration-short) var(--slotted-easing-standard);
+  }
+
+  .mark {
+    transform: scale(0.8) rotate(-12deg);
+  }
+
+  .wordmark {
+    transform: translateX(calc(var(--slotted-space-4) * -1));
+  }
+
+  .head[data-open] .mark,
+  .head[data-open] .wordmark {
+    opacity: 1;
+    transform: none;
+    transition-duration: var(--slotted-duration-long);
+    transition-timing-function: var(--slotted-easing-standard);
+  }
+
+  .head[data-open] .mark {
+    transition-delay: var(--slotted-duration-short);
+  }
+
+  .head[data-open] .wordmark {
+    transition-delay: calc(var(--slotted-duration-short) * 1.6);
   }
 
   .wordmark {
@@ -13,6 +65,7 @@
     font-weight: var(--slotted-font-weight-semibold);
     letter-spacing: -0.01em;
     line-height: 1;
+    white-space: nowrap;
   }
 
   /* The two commands stand above the destinations, one step apart; in the rail they stack

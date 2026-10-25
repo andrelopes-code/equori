@@ -18,6 +18,10 @@
     justify-content: center;
   }
 
+  .end {
+    gap: var(--slotted-space-4);
+  }
+
   /* Without a back control the title starts 16 px from the edge, as Android's bar sets it. */
   .start:empty + .title {
     padding-inline-start: var(--slotted-space-2);
