@@ -86,3 +86,4 @@ Registry of the findings reported to the Slotted owner (`web/CLAUDE.md`, "Slotte
 | Dashboard-grid widget headings default to level 3 under a page heading of level 1                   | reported |
 | Dashboard-grid widget detail link cannot render a router link                                       | reported |
 | A link in a card, chart or section action takes the slot's font size and has no size axis           | open     |
+| Attachment preview thumbnail is not lazy-loaded                                                     | open     |

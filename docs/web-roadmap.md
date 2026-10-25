@@ -2,7 +2,7 @@
 
 Sequential guide for the screens of `web/`. Each item names the screens, their functions, the API operations they consume and their dependencies. It is not the source of truth: the implementer of an item reads `api/openapi.yaml`, the ADRs, the scenarios of `docs/domain/06-scenarios.md`, `web/CLAUDE.md` and the existing code before designing the screen. Field lists below are a map of the contract, not a form specification.
 
-Status snapshot: 2026-10-25, commit `984abb8`.
+Status snapshot: 2026-10-25, commit `513df59`.
 
 ## Status legend
 
@@ -18,7 +18,7 @@ Status snapshot: 2026-10-25, commit `984abb8`.
 
 | # | Item | Status | Depends on |
 |---|---|---|---|
-| 1 | Transaction detail: attachments, investment and foreign currency facts | Partial | — |
+| 1 | Transaction detail: attachments, investment and foreign currency facts | Delivered | — |
 | 2 | Foreign purchase and currency exchange entry | Delivered | — |
 | 3 | Aggregator integrations and connections | Partial | — |
 | 4 | Institution identifiers | Partial | — |
@@ -56,11 +56,9 @@ Outside the sequence. Items 1, 3, 4, 8 and 14 extend some of them.
 
 ## 1. Transaction detail: attachments, investment and foreign currency facts
 
-Status: Partial.
+Status: Delivered, except the PDF preview. Operations: `getTransaction` (trade, investment income and posting original amount), `listAttachments`, `getAttachmentContent` (`features/transactions/`: `trade-facts.tsx`, `income-facts.tsx`, `original-amount.tsx`, `attachments-section.tsx`, `attachment-viewer.tsx`). The viewer shows images; a PDF is downloaded. The content response sends `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`, so a frame or a `blob:` URL cannot show a PDF. The PDF preview waits for a change of the security headers (ADR 007), which this item did not make (snapshot 2026-10-25, commit `513df59`). The thumbnail is drawn by the page because the Slotted attachment preview is not lazy-loaded.
 
 Existing code: `features/transactions/transaction-detail.tsx`, `attachments-section.tsx`, `transaction-facts.tsx`, `postings-table.tsx`.
-
-Operations: `getAttachmentContent` (no consumer). `getTransaction` already returns `trade`, `investment_income` and `postings[].original`; no screen renders them.
 
 Functions:
 - Attachment preview: image thumbnail and PDF first page in the attachment list; a viewer with zoom, page navigation and download. On phone width the viewer opens full screen with swipe between attachments.

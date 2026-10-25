@@ -1,0 +1,35 @@
+@layer app {
+  .stage {
+    display: grid;
+    place-items: center;
+    overflow: auto;
+    min-block-size: 40vh;
+    max-block-size: 70vh;
+    background: var(--slotted-surface);
+  }
+
+  .image {
+    display: block;
+    max-inline-size: 100%;
+    max-block-size: 70vh;
+    object-fit: contain;
+    touch-action: none;
+    user-select: none;
+  }
+
+  /* A zoomed image is wider than the stage: the stage scrolls and a touch pans it. */
+  .zoomed {
+    max-inline-size: none;
+    max-block-size: none;
+    touch-action: pan-x pan-y;
+  }
+
+  .toolbar {
+    flex-wrap: wrap;
+  }
+
+  .zoom {
+    min-inline-size: 4ch;
+    text-align: center;
+  }
+}

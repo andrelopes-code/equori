@@ -7,6 +7,7 @@ import {
   AttachmentLink,
   AttachmentPreview,
   AttachmentRemove,
+  AttachmentTrigger,
 } from "@slotted/react/attachment";
 import { Button } from "@slotted/react/button";
 import { Glyph, Icon } from "@slotted/react/icon";
@@ -24,7 +25,15 @@ import {
   useRemoveAttachment,
   useUploadAttachment,
 } from "@/features/transactions/api";
-import { useT } from "@/i18n/i18n-provider";
+import {
+  AttachmentViewer,
+  contentURL,
+} from "@/features/transactions/attachment-viewer";
+import {
+  formatFileSize,
+  formatUploaded,
+} from "@/features/transactions/attachment-meta";
+import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 // The media types the server detects and keeps (N26).
 const accepted = "application/pdf,image/jpeg,image/png,image/webp,text/plain";
@@ -37,14 +46,18 @@ export function AttachmentsSection({
   readOnly: boolean;
 }) {
   const t = useT();
+  const [tag] = useAppLocale();
   const api = useApi();
   const files = useQuery(attachmentsQuery(api, transactionId));
   const upload = useUploadAttachment(transactionId);
   const remove = useRemoveAttachment(transactionId);
   const input = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<string | null>(null);
 
   const items = files.data ?? [];
+  const isImage = (mediaType: string) => mediaType.startsWith("image/");
+  const images = items.filter((item) => isImage(item.media_type));
   return (
     <Stack gap={3}>
       {files.isError && (
@@ -54,7 +67,12 @@ export function AttachmentsSection({
         <Text tone="muted">{t("attachments.none")}</Text>
       )}
       {items.length > 0 && (
-        <AttachmentGroup aria-label={t("attachments.label")} size="sm">
+        <AttachmentGroup
+          aria-label={t("attachments.label")}
+          size="sm"
+          layout="grid"
+          orientation="vertical"
+        >
           {items.map((item) => (
             <Attachment
               key={item.id}
@@ -75,13 +93,42 @@ export function AttachmentsSection({
                     },
                   })}
             >
-              <AttachmentPreview />
-              <AttachmentBody>
-                <AttachmentLink
-                  href={`/api/v1/attachments/${item.id}/content`}
-                  download={item.file_name}
+              {isImage(item.media_type) ? (
+                // Workaround for Slotted finding "Attachment preview thumbnail is not lazy-loaded":
+                // the family draws its own img without loading="lazy", so the page draws it.
+                <AttachmentPreview
+                  render={(props) => (
+                    <span {...props}>
+                      <img
+                        src={contentURL(item.id)}
+                        alt={item.file_name}
+                        loading="lazy"
+                      />
+                    </span>
+                  )}
                 />
-                <AttachmentDetail />
+              ) : (
+                <AttachmentPreview />
+              )}
+              <AttachmentBody>
+                {isImage(item.media_type) ? (
+                  <AttachmentTrigger
+                    onClick={() => {
+                      setViewing(item.id);
+                    }}
+                  />
+                ) : (
+                  <AttachmentLink
+                    href={contentURL(item.id)}
+                    download={item.file_name}
+                  />
+                )}
+                <AttachmentDetail>
+                  {t("attachment.detail", {
+                    size: formatFileSize(item.size, tag),
+                    uploaded: formatUploaded(item.created_at, tag),
+                  })}
+                </AttachmentDetail>
               </AttachmentBody>
               {!readOnly && (
                 <AttachmentActions>
@@ -92,6 +139,14 @@ export function AttachmentsSection({
           ))}
         </AttachmentGroup>
       )}
+      <AttachmentViewer
+        images={images}
+        currentId={viewing}
+        onChange={setViewing}
+        onClose={() => {
+          setViewing(null);
+        }}
+      />
       {error !== null && <InlineMessage tone="danger">{error}</InlineMessage>}
       {!readOnly && (
         <div>
