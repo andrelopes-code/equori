@@ -9,6 +9,7 @@ export const settingsTopics = [
   { id: "privacy", title: "settings.privacy.title" },
   { id: "finances", title: "settings.ledger.title" },
   { id: "calendars", title: "calendar.title" },
+  { id: "integrations", title: "settings.integrations.title" },
   { id: "assistant", title: "settings.assistant.title" },
 ] as const satisfies readonly { id: string; title: MessageKey }[];
 

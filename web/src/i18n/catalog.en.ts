@@ -90,6 +90,30 @@ export const catalogEn = {
     "Translucent surfaces over a soft, slowly moving gradient. Dark scheme only.",
   "settings.privacy.title": "Privacy",
   "settings.privacy.description": "Replaces every amount with ••••.",
+  "settings.integrations.title": "Integrations",
+  "settings.integrations.description":
+    "Credentials of the aggregators that bring bank data. The server stores them sealed and never shows them again.",
+  "settings.integrations.add": "Add integration",
+  "settings.integrations.empty": "No integration yet.",
+  "settings.integrations.connections": "Connections: {count}",
+  "settings.integrations.updated": "Credentials updated {date}",
+  "settings.integrations.name": "Name",
+  "settings.integrations.aggregator": "Aggregator",
+  "settings.integrations.create": "Create",
+  "settings.integrations.rotate": "Replace credentials",
+  "settings.integrations.rotateTitle": "Credentials of {name}",
+  "settings.integrations.secretHint":
+    "Write-only: the stored value is never shown.",
+  "settings.integrations.delete": "Delete",
+  "settings.integrations.deleteTitle": "Delete {name}",
+  "settings.integrations.deleteHint":
+    "Only an integration without connections can be deleted.",
+  "settings.integrations.blockedBy": "Connections that use it:",
+  "problem.aggregator_unauthorized": "The aggregator rejected the credentials.",
+  "problem.aggregator_unavailable": "The aggregator did not answer.",
+  "problem.integration_unavailable":
+    "The server has no EQUORI_SECRET_KEY, so it cannot store credentials.",
+  "problem.integration_in_use": "Connections still use this integration.",
   "settings.assistant.title": "Assistant",
   "settings.assistant.description":
     "Language model providers and the models each feature uses.",

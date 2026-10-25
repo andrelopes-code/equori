@@ -307,3 +307,83 @@ export function useSetUsageLimit() {
       unwrap(await api.PUT("/assistant/usage/limits", { body })),
   });
 }
+
+export type Aggregator = components["schemas"]["Aggregator"];
+export type Integration = components["schemas"]["Integration"];
+export type Connection = components["schemas"]["Connection"];
+
+export const integrationKeys = {
+  aggregators: ["integrations", "aggregators"] as const,
+  list: ["integrations", "list"] as const,
+};
+
+// The aggregators are fixed in the server's code, so the list is cached for the session.
+export function aggregatorsQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: integrationKeys.aggregators,
+    queryFn: async () => (await unwrap(await api.GET("/aggregators"))).items,
+    staleTime: Infinity,
+  });
+}
+
+// One page holds every integration of a household.
+export function integrationsQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: integrationKeys.list,
+    queryFn: async () =>
+      (
+        await unwrap(
+          await api.GET("/integrations", { params: { query: { limit: 100 } } }),
+        )
+      ).items,
+  });
+}
+
+// The same request and key as connectionsQuery of `connections`, which imports `accounts`,
+// which imports this feature: reading it here keeps the imports one way and shares one cache entry.
+export function integrationConnectionsQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: ["connections", "list"] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/connections", { params: { query: { limit: 100 } } }),
+      ),
+  });
+}
+
+export function useCreateIntegration() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (body: components["schemas"]["IntegrationInput"]) =>
+      unwrap(await api.POST("/integrations", { body })),
+  });
+}
+
+export function useUpdateIntegrationCredentials() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      credentials,
+    }: {
+      id: string;
+      credentials: Record<string, string>;
+    }) =>
+      unwrap(
+        await api.PUT("/integrations/{id}/credentials", {
+          params: { path: { id } },
+          body: credentials,
+        }),
+      ),
+  });
+}
+
+export function useDeleteIntegration() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      unwrap(
+        await api.DELETE("/integrations/{id}", { params: { path: { id } } }),
+      ),
+  });
+}

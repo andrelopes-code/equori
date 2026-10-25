@@ -92,6 +92,30 @@ export const catalogPtBR: Catalog = {
     "Superfícies translúcidas sobre um gradiente suave que se move devagar. Somente no esquema escuro.",
   "settings.privacy.title": "Privacidade",
   "settings.privacy.description": "Substitui todos os valores por ••••.",
+  "settings.integrations.title": "Integrações",
+  "settings.integrations.description":
+    "Credenciais dos agregadores que trazem os dados do banco. O servidor as guarda cifradas e nunca as mostra de novo.",
+  "settings.integrations.add": "Adicionar integração",
+  "settings.integrations.empty": "Nenhuma integração ainda.",
+  "settings.integrations.connections": "Conexões: {count}",
+  "settings.integrations.updated": "Credenciais atualizadas em {date}",
+  "settings.integrations.name": "Nome",
+  "settings.integrations.aggregator": "Agregador",
+  "settings.integrations.create": "Criar",
+  "settings.integrations.rotate": "Trocar credenciais",
+  "settings.integrations.rotateTitle": "Credenciais de {name}",
+  "settings.integrations.secretHint":
+    "Só de escrita: o valor guardado nunca é mostrado.",
+  "settings.integrations.delete": "Excluir",
+  "settings.integrations.deleteTitle": "Excluir {name}",
+  "settings.integrations.deleteHint":
+    "Só uma integração sem conexões pode ser excluída.",
+  "settings.integrations.blockedBy": "Conexões que a usam:",
+  "problem.aggregator_unauthorized": "O agregador recusou as credenciais.",
+  "problem.aggregator_unavailable": "O agregador não respondeu.",
+  "problem.integration_unavailable":
+    "O servidor não tem EQUORI_SECRET_KEY e não consegue guardar credenciais.",
+  "problem.integration_in_use": "Ainda há conexões que usam esta integração.",
   "settings.assistant.title": "Assistente",
   "settings.assistant.description":
     "Provedores de modelos de linguagem e os modelos que cada função usa.",
