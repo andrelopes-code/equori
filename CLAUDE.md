@@ -90,6 +90,7 @@ The suite is the safety net against regressions; agents change code only behind 
 - Assert exact values. Check the status before decoding a body: a 404 decoded into a struct yields zero values that pass emptiness checks.
 - Tests are deterministic: a fixed date through `apitest.Today`, no sleeps, no wall clock, no dependence on map order.
 - Assert observable outcomes (HTTP responses, rows, published events), not internal calls. No mocks of the repository or of PostgreSQL.
+- Tests with the build tag `eval` or `live` call a paid or quota-limited provider API with the owner's key. Agents never run them, never pass `-tags eval` or `-tags live`, and never export `EQUORI_GEMINI_API_KEY`, `EQUORI_EVAL_KEY` or any provider key to a test, unless the owner asks for that run in the same message and names the model and request budget.
 
 ## Comments
 
