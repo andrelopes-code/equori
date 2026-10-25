@@ -24,6 +24,13 @@
     touch-action: pan-x pan-y;
   }
 
+  .frame {
+    display: block;
+    inline-size: 100%;
+    block-size: 70vh;
+    border: 0;
+  }
+
   .toolbar {
     flex-wrap: wrap;
   }

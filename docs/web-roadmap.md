@@ -56,7 +56,7 @@ Outside the sequence. Items 1, 3, 4, 8 and 14 extend some of them.
 
 ## 1. Transaction detail: attachments, investment and foreign currency facts
 
-Status: Delivered, except the PDF preview. Operations: `getTransaction` (trade, investment income and posting original amount), `listAttachments`, `getAttachmentContent` (`features/transactions/`: `trade-facts.tsx`, `income-facts.tsx`, `original-amount.tsx`, `attachments-section.tsx`, `attachment-viewer.tsx`). The viewer shows images; a PDF is downloaded. The content response sends `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`, so a frame or a `blob:` URL cannot show a PDF. The PDF preview waits for a change of the security headers (ADR 007), which this item did not make (snapshot 2026-10-25, commit `513df59`). The thumbnail is drawn by the page because the Slotted attachment preview is not lazy-loaded.
+Status: Delivered. Operations: `getTransaction` (trade, investment income and posting original amount), `listAttachments`, `getAttachmentContent` (`features/transactions/`: `trade-facts.tsx`, `income-facts.tsx`, `original-amount.tsx`, `attachments-section.tsx`, `attachment-viewer.tsx`). The viewer shows images and, in a frame of `getAttachmentContent?disposition=inline`, PDFs; the download stays in the viewer (ADR 007, C9a). The thumbnail is drawn by the page because the Slotted attachment preview is not lazy-loaded.
 
 Existing code: `features/transactions/transaction-detail.tsx`, `attachments-section.tsx`, `transaction-facts.tsx`, `postings-table.tsx`.
 

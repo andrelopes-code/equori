@@ -31,15 +31,16 @@ export function contentURL(id: string): string {
 
 const clamp = (zoom: number) => Math.min(maxZoom, Math.max(minZoom, zoom));
 
-// The viewer of the image attachments of one transaction. A PDF is not shown here: the response
-// headers of the content forbid a frame or a blob (ADR 007), so a PDF is downloaded.
+// The viewer of the image and PDF attachments of one transaction. A PDF is shown in a frame of
+// the content with `disposition=inline`, the one response that admits a frame (ADR 007, C9a);
+// the browser's own reader zooms and pages it, so the zoom buttons wait for an image.
 export function AttachmentViewer({
-  images,
+  files,
   currentId,
   onChange,
   onClose,
 }: {
-  images: readonly Attachment[];
+  files: readonly Attachment[];
   currentId: string | null;
   onChange: (id: string) => void;
   onClose: () => void;
@@ -47,11 +48,12 @@ export function AttachmentViewer({
   const t = useT();
   const [tag] = useAppLocale();
   const [zoom, setZoom] = useState(1);
-  const index = images.findIndex((image) => image.id === currentId);
-  const current = images[index];
+  const index = files.findIndex((file) => file.id === currentId);
+  const current = files[index];
+  const isPdf = current?.media_type === "application/pdf";
 
   const step = (direction: 1 | -1) => {
-    const target = images[index + direction];
+    const target = files[index + direction];
     if (target === undefined) return;
     setZoom(1);
     onChange(target.id);
@@ -93,7 +95,7 @@ export function AttachmentViewer({
           <DialogDescription>
             {t("attachment.position", {
               index: index + 1,
-              count: images.length,
+              count: files.length,
             })}
           </DialogDescription>
           <DialogClose />
@@ -101,21 +103,29 @@ export function AttachmentViewer({
         <DialogBody>
           {current !== undefined && (
             <div ref={stageRef} className={styles.stage}>
-              <img
-                className={
-                  zoom === 1
-                    ? styles.image
-                    : [styles.image, styles.zoomed].join(" ")
-                }
-                style={
-                  zoom === 1
-                    ? undefined
-                    : { inlineSize: `${String(zoom * 100)}%` }
-                }
-                src={contentURL(current.id)}
-                alt={current.file_name}
-                draggable={false}
-              />
+              {isPdf ? (
+                <iframe
+                  className={styles.frame}
+                  src={`${contentURL(current.id)}?disposition=inline`}
+                  title={current.file_name}
+                />
+              ) : (
+                <img
+                  className={
+                    zoom === 1
+                      ? styles.image
+                      : [styles.image, styles.zoomed].join(" ")
+                  }
+                  style={
+                    zoom === 1
+                      ? undefined
+                      : { inlineSize: `${String(zoom * 100)}%` }
+                  }
+                  src={contentURL(current.id)}
+                  alt={current.file_name}
+                  draggable={false}
+                />
+              )}
             </div>
           )}
         </DialogBody>
@@ -138,7 +148,7 @@ export function AttachmentViewer({
               aria-label={t("attachment.next")}
               variant="outline"
               tone="secondary"
-              disabled={index >= images.length - 1}
+              disabled={index >= files.length - 1}
               onClick={() => {
                 step(1);
               }}
@@ -151,7 +161,7 @@ export function AttachmentViewer({
               aria-label={t("attachment.zoomOut")}
               variant="outline"
               tone="secondary"
-              disabled={zoom <= minZoom}
+              disabled={isPdf || zoom <= minZoom}
               onClick={() => {
                 zoomTo(zoom - zoomStep);
               }}
@@ -167,7 +177,7 @@ export function AttachmentViewer({
               aria-label={t("attachment.zoomIn")}
               variant="outline"
               tone="secondary"
-              disabled={zoom >= maxZoom}
+              disabled={isPdf || zoom >= maxZoom}
               onClick={() => {
                 zoomTo(zoom + zoomStep);
               }}
@@ -180,7 +190,7 @@ export function AttachmentViewer({
               aria-label={t("attachment.zoomReset")}
               variant="outline"
               tone="secondary"
-              disabled={zoom === 1}
+              disabled={isPdf || zoom === 1}
               onClick={() => {
                 setZoom(1);
               }}

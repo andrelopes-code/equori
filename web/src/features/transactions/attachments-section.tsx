@@ -58,7 +58,9 @@ export function AttachmentsSection({
 
   const items = files.data ?? [];
   const isImage = (mediaType: string) => mediaType.startsWith("image/");
-  const images = items.filter((item) => isImage(item.media_type));
+  const viewable = items.filter(
+    (item) => isImage(item.media_type) || item.media_type === "application/pdf",
+  );
   return (
     <Stack gap={3}>
       {files.isError && (
@@ -113,7 +115,7 @@ export function AttachmentsSection({
                 <AttachmentPreview />
               )}
               <AttachmentBody>
-                {isImage(item.media_type) ? (
+                {viewable.includes(item) ? (
                   <AttachmentTrigger
                     onClick={() => {
                       setViewing(item.id);
@@ -142,7 +144,7 @@ export function AttachmentsSection({
         </AttachmentGroup>
       )}
       <AttachmentViewer
-        images={images}
+        files={viewable}
         currentId={viewing}
         onChange={setViewing}
         onClose={() => {

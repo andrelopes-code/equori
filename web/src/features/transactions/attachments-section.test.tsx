@@ -123,13 +123,21 @@ describe("attachments of a transaction", () => {
     ).toBe(true);
   });
 
-  it("downloads a PDF instead of opening a viewer", async () => {
+  it("opens a PDF in a frame with the inline disposition and keeps the download", async () => {
     await renderApp(path, { fetch: api() });
-    const link = await screen.findByRole("link", { name: "invoice.pdf" });
-    expect(link).toHaveAttribute("href", content(ids.pdf));
-    expect(link).toHaveAttribute("download", "invoice.pdf");
-    await userEvent.setup().click(link);
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    const { dialog } = await open("invoice.pdf");
+    const frame = within(dialog).getByTitle("invoice.pdf");
+    expect(frame.tagName).toBe("IFRAME");
+    expect(frame).toHaveAttribute(
+      "src",
+      `${content(ids.pdf)}?disposition=inline`,
+    );
+    expect(within(dialog).queryByRole("img")).toBeNull();
+    const download = within(dialog).getByRole("link", {
+      name: catalogEn["attachment.download"],
+    });
+    expect(download).toHaveAttribute("href", content(ids.pdf));
+    expect(download).toHaveAttribute("download", "invoice.pdf");
   });
 
   it("opens the viewer on the image and returns the focus on Escape", async () => {
@@ -174,7 +182,7 @@ describe("attachments of a transaction", () => {
     expect(within(dialog).getByText("100%")).toBeInTheDocument();
   });
 
-  it("steps between the images by button and by arrow key and skips the PDF", async () => {
+  it("steps between the files, the PDF included, by button and by arrow key", async () => {
     await renderApp(path, { fetch: api() });
     const { user, dialog } = await open("receipt-1.png");
     const previous = within(dialog).getByRole("button", {
@@ -184,34 +192,32 @@ describe("attachments of a transaction", () => {
       name: catalogEn["attachment.next"],
     });
     expect(previous).toBeDisabled();
-    expect(within(dialog).getByText("1 of 3")).toBeInTheDocument();
+    expect(within(dialog).getByText("1 of 4")).toBeInTheDocument();
     await user.click(next);
+    expect(within(dialog).getByTitle("invoice.pdf")).toBeInTheDocument();
+    expect(within(dialog).getByText("2 of 4")).toBeInTheDocument();
+    await user.keyboard("{ArrowRight}");
     expect(shown(dialog)).toHaveAttribute("src", content(ids.two));
     await user.keyboard("{ArrowRight}");
     expect(shown(dialog)).toHaveAttribute("src", content(ids.three));
     expect(next).toBeDisabled();
     await user.keyboard("{ArrowLeft}");
     expect(shown(dialog)).toHaveAttribute("src", content(ids.two));
-    expect(within(dialog).getByText("2 of 3")).toBeInTheDocument();
+    expect(within(dialog).getByText("3 of 4")).toBeInTheDocument();
   });
 
-  it("swipes between the images on a phone", async () => {
+  it("swipes between the files on a phone", async () => {
     await renderApp(path, { fetch: api(), width: 390 });
     const { dialog } = await open("receipt-1.png");
     const image = shown(dialog);
     fireEvent.pointerDown(image, { clientX: 300, clientY: 200, pointerId: 1 });
     fireEvent.pointerUp(image, { clientX: 100, clientY: 210, pointerId: 1 });
-    expect(shown(dialog)).toHaveAttribute("src", content(ids.two));
-    fireEvent.pointerDown(shown(dialog), {
-      clientX: 100,
-      clientY: 200,
-      pointerId: 1,
-    });
-    fireEvent.pointerUp(shown(dialog), {
-      clientX: 300,
-      clientY: 200,
-      pointerId: 1,
-    });
+    const frame = within(dialog).getByTitle("invoice.pdf");
+    // The frame takes its own touches, so the swipe lands on the stage around it.
+    const stage = frame.parentElement;
+    if (stage === null) throw new Error("no stage around the frame");
+    fireEvent.pointerDown(stage, { clientX: 100, clientY: 200, pointerId: 1 });
+    fireEvent.pointerUp(stage, { clientX: 300, clientY: 200, pointerId: 1 });
     expect(shown(dialog)).toHaveAttribute("src", content(ids.one));
   });
 
