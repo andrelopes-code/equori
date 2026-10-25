@@ -46,6 +46,18 @@ func (r *Repository) UsageSince(ctx context.Context, userID int64, today, since 
 	return out, nil
 }
 
+func (r *Repository) UsageByDay(ctx context.Context, userID int64, from, to time.Time) ([]domain.UsageDay, error) {
+	rows, err := r.q.UsageByDay(ctx, UsageByDayParams{UserID: userID, FromDate: from, ToDate: to})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]domain.UsageDay, len(rows))
+	for i, row := range rows {
+		out[i] = domain.UsageDay{Day: row.Day, ProviderID: row.ProviderID, Model: row.Model, Requests: row.Requests, Errors: row.Errors, Tokens: row.Tokens}
+	}
+	return out, nil
+}
+
 func (r *Repository) Limits(ctx context.Context, userID int64) ([]domain.Limit, error) {
 	rows, err := r.q.ListUsageLimits(ctx, userID)
 	if err != nil {

@@ -21,6 +21,7 @@ var exposure = map[string]string{
 	"listUses":                         "-llm",
 	"setUseChain":                      "-llm",
 	"listUsage":                        "-llm",
+	"listUsageDays":                    "-llm",
 	"setUsageLimit":                    "-llm",
 	"deleteSession":                    "-session",
 	"getCurrentUser":                   "-session",

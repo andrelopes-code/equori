@@ -2136,6 +2136,36 @@ paths:
                 $ref: "#/components/schemas/UsageList"
         "401":
           $ref: "#/components/responses/Problem"
+  /assistant/usage/days:
+    get:
+      tags: [assistant]
+      operationId: listUsageDays
+      summary: The user's usage per day, provider and model over a range of at most 90 days.
+      description: Both ends are included and the figures sum the uses. A day without use has no row.
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsageDayList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
   /assistant/usage/limits:
     put:
       tags: [assistant]
@@ -4801,6 +4831,36 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/UsageRow"
+    UsageDay:
+      type: object
+      required: [day, provider_id, model, requests, errors, tokens]
+      properties:
+        day:
+          type: string
+          format: date
+        provider_id:
+          type: string
+        model:
+          type: string
+        requests:
+          type: integer
+          format: int64
+          description: Requests sent that day, answered or not.
+        errors:
+          type: integer
+          format: int64
+        tokens:
+          type: integer
+          format: int64
+          description: Input and output tokens of the day's answers.
+    UsageDayList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/UsageDay"
     AssistantChat:
       type: object
       additionalProperties: false

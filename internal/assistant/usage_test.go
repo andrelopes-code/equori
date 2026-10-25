@@ -3,6 +3,7 @@ package assistant_test
 import (
 	"context"
 	"net/http"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -135,5 +136,78 @@ func TestUsageLimitsA4A5(t *testing.T) {
 	h.MustDo(http.MethodDelete, "/api/v1/assistant/providers/"+p.ID, nil, http.StatusNoContent, nil)
 	if got := usage(t, h); len(got) != 0 {
 		t.Fatalf("usage after clearing and deleting = %+v", got)
+	}
+}
+
+type usageDayView struct {
+	Day        string `json:"day"`
+	ProviderID string `json:"provider_id"`
+	Model      string `json:"model"`
+	Requests   int64  `json:"requests"`
+	Errors     int64  `json:"errors"`
+	Tokens     int64  `json:"tokens"`
+}
+
+func usageDays(t *testing.T, h *apitest.Harness, c *http.Client, query string) []usageDayView {
+	t.Helper()
+	var out struct {
+		Items []usageDayView `json:"items"`
+	}
+	r := h.Call(c, http.MethodGet, "/api/v1/assistant/usage/days?"+query, nil)
+	if r.Status != http.StatusOK {
+		t.Fatalf("usage days = %d: %s", r.Status, r.Body)
+	}
+	r.Decode(t, &out)
+	return out.Items
+}
+
+// The days operation gives one row per day, provider and model, without the days that had no use.
+func TestUsageDays(t *testing.T) {
+	t.Parallel()
+	lite := structured(`{"items":[]}`)
+	lite.Model = "gemini-3.5-flash-lite"
+	lite.Response.Usage = llm.Usage{InputTokens: 40, OutputTokens: 2}
+	refused := llmtest.Step{Model: "gemini-3.5-flash-lite", Err: &llm.QuotaError{RetryAfter: time.Hour}}
+	flash := structured(`{"items":[]}`)
+	flash.Model = "gemini-3.1-flash-lite"
+	flash.Response.Usage = llm.Usage{InputTokens: 10, OutputTokens: 5}
+	var day atomic.Int64
+	start := time.Date(2026, 10, 20, 12, 0, 0, 0, time.UTC)
+	h := apitest.New(t, apitest.LLM(llmtest.New("aistudio", lite, refused, flash)),
+		apitest.Clock(func() time.Time { return start.AddDate(0, 0, int(day.Load())) }))
+	ctx := auth.WithUserID(t.Context(), h.OwnerID())
+	if err := call(ctx, h, assistant.ChatUse); err != nil {
+		t.Fatalf("day 1: %v", err)
+	}
+	day.Store(2)
+	if err := call(ctx, h, assistant.ChatUse); err != nil {
+		t.Fatalf("day 3: %v", err)
+	}
+
+	// Day 2 has no use; on day 3 the lite model refused and the call moved to the next target.
+	want := []usageDayView{
+		{Day: "2026-10-20", ProviderID: "aistudio", Model: "gemini-3.5-flash-lite", Requests: 1, Tokens: 42},
+		{Day: "2026-10-22", ProviderID: "aistudio", Model: "gemini-3.1-flash-lite", Requests: 1, Tokens: 15},
+		{Day: "2026-10-22", ProviderID: "aistudio", Model: "gemini-3.5-flash-lite", Requests: 1, Errors: 1},
+	}
+	got := usageDays(t, h, h.Client, "from=2026-10-20&to=2026-10-22")
+	if len(got) != len(want) {
+		t.Fatalf("usage days = %+v", got)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("row %d = %+v, want %+v", i, got[i], want[i])
+		}
+	}
+	if got := usageDays(t, h, h.Client, "from=2026-10-21&to=2026-10-21"); len(got) != 0 {
+		t.Fatalf("a day without use = %+v", got)
+	}
+	other := h.Login("other@example.com")
+	if got := usageDays(t, h, other, "from=2026-10-20&to=2026-10-22"); len(got) != 0 {
+		t.Fatalf("other user sees %+v", got)
+	}
+
+	for _, q := range []string{"from=2026-10-20&to=2027-01-20", "from=2026-10-22&to=2026-10-20", "to=2026-10-22", "from=2026-10-20"} {
+		h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/assistant/usage/days?"+q, nil), http.StatusBadRequest, "invalid_request", "")
 	}
 }

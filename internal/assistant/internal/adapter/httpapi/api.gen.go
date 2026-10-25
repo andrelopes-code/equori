@@ -350,6 +350,25 @@ type ProviderPatch struct {
 	Name *string `json:"name,omitempty"`
 }
 
+// UsageDay defines model for UsageDay.
+type UsageDay struct {
+	Day        openapi_types.Date `json:"day"`
+	Errors     int64              `json:"errors"`
+	Model      string             `json:"model"`
+	ProviderId string             `json:"provider_id"`
+
+	// Requests Requests sent that day, answered or not.
+	Requests int64 `json:"requests"`
+
+	// Tokens Input and output tokens of the day's answers.
+	Tokens int64 `json:"tokens"`
+}
+
+// UsageDayList defines model for UsageDayList.
+type UsageDayList struct {
+	Items []UsageDay `json:"items"`
+}
+
 // UsageLimitInput defines model for UsageLimitInput.
 type UsageLimitInput struct {
 	Model          string `json:"model"`
@@ -432,6 +451,12 @@ type ListAssistantConversationsParams struct {
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
 
+// ListUsageDaysParams defines parameters for ListUsageDays.
+type ListUsageDaysParams struct {
+	From openapi_types.Date `form:"from" json:"from"`
+	To   openapi_types.Date `form:"to" json:"to"`
+}
+
 // CreateProviderJSONRequestBody defines body for CreateProvider for application/json ContentType.
 type CreateProviderJSONRequestBody = ProviderInput
 
@@ -494,6 +519,9 @@ type ServerInterface interface {
 	// ListUsage The user's usage per provider and model today and over the last 30 days, with declared limits (ADR 019 U6).
 	// (GET /assistant/usage)
 	ListUsage(w http.ResponseWriter, r *http.Request)
+	// ListUsageDays The user's usage per day, provider and model over a range of at most 90 days.
+	// (GET /assistant/usage/days)
+	ListUsageDays(w http.ResponseWriter, r *http.Request, params ListUsageDaysParams)
 	// SetUsageLimit Declare the daily limits of a provider and model; absent quotas remove them.
 	// (PUT /assistant/usage/limits)
 	SetUsageLimit(w http.ResponseWriter, r *http.Request)
@@ -840,6 +868,52 @@ func (siw *ServerInterfaceWrapper) ListUsage(w http.ResponseWriter, r *http.Requ
 	handler.ServeHTTP(w, r)
 }
 
+// ListUsageDays operation middleware
+func (siw *ServerInterfaceWrapper) ListUsageDays(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListUsageDaysParams
+
+	// ------------- Required query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListUsageDays(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // SetUsageLimit operation middleware
 func (siw *ServerInterfaceWrapper) SetUsageLimit(w http.ResponseWriter, r *http.Request) {
 
@@ -1021,6 +1095,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/assistant/providers/{id}", wrapper.UpdateProvider)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/assistant/providers/{id}/models", wrapper.ListProviderModels)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/assistant/usage", wrapper.ListUsage)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/assistant/usage/days", wrapper.ListUsageDays)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/assistant/usage/limits", wrapper.SetUsageLimit)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/assistant/chat", wrapper.GetAssistantChat)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/assistant/turns", wrapper.SendAssistantMessage)
@@ -1895,6 +1970,58 @@ func (response ListUsage401ApplicationProblemPlusJSONResponse) VisitListUsageRes
 	return err
 }
 
+type ListUsageDaysRequestObject struct {
+	Params ListUsageDaysParams
+}
+
+type ListUsageDaysResponseObject interface {
+	VisitListUsageDaysResponse(w http.ResponseWriter) error
+}
+
+type ListUsageDays200JSONResponse UsageDayList
+
+func (response ListUsageDays200JSONResponse) VisitListUsageDaysResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListUsageDays400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListUsageDays400ApplicationProblemPlusJSONResponse) VisitListUsageDaysResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListUsageDays401ApplicationProblemPlusJSONResponse Problem
+
+func (response ListUsageDays401ApplicationProblemPlusJSONResponse) VisitListUsageDaysResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type SetUsageLimitRequestObject struct {
 	Body *SetUsageLimitJSONRequestBody
 }
@@ -2106,6 +2233,9 @@ type StrictServerInterface interface {
 	// ListUsage The user's usage per provider and model today and over the last 30 days, with declared limits (ADR 019 U6).
 	// (GET /assistant/usage)
 	ListUsage(ctx context.Context, request ListUsageRequestObject) (ListUsageResponseObject, error)
+	// ListUsageDays The user's usage per day, provider and model over a range of at most 90 days.
+	// (GET /assistant/usage/days)
+	ListUsageDays(ctx context.Context, request ListUsageDaysRequestObject) (ListUsageDaysResponseObject, error)
 	// SetUsageLimit Declare the daily limits of a provider and model; absent quotas remove them.
 	// (PUT /assistant/usage/limits)
 	SetUsageLimit(ctx context.Context, request SetUsageLimitRequestObject) (SetUsageLimitResponseObject, error)
@@ -2546,6 +2676,32 @@ func (sh *strictHandler) ListUsage(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListUsageResponseObject); ok {
 		if err := validResponse.VisitListUsageResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListUsageDays operation middleware
+func (sh *strictHandler) ListUsageDays(w http.ResponseWriter, r *http.Request, params ListUsageDaysParams) {
+	var request ListUsageDaysRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListUsageDays(ctx, request.(ListUsageDaysRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListUsageDays")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListUsageDaysResponseObject); ok {
+		if err := validResponse.VisitListUsageDaysResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

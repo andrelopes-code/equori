@@ -26,6 +26,16 @@ WHERE user_id = @user_id AND day >= @since::date
 GROUP BY provider_id, model
 ORDER BY provider_id, model;
 
+-- name: UsageByDay :many
+SELECT day, provider_id, model,
+       sum(requests)::bigint AS requests,
+       sum(errors)::bigint   AS errors,
+       sum(input_tokens + output_tokens)::bigint AS tokens
+FROM assistant_usage
+WHERE user_id = @user_id AND day BETWEEN @from_date AND @to_date
+GROUP BY day, provider_id, model
+ORDER BY day, provider_id, model;
+
 -- name: ListUsageLimits :many
 SELECT * FROM assistant_usage_limit WHERE user_id = $1 ORDER BY provider_id, model;
 

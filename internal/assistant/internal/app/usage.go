@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"time"
 
@@ -17,6 +18,7 @@ const UsageDays = 30
 type UsageRepository interface {
 	AddUsage(ctx context.Context, e domain.UsageEntry) error
 	UsageSince(ctx context.Context, userID int64, today, since time.Time) ([]domain.UsageSummary, error)
+	UsageByDay(ctx context.Context, userID int64, from, to time.Time) ([]domain.UsageDay, error)
 	Limits(ctx context.Context, userID int64) ([]domain.Limit, error)
 	SetLimit(ctx context.Context, userID int64, l domain.Limit) error
 }
@@ -35,6 +37,20 @@ func (s *Service) Record(ctx context.Context, userID int64, a Attempt) error {
 		Failed: a.Outcome != "ok", Quota: a.Outcome == "quota",
 		InputTokens: a.InputTokens, OutputTokens: a.OutputTokens, CoolingUntil: a.CoolingUntil,
 	})
+}
+
+// MaxUsageRangeDays is the longest range UsageByDay answers, both ends included.
+const MaxUsageRangeDays = 90
+
+var ErrInvalidUsageRange = errors.New("from must not be after to, and the range must not exceed 90 days")
+
+// UsageByDay returns the user's usage per day, provider and model from from to to, both
+// inclusive; a day without use has no row.
+func (s *Service) UsageByDay(ctx context.Context, userID int64, from, to time.Time) ([]domain.UsageDay, error) {
+	if to.Before(from) || to.Sub(from) > (MaxUsageRangeDays-1)*24*time.Hour {
+		return nil, ErrInvalidUsageRange
+	}
+	return s.repo.UsageByDay(ctx, userID, from, to)
 }
 
 // UsageRow is one provider and model with its usage, its declared limit and its cooldown.

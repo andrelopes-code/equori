@@ -3,6 +3,8 @@ package httpapi
 import (
 	"context"
 
+	openapi_types "github.com/oapi-codegen/runtime/types"
+
 	"github.com/andrelopes-code/equori/internal/assistant/internal/app"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 )
@@ -26,6 +28,21 @@ func (s *Server) ListUsage(ctx context.Context, _ ListUsageRequestObject) (ListU
 		}
 	}
 	return ListUsage200JSONResponse{Items: items}, nil
+}
+
+func (s *Server) ListUsageDays(ctx context.Context, req ListUsageDaysRequestObject) (ListUsageDaysResponseObject, error) {
+	rows, err := s.svc.UsageByDay(ctx, auth.MustUserID(ctx), req.Params.From.Time, req.Params.To.Time)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]UsageDay, len(rows))
+	for i, r := range rows {
+		items[i] = UsageDay{
+			Day: openapi_types.Date{Time: r.Day}, ProviderId: r.ProviderID, Model: r.Model,
+			Requests: r.Requests, Errors: r.Errors, Tokens: r.Tokens,
+		}
+	}
+	return ListUsageDays200JSONResponse{Items: items}, nil
 }
 
 func (s *Server) SetUsageLimit(ctx context.Context, req SetUsageLimitRequestObject) (SetUsageLimitResponseObject, error) {

@@ -60,6 +60,10 @@ func toProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusServiceUnavailable, "assistant_unavailable", "no language model provider serves the assistant; add one in Settings"), true
 	case errors.Is(err, app.ErrTurnFailed):
 		return problem.New(http.StatusBadGateway, "assistant_failed", "the language model provider refused the request"), true
+	case errors.Is(err, app.ErrInvalidUsageRange):
+		d := problem.New(http.StatusBadRequest, "invalid_request", err.Error())
+		d.Errors = []problem.FieldError{{Field: "to", Message: "must be on or after from and at most 89 days after it"}}
+		return d, true
 	case errors.Is(err, app.ErrInvalidText):
 		return problem.New(http.StatusBadRequest, "invalid_request", err.Error()), true
 	case errors.Is(err, domain.ErrConversationNotFound):

@@ -20,6 +20,13 @@ type UsageEntry struct {
 	CoolingUntil time.Time
 }
 
+// UsageDay is the usage of one provider and model on one day, summed over the uses.
+type UsageDay struct {
+	Day                      time.Time
+	ProviderID, Model        string
+	Requests, Errors, Tokens int64
+}
+
 // UsageSummary is the usage of one provider and model: today and since the period's start.
 type UsageSummary struct {
 	ProviderID     string

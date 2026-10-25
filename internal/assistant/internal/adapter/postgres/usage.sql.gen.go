@@ -154,6 +154,59 @@ func (q *Queries) SetUsageLimit(ctx context.Context, arg SetUsageLimitParams) er
 	return err
 }
 
+const usageByDay = `-- name: UsageByDay :many
+SELECT day, provider_id, model,
+       sum(requests)::bigint AS requests,
+       sum(errors)::bigint   AS errors,
+       sum(input_tokens + output_tokens)::bigint AS tokens
+FROM assistant_usage
+WHERE user_id = $1 AND day BETWEEN $2 AND $3
+GROUP BY day, provider_id, model
+ORDER BY day, provider_id, model
+`
+
+type UsageByDayParams struct {
+	UserID   int64
+	FromDate time.Time
+	ToDate   time.Time
+}
+
+type UsageByDayRow struct {
+	Day        time.Time
+	ProviderID string
+	Model      string
+	Requests   int64
+	Errors     int64
+	Tokens     int64
+}
+
+func (q *Queries) UsageByDay(ctx context.Context, arg UsageByDayParams) ([]UsageByDayRow, error) {
+	rows, err := q.db.Query(ctx, usageByDay, arg.UserID, arg.FromDate, arg.ToDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UsageByDayRow
+	for rows.Next() {
+		var i UsageByDayRow
+		if err := rows.Scan(
+			&i.Day,
+			&i.ProviderID,
+			&i.Model,
+			&i.Requests,
+			&i.Errors,
+			&i.Tokens,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const usageSince = `-- name: UsageSince :many
 SELECT provider_id, model,
        COALESCE(sum(requests) FILTER (WHERE day = $1::date), 0)::bigint      AS today_requests,

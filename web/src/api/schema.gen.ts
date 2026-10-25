@@ -1225,6 +1225,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/assistant/usage/days": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The user's usage per day, provider and model over a range of at most 90 days.
+         * @description Both ends are included and the figures sum the uses. A day without use has no row.
+         */
+        get: operations["listUsageDays"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/assistant/usage/limits": {
         parameters: {
             query?: never;
@@ -2779,6 +2799,27 @@ export interface components {
         };
         UsageList: {
             items: components["schemas"]["UsageRow"][];
+        };
+        UsageDay: {
+            /** Format: date */
+            day: string;
+            provider_id: string;
+            model: string;
+            /**
+             * Format: int64
+             * @description Requests sent that day, answered or not.
+             */
+            requests: number;
+            /** Format: int64 */
+            errors: number;
+            /**
+             * Format: int64
+             * @description Input and output tokens of the day's answers.
+             */
+            tokens: number;
+        };
+        UsageDayList: {
+            items: components["schemas"]["UsageDay"][];
         };
         AssistantChat: {
             available: boolean;
@@ -6944,6 +6985,31 @@ export interface operations {
                     "application/json": components["schemas"]["UsageList"];
                 };
             };
+            401: components["responses"]["Problem"];
+        };
+    };
+    listUsageDays: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsageDayList"];
+                };
+            };
+            400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
         };
     };
