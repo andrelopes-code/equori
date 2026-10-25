@@ -1,5 +1,6 @@
 import { ButtonLink } from "@slotted/react/button";
 import { Field, FieldLabel } from "@slotted/react/field";
+import { Inline } from "@slotted/react/inline";
 import { Page, PageBody } from "@slotted/react/page";
 import {
   PageHeader,
@@ -121,10 +122,7 @@ export function PortfolioPage() {
                 {t("portfolio.subtitle")}
               </PageHeaderSubheading>
             </PageHeaderTitle>
-            <PageHeaderActions>
-              {!compact && controls}
-              {yearLink}
-            </PageHeaderActions>
+            <PageHeaderActions>{!compact && controls}</PageHeaderActions>
           </PageHeaderTitleRow>
         </PageHeaderTitleArea>
       </PageHeader>
@@ -132,9 +130,12 @@ export function PortfolioPage() {
         <Stack gap={6}>
           {compact && <div className={styles.controls}>{controls}</div>}
           <Stack gap={3}>
-            <Heading level={2} size="md">
-              {t("portfolio.positions.title")}
-            </Heading>
+            <Inline gap={3} align="center" justify="between" wrap="wrap">
+              <Heading level={2} size="md">
+                {t("portfolio.positions.title")}
+              </Heading>
+              {yearLink}
+            </Inline>
             <PortfolioPositions date={date} />
           </Stack>
           <div className={styles.pair}>

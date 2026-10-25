@@ -104,6 +104,9 @@ describe("Tax year of investments", () => {
     });
     await results();
     expect(years).toEqual(["2025"]);
+    expect(screen.getByRole("spinbutton", { name: "Year" })).toHaveValue(
+      "2025",
+    );
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Increase" }));
     await waitFor(() => {
