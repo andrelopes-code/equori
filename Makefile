@@ -14,7 +14,7 @@ COMPOSE := docker compose -f compose.yaml -f compose.dev.yaml
 LOCAL_ENV ?= $(HOME)/.config/equori/local.env
 LOAD_ENV := set -a && . ./dev.env && { [ ! -f "$(LOCAL_ENV)" ] || . "$(LOCAL_ENV)"; } && { [ ! -f .env ] || . ./.env; } && set +a
 
-.PHONY: check static fmt fmt-check lint tidy-check gen gen-check test test-race vuln build dev db-up db-down db-test-up run-dev run-prod hooks tools web-deps web-build web-check web-static web-test web-dev
+.PHONY: check static fmt fmt-check lint tidy-check gen gen-check test test-race vuln build dev db-up db-down db-test-up run-dev run-prod hooks tools web-deps web-build web-check web-static web-test web-dev demo demo-user demo-reset
 
 # Everything, the Go tests under -race included: CI runs it on every pull request. The web build
 # comes first: the Go tests compile package web, which embeds web/dist. The web tests come last:
@@ -69,6 +69,22 @@ build: web-build
 
 dev: db-up
 	$(LOAD_ENV) && go run ./cmd/equori
+
+# The demo user of the local instance (docs/superpowers/plans/2026-10-24-demo-account.md); both targets need make dev running.
+DEMO_EMAIL ?= demo@equori.local
+export EQUORI_DEMO_PASSWORD ?= equori-demo-account
+
+demo-user: db-up
+	-$(LOAD_ENV) && printf '%s\n' "$(EQUORI_DEMO_PASSWORD)" | go run ./cmd/equori user create --email $(DEMO_EMAIL) --language pt --region BR
+
+# Deletes the demo user and every row it owns (cmd/demoseed/reset.sql); make demo then seeds it again.
+demo-reset: db-up
+	sed 's/@EMAIL@/$(DEMO_EMAIL)/g' cmd/demoseed/reset.sql | $(COMPOSE) exec -T db psql -v ON_ERROR_STOP=1 -U equori -d equori -f -
+
+demo: demo-user
+	go run ./cmd/demoseed -email $(DEMO_EMAIL)
+	@# The rebuilds collide with the dispatcher while it still drains the events of the seeding, so they retry.
+	$(LOAD_ENV) && for i in 1 2 3 4 5 6 7 8 9 10 11 12; do sleep 15; go run ./cmd/equori portfolio rebuild && go run ./cmd/equori reporting rebuild && exit 0; done; exit 1
 
 # The app and the Vite dev server together; Ctrl-C stops both.
 run-dev: $(WEB_DEPS)

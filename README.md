@@ -68,6 +68,12 @@ set -a; . ./dev.env; set +a
 go run ./cmd/equori user create --email you@example.com --admin
 ```
 
+### Demo account
+
+`make demo` (with `make dev` running) creates the user `demo@equori.local` and fills it with 24 months of data of a Brazilian persona: accounts and cards of four institutions, about 2300 transactions, installment plans, a brokerage portfolio with prices and income, schedules, budgets, goals, rules, imported statements and reconciliation differences. The password is `$EQUORI_DEMO_PASSWORD`, `equori-demo-account` by default. `make demo-reset` deletes the user and every row it owns. The persona and the plan are in `docs/superpowers/plans/2026-10-24-demo-account.md`.
+
+The instruments and prices of the demo are shared by every user of the instance.
+
 ## License
 
 MIT
