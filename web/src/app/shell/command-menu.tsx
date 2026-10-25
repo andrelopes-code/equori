@@ -97,6 +97,13 @@ export function CommandMenu({
         onSelect: () => void navigate({ to: "/accounts/institutions" }),
       },
       {
+        id: "go.taxYear",
+        label: t("palette.taxYear"),
+        group: "go",
+        icon: icon("instruments"),
+        onSelect: () => void navigate({ to: "/portfolio/year" }),
+      },
+      {
         id: "go.links",
         label: t("palette.links"),
         group: "go",

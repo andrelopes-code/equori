@@ -1,5 +1,6 @@
 // The words of the portfolio screen, spread into catalogEn.
 export const portfolioEn = {
+  "palette.taxYear": "Investment results and income of a year",
   "taxYear.title": "Investments in {year}",
   "taxYear.range": "From {from} to {to}.",
   "taxYear.year": "Year",

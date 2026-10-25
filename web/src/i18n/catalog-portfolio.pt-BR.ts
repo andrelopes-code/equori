@@ -1,6 +1,7 @@
 import type { portfolioEn } from "@/i18n/catalog-portfolio.en";
 
 export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
+  "palette.taxYear": "Resultados e rendimentos de um ano",
   "taxYear.title": "Investimentos em {year}",
   "taxYear.range": "De {from} a {to}.",
   "taxYear.year": "Ano",
