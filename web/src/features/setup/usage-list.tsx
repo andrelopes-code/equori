@@ -9,6 +9,8 @@ import {
   ListItemEnd,
   ListItemLabel,
 } from "@slotted/react/list-item";
+import { ProgressBar } from "@slotted/react/progress-indicator";
+import { Stack } from "@slotted/react/stack";
 import { Tag } from "@slotted/react/tag";
 import { useMemo } from "react";
 
@@ -21,6 +23,11 @@ const tones = {
   near: "warning",
   cooling: "warning",
 } as const;
+
+function meterTone(used: number, limit: number) {
+  if (used >= limit) return "danger";
+  return used >= limit * 0.8 ? "warning" : "accent";
+}
 
 // The "Usage" group of the assistant section: today's and the period's figures per provider
 // and model, against the declared limits (ADR 019 U7).
@@ -95,6 +102,42 @@ export function UsageList({
                     }),
                   ].join(" · ")}
                 </ListItemDescription>
+                {(row.requests_per_day !== undefined ||
+                  row.tokens_per_day !== undefined) && (
+                  <Stack gap={1}>
+                    {row.requests_per_day !== undefined && (
+                      <ProgressBar
+                        size="sm"
+                        label={t("assistant.usage.meter.requests")}
+                        value={row.today_requests}
+                        max={row.requests_per_day}
+                        valueText={t("assistant.usage.requestsOf", {
+                          count: number.format(row.today_requests),
+                          limit: number.format(row.requests_per_day),
+                        })}
+                        showValue
+                        tone={meterTone(
+                          row.today_requests,
+                          row.requests_per_day,
+                        )}
+                      />
+                    )}
+                    {row.tokens_per_day !== undefined && (
+                      <ProgressBar
+                        size="sm"
+                        label={t("assistant.usage.meter.tokens")}
+                        value={row.today_tokens}
+                        max={row.tokens_per_day}
+                        valueText={t("assistant.usage.tokensOf", {
+                          count: number.format(row.today_tokens),
+                          limit: number.format(row.tokens_per_day),
+                        })}
+                        showValue
+                        tone={meterTone(row.today_tokens, row.tokens_per_day)}
+                      />
+                    )}
+                  </Stack>
+                )}
               </ListItemBody>
               {status !== null && (
                 <ListItemEnd>

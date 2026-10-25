@@ -157,12 +157,15 @@ export type ModelPreset = components["schemas"]["Preset"];
 export type ModelUse = components["schemas"]["Use"];
 export type ChainTargetInput = components["schemas"]["ChainTargetInput"];
 export type UsageRow = components["schemas"]["UsageRow"];
+export type UsageDay = components["schemas"]["UsageDay"];
 
 export const assistantKeys = {
   presets: ["assistant", "presets"] as const,
   providers: ["assistant", "providers"] as const,
   uses: ["assistant", "uses"] as const,
   usage: ["assistant", "usage"] as const,
+  usageDays: (from: string, to: string) =>
+    ["assistant", "usage", "days", from, to] as const,
   models: (id: string) => ["assistant", "providers", id, "models"] as const,
 };
 
@@ -265,6 +268,20 @@ export function usageQuery(api: Client<paths>) {
   return queryOptions({
     queryKey: assistantKeys.usage,
     queryFn: async () => unwrap(await api.GET("/assistant/usage")),
+  });
+}
+
+export function usageDaysQuery(api: Client<paths>, from: string, to: string) {
+  return queryOptions({
+    queryKey: assistantKeys.usageDays(from, to),
+    queryFn: async () =>
+      (
+        await unwrap(
+          await api.GET("/assistant/usage/days", {
+            params: { query: { from, to } },
+          }),
+        )
+      ).items,
   });
 }
 

@@ -33,6 +33,7 @@ import { ProviderDialog } from "@/features/setup/provider-dialog";
 import { ProviderModelsDialog } from "@/features/setup/provider-models-dialog";
 import { SettingsSection } from "@/features/setup/settings-section";
 import { UsageLimitDialog } from "@/features/setup/usage-limit-dialog";
+import { UsageChart } from "@/features/setup/usage-chart";
 import { UsePrivacy } from "@/features/setup/use-privacy";
 import { UsageList } from "@/features/setup/usage-list";
 import { mergeUsageRows } from "@/features/setup/usage-rows";
@@ -212,6 +213,7 @@ export function SettingsAssistant() {
                 setOpen({ kind: "limits", row });
               }}
             />
+            <UsageChart />
           </List>
         )}
         <InlineMessage>{t("assistant.usage.note")}</InlineMessage>

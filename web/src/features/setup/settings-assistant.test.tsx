@@ -1,11 +1,17 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { catalogEn as en } from "@/i18n/catalog.en";
 import { catalogPtBR as pt } from "@/i18n/catalog.pt-BR";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
+
+// The chart engine renders thousands of nodes in jsdom, and each text query over the section
+// scans them again on every mutation. The charts are checked on their data, in the table.
+vi.mock("@slotted/react/chart", () => ({
+  Chart: ({ title }: { title: string }) => <figure aria-label={title} />,
+}));
 
 interface Sent {
   route: string;
@@ -104,6 +110,8 @@ function api(
     create?: () => Response;
     models?: () => Response;
     me?: { language: string; region: string };
+    daysQueries?: string[];
+    days?: boolean;
   } = {},
 ) {
   const record =
@@ -154,6 +162,32 @@ function api(
           },
         ],
       }),
+    "GET /api/v1/assistant/usage/days": (req: Request) => {
+      answers.daysQueries?.push(new URL(req.url).search);
+      return json(200, {
+        items:
+          answers.days !== true
+            ? []
+            : [
+                {
+                  day: "2026-10-16",
+                  provider_id: "aistudio",
+                  model: "gemini-3.5-flash-lite",
+                  requests: 40,
+                  errors: 1,
+                  tokens: 800,
+                },
+                {
+                  day: "2026-10-16",
+                  provider_id: "p1",
+                  model: "llama",
+                  requests: 5,
+                  errors: 0,
+                  tokens: 100,
+                },
+              ],
+      });
+    },
     "PUT /api/v1/assistant/usage/limits": record(
       "PUT /limits",
       () => new Response(null, { status: 204 }),
@@ -259,6 +293,42 @@ describe("assistant settings", () => {
     const view = await section();
     expect(await view.findAllByText(en["assistant.use.sends"])).toHaveLength(2);
     expect(view.getByText(en["assistant.use.local"])).toBeVisible();
+    expect(
+      await view.findByRole("progressbar", {
+        name: en["assistant.usage.meter.requests"],
+      }),
+    ).toHaveAttribute("aria-valuenow", "80");
+    expect(
+      view.getByText(en["assistant.usage.chart.empty"].replace("{days}", "30")),
+    ).toBeVisible();
+  });
+
+  it("charts the last 30 days and meters today against the daily limit", async () => {
+    const daysQueries: string[] = [];
+    await renderApp("/settings", {
+      fetch: api([], { daysQueries, days: true }),
+    });
+    const view = await section();
+    // Role queries over the chart's SVG take longer than the test timeout.
+    const day = (await view.findByText("16/10/2026")).closest("tr");
+    if (day === null) throw new Error("no row for the day");
+    expect([...day.querySelectorAll("td")].map((c) => c.textContent)).toEqual([
+      "45",
+      "1",
+      "900",
+    ]);
+    expect(daysQueries).toEqual(["?from=2026-09-18&to=2026-10-17"]);
+    expect(
+      view.getByLabelText(pt["assistant.usage.chart.requests"]),
+    ).toBeInTheDocument();
+    expect(
+      view.getByLabelText(pt["assistant.usage.chart.tokens"]),
+    ).toBeInTheDocument();
+    const meter = await view.findByRole("progressbar", {
+      name: pt["assistant.usage.meter.requests"],
+    });
+    expect(meter).toHaveAttribute("aria-valuenow", "80");
+    expect(meter).toHaveAttribute("aria-valuemax", "100");
   });
 
   it("shows a refused key at its field and in the summary", async () => {
