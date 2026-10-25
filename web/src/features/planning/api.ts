@@ -16,6 +16,8 @@ export const planningKeys = {
   projection: (accountID: string, to: string) =>
     ["planning", "projection", accountID, to] as const,
   calendars: ["planning", "calendars"] as const,
+  holidays: (name: string, year: number) =>
+    ["planning", "holidays", name, year] as const,
   budgets: ["planning", "budgets"] as const,
   budget: (id: string) => ["planning", "budget", id] as const,
   progress: (budgetID: string, month: string) =>
@@ -340,6 +342,21 @@ export function calendarsQuery(api: Client<paths>) {
   return queryOptions({
     queryKey: planningKeys.calendars,
     queryFn: async () => unwrap(await api.GET("/calendars")),
+    staleTime: Infinity,
+  });
+}
+
+export function holidaysQuery(api: Client<paths>, name: string, year: number) {
+  return queryOptions({
+    queryKey: planningKeys.holidays(name, year),
+    queryFn: async () =>
+      (
+        await unwrap(
+          await api.GET("/calendars/{name}/holidays", {
+            params: { path: { name }, query: { year } },
+          }),
+        )
+      ).items,
     staleTime: Infinity,
   });
 }

@@ -1,5 +1,7 @@
 export {
   budgetProgressQuery,
+  calendarsQuery,
+  holidaysQuery,
   budgetsQuery,
   committedQuery,
   goalsQuery,
@@ -18,6 +20,7 @@ export {
   usedShare,
 } from "@/features/planning/budget-month";
 export type { BudgetState, Figures } from "@/features/planning/budget-month";
+export { calendarLabel } from "@/features/planning/calendar-label";
 export { kindLabel } from "@/features/planning/schedule-words";
 export { OccurrenceActions } from "@/features/planning/occurrence-actions";
 export { RealizedOccurrences } from "@/features/planning/realized-occurrences";

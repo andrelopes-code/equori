@@ -1418,6 +1418,20 @@ export const catalogPtBR: Catalog = {
   "calendar.regionDefault": "{name} (sua região)",
   "calendar.br_banking": "Dias úteis bancários do Brasil",
   "calendar.weekend": "Somente fins de semana",
+  "calendar.title": "Calendários",
+  "calendar.description":
+    "Calendários de dias úteis da instância. Um agendamento usa um deles para ajustar suas datas de vencimento.",
+  "calendar.regionMark": "Calendário da sua região",
+  "calendar.weekendDays": "Fim de semana: {days}",
+  "calendar.holidaysOf": "Feriados de {name} em {year}",
+  "calendar.pick": "Escolha um calendário para ver os feriados.",
+  "calendar.year.previous": "Ano anterior",
+  "calendar.year.next": "Próximo ano",
+  "calendar.source.rule": "Regra do calendário",
+  "calendar.source.instance": "Definido na instância",
+  "calendar.holidays.empty":
+    "Sem feriados em {year}. Somente os fins de semana não são dias úteis.",
+  "calendar.open": "Ver os feriados deste calendário",
   "schedule.tolerance": "Tolerância de conciliação (%)",
   "schedule.toleranceHint":
     "Quanto o valor de uma transação pode se afastar do previsto para realizá-la.",

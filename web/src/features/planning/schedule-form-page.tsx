@@ -31,7 +31,7 @@ import {
 import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
@@ -347,6 +347,17 @@ export function ScheduleFormPage() {
                       if (typeof next === "string") setPicked(next);
                     }}
                   />
+                  {calendar !== "" && (
+                    <FieldDescription>
+                      <Link
+                        to="/settings"
+                        search={{ calendar }}
+                        hash="calendars"
+                      >
+                        {t("calendar.open")}
+                      </Link>
+                    </FieldDescription>
+                  )}
                 </Field>
                 <Field>
                   <FieldLabel>{t("schedule.tolerance")}</FieldLabel>

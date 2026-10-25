@@ -40,6 +40,7 @@ import { accountsQuery } from "@/features/accounts";
 import { agenda } from "@/features/planning/agenda";
 import { AgendaTable } from "@/features/planning/agenda-table";
 import { occurrencesQuery, scheduleQuery } from "@/features/planning/api";
+import { calendarLabel } from "@/features/planning/calendar-label";
 import { EndDialog } from "@/features/planning/end-dialog";
 import { PauseDialog } from "@/features/planning/pause-dialog";
 import {
@@ -184,7 +185,13 @@ export function SchedulePage() {
                 {t("schedule.calendar")}
               </DescriptionListTerm>
               <DescriptionListDescription>
-                {s.calendar}
+                <Link
+                  to="/settings"
+                  search={{ calendar: s.calendar }}
+                  hash="calendars"
+                >
+                  {calendarLabel(t, s.calendar)}
+                </Link>
               </DescriptionListDescription>
             </DescriptionListItem>
             <DescriptionListItem>

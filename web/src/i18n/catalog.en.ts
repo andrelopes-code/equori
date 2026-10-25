@@ -1398,6 +1398,20 @@ export const catalogEn = {
   "calendar.regionDefault": "{name} (your region)",
   "calendar.br_banking": "Brazilian banking days",
   "calendar.weekend": "Weekends only",
+  "calendar.title": "Calendars",
+  "calendar.description":
+    "Business-day calendars of this instance. A schedule uses one to move its due dates.",
+  "calendar.regionMark": "Your region's calendar",
+  "calendar.weekendDays": "Weekend: {days}",
+  "calendar.holidaysOf": "Holidays of {name} in {year}",
+  "calendar.pick": "Select a calendar to see its holidays.",
+  "calendar.year.previous": "Previous year",
+  "calendar.year.next": "Next year",
+  "calendar.source.rule": "Calendar rule",
+  "calendar.source.instance": "Defined on this instance",
+  "calendar.holidays.empty":
+    "No holidays in {year}. Only weekends are not business days.",
+  "calendar.open": "See the holidays of this calendar",
   "schedule.tolerance": "Match tolerance (%)",
   "schedule.toleranceHint":
     "How far a transaction's amount may be from the expected one to realize it.",

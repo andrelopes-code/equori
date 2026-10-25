@@ -2,7 +2,7 @@
 
 Sequential guide for the screens of `web/`. Each item names the screens, their functions, the API operations they consume and their dependencies. It is not the source of truth: the implementer of an item reads `api/openapi.yaml`, the ADRs, the scenarios of `docs/domain/06-scenarios.md`, `web/CLAUDE.md` and the existing code before designing the screen. Field lists below are a map of the contract, not a form specification.
 
-Status snapshot: 2026-10-25, commit `513df59`.
+Status snapshot: 2026-10-25, commit `f6ae62e`.
 
 ## Status legend
 
@@ -30,7 +30,7 @@ Status snapshot: 2026-10-25, commit `513df59`.
 | 10 | Portfolio | Delivered | 8, 9 |
 | 11 | Tax year report of investments | Delivered | 9 |
 | 12 | Reports | Delivered | 10 |
-| 13 | Calendars and holidays | No screen | — |
+| 13 | Calendars and holidays | Delivered | — |
 | 14 | Language model settings: usage and privacy | Partial | — |
 | 15 | Category suggestions outside capture | Needs ADR amendment | 14 |
 | 16 | Assistant chat | Delivered | 14 |
@@ -43,7 +43,7 @@ Outside the sequence. Items 1, 3, 4, 8 and 14 extend some of them.
 | Area | Routes | Functions |
 |---|---|---|
 | Session | `/login` | Sign in, sign out, session expiry. |
-| Settings | `/settings` | Sections account, appearance, assistant, finances (base currency, currencies), language and region, privacy mode (ADR 018). |
+| Settings | `/settings` | Sections account, appearance, assistant, calendars and holidays, finances (base currency, currencies), language and region, privacy mode (ADR 018). |
 | Accounts | `/accounts`, `/accounts/new`, `/accounts/$id`, `/accounts/$id/edit`, `/institutions`, `/links` | Balance sheet by group, account page with balance chart and projection, figures, ledger, positions, scheduled with occurrence actions, reconciliation and balance assertions, sync, imports; create, edit, close, reopen, merge, parent, appearance and logo. |
 | Imports | `/accounts/$id/import`, `/accounts/$id/imports/$batchId` | OFX and CSV import, CSV profile, batch records, review queue of unconfirmed records. |
 | Cards | `/cards`, `/cards/$accountId`, `/cards/$accountId/statements/$statementId` | Card list, card page with statements chart, plastic cards, installment plans, settings (billing cycle rules, credit limits); statement page with lines, payment, financing, refunds, anticipation, disputes, statement facts and reconciliation. |
@@ -298,9 +298,7 @@ Domain: phase P9 adds accrual and cash views and statement analytics (S30); thos
 
 ## 13. Calendars and holidays
 
-Status: No screen.
-
-Operations: `listCalendars`, `listHolidays`.
+Status: Delivered. Operations: `listCalendars`, `listHolidays` (`features/setup/settings-calendars.tsx`: the calendars section of `/settings`, state in the address as `calendar` and `year`; `CalendarList.default` names the calendar of the owner's region). The schedule page and the schedule form link to the section.
 
 Functions:
 - A read-only settings section: the calendars of the instance with their weekend days; the user's calendar first.

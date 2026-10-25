@@ -267,6 +267,7 @@ describe("settings page", () => {
         catalogPtBR["settings.language.title"],
         catalogPtBR["settings.privacy.title"],
         catalogPtBR["settings.ledger.title"],
+        catalogPtBR["calendar.title"],
         catalogPtBR["settings.assistant.title"],
       ]);
     });

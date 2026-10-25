@@ -208,6 +208,35 @@ describe("Schedule form calendar", () => {
   });
 });
 
+describe("Schedule calendar links", () => {
+  it("links the schedule's calendar to its holidays in the settings", async () => {
+    await renderApp(`/planning/schedules/${rentID}`, { fetch: api() });
+    const link = await screen.findByRole("link", {
+      name: catalogEn["calendar.br_banking"],
+    });
+    expect(link).toHaveAttribute(
+      "href",
+      "/settings?calendar=br_banking#calendars",
+    );
+  });
+
+  it("links the form's chosen calendar to its holidays in the settings", async () => {
+    await renderApp("/planning/schedules/new", { fetch: api() });
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["schedule.advanced"],
+      }),
+    );
+    const link = await screen.findByRole("link", {
+      name: catalogEn["calendar.open"],
+    });
+    expect(link).toHaveAttribute(
+      "href",
+      "/settings?calendar=br_banking#calendars",
+    );
+  });
+});
+
 describe("Schedule page", () => {
   it("lists the terms versions, the pauses and the end", async () => {
     await renderApp(`/planning/schedules/${streamingID}`, { fetch: api() });

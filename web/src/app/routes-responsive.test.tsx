@@ -66,6 +66,7 @@ function newFetch() {
   return fakeApi({
     "GET /api/v1/me": () => json(200, { id: 1, email: "a@b.c", role: "admin" }),
     "GET /api/v1/settings": () => json(200, { base_currency: "BRL" }),
+    "GET /api/v1/calendars": () => json(200, { default: "weekend", items: [] }),
     "GET /api/v1/instruments": () =>
       json(200, {
         items: [{ code: "BRL", type: "currency", scale: 2, name: "Real" }],

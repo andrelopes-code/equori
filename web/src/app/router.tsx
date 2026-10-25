@@ -73,7 +73,7 @@ import {
   validatePlanningSearch,
 } from "@/features/planning";
 import { LoginPage, meQuery } from "@/features/session";
-import { SettingsPage } from "@/features/setup";
+import { SettingsPage, validateSettingsSearch } from "@/features/setup";
 import {
   CapturePage,
   CorrectTransactionPage,
@@ -137,6 +137,7 @@ const authedRoute = createRoute({
 const settingsRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "settings",
+  validateSearch: validateSettingsSearch,
   component: SettingsPage,
 });
 

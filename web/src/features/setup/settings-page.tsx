@@ -12,6 +12,7 @@ import { TableOfContents } from "@slotted/react/table-of-contents";
 import { SettingsAccount } from "@/features/setup/settings-account";
 import { SettingsAppearance } from "@/features/setup/settings-appearance";
 import { SettingsAssistant } from "@/features/setup/settings-assistant";
+import { SettingsCalendars } from "@/features/setup/settings-calendars";
 import { SettingsLanguage } from "@/features/setup/settings-language";
 import { SettingsLedger } from "@/features/setup/settings-ledger";
 import { SettingsPrivacy } from "@/features/setup/settings-privacy";
@@ -54,6 +55,7 @@ export function SettingsPage() {
               <SettingsLanguage />
               <SettingsPrivacy />
               <SettingsLedger />
+              <SettingsCalendars />
               <SettingsAssistant />
             </div>
           </div>
