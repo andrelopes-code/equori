@@ -13,7 +13,6 @@ import { EntryKindPicker } from "@/features/transactions/entry-kind-picker";
 import type { ExchangeDraft } from "@/features/transactions/exchange-draft";
 import formStyles from "@/features/transactions/transaction-form.module.css";
 import type { useExchangeEntry } from "@/features/transactions/use-exchange-entry";
-import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { DateShortcuts } from "@/ui/date-shortcuts";
@@ -256,13 +255,6 @@ export function ExchangeForm({
             label: t("exchange.comparison"),
             value:
               view.difference === null ? undefined : percent(view.difference),
-            note:
-              view.stored === undefined
-                ? null
-                : t("exchange.comparisonNote", {
-                    rate: formatRate(view.stored.value, locale),
-                    date: formatDate(view.stored.date, locale),
-                  }),
           },
         ]}
       />

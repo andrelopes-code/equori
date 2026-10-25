@@ -1,14 +1,11 @@
 @layer app {
   /* The result sits in the page footer, which is the one material; it paints no ground of its own,
-     so no second blur adds to the footer's. */
-  .result {
-    padding-block-end: var(--slotted-space-4);
-  }
-
-  /* A figure's least measure: no token holds it. Four fit at 1280, one stacks on a phone. */
+     so no second blur adds to the footer's. A figure's least measure: no token holds it. Three
+     fit side by side at 390 px and four at 1280. */
   .figures {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-    gap: var(--slotted-space-4);
+    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+    gap: var(--slotted-space-2) var(--slotted-space-4);
+    padding-block-end: var(--slotted-space-3);
   }
 }
