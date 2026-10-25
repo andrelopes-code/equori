@@ -134,6 +134,9 @@ export const catalogEn = {
   "assistant.use.default": "Default",
   "assistant.use.custom": "Custom",
   "assistant.use.none": "No provider serves this feature.",
+  "assistant.use.sends": "Sends financial data",
+  "assistant.use.local": "Sends no financial data",
+  "assistant.use.lacks": "{provider} lacks: {list}",
   "assistant.use.edit": "Edit order",
   "assistant.use.trains":
     "The free tier of {provider} uses the content sent, including financial data.",

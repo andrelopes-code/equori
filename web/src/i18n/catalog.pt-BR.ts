@@ -138,6 +138,9 @@ export const catalogPtBR: Catalog = {
   "assistant.use.default": "Padrão",
   "assistant.use.custom": "Personalizada",
   "assistant.use.none": "Nenhum provedor atende esta função.",
+  "assistant.use.sends": "Envia dados financeiros",
+  "assistant.use.local": "Não envia dados financeiros",
+  "assistant.use.lacks": "{provider} não oferece: {list}",
   "assistant.use.edit": "Editar ordem",
   "assistant.use.trains":
     "A camada gratuita de {provider} usa o conteúdo enviado, incluindo dados financeiros.",

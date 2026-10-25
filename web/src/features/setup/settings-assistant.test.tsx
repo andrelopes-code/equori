@@ -2,6 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
+import { catalogEn as en } from "@/i18n/catalog.en";
 import { catalogPtBR as pt } from "@/i18n/catalog.pt-BR";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
@@ -80,9 +81,30 @@ const defaultSuggest = {
   ],
 };
 
+const lackingUse = {
+  id: "assistant.vision",
+  needs: ["image_input", "tools"],
+  sends_financial_data: false,
+  default: true,
+  targets: [
+    {
+      provider_id: "p1",
+      provider_name: "Groq",
+      preset: "groq",
+      notice: "provider_terms",
+      model: "llama",
+      capabilities: ["tools"],
+    },
+  ],
+};
+
 function api(
   sent: Sent[],
-  answers: { create?: () => Response; models?: () => Response } = {},
+  answers: {
+    create?: () => Response;
+    models?: () => Response;
+    me?: { language: string; region: string };
+  } = {},
 ) {
   const record =
     (route: string, answer: () => Response) => async (req: Request) => {
@@ -95,17 +117,18 @@ function api(
         id: 1,
         email: "a@b.c",
         role: "admin",
-        language: "pt",
-        region: "BR",
+        language: answers.me?.language ?? "pt",
+        region: answers.me?.region ?? "BR",
       }),
-    "GET /api/v1/settings": () => json(200, { base_currency: "BRL" }),
+    "GET /api/v1/settings": () =>
+      json(200, { base_currency: answers.me === undefined ? "BRL" : "EUR" }),
     "GET /api/v1/transactions": () => json(200, { items: [] }),
     "GET /api/v1/instruments": () => json(200, { items: [] }),
     "GET /api/v1/assistant/presets": () => json(200, { items: presets }),
     "GET /api/v1/assistant/providers": () =>
       json(200, { items: [groq, instance] }),
     "GET /api/v1/assistant/uses": () =>
-      json(200, { items: [defaultSuggest, customChat] }),
+      json(200, { items: [defaultSuggest, customChat, lackingUse] }),
     "POST /api/v1/assistant/providers": record(
       "POST /assistant/providers",
       answers.create ?? (() => json(201, groq)),
@@ -177,7 +200,8 @@ describe("assistant settings", () => {
     const view = await section();
     expect(await view.findByText("Groq")).toBeVisible();
     expect(view.getByText(pt["assistant.provider.instance"])).toBeVisible();
-    expect(view.getByText(pt["assistant.notice.trains"])).toBeVisible();
+    // The provider row and the capture.suggest use row each carry the notice.
+    expect(view.getAllByText(pt["assistant.notice.trains"])).toHaveLength(2);
     expect(
       view.getByText(
         `${pt["assistant.preset.groq"]} · ${pt["assistant.provider.keyStored"]}`,
@@ -188,6 +212,53 @@ describe("assistant settings", () => {
         pt["assistant.use.trains"].replace("{provider}", "aistudio"),
       ),
     ).toBeVisible();
+  });
+
+  it("states per use whether financial data leaves, what it needs and where it goes", async () => {
+    await renderApp("/settings", { fetch: api([]) });
+    const view = await section();
+    const row = async (label: string) => {
+      const li = (await view.findByText(label)).closest("li");
+      if (li === null) throw new Error(`no row for ${label}`);
+      return within(li);
+    };
+    const suggest = await row(pt["assistant.use.capture.suggest"]);
+    expect(suggest.getByText(pt["assistant.use.sends"])).toBeVisible();
+    expect(
+      suggest.getByText(
+        pt["assistant.chain.needs"].replace(
+          "{list}",
+          pt["assistant.capability.structured_output"],
+        ),
+      ),
+    ).toBeVisible();
+    expect(suggest.getByText(pt["assistant.notice.trains"])).toBeVisible();
+    expect(
+      suggest.getByText(
+        pt["assistant.use.trains"].replace("{provider}", "aistudio"),
+      ),
+    ).toBeVisible();
+    const chat = await row(pt["assistant.use.assistant.chat"]);
+    expect(chat.queryByText(/camada gratuita/i)).toBeNull();
+    expect(chat.getByText(pt["assistant.notice.provider_terms"])).toBeVisible();
+    const vision = await row("assistant.vision");
+    expect(vision.getByText(pt["assistant.use.local"])).toBeVisible();
+    expect(
+      vision.getByText(
+        pt["assistant.use.lacks"]
+          .replace("{provider}", "Groq")
+          .replace("{list}", pt["assistant.capability.image_input"]),
+      ),
+    ).toBeVisible();
+  });
+
+  it("words the use privacy in English for another region and base currency", async () => {
+    await renderApp("/settings", {
+      fetch: api([], { me: { language: "en", region: "DE" } }),
+    });
+    const view = await section();
+    expect(await view.findAllByText(en["assistant.use.sends"])).toHaveLength(2);
+    expect(view.getByText(en["assistant.use.local"])).toBeVisible();
   });
 
   it("shows a refused key at its field and in the summary", async () => {

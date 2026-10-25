@@ -1,4 +1,3 @@
-import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import { InlineMessage } from "@slotted/react/inline-message";
 import { List, ListEmpty, ListSection } from "@slotted/react/list";
@@ -34,6 +33,7 @@ import { ProviderDialog } from "@/features/setup/provider-dialog";
 import { ProviderModelsDialog } from "@/features/setup/provider-models-dialog";
 import { SettingsSection } from "@/features/setup/settings-section";
 import { UsageLimitDialog } from "@/features/setup/usage-limit-dialog";
+import { UsePrivacy } from "@/features/setup/use-privacy";
 import { UsageList } from "@/features/setup/usage-list";
 import { mergeUsageRows } from "@/features/setup/usage-rows";
 import { useT } from "@/i18n/i18n-provider";
@@ -61,19 +61,6 @@ export function SettingsAssistant() {
   const failure = providers.error ?? uses.error ?? usage.error ?? remove.error;
   const presetItems = presets.data?.items ?? [];
   const providerItems = providers.data?.items ?? [];
-
-  // Providers whose free tier trains on the financial data a use sends are said once.
-  const exposed = [
-    ...new Set(
-      (uses.data?.items ?? []).flatMap((use) =>
-        use.sends_financial_data
-          ? use.targets
-              .filter((x) => x.notice === "trains")
-              .map((x) => x.provider_name)
-          : [],
-      ),
-    ),
-  ];
 
   return (
     <SettingsSection
@@ -196,6 +183,7 @@ export function SettingsAssistant() {
                       </Tag>
                     </ListItemEnd>
                   </ListItemContent>
+                  <UsePrivacy use={use} />
                   <ListItemActions>
                     <Button
                       size="sm"
@@ -227,15 +215,6 @@ export function SettingsAssistant() {
           </List>
         )}
         <InlineMessage>{t("assistant.usage.note")}</InlineMessage>
-        {exposed.length > 0 && (
-          <Alert tone="warning">
-            <AlertContent>
-              <AlertDescription>
-                {t("assistant.use.trains", { provider: exposed.join(", ") })}
-              </AlertDescription>
-            </AlertContent>
-          </Alert>
-        )}
       </Stack>
       {(open?.kind === "create" || open?.kind === "edit") && (
         <ProviderDialog
