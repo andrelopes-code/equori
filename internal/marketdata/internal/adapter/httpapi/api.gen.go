@@ -135,7 +135,9 @@ type CalendarWeekend string
 
 // CalendarList defines model for CalendarList.
 type CalendarList struct {
-	Items []Calendar `json:"items"`
+	// Default Calendar id the owner's region gives a new record (ADR 016).
+	Default string     `json:"default"`
+	Items   []Calendar `json:"items"`
 }
 
 // FieldError defines model for FieldError.

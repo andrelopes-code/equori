@@ -105,6 +105,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	marketdataModule := marketdata.New(pool).WithFeeds(marketdata.FeedConfig{
 		Sources: sources, Indexes: indexSources, Client: feedClient, Clock: clk, Log: log,
 	})
+	marketdataModule.WithProfiles(identityModule)
 	ledgerModule := ledger.New(pool, dispatcher, marketdataModule, identityModule, clk, log)
 	reportingModule := reporting.New(pool, dispatcher, log)
 	classificationModule := classification.New(pool, dispatcher, ledgerModule, log)

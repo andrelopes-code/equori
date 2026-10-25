@@ -6571,8 +6571,12 @@ components:
           $ref: "#/components/schemas/Money"
     CalendarList:
       type: object
-      required: [items]
+      required: [items, default]
       properties:
+        default:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+          description: Calendar id the owner's region gives a new record (ADR 016).
         items:
           type: array
           items:

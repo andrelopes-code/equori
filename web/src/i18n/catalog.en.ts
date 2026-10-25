@@ -1395,7 +1395,9 @@ export const catalogEn = {
   "schedule.recurrence": "Recurrence",
   "schedule.advanced": "Advanced",
   "schedule.calendar": "Business-day calendar",
-  "schedule.calendarDefault": "The calendar of your region",
+  "calendar.regionDefault": "{name} (your region)",
+  "calendar.br_banking": "Brazilian banking days",
+  "calendar.weekend": "Weekends only",
   "schedule.tolerance": "Match tolerance (%)",
   "schedule.toleranceHint":
     "How far a transaction's amount may be from the expected one to realize it.",

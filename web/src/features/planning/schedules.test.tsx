@@ -145,6 +145,69 @@ describe("New schedule", () => {
   });
 });
 
+describe("Schedule form calendar", () => {
+  async function submitWith(pickedCalendar: string | null) {
+    const sent: Record<string, unknown>[] = [];
+    await renderApp("/planning/schedules/new", {
+      fetch: api({
+        "POST /api/v1/schedules": async (req) => {
+          sent.push((await req.json()) as Record<string, unknown>);
+          return json(201, rent);
+        },
+      }),
+    });
+    await userEvent.type(
+      await screen.findByRole("textbox", {
+        name: catalogEn["schedule.description"],
+      }),
+      "Rent",
+    );
+    await userEvent.type(
+      screen.getByRole("textbox", { name: catalogEn["schedule.amount"] }),
+      "210000",
+    );
+    await userEvent.click(
+      within(
+        screen.getByRole("radiogroup", { name: catalogEn["schedule.account"] }),
+      ).getByRole("radio", { name: /^Nubank/ }),
+    );
+    await pick(catalogEn["schedule.category"], "Mercado");
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["schedule.advanced"] }),
+    );
+    const select = screen.getByRole("combobox", {
+      name: catalogEn["schedule.calendar"],
+    });
+    await waitFor(() => {
+      expect(select).toHaveTextContent("Brazilian banking days (your region)");
+    });
+    if (pickedCalendar !== null) {
+      await userEvent.click(select);
+      await userEvent.click(
+        await screen.findByRole("option", { name: pickedCalendar }),
+      );
+    }
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["schedule.create"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    return sent[0];
+  }
+
+  it("opens on the region's calendar and omits it from the request", async () => {
+    expect(await submitWith(null)).not.toHaveProperty("calendar");
+  });
+
+  it("sends a calendar other than the region's", async () => {
+    expect(await submitWith(catalogEn["calendar.weekend"])).toHaveProperty(
+      "calendar",
+      "weekend",
+    );
+  });
+});
+
 describe("Schedule page", () => {
   it("lists the terms versions, the pauses and the end", async () => {
     await renderApp(`/planning/schedules/${streamingID}`, { fetch: api() });

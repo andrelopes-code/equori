@@ -1415,7 +1415,9 @@ export const catalogPtBR: Catalog = {
   "schedule.recurrence": "Recorrência",
   "schedule.advanced": "Avançado",
   "schedule.calendar": "Calendário de dias úteis",
-  "schedule.calendarDefault": "O calendário da sua região",
+  "calendar.regionDefault": "{name} (sua região)",
+  "calendar.br_banking": "Dias úteis bancários do Brasil",
+  "calendar.weekend": "Somente fins de semana",
   "schedule.tolerance": "Tolerância de conciliação (%)",
   "schedule.toleranceHint":
     "Quanto o valor de uma transação pode se afastar do previsto para realizá-la.",

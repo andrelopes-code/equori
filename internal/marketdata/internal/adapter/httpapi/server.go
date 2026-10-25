@@ -24,8 +24,8 @@ var ErrNotFound = errors.New("not found")
 // HolidayLister is provided by the module root, which owns the calendar rules.
 type HolidayLister func(ctx context.Context, calendar string, year int) ([]Holiday, error)
 
-// CalendarLister is provided by the module root, which owns the calendar registry.
-type CalendarLister func() []Calendar
+// CalendarLister is provided by the module root, which owns the calendar registry and the owner's region.
+type CalendarLister func(ctx context.Context) (CalendarList, error)
 
 // Service is the module root: instruments and prices (P8 amendments A59, A60).
 type Service interface {
@@ -68,8 +68,12 @@ func (s *Server) ListHolidays(ctx context.Context, req ListHolidaysRequestObject
 	return ListHolidays200JSONResponse{Items: hs}, nil
 }
 
-func (s *Server) ListCalendars(_ context.Context, _ ListCalendarsRequestObject) (ListCalendarsResponseObject, error) {
-	return ListCalendars200JSONResponse{Items: s.calendars()}, nil
+func (s *Server) ListCalendars(ctx context.Context, _ ListCalendarsRequestObject) (ListCalendarsResponseObject, error) {
+	list, err := s.calendars(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return ListCalendars200JSONResponse(list), nil
 }
 
 // NewHoliday builds the API representation; the module root uses it in its HolidayLister.

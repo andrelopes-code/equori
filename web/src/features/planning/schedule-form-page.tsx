@@ -39,6 +39,7 @@ import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { accountsQuery } from "@/features/accounts";
 import { CategoryPicker } from "@/features/categories";
+import { calendarLabel } from "@/features/planning/calendar-label";
 import { calendarsQuery, useCreateSchedule } from "@/features/planning/api";
 import { RecurrenceFields } from "@/features/planning/recurrence-fields";
 import { kindLabel } from "@/features/planning/schedule-words";
@@ -56,7 +57,6 @@ const kinds = Object.keys(kindLabel) as ScheduleKind[];
 // The server's defaults (ScheduleInput), shown so the reader sees what is sent.
 const defaultToleranceBP = 1000;
 const defaultGraceDays = 3;
-const regionCalendar = "";
 
 // A schedule's counterpart: a category for a bill, a subscription or an income, another balance
 // account for a transfer or a saving.
@@ -88,7 +88,10 @@ export function ScheduleFormPage() {
     adjustment: "none",
     start: today,
   }));
-  const [calendar, setCalendar] = useState(regionCalendar);
+  // Null until the reader picks one; the select then shows the server's default for the region.
+  const [picked, setPicked] = useState<string | null>(null);
+  const defaultCalendar = calendars.data?.default;
+  const calendar = picked ?? defaultCalendar ?? "";
   const [toleranceBP, setToleranceBP] = useState(defaultToleranceBP);
   const [graceDays, setGraceDays] = useState(defaultGraceDays);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -123,7 +126,9 @@ export function ScheduleFormPage() {
         description: description.trim(),
         amount: { amount, currency },
         recurrence,
-        ...(calendar === regionCalendar ? {} : { calendar }),
+        ...(calendar === "" || calendar === defaultCalendar
+          ? {}
+          : { calendar }),
         match_tolerance_bp: toleranceBP,
         grace_days: graceDays,
       })
@@ -329,18 +334,17 @@ export function ScheduleFormPage() {
                     label={t("schedule.calendar")}
                     multiple={false}
                     value={calendar}
-                    choices={[
-                      {
-                        value: regionCalendar,
-                        label: t("schedule.calendarDefault"),
-                      },
-                      ...(calendars.data ?? []).map((c) => ({
-                        value: c.id,
-                        label: c.id,
-                      })),
-                    ]}
+                    choices={(calendars.data?.items ?? []).map((c) => ({
+                      value: c.id,
+                      label:
+                        c.id === defaultCalendar
+                          ? t("calendar.regionDefault", {
+                              name: calendarLabel(t, c.id),
+                            })
+                          : calendarLabel(t, c.id),
+                    }))}
                     onChange={(next) => {
-                      if (typeof next === "string") setCalendar(next);
+                      if (typeof next === "string") setPicked(next);
                     }}
                   />
                 </Field>

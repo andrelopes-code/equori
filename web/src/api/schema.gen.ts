@@ -3758,6 +3758,8 @@ export interface components {
             available_limit?: components["schemas"]["Money"];
         };
         CalendarList: {
+            /** @description Calendar id the owner's region gives a new record (ADR 016). */
+            default: string;
             items: components["schemas"]["Calendar"][];
         };
         Calendar: {

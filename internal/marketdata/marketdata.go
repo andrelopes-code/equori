@@ -18,6 +18,8 @@ import (
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/adapter/toolapi"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/calendar"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
+	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/registry"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
@@ -43,7 +45,20 @@ type Module struct {
 	q     *postgres.Queries
 	feeds FeedConfig
 
+	profiles Profiles
+
 	calendars registry.Registry[calendar.Calendar]
+}
+
+// Profiles gives the language and region of a user (identity).
+type Profiles interface {
+	Profile(ctx context.Context, userID int64) (locale.Locale, error)
+}
+
+// WithProfiles sets where the region of the calling user comes from; the composition root calls it once.
+func (m *Module) WithProfiles(p Profiles) *Module {
+	m.profiles = p
+	return m
 }
 
 func New(pool *pgxpool.Pool) *Module {
@@ -84,7 +99,7 @@ func (m *Module) Tools() tool.Group {
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux, log *slog.Logger) {
-	httpapi.NewServer(m.listHolidays, m.listCalendars, m, log).Register(mux)
+	httpapi.NewServer(m.listHolidays, m.calendarList, m, log).Register(mux)
 }
 
 func (m *Module) listHolidays(ctx context.Context, calendar string, year int) ([]httpapi.Holiday, error) {
@@ -100,6 +115,14 @@ func (m *Module) listHolidays(ctx context.Context, calendar string, year int) ([
 		out[i] = httpapi.NewHoliday(openapi_types.Date{Time: h.Date}, h.Name, h.Source)
 	}
 	return out, nil
+}
+
+func (m *Module) calendarList(ctx context.Context) (httpapi.CalendarList, error) {
+	l, err := m.profiles.Profile(ctx, auth.MustUserID(ctx))
+	if err != nil {
+		return httpapi.CalendarList{}, fmt.Errorf("read profile: %w", err)
+	}
+	return httpapi.CalendarList{Items: m.listCalendars(), Default: m.DefaultCalendar(l.Region)}, nil
 }
 
 func (m *Module) listCalendars() []httpapi.Calendar {

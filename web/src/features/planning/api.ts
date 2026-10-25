@@ -339,7 +339,7 @@ export function useMoveOccurrence() {
 export function calendarsQuery(api: Client<paths>) {
   return queryOptions({
     queryKey: planningKeys.calendars,
-    queryFn: async () => (await unwrap(await api.GET("/calendars"))).items,
+    queryFn: async () => unwrap(await api.GET("/calendars")),
     staleTime: Infinity,
   });
 }

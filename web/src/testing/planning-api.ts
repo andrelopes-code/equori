@@ -143,9 +143,18 @@ export function transaction(id: string, date: string, amount: number) {
 export const exactID = "a9000000-0000-4000-8000-000000000001";
 export const farID = "a9000000-0000-4000-8000-000000000002";
 
+export const calendarList = {
+  default: "br_banking",
+  items: [
+    { id: "br_banking", weekend: ["saturday", "sunday"] },
+    { id: "weekend", weekend: ["saturday", "sunday"] },
+  ],
+};
+
 export function planningApi(overrides: Record<string, Route> = {}) {
   return fakeApi(
     accountRoutes({
+      "GET /api/v1/calendars": () => json(200, calendarList),
       "GET /api/v1/schedules": () => json(200, { items: schedules }),
       ...Object.fromEntries(
         schedules.map((s) => [
