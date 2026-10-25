@@ -168,4 +168,21 @@ describe("PayeesPage", () => {
       ]);
     });
   });
+
+  it.each([
+    [390, "bottom"],
+    [1280, "end"],
+  ])("opens the aliases drawer at %i px from the %s", async (width, side) => {
+    await renderApp("/categories/payees", { fetch: api([]), width });
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Actions for iFood" }),
+    );
+    await userEvent.click(
+      await screen.findByRole("menuitem", {
+        name: catalogEn["payees.manageAliases"],
+      }),
+    );
+    const drawer = await screen.findByRole("dialog");
+    expect(drawer.closest("[data-side]")).toHaveAttribute("data-side", side);
+  });
 });

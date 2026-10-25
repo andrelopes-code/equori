@@ -50,6 +50,7 @@ import { transactionRow } from "@/features/transactions/transaction-row";
 import { TransferDialog } from "@/features/transactions/transfer-dialog";
 import { useTransactionData } from "@/features/transactions/use-transaction-data";
 import { VoidDialog } from "@/features/transactions/void-dialog";
+import styles from "@/features/transactions/transaction-detail.module.css";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
@@ -184,7 +185,7 @@ export function TransactionDetail({
       level={host === "page" ? "1" : "2"}
       scroll={host === "pane" ? "self" : "ancestor"}
     >
-      <PageHeader>
+      <PageHeader className={host === "pane" ? styles.paneHeader : undefined}>
         <PageHeaderTitleArea>
           {back}
           <PageHeaderTitleRow>

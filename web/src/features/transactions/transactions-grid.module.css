@@ -5,6 +5,7 @@
     align-items: center;
     gap: var(--slotted-space-5);
     min-inline-size: 0;
+    inline-size: 100%;
     max-inline-size: 100%;
   }
 
@@ -23,8 +24,16 @@
   /* The payee over its detail line; the stack takes what the mark leaves and cuts inside it. */
   .lines {
     display: flex;
+    flex: 1;
     flex-direction: column;
     min-inline-size: 0;
+  }
+
+  /* The amount keeps its width at the end of the payee's line; the payee cuts instead. */
+  .trail {
+    flex: none;
+    margin-inline-start: auto;
+    padding-inline-start: var(--slotted-space-4);
   }
 
   .line {

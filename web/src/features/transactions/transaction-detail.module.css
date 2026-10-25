@@ -1,0 +1,13 @@
+@layer app {
+  /* The header blurs what scrolls under it, and a blurred box is not cut by the pane's rounded
+     overflow: its square top corners show over the pane's border. It takes the pane's inner radius
+     itself, so the glass stays and the corners follow the pane. */
+  .paneHeader {
+    border-start-start-radius: calc(
+      var(--slotted-radius-lg) - var(--slotted-border-width-thin)
+    );
+    border-start-end-radius: calc(
+      var(--slotted-radius-lg) - var(--slotted-border-width-thin)
+    );
+  }
+}

@@ -48,7 +48,7 @@ export function GoalWhatIf({
   return (
     <Stack gap={3}>
       <Field size="sm">
-        <Inline justify="between" gap={3}>
+        <Inline justify="between" align="baseline" gap={3}>
           <FieldLabel>{t("goals.monthly")}</FieldLabel>
           <Text size="sm" weight="medium">
             {fmt.money(
@@ -97,7 +97,7 @@ export function GoalWhatIf({
       )}
       {investing && (
         <Field size="sm">
-          <Inline justify="between" gap={3}>
+          <Inline justify="between" align="baseline" gap={3}>
             <FieldLabel>{t("goals.return")}</FieldLabel>
             <Text size="sm" weight="medium">
               {new Intl.NumberFormat(locale, {

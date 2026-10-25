@@ -5,6 +5,19 @@
     gap: var(--slotted-space-4);
   }
 
+  .summary {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-4);
+  }
+
+  /* A phone reads the records before the figures and charts (docs/contributing/mobile.md, M2). */
+  @media (max-width: 599px) {
+    .summary {
+      order: 1;
+    }
+  }
+
   /* The figures and charts push the tree down, so the page scrolls and the tree keeps a height
      of its own: 32rem shows eleven rows of 44 px and a header; no token holds a measure. */
   .listing {

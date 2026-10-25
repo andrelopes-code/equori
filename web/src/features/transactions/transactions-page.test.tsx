@@ -394,4 +394,24 @@ describe("TransactionsPage on a phone", () => {
     expect(await screen.findByText("Year end")).toBeInTheDocument();
     expect(seen.queries.map((q) => q.get("cursor"))).toEqual([null, "page-2"]);
   });
+
+  // The amount ends the payee's line, so the line under it takes the cell's whole width.
+  it("draws the amount in the cell of the payee", async () => {
+    await renderApp("/transactions", {
+      fetch: api({ queries: [] }),
+      today: "2026-10-17",
+      width: 390,
+    });
+    await screen.findByText("Padaria");
+    const cell = screen
+      .getByText("Padaria")
+      .closest('[role="rowheader"], [role="gridcell"]');
+    if (!(cell instanceof HTMLElement)) throw new Error("no cell for Padaria");
+    expect(within(cell).getByText("−R$120.00")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("columnheader", {
+        name: catalogEn["transactions.column.amount"],
+      }),
+    ).toBeNull();
+  });
 });

@@ -131,8 +131,9 @@ export function TransactionsGrid({
         accessor: "title",
         rowHeader: true,
         flex: 2,
-        // Narrow enough that the amount keeps its column beside it on a 390 px phone.
-        minWidth: 150,
+        // Beside a table's amount the title may be narrow. On a phone the amount is in the cell, and
+        // a title narrower than this lets the category column fit beside it and squeeze the text.
+        minWidth: growsWithPage ? 240 : 150,
       },
       {
         id: "category",
@@ -153,18 +154,23 @@ export function TransactionsGrid({
         // Without room the tags leave the row rather than lengthen it on a phone.
         popin: false,
       },
-      {
-        id: "amount",
-        label: t("transactions.column.amount"),
-        accessor: (row) => row.money.amount,
-        numeric: true,
-        width: 148,
-        priority: 1,
-        format: (_value, row) =>
-          fmt.money(row.money, scale(row.money.currency)),
-      },
+      // Below 600 px the amount ends the payee's line (TitleCell), which frees 148 px for the text.
+      ...(growsWithPage
+        ? []
+        : [
+            {
+              id: "amount",
+              label: t("transactions.column.amount"),
+              accessor: (row: ListRow) => row.money.amount,
+              numeric: true,
+              width: 148,
+              priority: 1,
+              format: (_value: unknown, row: ListRow) =>
+                fmt.money(row.money, scale(row.money.currency)),
+            },
+          ]),
     ],
-    [t, locale, today, scale, fmt],
+    [t, locale, today, scale, fmt, growsWithPage],
   );
 
   const titles = useMemo(
@@ -198,6 +204,11 @@ export function TransactionsGrid({
         <TitleCell
           row={row}
           category={categories.get(row.categoryIds[0] ?? "")}
+          amount={
+            growsWithPage
+              ? fmt.money(row.money, scale(row.money.currency))
+              : undefined
+          }
         />
       ),
       category: ({ row }: { row: ListRow }) => (
@@ -217,7 +228,7 @@ export function TransactionsGrid({
         <AmountCell row={row} text={text} />
       ),
     }),
-    [categories, editCategory],
+    [categories, editCategory, growsWithPage, fmt, scale],
   );
   const editorRenderers = useMemo(
     () => ({

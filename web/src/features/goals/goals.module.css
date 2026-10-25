@@ -72,9 +72,17 @@
     overflow-wrap: anywhere;
   }
 
+  .partsBlock {
+    margin-block-end: var(--slotted-space-5);
+  }
+
+  /* One grid for the whole list, so the values and the shares line up from row to row; each row
+     takes the list's tracks. The share is never broken: its column is as wide as the widest. */
   .parts {
     display: grid;
-    gap: var(--slotted-space-3);
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    column-gap: var(--slotted-space-4);
+    row-gap: var(--slotted-space-3);
     margin: 0;
     padding: 0;
     list-style: none;
@@ -82,9 +90,18 @@
 
   .parts li {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto 3ch;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
     align-items: baseline;
-    gap: var(--slotted-space-3);
+  }
+
+  .parts li > :not(:first-child) {
+    white-space: nowrap;
+  }
+
+  .partValue {
+    display: grid;
+    min-width: 0;
   }
 
   .partName {

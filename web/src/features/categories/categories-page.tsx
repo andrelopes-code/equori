@@ -289,37 +289,39 @@ export function CategoriesPage() {
               {t("category.showArchived")}
             </Switch>
           </Inline>
-          {scale !== null && currency !== undefined && (
-            <FiguresRow
-              cls={cls}
-              currency={currency}
-              scale={scale(currency)}
-              previousMonth={before}
-              comparable={comparable}
-              from={from}
-              to={to}
-              days={daysCounted(month, today)}
-              monthDays={Number(to.slice(8, 10))}
-              current={current}
-              previous={previous}
-              pending={pending}
-              loading={accounts.isPending || totals.isPending}
-            />
-          )}
-          {scale !== null && currency !== undefined && (
-            <CategoryCharts
-              trend={trend}
-              currency={currency}
-              scale={scale(currency)}
-              loading={history.pending}
-            />
-          )}
-          {(scale === null || currency === undefined) && (
-            <Stack gap={4} aria-busy="true">
-              <Skeleton shape="block" blockSize="6rem" />
-              <Skeleton shape="block" blockSize="16rem" />
-            </Stack>
-          )}
+          <div className={styles.summary}>
+            {scale !== null && currency !== undefined && (
+              <FiguresRow
+                cls={cls}
+                currency={currency}
+                scale={scale(currency)}
+                previousMonth={before}
+                comparable={comparable}
+                from={from}
+                to={to}
+                days={daysCounted(month, today)}
+                monthDays={Number(to.slice(8, 10))}
+                current={current}
+                previous={previous}
+                pending={pending}
+                loading={accounts.isPending || totals.isPending}
+              />
+            )}
+            {scale !== null && currency !== undefined && (
+              <CategoryCharts
+                trend={trend}
+                currency={currency}
+                scale={scale(currency)}
+                loading={history.pending}
+              />
+            )}
+            {(scale === null || currency === undefined) && (
+              <Stack gap={4} aria-busy="true">
+                <Skeleton shape="block" blockSize="6rem" />
+                <Skeleton shape="block" blockSize="16rem" />
+              </Stack>
+            )}
+          </div>
           <div className={styles.listing}>
             {scale !== null && currency !== undefined && (
               <CategoryTree

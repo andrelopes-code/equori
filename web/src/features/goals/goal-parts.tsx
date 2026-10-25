@@ -35,7 +35,7 @@ export function GoalParts({
     return null;
   const share = new Intl.NumberFormat(locale, { style: "percent" });
   return (
-    <Collapsible size="sm">
+    <Collapsible size="sm" className={styles.partsBlock}>
       <CollapsibleHeader>
         <CollapsibleTrigger>{t("goals.parts")}</CollapsibleTrigger>
       </CollapsibleHeader>
@@ -51,15 +51,17 @@ export function GoalParts({
                   {part.instrument}
                 </Text>
               </div>
-              {part.instrument !== goal.target.currency && (
-                <Text size="sm" tone="muted" numeric="tabular">
-                  {fmt.money(part.quantity, scale(part.instrument))}
+              <div className={styles.partValue}>
+                <Text size="sm" numeric="tabular" align="end">
+                  {fmt.money(part.value, scale(part.value.currency))}
                 </Text>
-              )}
-              <Text size="sm" numeric="tabular">
-                {fmt.money(part.value, scale(part.value.currency))}
-              </Text>
-              <Text size="sm" tone="muted" numeric="tabular">
+                {part.instrument !== goal.target.currency && (
+                  <Text size="xs" tone="muted" numeric="tabular" align="end">
+                    {fmt.money(part.quantity, scale(part.instrument))}
+                  </Text>
+                )}
+              </div>
+              <Text size="sm" tone="muted" numeric="tabular" align="end">
                 {share.format(
                   goal.current.amount > 0
                     ? Math.floor(
