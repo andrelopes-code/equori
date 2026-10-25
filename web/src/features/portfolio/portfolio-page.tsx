@@ -136,7 +136,7 @@ export function PortfolioPage() {
               </Heading>
               {yearLink}
             </Inline>
-            <PortfolioPositions date={date} />
+            <PortfolioPositions date={date} valueIn={valueIn} />
           </Stack>
           <div className={styles.pair}>
             <Stack gap={3}>

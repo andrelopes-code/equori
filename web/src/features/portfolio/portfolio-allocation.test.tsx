@@ -90,7 +90,7 @@ describe("Portfolio allocation", () => {
     await allocationTable("institution");
   });
 
-  it("sends the date, the grouping and the valuation currency, and not on the positions", async () => {
+  it("sends the date, the grouping and the valuation currency and the positions", async () => {
     const allocation: URLSearchParams[] = [];
     const positions: URLSearchParams[] = [];
     const fetch = portfolioApi({
@@ -109,7 +109,7 @@ describe("Portfolio allocation", () => {
         allocation.map((q) => [q.get("date"), q.get("by"), q.get("value_in")]),
       ).toEqual([["2026-09-30", "type", "USD"]]);
     });
-    expect(positions.map((q) => q.get("value_in"))).toEqual([null]);
+    expect(positions.map((q) => q.get("value_in"))).toEqual(["USD"]);
   });
 
   it("values in the base currency when none is chosen", async () => {

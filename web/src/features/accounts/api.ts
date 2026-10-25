@@ -234,13 +234,24 @@ export function projectionQuery(api: Client<paths>, id: string, to: string) {
   });
 }
 
-export function positionsQuery(api: Client<paths>, date: string) {
+export function positionsQuery(
+  api: Client<paths>,
+  date: string,
+  valueIn?: string,
+) {
   return queryOptions({
-    queryKey: ["positions", date] as const,
+    queryKey: ["positions", date, valueIn] as const,
     queryFn: async () =>
       (
         await unwrap(
-          await api.GET("/positions", { params: { query: { date } } }),
+          await api.GET("/positions", {
+            params: {
+              query: {
+                date,
+                ...(valueIn === undefined ? {} : { value_in: valueIn }),
+              },
+            },
+          }),
         )
       ).items,
   });

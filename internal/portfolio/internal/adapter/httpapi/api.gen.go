@@ -256,6 +256,9 @@ type ListInstrumentSubtypesParams struct {
 // ListPositionsParams defines parameters for ListPositions.
 type ListPositionsParams struct {
 	Date openapi_types.Date `form:"date" json:"date"`
+
+	// ValueIn Currency of market_value; the base currency by default. A missing price to it is price_missing.
+	ValueIn *string `form:"value_in,omitempty" json:"value_in,omitempty"`
 }
 
 // ListRealizedResultsParams defines parameters for ListRealizedResults.
@@ -422,6 +425,19 @@ func (siw *ServerInterfaceWrapper) ListPositions(w http.ResponseWriter, r *http.
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "date"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "date", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "value_in" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "value_in", r.URL.Query(), &params.ValueIn, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "value_in"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "value_in", Err: err})
 		}
 		return
 	}
@@ -970,6 +986,20 @@ func (response ListPositions401ApplicationProblemPlusJSONResponse) VisitListPosi
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListPositions422ApplicationProblemPlusJSONResponse Problem
+
+func (response ListPositions422ApplicationProblemPlusJSONResponse) VisitListPositionsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
 	_, err := buf.WriteTo(w)
 	return err
 }

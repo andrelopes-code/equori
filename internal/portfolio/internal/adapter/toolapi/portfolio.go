@@ -159,7 +159,7 @@ func optionalFields(name string, fields []field, optional ...string) error {
 }
 
 func positions(ctx context.Context, svc *app.Service, names AccountNames, userID int64, date time.Time) (getPortfolioOut, error) {
-	ps, err := svc.Positions(ctx, userID, date)
+	ps, err := svc.Positions(ctx, userID, date, "")
 	if err != nil {
 		return getPortfolioOut{}, err
 	}

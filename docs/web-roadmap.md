@@ -252,7 +252,7 @@ Region: income types and tax treatment come from the user's jurisdiction; no lit
 
 ## 10. Portfolio
 
-Status: Delivered. Operations: `listPositions`, `getAllocation`, `getReturn` (`features/portfolio/`: `/portfolio`; `listPositions` also per account in `features/accounts/positions-tab.tsx`). `listPositions` takes no `value_in`, so the positions stay in the base currency and the valuation currency applies to the allocation and the return only. The return has no whole-portfolio form: the contract takes one account tree, so the screen offers the investment accounts and their parents.
+Status: Delivered. Operations: `listPositions`, `getAllocation`, `getReturn` (`features/portfolio/`: `/portfolio`; `listPositions` also per account in `features/accounts/positions-tab.tsx`). The return has no whole-portfolio form: the contract takes one account tree, so the screen offers the investment accounts and their parents.
 
 Reference: investments design section 4.3.
 

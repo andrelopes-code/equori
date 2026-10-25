@@ -39,8 +39,6 @@ export const portfolioEn = {
     "Positions, allocation and return of the investment accounts at a date.",
   "portfolio.date": "Valuation date",
   "portfolio.positions.title": "Positions",
-  "portfolio.positions.baseOnly":
-    "Positions are valued in the base currency, {currency}.",
   "portfolio.group": "Group by",
   "portfolio.group.account": "Account",
   "portfolio.group.instrument": "Security",

@@ -833,6 +833,13 @@ paths:
           schema:
             type: string
             format: date
+        - name: value_in
+          in: query
+          required: false
+          description: Currency of market_value; the base currency by default. A missing price to it is price_missing.
+          schema:
+            type: string
+            pattern: "^[A-Z]{3}$"
       responses:
         "200":
           description: OK.
@@ -843,6 +850,8 @@ paths:
         "400":
           $ref: "#/components/responses/Problem"
         "401":
+          $ref: "#/components/responses/Problem"
+        "422":
           $ref: "#/components/responses/Problem"
   /realized-results:
     get:

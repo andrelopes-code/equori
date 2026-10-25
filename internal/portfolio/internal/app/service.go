@@ -4,6 +4,7 @@ package app
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"time"
 
@@ -185,9 +186,10 @@ type Position struct {
 	Prices              []Price
 }
 
-// Positions returns the non-empty positions at the end of date in the base currency;
-// a position without a price has no market value.
-func (s *Service) Positions(ctx context.Context, userID int64, date time.Time) ([]Position, error) {
+// Positions returns the non-empty positions at the end of date with the cost in the base currency
+// and the market value in in (the base currency by default); a position without a price has no
+// market value, and a missing price to in is ErrPriceMissing.
+func (s *Service) Positions(ctx context.Context, userID int64, date time.Time, in money.Currency) ([]Position, error) {
 	base, err := s.ledger.BaseCurrency(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -218,6 +220,13 @@ func (s *Service) Positions(ctx context.Context, userID int64, date time.Time) (
 		case err != nil:
 			return nil, err
 		default:
+			if value.Currency() != in && in != "" {
+				var more []Price
+				if value, more, err = s.md.Convert(ctx, value, in, date); err != nil {
+					return nil, fmt.Errorf("value the position of %s: %w", row.AccountID, err)
+				}
+				prices = append(prices, more...)
+			}
 			p.MarketValue, p.Prices = &value, prices
 		}
 		out = append(out, p)

@@ -40,8 +40,6 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
     "Posições, alocação e retorno das contas de investimento em uma data.",
   "portfolio.date": "Data de avaliação",
   "portfolio.positions.title": "Posições",
-  "portfolio.positions.baseOnly":
-    "As posições são avaliadas na moeda base, {currency}.",
   "portfolio.group": "Agrupar por",
   "portfolio.group.account": "Conta",
   "portfolio.group.instrument": "Ativo",

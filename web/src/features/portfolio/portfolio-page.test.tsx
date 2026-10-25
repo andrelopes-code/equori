@@ -104,7 +104,7 @@ describe("Portfolio positions", () => {
     ).toHaveAttribute("href", expect.stringContaining("/accounts/"));
   });
 
-  it("asks for the positions at the date of the address, in the base currency", async () => {
+  it("asks for the positions at the date of the address, valued in the base currency", async () => {
     const asked: URLSearchParams[] = [];
     const fetch = portfolioApi({
       "GET /api/v1/positions": (req) => {
@@ -115,14 +115,44 @@ describe("Portfolio positions", () => {
     await renderApp("/portfolio?date=2026-09-30", { fetch });
     await waitFor(() => {
       expect(asked.map((q) => [q.get("date"), q.get("value_in")])).toEqual([
-        ["2026-09-30", null],
+        ["2026-09-30", "BRL"],
       ]);
     });
-    expect(
-      await screen.findByText(
-        catalogEn["portfolio.positions.baseOnly"].replace("{currency}", "BRL"),
-      ),
-    ).toBeInTheDocument();
+  });
+
+  it("values the positions in the currency chosen in the address, with a base currency of EUR", async () => {
+    localStorage.setItem(
+      "equori.locale",
+      JSON.stringify({ language: "en", region: "DE" }),
+    );
+    const asked: (string | null)[] = [];
+    const fetch = portfolioApi({
+      "GET /api/v1/settings": () => json(200, { base_currency: "EUR" }),
+      "GET /api/v1/positions": (req) => {
+        asked.push(new URL(req.url).searchParams.get("value_in"));
+        return json(200, {
+          items: [
+            {
+              account_id: "b0000000-0000-4000-8000-000000000003",
+              instrument: "PETR4",
+              quantity: { amount: 3, currency: "PETR4" },
+              cost_basis: { amount: 1000, currency: "EUR" },
+              average_cost: "3.3333",
+              market_value: { amount: 2100, currency: "USD" },
+            },
+          ],
+        });
+      },
+    });
+    await renderApp("/portfolio?value_in=USD", { fetch });
+    const table = await positionsTable();
+    const usd = new Intl.NumberFormat("en-DE", {
+      style: "currency",
+      currency: "USD",
+    });
+    await within(table).findAllByText(usd.format(21));
+    expect(asked).toEqual(["USD"]);
+    expect(rowTexts(table).at(-1)).toContain(usd.format(21));
   });
 
   it("shows the empty state when no account holds a position", async () => {

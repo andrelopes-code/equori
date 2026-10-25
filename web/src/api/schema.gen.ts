@@ -5605,6 +5605,8 @@ export interface operations {
         parameters: {
             query: {
                 date: string;
+                /** @description Currency of market_value; the base currency by default. A missing price to it is price_missing. */
+                value_in?: string;
             };
             header?: never;
             path?: never;
@@ -5623,6 +5625,7 @@ export interface operations {
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     listRealizedResults: {

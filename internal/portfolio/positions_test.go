@@ -65,3 +65,27 @@ func TestNegativeHoldingHasNoAverageCost(t *testing.T) {
 		t.Fatalf("positions = %+v", ps)
 	}
 }
+
+func TestPositionsValuedInAChosenCurrency(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	f.trade(t, "buy", "2026-10-10", 10, "10.00", 0)
+	f.h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "MXRF11", "quote_instrument": "BRL", "date": "2026-10-30", "value": "10.5"}, http.StatusCreated, nil)
+	f.h.Dispatch()
+
+	// 10 shares at 10.50 BRL are 105.00 BRL; at 5 BRL per USD they are 21.00 USD.
+	if ps := f.positions(t, "2026-11-01"); len(ps) != 1 || ps[0].MarketValue["amount"] != float64(10500) || ps[0].MarketValue["currency"] != "BRL" {
+		t.Fatalf("default currency = %+v", ps)
+	}
+	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/positions?date=2026-11-01&value_in=USD", nil), http.StatusUnprocessableEntity, "price_missing", "")
+
+	f.h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "USD", "quote_instrument": "BRL", "date": "2026-10-30", "value": "5"}, http.StatusCreated, nil)
+	var out struct {
+		Items []positionOut `json:"items"`
+	}
+	f.h.MustDo(http.MethodGet, "/api/v1/positions?date=2026-11-01&value_in=USD", nil, http.StatusOK, &out)
+	if len(out.Items) != 1 || out.Items[0].MarketValue["amount"] != float64(2100) || out.Items[0].MarketValue["currency"] != "USD" ||
+		out.Items[0].CostBasis["currency"] != "BRL" {
+		t.Fatalf("value_in=USD = %+v", out.Items)
+	}
+}

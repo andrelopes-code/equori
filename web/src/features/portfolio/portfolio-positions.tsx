@@ -39,7 +39,7 @@ import type {
   PositionGroupBy,
   PositionRow,
 } from "@/features/portfolio/portfolio-groups";
-import { settingsQuery, useScale } from "@/features/setup";
+import { useScale } from "@/features/setup";
 import { formatBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { MASK } from "@/privacy/mask";
@@ -54,9 +54,15 @@ type Money = components["schemas"]["Money"];
 
 const columns = 8;
 
-// The positions of every account at the valuation date, in the base currency: listPositions
-// takes no value_in. A position without a price is marked and stays out of the total and the shares.
-export function PortfolioPositions({ date }: { date: string }) {
+// The positions of every account at the valuation date, valued in valueIn. A position without a
+// price is marked and stays out of the total and the shares.
+export function PortfolioPositions({
+  date,
+  valueIn,
+}: {
+  date: string;
+  valueIn: string | undefined;
+}) {
   const t = useT();
   const [tag] = useAppLocale();
   const api = useApi();
@@ -64,14 +70,16 @@ export function PortfolioPositions({ date }: { date: string }) {
   const scale = useScale();
   const compact = useMediaQuery(compactQuery);
   const [by, setBy] = useState<PositionGroupBy>("account");
-  const positions = useQuery(positionsQuery(api, date));
+  const positions = useQuery({
+    ...positionsQuery(api, date, valueIn),
+    enabled: valueIn !== undefined,
+  });
   const accounts = useQuery(accountsQuery(api));
-  const base = useQuery(settingsQuery(api)).data?.base_currency;
   const pending =
     positions.isPending ||
     accounts.isPending ||
     scale === null ||
-    base === undefined;
+    valueIn === undefined;
   if (positions.isError)
     return (
       <QueryError
@@ -154,11 +162,6 @@ export function PortfolioPositions({ date }: { date: string }) {
             {t("portfolio.group.instrument")}
           </Segment>
         </SegmentedControl>
-        {base !== undefined && (
-          <Text size="sm" tone="muted">
-            {t("portfolio.positions.baseOnly", { currency: base })}
-          </Text>
-        )}
       </Inline>
       {unvalued > 0 && (
         <Text size="sm" tone="muted">
@@ -189,9 +192,9 @@ export function PortfolioPositions({ date }: { date: string }) {
               key={group.key}
               label={group.label}
               end={
-                base === undefined || group.value === 0
+                valueIn === undefined || group.value === 0
                   ? undefined
-                  : money({ amount: group.value, currency: base })
+                  : money({ amount: group.value, currency: valueIn })
               }
             >
               <PhoneList
@@ -229,11 +232,11 @@ export function PortfolioPositions({ date }: { date: string }) {
               />
             </PhoneGroup>
           ))}
-          {base !== undefined && groups.length > 0 && (
+          {valueIn !== undefined && groups.length > 0 && (
             <Text size="sm" tone="muted">
               {[
                 t("portfolio.total"),
-                money({ amount: total, currency: base }),
+                money({ amount: total, currency: valueIn }),
               ].join(": ")}
             </Text>
           )}
@@ -317,7 +320,7 @@ export function PortfolioPositions({ date }: { date: string }) {
                       {t("portfolio.total")}
                     </TableRowHeader>
                     <TableCell numeric>
-                      {money({ amount: total, currency: base })}
+                      {money({ amount: total, currency: valueIn })}
                     </TableCell>
                     <TableCell numeric />
                     <TableCell numeric>

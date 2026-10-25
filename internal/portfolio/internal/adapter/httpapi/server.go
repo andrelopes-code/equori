@@ -38,7 +38,7 @@ func (s *Server) Register(mux *http.ServeMux) {
 }
 
 func (s *Server) ListPositions(ctx context.Context, req ListPositionsRequestObject) (ListPositionsResponseObject, error) {
-	ps, err := s.svc.Positions(ctx, auth.MustUserID(ctx), req.Params.Date.Time)
+	ps, err := s.svc.Positions(ctx, auth.MustUserID(ctx), req.Params.Date.Time, valueIn(req.Params.ValueIn))
 	if err != nil {
 		return nil, err
 	}
