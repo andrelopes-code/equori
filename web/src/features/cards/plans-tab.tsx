@@ -27,6 +27,8 @@ import { addMonths } from "@/features/cards/reference-months";
 import { planStatusTone, planStatusWords } from "@/features/cards/plan-words";
 import { formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { PhoneList } from "@/ui/phone-list";
+import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 import { Presence } from "@/ui/presence";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
@@ -89,94 +91,161 @@ export function PlansTab({
     const text = names.get(id) ?? "";
     return text === "" ? t("ledger.untitled") : text;
   };
+  const compact = useMediaQuery(compactQuery);
+  const money = (m: components["schemas"]["Money"]) =>
+    fmt.money(m, scale(m.currency));
   return (
     <>
-      <Table columns={7} variant="framed">
-        <TableContent>
-          <TableCaption>{t("plans.list")}</TableCaption>
-          <TableHead>
-            <TableRow>
-              <TableColumnHeader>{t("plans.purchase")}</TableColumnHeader>
-              <TableColumnHeader>{t("plans.billed")}</TableColumnHeader>
-              <TableColumnHeader numeric>{t("plans.each")}</TableColumnHeader>
-              <TableColumnHeader numeric>
-                {t("plans.remaining")}
-              </TableColumnHeader>
-              <TableColumnHeader>{t("plans.last")}</TableColumnHeader>
-              <TableColumnHeader>{t("plans.status")}</TableColumnHeader>
-              <TableColumnHeader align="end">
-                <VisuallyHidden>{t("links.actions")}</VisuallyHidden>
-              </TableColumnHeader>
-            </TableRow>
-          </TableHead>
-          {pending && ids.length === 0 ? (
-            <TableLoader skeletonRows={3} />
-          ) : (
-            <TableBody>
-              {ids.length === 0 && <TableEmpty>{t("plans.none")}</TableEmpty>}
-              {ids.map((id, i) => {
-                const plan = plans[i]?.data;
-                const progress =
-                  plan === undefined
-                    ? undefined
-                    : planProgress(plan, reference);
-                const money = (m: components["schemas"]["Money"]) =>
-                  fmt.money(m, scale(m.currency));
-                return (
-                  <TableRow key={id} value={id}>
-                    <TableRowHeader>{name(id)}</TableRowHeader>
-                    <TableCell>
-                      {plan === undefined || progress === undefined
-                        ? null
-                        : t("plans.progress", {
-                            billed: progress.billed,
-                            count: plan.count,
-                          })}
-                    </TableCell>
-                    <TableCell numeric>
-                      {progress?.each === undefined
-                        ? null
-                        : money(progress.each)}
-                    </TableCell>
-                    <TableCell numeric>
-                      {progress?.remaining === undefined
-                        ? null
-                        : money(progress.remaining)}
-                    </TableCell>
-                    <TableCell>
-                      {progress?.last === undefined
-                        ? null
-                        : formatMonthTitle(progress.last, locale)}
-                    </TableCell>
-                    <TableCell>
-                      {plan !== undefined && (
-                        <Tag size="sm" tone={planStatusTone[plan.status]}>
-                          {t(planStatusWords[plan.status])}
-                        </Tag>
-                      )}
-                    </TableCell>
-                    <TableCell align="end">
-                      <IconButton
-                        size="sm"
-                        variant="ghost"
-                        tone="secondary"
-                        aria-label={t("plans.openPlan", { name: name(id) })}
-                        onClick={() => {
-                          setOpened(id);
-                        }}
-                      >
-                        <Icon>
-                          <Glyph name="chevron-right" />
-                        </Icon>
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          )}
-        </TableContent>
-      </Table>
+      {compact ? (
+        <PhoneList
+          label={t("plans.list")}
+          loading={pending && ids.length === 0}
+          empty={t("plans.none")}
+          rows={ids.map((id, i) => {
+            const plan = plans[i]?.data;
+            const progress =
+              plan === undefined ? undefined : planProgress(plan, reference);
+            return {
+              key: id,
+              title: name(id),
+              lines: [
+                plan === undefined || progress === undefined
+                  ? null
+                  : [
+                      t("plans.progress", {
+                        billed: progress.billed,
+                        count: plan.count,
+                      }),
+                      progress.last === undefined
+                        ? undefined
+                        : [
+                            t("plans.last"),
+                            formatMonthTitle(progress.last, locale),
+                          ].join(": "),
+                    ]
+                      .filter((part) => part !== undefined)
+                      .join(" · "),
+                progress?.remaining === undefined
+                  ? null
+                  : [t("plans.remaining"), money(progress.remaining)].join(
+                      ": ",
+                    ),
+                plan === undefined ? null : (
+                  <Tag
+                    key="status"
+                    size="sm"
+                    tone={planStatusTone[plan.status]}
+                  >
+                    {t(planStatusWords[plan.status])}
+                  </Tag>
+                ),
+              ].filter((line) => line !== null),
+              end:
+                progress?.each === undefined ? undefined : money(progress.each),
+              actions: (
+                <IconButton
+                  size="sm"
+                  variant="ghost"
+                  tone="secondary"
+                  aria-label={t("plans.openPlan", { name: name(id) })}
+                  onClick={() => {
+                    setOpened(id);
+                  }}
+                >
+                  <Icon>
+                    <Glyph name="chevron-right" />
+                  </Icon>
+                </IconButton>
+              ),
+            };
+          })}
+        />
+      ) : (
+        <Table columns={7} variant="framed">
+          <TableContent>
+            <TableCaption>{t("plans.list")}</TableCaption>
+            <TableHead>
+              <TableRow>
+                <TableColumnHeader>{t("plans.purchase")}</TableColumnHeader>
+                <TableColumnHeader>{t("plans.billed")}</TableColumnHeader>
+                <TableColumnHeader numeric>{t("plans.each")}</TableColumnHeader>
+                <TableColumnHeader numeric>
+                  {t("plans.remaining")}
+                </TableColumnHeader>
+                <TableColumnHeader>{t("plans.last")}</TableColumnHeader>
+                <TableColumnHeader>{t("plans.status")}</TableColumnHeader>
+                <TableColumnHeader align="end">
+                  <VisuallyHidden>{t("links.actions")}</VisuallyHidden>
+                </TableColumnHeader>
+              </TableRow>
+            </TableHead>
+            {pending && ids.length === 0 ? (
+              <TableLoader skeletonRows={3} />
+            ) : (
+              <TableBody>
+                {ids.length === 0 && <TableEmpty>{t("plans.none")}</TableEmpty>}
+                {ids.map((id, i) => {
+                  const plan = plans[i]?.data;
+                  const progress =
+                    plan === undefined
+                      ? undefined
+                      : planProgress(plan, reference);
+                  return (
+                    <TableRow key={id} value={id}>
+                      <TableRowHeader>{name(id)}</TableRowHeader>
+                      <TableCell>
+                        {plan === undefined || progress === undefined
+                          ? null
+                          : t("plans.progress", {
+                              billed: progress.billed,
+                              count: plan.count,
+                            })}
+                      </TableCell>
+                      <TableCell numeric>
+                        {progress?.each === undefined
+                          ? null
+                          : money(progress.each)}
+                      </TableCell>
+                      <TableCell numeric>
+                        {progress?.remaining === undefined
+                          ? null
+                          : money(progress.remaining)}
+                      </TableCell>
+                      <TableCell>
+                        {progress?.last === undefined
+                          ? null
+                          : formatMonthTitle(progress.last, locale)}
+                      </TableCell>
+                      <TableCell>
+                        {plan !== undefined && (
+                          <Tag size="sm" tone={planStatusTone[plan.status]}>
+                            {t(planStatusWords[plan.status])}
+                          </Tag>
+                        )}
+                      </TableCell>
+                      <TableCell align="end">
+                        <IconButton
+                          size="sm"
+                          variant="ghost"
+                          tone="secondary"
+                          aria-label={t("plans.openPlan", { name: name(id) })}
+                          onClick={() => {
+                            setOpened(id);
+                          }}
+                        >
+                          <Icon>
+                            <Glyph name="chevron-right" />
+                          </Icon>
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            )}
+          </TableContent>
+        </Table>
+      )}
       <Presence value={opened ?? undefined}>
         {(planId) => (
           <PlanDrawer

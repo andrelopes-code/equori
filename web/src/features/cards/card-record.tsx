@@ -40,6 +40,7 @@ import { institutionsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { Presence } from "@/ui/presence";
+import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 type Account = components["schemas"]["Account"];
 
@@ -100,6 +101,27 @@ export function CardRecord({
     });
   };
 
+  // A phone reads the records under the tabs first, and the figures after them (mobile.md M2, M4).
+  const compact = useMediaQuery(compactQuery);
+  const overview = (
+    <>
+      <CardFigures
+        account={account}
+        current={current}
+        unpaid={unpaid}
+        committed={committed}
+        loading={statements.isPending}
+        scale={scale}
+      />
+      <StatementsChart
+        statements={statements.data ?? []}
+        commitments={commitments.months}
+        currency={account.currency}
+        scale={scale(account.currency)}
+        loading={statements.isPending}
+      />
+    </>
+  );
   return (
     <Page width="full">
       <CardHeader
@@ -148,21 +170,7 @@ export function CardRecord({
               </AlertActions>
             </Alert>
           )}
-          <CardFigures
-            account={account}
-            current={current}
-            unpaid={unpaid}
-            committed={committed}
-            loading={statements.isPending}
-            scale={scale}
-          />
-          <StatementsChart
-            statements={statements.data ?? []}
-            commitments={commitments.months}
-            currency={account.currency}
-            scale={scale(account.currency)}
-            loading={statements.isPending}
-          />
+          {!compact && overview}
           <div aria-busy={shown !== (chosen ?? tab) || undefined}>
             {shown === "statements" && (
               <StatementsTab
@@ -204,6 +212,7 @@ export function CardRecord({
               />
             )}
           </div>
+          {compact && overview}
         </Stack>
       </PageBody>
       <Presence value={dialog === "installments" ? dialog : undefined}>

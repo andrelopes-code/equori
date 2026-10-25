@@ -7,6 +7,7 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerPanel,
+  DrawerResizer,
   DrawerTitle,
 } from "@slotted/react/drawer";
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
@@ -43,6 +44,7 @@ import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
 import { MoneyInput } from "@/ui/money-input";
 import { QueryError } from "@/ui/query-error";
+import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
@@ -68,6 +70,7 @@ export function PlanDrawer({
 }) {
   const t = useT();
   const overlayOpen = useOverlayOpen();
+  const phone = useMediaQuery(compactQuery);
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
   const today = useToday();
@@ -131,12 +134,14 @@ export function PlanDrawer({
   return (
     <Drawer
       open={overlayOpen}
-      size="lg"
+      side={phone ? "bottom" : "end"}
+      size={phone ? "content" : "lg"}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
     >
       <DrawerPanel>
+        {phone && <DrawerResizer />}
         <DrawerHeader>
           <DrawerTitle>{t("plan.title", { name })}</DrawerTitle>
           <DrawerDescription>

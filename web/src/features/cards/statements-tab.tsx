@@ -24,6 +24,8 @@ import {
 } from "@/features/cards/statement-words";
 import { formatDate, formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { PhoneList } from "@/ui/phone-list";
+import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 import { useAppLink } from "@/ui/use-app-link";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
@@ -50,73 +52,116 @@ export function StatementsTab({
   const follow = useAppLink();
   const money = (m: components["schemas"]["Money"]) =>
     fmt.money(m, scale(m.currency));
+  const compact = useMediaQuery(compactQuery);
   const rows = [...statements].reverse();
   return (
     <Stack gap={3}>
-      <Table columns={7} variant="framed">
-        <TableContent>
-          <TableCaption>{t("card.statements")}</TableCaption>
-          <TableHead>
-            <TableRow>
-              <TableColumnHeader>{t("card.reference")}</TableColumnHeader>
-              <TableColumnHeader>{t("card.closing")}</TableColumnHeader>
-              <TableColumnHeader>{t("card.due")}</TableColumnHeader>
-              <TableColumnHeader numeric>
-                {t("card.amountDue")}
-              </TableColumnHeader>
-              <TableColumnHeader numeric>{t("card.settled")}</TableColumnHeader>
-              <TableColumnHeader numeric>{t("card.unpaid")}</TableColumnHeader>
-              <TableColumnHeader>{t("card.status")}</TableColumnHeader>
-            </TableRow>
-          </TableHead>
-          {loading ? (
-            <TableLoader skeletonRows={6} />
-          ) : (
-            <TableBody>
-              {rows.length === 0 && (
-                <TableEmpty>{t("card.noStatements")}</TableEmpty>
-              )}
-              {rows.map((s) => (
-                <TableRow key={s.id} value={s.id}>
-                  <TableRowHeader>
-                    <Stack gap={0}>
-                      <Link
-                        variant="neutral"
-                        underline="hover"
-                        href={`/cards/${accountId}/statements/${s.id}`}
-                        onClick={follow({
-                          to: "/cards/$accountId/statements/$statementId",
-                          params: { accountId, statementId: s.id },
-                        })}
-                      >
-                        {formatMonthTitle(s.reference, locale)}
-                      </Link>
-                      {s.amount_difference !== undefined &&
-                        s.amount_difference.amount !== 0 && (
-                          <Text size="xs" tone="warning">
-                            {t("card.institutionDiffers", {
-                              amount: money(s.amount_difference),
-                            })}
-                          </Text>
-                        )}
-                    </Stack>
-                  </TableRowHeader>
-                  <TableCell>{formatDate(s.closing_date, locale)}</TableCell>
-                  <TableCell>{formatDate(s.due_date, locale)}</TableCell>
-                  <TableCell numeric>{money(s.amount_due)}</TableCell>
-                  <TableCell numeric>{money(s.settled)}</TableCell>
-                  <TableCell numeric>{money(s.unpaid)}</TableCell>
-                  <TableCell>
-                    <Tag size="sm" tone={statementStatusTone[s.status]}>
-                      {t(statementStatusWords[s.status])}
-                    </Tag>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          )}
-        </TableContent>
-      </Table>
+      {compact ? (
+        <PhoneList
+          label={t("card.statements")}
+          loading={loading}
+          empty={t("card.noStatements")}
+          rows={rows.map((s) => ({
+            key: s.id,
+            title: formatMonthTitle(s.reference, locale),
+            href: `/cards/${accountId}/statements/${s.id}`,
+            onOpen: follow({
+              to: "/cards/$accountId/statements/$statementId",
+              params: { accountId, statementId: s.id },
+            }),
+            lines: [
+              [
+                [t("card.closing"), formatDate(s.closing_date, locale)].join(
+                  ": ",
+                ),
+                [t("card.due"), formatDate(s.due_date, locale)].join(": "),
+              ].join(" · "),
+              [t("card.unpaid"), money(s.unpaid)].join(": "),
+              <Tag key="status" size="sm" tone={statementStatusTone[s.status]}>
+                {t(statementStatusWords[s.status])}
+              </Tag>,
+              s.amount_difference !== undefined &&
+              s.amount_difference.amount !== 0 ? (
+                <Text key="difference" size="xs" tone="warning">
+                  {t("card.institutionDiffers", {
+                    amount: money(s.amount_difference),
+                  })}
+                </Text>
+              ) : null,
+            ].filter((line) => line !== null),
+            end: money(s.amount_due),
+          }))}
+        />
+      ) : (
+        <Table columns={7} variant="framed">
+          <TableContent>
+            <TableCaption>{t("card.statements")}</TableCaption>
+            <TableHead>
+              <TableRow>
+                <TableColumnHeader>{t("card.reference")}</TableColumnHeader>
+                <TableColumnHeader>{t("card.closing")}</TableColumnHeader>
+                <TableColumnHeader>{t("card.due")}</TableColumnHeader>
+                <TableColumnHeader numeric>
+                  {t("card.amountDue")}
+                </TableColumnHeader>
+                <TableColumnHeader numeric>
+                  {t("card.settled")}
+                </TableColumnHeader>
+                <TableColumnHeader numeric>
+                  {t("card.unpaid")}
+                </TableColumnHeader>
+                <TableColumnHeader>{t("card.status")}</TableColumnHeader>
+              </TableRow>
+            </TableHead>
+            {loading ? (
+              <TableLoader skeletonRows={6} />
+            ) : (
+              <TableBody>
+                {rows.length === 0 && (
+                  <TableEmpty>{t("card.noStatements")}</TableEmpty>
+                )}
+                {rows.map((s) => (
+                  <TableRow key={s.id} value={s.id}>
+                    <TableRowHeader>
+                      <Stack gap={0}>
+                        <Link
+                          variant="neutral"
+                          underline="hover"
+                          href={`/cards/${accountId}/statements/${s.id}`}
+                          onClick={follow({
+                            to: "/cards/$accountId/statements/$statementId",
+                            params: { accountId, statementId: s.id },
+                          })}
+                        >
+                          {formatMonthTitle(s.reference, locale)}
+                        </Link>
+                        {s.amount_difference !== undefined &&
+                          s.amount_difference.amount !== 0 && (
+                            <Text size="xs" tone="warning">
+                              {t("card.institutionDiffers", {
+                                amount: money(s.amount_difference),
+                              })}
+                            </Text>
+                          )}
+                      </Stack>
+                    </TableRowHeader>
+                    <TableCell>{formatDate(s.closing_date, locale)}</TableCell>
+                    <TableCell>{formatDate(s.due_date, locale)}</TableCell>
+                    <TableCell numeric>{money(s.amount_due)}</TableCell>
+                    <TableCell numeric>{money(s.settled)}</TableCell>
+                    <TableCell numeric>{money(s.unpaid)}</TableCell>
+                    <TableCell>
+                      <Tag size="sm" tone={statementStatusTone[s.status]}>
+                        {t(statementStatusWords[s.status])}
+                      </Tag>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            )}
+          </TableContent>
+        </Table>
+      )}
       <div>
         <Button variant="outline" tone="secondary" onClick={onEarlier}>
           {t("card.earlier")}
