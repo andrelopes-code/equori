@@ -167,6 +167,12 @@ export function SettingsCalendars() {
             <p>{t("calendar.pick")}</p>
           ) : (
             <Stack gap={4}>
+              <output aria-live="polite">
+                {t("calendar.holidaysOf", {
+                  name: calendarLabel(t, chosen.id),
+                  year: String(year),
+                })}
+              </output>
               <Inline gap={3} align="center">
                 <Button
                   size="sm"
@@ -179,12 +185,6 @@ export function SettingsCalendars() {
                 >
                   {t("calendar.year.previous")}
                 </Button>
-                <output aria-live="polite">
-                  {t("calendar.holidaysOf", {
-                    name: calendarLabel(t, chosen.id),
-                    year: String(year),
-                  })}
-                </output>
                 <Button
                   size="sm"
                   variant="ghost"
