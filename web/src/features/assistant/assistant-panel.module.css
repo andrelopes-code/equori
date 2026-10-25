@@ -11,13 +11,35 @@
 }
 
 @layer app {
-  /* The thread and the composer stack in the body; only the thread scrolls (CV-01). */
+  /* The thread fills the body and scrolls on its own; the composer is the footer (CV-01). */
   .thread {
     display: grid;
-    grid-template-rows: minmax(0, 1fr) auto;
-    gap: var(--slotted-space-4);
+    grid-template-rows: minmax(0, 1fr);
     height: 100%;
     min-height: 0;
+  }
+
+  /* A bottom sheet sizes its panel to its content, which leaves the footer under a short thread.
+     On a phone the panel keeps the screen's height and its body takes the rest, so the footer's
+     natural place is the screen's foot and the sheet's sticky footer holds it there while a drag
+     slides the panel down. */
+  @media (max-width: 599px) {
+    .panel {
+      block-size: 100%;
+      max-block-size: 100%;
+      min-block-size: 0;
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+    }
+
+    /* Workaround for Slotted finding "A message scroller in a bottom sheet keeps a pull at its top from moving the sheet": the thread's scroll chains to the sheet, so a pull at its top drags the sheet down. */
+    .viewport {
+      overscroll-behavior-block: auto;
+    }
+  }
+
+  /* The conversations stand one step apart. */
+  .conversations {
+    --slotted-list-gap: var(--slotted-space-4);
   }
 
   .headerActions {
@@ -54,19 +76,21 @@
 
   /* A notice that blocks the composer stands right above it, where the reader looks to type. */
   .composer {
+    flex: 1;
+    min-inline-size: 0;
     display: grid;
     gap: var(--slotted-space-3);
-    padding-block-start: var(--slotted-space-1);
   }
 
   .hint {
     flex: 1;
+    padding-inline-start: var(--slotted-space-2);
     min-inline-size: 0;
   }
 
   /* A coarse pointer types on a screen keyboard, where Enter and Shift+Enter are not at hand. */
   @media (pointer: coarse) {
-    .hint:not([data-note]) {
+    .hint {
       visibility: hidden;
     }
   }

@@ -10,8 +10,10 @@ import {
   Drawer,
   DrawerBody,
   DrawerDescription,
+  DrawerFooter,
   DrawerHeader,
   DrawerPanel,
+  DrawerResizer,
   DrawerTitle,
 } from "@slotted/react/drawer";
 import {
@@ -46,7 +48,6 @@ import { HeaderActions } from "@/features/assistant/header-actions";
 import { ProviderNotice } from "@/features/assistant/provider-notice";
 import type { AssistantProblem } from "@/features/assistant/sse";
 import { useAssistantTurn } from "@/features/assistant/use-assistant-turn";
-import { speechSupported } from "@/features/assistant/use-speech-input";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import type { TFunction } from "@/i18n/i18n-provider";
 import { usePrivacy } from "@/privacy/privacy-provider";
@@ -84,7 +85,8 @@ function problemText(
   }
 }
 
-// A side panel beside the page from 600 px; a full-height bottom sheet on a phone. Its state
+// A side panel beside the page from 600 px; a full-height bottom sheet on a phone, whose composer
+// is the sheet's footer and stays at the screen's foot while the sheet is dragged. Its state
 // outlives closing it.
 export function AssistantPanel({
   open,
@@ -166,7 +168,8 @@ export function AssistantPanel({
       modal={phone}
       outsidePress="none"
     >
-      <DrawerPanel>
+      <DrawerPanel className={styles.panel}>
+        {phone && <DrawerResizer />}
         <DrawerHeader>
           <DrawerTitle>{t("assistant.title")}</DrawerTitle>
           <DrawerDescription>
@@ -211,10 +214,7 @@ export function AssistantPanel({
                     <>
                       {blockedNotice}
                       {chat.data !== undefined && (
-                        <ProviderNotice
-                          chat={chat.data}
-                          voice={speechSupported()}
-                        />
+                        <ProviderNotice chat={chat.data} />
                       )}
                     </>
                   }
@@ -226,7 +226,7 @@ export function AssistantPanel({
                 defaultPosition="end"
                 busy={turn.pending !== null}
               >
-                <MessageScrollerViewport>
+                <MessageScrollerViewport className={styles.viewport}>
                   <MessageScrollerContent className={styles.feed}>
                     {messages.map((m) => (
                       <MessageScrollerItem
@@ -269,18 +269,20 @@ export function AssistantPanel({
                 </MessageScrollerViewport>
               </MessageScroller>
             )}
-            {!listing && (
-              <div className={styles.composer}>
-                {started && blockedNotice}
-                <AssistantComposer
-                  disabled={blocked || chat.data === undefined}
-                  busy={turn.pending !== null}
-                  onSend={send}
-                />
-              </div>
-            )}
           </div>
         </DrawerBody>
+        {!listing && (
+          <DrawerFooter>
+            <div className={styles.composer}>
+              {started && blockedNotice}
+              <AssistantComposer
+                disabled={blocked || chat.data === undefined}
+                busy={turn.pending !== null}
+                onSend={send}
+              />
+            </div>
+          </DrawerFooter>
+        )}
       </DrawerPanel>
     </Drawer>
   );

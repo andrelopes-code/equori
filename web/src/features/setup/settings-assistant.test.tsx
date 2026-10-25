@@ -185,9 +185,7 @@ describe("assistant settings", () => {
     ).toBeVisible();
     expect(
       view.getByText(
-        pt["assistant.use.trains"]
-          .replace("{use}", pt["assistant.use.capture.suggest"])
-          .replace("{provider}", "aistudio"),
+        pt["assistant.use.trains"].replace("{provider}", "aistudio"),
       ),
     ).toBeVisible();
   });

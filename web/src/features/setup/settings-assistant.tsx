@@ -1,3 +1,4 @@
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import { InlineMessage } from "@slotted/react/inline-message";
 import { List, ListEmpty, ListSection } from "@slotted/react/list";
@@ -61,13 +62,18 @@ export function SettingsAssistant() {
   const presetItems = presets.data?.items ?? [];
   const providerItems = providers.data?.items ?? [];
 
-  // A use that sends financial data to a provider whose free tier trains on it is said once.
-  const exposed = (uses.data?.items ?? []).flatMap((use) => {
-    const target = use.targets.find((x) => x.notice === "trains");
-    return use.sends_financial_data && target !== undefined
-      ? [{ use, provider: target.provider_name }]
-      : [];
-  });
+  // Providers whose free tier trains on the financial data a use sends are said once.
+  const exposed = [
+    ...new Set(
+      (uses.data?.items ?? []).flatMap((use) =>
+        use.sends_financial_data
+          ? use.targets
+              .filter((x) => x.notice === "trains")
+              .map((x) => x.provider_name)
+          : [],
+      ),
+    ),
+  ];
 
   return (
     <SettingsSection
@@ -221,14 +227,15 @@ export function SettingsAssistant() {
           </List>
         )}
         <InlineMessage>{t("assistant.usage.note")}</InlineMessage>
-        {exposed.map(({ use, provider }) => (
-          <InlineMessage key={use.id} tone="warning">
-            {t("assistant.use.trains", {
-              use: catalogLabel(t, `assistant.use.${use.id}`, use.id),
-              provider,
-            })}
-          </InlineMessage>
-        ))}
+        {exposed.length > 0 && (
+          <Alert tone="warning">
+            <AlertContent>
+              <AlertDescription>
+                {t("assistant.use.trains", { provider: exposed.join(", ") })}
+              </AlertDescription>
+            </AlertContent>
+          </Alert>
+        )}
       </Stack>
       {(open?.kind === "create" || open?.kind === "edit") && (
         <ProviderDialog

@@ -90,7 +90,11 @@ export function ConversationList({
           </AlertContent>
         </Alert>
       )}
-      <List aria-label={t("assistant.conversations")}>
+      <List
+        variant="separated"
+        className={styles.conversations}
+        aria-label={t("assistant.conversations")}
+      >
         {list.isSuccess && items.length === 0 && (
           <ListEmpty>{t("assistant.conversations.empty")}</ListEmpty>
         )}
@@ -147,7 +151,12 @@ export function ConversationList({
           </Button>
         </span>
       )}
-      <Dialog open={asking} size="sm" onOpenChange={setAsking}>
+      <Dialog
+        open={asking}
+        size="sm"
+        fullScreen="never"
+        onOpenChange={setAsking}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("assistant.delete_all")}</DialogTitle>

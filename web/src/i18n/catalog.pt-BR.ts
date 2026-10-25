@@ -140,7 +140,7 @@ export const catalogPtBR: Catalog = {
   "assistant.use.none": "Nenhum provedor atende esta função.",
   "assistant.use.edit": "Editar ordem",
   "assistant.use.trains":
-    "{use} envia dados financeiros para {provider}, cuja camada gratuita usa o conteúdo enviado.",
+    "A camada gratuita de {provider} usa o conteúdo enviado, incluindo dados financeiros.",
   "assistant.chain.title": "Modelos de {use}",
   "assistant.chain.empty":
     "Nenhum modelo. Salvar a lista vazia restaura o padrão.",
@@ -1107,18 +1107,6 @@ export const catalogPtBR: Catalog = {
   "assistant.suggestion.spending": "Quanto gastei por categoria este mês?",
   "assistant.suggestion.statement": "Quando fecha a próxima fatura do cartão?",
   "assistant.composer.hint": "Enter envia · Shift+Enter quebra a linha",
-  "assistant.voice.start": "Ditar mensagem",
-  "assistant.voice.stop": "Parar o ditado",
-  "assistant.voice.listening": "Ouvindo… fale a sua pergunta",
-  "assistant.voice.denied": "Permita o microfone nas configurações do site.",
-  "assistant.voice.unavailable":
-    "Este navegador não oferece reconhecimento de fala.",
-  "assistant.voice.silence": "Toque no microfone e fale.",
-  "assistant.voice.denied.title": "Microfone bloqueado",
-  "assistant.voice.unavailable.title": "Ditado indisponível",
-  "assistant.voice.silence.title": "Nenhuma fala detectada",
-  "assistant.voice.notice":
-    "O ditado usa o reconhecimento de fala do navegador, que pode enviar o áudio ao fabricante do navegador.",
   "assistant.notice.title": "Sobre os seus dados",
   "assistant.exhausted.title": "Limite de uso atingido",
   "assistant.unavailable.title": "Assistente indisponível",
@@ -1506,7 +1494,6 @@ export const catalogPtBR: Catalog = {
   "subscriptions.monthly": "Por mês",
   "subscriptions.yearly": "Por ano",
   "subscriptions.history": "Histórico de preço",
-  "subscriptions.priceFrom": "{amount} a partir de {date}",
   "subscriptions.total": "Total",
   "subscriptions.empty": "Nenhuma assinatura",
   "subscriptions.actions": "Ações de {name}",

@@ -1,31 +1,16 @@
-import { Icon } from "@slotted/react/icon";
 import {
   PromptComposer,
-  PromptComposerAction,
   PromptComposerFooter,
   PromptComposerInput,
   PromptComposerSubmit,
 } from "@slotted/react/prompt-composer";
-import { toast } from "@slotted/react/toast";
 import { Text } from "@slotted/react/typography";
 import { useState } from "react";
 
-import { AssistantIcon } from "@/features/assistant/assistant-icon";
 import styles from "@/features/assistant/assistant-panel.module.css";
-import { useSpeechInput } from "@/features/assistant/use-speech-input";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useT } from "@/i18n/i18n-provider";
 
-const voiceError = {
-  denied: ["assistant.voice.denied.title", "assistant.voice.denied"],
-  unavailable: [
-    "assistant.voice.unavailable.title",
-    "assistant.voice.unavailable",
-  ],
-  silence: ["assistant.voice.silence.title", "assistant.voice.silence"],
-} as const;
-
-// Families read: prompt-composer, icon, typography. The field keeps what the reader typed or
-// dictated until a send is accepted; a send while a turn runs is refused and the text stays.
+// Families read: prompt-composer, typography. The field keeps what the reader typed until a send is accepted; a send while a turn runs is refused and the text stays.
 export function AssistantComposer({
   disabled,
   busy,
@@ -36,26 +21,7 @@ export function AssistantComposer({
   onSend: (text: string) => void;
 }) {
   const t = useT();
-  const [locale] = useAppLocale();
   const [value, setValue] = useState("");
-  // Workaround for Slotted finding "The prompt composer has no dictation action": the panel runs the browser's speech recognition and draws the microphone itself.
-  const speech = useSpeechInput(
-    locale,
-    (text) => {
-      setValue((current) =>
-        current.trim() === "" ? text : `${current} ${text}`,
-      );
-    },
-    (error) => {
-      const [title, description] = voiceError[error];
-      toast.show({
-        tone: "warning",
-        title: t(title),
-        description: t(description),
-      });
-    },
-  );
-
   return (
     <div className={styles.halo} data-busy={busy || undefined}>
       <PromptComposer
@@ -83,34 +49,8 @@ export function AssistantComposer({
           maxRows={6}
         />
         <PromptComposerFooter>
-          {speech.supported && (
-            <PromptComposerAction
-              aria-label={
-                speech.unavailable
-                  ? t("assistant.voice.unavailable.title")
-                  : speech.listening
-                    ? t("assistant.voice.stop")
-                    : t("assistant.voice.start")
-              }
-              aria-pressed={speech.listening}
-              disabled={disabled || speech.unavailable}
-              onClick={speech.toggle}
-            >
-              <Icon>
-                <AssistantIcon name={speech.unavailable ? "mic-off" : "mic"} />
-              </Icon>
-            </PromptComposerAction>
-          )}
-          <Text
-            size="xs"
-            tone={speech.listening ? "accent" : "muted"}
-            className={styles.hint}
-            data-note={speech.listening || undefined}
-            aria-live="polite"
-          >
-            {speech.listening
-              ? t("assistant.voice.listening")
-              : t("assistant.composer.hint")}
+          <Text size="xs" tone="muted" className={styles.hint}>
+            {t("assistant.composer.hint")}
           </Text>
           <PromptComposerSubmit />
         </PromptComposerFooter>

@@ -11,14 +11,8 @@ import { useT } from "@/i18n/i18n-provider";
 type Chat = components["schemas"]["AssistantChat"];
 
 // Shown before the first message of a conversation: where the content goes, what that host does
-// with it and, when the browser dictates, where the audio goes.
-export function ProviderNotice({
-  chat,
-  voice,
-}: {
-  chat: Chat;
-  voice: boolean;
-}) {
+// with it.
+export function ProviderNotice({ chat }: { chat: Chat }) {
   const t = useT();
   if (chat.provider_name === undefined || chat.model === undefined) return null;
   const sentence =
@@ -38,7 +32,6 @@ export function ProviderNotice({
               model: chat.model,
             }),
             sentence,
-            ...(voice ? [t("assistant.voice.notice")] : []),
           ].join(" ")}
         </AlertDescription>
       </AlertContent>
