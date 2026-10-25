@@ -206,6 +206,21 @@ export function providerModelsQuery(api: Client<paths>, id: string) {
   });
 }
 
+// Calls the provider with its stored key; a rejection arrives as the mutation's error.
+export function useCheckProviderKey() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      (
+        await unwrap(
+          await api.GET("/assistant/providers/{id}/models", {
+            params: { path: { id } },
+          }),
+        )
+      ).items.length,
+  });
+}
+
 export function useCreateProvider() {
   const api = useApi();
   return useMutation({

@@ -89,6 +89,7 @@ function newFetch() {
     "GET /api/v1/goals": () => json(200, { items: [] }),
     "GET /api/v1/connections": () => json(200, { items: [] }),
     "GET /api/v1/occurrences": () => json(200, { items: [] }),
+    "GET /api/v1/assistant/usage/days": () => json(200, { items: [] }),
     "GET /api/v1/reports/net-worth": () => {
       const zero = { amount: 0, currency: "BRL" };
       return json(200, { assets: zero, liabilities: zero, net: zero });

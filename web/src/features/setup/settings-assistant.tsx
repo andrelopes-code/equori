@@ -22,6 +22,7 @@ import {
   presetsQuery,
   providersQuery,
   usageQuery,
+  useCheckProviderKey,
   useDeleteProvider,
   usesQuery,
 } from "@/features/setup/api";
@@ -37,7 +38,7 @@ import { UsageChart } from "@/features/setup/usage-chart";
 import { UsePrivacy } from "@/features/setup/use-privacy";
 import { UsageList } from "@/features/setup/usage-list";
 import { mergeUsageRows } from "@/features/setup/usage-rows";
-import { useT } from "@/i18n/i18n-provider";
+import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 type Open =
   | { kind: "create" }
@@ -55,6 +56,8 @@ export function SettingsAssistant() {
   const uses = useQuery(usesQuery(api));
   const usage = useQuery(usageQuery(api));
   const remove = useDeleteProvider();
+  const check = useCheckProviderKey();
+  const [locale] = useAppLocale();
   const [open, setOpen] = useState<Open | null>(null);
   const close = () => {
     setOpen(null);
@@ -115,8 +118,33 @@ export function SettingsAssistant() {
                       <NoticeTag notice={provider.notice} />
                     </ListItemEnd>
                   </ListItemContent>
+                  {check.variables === provider.id && (
+                    <ListItemDescription>
+                      {check.isPending && t("assistant.key.checking")}
+                      {check.isSuccess &&
+                        t("assistant.key.ok", {
+                          count: new Intl.NumberFormat(locale).format(
+                            check.data,
+                          ),
+                        })}
+                      {check.isError && errorText(check.error, t)}
+                    </ListItemDescription>
+                  )}
                   {!provider.instance && (
                     <ListItemActions>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        tone="secondary"
+                        loading={
+                          check.isPending && check.variables === provider.id
+                        }
+                        onClick={() => {
+                          check.mutate(provider.id);
+                        }}
+                      >
+                        {t("assistant.key.check")}
+                      </Button>
                       <Button
                         size="sm"
                         variant="ghost"

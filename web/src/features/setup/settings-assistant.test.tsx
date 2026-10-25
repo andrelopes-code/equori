@@ -108,7 +108,7 @@ function api(
   sent: Sent[],
   answers: {
     create?: () => Response;
-    models?: () => Response;
+    models?: (() => Response) | undefined;
     me?: { language: string; region: string };
     daysQueries?: string[];
     days?: boolean;
@@ -390,6 +390,60 @@ describe("assistant settings", () => {
     const dialog = await screen.findByRole("dialog");
     expect(
       await within(dialog).findByText(pt["problem.provider_unauthorized"]),
+    ).toBeVisible();
+  });
+
+  it.each([
+    [
+      "accepts the key",
+      undefined,
+      pt["assistant.key.ok"].replace("{count}", "2"),
+    ],
+    [
+      "shows the provider refusing the key",
+      () => problem(502, "provider_unauthorized"),
+      pt["problem.provider_unauthorized"],
+    ],
+    [
+      "shows a missing key",
+      () => problem(409, "secret_key_missing"),
+      pt["problem.secret_key_missing"],
+    ],
+  ])(
+    "checks a provider key from its row and %s",
+    async (_name, models, text) => {
+      await renderApp("/settings", { fetch: api([], { models }) });
+      const view = await section();
+      const row = (await view.findByText("Groq")).closest("li");
+      if (row === null) throw new Error("no provider row");
+      await userEvent.click(
+        within(row).getByRole("button", { name: pt["assistant.key.check"] }),
+      );
+      expect(await within(row).findByText(text)).toBeVisible();
+      expect(screen.queryByRole("dialog")).toBeNull();
+    },
+  );
+
+  it("checks a key in English with the models counted by locale", async () => {
+    await renderApp("/settings", {
+      fetch: api([], {
+        me: { language: "en", region: "DE" },
+        models: () =>
+          json(200, {
+            items: Array.from({ length: 1234 }, (_, i) => `m${String(i)}`),
+          }),
+      }),
+    });
+    const view = await section();
+    const row = (await view.findByText("Groq")).closest("li");
+    if (row === null) throw new Error("no provider row");
+    await userEvent.click(
+      within(row).getByRole("button", { name: en["assistant.key.check"] }),
+    );
+    expect(
+      await within(row).findByText(
+        en["assistant.key.ok"].replace("{count}", "1.234"),
+      ),
     ).toBeVisible();
   });
 

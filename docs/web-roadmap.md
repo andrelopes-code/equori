@@ -307,16 +307,13 @@ Functions:
 
 ## 14. Language model settings: usage and privacy
 
-Status: Partial. Delivered in `features/setup/settings-assistant.tsx`: providers, models, chains per use, usage list and limits.
+Status: Delivered. Operations: `listPresets`, `listProviders`, `createProvider`, `updateProvider`, `deleteProvider`, `listProviderModels`, `listUses`, `setUseChain`, `listUsage`, `listUsageDays`, `setUsageLimit` (`features/setup/`: `settings-assistant.tsx`, `use-privacy.tsx`, `usage-list.tsx`, `usage-chart.tsx`). Declared uses: `capture.suggest`, `assistant.chat`.
 
-Operations: `listPresets`, `listProviders`, `createProvider`, `updateProvider`, `deleteProvider`, `listProviderModels`, `listUses`, `setUseChain`, `listUsage`, `setUsageLimit`. Declared uses: `capture.suggest`, `assistant.chat`.
-
-Functions to add or verify against the existing section:
-- Per use: whether it sends financial data (`sends_financial_data`), the capabilities it needs, and the notice of each target in its chain (`trains`, `local`, `provider_terms`). A use that sends financial data to a target with notice `trains` is highlighted.
-- Per provider and model: requests, errors and tokens today; requests and tokens over the period; meters against the declared daily limits; cooling state until `cooling_until`.
-- Provider key check through `listProviderModels`, with its result shown on the provider row.
-
-The API returns today and a period total, not a daily series; a usage chart over time needs a new operation.
+Functions:
+- Per use: whether it sends financial data, the capabilities it needs, the notice of each target in its chain and the capability a target lacks. A use that sends financial data to a target with notice `trains` carries the warning.
+- Per provider and model: requests, errors and tokens today and over the period; meters of requests and tokens today against the daily limits; cooling state until `cooling_until`.
+- Chart of requests and tokens per day over the last 30 days, with a table of the days with use.
+- Provider key check from the provider row through `listProviderModels`; the result (models counted, or the Problem) stays on the row.
 
 ## 15. Category suggestions outside capture
 

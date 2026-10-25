@@ -101,6 +101,9 @@ export const catalogPtBR: Catalog = {
   "assistant.provider.add": "Adicionar provedor",
   "assistant.provider.edit": "Editar provedor",
   "assistant.provider.delete": "Excluir",
+  "assistant.key.checking": "Verificando a chave…",
+  "assistant.key.check": "Verificar chave",
+  "assistant.key.ok": "Chave aceita: {count} modelos",
   "assistant.provider.models": "Listar modelos",
   "assistant.provider.instance":
     "Configurado no servidor para todos os usuários",
