@@ -217,20 +217,21 @@ export function ConnectionLinks({
             {t("links.batches")}
           </Text>
           {batches.map((batch) => (
-            <Link
-              key={batch.id}
-              variant="neutral"
-              underline="hover"
-              href={`/accounts/${batch.account_id}/imports/${batch.id}`}
-              onClick={follow({
-                to: "/accounts/$id/imports/$batchId",
-                params: { id: batch.account_id, batchId: batch.id },
-              })}
-            >
-              {t("links.batch", {
-                account: accounts.get(batch.account_id)?.name ?? "",
-              })}
-            </Link>
+            <Text size="sm" key={batch.id}>
+              <Link
+                variant="neutral"
+                underline="hover"
+                href={`/accounts/${batch.account_id}/imports/${batch.id}`}
+                onClick={follow({
+                  to: "/accounts/$id/imports/$batchId",
+                  params: { id: batch.account_id, batchId: batch.id },
+                })}
+              >
+                {t("links.batch", {
+                  account: accounts.get(batch.account_id)?.name ?? "",
+                })}
+              </Link>
+            </Text>
           ))}
         </Stack>
       )}

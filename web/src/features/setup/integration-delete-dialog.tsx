@@ -9,7 +9,14 @@ import {
   DialogTitle,
 } from "@slotted/react/dialog";
 import { InlineMessage } from "@slotted/react/inline-message";
+import { List } from "@slotted/react/list";
+import {
+  ListItem,
+  ListItemContent,
+  ListItemLabel,
+} from "@slotted/react/list-item";
 import { Stack } from "@slotted/react/stack";
+import { Text } from "@slotted/react/typography";
 import { useState } from "react";
 
 import { ProblemError, errorText } from "@/api/problem";
@@ -60,14 +67,24 @@ export function IntegrationDeleteDialog({
                 {errorText(failure, t)}
               </InlineMessage>
               {inUse && (
-                <div>
-                  <p>{t("settings.integrations.blockedBy")}</p>
-                  <ul>
+                <Stack gap={1}>
+                  <Text size="sm" tone="muted">
+                    {t("settings.integrations.blockedBy")}
+                  </Text>
+                  <List
+                    size="sm"
+                    variant="ruled"
+                    aria-label={t("settings.integrations.blockedBy")}
+                  >
                     {blocking.map((c) => (
-                      <li key={c.id}>{c.name}</li>
+                      <ListItem key={c.id}>
+                        <ListItemContent>
+                          <ListItemLabel>{c.name}</ListItemLabel>
+                        </ListItemContent>
+                      </ListItem>
                     ))}
-                  </ul>
-                </div>
+                  </List>
+                </Stack>
               )}
             </Stack>
           )}
