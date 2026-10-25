@@ -188,7 +188,7 @@ func TestTurnExhausted(t *testing.T) {
 	quota := func(model string) llmtest.Step {
 		return llmtest.Step{Model: model, Err: &llm.QuotaError{RetryAfter: time.Hour}}
 	}
-	p := llmtest.New("aistudio", quota("gemini-3.5-flash-lite"), quota("gemini-3.5-flash"))
+	p := llmtest.New("aistudio", quota("gemini-3.5-flash-lite"), quota("gemini-3.1-flash-lite"), quota("gemini-3.5-flash"))
 	h := turnHarness(t, p)
 	ctx := auth.WithUserID(t.Context(), h.OwnerID())
 	_, _ = h.App.LLM.Use(assistant.ChatUse).Generate(ctx, llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}}})
@@ -226,8 +226,8 @@ func TestTurnFallback(t *testing.T) {
 	p := llmtest.New("aistudio",
 		callStep("get_balances", `{}`),
 		llmtest.Step{Model: chatModel, Err: &llm.QuotaError{RetryAfter: time.Hour}},
-		llmtest.Step{Model: "gemini-3.5-flash", Response: callStep("get_balances", `{}`).Response},
-		llmtest.Step{Model: "gemini-3.5-flash", Response: textStep("ok").Response},
+		llmtest.Step{Model: "gemini-3.1-flash-lite", Response: callStep("get_balances", `{}`).Response},
+		llmtest.Step{Model: "gemini-3.1-flash-lite", Response: textStep("ok").Response},
 	)
 	h := turnHarness(t, p)
 	r := sendTurn(h, h.Client, map[string]any{"text": "saldo"})

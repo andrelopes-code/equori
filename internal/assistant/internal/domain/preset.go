@@ -52,7 +52,7 @@ var toolsAndStructured = []string{CapTools, CapStructuredOutput}
 func Presets() []Preset {
 	return []Preset{
 		{ID: "gemini", API: APIGemini, BaseURL: "https://generativelanguage.googleapis.com", KeyRequired: true, Notice: NoticeTrains,
-			Models: []PresetModel{{"gemini-3.5-flash", toolsAndStructured}, {"gemini-3.5-flash-lite", toolsAndStructured}}},
+			Models: []PresetModel{{"gemini-3.5-flash", toolsAndStructured}, {"gemini-3.5-flash-lite", toolsAndStructured}, {"gemini-3.1-flash-lite", toolsAndStructured}}},
 		{ID: "groq", API: APIOpenAI, BaseURL: "https://api.groq.com/openai/v1", KeyRequired: true, Notice: NoticeProviderTerms,
 			Models: []PresetModel{{"openai/gpt-oss-120b", toolsAndStructured}}},
 		{ID: "openrouter", API: APIOpenAI, BaseURL: "https://openrouter.ai/api/v1", KeyRequired: true, Notice: NoticeProviderTerms},

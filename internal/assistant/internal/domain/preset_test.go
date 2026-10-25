@@ -28,7 +28,7 @@ func TestPresets(t *testing.T) {
 	if !ok || gemini.API != APIGemini || gemini.Notice != NoticeTrains || !gemini.KeyRequired {
 		t.Fatalf("gemini preset = %+v", gemini)
 	}
-	for _, model := range []string{"gemini-3.5-flash", "gemini-3.5-flash-lite"} {
+	for _, model := range []string{"gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"} {
 		if got := ModelCapabilities("gemini", model, nil); !slices.Equal(got, []string{"tools", "structured_output"}) {
 			t.Fatalf("%s capabilities = %v", model, got)
 		}

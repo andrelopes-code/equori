@@ -113,11 +113,11 @@ func TestResolveDefault(t *testing.T) {
 	gemini := w.provider(t, "gemini", "Gemini", "https://generativelanguage.googleapis.com", "ek", keyA, day.Add(time.Hour))
 	m := w.module(t, keyA, "")
 	got := targets(t, m, auth.WithUserID(t.Context(), w.user), assistant.ChatUse)
-	want := []string{gemini.String() + "/gemini-3.5-flash-lite", "aistudio/gemini-3.5-flash-lite", gemini.String() + "/gemini-3.5-flash", "aistudio/gemini-3.5-flash", groq.String() + "/openai/gpt-oss-120b"}
+	want := []string{gemini.String() + "/gemini-3.5-flash-lite", "aistudio/gemini-3.5-flash-lite", gemini.String() + "/gemini-3.1-flash-lite", "aistudio/gemini-3.1-flash-lite", gemini.String() + "/gemini-3.5-flash", "aistudio/gemini-3.5-flash", groq.String() + "/openai/gpt-oss-120b"}
 	if !slices.Equal(got, want) {
 		t.Fatalf("targets = %v, want %v", got, want)
 	}
-	wantMade := []string{"gemini https://generativelanguage.googleapis.com ek", "gemini https://generativelanguage.googleapis.com ek", "openai https://api.groq.com/openai/v1 gk"}
+	wantMade := []string{"gemini https://generativelanguage.googleapis.com ek", "gemini https://generativelanguage.googleapis.com ek", "gemini https://generativelanguage.googleapis.com ek", "openai https://api.groq.com/openai/v1 gk"}
 	if !reflect.DeepEqual(w.made.calls, wantMade) {
 		t.Fatalf("built providers = %v, want %v", w.made.calls, wantMade)
 	}
@@ -143,7 +143,7 @@ func TestResolveWithoutUser(t *testing.T) {
 	w := newWorld(t)
 	w.provider(t, "gemini", "Gemini", "https://generativelanguage.googleapis.com", "ek", keyA, day)
 	m := w.module(t, keyA, "")
-	if got, want := targets(t, m, t.Context(), assistant.ChatUse), []string{"aistudio/gemini-3.5-flash-lite", "aistudio/gemini-3.5-flash"}; !slices.Equal(got, want) {
+	if got, want := targets(t, m, t.Context(), assistant.ChatUse), []string{"aistudio/gemini-3.5-flash-lite", "aistudio/gemini-3.1-flash-lite", "aistudio/gemini-3.5-flash"}; !slices.Equal(got, want) {
 		t.Fatalf("targets = %v, want %v", got, want)
 	}
 }
@@ -153,7 +153,7 @@ func TestResolveUnreadableKey(t *testing.T) {
 	w := newWorld(t)
 	w.provider(t, "groq", "Groq", "https://api.groq.com/openai/v1", "gk", keyB, day)
 	m := w.module(t, keyA, "")
-	if got, want := targets(t, m, auth.WithUserID(t.Context(), w.user), assistant.ChatUse), []string{"aistudio/gemini-3.5-flash-lite", "aistudio/gemini-3.5-flash"}; !slices.Equal(got, want) {
+	if got, want := targets(t, m, auth.WithUserID(t.Context(), w.user), assistant.ChatUse), []string{"aistudio/gemini-3.5-flash-lite", "aistudio/gemini-3.1-flash-lite", "aistudio/gemini-3.5-flash"}; !slices.Equal(got, want) {
 		t.Fatalf("targets = %v, want %v", got, want)
 	}
 }
@@ -169,7 +169,7 @@ func TestRotateSecrets(t *testing.T) {
 	}
 	after := w.module(t, keyB, "")
 	got := targets(t, after, auth.WithUserID(t.Context(), w.user), assistant.ChatUse)
-	if want := []string{"aistudio/gemini-3.5-flash-lite", "aistudio/gemini-3.5-flash", groq.String() + "/openai/gpt-oss-120b"}; !slices.Equal(got, want) {
+	if want := []string{"aistudio/gemini-3.5-flash-lite", "aistudio/gemini-3.1-flash-lite", "aistudio/gemini-3.5-flash", groq.String() + "/openai/gpt-oss-120b"}; !slices.Equal(got, want) {
 		t.Fatalf("targets after rotation = %v, want %v", got, want)
 	}
 }

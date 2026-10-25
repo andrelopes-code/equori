@@ -42,19 +42,24 @@ func TestChatState(t *testing.T) {
 		quota := func(model string) llmtest.Step {
 			return llmtest.Step{Model: model, Err: &llm.QuotaError{RetryAfter: time.Hour}}
 		}
-		h := apitest.New(t, apitest.LLM(llmtest.New("aistudio", quota("gemini-3.5-flash-lite"), quota("gemini-3.5-flash"))))
+		h := apitest.New(t, apitest.LLM(llmtest.New("aistudio", quota("gemini-3.5-flash-lite"), quota("gemini-3.1-flash-lite"), quota("gemini-3.5-flash"))))
 		ctx := auth.WithUserID(t.Context(), h.OwnerID())
 		_, _ = h.App.LLM.Use(assistant.ChatUse).Generate(ctx, llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}}})
 		var rows struct {
 			Items []usageView `json:"items"`
 		}
 		h.MustDo(http.MethodGet, "/api/v1/assistant/usage", nil, http.StatusOK, &rows)
-		if len(rows.Items) != 2 || rows.Items[0].CoolingUntil == nil || rows.Items[1].CoolingUntil == nil {
+		if len(rows.Items) != 3 {
 			t.Fatalf("usage = %+v", rows.Items)
 		}
-		earliest := *rows.Items[0].CoolingUntil
-		if c := *rows.Items[1].CoolingUntil; c.Before(earliest) {
-			earliest = c
+		var earliest time.Time
+		for i, row := range rows.Items {
+			if row.CoolingUntil == nil {
+				t.Fatalf("usage = %+v", rows.Items)
+			}
+			if c := *row.CoolingUntil; i == 0 || c.Before(earliest) {
+				earliest = c
+			}
 		}
 		got := chatState(t, h)
 		if got.Available || got.ProviderName != "" || got.RetryAt == nil || !got.RetryAt.Equal(earliest) {
