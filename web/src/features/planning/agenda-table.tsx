@@ -51,13 +51,15 @@ export function AgendaTable({
   const today = useToday();
   const fmt = useMoneyFormat();
   const group = (label: string, rows: AgendaRow[]) => {
-    const total = netOf(rows);
+    const totals = netOf(rows);
     return (
       <TableGroupRow
         end={
-          total === undefined
+          totals.length === 0
             ? undefined
-            : fmt.signed(total, scale(total.currency))
+            : totals
+                .map((total) => fmt.signed(total, scale(total.currency)))
+                .join(" · ")
         }
       >
         {label}

@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import type { components } from "@/api/schema.gen";
 import {
+  type AgendaRow,
   agenda,
   candidateWindow,
   monthTotals,
+  netOf,
   realizeCandidates,
 } from "@/features/planning/agenda";
 
@@ -102,6 +104,32 @@ describe("agenda", () => {
     expect(ids({ scheduleID: "salary" })).toEqual(["o2"]);
     expect(ids({ accountID: "acc-1" })).toEqual(["o1", "o3"]);
     expect(ids({ kind: "income" })).toEqual(["o2"]);
+  });
+});
+
+describe("netOf", () => {
+  const row = (id: string, amount: number, currency: string): AgendaRow => ({
+    occurrence: occurrence(id, "rent", "2026-11-05", 0),
+    schedule: rent,
+    money: { amount, currency },
+  });
+
+  it("gives no total for no rows", () => {
+    expect(netOf([])).toEqual([]);
+  });
+
+  it("gives one total per currency, ordered by the currency code", () => {
+    expect(
+      netOf([
+        row("o1", -1000, "USD"),
+        row("o2", -210000, "BRL"),
+        row("o3", 500, "USD"),
+        row("o4", 300000, "BRL"),
+      ]),
+    ).toEqual([
+      { amount: 90000, currency: "BRL" },
+      { amount: -500, currency: "USD" },
+    ]);
   });
 });
 

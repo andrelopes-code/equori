@@ -86,6 +86,37 @@ describe("PlanningPage agenda", () => {
     ).toBeInTheDocument();
   });
 
+  it("totals a day with one figure per currency, with a base currency of EUR", async () => {
+    await renderApp("/planning", {
+      fetch: api({
+        "GET /api/v1/settings": () => json(200, { base_currency: "EUR" }),
+        "GET /api/v1/occurrences": (req) =>
+          new URL(req.url).searchParams.get("state") === "overdue"
+            ? json(200, { items: [] })
+            : json(200, {
+                items: [
+                  {
+                    ...rentOctober,
+                    state: "expected",
+                    expected_amount: { amount: 5000, currency: "EUR" },
+                  },
+                  {
+                    ...rentOctober,
+                    id: "f1000000-0000-4000-8000-0000000000aa",
+                    state: "expected",
+                    expected_amount: { amount: 1000, currency: "USD" },
+                  },
+                ],
+              }),
+      }),
+    });
+    await screen.findAllByRole("rowheader", { name: /·/ });
+    const headers = screen
+      .getAllByRole("rowheader")
+      .map((cell) => cell.textContent);
+    expect(headers).toEqual(["Mon, Oct 5−€5,000 · −$10.00", "Rent", "Rent"]);
+  });
+
   it("totals the month's expected inflow and outflow", async () => {
     await renderApp("/planning", { fetch: api() });
     const figures = await screen.findByRole("region", {

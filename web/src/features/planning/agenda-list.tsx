@@ -62,15 +62,17 @@ export function AgendaList({
       </ResultState>
     );
   const group = (key: string, label: string, rows: AgendaRow[]) => {
-    const total = netOf(rows);
+    const totals = netOf(rows);
     return (
       <PhoneGroup
         key={key}
         label={label}
         end={
-          total === undefined
+          totals.length === 0
             ? undefined
-            : fmt.signed(total, scale(total.currency))
+            : totals
+                .map((total) => fmt.signed(total, scale(total.currency)))
+                .join(" · ")
         }
       >
         <List aria-label={label} variant="framed">

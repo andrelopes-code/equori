@@ -33,15 +33,18 @@ export interface Agenda {
   days: { date: string; rows: AgendaRow[] }[];
 }
 
-// The sum of a day's or a group's rows; undefined for none.
-export function netOf(rows: AgendaRow[]): Money | undefined {
-  const first = rows[0];
-  return first === undefined
-    ? undefined
-    : {
-        amount: rows.reduce((sum, r) => sum + r.money.amount, 0),
-        currency: first.money.currency,
-      };
+// The sum of a day's or a group's rows in each currency, ordered by the currency code; empty for
+// none.
+export function netOf(rows: AgendaRow[]): Money[] {
+  const sums = new Map<string, number>();
+  for (const r of rows)
+    sums.set(
+      r.money.currency,
+      (sums.get(r.money.currency) ?? 0) + r.money.amount,
+    );
+  return [...sums]
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .map(([currency, amount]) => ({ amount, currency }));
 }
 
 export function signedAmount(
