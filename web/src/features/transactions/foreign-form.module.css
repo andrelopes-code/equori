@@ -1,13 +1,14 @@
 @layer app {
-  /* The result stays above the footer while the fields scroll, so a phone shows the effect of
-     each keystroke; the page writes the footer's height on the scroller. */
+  /* The result sits in the page footer, which is the one material; it paints no ground of its own,
+     so no second blur adds to the footer's. */
   .result {
-    position: sticky;
-    inset-block-end: var(--slotted-page-sticky-bottom, 0px);
-    border-block-start: var(--slotted-border-width-thin) solid
-      var(--slotted-border-subtle);
-    z-index: 1;
-    padding-block: var(--slotted-space-4);
-    background: var(--slotted-surface);
+    padding-block-end: var(--slotted-space-4);
+  }
+
+  /* A figure's least measure: no token holds it. Four fit at 1280, one stacks on a phone. */
+  .figures {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: var(--slotted-space-4);
   }
 }
