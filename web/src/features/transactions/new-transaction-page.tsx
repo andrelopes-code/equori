@@ -52,6 +52,7 @@ import { IncomeForm } from "@/features/transactions/income-form";
 import { TradeForm } from "@/features/transactions/trade-form";
 import { useIncomeEntry } from "@/features/transactions/use-income-entry";
 import { useExchangeEntry } from "@/features/transactions/use-exchange-entry";
+import styles from "@/features/transactions/foreign-form.module.css";
 import { ResultSlotContext } from "@/features/transactions/result-slot";
 import { useForeignEntry } from "@/features/transactions/use-foreign-entry";
 import { useTradeEntry } from "@/features/transactions/use-trade-entry";
@@ -254,7 +255,7 @@ export function NewTransactionPage() {
       footer={
         <PageFooter>
           {(investment === "foreign_purchase" || investment === "exchange") && (
-            <div ref={setResultSlot} />
+            <div ref={setResultSlot} className={styles.slot} />
           )}
           <ActionBar aria-label={t("entry.actions")}>
             <ActionBarActions>
