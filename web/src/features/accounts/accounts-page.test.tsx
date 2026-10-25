@@ -10,7 +10,7 @@ import {
   checkingID,
   connectionFixture,
 } from "@/testing/account-api";
-import { fakeApi, json } from "@/testing/fake-api";
+import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 
 function api(queries: URLSearchParams[] = [], overrides = {}) {
@@ -56,6 +56,22 @@ describe("AccountsPage", () => {
         "2026-09-17",
         "2026-10-17",
       ]);
+    });
+  });
+
+  it("leaves the trend empty, not loading, for an account that holds several instruments", async () => {
+    let refused = 0;
+    const { container } = await renderApp("/accounts", {
+      fetch: api([], {
+        "GET /api/v1/reports/balances": () => {
+          refused += 1;
+          return problem(422, "mixed_instruments");
+        },
+      }),
+    });
+    await waitFor(() => {
+      expect(refused).toBeGreaterThan(0);
+      expect(container.querySelector('[data-ui="skeleton"]')).toBeNull();
     });
   });
 

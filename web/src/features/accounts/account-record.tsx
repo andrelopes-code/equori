@@ -7,6 +7,7 @@ import { useDeferredValue, useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
+import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 import { AccountFigures } from "@/features/accounts/account-figures";
 import { AccountHeader } from "@/features/accounts/account-header";
 import type { TabEntry } from "@/features/accounts/account-header";
@@ -145,6 +146,19 @@ export function AccountRecord({
     });
   });
 
+  // A phone reads the records under the tabs first, and the figures after them (mobile.md M2, M4).
+  const compact = useMediaQuery(compactQuery);
+  const overview = (
+    <>
+      <AccountFigures account={account} scale={scale} />
+      <BalanceChart
+        account={account}
+        range={range}
+        onRange={changeRange}
+        scale={scale(account.currency)}
+      />
+    </>
+  );
   return (
     <Page width="full">
       <AccountHeader
@@ -179,13 +193,7 @@ export function AccountRecord({
       <PageBody>
         <Stack gap={6}>
           <AccountSetupMessage accountId={account.id} />
-          <AccountFigures account={account} scale={scale} />
-          <BalanceChart
-            account={account}
-            range={range}
-            onRange={changeRange}
-            scale={scale(account.currency)}
-          />
+          {!compact && overview}
           <div aria-busy={shownTab !== (chosen ?? current) || undefined}>
             <AccountTabPanel
               tab={shownTab}
@@ -198,6 +206,7 @@ export function AccountRecord({
               scale={scale}
             />
           </div>
+          {compact && overview}
         </Stack>
       </PageBody>
       <Presence value={dialog === "close" ? dialog : undefined}>

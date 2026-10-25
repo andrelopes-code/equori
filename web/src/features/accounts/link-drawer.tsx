@@ -7,6 +7,7 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerPanel,
+  DrawerResizer,
   DrawerTitle,
 } from "@slotted/react/drawer";
 import {
@@ -30,6 +31,7 @@ import { subtypeWords } from "@/features/accounts/sync-tab";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
+import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 
 type Account = components["schemas"]["Account"];
@@ -63,6 +65,7 @@ export function LinkDrawer({
 }) {
   const t = useT();
   const overlayOpen = useOverlayOpen();
+  const phone = useMediaQuery(compactQuery);
   const today = useToday();
   const map = useMapExternalAccount();
   const [account, setAccount] = useState<string | null>(
@@ -77,12 +80,14 @@ export function LinkDrawer({
   return (
     <Drawer
       open={overlayOpen}
-      size="md"
+      side={phone ? "bottom" : "end"}
+      size={phone ? "content" : "md"}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
     >
       <DrawerPanel>
+        {phone && <DrawerResizer />}
         <DrawerHeader>
           <DrawerTitle>
             {t("links.drawerTitle", { name: external.name })}

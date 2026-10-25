@@ -1,0 +1,14 @@
+@layer app {
+  /* The mark and the text of a row stand one step apart. */
+  .row {
+    --slotted-list-item-gap: var(--slotted-space-5);
+  }
+
+  /* The institution and the reconciliation status share one line and wrap as a unit. */
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--slotted-space-2);
+  }
+}

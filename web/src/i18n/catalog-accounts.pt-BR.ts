@@ -215,6 +215,8 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "account.chart.range": "Período do gráfico",
   "account.chart.days": "{count} dias",
   "account.chart.year": "12 meses",
+  "account.chart.daysShort": "{count} d",
+  "account.chart.yearShort": "12 m",
   "account.closeTitle": "Encerrar {name}",
   "account.closeHint":
     "Uma conta encerrada não recebe novos lançamentos. Ela precisa estar zerada na data e não ter nada depois dela.",

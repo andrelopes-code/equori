@@ -219,6 +219,8 @@ export const accountsEn = {
   "account.chart.range": "Period of the chart",
   "account.chart.days": "{count} days",
   "account.chart.year": "12 months",
+  "account.chart.daysShort": "{count} d",
+  "account.chart.yearShort": "12 m",
   "account.closeTitle": "Close {name}",
   "account.closeHint":
     "A closed account takes no new entries. It must hold nothing on the closing date and have nothing after it.",

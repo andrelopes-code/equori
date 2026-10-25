@@ -10,7 +10,8 @@ import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 // The last 90 days of an account and its sub-accounts, drawn in minor units: the shape is what
-// the row shows, and the description reads each value as money.
+// the row shows, and the description reads each value as money. An account that holds several
+// instruments has no single series (422 mixed_instruments): its box stays empty.
 export function AccountTrend({
   accountId,
   name,
@@ -31,7 +32,7 @@ export function AccountTrend({
   );
   return (
     <div className={styles.trend}>
-      {series.data === undefined ? (
+      {series.isError ? null : series.data === undefined ? (
         // The line's own box, reserved while the series loads (waiting-states, section 2).
         <Skeleton shape="block" blockSize="20px" />
       ) : (

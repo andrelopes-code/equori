@@ -16,6 +16,7 @@ import { AccountAvatar } from "@/features/accounts/account-avatar";
 import { accountHref, accountRoute } from "@/features/accounts/account-route";
 import { AccountRowStatus } from "@/features/accounts/account-row-status";
 import type { SheetRow } from "@/features/accounts/balance-sheet";
+import styles from "@/features/accounts/balance-group-list.module.css";
 import { useT } from "@/i18n/i18n-provider";
 import { MoneyFigure } from "@/ui/money-figure";
 import { useAppLink } from "@/ui/use-app-link";
@@ -23,8 +24,8 @@ import { useAppLink } from "@/ui/use-app-link";
 type Institution = components["schemas"]["Institution"];
 type Money = components["schemas"]["Money"];
 
-// Below 600 px a group is a list of rows that open the account (LP-01): mark, name and status,
-// balance at the end.
+// Below 600 px a group is a list of rows that open the account (LP-01): mark, name and
+// institution, balance and status at the end. An institution that repeats the name is left out.
 export function BalanceGroupList({
   label,
   rows,
@@ -61,8 +62,12 @@ export function BalanceGroupList({
       <List aria-label={label} variant="framed">
         {rows.map((row) => {
           const amount = row.hasChildren ? row.subtree : row.balance;
+          const institution =
+            row.account.institution_id === undefined
+              ? undefined
+              : institutions.get(row.account.institution_id)?.name;
           return (
-            <ListItem key={row.account.id}>
+            <ListItem key={row.account.id} className={styles.row}>
               <ListItemLink
                 href={accountHref(row.account)}
                 onClick={follow(accountRoute(row.account))}
@@ -75,11 +80,16 @@ export function BalanceGroupList({
                     {row.depth > 0 ? `↳ ${row.account.name}` : row.account.name}
                   </ListItemLabel>
                   <ListItemDescription>
-                    {row.account.institution_id !== undefined &&
-                      institutions.get(row.account.institution_id)?.name}{" "}
-                    {!row.hasChildren && (
-                      <AccountRowStatus account={row.account} scale={scale} />
-                    )}
+                    <span className={styles.meta}>
+                      {institution !== undefined &&
+                        institution.toLowerCase() !==
+                          row.account.name.toLowerCase() && (
+                          <span>{institution}</span>
+                        )}
+                      {!row.hasChildren && (
+                        <AccountRowStatus account={row.account} scale={scale} />
+                      )}
+                    </span>
                   </ListItemDescription>
                 </ListItemBody>
                 <ListItemEnd>

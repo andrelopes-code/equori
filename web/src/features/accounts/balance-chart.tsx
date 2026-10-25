@@ -13,6 +13,7 @@ import { balanceChartRows } from "@/features/accounts/balance-chart-rows";
 import { formatDayMonth, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 import styles from "@/features/accounts/balance-chart.module.css";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -35,6 +36,7 @@ export const BalanceChart = memo(function BalanceChart({
   scale: number;
 }) {
   const t = useT();
+  const compact = useMediaQuery(compactQuery);
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
   const api = useApi();
@@ -108,12 +110,18 @@ export const BalanceChart = memo(function BalanceChart({
             }}
           >
             <Segment value="30">
-              {t("account.chart.days", { count: 30 })}
+              {t(compact ? "account.chart.daysShort" : "account.chart.days", {
+                count: 30,
+              })}
             </Segment>
             <Segment value="90">
-              {t("account.chart.days", { count: 90 })}
+              {t(compact ? "account.chart.daysShort" : "account.chart.days", {
+                count: 90,
+              })}
             </Segment>
-            <Segment value="365">{t("account.chart.year")}</Segment>
+            <Segment value="365">
+              {t(compact ? "account.chart.yearShort" : "account.chart.year")}
+            </Segment>
           </SegmentedControl>
         </div>
       }

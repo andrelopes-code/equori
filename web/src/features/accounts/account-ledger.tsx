@@ -26,6 +26,7 @@ import { Fragment, useMemo } from "react";
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import styles from "@/features/accounts/account-ledger.module.css";
+import { AccountLedgerList } from "@/features/accounts/account-ledger-list";
 import type { AccountSearch } from "@/features/accounts/account-search";
 import {
   accountTransactionsQuery,
@@ -43,6 +44,7 @@ import { formatDayHeader, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { PeriodControl } from "@/ui/period-control";
+import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 import { useAppLink } from "@/ui/use-app-link";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
@@ -78,6 +80,7 @@ export function AccountLedger({
   const fmt = useMoneyFormat();
   const api = useApi();
   const today = useToday();
+  const compact = useMediaQuery(compactQuery);
   const navigate = useNavigate();
   const follow = useAppLink();
   const to = search.to ?? today;
@@ -121,6 +124,25 @@ export function AccountLedger({
     return [...byDay.entries()];
   }, [rows]);
   const columns = leaf ? 5 : 4;
+  const titleOf = (row: LedgerRow) => {
+    const tx = row.transaction;
+    return (
+      (tx.payee_id === undefined ? undefined : payeeNames.get(tx.payee_id)) ??
+      (tx.description === "" ? t("ledger.untitled") : tx.description)
+    );
+  };
+  const dayLabel = (day: string) =>
+    formatDayHeader(day, today, locale, {
+      today: t("day.today"),
+      yesterday: t("day.yesterday"),
+    });
+  const dayEnd = (dayRows: LedgerRow[]) => {
+    const currency = dayRows[0]?.currency ?? account.currency;
+    return fmt.signed(
+      { amount: dayRows.reduce((sum, r) => sum + r.amount, 0), currency },
+      scale(currency),
+    );
+  };
   const money = (amount: number, currency: string) =>
     fmt.money({ amount, currency }, scale(currency));
 
@@ -144,176 +166,211 @@ export function AccountLedger({
           }}
         />
       </Inline>
-      <Table
-        columns={columns}
-        variant="framed"
-        loading={pages.isFetching && !pages.isPending}
-      >
-        <TableContent>
-          <TableCaption>{t("ledger.caption")}</TableCaption>
-          <TableHead>
-            <TableRow>
-              <TableColumnHeader>{t("ledger.movement")}</TableColumnHeader>
-              <TableColumnHeader>{t("ledger.other")}</TableColumnHeader>
-              <TableColumnHeader>{t("ledger.status")}</TableColumnHeader>
-              <TableColumnHeader numeric>
-                {t("ledger.amount")}
-              </TableColumnHeader>
-              {leaf && (
+      {compact ? (
+        <AccountLedgerList
+          days={days}
+          loading={pages.isPending}
+          title={titleOf}
+          counterparts={(row) =>
+            row.counterparts
+              .map((id) => names.get(id) ?? t("ledger.unknownAccount"))
+              .join(", ")
+          }
+          amount={(row) =>
+            fmt.signed(
+              {
+                amount: row.voided
+                  ? row.transaction.postings
+                      .filter((p) => p.account_id === account.id)
+                      .reduce((sum, p) => sum + p.amount.amount, 0)
+                  : row.amount,
+                currency: row.currency,
+              },
+              scale(row.currency),
+            )
+          }
+          balance={(row) => {
+            const left = balances?.get(row.id);
+            return left === undefined
+              ? undefined
+              : money(left, account.currency);
+          }}
+          dayEnd={dayEnd}
+          dayLabel={dayLabel}
+        />
+      ) : (
+        <Table
+          columns={columns}
+          variant="framed"
+          loading={pages.isFetching && !pages.isPending}
+        >
+          <TableContent>
+            <TableCaption>{t("ledger.caption")}</TableCaption>
+            <TableHead>
+              <TableRow>
+                <TableColumnHeader>{t("ledger.movement")}</TableColumnHeader>
+                <TableColumnHeader>{t("ledger.other")}</TableColumnHeader>
+                <TableColumnHeader>{t("ledger.status")}</TableColumnHeader>
                 <TableColumnHeader numeric>
-                  {t("ledger.balanceAfter")}
+                  {t("ledger.amount")}
                 </TableColumnHeader>
-              )}
-            </TableRow>
-          </TableHead>
-          {pages.isPending ? (
-            <TableLoader skeletonRows={8} />
-          ) : (
-            <TableBody>
-              {rows.length === 0 && (
-                <TableEmpty>{t("ledger.empty")}</TableEmpty>
-              )}
-              {days.map(([day, dayRows]) => {
-                const net = dayRows.reduce((sum, r) => sum + r.amount, 0);
-                const currency = dayRows[0]?.currency ?? account.currency;
-                return (
-                  <Fragment key={day}>
-                    <TableGroupRow
-                      end={fmt.signed(
-                        { amount: net, currency },
-                        scale(currency),
-                      )}
-                    >
-                      {formatDayHeader(day, today, locale, {
-                        today: t("day.today"),
-                        yesterday: t("day.yesterday"),
-                      })}
-                    </TableGroupRow>
-                    {dayRows.map((row) => {
-                      const tx = row.transaction;
-                      const title =
-                        (tx.payee_id === undefined
-                          ? undefined
-                          : payeeNames.get(tx.payee_id)) ??
-                        (tx.description === ""
-                          ? t("ledger.untitled")
-                          : tx.description);
-                      const balance = balances?.get(row.id);
-                      return (
-                        <TableRow
-                          key={row.id}
-                          value={row.id}
-                          onAction={() => {
-                            void navigate({
-                              to: "/transactions/$id",
-                              params: { id: row.id },
-                            });
-                          }}
-                        >
-                          <TableRowHeader>
-                            <Stack gap={0}>
-                              <Inline gap={2}>
-                                <Link
-                                  variant="neutral"
-                                  underline="hover"
-                                  href={`/transactions/${row.id}`}
-                                  onClick={follow({
-                                    to: "/transactions/$id",
-                                    params: { id: row.id },
-                                  })}
-                                >
-                                  <span
-                                    className={
-                                      row.voided ? styles.voided : undefined
-                                    }
+                {leaf && (
+                  <TableColumnHeader numeric>
+                    {t("ledger.balanceAfter")}
+                  </TableColumnHeader>
+                )}
+              </TableRow>
+            </TableHead>
+            {pages.isPending ? (
+              <TableLoader skeletonRows={8} />
+            ) : (
+              <TableBody>
+                {rows.length === 0 && (
+                  <TableEmpty>{t("ledger.empty")}</TableEmpty>
+                )}
+                {days.map(([day, dayRows]) => {
+                  const net = dayRows.reduce((sum, r) => sum + r.amount, 0);
+                  const currency = dayRows[0]?.currency ?? account.currency;
+                  return (
+                    <Fragment key={day}>
+                      <TableGroupRow
+                        end={fmt.signed(
+                          { amount: net, currency },
+                          scale(currency),
+                        )}
+                      >
+                        {formatDayHeader(day, today, locale, {
+                          today: t("day.today"),
+                          yesterday: t("day.yesterday"),
+                        })}
+                      </TableGroupRow>
+                      {dayRows.map((row) => {
+                        const tx = row.transaction;
+                        const title =
+                          (tx.payee_id === undefined
+                            ? undefined
+                            : payeeNames.get(tx.payee_id)) ??
+                          (tx.description === ""
+                            ? t("ledger.untitled")
+                            : tx.description);
+                        const balance = balances?.get(row.id);
+                        return (
+                          <TableRow
+                            key={row.id}
+                            value={row.id}
+                            onAction={() => {
+                              void navigate({
+                                to: "/transactions/$id",
+                                params: { id: row.id },
+                              });
+                            }}
+                          >
+                            <TableRowHeader>
+                              <Stack gap={0}>
+                                <Inline gap={2}>
+                                  <Link
+                                    variant="neutral"
+                                    underline="hover"
+                                    href={`/transactions/${row.id}`}
+                                    onClick={follow({
+                                      to: "/transactions/$id",
+                                      params: { id: row.id },
+                                    })}
                                   >
-                                    {title}
-                                  </span>
-                                </Link>
-                                {row.voided && (
-                                  <Tag size="sm" tone="secondary">
-                                    {t("ledger.voided")}
-                                  </Tag>
-                                )}
-                              </Inline>
-                              {tx.payee_id !== undefined &&
-                                tx.description !== "" && (
-                                  <Text size="xs" tone="muted">
-                                    {tx.description}
-                                  </Text>
-                                )}
-                            </Stack>
-                          </TableRowHeader>
-                          <TableCell>
-                            <Text size="sm" tone="muted">
-                              {row.counterparts
-                                .map(
-                                  (id) =>
-                                    names.get(id) ?? t("ledger.unknownAccount"),
-                                )
-                                .join(", ")}
-                            </Text>
-                          </TableCell>
-                          <TableCell>
-                            <span
-                              role="img"
-                              aria-label={t(statusLabel[row.status])}
-                              title={t(statusLabel[row.status])}
-                            >
-                              <Icon size="sm">
-                                <Glyph name={statusGlyph[row.status]} />
-                              </Icon>
-                            </span>
-                          </TableCell>
-                          <TableCell numeric>
-                            <Text
-                              size="sm"
-                              weight="semibold"
-                              className={
-                                row.voided
-                                  ? styles.voided
-                                  : row.amount > 0
-                                    ? styles.positive
-                                    : undefined
-                              }
-                            >
-                              {fmt.signed(
-                                {
-                                  amount: row.voided
-                                    ? row.transaction.postings
-                                        .filter(
-                                          (p) => p.account_id === account.id,
-                                        )
-                                        .reduce(
-                                          (s, p) => s + p.amount.amount,
-                                          0,
-                                        )
-                                    : row.amount,
-                                  currency: row.currency,
-                                },
-                                scale(row.currency),
-                              )}
-                            </Text>
-                          </TableCell>
-                          {leaf && (
-                            <TableCell numeric>
-                              <Text size="sm">
-                                {balance === undefined
-                                  ? ""
-                                  : money(balance, account.currency)}
+                                    <span
+                                      className={
+                                        row.voided ? styles.voided : undefined
+                                      }
+                                    >
+                                      {title}
+                                    </span>
+                                  </Link>
+                                  {row.voided && (
+                                    <Tag size="sm" tone="secondary">
+                                      {t("ledger.voided")}
+                                    </Tag>
+                                  )}
+                                </Inline>
+                                {tx.payee_id !== undefined &&
+                                  tx.description !== "" && (
+                                    <Text size="xs" tone="muted">
+                                      {tx.description}
+                                    </Text>
+                                  )}
+                              </Stack>
+                            </TableRowHeader>
+                            <TableCell>
+                              <Text size="sm" tone="muted">
+                                {row.counterparts
+                                  .map(
+                                    (id) =>
+                                      names.get(id) ??
+                                      t("ledger.unknownAccount"),
+                                  )
+                                  .join(", ")}
                               </Text>
                             </TableCell>
-                          )}
-                        </TableRow>
-                      );
-                    })}
-                  </Fragment>
-                );
-              })}
-            </TableBody>
-          )}
-        </TableContent>
-      </Table>
+                            <TableCell>
+                              <span
+                                role="img"
+                                aria-label={t(statusLabel[row.status])}
+                                title={t(statusLabel[row.status])}
+                              >
+                                <Icon size="sm">
+                                  <Glyph name={statusGlyph[row.status]} />
+                                </Icon>
+                              </span>
+                            </TableCell>
+                            <TableCell numeric>
+                              <Text
+                                size="sm"
+                                weight="semibold"
+                                className={
+                                  row.voided
+                                    ? styles.voided
+                                    : row.amount > 0
+                                      ? styles.positive
+                                      : undefined
+                                }
+                              >
+                                {fmt.signed(
+                                  {
+                                    amount: row.voided
+                                      ? row.transaction.postings
+                                          .filter(
+                                            (p) => p.account_id === account.id,
+                                          )
+                                          .reduce(
+                                            (s, p) => s + p.amount.amount,
+                                            0,
+                                          )
+                                      : row.amount,
+                                    currency: row.currency,
+                                  },
+                                  scale(row.currency),
+                                )}
+                              </Text>
+                            </TableCell>
+                            {leaf && (
+                              <TableCell numeric>
+                                <Text size="sm">
+                                  {balance === undefined
+                                    ? ""
+                                    : money(balance, account.currency)}
+                                </Text>
+                              </TableCell>
+                            )}
+                          </TableRow>
+                        );
+                      })}
+                    </Fragment>
+                  );
+                })}
+              </TableBody>
+            )}
+          </TableContent>
+        </Table>
+      )}
       {pages.hasNextPage && (
         <div>
           <Button

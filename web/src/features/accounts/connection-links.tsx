@@ -26,6 +26,8 @@ import {
 import { formatInstant } from "@/features/accounts/instant";
 import { subtypeWords } from "@/features/accounts/sync-tab";
 import type { MessageKey } from "@/i18n/catalog.en";
+import { PhoneList } from "@/ui/phone-list";
+import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 type Account = components["schemas"]["Account"];
@@ -59,6 +61,47 @@ export function ConnectionLinks({
     tone: "success" | "danger";
     text: string;
   } | null>(null);
+  const compact = useMediaQuery(compactQuery);
+  const actions = (external: ExternalAccount) => (
+    <Inline gap={2} justify="end">
+      <Button
+        size="sm"
+        variant={external.state === "pending" ? "solid" : "outline"}
+        onClick={() => {
+          onLink(external);
+        }}
+      >
+        {external.state === "mapped" ? t("links.change") : t("links.link")}
+      </Button>
+      {external.state === "pending" && (
+        <Button
+          size="sm"
+          variant="ghost"
+          tone="secondary"
+          loading={
+            ignore.isPending && ignore.variables.externalId === external.id
+          }
+          onClick={() => {
+            setMessage(null);
+            ignore
+              .mutateAsync({
+                connectionId: connection.id,
+                externalId: external.id,
+                mapping: { ignored: true },
+              })
+              .catch((caught: unknown) => {
+                setMessage({
+                  tone: "danger",
+                  text: errorText(caught, t),
+                });
+              });
+          }}
+        >
+          {t("links.ignore")}
+        </Button>
+      )}
+    </Inline>
+  );
   const provider = providerWords[connection.provider_status];
   const facts = [
     provider === undefined ? connection.provider_status : t(provider),
@@ -119,116 +162,120 @@ export function ConnectionLinks({
           </AlertContent>
         </Alert>
       )}
-      <Table columns={4} variant="framed">
-        <TableContent>
-          <TableCaption>{connection.name}</TableCaption>
-          <TableHead>
-            <TableRow>
-              <TableColumnHeader>{t("sync.external")}</TableColumnHeader>
-              <TableColumnHeader>{t("accountForm.currency")}</TableColumnHeader>
-              <TableColumnHeader>{t("links.state")}</TableColumnHeader>
-              <TableColumnHeader align="end">
-                {t("links.actions")}
-              </TableColumnHeader>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {connection.accounts.map((external) => {
-              const subtype = subtypeWords[external.subtype];
-              const target =
-                external.account_id === undefined
-                  ? undefined
-                  : accounts.get(external.account_id);
-              return (
-                <TableRow key={external.id} value={external.id}>
-                  <TableRowHeader>
-                    <Stack gap={0}>
-                      <Text size="sm" weight="medium">
-                        {external.name}
-                      </Text>
-                      <Text size="xs" tone="muted">
-                        {[
-                          subtype === undefined ? external.subtype : t(subtype),
-                          external.number_last4 === undefined
-                            ? undefined
-                            : t("account.lastFour", {
-                                digits: external.number_last4,
-                              }),
-                        ]
-                          .filter((p) => p !== undefined)
-                          .join(" · ")}
-                      </Text>
-                    </Stack>
-                  </TableRowHeader>
-                  <TableCell>{external.currency}</TableCell>
-                  <TableCell>
-                    {external.state === "mapped" ? (
-                      <Tag size="sm" tone="success">
-                        {t("links.state.mapped", {
-                          account: target?.name ?? "",
-                        })}
-                      </Tag>
-                    ) : external.state === "ignored" ? (
-                      <Tag size="sm" tone="secondary">
-                        {t("links.state.ignored")}
-                      </Tag>
-                    ) : (
-                      <Tag size="sm" tone="warning">
-                        {t("links.state.pending")}
-                      </Tag>
-                    )}
-                  </TableCell>
-                  <TableCell align="end">
-                    <Inline gap={2} justify="end">
-                      <Button
-                        size="sm"
-                        variant={
-                          external.state === "pending" ? "solid" : "outline"
-                        }
-                        onClick={() => {
-                          onLink(external);
-                        }}
-                      >
-                        {external.state === "mapped"
-                          ? t("links.change")
-                          : t("links.link")}
-                      </Button>
-                      {external.state === "pending" && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          tone="secondary"
-                          loading={
-                            ignore.isPending &&
-                            ignore.variables.externalId === external.id
-                          }
-                          onClick={() => {
-                            setMessage(null);
-                            ignore
-                              .mutateAsync({
-                                connectionId: connection.id,
-                                externalId: external.id,
-                                mapping: { ignored: true },
-                              })
-                              .catch((caught: unknown) => {
-                                setMessage({
-                                  tone: "danger",
-                                  text: errorText(caught, t),
-                                });
-                              });
-                          }}
-                        >
-                          {t("links.ignore")}
-                        </Button>
+      {compact ? (
+        <PhoneList
+          label={connection.name}
+          loading={false}
+          empty={t("links.state.pending")}
+          rows={connection.accounts.map((external) => {
+            const subtype = subtypeWords[external.subtype];
+            const target =
+              external.account_id === undefined
+                ? undefined
+                : accounts.get(external.account_id);
+            return {
+              key: external.id,
+              title: external.name,
+              lines: [
+                [
+                  subtype === undefined ? external.subtype : t(subtype),
+                  external.number_last4 === undefined
+                    ? undefined
+                    : t("account.lastFour", { digits: external.number_last4 }),
+                  external.currency,
+                ]
+                  .filter((part) => part !== undefined)
+                  .join(" · "),
+                external.state === "mapped" ? (
+                  <Tag key="state" size="sm" tone="success">
+                    {t("links.state.mapped", { account: target?.name ?? "" })}
+                  </Tag>
+                ) : external.state === "ignored" ? (
+                  <Tag key="state" size="sm" tone="secondary">
+                    {t("links.state.ignored")}
+                  </Tag>
+                ) : (
+                  <Tag key="state" size="sm" tone="warning">
+                    {t("links.state.pending")}
+                  </Tag>
+                ),
+              ],
+              actions: actions(external),
+            };
+          })}
+        />
+      ) : (
+        <Table columns={4} variant="framed">
+          <TableContent>
+            <TableCaption>{connection.name}</TableCaption>
+            <TableHead>
+              <TableRow>
+                <TableColumnHeader>{t("sync.external")}</TableColumnHeader>
+                <TableColumnHeader>
+                  {t("accountForm.currency")}
+                </TableColumnHeader>
+                <TableColumnHeader>{t("links.state")}</TableColumnHeader>
+                <TableColumnHeader align="end">
+                  {t("links.actions")}
+                </TableColumnHeader>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {connection.accounts.map((external) => {
+                const subtype = subtypeWords[external.subtype];
+                const target =
+                  external.account_id === undefined
+                    ? undefined
+                    : accounts.get(external.account_id);
+                return (
+                  <TableRow key={external.id} value={external.id}>
+                    <TableRowHeader>
+                      <Stack gap={0}>
+                        <Text size="sm" weight="medium">
+                          {external.name}
+                        </Text>
+                        <Text size="xs" tone="muted">
+                          {[
+                            subtype === undefined
+                              ? external.subtype
+                              : t(subtype),
+                            external.number_last4 === undefined
+                              ? undefined
+                              : t("account.lastFour", {
+                                  digits: external.number_last4,
+                                }),
+                          ]
+                            .filter((p) => p !== undefined)
+                            .join(" · ")}
+                        </Text>
+                      </Stack>
+                    </TableRowHeader>
+                    <TableCell>{external.currency}</TableCell>
+                    <TableCell>
+                      {external.state === "mapped" ? (
+                        <Tag size="sm" tone="success">
+                          {t("links.state.mapped", {
+                            account: target?.name ?? "",
+                          })}
+                        </Tag>
+                      ) : external.state === "ignored" ? (
+                        <Tag size="sm" tone="secondary">
+                          {t("links.state.ignored")}
+                        </Tag>
+                      ) : (
+                        <Tag size="sm" tone="warning">
+                          {t("links.state.pending")}
+                        </Tag>
                       )}
-                    </Inline>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </TableContent>
-      </Table>
+                    </TableCell>
+                    <TableCell align="end">{actions(external)}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </TableContent>
+        </Table>
+      )}
     </Stack>
   );
 }

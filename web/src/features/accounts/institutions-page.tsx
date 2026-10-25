@@ -43,6 +43,8 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { HeaderAction } from "@/ui/header-action";
 import { QueryError } from "@/ui/query-error";
 import { Presence } from "@/ui/presence";
+import { PhoneList } from "@/ui/phone-list";
+import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 type Institution = components["schemas"]["Institution"];
 
@@ -57,6 +59,64 @@ export function InstitutionsPage() {
   const [creating, setCreating] = useState(false);
   const [logoTarget, setLogoTarget] = useState<Institution | null>(null);
 
+  const compact = useMediaQuery(compactQuery);
+  const actions = (institution: Institution) => (
+    <Menu>
+      <MenuTrigger
+        render={(props) => (
+          <IconButton
+            {...props}
+            size="sm"
+            variant="ghost"
+            tone="secondary"
+            aria-label={t("institutions.actions", {
+              name: institution.name,
+            })}
+          >
+            <Icon>
+              <Glyph name="ellipsis" />
+            </Icon>
+          </IconButton>
+        )}
+      />
+      <MenuContent>
+        <MenuItem
+          onSelect={() => {
+            setLogoTarget(institution);
+          }}
+        >
+          {t("institutions.setLogo")}
+        </MenuItem>
+        {institution.identifier !== undefined && (
+          <MenuItem
+            onSelect={() => {
+              setIdentifier
+                .mutateAsync({
+                  id: institution.id,
+                  identifier: null,
+                })
+                .then(() => {
+                  toast.show({
+                    tone: "success",
+                    title: t("institutions.logoRemoved", {
+                      name: institution.name,
+                    }),
+                  });
+                })
+                .catch((error: unknown) => {
+                  toast.show({
+                    tone: "danger",
+                    title: errorText(error, t),
+                  });
+                });
+            }}
+          >
+            {t("institutions.removeLogo")}
+          </MenuItem>
+        )}
+      </MenuContent>
+    </Menu>
+  );
   const counts = new Map<string, number>();
   for (const account of accounts.data ?? []) {
     if (account.institution_id === undefined) continue;
@@ -88,6 +148,41 @@ export function InstitutionsPage() {
           <QueryError
             error={institutions.error}
             onRetry={() => void institutions.refetch()}
+          />
+        ) : compact ? (
+          <PhoneList
+            label={t("institutions.title")}
+            loading={institutions.isPending}
+            empty={t("institutions.empty")}
+            rows={rows.map((institution) => ({
+              key: institution.id,
+              title: (
+                <Inline gap={3} wrap="nowrap">
+                  <AccountMark
+                    shape="square"
+                    size="sm"
+                    name={institution.name}
+                    logo={logoOf(institution.identifier, index.data)}
+                  />
+                  {institution.name}
+                </Inline>
+              ),
+              lines: [
+                [
+                  institution.code === undefined
+                    ? undefined
+                    : [t("institutions.code"), institution.code].join(": "),
+                  ispbOf(institution),
+                  [
+                    t("institutions.accounts"),
+                    String(counts.get(institution.id) ?? 0),
+                  ].join(": "),
+                ]
+                  .filter((part) => part !== undefined)
+                  .join(" · "),
+              ],
+              actions: actions(institution),
+            }))}
           />
         ) : (
           <Table columns={5} variant="framed">
@@ -150,61 +245,7 @@ export function InstitutionsPage() {
                           {String(counts.get(institution.id) ?? 0)}
                         </TableCell>
                         <TableCell align="end">
-                          <Menu>
-                            <MenuTrigger
-                              render={(props) => (
-                                <IconButton
-                                  {...props}
-                                  size="sm"
-                                  variant="ghost"
-                                  tone="secondary"
-                                  aria-label={t("institutions.actions", {
-                                    name: institution.name,
-                                  })}
-                                >
-                                  <Icon>
-                                    <Glyph name="ellipsis" />
-                                  </Icon>
-                                </IconButton>
-                              )}
-                            />
-                            <MenuContent>
-                              <MenuItem
-                                onSelect={() => {
-                                  setLogoTarget(institution);
-                                }}
-                              >
-                                {t("institutions.setLogo")}
-                              </MenuItem>
-                              {institution.identifier !== undefined && (
-                                <MenuItem
-                                  onSelect={() => {
-                                    setIdentifier
-                                      .mutateAsync({
-                                        id: institution.id,
-                                        identifier: null,
-                                      })
-                                      .then(() => {
-                                        toast.show({
-                                          tone: "success",
-                                          title: t("institutions.logoRemoved", {
-                                            name: institution.name,
-                                          }),
-                                        });
-                                      })
-                                      .catch((error: unknown) => {
-                                        toast.show({
-                                          tone: "danger",
-                                          title: errorText(error, t),
-                                        });
-                                      });
-                                  }}
-                                >
-                                  {t("institutions.removeLogo")}
-                                </MenuItem>
-                              )}
-                            </MenuContent>
-                          </Menu>
+                          {actions(institution)}
                         </TableCell>
                       </TableRow>
                     );
