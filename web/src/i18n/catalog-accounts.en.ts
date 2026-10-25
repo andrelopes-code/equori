@@ -43,6 +43,17 @@ export const accountsEn = {
   "institutions.setLogoHint":
     "The logo comes from the bank catalogue entry with the same ISPB.",
   "institutions.catalogueEntry": "Catalogue entry",
+  "institutions.editIdentifier": "Edit identifier",
+  "institutions.identifierOf": "Identifier of {name}",
+  "institutions.identifierHint":
+    "An identifier names the institution in a scheme. The logo comes from the scheme that has one for it.",
+  "institutions.scheme": "Scheme",
+  "institutions.scheme.br_ispb": "ISPB (Brazil)",
+  "institutions.identifier": "Identifier",
+  "institutions.identifierPattern":
+    "The identifier does not match the scheme's pattern.",
+  "institutions.clearIdentifier": "Clear identifier",
+  "institutions.identifierSet": "Identifier of {name} saved",
   "institutions.removeLogo": "Remove logo",
   "institutions.logoSet": "Logo of {name} set",
   "institutions.logoRemoved": "Logo of {name} removed",

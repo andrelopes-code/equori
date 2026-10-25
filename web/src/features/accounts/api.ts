@@ -408,6 +408,16 @@ export function useSetAppearance() {
   );
 }
 
+// The schemes are fixed in the server's code, so the list is cached for the session.
+export function identifierSchemesQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: ["institutions", "identifier-schemes"] as const,
+    queryFn: async () =>
+      (await unwrap(await api.GET("/institution-identifier-schemes"))).items,
+    staleTime: Infinity,
+  });
+}
+
 export function useSetInstitutionIdentifier() {
   return useApiMutation(
     async (

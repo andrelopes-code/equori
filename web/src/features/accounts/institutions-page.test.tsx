@@ -96,6 +96,156 @@ describe("InstitutionsPage", () => {
     });
   });
 
+  it("sets an identifier by scheme after checking its pattern", async () => {
+    const sent: Sent[] = [];
+    await renderApp("/accounts/institutions", { fetch: api(sent) });
+    await rowMenu("Itaú");
+    await userEvent.click(
+      await screen.findByRole("menuitem", {
+        name: catalogEn["institutions.editIdentifier"],
+      }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(
+      within(dialog).getByRole("combobox", {
+        name: catalogEn["institutions.scheme"],
+      }),
+    );
+    await userEvent.click(await screen.findByRole("option", { name: "bic" }));
+    await userEvent.type(
+      within(dialog).getByRole("textbox", {
+        name: catalogEn["institutions.identifier"],
+      }),
+      "bad",
+    );
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: catalogEn["detail.save"] }),
+    );
+    expect(
+      await within(dialog).findByText(
+        catalogEn["institutions.identifierPattern"],
+      ),
+    ).toBeVisible();
+    expect(sent).toEqual([]);
+    await userEvent.clear(
+      within(dialog).getByRole("textbox", {
+        name: catalogEn["institutions.identifier"],
+      }),
+    );
+    await userEvent.type(
+      within(dialog).getByRole("textbox", {
+        name: catalogEn["institutions.identifier"],
+      }),
+      "ITAUBRSP",
+    );
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: catalogEn["detail.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toEqual([
+        { route: "PUT itau", body: { scheme: "bic", identifier: "ITAUBRSP" } },
+      ]);
+    });
+  });
+
+  it("previews the logo an identifier resolves to and clears the identifier", async () => {
+    const sent: Sent[] = [];
+    await renderApp("/accounts/institutions", { fetch: api(sent) });
+    await rowMenu("Itaú");
+    await userEvent.click(
+      await screen.findByRole("menuitem", {
+        name: catalogEn["institutions.editIdentifier"],
+      }),
+    );
+    let dialog = await screen.findByRole("dialog");
+    expect(dialog.querySelector("img")).toBeNull();
+    expect(
+      within(dialog).queryByRole("button", {
+        name: catalogEn["institutions.clearIdentifier"],
+      }),
+    ).toBeNull();
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+    await rowMenu("Nubank");
+    await userEvent.click(
+      await screen.findByRole("menuitem", {
+        name: catalogEn["institutions.editIdentifier"],
+      }),
+    );
+    dialog = await screen.findByRole("dialog");
+    expect(
+      within(dialog).getByRole("textbox", {
+        name: catalogEn["institutions.identifier"],
+      }),
+    ).toHaveValue("18236120");
+    expect(dialog.querySelector("img")).not.toBeNull();
+    await userEvent.click(
+      within(dialog).getByRole("button", {
+        name: catalogEn["institutions.clearIdentifier"],
+      }),
+    );
+    await waitFor(() => {
+      expect(sent).toEqual([
+        { route: "PUT nubank", body: { scheme: null, identifier: null } },
+      ]);
+    });
+  });
+
+  it("offers the schemes the API lists to a user in another region", async () => {
+    const sent: Sent[] = [];
+    await renderApp("/accounts/institutions", {
+      fetch: fakeApi(
+        accountRoutes({
+          "GET /api/v1/me": () =>
+            json(200, {
+              id: 1,
+              email: "a@b.c",
+              role: "admin",
+              language: "en",
+              region: "DE",
+            }),
+          "GET /api/v1/settings": () => json(200, { base_currency: "EUR" }),
+          "GET /api/v1/institution-identifier-schemes": () =>
+            json(200, { items: [{ id: "bic", pattern: "^[A-Z]{8}$" }] }),
+          [`PUT /api/v1/institutions/${itauID}/identifier`]: async (req) => {
+            sent.push({ route: "PUT", body: await req.json() });
+            return json(200, { id: itauID, name: "Itaú" });
+          },
+        }),
+      ),
+    });
+    await rowMenu("Itaú");
+    await userEvent.click(
+      await screen.findByRole("menuitem", {
+        name: catalogEn["institutions.editIdentifier"],
+      }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(
+      within(dialog).getByRole("combobox", {
+        name: catalogEn["institutions.scheme"],
+      }),
+    );
+    expect(await screen.findAllByRole("option")).toHaveLength(1);
+    await userEvent.click(screen.getByRole("option", { name: "bic" }));
+    await userEvent.type(
+      within(dialog).getByRole("textbox", {
+        name: catalogEn["institutions.identifier"],
+      }),
+      "ITAUBRSP",
+    );
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: catalogEn["detail.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toEqual([
+        { route: "PUT", body: { scheme: "bic", identifier: "ITAUBRSP" } },
+      ]);
+    });
+  });
+
   it("creates an institution from the header", async () => {
     const sent: Sent[] = [];
     await renderApp("/accounts/institutions", { fetch: api(sent) });

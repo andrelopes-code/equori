@@ -111,14 +111,12 @@ Functions, connection detail (from `/links`):
 
 ## 4. Institution identifiers
 
-Status: Partial. Delivered: `setInstitutionIdentifier`. No screen: `listInstitutionIdentifierSchemes`.
-
-Existing code: `features/accounts/institutions-page.tsx`, `institution-field.tsx`.
+Status: Delivered. Operations: `setInstitutionIdentifier`, `listInstitutionIdentifierSchemes` (`features/accounts/institution-identifier-dialog.tsx`, opened from the row menu of `institutions-page.tsx`).
 
 Functions:
-- Scheme select filled by `listInstitutionIdentifierSchemes`; identifier input validated against the scheme `pattern` before submit.
-- Clear identifier.
-- Logo preview, since an identifier keys the institution logo (ADR 013).
+- Scheme select filled by `listInstitutionIdentifierSchemes`; identifier input checked against the scheme `pattern` before submit.
+- Clear identifier from the dialog.
+- Logo preview from `logoOf`, since an identifier keys the institution logo (ADR 013).
 
 ## 5. Schedules and occurrences
 

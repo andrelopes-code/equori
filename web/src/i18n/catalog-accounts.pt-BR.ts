@@ -44,6 +44,17 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "institutions.setLogoHint":
     "O logo vem da entrada do catálogo de bancos com o mesmo ISPB.",
   "institutions.catalogueEntry": "Entrada do catálogo",
+  "institutions.editIdentifier": "Editar identificador",
+  "institutions.identifierOf": "Identificador de {name}",
+  "institutions.identifierHint":
+    "O identificador nomeia a instituição num esquema. O logo vem do esquema que tem um para ele.",
+  "institutions.scheme": "Esquema",
+  "institutions.scheme.br_ispb": "ISPB (Brasil)",
+  "institutions.identifier": "Identificador",
+  "institutions.identifierPattern":
+    "O identificador não segue o padrão do esquema.",
+  "institutions.clearIdentifier": "Limpar identificador",
+  "institutions.identifierSet": "Identificador de {name} salvo",
   "institutions.removeLogo": "Remover logo",
   "institutions.logoSet": "Logo de {name} definido",
   "institutions.logoRemoved": "Logo de {name} removido",

@@ -220,6 +220,13 @@ export function accountRoutes(
       }),
     "GET /api/v1/accounts": () => json(200, { items: accountFixtures }),
     "GET /api/v1/institutions": () => json(200, { items: institutionFixtures }),
+    "GET /api/v1/institution-identifier-schemes": () =>
+      json(200, {
+        items: [
+          { id: "br_ispb", pattern: "^[0-9]{8}$" },
+          { id: "bic", pattern: "^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$" },
+        ],
+      }),
     "GET /api/v1/balances": balancesAt,
     "GET /api/v1/connections": () => json(200, { items: [connectionFixture] }),
     "GET /api/v1/goals": () => json(200, { items: [] }),

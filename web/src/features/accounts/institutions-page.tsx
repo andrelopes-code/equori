@@ -37,6 +37,7 @@ import {
   logoOf,
 } from "@/features/accounts/institution-logo";
 import { NewInstitutionDialog } from "@/features/accounts/new-institution-dialog";
+import { InstitutionIdentifierDialog } from "@/features/accounts/institution-identifier-dialog";
 import { SetLogoDialog } from "@/features/accounts/set-logo-dialog";
 import { institutionsQuery } from "@/features/setup";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -58,6 +59,9 @@ export function InstitutionsPage() {
   const setIdentifier = useSetInstitutionIdentifier();
   const [creating, setCreating] = useState(false);
   const [logoTarget, setLogoTarget] = useState<Institution | null>(null);
+  const [identifierTarget, setIdentifierTarget] = useState<Institution | null>(
+    null,
+  );
 
   const compact = useMediaQuery(compactQuery);
   const actions = (institution: Institution) => (
@@ -86,6 +90,13 @@ export function InstitutionsPage() {
           }}
         >
           {t("institutions.setLogo")}
+        </MenuItem>
+        <MenuItem
+          onSelect={() => {
+            setIdentifierTarget(institution);
+          }}
+        >
+          {t("institutions.editIdentifier")}
         </MenuItem>
         {institution.identifier !== undefined && (
           <MenuItem
@@ -284,6 +295,28 @@ export function InstitutionsPage() {
               toast.show({
                 tone: "success",
                 title: t("institutions.logoSet", { name: institution.name }),
+              });
+            }}
+          />
+        )}
+      </Presence>
+      <Presence value={identifierTarget ?? undefined}>
+        {(institution) => (
+          <InstitutionIdentifierDialog
+            institution={institution}
+            onCancel={() => {
+              setIdentifierTarget(null);
+            }}
+            onDone={(cleared) => {
+              setIdentifierTarget(null);
+              toast.show({
+                tone: "success",
+                title: t(
+                  cleared
+                    ? "institutions.logoRemoved"
+                    : "institutions.identifierSet",
+                  { name: institution.name },
+                ),
               });
             }}
           />
