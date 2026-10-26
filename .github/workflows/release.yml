@@ -201,3 +201,24 @@ jobs:
           git add Formula/equori.rb
           git commit -m "equori ${GITHUB_REF_NAME#v}"
           git push
+
+  # The published formula installs, passes its test, and runs managed mode on Homebrew's postgresql@18.
+  homebrew-check:
+    needs: homebrew
+    runs-on: macos-latest
+    steps:
+      - run: brew tap andrelopes-code/equori
+      - run: brew install andrelopes-code/equori/equori
+      - run: brew test andrelopes-code/equori/equori
+      - run: test "$(equori version | head -1)" = "equori ${GITHUB_REF_NAME}"
+      - run: |
+          export EQUORI_DATA_DIR="$RUNNER_TEMP/equori"
+          equori serve > "$RUNNER_TEMP/serve.log" 2>&1 &
+          serve=$!
+          for _ in $(seq 90); do curl -fsS http://127.0.0.1:8080/healthz && break; sleep 1; done
+          curl -fsS http://127.0.0.1:8080/healthz
+          printf 'equori-check-pass\n' | equori user create --email check@equori.test --language en --region US --currency USD
+          equori backup | grep -E '/backups/equori-[0-9-]+-s[0-9]+\.dump$'
+          kill "$serve"
+          wait "$serve" || true
+          test ! -e "$EQUORI_DATA_DIR/pg/postmaster.pid"
