@@ -4,11 +4,9 @@ on:
   push:
     tags: ["v*.*.*"]
 
+# Write scopes go only to the jobs that publish; make check runs every development dependency.
 permissions:
-  contents: write
-  packages: write
-  id-token: write
-  attestations: write
+  contents: read
 
 jobs:
   # R1: nothing is published from a commit that fails make check.
@@ -31,6 +29,10 @@ jobs:
   dist:
     needs: check
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
@@ -57,10 +59,18 @@ jobs:
   image:
     needs: check
     runs-on: ubuntu-latest
-    outputs:
-      tag: ${{ steps.meta.outputs.version }}
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
@@ -83,6 +93,15 @@ jobs:
           tags: equori:smoke
           build-args: VERSION=${{ github.ref_name }}
       - run: test "$(docker run --rm equori:smoke version | head -1)" = "equori ${{ github.ref_name }}"
+      # R7: the database of the previous tag migrates under this image with every fact, before any push.
+      - id: prev
+        run: echo "tag=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)" >> "$GITHUB_OUTPUT"
+      - if: steps.prev.outputs.tag == ''
+        run: echo "no previous tag; the first release has nothing to upgrade from"
+      - if: steps.prev.outputs.tag != ''
+        run: |
+          prev=${{ steps.prev.outputs.tag }}
+          scripts/upgrade-test.sh "ghcr.io/${{ github.repository }}:${prev#v}" equori:smoke "$prev"
       - id: push
         uses: docker/build-push-action@v6
         with:
@@ -98,35 +117,11 @@ jobs:
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
 
-  # R7: the database of the previous tag migrates under this one with every fact.
-  upgrade:
-    needs: image
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - id: prev
-        run: echo "tag=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)" >> "$GITHUB_OUTPUT"
-      - if: steps.prev.outputs.tag == ''
-        run: echo "no previous tag; the first release has nothing to upgrade from"
-      - if: steps.prev.outputs.tag != ''
-        run: |
-          prev=${{ steps.prev.outputs.tag }}
-          scripts/upgrade-test.sh "ghcr.io/${{ github.repository }}:${prev#v}" \
-            "ghcr.io/${{ github.repository }}:${{ needs.image.outputs.tag }}" "$prev"
-
   release:
-    needs: [dist, image, upgrade]
+    needs: [dist, image]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v5
       - uses: actions/download-artifact@v8
