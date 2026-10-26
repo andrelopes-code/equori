@@ -31,15 +31,20 @@ describe("offline redirect", () => {
     });
   });
 
-  it("keeps sending a signed-out visitor to the login page", async () => {
+  it("keeps sending a signed-out visitor to the login page, asking once", async () => {
+    let asked = 0;
     const { router } = await renderApp("/transactions", {
       fetch: fakeApi({
-        "GET /api/v1/me": () => problem(401, "unauthorized"),
+        "GET /api/v1/me": () => {
+          asked += 1;
+          return problem(401, "unauthorized");
+        },
       }),
     });
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/login");
     });
+    expect(asked).toBe(1);
   });
 
   it("opens /offline when the profile request gets no answer", async () => {

@@ -132,8 +132,10 @@ const authedRoute = createRoute({
       const me = await context.queryClient.query({
         ...meQuery(context.api),
         staleTime: "static",
-        // One retry: a start without the server should reach /offline in seconds.
-        retry: 1,
+        // One retry: a start without the server should reach /offline in seconds. A Problem below
+        // 500, such as the 401 of a signed-out visitor, is not retried (query-client.ts).
+        retry: (count, error) =>
+          !(error instanceof ProblemError && error.status < 500) && count < 1,
       });
       rememberDeviceUser({ id: me.id, email: me.email });
     } catch (error) {
