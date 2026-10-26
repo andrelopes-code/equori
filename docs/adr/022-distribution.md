@@ -94,7 +94,7 @@ Managed mode is the mode in which `equori` runs its own PostgreSQL server as a c
 
 | Rule | State |
 |---|---|
-| R5 | The formula template, its renderer (`scripts/render-formula.sh`, `make formula-test`) and the `homebrew` release job exist. The tap repository `andrelopes-code/homebrew-equori` does not exist yet; the owner creates it. |
+| R5 | The formula template, its renderer (`scripts/render-formula.sh`, `make formula-test`) and the `homebrew` release job exist. The tap repository `andrelopes-code/homebrew-equori` exists since 2026-10-26 and holds no formula until the first tag. |
 | R6 | The `homebrew` job reads the secret `HOMEBREW_TAP_TOKEN`, which the owner creates with contents access to the tap repository only. |
 | D8 | `docs/operations/remote-access.md`. |
 
