@@ -29,9 +29,9 @@ export const reportsPtBR: Record<keyof typeof reportsEn, string> = {
   "report.class": "Classe",
   "report.class.expense": "Despesa",
   "report.class.income": "Receita",
-  "view.label": "Visão",
-  "view.accrual": "Competência",
-  "view.cash": "Caixa",
+  "view.label": "Regime contábil",
+  "view.accrual": "Regime de competência",
+  "view.cash": "Regime de caixa",
   "view.accrual.rule":
     "Cada valor conta na data da transação; uma compra parcelada conta inteira na data da compra.",
   "view.cash.rule":

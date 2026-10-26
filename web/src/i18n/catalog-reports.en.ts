@@ -28,9 +28,9 @@ export const reportsEn = {
   "report.class": "Class",
   "report.class.expense": "Expense",
   "report.class.income": "Income",
-  "view.label": "View",
-  "view.accrual": "Accrual",
-  "view.cash": "Cash",
+  "view.label": "Accounting basis",
+  "view.accrual": "Accrual basis",
+  "view.cash": "Cash basis",
   "view.accrual.rule":
     "Each amount counts on its transaction date; an installment purchase counts in full when bought.",
   "view.cash.rule":

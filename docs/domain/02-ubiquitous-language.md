@@ -192,7 +192,7 @@ classDiagram
 |---|---|---|---|
 | Budget | Orçamento | Planned amount for a category over a period. | Food: 1,800.00 per month |
 | Goal | Meta | Target balance for an account or group of accounts by a date. | Emergency fund 30,000.00 by 2027-06 |
-| Accrual view | Visão por competência | Income and expenses on their transaction date. An installment purchase counts in full on the purchase date. | |
-| Cash view | Visão por caixa | Income and expenses on the date money left or entered a balance account. A card expense counts when its statement is paid, in proportion to the payment. | |
+| Accrual view | Regime de competência | Income and expenses on their transaction date. An installment purchase counts in full on the purchase date. | |
+| Cash view | Regime de caixa | Income and expenses on the date money left or entered a balance account. A card expense counts when its statement is paid, in proportion to the payment. | |
 | Committed amount | Valor comprometido | Sum of installments not yet billed and expected occurrences in a future period. | 2,340.00 already committed for 2026-12 |
 | Net worth | Patrimônio líquido | Sum of all balance accounts (assets − liabilities) at a date, converted with stored prices (B05). | |
