@@ -190,4 +190,17 @@ export default defineConfig(
       },
     },
   },
+  {
+    // The service worker, a classic script in its own global scope (ADR 022, P1).
+    files: ["public/sw.js"],
+    languageOptions: {
+      sourceType: "script",
+      globals: {
+        self: "readonly",
+        caches: "readonly",
+        fetch: "readonly",
+        URL: "readonly",
+      },
+    },
+  },
 );

@@ -16,6 +16,7 @@ func TestHandler(t *testing.T) {
 		"index.html":         {Data: []byte(index)},
 		"assets/app-1a2b.js": {Data: []byte("console.log(1)")},
 		"favicon.svg":        {Data: []byte("<svg/>")},
+		"sw.js":              {Data: []byte("self")},
 	}
 	tests := []struct {
 		name         string
@@ -32,6 +33,7 @@ func TestHandler(t *testing.T) {
 		{"index by name", http.MethodGet, "/index.html", 200, index, "no-cache", "text/html; charset=utf-8", ""},
 		{"asset", http.MethodGet, "/assets/app-1a2b.js", 200, "console.log(1)", "public, max-age=31536000, immutable", "text/javascript; charset=utf-8", ""},
 		{"root file", http.MethodGet, "/favicon.svg", 200, "<svg/>", "", "image/svg+xml", ""},
+		{"service worker", http.MethodGet, "/sw.js", 200, "self", "no-cache", "text/javascript; charset=utf-8", ""},
 		{"missing asset", http.MethodGet, "/assets/app-9z9z.js", 404, "404 page not found\n", "", "text/plain; charset=utf-8", ""},
 		{"asset directory", http.MethodGet, "/assets/", 404, "404 page not found\n", "", "text/plain; charset=utf-8", ""},
 		{"dot-dot path", http.MethodGet, "/../../etc/passwd", 200, index, "no-cache", "text/html; charset=utf-8", ""},

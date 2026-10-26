@@ -58,7 +58,8 @@ func serveFile(w http.ResponseWriter, r *http.Request, fsys fs.FS, name string) 
 		return false
 	}
 	switch {
-	case name == indexName:
+	case name == indexName || name == "sw.js":
+		// The browser must see a new service worker on the next load (ADR 008, W11; ADR 022, P2).
 		w.Header().Set("Cache-Control", "no-cache")
 	case strings.HasPrefix(name, assetsDir+"/"):
 		// Vite names every file under assets/ by its content hash.
