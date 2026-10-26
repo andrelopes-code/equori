@@ -1185,6 +1185,16 @@ export const catalogPtBR: Catalog = {
     "O aparelho recusou guardar o texto; ele continua no campo.",
   "queue.discard": "Descartar",
   "queue.writtenOn": "Escrito em {date}",
+  "queue.title": "Lançamentos offline",
+  "queue.subheading":
+    "Textos escritos sem o servidor. Cada um abre no lançamento por texto com o dia em que foi escrito.",
+  "queue.process": "Revisar",
+  "queue.empty": "Nenhum lançamento offline na fila.",
+  "queue.pending": "{count} lançamentos offline na fila",
+  "queue.open": "Abrir fila",
+  "capture.queuedFrom":
+    "Texto escrito em {date}. As datas dele contam a partir desse dia.",
+  "capture.queue": "Fila offline ({count})",
   "assistant.title": "Assistente",
   "assistant.open": "Abrir o assistente",
   "assistant.key": "A",

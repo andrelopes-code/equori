@@ -29,3 +29,6 @@ export {
 } from "@/features/transactions/capture-queue";
 export type { QueuedCapture } from "@/features/transactions/capture-queue";
 export { OfflinePage } from "@/features/transactions/offline-page";
+export { CaptureQueuePage } from "@/features/transactions/capture-queue-page";
+export { useCaptureQueueNotice } from "@/features/transactions/use-capture-queue-notice";
+export { validateCaptureSearch } from "@/features/transactions/search";

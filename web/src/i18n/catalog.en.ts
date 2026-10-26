@@ -1180,6 +1180,16 @@ export const catalogEn = {
     "The device refused to store the text; it stays in the field.",
   "queue.discard": "Discard",
   "queue.writtenOn": "Written on {date}",
+  "queue.title": "Offline captures",
+  "queue.subheading":
+    "Texts written without the server. Each opens in the text capture with the day it was written.",
+  "queue.process": "Review",
+  "queue.empty": "No offline capture waiting.",
+  "queue.pending": "{count} offline captures waiting",
+  "queue.open": "Open queue",
+  "capture.queuedFrom":
+    "Text written on {date}. Its dates count from that day.",
+  "capture.queue": "Offline queue ({count})",
   "assistant.title": "Assistant",
   "assistant.open": "Open the assistant",
   "assistant.key": "A",

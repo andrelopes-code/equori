@@ -44,6 +44,15 @@
     ]
   },
   {
+    "path": "/transactions/queue",
+    "topics": ["capture"],
+    "screen": "Offline captures",
+    "tasks": [
+      "review texts written without the server",
+      "discard a queued text"
+    ]
+  },
+  {
     "path": "/transactions/$id",
     "topics": [
       "transactions_and_postings",

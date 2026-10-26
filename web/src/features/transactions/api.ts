@@ -535,10 +535,12 @@ export function useCreateTransaction() {
 
 // The text read as drafts (A106). It records nothing, so it is a query keyed by what it
 // reads; the drafts on screen stay while the next answer is on its way (AF-02).
+// referenceDate is the day a queued text was written; its date phrases resolve against it (A128).
 export function capturePreviewQuery(
   api: Client<paths>,
   text: string,
   defaultAccountId: string | null,
+  referenceDate: string | null,
 ) {
   return queryOptions({
     queryKey: [
@@ -546,6 +548,7 @@ export function capturePreviewQuery(
       "capture",
       text,
       defaultAccountId,
+      ...(referenceDate === null ? [] : [referenceDate]),
     ] as const,
     queryFn: async () =>
       unwrap(
@@ -555,6 +558,9 @@ export function capturePreviewQuery(
             ...(defaultAccountId === null
               ? {}
               : { default_account_id: defaultAccountId }),
+            ...(referenceDate === null
+              ? {}
+              : { reference_date: referenceDate }),
           },
         }),
       ),

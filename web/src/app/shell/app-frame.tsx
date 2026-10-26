@@ -29,6 +29,7 @@ import { useExtent } from "@/app/shell/use-extent";
 import { useScrollState } from "@/app/shell/use-scroll-state";
 import { useWide } from "@/app/shell/use-wide";
 import { AssistantPanel } from "@/features/assistant";
+import { useCaptureQueueNotice } from "@/features/transactions";
 import { useT } from "@/i18n/i18n-provider";
 import { applyDensity, readDensity } from "@/theme/density";
 
@@ -37,6 +38,7 @@ const stickyFooter = "var(--slotted-page-sticky-bottom, 0px)";
 // One AppShell holds both layouts, so the routed page keeps its place in the tree when the
 // width crosses the desktop step: the regions of the other layout render as null beside it.
 export function AppFrame() {
+  useCaptureQueueNotice();
   const t = useT();
   const wide = useWide();
   const main = useRef<HTMLElement>(null);

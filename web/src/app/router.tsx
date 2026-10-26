@@ -77,12 +77,14 @@ import { LoginPage, meQuery, rememberDeviceUser } from "@/features/session";
 import { SettingsPage, validateSettingsSearch } from "@/features/setup";
 import {
   CapturePage,
+  CaptureQueuePage,
   CorrectTransactionPage,
   NewTransactionPage,
   OfflinePage,
   TransactionPage,
   TransactionsPage,
   isBuiltKind,
+  validateCaptureSearch,
   validateTransactionSearch,
   validateTransactionsPageSearch,
 } from "@/features/transactions";
@@ -384,7 +386,14 @@ const newTransactionRoute = createRoute({
 const captureRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "transactions/capture",
+  validateSearch: validateCaptureSearch,
   component: CapturePage,
+});
+
+const captureQueueRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "transactions/queue",
+  component: CaptureQueuePage,
 });
 
 const transactionRoute = createRoute({
@@ -419,6 +428,7 @@ export const routeTree = rootRoute.addChildren([
     transactionsRoute,
     newTransactionRoute,
     captureRoute,
+    captureQueueRoute,
     transactionRoute,
     correctTransactionRoute,
     categoriesRoute,

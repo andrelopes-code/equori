@@ -46,6 +46,14 @@ function text(value: unknown, max: number): string | undefined {
   return trimmed.length >= 1 && trimmed.length <= max ? trimmed : undefined;
 }
 
+// The capture screen opens a text of the offline queue by its id (P5 of ADR 022).
+export function validateCaptureSearch(raw: Record<string, unknown>): {
+  queued?: string;
+} {
+  const queued = uuid(raw.queued);
+  return queued === undefined ? {} : { queued };
+}
+
 export function validateTransactionSearch(
   raw: Record<string, unknown>,
 ): TransactionSearch {

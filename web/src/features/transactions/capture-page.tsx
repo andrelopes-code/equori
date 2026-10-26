@@ -23,12 +23,13 @@ import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 import { toast } from "@slotted/react/toast";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import { accountsQuery } from "@/features/accounts";
+import { meQuery } from "@/features/session";
 import { payeesQuery, settingsQuery, useScale } from "@/features/setup";
 import { AccountField } from "@/features/transactions/account-field";
 import {
@@ -55,6 +56,11 @@ import type {
 import { CaptureComposer } from "@/features/transactions/capture-composer";
 import { CaptureEditDialog } from "@/features/transactions/capture-edit-dialog";
 import { CaptureLineItem } from "@/features/transactions/capture-line-item";
+import {
+  findQueued,
+  readQueue,
+  removeQueued,
+} from "@/features/transactions/capture-queue";
 import styles from "@/features/transactions/capture-page.module.css";
 import {
   readCaptureDraft,
@@ -63,7 +69,8 @@ import {
   writeDefaultAccount,
   writeEntryForm,
 } from "@/features/transactions/capture-store";
-import { useT } from "@/i18n/i18n-provider";
+import { formatDate } from "@/i18n/format";
+import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useDebounced } from "@/ui/use-debounced";
 import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
@@ -87,11 +94,28 @@ export function CapturePage() {
   const settings = useQuery(settingsQuery(api));
   const scale = useScale();
   const record = useRecordBatch();
+  const [locale] = useAppLocale();
+  const me = useQuery({ ...meQuery(api), staleTime: Infinity });
+  // P5 of ADR 022: a text of the offline queue opens with the day it was written; it neither
+  // reads nor writes the session's draft.
+  const { queued: queuedId } = useSearch({
+    from: "/_authed/transactions/capture",
+  });
+  const [entry] = useState(() =>
+    queuedId === undefined ? undefined : findQueued(queuedId),
+  );
+  const waiting = me.data === undefined ? 0 : readQueue(me.data.id).length;
 
-  const [stored] = useState(readCaptureDraft);
+  const [stored] = useState(() =>
+    entry === undefined
+      ? readCaptureDraft()
+      : { text: entry.text, overrides: {} },
+  );
   const [text, setText] = useState(stored.text);
   const [overrides, setOverrides] = useState(stored.overrides);
-  const [defaultAccountId, setDefaultAccountId] = useState(readDefaultAccount);
+  const [defaultAccountId, setDefaultAccountId] = useState(
+    () => entry?.defaultAccountId ?? readDefaultAccount(),
+  );
   const [editing, setEditing] = useState<number | null>(null);
   const [refusal, setRefusal] = useState<{
     index: number;
@@ -103,8 +127,8 @@ export function CapturePage() {
     writeEntryForm("text");
   }, []);
   useEffect(() => {
-    writeCaptureDraft({ text, overrides });
-  }, [text, overrides]);
+    if (entry === undefined) writeCaptureDraft({ text, overrides });
+  }, [entry, text, overrides]);
 
   const accountsById = useMemo(
     () => new Map((accounts.data ?? []).map((a) => [a.id, a])),
@@ -124,7 +148,12 @@ export function CapturePage() {
 
   const settled = useDebounced(text, readDelay);
   const preview = useQuery({
-    ...capturePreviewQuery(api, settled, defaultAccount),
+    ...capturePreviewQuery(
+      api,
+      settled,
+      defaultAccount,
+      entry?.capturedOn ?? null,
+    ),
     enabled: settled.trim() !== "" && accounts.data !== undefined,
   });
   const empty = text.trim() === "";
@@ -213,6 +242,8 @@ export function CapturePage() {
       const batch = await record.mutateAsync(
         rows.map((r) => entryOf(r.draft, accountsById, base)),
       );
+      // The entry leaves the queue only once its transactions are recorded.
+      if (entry !== undefined) removeQueued(entry.id);
       setText("");
       setOverrides({});
       toast.show({
@@ -231,6 +262,7 @@ export function CapturePage() {
           </Button>
         ),
       });
+      if (entry !== undefined) void navigate({ to: "/transactions/queue" });
     } catch (error) {
       if (error instanceof ProblemError) {
         const [field, message] =
@@ -330,10 +362,37 @@ export function CapturePage() {
               >
                 {t("capture.useForm")}
               </ButtonLink>
+              {entry === undefined && waiting > 0 && (
+                <ButtonLink
+                  variant="outline"
+                  tone="secondary"
+                  href="/transactions/queue"
+                  // Workaround for Slotted finding "ButtonLink render props cannot be spread onto a
+                  // router link": as above.
+                  onClick={(event) => {
+                    if (
+                      event.button !== 0 ||
+                      event.metaKey ||
+                      event.ctrlKey ||
+                      event.shiftKey ||
+                      event.altKey
+                    )
+                      return;
+                    event.preventDefault();
+                    void navigate({ to: "/transactions/queue" });
+                  }}
+                >
+                  {t("capture.queue", { count: waiting })}
+                </ButtonLink>
+              )}
             </PageHeaderActions>
           </PageHeaderTitleRow>
           <PageHeaderDescription>
-            {t("capture.subheading")}
+            {entry === undefined
+              ? t("capture.subheading")
+              : t("capture.queuedFrom", {
+                  date: formatDate(entry.capturedOn, locale),
+                })}
           </PageHeaderDescription>
         </PageHeaderTitleArea>
       </PageHeader>
@@ -356,7 +415,7 @@ export function CapturePage() {
                     exclude={null}
                     amount={0}
                     direction="out"
-                    date={today}
+                    date={entry?.capturedOn ?? today}
                     categoryId={null}
                     payeeId={null}
                     kind="expense"

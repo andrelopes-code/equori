@@ -28,7 +28,14 @@ function fullPaths(node: RouteNode, out: Set<string>): Set<string> {
 // Building a router assigns each route its fullPath.
 newRouter();
 const routes = fullPaths(routeTree as RouteNode, new Set());
-const unmapped = new Set(["/login", "/preview/account-card", "/accounts", ""]);
+// /offline opens without the server, where no assistant answers (P3 of ADR 022).
+const unmapped = new Set([
+  "/login",
+  "/offline",
+  "/preview/account-card",
+  "/accounts",
+  "",
+]);
 
 describe("navigation map", () => {
   it("reads the routes of the router", () => {
