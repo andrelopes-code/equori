@@ -32,7 +32,7 @@ The proxy keeps the `Host` header, which is Caddy's default. The cross-origin pr
 
 ## Plain HTTP on a LAN
 
-The application runs over `http://<lan address>:8080` with `EQUORI_INSECURE_COOKIES=true`. A browser refuses the secure-context features over plain HTTP:
+The application runs over `http://<lan address>:8080` with `EQUORI_INSECURE_COOKIES=true`. The Homebrew service listens on `127.0.0.1:8080` only: its environment sets `EQUORI_HTTP_ADDR`, and a process value wins over `equori.env` (ADR 022, C2). LAN access from a Homebrew installation therefore runs `EQUORI_HTTP_ADDR=0.0.0.0:8080 EQUORI_INSECURE_COOKIES=true equori serve` outside the service. A browser refuses the secure-context features over plain HTTP:
 
 | Works | Does not work |
 |---|---|
