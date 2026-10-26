@@ -65,7 +65,7 @@ test-race: db-test-up
 # Managed mode needs the PostgreSQL programs; the postgres:18 image holds them, so the compiled
 # cluster tests run there, on the host network to reach db-test (ADR 022). Each entry is
 # <package directory>:<-test.run pattern>.
-CLUSTER_TESTS := internal/platform/pgcluster:. internal/platform/backup:. internal/server:^TestCluster
+CLUSTER_TESTS := internal/platform/pgcluster:. internal/platform/backup:. internal/server:^TestCluster cmd/equori:^TestCluster
 test-cluster: db-test-up
 	rm -rf $(BIN)/cluster-tests && mkdir -p $(BIN)/cluster-tests
 	for entry in $(CLUSTER_TESTS); do \

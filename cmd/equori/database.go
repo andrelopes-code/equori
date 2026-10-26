@@ -96,11 +96,3 @@ func (d *database) Close(log *slog.Logger) {
 		}
 	}
 }
-
-// postgresBin returns the programs of the running cluster, else those of the configuration (M2).
-func postgresBin(cfg config.Config, d *database) (string, error) {
-	if d != nil && d.Cluster != nil {
-		return d.Cluster.Bin(), nil
-	}
-	return pgcluster.Bin(cfg.PostgresBin)
-}

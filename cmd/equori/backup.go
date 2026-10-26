@@ -55,19 +55,24 @@ func backupCommand(args []string) error {
 		fmt.Fprintln(os.Stderr, backupUsage)
 		return errUsage
 	}
-	cfg, log, err := setup()
+	cfg, _, err := setup()
 	if err != nil {
 		return err
 	}
 	ctx := context.Background()
-	db, err := openDatabase(ctx, cfg, log, false)
+	bin, err := pgcluster.Bin(cfg.PostgresBin)
 	if err != nil {
 		return err
 	}
-	defer db.Close(log)
-	bin, err := postgresBin(cfg, db)
-	if err != nil {
-		return err
+	// A backup holds the database as it is, so it never goes through openDatabase, which migrates.
+	dsn := cfg.DatabaseURL
+	if cfg.Managed() {
+		c, err := pgcluster.Attach(ctx, cfg.DataDir, bin)
+		if err != nil {
+			return err
+		}
+		defer func() { _ = c.Stop() }()
+		dsn = c.DSN(pgcluster.Database)
 	}
 	latest, err := postgres.LatestVersion()
 	if err != nil {
@@ -80,7 +85,7 @@ func backupCommand(args []string) error {
 			path = filepath.Join(cfg.BackupDir, path)
 		}
 	}
-	if err := backup.Dump(ctx, bin, db.DSN, path); err != nil {
+	if err := backup.Dump(ctx, bin, dsn, path); err != nil {
 		return err
 	}
 	fmt.Println(path)
