@@ -1171,6 +1171,20 @@ export const catalogPtBR: Catalog = {
   "capture.problem.installments":
     "Parcelamento só vale para despesa no cartão.",
   "capture.problem.rows": "Os lançamentos precisam citar uma conta e fechar.",
+  "offline.title": "Sem conexão com o servidor",
+  "offline.subheading":
+    "Escreva o que gastou; o equori lê quando o servidor responder de novo.",
+  "offline.user": "Na fila de {email}",
+  "offline.noUser":
+    "Entre uma vez com o servidor acessível para lançar neste aparelho sem ele.",
+  "offline.queue": "Guardar na fila",
+  "offline.retry": "Tentar de novo",
+  "offline.queued": "Na fila",
+  "offline.empty": "Nada na fila.",
+  "offline.writeFailed":
+    "O aparelho recusou guardar o texto; ele continua no campo.",
+  "queue.discard": "Descartar",
+  "queue.writtenOn": "Escrito em {date}",
   "assistant.title": "Assistente",
   "assistant.open": "Abrir o assistente",
   "assistant.key": "A",

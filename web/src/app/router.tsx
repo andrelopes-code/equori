@@ -79,6 +79,7 @@ import {
   CapturePage,
   CorrectTransactionPage,
   NewTransactionPage,
+  OfflinePage,
   TransactionPage,
   TransactionsPage,
   isBuiltKind,
@@ -101,6 +102,12 @@ function isLocalPath(path: string): boolean {
   // eslint-disable-next-line no-control-regex -- the control characters are the subject of the check.
   return /^\/(?![/\\])/.test(path) && !/[\u0000-\u001f\u007f]/.test(path);
 }
+
+const offlineRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/offline",
+  component: OfflinePage,
+});
 
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -131,6 +138,11 @@ const authedRoute = createRoute({
       if (error instanceof ProblemError && error.status === 401) {
         // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirects are thrown objects.
         throw redirect({ to: "/login", search: { redirect: location.href } });
+      }
+      // fetch rejects with a TypeError when no HTTP answer arrives (P3 of ADR 022).
+      if (error instanceof TypeError) {
+        // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirects are thrown objects.
+        throw redirect({ to: "/offline" });
       }
       throw error;
     }
@@ -400,6 +412,7 @@ const previewRoutes = import.meta.env.DEV
 
 export const routeTree = rootRoute.addChildren([
   loginRoute,
+  offlineRoute,
   ...previewRoutes,
   authedRoute.addChildren([
     homeRoute,

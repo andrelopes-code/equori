@@ -28,3 +28,4 @@ export {
   removeQueued,
 } from "@/features/transactions/capture-queue";
 export type { QueuedCapture } from "@/features/transactions/capture-queue";
+export { OfflinePage } from "@/features/transactions/offline-page";

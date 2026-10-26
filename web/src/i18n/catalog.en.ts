@@ -1166,6 +1166,20 @@ export const catalogEn = {
   "capture.problem.sameAccount": "Source and destination are the same account.",
   "capture.problem.installments": "Installments apply to card expenses only.",
   "capture.problem.rows": "The postings must name an account and balance.",
+  "offline.title": "No connection to the server",
+  "offline.subheading":
+    "Write what you spent; equori reads it when the server answers again.",
+  "offline.user": "Queued for {email}",
+  "offline.noUser":
+    "Sign in once with the server reachable to write captures on this device without it.",
+  "offline.queue": "Queue",
+  "offline.retry": "Try again",
+  "offline.queued": "Waiting",
+  "offline.empty": "Nothing waiting.",
+  "offline.writeFailed":
+    "The device refused to store the text; it stays in the field.",
+  "queue.discard": "Discard",
+  "queue.writtenOn": "Written on {date}",
   "assistant.title": "Assistant",
   "assistant.open": "Open the assistant",
   "assistant.key": "A",
