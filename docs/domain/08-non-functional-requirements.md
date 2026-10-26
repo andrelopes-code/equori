@@ -34,7 +34,7 @@ Every requirement has a measurable criterion and a verification method. Performa
 
 | ID | Requirement | Verification |
 |---|---|---|
-| N10 | A committed change is never lost; a cross-module reaction is never lost (ADR 006). | Crash test between commit and dispatch |
+| N10 | A committed change is never lost; a cross-module reaction is never lost (ADR 006). | Crash tests between commit and dispatch: `TestN10EventSurvivesCrashBetweenCommitAndDispatch`, `TestN10HandlerEffectAppliedOnceAfterCrashBeforeDelivery` (`internal/platform/outbox`) |
 | N11 | Migrations are forward-only, transactional and applied at startup; a failed migration leaves the previous schema intact and stops the application. | Migration tests on a copy of the reference dataset |
 | N12 | Backup and restore are documented (`docs/operations/backup.md`); a restored backup reproduces every table, balance, derived series and trigger of the original. | `internal/server/backup_test.go` in `make check` |
 | N13 | Export (SC6) followed by import into an empty instance reproduces every fact and every derived value. | Round-trip test |

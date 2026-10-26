@@ -279,3 +279,76 @@ func TestDrainDeliversMoreThanOneBatch(t *testing.T) {
 		t.Fatalf("Drain = %d, %v; want 250", n, err)
 	}
 }
+
+// N10: an event committed with its change and never dispatched is delivered once
+// by the dispatcher of the next process.
+func TestN10EventSurvivesCrashBetweenCommitAndDispatch(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+	userID := pgtest.CreateUser(t, pool)
+	var calls atomic.Int32
+	handler := func(context.Context, pgx.Tx, outbox.Delivered) error { calls.Add(1); return nil }
+	crashed := newDispatcher(pool)
+	crashed.Subscribe("c", eventType, handler)
+	insertEvent(t, pool, outbox.Event{Type: eventType, UserID: userID, AggregateID: "x", Payload: 1})
+
+	restarted := newDispatcher(pool)
+	restarted.Subscribe("c", eventType, handler)
+	if n := dispatch(t, restarted); n != 1 {
+		t.Fatalf("restarted dispatcher delivered %d, want 1", n)
+	}
+	if n := dispatch(t, restarted); n != 0 {
+		t.Fatalf("second pass delivered %d, want 0", n)
+	}
+	if calls.Load() != 1 {
+		t.Fatalf("handler calls = %d, want 1", calls.Load())
+	}
+	if status, attempts := delivery(t, pool, "c"); status != "delivered" || attempts != 1 {
+		t.Fatalf("delivery = %s after %d attempts, want delivered after 1", status, attempts)
+	}
+}
+
+// N10: a process that dies after the handler wrote and before the delivery row
+// committed leaves no effect; the next process applies the effect once.
+func TestN10HandlerEffectAppliedOnceAfterCrashBeforeDelivery(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+	userID := pgtest.CreateUser(t, pool)
+	if _, err := pool.Exec(t.Context(), `CREATE TABLE scratch (n int)`); err != nil {
+		t.Fatal(err)
+	}
+	effect := func(ctx context.Context, tx pgx.Tx, _ outbox.Delivered) error {
+		_, err := tx.Exec(ctx, `INSERT INTO scratch VALUES (1)`)
+		return err
+	}
+	insertEvent(t, pool, outbox.Event{Type: eventType, UserID: userID, AggregateID: "x", Payload: 1})
+
+	// The process dies inside the handler's transaction: its context ends before commit.
+	dying, die := context.WithCancel(t.Context())
+	crashed := newDispatcher(pool)
+	crashed.Subscribe("c", eventType, func(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
+		if err := effect(ctx, tx, e); err != nil {
+			return err
+		}
+		die()
+		return ctx.Err()
+	})
+	if _, err := crashed.DispatchPending(dying); !errors.Is(err, context.Canceled) {
+		t.Fatalf("crashed dispatch err = %v, want context.Canceled", err)
+	}
+
+	restarted := newDispatcher(pool)
+	restarted.Subscribe("c", eventType, effect)
+	if n := dispatch(t, restarted); n != 1 {
+		t.Fatalf("restarted dispatcher delivered %d, want 1", n)
+	}
+	dispatch(t, restarted)
+
+	var n int
+	if err := pool.QueryRow(t.Context(), `SELECT count(*) FROM scratch`).Scan(&n); err != nil || n != 1 {
+		t.Fatalf("scratch rows = %d, %v; want 1", n, err)
+	}
+	if status, attempts := delivery(t, pool, "c"); status != "delivered" || attempts != 1 {
+		t.Fatalf("delivery = %s after %d attempts, want delivered after 1", status, attempts)
+	}
+}
