@@ -83,6 +83,21 @@ Managed mode is the mode in which `equori` runs its own PostgreSQL server as a c
 | P8 | The first queued entry calls `navigator.storage.persist()`. |
 | P9 | No Background Sync, no push. iOS gives neither to a web application without restrictions; processing happens with the application open. |
 
+## Remote access
+
+`docs/operations/remote-access.md` covers three setups:
+- `tailscale serve` in front of `127.0.0.1:8080`, for Homebrew and for compose;
+- a reverse proxy with a public certificate, for a VPS with a domain;
+- plain HTTP on a LAN, with its limits (no installation, no offline queue, `EQUORI_INSECURE_COOKIES=true`).
+
+## Delivery
+
+| Rule | State |
+|---|---|
+| R5 | The formula template, its renderer (`scripts/render-formula.sh`, `make formula-test`) and the `homebrew` release job exist. The tap repository `andrelopes-code/homebrew-equori` does not exist yet; the owner creates it. |
+| R6 | The `homebrew` job reads the secret `HOMEBREW_TAP_TOKEN`, which the owner creates with contents access to the tap repository only. |
+| D8 | `docs/operations/remote-access.md`. |
+
 ## Settled during planning
 
 | Item | Value |
