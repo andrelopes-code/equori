@@ -65,6 +65,8 @@ var exposure = map[string]string{
 	"putInstrumentTerms":               "manage_instrument",
 	"getAllocation":                    "get_portfolio",
 	"getNetWorth":                      "get_portfolio",
+	"getStatementAnalytics":            "-visual",
+	"getCardStatementAnalytics":        "-visual",
 	"requestExport":                    "-file",
 	"getExport":                        "-file",
 	"getExportContent":                 "-file",

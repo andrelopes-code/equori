@@ -47,6 +47,7 @@ type Point struct {
 type Repository interface {
 	FlowRepository
 	CashRepository
+	AnalyticsRepository
 	AccountCurrency(ctx context.Context, userID int64, accountID uuid.UUID) (string, error)
 	AccountName(ctx context.Context, userID int64, accountID uuid.UUID) (string, error)
 	Rebuild(ctx context.Context, userID int64, accountID uuid.UUID, from time.Time) error

@@ -46,7 +46,7 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, clk clock.Clock, log
 	for _, eventType := range []string{ledger.EventTransactionRecorded, ledger.EventTransactionCorrected, ledger.EventTransactionCategorized, ledger.EventTransactionVoided} {
 		dispatcher.Subscribe("reporting-series", eventType, rebuildSeries)
 	}
-	return &Module{svc: svc, exports: exports, http: httpapi.NewServer(svc, exports, log)}
+	return &Module{svc: svc, exports: exports, http: httpapi.NewServer(svc, exports, clk, log)}
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }

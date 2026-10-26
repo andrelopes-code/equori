@@ -119,6 +119,11 @@ type BalanceSeries struct {
 	Items []BalancePoint `json:"items"`
 }
 
+// CardStatementAnalytics defines model for CardStatementAnalytics.
+type CardStatementAnalytics struct {
+	Items []StatementAnalyticsItem `json:"items"`
+}
+
 // CategoryTotal defines model for CategoryTotal.
 type CategoryTotal struct {
 	AccountId    openapi_types.UUID `json:"account_id"`
@@ -199,6 +204,51 @@ type Problem struct {
 	Type    string     `json:"type"`
 }
 
+// StatementAnalytics defines model for StatementAnalytics.
+type StatementAnalytics struct {
+	Categories   []StatementCategoryParts `json:"categories"`
+	Charges      Money                    `json:"charges"`
+	Credits      Money                    `json:"credits"`
+	Installments Money                    `json:"installments"`
+	Purchases    Money                    `json:"purchases"`
+	Reference    string                   `json:"reference"`
+	StatementId  openapi_types.UUID       `json:"statement_id"`
+	Total        Money                    `json:"total"`
+}
+
+// StatementAnalyticsItem defines model for StatementAnalyticsItem.
+type StatementAnalyticsItem struct {
+	Charges      Money              `json:"charges"`
+	Credits      Money              `json:"credits"`
+	Installments Money              `json:"installments"`
+	Purchases    Money              `json:"purchases"`
+	Reference    string             `json:"reference"`
+	StatementId  openapi_types.UUID `json:"statement_id"`
+	Total        Money              `json:"total"`
+}
+
+// StatementCategoryParts defines model for StatementCategoryParts.
+type StatementCategoryParts struct {
+	CategoryId   openapi_types.UUID `json:"category_id"`
+	Charges      Money              `json:"charges"`
+	Credits      Money              `json:"credits"`
+	Installments Money              `json:"installments"`
+	Purchases    Money              `json:"purchases"`
+	Total        Money              `json:"total"`
+}
+
+// StatementParts defines model for StatementParts.
+type StatementParts struct {
+	Charges      Money `json:"charges"`
+	Credits      Money `json:"credits"`
+	Installments Money `json:"installments"`
+	Purchases    Money `json:"purchases"`
+	Total        Money `json:"total"`
+}
+
+// ID defines model for ID.
+type ID = openapi_types.UUID
+
 // ImportArchiveMultipartBody defines parameters for ImportArchive.
 type ImportArchiveMultipartBody struct {
 	File openapi_types.File `json:"file"`
@@ -245,6 +295,9 @@ type ImportArchiveMultipartRequestBody ImportArchiveMultipartBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// GetCardStatementAnalytics The 12 latest statements of a card closed on or before today, oldest first, split as in getStatementAnalytics.
+	// (GET /accounts/{id}/statement-analytics)
+	GetCardStatementAnalytics(w http.ResponseWriter, r *http.Request, id ID)
 	// RequestExport Request an archive of every fact of the books (SC6, docs/superpowers/specs/2026-10-26-export-design.md).
 	// (POST /exports)
 	RequestExport(w http.ResponseWriter, r *http.Request)
@@ -266,6 +319,9 @@ type ServerInterface interface {
 	// GetAccountFlows Booked inflow and outflow of one account, one item per day in [from, to] that has a posting (A119).
 	// (GET /reports/flows)
 	GetAccountFlows(w http.ResponseWriter, r *http.Request, params GetAccountFlowsParams)
+	// GetStatementAnalytics A statement split into purchases, installments, charges and credits, per category (P9).
+	// (GET /statements/{id}/analytics)
+	GetStatementAnalytics(w http.ResponseWriter, r *http.Request, id ID)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -276,6 +332,32 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// GetCardStatementAnalytics operation middleware
+func (siw *ServerInterfaceWrapper) GetCardStatementAnalytics(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCardStatementAnalytics(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // RequestExport operation middleware
 func (siw *ServerInterfaceWrapper) RequestExport(w http.ResponseWriter, r *http.Request) {
@@ -536,6 +618,32 @@ func (siw *ServerInterfaceWrapper) GetAccountFlows(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
+// GetStatementAnalytics operation middleware
+func (siw *ServerInterfaceWrapper) GetStatementAnalytics(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetStatementAnalytics(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -660,6 +768,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/exports/current", wrapper.GetExport)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/exports/current/content", wrapper.GetExportContent)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/imports/archive", wrapper.ImportArchive)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statements/{id}/analytics", wrapper.GetStatementAnalytics)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/statement-analytics", wrapper.GetCardStatementAnalytics)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/balances", wrapper.GetBalanceSeries)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/flows", wrapper.GetAccountFlows)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/categories", wrapper.GetCategoryTotals)
@@ -668,6 +778,58 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 }
 
 type ProblemApplicationProblemPlusJSONResponse Problem
+
+type GetCardStatementAnalyticsRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type GetCardStatementAnalyticsResponseObject interface {
+	VisitGetCardStatementAnalyticsResponse(w http.ResponseWriter) error
+}
+
+type GetCardStatementAnalytics200JSONResponse CardStatementAnalytics
+
+func (response GetCardStatementAnalytics200JSONResponse) VisitGetCardStatementAnalyticsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCardStatementAnalytics401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetCardStatementAnalytics401ApplicationProblemPlusJSONResponse) VisitGetCardStatementAnalyticsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetCardStatementAnalytics404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetCardStatementAnalytics404ApplicationProblemPlusJSONResponse) VisitGetCardStatementAnalyticsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
 
 type RequestExportRequestObject struct {
 }
@@ -1128,8 +1290,63 @@ func (response GetAccountFlows404ApplicationProblemPlusJSONResponse) VisitGetAcc
 	return err
 }
 
+type GetStatementAnalyticsRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type GetStatementAnalyticsResponseObject interface {
+	VisitGetStatementAnalyticsResponse(w http.ResponseWriter) error
+}
+
+type GetStatementAnalytics200JSONResponse StatementAnalytics
+
+func (response GetStatementAnalytics200JSONResponse) VisitGetStatementAnalyticsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetStatementAnalytics401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetStatementAnalytics401ApplicationProblemPlusJSONResponse) VisitGetStatementAnalyticsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetStatementAnalytics404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetStatementAnalytics404ApplicationProblemPlusJSONResponse) VisitGetStatementAnalyticsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// GetCardStatementAnalytics The 12 latest statements of a card closed on or before today, oldest first, split as in getStatementAnalytics.
+	// (GET /accounts/{id}/statement-analytics)
+	GetCardStatementAnalytics(ctx context.Context, request GetCardStatementAnalyticsRequestObject) (GetCardStatementAnalyticsResponseObject, error)
 	// RequestExport Request an archive of every fact of the books (SC6, docs/superpowers/specs/2026-10-26-export-design.md).
 	// (POST /exports)
 	RequestExport(ctx context.Context, request RequestExportRequestObject) (RequestExportResponseObject, error)
@@ -1151,6 +1368,9 @@ type StrictServerInterface interface {
 	// GetAccountFlows Booked inflow and outflow of one account, one item per day in [from, to] that has a posting (A119).
 	// (GET /reports/flows)
 	GetAccountFlows(ctx context.Context, request GetAccountFlowsRequestObject) (GetAccountFlowsResponseObject, error)
+	// GetStatementAnalytics A statement split into purchases, installments, charges and credits, per category (P9).
+	// (GET /statements/{id}/analytics)
+	GetStatementAnalytics(ctx context.Context, request GetStatementAnalyticsRequestObject) (GetStatementAnalyticsResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -1190,6 +1410,32 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// GetCardStatementAnalytics operation middleware
+func (sh *strictHandler) GetCardStatementAnalytics(w http.ResponseWriter, r *http.Request, id ID) {
+	var request GetCardStatementAnalyticsRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCardStatementAnalytics(ctx, request.(GetCardStatementAnalyticsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCardStatementAnalytics")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCardStatementAnalyticsResponseObject); ok {
+		if err := validResponse.VisitGetCardStatementAnalyticsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // RequestExport operation middleware
@@ -1366,6 +1612,32 @@ func (sh *strictHandler) GetAccountFlows(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetAccountFlowsResponseObject); ok {
 		if err := validResponse.VisitGetAccountFlowsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetStatementAnalytics operation middleware
+func (sh *strictHandler) GetStatementAnalytics(w http.ResponseWriter, r *http.Request, id ID) {
+	var request GetStatementAnalyticsRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetStatementAnalytics(ctx, request.(GetStatementAnalyticsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetStatementAnalytics")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetStatementAnalyticsResponseObject); ok {
+		if err := validResponse.VisitGetStatementAnalyticsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

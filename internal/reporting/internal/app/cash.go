@@ -18,13 +18,18 @@ const (
 	ViewCash    View = "cash"
 )
 
-// CardLine is a charge or credit posting of a card in the base currency, with the reference
-// month of its statement (CV1).
+// CardLine is a charge or credit posting of a card, with the reference month of its
+// statement (CV1). Base is true on a card in the base currency (CV6); PlanPurchase is the date
+// of the purchase of the line's installment plan; Anticipation marks a line of a transaction
+// linked anticipation_of.
 type CardLine struct {
 	ID, TransactionID, CardID uuid.UUID
 	Amount                    int64
 	Credit                    bool
 	Statement                 time.Time
+	Base                      bool
+	PlanPurchase              *time.Time
+	Anticipation              bool
 }
 
 type CardPayment struct {
@@ -85,6 +90,9 @@ func paid(f CardFacts) []payment {
 	}
 	var buckets []*bucket
 	for _, l := range f.Lines {
+		if !l.Base {
+			continue
+		}
 		if n := len(buckets); n == 0 || buckets[n-1].card != l.CardID || !buckets[n-1].statement.Equal(l.Statement) {
 			buckets = append(buckets, &bucket{card: l.CardID, statement: l.Statement, shares: Shares{}})
 		}

@@ -19,11 +19,12 @@ var _ StrictServerInterface = (*Server)(nil)
 type Server struct {
 	svc     *app.Service
 	exports *app.Exports
+	clock   app.Clock
 	errs    httpserver.ErrorWriter
 }
 
-func NewServer(svc *app.Service, exports *app.Exports, log *slog.Logger) *Server {
-	return &Server{svc: svc, exports: exports, errs: httpserver.ErrorWriter{Log: log, Map: ToProblem}}
+func NewServer(svc *app.Service, exports *app.Exports, clk app.Clock, log *slog.Logger) *Server {
+	return &Server{svc: svc, exports: exports, clock: clk, errs: httpserver.ErrorWriter{Log: log, Map: ToProblem}}
 }
 
 func (s *Server) Register(mux *http.ServeMux) {

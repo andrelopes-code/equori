@@ -12,27 +12,102 @@ import (
 	"github.com/google/uuid"
 )
 
+const analyticsStatements = `-- name: AnalyticsStatements :many
+SELECT s.id, s.account_id, s.reference_month, s.closing_date, a.instrument,
+       coalesce(lag(s.closing_date) OVER (ORDER BY s.reference_month), '1900-01-01')::date AS previous_closing
+FROM ledger_statement s
+JOIN ledger_account a ON a.id = s.account_id
+WHERE s.user_id = $1 AND s.account_id = $2 AND a.kind = 'credit_card'
+ORDER BY s.reference_month DESC
+`
+
+type AnalyticsStatementsParams struct {
+	UserID int64
+	CardID uuid.UUID
+}
+
+type AnalyticsStatementsRow struct {
+	ID              uuid.UUID
+	AccountID       uuid.UUID
+	ReferenceMonth  time.Time
+	ClosingDate     time.Time
+	Instrument      string
+	PreviousClosing time.Time
+}
+
+// The card's statements with the closing of the one before each, newest first.
+func (q *Queries) AnalyticsStatements(ctx context.Context, arg AnalyticsStatementsParams) ([]AnalyticsStatementsRow, error) {
+	rows, err := q.db.Query(ctx, analyticsStatements, arg.UserID, arg.CardID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AnalyticsStatementsRow
+	for rows.Next() {
+		var i AnalyticsStatementsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.AccountID,
+			&i.ReferenceMonth,
+			&i.ClosingDate,
+			&i.Instrument,
+			&i.PreviousClosing,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const cardInstrument = `-- name: CardInstrument :one
+SELECT instrument FROM ledger_account WHERE user_id = $1 AND id = $2 AND kind = 'credit_card'
+`
+
+type CardInstrumentParams struct {
+	UserID int64
+	ID     uuid.UUID
+}
+
+func (q *Queries) CardInstrument(ctx context.Context, arg CardInstrumentParams) (string, error) {
+	row := q.db.QueryRow(ctx, cardInstrument, arg.UserID, arg.ID)
+	var instrument string
+	err := row.Scan(&instrument)
+	return instrument, err
+}
+
 const cashCardLines = `-- name: CashCardLines :many
-SELECT p.id, p.transaction_id, p.account_id AS card_id, p.amount, p.card_role, s.reference_month
+SELECT p.id, p.transaction_id, p.account_id AS card_id, p.amount, p.card_role, s.reference_month,
+       (a.instrument = st.base_currency)::boolean AS base, o.date AS plan_purchase_date,
+       EXISTS (SELECT 1 FROM ledger_link l WHERE l.user_id = p.user_id AND l.from_transaction_id = p.transaction_id
+               AND l.link_type = 'anticipation_of')::boolean AS anticipation
 FROM ledger_posting p
 JOIN ledger_account a ON a.id = p.account_id
 JOIN ledger_settings st ON st.user_id = p.user_id
 JOIN ledger_statement s ON s.id = p.statement_id
-WHERE p.user_id = $1 AND NOT p.voided AND a.kind = 'credit_card' AND a.instrument = st.base_currency
-  AND p.card_role IN ('charge', 'credit')
+LEFT JOIN ledger_installment_plan ip ON ip.id = p.installment_plan_id
+LEFT JOIN ledger_transaction o ON o.id = ip.origin_transaction_id
+WHERE p.user_id = $1 AND NOT p.voided AND a.kind = 'credit_card' AND p.card_role IN ('charge', 'credit')
 ORDER BY p.account_id, s.reference_month, p.id
 `
 
 type CashCardLinesRow struct {
-	ID             uuid.UUID
-	TransactionID  uuid.UUID
-	CardID         uuid.UUID
-	Amount         int64
-	CardRole       *string
-	ReferenceMonth time.Time
+	ID               uuid.UUID
+	TransactionID    uuid.UUID
+	CardID           uuid.UUID
+	Amount           int64
+	CardRole         *string
+	ReferenceMonth   time.Time
+	Base             bool
+	PlanPurchaseDate *time.Time
+	Anticipation     bool
 }
 
-// CV1: charge and credit postings of the user's cards in the base currency, by card and statement.
+// Charge and credit postings of the user's cards by card and statement; base marks a card in
+// the base currency (CV1, CV6). A line of an installment plan carries the date of its purchase.
 func (q *Queries) CashCardLines(ctx context.Context, userID int64) ([]CashCardLinesRow, error) {
 	rows, err := q.db.Query(ctx, cashCardLines, userID)
 	if err != nil {
@@ -49,6 +124,9 @@ func (q *Queries) CashCardLines(ctx context.Context, userID int64) ([]CashCardLi
 			&i.Amount,
 			&i.CardRole,
 			&i.ReferenceMonth,
+			&i.Base,
+			&i.PlanPurchaseDate,
+			&i.Anticipation,
 		); err != nil {
 			return nil, err
 		}
@@ -231,4 +309,50 @@ func (q *Queries) CashPayments(ctx context.Context, arg CashPaymentsParams) ([]C
 		return nil, err
 	}
 	return items, nil
+}
+
+const chargeCategories = `-- name: ChargeCategories :many
+WITH RECURSIVE c AS (
+    SELECT r.id FROM ledger_account r WHERE r.user_id = $1 AND r.system_role IN ('interest', 'taxes', 'fees')
+    UNION ALL
+    SELECT a.id FROM ledger_account a JOIN c ON a.parent_id = c.id WHERE a.user_id = $1
+)
+SELECT id FROM c
+`
+
+// The system categories interest, taxes and fees with their descendants.
+func (q *Queries) ChargeCategories(ctx context.Context, userID int64) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, chargeCategories, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const statementCard = `-- name: StatementCard :one
+SELECT s.account_id FROM ledger_statement s WHERE s.user_id = $1 AND s.id = $2
+`
+
+type StatementCardParams struct {
+	UserID int64
+	ID     uuid.UUID
+}
+
+func (q *Queries) StatementCard(ctx context.Context, arg StatementCardParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, statementCard, arg.UserID, arg.ID)
+	var account_id uuid.UUID
+	err := row.Scan(&account_id)
+	return account_id, err
 }

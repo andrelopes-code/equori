@@ -1408,6 +1408,45 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /statements/{id}/analytics:
+    get:
+      tags: [reporting]
+      operationId: getStatementAnalytics
+      summary: A statement split into purchases, installments, charges and credits, per category (P9).
+      description: |
+        Each category amount of the statement falls in one part (docs/superpowers/plans/2026-10-26-p9-cash-view.md,
+        section Statement analytics); categories are ordered by total, largest first, then by id.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatementAnalytics"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/statement-analytics:
+    get:
+      tags: [reporting]
+      operationId: getCardStatementAnalytics
+      summary: The 12 latest statements of a card closed on or before today, oldest first, split as in getStatementAnalytics.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardStatementAnalytics"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
   /reports/balances:
     get:
       tags: [reporting]
@@ -8186,6 +8225,59 @@ components:
                 type: string
               rows:
                 type: integer
+    StatementParts:
+      type: object
+      required: [purchases, installments, charges, credits, total]
+      properties:
+        purchases:
+          $ref: "#/components/schemas/Money"
+        installments:
+          $ref: "#/components/schemas/Money"
+        charges:
+          $ref: "#/components/schemas/Money"
+        credits:
+          $ref: "#/components/schemas/Money"
+        total:
+          $ref: "#/components/schemas/Money"
+    StatementCategoryParts:
+      allOf:
+        - $ref: "#/components/schemas/StatementParts"
+        - type: object
+          required: [category_id]
+          properties:
+            category_id:
+              type: string
+              format: uuid
+    StatementAnalytics:
+      allOf:
+        - $ref: "#/components/schemas/StatementAnalyticsItem"
+        - type: object
+          required: [categories]
+          properties:
+            categories:
+              type: array
+              items:
+                $ref: "#/components/schemas/StatementCategoryParts"
+    StatementAnalyticsItem:
+      allOf:
+        - $ref: "#/components/schemas/StatementParts"
+        - type: object
+          required: [statement_id, reference]
+          properties:
+            statement_id:
+              type: string
+              format: uuid
+            reference:
+              type: string
+              pattern: "^[0-9]{4}-[0-9]{2}$"
+    CardStatementAnalytics:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatementAnalyticsItem"
     TransactionBatchInput:
       type: object
       additionalProperties: false

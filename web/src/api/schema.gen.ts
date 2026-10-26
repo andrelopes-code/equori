@@ -845,6 +845,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/statements/{id}/analytics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A statement split into purchases, installments, charges and credits, per category (P9).
+         * @description Each category amount of the statement falls in one part (docs/superpowers/plans/2026-10-26-p9-cash-view.md,
+         *     section Statement analytics); categories are ordered by total, largest first, then by id.
+         */
+        get: operations["getStatementAnalytics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/{id}/statement-analytics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The 12 latest statements of a card closed on or before today, oldest first, split as in getStatementAnalytics. */
+        get: operations["getCardStatementAnalytics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/reports/balances": {
         parameters: {
             query?: never;
@@ -4594,6 +4632,28 @@ export interface components {
                 rows: number;
             }[];
         };
+        StatementParts: {
+            purchases: components["schemas"]["Money"];
+            installments: components["schemas"]["Money"];
+            charges: components["schemas"]["Money"];
+            credits: components["schemas"]["Money"];
+            total: components["schemas"]["Money"];
+        };
+        StatementCategoryParts: components["schemas"]["StatementParts"] & {
+            /** Format: uuid */
+            category_id: string;
+        };
+        StatementAnalytics: components["schemas"]["StatementAnalyticsItem"] & {
+            categories: components["schemas"]["StatementCategoryParts"][];
+        };
+        StatementAnalyticsItem: components["schemas"]["StatementParts"] & {
+            /** Format: uuid */
+            statement_id: string;
+            reference: string;
+        };
+        CardStatementAnalytics: {
+            items: components["schemas"]["StatementAnalyticsItem"][];
+        };
         TransactionBatchInput: {
             entries: components["schemas"]["TransactionBatchEntry"][];
         };
@@ -6398,6 +6458,54 @@ export interface operations {
             409: components["responses"]["Problem"];
             413: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    getStatementAnalytics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementAnalytics"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    getCardStatementAnalytics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardStatementAnalytics"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
         };
     };
     getBalanceSeries: {
