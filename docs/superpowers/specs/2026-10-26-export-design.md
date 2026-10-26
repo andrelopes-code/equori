@@ -79,5 +79,8 @@ A section of `/settings` requests the export, shows its status and size, downloa
 
 ## Out of scope
 
-- Import of an archive of another schema version. The archive names its version, so a migration of archive rows can be added later.
 - Merging an archive into books that hold facts.
+
+## Amendment of 2026-10-26
+
+ADR 021 versions the archive. The manifest of E1 gains `archive_version` and `app_version`; step 1 of E4 refuses an archive above the instance's `archive_version` with `archive_too_new` and migrates an older one before any write, in place of `archive_version_mismatch`. The import of an archive of another schema version leaves the out-of-scope list. Reason: the app is distributed in versions, and an archive of any earlier version must import into any later one.
