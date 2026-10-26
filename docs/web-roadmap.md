@@ -20,8 +20,8 @@ Status snapshot: 2026-10-25, commit `f6ae62e`.
 |---|---|---|---|
 | 1 | Transaction detail: attachments, investment and foreign currency facts | Delivered | — |
 | 2 | Foreign purchase and currency exchange entry | Delivered | — |
-| 3 | Aggregator integrations and connections | Partial | — |
-| 4 | Institution identifiers | Partial | — |
+| 3 | Aggregator integrations and connections | Delivered | — |
+| 4 | Institution identifiers | Delivered | — |
 | 5 | Schedules and occurrences | Delivered | — |
 | 6 | Budgets | Delivered | 5 |
 | 7 | Overview | Delivered | 5, 6, 10 |
@@ -31,7 +31,7 @@ Status snapshot: 2026-10-25, commit `f6ae62e`.
 | 11 | Tax year report of investments | Delivered | 9 |
 | 12 | Reports | Delivered | 10 |
 | 13 | Calendars and holidays | Delivered | — |
-| 14 | Language model settings: usage and privacy | Partial | — |
+| 14 | Language model settings: usage and privacy | Delivered | — |
 | 15 | Category suggestions outside capture | Delivered | 14 |
 | 16 | Assistant chat | Delivered | 14 |
 | 17 | Data export | Delivered | 12 |
