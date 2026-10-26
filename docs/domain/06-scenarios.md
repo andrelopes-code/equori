@@ -817,3 +817,23 @@ Deleting a conversation deletes its messages and proposals; deleting all leaves 
 ### S142 Injection
 
 A payee named with an instruction to void transactions reaches the model only inside a tool result; the scripted void stays a pending proposal, and a rejection leaves the transaction intact. Test: `TestInjectedPayeeNeedsConfirmation`.
+
+## 6.21 Cash view and statement analytics
+
+Scenarios of phase P9 (`docs/superpowers/plans/2026-10-26-p9-cash-view.md`, CV1 to CV6). Itaú Visa closes on day 3 and is due on day 10; amounts are BRL; `GET /reports/categories?class=expense&view=cash` reads one month.
+
+### S145 Statement paid in two parts
+
+Statement 2026-11 holds Supermarket 230.00 (2026-10-14) and laptop installment 1/3 333.34 (S06), amount due 563.34. Payments of 200.00 on 2026-11-10 and 363.34 on 2026-12-05. Cash view: November 2026 Food › Supermarket 81.65, Electronics 118.35 (20,000 × 23,000 / 56,334 = 8,165.58 cents, floor 8,165; 11,834 plus the cent left, the largest share); December 2026 Food › Supermarket 148.35, Electronics 214.99.
+
+### S146 Refund on the statement
+
+Statement 2026-11 holds Supermarket 230.00, laptop installment 1/3 333.34 and a refund of 30.00 of the supermarket purchase dated 2026-10-25, amount due 533.34, paid in full on 2026-11-10. Cash view of November 2026: Food › Supermarket 200.00, Electronics 333.34. Accrual view of October 2026: Food › Supermarket 200.00 (230.00 − 30.00), Electronics 1,000.00.
+
+### S147 Anticipated installments
+
+On 2026-11-15 laptop installments 2/3 and 3/3 (666.66) are anticipated to statement 2026-12 for 640.00 (Discounts 26.66). Statement 2026-12 holds installment 2/3 333.33, its reversal −333.33 and the anticipation 640.00; statement 2027-01 nets 0.00. Statement 2026-11 is paid in full on 2026-11-10 and statement 2026-12, 640.00, on 2026-12-10. Cash view of December 2026: Electronics 666.66 (expense) and Discounts 26.66 (income).
+
+### S148 Analysis of a statement
+
+Statement 2026-12 holds laptop installment 2/3 333.33 (bought 2026-10-20), a Food › Supermarket purchase of 150.00 on 2026-11-20, the annual fee of 40.00 on Fees on 2026-12-01 and a refund of 20.00 of that purchase on 2026-11-25. `GET /statements/{id}/analytics`: Electronics installments 333.33; Food › Supermarket purchases 150.00 and credits −20.00, total 130.00; Fees charges 40.00; totals purchases 150.00, installments 333.33, charges 40.00, credits −20.00, total 503.33.
