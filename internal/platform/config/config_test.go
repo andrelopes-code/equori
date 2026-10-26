@@ -19,7 +19,7 @@ func TestLoad(t *testing.T) {
 			name: "defaults",
 			env:  map[string]string{"EQUORI_DATABASE_URL": "postgres://x"},
 			want: Config{
-				DatabaseURL: "postgres://x", HTTPAddr: ":8080", LogLevel: slog.LevelInfo, TimeZone: time.UTC,
+				DatabaseURL: "postgres://x", HTTPAddr: ":8080", LogLevel: slog.LevelInfo, TimeZone: time.Local,
 				SyncInterval: time.Hour, GeminiURL: "https://generativelanguage.googleapis.com",
 			},
 		},

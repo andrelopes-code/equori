@@ -89,11 +89,15 @@ func Load(getenv func(string) string) (Config, error) {
 			return Config{}, fmt.Errorf("EQUORI_LOG_LEVEL: %w", err)
 		}
 	}
-	tz, err := time.LoadLocation(getenv("EQUORI_TIMEZONE"))
-	if err != nil {
-		return Config{}, fmt.Errorf("EQUORI_TIMEZONE: %w", err)
+	// The host's zone: a container without TZ and without zone files resolves to UTC.
+	cfg.TimeZone = time.Local
+	if name := getenv("EQUORI_TIMEZONE"); name != "" {
+		tz, err := time.LoadLocation(name)
+		if err != nil {
+			return Config{}, fmt.Errorf("EQUORI_TIMEZONE: %w", err)
+		}
+		cfg.TimeZone = tz
 	}
-	cfg.TimeZone = tz
 	if v := getenv("EQUORI_INSECURE_COOKIES"); v != "" {
 		b, err := strconv.ParseBool(v)
 		if err != nil {
@@ -108,6 +112,7 @@ func Load(getenv func(string) string) (Config, error) {
 		}
 		cfg.APIDocs = b
 	}
+	var err error
 	if cfg.SecretKey, err = secretKey(getenv, "EQUORI_SECRET_KEY"); err != nil {
 		return Config{}, err
 	}

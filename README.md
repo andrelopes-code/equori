@@ -29,7 +29,7 @@ docker compose exec app /equori user create --email you@example.com --admin
 | `EQUORI_DATABASE_URL` | set by `compose.yaml` | PostgreSQL connection URL |
 | `EQUORI_HTTP_ADDR` | `:8080` | HTTP listen address |
 | `EQUORI_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
-| `EQUORI_TIMEZONE` | `UTC` | IANA time zone for "today" and month boundaries, e.g. `America/Sao_Paulo` |
+| `EQUORI_TIMEZONE` | the host's zone (UTC in the container image) | IANA time zone for "today" and month boundaries, e.g. `America/Sao_Paulo` |
 | `EQUORI_INSECURE_COOKIES` | `false` | `true` drops the `Secure` cookie attribute; required to log in over plain HTTP from another host |
 | `EQUORI_API_DOCS` | `false` | `true` serves the API reference at `/docs` and the contract at `/openapi.yaml`, both without a session |
 | `EQUORI_SECRET_KEY` | unset | 32 bytes in standard base64 (`openssl rand -base64 32`) that seal integration credentials (ADR 008); without it integrations are unavailable. Keep it outside backups |
