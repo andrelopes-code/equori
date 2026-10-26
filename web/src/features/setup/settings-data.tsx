@@ -5,8 +5,8 @@ import {
   ListItem,
   ListItemBody,
   ListItemContent,
+  ListItemActions,
   ListItemDescription,
-  ListItemEnd,
   ListItemLabel,
 } from "@slotted/react/list-item";
 import { SkeletonText } from "@slotted/react/skeleton";
@@ -68,7 +68,7 @@ export function SettingsData() {
       title={t("settings.data.title")}
       description={t("settings.data.description")}
     >
-      <Stack gap={4}>
+      <Stack gap={5}>
         {current.isError ? (
           <QueryError
             error={current.error}
@@ -77,15 +77,15 @@ export function SettingsData() {
         ) : current.isPending || hasTransactions.isPending ? (
           <SkeletonText lines={4} />
         ) : (
-          <List aria-label={t("settings.data.title")}>
+          <List variant="ruled" aria-label={t("settings.data.title")}>
             <ListItem>
-              <ListItemBody>
-                <ListItemContent>
+              <ListItemContent>
+                <ListItemBody>
                   <ListItemLabel>{t("export.label")}</ListItemLabel>
                   <ListItemDescription>{status()}</ListItemDescription>
-                </ListItemContent>
-              </ListItemBody>
-              <ListItemEnd>
+                </ListItemBody>
+              </ListItemContent>
+              <ListItemActions>
                 {current.data?.status === "ready" && (
                   <ButtonLink
                     size="sm"
@@ -116,21 +116,21 @@ export function SettingsData() {
                 >
                   {t("export.request")}
                 </Button>
-              </ListItemEnd>
+              </ListItemActions>
             </ListItem>
             <ListItem>
-              <ListItemBody>
-                <ListItemContent>
+              <ListItemContent>
+                <ListItemBody>
                   <ListItemLabel>{t("import.label")}</ListItemLabel>
                   <ListItemDescription>
                     {hasTransactions.data === true
                       ? t("import.blocked")
                       : t("import.description")}
                   </ListItemDescription>
-                </ListItemContent>
-              </ListItemBody>
+                </ListItemBody>
+              </ListItemContent>
               {hasTransactions.data === false && (
-                <ListItemEnd>
+                <ListItemActions>
                   <VisuallyHidden>
                     <input
                       ref={input}
@@ -173,7 +173,7 @@ export function SettingsData() {
                   >
                     {t("import.choose")}
                   </Button>
-                </ListItemEnd>
+                </ListItemActions>
               )}
             </ListItem>
           </List>
