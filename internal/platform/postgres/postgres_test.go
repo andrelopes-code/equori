@@ -69,3 +69,44 @@ func TestMigrateAcceptsEmptyDatabase(t *testing.T) {
 		t.Fatalf("Migrate() on an empty database: %v", err)
 	}
 }
+
+func TestPending(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+	discard := slog.New(slog.NewTextHandler(io.Discard, nil))
+	empty := pgtest.Empty(t)
+	if _, pending, err := postgres.Pending(ctx, empty); err != nil || pending {
+		t.Fatalf("empty database: pending %v, %v; want false", pending, err)
+	}
+	if err := postgres.MigrateTo(ctx, empty, 5, discard); err != nil {
+		t.Fatal(err)
+	}
+	if current, pending, err := postgres.Pending(ctx, empty); err != nil || !pending || current != 5 {
+		t.Fatalf("at version 5: %d, %v, %v; want 5, true", current, pending, err)
+	}
+	if _, pending, err := postgres.Pending(ctx, pgtest.New(t)); err != nil || pending {
+		t.Fatalf("migrated: pending %v, %v; want false", pending, err)
+	}
+}
+
+// The compose and test servers run postgres:18-alpine; musl orders by code point, as the builtin
+// provider of managed mode does (ADR 022, M4). A failure here disproves that premise: stop and report.
+func TestTestServerOrdersByCodePoint(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+	var got string
+	if err := pool.QueryRow(t.Context(), "SELECT string_agg(x, ',' ORDER BY x) FROM (VALUES ('banco'), ('Água'), ('Zebra'), ('Banco')) v(x)").Scan(&got); err != nil {
+		t.Fatal(err)
+	}
+	if got != "Banco,Zebra,banco,Água" {
+		t.Fatalf("order = %q", got)
+	}
+}
+
+func TestLocale(t *testing.T) {
+	t.Parallel()
+	provider, _, err := postgres.Locale(t.Context(), pgtest.New(t))
+	if err != nil || provider != "c" {
+		t.Fatalf("Locale() provider = %q, %v; want %q (libc)", provider, err, "c")
+	}
+}

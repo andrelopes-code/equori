@@ -3,6 +3,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -61,17 +62,12 @@ func Migrate(ctx context.Context, pool *pgxpool.Pool, log *slog.Logger) error {
 
 // MigrateTo applies the migrations up to version; tests of data migrations stop before theirs.
 func MigrateTo(ctx context.Context, pool *pgxpool.Pool, version int64, log *slog.Logger) error {
-	dir, err := fs.Sub(db.Migrations, "migrations")
+	provider, sqlDB, err := newProvider(pool)
 	if err != nil {
 		return err
 	}
-	sqlDB := stdlib.OpenDBFromPool(pool)
 	defer sqlDB.Close()
 
-	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, dir)
-	if err != nil {
-		return fmt.Errorf("create migration provider: %w", err)
-	}
 	current, err := provider.GetDBVersion(ctx)
 	if err != nil {
 		return fmt.Errorf("read schema version: %w", err)
@@ -89,4 +85,45 @@ func MigrateTo(ctx context.Context, pool *pgxpool.Pool, version int64, log *slog
 		log.Info("migration applied", "version", r.Source.Version, "duration", r.Duration)
 	}
 	return nil
+}
+
+// Pending reports the schema version and whether migrations remain; a fresh database (version 0)
+// holds nothing to back up, so it reports none.
+func Pending(ctx context.Context, pool *pgxpool.Pool) (current int64, pending bool, err error) {
+	provider, sqlDB, err := newProvider(pool)
+	if err != nil {
+		return 0, false, err
+	}
+	defer sqlDB.Close()
+	if current, err = provider.GetDBVersion(ctx); err != nil {
+		return 0, false, fmt.Errorf("read schema version: %w", err)
+	}
+	latest, err := LatestVersion()
+	if err != nil {
+		return 0, false, err
+	}
+	return current, current > 0 && current < latest, nil
+}
+
+// Locale returns the locale provider (b builtin, c libc, i icu) and locale of the database.
+func Locale(ctx context.Context, pool *pgxpool.Pool) (provider, locale string, err error) {
+	err = pool.QueryRow(ctx, "SELECT datlocprovider::text, coalesce(datlocale, '') FROM pg_database WHERE datname = current_database()").Scan(&provider, &locale)
+	if err != nil {
+		return "", "", fmt.Errorf("read database locale: %w", err)
+	}
+	return provider, locale, nil
+}
+
+func newProvider(pool *pgxpool.Pool) (*goose.Provider, *sql.DB, error) {
+	dir, err := fs.Sub(db.Migrations, "migrations")
+	if err != nil {
+		return nil, nil, err
+	}
+	sqlDB := stdlib.OpenDBFromPool(pool)
+	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, dir)
+	if err != nil {
+		_ = sqlDB.Close()
+		return nil, nil, fmt.Errorf("create migration provider: %w", err)
+	}
+	return provider, sqlDB, nil
 }
