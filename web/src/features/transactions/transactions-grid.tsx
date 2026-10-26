@@ -215,6 +215,7 @@ export function TransactionsGrid({
         <CategoryCell
           row={row}
           categories={categories}
+          withMark={!growsWithPage}
           onCategorize={
             row.voided || row.transfer
               ? undefined

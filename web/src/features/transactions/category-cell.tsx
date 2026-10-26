@@ -2,6 +2,7 @@ import { Button } from "@slotted/react/button";
 import { Text } from "@slotted/react/typography";
 
 import type { CategoryEntry } from "@/features/categories";
+import { CategorizationMark } from "@/features/transactions/categorization-mark";
 import styles from "@/features/transactions/transactions-grid.module.css";
 import type { ListRow } from "@/features/transactions/use-transaction-list";
 import { useT } from "@/i18n/i18n-provider";
@@ -10,11 +11,14 @@ export function CategoryCell({
   row,
   categories,
   onCategorize,
+  withMark = false,
 }: {
   row: ListRow;
   categories: Map<string, CategoryEntry>;
   // Present when the row can be categorized from the list.
   onCategorize?: (() => void) | undefined;
+  // Below 600 px the mark of the method stands on the title's line of details instead.
+  withMark?: boolean;
 }) {
   const t = useT();
   if (row.transfer) {
@@ -43,19 +47,27 @@ export function CategoryCell({
   const whole = entries.map((e) => e.path).join(", ");
   // The category's mark leads the row; the cell names it.
   const content = <span className={styles.cut}>{name}</span>;
-  return onCategorize === undefined ? (
-    <span title={whole}>{content}</span>
-  ) : (
-    <Button
-      size="sm"
-      variant="ghost"
-      tone="secondary"
-      title={whole}
-      aria-label={t("transactions.changeCategory", { category: whole })}
-      onClick={onCategorize}
-      className={styles.categoryButton}
-    >
-      {content}
-    </Button>
+  const cell =
+    onCategorize === undefined ? (
+      <span title={whole}>{content}</span>
+    ) : (
+      <Button
+        size="sm"
+        variant="ghost"
+        tone="secondary"
+        title={whole}
+        aria-label={t("transactions.changeCategory", { category: whole })}
+        onClick={onCategorize}
+        className={styles.categoryButton}
+      >
+        {content}
+      </Button>
+    );
+  if (!withMark) return cell;
+  return (
+    <span className={styles.marked}>
+      {cell}
+      <CategorizationMark categorization={row.categorization} />
+    </span>
   );
 }

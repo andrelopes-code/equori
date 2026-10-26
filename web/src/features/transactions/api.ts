@@ -292,6 +292,22 @@ export async function similarTransactions(
   return page.items;
 }
 
+// How the categories of one page of the list were decided, in one call (A79).
+export function categorizationsQuery(
+  api: Client<paths>,
+  ids: readonly string[],
+) {
+  return queryOptions({
+    queryKey: [...transactionKeys.all, "categorizations", ids] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/categorizations", {
+          params: { query: { transaction_id: [...ids] } },
+        }),
+      ),
+  });
+}
+
 export function categorizationQuery(api: Client<paths>, id: string) {
   return queryOptions({
     queryKey: [...transactionKeys.detail(id), "categorization"] as const,

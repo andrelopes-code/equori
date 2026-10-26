@@ -4,6 +4,7 @@ import { Text } from "@slotted/react/typography";
 import { CategoryMark } from "@/features/categories";
 import type { CategoryEntry } from "@/features/categories";
 import { AmountCell } from "@/features/transactions/amount-cell";
+import { CategorizationMark } from "@/features/transactions/categorization-mark";
 import styles from "@/features/transactions/transactions-grid.module.css";
 import type { ListRow } from "@/features/transactions/use-transaction-list";
 import { useT } from "@/i18n/i18n-provider";
@@ -67,10 +68,21 @@ export function TitleCell({
             </span>
           )}
         </span>
-        {detail !== "" && (
-          <Text size="sm" tone="muted" className={styles.cut}>
-            {detail}
-          </Text>
+        {amount !== undefined && row.categorization?.method != null ? (
+          <span className={styles.line}>
+            <CategorizationMark categorization={row.categorization} />
+            {detail !== "" && (
+              <Text size="sm" tone="muted" className={styles.cut}>
+                {detail}
+              </Text>
+            )}
+          </span>
+        ) : (
+          detail !== "" && (
+            <Text size="sm" tone="muted" className={styles.cut}>
+              {detail}
+            </Text>
+          )
         )}
       </span>
     </span>
