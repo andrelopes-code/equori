@@ -247,6 +247,7 @@ The system prompt is a Go template in `internal/assistant/internal/app/prompt.go
 6. Writes: write tools create proposals; tell the user to confirm on the card; never say that a change happened before a confirmation result exists in the history.
 7. Untrusted text (section 11).
 8. Format: short paragraphs and lists, Markdown links to screens from `get_help`, no tables, no headings, no code blocks.
+   Amendment of 2026-10-26: when an answer compares three or more rows on two or more columns, the model writes one GFM table with a header row; any other table, headings, code blocks and charts stay out. Reason: a comparison of several accounts, months or categories written as a list repeats every column name on every item.
 
 The template takes no text from the user other than the locale codes and the page path, which the API validates (`^[a-z]{2,3}$`, `^[A-Z]{2}$`, `^/[A-Za-z0-9/_$.-]{0,199}$`).
 
@@ -263,6 +264,7 @@ The template takes no text from the user other than the locale codes and the pag
 - Before the first message of a conversation the panel shows the notice of `getAssistantChat`: provider and model, and, for `trains`, the sentence that the provider uses the content sent to improve its products and that people may read it. When `available` is false it shows the reason and `retry_at`, and disables the input.
 - During a turn the panel shows the `step` events as a progress line naming the tool's task (`assistant.step.<tool>` in the catalogs).
 - Messages render a Markdown subset: paragraphs, bullet and numbered lists, bold, and links (section 9). While privacy mode is on, every text segment that matches the amount pattern of `expectNoAmounts` is replaced with the mask of `useMoneyFormat()` (audit item 11).
+- Amendment of 2026-10-26: the subset adds GFM tables. A table renders with the Slotted `table` family, its header cells carry `scope="col"`, it scrolls sideways below 600 px, and privacy mode masks amounts in its cells as in text. A malformed table, and any Markdown outside the subset, renders as text. Charts stay out (section 1, non-goals).
 - A proposal renders as a card: action label, target, a list of changes (`before` → `after`, amounts through `useMoneyFormat()`), and Confirm and Reject buttons. States `executed`, `failed`, `rejected`, `stale`, `discarded`, `executing` and expired show their label and no buttons. A failed execution shows the tool error's detail.
 - Exhausted quota (`assistant_exhausted`) shows the time of return in the user's locale and disables the input until then.
 - Conversation list: newest first, each with title and date, with delete; a "delete all" action asks for confirmation.
