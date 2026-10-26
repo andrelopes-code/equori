@@ -51,4 +51,28 @@ describe("parseAnswer", () => {
     expect(find(tree, "heading")).toHaveLength(0);
     expect(text(tree)).toBe("# Title");
   });
+
+  it("reads a GFM table with its alignment", () => {
+    const tree = parseAnswer(
+      "Totals:\n\n| Category | Oct |\n| :--- | ---: |\n| Food | 1 |\n| Rent | 2 |",
+    );
+    const table = find(tree, "table")[0];
+    expect(table?.align).toEqual(["left", "right"]);
+    expect(find(tree, "tableRow")).toHaveLength(3);
+    expect(find(tree, "tableRow")[1]?.children?.map(text)).toEqual([
+      "Food",
+      "1",
+    ]);
+  });
+
+  it("keeps rows without a delimiter line as text", () => {
+    const tree = parseAnswer("| a | b |\n| c | d |");
+    expect(find(tree, "table")).toHaveLength(0);
+    expect(text(tree)).toBe("| a | b |\n| c | d |");
+  });
+
+  it("keeps a delimiter line of another width as text", () => {
+    const tree = parseAnswer("| a | b |\n| --- |\n| c | d |");
+    expect(find(tree, "table")).toHaveLength(0);
+  });
 });

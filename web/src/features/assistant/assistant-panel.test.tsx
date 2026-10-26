@@ -1,9 +1,10 @@
-import { act, screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AssistantPanel } from "@/features/assistant/assistant-panel";
 import { catalogEn } from "@/i18n/catalog.en";
+import { writeLocale } from "@/i18n/locale";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { expectNoAmounts, hideAmounts } from "@/testing/privacy";
 import { renderWithRouter } from "@/testing/render-app";
@@ -217,6 +218,65 @@ describe("AssistantPanel", () => {
     );
     if (panel === null) throw new Error("the panel is not rendered");
     expectNoAmounts(panel, ["1.234,56"]);
+  });
+
+  // Language en, region DE, amounts in EUR as the model writes them for de-DE.
+  const table = [
+    "Spending by month:",
+    "",
+    "| Category | October | November |",
+    "| :--- | ---: | ---: |",
+    "| Food | 1.234,56 € | 98,50 € |",
+    "| Rent | 900,00 € | 900,00 € |",
+    "| Car | 60,00 € | 75,10 € |",
+  ].join("\n");
+
+  async function answer(content: string, hidden = false) {
+    localStorage.clear();
+    if (hidden) hideAmounts();
+    writeLocale({ language: "en", region: "DE" });
+    const stream = turnStream();
+    setup({
+      "POST /api/v1/assistant/turns": () => stream.response(),
+      "GET /api/v1/assistant/conversations/c1": () =>
+        json(200, detail(content)),
+    });
+    await ask("How much?");
+    act(() => {
+      stream.write(
+        `event: turn\ndata: {"conversation_id":"c1","message_id":"m1"}\n\nevent: answer\ndata: ${JSON.stringify(message(content))}\n\n`,
+      );
+      stream.close();
+    });
+  }
+
+  it("renders a table of an answer with column headers", async () => {
+    await answer(table);
+    const grid = await screen.findByRole("table");
+    const headers = within(grid).getAllByRole("columnheader");
+    expect(headers.map((h) => h.textContent)).toEqual([
+      "Category",
+      "October",
+      "November",
+    ]);
+    for (const h of headers) expect(h).toHaveAttribute("scope", "col");
+    expect(within(grid).getAllByRole("row")).toHaveLength(4);
+    expect(within(grid).getByText("1.234,56 €")).toBeInTheDocument();
+  });
+
+  it("masks the amounts in the cells of a table while privacy is on", async () => {
+    await answer(table, true);
+    const grid = await screen.findByRole("table");
+    expect(within(grid).getByText("Food")).toBeInTheDocument();
+    expectNoAmounts(grid, ["1.234,56", "98,50", "900,00", "60,00", "75,10"]);
+  });
+
+  it("shows a malformed table as text", async () => {
+    await answer("| Category | October |\n| Food | 98,50 € |");
+    expect(
+      await screen.findByText(/\| Food \| 98,50 € \|/),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("table")).toBeNull();
   });
 
   it("navigates through the router on a link to a screen", async () => {
