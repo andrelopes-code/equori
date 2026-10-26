@@ -66,7 +66,7 @@ export function GoalCard({
   return (
     <Card
       render={(props) => <article {...props} aria-label={goal.name} />}
-      fill={state === "reached" ? "subtle" : "outline"}
+      fill="outline"
     >
       <CardHeader>
         <Heading level={3} size="md">
