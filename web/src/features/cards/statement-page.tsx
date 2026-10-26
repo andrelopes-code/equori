@@ -47,6 +47,7 @@ import { RefundDialog } from "@/features/cards/refund-dialog";
 import { addMonths, currentMonth } from "@/features/cards/reference-months";
 import { StatementFigures } from "@/features/cards/statement-figures";
 import { neighbours } from "@/features/cards/statement-groups";
+import { StatementAnalysis } from "@/features/cards/statement-analysis";
 import { StatementLines } from "@/features/cards/statement-lines";
 import {
   statementStatusTone,
@@ -279,6 +280,13 @@ export function StatementPage() {
                 ) : null
               }
             />
+            {s.status !== "open" && (
+              <StatementAnalysis
+                accountId={accountId}
+                statementId={statementId}
+                scale={sc(s.amount_due.currency)}
+              />
+            )}
           </Stack>
         )}
       </PageBody>

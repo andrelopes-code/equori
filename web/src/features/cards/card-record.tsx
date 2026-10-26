@@ -33,6 +33,7 @@ import { InstallmentPurchaseDialog } from "@/features/cards/installment-purchase
 import { PlansTab } from "@/features/cards/plans-tab";
 import { PlasticCardsTab } from "@/features/cards/plastic-cards-tab";
 import { addMonths, currentMonth } from "@/features/cards/reference-months";
+import { CardAnalysis } from "@/features/cards/card-analysis";
 import { StatementsChart } from "@/features/cards/statements-chart";
 import { StatementsTab } from "@/features/cards/statements-tab";
 import { useCommitments } from "@/features/cards/use-commitments";
@@ -120,6 +121,7 @@ export function CardRecord({
         scale={scale(account.currency)}
         loading={statements.isPending}
       />
+      <CardAnalysis accountId={account.id} scale={scale(account.currency)} />
     </>
   );
   return (

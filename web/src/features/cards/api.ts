@@ -24,6 +24,8 @@ export const cardKeys = {
   account: (a: string) => [...accountKeys.detail(a), "account"] as const,
   disputes: (t: string) => [...transactionKeys.detail(t), "disputes"] as const,
   plan: (p: string) => ["transactions", "plan", p] as const,
+  analytics: (a: string, s: string) =>
+    [...accountKeys.detail(a), "analytics", s] as const,
 };
 
 // A119: the account's booked inflow and outflow per day in [from, to].
@@ -449,4 +451,36 @@ export function useAnticipate() {
         }),
       ),
   );
+}
+
+// A statement split into purchases, installments, charges and credits per category (P9).
+export function statementAnalyticsQuery(
+  api: Client<paths>,
+  accountId: string,
+  statementId: string,
+) {
+  return queryOptions({
+    queryKey: cardKeys.analytics(accountId, statementId),
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/statements/{id}/analytics", {
+          params: { path: { id: statementId } },
+        }),
+      ),
+  });
+}
+
+// The card's 12 latest closed statements, split as one statement is.
+export function cardAnalyticsQuery(api: Client<paths>, accountId: string) {
+  return queryOptions({
+    queryKey: cardKeys.analytics(accountId, "card"),
+    queryFn: async () =>
+      (
+        await unwrap(
+          await api.GET("/accounts/{id}/statement-analytics", {
+            params: { path: { id: accountId } },
+          }),
+        )
+      ).items,
+  });
 }
