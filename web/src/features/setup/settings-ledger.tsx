@@ -4,8 +4,9 @@ import {
   FieldError,
   FieldLabel,
 } from "@slotted/react/field";
+import { Link } from "@slotted/react/link";
+import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 
 import { useApi } from "@/api/api-context";
@@ -19,9 +20,11 @@ import {
 import { SettingsSection } from "@/features/setup/settings-section";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
+import { useAppLink } from "@/ui/use-app-link";
 
 export function SettingsLedger() {
   const t = useT();
+  const follow = useAppLink();
   const api = useApi();
   const settings = useQuery(settingsQuery(api));
   const instruments = useQuery(instrumentsQuery(api));
@@ -75,7 +78,11 @@ export function SettingsLedger() {
           <FieldError>{currencyError}</FieldError>
         )}
       </Field>
-      <Link to="/instruments">{t("settings.ledger.instruments")}</Link>
+      <Text size="sm">
+        <Link href="/instruments" onClick={follow({ to: "/instruments" })}>
+          {t("settings.ledger.instruments")}
+        </Link>
+      </Text>
     </SettingsSection>
   );
 }
