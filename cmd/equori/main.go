@@ -53,7 +53,10 @@ func main() {
 	case "healthcheck":
 		os.Exit(healthcheck())
 	case "version":
-		fmt.Println(buildVersion())
+		var text string
+		if text, err = versionText(buildVersion()); err == nil {
+			fmt.Print(text)
+		}
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command %q; available: serve, user, reporting, portfolio, planning, secrets, healthcheck, version\n", cmd)
 		os.Exit(2)
@@ -69,7 +72,11 @@ func serve() error {
 	if err != nil {
 		return err
 	}
-	log.Info("starting equori", "version", buildVersion(), "timezone", cfg.TimeZone.String())
+	schema, err := postgres.LatestVersion()
+	if err != nil {
+		return err
+	}
+	log.Info("starting equori", "version", buildVersion(), "schema", schema, "timezone", cfg.TimeZone.String())
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
