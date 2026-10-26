@@ -13,9 +13,12 @@ import type { CategoryClass } from "@/features/categories/category-paths";
 
 type AccountInput = components["schemas"]["AccountInput"];
 
+// When an amount counts: on its transaction date, or when the money left a balance account.
+export type CategoryView = "accrual" | "cash";
+
 export const categoryKeys = {
-  totals: (from: string, to: string, cls: CategoryClass) =>
-    ["reports", "categories", from, to, cls] as const,
+  totals: (from: string, to: string, cls: CategoryClass, view: CategoryView) =>
+    ["reports", "categories", from, to, cls, view] as const,
 };
 
 export function categoryTotalsQuery(
@@ -23,14 +26,22 @@ export function categoryTotalsQuery(
   from: string,
   to: string,
   cls: CategoryClass,
+  view: CategoryView = "accrual",
 ) {
   return queryOptions({
-    queryKey: categoryKeys.totals(from, to, cls),
+    queryKey: categoryKeys.totals(from, to, cls, view),
     queryFn: async () =>
       (
         await unwrap(
           await api.GET("/reports/categories", {
-            params: { query: { from, to, class: cls } },
+            params: {
+              query: {
+                from,
+                to,
+                class: cls,
+                ...(view === "cash" ? { view } : {}),
+              },
+            },
           }),
         )
       ).items,

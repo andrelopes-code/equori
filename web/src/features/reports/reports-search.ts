@@ -23,6 +23,8 @@ export interface ReportsSearch {
   to?: string | undefined;
   // The class of the categories tab; expense when absent.
   class?: "income" | undefined;
+  // The view of the categories tab; accrual when absent.
+  view?: "cash" | undefined;
   // The category whose children the categories tab lists; the top level when absent.
   parent?: string | undefined;
   // The account of the flows tab; the first open account when absent.
@@ -62,6 +64,7 @@ export function validateReportsSearch(
     from: period ? from : undefined,
     to: period ? to : undefined,
     class: raw.class === "income" ? "income" : undefined,
+    view: raw.view === "cash" ? "cash" : undefined,
     parent: matching(raw.parent, uuidPattern),
     account: matching(raw.account, uuidPattern),
     by: raw.by === "month" ? "month" : undefined,

@@ -57,6 +57,8 @@ import { FiguresRow } from "@/features/categories/figures-row";
 import { settingsQuery, useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { MonthControl } from "@/ui/month-control";
+import { CategoryViewControl } from "@/features/categories/category-view-control";
+import { CategoryViewNote } from "@/features/categories/category-view-note";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useToday } from "@/i18n/today";
 
@@ -89,16 +91,17 @@ export function CategoriesPage() {
   const search = useSearch({ from: "/_authed/categories" });
   const month = search.month ?? today.slice(0, 7);
   const cls: CategoryClass = search.class ?? "expense";
+  const view = search.view ?? "accrual";
   const showArchived = search.archived === true;
   const { from, to } = monthBounds(month);
 
   const accounts = useQuery(accountsQuery(api));
   const settings = useQuery(settingsQuery(api));
-  const totals = useQuery(categoryTotalsQuery(api, from, to, cls));
+  const totals = useQuery(categoryTotalsQuery(api, from, to, cls, view));
   const before = previousMonth(month);
   const comparable = comparableBounds(month, today);
   const previousTotals = useQuery(
-    categoryTotalsQuery(api, comparable.from, comparable.to, cls),
+    categoryTotalsQuery(api, comparable.from, comparable.to, cls, view),
   );
   const scale = useScale();
   const archive = useArchiveCategory();
@@ -113,7 +116,7 @@ export function CategoriesPage() {
   const history = useQueries({
     queries: months.map((m) => {
       const bounds = monthBounds(m);
-      return categoryTotalsQuery(api, bounds.from, bounds.to, cls);
+      return categoryTotalsQuery(api, bounds.from, bounds.to, cls, view);
     }),
     combine: combineHistory,
   });
@@ -280,6 +283,12 @@ export function CategoriesPage() {
               <Segment value="expense">{t("category.group.expense")}</Segment>
               <Segment value="income">{t("category.group.income")}</Segment>
             </SegmentedControl>
+            <CategoryViewControl
+              value={view}
+              onChange={(next) => {
+                setSearch({ view: next === "cash" ? "cash" : undefined });
+              }}
+            />
             <Switch
               checked={showArchived}
               onCheckedChange={(checked) => {
@@ -289,6 +298,7 @@ export function CategoriesPage() {
               {t("category.showArchived")}
             </Switch>
           </Inline>
+          <CategoryViewNote view={view} />
           <div className={styles.summary}>
             {scale !== null && currency !== undefined && (
               <FiguresRow

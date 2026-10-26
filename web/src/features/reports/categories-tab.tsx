@@ -34,7 +34,12 @@ import { useMemo } from "react";
 
 import { useApi } from "@/api/api-context";
 import { accountsQuery } from "@/features/accounts";
-import { categoryTotalsQuery, useCategoryEntries } from "@/features/categories";
+import {
+  categoryTotalsQuery,
+  CategoryViewControl,
+  CategoryViewNote,
+  useCategoryEntries,
+} from "@/features/categories";
 import { periodProblem } from "@/features/portfolio";
 import { categoryRows } from "@/features/reports/category-rows";
 import type { CategoryRow } from "@/features/reports/category-rows";
@@ -76,6 +81,7 @@ export function CategoriesTab({
   const reportLink = useReportLink();
   const follow = useAppLink();
   const cls = search.class ?? "expense";
+  const view = search.view ?? "accrual";
   const compare = search.compare === true;
   const before = previousPeriod(period);
   const problem = periodProblem(period.from, period.to);
@@ -83,11 +89,11 @@ export function CategoriesTab({
   const accounts = useQuery(accountsQuery(api));
   const entries = useCategoryEntries(accounts.data);
   const current = useQuery({
-    ...categoryTotalsQuery(api, period.from, period.to, cls),
+    ...categoryTotalsQuery(api, period.from, period.to, cls, view),
     enabled: problem === undefined,
   });
   const previous = useQuery({
-    ...categoryTotalsQuery(api, before.from, before.to, cls),
+    ...categoryTotalsQuery(api, before.from, before.to, cls, view),
     enabled: problem === undefined && compare,
   });
   const level = useMemo(
@@ -247,6 +253,14 @@ export function CategoriesTab({
             <Segment value="income">{t("report.class.income")}</Segment>
           </SegmentedControl>
         }
+        middle={
+          <CategoryViewControl
+            value={view}
+            onChange={(next) => {
+              onChange({ view: next === "cash" ? "cash" : undefined });
+            }}
+          />
+        }
         end={
           <CompareSwitch
             checked={compare}
@@ -256,6 +270,7 @@ export function CategoriesTab({
           />
         }
       />
+      <CategoryViewNote view={view} />
       {open !== undefined && (
         <Breadcrumb aria-label={t("report.categories.trail")}>
           <BreadcrumbList>

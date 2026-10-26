@@ -1,10 +1,11 @@
 export interface CategoriesSearch {
   month?: string;
   class?: "income";
+  view?: "cash";
   archived?: true;
 }
 
-// Expense and the current month are the defaults and stay out of the address.
+// Expense, accrual and the current month are the defaults and stay out of the address.
 export function validateCategoriesSearch(
   raw: Record<string, unknown>,
 ): CategoriesSearch {
@@ -15,6 +16,7 @@ export function validateCategoriesSearch(
   return {
     ...(month === undefined ? {} : { month }),
     ...(raw.class === "income" ? { class: "income" as const } : {}),
+    ...(raw.view === "cash" ? { view: "cash" as const } : {}),
     ...(raw.archived === true ? { archived: true as const } : {}),
   };
 }

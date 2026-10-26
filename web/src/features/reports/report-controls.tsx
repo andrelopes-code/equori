@@ -7,14 +7,24 @@ import type { ReactNode } from "react";
 // report.
 export function ReportControls({
   start,
+  middle,
   end,
 }: {
   start?: ReactNode;
+  // A second control beside start.
+  middle?: ReactNode;
   end?: ReactNode;
 }) {
   return (
     <Inline gap={4} justify="between" align="center" wrap="wrap">
-      {start}
+      {middle === undefined ? (
+        start
+      ) : (
+        <Inline gap={4} align="center" wrap="wrap">
+          {start}
+          {middle}
+        </Inline>
+      )}
       <Inline gap={4} align="center" wrap="wrap">
         {end}
       </Inline>

@@ -20,3 +20,6 @@ export { useCategoryEntries } from "@/features/categories/use-category-entries";
 export { RuleEditorPage } from "@/features/categories/rule-editor-page";
 export { validateRulePrefill } from "@/features/categories/rule-prefill";
 export { categoryTotalsQuery } from "@/features/categories/api";
+export type { CategoryView } from "@/features/categories/api";
+export { CategoryViewControl } from "@/features/categories/category-view-control";
+export { CategoryViewNote } from "@/features/categories/category-view-note";

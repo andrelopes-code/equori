@@ -29,6 +29,13 @@ export const reportsPtBR: Record<keyof typeof reportsEn, string> = {
   "report.class": "Classe",
   "report.class.expense": "Despesa",
   "report.class.income": "Receita",
+  "view.label": "Visão",
+  "view.accrual": "Competência",
+  "view.cash": "Caixa",
+  "view.accrual.rule":
+    "Cada valor conta na data da transação; uma compra parcelada conta inteira na data da compra.",
+  "view.cash.rule":
+    "Uma compra no cartão conta quando a fatura é paga, na proporção do pagamento; os demais valores contam na sua data.",
   "report.period.thisQuarter": "Este trimestre",
   "report.period.lastQuarter": "Trimestre passado",
   "report.period.quarterOf": "{quarter}º tri {year}",
