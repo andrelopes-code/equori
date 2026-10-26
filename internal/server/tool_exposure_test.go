@@ -99,6 +99,7 @@ var exposure = map[string]string{
 	"createTransactionBatch":           "record_transaction",
 	"previewCapture":                   "-capture",
 	"suggestCaptureCategories":         "-capture",
+	"suggestTransactionCategories":     "-capture",
 	"getCommitment":                    "get_account_details",
 	"payStatement":                     "settle_statement",
 	"financeStatement":                 "settle_statement",

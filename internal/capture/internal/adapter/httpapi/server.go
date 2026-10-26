@@ -43,6 +43,12 @@ func toProblem(err error) (problem.Details, bool) {
 	switch {
 	case errors.Is(err, app.ErrTooManySuggestions):
 		return problem.New(http.StatusBadRequest, "invalid_request", err.Error()), true
+	case errors.Is(err, app.ErrTransactionNotFound):
+		return problem.New(http.StatusNotFound, "not_found", err.Error()), true
+	case errors.Is(err, app.ErrNotUncategorized):
+		d := problem.New(http.StatusUnprocessableEntity, "transaction_not_uncategorized", err.Error())
+		d.Errors = []problem.FieldError{{Field: "transaction_ids", Message: err.Error()}}
+		return d, true
 	case errors.Is(err, app.ErrTooManyLines):
 		return problem.New(http.StatusUnprocessableEntity, "too_many_lines", err.Error()), true
 	case errors.Is(err, app.ErrDefaultAccount):
@@ -138,11 +144,31 @@ func (s *Server) SuggestCaptureCategories(ctx context.Context, req SuggestCaptur
 		if sg.CategoryID == uuid.Nil {
 			continue
 		}
-		source := Kept
+		source := CaptureSuggestionSourceKept
 		if sg.FromModel {
-			source = Model
+			source = CaptureSuggestionSourceModel
 		}
 		out.Items[i] = CaptureSuggestion{CategoryId: optUUID(sg.CategoryID), Source: &source}
+	}
+	return out, nil
+}
+
+func (s *Server) SuggestTransactionCategories(ctx context.Context, req SuggestTransactionCategoriesRequestObject) (SuggestTransactionCategoriesResponseObject, error) {
+	suggestions, available, err := s.svc.SuggestForTransactions(ctx, auth.MustUserID(ctx), req.Body.TransactionIds)
+	if err != nil {
+		return nil, err
+	}
+	out := SuggestTransactionCategories200JSONResponse{Available: available, Items: make([]TransactionSuggestion, len(suggestions))}
+	for i, sg := range suggestions {
+		out.Items[i].TransactionId = req.Body.TransactionIds[i]
+		if sg.CategoryID == uuid.Nil {
+			continue
+		}
+		source := TransactionSuggestionSourceKept
+		if sg.FromModel {
+			source = TransactionSuggestionSourceModel
+		}
+		out.Items[i].CategoryId, out.Items[i].Source = optUUID(sg.CategoryID), &source
 	}
 	return out, nil
 }

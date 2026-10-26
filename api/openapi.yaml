@@ -2003,6 +2003,37 @@ paths:
           $ref: "#/components/responses/Problem"
         "401":
           $ref: "#/components/responses/Problem"
+  /transactions/category-suggestions:
+    post:
+      tags: [capture]
+      operationId: suggestTransactionCategories
+      summary: Name a category for existing uncategorized transactions (ADR 014 L1a).
+      description: |
+        Each transaction is asked as a capture line of its class with its description, under the use capture.suggest.
+        Nothing is recorded; categorizeTransactions records an accepted suggestion. 404 not_found when an id is not
+        one of the user's transactions; 422 transaction_not_uncategorized when one is not an uncategorized expense or
+        income.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionSuggestionInput"
+      responses:
+        "200":
+          description: One suggestion per transaction, in input order.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionSuggestions"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /assistant/presets:
     get:
       tags: [assistant]
@@ -7963,6 +7994,44 @@ components:
     CaptureSuggestion:
       type: object
       properties:
+        category_id:
+          type: string
+          format: uuid
+          description: Absent when no category is named.
+        source:
+          type: string
+          enum: [kept, model]
+          description: Absent when no category is named.
+    TransactionSuggestionInput:
+      type: object
+      additionalProperties: false
+      required: [transaction_ids]
+      properties:
+        transaction_ids:
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            type: string
+            format: uuid
+    TransactionSuggestions:
+      type: object
+      required: [items, available]
+      properties:
+        available:
+          type: boolean
+          description: False when the language model could not be asked; the items then hold kept answers only.
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransactionSuggestion"
+    TransactionSuggestion:
+      type: object
+      required: [transaction_id]
+      properties:
+        transaction_id:
+          type: string
+          format: uuid
         category_id:
           type: string
           format: uuid

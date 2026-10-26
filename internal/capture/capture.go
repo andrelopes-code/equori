@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -72,6 +73,29 @@ func (p ledgerPort) BaseCurrency(ctx context.Context, userID int64) (money.Curre
 }
 
 func (p ledgerPort) Today() time.Time { return p.l.Today() }
+
+// Transactions classes a transaction by its uncategorized posting; a voided one, or one with a
+// category, has no class.
+func (p ledgerPort) Transactions(ctx context.Context, userID int64, ids []uuid.UUID) ([]app.Transaction, error) {
+	facts, err := p.l.TransactionFacts(ctx, userID, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]app.Transaction, len(facts))
+	for i, f := range facts {
+		out[i] = app.Transaction{ID: f.ID, Description: f.Description}
+		if f.Voided || f.CategoryState != "uncategorized" {
+			continue
+		}
+		for _, x := range f.Postings {
+			if class, ok := strings.CutPrefix(x.SystemRole, "uncategorized_"); ok {
+				out[i].Class = class
+				break
+			}
+		}
+	}
+	return out, nil
+}
 
 type classifierPort struct{ c *classification.Module }
 

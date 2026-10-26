@@ -1128,6 +1128,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/transactions/category-suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Name a category for existing uncategorized transactions (ADR 014 L1a).
+         * @description Each transaction is asked as a capture line of its class with its description, under the use capture.suggest.
+         *     Nothing is recorded; categorizeTransactions records an accepted suggestion. 404 not_found when an id is not
+         *     one of the user's transactions; 422 transaction_not_uncategorized when one is not an uncategorized expense or
+         *     income.
+         */
+        post: operations["suggestTransactionCategories"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/assistant/presets": {
         parameters: {
             query?: never;
@@ -4445,6 +4468,28 @@ export interface components {
              */
             source?: "kept" | "model";
         };
+        TransactionSuggestionInput: {
+            transaction_ids: string[];
+        };
+        TransactionSuggestions: {
+            /** @description False when the language model could not be asked; the items then hold kept answers only. */
+            available: boolean;
+            items: components["schemas"]["TransactionSuggestion"][];
+        };
+        TransactionSuggestion: {
+            /** Format: uuid */
+            transaction_id: string;
+            /**
+             * Format: uuid
+             * @description Absent when no category is named.
+             */
+            category_id?: string;
+            /**
+             * @description Absent when no category is named.
+             * @enum {string}
+             */
+            source?: "kept" | "model";
+        };
         TransactionBatchInput: {
             entries: components["schemas"]["TransactionBatchEntry"][];
         };
@@ -6847,6 +6892,34 @@ export interface operations {
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
+        };
+    };
+    suggestTransactionCategories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransactionSuggestionInput"];
+            };
+        };
+        responses: {
+            /** @description One suggestion per transaction, in input order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionSuggestions"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     listPresets: {

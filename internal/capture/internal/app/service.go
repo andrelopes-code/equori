@@ -42,6 +42,9 @@ type Payee struct {
 type Ledger interface {
 	Vocabulary(ctx context.Context, userID int64) ([]Account, []Payee, error)
 	BaseCurrency(ctx context.Context, userID int64) (money.Currency, error)
+	// Transactions returns the user's transactions among ids in the order of ids; unknown ids
+	// are omitted.
+	Transactions(ctx context.Context, userID int64, ids []uuid.UUID) ([]Transaction, error)
 	Today() time.Time
 }
 

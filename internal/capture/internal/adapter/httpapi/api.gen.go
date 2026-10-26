@@ -195,16 +195,16 @@ func (e CaptureSegmentRole) Valid() bool {
 
 // Defines values for CaptureSuggestionSource.
 const (
-	Kept  CaptureSuggestionSource = "kept"
-	Model CaptureSuggestionSource = "model"
+	CaptureSuggestionSourceKept  CaptureSuggestionSource = "kept"
+	CaptureSuggestionSourceModel CaptureSuggestionSource = "model"
 )
 
 // Valid indicates whether the value is a known member of the CaptureSuggestionSource enum.
 func (e CaptureSuggestionSource) Valid() bool {
 	switch e {
-	case Kept:
+	case CaptureSuggestionSourceKept:
 		return true
-	case Model:
+	case CaptureSuggestionSourceModel:
 		return true
 	default:
 		return false
@@ -223,6 +223,24 @@ func (e CaptureSuggestionItemKind) Valid() bool {
 	case CaptureSuggestionItemKindExpense:
 		return true
 	case CaptureSuggestionItemKindIncome:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for TransactionSuggestionSource.
+const (
+	TransactionSuggestionSourceKept  TransactionSuggestionSource = "kept"
+	TransactionSuggestionSourceModel TransactionSuggestionSource = "model"
+)
+
+// Valid indicates whether the value is a known member of the TransactionSuggestionSource enum.
+func (e TransactionSuggestionSource) Valid() bool {
+	switch e {
+	case TransactionSuggestionSourceKept:
+		return true
+	case TransactionSuggestionSourceModel:
 		return true
 	default:
 		return false
@@ -381,11 +399,39 @@ type Problem struct {
 	Type    string     `json:"type"`
 }
 
+// TransactionSuggestion defines model for TransactionSuggestion.
+type TransactionSuggestion struct {
+	// CategoryId Absent when no category is named.
+	CategoryId *openapi_types.UUID `json:"category_id,omitempty"`
+
+	// Source Absent when no category is named.
+	Source        *TransactionSuggestionSource `json:"source,omitempty"`
+	TransactionId openapi_types.UUID           `json:"transaction_id"`
+}
+
+// TransactionSuggestionSource Absent when no category is named.
+type TransactionSuggestionSource string
+
+// TransactionSuggestionInput defines model for TransactionSuggestionInput.
+type TransactionSuggestionInput struct {
+	TransactionIds []openapi_types.UUID `json:"transaction_ids"`
+}
+
+// TransactionSuggestions defines model for TransactionSuggestions.
+type TransactionSuggestions struct {
+	// Available False when the language model could not be asked; the items then hold kept answers only.
+	Available bool                    `json:"available"`
+	Items     []TransactionSuggestion `json:"items"`
+}
+
 // PreviewCaptureJSONRequestBody defines body for PreviewCapture for application/json ContentType.
 type PreviewCaptureJSONRequestBody = CapturePreviewInput
 
 // SuggestCaptureCategoriesJSONRequestBody defines body for SuggestCaptureCategories for application/json ContentType.
 type SuggestCaptureCategoriesJSONRequestBody = CaptureSuggestionInput
+
+// SuggestTransactionCategoriesJSONRequestBody defines body for SuggestTransactionCategories for application/json ContentType.
+type SuggestTransactionCategoriesJSONRequestBody = TransactionSuggestionInput
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -395,6 +441,9 @@ type ServerInterface interface {
 	// SuggestCaptureCategories Name a category for descriptions classification left uncategorized (ADR 014).
 	// (POST /capture/suggestions)
 	SuggestCaptureCategories(w http.ResponseWriter, r *http.Request)
+	// SuggestTransactionCategories Name a category for existing uncategorized transactions (ADR 014 L1a).
+	// (POST /transactions/category-suggestions)
+	SuggestTransactionCategories(w http.ResponseWriter, r *http.Request)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -425,6 +474,20 @@ func (siw *ServerInterfaceWrapper) SuggestCaptureCategories(w http.ResponseWrite
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.SuggestCaptureCategories(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SuggestTransactionCategories operation middleware
+func (siw *ServerInterfaceWrapper) SuggestTransactionCategories(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SuggestTransactionCategories(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -556,6 +619,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/capture/preview", wrapper.PreviewCapture)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/capture/suggestions", wrapper.SuggestCaptureCategories)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/transactions/category-suggestions", wrapper.SuggestTransactionCategories)
 
 	return m
 }
@@ -680,6 +744,86 @@ func (response SuggestCaptureCategories401ApplicationProblemPlusJSONResponse) Vi
 	return err
 }
 
+type SuggestTransactionCategoriesRequestObject struct {
+	Body *SuggestTransactionCategoriesJSONRequestBody
+}
+
+type SuggestTransactionCategoriesResponseObject interface {
+	VisitSuggestTransactionCategoriesResponse(w http.ResponseWriter) error
+}
+
+type SuggestTransactionCategories200JSONResponse TransactionSuggestions
+
+func (response SuggestTransactionCategories200JSONResponse) VisitSuggestTransactionCategoriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SuggestTransactionCategories400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SuggestTransactionCategories400ApplicationProblemPlusJSONResponse) VisitSuggestTransactionCategoriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SuggestTransactionCategories401ApplicationProblemPlusJSONResponse Problem
+
+func (response SuggestTransactionCategories401ApplicationProblemPlusJSONResponse) VisitSuggestTransactionCategoriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SuggestTransactionCategories404ApplicationProblemPlusJSONResponse Problem
+
+func (response SuggestTransactionCategories404ApplicationProblemPlusJSONResponse) VisitSuggestTransactionCategoriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SuggestTransactionCategories422ApplicationProblemPlusJSONResponse Problem
+
+func (response SuggestTransactionCategories422ApplicationProblemPlusJSONResponse) VisitSuggestTransactionCategoriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// PreviewCapture Read each line of a text as a transaction draft; records nothing (A106).
@@ -688,6 +832,9 @@ type StrictServerInterface interface {
 	// SuggestCaptureCategories Name a category for descriptions classification left uncategorized (ADR 014).
 	// (POST /capture/suggestions)
 	SuggestCaptureCategories(ctx context.Context, request SuggestCaptureCategoriesRequestObject) (SuggestCaptureCategoriesResponseObject, error)
+	// SuggestTransactionCategories Name a category for existing uncategorized transactions (ADR 014 L1a).
+	// (POST /transactions/category-suggestions)
+	SuggestTransactionCategories(ctx context.Context, request SuggestTransactionCategoriesRequestObject) (SuggestTransactionCategoriesResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -784,6 +931,37 @@ func (sh *strictHandler) SuggestCaptureCategories(w http.ResponseWriter, r *http
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SuggestCaptureCategoriesResponseObject); ok {
 		if err := validResponse.VisitSuggestCaptureCategoriesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SuggestTransactionCategories operation middleware
+func (sh *strictHandler) SuggestTransactionCategories(w http.ResponseWriter, r *http.Request) {
+	var request SuggestTransactionCategoriesRequestObject
+
+	var body SuggestTransactionCategoriesJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SuggestTransactionCategories(ctx, request.(SuggestTransactionCategoriesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SuggestTransactionCategories")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SuggestTransactionCategoriesResponseObject); ok {
+		if err := validResponse.VisitSuggestTransactionCategoriesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
