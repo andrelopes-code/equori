@@ -142,3 +142,8 @@ I1, I3 and I4 are independent. I2 and I3 can run in parallel after I1.
 
 - Whether the exempt treatment of `cri` and `cra` holds for an owner that is not an individual: `br` assumes an individual, as D1 does for the other rows.
 - Whether the IPCA accrual uses the published month or an estimate for the current month. This document assumes the last published level, repeated until the next one is published.
+
+### Amendment of 2026-10-26
+
+- IPCA accrual, decided: the accrual uses the last published level, repeated until the next one is published; no estimate of the current month enters a price. Reason: a published level is verifiable against the source, and an estimate would change prices already shown once the real level arrives. `TestAccrueIPCAWithoutPublishedMonth` (`internal/marketdata/internal/domain/accrual_test.go`) fixes the behavior.
+- Treatment of `cri` and `cra` for an owner that is not an individual: still open. `br` keeps assuming an individual.

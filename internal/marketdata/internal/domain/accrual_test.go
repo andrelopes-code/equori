@@ -128,6 +128,26 @@ func TestAccrueIPCAStep(t *testing.T) {
 	}
 }
 
+// Investments design, section 7, amendment of 2026-10-26: a month whose rate is not published
+// adds no index growth and no estimate; only the spread accrues.
+func TestAccrueIPCAWithoutPublishedMonth(t *testing.T) {
+	t.Parallel()
+	terms := Terms{IssuedOn: date("2026-01-01"), MaturesOn: date("2035-05-15"), IndexID: "ipca", PercentOfIndexBP: 10000, SpreadBP: 600, DayCount: DayCountAct365, FaceValue: 100000}
+	rates := []IndexRate{{Date: date("2026-01-01"), Rate: "0.004200000000"}, {Date: date("2026-02-01"), Rate: "-0.003000000000"}}
+	prices, err := Accrue(terms, 2, rates, date("2026-04-01"), date("2026-04-02"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := values(prices)
+	// 1000 × 1.0042 × 0.997 × 1.06^(days/365): March has ended without a published rate.
+	want := map[string]string{"2026-04-01": "1015.675970458164", "2026-04-02": "1015.838126770537"}
+	for d, v := range want {
+		if got[d] != v {
+			t.Errorf("price on %s = %q, want %q", d, got[d], v)
+		}
+	}
+}
+
 func TestAccruePeriod(t *testing.T) {
 	t.Parallel()
 	terms := cdb(10000, 0)
