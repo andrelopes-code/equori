@@ -1,6 +1,7 @@
 services:
   app:
-    image: ghcr.io/andrelopes-code/equori:latest
+    # A release attaches this file with the default set to its version (V7 of the distribution design); from a clone, compose builds the dev image.
+    image: ghcr.io/andrelopes-code/equori:${EQUORI_VERSION:-dev}
     build: .
     ports:
       - "8080:8080"
