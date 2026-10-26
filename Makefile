@@ -14,13 +14,14 @@ COMPOSE := docker compose -f compose.yaml -f compose.dev.yaml
 LOCAL_ENV ?= $(HOME)/.config/equori/local.env
 LOAD_ENV := set -a && . ./dev.env && { [ ! -f "$(LOCAL_ENV)" ] || . "$(LOCAL_ENV)"; } && { [ ! -f .env ] || . ./.env; } && set +a
 
-.PHONY: check static fmt fmt-check lint tidy-check gen gen-check test test-race perf vuln build dist upgrade-test dev db-up db-down db-test-up run-dev run-prod hooks tools web-deps web-build web-check web-static web-test web-dev demo demo-user demo-reset
+.PHONY: check static fmt fmt-check lint tidy-check gen gen-check test test-race perf vuln build dist upgrade-test test-cluster dev db-up db-down db-test-up run-dev run-prod hooks tools web-deps web-build web-check web-static web-test web-dev demo demo-user demo-reset
 
 # Everything, the Go tests under -race included: CI runs it on every pull request. The web build
 # comes first: the Go tests compile package web, which embeds web/dist. The web tests come last:
 # beside the Go tests they starve for CPU and pass their timeouts.
 check: static web-build
 	$(MAKE) --no-print-directory -j2 test-race web-static
+	$(MAKE) --no-print-directory test-cluster
 	$(MAKE) --no-print-directory web-test
 
 static: fmt-check tidy-check gen-check lint
@@ -60,6 +61,21 @@ test: db-test-up
 
 test-race: db-test-up
 	go test -race -timeout 30m ./...
+
+# Managed mode needs the PostgreSQL programs; the postgres:18 image holds them, so the compiled
+# cluster tests run there, on the host network to reach db-test (ADR 022). Each entry is
+# <package directory>:<-test.run pattern>.
+CLUSTER_TESTS := internal/platform/pgcluster:.
+test-cluster: db-test-up
+	rm -rf $(BIN)/cluster-tests && mkdir -p $(BIN)/cluster-tests
+	for entry in $(CLUSTER_TESTS); do \
+		pkg=$${entry%%:*} && pattern=$${entry#*:} && test=$(BIN)/cluster-tests/$$(basename $$pkg).test && \
+		CGO_ENABLED=0 go test -c -tags cluster -o $$test ./$$pkg && \
+		docker run --rm --network host -u postgres -v $$test:/cluster.test:ro \
+			-e EQUORI_TEST_POSTGRES_BIN=/usr/lib/postgresql/18/bin \
+			-e EQUORI_TEST_DATABASE_URL=$(EQUORI_TEST_DATABASE_URL) \
+			postgres:18 /cluster.test -test.count=1 -test.v -test.run "$$pattern" || exit 1; \
+	done
 
 # N05, N06 and N09 on the demo dataset (docs/operations/performance.md); make check never runs it.
 perf: db-test-up

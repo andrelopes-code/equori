@@ -34,8 +34,8 @@ func ensurePrivateDir(path string) error {
 	if err != nil {
 		return fmt.Errorf("inspect %s: %w", path, err)
 	}
-	if !info.IsDir() || info.Mode().Perm() != 0o700 {
-		return fmt.Errorf("%s must be a directory with mode 0700, found %v", path, info.Mode())
+	if !info.IsDir() || info.Mode().Perm() != 0o700 || !ownedByMe(info) {
+		return fmt.Errorf("%s must be a directory of this user with mode 0700, found %v", path, info.Mode())
 	}
 	return nil
 }
