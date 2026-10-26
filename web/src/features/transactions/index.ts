@@ -20,3 +20,11 @@ export { TransactionPage } from "@/features/transactions/transaction-page";
 export { AccountField } from "@/features/transactions/account-field";
 export { PayeeField } from "@/features/transactions/payee-field";
 export { formatFileSize } from "@/features/transactions/attachment-meta";
+export {
+  QueueWriteError,
+  enqueueCapture,
+  findQueued,
+  readQueue,
+  removeQueued,
+} from "@/features/transactions/capture-queue";
+export type { QueuedCapture } from "@/features/transactions/capture-queue";
