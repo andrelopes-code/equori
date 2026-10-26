@@ -173,3 +173,31 @@ jobs:
           flags=(--generate-notes --verify-tag)
           if [[ "$GITHUB_REF_NAME" == *-* ]]; then flags+=(--prerelease); fi
           gh release create "$GITHUB_REF_NAME" "${flags[@]}" dist/*.tar.gz dist/SHA256SUMS dist/compose.yaml
+
+  # R5: in 0.x every tag moves the formula; from 1.0 only a tag without a pre-release suffix.
+  #   v0.3.0 → true, v0.3.0-beta.1 → true, v1.0.0 → true, v1.1.0-rc.1 → false
+  homebrew:
+    needs: release
+    if: startsWith(github.ref_name, 'v0.') || !contains(github.ref_name, '-')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - run: scripts/render-formula.sh "${GITHUB_REF_NAME#v}" dist/SHA256SUMS > "$RUNNER_TEMP/equori.rb"
+      - uses: actions/checkout@v5
+        with:
+          repository: andrelopes-code/homebrew-equori
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: tap
+      - run: |
+          mkdir -p tap/Formula
+          cp "$RUNNER_TEMP/equori.rb" tap/Formula/equori.rb
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/equori.rb
+          git commit -m "equori ${GITHUB_REF_NAME#v}"
+          git push
