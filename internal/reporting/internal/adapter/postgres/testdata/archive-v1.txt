@@ -1,0 +1,407 @@
+assistant_conversation.created_at timestamptz
+assistant_conversation.id uuid
+assistant_conversation.title text
+assistant_conversation.updated_at timestamptz
+assistant_message.content text
+assistant_message.conversation_id uuid
+assistant_message.created_at timestamptz
+assistant_message.id uuid
+assistant_message.outcome text null
+assistant_message.role text
+assistant_message.seq int4
+assistant_proposal.arguments jsonb
+assistant_proposal.basis text
+assistant_proposal.conversation_id uuid
+assistant_proposal.created_at timestamptz
+assistant_proposal.decided_at timestamptz null
+assistant_proposal.expires_at timestamptz
+assistant_proposal.id uuid
+assistant_proposal.message_id uuid null
+assistant_proposal.preview jsonb
+assistant_proposal.result jsonb null
+assistant_proposal.status text
+assistant_proposal.tool text
+classification_categorization.category_id uuid null
+classification_categorization.corrected bool
+classification_categorization.decided_at timestamptz
+classification_categorization.match_key text null
+classification_categorization.method text null
+classification_categorization.rule_id uuid null
+classification_categorization.transaction_date date
+classification_categorization.transaction_id uuid
+classification_categorization.transaction_version int4
+classification_categorization.voided bool
+classification_payee_alias.created_at timestamptz
+classification_payee_alias.id uuid
+classification_payee_alias.match_type text
+classification_payee_alias.pattern text
+classification_payee_alias.payee_id uuid
+classification_rule.actions jsonb
+classification_rule.conditions jsonb
+classification_rule.created_at timestamptz
+classification_rule.enabled bool
+classification_rule.id uuid
+classification_rule.name text
+classification_rule.priority int4
+classification_rule.schema_version int2
+classification_rule.stop_processing bool
+classification_rule.updated_at timestamptz
+classification_source_category.aggregator text
+classification_source_category.category_id uuid null
+classification_source_category.external_id text
+classification_source_category.id uuid
+classification_source_category.name text
+classification_source_category.seen_count int4
+classification_suggestion.actions jsonb
+classification_suggestion.conditions jsonb
+classification_suggestion.created_at timestamptz
+classification_suggestion.decided_at timestamptz null
+classification_suggestion.example_transaction_ids _uuid
+classification_suggestion.fingerprint text
+classification_suggestion.id uuid
+classification_suggestion.rule_id uuid null
+classification_suggestion.state text
+ingestion_batch.account_id uuid
+ingestion_batch.balance_amount int8 null
+ingestion_batch.balance_date date null
+ingestion_batch.balance_reason text null
+ingestion_batch.balance_status text
+ingestion_batch.completed_at timestamptz null
+ingestion_batch.created int4
+ingestion_batch.currency text
+ingestion_batch.discarded int4
+ingestion_batch.external_account_id uuid null
+ingestion_batch.file_name text null
+ingestion_batch.id uuid
+ingestion_batch.ignored int4
+ingestion_batch.matched int4
+ingestion_batch.needs_review int4
+ingestion_batch.period_from date null
+ingestion_batch.period_to date null
+ingestion_batch.received int4
+ingestion_batch.source text
+ingestion_batch.started_at timestamptz
+ingestion_batch.updated int4
+ingestion_batch.withdrawn int4
+ingestion_connection.created_at timestamptz
+ingestion_connection.external_id text
+ingestion_connection.id uuid
+ingestion_connection.integration_id uuid
+ingestion_connection.last_error text null
+ingestion_connection.last_item_update_at timestamptz null
+ingestion_connection.last_synced_at timestamptz null
+ingestion_connection.name text
+ingestion_connection.next_item_update_at timestamptz null
+ingestion_connection.provider_status text
+ingestion_csv_profile.account_id uuid
+ingestion_csv_profile.amount_column text null
+ingestion_csv_profile.amount_sign text
+ingestion_csv_profile.credit_column text null
+ingestion_csv_profile.date_column text
+ingestion_csv_profile.date_layout text
+ingestion_csv_profile.debit_column text null
+ingestion_csv_profile.decimal_separator text
+ingestion_csv_profile.delimiter text
+ingestion_csv_profile.description_column text
+ingestion_csv_profile.encoding text
+ingestion_csv_profile.group_separator text
+ingestion_csv_profile.header_rows int4
+ingestion_csv_profile.id_column text null
+ingestion_csv_profile.updated_at timestamptz
+ingestion_external_account.account_id uuid null
+ingestion_external_account.balance_amount int8 null
+ingestion_external_account.balance_on date null
+ingestion_external_account.connection_id uuid
+ingestion_external_account.currency text
+ingestion_external_account.external_account_id text
+ingestion_external_account.former_names _text
+ingestion_external_account.id uuid
+ingestion_external_account.ignored bool
+ingestion_external_account.last_synced_on date null
+ingestion_external_account.name text
+ingestion_external_account.number_last4 text null
+ingestion_external_account.subtype text
+ingestion_external_account.sync_from date null
+ingestion_external_account.type text
+ingestion_external_record.account_id uuid
+ingestion_external_record.amount int8
+ingestion_external_record.balance_after int8 null
+ingestion_external_record.batch_id uuid
+ingestion_external_record.booked_on date
+ingestion_external_record.candidate_scores jsonb
+ingestion_external_record.candidates _uuid
+ingestion_external_record.category_id text null
+ingestion_external_record.dedup_key bytea
+ingestion_external_record.description text
+ingestion_external_record.due_date date null
+ingestion_external_record.external_id text null
+ingestion_external_record.external_status text null
+ingestion_external_record.id uuid
+ingestion_external_record.installment_count int4 null
+ingestion_external_record.installment_number int4 null
+ingestion_external_record.line_kind text null
+ingestion_external_record.raw jsonb
+ingestion_external_record.review_reason text null
+ingestion_external_record.state text
+ingestion_external_record.transaction_id uuid null
+ingestion_external_record.unapplied_change text null
+ingestion_installment_plan.account_id uuid
+ingestion_installment_plan.plan_id uuid
+ingestion_installment_plan.plan_key bytea
+ingestion_integration.aggregator text
+ingestion_integration.credential_ciphertext bytea
+ingestion_integration.id uuid
+ingestion_integration.name text
+ingestion_integration.updated_at timestamptz
+ledger_account.account_class text
+ledger_account.closed_on date null
+ledger_account.color int2 null
+ledger_account.counterparty_payee_id uuid null
+ledger_account.created_at timestamptz
+ledger_account.icon text null
+ledger_account.id uuid
+ledger_account.institution_id uuid null
+ledger_account.instrument text
+ledger_account.kind text null
+ledger_account.name text
+ledger_account.opened_on date
+ledger_account.parent_id uuid null
+ledger_account.system_role text null
+ledger_account.updated_at timestamptz
+ledger_account.yield_mode text
+ledger_attachment.created_at timestamptz
+ledger_attachment.file_name text
+ledger_attachment.id uuid
+ledger_attachment.media_type text
+ledger_attachment.sha256 bytea
+ledger_attachment.transaction_id uuid
+ledger_attachment_blob.content bytea
+ledger_attachment_blob.sha256 bytea
+ledger_attachment_blob.size int4
+ledger_balance_assertion.account_id uuid
+ledger_balance_assertion.amount int8
+ledger_balance_assertion.date date
+ledger_balance_assertion.id uuid
+ledger_balance_assertion.recorded_at timestamptz
+ledger_balance_assertion.source text
+ledger_billing_cycle_rule.account_id uuid
+ledger_billing_cycle_rule.calendar text
+ledger_billing_cycle_rule.closing_adjustment text
+ledger_billing_cycle_rule.closing_day int2 null
+ledger_billing_cycle_rule.closing_day_assignment text
+ledger_billing_cycle_rule.closing_days_before_due int2 null
+ledger_billing_cycle_rule.closing_mode text
+ledger_billing_cycle_rule.created_at timestamptz
+ledger_billing_cycle_rule.due_date_adjustment text
+ledger_billing_cycle_rule.due_day int2
+ledger_billing_cycle_rule.effective_from date
+ledger_card.account_id uuid
+ledger_card.active bool
+ledger_card.created_at timestamptz
+ledger_card.foreign_charge_bp int4
+ledger_card.holder text
+ledger_card.id uuid
+ledger_card.last_four text
+ledger_card.virtual bool
+ledger_credit_limit.account_id uuid
+ledger_credit_limit.amount int8
+ledger_credit_limit.created_at timestamptz
+ledger_credit_limit.effective_from date
+ledger_dispute.id uuid
+ledger_dispute.opened_on date
+ledger_dispute.outcome text null
+ledger_dispute.refund_transaction_id uuid null
+ledger_dispute.resolved_on date null
+ledger_dispute.transaction_id uuid
+ledger_installment_plan.account_id uuid
+ledger_installment_plan.created_at timestamptz
+ledger_installment_plan.first_statement_id uuid
+ledger_installment_plan.id uuid
+ledger_installment_plan.installment_count int2
+ledger_installment_plan.interest int8
+ledger_installment_plan.monthly_rate numeric null
+ledger_installment_plan.origin_transaction_id uuid
+ledger_installment_plan.plan_kind text
+ledger_installment_plan.principal int8
+ledger_institution.code text null
+ledger_institution.id uuid
+ledger_institution.identifier text null
+ledger_institution.identifier_scheme text null
+ledger_institution.name text
+ledger_investment_income.account_id uuid
+ledger_investment_income.cash_account_id uuid
+ledger_investment_income.currency text
+ledger_investment_income.gross int8
+ledger_investment_income.income_type text
+ledger_investment_income.transaction_id uuid
+ledger_investment_income.withheld int8
+ledger_link.amount int8 null
+ledger_link.from_transaction_id uuid
+ledger_link.id uuid
+ledger_link.link_type text
+ledger_link.to_transaction_id uuid
+ledger_payee.id uuid
+ledger_payee.merged_into uuid null
+ledger_payee.name text
+ledger_posting.account_id uuid
+ledger_posting.amount int8
+ledger_posting.booked_on date
+ledger_posting.card_role text null
+ledger_posting.external_record_id uuid null
+ledger_posting.id uuid
+ledger_posting.installment_count int2 null
+ledger_posting.installment_number int2 null
+ledger_posting.installment_plan_id uuid null
+ledger_posting.memo text null
+ledger_posting.original_amount int8 null
+ledger_posting.original_instrument text null
+ledger_posting.position int2
+ledger_posting.settled_on date null
+ledger_posting.statement_id uuid null
+ledger_posting.status text
+ledger_posting.transaction_id uuid
+ledger_posting.voided bool
+ledger_posting.weight int8
+ledger_reconciliation.account_id uuid
+ledger_reconciliation.assertion_id uuid null
+ledger_reconciliation.date date
+ledger_reconciliation.difference int8
+ledger_reconciliation.id uuid
+ledger_reconciliation.reconciled_at timestamptz
+ledger_reconciliation.resolution text
+ledger_reconciliation.resolution_transaction_id uuid null
+ledger_reconciliation.statement_id uuid null
+ledger_settings.base_currency text
+ledger_statement.account_id uuid
+ledger_statement.closing_date date
+ledger_statement.created_at timestamptz
+ledger_statement.due_date date
+ledger_statement.financed_by_plan_id uuid null
+ledger_statement.id uuid
+ledger_statement.reference_month date
+ledger_statement_fact.closing_date date null
+ledger_statement_fact.due_date date
+ledger_statement_fact.minimum int8 null
+ledger_statement_fact.reported_at timestamptz
+ledger_statement_fact.source text
+ledger_statement_fact.statement_id uuid
+ledger_statement_fact.total int8
+ledger_tag.id uuid
+ledger_tag.name text
+ledger_trade.account_id uuid
+ledger_trade.cash_account_id uuid
+ledger_trade.cost int8 null
+ledger_trade.currency text
+ledger_trade.fees int8
+ledger_trade.gross int8
+ledger_trade.quantity int8
+ledger_trade.side text
+ledger_trade.taxes int8
+ledger_trade.transaction_id uuid
+ledger_trade.unit_price numeric
+ledger_transaction.balancing_currency text
+ledger_transaction.created_at timestamptz
+ledger_transaction.date date
+ledger_transaction.description text
+ledger_transaction.id uuid
+ledger_transaction.origin text
+ledger_transaction.payee_id uuid null
+ledger_transaction.updated_at timestamptz
+ledger_transaction.version int4
+ledger_transaction.void_reason text null
+ledger_transaction.voided_at timestamptz null
+ledger_transaction_tag.tag_id uuid
+ledger_transaction_tag.transaction_id uuid
+ledger_transaction_version.reason text
+ledger_transaction_version.replaced_at timestamptz
+ledger_transaction_version.snapshot jsonb
+ledger_transaction_version.transaction_id uuid
+ledger_transaction_version.version int4
+marketdata_fixed_income_terms.day_count text
+marketdata_fixed_income_terms.face_value int8
+marketdata_fixed_income_terms.index_id text null
+marketdata_fixed_income_terms.instrument_code text
+marketdata_fixed_income_terms.issued_on date
+marketdata_fixed_income_terms.matures_on date
+marketdata_fixed_income_terms.percent_of_index_bp int4
+marketdata_fixed_income_terms.spread_bp int4
+marketdata_holiday.calendar text
+marketdata_holiday.date date
+marketdata_holiday.name text
+marketdata_index_rate.date date
+marketdata_index_rate.index_id text
+marketdata_index_rate.rate numeric
+marketdata_index_rate.source text
+marketdata_instrument.code text
+marketdata_instrument.exchange text null
+marketdata_instrument.instrument_type text
+marketdata_instrument.name text
+marketdata_instrument.quote_currency text null
+marketdata_instrument.scale int2
+marketdata_instrument.subtype text null
+marketdata_price.date date
+marketdata_price.instrument text
+marketdata_price.priority int2
+marketdata_price.quote_instrument text
+marketdata_price.recorded_at timestamptz
+marketdata_price.source text
+marketdata_price.value numeric
+planning_budget.category_account_id uuid
+planning_budget.created_at timestamptz
+planning_budget.currency text
+planning_budget.id uuid
+planning_budget.period_type text
+planning_budget.rollover bool
+planning_budget_amount.amount int8
+planning_budget_amount.budget_id uuid
+planning_budget_amount.effective_from date
+planning_goal.created_at timestamptz
+planning_goal.currency text
+planning_goal.due_on date
+planning_goal.id uuid
+planning_goal.name text
+planning_goal.target int8
+planning_goal_account.account_id uuid
+planning_goal_account.goal_id uuid
+planning_occurrence.declined_transaction_id uuid null
+planning_occurrence.expected_amount int8
+planning_occurrence.expected_on date
+planning_occurrence.id uuid
+planning_occurrence.moved_from date null
+planning_occurrence.realized_by text null
+planning_occurrence.schedule_id uuid
+planning_occurrence.sequence int4
+planning_occurrence.skip_reason text null
+planning_occurrence.state text
+planning_occurrence.transaction_id uuid null
+planning_schedule.account_id uuid
+planning_schedule.calendar text
+planning_schedule.counterpart_id uuid
+planning_schedule.created_at timestamptz
+planning_schedule.currency text
+planning_schedule.description text
+planning_schedule.ends_on date null
+planning_schedule.generated_until date
+planning_schedule.grace_days int4
+planning_schedule.id uuid
+planning_schedule.kind text
+planning_schedule.match_tolerance_bp int4
+planning_schedule.payee_id uuid null
+planning_schedule.updated_at timestamptz
+planning_schedule_pause.period daterange
+planning_schedule_pause.schedule_id uuid
+planning_schedule_terms.adjustment text
+planning_schedule_terms.amount int8
+planning_schedule_terms.business_day_ordinal int4 null
+planning_schedule_terms.calendar text
+planning_schedule_terms.count int4 null
+planning_schedule_terms.day_of_month int4 null
+planning_schedule_terms.effective_from date
+planning_schedule_terms.first_sequence int4 null
+planning_schedule_terms.frequency text
+planning_schedule_terms.interval int4
+planning_schedule_terms.ordinal int4 null
+planning_schedule_terms.schedule_id uuid
+planning_schedule_terms.start date
+planning_schedule_terms.until date null
+planning_schedule_terms.weekday int4 null
