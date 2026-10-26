@@ -24,11 +24,11 @@ Every requirement has a measurable criterion and a verification method. Performa
 
 | ID | Requirement | Verification |
 |---|---|---|
-| N05 | p95 latency below 200 ms for list, balance, statement and report endpoints on the reference dataset. | Benchmark suite with seeded dataset |
-| N06 | Balance of one account at any date: below 50 ms. | Benchmark |
+| N05 | p95 latency below 200 ms for list, balance, statement and report endpoints on the reference dataset. | `make perf` (`docs/operations/performance.md`) |
+| N06 | Balance of one account at any date: below 50 ms. | `make perf` (`docs/operations/performance.md`) |
 | N07 | Import of an OFX file with 1,000 records: below 5 s, including deduplication, matching and categorization. | Benchmark |
 | N08 | Full rebuild of derived tables (balance series, positions) for the reference dataset: below 60 s. | Benchmark |
-| N09 | Application memory below 256 MiB RSS under normal use. | Container metrics |
+| N09 | Application memory below 256 MiB RSS under normal use. | `make perf` (`docs/operations/performance.md`) |
 
 ## 8.4 Reliability and data safety
 

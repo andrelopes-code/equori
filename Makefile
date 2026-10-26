@@ -14,7 +14,7 @@ COMPOSE := docker compose -f compose.yaml -f compose.dev.yaml
 LOCAL_ENV ?= $(HOME)/.config/equori/local.env
 LOAD_ENV := set -a && . ./dev.env && { [ ! -f "$(LOCAL_ENV)" ] || . "$(LOCAL_ENV)"; } && { [ ! -f .env ] || . ./.env; } && set +a
 
-.PHONY: check static fmt fmt-check lint tidy-check gen gen-check test test-race vuln build dev db-up db-down db-test-up run-dev run-prod hooks tools web-deps web-build web-check web-static web-test web-dev demo demo-user demo-reset
+.PHONY: check static fmt fmt-check lint tidy-check gen gen-check test test-race perf vuln build dev db-up db-down db-test-up run-dev run-prod hooks tools web-deps web-build web-check web-static web-test web-dev demo demo-user demo-reset
 
 # Everything, the Go tests under -race included: CI runs it on every pull request. The web build
 # comes first: the Go tests compile package web, which embeds web/dist. The web tests come last:
@@ -60,6 +60,10 @@ test: db-test-up
 
 test-race: db-test-up
 	go test -race -timeout 30m ./...
+
+# N05, N06 and N09 on the demo dataset (docs/operations/performance.md); make check never runs it.
+perf: db-test-up
+	go test -tags perf -count=1 -timeout 30m -run TestPerformanceOnDemoDataset -v ./cmd/demoseed/
 
 vuln: $(TOOLS)
 	$(BIN)/govulncheck ./...
