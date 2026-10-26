@@ -33,8 +33,9 @@ pre-commit:
         - "web/src/theme/glass/**"
       run: make gen-check
 
+# Sequential: run beside the Go tests, the vitest workers starve and time out (41 of 1494 tests).
 pre-push:
-  parallel: true
+  parallel: false
   jobs:
     - name: go-lint
       glob: "**/*.go"
