@@ -14,7 +14,7 @@ COMPOSE := docker compose -f compose.yaml -f compose.dev.yaml
 LOCAL_ENV ?= $(HOME)/.config/equori/local.env
 LOAD_ENV := set -a && . ./dev.env && { [ ! -f "$(LOCAL_ENV)" ] || . "$(LOCAL_ENV)"; } && { [ ! -f .env ] || . ./.env; } && set +a
 
-.PHONY: check static fmt fmt-check lint tidy-check gen gen-check test test-race perf vuln build dev db-up db-down db-test-up run-dev run-prod hooks tools web-deps web-build web-check web-static web-test web-dev demo demo-user demo-reset
+.PHONY: check static fmt fmt-check lint tidy-check gen gen-check test test-race perf vuln build dist dev db-up db-down db-test-up run-dev run-prod hooks tools web-deps web-build web-check web-static web-test web-dev demo demo-user demo-reset
 
 # Everything, the Go tests under -race included: CI runs it on every pull request. The web build
 # comes first: the Go tests compile package web, which embeds web/dist. The web tests come last:
@@ -70,6 +70,24 @@ vuln: $(TOOLS)
 
 build: web-build
 	CGO_ENABLED=0 go build -trimpath -o $(BIN)/equori ./cmd/equori
+
+# Release archives (R2 of docs/superpowers/specs/2026-10-26-distribution-design.md). The commit
+# time stamps every file and gzip stores no name or time, so two builds of one commit are identical.
+DIST_TARGETS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64
+DIST_VERSION ?= $(shell git describe --tags --exact-match 2>/dev/null || echo dev)
+
+dist: web-build
+	rm -rf dist && mkdir -p dist
+	epoch=$$(git log -1 --format=%ct) && \
+	for target in $(DIST_TARGETS); do \
+		os=$${target%/*} && arch=$${target#*/} && name=equori_$(DIST_VERSION:v%=%)_$${os}_$${arch} && \
+		mkdir -p dist/$$name && \
+		CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch go build -trimpath -ldflags="-s -w -X main.version=$(DIST_VERSION)" -o dist/$$name/equori ./cmd/equori && \
+		cp LICENSE README.md dist/$$name/ && \
+		tar --sort=name --mtime=@$$epoch --owner=0 --group=0 --numeric-owner --mode='u+rw,go+r,go-w' -C dist -cf - $$name | gzip -n > dist/$$name.tar.gz && \
+		rm -rf dist/$$name || exit 1; \
+	done
+	cd dist && sha256sum *.tar.gz > SHA256SUMS
 
 dev: db-up
 	$(LOAD_ENV) && go run ./cmd/equori
