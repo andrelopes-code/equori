@@ -38,7 +38,7 @@ describe("AccountCard", () => {
     expect(face.textContent).toContain(".77");
   });
 
-  it("draws the chip with its legend and sum, and the meter in alert with an icon", () => {
+  it("draws the chip with its legend and sum, and the meter in alert", () => {
     const face = card();
     expect(
       within(face).getByRole("img", { name: "spent this week: R$50.00" }),
@@ -49,7 +49,6 @@ describe("AccountCard", () => {
       "89% of the limit, R$11 free",
     );
     expect(meter.getAttribute("data-state")).toBe("alert");
-    expect(meter.querySelector("[data-warning]")).not.toBeNull();
     expect(meter.querySelectorAll("[data-segment]")).toHaveLength(20);
     expect(meter.querySelectorAll("[data-segment='filled']")).toHaveLength(18);
     expect(meter.querySelectorAll("[data-segment='risk']")).toHaveLength(2);
@@ -62,7 +61,6 @@ describe("AccountCard", () => {
     expect(meter.textContent).toContain("R$4 over the limit");
     expect(meter.textContent).toContain("104% of the limit");
     expect(meter.getAttribute("data-state")).toBe("over");
-    expect(meter.querySelector("[data-warning]")).not.toBeNull();
   });
 
   it("hides amounts but keeps the percent and the meter", () => {
@@ -113,7 +111,7 @@ describe("AccountCard", () => {
     expect(face.textContent).toContain("−R$");
   });
 
-  it("marks a reached goal in text, without the warning icon", () => {
+  it("marks a reached goal in text", () => {
     const meter = within(
       card({
         kind: "savings",
@@ -124,7 +122,6 @@ describe("AccountCard", () => {
     expect(meter.textContent).toContain("Goal of R$200");
     expect(meter.textContent).toContain("Goal reached");
     expect(meter.getAttribute("data-state")).toBe("reached");
-    expect(meter.querySelector("[data-warning]")).toBeNull();
   });
 
   it("is one link named by the card and described by its chip and meter", () => {

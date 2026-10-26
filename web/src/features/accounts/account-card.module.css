@@ -270,19 +270,10 @@
     text-overflow: ellipsis;
   }
 
+  .meter:not([data-state="normal"]) .meterLeft,
   .meterRight {
     color: var(--meter-ink);
     font-weight: var(--slotted-font-weight-semibold);
-  }
-
-  /* The glyph stands on the baseline at the height of a capital letter. */
-  .warning {
-    block-size: 0.7em;
-    block-size: 1cap;
-    inline-size: auto;
-    margin-inline-end: var(--slotted-space-2);
-    fill: currentcolor;
-    vertical-align: baseline;
   }
 
   .segments {
