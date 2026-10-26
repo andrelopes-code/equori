@@ -47,7 +47,7 @@ The list of fact tables is read from the database catalog at run time, so a new 
 
 1. The archive is read whole. A missing or unreadable manifest, a file whose SHA-256 differs from the manifest, or a row that is not a JSON object: 422 `archive_invalid`. A `schema_version` other than the instance's: 422 `archive_version_mismatch`.
 2. The user must hold no fact: no row in `ledger_transaction`, and no row in `ledger_account` without a system role. Otherwise 409 `import_not_empty`.
-3. In one transaction: the user's rows of every fact table are deleted, child tables first; this removes the system accounts and settings written at sign-up. Shared rows are inserted with `ON CONFLICT DO NOTHING`. Fact tables are inserted in the order of their foreign keys, computed from the catalog; each table is one `INSERT … SELECT FROM jsonb_populate_recordset`, so a reference between rows of one table is checked at the end of the statement. `user_id` is set to the importing user.
+3. In one transaction: the user's rows of every fact table are deleted, child tables first; this removes the system accounts and settings written at sign-up. Shared rows are inserted with `ON CONFLICT DO NOTHING`. Fact tables are inserted in the order of their foreign keys, computed from the catalog; each table is one `INSERT … SELECT FROM jsonb_populate_recordset`, so a reference between rows of one table is checked at the end of the statement. `user_id` is set to the importing user. `ledger_statement.financed_by_plan_id` closes a cycle with `ledger_installment_plan.first_statement_id`; it is inserted empty and set by an UPDATE after the inserts.
 4. A primary key already held by another user of the instance: 409 `import_conflict`, and nothing is written.
 5. After the commit, the derived tables are rebuilt for the user: the balance series of every account (`equori reporting rebuild`, per user) and the positions, results and income events (`equori portfolio rebuild`, per user).
 
@@ -66,10 +66,12 @@ The archive is built in memory: one export holds at most 256 MiB of the process 
 
 `internal/reporting/export_test.go` runs two harnesses, each on its own database:
 
-1. On the first, a user records accounts, a card with an installment purchase, transactions with tags and an attachment, a trade, a schedule with a realized occurrence, a budget and a rule.
+1. On the first, a user records accounts, a card with an installment purchase, transactions with tags and an attachment, a correction, a trade with a price, a schedule, a budget and a rule.
 2. The archive is exported and downloaded, then imported by a new user of the second database.
-3. A new export of the second user equals the first archive in every table file and attachment.
-4. Derived values are equal on both: `listAccounts` balances, `getNetWorth`, `getCategoryTotals` of the month, `listPositions` and `getCommitment`.
+3. A new export of the second user equals the first archive in every fact table file and attachment. Shared tables are left out of the comparison: each instance writes its own currency rows.
+4. Derived values are equal on both: `listAccounts`, `getNetWorth`, `getCategoryTotals` of the month, `getBalanceSeries`, `listPositions` and `getCommitment`.
+
+`TestImportRejects` covers each refusal of E4 and `TestEveryTableIsClassified` the classification of E2.
 
 ## Web
 

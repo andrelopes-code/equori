@@ -15,6 +15,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/ledger"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 	"github.com/andrelopes-code/equori/internal/reporting/internal/adapter/httpapi"
@@ -24,13 +25,15 @@ import (
 )
 
 type Module struct {
-	svc  *app.Service
-	http *httpapi.Server
+	svc     *app.Service
+	exports *app.Exports
+	http    *httpapi.Server
 }
 
 func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, clk clock.Clock, log *slog.Logger) *Module {
 	svc := app.NewService(postgres.NewRepository(pool))
-	exports := app.NewExports(postgres.NewExports(pool), clk)
+	store := postgres.NewExports(pool)
+	exports := app.NewExports(store, store, clk, svc.RebuildUser)
 	dispatcher.Subscribe("reporting-export", postgres.EventExportRequested, func(ctx context.Context, _ pgx.Tx, e outbox.Delivered) error {
 		var p struct {
 			ExportID uuid.UUID `json:"export_id"`
@@ -43,10 +46,22 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, clk clock.Clock, log
 	for _, eventType := range []string{ledger.EventTransactionRecorded, ledger.EventTransactionCorrected, ledger.EventTransactionCategorized, ledger.EventTransactionVoided} {
 		dispatcher.Subscribe("reporting-series", eventType, rebuildSeries)
 	}
-	return &Module{svc: svc, http: httpapi.NewServer(svc, exports, log)}
+	return &Module{svc: svc, exports: exports, http: httpapi.NewServer(svc, exports, log)}
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
+
+// OnImport adds the rebuild of another module's derived tables, run for the user after an
+// import of an export archive (export design E4).
+func (m *Module) OnImport(rebuild func(ctx context.Context, userID int64) error) {
+	m.exports.OnImport(rebuild)
+}
+
+// BodyLimits raises the request body limit of an archive import: the largest archive plus
+// the multipart framing (export design E5).
+func (m *Module) BodyLimits() []httpserver.BodyLimit {
+	return []httpserver.BodyLimit{{Pattern: "POST /api/v1/imports/archive", Bytes: app.MaxArchiveBytes + 1<<20}}
+}
 
 // Tools returns the reporting module's tools for language models (ADR 012).
 func (m *Module) Tools() tool.Group {

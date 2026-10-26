@@ -234,7 +234,8 @@ func (s *Service) RotateSecrets(ctx context.Context) (int, error) {
 		return 0, err
 	}
 	return s.repo.ResealCredentials(ctx, func(userID int64, id uuid.UUID, sealed []byte) ([]byte, error) {
-		if !s.box.NeedsReseal(sealed) {
+		// An imported integration holds no credential until the owner enters it (export design E2).
+		if len(sealed) == 0 || !s.box.NeedsReseal(sealed) {
 			return nil, nil
 		}
 		row := credentialRow(userID, id)

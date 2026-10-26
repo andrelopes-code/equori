@@ -93,6 +93,22 @@ func ToProblem(err error) (problem.Details, bool) {
 		d := problem.New(http.StatusBadRequest, "invalid_request", "from must not be after to, and the range must not exceed 366 days")
 		d.Errors = []problem.FieldError{{Field: "to", Message: "must be on or after from and at most 365 days after it"}}
 		return d, true
+	case errors.Is(err, errFileRequired):
+		d := problem.New(http.StatusBadRequest, "invalid_request", err.Error())
+		d.Errors = []problem.FieldError{{Field: "file", Message: "is required"}}
+		return d, true
+	case errors.Is(err, app.ErrArchiveInvalid):
+		d := problem.New(http.StatusUnprocessableEntity, "archive_invalid", err.Error())
+		d.Errors = []problem.FieldError{{Field: "file", Message: err.Error()}}
+		return d, true
+	case errors.Is(err, app.ErrArchiveVersion):
+		d := problem.New(http.StatusUnprocessableEntity, "archive_version_mismatch", err.Error())
+		d.Errors = []problem.FieldError{{Field: "file", Message: err.Error()}}
+		return d, true
+	case errors.Is(err, app.ErrImportNotEmpty):
+		return problem.New(http.StatusConflict, "import_not_empty", err.Error()), true
+	case errors.Is(err, app.ErrImportConflict):
+		return problem.New(http.StatusConflict, "import_conflict", err.Error()), true
 	case errors.Is(err, app.ErrExportNotFound):
 		return problem.New(http.StatusNotFound, "not_found", err.Error()), true
 	case errors.Is(err, app.ErrExportPending):

@@ -516,3 +516,20 @@ func TestAggregatorUnavailable(t *testing.T) {
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/integrations", integrationBody("Meu Pluggy", pluggyClient, pluggySecret)),
 		http.StatusBadGateway, "aggregator_unavailable", "")
 }
+
+// Export design E2: an imported integration holds no credential; rotation passes over it and
+// the integration asks for the credential again.
+func TestSecretRotationSkipsImportedIntegration(t *testing.T) {
+	t.Parallel()
+	a := newAggregator(t)
+	a.serveItem(pluggyClient, nubankItem, "Nubank")
+	in := a.integrate(a.h.Client, "Meu Pluggy", pluggyClient, pluggySecret)
+	if _, err := a.h.Pool.Exec(t.Context(), `UPDATE ingestion_integration SET credential_ciphertext = ''`); err != nil {
+		t.Fatal(err)
+	}
+	a.h.Restart(apitest.Aggregator("pluggy", a.p.URL()), apitest.SecretKeys(strings.Repeat("n", 32), apitest.SecretKey))
+	if n, err := a.h.App.Ingestion.RotateSecrets(t.Context()); err != nil || n != 0 {
+		t.Fatalf("rotation = %d, %v; want 0", n, err)
+	}
+	a.h.ExpectProblem(a.connect(a.h.Client, in.ID, nubankItem), http.StatusConflict, "integration_unavailable", "")
+}

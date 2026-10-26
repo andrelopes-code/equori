@@ -120,21 +120,26 @@ func (s *Service) RebuildAll(ctx context.Context) error {
 		return err
 	}
 	for _, userID := range users {
-		accounts, err := s.ledger.AccountFacts(ctx, userID)
-		if err != nil {
-			return err
-		}
-		ids := make([]uuid.UUID, 0, len(accounts))
-		for _, a := range accounts {
-			if a.Kind == kindBrokerage {
-				ids = append(ids, a.ID)
-			}
-		}
-		if err := s.HandleTransaction(ctx, userID, ids); err != nil {
+		if err := s.RebuildUser(ctx, userID); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// RebuildUser recomputes the derived rows of every brokerage account of the user.
+func (s *Service) RebuildUser(ctx context.Context, userID int64) error {
+	accounts, err := s.ledger.AccountFacts(ctx, userID)
+	if err != nil {
+		return err
+	}
+	ids := make([]uuid.UUID, 0, len(accounts))
+	for _, a := range accounts {
+		if a.Kind == kindBrokerage {
+			ids = append(ids, a.ID)
+		}
+	}
+	return s.HandleTransaction(ctx, userID, ids)
 }
 
 // IncomeTypes returns the universal income types plus those of the user's jurisdiction, sorted.

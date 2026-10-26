@@ -129,6 +129,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
+	reportingModule.OnImport(portfolioModule.RebuildUser)
 	planningModule := planning.New(pool, dispatcher, ledgerModule, marketdataModule, identityModule, portfolioModule, clk, log)
 	tools, err := tool.NewRegistry(log, append([]tool.Group{ledgerModule.Tools(), reportingModule.Tools(), ingestionModule.Tools(), planningModule.Tools(), portfolioModule.Tools(), marketdataModule.Tools(), classificationModule.Tools(), identityModule.Tools(), assistantModule.Tools()}, cfg.ExtraTools...)...)
 	if err != nil {
@@ -173,7 +174,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 
 	return &App{
 		Handler: httpserver.Middleware(identityModule.RequireSession(validator.Middleware(mux)), log,
-			append(ledgerModule.BodyLimits(), ingestionModule.BodyLimits()...)...),
+			slices.Concat(ledgerModule.BodyLimits(), ingestionModule.BodyLimits(), reportingModule.BodyLimits())...),
 		Dispatcher: dispatcher,
 		Tools:      tools,
 		Identity:   identityModule,

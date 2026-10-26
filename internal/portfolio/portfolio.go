@@ -87,6 +87,11 @@ func (m *Module) handle(ctx context.Context, tx pgx.Tx, e outbox.Delivered) erro
 // RebuildAll recomputes every derived row from the ledger (equori portfolio rebuild).
 func (m *Module) RebuildAll(ctx context.Context) error { return m.svc.RebuildAll(ctx) }
 
+// RebuildUser recomputes the user's derived rows, after an import of an export archive.
+func (m *Module) RebuildUser(ctx context.Context, userID int64) error {
+	return m.svc.RebuildUser(ctx, userID)
+}
+
 // TrailingReturn is the money-weighted return, in basis points, of the accounts taken as one tree
 // over the last 12 months up to today, valued in in, with the whole months the window covers;
 // ok is false when there is too little history or no flow (investments design 4.4).

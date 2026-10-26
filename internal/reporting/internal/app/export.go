@@ -53,11 +53,21 @@ type ExportRepository interface {
 type Clock interface{ Now() time.Time }
 
 type Exports struct {
-	repo  ExportRepository
-	clock Clock
+	repo     ExportRepository
+	imports  ImportRepository
+	clock    Clock
+	rebuilds []func(ctx context.Context, userID int64) error
 }
 
-func NewExports(repo ExportRepository, clk Clock) *Exports { return &Exports{repo: repo, clock: clk} }
+// NewExports takes the rebuilds of every derived table, run for the user after an import.
+func NewExports(repo ExportRepository, imports ImportRepository, clk Clock, rebuilds ...func(ctx context.Context, userID int64) error) *Exports {
+	return &Exports{repo: repo, imports: imports, clock: clk, rebuilds: rebuilds}
+}
+
+// OnImport adds a rebuild of another module's derived tables.
+func (s *Exports) OnImport(rebuild func(ctx context.Context, userID int64) error) {
+	s.rebuilds = append(s.rebuilds, rebuild)
+}
 
 func (s *Exports) Request(ctx context.Context, userID int64) (Export, error) {
 	e, ok, err := s.repo.RequestExport(ctx, userID, s.clock.Now())

@@ -33,6 +33,7 @@ The root package composes the module and exposes `RegisterRoutes`; `cmd/equori` 
 | Each table has one owner module; only the owner writes to it | Table name prefixed by module; sqlc queries in `db/queries/<module>/` |
 | `reporting` reads other modules' tables with `SELECT` only | Code review |
 | A database transaction never spans modules | The owner module exposes the atomic operation |
+| Amendment of 2026-10-26: `importArchive` of `reporting` writes every fact table of every module in one transaction (`docs/superpowers/specs/2026-10-26-export-design.md`, E4). It is the one exception to the two rules above. Reason: a restore of whole tables has no owner operation to call, and N13 requires that a refused import writes nothing. | `TestImportRejects` |
 
 `internal/platform/` holds infrastructure without business rules: config, database connection, migrations, HTTP server.
 

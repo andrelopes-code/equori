@@ -68,6 +68,7 @@ var exposure = map[string]string{
 	"requestExport":                    "-file",
 	"getExport":                        "-file",
 	"getExportContent":                 "-file",
+	"importArchive":                    "-file",
 	"listReimbursementSources":         "get_transaction",
 	"listReimbursementCandidates":      "get_transaction",
 	"reimburseTransaction":             "change_transaction",

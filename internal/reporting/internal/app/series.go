@@ -115,12 +115,21 @@ func (s *Service) RebuildAccounts(ctx context.Context, userID int64, accountIDs 
 // earliest precedes every accounting date the ledger accepts (ledger accounts open on 1900-01-01 at the earliest).
 var earliest = time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)
 
-func (s *Service) RebuildAll(ctx context.Context) error {
+func (s *Service) RebuildAll(ctx context.Context) error { return s.rebuild(ctx, 0) }
+
+// RebuildUser recomputes the series of every account of the user, after an import.
+func (s *Service) RebuildUser(ctx context.Context, userID int64) error { return s.rebuild(ctx, userID) }
+
+// rebuild recomputes the accounts of userID, or of every user when it is zero.
+func (s *Service) rebuild(ctx context.Context, userID int64) error {
 	refs, err := s.repo.AllAccounts(ctx)
 	if err != nil {
 		return err
 	}
 	for _, r := range refs {
+		if userID != 0 && r.UserID != userID {
+			continue
+		}
 		if err := s.repo.Rebuild(ctx, r.UserID, r.AccountID, earliest); err != nil {
 			return err
 		}

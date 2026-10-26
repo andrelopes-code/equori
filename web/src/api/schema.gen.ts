@@ -821,6 +821,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/imports/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restore an export archive into books without facts (N13, export design E4).
+         * @description The request body limit of this route is 257 MiB. 422 archive_invalid for an archive that does not read,
+         *     a checksum that differs or a table the instance does not export; 422 archive_version_mismatch for another
+         *     schema version; 409 import_not_empty when the user holds a transaction or an account without a system
+         *     role; 409 import_conflict when an identifier belongs to another user of the instance. A refused import
+         *     writes nothing.
+         */
+        post: operations["importArchive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/reports/balances": {
         parameters: {
             query?: never;
@@ -4564,6 +4588,12 @@ export interface components {
             /** @description The code of a failure, such as export_too_large; present when failed. */
             problem?: string;
         };
+        ArchiveImport: {
+            tables: {
+                name: string;
+                rows: number;
+            }[];
+        };
         TransactionBatchInput: {
             entries: components["schemas"]["TransactionBatchEntry"][];
         };
@@ -6337,6 +6367,37 @@ export interface operations {
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
+        };
+    };
+    importArchive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The rows written per table, in import order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArchiveImport"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            413: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     getBalanceSeries: {

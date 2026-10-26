@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"time"
 
@@ -79,6 +80,14 @@ func (e GetCategoryTotalsParamsClass) Valid() bool {
 // AccountFlows defines model for AccountFlows.
 type AccountFlows struct {
 	Items []FlowDay `json:"items"`
+}
+
+// ArchiveImport defines model for ArchiveImport.
+type ArchiveImport struct {
+	Tables []struct {
+		Name string `json:"name"`
+		Rows int    `json:"rows"`
+	} `json:"tables"`
 }
 
 // BalancePoint defines model for BalancePoint.
@@ -172,6 +181,11 @@ type Problem struct {
 	Type    string     `json:"type"`
 }
 
+// ImportArchiveMultipartBody defines parameters for ImportArchive.
+type ImportArchiveMultipartBody struct {
+	File openapi_types.File `json:"file"`
+}
+
 // GetBalanceSeriesParams defines parameters for GetBalanceSeries.
 type GetBalanceSeriesParams struct {
 	AccountId openapi_types.UUID           `form:"account_id" json:"account_id"`
@@ -200,6 +214,9 @@ type GetAccountFlowsParams struct {
 	To        openapi_types.Date `form:"to" json:"to"`
 }
 
+// ImportArchiveMultipartRequestBody defines body for ImportArchive for multipart/form-data ContentType.
+type ImportArchiveMultipartRequestBody ImportArchiveMultipartBody
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// RequestExport Request an archive of every fact of the books (SC6, docs/superpowers/specs/2026-10-26-export-design.md).
@@ -211,6 +228,9 @@ type ServerInterface interface {
 	// GetExportContent Download the archive of a ready export; 409 export_not_ready otherwise.
 	// (GET /exports/current/content)
 	GetExportContent(w http.ResponseWriter, r *http.Request)
+	// ImportArchive Restore an export archive into books without facts (N13, export design E4).
+	// (POST /imports/archive)
+	ImportArchive(w http.ResponseWriter, r *http.Request)
 	// GetBalanceSeries Daily balance of an account and its sub-accounts, one item per day in [from, to].
 	// (GET /reports/balances)
 	GetBalanceSeries(w http.ResponseWriter, r *http.Request, params GetBalanceSeriesParams)
@@ -264,6 +284,20 @@ func (siw *ServerInterfaceWrapper) GetExportContent(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetExportContent(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ImportArchive operation middleware
+func (siw *ServerInterfaceWrapper) ImportArchive(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ImportArchive(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -586,6 +620,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/exports", wrapper.RequestExport)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/exports/current", wrapper.GetExport)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/exports/current/content", wrapper.GetExportContent)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/imports/archive", wrapper.ImportArchive)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/balances", wrapper.GetBalanceSeries)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/flows", wrapper.GetAccountFlows)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/categories", wrapper.GetCategoryTotals)
@@ -772,6 +807,86 @@ func (response GetExportContent409ApplicationProblemPlusJSONResponse) VisitGetEx
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportArchiveRequestObject struct {
+	Body *multipart.Reader
+}
+
+type ImportArchiveResponseObject interface {
+	VisitImportArchiveResponse(w http.ResponseWriter) error
+}
+
+type ImportArchive200JSONResponse ArchiveImport
+
+func (response ImportArchive200JSONResponse) VisitImportArchiveResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportArchive401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ImportArchive401ApplicationProblemPlusJSONResponse) VisitImportArchiveResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportArchive409ApplicationProblemPlusJSONResponse Problem
+
+func (response ImportArchive409ApplicationProblemPlusJSONResponse) VisitImportArchiveResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportArchive413ApplicationProblemPlusJSONResponse Problem
+
+func (response ImportArchive413ApplicationProblemPlusJSONResponse) VisitImportArchiveResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(413)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ImportArchive422ApplicationProblemPlusJSONResponse Problem
+
+func (response ImportArchive422ApplicationProblemPlusJSONResponse) VisitImportArchiveResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -985,6 +1100,9 @@ type StrictServerInterface interface {
 	// GetExportContent Download the archive of a ready export; 409 export_not_ready otherwise.
 	// (GET /exports/current/content)
 	GetExportContent(ctx context.Context, request GetExportContentRequestObject) (GetExportContentResponseObject, error)
+	// ImportArchive Restore an export archive into books without facts (N13, export design E4).
+	// (POST /imports/archive)
+	ImportArchive(ctx context.Context, request ImportArchiveRequestObject) (ImportArchiveResponseObject, error)
 	// GetBalanceSeries Daily balance of an account and its sub-accounts, one item per day in [from, to].
 	// (GET /reports/balances)
 	GetBalanceSeries(ctx context.Context, request GetBalanceSeriesRequestObject) (GetBalanceSeriesResponseObject, error)
@@ -1100,6 +1218,37 @@ func (sh *strictHandler) GetExportContent(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetExportContentResponseObject); ok {
 		if err := validResponse.VisitGetExportContentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ImportArchive operation middleware
+func (sh *strictHandler) ImportArchive(w http.ResponseWriter, r *http.Request) {
+	var request ImportArchiveRequestObject
+
+	if reader, err := r.MultipartReader(); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
+		return
+	} else {
+		request.Body = reader
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ImportArchive(ctx, request.(ImportArchiveRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ImportArchive")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ImportArchiveResponseObject); ok {
+		if err := validResponse.VisitImportArchiveResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

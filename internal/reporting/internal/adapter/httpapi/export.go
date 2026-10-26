@@ -4,11 +4,17 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"errors"
+	"fmt"
+	"io"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/reporting/internal/app"
 )
+
+// errFileRequired: the multipart body holds no part named file.
+var errFileRequired = errors.New("file is required")
 
 func toExport(e app.Export) Export {
 	out := Export{Id: e.ID, Status: ExportStatus(e.Status), RequestedAt: e.RequestedAt, FinishedAt: e.FinishedAt}
@@ -48,4 +54,36 @@ func (s *Server) GetExportContent(ctx context.Context, _ GetExportContentRequest
 		Body: bytes.NewReader(content), ContentLength: int64(len(content)),
 		Headers: GetExportContent200ResponseHeaders{ContentDisposition: &disposition},
 	}, nil
+}
+
+func (s *Server) ImportArchive(ctx context.Context, req ImportArchiveRequestObject) (ImportArchiveResponseObject, error) {
+	var archive []byte
+	for {
+		part, err := req.Body.NextPart()
+		if errors.Is(err, io.EOF) {
+			return nil, errFileRequired
+		}
+		if err != nil {
+			return nil, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
+		}
+		if part.FormName() != "file" {
+			continue
+		}
+		if archive, err = io.ReadAll(io.LimitReader(part, app.MaxArchiveBytes+1)); err != nil {
+			return nil, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
+		}
+		break
+	}
+	counts, err := s.exports.Import(ctx, auth.MustUserID(ctx), archive)
+	if err != nil {
+		return nil, err
+	}
+	out := ImportArchive200JSONResponse{Tables: make([]struct {
+		Name string `json:"name"`
+		Rows int    `json:"rows"`
+	}, len(counts))}
+	for i, c := range counts {
+		out.Tables[i].Name, out.Tables[i].Rows = c.Name, c.Rows
+	}
+	return out, nil
 }

@@ -1371,6 +1371,43 @@ paths:
           $ref: "#/components/responses/Problem"
         "409":
           $ref: "#/components/responses/Problem"
+  /imports/archive:
+    post:
+      tags: [reporting]
+      operationId: importArchive
+      summary: Restore an export archive into books without facts (N13, export design E4).
+      description: |
+        The request body limit of this route is 257 MiB. 422 archive_invalid for an archive that does not read,
+        a checksum that differs or a table the instance does not export; 422 archive_version_mismatch for another
+        schema version; 409 import_not_empty when the user holds a transaction or an account without a system
+        role; 409 import_conflict when an identifier belongs to another user of the instance. A refused import
+        writes nothing.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: The rows written per table, in import order.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArchiveImport"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "413":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /reports/balances:
     get:
       tags: [reporting]
@@ -8124,6 +8161,20 @@ components:
         problem:
           type: string
           description: The code of a failure, such as export_too_large; present when failed.
+    ArchiveImport:
+      type: object
+      required: [tables]
+      properties:
+        tables:
+          type: array
+          items:
+            type: object
+            required: [name, rows]
+            properties:
+              name:
+                type: string
+              rows:
+                type: integer
     TransactionBatchInput:
       type: object
       additionalProperties: false
