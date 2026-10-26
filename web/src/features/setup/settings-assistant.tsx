@@ -65,6 +65,16 @@ export function SettingsAssistant() {
   const failure = providers.error ?? uses.error ?? usage.error ?? remove.error;
   const presetItems = presets.data?.items ?? [];
   const providerItems = providers.data?.items ?? [];
+  // The providers whose free tier trains on what a use sends, when that use sends financial data.
+  const training = [
+    ...new Set(
+      (uses.data?.items ?? [])
+        .filter((use) => use.sends_financial_data)
+        .flatMap((use) => use.targets)
+        .filter((target) => target.notice === "trains")
+        .map((target) => target.provider_name),
+    ),
+  ];
 
   return (
     <SettingsSection
@@ -75,6 +85,11 @@ export function SettingsAssistant() {
       <Stack gap={5}>
         {failure !== null && (
           <InlineMessage tone="danger">{errorText(failure, t)}</InlineMessage>
+        )}
+        {training.length > 0 && (
+          <InlineMessage tone="warning">
+            {t("assistant.use.trains", { provider: training.join(", ") })}
+          </InlineMessage>
         )}
         {providers.isPending || uses.isPending ? (
           <SkeletonText lines={6} />
@@ -198,6 +213,7 @@ export function SettingsAssistant() {
                               .map((x) => `${x.provider_name} · ${x.model}`)
                               .join(" → ")}
                       </ListItemDescription>
+                      <UsePrivacy use={use} />
                     </ListItemBody>
                     <ListItemEnd>
                       <Tag
@@ -212,7 +228,6 @@ export function SettingsAssistant() {
                       </Tag>
                     </ListItemEnd>
                   </ListItemContent>
-                  <UsePrivacy use={use} />
                   <ListItemActions>
                     <Button
                       size="sm"

@@ -7,19 +7,13 @@ import type { ModelUse } from "@/features/setup/api";
 import { NoticeTag } from "@/features/setup/notice-tag";
 import { useT } from "@/i18n/i18n-provider";
 
-// What a use sends and where: financial data, the capabilities it needs, the notice of each
-// target and a warning where a target trains on financial data (ADR 019).
+// What a use sends and where: financial data, the capabilities it needs, one tag per notice of its
+// targets, and the capabilities a target lacks. The warning that a target trains on financial data
+// is the section's, stated once (ADR 019).
 export function UsePrivacy({ use }: { use: ModelUse }) {
   const t = useT();
   const capability = (c: ModelUse["needs"][number]) =>
     t(`assistant.capability.${c}`);
-  const training = [
-    ...new Set(
-      use.targets
-        .filter((x) => x.notice === "trains")
-        .map((x) => x.provider_name),
-    ),
-  ];
   const lacking = use.targets
     .map((x) => ({
       name: x.provider_name,
@@ -47,15 +41,10 @@ export function UsePrivacy({ use }: { use: ModelUse }) {
             })}
           </Tag>
         )}
-        {use.targets.map((x) => (
-          <NoticeTag key={`${x.provider_id}/${x.model}`} notice={x.notice} />
+        {[...new Set(use.targets.map((x) => x.notice))].map((notice) => (
+          <NoticeTag key={notice} notice={notice} />
         ))}
       </Inline>
-      {use.sends_financial_data && training.length > 0 && (
-        <InlineMessage tone="warning">
-          {t("assistant.use.trains", { provider: training.join(", ") })}
-        </InlineMessage>
-      )}
       {lacking.map((x) => (
         <InlineMessage key={x.name} tone="danger">
           {t("assistant.use.lacks", {

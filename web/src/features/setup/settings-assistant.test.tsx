@@ -268,10 +268,10 @@ describe("assistant settings", () => {
     ).toBeVisible();
     expect(suggest.getByText(pt["assistant.notice.trains"])).toBeVisible();
     expect(
-      suggest.getByText(
+      suggest.queryByText(
         pt["assistant.use.trains"].replace("{provider}", "aistudio"),
       ),
-    ).toBeVisible();
+    ).toBeNull();
     const chat = await row(pt["assistant.use.assistant.chat"]);
     expect(chat.queryByText(/camada gratuita/i)).toBeNull();
     expect(chat.getByText(pt["assistant.notice.provider_terms"])).toBeVisible();
