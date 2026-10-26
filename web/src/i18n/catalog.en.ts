@@ -1465,6 +1465,7 @@ export const catalogEn = {
   "schedules.recurrence": "Recurrence",
   "schedules.next": "Next occurrence",
   "schedules.ends": "Ends on",
+  "schedules.yearly": "Per year",
   "schedules.none": "None",
   "schedules.empty": "No schedule yet",
   "schedules.emptyHint":

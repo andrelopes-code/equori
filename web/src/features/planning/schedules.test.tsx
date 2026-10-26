@@ -36,6 +36,26 @@ async function pick(label: string, text: string) {
 }
 
 describe("Schedules tab", () => {
+  it("states what each schedule moves in a year, and leaves a transfer out", async () => {
+    await renderApp("/planning?tab=schedules", { fetch: api() });
+    const table = await screen.findByRole("table", {
+      name: catalogEn["schedules.caption"],
+    });
+    expect(
+      await within(table).findByRole("columnheader", {
+        name: catalogEn["schedules.yearly"],
+      }),
+    ).toBeInTheDocument();
+    const rentRow = await within(table).findByRole("row", { name: /^Rent/ });
+    expect(within(rentRow).getByText("R$25,200.00")).toBeInTheDocument();
+    const salaryRow = within(table).getByRole("row", { name: /^Salary/ });
+    expect(within(salaryRow).getByText("R$60,000.00")).toBeInTheDocument();
+    const streamingRow = within(table).getByRole("row", {
+      name: /^Streaming/,
+    });
+    expect(within(streamingRow).getByText("R$478.80")).toBeInTheDocument();
+  });
+
   it("lists the schedules by kind with their current terms, next occurrence and end", async () => {
     await renderApp("/planning?tab=schedules", { fetch: api() });
     const table = await screen.findByRole("table", {

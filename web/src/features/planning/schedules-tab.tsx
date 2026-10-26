@@ -31,6 +31,7 @@ import {
   currentTerms,
   kindLabel,
   recurrenceWords,
+  subscriptionCost,
 } from "@/features/planning/schedule-words";
 import { SchedulesList } from "@/features/planning/schedules-list";
 import { useScale } from "@/features/setup";
@@ -99,7 +100,7 @@ export function SchedulesTab({ onCreate }: { onCreate: () => void }) {
     );
   return (
     <Table
-      columns={7}
+      columns={8}
       variant="framed"
       loading={schedules.isFetching && !schedules.isPending}
     >
@@ -111,6 +112,9 @@ export function SchedulesTab({ onCreate }: { onCreate: () => void }) {
             <TableColumnHeader>{t("agenda.account")}</TableColumnHeader>
             <TableColumnHeader>{t("schedules.counterpart")}</TableColumnHeader>
             <TableColumnHeader numeric>{t("ledger.amount")}</TableColumnHeader>
+            <TableColumnHeader numeric>
+              {t("schedules.yearly")}
+            </TableColumnHeader>
             <TableColumnHeader>{t("schedules.recurrence")}</TableColumnHeader>
             <TableColumnHeader>{t("schedules.next")}</TableColumnHeader>
             <TableColumnHeader>{t("schedules.ends")}</TableColumnHeader>
@@ -151,6 +155,20 @@ export function SchedulesTab({ onCreate }: { onCreate: () => void }) {
                           {terms !== undefined &&
                             fmt.money(
                               terms.amount,
+                              scale(terms.amount.currency),
+                            )}
+                        </TableCell>
+                        <TableCell numeric>
+                          {terms !== undefined &&
+                            kind !== "transfer" &&
+                            fmt.money(
+                              {
+                                amount: subscriptionCost(
+                                  terms.recurrence,
+                                  terms.amount.amount,
+                                ).yearly,
+                                currency: terms.amount.currency,
+                              },
                               scale(terms.amount.currency),
                             )}
                         </TableCell>
