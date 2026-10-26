@@ -10,9 +10,9 @@ import (
 
 // card is the Itaú Visa of section 6.21: closes on day 3, due on day 10.
 type card struct {
-	h                                                   *apitest.Harness
-	card, checking, supermarket, electronics, discounts string
-	laptop                                              purchase
+	h                                                             *apitest.Harness
+	card, checking, supermarket, electronics, discounts, interest string
+	laptop                                                        purchase
 }
 
 type purchase struct {
@@ -23,7 +23,12 @@ type purchase struct {
 // newCard records the supermarket purchase of S05 and the laptop of S06.
 func newCard(t *testing.T) card {
 	t.Helper()
-	h := apitest.New(t, apitest.Today("2027-01-31"))
+	return newCardOn(t, "2027-01-31")
+}
+
+func newCardOn(t *testing.T, today string) card {
+	t.Helper()
+	h := apitest.New(t, apitest.Today(today))
 	food := h.Account("Food", "expense", "", nil)
 	c := card{
 		h: h, card: h.Card("Itaú Visa", 3, 10, "next"), checking: h.Account("Nubank", "asset", "checking", nil),
@@ -50,31 +55,27 @@ func newCard(t *testing.T) card {
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts?limit=200", nil, http.StatusOK, &accounts)
 	for _, a := range accounts.Items {
-		if a.SystemRole == "discounts" {
+		switch a.SystemRole {
+		case "discounts":
 			c.discounts = a.ID
+		case "interest":
+			c.interest = a.ID
 		}
 	}
 	return c
 }
 
-func (c card) pay(t *testing.T, statement, date string, amount int64) {
+// pay pays a statement and returns the payment's transaction ID.
+func (c card) pay(t *testing.T, statement, date string, amount int64) string {
 	t.Helper()
-	var out struct {
-		Items []struct {
-			ID        string `json:"id"`
-			Reference string `json:"reference"`
-		} `json:"items"`
+	id := c.statementID(t, statement)
+	var tx struct {
+		ID string `json:"id"`
 	}
-	c.h.MustDo(http.MethodGet, "/api/v1/accounts/"+c.card+"/statements?from=2026-01&to=2027-12", nil, http.StatusOK, &out)
-	for _, s := range out.Items {
-		if s.Reference == statement {
-			c.h.MustDo(http.MethodPost, "/api/v1/statements/"+s.ID+"/payments", map[string]any{
-				"date": date, "from_account_id": c.checking, "amount": apitest.BRL(amount),
-			}, http.StatusCreated, nil)
-			return
-		}
-	}
-	t.Fatalf("no statement %s in %+v", statement, out.Items)
+	c.h.MustDo(http.MethodPost, "/api/v1/statements/"+id+"/payments", map[string]any{
+		"date": date, "from_account_id": c.checking, "amount": apitest.BRL(amount),
+	}, http.StatusCreated, &tx)
+	return tx.ID
 }
 
 // totals reads the own total of every category with a non-zero total.
@@ -173,4 +174,84 @@ func TestS147(t *testing.T) {
 	expectTotals(t, totals(t, c.h, "expense", "cash", "2026-12-01", "2026-12-31"), map[string]int64{c.electronics: 66666})
 	expectTotals(t, totals(t, c.h, "income", "cash", "2026-12-01", "2026-12-31"), map[string]int64{c.discounts: 2666})
 	expectTotals(t, totals(t, c.h, "expense", "cash", "2027-01-01", "2027-01-31"), map[string]int64{})
+}
+
+type cashPayment struct {
+	Date   string `json:"date"`
+	Amount struct {
+		Amount   int64  `json:"amount"`
+		Currency string `json:"currency"`
+	} `json:"amount"`
+	StatementID          string `json:"statement_id"`
+	PaymentTransactionID string `json:"payment_transaction_id"`
+}
+
+func cashPayments(t *testing.T, h *apitest.Harness, category, from, to string) []cashPayment {
+	t.Helper()
+	var out struct {
+		Items []cashPayment `json:"items"`
+	}
+	h.MustDo(http.MethodGet, "/api/v1/reports/categories/"+category+"/cash-payments?from="+from+"&to="+to, nil, http.StatusOK, &out)
+	return out.Items
+}
+
+func TestS149(t *testing.T) {
+	t.Parallel()
+	c := newCardOn(t, "2027-03-31")
+	c.pay(t, "2026-11", "2026-11-10", 16334)
+	c.h.MustDo(http.MethodPost, "/api/v1/statements/"+c.statementID(t, "2026-11")+"/financing",
+		map[string]any{"date": "2026-11-12", "installment_count": 3, "installment_amount": apitest.BRL(14000)}, http.StatusCreated, nil)
+	december := c.pay(t, "2026-12", "2026-12-10", 47333)
+	c.pay(t, "2027-01", "2027-01-10", 47333)
+	c.pay(t, "2027-02", "2027-02-10", 14000)
+	months := []struct {
+		from, to string
+		want     map[string]int64
+	}{
+		{"2026-11-01", "2026-11-30", map[string]int64{c.supermarket: 6668, c.electronics: 9666}},
+		{"2026-12-01", "2026-12-31", map[string]int64{c.supermarket: 5444, c.electronics: 41223, c.interest: 666}},
+		{"2027-01-01", "2027-01-31", map[string]int64{c.supermarket: 5444, c.electronics: 41222, c.interest: 667}},
+		{"2027-02-01", "2027-02-28", map[string]int64{c.supermarket: 5444, c.electronics: 7889, c.interest: 667}},
+	}
+	for _, m := range months {
+		got := totals(t, c.h, "expense", "cash", m.from, m.to)
+		expectTotals(t, got, m.want)
+		expectTotals(t, totals(t, c.h, "expense", "cash", m.from, m.to), got)
+		for category, total := range m.want {
+			var sum int64
+			for _, p := range cashPayments(t, c.h, category, m.from, m.to) {
+				sum += p.Amount.Amount
+			}
+			if sum != total {
+				t.Errorf("cash payments of %s in %s sum to %d, want %d", category, m.from, sum, total)
+			}
+		}
+	}
+	// N20: the amount names the statement and the payment.
+	got := cashPayments(t, c.h, c.interest, "2026-12-01", "2026-12-31")
+	want := cashPayment{Date: "2026-12-10", StatementID: c.statementID(t, "2026-12"), PaymentTransactionID: december}
+	want.Amount.Amount, want.Amount.Currency = 666, "BRL"
+	if len(got) != 1 || got[0] != want {
+		t.Fatalf("cash payments of interest = %+v, want %+v", got, want)
+	}
+}
+
+func TestS150(t *testing.T) {
+	t.Parallel()
+	c := newCardOn(t, "2027-03-31")
+	c.pay(t, "2026-11", "2026-11-10", 26334)
+	c.h.Record("2026-12-01", apitest.Posting(c.card, -4500), apitest.Posting(c.interest, 4500))
+	c.pay(t, "2026-12", "2026-12-10", 50000)
+	c.pay(t, "2026-12", "2027-01-05", 17833)
+	expectTotals(t, totals(t, c.h, "expense", "cash", "2026-11-01", "2026-11-30"), map[string]int64{c.supermarket: 10751, c.electronics: 15583})
+	expectTotals(t, totals(t, c.h, "expense", "cash", "2026-12-01", "2026-12-31"), map[string]int64{c.supermarket: 12249, c.electronics: 35373, c.interest: 2378})
+	expectTotals(t, totals(t, c.h, "expense", "cash", "2027-01-01", "2027-01-31"), map[string]int64{c.electronics: 15711, c.interest: 2122})
+}
+
+func TestCashPaymentsOfAnotherUsersCategory(t *testing.T) {
+	t.Parallel()
+	c := newCard(t)
+	other := apitest.New(t, apitest.Today("2027-01-31"))
+	other.ExpectProblem(other.Do(http.MethodGet, "/api/v1/reports/categories/"+c.supermarket+"/cash-payments?from=2026-11-01&to=2026-11-30", nil), http.StatusNotFound, "not_found", "")
+	c.h.ExpectProblem(c.h.Do(http.MethodGet, "/api/v1/reports/categories/"+c.supermarket+"/cash-payments?from=2026-01-01&to=2027-12-31", nil), http.StatusBadRequest, "invalid_request", "to")
 }

@@ -1,7 +1,7 @@
 -- name: CashCardLines :many
 -- Charge and credit postings of the user's cards by card and statement; base marks a card in
 -- the base currency (CV1, CV6). A line of an installment plan carries the date of its purchase.
-SELECT p.id, p.transaction_id, p.account_id AS card_id, p.amount, p.card_role, s.reference_month,
+SELECT p.id, p.transaction_id, p.account_id AS card_id, p.amount, p.card_role, s.id AS statement_id, s.reference_month,
        (a.instrument = st.base_currency)::boolean AS base, o.date AS plan_purchase_date,
        EXISTS (SELECT 1 FROM ledger_link l WHERE l.user_id = p.user_id AND l.from_transaction_id = p.transaction_id
                AND l.link_type = 'anticipation_of')::boolean AS anticipation
@@ -16,7 +16,10 @@ ORDER BY p.account_id, s.reference_month, p.id;
 
 -- name: CashPayments :many
 -- CV4: payments of the user's cards in the base currency up to a date, in the order they apply.
-SELECT p.id, p.account_id AS card_id, p.booked_on, p.amount
+-- financing marks the payment of a transaction that created a financing plan (CV7).
+SELECT p.id, p.transaction_id, p.account_id AS card_id, p.booked_on, p.amount,
+       EXISTS (SELECT 1 FROM ledger_installment_plan ip WHERE ip.user_id = p.user_id
+               AND ip.origin_transaction_id = p.transaction_id AND ip.plan_kind = 'financing')::boolean AS financing
 FROM ledger_posting p
 JOIN ledger_account a ON a.id = p.account_id
 JOIN ledger_settings st ON st.user_id = p.user_id

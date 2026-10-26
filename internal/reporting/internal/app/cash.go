@@ -24,6 +24,7 @@ const (
 // linked anticipation_of.
 type CardLine struct {
 	ID, TransactionID, CardID uuid.UUID
+	StatementID               uuid.UUID
 	Amount                    int64
 	Credit                    bool
 	Statement                 time.Time
@@ -32,10 +33,13 @@ type CardLine struct {
 	Anticipation              bool
 }
 
+// CardPayment is a payment posting of a card. Financing marks the payment of a transaction
+// that created a financing plan (CV7).
 type CardPayment struct {
-	ID, CardID uuid.UUID
-	Date       time.Time
-	Amount     int64
+	ID, TransactionID, CardID uuid.UUID
+	Date                      time.Time
+	Amount                    int64
+	Financing                 bool
 }
 
 // Shares are amounts per category, signed as the category postings.
@@ -57,7 +61,16 @@ type CashRepository interface {
 	OffCardTotals(ctx context.Context, userID int64, from, to time.Time) (Shares, error)
 }
 
-// cashTotals is the cash view of [from, to] per category (CV1 to CV5).
+// CashPayment is the amount a card payment gives one category in the cash view, with the
+// statement it pays and the payment's transaction (N20, CV10).
+type CashPayment struct {
+	Date                 time.Time
+	Amount               int64
+	StatementID          uuid.UUID
+	PaymentTransactionID uuid.UUID
+}
+
+// cashTotals is the cash view of [from, to] per category (CV1 to CV9).
 func (s *Service) cashTotals(ctx context.Context, userID int64, from, to time.Time) (Shares, error) {
 	out, err := s.repo.OffCardTotals(ctx, userID, from, to)
 	if err != nil {
@@ -67,7 +80,8 @@ func (s *Service) cashTotals(ctx context.Context, userID int64, from, to time.Ti
 	if err != nil {
 		return nil, err
 	}
-	for _, p := range paid(facts) {
+	payments, _ := allocate(facts)
+	for _, p := range payments {
 		if !p.date.Before(from) && !p.date.After(to) {
 			add(out, p.shares)
 		}
@@ -75,42 +89,81 @@ func (s *Service) cashTotals(ctx context.Context, userID int64, from, to time.Ti
 	return out, nil
 }
 
-type payment struct {
-	date   time.Time
-	shares Shares
+// CategoryCashPayments lists the card amounts of one category in the cash view of [from, to],
+// signed as its postings, in the order the payments apply (CV10).
+func (s *Service) CategoryCashPayments(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) ([]CashPayment, string, error) {
+	if days := int(to.Sub(from).Hours()/24) + 1; days < 1 || days > MaxCategoryDays {
+		return nil, "", ErrInvalidCategoryRange
+	}
+	instrument, err := s.repo.AccountCurrency(ctx, userID, categoryID)
+	if err != nil {
+		return nil, "", err
+	}
+	facts, err := s.repo.CardFacts(ctx, userID, to)
+	if err != nil {
+		return nil, "", err
+	}
+	payments, _ := allocate(facts)
+	var out []CashPayment
+	for _, p := range payments {
+		if v := p.shares[categoryID]; v != 0 && !p.date.Before(from) && !p.date.After(to) {
+			out = append(out, CashPayment{Date: p.date, Amount: v, StatementID: p.statement, PaymentTransactionID: p.transaction})
+		}
+	}
+	return out, instrument, nil
 }
 
-// paid applies each payment to the oldest statement of its card that is still owed (CV4).
-func paid(f CardFacts) []payment {
+type payment struct {
+	date                   time.Time
+	statement, transaction uuid.UUID
+	shares                 Shares
+}
+
+// allocate applies each payment to the oldest statement of its card that is still owed (CV4)
+// and returns the cash payments with the categories of every card line (CV2, CV7).
+func allocate(f CardFacts) ([]payment, map[uuid.UUID]Shares) {
+	financing := map[uuid.UUID]bool{}
+	for _, p := range f.Payments {
+		if p.Financing {
+			financing[p.TransactionID] = true
+		}
+	}
 	categories := lineCategories(f)
 	type bucket struct {
-		card      uuid.UUID
+		card, id  uuid.UUID
 		statement time.Time
 		shares    Shares
 	}
 	var buckets []*bucket
+	bucketOf := map[uuid.UUID]*bucket{}
+	byTx := map[uuid.UUID][]CardLine{}
 	for _, l := range f.Lines {
 		if !l.Base {
 			continue
 		}
+		if financing[l.TransactionID] {
+			// CV7: an installment of a financing has no categories until the financing applies.
+			categories[l.ID] = Shares{}
+		}
 		if n := len(buckets); n == 0 || buckets[n-1].card != l.CardID || !buckets[n-1].statement.Equal(l.Statement) {
-			buckets = append(buckets, &bucket{card: l.CardID, statement: l.Statement, shares: Shares{}})
+			buckets = append(buckets, &bucket{card: l.CardID, id: l.StatementID, statement: l.Statement, shares: Shares{}})
 		}
+		bucketOf[l.ID] = buckets[len(buckets)-1]
+		byTx[l.TransactionID] = append(byTx[l.TransactionID], l)
 		add(buckets[len(buckets)-1].shares, categories[l.ID])
-	}
-	// A statement owing nothing passes what it holds to the next statement of its card.
-	var owed []*bucket
-	for i, b := range buckets {
-		if sum(b.shares) > 0 {
-			owed = append(owed, b)
-		} else if i+1 < len(buckets) && buckets[i+1].card == b.card {
-			add(buckets[i+1].shares, b.shares)
-		}
 	}
 	var out []payment
 	for _, p := range f.Payments {
+		// A statement owing nothing passes what it holds to the next statement of its card (CV8).
+		for i, b := range buckets[:max(len(buckets)-1, 0)] {
+			if sum(b.shares) <= 0 && buckets[i+1].card == b.card {
+				add(buckets[i+1].shares, b.shares)
+				b.shares = Shares{}
+			}
+		}
 		left := p.Amount
-		for _, b := range owed {
+		moved := Shares{}
+		for _, b := range buckets {
 			if left <= 0 {
 				break
 			}
@@ -121,8 +174,44 @@ func paid(f CardFacts) []payment {
 			share := distribute(min(left, due), b.shares)
 			add(b.shares, negate(share))
 			left -= min(left, due)
-			out = append(out, payment{date: p.Date, shares: share})
+			if p.Financing {
+				add(moved, share)
+				continue
+			}
+			out = append(out, payment{date: p.Date, statement: b.id, transaction: p.TransactionID, shares: share})
 		}
+		if !p.Financing {
+			continue
+		}
+		// CV7: the principal moves into the installments beside the financing's interest.
+		rest := clone(f.Categories[p.TransactionID])
+		add(rest, moved)
+		for _, l := range spread(byTx[p.TransactionID], rest) {
+			add(bucketOf[l.id].shares, l.shares)
+			categories[l.id] = l.shares
+		}
+	}
+	return out, categories
+}
+
+type lineShares struct {
+	id     uuid.UUID
+	shares Shares
+}
+
+// spread distributes rest over lines in proportion to their amounts, the last line taking
+// what is left (CV2).
+func spread(lines []CardLine, rest Shares) []lineShares {
+	out := make([]lineShares, len(lines))
+	for i, l := range lines {
+		if i == len(lines)-1 {
+			out[i] = lineShares{l.ID, rest}
+			break
+		}
+		share := distribute(-l.Amount, rest)
+		out[i] = lineShares{l.ID, share}
+		rest = clone(rest)
+		add(rest, negate(share))
 	}
 	return out
 }
@@ -157,15 +246,8 @@ func lineCategories(f CardFacts) map[uuid.UUID]Shares {
 			}
 			others = append(others, l)
 		}
-		for i, l := range others {
-			if i == len(others)-1 {
-				out[l.ID] = rest
-				break
-			}
-			share := distribute(-l.Amount, rest)
-			out[l.ID] = share
-			rest = clone(rest)
-			add(rest, negate(share))
+		for _, l := range spread(others, rest) {
+			out[l.id] = l.shares
 		}
 	}
 	return out

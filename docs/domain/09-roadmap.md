@@ -45,3 +45,5 @@ flowchart LR
 ## 9.3 Next step
 
 P1 to P9 are delivered; the SC1 check of P6 waits for the owner (`docs/operations/pluggy.md`, section 5). P9 delivered the cash view of `getCategoryTotals` and the statement analytics (`docs/superpowers/plans/2026-10-26-p9-cash-view.md`, S30, S145 to S148), and the export and import round trip (`docs/superpowers/specs/2026-10-26-export-design.md`, SC6, N13). Left out of P9: the cash view of a financed statement and of revolving credit, which no scenario fixes, and the import of an archive of another schema version.
+
+Amendment of 2026-10-26: the cash view of a financed statement and of revolving credit is delivered (CV7 to CV10 of `docs/superpowers/plans/2026-10-26-p9-cash-view.md`, S149, S150). Reason: the owner decided the rule.

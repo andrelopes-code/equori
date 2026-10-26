@@ -24,14 +24,16 @@ func (r *Repository) CardFacts(ctx context.Context, userID int64, to time.Time) 
 	var txs []uuid.UUID
 	for _, l := range lines {
 		f.Lines = append(f.Lines, app.CardLine{
-			ID: l.ID, TransactionID: l.TransactionID, CardID: l.CardID, Amount: l.Amount,
+			ID: l.ID, TransactionID: l.TransactionID, CardID: l.CardID, StatementID: l.StatementID, Amount: l.Amount,
 			Credit: l.CardRole != nil && *l.CardRole == "credit", Statement: l.ReferenceMonth,
 			Base: l.Base, PlanPurchase: l.PlanPurchaseDate, Anticipation: l.Anticipation,
 		})
 		txs = append(txs, l.TransactionID)
 	}
 	for _, p := range payments {
-		f.Payments = append(f.Payments, app.CardPayment{ID: p.ID, CardID: p.CardID, Date: p.BookedOn, Amount: p.Amount})
+		f.Payments = append(f.Payments, app.CardPayment{
+			ID: p.ID, TransactionID: p.TransactionID, CardID: p.CardID, Date: p.BookedOn, Amount: p.Amount, Financing: p.Financing,
+		})
 	}
 	origins, err := r.q.CashOrigins(ctx, CashOriginsParams{UserID: userID, TransactionIds: txs})
 	if err != nil {

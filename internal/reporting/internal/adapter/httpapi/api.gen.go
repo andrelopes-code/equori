@@ -124,6 +124,23 @@ type CardStatementAnalytics struct {
 	Items []StatementAnalyticsItem `json:"items"`
 }
 
+// CategoryCashPayment defines model for CategoryCashPayment.
+type CategoryCashPayment struct {
+	Amount Money `json:"amount"`
+
+	// Date The payment's date.
+	Date                 openapi_types.Date `json:"date"`
+	PaymentTransactionId openapi_types.UUID `json:"payment_transaction_id"`
+
+	// StatementId The statement the payment pays.
+	StatementId openapi_types.UUID `json:"statement_id"`
+}
+
+// CategoryCashPayments defines model for CategoryCashPayments.
+type CategoryCashPayments struct {
+	Items []CategoryCashPayment `json:"items"`
+}
+
 // CategoryTotal defines model for CategoryTotal.
 type CategoryTotal struct {
 	AccountId    openapi_types.UUID `json:"account_id"`
@@ -276,7 +293,7 @@ type GetCategoryTotalsParams struct {
 
 	// View accrual counts each amount on its transaction date. cash counts a card line when its statement is paid,
 	// in proportion to the payment, and any other amount on its date (docs/superpowers/plans/2026-10-26-p9-cash-view.md,
-	// CV1 to CV6).
+	// CV1 to CV10).
 	View *GetCategoryTotalsParamsView `form:"view,omitempty" json:"view,omitempty"`
 }
 
@@ -285,6 +302,12 @@ type GetCategoryTotalsParamsClass string
 
 // GetCategoryTotalsParamsView defines parameters for GetCategoryTotals.
 type GetCategoryTotalsParamsView string
+
+// ListCategoryCashPaymentsParams defines parameters for ListCategoryCashPayments.
+type ListCategoryCashPaymentsParams struct {
+	From openapi_types.Date `form:"from" json:"from"`
+	To   openapi_types.Date `form:"to" json:"to"`
+}
 
 // GetAccountFlowsParams defines parameters for GetAccountFlows.
 type GetAccountFlowsParams struct {
@@ -319,6 +342,9 @@ type ServerInterface interface {
 	// GetCategoryTotals Totals of each category of a class in [from, to], at most 366 days, in the accrual or cash view (A77).
 	// (GET /reports/categories)
 	GetCategoryTotals(w http.ResponseWriter, r *http.Request, params GetCategoryTotalsParams)
+	// ListCategoryCashPayments Card amounts of one category in the cash view of [from, to], at most 366 days, each naming its statement and payment (N20).
+	// (GET /reports/categories/{id}/cash-payments)
+	ListCategoryCashPayments(w http.ResponseWriter, r *http.Request, id ID, params ListCategoryCashPaymentsParams)
 	// GetAccountFlows Booked inflow and outflow of one account, one item per day in [from, to] that has a posting (A119).
 	// (GET /reports/flows)
 	GetAccountFlows(w http.ResponseWriter, r *http.Request, params GetAccountFlowsParams)
@@ -562,6 +588,61 @@ func (siw *ServerInterfaceWrapper) GetCategoryTotals(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// ListCategoryCashPayments operation middleware
+func (siw *ServerInterfaceWrapper) ListCategoryCashPayments(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListCategoryCashPaymentsParams
+
+	// ------------- Required query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCategoryCashPayments(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetAccountFlows operation middleware
 func (siw *ServerInterfaceWrapper) GetAccountFlows(w http.ResponseWriter, r *http.Request) {
 
@@ -776,6 +857,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/balances", wrapper.GetBalanceSeries)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/flows", wrapper.GetAccountFlows)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/categories", wrapper.GetCategoryTotals)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/categories/{id}/cash-payments", wrapper.ListCategoryCashPayments)
 
 	return m
 }
@@ -1227,6 +1309,73 @@ func (response GetCategoryTotals401ApplicationProblemPlusJSONResponse) VisitGetC
 	return err
 }
 
+type ListCategoryCashPaymentsRequestObject struct {
+	Id     ID `json:"id"`
+	Params ListCategoryCashPaymentsParams
+}
+
+type ListCategoryCashPaymentsResponseObject interface {
+	VisitListCategoryCashPaymentsResponse(w http.ResponseWriter) error
+}
+
+type ListCategoryCashPayments200JSONResponse CategoryCashPayments
+
+func (response ListCategoryCashPayments200JSONResponse) VisitListCategoryCashPaymentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCategoryCashPayments400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListCategoryCashPayments400ApplicationProblemPlusJSONResponse) VisitListCategoryCashPaymentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCategoryCashPayments401ApplicationProblemPlusJSONResponse Problem
+
+func (response ListCategoryCashPayments401ApplicationProblemPlusJSONResponse) VisitListCategoryCashPaymentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListCategoryCashPayments404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListCategoryCashPayments404ApplicationProblemPlusJSONResponse) VisitListCategoryCashPaymentsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetAccountFlowsRequestObject struct {
 	Params GetAccountFlowsParams
 }
@@ -1368,6 +1517,9 @@ type StrictServerInterface interface {
 	// GetCategoryTotals Totals of each category of a class in [from, to], at most 366 days, in the accrual or cash view (A77).
 	// (GET /reports/categories)
 	GetCategoryTotals(ctx context.Context, request GetCategoryTotalsRequestObject) (GetCategoryTotalsResponseObject, error)
+	// ListCategoryCashPayments Card amounts of one category in the cash view of [from, to], at most 366 days, each naming its statement and payment (N20).
+	// (GET /reports/categories/{id}/cash-payments)
+	ListCategoryCashPayments(ctx context.Context, request ListCategoryCashPaymentsRequestObject) (ListCategoryCashPaymentsResponseObject, error)
 	// GetAccountFlows Booked inflow and outflow of one account, one item per day in [from, to] that has a posting (A119).
 	// (GET /reports/flows)
 	GetAccountFlows(ctx context.Context, request GetAccountFlowsRequestObject) (GetAccountFlowsResponseObject, error)
@@ -1589,6 +1741,33 @@ func (sh *strictHandler) GetCategoryTotals(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetCategoryTotalsResponseObject); ok {
 		if err := validResponse.VisitGetCategoryTotalsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListCategoryCashPayments operation middleware
+func (sh *strictHandler) ListCategoryCashPayments(w http.ResponseWriter, r *http.Request, id ID, params ListCategoryCashPaymentsParams) {
+	var request ListCategoryCashPaymentsRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCategoryCashPayments(ctx, request.(ListCategoryCashPaymentsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCategoryCashPayments")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListCategoryCashPaymentsResponseObject); ok {
+		if err := validResponse.VisitListCategoryCashPaymentsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

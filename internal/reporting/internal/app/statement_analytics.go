@@ -90,7 +90,7 @@ func (s *Service) analyse(ctx context.Context, userID int64, instrument string, 
 	if err != nil {
 		return nil, err
 	}
-	categories := lineCategories(facts)
+	_, categories := allocate(facts)
 	out := make([]StatementAnalytics, len(refs))
 	for i, ref := range refs {
 		byCategory := map[uuid.UUID]*CategoryParts{}

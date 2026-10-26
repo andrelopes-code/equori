@@ -80,7 +80,7 @@ func (q *Queries) CardInstrument(ctx context.Context, arg CardInstrumentParams) 
 }
 
 const cashCardLines = `-- name: CashCardLines :many
-SELECT p.id, p.transaction_id, p.account_id AS card_id, p.amount, p.card_role, s.reference_month,
+SELECT p.id, p.transaction_id, p.account_id AS card_id, p.amount, p.card_role, s.id AS statement_id, s.reference_month,
        (a.instrument = st.base_currency)::boolean AS base, o.date AS plan_purchase_date,
        EXISTS (SELECT 1 FROM ledger_link l WHERE l.user_id = p.user_id AND l.from_transaction_id = p.transaction_id
                AND l.link_type = 'anticipation_of')::boolean AS anticipation
@@ -100,6 +100,7 @@ type CashCardLinesRow struct {
 	CardID           uuid.UUID
 	Amount           int64
 	CardRole         *string
+	StatementID      uuid.UUID
 	ReferenceMonth   time.Time
 	Base             bool
 	PlanPurchaseDate *time.Time
@@ -123,6 +124,7 @@ func (q *Queries) CashCardLines(ctx context.Context, userID int64) ([]CashCardLi
 			&i.CardID,
 			&i.Amount,
 			&i.CardRole,
+			&i.StatementID,
 			&i.ReferenceMonth,
 			&i.Base,
 			&i.PlanPurchaseDate,
@@ -264,7 +266,9 @@ func (q *Queries) CashOrigins(ctx context.Context, arg CashOriginsParams) ([]Cas
 }
 
 const cashPayments = `-- name: CashPayments :many
-SELECT p.id, p.account_id AS card_id, p.booked_on, p.amount
+SELECT p.id, p.transaction_id, p.account_id AS card_id, p.booked_on, p.amount,
+       EXISTS (SELECT 1 FROM ledger_installment_plan ip WHERE ip.user_id = p.user_id
+               AND ip.origin_transaction_id = p.transaction_id AND ip.plan_kind = 'financing')::boolean AS financing
 FROM ledger_posting p
 JOIN ledger_account a ON a.id = p.account_id
 JOIN ledger_settings st ON st.user_id = p.user_id
@@ -279,13 +283,16 @@ type CashPaymentsParams struct {
 }
 
 type CashPaymentsRow struct {
-	ID       uuid.UUID
-	CardID   uuid.UUID
-	BookedOn time.Time
-	Amount   int64
+	ID            uuid.UUID
+	TransactionID uuid.UUID
+	CardID        uuid.UUID
+	BookedOn      time.Time
+	Amount        int64
+	Financing     bool
 }
 
 // CV4: payments of the user's cards in the base currency up to a date, in the order they apply.
+// financing marks the payment of a transaction that created a financing plan (CV7).
 func (q *Queries) CashPayments(ctx context.Context, arg CashPaymentsParams) ([]CashPaymentsRow, error) {
 	rows, err := q.db.Query(ctx, cashPayments, arg.UserID, arg.ToDate)
 	if err != nil {
@@ -297,9 +304,11 @@ func (q *Queries) CashPayments(ctx context.Context, arg CashPaymentsParams) ([]C
 		var i CashPaymentsRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.TransactionID,
 			&i.CardID,
 			&i.BookedOn,
 			&i.Amount,
+			&i.Financing,
 		); err != nil {
 			return nil, err
 		}

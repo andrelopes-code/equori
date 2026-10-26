@@ -83,6 +83,21 @@ func (s *Server) GetCategoryTotals(ctx context.Context, req GetCategoryTotalsReq
 	return out, nil
 }
 
+func (s *Server) ListCategoryCashPayments(ctx context.Context, req ListCategoryCashPaymentsRequestObject) (ListCategoryCashPaymentsResponseObject, error) {
+	payments, instrument, err := s.svc.CategoryCashPayments(ctx, auth.MustUserID(ctx), req.Id, req.Params.From.Time, req.Params.To.Time)
+	if err != nil {
+		return nil, err
+	}
+	out := ListCategoryCashPayments200JSONResponse{Items: make([]CategoryCashPayment, len(payments))}
+	for i, p := range payments {
+		out.Items[i] = CategoryCashPayment{
+			Date: cashDate(p), Amount: Money{Amount: p.Amount, Currency: instrument},
+			StatementId: p.StatementID, PaymentTransactionId: p.PaymentTransactionID,
+		}
+	}
+	return out, nil
+}
+
 // ToProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).
 func ToProblem(err error) (problem.Details, bool) {
 	switch {

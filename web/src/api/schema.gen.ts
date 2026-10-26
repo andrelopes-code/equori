@@ -989,6 +989,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/reports/categories/{id}/cash-payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Card amounts of one category in the cash view of [from, to], at most 366 days, each naming its statement and payment (N20).
+         * @description Each item is the share a card payment gives the category (docs/superpowers/plans/2026-10-26-p9-cash-view.md, CV1 to CV10),
+         *     signed as the category's postings, in the order the payments apply. Amounts of transactions without a card line are not
+         *     listed; they count on their own date. The items of a category sum to the card part of its cash total.
+         */
+        get: operations["listCategoryCashPayments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/calendars": {
         parameters: {
             query?: never;
@@ -4231,6 +4253,24 @@ export interface components {
             total: components["schemas"]["Money"];
             subtree_total: components["schemas"]["Money"];
         };
+        CategoryCashPayments: {
+            items: components["schemas"]["CategoryCashPayment"][];
+        };
+        CategoryCashPayment: {
+            /**
+             * Format: date
+             * @description The payment's date.
+             */
+            date: string;
+            amount: components["schemas"]["Money"];
+            /**
+             * Format: uuid
+             * @description The statement the payment pays.
+             */
+            statement_id: string;
+            /** Format: uuid */
+            payment_transaction_id: string;
+        };
         /**
          * @description Kebab-case name of a lucide-react icon of the curated category set (A83).
          * @enum {string}
@@ -6737,7 +6777,7 @@ export interface operations {
                 /**
                  * @description accrual counts each amount on its transaction date. cash counts a card line when its statement is paid,
                  *     in proportion to the payment, and any other amount on its date (docs/superpowers/plans/2026-10-26-p9-cash-view.md,
-                 *     CV1 to CV6).
+                 *     CV1 to CV10).
                  */
                 view?: "accrual" | "cash";
             };
@@ -6758,6 +6798,34 @@ export interface operations {
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
+        };
+    };
+    listCategoryCashPayments: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryCashPayments"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
         };
     };
     listCalendars: {

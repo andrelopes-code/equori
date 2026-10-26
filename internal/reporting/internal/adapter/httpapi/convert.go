@@ -9,3 +9,5 @@ import (
 func dateOf(p app.Point) openapi_types.Date { return openapi_types.Date{Time: p.Date} }
 
 func flowDate(f app.Flow) openapi_types.Date { return openapi_types.Date{Time: f.Date} }
+
+func cashDate(p app.CashPayment) openapi_types.Date { return openapi_types.Date{Time: p.Date} }

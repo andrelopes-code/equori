@@ -70,6 +70,7 @@ var exposure = map[string]string{
 	"getAllocation":                    "get_portfolio",
 	"getNetWorth":                      "get_portfolio",
 	"getStatementAnalytics":            "-visual",
+	"listCategoryCashPayments":         "-visual",
 	"getCardStatementAnalytics":        "-visual",
 	"requestExport":                    "-file",
 	"getExport":                        "-file",
