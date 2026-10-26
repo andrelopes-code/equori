@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -20,6 +21,7 @@ import (
 var (
 	ErrDumpAhead  = errors.New("the dump holds a migration this binary does not know")
 	ErrOldProgram = errors.New("pg_dump is older than the server")
+	ErrNoCreateDB = errors.New("restore recreates the database and needs a role that may create one")
 )
 
 // Dump writes pg_dump's custom format of the database to path, created with mode 0600 (B1).
@@ -40,6 +42,10 @@ func Dump(ctx context.Context, bin, dsn, path string) error {
 		return fmt.Errorf("create backup directory: %w", err)
 	}
 	partial := path + ".partial"
+	// A dump killed mid-way leaves its partial file; the next run of the same name replaces it.
+	if err := os.Remove(partial); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return fmt.Errorf("remove %s: %w", partial, err)
+	}
 	f, err := os.OpenFile(partial, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600) //nolint:gosec // G304: the backup path is the owner's configuration.
 	if err != nil {
 		return fmt.Errorf("create %s: %w", partial, err)
@@ -132,6 +138,15 @@ func Restore(ctx context.Context, bin, dsn, path string, latest int64) error {
 		return fmt.Errorf("connect to the maintenance database: %w", err)
 	}
 	defer func() { _ = conn.Close(ctx) }()
+	// The drop comes before the create: a role that may drop its database but not create one would
+	// lose it, so the privilege is checked first.
+	var create bool
+	if err := conn.QueryRow(ctx, "SELECT rolcreatedb OR rolsuper FROM pg_roles WHERE rolname = current_user").Scan(&create); err != nil {
+		return fmt.Errorf("read role privileges: %w", err)
+	}
+	if !create {
+		return fmt.Errorf("%w: role %s lacks CREATEDB", ErrNoCreateDB, cfg.User)
+	}
 	if _, err := conn.Exec(ctx, "DROP DATABASE IF EXISTS "+name+" WITH (FORCE)"); err != nil {
 		return fmt.Errorf("drop database: %w", err)
 	}

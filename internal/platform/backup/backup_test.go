@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/jackc/pgx/v5"
@@ -85,4 +86,47 @@ func TestRestoreRefusesNewerDump(t *testing.T) {
 		t.Fatalf("Restore: %v, want ErrDumpAhead", err)
 	}
 	execSQL(t, dsn, "SELECT 1 FROM fact WHERE v = 'untouched'")
+}
+
+// A dump killed mid-way leaves its .partial file; the next dump of the same name must not fail on it.
+func TestDumpReplacesALeftoverPartialFile(t *testing.T) {
+	c := testCluster(t)
+	dsn := c.DSN(pgcluster.Database)
+	execSQL(t, dsn, "CREATE TABLE fact (v text)")
+	path := filepath.Join(t.TempDir(), "x.dump")
+	if err := os.WriteFile(path+".partial", []byte("cut"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := Dump(t.Context(), c.Bin(), dsn, path); err != nil {
+		t.Fatalf("Dump beside a leftover partial file: %v", err)
+	}
+	if _, err := os.Stat(path + ".partial"); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("partial file after Dump: %v", err)
+	}
+}
+
+// A role that may drop its database but not create one keeps the database: Restore refuses before the drop.
+func TestRestoreKeepsTheDatabaseOfARoleWithoutCreateDB(t *testing.T) {
+	c := testCluster(t)
+	dsn := c.DSN(pgcluster.Database)
+	execSQL(t, dsn, "CREATE TABLE goose_db_version (id serial, version_id bigint, is_applied boolean, tstamp timestamp DEFAULT now()); INSERT INTO goose_db_version (version_id, is_applied) VALUES (1, true)")
+	path := filepath.Join(t.TempDir(), "x.dump")
+	if err := Dump(t.Context(), c.Bin(), dsn, path); err != nil {
+		t.Fatal(err)
+	}
+	execSQL(t, c.DSN("postgres"), "CREATE ROLE limited LOGIN")
+	execSQL(t, c.DSN("postgres"), "CREATE DATABASE owned OWNER limited")
+	limited := strings.Replace(c.DSN("owned"), "user=equori", "user=limited", 1)
+	if err := Restore(t.Context(), c.Bin(), limited, path, 60); err == nil {
+		t.Fatal("Restore by a role without CREATEDB: want an error")
+	}
+	conn, err := pgx.Connect(t.Context(), c.DSN("postgres"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = conn.Close(t.Context()) }()
+	var n int
+	if err := conn.QueryRow(t.Context(), "SELECT count(*) FROM pg_database WHERE datname = 'owned'").Scan(&n); err != nil || n != 1 {
+		t.Fatalf("database owned after the refused restore: %d, %v", n, err)
+	}
 }
