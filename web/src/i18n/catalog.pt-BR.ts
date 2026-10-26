@@ -1016,6 +1016,25 @@ export const catalogPtBR: Catalog = {
   "payees.new": "Novo favorecido",
   "payees.created": "Favorecido {name} criado",
   "payees.search": "Buscar favorecidos",
+  "categories.tab.tags": "Tags",
+  "categories.subtitle.tags":
+    "Os rótulos que você dá às transações, além das categorias.",
+  "tags.name": "Nome",
+  "tags.actions": "Ações de {name}",
+  "tags.search": "Buscar tags",
+  "tags.merge": "Mesclar",
+  "tags.mergeTitle": "Mesclar {count} tags",
+  "tags.mergeDescription":
+    "As transações passam para a tag que fica; as outras saem da lista. Não dá para desfazer.",
+  "tags.keep": "Tag que fica",
+  "tags.merged": "Tags mescladas",
+  "tags.delete": "Excluir",
+  "tags.deleteTitle": "Excluir a tag {name}",
+  "tags.deleteCounting": "Contando as transações que levam a tag {name}…",
+  "tags.deleteOne": "1 transação perde a tag {name}. Não dá para desfazer.",
+  "tags.deleteMany":
+    "{count} transações perdem a tag {name}. Não dá para desfazer.",
+  "tags.deleted": "Tag excluída",
   "alias.title": "Apelidos de {name}",
   "alias.description":
     "Uma linha importada sem favorecido recebe este quando a descrição combina.",

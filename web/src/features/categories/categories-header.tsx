@@ -16,21 +16,23 @@ import type { ReactNode } from "react";
 import { useT } from "@/i18n/i18n-provider";
 import { HeaderProgress } from "@/ui/header-progress";
 
-export type CategoriesTab = "categories" | "rules" | "payees";
+export type CategoriesTab = "categories" | "rules" | "payees" | "tags";
 
 const routes = {
   categories: "/categories",
   rules: "/categories/rules",
   payees: "/categories/payees",
+  tags: "/categories/tags",
 } as const;
 
 const subtitles = {
   categories: "categories.subtitle.categories",
   rules: "categories.subtitle.rules",
   payees: "categories.subtitle.payees",
+  tags: "categories.subtitle.tags",
 } as const;
 
-// The three pages of the destination share one header; each tab is its own route (LA-04).
+// The four pages of the destination share one header; each tab is its own route (LA-04).
 export function CategoriesHeader({
   current,
   actions,
@@ -73,7 +75,8 @@ export function CategoriesHeader({
             if (
               value === "categories" ||
               value === "rules" ||
-              value === "payees"
+              value === "payees" ||
+              value === "tags"
             ) {
               setChosen(value);
               requestAnimationFrame(() => {
@@ -88,6 +91,7 @@ export function CategoriesHeader({
             <Tab value="categories">{t("categories.tab.categories")}</Tab>
             <Tab value="rules">{rulesLabel ?? t("categories.tab.rules")}</Tab>
             <Tab value="payees">{t("categories.tab.payees")}</Tab>
+            <Tab value="tags">{t("categories.tab.tags")}</Tab>
           </TabList>
         </Tabs>
       </PageHeaderTabs>

@@ -56,6 +56,7 @@ import {
 import {
   CategoriesPage,
   PayeesPage,
+  TagsPage,
   RuleEditorPage,
   RulesPage,
   validateCategoriesSearch,
@@ -259,6 +260,12 @@ const payeesRoute = createRoute({
   component: PayeesPage,
 });
 
+const tagsRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "categories/tags",
+  component: TagsPage,
+});
+
 const goalsRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "goals",
@@ -403,6 +410,7 @@ export const routeTree = rootRoute.addChildren([
     newRuleRoute,
     ruleRoute,
     payeesRoute,
+    tagsRoute,
     goalsRoute,
     planningRoute,
     newScheduleRoute,

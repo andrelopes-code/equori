@@ -1,5 +1,6 @@
 export {
   transactionKeys,
+  tagsQuery,
   periodTransactionsQuery,
   transactionMutated,
   uncategorizedCountQuery,

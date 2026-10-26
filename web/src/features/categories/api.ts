@@ -413,6 +413,63 @@ export function useRenamePayee() {
   });
 }
 
+export function tagUsageQuery(api: Client<paths>, name: string) {
+  return queryOptions({
+    queryKey: ["tags", name] as const,
+    queryFn: async () =>
+      unwrap(await api.GET("/tags/{name}", { params: { path: { name } } })),
+  });
+}
+
+export function useRenameTag() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ tag, name }: { tag: string; name: string }) =>
+      unwrap(
+        await api.PATCH("/tags/{name}", {
+          params: { path: { name: tag } },
+          body: { name },
+        }),
+      ),
+    onSuccess: () => queryClient.invalidateQueries(),
+  });
+}
+
+export function useMergeTags() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      sources,
+      into,
+    }: {
+      sources: string[];
+      into: string;
+    }) => {
+      for (const name of sources) {
+        await unwrap(
+          await api.POST("/tags/{name}/merge", {
+            params: { path: { name } },
+            body: { into },
+          }),
+        );
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries(),
+  });
+}
+
+export function useDeleteTag() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (name: string) =>
+      unwrap(await api.DELETE("/tags/{name}", { params: { path: { name } } })),
+    onSuccess: () => queryClient.invalidateQueries(),
+  });
+}
+
 export function useCreatePayeeRecord() {
   const api = useApi();
   const queryClient = useQueryClient();

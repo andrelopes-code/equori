@@ -15,6 +15,7 @@ export type {
 export { CategoriesPage } from "@/features/categories/categories-page";
 export { RulesPage } from "@/features/categories/rules-page";
 export { PayeesPage } from "@/features/categories/payees-page";
+export { TagsPage } from "@/features/categories/tags-page";
 export { validateCategoriesSearch } from "@/features/categories/categories-search";
 export { useCategoryEntries } from "@/features/categories/use-category-entries";
 export { RuleEditorPage } from "@/features/categories/rule-editor-page";

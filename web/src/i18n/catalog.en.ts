@@ -1014,6 +1014,26 @@ export const catalogEn = {
   "payees.new": "New payee",
   "payees.created": "Payee {name} created",
   "payees.search": "Search payees",
+  "categories.tab.tags": "Tags",
+  "categories.subtitle.tags":
+    "The labels you give transactions across categories.",
+  "tags.name": "Name",
+  "tags.actions": "Actions for {name}",
+  "tags.search": "Search tags",
+  "tags.merge": "Merge",
+  "tags.mergeTitle": "Merge {count} tags",
+  "tags.mergeDescription":
+    "Their transactions move to the tag that stays; the others leave the list. This cannot be undone.",
+  "tags.keep": "Tag that stays",
+  "tags.merged": "Tags merged",
+  "tags.delete": "Delete",
+  "tags.deleteTitle": "Delete the tag {name}",
+  "tags.deleteCounting": "Counting the transactions that carry the tag {name}…",
+  "tags.deleteOne":
+    "1 transaction loses the tag {name}. This cannot be undone.",
+  "tags.deleteMany":
+    "{count} transactions lose the tag {name}. This cannot be undone.",
+  "tags.deleted": "Tag deleted",
   "alias.title": "Aliases of {name}",
   "alias.description":
     "An imported line without a payee takes this one when its description matches.",
