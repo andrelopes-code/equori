@@ -259,8 +259,12 @@ func (r *Exports) Export(ctx context.Context, userID int64) (app.Export, error) 
 	if row.Problem != nil {
 		e.Problem = *row.Problem
 	}
-	if row.ArchiveVersion != nil {
+	switch {
+	case row.ArchiveVersion != nil:
 		e.ArchiveVersion = int(*row.ArchiveVersion)
+	case e.Status == app.ExportReady:
+		// Built by a binary older than archive_version: its manifest has no version, which reads as 1 (ADR 021, V1).
+		e.ArchiveVersion = 1
 	}
 	return e, nil
 }

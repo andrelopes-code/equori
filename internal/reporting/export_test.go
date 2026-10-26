@@ -160,3 +160,19 @@ func TestExport(t *testing.T) {
 		t.Errorf("attachments = %+v", m.Attachments)
 	}
 }
+
+// ADR 021, V1: a ready export built by a binary older than archive_version holds an archive
+// without the field, which reads as version 1.
+func TestExportBuiltBeforeArchiveVersion(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t, apitest.Today("2026-10-26"))
+	export(t, h)
+	if _, err := h.Pool.Exec(t.Context(), `UPDATE reporting_export SET archive_version = NULL`); err != nil {
+		t.Fatal(err)
+	}
+	var e exportView
+	h.MustDo(http.MethodGet, "/api/v1/exports/current", nil, http.StatusOK, &e)
+	if e.Status != "ready" || e.ArchiveVersion != 1 {
+		t.Fatalf("export = %+v", e)
+	}
+}
