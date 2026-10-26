@@ -9,7 +9,16 @@ API contract: [api/openapi.yaml](api/openapi.yaml). Security reports: [SECURITY.
 ## Run
 
 ```sh
+curl -fsSLO https://github.com/andrelopes-code/equori/releases/latest/download/compose.yaml
 POSTGRES_PASSWORD=change-me docker compose up -d
+```
+
+The downloaded compose.yaml names the image of its release; a newer release ships its own.
+
+Archives: each release attaches `equori_<version>_<os>_<arch>.tar.gz` for Linux and macOS and `SHA256SUMS`. The binary needs `EQUORI_DATABASE_URL` pointing to PostgreSQL 18 or later. Verify an archive with:
+
+```sh
+gh attestation verify equori_<version>_linux_amd64.tar.gz --repo andrelopes-code/equori
 ```
 
 The app listens on `http://localhost:8080`. `GET /healthz` returns `200` when the database is reachable.
@@ -21,7 +30,7 @@ API conventions ([ADR 007](docs/adr/007-api-conventions.md)): every request is v
 Create the first admin (the password is prompted without echo):
 
 ```sh
-docker compose exec app /equori user create --email you@example.com --admin
+docker compose exec app /equori user create --email you@example.com --language <code> --region <country> --admin
 ```
 
 | Variable | Default | Description |

@@ -17,6 +17,8 @@ Decisions: `docs/adr/`. Read the relevant ADR before changing what it covers.
 | `make web-check` | Build `web/`, then typecheck, ESLint and Prettier check |
 | `make gen` | Regenerate sqlc and oapi-codegen output after editing `db/queries`, `db/migrations` or `api/openapi.yaml`; also compiles the theme |
 | `make vuln` | govulncheck |
+| `make dist` | Release archives and `SHA256SUMS` in `dist/` (ADR 022) |
+| `make upgrade-test` | A database seeded by one image keeps every fact under another (ADR 022, R7); defaults to the current tree as both |
 | `make hooks` | Install the git hooks of `lefthook.yml` (ADR 015): a commit formats and lints its staged files and checks generated code when its sources change; a push lints, typechecks and runs the Go tests and the web tests related to the files it sends |
 
 Tools are pinned in `tools/go.mod` and built into `bin/`; `web/` tools are pinned in `web/package.json`, and pnpm runs from inside `web/` so Corepack selects its version. Do not install tools globally. Do not add custom lint scripts.

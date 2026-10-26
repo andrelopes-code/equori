@@ -161,7 +161,7 @@ The model must represent every item below. Each item gets at least one worked ex
 
 ## 1.9 Constraints
 
-- Self-hosted: one application container plus PostgreSQL (ADR 001, ADR 002). License MIT.
+- Self-hosted: one binary plus PostgreSQL, distributed in the forms of ADR 022. License MIT.
 - Brazilian context first: BRL, credit card statements with closing and due dates, interest-free installments ("parcelado sem juros"), PIX, boleto, Open Finance Brasil.
 - Multi-currency in the core model from the first schema version, even while the interface shows BRL only.
 - Conventions of ADR 005: integer minor units, calendar dates in the instance time zone, cursor pagination.
