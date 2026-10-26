@@ -15,7 +15,7 @@ const testToday = "2026-10-24"
 
 func seedHarness(t *testing.T) (*seeder, config, *apitest.Harness) {
 	t.Helper()
-	h := apitest.New(t)
+	h := apitest.New(t, apitest.Today(testToday))
 	c := h.LoginAs("demo@equori.local", locale.Locale{Language: "pt", Region: "BR"}, "BRL")
 	today, err := time.Parse(time.DateOnly, testToday)
 	if err != nil {

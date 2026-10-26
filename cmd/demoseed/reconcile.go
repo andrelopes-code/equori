@@ -259,10 +259,15 @@ func (s *seeder) touchOccurrences() {
 			ID         string `json:"id"`
 			ScheduleID string `json:"schedule_id"`
 			ExpectedOn string `json:"expected_on"`
+			State      string `json:"state"`
 		} `json:"items"`
 	}
 	s.do(http.MethodGet, "/occurrences?from="+iso(s.today)+"&to="+iso(s.today.AddDate(0, 0, 40)), nil, &out)
 	for _, o := range out.Items {
+		// A realized or skipped occurrence refuses both changes (409 occurrence_closed).
+		if o.State != "expected" {
+			continue
+		}
 		switch o.ScheduleID {
 		case s.ids["schedule.donation"]:
 			s.do(http.MethodPost, "/occurrences/"+o.ID+"/skip", map[string]any{"reason": "Doação adiantada para dezembro"}, nil)
