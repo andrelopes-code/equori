@@ -4,7 +4,9 @@ package pgcluster
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 
@@ -181,5 +183,38 @@ func TestAttachStartsATemporaryServer(t *testing.T) {
 	case <-a.Exited():
 	default:
 		t.Fatal("the temporary server is still running after Stop")
+	}
+}
+
+// M6 after a container restart: postmaster.pid names a PID that another process now holds and no
+// server answers on the socket; Start removes the stale file and starts the server.
+func TestStartIgnoresAStalePidFile(t *testing.T) {
+	dir := t.TempDir()
+	c, err := Start(t.Context(), dir, testBin(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := c.Stop(); err != nil {
+		t.Fatal(err)
+	}
+	other := exec.CommandContext(t.Context(), "sleep", "120")
+	if err := other.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = other.Process.Kill(); _ = other.Wait() }()
+	pid := fmt.Sprintf("%d\n%s\n", other.Process.Pid, filepath.Join(dir, "pg"))
+	if err := os.WriteFile(filepath.Join(dir, "pg", "postmaster.pid"), []byte(pid), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	next, err := Start(t.Context(), dir, testBin(t))
+	if err != nil {
+		t.Fatalf("Start beside a stale pid file: %v", err)
+	}
+	defer func() { _ = next.Stop() }()
+	if got := query(t, next, "SELECT 'up'"); got != "up" {
+		t.Fatal(got)
+	}
+	if other.ProcessState != nil {
+		t.Fatal("Start signalled the process that holds the stale PID")
 	}
 }

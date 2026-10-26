@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/andrelopes-code/equori/internal/platform/postgres"
 )
@@ -142,7 +143,7 @@ func start(ctx context.Context, dir, bin string, lock *os.File) (*Cluster, error
 	if err := initialize(ctx, bin, pgdata, major); err != nil {
 		return nil, err
 	}
-	if err := stopLeftover(ctx, bin, pgdata); err != nil {
+	if err := stopLeftover(ctx, bin, pgdata, socket); err != nil {
 		return nil, err
 	}
 	// Not CommandContext: the server outlives the start context and stops in Stop, after HTTP.
@@ -194,20 +195,40 @@ func initialize(ctx context.Context, bin, pgdata string, major int) error {
 	return os.WriteFile(filepath.Join(pgdata, "pg_hba.conf"), []byte("local all all trust\n"), 0o600)
 }
 
-func stopLeftover(ctx context.Context, bin, pgdata string) error {
-	if _, err := os.Stat(filepath.Join(pgdata, "postmaster.pid")); errors.Is(err, fs.ErrNotExist) {
+func stopLeftover(ctx context.Context, bin, pgdata, socket string) error {
+	pidFile := filepath.Join(pgdata, "postmaster.pid")
+	if _, err := os.Stat(pidFile); errors.Is(err, fs.ErrNotExist) {
 		return nil
 	}
-	pgctl := filepath.Join(bin, "pg_ctl")
-	// Exit status 3: no server runs; postgres removes a stale pid file by itself.
-	if exec.CommandContext(ctx, pgctl, "status", "-D", pgdata).Run() != nil { //nolint:gosec // G204: as above.
+	if !answers(ctx, socket) {
+		// Stale: this process holds equori.lock and no server answers on the socket. After a container
+		// restart the file's PID names another process, and postgres would refuse to start beside it.
+		for _, name := range []string{pidFile, filepath.Join(socket, ".s.PGSQL.5432.lock")} {
+			if err := os.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) {
+				return fmt.Errorf("remove stale %s: %w", name, err)
+			}
+		}
 		return nil
 	}
-	out, err := exec.CommandContext(ctx, pgctl, "stop", "-D", pgdata, "-m", "fast", "-w", "-t", "60").CombinedOutput() //nolint:gosec // G204: as above.
+	out, err := exec.CommandContext(ctx, filepath.Join(bin, "pg_ctl"), "stop", "-D", pgdata, "-m", "fast", "-w", "-t", "60").CombinedOutput() //nolint:gosec // G204: as above.
 	if err != nil {
 		return fmt.Errorf("stop the server left running: %w: %s", err, out)
 	}
 	return nil
+}
+
+// answers reports whether a server listens on the socket; a server that is starting or stopping
+// answers with an error, which counts.
+func answers(ctx context.Context, socket string) bool {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	conn, err := pgx.Connect(ctx, (&Cluster{socket: socket}).DSN("postgres"))
+	if err == nil {
+		_ = conn.Close(ctx)
+		return true
+	}
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr)
 }
 
 func (c *Cluster) waitReady(ctx context.Context) error {
