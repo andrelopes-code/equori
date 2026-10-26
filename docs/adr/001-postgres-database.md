@@ -23,3 +23,9 @@ In SQLite, these changes require the 12-step table rebuild (create new table, co
 - `compose.yaml` has 2 services (`app`, `db`). The Postgres major version is pinned in the image tag.
 - Integration tests run against the development Postgres (`make db-up`). `pgtest.New` creates, migrates and drops one database per test.
 - Postgres major upgrades are the host's responsibility. The procedure is documented in the README.
+
+## Amendment of 2026-10-26 (ADR 022)
+
+- Managed mode runs PostgreSQL as a child of `equori` over a data directory (`internal/platform/pgcluster`).
+- The minimum major is 18: the migrations call `uuidv7()`.
+- Major upgrades stay the host's responsibility for compose and follow ADR 022 V6 for managed mode.

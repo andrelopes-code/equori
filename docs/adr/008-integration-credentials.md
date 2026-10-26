@@ -16,6 +16,7 @@ Phase P6 stores Pluggy client ids and secrets. Each pair reads every bank item o
 | K3 | Associated data binds a value to its row: table name, user id and row id. A value copied to another row, or a relabelled key id, does not open. Any failure is the same error, `ErrUnreadable`. |
 | K4 | Rotation: the new key goes to `EQUORI_SECRET_KEY` and the old one to `EQUORI_SECRET_KEY_PREVIOUS`; `equori secrets rotate` reseals every value in one database transaction; then the previous key is removed. |
 | K5 | Plaintext credentials and the Pluggy API keys derived from them live only in memory, never in logs, problem details or responses (N16). |
+| K6 | Amendment of 2026-10-26. In managed mode without `EQUORI_SECRET_KEY`, the first start writes 32 random bytes in standard base64 to `secret.key` in the data directory, mode 0600, outside every dump; `equori secrets key` prints the key in use. Reason: a Homebrew service or a standalone container has no place for a key the owner would have to generate first (ADR 022, C3). |
 
 ## Consequences
 

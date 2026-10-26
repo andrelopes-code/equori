@@ -36,7 +36,7 @@ Every requirement has a measurable criterion and a verification method. Performa
 |---|---|---|
 | N10 | A committed change is never lost; a cross-module reaction is never lost (ADR 006). | Crash tests between commit and dispatch: `TestN10EventSurvivesCrashBetweenCommitAndDispatch`, `TestN10HandlerEffectAppliedOnceAfterCrashBeforeDelivery` (`internal/platform/outbox`) |
 | N11 | Migrations are forward-only, transactional and applied at startup; a failed migration leaves the previous schema intact and stops the application. | Migration tests on a copy of the reference dataset |
-| N12 | Backup and restore are documented (`docs/operations/backup.md`); a restored backup reproduces every table, balance, derived series and trigger of the original. | `internal/server/backup_test.go` in `make check` |
+| N12 | Backup and restore are documented (`docs/operations/backup.md`); a restored backup reproduces every table, balance, derived series and trigger of the original. | `internal/server/backup_test.go` and `internal/server/cluster_backup_test.go` in `make check` |
 | N13 | Export (SC6) followed by import into an empty instance reproduces every fact and every derived value. | Round-trip test |
 
 ## 8.5 Security and privacy
@@ -72,3 +72,4 @@ Every requirement has a measurable criterion and a verification method. Performa
 | N25 | Browsers: the last two major versions of Chrome, Firefox, Safari and Edge. |
 | N26 | Limits: 500 postings per transaction; 420 installments per plan; 10 MiB per attachment and per imported file; 1 MiB per request body except attachment upload and file import (11 MiB). |
 | N27 | A binary refuses a database that holds a migration it does not know (ADR 022, V4); verified by `TestMigrateRefusesNewerSchema`. |
+| N28 | A dump of each form restores into each other form with every fact (ADR 022, B4); verified by `TestClusterBackupRestoresAcrossForms`. |

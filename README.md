@@ -21,6 +21,15 @@ Archives: each release attaches `equori_<version>_<os>_<arch>.tar.gz` for Linux 
 gh attestation verify equori_<version>_linux_amd64.tar.gz --repo andrelopes-code/equori
 ```
 
+### One container
+
+The standalone image holds the application and PostgreSQL; the data lives in the `/data` volume:
+
+```sh
+docker run -d --name equori -p 8080:8080 -v equori:/data ghcr.io/andrelopes-code/equori:<version>-standalone
+docker exec -it equori equori user create --email you@example.com --language <code> --region <country> --admin
+```
+
 The app listens on `http://localhost:8080`. `GET /healthz` returns `200` when the database is reachable.
 
 API groups under `/api/v1` (contract: [api/openapi.yaml](api/openapi.yaml)): session and current user; settings; institutions, payees and tags; accounts and categories with balances; transactions with corrections, voids and version history; credit cards (billing cycle rules, credit limits, cards, statements, installment purchases, statement payments and financing, refunds, cancellations, anticipations, disputes, commitments); reconciliation (balance assertions with automatic yield, difference resolution, statement reconciliation, unlock); transaction attachments; file import (CSV profiles, OFX and CSV imports, import batches, review of external records); classification (categorization rules and their order, payee aliases, rule suggestions, running rules on uncategorized transactions, categorization method per transaction and statistics, `POST /transactions/{id}/categorize`); transfers (`POST /transactions/{id}/transfer`, which pairs the imported sides of one transfer, and the rule actions `transfer` and `mark_reimbursable`); the Brazilian banking calendar (`/calendars/br_banking/holidays`); daily balance series (`/reports/balances`). Derived series can be recomputed with `docker compose exec app /equori reporting rebuild`. Schedules created before P7 amendment A127 get their earlier occurrences with `docker compose exec app /equori planning backfill`.
@@ -35,13 +44,16 @@ docker compose exec app /equori user create --email you@example.com --language <
 
 | Variable | Default | Description |
 |---|---|---|
-| `EQUORI_DATABASE_URL` | set by `compose.yaml` | PostgreSQL connection URL |
+| `EQUORI_DATABASE_URL` | set by `compose.yaml` | PostgreSQL connection URL; unset, equori runs its own PostgreSQL server over `EQUORI_DATA_DIR` (managed mode) |
+| `EQUORI_DATA_DIR` | per-user data directory | Data directory of managed mode |
+| `EQUORI_POSTGRES_BIN` | directory of `postgres` on `PATH` | Directory of the PostgreSQL 18 programs for managed mode, `equori backup` and `equori restore` |
+| `EQUORI_BACKUP_DIR` | `<data directory>/backups` | Directory of the automatic backups of managed mode |
 | `EQUORI_HTTP_ADDR` | `:8080` | HTTP listen address |
 | `EQUORI_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
 | `EQUORI_TIMEZONE` | the host's zone (UTC in the container image) | IANA time zone for "today" and month boundaries, e.g. `America/Sao_Paulo` |
 | `EQUORI_INSECURE_COOKIES` | `false` | `true` drops the `Secure` cookie attribute; required to log in over plain HTTP from another host |
 | `EQUORI_API_DOCS` | `false` | `true` serves the API reference at `/docs` and the contract at `/openapi.yaml`, both without a session |
-| `EQUORI_SECRET_KEY` | unset | 32 bytes in standard base64 (`openssl rand -base64 32`) that seal integration credentials (ADR 008); without it integrations are unavailable. Keep it outside backups |
+| `EQUORI_SECRET_KEY` | unset | 32 bytes in standard base64 (`openssl rand -base64 32`) that seal integration credentials (ADR 008); without it integrations are unavailable, except in managed mode, which generates `secret.key` in the data directory (`equori secrets key` prints it). Keep it outside backups |
 | `EQUORI_SECRET_KEY_PREVIOUS` | unset | The replaced key during a rotation: `equori secrets rotate` reseals every credential, then remove it |
 | `EQUORI_AGGREGATOR_PLUGGY_URL` | `https://api.pluggy.ai` | Base URL of the Pluggy API |
 | `EQUORI_SYNC_INTERVAL` | `1h` | How often connections are checked for new Pluggy data (at least `1m`) |
@@ -52,6 +64,8 @@ Data lives in the `pgdata` Docker volume. Back it up with:
 ```sh
 docker compose exec db pg_dump -U equori equori > equori.sql
 ```
+
+Commands: `serve` (the default), `user create`, `backup`, `restore`, `secrets key`, `secrets rotate`, `reporting rebuild`, `portfolio rebuild`, `planning backfill`, `healthcheck`, `version`.
 
 Backup and restore: [docs/operations/backup.md](docs/operations/backup.md). Export, import and archive compatibility between versions: [docs/operations/export.md](docs/operations/export.md). Bank sync through Pluggy and Meu Pluggy: [docs/operations/pluggy.md](docs/operations/pluggy.md).
 

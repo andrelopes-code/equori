@@ -30,9 +30,56 @@ equori shipped as one form, compose with the application image tagged `latest`. 
 | R6 | Credentials: `GITHUB_TOKEN` for GHCR and the release; one fine-grained token restricted to the tap repository. |
 | R7 | Upgrade test (V2): the release job starts the image of the previous tag on an empty database and populates it through the HTTP API with the demo dataset. It then starts the new image on the same database and requires a successful migration, a healthy state, and the balance of every account and the row count of every fact table equal to the values read before. The first tag has no predecessor and skips the job. Each tag is tested against its predecessor, and goose applies the same migration files in the same order, so the chain covers every earlier tag. |
 
+## Managed PostgreSQL
+
+Managed mode is the mode in which `equori` runs its own PostgreSQL server as a child process over a data directory it owns.
+
+| ID | Rule |
+|---|---|
+| M1 | A set `EQUORI_DATABASE_URL` selects external mode, as today. An unset one selects managed mode in `EQUORI_DATA_DIR`. The default data directory is `$XDG_DATA_HOME/equori` (fallback `~/.local/share/equori`) on Linux and `~/Library/Application Support/equori` on macOS. |
+| M2 | PostgreSQL programs come from `EQUORI_POSTGRES_BIN`, read from the process environment or from `equori.env` (C2). Without it, they come from the directory of `postgres` found on `PATH`. Every command resolves the programs the same way, so `equori user create` from a shell finds what `serve` finds. Homebrew's `postgresql@18` is keg-only and PGDG installs into `/usr/lib/postgresql/18/bin`; neither is on `PATH`, so the formula sets the variable (R5) and the archive's installation guide names it. The major reported by `postgres --version` is at least 18. When the data directory exists, the major equals its `PG_VERSION`. A mismatch stops the start with a message naming both majors. |
+| M3 | Layout: `pg/` (cluster, mode 0700), `run/` (socket directory, mode 0700), `backups/`, `secret.key`, `equori.env`, `equori.lock`. |
+| M4 | The first start runs `initdb -U equori --encoding=UTF8 --locale-provider=builtin --builtin-locale=C.UTF-8 --auth-local=trust`. `pg_hba.conf` holds one `local` line. The builtin provider orders by code point and depends on neither libc nor ICU, so an operating system upgrade never changes the order stored in an index. |
+| M5 | The server runs with `listen_addresses = ''` and `unix_socket_directories` set to `run/`. No TCP port opens. Access control is the 0700 mode of `run/`. |
+| M6 | `serve` takes an exclusive lock on `equori.lock`. When a server is already running on the cluster, `serve` stops it with a fast shutdown. `serve` then starts `postgres` as a child, waits until it accepts connections, applies the migrations and serves HTTP. On SIGINT or SIGTERM, `serve` stops HTTP, stops the child with a fast shutdown and waits for its exit. When the child exits during serving, `serve` exits with a non-zero status, and the service manager restarts it. |
+| M7 | The other commands (`user`, `reporting`, `portfolio`, `planning`, `secrets`, `backup`, `restore`) connect through the socket while `serve` holds the lock. Otherwise they take the lock, start a temporary server and stop it before exit. |
+| M8 | Started as root, managed mode exits with a message, because PostgreSQL refuses to run as root. |
+| M9 | Managed mode runs on Linux and macOS. On Windows it exits with a message naming external mode. |
+| M10 | The standalone image sets `EQUORI_DATA_DIR=/data`, `EQUORI_POSTGRES_BIN=/usr/lib/postgresql/18/bin` and `USER postgres`. Its `HEALTHCHECK` stays `equori healthcheck`. |
+
+## Configuration
+
+| ID | Rule |
+|---|---|
+| C1 | An empty `EQUORI_TIMEZONE` resolves to the system zone (`time.Local`). A container without `TZ` and without zone files keeps UTC. `compose.yaml` keeps its explicit default. |
+| C2 | In managed mode, `equori.env` in the data directory is read before the process environment. Format: one `KEY=VALUE` per line, `#` starts a comment line, no quoting, no expansion. A variable present in the process environment wins. The Homebrew service has no other place for settings that survives an upgrade. |
+| C3 | In managed mode without `EQUORI_SECRET_KEY`, the first start writes 32 random bytes in standard base64 to `secret.key`, mode 0600, and uses them. The key stays outside every dump (ADR 008, K2). `equori secrets key` prints the key in use, so the owner can store it apart from the dumps and set `EQUORI_SECRET_KEY` on the instance that receives a restore. Without the key, a restored instance keeps every ledger fact and answers 409 `integration_unavailable` until the credentials are entered again (ADR 008, consequences). External mode is unchanged. |
+| C4 | Applied only if F3 shows that Safari drops a `Secure` cookie on `http://127.0.0.1`: the session cookie omits `Secure` when the request's host is a loopback address. Every other host keeps `Secure` unless `EQUORI_INSECURE_COOKIES=true`. |
+
+## Backup and restore
+
+| ID | Rule |
+|---|---|
+| B1 | `equori backup [--out FILE]` writes `pg_dump -Fc` of the database, through the socket in managed mode or `EQUORI_DATABASE_URL` in external mode. `pg_dump` comes from the programs of M2. The `pg_dump` major is at least the server major. The default file name is `equori-<YYYY-MM-DD>-s<schema version>.dump`, mode 0600. |
+| B2 | `equori restore FILE` refuses to run while `serve` holds the lock. It drops the database, recreates it from `template0` with `LOCALE_PROVIDER builtin` and `BUILTIN_LOCALE 'C.UTF-8'` in every mode, and runs `pg_restore --no-owner --exit-on-error`. Text orderings therefore do not change when a dump moves to a host with another default locale. A dump whose schema version is above the binary's highest migration is refused (V4). The next `serve` applies the newer migrations. |
+| B3 | Managed mode backs up into `backups/` before it applies pending migrations, and once per 24 hours while serving. Retention: the last 7 periodic and the last 3 pre-migration backups. `EQUORI_BACKUP_DIR` overrides the directory. |
+| B4 | A dump restores into any form. This is the supported path from one form to another: computer to server, compose to standalone. |
+| B5 | Compose keeps the `docker compose exec db pg_dump` procedure; the distroless application image holds no `pg_dump`. Its restore procedure creates the database with the locale of B2. `compose.yaml` sets `POSTGRES_INITDB_ARGS="--locale-provider=builtin --builtin-locale=C.UTF-8"`, which applies to a new volume only. |
+| B6 | `docs/operations/backup.md` is rewritten around B1 to B5. It states that `backups/` sits on the same disk as the data and is copied elsewhere by the owner. |
+| B7 | At start, `serve` logs a warning when the database's locale provider is not `builtin` with `C.UTF-8`, and names the restore of B2 as the conversion. |
+
+## Settled during planning
+
+| Item | Value |
+|---|---|
+| Socket path over the limit (107 bytes on Linux, 103 on macOS) | `run/` moves to `$TMPDIR/equori-<first 12 hex digits of SHA-256 of the data directory>`, mode 0700. |
+| Server settings of the managed cluster | `listen_addresses=''`, `max_connections=50`, every other setting at its default; passed as `-c` flags on each start. |
+| Precache list of P1 | No build step: the service worker reads `/` at install and caches the `/assets/` files it names (P1). |
+| Periodic backup | A goroutine of `serve` checks every hour whether the newest periodic file is older than 24 hours. |
+| Managed-mode tests | Build tag `cluster`; `make test-cluster` runs the compiled test binaries inside the `postgres:18` image, which holds the PostgreSQL programs. |
+
 ## Consequences
 
 - `latest` stays a moving image tag, and no document names it.
 - A release that fails `make check` or R7 publishes nothing.
 - The first tag skips R7.
-- Until F2 delivers the standalone image, R4 runs on the compose image.
