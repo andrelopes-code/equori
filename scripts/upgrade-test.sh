@@ -49,6 +49,24 @@ ORDER BY table_name \gexec
 SQL
 }
 
+# The dispatcher derives rows from the outbox after each write; a snapshot counts only once two
+# readings 5 seconds apart agree.
+settled() {
+	local previous current
+	previous=$(snapshot)
+	for _ in $(seq 60); do
+		sleep 5
+		current=$(snapshot)
+		if [[ $current == "$previous" ]]; then
+			printf '%s\n' "$current"
+			return 0
+		fi
+		previous=$current
+	done
+	echo "facts still changing after 300 seconds" >&2
+	return 1
+}
+
 docker network create "$name" >/dev/null
 docker run -d --name "$name-db" --network "$name" -e POSTGRES_USER=equori -e POSTGRES_PASSWORD=equori \
 	-e POSTGRES_DB=equori postgres:18-alpine >/dev/null
@@ -60,12 +78,16 @@ printf '%s\n' equori-upgrade-test | docker exec -i "$name-app" /equori user crea
 git worktree add --detach "$work/src" "$prev_ref" >/dev/null
 (cd "$work/src" && go run ./cmd/demoseed -url "http://127.0.0.1:$port" -email upgrade@equori.test \
 	-password equori-upgrade-test -today 2026-10-26)
-# The dispatcher of the previous release drains the outbox of the seeding.
-sleep 15
-snapshot >"$work/before"
+settled >"$work/before"
 docker rm -f "$name-app" >/dev/null
 
 start_app "$new_image"
-snapshot >"$work/after"
-diff -u "$work/before" "$work/after"
+settled >"$work/after"
+# A table the new release adds appears only in after; a line of before that changed or vanished is a lost fact.
+lost=$(comm -23 <(sort "$work/before") <(sort "$work/after"))
+if [[ -n $lost ]]; then
+	echo "lost or changed after the upgrade:" >&2
+	echo "$lost" >&2
+	exit 1
+fi
 echo "upgrade from $prev_image to $new_image kept $(wc -l <"$work/before") facts"
