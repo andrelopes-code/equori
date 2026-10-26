@@ -31,18 +31,20 @@ func (q *Queries) ExportContent(ctx context.Context, userID int64) (ExportConten
 
 const finishExport = `-- name: FinishExport :exec
 UPDATE reporting_export
-SET status = $1, finished_at = $2, content = $3, sha256 = $4, problem = $5
-WHERE user_id = $6 AND id = $7 AND status = 'pending'
+SET status = $1, finished_at = $2, content = $3, sha256 = $4, problem = $5,
+    archive_version = $6
+WHERE user_id = $7 AND id = $8 AND status = 'pending'
 `
 
 type FinishExportParams struct {
-	Status     string
-	FinishedAt *time.Time
-	Content    []byte
-	Sha256     []byte
-	Problem    *string
-	UserID     int64
-	ID         uuid.UUID
+	Status         string
+	FinishedAt     *time.Time
+	Content        []byte
+	Sha256         []byte
+	Problem        *string
+	ArchiveVersion *int32
+	UserID         int64
+	ID             uuid.UUID
 }
 
 func (q *Queries) FinishExport(ctx context.Context, arg FinishExportParams) error {
@@ -52,6 +54,7 @@ func (q *Queries) FinishExport(ctx context.Context, arg FinishExportParams) erro
 		arg.Content,
 		arg.Sha256,
 		arg.Problem,
+		arg.ArchiveVersion,
 		arg.UserID,
 		arg.ID,
 	)
@@ -59,18 +62,20 @@ func (q *Queries) FinishExport(ctx context.Context, arg FinishExportParams) erro
 }
 
 const getExport = `-- name: GetExport :one
-SELECT id, status, requested_at, finished_at, coalesce(octet_length(content), 0)::bigint AS size, sha256, problem
+SELECT id, status, requested_at, finished_at, coalesce(octet_length(content), 0)::bigint AS size, sha256, problem,
+       archive_version
 FROM reporting_export WHERE user_id = $1
 `
 
 type GetExportRow struct {
-	ID          uuid.UUID
-	Status      string
-	RequestedAt time.Time
-	FinishedAt  *time.Time
-	Size        int64
-	Sha256      []byte
-	Problem     *string
+	ID             uuid.UUID
+	Status         string
+	RequestedAt    time.Time
+	FinishedAt     *time.Time
+	Size           int64
+	Sha256         []byte
+	Problem        *string
+	ArchiveVersion *int32
 }
 
 func (q *Queries) GetExport(ctx context.Context, userID int64) (GetExportRow, error) {
@@ -84,6 +89,7 @@ func (q *Queries) GetExport(ctx context.Context, userID int64) (GetExportRow, er
 		&i.Size,
 		&i.Sha256,
 		&i.Problem,
+		&i.ArchiveVersion,
 	)
 	return i, err
 }
@@ -92,7 +98,7 @@ const requestExport = `-- name: RequestExport :one
 INSERT INTO reporting_export (user_id, status, requested_at) VALUES ($1, 'pending', $2)
 ON CONFLICT (user_id) DO UPDATE
 SET id = uuidv7(), status = 'pending', requested_at = excluded.requested_at, finished_at = NULL,
-    content = NULL, sha256 = NULL, problem = NULL
+    content = NULL, sha256 = NULL, problem = NULL, archive_version = NULL
 WHERE reporting_export.status <> 'pending'
 RETURNING id, status, requested_at
 `

@@ -19,6 +19,9 @@ type Details struct {
 	RequestID string       `json:"request_id,omitempty"`
 	Errors    []FieldError `json:"errors,omitempty"`
 	RetryAt   *time.Time   `json:"retry_at,omitempty"`
+	// ArchiveVersion and InstanceVersion name the versions of archive_too_new (ADR 021).
+	ArchiveVersion  *int `json:"archive_version,omitempty"`
+	InstanceVersion *int `json:"instance_version,omitempty"`
 }
 
 type FieldError struct {

@@ -18,12 +18,6 @@ import (
 
 var _ app.ImportRepository = (*Exports)(nil)
 
-func (r *Exports) SchemaVersion(ctx context.Context) (int64, error) {
-	var v int64
-	err := r.pool.QueryRow(ctx, `SELECT max(version_id) FROM goose_db_version WHERE is_applied`).Scan(&v)
-	return v, err
-}
-
 func (r *Exports) ImportableTables(ctx context.Context) ([]string, error) {
 	facts, err := FactTables(ctx, r.pool)
 	if err != nil {

@@ -82,7 +82,7 @@ func serve() error {
 
 	clk := clock.New(cfg.TimeZone, time.Now)
 	scfg := serverConfig(cfg, &clk)
-	scfg.Web, scfg.WebDevPort = web.Dist(), cfg.WebDevPort
+	scfg.Web, scfg.WebDevPort, scfg.Version = web.Dist(), cfg.WebDevPort, buildVersion()
 	app, err := server.New(pool, scfg, log)
 	if err != nil {
 		return err

@@ -173,15 +173,30 @@ func TestImportRejects(t *testing.T) {
 	if err := json.Unmarshal(files["manifest.json"], &m); err != nil {
 		t.Fatal(err)
 	}
-	m["schema_version"] = m["schema_version"].(float64) + 1
-	newer := map[string][]byte{}
-	for name, b := range files {
-		newer[name] = b
+	withManifest := func(m map[string]any) []byte {
+		out := map[string][]byte{}
+		for name, b := range files {
+			out[name] = b
+		}
+		out["manifest.json"], _ = json.Marshal(m)
+		return zipOf(t, out)
 	}
-	newer["manifest.json"], _ = json.Marshal(m)
-	empty.ExpectProblem(empty.Upload(importPath, "a.zip", zipOf(t, newer)), http.StatusUnprocessableEntity, "archive_version_mismatch", "file")
+	// ADR 021, V4.
+	m["archive_version"] = 2.0
+	r := empty.Upload(importPath, "a.zip", withManifest(m))
+	empty.ExpectProblem(r, http.StatusUnprocessableEntity, "archive_too_new", "file")
+	var tooNew struct {
+		ArchiveVersion  int `json:"archive_version"`
+		InstanceVersion int `json:"instance_version"`
+	}
+	r.Decode(t, &tooNew)
+	if tooNew.ArchiveVersion != 2 || tooNew.InstanceVersion != 1 {
+		t.Errorf("archive_too_new = %s", r.Body)
+	}
+	m["archive_version"] = 0.0
+	empty.ExpectProblem(empty.Upload(importPath, "a.zip", withManifest(m)), http.StatusUnprocessableEntity, "archive_invalid", "file")
+	m["archive_version"] = 1.0
 
-	m["schema_version"] = m["schema_version"].(float64) - 1
 	tables := m["tables"].([]any)
 	tables[0].(map[string]any)["name"] = "identity_user"
 	foreign := map[string][]byte{}
@@ -202,5 +217,34 @@ func TestImportRejects(t *testing.T) {
 			t.Errorf("a refused import wrote accounts: %+v", accounts.Items)
 			break
 		}
+	}
+}
+
+// ADR 021, V1: schema_version no longer gates an import, and an archive written before
+// archive_version existed reads as version 1.
+func TestImportArchiveOfAnotherSchemaVersion(t *testing.T) {
+	t.Parallel()
+	source := apitest.New(t, apitest.Today("2026-10-26"))
+	populate(t, source)
+	files := archive(t, export(t, source))
+	var m map[string]any
+	if err := json.Unmarshal(files["manifest.json"], &m); err != nil {
+		t.Fatal(err)
+	}
+	m["schema_version"] = m["schema_version"].(float64) - 1
+	delete(m, "archive_version")
+	delete(m, "app_version")
+	files["manifest.json"], _ = json.Marshal(m)
+	target := apitest.New(t, apitest.Today("2026-10-26"))
+	r := target.Upload(importPath, "a.zip", zipOf(t, files))
+	if r.Status != http.StatusOK {
+		t.Fatalf("import = %d: %s", r.Status, r.Body)
+	}
+	var out struct {
+		ArchiveVersion int `json:"archive_version"`
+	}
+	r.Decode(t, &out)
+	if out.ArchiveVersion != 1 {
+		t.Errorf("archive_version = %s", r.Body)
 	}
 }

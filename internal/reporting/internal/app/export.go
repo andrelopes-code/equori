@@ -37,6 +37,8 @@ type Export struct {
 	Size        int64
 	SHA256      []byte
 	Problem     string
+	// ArchiveVersion is the archive_version of a ready export's archive (ADR 021).
+	ArchiveVersion int
 }
 
 type ExportRepository interface {

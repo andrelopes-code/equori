@@ -30,9 +30,10 @@ type Module struct {
 	http    *httpapi.Server
 }
 
-func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, clk clock.Clock, log *slog.Logger) *Module {
+// appVersion is the version of the running app, written in each export manifest (ADR 021).
+func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, clk clock.Clock, log *slog.Logger, appVersion string) *Module {
 	svc := app.NewService(postgres.NewRepository(pool))
-	store := postgres.NewExports(pool)
+	store := postgres.NewExports(pool, appVersion)
 	exports := app.NewExports(store, store, clk, svc.RebuildUser)
 	dispatcher.Subscribe("reporting-export", postgres.EventExportRequested, func(ctx context.Context, _ pgx.Tx, e outbox.Delivered) error {
 		var p struct {

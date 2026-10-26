@@ -102,7 +102,9 @@ type AccountFlows struct {
 
 // ArchiveImport defines model for ArchiveImport.
 type ArchiveImport struct {
-	Tables []struct {
+	// ArchiveVersion The archive_version the archive was written with (ADR 021).
+	ArchiveVersion int `json:"archive_version"`
+	Tables         []struct {
 		Name string `json:"name"`
 		Rows int    `json:"rows"`
 	} `json:"tables"`
@@ -159,8 +161,10 @@ type CategoryTotals struct {
 
 // Export defines model for Export.
 type Export struct {
-	FinishedAt *time.Time         `json:"finished_at,omitempty"`
-	Id         openapi_types.UUID `json:"id"`
+	// ArchiveVersion The archive_version of the archive (ADR 021); present when ready.
+	ArchiveVersion *int               `json:"archive_version,omitempty"`
+	FinishedAt     *time.Time         `json:"finished_at,omitempty"`
+	Id             openapi_types.UUID `json:"id"`
 
 	// Problem The code of a failure, such as export_too_large; present when failed.
 	Problem     *string   `json:"problem,omitempty"`
@@ -203,6 +207,9 @@ type Money struct {
 
 // Problem defines model for Problem.
 type Problem struct {
+	// ArchiveVersion The archive_version of a refused archive (archive_too_new, ADR 021).
+	ArchiveVersion *int `json:"archive_version,omitempty"`
+
 	// Code Stable error identifier. Values: invalid_request, request_too_large, invalid_credentials,
 	// too_many_attempts, unauthenticated, forbidden, not_found, validation_failed, internal_error,
 	// server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
@@ -212,11 +219,14 @@ type Problem struct {
 	// integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
 	// currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
 	// budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
-	// investment_transaction, system_account, attachment_not_inlineable.
-	Code      string        `json:"code"`
-	Detail    *string       `json:"detail,omitempty"`
-	Errors    *[]FieldError `json:"errors,omitempty"`
-	RequestId *string       `json:"request_id,omitempty"`
+	// investment_transaction, system_account, attachment_not_inlineable, archive_too_new.
+	Code   string        `json:"code"`
+	Detail *string       `json:"detail,omitempty"`
+	Errors *[]FieldError `json:"errors,omitempty"`
+
+	// InstanceVersion The highest archive_version the instance imports (archive_too_new, ADR 021).
+	InstanceVersion *int    `json:"instance_version,omitempty"`
+	RequestId       *string `json:"request_id,omitempty"`
 
 	// RetryAt Instant after which the same request can succeed.
 	RetryAt *time.Time `json:"retry_at,omitempty"`

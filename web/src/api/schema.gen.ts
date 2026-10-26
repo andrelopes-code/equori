@@ -881,8 +881,9 @@ export interface paths {
         /**
          * Restore an export archive into books without facts (N13, export design E4).
          * @description The request body limit of this route is 257 MiB. 422 archive_invalid for an archive that does not read,
-         *     a checksum that differs or a table the instance does not export; 422 archive_version_mismatch for another
-         *     schema version; 409 import_not_empty when the user holds a transaction or an account without a system
+         *     a checksum that differs, a table the instance does not export or an archive_version below 1; 422
+         *     archive_too_new, with archive_version and instance_version, for an archive of a later version (ADR 021);
+         *     an archive of an earlier version is migrated before any write; 409 import_not_empty when the user holds a transaction or an account without a system
          *     role; 409 import_conflict when an identifier belongs to another user of the instance. A refused import
          *     writes nothing.
          */
@@ -4728,8 +4729,12 @@ export interface components {
             sha256?: string;
             /** @description The code of a failure, such as export_too_large; present when failed. */
             problem?: string;
+            /** @description The archive_version of the archive (ADR 021); present when ready. */
+            archive_version?: number;
         };
         ArchiveImport: {
+            /** @description The archive_version the archive was written with (ADR 021). */
+            archive_version: number;
             tables: {
                 name: string;
                 rows: number;
@@ -5084,7 +5089,7 @@ export interface components {
              *     integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
              *     currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
              *     budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
-             *     investment_transaction, system_account, attachment_not_inlineable.
+             *     investment_transaction, system_account, attachment_not_inlineable, archive_too_new.
              */
             code: string;
             request_id?: string;
@@ -5093,6 +5098,10 @@ export interface components {
              * @description Instant after which the same request can succeed.
              */
             retry_at?: string;
+            /** @description The archive_version of a refused archive (archive_too_new, ADR 021). */
+            archive_version?: number;
+            /** @description The highest archive_version the instance imports (archive_too_new, ADR 021). */
+            instance_version?: number;
             errors?: components["schemas"]["FieldError"][];
         };
         FieldError: {

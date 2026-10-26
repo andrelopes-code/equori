@@ -59,23 +59,29 @@ type archiveFile struct {
 }
 
 type archiveManifest struct {
-	Format        string         `json:"format"`
-	FormatVersion int            `json:"format_version"`
-	SchemaVersion int64          `json:"schema_version"`
-	ExportedAt    time.Time      `json:"exported_at"`
-	Tables        []archiveTable `json:"tables"`
-	Attachments   []archiveFile  `json:"attachments"`
+	Format         string         `json:"format"`
+	FormatVersion  int            `json:"format_version"`
+	ArchiveVersion int            `json:"archive_version"`
+	AppVersion     string         `json:"app_version"`
+	SchemaVersion  int64          `json:"schema_version"`
+	ExportedAt     time.Time      `json:"exported_at"`
+	Tables         []archiveTable `json:"tables"`
+	Attachments    []archiveFile  `json:"attachments"`
 }
 
 var _ app.ExportRepository = (*Exports)(nil)
 
 // Exports builds archives on a pool: an archive reads one snapshot of its own transaction.
 type Exports struct {
-	pool *pgxpool.Pool
-	q    *Queries
+	pool       *pgxpool.Pool
+	q          *Queries
+	appVersion string
 }
 
-func NewExports(pool *pgxpool.Pool) *Exports { return &Exports{pool: pool, q: New(pool)} }
+// NewExports writes appVersion, the version of the running app, in each manifest (ADR 021, V1).
+func NewExports(pool *pgxpool.Pool, appVersion string) *Exports {
+	return &Exports{pool: pool, q: New(pool), appVersion: appVersion}
+}
 
 // FactTables returns the tables with user_id that the archive carries, by name.
 func FactTables(ctx context.Context, q DBTX) ([]string, error) {
@@ -111,14 +117,17 @@ func (r *Exports) BuildArchive(ctx context.Context, userID int64, at time.Time) 
 	var out []byte
 	err := pgx.BeginTxFunc(ctx, r.pool, pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly}, func(tx pgx.Tx) error {
 		var err error
-		out, err = buildArchive(ctx, tx, userID, at)
+		out, err = buildArchive(ctx, tx, userID, at, r.appVersion)
 		return err
 	})
 	return out, err
 }
 
-func buildArchive(ctx context.Context, tx pgx.Tx, userID int64, at time.Time) ([]byte, error) {
-	m := archiveManifest{Format: "equori-export", FormatVersion: 1, ExportedAt: at, Attachments: []archiveFile{}}
+func buildArchive(ctx context.Context, tx pgx.Tx, userID int64, at time.Time, appVersion string) ([]byte, error) {
+	m := archiveManifest{
+		Format: "equori-export", FormatVersion: 1, ArchiveVersion: app.ArchiveVersion, AppVersion: appVersion,
+		ExportedAt: at, Attachments: []archiveFile{},
+	}
 	if err := tx.QueryRow(ctx, `SELECT max(version_id) FROM goose_db_version WHERE is_applied`).Scan(&m.SchemaVersion); err != nil {
 		return nil, fmt.Errorf("read schema version: %w", err)
 	}
@@ -250,6 +259,9 @@ func (r *Exports) Export(ctx context.Context, userID int64) (app.Export, error) 
 	if row.Problem != nil {
 		e.Problem = *row.Problem
 	}
+	if row.ArchiveVersion != nil {
+		e.ArchiveVersion = int(*row.ArchiveVersion)
+	}
 	return e, nil
 }
 
@@ -270,7 +282,8 @@ func (r *Exports) FinishExport(ctx context.Context, userID int64, id uuid.UUID, 
 		p.Status, p.Problem = string(app.ExportFailed), &problem
 	} else {
 		sum := sha256.Sum256(archive)
-		p.Sha256 = sum[:]
+		version := int32(app.ArchiveVersion)
+		p.Sha256, p.ArchiveVersion = sum[:], &version
 	}
 	return r.q.FinishExport(ctx, p)
 }

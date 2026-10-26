@@ -100,6 +100,7 @@ func (s *Server) ListCategoryCashPayments(ctx context.Context, req ListCategoryC
 
 // ToProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).
 func ToProblem(err error) (problem.Details, bool) {
+	var tooNew *app.ArchiveTooNewError
 	switch {
 	case errors.Is(err, app.ErrInvalidRange):
 		d := problem.New(http.StatusBadRequest, "invalid_request", "from must not be after to, and the range must not exceed 3660 days")
@@ -121,9 +122,10 @@ func ToProblem(err error) (problem.Details, bool) {
 		d := problem.New(http.StatusUnprocessableEntity, "archive_invalid", err.Error())
 		d.Errors = []problem.FieldError{{Field: "file", Message: err.Error()}}
 		return d, true
-	case errors.Is(err, app.ErrArchiveVersion):
-		d := problem.New(http.StatusUnprocessableEntity, "archive_version_mismatch", err.Error())
+	case errors.As(err, &tooNew):
+		d := problem.New(http.StatusUnprocessableEntity, "archive_too_new", err.Error())
 		d.Errors = []problem.FieldError{{Field: "file", Message: err.Error()}}
+		d.ArchiveVersion, d.InstanceVersion = &tooNew.Archive, &tooNew.Instance
 		return d, true
 	case errors.Is(err, app.ErrImportNotEmpty):
 		return problem.New(http.StatusConflict, "import_not_empty", err.Error()), true

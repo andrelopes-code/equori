@@ -3,6 +3,7 @@
 package server
 
 import (
+	"cmp"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -35,6 +36,8 @@ import (
 )
 
 type Config struct {
+	// Version is the version of the running app; "dev" when empty (ADR 021).
+	Version       string
 	SecureCookies bool
 	// Clock defaults to the current time in UTC when nil.
 	Clock *clock.Clock
@@ -107,7 +110,8 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	})
 	marketdataModule.WithProfiles(identityModule)
 	ledgerModule := ledger.New(pool, dispatcher, marketdataModule, identityModule, clk, log)
-	reportingModule := reporting.New(pool, dispatcher, clk, log)
+	version := cmp.Or(cfg.Version, "dev")
+	reportingModule := reporting.New(pool, dispatcher, clk, log, version)
 	classificationModule := classification.New(pool, dispatcher, ledgerModule, log)
 	assistantModule, err := assistant.New(pool, assistant.Config{
 		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, Instance: cfg.LLMProviders,

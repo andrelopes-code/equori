@@ -20,7 +20,7 @@ func toExport(e app.Export) Export {
 	out := Export{Id: e.ID, Status: ExportStatus(e.Status), RequestedAt: e.RequestedAt, FinishedAt: e.FinishedAt}
 	if e.Status == app.ExportReady {
 		sum := hex.EncodeToString(e.SHA256)
-		out.Size, out.Sha256 = &e.Size, &sum
+		out.Size, out.Sha256, out.ArchiveVersion = &e.Size, &sum, &e.ArchiveVersion
 	}
 	if e.Problem != "" {
 		out.Problem = &e.Problem
@@ -74,11 +74,12 @@ func (s *Server) ImportArchive(ctx context.Context, req ImportArchiveRequestObje
 		}
 		break
 	}
-	counts, err := s.exports.Import(ctx, auth.MustUserID(ctx), archive)
+	res, err := s.exports.Import(ctx, auth.MustUserID(ctx), archive)
 	if err != nil {
 		return nil, err
 	}
-	out := ImportArchive200JSONResponse{Tables: make([]struct {
+	counts := res.Tables
+	out := ImportArchive200JSONResponse{ArchiveVersion: res.ArchiveVersion, Tables: make([]struct {
 		Name string `json:"name"`
 		Rows int    `json:"rows"`
 	}, len(counts))}

@@ -15,18 +15,22 @@ import (
 )
 
 type exportView struct {
-	ID      string `json:"id"`
-	Status  string `json:"status"`
-	Size    int64  `json:"size"`
-	SHA256  string `json:"sha256"`
-	Problem string `json:"problem"`
+	ID     string `json:"id"`
+	Status string `json:"status"`
+	Size   int64  `json:"size"`
+	// ArchiveVersion is the archive_version of a ready export (ADR 021).
+	ArchiveVersion int    `json:"archive_version"`
+	SHA256         string `json:"sha256"`
+	Problem        string `json:"problem"`
 }
 
 type manifest struct {
-	Format        string `json:"format"`
-	FormatVersion int    `json:"format_version"`
-	SchemaVersion int64  `json:"schema_version"`
-	Tables        []struct {
+	Format         string `json:"format"`
+	FormatVersion  int    `json:"format_version"`
+	ArchiveVersion int    `json:"archive_version"`
+	AppVersion     string `json:"app_version"`
+	SchemaVersion  int64  `json:"schema_version"`
+	Tables         []struct {
 		Name   string `json:"name"`
 		File   string `json:"file"`
 		Rows   int    `json:"rows"`
@@ -69,7 +73,7 @@ func export(t *testing.T, h *apitest.Harness) []byte {
 	h.Dispatch()
 	var done exportView
 	h.MustDo(http.MethodGet, "/api/v1/exports/current", nil, http.StatusOK, &done)
-	if done.Status != "ready" || done.ID != requested.ID {
+	if done.Status != "ready" || done.ID != requested.ID || done.ArchiveVersion != 1 {
 		t.Fatalf("export = %+v, requested %+v", done, requested)
 	}
 	r := h.Do(http.MethodGet, "/api/v1/exports/current/content", nil)
@@ -117,7 +121,8 @@ func TestExport(t *testing.T) {
 	if err := json.Unmarshal(files["manifest.json"], &m); err != nil {
 		t.Fatalf("manifest: %v", err)
 	}
-	if m.Format != "equori-export" || m.FormatVersion != 1 || m.SchemaVersion == 0 {
+	// ADR 021, V1.
+	if m.Format != "equori-export" || m.FormatVersion != 1 || m.ArchiveVersion != 1 || m.AppVersion != "dev" || m.SchemaVersion == 0 {
 		t.Fatalf("manifest = %+v", m)
 	}
 	rows := map[string]int{}
