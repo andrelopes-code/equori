@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -13,8 +15,11 @@ import (
 
 type Config struct {
 	DatabaseURL string
-	HTTPAddr    string
-	LogLevel    slog.Level
+	// DataDir, PostgresBin and BackupDir serve managed mode (ADR 022, M1 to M3); DataDir is empty
+	// in external mode.
+	DataDir, PostgresBin, BackupDir string
+	HTTPAddr                        string
+	LogLevel                        slog.Level
 	// TimeZone defines "today" and month boundaries for accounting dates (ADR 005).
 	TimeZone *time.Location
 	// InsecureCookies drops the Secure cookie attribute for plain-HTTP LAN deployments (ADR 003).
@@ -38,6 +43,9 @@ type Config struct {
 	// IndexFeeds are the identifiers listed in EQUORI_INDEX_FEEDS; the marketdata module validates them.
 	IndexFeeds []string
 }
+
+// Managed reports whether equori runs its own PostgreSQL server (M1).
+func (c Config) Managed() bool { return c.DatabaseURL == "" }
 
 func Load(getenv func(string) string) (Config, error) {
 	cfg := Config{
@@ -78,8 +86,19 @@ func Load(getenv func(string) string) (Config, error) {
 		}
 		cfg.WebDevPort = port
 	}
+	cfg.PostgresBin = getenv("EQUORI_POSTGRES_BIN")
+	cfg.BackupDir = getenv("EQUORI_BACKUP_DIR")
 	if cfg.DatabaseURL == "" {
-		return Config{}, errors.New("EQUORI_DATABASE_URL is not set")
+		cfg.DataDir = getenv("EQUORI_DATA_DIR")
+		if cfg.DataDir == "" {
+			cfg.DataDir = DefaultDataDir(runtime.GOOS, getenv)
+		}
+		if cfg.DataDir == "" {
+			return Config{}, errors.New("EQUORI_DATABASE_URL is not set and this system has no default data directory; set EQUORI_DATABASE_URL or EQUORI_DATA_DIR")
+		}
+		if cfg.BackupDir == "" {
+			cfg.BackupDir = filepath.Join(cfg.DataDir, "backups")
+		}
 	}
 	if cfg.HTTPAddr == "" {
 		cfg.HTTPAddr = ":8080"

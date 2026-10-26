@@ -56,7 +56,25 @@ func TestLoad(t *testing.T) {
 			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_WEB_DEV_PORT": "70000"},
 			wantErr: true,
 		},
-		{name: "missing database url", env: map[string]string{}, wantErr: true},
+		{name: "missing database url and data directory", env: map[string]string{}, wantErr: true},
+		{
+			name: "managed with explicit directories",
+			env:  map[string]string{"EQUORI_DATA_DIR": "/srv/equori", "EQUORI_POSTGRES_BIN": "/usr/lib/postgresql/18/bin"},
+			want: Config{
+				DataDir: "/srv/equori", BackupDir: "/srv/equori/backups", PostgresBin: "/usr/lib/postgresql/18/bin",
+				HTTPAddr: ":8080", LogLevel: slog.LevelInfo, TimeZone: time.Local,
+				SyncInterval: time.Hour, GeminiURL: "https://generativelanguage.googleapis.com",
+			},
+		},
+		{
+			name: "managed with a backup directory",
+			env:  map[string]string{"EQUORI_DATA_DIR": "/srv/equori", "EQUORI_BACKUP_DIR": "/mnt/backups"},
+			want: Config{
+				DataDir: "/srv/equori", BackupDir: "/mnt/backups",
+				HTTPAddr: ":8080", LogLevel: slog.LevelInfo, TimeZone: time.Local,
+				SyncInterval: time.Hour, GeminiURL: "https://generativelanguage.googleapis.com",
+			},
+		},
 		{
 			name:    "invalid insecure cookies",
 			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_INSECURE_COOKIES": "maybe"},
