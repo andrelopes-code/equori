@@ -73,7 +73,7 @@ import {
   validateBudgetSearch,
   validatePlanningSearch,
 } from "@/features/planning";
-import { LoginPage, meQuery } from "@/features/session";
+import { LoginPage, meQuery, rememberDeviceUser } from "@/features/session";
 import { SettingsPage, validateSettingsSearch } from "@/features/setup";
 import {
   CapturePage,
@@ -120,10 +120,13 @@ const authedRoute = createRoute({
   id: "_authed",
   beforeLoad: async ({ context, location }) => {
     try {
-      await context.queryClient.query({
+      const me = await context.queryClient.query({
         ...meQuery(context.api),
         staleTime: "static",
+        // One retry: a start without the server should reach /offline in seconds.
+        retry: 1,
       });
+      rememberDeviceUser({ id: me.id, email: me.email });
     } catch (error) {
       if (error instanceof ProblemError && error.status === 401) {
         // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirects are thrown objects.
