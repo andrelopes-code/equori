@@ -99,16 +99,20 @@ export const catalogPtBR: Catalog = {
   "export.label": "Exportação",
   "export.none": "Nenhuma exportação pedida.",
   "export.pending": "Preparando o arquivo.",
-  "export.ready": "Pronto: {size}, pedido em {date}.",
+  "export.ready":
+    "Pronto: {size}, pedido em {date}, versão de arquivo {version}.",
   "export.failed": "A última exportação falhou: o arquivo passa de 256 MiB.",
   "export.request": "Pedir exportação",
   "export.download": "Baixar",
   "import.label": "Importação",
   "import.description":
-    "Restaura um arquivo em livros sem transações; os fatos do arquivo substituem as contas iniciais.",
+    "Restaura um arquivo em livros sem transações; os fatos do arquivo substituem as contas iniciais. Um arquivo desta versão do equori ou de uma anterior é importado; um arquivo de uma versão posterior, não.",
   "import.blocked": "A importação exige livros sem transações.",
   "import.choose": "Escolher arquivo",
-  "import.done": "Arquivo importado: {rows} linhas.",
+  "import.done":
+    "Arquivo importado: {rows} linhas, versão de arquivo {version}.",
+  "import.tooNew":
+    "Este arquivo tem a versão de arquivo {archive}; esta versão do equori importa até a versão de arquivo {instance}. Atualize o equori para uma versão que importe a versão de arquivo {archive} e importe de novo.",
   "settings.integrations.description":
     "Credenciais dos agregadores que trazem os dados do banco. O servidor as guarda cifradas e nunca as mostra de novo.",
   "settings.integrations.add": "Adicionar integração",

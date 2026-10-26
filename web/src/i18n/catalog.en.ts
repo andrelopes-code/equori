@@ -97,16 +97,19 @@ export const catalogEn = {
   "export.label": "Export",
   "export.none": "No export requested.",
   "export.pending": "Preparing the archive.",
-  "export.ready": "Ready: {size}, requested on {date}.",
+  "export.ready":
+    "Ready: {size}, requested on {date}, archive version {version}.",
   "export.failed": "The last export failed: the archive exceeds 256 MiB.",
   "export.request": "Request export",
   "export.download": "Download",
   "import.label": "Import",
   "import.description":
-    "Restores an archive into books without transactions; the archive's facts replace the starting accounts.",
+    "Restores an archive into books without transactions; the archive's facts replace the starting accounts. An archive of this version of equori or an earlier one imports; an archive of a later version does not.",
   "import.blocked": "Import needs books without transactions.",
   "import.choose": "Choose archive",
-  "import.done": "Archive imported: {rows} rows.",
+  "import.done": "Archive imported: {rows} rows, archive version {version}.",
+  "import.tooNew":
+    "This archive has archive version {archive}; this version of equori imports up to archive version {instance}. Update equori to a version that imports archive version {archive}, then import again.",
   "settings.integrations.description":
     "Credentials of the aggregators that bring bank data. The server stores them sealed and never shows them again.",
   "settings.integrations.add": "Add integration",

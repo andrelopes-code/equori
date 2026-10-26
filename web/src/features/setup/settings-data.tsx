@@ -16,7 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 
 import { useApi } from "@/api/api-context";
-import { errorText } from "@/api/problem";
+import { errorText, ProblemError } from "@/api/problem";
 import {
   exportContentURL,
   exportQuery,
@@ -44,6 +44,19 @@ export function SettingsData() {
     text: string;
   } | null>(null);
 
+  // ADR 021, V4: an archive of a later version names both versions and the way out.
+  const importError = (caught: unknown) => {
+    const p = caught instanceof ProblemError ? caught.problem : undefined;
+    return p?.code === "archive_too_new" &&
+      p.archive_version !== undefined &&
+      p.instance_version !== undefined
+      ? t("import.tooNew", {
+          archive: p.archive_version,
+          instance: p.instance_version,
+        })
+      : errorText(caught, t);
+  };
+
   const status = () => {
     const e = current.data;
     if (e === null || e === undefined) return t("export.none");
@@ -58,6 +71,7 @@ export function SettingsData() {
           date: new Intl.DateTimeFormat(tag, { dateStyle: "medium" }).format(
             new Date(e.requested_at),
           ),
+          version: e.archive_version ?? 1,
         });
     }
   };
@@ -152,13 +166,14 @@ export function SettingsData() {
                                   (sum, table) => sum + table.rows,
                                   0,
                                 ),
+                                version: result.archive_version,
                               }),
                             });
                           })
                           .catch((caught: unknown) => {
                             setMessage({
                               tone: "danger",
-                              text: errorText(caught, t),
+                              text: importError(caught),
                             });
                           });
                       }}

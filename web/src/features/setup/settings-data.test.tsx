@@ -15,7 +15,14 @@ beforeEach(() => {
 const requested = "2026-10-26T12:00:00Z";
 
 // A region other than BR and a base currency other than BRL.
-function api({ hasTransactions }: { hasTransactions: boolean }) {
+function api({
+  hasTransactions,
+  tooNew = false,
+}: {
+  hasTransactions: boolean;
+  // The import answers archive_too_new for an archive of version 3 (ADR 021).
+  tooNew?: boolean;
+}) {
   let status: "none" | "ready" = "none";
   const sent: string[] = [];
   const fetch = fakeApi(
@@ -48,6 +55,7 @@ function api({ hasTransactions }: { hasTransactions: boolean }) {
               finished_at: requested,
               size: 18_432,
               sha256: "ab",
+              archive_version: 1,
             }),
       "POST /api/v1/exports": () => {
         sent.push("export");
@@ -62,7 +70,17 @@ function api({ hasTransactions }: { hasTransactions: boolean }) {
         // The multipart body read as text: the test environment's Request cannot parse its own form.
         const body = await req.text();
         sent.push(`import ${/name="(\w+)"/u.exec(body)?.[1] ?? "?"}`);
+        if (tooNew)
+          return json(422, {
+            type: "about:blank",
+            title: "Unprocessable Entity",
+            status: 422,
+            code: "archive_too_new",
+            archive_version: 3,
+            instance_version: 1,
+          });
         return json(200, {
+          archive_version: 1,
           tables: [
             { name: "ledger_account", rows: 14 },
             { name: "ledger_transaction", rows: 3 },
@@ -98,7 +116,9 @@ describe("Data section", () => {
     expect(download).toHaveAttribute("href", "/api/v1/exports/current/content");
     expect(sent).toEqual(["export"]);
     expect(
-      within(section()).getByText(/^Ready: 18 kB, requested on /),
+      within(section()).getByText(
+        /^Ready: 18 kB, requested on .*, archive version 1\.$/,
+      ),
     ).toBeInTheDocument();
     expect(
       within(section()).getByText(catalogEn["import.blocked"]),
@@ -124,7 +144,28 @@ describe("Data section", () => {
       expect(sent).toEqual(["import file"]);
     });
     expect(
-      await within(section()).findByText("Archive imported: 17 rows."),
+      await within(section()).findByText(
+        "Archive imported: 17 rows, archive version 1.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("names both versions of an archive written by a later version", async () => {
+    const { fetch } = api({ hasTransactions: false, tooNew: true });
+    await renderApp("/settings", { fetch });
+    const input = await within(section()).findByLabelText(
+      catalogEn["import.choose"],
+    );
+    await userEvent.upload(
+      input,
+      new File(["zip"], "equori-export-2027-01-01.zip", {
+        type: "application/zip",
+      }),
+    );
+    expect(
+      await within(section()).findByText(
+        "This archive has archive version 3; this version of equori imports up to archive version 1. Update equori to a version that imports archive version 3, then import again.",
+      ),
     ).toBeInTheDocument();
   });
 });
