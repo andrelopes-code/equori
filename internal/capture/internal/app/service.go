@@ -23,6 +23,9 @@ var ErrTooManyLines = errors.New("the text has more than 100 lines")
 // ErrDefaultAccount: the default account is not an account a line may name (A111).
 var ErrDefaultAccount = errors.New("the default account is not an open balance account")
 
+// ErrReferenceDate: reference_date lies more than one day after the instance's today (A128).
+var ErrReferenceDate = errors.New("the reference date is more than one day after today")
+
 // Account is a balance account as the ledger holds it.
 type Account struct {
 	ID, ParentID                  uuid.UUID
@@ -101,7 +104,8 @@ func NewService(l Ledger, c Classifier, h HintRepository, p Profiles, sg Suggest
 }
 
 // Preview reads text into drafts (A106–A113). It records nothing.
-func (s *Service) Preview(ctx context.Context, userID int64, text string, defaultAccount uuid.UUID) ([]Line, error) {
+// Preview reads text into lines; a zero reference reads it against today (A128).
+func (s *Service) Preview(ctx context.Context, userID int64, text string, defaultAccount uuid.UUID, reference time.Time) ([]Line, error) {
 	blank := 0
 	pieces := domain.SplitLines(text)
 	for _, p := range pieces {
@@ -129,7 +133,15 @@ func (s *Service) Preview(ctx context.Context, userID int64, text string, defaul
 		return nil, ErrDefaultAccount
 	}
 	y, m, d := s.ledger.Today().Date()
-	read := domain.Read(text, v, time.Date(y, m, d, 0, 0, 0, 0, time.UTC), defaultAccount)
+	day := time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
+	if !reference.IsZero() {
+		// A day ahead is accepted: the device that wrote the text may sit east of the instance's zone.
+		if reference.After(day.AddDate(0, 0, 1)) {
+			return nil, ErrReferenceDate
+		}
+		day = reference
+	}
+	read := domain.Read(text, v, day, defaultAccount)
 	lines := make([]Line, len(read))
 	names := payeeNames(payees)
 	var entries []Entry

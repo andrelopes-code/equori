@@ -1,6 +1,6 @@
 # Text capture
 
-Amendments A106–A118 and scenarios S99–S113 of `docs/domain/06-scenarios.md`.
+Amendments A106–A118 and A128, and scenarios S99–S113 and S151–S153 of `docs/domain/06-scenarios.md`.
 
 ## Intent
 
@@ -101,6 +101,16 @@ A free word of five or more letters at edit distance 1 (insertion, deletion, sub
 ## A118 Category suggestions
 
 A draft that classification left without a category is offered a language model's category under ADR 014: `POST /capture/suggestions` takes up to 40 descriptions with their kind and answers one suggestion each, from kept answers or one model call, with `available: false` when the model cannot be asked. The screen asks once the text has been still for 1.2 seconds, shows the category with "suggested by AI" and records it unless the owner changes it. The text is written in the application's prompt composer, ringed by a halo of the data hues that turns while the composer is in use or the drafts are on their way.
+
+## A128 Reference date
+
+`POST /capture/preview` takes an optional `reference_date`, and every date phrase of the text resolves against it instead of the instance's today; without it, against today. A date after today plus one day returns 422 `validation_failed` with a field error on `reference_date`, because the device that wrote the text may sit one day east of the instance's zone (distribution design, P6).
+
+| Scenario | Text | `reference_date` (today 2026-10-21) | Result |
+|---|---|---|---|
+| S151 | `mercado 30 ontem` | 2026-10-18 | date 2026-10-17 |
+| S152 | `mercado 30` | 2026-10-18 | date 2026-10-18 |
+| S153 | `mercado 30` | 2026-10-22, then 2026-10-23 | date 2026-10-22, then 422 `validation_failed` on `reference_date` |
 
 ## Out of scope
 

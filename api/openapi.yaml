@@ -8177,6 +8177,10 @@ components:
           type: string
           format: uuid
           description: Account of a line that names none (A111).
+        reference_date:
+          type: string
+          format: date
+          description: The day the text was written; date phrases resolve against it (A128). Today when absent; at most today plus one day.
     CapturePreview:
       type: object
       required: [lines]

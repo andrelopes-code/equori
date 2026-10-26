@@ -4611,6 +4611,11 @@ export interface components {
              * @description Account of a line that names none (A111).
              */
             default_account_id?: string;
+            /**
+             * Format: date
+             * @description The day the text was written; date phrases resolve against it (A128). Today when absent; at most today plus one day.
+             */
+            reference_date?: string;
         };
         CapturePreview: {
             lines: components["schemas"]["CaptureLine"][];

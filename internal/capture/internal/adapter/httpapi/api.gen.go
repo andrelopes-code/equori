@@ -313,7 +313,10 @@ type CapturePreview struct {
 type CapturePreviewInput struct {
 	// DefaultAccountId Account of a line that names none (A111).
 	DefaultAccountId *openapi_types.UUID `json:"default_account_id,omitempty"`
-	Text             string              `json:"text"`
+
+	// ReferenceDate The day the text was written; date phrases resolve against it (A128). Today when absent; at most today plus one day.
+	ReferenceDate *openapi_types.Date `json:"reference_date,omitempty"`
+	Text          string              `json:"text"`
 }
 
 // CaptureSegment defines model for CaptureSegment.

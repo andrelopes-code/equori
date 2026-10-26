@@ -279,3 +279,39 @@ func TestPreviewCandidates(t *testing.T) {
 		t.Fatalf("line = %+v", l)
 	}
 }
+
+// A128: the dates of a text written offline resolve against the day it was written.
+func TestPreviewReferenceDate(t *testing.T) {
+	t.Parallel()
+	b := newBooks(t)
+	at := func(t *testing.T, text, reference string) lineView {
+		t.Helper()
+		var out struct {
+			Lines []lineView `json:"lines"`
+		}
+		b.h.MustDo(http.MethodPost, "/api/v1/capture/preview",
+			map[string]any{"text": text, "default_account_id": b.wallet, "reference_date": reference}, http.StatusOK, &out)
+		if len(out.Lines) != 1 {
+			t.Fatalf("lines = %d, want 1", len(out.Lines))
+		}
+		return out.Lines[0]
+	}
+	t.Run("S151", func(t *testing.T) {
+		if l := at(t, "mercado 30 ontem", "2026-10-18"); l.Date != "2026-10-17" {
+			t.Fatalf("date = %s, want 2026-10-17", l.Date)
+		}
+	})
+	t.Run("S152", func(t *testing.T) {
+		if l := at(t, "mercado 30", "2026-10-18"); l.Date != "2026-10-18" {
+			t.Fatalf("date = %s, want 2026-10-18", l.Date)
+		}
+	})
+	t.Run("S153", func(t *testing.T) {
+		if l := at(t, "mercado 30", "2026-10-22"); l.Date != "2026-10-22" {
+			t.Fatalf("date = %s, want 2026-10-22 (today plus one day)", l.Date)
+		}
+		b.h.ExpectProblem(b.h.Do(http.MethodPost, "/api/v1/capture/preview",
+			map[string]any{"text": "mercado 30", "reference_date": "2026-10-23"}),
+			http.StatusUnprocessableEntity, "validation_failed", "reference_date")
+	})
+}

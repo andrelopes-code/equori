@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
@@ -55,6 +56,10 @@ func toProblem(err error) (problem.Details, bool) {
 		d := problem.New(http.StatusUnprocessableEntity, "validation_failed", err.Error())
 		d.Errors = []problem.FieldError{{Field: "default_account_id", Message: err.Error()}}
 		return d, true
+	case errors.Is(err, app.ErrReferenceDate):
+		d := problem.New(http.StatusUnprocessableEntity, "validation_failed", err.Error())
+		d.Errors = []problem.FieldError{{Field: "reference_date", Message: err.Error()}}
+		return d, true
 	}
 	return problem.Details{}, false
 }
@@ -64,7 +69,12 @@ func (s *Server) PreviewCapture(ctx context.Context, req PreviewCaptureRequestOb
 	if req.Body.DefaultAccountId != nil {
 		def = *req.Body.DefaultAccountId
 	}
-	lines, err := s.svc.Preview(ctx, auth.MustUserID(ctx), req.Body.Text, def)
+	var reference time.Time
+	if req.Body.ReferenceDate != nil {
+		y, m, d := req.Body.ReferenceDate.Date()
+		reference = time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
+	}
+	lines, err := s.svc.Preview(ctx, auth.MustUserID(ctx), req.Body.Text, def, reference)
 	if err != nil {
 		return nil, err
 	}
