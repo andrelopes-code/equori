@@ -103,6 +103,12 @@
     "tasks": ["rename or merge payees", "manage payee aliases"]
   },
   {
+    "path": "/categories/tags",
+    "topics": ["categorization_rules_and_payees"],
+    "screen": "Tags",
+    "tasks": ["rename, merge or delete tags"]
+  },
+  {
     "path": "/cards",
     "topics": ["credit_cards_and_statements"],
     "screen": "Cards",
