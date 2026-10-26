@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"log/slog"
@@ -8,13 +9,13 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"runtime"
 	"runtime/debug"
 	"strings"
 	"syscall"
 	"time"
 	_ "time/tzdata" // EQUORI_TIMEZONE must resolve in images without a zoneinfo database.
-
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andrelopes-code/equori/internal/ingestion"
 	"github.com/andrelopes-code/equori/internal/marketdata"
@@ -24,6 +25,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/llm"
 	"github.com/andrelopes-code/equori/internal/platform/llm/aistudio"
 	"github.com/andrelopes-code/equori/internal/platform/postgres"
+	"github.com/andrelopes-code/equori/internal/platform/secret"
 	"github.com/andrelopes-code/equori/internal/server"
 	"github.com/andrelopes-code/equori/web"
 )
@@ -50,6 +52,10 @@ func main() {
 		err = planningCommand(os.Args[2:])
 	case "secrets":
 		err = secretsCommand(os.Args[2:])
+	case "backup":
+		err = backupCommand(os.Args[2:])
+	case "restore":
+		err = restoreCommand(os.Args[2:])
 	case "healthcheck":
 		os.Exit(healthcheck())
 	case "version":
@@ -58,7 +64,7 @@ func main() {
 			fmt.Print(text)
 		}
 	default:
-		fmt.Fprintf(os.Stderr, "unknown command %q; available: serve, user, reporting, portfolio, planning, secrets, healthcheck, version\n", cmd)
+		fmt.Fprintf(os.Stderr, "unknown command %q; available: serve, user, reporting, portfolio, planning, secrets, backup, restore, healthcheck, version\n", cmd)
 		os.Exit(2)
 	}
 	if err != nil {
@@ -81,16 +87,36 @@ func serve() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	pool, err := openDatabase(ctx, cfg, log)
+	db, err := openDatabase(ctx, cfg, log, true)
 	if err != nil {
 		return err
 	}
-	defer pool.Close()
+	defer db.Close(log)
+	// B7: a database created by the host's locale orders text by that locale.
+	provider, locale, err := postgres.Locale(ctx, db.Pool)
+	if err != nil {
+		return err
+	}
+	if provider != "b" || locale != "C.UTF-8" {
+		log.Warn("text order follows the database host's locale; equori restore of a backup recreates the database with the builtin C.UTF-8 order", "provider", provider, "locale", locale)
+	}
+	// M6: serve exits when its postgres dies, and the service manager restarts both.
+	postgresExit := make(chan error, 1)
+	if db.Cluster != nil {
+		go func() {
+			select {
+			case <-db.Cluster.Exited():
+				postgresExit <- fmt.Errorf("postgres exited: %w", db.Cluster.ExitErr())
+				stop()
+			case <-ctx.Done():
+			}
+		}()
+	}
 
 	clk := clock.New(cfg.TimeZone, time.Now)
 	scfg := serverConfig(cfg, &clk)
 	scfg.Web, scfg.WebDevPort, scfg.Version = web.Dist(), cfg.WebDevPort, buildVersion()
-	app, err := server.New(pool, scfg, log)
+	app, err := server.New(db.Pool, scfg, log)
 	if err != nil {
 		return err
 	}
@@ -120,17 +146,31 @@ func serve() error {
 		defer close(feedsDone)
 		app.Marketdata.RunFeeds(ctx, 6*time.Hour)
 	}()
+	backupsDone := make(chan struct{})
+	go func() {
+		defer close(backupsDone)
+		if db.Cluster != nil {
+			runPeriodicBackups(ctx, db, cfg, log)
+		}
+	}()
 	defer func() {
 		stop()
 		<-schedulerDone
 		<-planningDone
 		<-feedsDone
+		<-backupsDone
 		if err := <-dispatcherDone; err != nil {
 			log.Error("outbox dispatcher stopped", "error", err)
 		}
 	}()
 
-	return httpserver.Run(ctx, cfg.HTTPAddr, app.Handler, log)
+	err = httpserver.Run(ctx, cfg.HTTPAddr, app.Handler, log)
+	select {
+	case perr := <-postgresExit:
+		return perr
+	default:
+		return err
+	}
 }
 
 // reportingCommand rebuilds every derived balance series from the ledger.
@@ -144,12 +184,12 @@ func reportingCommand(args []string) error {
 		return err
 	}
 	ctx := context.Background()
-	pool, err := openDatabase(ctx, cfg, log)
+	db, err := openDatabase(ctx, cfg, log, false)
 	if err != nil {
 		return err
 	}
-	defer pool.Close()
-	app, err := server.New(pool, server.Config{}, log)
+	defer db.Close(log)
+	app, err := server.New(db.Pool, server.Config{}, log)
 	if err != nil {
 		return err
 	}
@@ -167,12 +207,12 @@ func planningCommand(args []string) error {
 		return err
 	}
 	ctx := context.Background()
-	pool, err := openDatabase(ctx, cfg, log)
+	db, err := openDatabase(ctx, cfg, log, false)
 	if err != nil {
 		return err
 	}
-	defer pool.Close()
-	app, err := server.New(pool, server.Config{}, log)
+	defer db.Close(log)
+	app, err := server.New(db.Pool, server.Config{}, log)
 	if err != nil {
 		return err
 	}
@@ -190,12 +230,12 @@ func portfolioCommand(args []string) error {
 		return err
 	}
 	ctx := context.Background()
-	pool, err := openDatabase(ctx, cfg, log)
+	db, err := openDatabase(ctx, cfg, log, false)
 	if err != nil {
 		return err
 	}
-	defer pool.Close()
-	app, err := server.New(pool, server.Config{}, log)
+	defer db.Close(log)
+	app, err := server.New(db.Pool, server.Config{}, log)
 	if err != nil {
 		return err
 	}
@@ -242,24 +282,27 @@ func llmProviders(cfg config.Config) []llm.Provider {
 }
 
 func setup() (config.Config, *slog.Logger, error) {
-	cfg, err := config.Load(os.Getenv)
+	getenv := os.Getenv
+	if getenv("EQUORI_DATABASE_URL") == "" {
+		if dir := cmp.Or(getenv("EQUORI_DATA_DIR"), config.DefaultDataDir(runtime.GOOS, getenv)); dir != "" {
+			file, err := config.ReadEnvFile(filepath.Join(dir, "equori.env"))
+			if err != nil {
+				return config.Config{}, nil, err
+			}
+			getenv = config.WithFile(getenv, file)
+		}
+	}
+	cfg, err := config.Load(getenv)
 	if err != nil {
 		return config.Config{}, nil, err
 	}
+	if cfg.Managed() && cfg.SecretKey == "" {
+		if cfg.SecretKey, err = secret.LoadOrCreateKey(filepath.Join(cfg.DataDir, "secret.key")); err != nil {
+			return config.Config{}, nil, err
+		}
+	}
 	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: cfg.LogLevel}))
 	return cfg, log, nil
-}
-
-func openDatabase(ctx context.Context, cfg config.Config, log *slog.Logger) (*pgxpool.Pool, error) {
-	pool, err := postgres.Open(ctx, cfg.DatabaseURL)
-	if err != nil {
-		return nil, err
-	}
-	if err := postgres.Migrate(ctx, pool, log); err != nil {
-		pool.Close()
-		return nil, err
-	}
-	return pool, nil
 }
 
 // healthcheck backs the container HEALTHCHECK: the distroless image has no curl.

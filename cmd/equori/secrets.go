@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
+	"errors"
 	"fmt"
 	"os"
 
@@ -9,27 +11,41 @@ import (
 )
 
 const rotateUsage = `usage: equori secrets rotate
+       equori secrets key
+
+key prints the key in use in standard base64; store it apart from the backups.
 
 Reseals every stored integration credential under EQUORI_SECRET_KEY. Set the new key in
 EQUORI_SECRET_KEY and the old one in EQUORI_SECRET_KEY_PREVIOUS, run this command, then
 remove EQUORI_SECRET_KEY_PREVIOUS (ADR 008).`
 
 func secretsCommand(args []string) error {
-	if len(args) != 1 || args[0] != "rotate" {
+	if len(args) != 1 || (args[0] != "rotate" && args[0] != "key") {
 		fmt.Fprintln(os.Stderr, rotateUsage)
 		return errUsage
+	}
+	if args[0] == "key" {
+		cfg, _, err := setup()
+		if err != nil {
+			return err
+		}
+		if cfg.SecretKey == "" {
+			return errors.New("no secret key is configured: set EQUORI_SECRET_KEY")
+		}
+		fmt.Println(base64.StdEncoding.EncodeToString([]byte(cfg.SecretKey)))
+		return nil
 	}
 	cfg, log, err := setup()
 	if err != nil {
 		return err
 	}
 	ctx := context.Background()
-	pool, err := openDatabase(ctx, cfg, log)
+	db, err := openDatabase(ctx, cfg, log, false)
 	if err != nil {
 		return err
 	}
-	defer pool.Close()
-	app, err := server.New(pool, serverConfig(cfg, nil), log)
+	defer db.Close(log)
+	app, err := server.New(db.Pool, serverConfig(cfg, nil), log)
 	if err != nil {
 		return err
 	}

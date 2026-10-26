@@ -56,17 +56,17 @@ func userCommand(args []string) error {
 		return err
 	}
 	ctx := context.Background()
-	pool, err := openDatabase(ctx, cfg, log)
+	db, err := openDatabase(ctx, cfg, log, false)
 	if err != nil {
 		return err
 	}
-	defer pool.Close()
+	defer db.Close(log)
 
 	role := identity.RoleMember
 	if *admin {
 		role = identity.RoleAdmin
 	}
-	user, err := identity.New(pool, identity.Config{}, log).CreateUser(ctx, *email, password, role, l, base)
+	user, err := identity.New(db.Pool, identity.Config{}, log).CreateUser(ctx, *email, password, role, l, base)
 	if err != nil {
 		return fmt.Errorf("create user: %w", err)
 	}
