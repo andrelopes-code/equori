@@ -68,6 +68,21 @@ Managed mode is the mode in which `equori` runs its own PostgreSQL server as a c
 | B6 | `docs/operations/backup.md` is rewritten around B1 to B5. It states that `backups/` sits on the same disk as the data and is copied elsewhere by the owner. |
 | B7 | At start, `serve` logs a warning when the database's locale provider is not `builtin` with `C.UTF-8`, and names the restore of B2 as the conversion. |
 
+## Phone: installed application and offline capture
+
+| ID | Rule |
+|---|---|
+| P1 | A service worker at `/sw.js` registers only in a secure context and only in the production build. On install it caches `/` and every `/assets/` file that `/` names. A navigation goes to the network first, stores the answer under `/`, and falls back to the cached `/`. When the stored `/` changes, the cached `/assets/` files are deleted. A request under `/assets/` is answered from the cache first and stored on a miss. No `/api/` response is cached. |
+| P2 | `/sw.js` returns `Cache-Control: no-cache`, like `index.html` (ADR 008, W11). |
+| P3 | When the profile request of an authenticated route fails without an HTTP response, the application redirects to `/offline`. That screen holds a text field, the button that queues the text and the list of queued entries of the last user (P4a). |
+| P4 | The queue lives in `localStorage` under `equori.capture.queue`. The entries are short texts, the synchronous API runs in the jsdom test environment without a new dependency, and no service worker reads them. An entry holds `id`, `user_id`, `text`, `default_account_id` (optional), `captured_on` (the device's local date) and `created_at`. Only entries of the signed-in user are listed. |
+| P4a | The session cookie is `HttpOnly` and no API response is cached, so the device keeps its own record of the owner. Each successful load of the profile online stores `id` and `email` of the profile as the device's last user in `localStorage` under `equori.device.user`. Offline, a new entry belongs to the last user, and the offline screen shows that user's email. Logout clears the last user, so a signed-out device queues nothing. A device without a last user shows the offline state without the queue. |
+| P5 | With the server reachable and a session open, the application counts pending entries on start, on the `online` event and when the page becomes visible. Opening the queue loads its entries into the capture screen. Each preview sends `reference_date = captured_on`. Confirming records through `createTransactionBatch`, and the entry is deleted only after a 2xx response. Discarding an entry is an explicit action. |
+| P6 | `CapturePreviewInput` gains the optional date `reference_date`. Text capture A109 resolves every date phrase against it; without it, against today. A date after the instance's today plus one day returns 422 `validation_failed` with a field error on `reference_date`, the form the module already uses for `default_account_id`. |
+| P7 | Logout keeps the entries; they are listed again when the same user signs in on the device. A discard action on an entry removes it. A failed write of the queue keeps the text in the field and shows an error. |
+| P8 | The first queued entry calls `navigator.storage.persist()`. |
+| P9 | No Background Sync, no push. iOS gives neither to a web application without restrictions; processing happens with the application open. |
+
 ## Settled during planning
 
 | Item | Value |

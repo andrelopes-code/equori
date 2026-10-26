@@ -19,6 +19,7 @@ The web interface is the only client of equori (`docs/domain/01-vision.md`: no n
 | W12 | Responses outside `/api/` carry `Content-Security-Policy: default-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'`, in addition to the headers C9 of ADR 007 sets on every response. |
 | W13 | Modules of `web/src` import each other through the alias `@/`, which maps to `web/src/`. The `paths` entry of `web/tsconfig.json` is its only definition; Vite and Vitest read it through `resolve.tsconfigPaths`. ESLint `no-restricted-imports` rejects every import that starts with `./` or `../`. |
 | W14 | In development, `EQUORI_WEB_DEV_PORT` (set to 5173 in `dev.env`) replaces W9: every `GET` or `HEAD` path outside `/api/` answers 307 to the Vite server on that port of the request's host, with the same path and query; other methods answer 405. The embedded tree is a build that `make dev` does not refresh, so the application's port never shows it in development. Unset, as in production, W9 holds. |
+| W15 | Amendment of 2026-10-26. `/sw.js` is served with `Cache-Control: no-cache`, like `index.html`. The service worker stores `/`, the files under `assets/` that it names, `/boot.js`, `/boot.css`, `/manifest.json` and `/icon.svg`, and no `/api/` answer. Reason: the installed application opens without the server (ADR 022, D7). |
 
 ## Consequences
 
