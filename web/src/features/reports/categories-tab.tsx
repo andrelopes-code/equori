@@ -8,6 +8,7 @@ import {
 } from "@slotted/react/breadcrumb";
 import { Chart } from "@slotted/react/chart";
 import { InlineMessage } from "@slotted/react/inline-message";
+import { Inline } from "@slotted/react/inline";
 import { Link } from "@slotted/react/link";
 import {
   ResultState,
@@ -41,6 +42,7 @@ import {
   useCategoryEntries,
 } from "@/features/categories";
 import { periodProblem } from "@/features/portfolio";
+import { CashPaymentsTable } from "@/features/reports/cash-payments-table";
 import { categoryRows } from "@/features/reports/category-rows";
 import type { CategoryRow } from "@/features/reports/category-rows";
 import { CompareSwitch } from "@/features/reports/compare-switch";
@@ -155,6 +157,26 @@ export function CategoriesTab({
       </Link>
     );
   };
+  // In the cash view a card amount counts when its statement is paid: the payments open it (N20).
+  const records = (r: CategoryRow) =>
+    view === "cash" ? (
+      <Inline gap={3}>
+        {transactions(r)}
+        <Link
+          variant="neutral"
+          underline="hover"
+          {...reportLink({ ...search, payments: r.id })}
+        >
+          {t("report.cash.payments")}
+        </Link>
+      </Inline>
+    ) : (
+      transactions(r)
+    );
+  const paymentsOf =
+    view === "cash" && search.payments !== undefined
+      ? entries.find((e) => e.id === search.payments)
+      : undefined;
   const columns = compare ? 7 : 4;
   const diff = (c: number | undefined, bp: number | undefined) => (
     <>
@@ -194,7 +216,7 @@ export function CategoriesTab({
           {diff(r.change, r.changeBP)}
         </>
       )}
-      <TableCell>{isDirect ? null : transactions(r)}</TableCell>
+      <TableCell>{isDirect ? null : records(r)}</TableCell>
     </TableRow>
   );
   const shown = level.rows.slice(0, chartRows);
@@ -246,6 +268,7 @@ export function CategoriesTab({
               onChange({
                 class: value === "income" ? "income" : undefined,
                 parent: undefined,
+                payments: undefined,
               });
             }}
           >
@@ -381,6 +404,15 @@ export function CategoriesTab({
               )}
             </TableContent>
           </Table>
+          {paymentsOf !== undefined && (
+            <CashPaymentsTable
+              categoryId={paymentsOf.id}
+              name={paymentsOf.name}
+              income={cls === "income"}
+              period={period}
+              money={money}
+            />
+          )}
         </>
       )}
     </Stack>

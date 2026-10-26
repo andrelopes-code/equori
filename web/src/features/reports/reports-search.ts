@@ -27,6 +27,8 @@ export interface ReportsSearch {
   view?: "cash" | undefined;
   // The category whose children the categories tab lists; the top level when absent.
   parent?: string | undefined;
+  // The category whose card payments the cash view lists under its table; none when absent.
+  payments?: string | undefined;
   // The account of the flows tab; the first open account when absent.
   account?: string | undefined;
   // The granularity of the flows tab; day when absent.
@@ -66,6 +68,7 @@ export function validateReportsSearch(
     class: raw.class === "income" ? "income" : undefined,
     view: raw.view === "cash" ? "cash" : undefined,
     parent: matching(raw.parent, uuidPattern),
+    payments: matching(raw.payments, uuidPattern),
     account: matching(raw.account, uuidPattern),
     by: raw.by === "month" ? "month" : undefined,
     compare: raw.compare === true || raw.compare === "true" ? true : undefined,

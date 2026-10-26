@@ -182,7 +182,9 @@ type cashPayment struct {
 		Amount   int64  `json:"amount"`
 		Currency string `json:"currency"`
 	} `json:"amount"`
+	CardAccountID        string `json:"card_account_id"`
 	StatementID          string `json:"statement_id"`
+	StatementReference   string `json:"statement_reference"`
 	PaymentTransactionID string `json:"payment_transaction_id"`
 }
 
@@ -229,7 +231,7 @@ func TestS149(t *testing.T) {
 	}
 	// N20: the amount names the statement and the payment.
 	got := cashPayments(t, c.h, c.interest, "2026-12-01", "2026-12-31")
-	want := cashPayment{Date: "2026-12-10", StatementID: c.statementID(t, "2026-12"), PaymentTransactionID: december}
+	want := cashPayment{Date: "2026-12-10", CardAccountID: c.card, StatementID: c.statementID(t, "2026-12"), StatementReference: "2026-12", PaymentTransactionID: december}
 	want.Amount.Amount, want.Amount.Currency = 666, "BRL"
 	if len(got) != 1 || got[0] != want {
 		t.Fatalf("cash payments of interest = %+v, want %+v", got, want)

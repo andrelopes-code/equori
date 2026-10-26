@@ -54,6 +54,13 @@ export const reportsPtBR: Record<keyof typeof reportsEn, string> = {
   "report.categories.trail": "Caminho da categoria",
   "report.categories.all": "Todas as categorias",
   "report.categories.empty": "Nada lançado neste período.",
+  "report.cash.payments": "Pagamentos de cartão",
+  "report.cash.title": "Pagamentos de cartão de {name}",
+  "report.cash.payment": "Pagamento",
+  "report.cash.statement": "Fatura",
+  "report.cash.amount": "Valor",
+  "report.cash.empty":
+    "Nenhum pagamento de cartão conta em {name} neste período.",
   "report.flows.title": "Fluxos por conta",
   "report.flows.comparison": "Fluxos contra o período anterior",
   "report.flows.account": "Conta",

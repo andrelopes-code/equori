@@ -92,7 +92,7 @@ func (s *Server) ListCategoryCashPayments(ctx context.Context, req ListCategoryC
 	for i, p := range payments {
 		out.Items[i] = CategoryCashPayment{
 			Date: cashDate(p), Amount: Money{Amount: p.Amount, Currency: instrument},
-			StatementId: p.StatementID, PaymentTransactionId: p.PaymentTransactionID,
+			CardAccountId: p.CardID, StatementId: p.StatementID, StatementReference: p.StatementReference.Format("2006-01"), PaymentTransactionId: p.PaymentTransactionID,
 		}
 	}
 	return out, nil

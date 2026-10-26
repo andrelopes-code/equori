@@ -66,7 +66,8 @@ type CashRepository interface {
 type CashPayment struct {
 	Date                 time.Time
 	Amount               int64
-	StatementID          uuid.UUID
+	CardID, StatementID  uuid.UUID
+	StatementReference   time.Time
 	PaymentTransactionID uuid.UUID
 }
 
@@ -107,16 +108,16 @@ func (s *Service) CategoryCashPayments(ctx context.Context, userID int64, catego
 	var out []CashPayment
 	for _, p := range payments {
 		if v := p.shares[categoryID]; v != 0 && !p.date.Before(from) && !p.date.After(to) {
-			out = append(out, CashPayment{Date: p.date, Amount: v, StatementID: p.statement, PaymentTransactionID: p.transaction})
+			out = append(out, CashPayment{Date: p.date, Amount: v, CardID: p.card, StatementID: p.statement, StatementReference: p.reference, PaymentTransactionID: p.transaction})
 		}
 	}
 	return out, instrument, nil
 }
 
 type payment struct {
-	date                   time.Time
-	statement, transaction uuid.UUID
-	shares                 Shares
+	date, reference              time.Time
+	card, statement, transaction uuid.UUID
+	shares                       Shares
 }
 
 // allocate applies each payment to the oldest statement of its card that is still owed (CV4)
@@ -178,7 +179,7 @@ func allocate(f CardFacts) ([]payment, map[uuid.UUID]Shares) {
 				add(moved, share)
 				continue
 			}
-			out = append(out, payment{date: p.Date, statement: b.id, transaction: p.TransactionID, shares: share})
+			out = append(out, payment{date: p.Date, card: p.CardID, statement: b.id, reference: b.statement, transaction: p.TransactionID, shares: share})
 		}
 		if !p.Financing {
 			continue

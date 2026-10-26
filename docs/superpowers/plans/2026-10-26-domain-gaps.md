@@ -7,7 +7,7 @@ Three parts, executed in order on `main` without push. Each slice is one commit.
 | A | A1 | `docs: settle the open points of the investments design` (amendment of section 7; a `portfolio` test when the decided behavior has none) | done |
 | B | B1 | `docs(reporting): specify the cash view of financed and revolving statements` (amendment of the P9 cash view plan, new scenarios) | done |
 | B | B2 | `feat(reporting): distribute financed and revolving payments in the cash view` (apitest per new scenario, rebuild totals, N20 source) | done |
-| B | B3 | `feat(web): name the statement and payment of a cash amount` (`listCategoryCashPayments`, the contract change of B2) | open |
+| B | B3 | `feat(web): name the statement and payment of a cash amount` (`listCategoryCashPayments`, the contract change of B2) | done |
 | C | C1 | `docs(adr): version export archives` (ADR 021; export spec and roadmap 9.3 cite it) | open |
 | C | C2 | `feat(reporting): migrate export archives from earlier versions` | open |
 | C | C3 | `test(reporting): pin the exported tables to the archive version` | open |

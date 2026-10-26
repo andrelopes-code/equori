@@ -126,7 +126,8 @@ type CardStatementAnalytics struct {
 
 // CategoryCashPayment defines model for CategoryCashPayment.
 type CategoryCashPayment struct {
-	Amount Money `json:"amount"`
+	Amount        Money              `json:"amount"`
+	CardAccountId openapi_types.UUID `json:"card_account_id"`
 
 	// Date The payment's date.
 	Date                 openapi_types.Date `json:"date"`
@@ -134,6 +135,9 @@ type CategoryCashPayment struct {
 
 	// StatementId The statement the payment pays.
 	StatementId openapi_types.UUID `json:"statement_id"`
+
+	// StatementReference The reference month of that statement, YYYY-MM.
+	StatementReference string `json:"statement_reference"`
 }
 
 // CategoryCashPayments defines model for CategoryCashPayments.

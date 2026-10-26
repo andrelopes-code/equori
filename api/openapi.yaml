@@ -7471,7 +7471,7 @@ components:
             $ref: "#/components/schemas/CategoryCashPayment"
     CategoryCashPayment:
       type: object
-      required: [date, amount, statement_id, payment_transaction_id]
+      required: [date, amount, card_account_id, statement_id, statement_reference, payment_transaction_id]
       properties:
         date:
           type: string
@@ -7479,10 +7479,17 @@ components:
           description: The payment's date.
         amount:
           $ref: "#/components/schemas/Money"
+        card_account_id:
+          type: string
+          format: uuid
         statement_id:
           type: string
           format: uuid
           description: The statement the payment pays.
+        statement_reference:
+          type: string
+          pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+          description: The reference month of that statement, YYYY-MM.
         payment_transaction_id:
           type: string
           format: uuid

@@ -4263,11 +4263,15 @@ export interface components {
              */
             date: string;
             amount: components["schemas"]["Money"];
+            /** Format: uuid */
+            card_account_id: string;
             /**
              * Format: uuid
              * @description The statement the payment pays.
              */
             statement_id: string;
+            /** @description The reference month of that statement, YYYY-MM. */
+            statement_reference: string;
             /** Format: uuid */
             payment_transaction_id: string;
         };
