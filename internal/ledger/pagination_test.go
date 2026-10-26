@@ -4,6 +4,7 @@ import (
 	"encoding/json/jsontext"
 	"net/http"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
@@ -49,9 +50,10 @@ func walk(t *testing.T, h *apitest.Harness, path string) ([]string, string) {
 	return nil, ""
 }
 
-// ADR 007, C8: lists that grow with use are paginated by cursor.
-func TestGrowingListsPaginate(t *testing.T) {
-	t.Parallel()
+// growingLists records at least three items in each list of ADR 007, C8, other
+// than transactions, and returns the path of each list.
+func growingLists(t *testing.T) (*apitest.Harness, cardSetup, map[string]string) {
+	t.Helper()
 	c := newCardSetup(t, "2026-12-20")
 	h := c.h
 	for _, name := range []string{"Caixa", "Banco do Brasil", "Inter"} {
@@ -71,7 +73,7 @@ func TestGrowingListsPaginate(t *testing.T) {
 		mustAttach(t, h, tx, name, []byte("receipt "+name))
 	}
 
-	lists := map[string]string{
+	return h, c, map[string]string{
 		"accounts":           "/api/v1/accounts",
 		"institutions":       "/api/v1/institutions",
 		"payees":             "/api/v1/payees",
@@ -80,6 +82,12 @@ func TestGrowingListsPaginate(t *testing.T) {
 		"balance assertions": "/api/v1/accounts/" + c.checking + "/balance-assertions",
 		"attachments":        "/api/v1/transactions/" + tx + "/attachments",
 	}
+}
+
+// ADR 007, C8: lists that grow with use are paginated by cursor.
+func TestGrowingListsPaginate(t *testing.T) {
+	t.Parallel()
+	h, _, lists := growingLists(t)
 	cursors := map[string]string{}
 	for name, path := range lists {
 		t.Run(name, func(t *testing.T) {
@@ -104,5 +112,63 @@ func TestGrowingListsPaginate(t *testing.T) {
 			}
 			h.ExpectProblem(h.Do(http.MethodGet, path+"?cursor="+cursor, nil), http.StatusBadRequest, "invalid_request", "cursor")
 		}
+	}
+}
+
+// N23: every list of ADR 007, C8 pages by cursor under the rules of ADR 005,
+// section 4, and applies its documented filters.
+func TestN23EveryGrowingListPaginates(t *testing.T) {
+	t.Parallel()
+	h, c, lists := growingLists(t)
+	lists["transactions"] = "/api/v1/transactions"
+	type filter struct {
+		query   string
+		want    int
+		eachHas string
+	}
+	filters := map[string]filter{
+		"transactions": {"account_id=" + c.checking, 2, c.checking},
+		"statements":   {"from=2026-11&to=2026-11", 1, `"reference":"2026-11"`},
+	}
+	for name, path := range lists {
+		t.Run(name, func(t *testing.T) {
+			var first, second pageOf
+			h.MustDo(http.MethodGet, path+"?limit=2", nil, http.StatusOK, &first)
+			if len(first.Items) != 2 || first.NextCursor == "" {
+				t.Fatalf("limit=2: %d items, next_cursor %q", len(first.Items), first.NextCursor)
+			}
+			h.MustDo(http.MethodGet, path+"?limit=2&cursor="+first.NextCursor, nil, http.StatusOK, &second)
+			if len(second.Items) == 0 {
+				t.Fatal("page 2 is empty")
+			}
+			for _, it := range second.Items {
+				for _, seen := range first.Items {
+					if string(it) == string(seen) {
+						t.Fatalf("page 2 repeats %s", it)
+					}
+				}
+			}
+			// walk follows next_cursor until it is absent on the last page.
+			walk(t, h, path)
+			for _, limit := range []string{"0", "201"} {
+				h.ExpectProblem(h.Do(http.MethodGet, path+"?limit="+limit, nil), http.StatusBadRequest, "invalid_request", "limit")
+			}
+			h.ExpectProblem(h.Do(http.MethodGet, path+"?cursor=not-a-cursor", nil), http.StatusBadRequest, "invalid_request", "cursor")
+
+			f, ok := filters[name]
+			if !ok {
+				return
+			}
+			var filtered pageOf
+			h.MustDo(http.MethodGet, path+"?limit=200&"+f.query, nil, http.StatusOK, &filtered)
+			if len(filtered.Items) != f.want || filtered.NextCursor != "" {
+				t.Fatalf("%s: %d items, next_cursor %q; want %d items", f.query, len(filtered.Items), filtered.NextCursor, f.want)
+			}
+			for _, it := range filtered.Items {
+				if !strings.Contains(string(it), f.eachHas) {
+					t.Fatalf("%s returned %s", f.query, it)
+				}
+			}
+		})
 	}
 }

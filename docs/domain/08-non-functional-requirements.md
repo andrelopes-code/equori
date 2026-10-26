@@ -62,7 +62,7 @@ Every requirement has a measurable criterion and a verification method. Performa
 |---|---|---|
 | N21 | Interface languages: those listed in `web/src/i18n/languages.ts` (`en`, `pt`), each with a catalog. Number, currency and date formats come from `Intl` for the `language-region` locale of the profile (`web/src/i18n/locale.ts`). | UI tests |
 | N22 | Manual expense entry with at most three inputs (SC4). | UI test |
-| N23 | Every list that grows with use is paginated, and every list follows the filter rules of ADR 005 (ADR 007, C8). | API tests per list |
+| N23 | Every list that grows with use is paginated, and every list follows the filter rules of ADR 005 (ADR 007, C8). | `TestN23EveryGrowingListPaginates` (`internal/ledger/pagination_test.go`) |
 
 ## 8.8 Compatibility and limits
 
