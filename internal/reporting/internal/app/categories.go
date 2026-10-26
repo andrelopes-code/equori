@@ -31,15 +31,24 @@ type CategoryTotal struct {
 	SubtreeTotal int64
 }
 
-// CategoryTotals totals the categories of class in [from, to] (A77), in the order of the
-// repository rows. A closed account is listed only when one of its totals is not zero.
-func (s *Service) CategoryTotals(ctx context.Context, userID int64, class string, from, to time.Time) ([]CategoryTotal, error) {
+// CategoryTotals totals the categories of class in [from, to] (A77) in the view, in the
+// order of the repository rows. A closed account is listed only when one of its totals is not zero.
+func (s *Service) CategoryTotals(ctx context.Context, userID int64, class string, from, to time.Time, view View) ([]CategoryTotal, error) {
 	if days := int(to.Sub(from).Hours()/24) + 1; days < 1 || days > MaxCategoryDays {
 		return nil, ErrInvalidCategoryRange
 	}
 	rows, err := s.repo.CategoryTotals(ctx, userID, class, from, to)
 	if err != nil {
 		return nil, err
+	}
+	if view == ViewCash {
+		cash, err := s.cashTotals(ctx, userID, from, to)
+		if err != nil {
+			return nil, err
+		}
+		for i := range rows {
+			rows[i].Total = cash[rows[i].ID]
+		}
 	}
 	sign := int64(1)
 	if class == "income" {

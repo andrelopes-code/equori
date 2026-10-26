@@ -46,6 +46,7 @@ type Point struct {
 // Repository reads Ledger tables only through SELECT (ADR 002).
 type Repository interface {
 	FlowRepository
+	CashRepository
 	AccountCurrency(ctx context.Context, userID int64, accountID uuid.UUID) (string, error)
 	AccountName(ctx context.Context, userID int64, accountID uuid.UUID) (string, error)
 	Rebuild(ctx context.Context, userID int64, accountID uuid.UUID, from time.Time) error

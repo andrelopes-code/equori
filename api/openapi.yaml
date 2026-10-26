@@ -1498,7 +1498,7 @@ paths:
     get:
       tags: [reporting]
       operationId: getCategoryTotals
-      summary: Booked totals of each category of a class in [from, to], at most 366 days (A77).
+      summary: Totals of each category of a class in [from, to], at most 366 days, in the accrual or cash view (A77).
       description: |
         Spending of an expense category and earnings of an income category are positive. An account is listed
         when it is open or when its total or the total of its subtree is not zero; items are ordered by name then id.
@@ -1521,6 +1521,17 @@ paths:
           schema:
             type: string
             enum: [income, expense]
+        - name: view
+          in: query
+          required: false
+          description: |
+            accrual counts each amount on its transaction date. cash counts a card line when its statement is paid,
+            in proportion to the payment, and any other amount on its date (docs/superpowers/plans/2026-10-26-p9-cash-view.md,
+            CV1 to CV6).
+          schema:
+            type: string
+            enum: [accrual, cash]
+            default: accrual
       responses:
         "200":
           description: OK.

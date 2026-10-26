@@ -65,7 +65,11 @@ func (s *Server) GetAccountFlows(ctx context.Context, req GetAccountFlowsRequest
 }
 
 func (s *Server) GetCategoryTotals(ctx context.Context, req GetCategoryTotalsRequestObject) (GetCategoryTotalsResponseObject, error) {
-	totals, err := s.svc.CategoryTotals(ctx, auth.MustUserID(ctx), string(req.Params.Class), req.Params.From.Time, req.Params.To.Time)
+	view := app.ViewAccrual
+	if req.Params.View != nil {
+		view = app.View(*req.Params.View)
+	}
+	totals, err := s.svc.CategoryTotals(ctx, auth.MustUserID(ctx), string(req.Params.Class), req.Params.From.Time, req.Params.To.Time, view)
 	if err != nil {
 		return nil, err
 	}

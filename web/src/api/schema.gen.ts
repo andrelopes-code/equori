@@ -890,7 +890,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Booked totals of each category of a class in [from, to], at most 366 days (A77).
+         * Totals of each category of a class in [from, to], at most 366 days, in the accrual or cash view (A77).
          * @description Spending of an expense category and earnings of an income category are positive. An account is listed
          *     when it is open or when its total or the total of its subtree is not zero; items are ordered by name then id.
          */
@@ -6462,6 +6462,12 @@ export interface operations {
                 from: string;
                 to: string;
                 class: "income" | "expense";
+                /**
+                 * @description accrual counts each amount on its transaction date. cash counts a card line when its statement is paid,
+                 *     in proportion to the payment, and any other amount on its date (docs/superpowers/plans/2026-10-26-p9-cash-view.md,
+                 *     CV1 to CV6).
+                 */
+                view?: "accrual" | "cash";
             };
             header?: never;
             path?: never;

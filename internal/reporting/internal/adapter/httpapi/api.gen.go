@@ -77,6 +77,24 @@ func (e GetCategoryTotalsParamsClass) Valid() bool {
 	}
 }
 
+// Defines values for GetCategoryTotalsParamsView.
+const (
+	Accrual GetCategoryTotalsParamsView = "accrual"
+	Cash    GetCategoryTotalsParamsView = "cash"
+)
+
+// Valid indicates whether the value is a known member of the GetCategoryTotalsParamsView enum.
+func (e GetCategoryTotalsParamsView) Valid() bool {
+	switch e {
+	case Accrual:
+		return true
+	case Cash:
+		return true
+	default:
+		return false
+	}
+}
+
 // AccountFlows defines model for AccountFlows.
 type AccountFlows struct {
 	Items []FlowDay `json:"items"`
@@ -202,10 +220,18 @@ type GetCategoryTotalsParams struct {
 	From  openapi_types.Date           `form:"from" json:"from"`
 	To    openapi_types.Date           `form:"to" json:"to"`
 	Class GetCategoryTotalsParamsClass `form:"class" json:"class"`
+
+	// View accrual counts each amount on its transaction date. cash counts a card line when its statement is paid,
+	// in proportion to the payment, and any other amount on its date (docs/superpowers/plans/2026-10-26-p9-cash-view.md,
+	// CV1 to CV6).
+	View *GetCategoryTotalsParamsView `form:"view,omitempty" json:"view,omitempty"`
 }
 
 // GetCategoryTotalsParamsClass defines parameters for GetCategoryTotals.
 type GetCategoryTotalsParamsClass string
+
+// GetCategoryTotalsParamsView defines parameters for GetCategoryTotals.
+type GetCategoryTotalsParamsView string
 
 // GetAccountFlowsParams defines parameters for GetAccountFlows.
 type GetAccountFlowsParams struct {
@@ -234,7 +260,7 @@ type ServerInterface interface {
 	// GetBalanceSeries Daily balance of an account and its sub-accounts, one item per day in [from, to].
 	// (GET /reports/balances)
 	GetBalanceSeries(w http.ResponseWriter, r *http.Request, params GetBalanceSeriesParams)
-	// GetCategoryTotals Booked totals of each category of a class in [from, to], at most 366 days (A77).
+	// GetCategoryTotals Totals of each category of a class in [from, to], at most 366 days, in the accrual or cash view (A77).
 	// (GET /reports/categories)
 	GetCategoryTotals(w http.ResponseWriter, r *http.Request, params GetCategoryTotalsParams)
 	// GetAccountFlows Booked inflow and outflow of one account, one item per day in [from, to] that has a posting (A119).
@@ -423,6 +449,19 @@ func (siw *ServerInterfaceWrapper) GetCategoryTotals(w http.ResponseWriter, r *h
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "class"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "class", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "view" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "view", r.URL.Query(), &params.View, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "view"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "view", Err: err})
 		}
 		return
 	}
@@ -1106,7 +1145,7 @@ type StrictServerInterface interface {
 	// GetBalanceSeries Daily balance of an account and its sub-accounts, one item per day in [from, to].
 	// (GET /reports/balances)
 	GetBalanceSeries(ctx context.Context, request GetBalanceSeriesRequestObject) (GetBalanceSeriesResponseObject, error)
-	// GetCategoryTotals Booked totals of each category of a class in [from, to], at most 366 days (A77).
+	// GetCategoryTotals Totals of each category of a class in [from, to], at most 366 days, in the accrual or cash view (A77).
 	// (GET /reports/categories)
 	GetCategoryTotals(ctx context.Context, request GetCategoryTotalsRequestObject) (GetCategoryTotalsResponseObject, error)
 	// GetAccountFlows Booked inflow and outflow of one account, one item per day in [from, to] that has a posting (A119).

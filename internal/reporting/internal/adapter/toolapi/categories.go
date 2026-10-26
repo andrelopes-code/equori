@@ -46,7 +46,7 @@ func getCategoryTotals(svc *app.Service) tool.Tool {
 			"Do not use it for the transactions behind a total: search_transactions with account_id lists them.",
 		Effect: tool.ReadOnly,
 	}, func(ctx context.Context, userID int64, in getCategoryTotalsIn) (getCategoryTotalsOut, error) {
-		totals, err := svc.CategoryTotals(ctx, userID, string(in.Class), in.From.Time, in.To.Time)
+		totals, err := svc.CategoryTotals(ctx, userID, string(in.Class), in.From.Time, in.To.Time, app.ViewAccrual)
 		if err != nil {
 			return getCategoryTotalsOut{}, err
 		}
