@@ -268,27 +268,29 @@ export function CategoriesPage() {
       />
       <PageBody>
         <div className={styles.region}>
-          <Inline gap={4} justify="between" align="center">
-            <SegmentedControl
-              aria-label={t("category.class")}
-              value={cls}
-              onValueChange={(value) => {
-                if (value === "expense" || value === "income") {
-                  setSearch({
-                    class: value === "expense" ? undefined : value,
-                  });
-                }
-              }}
-            >
-              <Segment value="expense">{t("category.group.expense")}</Segment>
-              <Segment value="income">{t("category.group.income")}</Segment>
-            </SegmentedControl>
-            <CategoryViewControl
-              value={view}
-              onChange={(next) => {
-                setSearch({ view: next === "cash" ? "cash" : undefined });
-              }}
-            />
+          <Inline gap={4} justify="between" align="center" wrap="wrap">
+            <Inline gap={4} align="center" wrap="wrap">
+              <SegmentedControl
+                aria-label={t("category.class")}
+                value={cls}
+                onValueChange={(value) => {
+                  if (value === "expense" || value === "income") {
+                    setSearch({
+                      class: value === "expense" ? undefined : value,
+                    });
+                  }
+                }}
+              >
+                <Segment value="expense">{t("category.group.expense")}</Segment>
+                <Segment value="income">{t("category.group.income")}</Segment>
+              </SegmentedControl>
+              <CategoryViewControl
+                value={view}
+                onChange={(next) => {
+                  setSearch({ view: next === "cash" ? "cash" : undefined });
+                }}
+              />
+            </Inline>
             <Switch
               checked={showArchived}
               onCheckedChange={(checked) => {
