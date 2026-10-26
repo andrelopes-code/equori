@@ -1,0 +1,19 @@
+# Domain gaps left after P9
+
+Three parts, executed in order on `main` without push. Each slice is one commit. Each web slice has a test with language `en`, region `DE` and base currency `EUR`.
+
+| Part | Slice | Commit | Status |
+|---|---|---|---|
+| A | A1 | `docs: settle the open points of the investments design` (amendment of section 7; a `portfolio` test when the decided behavior has none) | open |
+| B | B1 | `docs(reporting): specify the cash view of financed and revolving statements` (amendment of the P9 cash view plan, new scenarios) | open |
+| B | B2 | `feat(reporting): distribute financed and revolving payments in the cash view` (apitest per new scenario, rebuild totals, N20 source) | open |
+| C | C1 | `docs(adr): version export archives` (ADR 021; export spec and roadmap 9.3 cite it) | open |
+| C | C2 | `feat(reporting): migrate export archives from earlier versions` | open |
+| C | C3 | `test(reporting): pin the exported tables to the archive version` | open |
+| C | C4 | `docs(reporting): document archive compatibility for owners` | open |
+| C | C5 | `feat(web): show archive versions on export and import` | open |
+
+## Decisions
+
+- B: the task names the apitests inside the `docs(reporting)` slice. A test of a behavior that does not exist fails, so the tests and the implementation form slice B2.
+- A: the task text carries the owner decision on the IPCA accrual only; the decision on `cri` and `cra` for an owner that is not an individual is cut off. Section 7 settles the IPCA point; the other point stays open and is listed in known problems.
