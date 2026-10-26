@@ -651,3 +651,22 @@ export function recentTransactionsQuery(
       ).items,
   });
 }
+
+// Categories a language model names for recorded uncategorized transactions (ADR 014 L1a).
+// Nothing is recorded, so the query is read once per selection.
+export function transactionSuggestionsQuery(
+  api: Client<paths>,
+  ids: readonly string[],
+) {
+  return queryOptions({
+    queryKey: ["transaction-suggestions", ids] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.POST("/transactions/category-suggestions", {
+          body: { transaction_ids: [...ids] },
+        }),
+      ),
+    enabled: ids.length > 0,
+    staleTime: Infinity,
+  });
+}

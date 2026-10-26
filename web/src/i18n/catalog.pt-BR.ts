@@ -394,6 +394,18 @@ export const catalogPtBR: Catalog = {
   "selection.clear": "Limpar",
   "selection.categorize": "Categorizar como…",
   "selection.categorizeTitle": "Categorizar {count} transações",
+  "selection.suggest": "Sugerir categorias",
+  "suggest.title": "Categorias sugeridas",
+  "suggest.description":
+    "Marque as sugestões a gravar. Uma sugestão desmarcada não altera nada.",
+  "suggest.sends":
+    "As descrições das transações selecionadas e os nomes das suas categorias vão para o provedor de Sugestão de categorias, como na captura.",
+  "suggest.unavailable":
+    "Nenhum modelo de linguagem pode responder agora. As transações continuam sem categoria.",
+  "suggest.option": "{description}: {category}",
+  "suggest.without": "Sem sugestão: {count}",
+  "suggest.record": "Gravar {count} aceitas",
+  "suggest.list": "Sugestões",
   "detail.title": "Transação",
   "detail.close": "Fechar",
   "detail.openPage": "Abrir como página",

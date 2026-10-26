@@ -32,7 +32,7 @@ Status snapshot: 2026-10-25, commit `f6ae62e`.
 | 12 | Reports | Delivered | 10 |
 | 13 | Calendars and holidays | Delivered | — |
 | 14 | Language model settings: usage and privacy | Partial | — |
-| 15 | Category suggestions outside capture | Needs ADR amendment | 14 |
+| 15 | Category suggestions outside capture | Delivered | 14 |
 | 16 | Assistant chat | Delivered | 14 |
 | 17 | Data export | Needs backend | 12 |
 
@@ -315,9 +315,7 @@ Functions:
 
 ## 15. Category suggestions outside capture
 
-Status: Needs ADR amendment. ADR 014 decision L1 restricts `suggestCaptureCategories` to capture lines.
-
-Candidate function: in `/transactions` with the uncategorized filter, a bulk action that asks the model for categories of the selected transactions and shows each suggestion for acceptance before `categorizeTransactions` records it. ADR 014 needs an amendment, or a new operation, before the screen exists.
+Status: Delivered. Operations: `suggestTransactionCategories` (ADR 014, L1a), `categorizeTransactions` (`features/transactions/`: `suggest-categories-dialog.tsx`, the "Suggest categories" action of `selection-bar.tsx` in the uncategorized queue). Each suggestion is a checkbox, checked by default; the accepted ones are recorded per category. The dialog states that the descriptions go to the provider of the use `capture.suggest`.
 
 ## 16. Assistant chat
 

@@ -27,6 +27,7 @@ export function SelectionBar({
   onOpenChange,
   onClear,
   onCategorize,
+  onSuggest,
 }: {
   count: number;
   // The sum of the selected rows; its sign puts expense or income first.
@@ -36,6 +37,8 @@ export function SelectionBar({
   onOpenChange: (open: boolean) => void;
   onClear: () => void;
   onCategorize: (categoryId: string) => void;
+  // Present in the uncategorized queue only (ADR 014 L1a).
+  onSuggest?: () => void;
 }) {
   const t = useT();
   const [value, setValue] = useState<string | null>(null);
@@ -48,6 +51,13 @@ export function SelectionBar({
             {t("selection.clear")}
           </Button>
         </ActionBarAction>
+        {onSuggest !== undefined && (
+          <ActionBarAction>
+            <Button variant="outline" tone="secondary" onClick={onSuggest}>
+              {t("selection.suggest")}
+            </Button>
+          </ActionBarAction>
+        )}
         <ActionBarAction>
           <Popover
             open={open}

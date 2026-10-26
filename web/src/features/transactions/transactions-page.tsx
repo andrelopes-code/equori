@@ -25,6 +25,7 @@ import { RefreshButton } from "@/ui/refresh-button";
 import { useRefresh } from "@/ui/use-refresh";
 import { useApi } from "@/api/api-context";
 import { errorText } from "@/api/problem";
+import type { components } from "@/api/schema.gen";
 import { accountsQuery } from "@/features/accounts";
 import { useCategoryEntries } from "@/features/categories";
 import { payeesQuery, useScale } from "@/features/setup";
@@ -38,6 +39,7 @@ import type { TransactionSearchDraft } from "@/features/transactions/search";
 import { PeriodControl } from "@/ui/period-control";
 import { PeriodSummary } from "@/features/transactions/period-summary";
 import { SelectionBar } from "@/features/transactions/selection-bar";
+import { SuggestCategoriesDialog } from "@/features/transactions/suggest-categories-dialog";
 import { TransactionFilters } from "@/features/transactions/transaction-filters";
 import { TransactionDetail } from "@/features/transactions/transaction-detail";
 import { TransactionsEmpty } from "@/features/transactions/transactions-empty";
@@ -50,6 +52,8 @@ import { useT } from "@/i18n/i18n-provider";
 import { compactQuery, useMediaQuery, wideQuery } from "@/ui/use-media-query";
 
 const listID = "transactions-list";
+
+type Transaction = components["schemas"]["Transaction"];
 
 export function TransactionsPage() {
   const t = useT();
@@ -84,6 +88,7 @@ export function TransactionsPage() {
   // The share of the row the list takes beside the open pane; it holds while a row opens and closes.
   const [split, setSplit] = useState(0.66);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
 
   const categories = useCategoryEntries(accounts.data);
   const categoriesById = useMemo(
@@ -111,6 +116,32 @@ export function TransactionsPage() {
         selectedRows.map((row) => row.transaction),
         category,
       );
+      setSelection([]);
+    } catch (error) {
+      toast.show({ tone: "danger", title: errorText(error, t) });
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  const recordSuggestions = async (
+    accepted: { transaction: Transaction; categoryId: string }[],
+  ) => {
+    // The dialog closes first: a write marks every query stale, and an open dialog would
+    // ask the model again.
+    setSuggesting(false);
+    setBulkBusy(true);
+    try {
+      for (const categoryId of new Set(accepted.map((a) => a.categoryId))) {
+        const category = categoriesById.get(categoryId);
+        if (category === undefined) continue;
+        await actions.categorizeMany(
+          accepted
+            .filter((a) => a.categoryId === categoryId)
+            .map((a) => a.transaction),
+          category,
+        );
+      }
       setSelection([]);
     } catch (error) {
       toast.show({ tone: "danger", title: errorText(error, t) });
@@ -162,7 +193,22 @@ export function TransactionsPage() {
               onCategorize={(id) => {
                 void categorizeSelection(id);
               }}
+              {...(search.uncategorized === true && {
+                onSuggest: () => {
+                  setSuggesting(true);
+                },
+              })}
             />
+            {suggesting && (
+              <SuggestCategoriesDialog
+                transactions={selectedRows.map((row) => row.transaction)}
+                categoriesById={categoriesById}
+                onOpenChange={setSuggesting}
+                onRecord={(accepted) => {
+                  void recordSuggestions(accepted);
+                }}
+              />
+            )}
           </PageFooter>
         ) : undefined
       }

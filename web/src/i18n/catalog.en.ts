@@ -389,6 +389,18 @@ export const catalogEn = {
   "selection.clear": "Clear",
   "selection.categorize": "Categorize as…",
   "selection.categorizeTitle": "Categorize {count} transactions",
+  "selection.suggest": "Suggest categories",
+  "suggest.title": "Suggested categories",
+  "suggest.description":
+    "Check the suggestions to record. A suggestion left unchecked changes nothing.",
+  "suggest.sends":
+    "The descriptions of the selected transactions and the names of your categories go to the provider of Category suggestions, as in the capture.",
+  "suggest.unavailable":
+    "No language model can answer now. The transactions stay uncategorized.",
+  "suggest.option": "{description}: {category}",
+  "suggest.without": "Without a suggestion: {count}",
+  "suggest.record": "Record {count} accepted",
+  "suggest.list": "Suggestions",
   "detail.title": "Transaction",
   "detail.close": "Close",
   "detail.openPage": "Open as a page",
