@@ -41,7 +41,7 @@ The list of fact tables is read from the database catalog at run time, so a new 
 | `getExportContent` `GET /exports/current/content` | The archive, `application/zip`, `Content-Disposition: attachment`. 409 `export_not_ready` unless `ready`. |
 | `importArchive` `POST /imports/archive` | Multipart with one `file`. 200 with `{tables: [{name, rows}]}` in import order. |
 
-`requestExport` writes a `reporting_export` row and the outbox event `reporting.export_requested` in one transaction (ADR 006). The reporting handler builds the archive inside one `REPEATABLE READ` read-only transaction, so every table comes from one snapshot, and stores it in `reporting_export.content`. A failed build sets `failed` and `problem`; it is not retried, because the same snapshot rules produce the same failure.
+`requestExport` writes a `reporting_export` row and the outbox event `reporting.export_requested` in one transaction (ADR 006). The reporting handler builds the archive inside one `REPEATABLE READ` read-only transaction, so every table comes from one snapshot, and stores it in `reporting_export.content`. An archive over the limit of E5 sets `failed` with `problem` `export_too_large` and is not retried; any other error leaves the export pending and the dispatcher retries the delivery.
 
 ## E4 Import
 

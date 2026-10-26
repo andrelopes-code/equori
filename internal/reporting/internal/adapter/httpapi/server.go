@@ -17,12 +17,13 @@ const BaseURL = "/api/v1"
 var _ StrictServerInterface = (*Server)(nil)
 
 type Server struct {
-	svc  *app.Service
-	errs httpserver.ErrorWriter
+	svc     *app.Service
+	exports *app.Exports
+	errs    httpserver.ErrorWriter
 }
 
-func NewServer(svc *app.Service, log *slog.Logger) *Server {
-	return &Server{svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: ToProblem}}
+func NewServer(svc *app.Service, exports *app.Exports, log *slog.Logger) *Server {
+	return &Server{svc: svc, exports: exports, errs: httpserver.ErrorWriter{Log: log, Map: ToProblem}}
 }
 
 func (s *Server) Register(mux *http.ServeMux) {
@@ -92,6 +93,12 @@ func ToProblem(err error) (problem.Details, bool) {
 		d := problem.New(http.StatusBadRequest, "invalid_request", "from must not be after to, and the range must not exceed 366 days")
 		d.Errors = []problem.FieldError{{Field: "to", Message: "must be on or after from and at most 365 days after it"}}
 		return d, true
+	case errors.Is(err, app.ErrExportNotFound):
+		return problem.New(http.StatusNotFound, "not_found", err.Error()), true
+	case errors.Is(err, app.ErrExportPending):
+		return problem.New(http.StatusConflict, "export_pending", err.Error()), true
+	case errors.Is(err, app.ErrExportNotReady):
+		return problem.New(http.StatusConflict, "export_not_ready", err.Error()), true
 	case errors.Is(err, app.ErrNotFound):
 		return problem.New(http.StatusNotFound, "not_found", "account not found"), true
 	case errors.Is(err, app.ErrMixedInstruments):

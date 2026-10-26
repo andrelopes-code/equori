@@ -11,12 +11,34 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
 	"github.com/oapi-codegen/runtime"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
+
+// Defines values for ExportStatus.
+const (
+	Failed  ExportStatus = "failed"
+	Pending ExportStatus = "pending"
+	Ready   ExportStatus = "ready"
+)
+
+// Valid indicates whether the value is a known member of the ExportStatus enum.
+func (e ExportStatus) Valid() bool {
+	switch e {
+	case Failed:
+		return true
+	case Pending:
+		return true
+	case Ready:
+		return true
+	default:
+		return false
+	}
+}
 
 // Defines values for GetBalanceSeriesParamsBasis.
 const (
@@ -81,6 +103,26 @@ type CategoryTotal struct {
 type CategoryTotals struct {
 	Items []CategoryTotal `json:"items"`
 }
+
+// Export defines model for Export.
+type Export struct {
+	FinishedAt *time.Time         `json:"finished_at,omitempty"`
+	Id         openapi_types.UUID `json:"id"`
+
+	// Problem The code of a failure, such as export_too_large; present when failed.
+	Problem     *string   `json:"problem,omitempty"`
+	RequestedAt time.Time `json:"requested_at"`
+
+	// Sha256 Hexadecimal SHA-256 of the archive; present when ready.
+	Sha256 *string `json:"sha256,omitempty"`
+
+	// Size Bytes of the archive; present when ready.
+	Size   *int64       `json:"size,omitempty"`
+	Status ExportStatus `json:"status"`
+}
+
+// ExportStatus defines model for Export.Status.
+type ExportStatus string
 
 // FieldError defines model for FieldError.
 type FieldError struct {
@@ -160,6 +202,15 @@ type GetAccountFlowsParams struct {
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// RequestExport Request an archive of every fact of the books (SC6, docs/superpowers/specs/2026-10-26-export-design.md).
+	// (POST /exports)
+	RequestExport(w http.ResponseWriter, r *http.Request)
+	// GetExport The user's export and its status; 404 when none was requested.
+	// (GET /exports/current)
+	GetExport(w http.ResponseWriter, r *http.Request)
+	// GetExportContent Download the archive of a ready export; 409 export_not_ready otherwise.
+	// (GET /exports/current/content)
+	GetExportContent(w http.ResponseWriter, r *http.Request)
 	// GetBalanceSeries Daily balance of an account and its sub-accounts, one item per day in [from, to].
 	// (GET /reports/balances)
 	GetBalanceSeries(w http.ResponseWriter, r *http.Request, params GetBalanceSeriesParams)
@@ -179,6 +230,48 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// RequestExport operation middleware
+func (siw *ServerInterfaceWrapper) RequestExport(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RequestExport(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetExport operation middleware
+func (siw *ServerInterfaceWrapper) GetExport(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetExport(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetExportContent operation middleware
+func (siw *ServerInterfaceWrapper) GetExportContent(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetExportContent(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // GetBalanceSeries operation middleware
 func (siw *ServerInterfaceWrapper) GetBalanceSeries(w http.ResponseWriter, r *http.Request) {
@@ -490,6 +583,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/exports", wrapper.RequestExport)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/exports/current", wrapper.GetExport)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/exports/current/content", wrapper.GetExportContent)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/balances", wrapper.GetBalanceSeries)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/flows", wrapper.GetAccountFlows)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/categories", wrapper.GetCategoryTotals)
@@ -498,6 +594,187 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 }
 
 type ProblemApplicationProblemPlusJSONResponse Problem
+
+type RequestExportRequestObject struct {
+}
+
+type RequestExportResponseObject interface {
+	VisitRequestExportResponse(w http.ResponseWriter) error
+}
+
+type RequestExport202JSONResponse Export
+
+func (response RequestExport202JSONResponse) VisitRequestExportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(202)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RequestExport401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RequestExport401ApplicationProblemPlusJSONResponse) VisitRequestExportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RequestExport409ApplicationProblemPlusJSONResponse Problem
+
+func (response RequestExport409ApplicationProblemPlusJSONResponse) VisitRequestExportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetExportRequestObject struct {
+}
+
+type GetExportResponseObject interface {
+	VisitGetExportResponse(w http.ResponseWriter) error
+}
+
+type GetExport200JSONResponse Export
+
+func (response GetExport200JSONResponse) VisitGetExportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetExport401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetExport401ApplicationProblemPlusJSONResponse) VisitGetExportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetExport404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetExport404ApplicationProblemPlusJSONResponse) VisitGetExportResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetExportContentRequestObject struct {
+}
+
+type GetExportContentResponseObject interface {
+	VisitGetExportContentResponse(w http.ResponseWriter) error
+}
+
+type GetExportContent200ResponseHeaders struct {
+	ContentDisposition *string
+}
+
+type GetExportContent200ApplicationzipResponse struct {
+	Body          io.Reader
+	Headers       GetExportContent200ResponseHeaders
+	ContentLength int64
+}
+
+func (response GetExportContent200ApplicationzipResponse) VisitGetExportContentResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "application/zip")
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
+	if response.Headers.ContentDisposition != nil {
+		w.Header().Set("Content-Disposition", fmt.Sprint(*response.Headers.ContentDisposition))
+	}
+	w.WriteHeader(200)
+
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	_, err := io.Copy(w, response.Body)
+	return err
+}
+
+type GetExportContent401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetExportContent401ApplicationProblemPlusJSONResponse) VisitGetExportContentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetExportContent404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetExportContent404ApplicationProblemPlusJSONResponse) VisitGetExportContentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetExportContent409ApplicationProblemPlusJSONResponse Problem
+
+func (response GetExportContent409ApplicationProblemPlusJSONResponse) VisitGetExportContentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
 
 type GetBalanceSeriesRequestObject struct {
 	Params GetBalanceSeriesParams
@@ -699,6 +976,15 @@ func (response GetAccountFlows404ApplicationProblemPlusJSONResponse) VisitGetAcc
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// RequestExport Request an archive of every fact of the books (SC6, docs/superpowers/specs/2026-10-26-export-design.md).
+	// (POST /exports)
+	RequestExport(ctx context.Context, request RequestExportRequestObject) (RequestExportResponseObject, error)
+	// GetExport The user's export and its status; 404 when none was requested.
+	// (GET /exports/current)
+	GetExport(ctx context.Context, request GetExportRequestObject) (GetExportResponseObject, error)
+	// GetExportContent Download the archive of a ready export; 409 export_not_ready otherwise.
+	// (GET /exports/current/content)
+	GetExportContent(ctx context.Context, request GetExportContentRequestObject) (GetExportContentResponseObject, error)
 	// GetBalanceSeries Daily balance of an account and its sub-accounts, one item per day in [from, to].
 	// (GET /reports/balances)
 	GetBalanceSeries(ctx context.Context, request GetBalanceSeriesRequestObject) (GetBalanceSeriesResponseObject, error)
@@ -747,6 +1033,78 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// RequestExport operation middleware
+func (sh *strictHandler) RequestExport(w http.ResponseWriter, r *http.Request) {
+	var request RequestExportRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RequestExport(ctx, request.(RequestExportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RequestExport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RequestExportResponseObject); ok {
+		if err := validResponse.VisitRequestExportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetExport operation middleware
+func (sh *strictHandler) GetExport(w http.ResponseWriter, r *http.Request) {
+	var request GetExportRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetExport(ctx, request.(GetExportRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetExport")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetExportResponseObject); ok {
+		if err := validResponse.VisitGetExportResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetExportContent operation middleware
+func (sh *strictHandler) GetExportContent(w http.ResponseWriter, r *http.Request) {
+	var request GetExportContentRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetExportContent(ctx, request.(GetExportContentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetExportContent")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetExportContentResponseObject); ok {
+		if err := validResponse.VisitGetExportContentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // GetBalanceSeries operation middleware

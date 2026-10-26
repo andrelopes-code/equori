@@ -1313,6 +1313,64 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /exports:
+    post:
+      tags: [reporting]
+      operationId: requestExport
+      summary: Request an archive of every fact of the books (SC6, docs/superpowers/specs/2026-10-26-export-design.md).
+      description: |
+        The archive is built after the response and replaces the previous export. 409 export_pending while one is
+        pending.
+      responses:
+        "202":
+          description: Accepted; the export is pending.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Export"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+  /exports/current:
+    get:
+      tags: [reporting]
+      operationId: getExport
+      summary: The user's export and its status; 404 when none was requested.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Export"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /exports/current/content:
+    get:
+      tags: [reporting]
+      operationId: getExportContent
+      summary: Download the archive of a ready export; 409 export_not_ready otherwise.
+      responses:
+        "200":
+          description: The ZIP archive.
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
   /reports/balances:
     get:
       tags: [reporting]
@@ -8040,6 +8098,32 @@ components:
           type: string
           enum: [kept, model]
           description: Absent when no category is named.
+    Export:
+      type: object
+      required: [id, status, requested_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, ready, failed]
+        requested_at:
+          type: string
+          format: date-time
+        finished_at:
+          type: string
+          format: date-time
+        size:
+          type: integer
+          format: int64
+          description: Bytes of the archive; present when ready.
+        sha256:
+          type: string
+          description: Hexadecimal SHA-256 of the archive; present when ready.
+        problem:
+          type: string
+          description: The code of a failure, such as export_too_large; present when failed.
     TransactionBatchInput:
       type: object
       additionalProperties: false

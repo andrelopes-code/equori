@@ -766,6 +766,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request an archive of every fact of the books (SC6, docs/superpowers/specs/2026-10-26-export-design.md).
+         * @description The archive is built after the response and replaces the previous export. 409 export_pending while one is
+         *     pending.
+         */
+        post: operations["requestExport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/exports/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The user's export and its status; 404 when none was requested. */
+        get: operations["getExport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/exports/current/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download the archive of a ready export; 409 export_not_ready otherwise. */
+        get: operations["getExportContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/reports/balances": {
         parameters: {
             query?: never;
@@ -4490,6 +4545,25 @@ export interface components {
              */
             source?: "kept" | "model";
         };
+        Export: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "pending" | "ready" | "failed";
+            /** Format: date-time */
+            requested_at: string;
+            /** Format: date-time */
+            finished_at?: string;
+            /**
+             * Format: int64
+             * @description Bytes of the archive; present when ready.
+             */
+            size?: number;
+            /** @description Hexadecimal SHA-256 of the archive; present when ready. */
+            sha256?: string;
+            /** @description The code of a failure, such as export_too_large; present when failed. */
+            problem?: string;
+        };
         TransactionBatchInput: {
             entries: components["schemas"]["TransactionBatchEntry"][];
         };
@@ -6195,6 +6269,74 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+        };
+    };
+    requestExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted; the export is pending. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Export"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    getExport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Export"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    getExportContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The ZIP archive. */
+            200: {
+                headers: {
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/zip": string;
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
         };
     };
     getBalanceSeries: {
