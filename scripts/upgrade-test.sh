@@ -49,21 +49,26 @@ ORDER BY table_name \gexec
 SQL
 }
 
-# The dispatcher derives rows from the outbox after each write; a snapshot counts only once two
-# readings 5 seconds apart agree.
+# The dispatcher derives rows from the outbox after each write and retries a failed delivery with a
+# growing delay; a snapshot counts once no delivery waits for a retry and two readings 10 seconds
+# apart, two poll intervals of the dispatcher, agree.
+retrying() {
+	docker exec "$name-db" psql -U equori -d equori -At -c "SELECT count(*) FROM outbox_delivery WHERE status = 'retrying'"
+}
+
 settled() {
 	local previous current
 	previous=$(snapshot)
 	for _ in $(seq 60); do
-		sleep 5
+		sleep 10
 		current=$(snapshot)
-		if [[ $current == "$previous" ]]; then
+		if [[ $current == "$previous" && $(retrying) == 0 ]]; then
 			printf '%s\n' "$current"
 			return 0
 		fi
 		previous=$current
 	done
-	echo "facts still changing after 300 seconds" >&2
+	echo "facts still changing after 600 seconds" >&2
 	return 1
 }
 
