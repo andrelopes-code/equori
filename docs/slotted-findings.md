@@ -91,3 +91,5 @@ Registry of the findings reported to the Slotted owner (`web/CLAUDE.md`, "Slotte
 | Dashboard-grid widget detail link cannot render a router link                                       | reported |
 | A link in a card, chart or section action takes the slot's font size and has no size axis           | open     |
 | Attachment preview thumbnail is not lazy-loaded                                                     | open     |
+| The list-item anatomy does not say which part holds which                                           | reported |
+| A list item with its parts out of order renders without layout or a warning                         | reported |
