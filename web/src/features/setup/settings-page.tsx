@@ -13,6 +13,7 @@ import { SettingsAccount } from "@/features/setup/settings-account";
 import { SettingsAppearance } from "@/features/setup/settings-appearance";
 import { SettingsAssistant } from "@/features/setup/settings-assistant";
 import { SettingsCalendars } from "@/features/setup/settings-calendars";
+import { SettingsData } from "@/features/setup/settings-data";
 import { SettingsIntegrations } from "@/features/setup/settings-integrations";
 import { SettingsLanguage } from "@/features/setup/settings-language";
 import { SettingsLedger } from "@/features/setup/settings-ledger";
@@ -59,6 +60,7 @@ export function SettingsPage() {
               <SettingsCalendars />
               <SettingsIntegrations />
               <SettingsAssistant />
+              <SettingsData />
             </div>
           </div>
         </div>

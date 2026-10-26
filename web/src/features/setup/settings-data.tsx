@@ -1,0 +1,187 @@
+import { Button, ButtonLink } from "@slotted/react/button";
+import { InlineMessage } from "@slotted/react/inline-message";
+import { List } from "@slotted/react/list";
+import {
+  ListItem,
+  ListItemBody,
+  ListItemContent,
+  ListItemDescription,
+  ListItemEnd,
+  ListItemLabel,
+} from "@slotted/react/list-item";
+import { SkeletonText } from "@slotted/react/skeleton";
+import { Stack } from "@slotted/react/stack";
+import { VisuallyHidden } from "@slotted/react/visually-hidden";
+import { useQuery } from "@tanstack/react-query";
+import { useRef, useState } from "react";
+
+import { useApi } from "@/api/api-context";
+import { errorText } from "@/api/problem";
+import {
+  exportContentURL,
+  exportQuery,
+  hasTransactionsQuery,
+  useImportArchive,
+  useRequestExport,
+} from "@/features/setup/api";
+import { SettingsSection } from "@/features/setup/settings-section";
+import { formatFileSize } from "@/features/transactions";
+import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { QueryError } from "@/ui/query-error";
+
+// Export and import of the books (docs/superpowers/specs/2026-10-26-export-design.md).
+export function SettingsData() {
+  const t = useT();
+  const api = useApi();
+  const [tag] = useAppLocale();
+  const current = useQuery(exportQuery(api));
+  const hasTransactions = useQuery(hasTransactionsQuery(api));
+  const request = useRequestExport();
+  const importing = useImportArchive();
+  const input = useRef<HTMLInputElement>(null);
+  const [message, setMessage] = useState<{
+    tone: "success" | "danger";
+    text: string;
+  } | null>(null);
+
+  const status = () => {
+    const e = current.data;
+    if (e === null || e === undefined) return t("export.none");
+    switch (e.status) {
+      case "pending":
+        return t("export.pending");
+      case "failed":
+        return t("export.failed");
+      case "ready":
+        return t("export.ready", {
+          size: formatFileSize(e.size ?? 0, tag),
+          date: new Intl.DateTimeFormat(tag, { dateStyle: "medium" }).format(
+            new Date(e.requested_at),
+          ),
+        });
+    }
+  };
+
+  return (
+    <SettingsSection
+      topic="data"
+      title={t("settings.data.title")}
+      description={t("settings.data.description")}
+    >
+      <Stack gap={4}>
+        {current.isError ? (
+          <QueryError
+            error={current.error}
+            onRetry={() => void current.refetch()}
+          />
+        ) : current.isPending || hasTransactions.isPending ? (
+          <SkeletonText lines={4} />
+        ) : (
+          <List aria-label={t("settings.data.title")}>
+            <ListItem>
+              <ListItemBody>
+                <ListItemContent>
+                  <ListItemLabel>{t("export.label")}</ListItemLabel>
+                  <ListItemDescription>{status()}</ListItemDescription>
+                </ListItemContent>
+              </ListItemBody>
+              <ListItemEnd>
+                {current.data?.status === "ready" && (
+                  <ButtonLink
+                    size="sm"
+                    variant="outline"
+                    tone="secondary"
+                    href={exportContentURL}
+                    download
+                  >
+                    {t("export.download")}
+                  </ButtonLink>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  tone="secondary"
+                  loading={
+                    request.isPending || current.data?.status === "pending"
+                  }
+                  onClick={() => {
+                    setMessage(null);
+                    request.mutateAsync().catch((caught: unknown) => {
+                      setMessage({
+                        tone: "danger",
+                        text: errorText(caught, t),
+                      });
+                    });
+                  }}
+                >
+                  {t("export.request")}
+                </Button>
+              </ListItemEnd>
+            </ListItem>
+            <ListItem>
+              <ListItemBody>
+                <ListItemContent>
+                  <ListItemLabel>{t("import.label")}</ListItemLabel>
+                  <ListItemDescription>
+                    {hasTransactions.data === true
+                      ? t("import.blocked")
+                      : t("import.description")}
+                  </ListItemDescription>
+                </ListItemContent>
+              </ListItemBody>
+              {hasTransactions.data === false && (
+                <ListItemEnd>
+                  <VisuallyHidden>
+                    <input
+                      ref={input}
+                      type="file"
+                      accept="application/zip,.zip"
+                      aria-label={t("import.choose")}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        event.target.value = "";
+                        if (file === undefined) return;
+                        setMessage(null);
+                        importing
+                          .mutateAsync(file)
+                          .then((result) => {
+                            setMessage({
+                              tone: "success",
+                              text: t("import.done", {
+                                rows: result.tables.reduce(
+                                  (sum, table) => sum + table.rows,
+                                  0,
+                                ),
+                              }),
+                            });
+                          })
+                          .catch((caught: unknown) => {
+                            setMessage({
+                              tone: "danger",
+                              text: errorText(caught, t),
+                            });
+                          });
+                      }}
+                    />
+                  </VisuallyHidden>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    tone="secondary"
+                    loading={importing.isPending}
+                    onClick={() => input.current?.click()}
+                  >
+                    {t("import.choose")}
+                  </Button>
+                </ListItemEnd>
+              )}
+            </ListItem>
+          </List>
+        )}
+        {message !== null && (
+          <InlineMessage tone={message.tone}>{message.text}</InlineMessage>
+        )}
+      </Stack>
+    </SettingsSection>
+  );
+}

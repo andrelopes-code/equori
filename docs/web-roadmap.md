@@ -34,7 +34,7 @@ Status snapshot: 2026-10-25, commit `f6ae62e`.
 | 14 | Language model settings: usage and privacy | Partial | — |
 | 15 | Category suggestions outside capture | Delivered | 14 |
 | 16 | Assistant chat | Delivered | 14 |
-| 17 | Data export | Needs backend | 12 |
+| 17 | Data export | Delivered | 12 |
 
 ## Delivered screens
 
@@ -336,6 +336,4 @@ Not delivered: tool results rendered as tables or charts inside an answer.
 
 ## 17. Data export
 
-Status: Needs backend. Phase P9 lists "export and import round trip"; no operation is declared.
-
-Functions: a settings section to request an export, follow its progress and download the file.
+Status: Delivered. Operations: `requestExport`, `getExport`, `getExportContent`, `importArchive` (`docs/superpowers/specs/2026-10-26-export-design.md`; `features/setup/settings-data.tsx`, the Data section of `/settings`). The section requests an export, reads its status again every 2 seconds while it is pending, downloads a ready archive, and imports an archive while the books hold no transaction.

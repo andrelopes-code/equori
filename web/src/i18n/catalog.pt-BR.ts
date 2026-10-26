@@ -93,6 +93,22 @@ export const catalogPtBR: Catalog = {
   "settings.privacy.title": "Privacidade",
   "settings.privacy.description": "Substitui todos os valores por ••••.",
   "settings.integrations.title": "Integrações",
+  "settings.data.title": "Dados",
+  "settings.data.description":
+    "Exporte todos os fatos dos livros num arquivo aberto, ou restaure um arquivo em livros vazios.",
+  "export.label": "Exportação",
+  "export.none": "Nenhuma exportação pedida.",
+  "export.pending": "Preparando o arquivo.",
+  "export.ready": "Pronto: {size}, pedido em {date}.",
+  "export.failed": "A última exportação falhou: o arquivo passa de 256 MiB.",
+  "export.request": "Pedir exportação",
+  "export.download": "Baixar",
+  "import.label": "Importação",
+  "import.description":
+    "Restaura um arquivo em livros sem transações; os fatos do arquivo substituem as contas iniciais.",
+  "import.blocked": "A importação exige livros sem transações.",
+  "import.choose": "Escolher arquivo",
+  "import.done": "Arquivo importado: {rows} linhas.",
   "settings.integrations.description":
     "Credenciais dos agregadores que trazem os dados do banco. O servidor as guarda cifradas e nunca as mostra de novo.",
   "settings.integrations.add": "Adicionar integração",

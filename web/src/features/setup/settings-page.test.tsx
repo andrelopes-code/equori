@@ -270,6 +270,7 @@ describe("settings page", () => {
         catalogPtBR["calendar.title"],
         catalogPtBR["settings.integrations.title"],
         catalogPtBR["settings.assistant.title"],
+        catalogPtBR["settings.data.title"],
       ]);
     });
   });

@@ -11,6 +11,7 @@ export const settingsTopics = [
   { id: "calendars", title: "calendar.title" },
   { id: "integrations", title: "settings.integrations.title" },
   { id: "assistant", title: "settings.assistant.title" },
+  { id: "data", title: "settings.data.title" },
 ] as const satisfies readonly { id: string; title: MessageKey }[];
 
 export type SettingsTopic = (typeof settingsTopics)[number]["id"];

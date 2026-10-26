@@ -91,6 +91,22 @@ export const catalogEn = {
   "settings.privacy.title": "Privacy",
   "settings.privacy.description": "Replaces every amount with ••••.",
   "settings.integrations.title": "Integrations",
+  "settings.data.title": "Data",
+  "settings.data.description":
+    "Export every fact of the books as an open archive, or restore an archive into empty books.",
+  "export.label": "Export",
+  "export.none": "No export requested.",
+  "export.pending": "Preparing the archive.",
+  "export.ready": "Ready: {size}, requested on {date}.",
+  "export.failed": "The last export failed: the archive exceeds 256 MiB.",
+  "export.request": "Request export",
+  "export.download": "Download",
+  "import.label": "Import",
+  "import.description":
+    "Restores an archive into books without transactions; the archive's facts replace the starting accounts.",
+  "import.blocked": "Import needs books without transactions.",
+  "import.choose": "Choose archive",
+  "import.done": "Archive imported: {rows} rows.",
   "settings.integrations.description":
     "Credentials of the aggregators that bring bank data. The server stores them sealed and never shows them again.",
   "settings.integrations.add": "Add integration",

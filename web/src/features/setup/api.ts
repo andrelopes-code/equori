@@ -387,3 +387,50 @@ export function useDeleteIntegration() {
       ),
   });
 }
+
+export const exportKeys = {
+  current: ["setup", "export"] as const,
+};
+
+// The user's export, or null when none was requested; a pending one is read again until it ends.
+export function exportQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: exportKeys.current,
+    queryFn: async () => {
+      const answer = await api.GET("/exports/current");
+      if (answer.response.status === 404) return null;
+      return unwrap(answer);
+    },
+    refetchInterval: (query) =>
+      query.state.data?.status === "pending" ? 2000 : false,
+  });
+}
+
+export const exportContentURL = "/api/v1/exports/current/content";
+
+export function useRequestExport() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => unwrap(await api.POST("/exports")),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: exportKeys.current }),
+  });
+}
+
+export function useImportArchive() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const body = new FormData();
+      body.append("file", file);
+      return unwrap(
+        await api.POST("/imports/archive", {
+          // openapi-fetch sends FormData as it is, with the boundary the browser writes.
+          body: body as unknown as { file: string },
+          bodySerializer: (value) => value as unknown as FormData,
+        }),
+      );
+    },
+  });
+}

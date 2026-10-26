@@ -18,3 +18,4 @@ export { CorrectTransactionPage } from "@/features/transactions/correct-transact
 export { TransactionPage } from "@/features/transactions/transaction-page";
 export { AccountField } from "@/features/transactions/account-field";
 export { PayeeField } from "@/features/transactions/payee-field";
+export { formatFileSize } from "@/features/transactions/attachment-meta";
