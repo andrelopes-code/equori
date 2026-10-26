@@ -11,7 +11,7 @@ Three parts, executed in order on `main` without push. Each slice is one commit.
 | C | C1 | `docs(adr): version export archives` (ADR 021; export spec and roadmap 9.3 cite it) | done |
 | C | C2 | `feat(reporting): migrate export archives from earlier versions` | done |
 | C | C3 | `test(reporting): pin the exported tables to the archive version` | done |
-| C | C4 | `docs(reporting): document archive compatibility for owners` | open |
+| C | C4 | `docs(reporting): document archive compatibility for owners` | done |
 | C | C5 | `feat(web): show archive versions on export and import` | open |
 
 ## Decisions
