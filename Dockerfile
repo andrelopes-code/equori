@@ -24,6 +24,19 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
     go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -o /out/equori ./cmd/equori
 
+# Application and PostgreSQL in one container (ADR 022, M10): equori runs the server of the base
+# image as its child. Built with --target standalone; the default target stays the application alone.
+FROM postgres:18 AS standalone
+COPY --from=build /out/equori /usr/local/bin/equori
+ENV EQUORI_DATA_DIR=/data EQUORI_POSTGRES_BIN=/usr/lib/postgresql/18/bin
+RUN mkdir -p /data && chown postgres:postgres /data
+USER postgres
+VOLUME /data
+EXPOSE 8080
+HEALTHCHECK --interval=10s --timeout=5s --retries=3 CMD ["equori", "healthcheck"]
+ENTRYPOINT ["equori"]
+CMD ["serve"]
+
 FROM gcr.io/distroless/static-debian13:nonroot
 COPY --from=build /out/equori /equori
 EXPOSE 8080

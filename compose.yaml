@@ -19,6 +19,8 @@ services:
       POSTGRES_USER: equori
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-equori}
       POSTGRES_DB: equori
+      # B5: a new volume orders text by code point, as managed mode does; an existing volume keeps its order.
+      POSTGRES_INITDB_ARGS: "--locale-provider=builtin --builtin-locale=C.UTF-8"
     volumes:
       - pgdata:/var/lib/postgresql
     healthcheck:

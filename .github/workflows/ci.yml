@@ -37,3 +37,10 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: false
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: standalone
+          load: true
+          tags: equori:standalone
+      - run: scripts/standalone-smoke.sh equori:standalone

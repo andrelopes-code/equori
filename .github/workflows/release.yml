@@ -102,6 +102,24 @@ jobs:
         run: |
           prev=${{ steps.prev.outputs.tag }}
           scripts/upgrade-test.sh "ghcr.io/${{ github.repository }}:${prev#v}" equori:smoke "$prev"
+      - id: meta-standalone
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}},suffix=-standalone
+            type=semver,pattern={{major}}.{{minor}},suffix=-standalone
+            type=raw,value=standalone,enable=${{ !contains(github.ref_name, '-') }}
+      # R4: the standalone image turns healthy and reports the tag before it is pushed.
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: standalone
+          load: true
+          tags: equori:standalone
+          build-args: VERSION=${{ github.ref_name }}
+      - run: test "$(docker run --rm equori:standalone version | head -1)" = "equori ${{ github.ref_name }}"
+      - run: scripts/standalone-smoke.sh equori:standalone
       - id: push
         uses: docker/build-push-action@v6
         with:
@@ -115,6 +133,21 @@ jobs:
         with:
           subject-name: ghcr.io/${{ github.repository }}
           subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+      - id: push-standalone
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: standalone
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: VERSION=${{ github.ref_name }}
+          tags: ${{ steps.meta-standalone.outputs.tags }}
+          labels: ${{ steps.meta-standalone.outputs.labels }}
+      - uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ghcr.io/${{ github.repository }}
+          subject-digest: ${{ steps.push-standalone.outputs.digest }}
           push-to-registry: true
 
   release:

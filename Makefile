@@ -14,7 +14,7 @@ COMPOSE := docker compose -f compose.yaml -f compose.dev.yaml
 LOCAL_ENV ?= $(HOME)/.config/equori/local.env
 LOAD_ENV := set -a && . ./dev.env && { [ ! -f "$(LOCAL_ENV)" ] || . "$(LOCAL_ENV)"; } && { [ ! -f .env ] || . ./.env; } && set +a
 
-.PHONY: check static fmt fmt-check lint tidy-check gen gen-check test test-race perf vuln build dist upgrade-test test-cluster dev db-up db-down db-test-up run-dev run-prod hooks tools web-deps web-build web-check web-static web-test web-dev demo demo-user demo-reset
+.PHONY: check static fmt fmt-check lint tidy-check gen gen-check test test-race perf vuln build dist upgrade-test test-cluster standalone-smoke dev db-up db-down db-test-up run-dev run-prod hooks tools web-deps web-build web-check web-static web-test web-dev demo demo-user demo-reset
 
 # Everything, the Go tests under -race included: CI runs it on every pull request. The web build
 # comes first: the Go tests compile package web, which embeds web/dist. The web tests come last:
@@ -111,6 +111,10 @@ UPGRADE_PREV_REF ?= HEAD
 upgrade-test:
 	docker build -t equori:upgrade-test .
 	scripts/upgrade-test.sh $(UPGRADE_PREV_IMAGE) equori:upgrade-test $(UPGRADE_PREV_REF)
+
+standalone-smoke:
+	docker build --target standalone -t equori:standalone .
+	scripts/standalone-smoke.sh equori:standalone
 
 dev: db-up
 	$(LOAD_ENV) && go run ./cmd/equori
