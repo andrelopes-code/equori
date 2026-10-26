@@ -36,7 +36,11 @@ async function navigate(request) {
   const shell = await caches.open(SHELL);
   try {
     const page = await fetch(request);
-    if (page.ok) {
+    // Only the application's page replaces the shell: a tab may navigate to /healthz or a file.
+    const isPage = (page.headers.get("Content-Type") ?? "").startsWith(
+      "text/html",
+    );
+    if (page.ok && isPage && !page.redirected) {
       const html = await page.clone().text();
       const stored = await shell.match("/");
       if (stored === undefined || (await stored.text()) !== html) {
@@ -47,6 +51,20 @@ async function navigate(request) {
     return page;
   } catch (error) {
     const stored = await shell.match("/");
+    if (stored !== undefined) return stored;
+    throw error;
+  }
+}
+
+// The unhashed files keep their names across builds, so the network answers first.
+async function unhashed(request) {
+  const files = await caches.open(FILES);
+  try {
+    const answer = await fetch(request);
+    if (answer.ok) await files.put(request, answer.clone());
+    return answer;
+  } catch (error) {
+    const stored = await files.match(request);
     if (stored !== undefined) return stored;
     throw error;
   }
@@ -68,6 +86,7 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin || url.pathname.startsWith("/api/"))
     return;
   if (request.mode === "navigate") event.respondWith(navigate(request));
-  else if (url.pathname.startsWith("/assets/") || STATIC.includes(url.pathname))
+  else if (url.pathname.startsWith("/assets/"))
     event.respondWith(file(request));
+  else if (STATIC.includes(url.pathname)) event.respondWith(unhashed(request));
 });

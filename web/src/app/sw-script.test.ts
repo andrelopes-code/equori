@@ -12,11 +12,21 @@ type Listener = (event: Record<string, unknown>) => void;
 
 let pages: Record<string, string>;
 let online: boolean;
+// The media type of a path that is not the application's page; every other answer is HTML.
+const types: Record<string, string> = {
+  "/healthz": "application/json",
+  "/boot.js": "text/javascript",
+};
 function server(req: Request): Promise<Response> {
   if (!online) return Promise.reject(new TypeError("Failed to fetch"));
   const path = new URL(req.url).pathname;
   const body = pages[path] ?? pages["/"];
-  return Promise.resolve(new Response(body, { status: 200 }));
+  return Promise.resolve(
+    new Response(body, {
+      status: 200,
+      headers: { "Content-Type": types[path] ?? "text/html" },
+    }),
+  );
 }
 
 // In-memory CacheStorage with string keys (absolute URLs).
@@ -103,6 +113,7 @@ describe("sw.js", () => {
       "/assets/index-a1.js": "a1",
       "/assets/index-b2.js": "b2",
       "/boot.js": "boot",
+      "/healthz": '{"status":"ok"}',
       "/boot.css": "",
       "/manifest.json": "{}",
       "/icon.svg": "<svg/>",
@@ -141,6 +152,29 @@ describe("sw.js", () => {
       request: sw.request("/", "navigate"),
     });
     expect(await answer?.text()).toBe(index("b2"));
+  });
+
+  it("keeps the shell when a navigation answers something other than the page", async () => {
+    const sw = load();
+    await sw.run("install");
+    await sw.run("fetch", { request: sw.request("/healthz", "navigate") });
+    online = false;
+    const answer = await sw.run("fetch", {
+      request: sw.request("/", "navigate"),
+    });
+    expect(await answer?.text()).toBe(index("a1"));
+    expect(sw.caches.stores.has("equori-files-v1")).toBe(true);
+  });
+
+  it("serves an unhashed file from the network first, and from the store without it", async () => {
+    const sw = load();
+    await sw.run("install");
+    pages["/boot.js"] = "boot2";
+    const fresh = await sw.run("fetch", { request: sw.request("/boot.js") });
+    expect(await fresh?.text()).toBe("boot2");
+    online = false;
+    const stored = await sw.run("fetch", { request: sw.request("/boot.js") });
+    expect(await stored?.text()).toBe("boot2");
   });
 
   it("never answers an /api/ request", async () => {
