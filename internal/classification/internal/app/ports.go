@@ -96,6 +96,8 @@ type Repository interface {
 	MergeCategory(ctx context.Context, userID int64, from, into uuid.UUID) error
 	// MergePayee rewrites every reference to the payee from as into (A82).
 	MergePayee(ctx context.Context, userID int64, from, into uuid.UUID) error
+	// RenameRuleTag makes the rules that add the tag from add into instead.
+	RenameRuleTag(ctx context.Context, userID int64, from, into string) error
 
 	// CorrectedExamples returns up to limit corrected, non-voided transactions with the
 	// match key and category, oldest first.

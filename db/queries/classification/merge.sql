@@ -62,3 +62,15 @@ WHERE user_id = @user_id AND (strpos(conditions::text, @from_id::text) > 0 OR st
 -- name: MergePayeeMatchKeys :exec
 UPDATE classification_categorization SET match_key = 'payee:' || @into_id::text
 WHERE user_id = @user_id AND match_key = 'payee:' || @from_id::text;
+
+-- name: RenameRuleTag :exec
+-- A rule that adds a renamed or merged tag adds the tag's new name, once.
+UPDATE classification_rule r
+SET actions = (
+        SELECT jsonb_agg(CASE WHEN x.a ? 'tags' THEN jsonb_set(x.a, '{tags}', (
+            SELECT jsonb_agg(DISTINCT CASE WHEN t = @from_name::text THEN @into_name::text ELSE t END)
+            FROM jsonb_array_elements_text(x.a -> 'tags') t)) ELSE x.a END ORDER BY x.i)
+        FROM jsonb_array_elements(r.actions) WITH ORDINALITY AS x (a, i)),
+    updated_at = now()
+WHERE r.user_id = @user_id
+  AND jsonb_path_exists(r.actions, '$[*].tags[*] ? (@ == $t)', jsonb_build_object('t', @from_name::text));

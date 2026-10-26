@@ -141,6 +141,39 @@ func TestManageAccountsPayees(t *testing.T) {
 	}
 }
 
+func TestManageAccountsTags(t *testing.T) {
+	t.Parallel()
+	s := newTaggedSetup(t)
+	h := s.c.h
+	rename := map[string]any{"action": "rename_tag", "tag": "trip", "name": "Lisbon"}
+	if p := previewTool(t, h, "manage_accounts_and_payees", rename); p.Changes[0].Before.Text != "trip" || p.Changes[0].After.Text != "lisbon" {
+		t.Fatalf("preview = %+v", p)
+	}
+	var out manageOut
+	toolOutput(t, h, "manage_accounts_and_payees", rename, &out)
+	if out.Name != "lisbon" {
+		t.Fatalf("renamed = %+v", out)
+	}
+	merge := map[string]any{"action": "merge_tag", "tag": "lisbon", "into_tag": "travel"}
+	if p := previewTool(t, h, "manage_accounts_and_payees", merge); !p.Destructive || p.Changes[0].Before.Text != "lisbon" || p.Changes[0].After.Text != "travel" {
+		t.Fatalf("preview = %+v", p)
+	}
+	toolOutput(t, h, "manage_accounts_and_payees", merge, &out)
+	if out.Name != "travel" {
+		t.Fatalf("merged = %+v", out)
+	}
+	del := map[string]any{"action": "delete_tag", "tag": "travel"}
+	if p := previewTool(t, h, "manage_accounts_and_payees", del); !p.Destructive || p.Target != "travel" {
+		t.Fatalf("preview = %+v", p)
+	}
+	toolOutput(t, h, "manage_accounts_and_payees", del, &out)
+	if names := tagNames(t, h); len(names) != 0 {
+		t.Fatalf("tags = %v", names)
+	}
+	h.ExpectToolError(h.Tool("manage_accounts_and_payees", map[string]any{"action": "delete_tag", "tag": "absent"}), "not_found", "")
+	h.ExpectToolError(h.Tool("manage_accounts_and_payees", map[string]any{"action": "delete_tag"}), "invalid_arguments", "tag")
+}
+
 func TestManageAccountsOtherUser(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, apitest.Today("2026-10-23"))

@@ -278,6 +278,41 @@ func (s *Server) MergePayee(ctx context.Context, req MergePayeeRequestObject) (M
 	return MergePayee200JSONResponse{Id: p.ID, Name: p.Name}, nil
 }
 
+func (s *Server) GetTag(ctx context.Context, req GetTagRequestObject) (GetTagResponseObject, error) {
+	t, err := s.svc.Tag(ctx, auth.MustUserID(ctx), req.Name)
+	if err != nil {
+		return nil, err
+	}
+	return GetTag200JSONResponse(toTagUsageAPI(t)), nil
+}
+
+func (s *Server) RenameTag(ctx context.Context, req RenameTagRequestObject) (RenameTagResponseObject, error) {
+	t, err := s.svc.RenameTag(ctx, auth.MustUserID(ctx), req.Name, req.Body.Name)
+	if err != nil {
+		return nil, err
+	}
+	return RenameTag200JSONResponse(toTagUsageAPI(t)), nil
+}
+
+func (s *Server) MergeTag(ctx context.Context, req MergeTagRequestObject) (MergeTagResponseObject, error) {
+	t, err := s.svc.MergeTag(ctx, auth.MustUserID(ctx), req.Name, req.Body.Into)
+	if err != nil {
+		return nil, err
+	}
+	return MergeTag200JSONResponse(toTagUsageAPI(t)), nil
+}
+
+func (s *Server) DeleteTag(ctx context.Context, req DeleteTagRequestObject) (DeleteTagResponseObject, error) {
+	if err := s.svc.DeleteTag(ctx, auth.MustUserID(ctx), req.Name); err != nil {
+		return nil, err
+	}
+	return DeleteTag204Response{}, nil
+}
+
+func toTagUsageAPI(t app.TagUsage) TagUsage {
+	return TagUsage{Name: t.Name, Transactions: t.Transactions}
+}
+
 func (s *Server) MergeAccount(ctx context.Context, req MergeAccountRequestObject) (MergeAccountResponseObject, error) {
 	a, err := s.svc.MergeCategories(ctx, auth.MustUserID(ctx), req.Id, req.Body.Into)
 	if err != nil {

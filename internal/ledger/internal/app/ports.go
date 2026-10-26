@@ -338,6 +338,16 @@ type Repository interface {
 	// RetirePayee moves the voided transactions and the counterparty accounts of from to into
 	// and marks from as merged (A82).
 	RetirePayee(ctx context.Context, userID int64, from, into uuid.UUID) error
+	// TagUsage returns ErrNotFound for a name the user has no tag under.
+	TagUsage(ctx context.Context, userID int64, name string) (TagUsage, error)
+	// RenameTag returns ErrValidation on name for a name in use.
+	RenameTag(ctx context.Context, userID int64, id uuid.UUID, name string) error
+	// TransactionsWithTag returns the non-voided transactions that carry the tag.
+	TransactionsWithTag(ctx context.Context, userID int64, tagID uuid.UUID) ([]uuid.UUID, error)
+	// MoveTagLinks makes every transaction that carries from carry into as well.
+	MoveTagLinks(ctx context.Context, userID int64, from, into uuid.UUID) error
+	// DeleteTag removes the tag from every transaction that still carries it.
+	DeleteTag(ctx context.Context, userID int64, id uuid.UUID) error
 
 	Transaction(ctx context.Context, userID int64, id uuid.UUID) (domain.Transaction, error)
 	LockTransaction(ctx context.Context, userID int64, id uuid.UUID) (domain.Transaction, error)

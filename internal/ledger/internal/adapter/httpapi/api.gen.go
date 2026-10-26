@@ -1636,6 +1636,11 @@ type MergePayeeInput struct {
 	Into openapi_types.UUID `json:"into"`
 }
 
+// MergeTagInput defines model for MergeTagInput.
+type MergeTagInput struct {
+	Into string `json:"into"`
+}
+
 // Money defines model for Money.
 type Money struct {
 	// Amount Integer units of the instrument scale (ADR 005).
@@ -1970,12 +1975,25 @@ type StatementSummary struct {
 // StatementSummaryStatus defines model for StatementSummary.Status.
 type StatementSummaryStatus string
 
+// TagInput defines model for TagInput.
+type TagInput struct {
+	Name string `json:"name"`
+}
+
 // TagList defines model for TagList.
 type TagList struct {
 	Items []string `json:"items"`
 
 	// NextCursor Absent on the last page.
 	NextCursor *string `json:"next_cursor,omitempty"`
+}
+
+// TagUsage defines model for TagUsage.
+type TagUsage struct {
+	Name string `json:"name"`
+
+	// Transactions Non-voided transactions that carry the tag.
+	Transactions int `json:"transactions"`
 }
 
 // Trade defines model for Trade.
@@ -2127,6 +2145,9 @@ type ID = openapi_types.UUID
 
 // Limit defines model for Limit.
 type Limit = int
+
+// TagName defines model for TagName.
+type TagName = string
 
 // ListAccountsParams defines parameters for ListAccounts.
 type ListAccountsParams struct {
@@ -2325,6 +2346,12 @@ type PayStatementJSONRequestBody = StatementPaymentInput
 // ReconcileStatementJSONRequestBody defines body for ReconcileStatement for application/json ContentType.
 type ReconcileStatementJSONRequestBody = StatementReconciliationInput
 
+// RenameTagJSONRequestBody defines body for RenameTag for application/json ContentType.
+type RenameTagJSONRequestBody = TagInput
+
+// MergeTagJSONRequestBody defines body for MergeTag for application/json ContentType.
+type MergeTagJSONRequestBody = MergeTagInput
+
 // RecordTradeJSONRequestBody defines body for RecordTrade for application/json ContentType.
 type RecordTradeJSONRequestBody = TradeInput
 
@@ -2522,6 +2549,18 @@ type ServerInterface interface {
 	// ListTags List tags in use.
 	// (GET /tags)
 	ListTags(w http.ResponseWriter, r *http.Request, params ListTagsParams)
+	// DeleteTag Delete a tag; every non-voided transaction that carries it gets a new version without it.
+	// (DELETE /tags/{name})
+	DeleteTag(w http.ResponseWriter, r *http.Request, name TagName)
+	// GetTag A tag and the number of non-voided transactions that carry it.
+	// (GET /tags/{name})
+	GetTag(w http.ResponseWriter, r *http.Request, name TagName)
+	// RenameTag Rename a tag on every transaction; no transaction gets a new version.
+	// (PATCH /tags/{name})
+	RenameTag(w http.ResponseWriter, r *http.Request, name TagName)
+	// MergeTag Merge a tag into another; returns the destination.
+	// (POST /tags/{name}/merge)
+	MergeTag(w http.ResponseWriter, r *http.Request, name TagName)
 	// RecordTrade Buy or sell a security for cash of the same brokerage at average cost (P8 amendment A68).
 	// (POST /trades)
 	RecordTrade(w http.ResponseWriter, r *http.Request)
@@ -4122,6 +4161,110 @@ func (siw *ServerInterfaceWrapper) ListTags(w http.ResponseWriter, r *http.Reque
 	handler.ServeHTTP(w, r)
 }
 
+// DeleteTag operation middleware
+func (siw *ServerInterfaceWrapper) DeleteTag(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "name" -------------
+	var name TagName
+
+	err = runtime.BindStyledParameterWithOptions("simple", "name", r.PathValue("name"), &name, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteTag(w, r, name)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetTag operation middleware
+func (siw *ServerInterfaceWrapper) GetTag(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "name" -------------
+	var name TagName
+
+	err = runtime.BindStyledParameterWithOptions("simple", "name", r.PathValue("name"), &name, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetTag(w, r, name)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RenameTag operation middleware
+func (siw *ServerInterfaceWrapper) RenameTag(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "name" -------------
+	var name TagName
+
+	err = runtime.BindStyledParameterWithOptions("simple", "name", r.PathValue("name"), &name, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RenameTag(w, r, name)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// MergeTag operation middleware
+func (siw *ServerInterfaceWrapper) MergeTag(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "name" -------------
+	var name TagName
+
+	err = runtime.BindStyledParameterWithOptions("simple", "name", r.PathValue("name"), &name, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.MergeTag(w, r, name)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // RecordTrade operation middleware
 func (siw *ServerInterfaceWrapper) RecordTrade(w http.ResponseWriter, r *http.Request) {
 
@@ -4839,6 +4982,10 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/payees/{id}", wrapper.RenamePayee)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/payees/{id}/merge", wrapper.MergePayee)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/tags", wrapper.ListTags)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/tags/{name}", wrapper.DeleteTag)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/tags/{name}", wrapper.GetTag)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/tags/{name}", wrapper.RenameTag)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/tags/{name}/merge", wrapper.MergeTag)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts", wrapper.ListAccounts)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts", wrapper.CreateAccount)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}", wrapper.GetAccount)
@@ -8269,6 +8416,238 @@ func (response ListTags401ApplicationProblemPlusJSONResponse) VisitListTagsRespo
 	return err
 }
 
+type DeleteTagRequestObject struct {
+	Name TagName `json:"name"`
+}
+
+type DeleteTagResponseObject interface {
+	VisitDeleteTagResponse(w http.ResponseWriter) error
+}
+
+type DeleteTag204Response struct {
+}
+
+func (response DeleteTag204Response) VisitDeleteTagResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteTag401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteTag401ApplicationProblemPlusJSONResponse) VisitDeleteTagResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteTag404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteTag404ApplicationProblemPlusJSONResponse) VisitDeleteTagResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTagRequestObject struct {
+	Name TagName `json:"name"`
+}
+
+type GetTagResponseObject interface {
+	VisitGetTagResponse(w http.ResponseWriter) error
+}
+
+type GetTag200JSONResponse TagUsage
+
+func (response GetTag200JSONResponse) VisitGetTagResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTag401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetTag401ApplicationProblemPlusJSONResponse) VisitGetTagResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetTag404ApplicationProblemPlusJSONResponse Problem
+
+func (response GetTag404ApplicationProblemPlusJSONResponse) VisitGetTagResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RenameTagRequestObject struct {
+	Name TagName `json:"name"`
+	Body *RenameTagJSONRequestBody
+}
+
+type RenameTagResponseObject interface {
+	VisitRenameTagResponse(w http.ResponseWriter) error
+}
+
+type RenameTag200JSONResponse TagUsage
+
+func (response RenameTag200JSONResponse) VisitRenameTagResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RenameTag401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RenameTag401ApplicationProblemPlusJSONResponse) VisitRenameTagResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RenameTag404ApplicationProblemPlusJSONResponse Problem
+
+func (response RenameTag404ApplicationProblemPlusJSONResponse) VisitRenameTagResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RenameTag422ApplicationProblemPlusJSONResponse Problem
+
+func (response RenameTag422ApplicationProblemPlusJSONResponse) VisitRenameTagResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MergeTagRequestObject struct {
+	Name TagName `json:"name"`
+	Body *MergeTagJSONRequestBody
+}
+
+type MergeTagResponseObject interface {
+	VisitMergeTagResponse(w http.ResponseWriter) error
+}
+
+type MergeTag200JSONResponse TagUsage
+
+func (response MergeTag200JSONResponse) VisitMergeTagResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MergeTag401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response MergeTag401ApplicationProblemPlusJSONResponse) VisitMergeTagResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MergeTag404ApplicationProblemPlusJSONResponse Problem
+
+func (response MergeTag404ApplicationProblemPlusJSONResponse) VisitMergeTagResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MergeTag422ApplicationProblemPlusJSONResponse Problem
+
+func (response MergeTag422ApplicationProblemPlusJSONResponse) VisitMergeTagResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type RecordTradeRequestObject struct {
 	Body *RecordTradeJSONRequestBody
 }
@@ -9751,6 +10130,18 @@ type StrictServerInterface interface {
 	// ListTags List tags in use.
 	// (GET /tags)
 	ListTags(ctx context.Context, request ListTagsRequestObject) (ListTagsResponseObject, error)
+	// DeleteTag Delete a tag; every non-voided transaction that carries it gets a new version without it.
+	// (DELETE /tags/{name})
+	DeleteTag(ctx context.Context, request DeleteTagRequestObject) (DeleteTagResponseObject, error)
+	// GetTag A tag and the number of non-voided transactions that carry it.
+	// (GET /tags/{name})
+	GetTag(ctx context.Context, request GetTagRequestObject) (GetTagResponseObject, error)
+	// RenameTag Rename a tag on every transaction; no transaction gets a new version.
+	// (PATCH /tags/{name})
+	RenameTag(ctx context.Context, request RenameTagRequestObject) (RenameTagResponseObject, error)
+	// MergeTag Merge a tag into another; returns the destination.
+	// (POST /tags/{name}/merge)
+	MergeTag(ctx context.Context, request MergeTagRequestObject) (MergeTagResponseObject, error)
 	// RecordTrade Buy or sell a security for cash of the same brokerage at average cost (P8 amendment A68).
 	// (POST /trades)
 	RecordTrade(ctx context.Context, request RecordTradeRequestObject) (RecordTradeResponseObject, error)
@@ -11416,6 +11807,124 @@ func (sh *strictHandler) ListTags(w http.ResponseWriter, r *http.Request, params
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListTagsResponseObject); ok {
 		if err := validResponse.VisitListTagsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteTag operation middleware
+func (sh *strictHandler) DeleteTag(w http.ResponseWriter, r *http.Request, name TagName) {
+	var request DeleteTagRequestObject
+
+	request.Name = name
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteTag(ctx, request.(DeleteTagRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteTag")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteTagResponseObject); ok {
+		if err := validResponse.VisitDeleteTagResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetTag operation middleware
+func (sh *strictHandler) GetTag(w http.ResponseWriter, r *http.Request, name TagName) {
+	var request GetTagRequestObject
+
+	request.Name = name
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetTag(ctx, request.(GetTagRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetTag")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetTagResponseObject); ok {
+		if err := validResponse.VisitGetTagResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RenameTag operation middleware
+func (sh *strictHandler) RenameTag(w http.ResponseWriter, r *http.Request, name TagName) {
+	var request RenameTagRequestObject
+
+	request.Name = name
+
+	var body RenameTagJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RenameTag(ctx, request.(RenameTagRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RenameTag")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RenameTagResponseObject); ok {
+		if err := validResponse.VisitRenameTagResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// MergeTag operation middleware
+func (sh *strictHandler) MergeTag(w http.ResponseWriter, r *http.Request, name TagName) {
+	var request MergeTagRequestObject
+
+	request.Name = name
+
+	var body MergeTagJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.MergeTag(ctx, request.(MergeTagRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "MergeTag")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(MergeTagResponseObject); ok {
+		if err := validResponse.VisitMergeTagResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -503,6 +503,9 @@ type ID = openapi_types.UUID
 // Limit defines model for Limit.
 type Limit = int
 
+// TagName defines model for TagName.
+type TagName = string
+
 // GetProjectionParams defines parameters for GetProjection.
 type GetProjectionParams struct {
 	To openapi_types.Date `form:"to" json:"to"`

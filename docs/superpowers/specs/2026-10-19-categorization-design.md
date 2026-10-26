@@ -15,7 +15,7 @@ Out of scope:
 
 | Item | Owner |
 |---|---|
-| Tag rename, merge and delete | later amendment |
+| Tag rename, merge and delete | amendment A85 (2026-10-26) |
 | Payee delete | no endpoint; merge covers duplicate payees |
 | Manual sibling order | not planned; siblings sort by name |
 | Running a single rule or a date range through `/rules/run` | not planned (A81 previews before saving) |
@@ -125,6 +125,18 @@ Added to `06-scenarios.md`, section 6.13, with the categories of that section pl
 | S77 | Three uncategorized transactions, one with a stale `expected_version`: results `categorized`, `categorized`, `version_conflict` (A78). |
 | S78 | With the S41 data, previewing "description contains `uber`" → Ride-hailing returns `would_categorize` with no transaction (UBER *EATS is already categorized by `/rules/run`) and `conflicts` with the Travel transaction (A81). |
 | S79 | Payees "iFood" and "IFOOD" merged into "iFood": the S38 alias names the destination, the transactions of "IFOOD" get version + 1, `GET /payees` lists one payee (A82). |
+
+### A85 Tag rename, merge and delete
+
+Amendment of 2026-10-26. Reason: tags grew without a way to correct a misspelt tag or join two tags; the operations follow A82.
+
+- `GET /tags/{name}` → 200 `TagUsage` `{ name, transactions }`, where `transactions` counts the non-voided transactions that carry the tag. The web interface states the count before a delete.
+- `PATCH /tags/{name}` `{ name }` → 200 `TagUsage`. The name is normalized as a transaction tag; a malformed name or a name in use is 422 `validation_failed` on `name`. The row is renamed in place; no transaction gets a new version. Publishes `ledger.tag_renamed.v1` `{ from, into }`.
+- `POST /tags/{name}/merge` `{ into }` → 200 `TagUsage` (the destination); 422 on `into` for the same tag or an unknown tag. Every non-voided transaction that carries the source gets a new version (reason `merged`, cause `merge`) carrying the destination once; voided transactions name the destination in place. The source tag is deleted. Publishes `ledger.tag_renamed.v1` `{ from, into }`.
+- `DELETE /tags/{name}` → 204. Every non-voided transaction that carries the tag gets a new version without it (reason `tag deleted`, cause `merge`); voided transactions lose it in place. Publishes `ledger.tag_deleted.v1` `{ name }`.
+- An unknown tag, or the tag of another user, is 404 `not_found` on every operation.
+- Classification on `ledger.tag_renamed.v1`: an `add_tags` rule action that names `from` names `into`, once.
+- The tool `manage_accounts_and_payees` gains the actions `rename_tag`, `merge_tag` and `delete_tag`.
 
 ## Problem codes
 

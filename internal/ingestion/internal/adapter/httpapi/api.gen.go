@@ -701,6 +701,9 @@ type ID = openapi_types.UUID
 // Limit defines model for Limit.
 type Limit = int
 
+// TagName defines model for TagName.
+type TagName = string
+
 // ImportFileMultipartBody defines parameters for ImportFile.
 type ImportFileMultipartBody struct {
 	File   openapi_types.File            `json:"file"`

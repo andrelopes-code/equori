@@ -496,6 +496,9 @@ type ID = openapi_types.UUID
 // Limit defines model for Limit.
 type Limit = int
 
+// TagName defines model for TagName.
+type TagName = string
+
 // GetCategorizationStatisticsParams defines parameters for GetCategorizationStatistics.
 type GetCategorizationStatisticsParams struct {
 	From openapi_types.Date `form:"from" json:"from"`

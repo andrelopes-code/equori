@@ -250,6 +250,9 @@ type SubtypeList struct {
 	Items []string `json:"items"`
 }
 
+// TagName defines model for TagName.
+type TagName = string
+
 // Year defines model for Year.
 type Year = int
 

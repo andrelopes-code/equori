@@ -3992,7 +3992,7 @@
   },
   {
     "name": "manage_accounts_and_payees",
-    "description": "Proposes a change to accounts, categories, payees or institutions: create, rename or move an account or category, close or reopen it, merge a category or payee into another, create or rename a payee, create an institution. Use it when the user asks to organize accounts, categories or payees. Do not use it for card settings: manage_card does. Merging cannot be undone; the user confirms every change.",
+    "description": "Proposes a change to accounts, categories, payees or institutions: create, rename or move an account or category, close or reopen it, merge a category or payee into another, create or rename a payee, create an institution, rename, merge or delete a tag. Use it when the user asks to organize accounts, categories, payees or tags. Do not use it for card settings: manage_card does. Merging cannot be undone; the user confirms every change.",
     "effect": "destructive",
     "idempotent": false,
     "input_schema": {
@@ -4010,7 +4010,10 @@
             "create_payee",
             "rename_payee",
             "merge_payee",
-            "create_institution"
+            "create_institution",
+            "rename_tag",
+            "merge_tag",
+            "delete_tag"
           ]
         },
         "account_id": {
@@ -4019,7 +4022,7 @@
         },
         "name": {
           "type": "string",
-          "description": "name of the new or renamed account, category, payee or institution"
+          "description": "name of the new or renamed account, category, payee, institution or tag"
         },
         "class": {
           "type": "string",
@@ -4073,6 +4076,14 @@
         "payee_id": {
           "type": "string",
           "description": "for rename_payee and merge_payee: payee to change, from list_payees_and_tags"
+        },
+        "tag": {
+          "type": "string",
+          "description": "for rename_tag, merge_tag and delete_tag: tag to change, from list_payees_and_tags"
+        },
+        "into_tag": {
+          "type": "string",
+          "description": "for merge_tag: tag that remains"
         }
       },
       "required": [

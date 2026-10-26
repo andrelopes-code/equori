@@ -424,6 +424,9 @@ type TransactionSuggestions struct {
 	Items     []TransactionSuggestion `json:"items"`
 }
 
+// TagName defines model for TagName.
+type TagName = string
+
 // PreviewCaptureJSONRequestBody defines body for PreviewCapture for application/json ContentType.
 type PreviewCaptureJSONRequestBody = CapturePreviewInput
 

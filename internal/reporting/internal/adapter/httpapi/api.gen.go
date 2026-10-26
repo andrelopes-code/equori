@@ -249,6 +249,9 @@ type StatementParts struct {
 // ID defines model for ID.
 type ID = openapi_types.UUID
 
+// TagName defines model for TagName.
+type TagName = string
+
 // ImportArchiveMultipartBody defines parameters for ImportArchive.
 type ImportArchiveMultipartBody struct {
 	File openapi_types.File `json:"file"`

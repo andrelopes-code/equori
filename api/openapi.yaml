@@ -333,6 +333,89 @@ paths:
                 $ref: "#/components/schemas/TagList"
         "401":
           $ref: "#/components/responses/Problem"
+  /tags/{name}:
+    parameters:
+      - $ref: "#/components/parameters/TagName"
+    get:
+      tags: [ledger]
+      operationId: getTag
+      summary: A tag and the number of non-voided transactions that carry it.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TagUsage"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    patch:
+      tags: [ledger]
+      operationId: renameTag
+      summary: Rename a tag on every transaction; no transaction gets a new version.
+      description: The name is normalized as a transaction tag. A name in use is 422 on name; merge the tags instead.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TagInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TagUsage"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [ledger]
+      operationId: deleteTag
+      summary: Delete a tag; every non-voided transaction that carries it gets a new version without it.
+      description: Voided transactions lose the tag in place.
+      responses:
+        "204":
+          description: Deleted.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /tags/{name}/merge:
+    post:
+      tags: [ledger]
+      operationId: mergeTag
+      summary: Merge a tag into another; returns the destination.
+      description: |
+        Every non-voided transaction that carries the tag gets a new version carrying the destination once; voided
+        transactions name the destination in place. The tag is deleted.
+      parameters:
+        - $ref: "#/components/parameters/TagName"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MergeTagInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TagUsage"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /accounts:
     get:
       tags: [ledger]
@@ -4786,6 +4869,14 @@ components:
       schema:
         type: string
         format: uuid
+    TagName:
+      name: name
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 60
     Limit:
       name: limit
       in: query
@@ -7442,6 +7533,33 @@ components:
           type: string
           format: uuid
           nullable: true
+    TagUsage:
+      type: object
+      required: [name, transactions]
+      properties:
+        name:
+          type: string
+        transactions:
+          type: integer
+          description: Non-voided transactions that carry the tag.
+    TagInput:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 60
+    MergeTagInput:
+      type: object
+      additionalProperties: false
+      required: [into]
+      properties:
+        into:
+          type: string
+          minLength: 1
+          maxLength: 60
     MergePayeeInput:
       type: object
       additionalProperties: false

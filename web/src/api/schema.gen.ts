@@ -183,6 +183,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/tags/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: components["parameters"]["TagName"];
+            };
+            cookie?: never;
+        };
+        /** A tag and the number of non-voided transactions that carry it. */
+        get: operations["getTag"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a tag; every non-voided transaction that carries it gets a new version without it.
+         * @description Voided transactions lose the tag in place.
+         */
+        delete: operations["deleteTag"];
+        options?: never;
+        head?: never;
+        /**
+         * Rename a tag on every transaction; no transaction gets a new version.
+         * @description The name is normalized as a transaction tag. A name in use is 422 on name; merge the tags instead.
+         */
+        patch: operations["renameTag"];
+        trace?: never;
+    };
+    "/tags/{name}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Merge a tag into another; returns the destination.
+         * @description Every non-voided transaction that carries the tag gets a new version carrying the destination once; voided
+         *     transactions name the destination in place. The tag is deleted.
+         */
+        post: operations["mergeTag"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts": {
         parameters: {
             query?: never;
@@ -4198,6 +4246,17 @@ export interface components {
             /** Format: uuid */
             parent_id: string | null;
         };
+        TagUsage: {
+            name: string;
+            /** @description Non-voided transactions that carry the tag. */
+            transactions: number;
+        };
+        TagInput: {
+            name: string;
+        };
+        MergeTagInput: {
+            into: string;
+        };
         MergePayeeInput: {
             /** Format: uuid */
             into: string;
@@ -5012,6 +5071,7 @@ export interface components {
         /** @description Year in which the tax year of the owner's jurisdiction starts. */
         Year: number;
         ID: string;
+        TagName: string;
         Limit: number;
         Cursor: string;
         SessionCookie: string;
@@ -5397,6 +5457,110 @@ export interface operations {
                 };
             };
             401: components["responses"]["Problem"];
+        };
+    };
+    getTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: components["parameters"]["TagName"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagUsage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    deleteTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: components["parameters"]["TagName"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    renameTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: components["parameters"]["TagName"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagUsage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    mergeTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: components["parameters"]["TagName"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MergeTagInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagUsage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     listAccounts: {

@@ -62,3 +62,31 @@ SELECT name FROM ledger_tag
 WHERE user_id = @user_id AND (sqlc.narg(after_name)::text IS NULL OR name > sqlc.narg(after_name)::text)
 ORDER BY name
 LIMIT @row_limit;
+
+-- name: GetTagUsage :one
+SELECT g.id, g.name, count(t.id)::int AS transactions
+FROM ledger_tag g
+LEFT JOIN ledger_transaction_tag tt ON tt.tag_id = g.id
+LEFT JOIN ledger_transaction t ON t.id = tt.transaction_id AND t.voided_at IS NULL
+WHERE g.user_id = @user_id AND g.name = @name
+GROUP BY g.id, g.name;
+
+-- name: RenameTag :one
+UPDATE ledger_tag SET name = @new_name WHERE user_id = @user_id AND id = @id
+RETURNING id;
+
+-- name: TransactionsWithTag :many
+SELECT tt.transaction_id FROM ledger_transaction_tag tt
+JOIN ledger_transaction t ON t.id = tt.transaction_id
+WHERE tt.user_id = @user_id AND tt.tag_id = @tag_id AND t.voided_at IS NULL
+ORDER BY tt.transaction_id;
+
+-- name: MoveTagLinks :exec
+-- Voided transactions keep their version and name the destination in place.
+INSERT INTO ledger_transaction_tag (user_id, transaction_id, tag_id)
+SELECT l.user_id, l.transaction_id, @into_id::uuid FROM ledger_transaction_tag l
+WHERE l.user_id = @user_id AND l.tag_id = @from_id
+ON CONFLICT DO NOTHING;
+
+-- name: DeleteTag :exec
+DELETE FROM ledger_tag WHERE user_id = @user_id AND id = @id;

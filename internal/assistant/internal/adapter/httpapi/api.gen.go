@@ -445,6 +445,9 @@ type ID = openapi_types.UUID
 // Limit defines model for Limit.
 type Limit = int
 
+// TagName defines model for TagName.
+type TagName = string
+
 // ListAssistantConversationsParams defines parameters for ListAssistantConversations.
 type ListAssistantConversationsParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`

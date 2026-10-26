@@ -195,3 +195,27 @@ func (q *Queries) MergeSuggestions(ctx context.Context, arg MergeSuggestionsPara
 	_, err := q.db.Exec(ctx, mergeSuggestions, arg.FromID, arg.IntoID, arg.UserID)
 	return err
 }
+
+const renameRuleTag = `-- name: RenameRuleTag :exec
+UPDATE classification_rule r
+SET actions = (
+        SELECT jsonb_agg(CASE WHEN x.a ? 'tags' THEN jsonb_set(x.a, '{tags}', (
+            SELECT jsonb_agg(DISTINCT CASE WHEN t = $1::text THEN $2::text ELSE t END)
+            FROM jsonb_array_elements_text(x.a -> 'tags') t)) ELSE x.a END ORDER BY x.i)
+        FROM jsonb_array_elements(r.actions) WITH ORDINALITY AS x (a, i)),
+    updated_at = now()
+WHERE r.user_id = $3
+  AND jsonb_path_exists(r.actions, '$[*].tags[*] ? (@ == $t)', jsonb_build_object('t', $1::text))
+`
+
+type RenameRuleTagParams struct {
+	FromName string
+	IntoName string
+	UserID   int64
+}
+
+// A rule that adds a renamed or merged tag adds the tag's new name, once.
+func (q *Queries) RenameRuleTag(ctx context.Context, arg RenameRuleTagParams) error {
+	_, err := q.db.Exec(ctx, renameRuleTag, arg.FromName, arg.IntoName, arg.UserID)
+	return err
+}

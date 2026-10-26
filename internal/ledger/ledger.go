@@ -43,6 +43,10 @@ const (
 	EventCategoriesMerged = app.EventCategoriesMerged
 	// EventPayeesMerged follows MergePayees (A82).
 	EventPayeesMerged = app.EventPayeesMerged
+	// EventTagRenamed follows RenameTag and MergeTag.
+	EventTagRenamed = app.EventTagRenamed
+	// EventTagDeleted follows DeleteTag.
+	EventTagDeleted = app.EventTagDeleted
 	// CauseMerge is the cause method of the versions a merge creates.
 	CauseMerge = app.CauseMerge
 )
@@ -55,6 +59,12 @@ type CategoriesMerged = app.CategoriesMerged
 
 // PayeesMerged is the payload of EventPayeesMerged.
 type PayeesMerged = app.PayeesMerged
+
+// TagRenamed is the payload of EventTagRenamed.
+type TagRenamed = app.TagRenamed
+
+// TagDeleted is the payload of EventTagDeleted.
+type TagDeleted = app.TagDeleted
 
 type Module struct {
 	http *httpapi.Server

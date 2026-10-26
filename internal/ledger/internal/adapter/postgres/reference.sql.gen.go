@@ -11,6 +11,20 @@ import (
 	"github.com/google/uuid"
 )
 
+const deleteTag = `-- name: DeleteTag :exec
+DELETE FROM ledger_tag WHERE user_id = $1 AND id = $2
+`
+
+type DeleteTagParams struct {
+	UserID int64
+	ID     uuid.UUID
+}
+
+func (q *Queries) DeleteTag(ctx context.Context, arg DeleteTagParams) error {
+	_, err := q.db.Exec(ctx, deleteTag, arg.UserID, arg.ID)
+	return err
+}
+
 const getPayee = `-- name: GetPayee :one
 SELECT id, user_id, name, merged_into FROM ledger_payee WHERE user_id = $1 AND id = $2
 `
@@ -40,6 +54,33 @@ func (q *Queries) GetSettings(ctx context.Context, userID int64) (LedgerSetting,
 	row := q.db.QueryRow(ctx, getSettings, userID)
 	var i LedgerSetting
 	err := row.Scan(&i.UserID, &i.BaseCurrency)
+	return i, err
+}
+
+const getTagUsage = `-- name: GetTagUsage :one
+SELECT g.id, g.name, count(t.id)::int AS transactions
+FROM ledger_tag g
+LEFT JOIN ledger_transaction_tag tt ON tt.tag_id = g.id
+LEFT JOIN ledger_transaction t ON t.id = tt.transaction_id AND t.voided_at IS NULL
+WHERE g.user_id = $1 AND g.name = $2
+GROUP BY g.id, g.name
+`
+
+type GetTagUsageParams struct {
+	UserID int64
+	Name   string
+}
+
+type GetTagUsageRow struct {
+	ID           uuid.UUID
+	Name         string
+	Transactions int32
+}
+
+func (q *Queries) GetTagUsage(ctx context.Context, arg GetTagUsageParams) (GetTagUsageRow, error) {
+	row := q.db.QueryRow(ctx, getTagUsage, arg.UserID, arg.Name)
+	var i GetTagUsageRow
+	err := row.Scan(&i.ID, &i.Name, &i.Transactions)
 	return i, err
 }
 
@@ -272,6 +313,25 @@ func (q *Queries) MoveCounterpartyPayee(ctx context.Context, arg MoveCounterpart
 	return err
 }
 
+const moveTagLinks = `-- name: MoveTagLinks :exec
+INSERT INTO ledger_transaction_tag (user_id, transaction_id, tag_id)
+SELECT l.user_id, l.transaction_id, $1::uuid FROM ledger_transaction_tag l
+WHERE l.user_id = $2 AND l.tag_id = $3
+ON CONFLICT DO NOTHING
+`
+
+type MoveTagLinksParams struct {
+	IntoID uuid.UUID
+	UserID int64
+	FromID uuid.UUID
+}
+
+// Voided transactions keep their version and name the destination in place.
+func (q *Queries) MoveTagLinks(ctx context.Context, arg MoveTagLinksParams) error {
+	_, err := q.db.Exec(ctx, moveTagLinks, arg.IntoID, arg.UserID, arg.FromID)
+	return err
+}
+
 const moveVoidedPayee = `-- name: MoveVoidedPayee :exec
 UPDATE ledger_transaction SET payee_id = $1
 WHERE user_id = $2 AND payee_id = $3 AND voided_at IS NOT NULL
@@ -344,6 +404,24 @@ func (q *Queries) RenamePayee(ctx context.Context, arg RenamePayeeParams) (Ledge
 	return i, err
 }
 
+const renameTag = `-- name: RenameTag :one
+UPDATE ledger_tag SET name = $1 WHERE user_id = $2 AND id = $3
+RETURNING id
+`
+
+type RenameTagParams struct {
+	NewName string
+	UserID  int64
+	ID      uuid.UUID
+}
+
+func (q *Queries) RenameTag(ctx context.Context, arg RenameTagParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, renameTag, arg.NewName, arg.UserID, arg.ID)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const setInstitutionIdentifier = `-- name: SetInstitutionIdentifier :one
 UPDATE ledger_institution SET identifier_scheme = $1, identifier = $2 WHERE user_id = $3 AND id = $4 RETURNING id, user_id, name, code, identifier_scheme, identifier
 `
@@ -397,6 +475,38 @@ func (q *Queries) TransactionsWithPayee(ctx context.Context, arg TransactionsWit
 			return nil, err
 		}
 		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const transactionsWithTag = `-- name: TransactionsWithTag :many
+SELECT tt.transaction_id FROM ledger_transaction_tag tt
+JOIN ledger_transaction t ON t.id = tt.transaction_id
+WHERE tt.user_id = $1 AND tt.tag_id = $2 AND t.voided_at IS NULL
+ORDER BY tt.transaction_id
+`
+
+type TransactionsWithTagParams struct {
+	UserID int64
+	TagID  uuid.UUID
+}
+
+func (q *Queries) TransactionsWithTag(ctx context.Context, arg TransactionsWithTagParams) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, transactionsWithTag, arg.UserID, arg.TagID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []uuid.UUID
+	for rows.Next() {
+		var transaction_id uuid.UUID
+		if err := rows.Scan(&transaction_id); err != nil {
+			return nil, err
+		}
+		items = append(items, transaction_id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

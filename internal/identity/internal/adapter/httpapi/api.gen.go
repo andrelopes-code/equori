@@ -91,6 +91,9 @@ type UserRole string
 // SessionCookie defines model for SessionCookie.
 type SessionCookie = string
 
+// TagName defines model for TagName.
+type TagName = string
+
 // DeleteSessionParams defines parameters for DeleteSession.
 type DeleteSessionParams struct {
 	EquoriSession *SessionCookie `form:"equori_session,omitempty" json:"equori_session,omitempty"`

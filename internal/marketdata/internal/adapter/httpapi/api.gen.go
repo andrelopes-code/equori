@@ -292,6 +292,9 @@ type Rate = string
 // TermsDayCount defines model for TermsDayCount.
 type TermsDayCount string
 
+// TagName defines model for TagName.
+type TagName = string
+
 // ListHolidaysParams defines parameters for ListHolidays.
 type ListHolidaysParams struct {
 	Year int `form:"year" json:"year"`

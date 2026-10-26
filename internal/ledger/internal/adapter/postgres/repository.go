@@ -154,6 +154,31 @@ func (r *Repository) TransactionsWithPayee(ctx context.Context, userID int64, pa
 	return r.q.TransactionsWithPayee(ctx, TransactionsWithPayeeParams{UserID: userID, PayeeID: nullUUID(payeeID)})
 }
 
+func (r *Repository) TagUsage(ctx context.Context, userID int64, name string) (app.TagUsage, error) {
+	row, err := r.q.GetTagUsage(ctx, GetTagUsageParams{UserID: userID, Name: name})
+	if err != nil {
+		return app.TagUsage{}, notFound(err)
+	}
+	return app.TagUsage{ID: row.ID, Name: row.Name, Transactions: int(row.Transactions)}, nil
+}
+
+func (r *Repository) RenameTag(ctx context.Context, userID int64, id uuid.UUID, name string) error {
+	_, err := r.q.RenameTag(ctx, RenameTagParams{UserID: userID, ID: id, NewName: name})
+	return duplicate(notFound(err), "name")
+}
+
+func (r *Repository) TransactionsWithTag(ctx context.Context, userID int64, tagID uuid.UUID) ([]uuid.UUID, error) {
+	return r.q.TransactionsWithTag(ctx, TransactionsWithTagParams{UserID: userID, TagID: tagID})
+}
+
+func (r *Repository) MoveTagLinks(ctx context.Context, userID int64, from, into uuid.UUID) error {
+	return r.q.MoveTagLinks(ctx, MoveTagLinksParams{UserID: userID, FromID: from, IntoID: into})
+}
+
+func (r *Repository) DeleteTag(ctx context.Context, userID int64, id uuid.UUID) error {
+	return r.q.DeleteTag(ctx, DeleteTagParams{UserID: userID, ID: id})
+}
+
 func (r *Repository) RetirePayee(ctx context.Context, userID int64, from, into uuid.UUID) error {
 	if err := r.q.MoveVoidedPayee(ctx, MoveVoidedPayeeParams{UserID: userID, FromID: nullUUID(from), IntoID: nullUUID(into)}); err != nil {
 		return err
