@@ -21,6 +21,16 @@ Archives: each release attaches `equori_<version>_<os>_<arch>.tar.gz` for Linux 
 gh attestation verify equori_<version>_linux_amd64.tar.gz --repo andrelopes-code/equori
 ```
 
+### Homebrew (macOS, Linux)
+
+```sh
+brew install andrelopes-code/equori/equori
+brew services start equori
+equori user create --email you@example.com --language <code> --region <country> --admin
+```
+
+Phone access over HTTPS: [docs/operations/remote-access.md](docs/operations/remote-access.md).
+
 ### One container
 
 The standalone image holds the application and PostgreSQL; the data lives in the `/data` volume:
