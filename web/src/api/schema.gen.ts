@@ -1160,6 +1160,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/indexes/{id}/expectations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The latest survey of the expected annual rate of an index, oldest point first (ADR 026 E5). */
+        get: operations["listIndexExpectations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/market-data/feeds": {
         parameters: {
             query?: never;
@@ -4202,6 +4219,8 @@ export interface components {
         };
         Index: {
             id: string;
+            /** @description An enabled expectation source stored points for the index (ADR 026 E5). */
+            expected: boolean;
             /**
              * @description The span one rate covers.
              * @enum {string}
@@ -4215,10 +4234,24 @@ export interface components {
         IndexList: {
             items: components["schemas"]["Index"][];
         };
+        IndexExpectations: {
+            /** Format: date */
+            survey_date: string;
+            items: components["schemas"]["IndexExpectation"][];
+        };
+        IndexExpectation: {
+            /** Format: date */
+            date: string;
+            /**
+             * @description Expected annual rate of the index on the date, an exact decimal fraction (0.1315 is 13.15%).
+             * @example 0.131500000000
+             */
+            rate: string;
+        };
         MarketDataFeed: {
             id: string;
             /** @enum {string} */
-            kind: "price" | "index";
+            kind: "price" | "index" | "expectation";
             enabled: boolean;
             /** @description Suggested for the calling user's region (ADR 025 F3); a suggestion enables nothing. */
             suggested: boolean;
@@ -7385,6 +7418,30 @@ export interface operations {
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    listIndexExpectations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndexExpectations"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
         };
     };
     listMarketDataFeeds: {

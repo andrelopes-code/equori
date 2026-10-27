@@ -68,6 +68,11 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.floating.basis": "Taxa do índice",
   "calc.floating.basis.current": "Atual, mantida por um ano",
   "calc.floating.basis.trailing": "Últimos 12 meses",
+  "calc.origin.daily.expected":
+    "{percent} do {index} pela trajetória que a pesquisa de mercado de {date} espera, em {months} meses",
+  "calc.origin.spread.expected":
+    "{index} + {spread} ao ano pela trajetória que a pesquisa de mercado de {date} espera, em {months} meses",
+  "calc.floating.basis.expected": "Esperada pelo mercado",
   "calc.floating.form": "Como a taxa segue o índice",
   "calc.floating.percent": "Percentual do índice",
   "calc.floating.spread": "Índice + spread",

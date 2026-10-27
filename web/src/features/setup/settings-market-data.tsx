@@ -170,6 +170,7 @@ export function SettingsMarketData() {
           </SettingsGroup>
           <SettingsGroup title={t("marketData.indexes")}>
             {rows("index")}
+            {rows("expectation")}
           </SettingsGroup>
         </Stack>
       )}

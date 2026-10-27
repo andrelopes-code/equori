@@ -4,8 +4,9 @@ import "time"
 
 // Kinds of a feed: a price source or an index source.
 const (
-	FeedPrice = "price"
-	FeedIndex = "index"
+	FeedPrice       = "price"
+	FeedIndex       = "index"
+	FeedExpectation = "expectation"
 )
 
 // Feed is a price or index source with its state for the instance (ADR 025 F5).

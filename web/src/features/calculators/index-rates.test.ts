@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   accumulated,
+  expectedOverDaily,
   percentOfDaily,
   spreadOverDaily,
   trailingDaily,
@@ -66,6 +67,43 @@ describe("index rates", () => {
       12,
     );
     expect(percentOfDaily(rates.slice(100), 1, "current")).toBeNull();
+  });
+
+  it("keeps the current rate along a path with no point (ADR 026 E6, E7)", () => {
+    const rates = weekdays();
+    rates[rates.length - 1] = { date: "2026-01-02", rate: 0.0005 };
+    const current = percentOfDaily(rates, 1.1, "current") ?? Number.NaN;
+    const path = expectedOverDaily(rates, [], 30, (d) => 1 + 1.1 * d);
+    expect(path).toBeCloseTo(current, 12);
+  });
+
+  it("follows the expected rate from the day after the last stored one", () => {
+    const rates = weekdays();
+    // From 2026-01-03 the path stays at 10% a year: every month compounds at it.
+    const path = expectedOverDaily(
+      rates,
+      [{ date: "2026-01-03", rate: 0.1 }],
+      12,
+      (d) => 1 + d,
+    );
+    expect(path).toBeCloseTo(0.1, 12);
+  });
+
+  it("runs linearly between the current rate and a point", () => {
+    const rates = weekdays();
+    const n = rates.filter((r) => r.date > "2025-01-02").length;
+    const current = 1.0004 ** n - 1;
+    // A point one year after the last date at the current rate minus 2 points: half a month
+    // in, the path has dropped by 2 × 0.5 / 12 points.
+    const point = new Date(Date.UTC(2027, 0, 2)).toISOString().slice(0, 10);
+    const one = expectedOverDaily(
+      rates,
+      [{ date: point, rate: current - 0.02 }],
+      1,
+      (d) => 1 + d,
+    );
+    expect(one).toBeCloseTo(current - (0.02 * 0.5) / 12, 3);
+    expect(one).toBeLessThan(current);
   });
 
   it("needs a year of daily data", () => {

@@ -1932,6 +1932,28 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /indexes/{id}/expectations:
+    get:
+      tags: [marketdata]
+      operationId: listIndexExpectations
+      summary: The latest survey of the expected annual rate of an index, oldest point first (ADR 026 E5).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IndexExpectations"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
   /market-data/feeds:
     get:
       tags: [marketdata]
@@ -7260,10 +7282,13 @@ components:
     Index:
       type: object
       additionalProperties: false
-      required: [id, period, first, last]
+      required: [id, period, first, last, expected]
       properties:
         id:
           type: string
+        expected:
+          type: boolean
+          description: An enabled expectation source stored points for the index (ADR 026 E5).
         period:
           type: string
           enum: [day, month]
@@ -7282,6 +7307,30 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Index"
+    IndexExpectations:
+      type: object
+      additionalProperties: false
+      required: [survey_date, items]
+      properties:
+        survey_date:
+          type: string
+          format: date
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/IndexExpectation"
+    IndexExpectation:
+      type: object
+      additionalProperties: false
+      required: [date, rate]
+      properties:
+        date:
+          type: string
+          format: date
+        rate:
+          type: string
+          description: Expected annual rate of the index on the date, an exact decimal fraction (0.1315 is 13.15%).
+          example: "0.131500000000"
     MarketDataFeed:
       type: object
       additionalProperties: false
@@ -7292,7 +7341,7 @@ components:
           pattern: "^[a-z0-9_]{2,40}$"
         kind:
           type: string
-          enum: [price, index]
+          enum: [price, index, expectation]
         enabled:
           type: boolean
         suggested:

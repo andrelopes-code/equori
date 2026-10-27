@@ -46,7 +46,12 @@ export function RatesCalculator() {
   const indexes = useIndexes();
   const daily = indexes.filter((i) => i.period === "day");
   const index = daily.find((i) => i.id === search.index);
-  const floating = readFloating(search, floatingKeys, index?.id ?? "");
+  const floating = readFloating(
+    search,
+    floatingKeys,
+    index?.id ?? "",
+    index?.expected ?? false,
+  );
   const ofIndex = useIndexRate(index, floating);
 
   const period = search.period === "month" ? "month" : "year";
@@ -133,6 +138,7 @@ export function RatesCalculator() {
       {index !== undefined && (
         <FloatingFields
           indexId={index.id}
+          expected={index.expected}
           floating={floating}
           keys={floatingKeys}
           percentLabel={t("calc.rates.percent")}

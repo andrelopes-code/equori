@@ -5,6 +5,11 @@ interface IndexFixture {
   id: string;
   period: "day" | "month";
   rates: { date: string; rate: string }[];
+  // The latest survey of the index's expected path (ADR 026), when it has one.
+  expectations?: {
+    survey_date: string;
+    items: { date: string; rate: string }[];
+  };
 }
 
 // 0.04% on each weekday from 2025-10-01 to 2026-10-16: more than a year of a daily index before
@@ -62,6 +67,7 @@ export function calculatorApiRoutes(
           period: x.period,
           first: x.rates[0]?.date,
           last: x.rates.at(-1)?.date,
+          expected: x.expectations !== undefined,
         })),
       }),
     ...Object.fromEntries(
@@ -76,6 +82,18 @@ export function calculatorApiRoutes(
           });
         },
       ]),
+    ),
+    ...Object.fromEntries(
+      indexes.flatMap((x) =>
+        x.expectations === undefined
+          ? []
+          : [
+              [
+                `GET /api/v1/indexes/${x.id}/expectations`,
+                () => json(200, x.expectations),
+              ],
+            ],
+      ),
     ),
   };
 }

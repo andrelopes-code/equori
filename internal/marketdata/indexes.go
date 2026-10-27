@@ -128,6 +128,7 @@ func (m *Module) Indexes(ctx context.Context) ([]IndexSummary, error) {
 		return nil, err
 	}
 	suggested := SuggestedFeeds(l.Region)
+	expected := m.expectedIndexes(on)
 	srcs := slices.Clone(m.feeds.Indexes)
 	slices.SortStableFunc(srcs, func(a, b index.Source) int {
 		return cmp.Compare(rank(suggested, a.ID()), rank(suggested, b.ID()))
@@ -142,7 +143,7 @@ func (m *Module) Indexes(ctx context.Context) ([]IndexSummary, error) {
 			return nil, fmt.Errorf("read the range of %s: %w", src.Index(), err)
 		}
 		if r.N > 0 {
-			out = append(out, IndexSummary{ID: src.Index(), Period: src.Period(), First: r.First, Last: r.Last})
+			out = append(out, IndexSummary{ID: src.Index(), Period: src.Period(), First: r.First, Last: r.Last, Expected: slices.Contains(expected, src.Index())})
 		}
 	}
 	return out, nil

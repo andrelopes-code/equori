@@ -2001,7 +2001,7 @@
   },
   {
     "name": "get_market_data",
-    "description": "Returns market data of the instance: instruments with their type and scale, one instrument with its fixed income terms, prices of an instrument in a period, business-day calendars, a calendar's holidays in a year, the stored economic indexes, or the rates of one index in a period. Use it for prices, securities, holidays and index rates. Do not use it for the user's holdings: get_portfolio does.",
+    "description": "Returns market data of the instance: instruments with their type and scale, one instrument with its fixed income terms, prices of an instrument in a period, business-day calendars, a calendar's holidays in a year, the stored economic indexes, the rates of one index in a period, or the annual rates a market survey expects for one index (where the indexes view says expected). Use it for prices, securities, holidays and index rates. Do not use it for the user's holdings: get_portfolio does.",
     "effect": "read_only",
     "idempotent": true,
     "input_schema": {
@@ -2017,7 +2017,8 @@
             "calendars",
             "holidays",
             "indexes",
-            "index_rates"
+            "index_rates",
+            "index_expectations"
           ]
         },
         "code": {
@@ -2040,7 +2041,7 @@
         },
         "index": {
           "type": "string",
-          "description": "for index_rates: index id from the indexes view"
+          "description": "for index_rates and index_expectations: index id from the indexes view"
         },
         "calendar": {
           "type": "string",
@@ -2310,13 +2311,17 @@
               "last": {
                 "type": "string",
                 "format": "date"
+              },
+              "expected": {
+                "type": "boolean"
               }
             },
             "required": [
               "id",
               "period",
               "first",
-              "last"
+              "last",
+              "expected"
             ],
             "additionalProperties": false
           }
@@ -2340,6 +2345,40 @@
             ],
             "additionalProperties": false
           }
+        },
+        "index_expectations": {
+          "type": "object",
+          "properties": {
+            "survey_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "points": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "rate": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "date",
+                  "rate"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "survey_date",
+            "points"
+          ],
+          "additionalProperties": false
         }
       },
       "additionalProperties": false

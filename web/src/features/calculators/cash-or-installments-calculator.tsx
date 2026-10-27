@@ -45,7 +45,9 @@ export function CashOrInstallmentsCalculator() {
   const [locale] = useAppLocale();
   const money = useCalculatorMoney();
   const [search, set] = useCalculatorSearch();
-  const compare = useRateSource(search, "compare");
+  const count = readInt(search.count, 1, maxInstallments);
+  // ADR 026 E8: one month per installment.
+  const compare = useRateSource(search, "compare", count ?? 12);
   if (money === null)
     return (
       <CalculatorFrame
@@ -57,7 +59,6 @@ export function CashOrInstallmentsCalculator() {
     );
 
   const cash = readMinor(search.cash);
-  const count = readInt(search.count, 1, maxInstallments);
   const installment = readMinor(search.installment);
   const firstNow = search.first === "now";
 

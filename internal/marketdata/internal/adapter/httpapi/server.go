@@ -39,6 +39,7 @@ type Service interface {
 	ListPrices(ctx context.Context, instrument, quote money.Currency, from, to time.Time) ([]domain.Price, error)
 	Indexes(ctx context.Context) ([]domain.IndexSummary, error)
 	IndexRates(ctx context.Context, id string, from, to time.Time) ([]domain.IndexRate, error)
+	Expectations(ctx context.Context, id string) (domain.IndexExpectations, error)
 	Feeds(ctx context.Context) ([]domain.Feed, error)
 	SetFeed(ctx context.Context, id string, enabled bool) (domain.Feed, error)
 	Refresh(ctx context.Context) error

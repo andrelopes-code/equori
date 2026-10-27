@@ -54,3 +54,20 @@ func TestSchemaRejectsInvalidFeeds(t *testing.T) {
 		})
 	}
 }
+
+// ADR 026 E3.
+func TestSchemaRejectsInvalidExpectations(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+	for name, sql := range map[string]string{
+		"index outside the pattern":  `INSERT INTO marketdata_index_expectation (index_id, date, rate, survey_date, source) VALUES ('CDI', '2026-12-31', 0.13, '2026-10-23', 'br_focus')`,
+		"source outside the pattern": `INSERT INTO marketdata_index_expectation (index_id, date, rate, survey_date, source) VALUES ('cdi', '2026-12-31', 0.13, '2026-10-23', 'Focus')`,
+		"rate at -100%":              `INSERT INTO marketdata_index_expectation (index_id, date, rate, survey_date, source) VALUES ('cdi', '2026-12-31', -1, '2026-10-23', 'br_focus')`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := pool.Exec(t.Context(), sql); err == nil {
+				t.Fatal("accepted")
+			}
+		})
+	}
+}

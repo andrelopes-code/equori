@@ -31,3 +31,21 @@ export function indexRatesQuery(
       ).items.map((r) => ({ date: r.date, rate: Number(r.rate) })),
   });
 }
+
+// The latest survey of an index's expected path (ADR 026 E5).
+export function indexExpectationsQuery(api: Client<paths>, id: string) {
+  return queryOptions({
+    queryKey: ["calculators", "index-expectations", id] as const,
+    queryFn: async (): Promise<{ surveyDate: string; points: IndexRate[] }> => {
+      const x = await unwrap(
+        await api.GET("/indexes/{id}/expectations", {
+          params: { path: { id } },
+        }),
+      );
+      return {
+        surveyDate: x.survey_date,
+        points: x.items.map((p) => ({ date: p.date, rate: Number(p.rate) })),
+      };
+    },
+  });
+}

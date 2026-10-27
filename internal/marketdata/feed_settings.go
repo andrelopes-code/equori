@@ -69,7 +69,8 @@ func (m *Module) enabledFeeds(ctx context.Context) (map[string]bool, error) {
 	return on, nil
 }
 
-// Feeds lists every feed of the registry, price sources first, with its state (ADR 025 F5).
+// Feeds lists every feed of the registry, price sources, then index and expectation sources, with
+// its state (ADR 025 F5).
 func (m *Module) Feeds(ctx context.Context) ([]Feed, error) {
 	on, err := m.enabledFeeds(ctx)
 	if err != nil {
@@ -104,6 +105,17 @@ func (m *Module) Feeds(ctx context.Context) ([]Feed, error) {
 		}
 		out = append(out, m.feed(src.ID(), domain.FeedIndex, src.Period(), last, on, suggested, lags))
 	}
+	for _, src := range m.feeds.Expectations {
+		latest, err := m.q.LatestSurvey(ctx, src.ID())
+		if err != nil {
+			return nil, fmt.Errorf("read the latest survey of %s: %w", src.ID(), err)
+		}
+		var last *time.Time
+		if latest.Found {
+			last = &latest.Latest
+		}
+		out = append(out, m.feed(src.ID(), domain.FeedExpectation, index.PeriodDay, last, on, suggested, lags))
+	}
 	return out, nil
 }
 
@@ -134,6 +146,9 @@ func feedLags() map[string]int {
 		lags[e.id] = e.lag
 	}
 	for _, e := range indexEntries() {
+		lags[e.id] = e.lag
+	}
+	for _, e := range expectationEntries() {
 		lags[e.id] = e.lag
 	}
 	return lags

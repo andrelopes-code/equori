@@ -51,6 +51,34 @@ describe("Rate converter", () => {
     expect(await result(catalogEn["calc.rates.ofIndex"])).toBe("11.0132%");
   });
 
+  it("follows the path the market expects when the index has one (ADR 026 E9)", async () => {
+    const cdi = {
+      ...cdiFixture(),
+      // From the day after the last rate the path stays at 10% a year.
+      expectations: {
+        survey_date: "2026-10-16",
+        items: [{ date: "2026-10-17", rate: "0.1" }],
+      },
+    };
+    await open("percent=100&index=cdi", calculatorApiRoutes([cdi]));
+    expect(await result(catalogEn["calc.rates.ofIndex"])).toBe("10%");
+  });
+
+  it("keeps the current rate when chosen over the expected path", async () => {
+    const cdi = {
+      ...cdiFixture(),
+      expectations: {
+        survey_date: "2026-10-16",
+        items: [{ date: "2026-10-17", rate: "0.1" }],
+      },
+    };
+    await open(
+      "percent=110&index=cdi&basis=current",
+      calculatorApiRoutes([cdi]),
+    );
+    expect(await result(catalogEn["calc.rates.ofIndex"])).toBe("12.1666%");
+  });
+
   it("gives the annual rate of a daily index plus a spread", async () => {
     await open("spread=2&index=cdi", calculatorApiRoutes([cdiFixture()]));
     // 1.0004^261 × 1.02 − 1: a spread compounds with an index of business days.

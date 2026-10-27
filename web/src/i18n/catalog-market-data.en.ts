@@ -28,5 +28,6 @@ export const marketDataEn = {
   "marketData.feed.eu_estr": "€STR (European Central Bank)",
   "marketData.feed.ea_hicp": "Euro area HICP (Eurostat)",
   "marketData.feed.us_sofr": "SOFR (Federal Reserve Bank of New York)",
+  "marketData.feed.br_focus": "Focus market survey (Banco Central do Brasil)",
   "marketData.feed.us_cpi": "CPI-U (Bureau of Labor Statistics)",
 } as const;

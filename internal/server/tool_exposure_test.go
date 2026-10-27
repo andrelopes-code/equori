@@ -99,6 +99,7 @@ var exposure = map[string]string{
 	"listHolidays":                     "get_market_data",
 	"listIndexes":                      "get_market_data",
 	"listIndexRates":                   "get_market_data",
+	"listIndexExpectations":            "get_market_data",
 	"listMarketDataFeeds":              "-instance",
 	"setMarketDataFeed":                "-instance",
 	"refreshMarketData":                "-instance",

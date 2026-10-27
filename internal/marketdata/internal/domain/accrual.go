@@ -31,6 +31,14 @@ type IndexSummary struct {
 	ID          string
 	Period      string
 	First, Last time.Time
+	// Expected is set when an enabled expectation source stored points for the index (ADR 026).
+	Expected bool
+}
+
+// IndexExpectations is the latest survey of an index (ADR 026 E5).
+type IndexExpectations struct {
+	SurveyDate time.Time
+	Points     []IndexRate
 }
 
 // DatedPrice is the price of one unit on a date, a decimal with 12 decimals.

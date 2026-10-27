@@ -22,6 +22,7 @@ type Service interface {
 	PutTerms(ctx context.Context, code string, t domain.Terms) (domain.Terms, error)
 	Indexes(ctx context.Context) ([]domain.IndexSummary, error)
 	IndexRates(ctx context.Context, id string, from, to time.Time) ([]domain.IndexRate, error)
+	Expectations(ctx context.Context, id string) (domain.IndexExpectations, error)
 }
 
 // Holiday is a non-business day of a calendar.

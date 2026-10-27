@@ -21,12 +21,13 @@ An admin enables and disables each feed under Settings, "Market data" (ADR 025).
 | `EQUORI_FEED_EA_HICP_URL` | `https://ec.europa.eu` | Base URL of the Eurostat dissemination API: dataset `prc_hicp_minr`, the euro area's all-items HICP (`geo=EA`, `coicop18=TOTAL`, index 2025 = 100). Each month is stored as its level over the month before, minus 1, on its first day. |
 | `EQUORI_FEED_US_SOFR_URL` | `https://markets.newyorkfed.org` | Base URL of the Markets Data API of the Federal Reserve Bank of New York: SOFR, percent a year on an actual/360 basis, stored as `eu_estr` is. |
 | `EQUORI_FEED_US_CPI_URL` | `https://api.bls.gov` | Base URL of the public API of the Bureau of Labor Statistics, version 1: series `CUUR0000SA0` (CPI-U, all items, U.S. city average, not seasonally adjusted), stored as `ea_hicp` is. Version 1 takes no key and answers 25 requests a day from one address; a first fetch of 20 years takes five. |
+| `EQUORI_FEED_BR_FOCUS_URL` | `https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata` | Base URL of the Expectativas API of the Banco Central do Brasil: the Focus survey's medians of the Selic target at each year end, stored as the expected CDI (ADR 026). `br_focus` is enabled only on the settings screen. |
 | `EQUORI_FEED_B3_COTAHIST_URL` | `https://bvmf.bmfbovespa.com.br/InstDados/SerHist` | Base URL of the B3 daily historical quotes files. |
 
 A network allowlist for the container adds `olinda.bcb.gov.br` and `bvmf.bmfbovespa.com.br`
 for the enabled feeds (`www.ecb.europa.eu` for `ecb`; `api.bcb.gov.br` for `br_cdi` and
 `br_ipca`; `data-api.ecb.europa.eu` for `eu_estr`; `ec.europa.eu` for `ea_hicp`;
-`markets.newyorkfed.org` for `us_sofr`; `api.bls.gov` for `us_cpi`).
+`markets.newyorkfed.org` for `us_sofr`; `api.bls.gov` for `us_cpi`; `olinda.bcb.gov.br` for `br_focus`).
 
 ## 2. Sources
 

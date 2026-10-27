@@ -27,6 +27,8 @@ export interface RateSource {
   monthly: number | null;
   annual: number | null;
   noIndexes: boolean;
+  // The horizon of the expected basis, in months (ADR 026 E8).
+  months: number;
 }
 
 // A rate typed with its period, or an annual rate taken from a daily index (design §4, "Index
@@ -34,6 +36,7 @@ export interface RateSource {
 export function useRateSource(
   search: Record<string, string>,
   rateKey: string,
+  months = 12,
 ): RateSource {
   const keys = {
     rate: rateKey,
@@ -49,8 +52,13 @@ export function useRateSource(
   const indexes = useIndexes();
   const daily = indexes.filter((i) => i.period === "day");
   const index = daily.find((i) => i.id === search[keys.index]);
-  const floating = readFloating(search, floatingKeys, index?.id ?? "");
-  const fromIndex = useIndexRate(index, floating);
+  const floating = readFloating(
+    search,
+    floatingKeys,
+    index?.id ?? "",
+    index?.expected ?? false,
+  );
+  const fromIndex = useIndexRate(index, floating, months);
   if (index !== undefined) {
     const annual = fromIndex?.rate ?? null;
     return {
@@ -65,6 +73,7 @@ export function useRateSource(
       monthly: annual === null ? null : annualToMonthly(annual),
       annual,
       noIndexes: indexes.length === 0,
+      months,
     };
   }
   const period: RatePeriod = search[keys.period] === "month" ? "month" : "year";
@@ -83,5 +92,6 @@ export function useRateSource(
     monthly,
     annual: monthly === null ? null : monthlyToAnnual(monthly),
     noIndexes: indexes.length === 0,
+    months,
   };
 }

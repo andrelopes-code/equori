@@ -126,13 +126,16 @@ func (e InstrumentType) Valid() bool {
 
 // Defines values for MarketDataFeedKind.
 const (
-	MarketDataFeedKindIndex MarketDataFeedKind = "index"
-	MarketDataFeedKindPrice MarketDataFeedKind = "price"
+	MarketDataFeedKindExpectation MarketDataFeedKind = "expectation"
+	MarketDataFeedKindIndex       MarketDataFeedKind = "index"
+	MarketDataFeedKindPrice       MarketDataFeedKind = "price"
 )
 
 // Valid indicates whether the value is a known member of the MarketDataFeedKind enum.
 func (e MarketDataFeedKind) Valid() bool {
 	switch e {
+	case MarketDataFeedKindExpectation:
+		return true
 	case MarketDataFeedKindIndex:
 		return true
 	case MarketDataFeedKindPrice:
@@ -229,9 +232,11 @@ type HolidayList struct {
 
 // Index defines model for Index.
 type Index struct {
-	First openapi_types.Date `json:"first"`
-	Id    string             `json:"id"`
-	Last  openapi_types.Date `json:"last"`
+	// Expected An enabled expectation source stored points for the index (ADR 026 E5).
+	Expected bool               `json:"expected"`
+	First    openapi_types.Date `json:"first"`
+	Id       string             `json:"id"`
+	Last     openapi_types.Date `json:"last"`
 
 	// Period The span one rate covers.
 	Period IndexPeriod `json:"period"`
@@ -239,6 +244,22 @@ type Index struct {
 
 // IndexPeriod The span one rate covers.
 type IndexPeriod string
+
+// IndexExpectation defines model for IndexExpectation.
+type IndexExpectation struct {
+	Date openapi_types.Date `json:"date"`
+
+	// Rate Expected annual rate of the index on the date, an exact decimal fraction (0.1315 is 13.15%).
+	//
+	// Example: 0.131500000000
+	Rate string `json:"rate"`
+}
+
+// IndexExpectations defines model for IndexExpectations.
+type IndexExpectations struct {
+	Items      []IndexExpectation `json:"items"`
+	SurveyDate openapi_types.Date `json:"survey_date"`
+}
 
 // IndexList defines model for IndexList.
 type IndexList struct {
@@ -462,6 +483,9 @@ type ServerInterface interface {
 	// ListIndexes The enabled indexes with at least one stored rate, those of the caller's region first (ADR 025 F3).
 	// (GET /indexes)
 	ListIndexes(w http.ResponseWriter, r *http.Request)
+	// ListIndexExpectations The latest survey of the expected annual rate of an index, oldest point first (ADR 026 E5).
+	// (GET /indexes/{id}/expectations)
+	ListIndexExpectations(w http.ResponseWriter, r *http.Request, id string)
 	// ListIndexRates The stored rates of an enabled index in [from, to], at most 7,320 days, oldest first.
 	// (GET /indexes/{id}/rates)
 	ListIndexRates(w http.ResponseWriter, r *http.Request, id string, params ListIndexRatesParams)
@@ -570,6 +594,32 @@ func (siw *ServerInterfaceWrapper) ListIndexes(w http.ResponseWriter, r *http.Re
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListIndexes(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListIndexExpectations operation middleware
+func (siw *ServerInterfaceWrapper) ListIndexExpectations(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListIndexExpectations(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1037,6 +1087,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/calendars/{name}/holidays", wrapper.ListHolidays)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/indexes", wrapper.ListIndexes)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/indexes/{id}/rates", wrapper.ListIndexRates)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/indexes/{id}/expectations", wrapper.ListIndexExpectations)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/market-data/feeds", wrapper.ListMarketDataFeeds)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/market-data/feeds/{id}", wrapper.SetMarketDataFeed)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/market-data/refresh", wrapper.RefreshMarketData)
@@ -1219,6 +1270,58 @@ func (response ListIndexes422ApplicationProblemPlusJSONResponse) VisitListIndexe
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListIndexExpectationsRequestObject struct {
+	Id string `json:"id"`
+}
+
+type ListIndexExpectationsResponseObject interface {
+	VisitListIndexExpectationsResponse(w http.ResponseWriter) error
+}
+
+type ListIndexExpectations200JSONResponse IndexExpectations
+
+func (response ListIndexExpectations200JSONResponse) VisitListIndexExpectationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListIndexExpectations401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListIndexExpectations401ApplicationProblemPlusJSONResponse) VisitListIndexExpectationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListIndexExpectations404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListIndexExpectations404ApplicationProblemPlusJSONResponse) VisitListIndexExpectationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -2045,6 +2148,9 @@ type StrictServerInterface interface {
 	// ListIndexes The enabled indexes with at least one stored rate, those of the caller's region first (ADR 025 F3).
 	// (GET /indexes)
 	ListIndexes(ctx context.Context, request ListIndexesRequestObject) (ListIndexesResponseObject, error)
+	// ListIndexExpectations The latest survey of the expected annual rate of an index, oldest point first (ADR 026 E5).
+	// (GET /indexes/{id}/expectations)
+	ListIndexExpectations(ctx context.Context, request ListIndexExpectationsRequestObject) (ListIndexExpectationsResponseObject, error)
 	// ListIndexRates The stored rates of an enabled index in [from, to], at most 7,320 days, oldest first.
 	// (GET /indexes/{id}/rates)
 	ListIndexRates(ctx context.Context, request ListIndexRatesRequestObject) (ListIndexRatesResponseObject, error)
@@ -2190,6 +2296,32 @@ func (sh *strictHandler) ListIndexes(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListIndexesResponseObject); ok {
 		if err := validResponse.VisitListIndexesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListIndexExpectations operation middleware
+func (sh *strictHandler) ListIndexExpectations(w http.ResponseWriter, r *http.Request, id string) {
+	var request ListIndexExpectationsRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListIndexExpectations(ctx, request.(ListIndexExpectationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListIndexExpectations")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListIndexExpectationsResponseObject); ok {
+		if err := validResponse.VisitListIndexExpectationsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

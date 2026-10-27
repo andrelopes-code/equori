@@ -13,7 +13,7 @@ import (
 type getMarketDataView string
 
 func (getMarketDataView) Values() []string {
-	return []string{"instruments", "instrument", "prices", "calendars", "holidays", "indexes", "index_rates"}
+	return []string{"instruments", "instrument", "prices", "calendars", "holidays", "indexes", "index_rates", "index_expectations"}
 }
 
 type getMarketDataIn struct {
@@ -22,7 +22,7 @@ type getMarketDataIn struct {
 	Quote    string            `json:"quote,omitzero" jsonschema:"for prices: code of the currency the price is quoted in"`
 	From     tool.Date         `json:"from,omitzero" jsonschema:"for prices and index_rates: first date"`
 	To       tool.Date         `json:"to,omitzero" jsonschema:"for prices and index_rates: last date; at most 366 days after from for prices, 7320 for index_rates"`
-	Index    string            `json:"index,omitzero" jsonschema:"for index_rates: index id from the indexes view"`
+	Index    string            `json:"index,omitzero" jsonschema:"for index_rates and index_expectations: index id from the indexes view"`
 	Calendar string            `json:"calendar,omitzero" jsonschema:"for holidays: calendar identifier from the calendars view"`
 	Year     int               `json:"year,omitzero" jsonschema:"for holidays: calendar year"`
 }
@@ -64,10 +64,16 @@ type holidayView struct {
 }
 
 type indexView struct {
-	ID     string    `json:"id"`
-	Period string    `json:"period"`
-	First  tool.Date `json:"first"`
-	Last   tool.Date `json:"last"`
+	ID       string    `json:"id"`
+	Period   string    `json:"period"`
+	First    tool.Date `json:"first"`
+	Last     tool.Date `json:"last"`
+	Expected bool      `json:"expected"`
+}
+
+type indexExpectationsView struct {
+	SurveyDate tool.Date       `json:"survey_date"`
+	Points     []indexRateView `json:"points"`
 }
 
 type indexRateView struct {
@@ -83,6 +89,8 @@ type getMarketDataOut struct {
 	Holidays    []holidayView    `json:"holidays,omitzero"`
 	Indexes     []indexView      `json:"indexes,omitzero"`
 	IndexRates  []indexRateView  `json:"index_rates,omitzero"`
+	// IndexExpectations holds annual rates expected on each date by the latest survey.
+	IndexExpectations indexExpectationsView `json:"index_expectations,omitzero"`
 }
 
 func toInstrumentView(in domain.Instrument) instrumentView {
@@ -93,7 +101,7 @@ func getMarketData(svc Service, cals Calendars) tool.Tool {
 	return tool.New(tool.Spec{
 		Name: "get_market_data",
 		Description: "Returns market data of the instance: instruments with their type and scale, one instrument with its fixed income terms, prices of an instrument in a period, business-day calendars, a calendar's holidays in a year, " +
-			"the stored economic indexes, or the rates of one index in a period. " +
+			"the stored economic indexes, the rates of one index in a period, or the annual rates a market survey expects for one index (where the indexes view says expected). " +
 			"Use it for prices, securities, holidays and index rates. " +
 			"Do not use it for the user's holdings: get_portfolio does.",
 		Effect:     tool.ReadOnly,
@@ -114,6 +122,8 @@ func getMarketData(svc Service, cals Calendars) tool.Tool {
 			err = required(name, fields, "calendar", "year")
 		case "index_rates":
 			err = required(name, fields, "index", "from", "to")
+		case "index_expectations":
+			err = required(name, fields, "index")
 		default:
 			err = required(name, fields)
 		}
@@ -157,7 +167,7 @@ func getMarketData(svc Service, cals Calendars) tool.Tool {
 			rows, err := svc.Indexes(ctx)
 			out := getMarketDataOut{Indexes: []indexView{}}
 			for _, x := range rows {
-				out.Indexes = append(out.Indexes, indexView{ID: x.ID, Period: x.Period, First: tool.DateOf(x.First), Last: tool.DateOf(x.Last)})
+				out.Indexes = append(out.Indexes, indexView{ID: x.ID, Period: x.Period, First: tool.DateOf(x.First), Last: tool.DateOf(x.Last), Expected: x.Expected})
 			}
 			return out, err
 		case "index_rates":
@@ -167,6 +177,16 @@ func getMarketData(svc Service, cals Calendars) tool.Tool {
 				out.IndexRates = append(out.IndexRates, indexRateView{Date: tool.DateOf(r.Date), Rate: r.Rate})
 			}
 			return out, err
+		case "index_expectations":
+			x, err := svc.Expectations(ctx, in.Index)
+			if err != nil {
+				return getMarketDataOut{}, err
+			}
+			v := indexExpectationsView{SurveyDate: tool.DateOf(x.SurveyDate), Points: []indexRateView{}}
+			for _, p := range x.Points {
+				v.Points = append(v.Points, indexRateView{Date: tool.DateOf(p.Date), Rate: p.Rate})
+			}
+			return getMarketDataOut{IndexExpectations: v}, nil
 		case "calendars":
 			out := getMarketDataOut{Calendars: []calendarView{}}
 			for _, c := range cals.List() {

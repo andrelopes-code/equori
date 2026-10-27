@@ -68,6 +68,11 @@ export const calculatorsEn = {
   "calc.floating.basis": "Rate of the index",
   "calc.floating.basis.current": "Current, kept for a year",
   "calc.floating.basis.trailing": "Last 12 months",
+  "calc.origin.daily.expected":
+    "{percent} of {index} along the path the market survey of {date} expects, over {months} months",
+  "calc.origin.spread.expected":
+    "{index} + {spread} a year along the path the market survey of {date} expects, over {months} months",
+  "calc.floating.basis.expected": "Expected by the market",
   "calc.floating.form": "How the rate follows the index",
   "calc.floating.percent": "Percent of the index",
   "calc.floating.spread": "Index + spread",

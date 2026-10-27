@@ -75,3 +75,55 @@ export function spreadOverDaily(
     ? year.reduce((p, r) => p * (1 + r.rate + spread / 360), 1) - 1
     : (1 + accumulated(year)) * (1 + spread) - 1;
 }
+
+const dayMs = 86_400_000;
+const monthDays = 365.25 / 12;
+
+// The expected annual rate of the index at a time (ADR 026 E6): linear from the current rate on
+// the last stored date to each point, then the last point's rate.
+function pathRate(
+  start: number,
+  current: number,
+  points: readonly IndexRate[],
+  at: number,
+): number {
+  let from = { t: start, rate: current };
+  for (const p of points) {
+    const t = Date.parse(`${p.date}T00:00:00Z`);
+    if (t <= start) continue;
+    if (at <= t)
+      return from.rate + ((p.rate - from.rate) * (at - from.t)) / (t - from.t);
+    from = { t, rate: p.rate };
+  }
+  return from.rate;
+}
+
+// The constant annual rate equivalent to the expected path over months (ADR 026 E7). Each month
+// takes the path's rate at its middle as the rate of each stored day, d = (1 + rate)^(1/n) − 1
+// with n the stored days of the trailing year; perDay(d, n) turns d into the factor of a stored
+// day at the percent or the spread of the contract. Null when the stored rates cover less than a
+// year.
+export function expectedOverDaily(
+  rates: readonly IndexRate[],
+  points: readonly IndexRate[],
+  months: number,
+  perDay: (d: number, n: number) => number,
+): number | null {
+  const year = trailingYear(rates);
+  const last = rates.at(-1);
+  if (year === null || last === undefined || months < 1) return null;
+  const n = year.length;
+  const current = (1 + last.rate) ** n - 1;
+  const start = Date.parse(`${last.date}T00:00:00Z`);
+  let factor = 1;
+  for (let k = 0; k < months; k++) {
+    const rate = pathRate(
+      start,
+      current,
+      points,
+      start + (k + 0.5) * monthDays * dayMs,
+    );
+    factor *= perDay((1 + rate) ** (1 / n) - 1, n) ** (n / 12);
+  }
+  return factor ** (12 / months) - 1;
+}

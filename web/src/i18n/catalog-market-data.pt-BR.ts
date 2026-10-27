@@ -30,5 +30,7 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "marketData.feed.eu_estr": "€STR (Banco Central Europeu)",
   "marketData.feed.ea_hicp": "HICP da zona do euro (Eurostat)",
   "marketData.feed.us_sofr": "SOFR (Federal Reserve Bank of New York)",
+  "marketData.feed.br_focus":
+    "Pesquisa Focus de mercado (Banco Central do Brasil)",
   "marketData.feed.us_cpi": "CPI-U (Bureau of Labor Statistics)",
 };

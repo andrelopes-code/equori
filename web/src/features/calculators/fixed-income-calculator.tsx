@@ -43,7 +43,14 @@ export function FixedIncomeCalculator() {
   const money = useCalculatorMoney();
   const [search, set] = useCalculatorSearch();
   const today = useToday();
-  const rate = useRateSource(search, "rate");
+  const daysUnit = readUnit(search.daysUnit, dayUnits);
+  const days = readDays(search.days, daysUnit, today, maxDays);
+  // ADR 026 E8: the days held, in months rounded up.
+  const rate = useRateSource(
+    search,
+    "rate",
+    days === null ? 12 : Math.max(1, Math.ceil((days * 12) / 365)),
+  );
   const rules = fixedIncomeRules(profile.region);
   const method = (
     <CalculatorMethod
@@ -73,8 +80,6 @@ export function FixedIncomeCalculator() {
     );
 
   const amount = readMinor(search.amount);
-  const daysUnit = readUnit(search.daysUnit, dayUnits);
-  const days = readDays(search.days, daysUnit, today, maxDays);
   const exempt = search.kind === "exempt";
   const typedTax = readRate(search.taxRate);
   // basis points of the tax on the yield, from the region's rule or the person's input.

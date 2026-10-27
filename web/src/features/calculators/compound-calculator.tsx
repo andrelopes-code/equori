@@ -101,8 +101,15 @@ export function CompoundCalculator() {
   const daily = indexes.filter((i) => i.period === "day");
   const monthly = indexes.filter((i) => i.period === "month");
   const index = daily.find((i) => i.id === search.index);
-  const floating = readFloating(search, floatingKeys, index?.id ?? "");
-  const fromIndex = useIndexRate(index, floating);
+  const floating = readFloating(
+    search,
+    floatingKeys,
+    index?.id ?? "",
+    index?.expected ?? false,
+  );
+  const monthsUnit = readUnit(search.monthsUnit, termUnits);
+  const months = readMonths(search.months, monthsUnit, 1, maxMonths);
+  const fromIndex = useIndexRate(index, floating, months ?? 12);
   const inflationIndex = monthly.find((i) => i.id === search.inflationIndex);
   const fromInflationIndex = useIndexRate(inflationIndex);
 
@@ -121,8 +128,6 @@ export function CompoundCalculator() {
     inflationIndex === undefined
       ? readRate(search.inflation)
       : (fromInflationIndex?.rate ?? null);
-  const monthsUnit = readUnit(search.monthsUnit, termUnits);
-  const months = readMonths(search.months, monthsUnit, 1, maxMonths);
   const delayUnit = readUnit(search.delayUnit, termUnits);
   const delay =
     search.delay === undefined
@@ -405,6 +410,7 @@ export function CompoundCalculator() {
       {index !== undefined && (
         <FloatingFields
           indexId={index.id}
+          expected={index.expected}
           floating={floating}
           keys={floatingKeys}
           percentLabel={t("calc.compound.percent")}
@@ -444,6 +450,7 @@ export function CompoundCalculator() {
                 index.id,
                 { ...floating, value: floating.value },
                 fromIndex.to,
+                months ?? 12,
               )}
             />
           )}

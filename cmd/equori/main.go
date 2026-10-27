@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
+	"slices"
 	"strings"
 	"syscall"
 	"time"
@@ -301,7 +302,7 @@ func aggregatorURLs(getenv func(string) string) map[string]string {
 // feedURLs reads EQUORI_FEED_<ID>_URL for each price feed the marketdata module offers.
 func feedURLs(getenv func(string) string) map[string]string {
 	urls := make(map[string]string)
-	for _, id := range append(marketdata.SourceIDs(), marketdata.IndexSourceIDs()...) {
+	for _, id := range slices.Concat(marketdata.SourceIDs(), marketdata.IndexSourceIDs(), marketdata.ExpectationSourceIDs()) {
 		if v := getenv("EQUORI_FEED_" + strings.ToUpper(id) + "_URL"); v != "" {
 			urls[id] = v
 		}

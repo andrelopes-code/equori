@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/adapter/postgres"
+	"github.com/andrelopes-code/equori/internal/marketdata/internal/expectation"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/index"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
@@ -24,6 +25,8 @@ type FeedConfig struct {
 	Sources []feed.Source
 	// Indexes are the index sources (investments design 4.2).
 	Indexes []index.Source
+	// Expectations are the expectation sources (ADR 026).
+	Expectations []expectation.Source
 	// Seed names the sources enabled while no setting is stored: EQUORI_PRICE_FEEDS and
 	// EQUORI_INDEX_FEEDS (ADR 025 F2).
 	Seed   []string
@@ -77,6 +80,15 @@ func (m *Module) TickFeeds(ctx context.Context) {
 	for _, src := range m.feeds.Indexes {
 		if on[src.ID()] {
 			err := m.tickIndex(ctx, src)
+			if err != nil {
+				m.logFeed(ctx, err, "source", src.ID())
+			}
+			m.ran(src.ID(), err)
+		}
+	}
+	for _, src := range m.feeds.Expectations {
+		if on[src.ID()] {
+			err := m.tickExpectation(ctx, src)
 			if err != nil {
 				m.logFeed(ctx, err, "source", src.ID())
 			}

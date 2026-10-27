@@ -122,7 +122,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		return nil, err
 	}
 	marketdataModule := marketdata.New(pool).WithFeeds(marketdata.FeedConfig{
-		Sources: sources, Indexes: indexSources, Seed: slices.Concat(cfg.PriceFeeds, cfg.IndexFeeds),
+		Sources: sources, Indexes: indexSources, Expectations: marketdata.NewExpectationSources(cfg.FeedURLs, feedClient), Seed: slices.Concat(cfg.PriceFeeds, cfg.IndexFeeds),
 		Client: feedClient, Clock: clk, Log: log,
 	})
 	marketdataModule.WithProfiles(identityModule).WithAdmins(identityModule)

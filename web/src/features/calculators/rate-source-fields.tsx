@@ -50,6 +50,7 @@ export function RateSourceFields({
       {index !== undefined && (
         <FloatingFields
           indexId={index.id}
+          expected={index.expected}
           floating={floating}
           keys={floatingKeys}
           percentLabel={t("calc.compound.percent")}
@@ -83,6 +84,7 @@ export function RateSourceFields({
                 index.id,
                 { ...floating, value: floating.value },
                 fromIndex.to,
+                source.months,
               )}
             />
           )}
