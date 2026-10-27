@@ -56,11 +56,16 @@ function turnStream() {
     },
   });
   return {
-    response: () =>
-      new Response(body, {
+    // A browser ends the body when the request's signal aborts.
+    response: (signal?: AbortSignal) => {
+      signal?.addEventListener("abort", () => {
+        controller?.error(new DOMException("aborted", "AbortError"));
+      });
+      return new Response(body, {
         status: 200,
         headers: { "Content-Type": "text/event-stream" },
-      }),
+      });
+    },
     write: (frame: string) => {
       controller?.enqueue(encoder.encode(frame));
     },
@@ -552,7 +557,7 @@ describe("AssistantPanel", () => {
     setup({
       "POST /api/v1/assistant/turns": (req) => {
         signal = req.signal;
-        return stream.response();
+        return stream.response(req.signal);
       },
       "GET /api/v1/assistant/conversations/c1": () =>
         json(200, unanswered("canceled")),
@@ -569,9 +574,51 @@ describe("AssistantPanel", () => {
       }),
     );
     expect(signal?.aborted).toBe(true);
+    const thread = document.querySelector<HTMLElement>(
+      '[data-own="assistant-panel"]',
+    );
+    if (thread === null) throw new Error("the panel is not rendered");
     expect(
-      await screen.findByText(catalogEn["assistant.canceled"]),
+      await within(thread).findByText(catalogEn["assistant.canceled"]),
     ).toBeInTheDocument();
+  });
+
+  // Review of phase 2: the refetch after Stop can arrive before the server stores the canceled
+  // answer; the question still shows the stop.
+  it("shows the stop when the refetch precedes the stored stop", async () => {
+    const stream = turnStream();
+    const d = detail("");
+    setup({
+      "POST /api/v1/assistant/turns": (req) => stream.response(req.signal),
+      "GET /api/v1/assistant/conversations/c1": () =>
+        json(200, { ...d, messages: [d.messages[0]] }),
+    });
+    await ask("How much?");
+    act(() => {
+      stream.write(
+        'event: turn\ndata: {"conversation_id":"c1","message_id":"m1"}\n\n',
+      );
+    });
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["assistant.composer.stop"],
+      }),
+    );
+    const thread = document.querySelector<HTMLElement>(
+      '[data-own="assistant-panel"]',
+    );
+    if (thread === null) throw new Error("the panel is not rendered");
+    expect(
+      await within(thread).findByRole("button", {
+        name: catalogEn["assistant.retry"],
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(thread).getByText(catalogEn["assistant.canceled"]),
+    ).toBeInTheDocument();
+    expect(
+      within(thread).queryByText(catalogEn["assistant.no_answer"]),
+    ).toBeNull();
   });
 
   it("keeps the text of the field on Enter during a turn (P4)", async () => {

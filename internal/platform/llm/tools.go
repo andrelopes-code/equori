@@ -142,6 +142,12 @@ func runTools(ctx context.Context, handlers map[string]ToolHandler, calls []Tool
 		wg.Go(func() {
 			sem <- struct{}{}
 			defer func() { <-sem }()
+			// A panic here has no request goroutine above it to recover it.
+			defer func() {
+				if p := recover(); p != nil {
+					errs[i] = fmt.Errorf("run tool %s: panic: %v", c.Name, p)
+				}
+			}()
 			r, err := runTool(ctx, handlers, c)
 			results[i], errs[i] = Part{ToolResult: &r}, err
 		})

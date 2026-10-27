@@ -17,6 +17,9 @@ import (
 
 const name = "openai"
 
+// maxToolCalls bounds the tool call index a streamed response may name.
+const maxToolCalls = 128
+
 type Provider struct {
 	baseURL string
 	apiKey  string
@@ -82,6 +85,10 @@ func (p *Provider) Stream(ctx context.Context, model string, req llm.Request, on
 				text.WriteString(c.Delta.Content)
 			}
 			for _, d := range c.Delta.ToolCalls {
+				// The index comes from the server; a response never holds this many calls.
+				if d.Index < 0 || d.Index >= maxToolCalls {
+					return fmt.Errorf("openai %s: tool call index %d: %w", model, d.Index, llm.ErrTransient)
+				}
 				for len(calls) <= d.Index {
 					calls = append(calls, toolCall{Type: "function"})
 				}

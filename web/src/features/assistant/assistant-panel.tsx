@@ -305,7 +305,7 @@ export function AssistantPanel({
                             id: "unanswered",
                             role: "assistant",
                             content: "",
-                            outcome: "failed",
+                            outcome: turn.stopped ? "canceled" : "failed",
                             created_at: last.created_at,
                             proposals: [],
                           }}

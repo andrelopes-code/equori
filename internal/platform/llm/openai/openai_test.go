@@ -328,6 +328,17 @@ func TestStream(t *testing.T) {
 			},
 		},
 		{
+			// Review of phase 2: the index comes from the server.
+			name: "tool call index out of range",
+			body: frames(`{"choices":[{"index":0,"delta":{"tool_calls":[{"index":-1,"id":"c0","function":{"name":"x","arguments":"{}"}}]}}]}`,
+				`{"choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]}`, "[DONE]"),
+			check: func(t *testing.T, _ llm.Response, _ []string, err error) {
+				if !errors.Is(err, llm.ErrTransient) {
+					t.Fatalf("err = %v, want ErrTransient", err)
+				}
+			},
+		},
+		{
 			name: "cut stream",
 			body: frames(`{"choices":[{"index":0,"delta":{"content":"A"}}]}`),
 			check: func(t *testing.T, _ llm.Response, _ []string, err error) {

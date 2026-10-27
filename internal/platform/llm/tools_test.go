@@ -464,3 +464,17 @@ func TestRunConcurrentReads(t *testing.T) {
 		}
 	})
 }
+
+// Review of phase 2: a read handler that panics on its own goroutine ends the run with an error
+// instead of the process.
+func TestRunConcurrentReadPanics(t *testing.T) {
+	t.Parallel()
+	a := llmtest.New("a", llmtest.Step{Model: "m1", Response: calls(llm.ToolCall{ID: "r1", Name: "r1", Args: json.RawMessage(`{}`)})})
+	f := newFixture(a)
+	boom := func(context.Context, json.RawMessage) (json.RawMessage, error) { panic("boom") }
+	_, err := llm.Run(context.Background(), f.router.Client(target("a/m1")), prompt(), map[string]llm.ToolHandler{"r1": boom},
+		llm.LoopOptions{MaxSteps: 2, Concurrent: func(string) bool { return true }})
+	if err == nil || !strings.Contains(err.Error(), "boom") {
+		t.Fatalf("err = %v, want the panic as an error", err)
+	}
+}

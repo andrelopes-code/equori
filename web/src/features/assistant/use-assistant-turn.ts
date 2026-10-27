@@ -28,6 +28,8 @@ export interface AssistantTurn {
   error: AssistantProblem | null;
   send: (text: string) => void;
   stop: () => void;
+  // The reader stopped the last turn; the stored stop may arrive after the refetch (P3).
+  stopped: boolean;
   open: (id: string) => void;
   reset: () => void;
 }
@@ -37,6 +39,7 @@ export function useAssistantTurn(page: string): AssistantTurn {
   const [conversationId, setConversationId] = useState(readOpenConversation);
   const [pending, setPending] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [stopped, setStopped] = useState(false);
   const [steps, setSteps] = useState<string[]>([]);
   const [activity, setActivity] = useState<Record<string, string[]>>({});
   const [error, setError] = useState<AssistantProblem | null>(null);
@@ -58,10 +61,12 @@ export function useAssistantTurn(page: string): AssistantTurn {
     setPending(null);
     setDraft("");
     setSteps([]);
+    setStopped(false);
     setError(null);
   }, []);
 
   const stop = useCallback(() => {
+    setStopped(true);
     abort.current?.abort();
   }, []);
 
@@ -82,6 +87,7 @@ export function useAssistantTurn(page: string): AssistantTurn {
       setPending(text);
       setDraft("");
       setSteps([]);
+      setStopped(false);
       setError(null);
       let userMessageId = "";
       const turnSteps: string[] = [];
@@ -172,6 +178,7 @@ export function useAssistantTurn(page: string): AssistantTurn {
     error,
     send,
     stop,
+    stopped,
     open,
     reset,
   };
