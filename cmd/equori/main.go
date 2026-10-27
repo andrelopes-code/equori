@@ -25,6 +25,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/llm"
 	"github.com/andrelopes-code/equori/internal/platform/llm/aistudio"
+	"github.com/andrelopes-code/equori/internal/platform/pgcluster"
 	"github.com/andrelopes-code/equori/internal/platform/postgres"
 	"github.com/andrelopes-code/equori/internal/platform/secret"
 	"github.com/andrelopes-code/equori/internal/platform/winsvc"
@@ -328,6 +329,12 @@ func setup() (config.Config, *slog.Logger, error) {
 	cfg, err := config.Load(getenv)
 	if err != nil {
 		return config.Config{}, nil, err
+	}
+	if cfg.Managed() {
+		// W-M3: the first command creates the data directory private, before secret.key lands in it.
+		if err := pgcluster.PrepareDataDir(cfg.DataDir); err != nil {
+			return config.Config{}, nil, err
+		}
 	}
 	if cfg.Managed() && cfg.SecretKey == "" {
 		if cfg.SecretKey, err = secret.LoadOrCreateKey(filepath.Join(cfg.DataDir, "secret.key")); err != nil {

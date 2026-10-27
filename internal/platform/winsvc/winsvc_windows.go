@@ -31,10 +31,13 @@ func (h handler) Execute(_ []string, req <-chan svc.ChangeRequest, status chan<-
 	done := make(chan error, 1)
 	go func() { done <- h.run(ctx) }()
 	status <- svc.Status{State: svc.Running, Accepts: svc.AcceptStop | svc.AcceptPreShutdown}
+	stopping := false
 	for {
 		select {
 		case err := <-done:
-			if err != nil {
+			// A stop that was asked for is no failure, or the recovery action would start the
+			// service again in the middle of an upgrade.
+			if err != nil && !stopping {
 				return true, 1
 			}
 			return false, 0
@@ -44,6 +47,7 @@ func (h handler) Execute(_ []string, req <-chan svc.ChangeRequest, status chan<-
 				status <- r.CurrentStatus
 			case svc.Stop, svc.PreShutdown:
 				status <- svc.Status{State: svc.StopPending}
+				stopping = true
 				cancel()
 			}
 		}
