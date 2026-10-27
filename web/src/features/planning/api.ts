@@ -24,6 +24,7 @@ export const planningKeys = {
     ["planning", "budget-progress", budgetID, month] as const,
   goals: ["planning", "goals"] as const,
   committed: (month: string) => ["planning", "committed", month] as const,
+  plan: (month: string) => ["planning", "budget-plan", month] as const,
 };
 
 type OccurrenceFilter = Pick<
@@ -246,6 +247,25 @@ export function committedQuery(api: Client<paths>, month: string) {
     queryKey: planningKeys.committed(month),
     queryFn: async () =>
       unwrap(await api.GET("/commitments", { params: { query: { month } } })),
+  });
+}
+
+export function budgetPlanQuery(api: Client<paths>, month: string) {
+  return queryOptions({
+    queryKey: planningKeys.plan(month),
+    queryFn: async () =>
+      unwrap(await api.GET("/budget-plan", { params: { query: { month } } })),
+  });
+}
+
+// Saves the reference choice and the changed amounts of a month in one transaction (A130).
+export function useSaveBudgetPlan(month: string) {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (body: components["schemas"]["BudgetPlanInput"]) =>
+      unwrap(
+        await api.PUT("/budget-plan", { params: { query: { month } }, body }),
+      ),
   });
 }
 
