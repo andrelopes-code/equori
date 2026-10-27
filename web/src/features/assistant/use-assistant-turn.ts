@@ -1,11 +1,15 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import type { components } from "@/api/schema.gen";
 import { assistantKeys, sendMessage } from "@/features/assistant/api";
 import type {
   AssistantEvent,
+  AssistantMessage,
   AssistantProblem,
 } from "@/features/assistant/sse";
+
+type ConversationDetail = components["schemas"]["AssistantConversationDetail"];
 
 export interface AssistantTurn {
   conversationId: string | undefined;
@@ -59,13 +63,44 @@ export function useAssistantTurn(page: string): AssistantTurn {
       setPending(text);
       setStep(null);
       setError(null);
+      let userMessageId = "";
       const onEvent = (event: AssistantEvent) => {
         if (event.type === "turn") {
           current.current = event.conversationId;
+          userMessageId = event.messageId;
           setConversationId(event.conversationId);
         } else if (event.type === "step") {
           setStep(event.tool);
-        } else if (event.type === "error") {
+        } else if (event.type === "answer") {
+          const id = current.current;
+          if (id === undefined) return;
+          // The answer is shown from the event; the refetch that follows only confirms it (P1).
+          const now = new Date().toISOString();
+          const user: AssistantMessage = {
+            id: userMessageId,
+            role: "user",
+            content: text,
+            created_at: now,
+            proposals: [],
+          };
+          queryClient.setQueryData<ConversationDetail>(
+            assistantKeys.conversation(id),
+            (old) =>
+              old === undefined
+                ? {
+                    id,
+                    title: text,
+                    created_at: now,
+                    updated_at: now,
+                    messages: [user, event.message],
+                  }
+                : { ...old, messages: [...old.messages, user, event.message] },
+          );
+          if (abort.current === controller) {
+            setPending(null);
+            setStep(null);
+          }
+        } else {
           setError(event.problem);
         }
       };

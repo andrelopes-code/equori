@@ -148,10 +148,15 @@ export function AssistantPanel({
     setListing(false);
     turn.send(text);
   };
-  const storedTitle = stored.data?.title;
+  // While the first turn runs, the conversation is named after the question (U13).
+  const storedTitle =
+    stored.data === undefined && turn.pending !== null
+      ? turn.pending
+      : stored.data?.title;
   const title = listing
     ? t("assistant.conversations")
-    : storedTitle === undefined || turn.conversationId === undefined
+    : storedTitle === undefined ||
+        (turn.conversationId === undefined && turn.pending === null)
       ? t("assistant.new_conversation")
       : hidden
         ? maskAmountText(storedTitle)

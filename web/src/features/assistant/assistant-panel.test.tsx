@@ -181,6 +181,68 @@ describe("AssistantPanel", () => {
     });
   });
 
+  it("never shows the welcome between the first turn event and the answer (U1)", async () => {
+    const stream = turnStream();
+    let resolveRoute: (r: Response) => void = () => undefined;
+    setup({
+      "POST /api/v1/assistant/turns": () => stream.response(),
+      "GET /api/v1/assistant/conversations/c1": () =>
+        new Promise<Response>((resolve) => {
+          resolveRoute = resolve;
+        }),
+    });
+    await ask("How much?");
+    const welcome = catalogEn["assistant.welcome.title"];
+    let welcomed = false;
+    const observer = new MutationObserver(() => {
+      if (document.body.textContent.includes(welcome)) welcomed = true;
+    });
+    act(() => {
+      stream.write(
+        'event: turn\ndata: {"conversation_id":"c1","message_id":"m1"}\n\n',
+      );
+    });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+    act(() => {
+      stream.write(
+        `event: answer\ndata: ${JSON.stringify(message("You spent **10 items**."))}\n\n`,
+      );
+      stream.close();
+    });
+    expect(await screen.findByText("10 items")).toBeInTheDocument();
+    expect(screen.queryByText(welcome)).toBeNull();
+    observer.disconnect();
+    expect(welcomed).toBe(false);
+    resolveRoute(json(200, detail("You spent **10 items**.")));
+  });
+
+  it("names the conversation after the question while the first turn runs (U13)", async () => {
+    const stream = turnStream();
+    setup({ "POST /api/v1/assistant/turns": () => stream.response() });
+    await ask("How much?");
+    act(() => {
+      stream.write(
+        'event: turn\ndata: {"conversation_id":"c1","message_id":"m1"}\n\n',
+      );
+    });
+    const header = await screen.findByText(catalogEn["assistant.title"]);
+    const drawer = header.closest('[data-ui="drawer"]') ?? document.body;
+    await waitFor(() => {
+      expect(
+        within(drawer as HTMLElement).queryByText(
+          catalogEn["assistant.new_conversation"],
+        ),
+      ).toBeNull();
+    });
+    expect(
+      within(drawer as HTMLElement).getAllByText("How much?").length,
+    ).toBeGreaterThan(1);
+  });
+
   it("says when the quota returns after an exhausted error event", async () => {
     setup({
       "POST /api/v1/assistant/turns": () =>
