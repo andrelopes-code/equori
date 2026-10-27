@@ -1,5 +1,10 @@
 import { Button } from "@slotted/react/button";
-import { InlineMessage } from "@slotted/react/inline-message";
+import {
+  Alert,
+  AlertActions,
+  AlertContent,
+  AlertDescription,
+} from "@slotted/react/alert";
 import { SkeletonText } from "@slotted/react/skeleton";
 import { Stack } from "@slotted/react/stack";
 import { Switch } from "@slotted/react/switch";
@@ -107,39 +112,50 @@ export function SettingsMarketData() {
       ) : (
         <Stack gap={3}>
           {enabled.length === 0 && (
-            <InlineMessage tone="info" size="md">
-              {t("marketData.none")}
-            </InlineMessage>
-          )}
-          {admin && enabled.length === 0 && suggested.length > 0 && (
-            <div>
-              <Button
-                loading={set.isPending}
-                onClick={() => {
-                  void (async () => {
-                    for (const f of suggested)
-                      await set.mutateAsync({ id: f.id, enabled: true });
-                  })().catch(() => undefined);
-                }}
-              >
-                {t("marketData.suggest", { region: regionName })}
-              </Button>
-            </div>
+            <Alert tone="info">
+              <AlertContent>
+                <AlertDescription>{t("marketData.none")}</AlertDescription>
+              </AlertContent>
+              {admin && suggested.length > 0 && (
+                <AlertActions>
+                  <Button
+                    size="sm"
+                    loading={set.isPending}
+                    onClick={() => {
+                      void (async () => {
+                        for (const f of suggested)
+                          await set.mutateAsync({ id: f.id, enabled: true });
+                      })().catch(() => undefined);
+                    }}
+                  >
+                    {t("marketData.suggest", { region: regionName })}
+                  </Button>
+                </AlertActions>
+              )}
+            </Alert>
           )}
           {attention && (
-            <InlineMessage tone="warning" size="md">
-              {t("marketData.attention")}
-            </InlineMessage>
+            <Alert tone="warning">
+              <AlertContent>
+                <AlertDescription>{t("marketData.attention")}</AlertDescription>
+              </AlertContent>
+            </Alert>
           )}
           {polling && (
-            <InlineMessage tone="info" size="md" live="polite">
-              {t("marketData.refreshing")}
-            </InlineMessage>
+            <Alert tone="info" live="polite">
+              <AlertContent>
+                <AlertDescription>
+                  {t("marketData.refreshing")}
+                </AlertDescription>
+              </AlertContent>
+            </Alert>
           )}
           {failure !== null && (
-            <InlineMessage tone="danger" size="md" live="polite">
-              {errorText(failure, t)}
-            </InlineMessage>
+            <Alert tone="danger" live="polite">
+              <AlertContent>
+                <AlertDescription>{errorText(failure, t)}</AlertDescription>
+              </AlertContent>
+            </Alert>
           )}
           <SettingsGroup
             title={t("marketData.prices")}
