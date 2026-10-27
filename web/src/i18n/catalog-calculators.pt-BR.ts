@@ -399,4 +399,65 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.debt-payoff.limit1":
     "A avalanche dá o menor total de juros; fechar primeiro as contas pequenas previu a quitação de todas as dívidas em dados de 6.000 clientes de renegociação (Gal e McShane 2012). A escolha é da pessoa.",
   "calc.debt-payoff.limit2": "Um plano para em 1.200 meses.",
+  "calc.recurring.schedule": "Agendamento (opcional)",
+  "calc.recurring.schedule.none": "Nenhum",
+  "calc.recurring.amount": "Valor por ocorrência",
+  "calc.recurring.per": "Frequência",
+  "calc.recurring.per.month": "Todo mês",
+  "calc.recurring.per.year": "Todo ano",
+  "calc.recurring.years": "Anos",
+  "calc.recurring.rate": "Taxa anual (opcional)",
+  "calc.recurring.origin": "agendamento {name}",
+  "calc.recurring.total": "Total pago",
+  "calc.recurring.futureValue": "Os mesmos pagamentos investidos à taxa",
+  "calc.recurring.difference": "Juros que os pagamentos renderiam",
+  "calc.recurring-cost.step1":
+    "O total é o valor vezes o número de ocorrências nos anos.",
+  "calc.recurring-cost.step2":
+    "Com uma taxa, cada pagamento é tratado como um depósito no início do seu período e cresce até o fim à taxa desse período.",
+  "calc.recurring-cost.formula1":
+    "total = p × n; valor futuro = (1 + j) · ((1 + j)^n − 1) / j · p (M2)",
+  "calc.recurring-cost.formula2":
+    "p: valor por ocorrência; n: ocorrências; j: taxa de um mês, (1 + anual)^(1/12) − 1, ou de um ano (M5).",
+  "calc.recurring-cost.assumption1":
+    "O valor fica igual; nenhum reajuste por índice é aplicado.",
+  "calc.recurring-cost.limit1":
+    "Um agendamento preenche o valor dos seus termos mais recentes; mudanças futuras dos termos não são projetadas.",
+  "calc.own.price": "Preço do imóvel",
+  "calc.own.rent": "Aluguel anual",
+  "calc.own.riskFree": "Taxa de juros que se deixa de ganhar",
+  "calc.own.propertyTax": "Alíquota do imposto sobre o imóvel",
+  "calc.own.deductibleTax":
+    "Alíquota do imposto de renda sobre juros dedutíveis",
+  "calc.own.mortgage": "Taxa do financiamento",
+  "calc.own.maintenanceRate": "Taxa de manutenção e depreciação",
+  "calc.own.appreciationRate": "Valorização esperada",
+  "calc.own.riskPremiumRate": "Prêmio de risco de ter o imóvel",
+  "calc.own.forgone": "Juros que se deixa de ganhar",
+  "calc.own.propertyTaxCost": "Imposto sobre o imóvel",
+  "calc.own.deduction": "Dedução de imposto",
+  "calc.own.maintenance": "Manutenção e depreciação",
+  "calc.own.appreciation": "Valorização esperada",
+  "calc.own.riskPremium": "Prêmio de risco",
+  "calc.own.total": "Custo anual de ter o imóvel",
+  "calc.own.rentYear": "Aluguel anual",
+  "calc.own.ownLower": "Ter o imóvel custa menos por ano em",
+  "calc.own.rentLower": "Alugar custa menos por ano em",
+  "calc.own.same": "Diferença por ano",
+  "calc.own-or-rent.step1":
+    "Cada componente é o preço vezes a sua taxa; a dedução e a valorização reduzem o custo.",
+  "calc.own-or-rent.step2":
+    "O custo anual de ter o imóvel é a soma dos seis componentes, comparada ao aluguel anual.",
+  "calc.own-or-rent.formula1":
+    "custo = P·r_rf + P·ω − P·τ(r_m + ω) + P·δ − P·g + P·γ",
+  "calc.own-or-rent.formula2":
+    "P: preço do imóvel; r_rf: taxa de juros que se deixa de ganhar; ω: alíquota do imposto sobre o imóvel; τ: alíquota do imposto de renda sobre juros do financiamento e imposto sobre o imóvel dedutíveis; r_m: taxa do financiamento; δ: manutenção e depreciação; g: valorização esperada; γ: prêmio de risco de ter o imóvel.",
+  "calc.own-or-rent.assumption1":
+    "Toda taxa é anual e se aplica ao preço inteiro.",
+  "calc.own-or-rent.assumption2":
+    "A dedução existe só onde os juros do financiamento são dedutíveis; a sua taxa começa em 0.",
+  "calc.own-or-rent.limit1":
+    "A fórmula vem do imposto de renda federal dos Estados Unidos; os impostos de outro país entram por ω e τ.",
+  "calc.own-or-rent.limit2":
+    "A valorização esperada e o prêmio de risco são estimativas escolhidas pela pessoa.",
 };

@@ -397,4 +397,64 @@ export const calculatorsEn = {
   "calc.debt-payoff.limit1":
     "The avalanche gives the lowest total interest; closing small accounts first predicted paying off all debt in data on 6,000 debt-settlement clients (Gal and McShane 2012). The choice is the person's.",
   "calc.debt-payoff.limit2": "A plan stops at 1,200 months.",
+  "calc.recurring.schedule": "Schedule (optional)",
+  "calc.recurring.schedule.none": "None",
+  "calc.recurring.amount": "Amount per occurrence",
+  "calc.recurring.per": "Frequency",
+  "calc.recurring.per.month": "Every month",
+  "calc.recurring.per.year": "Every year",
+  "calc.recurring.years": "Years",
+  "calc.recurring.rate": "Annual rate (optional)",
+  "calc.recurring.origin": "schedule {name}",
+  "calc.recurring.total": "Total paid",
+  "calc.recurring.futureValue": "The same payments invested at the rate",
+  "calc.recurring.difference": "Interest the payments would earn",
+  "calc.recurring-cost.step1":
+    "The total is the amount times the number of occurrences in the years.",
+  "calc.recurring-cost.step2":
+    "With a rate, each payment is treated as a deposit at the start of its period and grown to the end at the rate of that period.",
+  "calc.recurring-cost.formula1":
+    "total = p × n; future value = (1 + j) · ((1 + j)^n − 1) / j · p (M2)",
+  "calc.recurring-cost.formula2":
+    "p: amount per occurrence; n: occurrences; j: rate of a month, (1 + annual)^(1/12) − 1, or of a year (M5).",
+  "calc.recurring-cost.assumption1":
+    "The amount stays the same; no adjustment by an index is applied.",
+  "calc.recurring-cost.limit1":
+    "A schedule fills the amount of its latest terms; later changes of its terms are not projected.",
+  "calc.own.price": "House price",
+  "calc.own.rent": "Annual rent",
+  "calc.own.riskFree": "Forgone interest rate",
+  "calc.own.propertyTax": "Property tax rate",
+  "calc.own.deductibleTax": "Income tax rate on deductible interest",
+  "calc.own.mortgage": "Mortgage rate",
+  "calc.own.maintenanceRate": "Maintenance and depreciation rate",
+  "calc.own.appreciationRate": "Expected appreciation",
+  "calc.own.riskPremiumRate": "Risk premium of owning",
+  "calc.own.forgone": "Forgone interest",
+  "calc.own.propertyTaxCost": "Property tax",
+  "calc.own.deduction": "Tax deduction",
+  "calc.own.maintenance": "Maintenance and depreciation",
+  "calc.own.appreciation": "Expected appreciation",
+  "calc.own.riskPremium": "Risk premium",
+  "calc.own.total": "Annual cost of owning",
+  "calc.own.rentYear": "Annual rent",
+  "calc.own.ownLower": "Owning costs less per year by",
+  "calc.own.rentLower": "Renting costs less per year by",
+  "calc.own.same": "Difference per year",
+  "calc.own-or-rent.step1":
+    "Each component is the price times its rate; the deduction and the appreciation lower the cost.",
+  "calc.own-or-rent.step2":
+    "The annual cost of owning is the sum of the six components, set against the annual rent.",
+  "calc.own-or-rent.formula1":
+    "cost = P·r_rf + P·ω − P·τ(r_m + ω) + P·δ − P·g + P·γ",
+  "calc.own-or-rent.formula2":
+    "P: house price; r_rf: forgone interest rate; ω: property tax rate; τ: income tax rate on deductible mortgage interest and property tax; r_m: mortgage rate; δ: maintenance and depreciation; g: expected appreciation; γ: risk premium of owning.",
+  "calc.own-or-rent.assumption1":
+    "Every rate is annual and applies to the whole price.",
+  "calc.own-or-rent.assumption2":
+    "The deduction exists only where mortgage interest is deductible; its rate starts at 0.",
+  "calc.own-or-rent.limit1":
+    "The formula comes from the United States federal income tax; another country's taxes enter through ω and τ.",
+  "calc.own-or-rent.limit2":
+    "Expected appreciation and the risk premium are estimates the person chooses.",
 } as const;
