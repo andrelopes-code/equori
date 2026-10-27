@@ -35,8 +35,8 @@ func NewAgent(client *llm.Client, svc *app.Service, tools app.Tools, set tool.Se
 
 // Run calls the model loop once more after a wait when only transient cooldowns block every target and the
 // earliest one ends before the turn's deadline (design 2026-10-26 E6).
-func (a *Agent) Run(ctx context.Context, userID int64, in app.AgentRequest, onStep func(string), onRestart func()) (app.AgentResult, error) {
-	out, err := a.run(ctx, userID, in, onStep, onRestart)
+func (a *Agent) Run(ctx context.Context, userID int64, in app.AgentRequest, onStep, onText func(string), onRestart func()) (app.AgentResult, error) {
+	out, err := a.run(ctx, userID, in, onStep, onText, onRestart)
 	ee, ok := errors.AsType[*llm.ExhaustedError](err)
 	if !ok || !ee.Transient || !ee.RetryAt.Before(in.Deadline) {
 		return out, mapError(err)
@@ -45,14 +45,14 @@ func (a *Agent) Run(ctx context.Context, userID int64, in app.AgentRequest, onSt
 	if err := a.wait(ctx, ee.RetryAt); err != nil {
 		return out, mapError(err)
 	}
-	second, err := a.run(ctx, userID, in, onStep, onRestart)
+	second, err := a.run(ctx, userID, in, onStep, onText, onRestart)
 	second.ToolCalls += out.ToolCalls
 	second.InputTokens += out.InputTokens
 	second.OutputTokens += out.OutputTokens
 	return second, mapError(err)
 }
 
-func (a *Agent) run(ctx context.Context, userID int64, in app.AgentRequest, onStep func(string), onRestart func()) (app.AgentResult, error) {
+func (a *Agent) run(ctx context.Context, userID int64, in app.AgentRequest, onStep, onText func(string), onRestart func()) (app.AgentResult, error) {
 	req := llm.Request{System: in.System, Tools: a.decls}
 	for _, m := range in.History {
 		role := llm.RoleUser
@@ -70,6 +70,7 @@ func (a *Agent) run(ctx context.Context, userID int64, in app.AgentRequest, onSt
 			onStep(c.Name)
 		},
 		OnRestart: onRestart,
+		OnText:    onText,
 	})
 	out := app.AgentResult{
 		Text: res.Response.Text(), StepLimit: res.StepLimit, Restarted: res.Restarted, Steps: res.Steps, ToolCalls: calls,

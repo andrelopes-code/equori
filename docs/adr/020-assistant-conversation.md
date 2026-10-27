@@ -39,6 +39,7 @@ ADR 019 declares the use `assistant.chat` and ADR 012 the tool registry, with fo
 - ADR 019 design G7: the agent use starts on Gemini Flash-Lite, not Flash (C14).
 - C2, C3 (design 2026-10-26 E11, E12): a turn that stored its user message and ends without an answer stores an assistant message with outcome `failed` or, when the request context ended, `canceled`, and empty content. History renders such an exchange as the user text followed by `[no answer]`.
 - C10 (design 2026-10-26 E6, E7): only a quota cooldown or a daily limit makes a turn answer `assistant_exhausted`. A turn whose every target cools down from transient failures waits once for the earliest end inside its deadline and calls again; a turn that still fails ends with `assistant_failed`.
+- C3 (design 2026-10-26 E4): the stream adds `delta {text}`; a `step` ends the text of a model call that asked for tools.
 
 ## Consequences
 

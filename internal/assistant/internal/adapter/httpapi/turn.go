@@ -87,6 +87,8 @@ func (e *eventStream) Turn(conversationID, messageID uuid.UUID) {
 	e.send("turn", map[string]uuid.UUID{"conversation_id": conversationID, "message_id": messageID})
 }
 
+func (e *eventStream) Delta(text string) { e.send("delta", map[string]string{"text": text}) }
+
 func (e *eventStream) Step(tool string) { e.send("step", map[string]string{"tool": tool}) }
 
 func (e *eventStream) Answer(m app.AnsweredMessage) {

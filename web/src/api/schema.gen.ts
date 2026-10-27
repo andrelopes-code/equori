@@ -1576,7 +1576,8 @@ export interface paths {
         put?: never;
         /**
          * Run one conversation turn and stream its progress as Server-Sent Events.
-         * @description Events: turn {conversation_id, message_id}, step {tool}, answer (AssistantMessage) and error (Problem).
+         * @description Events: turn {conversation_id, message_id}, delta {text}, step {tool}, answer (AssistantMessage) and error (Problem).
+         *     Text received since the previous step belongs to a model call that asked for tools; a client drops it at the step.
          *     The stream ends after answer or error. Problems before the stream: 404 conversation_not_found,
          *     429 assistant_exhausted with retry_at, 503 assistant_unavailable, 400 invalid_request for text that is
          *     empty or over 4000 characters after trimming. An error event carries assistant_exhausted,

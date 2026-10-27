@@ -415,3 +415,28 @@ func TestTurnTransientIsNotALimit(t *testing.T) {
 		}
 	})
 }
+
+// G2, design 2026-10-26 E4; Review Focus 3 of phase 2: the text of a call that asked for tools
+// streams as delta and never reaches the stored answer.
+func TestTurnStreamsText(t *testing.T) {
+	t.Parallel()
+	call := callStep("get_balances", `{}`)
+	call.Chunks = []string{"Vou ver."}
+	answer := textStep("Saldo: R$ 10,00")
+	answer.Chunks = []string{"Saldo: ", "R$ 10,00"}
+	h := turnHarness(t, llmtest.New("aistudio", call, answer))
+	r := sendTurn(h, h.Client, map[string]any{"text": "Qual o saldo?"})
+	events := parseSSE(r.Body)
+	if got := eventNames(events); !slices.Equal(got, []string{"turn", "delta", "step", "delta", "delta", "answer"}) {
+		t.Fatalf("events = %v: %s", got, r.Body)
+	}
+	for i, want := range map[int]string{1: `{"text":"Vou ver."}`, 3: `{"text":"Saldo: "}`, 4: `{"text":"R$ 10,00"}`} {
+		if events[i].Data != want {
+			t.Fatalf("event %d data = %s, want %s", i, events[i].Data, want)
+		}
+	}
+	var stored turnAnswer
+	if err := json.Unmarshal([]byte(events[5].Data), &stored); err != nil || stored.Content != "Saldo: R$ 10,00" {
+		t.Fatalf("answer = %s", events[5].Data)
+	}
+}

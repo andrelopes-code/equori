@@ -49,7 +49,7 @@ func TestAgentWaitsOnceForTransient(t *testing.T) {
 					now = until
 					return nil
 				}}
-			res, err := a.Run(t.Context(), 1, app.AgentRequest{Text: "oi", Deadline: start.Add(tt.deadline)}, func(string) {}, func() {})
+			res, err := a.Run(t.Context(), 1, app.AgentRequest{Text: "oi", Deadline: start.Add(tt.deadline)}, func(string) {}, func(string) {}, func() {})
 			switch {
 			case tt.wantText != "":
 				if err != nil || res.Text != tt.wantText {

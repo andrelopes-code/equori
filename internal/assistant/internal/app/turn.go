@@ -51,9 +51,9 @@ type AgentResult struct {
 }
 
 // Agent runs the model loop over the chat tools. Its errors are *LimitError, ErrChatUnavailable, ErrTurnFailed
-// or a context error. Write tools reach Service.Propose with ctx.
+// or a context error. Write tools reach Service.Propose with ctx. onText receives the model's text as it arrives.
 type Agent interface {
-	Run(ctx context.Context, userID int64, req AgentRequest, onStep func(tool string), onRestart func()) (AgentResult, error)
+	Run(ctx context.Context, userID int64, req AgentRequest, onStep func(tool string), onText func(text string), onRestart func()) (AgentResult, error)
 }
 
 // UseAgent sets the agent and the profile lookup the chat needs; the chat does not run without them.
@@ -67,9 +67,10 @@ type AnsweredMessage struct {
 }
 
 // TurnEvents receives the progress of a turn. Turn is called once the user message is stored; after it the turn
-// ends with Answer or Error.
+// ends with Answer or Error. The text a Delta brought before a Step belongs to a call that asked for tools.
 type TurnEvents interface {
 	Turn(conversationID, messageID uuid.UUID)
+	Delta(text string)
 	Step(tool string)
 	Answer(m AnsweredMessage)
 	Error(err error)
@@ -190,7 +191,7 @@ func (s *Service) Turn(ctx context.Context, userID int64, in TurnInput, ev TurnE
 			}
 		}
 	}
-	res, err := s.agent.Run(runCtx, userID, req, ev.Step, discard)
+	res, err := s.agent.Run(runCtx, userID, req, ev.Step, ev.Delta, discard)
 	if err != nil {
 		discard()
 		outcome := outcomeFailed
