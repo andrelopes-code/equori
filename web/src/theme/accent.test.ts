@@ -18,8 +18,16 @@ describe("accent", () => {
   });
 
   it("ignores a stored value that is not an accent", () => {
-    localStorage.setItem("equori.accent", "#ff0000");
+    localStorage.setItem("equori.accent", "red");
     expect(readAccent()).toBe("indigo");
+  });
+
+  it("keeps a custom colour and writes it as the accent seed", () => {
+    applyAccent("#123abc");
+    expect(readAccent()).toBe("#123abc");
+    expect(
+      document.documentElement.style.getPropertyValue("--slotted-seed-accent"),
+    ).toBe("#123abc");
   });
 
   it("stores the accent and writes its seed on the document", () => {

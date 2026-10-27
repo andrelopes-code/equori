@@ -2,6 +2,7 @@ import { accountsPtBR } from "@/i18n/catalog-accounts.pt-BR";
 import { instrumentsPtBR } from "@/i18n/catalog-instruments.pt-BR";
 import { portfolioPtBR } from "@/i18n/catalog-portfolio.pt-BR";
 import { reportsPtBR } from "@/i18n/catalog-reports.pt-BR";
+import { settingsPtBR } from "@/i18n/catalog-settings.pt-BR";
 import type { Catalog } from "@/i18n/catalog.en";
 
 export const catalogPtBR: Catalog = {
@@ -9,6 +10,7 @@ export const catalogPtBR: Catalog = {
   ...instrumentsPtBR,
   ...portfolioPtBR,
   ...reportsPtBR,
+  ...settingsPtBR,
   "nav.home": "Início",
   "nav.label": "Navegação principal",
   "nav.transactions": "Transações",
@@ -57,7 +59,6 @@ export const catalogPtBR: Catalog = {
   "settings.region": "Região",
   "settings.baseCurrency": "Moeda base",
   "settings.subtitle": "Conta, aparência e finanças.",
-  "settings.browserOnly": "Guardado somente neste navegador.",
   "settings.account.title": "Conta",
   "settings.account.role.admin": "Administrador",
   "settings.account.role.member": "Membro",
@@ -85,7 +86,6 @@ export const catalogPtBR: Catalog = {
   "corners.soft": "Suaves",
   "corners.standard": "Padrão",
   "corners.round": "Arredondados",
-  "settings.experimental.title": "Experimental",
   "settings.experimental.glass":
     "Superfícies de vidro e gradiente em movimento",
   "settings.experimental.glassDescription":
@@ -1529,12 +1529,9 @@ export const catalogPtBR: Catalog = {
   "calendar.br_banking": "Dias úteis bancários do Brasil",
   "calendar.weekend": "Somente fins de semana",
   "calendar.title": "Calendários",
-  "calendar.description":
-    "Calendários de dias úteis da instância. Um agendamento usa um deles para ajustar suas datas de vencimento.",
   "calendar.regionMark": "Calendário da sua região",
   "calendar.weekendDays": "Fim de semana: {days}",
   "calendar.holidaysOf": "Feriados de {name} em {year}",
-  "calendar.pick": "Escolha um calendário para ver os feriados.",
   "calendar.year.previous": "Ano anterior",
   "calendar.year.next": "Próximo ano",
   "calendar.source.rule": "Regra do calendário",

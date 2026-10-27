@@ -87,88 +87,13 @@
     fill: var(--slotted-data-4);
   }
 
-  .density {
-    display: flex;
-    flex-direction: column;
-    background: var(--slotted-surface);
+  .seriesOne {
+    fill: var(--slotted-data-1);
   }
 
-  .head {
-    display: flex;
-    flex: none;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--slotted-space-2);
-    padding: var(--slotted-space-2) var(--slotted-space-3);
-    background: var(--slotted-surface-raised);
-    border-block-end: var(--slotted-border-width-thin) solid
-      var(--slotted-border-subtle);
-  }
-
-  .headText,
-  .headAmount {
-    block-size: var(--slotted-space-1);
-    border-radius: var(--slotted-radius-full);
-    background: var(--slotted-text-muted);
-  }
-
-  .headText {
-    inline-size: 30%;
-  }
-
-  .headAmount {
-    inline-size: 14%;
-  }
-
-  .row {
-    display: flex;
-    flex: 1;
-    align-items: center;
-    gap: var(--slotted-space-2);
-    min-block-size: 0;
-    padding-inline: var(--slotted-space-3);
-    border-block-end: var(--slotted-border-width-thin) solid
-      var(--slotted-border-subtle);
-  }
-
-  .row:last-child {
-    border-block-end: 0;
-  }
-
-  .mark {
-    flex: none;
-    inline-size: var(--slotted-space-2);
-    aspect-ratio: 1;
-    border-radius: var(--slotted-radius-full);
-  }
-
-  .mark[data-series="1"] {
-    background: var(--slotted-data-1);
-  }
-  .mark[data-series="2"] {
-    background: var(--slotted-data-2);
-  }
-  .mark[data-series="3"] {
-    background: var(--slotted-data-3);
-  }
-  .mark[data-series="4"] {
-    background: var(--slotted-data-4);
-  }
-
-  .text {
-    flex: none;
-    max-inline-size: 60%;
-    block-size: var(--slotted-space-1);
-    border-radius: var(--slotted-radius-full);
-    background: var(--slotted-text);
-  }
-
-  .amount {
-    inline-size: 14%;
-    margin-inline-start: auto;
-    block-size: var(--slotted-space-1);
-    border-radius: var(--slotted-radius-full);
-    background: var(--slotted-text-muted);
+  .rule {
+    stroke: var(--slotted-border-subtle);
+    stroke-width: 0.6;
   }
 }
 
@@ -217,5 +142,21 @@
     inline-size: 40%;
     block-size: var(--slotted-space-6);
     background: var(--slotted-tone-accent-solid);
+  }
+}
+
+@layer app {
+  /* The typeface preview: two letters and figures in the choice's own stack, on the page's ground. */
+  .typeface {
+    display: grid;
+    box-sizing: border-box;
+    aspect-ratio: 16 / 10;
+    place-items: center;
+    background: var(--slotted-surface);
+    color: var(--slotted-text);
+    font-size: var(--slotted-font-size-3xl);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--slotted-font-weight-medium);
+    line-height: var(--slotted-line-height-3xl);
   }
 }

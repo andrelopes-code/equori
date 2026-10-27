@@ -2,12 +2,14 @@ import { accountsEn } from "@/i18n/catalog-accounts.en";
 import { instrumentsEn } from "@/i18n/catalog-instruments.en";
 import { portfolioEn } from "@/i18n/catalog-portfolio.en";
 import { reportsEn } from "@/i18n/catalog-reports.en";
+import { settingsEn } from "@/i18n/catalog-settings.en";
 
 export const catalogEn = {
   ...accountsEn,
   ...instrumentsEn,
   ...portfolioEn,
   ...reportsEn,
+  ...settingsEn,
   "nav.home": "Home",
   "nav.label": "Main navigation",
   "nav.transactions": "Transactions",
@@ -56,7 +58,6 @@ export const catalogEn = {
   "settings.region": "Region",
   "settings.baseCurrency": "Base currency",
   "settings.subtitle": "Account, appearance and finances.",
-  "settings.browserOnly": "Kept in this browser only.",
   "settings.account.title": "Account",
   "settings.account.role.admin": "Administrator",
   "settings.account.role.member": "Member",
@@ -84,7 +85,6 @@ export const catalogEn = {
   "corners.soft": "Soft",
   "corners.standard": "Standard",
   "corners.round": "Round",
-  "settings.experimental.title": "Experimental",
   "settings.experimental.glass": "Glass surfaces and moving gradient",
   "settings.experimental.glassDescription":
     "Translucent surfaces over a soft, slowly moving gradient. Dark scheme only.",
@@ -1510,12 +1510,9 @@ export const catalogEn = {
   "calendar.br_banking": "Brazilian banking days",
   "calendar.weekend": "Weekends only",
   "calendar.title": "Calendars",
-  "calendar.description":
-    "Business-day calendars of this instance. A schedule uses one to move its due dates.",
   "calendar.regionMark": "Your region's calendar",
   "calendar.weekendDays": "Weekend: {days}",
   "calendar.holidaysOf": "Holidays of {name} in {year}",
-  "calendar.pick": "Select a calendar to see its holidays.",
   "calendar.year.previous": "Previous year",
   "calendar.year.next": "Next year",
   "calendar.source.rule": "Calendar rule",

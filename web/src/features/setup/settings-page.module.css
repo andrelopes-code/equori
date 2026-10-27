@@ -1,65 +1,112 @@
 @layer app {
-  .frame {
-    container-name: settings;
-    container-type: inline-size;
-  }
-
-  /* One column of sections in reading order. From 60 rem of the page's own width the contents
-     stand at the start; the sections keep a measure of 52 rem, where a row's label and its control
-     still read as one line. Neither measure has a token. */
+  /* The navigation column and the pane. The column keeps the measure of its longest label; the
+     pane keeps 56 rem, where a row's words and its control still read as one line. Neither measure
+     has a token. */
   .layout {
     display: grid;
     align-items: start;
-    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-9);
+    grid-template-columns: 14rem minmax(0, 56rem);
   }
 
-  .contents {
-    display: none;
+  /* Workaround for Slotted finding "A sticky table of contents has no inset under the page chrome":
+     the column is pinned by its own track, the inset of the pane's padding under the header. */
+  @media (max-width: 1023px) {
+    .layout {
+      gap: var(--slotted-space-7);
+      grid-template-columns: 12rem minmax(0, 1fr);
+    }
   }
 
-  .sections {
+  .navigation {
+    position: sticky;
+    inset-block-start: calc(
+      var(--slotted-page-sticky-top, 0px) + var(--slotted-space-6)
+    );
+  }
+
+  .content {
+    min-inline-size: 0;
+  }
+
+  .pane {
     display: flex;
     min-inline-size: 0;
     flex-direction: column;
-    gap: var(--slotted-space-6);
+    gap: var(--slotted-space-7);
   }
 
-  @container settings (min-width: 60rem) {
-    .layout {
-      gap: var(--slotted-space-9);
-      grid-template-columns: 12rem minmax(0, 52rem);
-    }
+  .paneHeader {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-3);
+    padding-block-end: var(--slotted-space-7);
+    border-block-end: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
 
-    /* Workaround for Slotted finding "A sticky table of contents has no inset under the page chrome":
-       the list is pinned by its column, the inset of a section's padding under the header. */
-    .contents {
-      position: sticky;
-      display: block;
-      inset-block-start: calc(
-        var(--slotted-page-sticky-top, 0px) + var(--slotted-space-6)
-      );
+  .paneTitle {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--slotted-space-4);
+  }
+
+  /* A setting: its words at the start, its control at the end. Under 36 rem of the row's own width
+     the control moves under the words and takes the row's width, a target a thumb reaches. */
+  /* The rows of a group: the container the rows ask their width of. */
+  .rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-5);
+    container-type: inline-size;
+  }
+
+  .row {
+    display: grid;
+    align-items: center;
+    gap: var(--slotted-space-4) var(--slotted-space-8);
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rowText {
+    display: flex;
+    min-inline-size: 0;
+    flex-direction: column;
+    gap: var(--slotted-space-1);
+  }
+
+  .rowControl {
+    display: flex;
+    min-inline-size: 0;
+    flex-direction: column;
+    gap: var(--slotted-space-3);
+  }
+
+  @container (min-width: 36rem) {
+    .row:not([data-stacked]) {
+      grid-template-columns: minmax(0, 1fr) minmax(14rem, 18rem);
     }
   }
 
-  /* The account block opens with a band of the accent fading out: the reader's mark on a page that
-     is otherwise controls, in the colour the reader chose. A tint is a mix of a token with
+  /* The account opens with a band of the accent fading out: the reader's mark on a page that is
+     otherwise controls, in the colour the reader chose. A tint is a mix of a token with
      transparent. */
   .identity {
-    position: relative;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
-    gap: var(--slotted-space-4);
-    padding: var(--slotted-space-4);
+    gap: var(--slotted-space-6);
+    padding: var(--slotted-space-7);
     border-radius: var(--slotted-radius-lg);
     background:
       linear-gradient(
         135deg,
-        color-mix(in srgb, var(--slotted-tone-accent-solid) 22%, transparent),
+        color-mix(in srgb, var(--slotted-tone-accent-solid) 26%, transparent),
         color-mix(in srgb, var(--slotted-tone-accent-solid) 6%, transparent) 60%,
         transparent
       ),
-      var(--slotted-section-surface, var(--slotted-surface-sunken));
+      var(--slotted-surface-sunken);
   }
 
   .who {
@@ -67,7 +114,7 @@
     min-inline-size: 0;
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--slotted-space-2);
+    gap: var(--slotted-space-3);
   }
 
   .email {
@@ -75,84 +122,27 @@
     margin: 0;
     overflow: hidden;
     color: var(--slotted-text);
-    font-size: var(--slotted-font-size-lg);
+    font-size: var(--slotted-font-size-xl);
     font-weight: var(--slotted-font-weight-semibold);
-    line-height: var(--slotted-line-height-lg);
+    line-height: var(--slotted-line-height-xl);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  /* The action stands under the identity on a phone and fills its width, a target a thumb reaches. */
-  .signOut {
-    grid-column: 1 / -1;
-  }
-
-  @container settings (min-width: 40rem) {
-    .signOut {
-      grid-column: 3;
-      grid-row: 1;
-    }
-
-    .identity {
-      grid-template-columns: auto minmax(0, 1fr) auto;
-    }
-  }
-
-  /* The groups of a section, each apart from the one before by a rule that spans the body. */
-  .groups {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .groups > * + * {
-    margin-block-start: var(--slotted-space-6);
-    padding-block-start: var(--slotted-space-6);
-    border-block-start: var(--slotted-border-width-thin) solid
-      var(--slotted-border-subtle);
-  }
-
-  .choice {
-    display: flex;
-    min-inline-size: 0;
-    flex-direction: column;
-    gap: var(--slotted-space-3);
-  }
-
-  .legend {
-    margin: 0;
-    color: var(--slotted-text);
-    font-size: var(--slotted-font-size-md);
-    font-weight: var(--slotted-font-weight-medium);
-    line-height: var(--slotted-line-height-md);
-  }
-
-  .hint {
-    margin: calc(-1 * var(--slotted-space-2)) 0 0;
-    color: var(--slotted-text-muted);
-    font-size: var(--slotted-font-size-sm);
-    line-height: var(--slotted-line-height-sm);
-  }
-
-  .fields {
-    display: flex;
-    flex-direction: column;
-    gap: var(--slotted-space-4);
-  }
-
   .example {
     display: grid;
-    gap: var(--slotted-space-3);
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--slotted-space-4);
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
   }
 
   .sample {
     display: flex;
     min-inline-size: 0;
     flex-direction: column;
-    gap: var(--slotted-space-1);
-    padding: var(--slotted-space-3);
+    gap: var(--slotted-space-2);
+    padding: var(--slotted-space-6);
     border-radius: var(--slotted-radius-md);
-    background: var(--slotted-section-surface, var(--slotted-surface-sunken));
+    background: var(--slotted-surface-sunken);
   }
 
   .sampleLabel {
@@ -164,11 +154,158 @@
   .sampleValue {
     overflow: hidden;
     color: var(--slotted-text);
+    font-size: var(--slotted-font-size-2xl);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--slotted-font-weight-semibold);
+    line-height: var(--slotted-line-height-2xl);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The live preview: real controls under the reader's current choices, on the sunken ground so
+     the card around them stays visible. */
+  .preview {
+    display: grid;
+    gap: var(--slotted-space-6);
+    padding: var(--slotted-space-7);
+    border-radius: var(--slotted-radius-lg);
+    background: var(--slotted-surface-sunken);
+  }
+
+  .previewRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--slotted-space-4);
+  }
+
+  .customAccent {
+    max-inline-size: 14rem;
+  }
+}
+
+@layer app {
+  /* A week as a strip of seven cells, the labels under the two dates that matter, and a legend.
+     The strip keeps a measure of 30 rem, where a cell reads as a day; no token holds it. */
+  .strip {
+    display: grid;
+    max-inline-size: 30rem;
+    gap: var(--slotted-space-3) var(--slotted-space-2);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  .cell {
+    display: grid;
+    box-sizing: border-box;
+    aspect-ratio: 1;
+    place-content: center;
+    justify-items: center;
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-md);
+    background: var(--slotted-surface-raised);
+    color: var(--slotted-text);
+  }
+
+  .cell[data-off] {
+    border-style: dashed;
+    background: var(--slotted-surface-sunken);
+    color: var(--slotted-text-muted);
+  }
+
+  .cell[data-state="due"] {
+    border: var(--slotted-border-width-medium) dashed var(--slotted-text-muted);
+  }
+
+  .cell[data-state="used"] {
+    border-color: var(--slotted-tone-accent-solid);
+    background: var(--slotted-tone-accent-solid);
+    color: var(--slotted-tone-accent-on-solid);
+  }
+
+  .cellName {
+    font-size: var(--slotted-font-size-xs);
+    line-height: var(--slotted-line-height-xs);
+    text-transform: uppercase;
+  }
+
+  .cellNumber {
+    font-size: var(--slotted-font-size-lg);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--slotted-font-weight-semibold);
+    line-height: var(--slotted-line-height-lg);
+  }
+
+  /* Each label stands under its own cell and may run over the empty cells of its row. */
+  .stripLabel {
+    grid-row: 2;
+    justify-self: center;
+    white-space: nowrap;
+  }
+
+  .stripLabel[data-column="due"] {
+    grid-column: 4;
+  }
+
+  .stripLabel[data-column="used"] {
+    grid-column: 6;
+  }
+
+  .stripArrow {
+    display: grid;
+    grid-column: 5;
+    grid-row: 2;
+    place-items: center;
+  }
+
+  .stripLegend {
+    display: flex;
+    grid-column: 1 / -1;
+    align-items: center;
+    gap: var(--slotted-space-3);
+    padding-block-start: var(--slotted-space-2);
+  }
+
+  .legendSwatch {
+    inline-size: var(--slotted-space-6);
+    block-size: var(--slotted-space-6);
+    box-sizing: border-box;
+    border: var(--slotted-border-width-thin) dashed var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-sm);
+    background: var(--slotted-surface-sunken);
+  }
+
+  /* A day drawn as a tile: the weekday above the day of the month, the way a wall calendar shows
+     it. The tile's side has no token; it holds two lines of the scale. */
+  .day {
+    display: grid;
+    flex: none;
+    box-sizing: border-box;
+    inline-size: 3.25rem;
+    block-size: 3.25rem;
+    place-content: center;
+    justify-items: center;
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-md);
+    background: var(--slotted-surface-raised);
+  }
+
+  .dayName {
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-medium);
+    line-height: var(--slotted-line-height-xs);
+    text-transform: uppercase;
+  }
+
+  .dayNumber {
     font-size: var(--slotted-font-size-xl);
     font-variant-numeric: tabular-nums;
     font-weight: var(--slotted-font-weight-semibold);
     line-height: var(--slotted-line-height-xl);
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  }
+
+  .year {
+    min-inline-size: 4ch;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
   }
 }

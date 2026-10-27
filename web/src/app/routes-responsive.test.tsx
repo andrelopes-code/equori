@@ -222,8 +222,11 @@ describe.each([360, 768, 1280])("routes at %i px", (width) => {
       ).toBeNull();
 
       const bar = container.querySelector('[data-own="navigation-bar"]');
-      // The column from 1024 px, the navigation bar below.
-      const column = container.querySelector('[data-ui="side-navigation"]');
+      // The column from 1024 px, the navigation bar below. A page's own side navigation (settings)
+      // stands in the main region and is not the shell's column.
+      const column = container.querySelector(
+        '[data-ui="app-shell"] [data-part="nav"] [data-ui="side-navigation"]',
+      );
       if (!authenticated) {
         expect(bar).toBeNull();
         expect(column).toBeNull();

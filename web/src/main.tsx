@@ -14,12 +14,20 @@ import { registerServiceWorker } from "@/app/service-worker";
 import { guardTouchContextMenu } from "@/app/touch-context-menu";
 import { applyAccent, readAccent } from "@/theme/accent";
 import { applyCorners, readCorners } from "@/theme/corners";
+import { motion } from "@/theme/motion";
 import { applyScheme, readScheme } from "@/theme/scheme";
+import { textSize } from "@/theme/text-size";
+import { tone } from "@/theme/tone";
+import { typeface } from "@/theme/typeface";
 import { restoreVisual } from "@/theme/visual";
 
 applyScheme(readScheme());
 applyAccent(readAccent());
 applyCorners(readCorners());
+tone.apply(tone.read());
+textSize.apply(textSize.read());
+typeface.apply(typeface.read());
+motion.apply(motion.read());
 restoreVisual();
 guardTouchContextMenu(document);
 

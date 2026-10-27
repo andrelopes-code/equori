@@ -187,8 +187,7 @@ export function SchedulePage() {
               <DescriptionListDescription>
                 <Link
                   to="/settings"
-                  search={{ calendar: s.calendar }}
-                  hash="calendars"
+                  search={{ section: "calendars", calendar: s.calendar }}
                 >
                   {calendarLabel(t, s.calendar)}
                 </Link>

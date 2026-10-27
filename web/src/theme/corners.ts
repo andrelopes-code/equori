@@ -26,7 +26,7 @@ export const cornerScales: Readonly<
 const steps: readonly Step[] = ["xs", "sm", "md", "lg"];
 
 const STORAGE_KEY = "equori.corners";
-const DEFAULT_CORNERS: Corners = "standard";
+export const defaultCorners: Corners = "standard";
 
 function isCorners(value: unknown): value is Corners {
   return (cornerStyles as readonly unknown[]).includes(value);
@@ -35,9 +35,9 @@ function isCorners(value: unknown): value is Corners {
 export function readCorners(): Corners {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return isCorners(stored) ? stored : DEFAULT_CORNERS;
+    return isCorners(stored) ? stored : defaultCorners;
   } catch {
-    return DEFAULT_CORNERS;
+    return defaultCorners;
   }
 }
 

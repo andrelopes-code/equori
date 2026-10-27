@@ -231,6 +231,7 @@ describe("desktop column", () => {
       catalogEn["privacy.hide"],
       catalogEn["scheme.dark"],
       catalogEn["scheme.light"],
+      catalogEn["scheme.high-contrast"],
       catalogEn["scheme.system"],
       catalogEn["density.comfortable"],
       catalogEn["density.compact"],

@@ -1,20 +1,27 @@
 import { useSyncExternalStore } from "react";
 
-export type Scheme = "dark" | "light" | "system";
+export type Scheme = "dark" | "light" | "high-contrast" | "system";
+
+export const schemes: readonly Scheme[] = [
+  "dark",
+  "light",
+  "high-contrast",
+  "system",
+];
 
 const STORAGE_KEY = "equori.scheme";
-const DEFAULT_SCHEME: Scheme = "dark";
+export const defaultScheme: Scheme = "dark";
 
 function isScheme(value: unknown): value is Scheme {
-  return value === "dark" || value === "light" || value === "system";
+  return (schemes as readonly unknown[]).includes(value);
 }
 
 export function readScheme(): Scheme {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return isScheme(stored) ? stored : DEFAULT_SCHEME;
+    return isScheme(stored) ? stored : defaultScheme;
   } catch {
-    return DEFAULT_SCHEME;
+    return defaultScheme;
   }
 }
 

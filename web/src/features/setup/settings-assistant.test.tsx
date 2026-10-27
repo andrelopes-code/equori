@@ -230,7 +230,7 @@ async function usageRow(
 
 describe("assistant settings", () => {
   it("lists providers with their notice, never a key, and warns on a training provider", async () => {
-    await renderApp("/settings", { fetch: api([]) });
+    await renderApp("/settings?section=assistant", { fetch: api([]) });
     const view = await section();
     expect(await view.findByText("Groq")).toBeVisible();
     expect(view.getByText(pt["assistant.provider.instance"])).toBeVisible();
@@ -249,7 +249,7 @@ describe("assistant settings", () => {
   });
 
   it("states per use whether financial data leaves, what it needs and where it goes", async () => {
-    await renderApp("/settings", { fetch: api([]) });
+    await renderApp("/settings?section=assistant", { fetch: api([]) });
     const view = await section();
     const row = async (label: string) => {
       const li = (await view.findByText(label)).closest("li");
@@ -287,7 +287,7 @@ describe("assistant settings", () => {
   });
 
   it("words the use privacy in English for another region and base currency", async () => {
-    await renderApp("/settings", {
+    await renderApp("/settings?section=assistant", {
       fetch: api([], { me: { language: "en", region: "DE" } }),
     });
     const view = await section();
@@ -305,7 +305,7 @@ describe("assistant settings", () => {
 
   it("charts the last 30 days and meters today against the daily limit", async () => {
     const daysQueries: string[] = [];
-    await renderApp("/settings", {
+    await renderApp("/settings?section=assistant", {
       fetch: api([], { daysQueries, days: true }),
     });
     const view = await section();
@@ -333,7 +333,7 @@ describe("assistant settings", () => {
 
   it("shows a refused key at its field and in the summary", async () => {
     const sent: Sent[] = [];
-    await renderApp("/settings", {
+    await renderApp("/settings?section=assistant", {
       fetch: api(sent, {
         create: () =>
           problem(422, "key_required", {
@@ -366,7 +366,7 @@ describe("assistant settings", () => {
   });
 
   it("lists a provider's models", async () => {
-    await renderApp("/settings", { fetch: api([]) });
+    await renderApp("/settings?section=assistant", { fetch: api([]) });
     const view = await section();
     await userEvent.click(
       await view.findByRole("button", {
@@ -378,7 +378,7 @@ describe("assistant settings", () => {
   });
 
   it("says a refused key when listing models", async () => {
-    await renderApp("/settings", {
+    await renderApp("/settings?section=assistant", {
       fetch: api([], { models: () => problem(502, "provider_unauthorized") }),
     });
     const view = await section();
@@ -412,7 +412,9 @@ describe("assistant settings", () => {
   ])(
     "checks a provider key from its row and %s",
     async (_name, models, text) => {
-      await renderApp("/settings", { fetch: api([], { models }) });
+      await renderApp("/settings?section=assistant", {
+        fetch: api([], { models }),
+      });
       const view = await section();
       const row = (await view.findByText("Groq")).closest("li");
       if (row === null) throw new Error("no provider row");
@@ -425,7 +427,7 @@ describe("assistant settings", () => {
   );
 
   it("checks a key in English with the models counted by locale", async () => {
-    await renderApp("/settings", {
+    await renderApp("/settings?section=assistant", {
       fetch: api([], {
         me: { language: "en", region: "DE" },
         models: () =>
@@ -449,7 +451,7 @@ describe("assistant settings", () => {
 
   it("restores a use's default chain with an empty list", async () => {
     const sent: Sent[] = [];
-    await renderApp("/settings", { fetch: api(sent) });
+    await renderApp("/settings?section=assistant", { fetch: api(sent) });
     const view = await section();
     const row = (
       await view.findByText(pt["assistant.use.assistant.chat"])
@@ -470,7 +472,7 @@ describe("assistant settings", () => {
   });
 
   it("shows today's usage against the limit and a zero row for an unused chain target", async () => {
-    await renderApp("/settings", { fetch: api([]) });
+    await renderApp("/settings?section=assistant", { fetch: api([]) });
     const view = await section();
     expect(
       await view.findByText(
@@ -483,7 +485,7 @@ describe("assistant settings", () => {
 
   it("sends the declared limits", async () => {
     const sent: Sent[] = [];
-    await renderApp("/settings", { fetch: api(sent) });
+    await renderApp("/settings?section=assistant", { fetch: api(sent) });
     const view = await section();
     const row = await usageRow(view, "Groq · openai/gpt-oss-120b");
     await userEvent.click(

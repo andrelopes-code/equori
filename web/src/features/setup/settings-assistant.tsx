@@ -1,3 +1,4 @@
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import { InlineMessage } from "@slotted/react/inline-message";
 import { List, ListEmpty, ListSection } from "@slotted/react/list";
@@ -32,6 +33,7 @@ import { ChainDialog } from "@/features/setup/chain-dialog";
 import { NoticeTag } from "@/features/setup/notice-tag";
 import { ProviderDialog } from "@/features/setup/provider-dialog";
 import { ProviderModelsDialog } from "@/features/setup/provider-models-dialog";
+import { SettingsGroup } from "@/features/setup/settings-group";
 import { SettingsSection } from "@/features/setup/settings-section";
 import { UsageLimitDialog } from "@/features/setup/usage-limit-dialog";
 import { UsageChart } from "@/features/setup/usage-chart";
@@ -82,185 +84,191 @@ export function SettingsAssistant() {
       title={t("settings.assistant.title")}
       description={t("settings.assistant.description")}
     >
-      <Stack gap={5}>
-        {failure !== null && (
-          <InlineMessage tone="danger">{errorText(failure, t)}</InlineMessage>
-        )}
-        {training.length > 0 && (
-          <InlineMessage tone="warning">
-            {t("assistant.use.trains", { provider: training.join(", ") })}
-          </InlineMessage>
-        )}
-        {providers.isPending || uses.isPending ? (
-          <SkeletonText lines={6} />
-        ) : (
-          <List variant="ruled" aria-label={t("settings.assistant.title")}>
-            <ListSection
-              label={t("assistant.providers")}
-              end={
-                <Button
-                  size="sm"
-                  variant="outline"
-                  tone="secondary"
-                  disabled={presetItems.length === 0}
-                  onClick={() => {
-                    setOpen({ kind: "create" });
-                  }}
-                >
-                  {t("assistant.provider.add")}
-                </Button>
-              }
-            >
-              {providerItems.length === 0 && (
-                <ListEmpty>{t("assistant.providers.empty")}</ListEmpty>
-              )}
-              {providerItems.map((provider) => (
-                <ListItem key={provider.id}>
-                  <ListItemContent>
-                    <ListItemBody>
-                      <ListItemLabel>{provider.name}</ListItemLabel>
+      <SettingsGroup>
+        <Stack gap={5}>
+          {failure !== null && (
+            <InlineMessage tone="danger">{errorText(failure, t)}</InlineMessage>
+          )}
+          {training.length > 0 && (
+            <Alert tone="warning">
+              <AlertContent>
+                <AlertDescription>
+                  {t("assistant.use.trains", { provider: training.join(", ") })}
+                </AlertDescription>
+              </AlertContent>
+            </Alert>
+          )}
+          {providers.isPending || uses.isPending ? (
+            <SkeletonText lines={6} />
+          ) : (
+            <List variant="ruled" aria-label={t("settings.assistant.title")}>
+              <ListSection
+                label={t("assistant.providers")}
+                end={
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    tone="secondary"
+                    disabled={presetItems.length === 0}
+                    onClick={() => {
+                      setOpen({ kind: "create" });
+                    }}
+                  >
+                    {t("assistant.provider.add")}
+                  </Button>
+                }
+              >
+                {providerItems.length === 0 && (
+                  <ListEmpty>{t("assistant.providers.empty")}</ListEmpty>
+                )}
+                {providerItems.map((provider) => (
+                  <ListItem key={provider.id}>
+                    <ListItemContent>
+                      <ListItemBody>
+                        <ListItemLabel>{provider.name}</ListItemLabel>
+                        <ListItemDescription>
+                          {provider.instance
+                            ? t("assistant.provider.instance")
+                            : `${catalogLabel(t, `assistant.preset.${provider.preset}`, provider.preset)} · ${t(
+                                provider.has_key
+                                  ? "assistant.provider.keyStored"
+                                  : "assistant.provider.noKey",
+                              )}`}
+                        </ListItemDescription>
+                      </ListItemBody>
+                      <ListItemEnd>
+                        <NoticeTag notice={provider.notice} />
+                      </ListItemEnd>
+                    </ListItemContent>
+                    {check.variables === provider.id && (
                       <ListItemDescription>
-                        {provider.instance
-                          ? t("assistant.provider.instance")
-                          : `${catalogLabel(t, `assistant.preset.${provider.preset}`, provider.preset)} · ${t(
-                              provider.has_key
-                                ? "assistant.provider.keyStored"
-                                : "assistant.provider.noKey",
-                            )}`}
+                        {check.isPending && t("assistant.key.checking")}
+                        {check.isSuccess &&
+                          t("assistant.key.ok", {
+                            count: new Intl.NumberFormat(locale).format(
+                              check.data,
+                            ),
+                          })}
+                        {check.isError && errorText(check.error, t)}
                       </ListItemDescription>
-                    </ListItemBody>
-                    <ListItemEnd>
-                      <NoticeTag notice={provider.notice} />
-                    </ListItemEnd>
-                  </ListItemContent>
-                  {check.variables === provider.id && (
-                    <ListItemDescription>
-                      {check.isPending && t("assistant.key.checking")}
-                      {check.isSuccess &&
-                        t("assistant.key.ok", {
-                          count: new Intl.NumberFormat(locale).format(
-                            check.data,
-                          ),
-                        })}
-                      {check.isError && errorText(check.error, t)}
-                    </ListItemDescription>
-                  )}
-                  {!provider.instance && (
+                    )}
+                    {!provider.instance && (
+                      <ListItemActions>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          tone="secondary"
+                          loading={
+                            check.isPending && check.variables === provider.id
+                          }
+                          onClick={() => {
+                            check.mutate(provider.id);
+                          }}
+                        >
+                          {t("assistant.key.check")}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          tone="secondary"
+                          onClick={() => {
+                            setOpen({ kind: "models", provider });
+                          }}
+                        >
+                          {t("assistant.provider.models")}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          tone="secondary"
+                          onClick={() => {
+                            setOpen({ kind: "edit", provider });
+                          }}
+                        >
+                          {t("assistant.provider.edit")}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          tone="danger"
+                          loading={
+                            remove.isPending && remove.variables === provider.id
+                          }
+                          onClick={() => {
+                            remove.mutate(provider.id);
+                          }}
+                        >
+                          {t("assistant.provider.delete")}
+                        </Button>
+                      </ListItemActions>
+                    )}
+                  </ListItem>
+                ))}
+              </ListSection>
+              <ListSection label={t("assistant.uses")}>
+                {(uses.data?.items ?? []).map((use) => (
+                  <ListItem key={use.id}>
+                    <ListItemContent>
+                      <ListItemBody>
+                        <ListItemLabel>
+                          {catalogLabel(t, `assistant.use.${use.id}`, use.id)}
+                        </ListItemLabel>
+                        <ListItemDescription>
+                          {use.targets.length === 0
+                            ? t("assistant.use.none")
+                            : use.targets
+                                .map((x) => `${x.provider_name} · ${x.model}`)
+                                .join(" → ")}
+                        </ListItemDescription>
+                        <UsePrivacy use={use} />
+                      </ListItemBody>
+                      <ListItemEnd>
+                        <Tag
+                          size="sm"
+                          tone={use.default ? "secondary" : "accent"}
+                        >
+                          {t(
+                            use.default
+                              ? "assistant.use.default"
+                              : "assistant.use.custom",
+                          )}
+                        </Tag>
+                      </ListItemEnd>
+                    </ListItemContent>
                     <ListItemActions>
                       <Button
                         size="sm"
                         variant="ghost"
                         tone="secondary"
-                        loading={
-                          check.isPending && check.variables === provider.id
-                        }
                         onClick={() => {
-                          check.mutate(provider.id);
+                          setOpen({ kind: "chain", use });
                         }}
                       >
-                        {t("assistant.key.check")}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        tone="secondary"
-                        onClick={() => {
-                          setOpen({ kind: "models", provider });
-                        }}
-                      >
-                        {t("assistant.provider.models")}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        tone="secondary"
-                        onClick={() => {
-                          setOpen({ kind: "edit", provider });
-                        }}
-                      >
-                        {t("assistant.provider.edit")}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        tone="danger"
-                        loading={
-                          remove.isPending && remove.variables === provider.id
-                        }
-                        onClick={() => {
-                          remove.mutate(provider.id);
-                        }}
-                      >
-                        {t("assistant.provider.delete")}
+                        {t("assistant.use.edit")}
                       </Button>
                     </ListItemActions>
-                  )}
-                </ListItem>
-              ))}
-            </ListSection>
-            <ListSection label={t("assistant.uses")}>
-              {(uses.data?.items ?? []).map((use) => (
-                <ListItem key={use.id}>
-                  <ListItemContent>
-                    <ListItemBody>
-                      <ListItemLabel>
-                        {catalogLabel(t, `assistant.use.${use.id}`, use.id)}
-                      </ListItemLabel>
-                      <ListItemDescription>
-                        {use.targets.length === 0
-                          ? t("assistant.use.none")
-                          : use.targets
-                              .map((x) => `${x.provider_name} · ${x.model}`)
-                              .join(" → ")}
-                      </ListItemDescription>
-                      <UsePrivacy use={use} />
-                    </ListItemBody>
-                    <ListItemEnd>
-                      <Tag
-                        size="sm"
-                        tone={use.default ? "secondary" : "accent"}
-                      >
-                        {t(
-                          use.default
-                            ? "assistant.use.default"
-                            : "assistant.use.custom",
-                        )}
-                      </Tag>
-                    </ListItemEnd>
-                  </ListItemContent>
-                  <ListItemActions>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      tone="secondary"
-                      onClick={() => {
-                        setOpen({ kind: "chain", use });
-                      }}
-                    >
-                      {t("assistant.use.edit")}
-                    </Button>
-                  </ListItemActions>
-                </ListItem>
-              ))}
-            </ListSection>
-            <UsageList
-              rows={mergeUsageRows(
-                usage.data?.items ?? [],
-                uses.data?.items ?? [],
-                new Set(
-                  providerItems.filter((p) => p.instance).map((p) => p.id),
-                ),
-              )}
-              now={new Date(usage.dataUpdatedAt)}
-              onLimits={(row) => {
-                setOpen({ kind: "limits", row });
-              }}
-            />
-            <UsageChart />
-          </List>
-        )}
-        <InlineMessage>{t("assistant.usage.note")}</InlineMessage>
-      </Stack>
+                  </ListItem>
+                ))}
+              </ListSection>
+              <UsageList
+                rows={mergeUsageRows(
+                  usage.data?.items ?? [],
+                  uses.data?.items ?? [],
+                  new Set(
+                    providerItems.filter((p) => p.instance).map((p) => p.id),
+                  ),
+                )}
+                now={new Date(usage.dataUpdatedAt)}
+                onLimits={(row) => {
+                  setOpen({ kind: "limits", row });
+                }}
+              />
+              <UsageChart />
+            </List>
+          )}
+          <InlineMessage>{t("assistant.usage.note")}</InlineMessage>
+        </Stack>
+      </SettingsGroup>
       {(open?.kind === "create" || open?.kind === "edit") && (
         <ProviderDialog
           presets={presetItems}

@@ -1,19 +1,22 @@
 import { Button } from "@slotted/react/button";
+import { Icon } from "@slotted/react/icon";
 import { Inline } from "@slotted/react/inline";
-import { List, ListEmpty, ListSection } from "@slotted/react/list";
+import { List, ListSection } from "@slotted/react/list";
 import {
   ListItem,
   ListItemBody,
-  ListItemContent,
   ListItemDescription,
   ListItemEnd,
   ListItemLabel,
+  ListItemLink,
+  ListItemStart,
+  ListItemContent,
 } from "@slotted/react/list-item";
 import { SkeletonText } from "@slotted/react/skeleton";
-import { Stack } from "@slotted/react/stack";
 import { Tag } from "@slotted/react/tag";
+import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useMemo } from "react";
 
 import { useApi } from "@/api/api-context";
@@ -23,11 +26,17 @@ import {
   calendarsQuery,
   holidaysQuery,
 } from "@/features/planning";
+import { CalendarDay } from "@/features/setup/calendar-day";
+import { CalendarShiftExample } from "@/features/setup/calendar-shift-example";
+import { SettingsGroup } from "@/features/setup/settings-group";
+import { SettingsIcon } from "@/features/setup/settings-icon";
+import styles from "@/features/setup/settings-page.module.css";
 import { maxYear, minYear } from "@/features/setup/settings-search";
 import { SettingsSection } from "@/features/setup/settings-section";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { QueryError } from "@/ui/query-error";
+import { useAppLink } from "@/ui/use-app-link";
 
 type Holiday = components["schemas"]["Holiday"];
 
@@ -47,31 +56,28 @@ const dayMs = 86_400_000;
 export function SettingsCalendars() {
   const t = useT();
   const api = useApi();
+  const follow = useAppLink();
   const [tag] = useAppLocale();
   const today = useToday();
   const search = useSearch({ from: "/_authed/settings" });
   const navigate = useNavigate();
   const calendars = useQuery(calendarsQuery(api));
   const year = search.year ?? Number(today.slice(0, 4));
-  const chosen = calendars.data?.items.find((c) => c.id === search.calendar);
+  // The region's calendar is on show until the reader picks another.
+  const chosenID = search.calendar ?? calendars.data?.default;
+  const chosen = calendars.data?.items.find((c) => c.id === chosenID);
   const holidays = useQuery({
     ...holidaysQuery(api, chosen?.id ?? "", year),
     enabled: chosen !== undefined,
   });
 
   const fmt = useMemo(() => {
-    const day = new Intl.DateTimeFormat(tag, {
-      weekday: "long",
-      timeZone: "UTC",
-    });
-    const month = new Intl.DateTimeFormat(tag, {
-      month: "long",
-      timeZone: "UTC",
-    });
-    const date = new Intl.DateTimeFormat(tag, {
-      dateStyle: "full",
-      timeZone: "UTC",
-    });
+    const utc = { timeZone: "UTC" } as const;
+    const day = new Intl.DateTimeFormat(tag, { weekday: "long", ...utc });
+    const short = new Intl.DateTimeFormat(tag, { weekday: "short", ...utc });
+    const number = new Intl.DateTimeFormat(tag, { day: "numeric", ...utc });
+    const month = new Intl.DateTimeFormat(tag, { month: "long", ...utc });
+    const date = new Intl.DateTimeFormat(tag, { dateStyle: "full", ...utc });
     const list = new Intl.ListFormat(tag, { type: "conjunction" });
     return {
       weekend: (days: readonly string[]) =>
@@ -82,6 +88,10 @@ export function SettingsCalendars() {
         ),
       month: (iso: string) => month.format(new Date(`${iso.slice(0, 7)}-01`)),
       date: (iso: string) => date.format(new Date(iso)),
+      tile: (iso: string) => ({
+        weekday: short.format(new Date(iso)),
+        day: number.format(new Date(iso)),
+      }),
     };
   }, [tag]);
 
@@ -113,7 +123,7 @@ export function SettingsCalendars() {
   const stepYear = (to: number) => {
     void navigate({
       to: "/settings",
-      search: { ...search, year: to },
+      search: { ...search, calendar: chosen?.id, year: to },
       replace: true,
     });
   };
@@ -122,32 +132,49 @@ export function SettingsCalendars() {
     <SettingsSection
       topic="calendars"
       title={t("calendar.title")}
-      description={t("calendar.description")}
+      description={t("calendar.purpose")}
     >
-      {calendars.isPending ? (
-        <SkeletonText lines={4} />
-      ) : calendars.isError ? (
-        <QueryError
-          error={calendars.error}
-          onRetry={() => void calendars.refetch()}
+      <SettingsGroup
+        title={t("calendar.how.title")}
+        description={t("calendar.how.description")}
+      >
+        <CalendarShiftExample
+          weekday={(iso) => fmt.tile(iso).weekday}
+          day={(iso) => fmt.tile(iso).day}
+          date={fmt.date}
         />
-      ) : (
-        <Stack gap={6}>
-          <List aria-label={t("calendar.title")}>
+      </SettingsGroup>
+
+      <SettingsGroup
+        title={t("calendar.list.title")}
+        description={t("calendar.list.description")}
+      >
+        {calendars.isPending ? (
+          <SkeletonText lines={4} />
+        ) : calendars.isError ? (
+          <QueryError
+            error={calendars.error}
+            onRetry={() => void calendars.refetch()}
+          />
+        ) : (
+          <List variant="separated" aria-label={t("calendar.title")}>
             {ordered.map((c) => (
-              <ListItem key={c.id}>
-                <ListItemContent>
+              <ListItem
+                key={c.id}
+                current={c.id === chosen?.id}
+                selected={c.id === chosen?.id}
+                tone="accent"
+              >
+                <ListItemLink
+                  href={`/settings?section=calendars&calendar=${c.id}`}
+                  onClick={follow({
+                    to: "/settings",
+                    search: { ...search, calendar: c.id },
+                    replace: true,
+                  })}
+                >
                   <ListItemBody>
-                    <ListItemLabel>
-                      <Link
-                        to="/settings"
-                        search={{ calendar: c.id, year: search.year }}
-                        replace
-                        aria-current={c.id === chosen?.id ? "true" : undefined}
-                      >
-                        {calendarLabel(t, c.id)}
-                      </Link>
-                    </ListItemLabel>
+                    <ListItemLabel>{calendarLabel(t, c.id)}</ListItemLabel>
                     <ListItemDescription>
                       {t("calendar.weekendDays", {
                         days: fmt.weekend(c.weekend),
@@ -156,67 +183,86 @@ export function SettingsCalendars() {
                   </ListItemBody>
                   {c.id === calendars.data.default && (
                     <ListItemEnd>
-                      <Tag size="sm">{t("calendar.regionMark")}</Tag>
+                      <Tag size="sm" tone="accent">
+                        {t("calendar.regionMark")}
+                      </Tag>
                     </ListItemEnd>
                   )}
-                </ListItemContent>
+                </ListItemLink>
               </ListItem>
             ))}
           </List>
-          {chosen === undefined ? (
-            <p>{t("calendar.pick")}</p>
+        )}
+      </SettingsGroup>
+
+      {chosen !== undefined && (
+        <SettingsGroup
+          title={holidaysLabel}
+          actions={
+            <Inline gap={2} align="center">
+              <Button
+                size="sm"
+                variant="ghost"
+                tone="secondary"
+                aria-label={t("calendar.year.previous")}
+                disabled={year <= minYear}
+                onClick={() => {
+                  stepYear(year - 1);
+                }}
+              >
+                <Icon size="sm" directional>
+                  <SettingsIcon name="previous" />
+                </Icon>
+              </Button>
+              <Text size="md" weight="semibold" className={styles.year}>
+                {String(year)}
+              </Text>
+              <Button
+                size="sm"
+                variant="ghost"
+                tone="secondary"
+                aria-label={t("calendar.year.next")}
+                disabled={year >= maxYear}
+                onClick={() => {
+                  stepYear(year + 1);
+                }}
+              >
+                <Icon size="sm" directional>
+                  <SettingsIcon name="next" />
+                </Icon>
+              </Button>
+            </Inline>
+          }
+        >
+          {holidays.isPending ? (
+            <SkeletonText lines={4} />
+          ) : holidays.isError ? (
+            <QueryError
+              error={holidays.error}
+              onRetry={() => void holidays.refetch()}
+            />
           ) : (
-            <Stack gap={4}>
-              <output aria-live="polite">
-                {t("calendar.holidaysOf", {
-                  name: calendarLabel(t, chosen.id),
-                  year: String(year),
-                })}
-              </output>
-              <Inline gap={3} align="center">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  tone="secondary"
-                  disabled={year <= minYear}
-                  onClick={() => {
-                    stepYear(year - 1);
-                  }}
-                >
-                  {t("calendar.year.previous")}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  tone="secondary"
-                  disabled={year >= maxYear}
-                  onClick={() => {
-                    stepYear(year + 1);
-                  }}
-                >
-                  {t("calendar.year.next")}
-                </Button>
-              </Inline>
-              {holidays.isPending ? (
-                <SkeletonText lines={4} />
-              ) : holidays.isError ? (
-                <QueryError
-                  error={holidays.error}
-                  onRetry={() => void holidays.refetch()}
-                />
-              ) : months.length === 0 ? (
-                <List aria-label={holidaysLabel}>
-                  <ListEmpty>
-                    {t("calendar.holidays.empty", { year: String(year) })}
-                  </ListEmpty>
-                </List>
-              ) : (
+            <>
+              <Text size="sm" tone="muted">
+                <output aria-live="polite">
+                  {months.length === 0
+                    ? t("calendar.holidays.empty", { year: String(year) })
+                    : t("calendar.holidays.count", {
+                        count: String(holidays.data.length),
+                        year: String(year),
+                      })}
+                </output>
+              </Text>
+              {months.length > 0 && (
                 <List aria-label={holidaysLabel}>
                   {months.map((m) => (
                     <ListSection key={m.key} label={fmt.month(m.key)}>
                       {m.items.map((h) => (
                         <ListItem key={`${h.date}/${h.name}`}>
                           <ListItemContent>
+                            <ListItemStart>
+                              <CalendarDay {...fmt.tile(h.date)} />
+                            </ListItemStart>
                             <ListItemBody>
                               <ListItemLabel>{h.name}</ListItemLabel>
                               <ListItemDescription>
@@ -239,9 +285,9 @@ export function SettingsCalendars() {
                   ))}
                 </List>
               )}
-            </Stack>
+            </>
           )}
-        </Stack>
+        </SettingsGroup>
       )}
     </SettingsSection>
   );
