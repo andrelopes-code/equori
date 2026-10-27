@@ -32,9 +32,10 @@ func (e *QuotaError) Error() string {
 func (e *QuotaError) Is(target error) bool { return target == ErrQuota }
 
 // ExhaustedError is returned at once when no target can be called; RetryAt is the earliest
-// instant one becomes available.
+// instant one becomes available. Transient is true when only transient failures cool the targets down.
 type ExhaustedError struct {
-	RetryAt time.Time
+	RetryAt   time.Time
+	Transient bool
 }
 
 func (e *ExhaustedError) Error() string {

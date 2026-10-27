@@ -6,6 +6,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -49,6 +50,8 @@ type Config struct {
 	Clock  clock.Clock
 	// NewProvider builds a user's provider; nil builds the real adapters.
 	NewProvider func(api, baseURL, key string) llm.Provider
+	// Wait blocks a chat turn until a transient cooldown ends (design 2026-10-26 E6); nil uses a timer on Clock.
+	Wait func(ctx context.Context, until time.Time) error
 }
 
 type Module struct {
@@ -62,6 +65,7 @@ type Module struct {
 	tools  app.Tools
 	locale func(context.Context, int64) (locale.Locale, error)
 	router *llm.Router
+	wait   func(ctx context.Context, until time.Time) error
 }
 
 // instancePreset maps an environment provider to its preset; only the Gemini adapter is
@@ -106,7 +110,20 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
 		}
 	}
 	svc := app.NewService(postgres.NewRepository(pool), box, llmapi.NewModels(build), instance, uses, cfg.Clock.Now, cfg.Clock.Today, log)
-	return &Module{svc: svc, resolver: llmapi.NewResolver(svc, cfg.Instance, build, log), http: httpapi.NewServer(svc, log), screens: screens, locale: cfg.Locale}, nil
+	wait := cfg.Wait
+	if wait == nil {
+		wait = func(ctx context.Context, until time.Time) error {
+			timer := time.NewTimer(until.Sub(cfg.Clock.Now()))
+			defer timer.Stop()
+			select {
+			case <-timer.C:
+				return nil
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+	}
+	return &Module{svc: svc, resolver: llmapi.NewResolver(svc, cfg.Instance, build, log), http: httpapi.NewServer(svc, log), screens: screens, locale: cfg.Locale, wait: wait}, nil
 }
 
 // Tools returns the assistant's own tools for language models (ADR 012).
@@ -137,7 +154,7 @@ func (m *Module) bindAgent(tools app.Tools) {
 	if m.tools == nil || m.router == nil {
 		return
 	}
-	m.svc.UseAgent(llmapi.NewAgent(m.router.Use(ChatUse), m.svc, m.tools, m.chat), m.locale)
+	m.svc.UseAgent(llmapi.NewAgent(m.router.Use(ChatUse), m.svc, m.tools, m.chat, m.wait), m.locale)
 }
 
 func (m *Module) Resolver() llm.Resolver { return m.resolver }

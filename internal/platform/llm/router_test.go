@@ -527,3 +527,99 @@ func TestClientPinCooling(t *testing.T) {
 		t.Fatalf("calls to b = %d, want 0", len(b.Requests()))
 	}
 }
+
+// gated answers its calls with the next function of calls, in call order.
+type gated struct {
+	mu    sync.Mutex
+	calls []func() (llm.Response, error)
+}
+
+func (*gated) Name() string { return "g" }
+
+func (g *gated) Generate(context.Context, string, llm.Request) (llm.Response, error) {
+	g.mu.Lock()
+	next := g.calls[0]
+	g.calls = g.calls[1:]
+	g.mu.Unlock()
+	return next()
+}
+
+// Design 2026-10-26 E6, E7: an exhausted chain reports whether only transient cooldowns block it.
+func TestExhaustedTransient(t *testing.T) {
+	t.Parallel()
+	transient := fmt.Errorf("x: %w", llm.ErrTransient)
+	exhausted := func(t *testing.T, err error) *llm.ExhaustedError {
+		t.Helper()
+		ex, ok := errors.AsType[*llm.ExhaustedError](err)
+		if !ok {
+			t.Fatalf("err = %v, want ExhaustedError", err)
+		}
+		return ex
+	}
+	t.Run("transient", func(t *testing.T) {
+		t.Parallel()
+		f := newFixture(llmtest.New("a", llmtest.Step{Model: "m1", Err: transient}))
+		_, err := f.router.Client(target("a/m1")).Generate(context.Background(), prompt())
+		if ex := exhausted(t, err); !ex.Transient || !ex.RetryAt.Equal(start.Add(10*time.Second)) {
+			t.Fatalf("ExhaustedError = %+v, want transient until +10s", ex)
+		}
+	})
+	t.Run("quota", func(t *testing.T) {
+		t.Parallel()
+		f := newFixture(llmtest.New("a", llmtest.Step{Model: "m1", Err: &llm.QuotaError{RetryAfter: time.Minute}}))
+		_, err := f.router.Client(target("a/m1")).Generate(context.Background(), prompt())
+		if ex := exhausted(t, err); ex.Transient {
+			t.Fatalf("ExhaustedError = %+v, want quota", ex)
+		}
+	})
+	t.Run("a quota cooldown on a skipped target blocks", func(t *testing.T) {
+		t.Parallel()
+		a := llmtest.New("a", llmtest.Step{Model: "m1", Err: &llm.QuotaError{}})
+		b := llmtest.New("b", llmtest.Step{Model: "m1", Response: text("ok")}, llmtest.Step{Model: "m1", Err: transient})
+		f := newFixture(a, b)
+		c := f.router.Client(target("a/m1"), target("b/m1"))
+		if _, err := c.Generate(context.Background(), prompt()); err != nil {
+			t.Fatal(err)
+		}
+		f.now = start.Add(time.Second)
+		_, err := c.Generate(context.Background(), prompt())
+		if ex := exhausted(t, err); ex.Transient {
+			t.Fatalf("ExhaustedError = %+v, want quota", ex)
+		}
+	})
+	// Review Focus 3: a transient failure that ends after a running quota cooldown keeps it a quota cooldown.
+	t.Run("transient over a running quota cooldown", func(t *testing.T) {
+		t.Parallel()
+		entered, release := make(chan struct{}), make(chan struct{})
+		g := &gated{calls: []func() (llm.Response, error){
+			func() (llm.Response, error) { close(entered); <-release; return llm.Response{}, transient },
+			func() (llm.Response, error) { return llm.Response{}, &llm.QuotaError{RetryAfter: 5 * time.Second} },
+		}}
+		f := newFixture(g)
+		c := f.router.Client(target("g/m1"))
+		done := make(chan error)
+		go func() {
+			_, err := c.Generate(context.Background(), prompt())
+			done <- err
+		}()
+		<-entered
+		if _, err := c.Generate(context.Background(), prompt()); !errors.Is(err, llm.ErrExhausted) {
+			t.Fatalf("quota call err = %v", err)
+		}
+		close(release)
+		if ex := exhausted(t, <-done); ex.Transient || !ex.RetryAt.Equal(start.Add(10*time.Second)) {
+			t.Fatalf("ExhaustedError = %+v, want quota until +10s", ex)
+		}
+	})
+	// Review Focus 2: a transient failure falls through to the next target without a wait.
+	t.Run("transient falls through", func(t *testing.T) {
+		t.Parallel()
+		a := llmtest.New("a", llmtest.Step{Model: "m1", Err: transient}, llmtest.Step{Model: "m2", Response: text("ok")})
+		b := llmtest.New("b")
+		f := newFixture(a, b)
+		resp, err := f.router.Client(target("a/m1"), target("a/m2"), target("b/m1")).Generate(context.Background(), prompt())
+		if err != nil || resp.Target != target("a/m2") || len(b.Requests()) != 0 {
+			t.Fatalf("resp = %+v, err = %v, third target calls = %d", resp.Target, err, len(b.Requests()))
+		}
+	})
+}

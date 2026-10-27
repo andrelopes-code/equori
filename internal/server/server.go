@@ -4,6 +4,7 @@ package server
 
 import (
 	"cmp"
+	"context"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -60,6 +61,8 @@ type Config struct {
 	LLMProviders []llm.Provider
 	// LLMFactory builds a user's provider; nil builds the real adapters. Tests replace it.
 	LLMFactory func(api, baseURL, key string) llm.Provider
+	// LLMWait blocks a chat turn until a transient cooldown ends; nil uses a timer on Clock.
+	LLMWait func(ctx context.Context, until time.Time) error
 	// PriceFeeds names the enabled price feeds; FeedURLs overrides their base URLs by identifier.
 	PriceFeeds []string
 	// IndexFeeds names the enabled index feeds; FeedURLs overrides their base URLs too.
@@ -120,6 +123,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	assistantModule, err := assistant.New(pool, assistant.Config{
 		SecretKey: cfg.SecretKey, PreviousSecretKey: cfg.PreviousSecretKey, Instance: cfg.LLMProviders,
 		Uses: []llm.Use{capture.SuggestUse, assistant.ChatUse}, Navigation: web.NavigationMap(), Locale: identityModule.Profile, Clock: clk, NewProvider: cfg.LLMFactory,
+		Wait: cfg.LLMWait,
 	}, log)
 	if err != nil {
 		return nil, err

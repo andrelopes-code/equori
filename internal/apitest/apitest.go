@@ -4,6 +4,7 @@ package apitest
 
 import (
 	"bytes"
+	"context"
 	"encoding/json/v2"
 	"io"
 	"io/fs"
@@ -91,6 +92,11 @@ func ExtraTools(groups ...tool.Group) Option {
 // LLM configures providers for the whole instance, as EQUORI_GEMINI_API_KEY does.
 func LLM(providers ...llm.Provider) Option {
 	return func(c *server.Config) { c.LLMProviders = providers }
+}
+
+// LLMWait replaces the timer the chat waits on for a transient cooldown to end (design 2026-10-26 E6).
+func LLMWait(f func(context.Context, time.Time) error) Option {
+	return func(c *server.Config) { c.LLMWait = f }
 }
 
 // LLMFactory builds the providers users configure, in place of the real adapters.

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/assistant/internal/app"
 	"github.com/andrelopes-code/equori/internal/assistant/internal/domain"
@@ -19,18 +20,39 @@ type Agent struct {
 	client   *llm.Client
 	decls    []llm.Tool
 	handlers map[string]llm.ToolHandler
+	wait     func(ctx context.Context, until time.Time) error
 }
 
 var _ app.Agent = (*Agent)(nil)
 
-// NewAgent declares every tool of set on every step, sorted by name (spec 7.3, delivery A).
-func NewAgent(client *llm.Client, svc *app.Service, tools app.Tools, set tool.Set) *Agent {
+// NewAgent declares every tool of set on every step, sorted by name (spec 7.3, delivery A). wait blocks until
+// the instant a transient cooldown ends (design 2026-10-26 E6).
+func NewAgent(client *llm.Client, svc *app.Service, tools app.Tools, set tool.Set, wait func(ctx context.Context, until time.Time) error) *Agent {
 	decls, handlers := ChatHandlers(svc, tools, set, app.TurnConversation)
 	slices.SortFunc(decls, func(a, b llm.Tool) int { return strings.Compare(a.Name, b.Name) })
-	return &Agent{client: client, decls: decls, handlers: handlers}
+	return &Agent{client: client, decls: decls, handlers: handlers, wait: wait}
 }
 
+// Run calls the model loop once more after a wait when only transient cooldowns block every target and the
+// earliest one ends before the turn's deadline (design 2026-10-26 E6).
 func (a *Agent) Run(ctx context.Context, userID int64, in app.AgentRequest, onStep func(string), onRestart func()) (app.AgentResult, error) {
+	out, err := a.run(ctx, userID, in, onStep, onRestart)
+	ee, ok := errors.AsType[*llm.ExhaustedError](err)
+	if !ok || !ee.Transient || !ee.RetryAt.Before(in.Deadline) {
+		return out, mapError(err)
+	}
+	onRestart()
+	if err := a.wait(ctx, ee.RetryAt); err != nil {
+		return out, mapError(err)
+	}
+	second, err := a.run(ctx, userID, in, onStep, onRestart)
+	second.ToolCalls += out.ToolCalls
+	second.InputTokens += out.InputTokens
+	second.OutputTokens += out.OutputTokens
+	return second, mapError(err)
+}
+
+func (a *Agent) run(ctx context.Context, userID int64, in app.AgentRequest, onStep func(string), onRestart func()) (app.AgentResult, error) {
 	req := llm.Request{System: in.System, Tools: a.decls}
 	for _, m := range in.History {
 		role := llm.RoleUser
@@ -54,7 +76,7 @@ func (a *Agent) Run(ctx context.Context, userID int64, in app.AgentRequest, onSt
 		InputTokens: res.Usage.InputTokens, OutputTokens: res.Usage.OutputTokens,
 		ProviderName: res.Response.Target.Provider, Model: res.Response.Target.Model,
 	}
-	return out, mapError(err)
+	return out, err
 }
 
 // mapError turns the model loop's failures into the errors of spec 6.2.
@@ -65,7 +87,7 @@ func mapError(err error) error {
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 		return err
 	case errors.Is(err, llm.ErrExhausted):
-		if ee, ok := errors.AsType[*llm.ExhaustedError](err); ok {
+		if ee, ok := errors.AsType[*llm.ExhaustedError](err); ok && !ee.Transient {
 			return &app.LimitError{RetryAt: ee.RetryAt}
 		}
 		return fmt.Errorf("%w: %w", app.ErrTurnFailed, err)

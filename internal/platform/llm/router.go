@@ -27,12 +27,18 @@ type Router struct {
 	providers map[string]Provider
 
 	mu       sync.Mutex
-	cooldown map[Target]time.Time
+	cooldown map[Target]cooldown
+}
+
+// cooldown is the end of a target's pause and whether a quota failure started it.
+type cooldown struct {
+	until time.Time
+	quota bool
 }
 
 // NewRouter serves fixed chains over providers and uses through res, which may be nil.
 func NewRouter(clk *clock.Clock, log *slog.Logger, res Resolver, providers ...Provider) *Router {
-	r := &Router{clk: clk, log: log, res: res, providers: map[string]Provider{}, cooldown: map[Target]time.Time{}}
+	r := &Router{clk: clk, log: log, res: res, providers: map[string]Provider{}, cooldown: map[Target]cooldown{}}
 	for _, p := range providers {
 		r.providers[p.Name()] = p
 	}
@@ -133,7 +139,7 @@ func (c *Client) Generate(ctx context.Context, req Request) (Response, error) {
 			return Response{}, fmt.Errorf("generate with %s: %w", t, err)
 		}
 		until := r.clk.Now().Add(wait)
-		r.setCooldown(t, until)
+		r.setCooldown(t, until, outcome == "quota")
 		c.record(ctx, Attempt{Target: t, Outcome: outcome, CooldownUntil: until})
 		r.log.Warn("llm call", "provider", t.Provider, "model", t.Model, "outcome", outcome, "duration", elapsed,
 			"cooldown_until", until)
@@ -141,7 +147,7 @@ func (c *Client) Generate(ctx context.Context, req Request) (Response, error) {
 	if len(bindings) == 0 {
 		return Response{}, ErrUnavailable
 	}
-	return Response{}, &ExhaustedError{RetryAt: r.earliestEnd(bindings)}
+	return Response{}, &ExhaustedError{RetryAt: r.earliestEnd(bindings), Transient: r.allTransient(bindings)}
 }
 
 // record hands a use client's attempt to the resolver when it is also a Recorder.
@@ -181,15 +187,30 @@ func classify(err error) (string, time.Duration) {
 func (r *Router) coolingDown(t Target) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return r.cooldown[t].After(r.clk.Now())
+	return r.cooldown[t].until.After(r.clk.Now())
 }
 
-func (r *Router) setCooldown(t Target, until time.Time) {
+// setCooldown extends t's cooldown to until; a quota cooldown still running stays a quota cooldown.
+func (r *Router) setCooldown(t Target, until time.Time, quota bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if until.After(r.cooldown[t]) {
-		r.cooldown[t] = until
+	old := r.cooldown[t]
+	if until.After(old.until) {
+		r.cooldown[t] = cooldown{until: until, quota: quota || old.quota && old.until.After(r.clk.Now())}
 	}
+}
+
+// allTransient reports whether no running cooldown of bindings comes from a quota failure.
+func (r *Router) allTransient(bindings []Binding) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	now := r.clk.Now()
+	for _, b := range bindings {
+		if c := r.cooldown[b.Target]; c.quota && c.until.After(now) {
+			return false
+		}
+	}
+	return true
 }
 
 func (r *Router) earliestEnd(bindings []Binding) time.Time {
@@ -197,7 +218,7 @@ func (r *Router) earliestEnd(bindings []Binding) time.Time {
 	defer r.mu.Unlock()
 	var earliest time.Time
 	for _, b := range bindings {
-		if end := r.cooldown[b.Target]; earliest.IsZero() || end.Before(earliest) {
+		if end := r.cooldown[b.Target].until; earliest.IsZero() || end.Before(earliest) {
 			earliest = end
 		}
 	}

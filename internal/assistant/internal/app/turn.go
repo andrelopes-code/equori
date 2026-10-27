@@ -33,10 +33,12 @@ var (
 )
 
 // AgentRequest is what the agent sends to the model: the prompt, the earlier turns and the user's text.
+// Deadline is the instant the turn ends, on the instance clock.
 type AgentRequest struct {
-	System  string
-	History []HistoryMessage
-	Text    string
+	System   string
+	History  []HistoryMessage
+	Text     string
+	Deadline time.Time
 }
 
 // AgentResult is the final answer of an agent run and what the run cost.
@@ -175,9 +177,10 @@ func (s *Service) Turn(ctx context.Context, userID int64, in TurnInput, ev TurnE
 	runCtx, cancel := context.WithTimeout(context.WithValue(ctx, turnKey{}, state), TurnTimeout)
 	defer cancel()
 	req := AgentRequest{
-		System:  Prompt(PromptInput{Today: s.today(), Locale: prof, Page: in.Page}),
-		History: History(messages, proposals, now),
-		Text:    text,
+		System:   Prompt(PromptInput{Today: s.today(), Locale: prof, Page: in.Page}),
+		History:  History(messages, proposals, now),
+		Text:     text,
+		Deadline: s.now().Add(TurnTimeout),
 	}
 	discard := func() {
 		if ids := state.take(); len(ids) > 0 {

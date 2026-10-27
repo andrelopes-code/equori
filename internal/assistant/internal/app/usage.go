@@ -32,10 +32,15 @@ type Attempt struct {
 
 // Record adds one attempt to the user's counters of the day.
 func (s *Service) Record(ctx context.Context, userID int64, a Attempt) error {
+	// Only a quota cooldown blocks the chat state; a transient one lives in the router (design 2026-10-26 E7).
+	var cooling time.Time
+	if a.Outcome == "quota" {
+		cooling = a.CoolingUntil
+	}
 	return s.repo.AddUsage(ctx, domain.UsageEntry{
 		UserID: userID, Day: s.today(), ProviderID: a.ProviderID, Model: a.Model, UseID: a.UseID,
 		Failed: a.Outcome != "ok", Quota: a.Outcome == "quota",
-		InputTokens: a.InputTokens, OutputTokens: a.OutputTokens, CoolingUntil: a.CoolingUntil,
+		InputTokens: a.InputTokens, OutputTokens: a.OutputTokens, CoolingUntil: cooling,
 	})
 }
 

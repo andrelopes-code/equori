@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"slices"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -359,4 +361,57 @@ func TestTurnOtherUserConversation(t *testing.T) {
 	other := h.Login("other@example.com")
 	h.ExpectProblem(sendTurn(h, other, map[string]any{"conversation_id": turn.ConversationID, "text": "oi"}), http.StatusNotFound, "conversation_not_found", "")
 	h.ExpectProblem(h.Call(other, http.MethodGet, "/api/v1/assistant/conversations/"+turn.ConversationID, nil), http.StatusNotFound, "conversation_not_found", "")
+}
+
+// U3, design 2026-10-26 E6, E7: transient failures on every target make the turn wait once, never a usage limit.
+func TestTurnTransientIsNotALimit(t *testing.T) {
+	t.Parallel()
+	transient := func(model string) llmtest.Step {
+		return llmtest.Step{Model: model, Err: fmt.Errorf("500: %w", llm.ErrTransient)}
+	}
+	harness := func(t *testing.T, p *llmtest.Provider) (*apitest.Harness, *[]time.Time) {
+		var mu sync.Mutex
+		now := time.Date(2026, 10, 23, 12, 0, 0, 0, time.UTC)
+		var waits []time.Time
+		h := turnHarness(t, p,
+			apitest.Clock(func() time.Time { mu.Lock(); defer mu.Unlock(); return now }),
+			apitest.LLMWait(func(_ context.Context, until time.Time) error {
+				mu.Lock()
+				defer mu.Unlock()
+				waits = append(waits, until)
+				now = until
+				return nil
+			}))
+		return h, &waits
+	}
+	steps := []llmtest.Step{transient("gemini-3.5-flash-lite"), transient("gemini-3.1-flash-lite"), transient("gemini-3.5-flash")}
+	t.Run("waits and answers", func(t *testing.T) {
+		t.Parallel()
+		h, waits := harness(t, llmtest.New("aistudio", append(slices.Clone(steps), textStep("ok"))...))
+		r := sendTurn(h, h.Client, map[string]any{"text": "oi"})
+		events := parseSSE(r.Body)
+		if r.Status != http.StatusOK || !slices.Equal(eventNames(events), []string{"turn", "answer"}) {
+			t.Fatalf("status = %d: %s", r.Status, r.Body)
+		}
+		var answer turnAnswer
+		if err := json.Unmarshal([]byte(events[1].Data), &answer); err != nil || answer.Content != "ok" {
+			t.Fatalf("answer = %s", events[1].Data)
+		}
+		var chat struct {
+			Available bool `json:"available"`
+		}
+		h.MustDo(http.MethodGet, "/api/v1/assistant/chat", nil, http.StatusOK, &chat)
+		if !chat.Available || len(*waits) != 1 {
+			t.Fatalf("available = %v, waits = %v", chat.Available, *waits)
+		}
+	})
+	t.Run("transient cooldowns are not stored as a limit", func(t *testing.T) {
+		t.Parallel()
+		h, _ := harness(t, llmtest.New("aistudio", append(slices.Clone(steps), textStep("ok"))...))
+		ctx := auth.WithUserID(t.Context(), h.OwnerID())
+		_, _ = h.App.LLM.Use(assistant.ChatUse).Generate(ctx, llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}}})
+		if r := sendTurn(h, h.Client, map[string]any{"text": "oi"}); r.Status != http.StatusOK {
+			t.Fatalf("status = %d: %s", r.Status, r.Body)
+		}
+	})
 }
