@@ -41,7 +41,7 @@ export function MethodSection({
 }) {
   const t = useT();
   const part = (title: MessageKey, children: ReactNode) => (
-    <Section size="sm">
+    <Section size="sm" divider={false}>
       <SectionHeader>
         <SectionTitle>
           <SectionHeading>{t(title)}</SectionHeading>
@@ -59,7 +59,7 @@ export function MethodSection({
       </Text>
     ));
   return (
-    <Section>
+    <Section divider={false}>
       <SectionHeader>
         <SectionTitle>
           <SectionHeading>{t("calc.method")}</SectionHeading>

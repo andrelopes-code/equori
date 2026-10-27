@@ -63,7 +63,7 @@ export function CalculatorFrame({
       <PageBody>
         <Stack gap={8}>
           <div className={styles.work}>
-            <Section>
+            <Section divider={false}>
               <SectionHeader>
                 <SectionTitle>
                   <SectionHeading>{t("calc.inputs")}</SectionHeading>
@@ -73,7 +73,7 @@ export function CalculatorFrame({
                 <Stack gap={4}>{inputs}</Stack>
               </SectionBody>
             </Section>
-            <Section aria-live="polite">
+            <Section divider={false} aria-live="polite">
               <SectionHeader>
                 <SectionTitle>
                   <SectionHeading>{t("calc.results")}</SectionHeading>

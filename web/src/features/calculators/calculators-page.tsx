@@ -50,7 +50,7 @@ export function CalculatorsPage() {
       <PageBody>
         <Stack gap={6}>
           {calculatorGroups.map((group) => (
-            <Section key={group}>
+            <Section key={group} divider={false}>
               <SectionHeader>
                 <SectionTitle>
                   <SectionHeading>{t(`calc.group.${group}`)}</SectionHeading>
