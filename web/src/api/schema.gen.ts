@@ -22,6 +22,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Report whether the first user is still to be created (ADR 003, amendment of 2026-10-27). */
+        get: operations["getSetup"];
+        put?: never;
+        /**
+         * Create the first user, an admin, with the setup token, and start a session.
+         * @description The token is the one serve logs and writes to setup.url while no user exists. A token
+         *     that differs is 403 setup_token_invalid; once a user exists, 409 setup_complete. Without
+         *     base_currency the default of the region applies; a region without one is 422 on
+         *     base_currency.
+         */
+        post: operations["completeSetup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me": {
         parameters: {
             query?: never;
@@ -5193,6 +5217,17 @@ export interface components {
             language?: string;
             region?: string;
         };
+        SetupStatus: {
+            required: boolean;
+        };
+        SetupInput: {
+            token: string;
+            email: string;
+            password: string;
+            language: string;
+            region: string;
+            base_currency?: string;
+        };
         Problem: {
             type: string;
             title: string;
@@ -5208,7 +5243,8 @@ export interface components {
              *     integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
              *     currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
              *     budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
-             *     investment_transaction, system_account, attachment_not_inlineable, archive_too_new.
+             *     investment_transaction, system_account, attachment_not_inlineable, archive_too_new,
+             *     setup_token_invalid, setup_complete.
              */
             code: string;
             request_id?: string;
@@ -5302,6 +5338,57 @@ export interface operations {
                 content?: never;
             };
             401: components["responses"]["Problem"];
+        };
+    };
+    getSetup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Setup state. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SetupStatus"];
+                };
+            };
+        };
+    };
+    completeSetup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetupInput"];
+            };
+        };
+        responses: {
+            /** @description First user created and signed in. */
+            201: {
+                headers: {
+                    "Set-Cookie"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            413: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
         };
     };
     getCurrentUser: {

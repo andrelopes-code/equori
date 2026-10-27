@@ -14,7 +14,7 @@ COMPOSE := docker compose -f compose.yaml -f compose.dev.yaml
 LOCAL_ENV ?= $(HOME)/.config/equori/local.env
 LOAD_ENV := set -a && . ./dev.env && { [ ! -f "$(LOCAL_ENV)" ] || . "$(LOCAL_ENV)"; } && { [ ! -f .env ] || . ./.env; } && set +a
 
-.PHONY: check static fmt fmt-check lint tidy-check gen gen-check test test-race perf vuln build dist upgrade-test test-cluster standalone-smoke formula-test dev db-up db-down db-test-up run-dev run-prod hooks tools web-deps web-build web-check web-static web-test web-dev demo demo-user demo-reset
+.PHONY: check static fmt fmt-check lint tidy-check gen gen-check test test-race perf vuln build dist upgrade-test test-cluster test-exchange standalone-smoke formula-test dev db-up db-down db-test-up run-dev run-prod hooks tools web-deps web-build web-check web-static web-test web-dev demo demo-user demo-reset
 
 # Everything, the Go tests under -race included: CI runs it on every pull request. The web build
 # comes first: the Go tests compile package web, which embeds web/dist. The web tests come last:
@@ -32,8 +32,11 @@ fmt: $(TOOLS)
 fmt-check: $(TOOLS)
 	$(BIN)/golangci-lint fmt --diff
 
+# The Windows form compiles from the same tree (ADR 023); its build-tagged files are checked here too.
 lint: $(TOOLS)
 	$(BIN)/golangci-lint run
+	GOOS=windows $(BIN)/golangci-lint run
+	GOOS=windows CGO_ENABLED=0 go vet ./...
 
 # Each module's adapter/httpapi holds an oapi-codegen.yaml selecting its tag from api/openapi.yaml.
 gen: $(TOOLS) $(WEB_DEPS)
@@ -76,6 +79,18 @@ test-cluster: db-test-up
 			-e EQUORI_TEST_DATABASE_URL=$(EQUORI_TEST_DATABASE_URL) \
 			postgres:18 /cluster.test -test.count=1 -test.v -test.run "$$pattern" || exit 1; \
 	done
+
+# B4 across operating systems (W-R2 of the Windows design): EXCHANGE_DIR holds <goos>.dump and
+# <goos>.snapshot; EXCHANGE_RUN selects ^TestExchangeDump$ or ^TestExchangeRestore$.
+EXCHANGE_DIR ?= $(BIN)/exchange
+EXCHANGE_RUN ?= ^TestExchangeRestore$$
+test-exchange: db-test-up
+	mkdir -p $(BIN)/cluster-tests $(EXCHANGE_DIR) && chmod 0777 $(EXCHANGE_DIR)
+	CGO_ENABLED=0 go test -c -tags cluster -o $(BIN)/cluster-tests/exchange.test ./internal/server
+	docker run --rm --network host -u postgres -v $(BIN)/cluster-tests/exchange.test:/cluster.test:ro \
+		-v $(abspath $(EXCHANGE_DIR)):/exchange -e EQUORI_TEST_EXCHANGE=/exchange \
+		-e EQUORI_TEST_POSTGRES_BIN=/usr/lib/postgresql/18/bin -e EQUORI_TEST_DATABASE_URL=$(EQUORI_TEST_DATABASE_URL) \
+		postgres:18 /cluster.test -test.count=1 -test.v -test.run '$(EXCHANGE_RUN)'
 
 # N05, N06 and N09 on the demo dataset (docs/operations/performance.md); make check never runs it.
 perf: db-test-up

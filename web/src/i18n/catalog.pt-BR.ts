@@ -257,6 +257,25 @@ export const catalogPtBR: Catalog = {
   "login.email": "E-mail",
   "login.password": "Senha",
   "login.submit": "Entrar",
+  "setup.title": "Criar o primeiro usuário",
+  "setup.subtitle":
+    "Este usuário administra a instância. O idioma e a região definem como o equori escreve números, datas e valores.",
+  "setup.email": "E-mail",
+  "setup.password": "Senha",
+  "setup.password.help": "Pelo menos 12 caracteres.",
+  "setup.language": "Idioma",
+  "setup.region": "Região",
+  "setup.region.placeholder": "Escolha uma região",
+  "setup.currency": "Moeda base",
+  "setup.currency.help":
+    "Um código de três letras, como o de um extrato bancário. Deixe vazio para usar a moeda da região, quando ela tiver uma.",
+  "setup.submit": "Criar e entrar",
+  "setup.required": "Obrigatório.",
+  "setup.token_missing":
+    'Este endereço não tem o token de configuração. Abra o endereço que o equori mostrou na primeira execução: o arquivo setup.url no diretório de dados, ou a linha "first user setup" do log.',
+  "problem.setup_token_invalid":
+    "Este endereço de configuração não é o que esta instância emitiu. Abra de novo o endereço do setup.url ou do log.",
+  "problem.setup_complete": "O primeiro usuário já existe. Entre com ele.",
   "scheme.dark": "Escuro",
   "scheme.light": "Claro",
   "scheme.system": "Sistema",

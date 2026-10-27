@@ -20,7 +20,13 @@ func testCluster(t *testing.T) *pgcluster.Cluster {
 	if bin == "" {
 		t.Fatal("EQUORI_TEST_POSTGRES_BIN is not set; run make test-cluster")
 	}
-	c, err := pgcluster.Start(t.Context(), t.TempDir(), bin)
+	// A short directory: the socket path of a long test name exceeds the limit of Windows (W-M5).
+	dir, err := os.MkdirTemp("", "pgc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+	c, err := pgcluster.Start(t.Context(), dir, bin)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,10 +54,7 @@ func TestDumpAndRestore(t *testing.T) {
 	if err := Dump(t.Context(), c.Bin(), dsn, path); err != nil {
 		t.Fatal(err)
 	}
-	info, err := os.Stat(path)
-	if err != nil || info.Mode().Perm() != 0o600 {
-		t.Fatalf("dump mode = %v, %v; want 0600", info.Mode().Perm(), err)
-	}
+	assertPrivateMode(t, path)
 	if v, err := DumpVersion(t.Context(), c.Bin(), path); err != nil || v != 60 {
 		t.Fatalf("DumpVersion = %d, %v", v, err)
 	}

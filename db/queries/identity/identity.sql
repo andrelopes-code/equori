@@ -28,3 +28,10 @@ DELETE FROM identity_session WHERE token_hash = $1;
 
 -- name: DeleteExpiredSessions :exec
 DELETE FROM identity_session WHERE expires_at <= $1;
+
+-- name: LockUsers :exec
+-- The first-user setup creates its admin under this lock, so two requests yield one admin (W-U4).
+LOCK TABLE identity_user IN EXCLUSIVE MODE;
+
+-- name: AnyUser :one
+SELECT EXISTS (SELECT 1 FROM identity_user);

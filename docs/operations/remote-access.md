@@ -17,6 +17,7 @@ tailscale serve reset
 - HTTPS certificates must be enabled for the tailnet; the first `tailscale serve` asks for it.
 - Serve stays inside the tailnet. Funnel publishes to the internet and is not used.
 - The command syntax changed in client 1.52; `tailscale serve --help` shows the form of the installed client.
+- On Windows the service listens on `127.0.0.1:8080` too; the same command, in a terminal after Tailscale for Windows is installed, publishes it.
 
 ## Reverse proxy with a domain
 

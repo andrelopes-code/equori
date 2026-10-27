@@ -17,6 +17,18 @@ const (
 	assetsDir = "assets"
 )
 
+// contentTypes fixes the types of the files the web build emits. On Windows, mime reads the
+// registry, which may map .js to text/plain, and a browser then refuses to run the modules.
+var contentTypes = map[string]string{
+	".html":  "text/html; charset=utf-8",
+	".js":    "text/javascript; charset=utf-8",
+	".css":   "text/css; charset=utf-8",
+	".json":  "application/json",
+	".svg":   "image/svg+xml",
+	".png":   "image/png",
+	".woff2": "font/woff2",
+}
+
 // Handler serves the files of fsys and answers every other path with index.html,
 // so the browser resolves client routes. Paths under assets/ never fall back:
 // a stale hashed bundle name must fail as 404, not load HTML as a script.
@@ -64,6 +76,9 @@ func serveFile(w http.ResponseWriter, r *http.Request, fsys fs.FS, name string) 
 	case strings.HasPrefix(name, assetsDir+"/"):
 		// Vite names every file under assets/ by its content hash.
 		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+	}
+	if ct, ok := contentTypes[path.Ext(name)]; ok {
+		w.Header().Set("Content-Type", ct)
 	}
 	// ServeContent serves index.html under its own name; http.ServeFileFS would redirect it to "./".
 	http.ServeContent(w, r, name, info.ModTime(), content)

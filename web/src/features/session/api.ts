@@ -11,12 +11,40 @@ import type { paths } from "@/api/schema.gen";
 import { useAppLocale } from "@/i18n/i18n-provider";
 import type { Language } from "@/i18n/languages";
 
-export const sessionKeys = { me: ["session", "me"] as const };
+export const sessionKeys = {
+  me: ["session", "me"] as const,
+  setup: ["session", "setup"] as const,
+};
 
 export function meQuery(api: Client<paths>) {
   return queryOptions({
     queryKey: sessionKeys.me,
     queryFn: async () => unwrap(await api.GET("/me")),
+  });
+}
+
+// Whether the first user is still to be created (W-U2 of the Windows design).
+export function setupQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: sessionKeys.setup,
+    queryFn: async () => unwrap(await api.GET("/setup")),
+  });
+}
+
+export type SetupInput =
+  paths["/setup"]["post"]["requestBody"]["content"]["application/json"];
+
+// The answer is the new admin, signed in by the cookie of the same response.
+export function useCompleteSetup() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: SetupInput) =>
+      unwrap(await api.POST("/setup", { body: input })),
+    onSuccess: (me) => {
+      queryClient.setQueryData(meQuery(api).queryKey, me);
+      queryClient.setQueryData(setupQuery(api).queryKey, { required: false });
+    },
   });
 }
 

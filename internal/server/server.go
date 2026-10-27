@@ -39,6 +39,8 @@ type Config struct {
 	// Version is the version of the running app; "dev" when empty (ADR 021).
 	Version       string
 	SecureCookies bool
+	// SetupDone runs after the first user is created from the browser (W-U5).
+	SetupDone func()
 	// Clock defaults to the current time in UTC when nil.
 	Clock *clock.Clock
 	// Web holds the built single-page application; nil answers 404 outside /api/.
@@ -95,7 +97,9 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	if cfg.Clock != nil {
 		clk = *cfg.Clock
 	}
-	identityModule := identity.New(pool, identity.Config{SecureCookies: cfg.SecureCookies}, log)
+	identityModule := identity.New(pool, identity.Config{
+		SecureCookies: cfg.SecureCookies, DefaultCurrency: ledger.DefaultBaseCurrency, SetupDone: cfg.SetupDone,
+	}, log)
 	feedClient := &http.Client{Timeout: time.Minute}
 	sources, err := marketdata.NewSources(cfg.PriceFeeds, cfg.FeedURLs, feedClient)
 	if err != nil {

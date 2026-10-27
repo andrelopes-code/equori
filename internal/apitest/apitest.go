@@ -150,6 +150,14 @@ func SecretKeys(current, previous string) Option {
 // New starts the application and logs in owner@example.com as Client.
 func New(t testing.TB, opts ...Option) *Harness {
 	t.Helper()
+	h := Empty(t, opts...)
+	h.Client = h.Login("owner@example.com")
+	return h
+}
+
+// Empty is New without the owner: the instance has no user, as before the first-user setup.
+func Empty(t testing.TB, opts ...Option) *Harness {
+	t.Helper()
 	logs := &logBuffer{}
 	var out io.Writer = logs
 	if os.Getenv("EQUORI_TEST_LOG") == "1" {
@@ -159,7 +167,6 @@ func New(t testing.TB, opts ...Option) *Harness {
 	h.server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { (*h.handler.Load()).ServeHTTP(w, r) }))
 	t.Cleanup(h.server.Close)
 	h.start(opts)
-	h.Client = h.Login("owner@example.com")
 	return h
 }
 

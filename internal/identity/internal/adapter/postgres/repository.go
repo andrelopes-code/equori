@@ -50,31 +50,68 @@ type userCreated struct {
 func (r *Repository) CreateUser(ctx context.Context, u domain.User, base money.Currency) (domain.User, error) {
 	var created domain.User
 	err := pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
-		row, err := r.q.WithTx(tx).CreateUser(ctx, CreateUserParams{
-			Email:        u.Email,
-			PasswordHash: u.PasswordHash,
-			Role:         string(u.Role),
-			Language:     u.Language,
-			Region:       u.Region,
-		})
-		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == uniqueViolation {
-			return app.ErrEmailTaken
-		}
-		if err != nil {
-			return err
-		}
-		created = toUser(row)
-		return outbox.Insert(ctx, tx, outbox.Event{
-			Type:        userCreatedEvent,
-			UserID:      row.ID,
-			AggregateID: strconv.FormatInt(row.ID, 10),
-			Payload:     userCreated{UserID: row.ID, Email: row.Email, Language: row.Language, Region: row.Region, BaseCurrency: base},
-		})
+		var err error
+		created, err = r.insertUser(ctx, tx, u, base)
+		return err
 	})
 	if err != nil {
 		return domain.User{}, err
 	}
 	return created, nil
+}
+
+// CreateFirstUser creates u only while no user exists; the table lock makes the check and the
+// insert one step for concurrent requests (W-U4).
+func (r *Repository) CreateFirstUser(ctx context.Context, u domain.User, base money.Currency) (domain.User, error) {
+	var created domain.User
+	err := pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
+		q := r.q.WithTx(tx)
+		if err := q.LockUsers(ctx); err != nil {
+			return err
+		}
+		exists, err := q.AnyUser(ctx)
+		if err != nil {
+			return err
+		}
+		if exists {
+			return app.ErrSetupComplete
+		}
+		created, err = r.insertUser(ctx, tx, u, base)
+		return err
+	})
+	if err != nil {
+		return domain.User{}, err
+	}
+	return created, nil
+}
+
+func (r *Repository) AnyUser(ctx context.Context) (bool, error) {
+	return r.q.AnyUser(ctx)
+}
+
+func (r *Repository) insertUser(ctx context.Context, tx pgx.Tx, u domain.User, base money.Currency) (domain.User, error) {
+	row, err := r.q.WithTx(tx).CreateUser(ctx, CreateUserParams{
+		Email:        u.Email,
+		PasswordHash: u.PasswordHash,
+		Role:         string(u.Role),
+		Language:     u.Language,
+		Region:       u.Region,
+	})
+	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == uniqueViolation {
+		return domain.User{}, app.ErrEmailTaken
+	}
+	if err != nil {
+		return domain.User{}, err
+	}
+	if err := outbox.Insert(ctx, tx, outbox.Event{
+		Type:        userCreatedEvent,
+		UserID:      row.ID,
+		AggregateID: strconv.FormatInt(row.ID, 10),
+		Payload:     userCreated{UserID: row.ID, Email: row.Email, Language: row.Language, Region: row.Region, BaseCurrency: base},
+	}); err != nil {
+		return domain.User{}, err
+	}
+	return toUser(row), nil
 }
 
 func (r *Repository) UpdateProfile(ctx context.Context, userID int64, l locale.Locale) (domain.User, error) {

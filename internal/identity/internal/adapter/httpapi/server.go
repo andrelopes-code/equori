@@ -12,6 +12,8 @@ import (
 	"github.com/andrelopes-code/equori/internal/identity/internal/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
+	"github.com/andrelopes-code/equori/internal/platform/locale"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/problem"
 )
 
@@ -47,11 +49,12 @@ func (s *Server) Register(mux *http.ServeMux) {
 
 type userKey struct{}
 
-// RequireSession rejects every /api/ request without a valid session, except login.
+// RequireSession rejects every /api/ request without a valid session, except login and the
+// first-user setup.
 // Deny by default: a new endpoint is protected without opting in.
 func (s *Server) RequireSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !isAPI(r) || isLogin(r) {
+		if !isAPI(r) || isLogin(r) || isSetup(r) {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -77,6 +80,34 @@ func isAPI(r *http.Request) bool {
 
 func isLogin(r *http.Request) bool {
 	return r.Method == http.MethodPost && r.URL.Path == BaseURL+"/session"
+}
+
+// isSetup: the setup token, not a session, guards the first-user setup (W-U8).
+func isSetup(r *http.Request) bool {
+	return (r.Method == http.MethodGet || r.Method == http.MethodPost) && r.URL.Path == BaseURL+"/setup"
+}
+
+func (s *Server) GetSetup(ctx context.Context, _ GetSetupRequestObject) (GetSetupResponseObject, error) {
+	required, err := s.svc.SetupRequired(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return GetSetup200JSONResponse{Required: required}, nil
+}
+
+func (s *Server) CompleteSetup(ctx context.Context, req CompleteSetupRequestObject) (CompleteSetupResponseObject, error) {
+	if req.Body == nil {
+		return nil, errInvalidRequest
+	}
+	b := req.Body
+	session, user, err := s.svc.CompleteSetup(ctx, b.Token, b.Email, b.Password,
+		locale.Locale{Language: b.Language, Region: b.Region}, money.Currency(deref(b.BaseCurrency)))
+	if err != nil {
+		return nil, err
+	}
+	s.log.InfoContext(ctx, "first user created", "user_id", user.ID, "request_id", httpserver.RequestID(ctx))
+	cookie := s.cookie(session.Token, session.ExpiresAt)
+	return CompleteSetup201JSONResponse{Body: toAPIUser(user), Headers: CompleteSetup201ResponseHeaders{SetCookie: &cookie}}, nil
 }
 
 func (s *Server) CreateSession(ctx context.Context, req CreateSessionRequestObject) (CreateSessionResponseObject, error) {
@@ -173,6 +204,10 @@ func ToProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusUnauthorized, "unauthenticated", "a valid session is required"), true
 	case errors.Is(err, app.ErrTooManyAttempts):
 		return problem.New(http.StatusTooManyRequests, "too_many_attempts", "too many login attempts; retry in 15 minutes"), true
+	case errors.Is(err, app.ErrSetupTokenInvalid):
+		return problem.New(http.StatusForbidden, "setup_token_invalid", "the setup token is not the one this instance issued"), true
+	case errors.Is(err, app.ErrSetupComplete):
+		return problem.New(http.StatusConflict, "setup_complete", "the first user exists; sign in instead"), true
 	case errors.Is(err, app.ErrBusy):
 		return problem.New(http.StatusServiceUnavailable, "server_busy", "server is busy; retry shortly"), true
 	}

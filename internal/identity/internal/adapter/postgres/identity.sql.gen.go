@@ -10,6 +10,17 @@ import (
 	"time"
 )
 
+const anyUser = `-- name: AnyUser :one
+SELECT EXISTS (SELECT 1 FROM identity_user)
+`
+
+func (q *Queries) AnyUser(ctx context.Context) (bool, error) {
+	row := q.db.QueryRow(ctx, anyUser)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const createSession = `-- name: CreateSession :exec
 INSERT INTO identity_session (token_hash, user_id, created_at, expires_at)
 VALUES ($1, $2, $3, $4)
@@ -152,6 +163,16 @@ func (q *Queries) GetUserBySession(ctx context.Context, arg GetUserBySessionPara
 		&i.Region,
 	)
 	return i, err
+}
+
+const lockUsers = `-- name: LockUsers :exec
+LOCK TABLE identity_user IN EXCLUSIVE MODE
+`
+
+// The first-user setup creates its admin under this lock, so two requests yield one admin (W-U4).
+func (q *Queries) LockUsers(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, lockUsers)
+	return err
 }
 
 const updateProfile = `-- name: UpdateProfile :one

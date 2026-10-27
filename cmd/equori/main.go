@@ -3,6 +3,7 @@ package main
 import (
 	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -24,8 +25,10 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/llm"
 	"github.com/andrelopes-code/equori/internal/platform/llm/aistudio"
+	"github.com/andrelopes-code/equori/internal/platform/pgcluster"
 	"github.com/andrelopes-code/equori/internal/platform/postgres"
 	"github.com/andrelopes-code/equori/internal/platform/secret"
+	"github.com/andrelopes-code/equori/internal/platform/winsvc"
 	"github.com/andrelopes-code/equori/internal/server"
 	"github.com/andrelopes-code/equori/web"
 )
@@ -41,7 +44,28 @@ func main() {
 	var err error
 	switch cmd {
 	case "serve":
-		err = serve()
+		if winsvc.IsService() {
+			// The service has no console: serve's error goes to the log opened before the configuration.
+			if err = openServiceLog(); err != nil {
+				break
+			}
+			err = winsvc.Run(serviceName, func(ctx context.Context) error {
+				err := serve(ctx)
+				if err != nil {
+					fmt.Fprintln(os.Stderr, err)
+				}
+				return err
+			})
+			break
+		}
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		err = serve(ctx)
+		stop()
+	case "service":
+		if err = serviceCommand(os.Args[2:]); errors.Is(err, winsvc.ErrUnsupported) {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(2)
+		}
 	case "user":
 		err = userCommand(os.Args[2:])
 	case "reporting":
@@ -64,7 +88,7 @@ func main() {
 			fmt.Print(text)
 		}
 	default:
-		fmt.Fprintf(os.Stderr, "unknown command %q; available: serve, user, reporting, portfolio, planning, secrets, backup, restore, healthcheck, version\n", cmd)
+		fmt.Fprintf(os.Stderr, "unknown command %q; available: serve, user, reporting, portfolio, planning, secrets, backup, restore, service, healthcheck, version\n", cmd)
 		os.Exit(2)
 	}
 	if err != nil {
@@ -73,7 +97,7 @@ func main() {
 	}
 }
 
-func serve() error {
+func serve(parent context.Context) error {
 	cfg, log, err := setup()
 	if err != nil {
 		return err
@@ -84,7 +108,7 @@ func serve() error {
 	}
 	log.Info("starting equori", "version", buildVersion(), "schema", schema, "timezone", cfg.TimeZone.String())
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	ctx, stop := context.WithCancel(parent)
 	defer stop()
 
 	db, err := openDatabase(ctx, cfg, log, true)
@@ -116,11 +140,24 @@ func serve() error {
 	clk := clock.New(cfg.TimeZone, time.Now)
 	scfg := serverConfig(cfg, &clk)
 	scfg.Web, scfg.WebDevPort, scfg.Version = web.Dist(), cfg.WebDevPort, buildVersion()
+	scfg.SetupDone = func() {
+		if err := removeSetupFile(cfg); err != nil {
+			log.Error("first user setup", "error", err)
+		}
+	}
 	app, err := server.New(db.Pool, scfg, log)
 	if err != nil {
 		return err
 	}
 	if err := app.Marketdata.ReconcileCurrencies(ctx); err != nil {
+		return err
+	}
+	// W-U1: until the first user exists, the browser creates it with this token.
+	token, err := app.Identity.StartSetup(ctx)
+	if err != nil {
+		return err
+	}
+	if err := announceSetup(cfg, log, token); err != nil {
 		return err
 	}
 
@@ -295,6 +332,12 @@ func setup() (config.Config, *slog.Logger, error) {
 	cfg, err := config.Load(getenv)
 	if err != nil {
 		return config.Config{}, nil, err
+	}
+	if cfg.Managed() {
+		// W-M3: the first command creates the data directory private, before secret.key lands in it.
+		if err := pgcluster.PrepareDataDir(cfg.DataDir); err != nil {
+			return config.Config{}, nil, err
+		}
 	}
 	if cfg.Managed() && cfg.SecretKey == "" {
 		if cfg.SecretKey, err = secret.LoadOrCreateKey(filepath.Join(cfg.DataDir, "secret.key")); err != nil {

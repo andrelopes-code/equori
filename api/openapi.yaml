@@ -73,6 +73,58 @@ paths:
                 type: string
         "401":
           $ref: "#/components/responses/Problem"
+  /setup:
+    get:
+      tags: [identity]
+      operationId: getSetup
+      summary: Report whether the first user is still to be created (ADR 003, amendment of 2026-10-27).
+      security: []
+      responses:
+        "200":
+          description: Setup state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SetupStatus"
+    post:
+      tags: [identity]
+      operationId: completeSetup
+      summary: Create the first user, an admin, with the setup token, and start a session.
+      description: |
+        The token is the one serve logs and writes to setup.url while no user exists. A token
+        that differs is 403 setup_token_invalid; once a user exists, 409 setup_complete. Without
+        base_currency the default of the region applies; a region without one is 422 on
+        base_currency.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetupInput"
+      responses:
+        "201":
+          description: First user created and signed in.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "413":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
   /me:
     get:
       tags: [identity]
@@ -9333,6 +9385,32 @@ components:
         region:
           type: string
           pattern: "^[A-Z]{2}$"
+    SetupStatus:
+      type: object
+      required: [required]
+      properties:
+        required:
+          type: boolean
+    SetupInput:
+      type: object
+      additionalProperties: false
+      required: [token, email, password, language, region]
+      properties:
+        token:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        language:
+          type: string
+          pattern: "^[a-z]{2,3}$"
+        region:
+          type: string
+          pattern: "^[A-Z]{2}$"
+        base_currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
     Problem:
       type: object
       required: [type, title, status, code]
@@ -9357,7 +9435,8 @@ components:
             integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
             currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
             budget_exists, instrument_exists, mixed_instruments, price_missing, later_sale_exists,
-            investment_transaction, system_account, attachment_not_inlineable, archive_too_new.
+            investment_transaction, system_account, attachment_not_inlineable, archive_too_new,
+            setup_token_invalid, setup_complete.
         request_id:
           type: string
         retry_at:

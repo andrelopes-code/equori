@@ -26,6 +26,9 @@ var (
 // Repository returns ErrNotFound for missing rows and ErrEmailTaken on duplicate email.
 type Repository interface {
 	CreateUser(ctx context.Context, u domain.User, base money.Currency) (domain.User, error)
+	// CreateFirstUser returns ErrSetupComplete when a user exists.
+	CreateFirstUser(ctx context.Context, u domain.User, base money.Currency) (domain.User, error)
+	AnyUser(ctx context.Context) (bool, error)
 	UpdateProfile(ctx context.Context, userID int64, l locale.Locale) (domain.User, error)
 	UserByID(ctx context.Context, userID int64) (domain.User, error)
 	UserByEmail(ctx context.Context, email string) (domain.User, error)
@@ -50,6 +53,7 @@ type Service struct {
 	hashSlots chan struct{}
 	// dummyHash is verified when the email is unknown, so both failure paths cost one argon2id run.
 	dummyHash string
+	setup     setup
 }
 
 func NewService(repo Repository, now func() time.Time) *Service {
@@ -63,6 +67,15 @@ func NewService(repo Repository, now func() time.Time) *Service {
 }
 
 func (s *Service) CreateUser(ctx context.Context, email, plain string, role domain.Role, l locale.Locale, base money.Currency) (domain.User, error) {
+	u, err := s.newUser(ctx, email, plain, role, l, base)
+	if err != nil {
+		return domain.User{}, err
+	}
+	return s.repo.CreateUser(ctx, u, base)
+}
+
+// newUser validates a new user and hashes its password.
+func (s *Service) newUser(ctx context.Context, email, plain string, role domain.Role, l locale.Locale, base money.Currency) (domain.User, error) {
 	email, err := domain.NormalizeEmail(email)
 	if err != nil {
 		return domain.User{}, err
@@ -85,7 +98,7 @@ func (s *Service) CreateUser(ctx context.Context, email, plain string, role doma
 	}
 	hash := password.Hash(plain)
 	release()
-	return s.repo.CreateUser(ctx, domain.User{Email: email, PasswordHash: hash, Role: role, Language: l.Language, Region: l.Region}, base)
+	return domain.User{Email: email, PasswordHash: hash, Role: role, Language: l.Language, Region: l.Region}, nil
 }
 
 func validateLocale(l locale.Locale) error {
@@ -180,11 +193,15 @@ func (s *Service) Login(ctx context.Context, email, plain string) (Session, erro
 	if err := s.repo.DeleteExpiredSessions(ctx, now); err != nil {
 		return Session{}, fmt.Errorf("delete expired sessions: %w", err)
 	}
-	token, session := domain.NewSession(user.ID, now)
+	return s.startSession(ctx, user.ID, now)
+}
+
+func (s *Service) startSession(ctx context.Context, userID int64, now time.Time) (Session, error) {
+	token, session := domain.NewSession(userID, now)
 	if err := s.repo.CreateSession(ctx, session); err != nil {
 		return Session{}, fmt.Errorf("create session: %w", err)
 	}
-	return Session{UserID: user.ID, Token: token, ExpiresAt: session.ExpiresAt}, nil
+	return Session{UserID: userID, Token: token, ExpiresAt: session.ExpiresAt}, nil
 }
 
 func (s *Service) Logout(ctx context.Context, token string) error {

@@ -27,6 +27,91 @@ jobs:
       - run: make check
       - run: make vuln
 
+  # Managed mode on Windows (docs/superpowers/specs/2026-10-27-distribution-windows-design.md, W-R1).
+  # B4 across operating systems (W-R2): a Linux dump for the windows job, which returns one.
+  exchange-linux-dump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - run: make test-exchange EXCHANGE_RUN='^TestExchangeDump$$'
+      # The container's postgres user wrote the files with mode 0600.
+      - run: sudo chmod -R a+r bin/exchange
+      - uses: actions/upload-artifact@v7
+        with:
+          name: exchange-linux
+          path: bin/exchange/
+
+  windows:
+    needs: exchange-linux-dump
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - id: pg
+        uses: actions/cache@v6
+        with:
+          path: ${{ runner.temp }}/pg
+          key: postgres-${{ hashFiles('packaging/windows/postgresql.env', 'scripts/windows-postgres.ps1') }}
+      - if: steps.pg.outputs.cache-hit != 'true'
+        run: scripts/windows-postgres.ps1 -Out "$env:RUNNER_TEMP\pg"
+      # The test server of pgtest, from the same bundle; the libc provider, as db-test of compose.dev.yaml.
+      - run: |
+          "EQUORI_TEST_POSTGRES_BIN=$env:RUNNER_TEMP\pg\bin" >> $env:GITHUB_ENV
+          "EQUORI_TEST_DATABASE_URL=postgres://equori:equori@127.0.0.1:54339/postgres?sslmode=disable" >> $env:GITHUB_ENV
+          $pg = "$env:RUNNER_TEMP\pg\bin"
+          Set-Content -NoNewline -Path "$env:RUNNER_TEMP\pw" -Value equori
+          & "$pg\initdb.exe" -D "$env:RUNNER_TEMP\testdb" -U equori --pwfile="$env:RUNNER_TEMP\pw" --auth=scram-sha-256 --encoding=UTF8 --locale=C | Out-Null
+          & "$pg\pg_ctl.exe" start -w -D "$env:RUNNER_TEMP\testdb" -l "$env:RUNNER_TEMP\testdb.log" -o "-p 54339 -c listen_addresses=127.0.0.1 -c max_connections=300 -c fsync=off"
+          if ($LASTEXITCODE -ne 0) { Get-Content "$env:RUNNER_TEMP\testdb.log"; exit 1 }
+      - run: go test ./internal/platform/... ./cmd/...
+      # The runner is elevated, so every managed-mode test runs postgres under the restricted token (W-M7).
+      - run: |
+          go test -tags cluster -count=1 ./internal/platform/pgcluster/ ./internal/platform/backup/
+          go test -tags cluster -count=1 -run '^TestCluster' ./internal/server/ ./cmd/equori/
+      - uses: actions/download-artifact@v8
+        with:
+          name: exchange-linux
+          path: ${{ runner.temp }}/exchange
+      - run: go test -tags cluster -count=1 -run '^(TestExchangeRestore|TestExchangeDump)$' ./internal/server/
+        env:
+          EQUORI_TEST_EXCHANGE: ${{ runner.temp }}\exchange
+      - uses: actions/upload-artifact@v7
+        with:
+          name: exchange-windows
+          path: ${{ runner.temp }}/exchange/windows.*
+      # The installer and its smoke test (W-I1 to W-I7, W-R3); the web build waits for the release job.
+      - run: |
+          $payload = "$env:RUNNER_TEMP\payload"
+          New-Item -ItemType Directory -Force $payload | Out-Null
+          go build -trimpath -ldflags "-s -w -X main.version=dev" -o "$payload\equori.exe" ./cmd/equori
+          Copy-Item -Recurse "$env:RUNNER_TEMP\pg" "$payload\postgresql"
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /Qp /DAppVersion=0.0.0 "/DPayload=$payload" "/O$env:RUNNER_TEMP\installer" packaging\windows\equori.iss
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          "installer bytes: $((Get-Item "$env:RUNNER_TEMP\installer\*.exe").Length)"
+      - run: scripts/windows-smoke.ps1 -Installer (Get-Item "$env:RUNNER_TEMP\installer\*.exe").FullName -Tag dev -Region US -Currency USD
+
+  exchange-linux-restore:
+    needs: windows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - uses: actions/download-artifact@v8
+        with:
+          name: exchange-windows
+          path: bin/exchange
+      - run: make test-exchange
+
   image:
     runs-on: ubuntu-latest
     steps:

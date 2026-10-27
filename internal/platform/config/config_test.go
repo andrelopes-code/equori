@@ -2,6 +2,7 @@ package config
 
 import (
 	"log/slog"
+	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
@@ -61,7 +62,7 @@ func TestLoad(t *testing.T) {
 			name: "managed with explicit directories",
 			env:  map[string]string{"EQUORI_DATA_DIR": "/srv/equori", "EQUORI_POSTGRES_BIN": "/usr/lib/postgresql/18/bin"},
 			want: Config{
-				DataDir: "/srv/equori", BackupDir: "/srv/equori/backups", PostgresBin: "/usr/lib/postgresql/18/bin",
+				DataDir: "/srv/equori", BackupDir: filepath.Join("/srv/equori", "backups"), PostgresBin: "/usr/lib/postgresql/18/bin",
 				HTTPAddr: ":8080", LogLevel: slog.LevelInfo, TimeZone: time.Local,
 				SyncInterval: time.Hour, GeminiURL: "https://generativelanguage.googleapis.com",
 			},

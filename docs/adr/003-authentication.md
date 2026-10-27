@@ -52,3 +52,12 @@ The instance has one user until further notice. Data stays isolated by `user_id`
 
 - Encryption of stored integration credentials (bank tokens): separate ADR before the first integration.
 - Multi-factor authentication and OIDC login.
+
+## Amendment of 2026-10-27 (ADR 023)
+
+The first admin is also created from the browser. "No HTTP setup endpoint exists" no longer holds:
+
+- While no user exists, `serve` issues a one-time setup token of 32 random bytes and logs the URL `/setup#token=<token>`; in managed mode it also writes the URL to `setup.url` in the data directory. Reading the token requires the host: the log or the data directory.
+- `GET /api/v1/setup` reports whether the setup is required. `POST /api/v1/setup` creates the first user, an admin, with the token, and starts its session. Another token is 403 `setup_token_invalid`; an existing user is 409 `setup_complete`. The creation locks `identity_user`, so two requests yield one admin.
+- `equori user create` keeps working.
+

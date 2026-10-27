@@ -1,0 +1,32 @@
+name: postgres
+
+# W-P4 of the Windows design: the pinned PostgreSQL of the installer is the current minor.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  pull_request:
+    paths:
+      - packaging/windows/postgresql.env
+      - scripts/postgres-current.ps1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  postgres-current:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v5
+      # The check must fail on a newer minor before its pass on the live list counts.
+      - run: |
+          $pin = (Get-Content packaging/windows/postgresql.env | Where-Object { $_ -match '^PG_VERSION=' }) -replace '^PG_VERSION=(\d+)\.(\d+)-\d+$', '$1 $2'
+          $major, $minor = $pin -split ' '
+          @(@{ major = $major; latestMinor = "$([int]$minor + 1)"; relDate = '2026-01-01' }) | ConvertTo-Json -AsArray | Set-Content "$env:RUNNER_TEMP/newer.json"
+          pwsh -NoProfile -File scripts/postgres-current.ps1 -Versions "$env:RUNNER_TEMP/newer.json"
+          if ($LASTEXITCODE -ne 1) { throw "the check passed a pin older than the list" }
+          exit 0
+      - run: scripts/postgres-current.ps1

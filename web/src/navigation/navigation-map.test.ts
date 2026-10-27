@@ -28,10 +28,12 @@ function fullPaths(node: RouteNode, out: Set<string>): Set<string> {
 // Building a router assigns each route its fullPath.
 newRouter();
 const routes = fullPaths(routeTree as RouteNode, new Set());
-// /offline opens without the server, where no assistant answers (P3 of ADR 022).
+// /offline opens without the server, where no assistant answers (P3 of ADR 022); /setup opens
+// before the first user exists, who could ask one (W-U6 of the Windows design).
 const unmapped = new Set([
   "/login",
   "/offline",
+  "/setup",
   "/preview/account-card",
   "/accounts",
   "",

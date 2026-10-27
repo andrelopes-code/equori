@@ -1,5 +1,3 @@
-//go:build unix
-
 package pgcluster
 
 import (
@@ -12,7 +10,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -39,6 +36,7 @@ type Cluster struct {
 	dir, bin, socket string
 	lock             *os.File // nil when attached to the server of a running serve
 	cmd              *exec.Cmd
+	proc             *proc
 	done             chan struct{} // closed when the child exits; nil when attached
 	exitErr          error
 }
@@ -60,7 +58,7 @@ func quote(v string) string {
 // Start runs the server of serve (M6): it takes the directory's lock, creates the cluster on the
 // first run, stops a server left by a process that died, and starts postgres as a child.
 func Start(ctx context.Context, dir, bin string) (*Cluster, error) {
-	if err := refuseRoot(os.Geteuid()); err != nil {
+	if err := checkPrivileges(); err != nil {
 		return nil, err
 	}
 	lock, err := lockDir(dir)
@@ -78,7 +76,7 @@ func Start(ctx context.Context, dir, bin string) (*Cluster, error) {
 // Attach serves a command other than serve (M7): it connects to serve's server when serve holds
 // the lock, and otherwise starts a temporary server that Stop ends.
 func Attach(ctx context.Context, dir, bin string) (*Cluster, error) {
-	if err := refuseRoot(os.Geteuid()); err != nil {
+	if err := checkPrivileges(); err != nil {
 		return nil, err
 	}
 	lock, err := lockDir(dir)
@@ -106,20 +104,26 @@ func Attach(ctx context.Context, dir, bin string) (*Cluster, error) {
 	return c, nil
 }
 
+// PrepareDataDir creates the data directory, or checks an existing one, so that only the process
+// account and the named accounts reach it: mode 0700 on Unix, the DACL of W-M3 on Windows.
+func PrepareDataDir(dir string, accounts ...string) error {
+	if err := prepareDataDir(dir, accounts); err != nil {
+		return fmt.Errorf("prepare data directory: %w", err)
+	}
+	return nil
+}
+
 func lockDir(dir string) (*os.File, error) {
-	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return nil, fmt.Errorf("create data directory: %w", err)
+	if err := PrepareDataDir(dir); err != nil {
+		return nil, err
 	}
 	f, err := os.OpenFile(filepath.Join(dir, "equori.lock"), os.O_CREATE|os.O_RDWR, 0o600) //nolint:gosec // G304: the data directory is the owner's configuration.
 	if err != nil {
 		return nil, fmt.Errorf("open lock: %w", err)
 	}
-	if err := syscall.Flock(int(f.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+	if err := lockFile(f); err != nil {
 		_ = f.Close()
-		if errors.Is(err, syscall.EWOULDBLOCK) {
-			return nil, ErrBusy
-		}
-		return nil, fmt.Errorf("lock data directory: %w", err)
+		return nil, err
 	}
 	return f, nil
 }
@@ -129,7 +133,7 @@ func start(ctx context.Context, dir, bin string, lock *os.File) (*Cluster, error
 	if err != nil {
 		return nil, err
 	}
-	if err := ensurePrivateDir(socket); err != nil {
+	if err := privateDir(socket); err != nil {
 		return nil, err
 	}
 	major, err := Major(ctx, filepath.Join(bin, "postgres"))
@@ -150,16 +154,23 @@ func start(ctx context.Context, dir, bin string, lock *os.File) (*Cluster, error
 	cmd := exec.Command(filepath.Join(bin, "postgres"), "-D", pgdata, "-k", socket, //nolint:gosec,noctx // G204: the programs directory is the owner's configuration.
 		"-c", "listen_addresses=", "-c", "max_connections="+maxConnections)
 	cmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr
-	// Its own process group: a terminal's Ctrl-C reaches serve only, which stops the server last.
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	p, err := newProc(cmd)
+	if err != nil {
+		return nil, err
+	}
 	if err := cmd.Start(); err != nil {
+		p.close()
 		return nil, fmt.Errorf("start postgres: %w", err)
 	}
-	c := &Cluster{dir: dir, bin: bin, socket: socket, lock: lock, cmd: cmd, done: make(chan struct{})}
+	c := &Cluster{dir: dir, bin: bin, socket: socket, lock: lock, cmd: cmd, proc: p, done: make(chan struct{})}
 	go func() {
 		c.exitErr = cmd.Wait()
 		close(c.done)
 	}()
+	if err := p.started(cmd); err != nil {
+		_ = c.stopChild()
+		return nil, err
+	}
 	if err := c.waitReady(ctx); err != nil {
 		_ = c.stopChild()
 		return nil, err
@@ -192,19 +203,19 @@ func initialize(ctx context.Context, bin, pgdata string, major int) error {
 		return fmt.Errorf("initdb: %w: %s", err, out)
 	}
 	// M5: one local line; access control is the mode of the socket directory.
-	return os.WriteFile(filepath.Join(pgdata, "pg_hba.conf"), []byte("local all all trust\n"), 0o600)
+	return os.WriteFile(filepath.Join(pgdata, "pg_hba.conf"), []byte("local all all trust\n"), 0o600) //nolint:gosec // G703: the data directory is the owner's configuration.
 }
 
 func stopLeftover(ctx context.Context, bin, pgdata, socket string) error {
 	pidFile := filepath.Join(pgdata, "postmaster.pid")
-	if _, err := os.Stat(pidFile); errors.Is(err, fs.ErrNotExist) {
+	if _, err := os.Stat(pidFile); errors.Is(err, fs.ErrNotExist) { //nolint:gosec // G703: as above.
 		return nil
 	}
 	if !answers(ctx, socket) {
 		// Stale: this process holds equori.lock and no server answers on the socket. After a container
 		// restart the file's PID names another process, and postgres would refuse to start beside it.
 		for _, name := range []string{pidFile, filepath.Join(socket, ".s.PGSQL.5432.lock")} {
-			if err := os.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			if err := os.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) { //nolint:gosec // G703: as above.
 				return fmt.Errorf("remove stale %s: %w", name, err)
 			}
 		}
@@ -294,15 +305,16 @@ func (c *Cluster) stopChild() error {
 		return nil
 	default:
 	}
-	if err := c.cmd.Process.Signal(syscall.SIGINT); err != nil && !errors.Is(err, os.ErrProcessDone) {
-		return fmt.Errorf("signal postgres: %w", err)
+	defer c.proc.close()
+	if err := c.proc.stop(c, false); err != nil {
+		return err
 	}
 	select {
 	case <-c.done:
 		return nil
 	case <-time.After(stopWait):
 		// Immediate shutdown; the next start runs crash recovery.
-		_ = c.cmd.Process.Signal(syscall.SIGQUIT)
+		_ = c.proc.stop(c, true)
 		<-c.done
 		return fmt.Errorf("postgres did not stop within %s; sent immediate shutdown", stopWait)
 	}

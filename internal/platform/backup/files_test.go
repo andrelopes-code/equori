@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -81,5 +82,9 @@ func TestParseDumpVersion(t *testing.T) {
 	}
 	if _, err := parseDumpVersion("SET x;\n"); err == nil {
 		t.Fatal("no COPY block: want an error")
+	}
+	// pg_restore of the Windows bundle ends its lines with CRLF.
+	if got, err := parseDumpVersion(strings.ReplaceAll(script, "\n", "\r\n")); err != nil || got != 60 {
+		t.Fatalf("parseDumpVersion of a CRLF script = %d, %v; want 60", got, err)
 	}
 }
