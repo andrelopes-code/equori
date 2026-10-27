@@ -21,6 +21,8 @@ type Agent struct {
 	decls    []llm.Tool
 	handlers map[string]llm.ToolHandler
 	wait     func(ctx context.Context, until time.Time) error
+	// concurrent names the read tools, whose calls of one response run together (design 2026-10-26 E13).
+	concurrent func(name string) bool
 }
 
 var _ app.Agent = (*Agent)(nil)
@@ -30,7 +32,11 @@ var _ app.Agent = (*Agent)(nil)
 func NewAgent(client *llm.Client, svc *app.Service, tools app.Tools, set tool.Set, wait func(ctx context.Context, until time.Time) error) *Agent {
 	decls, handlers := ChatHandlers(svc, tools, set, app.TurnConversation)
 	slices.SortFunc(decls, func(a, b llm.Tool) int { return strings.Compare(a.Name, b.Name) })
-	return &Agent{client: client, decls: decls, handlers: handlers, wait: wait}
+	concurrent := func(name string) bool {
+		e, ok := tools.Effect(name)
+		return ok && e == tool.ReadOnly
+	}
+	return &Agent{client: client, decls: decls, handlers: handlers, wait: wait, concurrent: concurrent}
 }
 
 // Run calls the model loop once more after a wait when only transient cooldowns block every target and the
@@ -69,8 +75,9 @@ func (a *Agent) run(ctx context.Context, userID int64, in app.AgentRequest, onSt
 			calls++
 			onStep(c.Name)
 		},
-		OnRestart: onRestart,
-		OnText:    onText,
+		OnRestart:  onRestart,
+		OnText:     onText,
+		Concurrent: a.concurrent,
 	})
 	out := app.AgentResult{
 		Text: res.Response.Text(), StepLimit: res.StepLimit, Restarted: res.Restarted, Steps: res.Steps, ToolCalls: calls,

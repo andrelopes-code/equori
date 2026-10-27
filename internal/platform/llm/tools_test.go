@@ -5,6 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"reflect"
+	"slices"
+	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -344,4 +348,119 @@ func TestRunStreams(t *testing.T) {
 	if want := []string{"Vou ", "ver.", "R$ ", "10"}; err != nil || !reflect.DeepEqual(got, want) {
 		t.Fatalf("chunks = %v, err = %v, want %v", got, err, want)
 	}
+}
+
+// Design 2026-10-26 E13: the read calls of one response run concurrently, at most 4 at a time;
+// the other calls run after them in response order; results keep response order.
+func TestRunConcurrentReads(t *testing.T) {
+	t.Parallel()
+	run := func(t *testing.T, names []string, handlers map[string]llm.ToolHandler, onCall func(llm.ToolCall)) []llm.ToolResult {
+		t.Helper()
+		var cs []llm.ToolCall
+		for _, n := range names {
+			cs = append(cs, llm.ToolCall{ID: n, Name: n, Args: json.RawMessage(`{}`)})
+		}
+		a := llmtest.New("a", llmtest.Step{Model: "m1", Response: calls(cs...)}, llmtest.Step{Model: "m1", Response: text("ok")})
+		f := newFixture(a)
+		ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+		defer cancel()
+		res, err := llm.Run(ctx, f.router.Client(target("a/m1")), prompt(), handlers, llm.LoopOptions{
+			MaxSteps: 3, OnToolCall: onCall,
+			Concurrent: func(name string) bool { return strings.HasPrefix(name, "r") },
+		})
+		if err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+		return toolMessage(t, res.History, 2)
+	}
+	names := func(rs []llm.ToolResult) []string {
+		var out []string
+		for _, r := range rs {
+			out = append(out, r.Name)
+		}
+		return out
+	}
+	// waitFor returns a handler that waits until gate closes or the context ends.
+	waitFor := func(gate <-chan struct{}, before func()) llm.ToolHandler {
+		return func(ctx context.Context, _ json.RawMessage) (json.RawMessage, error) {
+			before()
+			select {
+			case <-gate:
+				return json.RawMessage(`{}`), nil
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			}
+		}
+	}
+	t.Run("reads run together", func(t *testing.T) {
+		t.Parallel()
+		all := make(chan struct{})
+		var started atomic.Int32
+		h := waitFor(all, func() {
+			if started.Add(1) == 3 {
+				close(all)
+			}
+		})
+		got := run(t, []string{"r1", "r2", "r3"}, map[string]llm.ToolHandler{"r1": h, "r2": h, "r3": h}, nil)
+		if !slices.Equal(names(got), []string{"r1", "r2", "r3"}) {
+			t.Fatalf("results = %v", names(got))
+		}
+	})
+	t.Run("at most four at a time", func(t *testing.T) {
+		t.Parallel()
+		four := make(chan struct{})
+		var mu sync.Mutex
+		started, inflight, peak := 0, 0, 0
+		inner := waitFor(four, func() {
+			mu.Lock()
+			defer mu.Unlock()
+			started++
+			inflight++
+			peak = max(peak, inflight)
+			if started == 4 {
+				close(four)
+			}
+		})
+		h := func(ctx context.Context, args json.RawMessage) (json.RawMessage, error) {
+			defer func() { mu.Lock(); inflight--; mu.Unlock() }()
+			return inner(ctx, args)
+		}
+		handlers := map[string]llm.ToolHandler{}
+		ns := []string{"r1", "r2", "r3", "r4", "r5", "r6"}
+		for _, n := range ns {
+			handlers[n] = h
+		}
+		got := run(t, ns, handlers, nil)
+		if peak != 4 || !slices.Equal(names(got), ns) {
+			t.Fatalf("peak = %d, results = %v", peak, names(got))
+		}
+	})
+	t.Run("writes after reads, in response order", func(t *testing.T) {
+		t.Parallel()
+		var mu sync.Mutex
+		var order, seen []string
+		rec := func(n string) llm.ToolHandler {
+			return func(context.Context, json.RawMessage) (json.RawMessage, error) {
+				mu.Lock()
+				defer mu.Unlock()
+				order = append(order, n)
+				return json.RawMessage(`{}`), nil
+			}
+		}
+		ns := []string{"w1", "r1", "w2", "r2"}
+		got := run(t, ns, map[string]llm.ToolHandler{"w1": rec("w1"), "r1": rec("r1"), "w2": rec("w2"), "r2": rec("r2")},
+			func(c llm.ToolCall) { seen = append(seen, c.Name) })
+		pos := func(n string) int { return slices.Index(order, n) }
+		if pos("r1") > pos("w1") || pos("r2") > pos("w1") || pos("w1") > pos("w2") || !slices.Equal(names(got), ns) || !slices.Equal(seen, ns) {
+			t.Fatalf("start order = %v, results = %v, OnToolCall = %v", order, names(got), seen)
+		}
+	})
+	// Review Focus 5 of phase 2.
+	t.Run("a failing read keeps its place", func(t *testing.T) {
+		t.Parallel()
+		got := run(t, []string{"r1", "r2"}, map[string]llm.ToolHandler{"r1": handler("", errors.New("boom")), "r2": handler(`{"v":2}`, nil)}, nil)
+		if !slices.Equal(names(got), []string{"r1", "r2"}) || !got[0].IsError || got[1].IsError {
+			t.Fatalf("results = %+v", got)
+		}
+	})
 }
