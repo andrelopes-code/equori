@@ -27,6 +27,26 @@ jobs:
       - run: make check
       - run: make vuln
 
+  # Managed mode on Windows (docs/superpowers/specs/2026-10-27-distribution-windows-design.md, W-R1).
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - id: pg
+        uses: actions/cache@v6
+        with:
+          path: ${{ runner.temp }}/pg
+          key: postgres-${{ hashFiles('packaging/windows/postgresql.env', 'scripts/windows-postgres.ps1') }}
+      - if: steps.pg.outputs.cache-hit != 'true'
+        run: scripts/windows-postgres.ps1 -Out "$env:RUNNER_TEMP\pg"
+      - run: go test ./internal/platform/pgcluster/
+
   image:
     runs-on: ubuntu-latest
     steps:

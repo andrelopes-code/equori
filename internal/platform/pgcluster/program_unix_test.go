@@ -9,6 +9,8 @@ import (
 	"testing"
 )
 
+const exeSuffix = ""
+
 // W-M2: a postgres file without the executable bit is not a program.
 func TestBinExplicitNotExecutable(t *testing.T) {
 	t.Parallel()

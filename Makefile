@@ -32,8 +32,11 @@ fmt: $(TOOLS)
 fmt-check: $(TOOLS)
 	$(BIN)/golangci-lint fmt --diff
 
+# The Windows form compiles from the same tree (ADR 023); its build-tagged files are checked here too.
 lint: $(TOOLS)
 	$(BIN)/golangci-lint run
+	GOOS=windows $(BIN)/golangci-lint run
+	GOOS=windows CGO_ENABLED=0 go vet ./...
 
 # Each module's adapter/httpapi holds an oapi-codegen.yaml selecting its tag from api/openapi.yaml.
 gen: $(TOOLS) $(WEB_DEPS)
