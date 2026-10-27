@@ -46,6 +46,10 @@ jobs:
       - if: steps.pg.outputs.cache-hit != 'true'
         run: scripts/windows-postgres.ps1 -Out "$env:RUNNER_TEMP\pg"
       - run: go test ./internal/platform/pgcluster/
+      # The runner is elevated, so every managed-mode test runs postgres under the restricted token (W-M7).
+      - run: go test -tags cluster -count=1 ./internal/platform/pgcluster/
+        env:
+          EQUORI_TEST_POSTGRES_BIN: ${{ runner.temp }}\pg\bin
 
   image:
     runs-on: ubuntu-latest

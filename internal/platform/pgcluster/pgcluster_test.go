@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -197,7 +198,8 @@ func TestStartIgnoresAStalePidFile(t *testing.T) {
 	if err := c.Stop(); err != nil {
 		t.Fatal(err)
 	}
-	other := exec.CommandContext(t.Context(), "sleep", "120")
+	other := exec.CommandContext(t.Context(), os.Args[0], "-test.run=^TestHelperSleep$")
+	other.Env = append(os.Environ(), "EQUORI_TEST_HELPER=sleep")
 	if err := other.Start(); err != nil {
 		t.Fatal(err)
 	}
@@ -217,4 +219,13 @@ func TestStartIgnoresAStalePidFile(t *testing.T) {
 	if other.ProcessState != nil {
 		t.Fatal("Start signalled the process that holds the stale PID")
 	}
+}
+
+// TestHelperSleep is the process that holds the stale PID of TestStartIgnoresAStalePidFile; it
+// returns at once in a normal run.
+func TestHelperSleep(t *testing.T) {
+	if os.Getenv("EQUORI_TEST_HELPER") != "sleep" {
+		return
+	}
+	time.Sleep(120 * time.Second)
 }
