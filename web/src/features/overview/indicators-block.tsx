@@ -81,7 +81,7 @@ export function IndicatorsBlock({
       title={t("overview.indicators.title")}
       link={{
         label: t("overview.indicators.open"),
-        options: { to: "/reports" },
+        options: { to: "/reports", search: { tab: "indicators" } },
       }}
       loading={report === undefined && query.error === null}
       error={query.error}
