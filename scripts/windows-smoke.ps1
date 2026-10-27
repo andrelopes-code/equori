@@ -50,9 +50,14 @@ $auth = @{ Cookie = $cookie }
 if (Test-Path "$data\setup.url") { throw 'setup.url is still there after the setup' }
 "3 first user created with the token of setup.url"
 
-$account = { param($name, $class) (Invoke-RestMethod -Headers $auth -Method Post -ContentType 'application/json' -Body (@{ name = $name; class = $class; currency = $Currency } | ConvertTo-Json) "$base/api/v1/accounts").id }
-$checking = & $account 'Checking' 'asset'
-$food = & $account 'Food' 'expense'
+$account = {
+    param($name, $class, $kind)
+    $fields = @{ name = $name; class = $class; currency = $Currency }
+    if ($kind) { $fields.kind = $kind }
+    (Invoke-RestMethod -Headers $auth -Method Post -ContentType 'application/json' -Body ($fields | ConvertTo-Json) "$base/api/v1/accounts").id
+}
+$checking = & $account 'Checking' 'asset' 'checking'
+$food = & $account 'Food' 'expense' ''
 $tx = @{ date = '2026-10-14'; description = 'smoke'; postings = @(
         @{ account_id = $checking; amount = @{ amount = -2300; currency = $Currency } },
         @{ account_id = $food; amount = @{ amount = 2300; currency = $Currency } }) } | ConvertTo-Json -Depth 5
