@@ -22,6 +22,10 @@ func socketFallback(abs string) (string, error) {
 	return filepath.Join(os.TempDir(), "equori-"+hex.EncodeToString(sum[:])[:12]), nil
 }
 
+func prepareDataDir(dir string, _ []string) error {
+	return os.MkdirAll(dir, 0o700)
+}
+
 func lockFile(f *os.File) error {
 	if err := syscall.Flock(int(f.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
 		if errors.Is(err, syscall.EWOULDBLOCK) {

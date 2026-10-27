@@ -13,10 +13,7 @@ import (
 	"strings"
 )
 
-var (
-	ErrRoot        = errors.New("managed mode does not run as root: PostgreSQL refuses it")
-	ErrUnsupported = errors.New("managed mode runs on Linux and macOS; set EQUORI_DATABASE_URL")
-)
+var ErrRoot = errors.New("managed mode does not run as root: PostgreSQL refuses it")
 
 var versionLine = regexp.MustCompile(`\(PostgreSQL\) (\d+)`)
 

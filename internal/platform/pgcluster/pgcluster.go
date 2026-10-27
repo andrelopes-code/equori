@@ -1,5 +1,3 @@
-//go:build unix
-
 package pgcluster
 
 import (
@@ -106,9 +104,18 @@ func Attach(ctx context.Context, dir, bin string) (*Cluster, error) {
 	return c, nil
 }
 
+// PrepareDataDir creates the data directory, or checks an existing one, so that only the process
+// account and the named accounts reach it: mode 0700 on Unix, the DACL of W-M3 on Windows.
+func PrepareDataDir(dir string, accounts ...string) error {
+	if err := prepareDataDir(dir, accounts); err != nil {
+		return fmt.Errorf("prepare data directory: %w", err)
+	}
+	return nil
+}
+
 func lockDir(dir string) (*os.File, error) {
-	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return nil, fmt.Errorf("create data directory: %w", err)
+	if err := PrepareDataDir(dir); err != nil {
+		return nil, err
 	}
 	f, err := os.OpenFile(filepath.Join(dir, "equori.lock"), os.O_CREATE|os.O_RDWR, 0o600) //nolint:gosec // G304: the data directory is the owner's configuration.
 	if err != nil {
