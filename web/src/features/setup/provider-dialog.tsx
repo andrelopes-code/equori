@@ -32,17 +32,20 @@ export function ProviderDialog({
   presets,
   provider,
   onClose,
+  initialPreset,
 }: {
   presets: readonly ModelPreset[];
   provider: ModelProvider | null;
   onClose: () => void;
+  // The preset a start choice selected (S1).
+  initialPreset?: string | undefined;
 }) {
   const t = useT();
   const formId = useId();
   const create = useCreateProvider();
   const update = useUpdateProvider();
   const [presetId, setPresetId] = useState(
-    provider?.preset ?? presets[0]?.id ?? "",
+    provider?.preset ?? initialPreset ?? presets[0]?.id ?? "",
   );
   const [name, setName] = useState(provider?.name ?? "");
   const [baseURL, setBaseURL] = useState(provider?.base_url ?? "");

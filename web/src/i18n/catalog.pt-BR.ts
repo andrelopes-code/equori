@@ -176,6 +176,17 @@ export const catalogPtBR: Catalog = {
   "assistant.notice.provider_terms": "Termos do provedor",
   "assistant.notice.trains.detail":
     "Na camada gratuita, o serviço usa o conteúdo enviado para melhorar seus produtos, e revisores podem lê-lo.",
+  "assistant.start.title": "Escolha como começar com o assistente",
+  "assistant.start.gemini": "Google Gemini",
+  "assistant.start.gemini.detail": "Uma chave gratuita do Google AI Studio.",
+  "assistant.start.gemini.key": "Obter uma chave no Google AI Studio",
+  "assistant.start.gemini.key_url": "https://aistudio.google.com/apikey",
+  "assistant.start.local": "Um modelo neste computador",
+  "assistant.start.local.detail":
+    "Ollama ou LM Studio neste computador ou nesta rede; seus dados vão só para lá.",
+  "assistant.start.external": "Usar Claude ou Codex",
+  "assistant.start.external.detail":
+    "Um agente que você já assina lê e altera suas finanças pelo MCP.",
   "assistant.notice.local.detail": "Os dados ficam no host configurado.",
   "assistant.notice.provider_terms.detail":
     "O uso dos dados segue os termos do provedor.",

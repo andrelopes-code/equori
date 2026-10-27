@@ -393,6 +393,8 @@ export function AssistantPanel({
   );
 
   if (beside) {
+    // A closed pane leaves the layout; its state stays here.
+    if (!open) return null;
     return (
       <AppShellAside
         // An inline pane is not a layer, so the shell leaves Escape alone; the assistant closes on it.

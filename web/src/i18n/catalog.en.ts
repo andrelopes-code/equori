@@ -171,6 +171,17 @@ export const catalogEn = {
   "assistant.notice.provider_terms": "Provider's terms",
   "assistant.notice.trains.detail":
     "On the free tier, the service uses submitted content to improve its products, and reviewers may read it.",
+  "assistant.start.title": "Choose how to start the assistant",
+  "assistant.start.gemini": "Google Gemini",
+  "assistant.start.gemini.detail": "A free key from Google AI Studio.",
+  "assistant.start.gemini.key": "Get a key at Google AI Studio",
+  "assistant.start.gemini.key_url": "https://aistudio.google.com/apikey",
+  "assistant.start.local": "A model on this computer",
+  "assistant.start.local.detail":
+    "Ollama or LM Studio on this computer or network; your data goes only there.",
+  "assistant.start.external": "Use Claude or Codex",
+  "assistant.start.external.detail":
+    "An agent you already pay for reads and changes your finances through MCP.",
   "assistant.notice.local.detail": "Data stays on the configured host.",
   "assistant.notice.provider_terms.detail":
     "Data use follows the provider's terms.",

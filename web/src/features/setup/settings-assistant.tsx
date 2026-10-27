@@ -15,9 +15,11 @@ import { SkeletonText } from "@slotted/react/skeleton";
 import { Stack } from "@slotted/react/stack";
 import { Tag } from "@slotted/react/tag";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
+import { chatStateQuery } from "@/features/assistant";
 import { errorText } from "@/api/problem";
 import {
   presetsQuery,
@@ -29,6 +31,8 @@ import {
 } from "@/features/setup/api";
 import type { ModelProvider, ModelUse, UsageRow } from "@/features/setup/api";
 import { catalogLabel } from "@/features/setup/catalog-label";
+import { AssistantStart } from "@/features/setup/assistant-start";
+import type { StartPreset } from "@/features/setup/assistant-start";
 import { ChainDialog } from "@/features/setup/chain-dialog";
 import { NoticeTag } from "@/features/setup/notice-tag";
 import { ProviderDialog } from "@/features/setup/provider-dialog";
@@ -43,7 +47,7 @@ import { mergeUsageRows } from "@/features/setup/usage-rows";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 type Open =
-  | { kind: "create" }
+  | { kind: "create"; preset?: StartPreset }
   | { kind: "edit"; provider: ModelProvider }
   | { kind: "models"; provider: ModelProvider }
   | { kind: "chain"; use: ModelUse }
@@ -57,6 +61,8 @@ export function SettingsAssistant() {
   const providers = useQuery(providersQuery(api));
   const uses = useQuery(usesQuery(api));
   const usage = useQuery(usageQuery(api));
+  const chat = useQuery(chatStateQuery(api));
+  const navigate = useNavigate();
   const remove = useDeleteProvider();
   const check = useCheckProviderKey();
   const [locale] = useAppLocale();
@@ -67,6 +73,11 @@ export function SettingsAssistant() {
   const failure = providers.error ?? uses.error ?? usage.error ?? remove.error;
   const presetItems = presets.data?.items ?? [];
   const providerItems = providers.data?.items ?? [];
+  // S1: no provider of the reader's own and none of the instance serving the chat.
+  const starting =
+    providers.data !== undefined &&
+    chat.data?.available === false &&
+    providerItems.every((p) => p.instance);
   // The providers whose free tier trains on what a use sends, when that use sends financial data.
   const training = [
     ...new Set(
@@ -88,6 +99,19 @@ export function SettingsAssistant() {
         <Stack gap={5}>
           {failure !== null && (
             <InlineMessage tone="danger">{errorText(failure, t)}</InlineMessage>
+          )}
+          {starting && (
+            <AssistantStart
+              onPreset={(preset) => {
+                setOpen({ kind: "create", preset });
+              }}
+              onExternal={() => {
+                void navigate({
+                  to: "/settings",
+                  search: { section: "external_access" },
+                });
+              }}
+            />
           )}
           {training.length > 0 && (
             <Alert tone="warning">
@@ -273,6 +297,7 @@ export function SettingsAssistant() {
         <ProviderDialog
           presets={presetItems}
           provider={open.kind === "edit" ? open.provider : null}
+          initialPreset={open.kind === "create" ? open.preset : undefined}
           onClose={close}
         />
       )}
