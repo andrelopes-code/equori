@@ -87,6 +87,16 @@ jobs:
         with:
           name: exchange-windows
           path: ${{ runner.temp }}/exchange/windows.*
+      # The installer and its smoke test (W-I1 to W-I7, W-R3); the web build waits for the release job.
+      - run: |
+          $payload = "$env:RUNNER_TEMP\payload"
+          New-Item -ItemType Directory -Force $payload | Out-Null
+          go build -trimpath -ldflags "-s -w -X main.version=dev" -o "$payload\equori.exe" ./cmd/equori
+          Copy-Item -Recurse "$env:RUNNER_TEMP\pg" "$payload\postgresql"
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /Qp /DAppVersion=0.0.0 "/DPayload=$payload" "/O$env:RUNNER_TEMP\installer" packaging\windows\equori.iss
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          "installer bytes: $((Get-Item "$env:RUNNER_TEMP\installer\*.exe").Length)"
+      - run: scripts/windows-smoke.ps1 -Installer (Get-Item "$env:RUNNER_TEMP\installer\*.exe").FullName -Tag dev -Region US -Currency USD
 
   exchange-linux-restore:
     needs: windows
