@@ -1,7 +1,6 @@
 package pgcluster
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -81,12 +80,5 @@ func TestBinExplicitWins(t *testing.T) {
 	}
 	if got, err := bin(explicit, filepath.Join(root, "equori")); err != nil || got != explicit {
 		t.Fatalf("bin(explicit, exe) = %q, %v; want %q", got, err, explicit)
-	}
-}
-
-func TestRefuseRoot(t *testing.T) {
-	t.Parallel()
-	if !errors.Is(refuseRoot(0), ErrRoot) || refuseRoot(1000) != nil {
-		t.Fatal("refuseRoot: want ErrRoot for 0 and nil for 1000")
 	}
 }

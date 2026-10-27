@@ -66,10 +66,3 @@ func parseMajor(out string) (int, error) {
 	}
 	return strconv.Atoi(m[1])
 }
-
-func refuseRoot(euid int) error {
-	if euid == 0 {
-		return ErrRoot
-	}
-	return nil
-}

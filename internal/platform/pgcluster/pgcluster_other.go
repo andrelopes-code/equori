@@ -2,10 +2,7 @@
 
 package pgcluster
 
-import (
-	"context"
-	"os"
-)
+import "context"
 
 const Database = "equori"
 
@@ -17,6 +14,9 @@ func (c *Cluster) DSN(string) string                           { return "" }
 func (c *Cluster) Exited() <-chan struct{}                     { return nil }
 func (c *Cluster) ExitErr() error                              { return nil }
 func (c *Cluster) Stop() error                                 { return nil }
-func ownedByMe(os.FileInfo) bool                               { return true }
 func Start(context.Context, string, string) (*Cluster, error)  { return nil, ErrUnsupported }
 func Attach(context.Context, string, string) (*Cluster, error) { return nil, ErrUnsupported }
+
+const socketLimit = 103
+
+func socketFallback(string) (string, error) { return "", ErrUnsupported }

@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -39,6 +38,7 @@ type Cluster struct {
 	dir, bin, socket string
 	lock             *os.File // nil when attached to the server of a running serve
 	cmd              *exec.Cmd
+	proc             *proc
 	done             chan struct{} // closed when the child exits; nil when attached
 	exitErr          error
 }
@@ -60,7 +60,7 @@ func quote(v string) string {
 // Start runs the server of serve (M6): it takes the directory's lock, creates the cluster on the
 // first run, stops a server left by a process that died, and starts postgres as a child.
 func Start(ctx context.Context, dir, bin string) (*Cluster, error) {
-	if err := refuseRoot(os.Geteuid()); err != nil {
+	if err := checkPrivileges(); err != nil {
 		return nil, err
 	}
 	lock, err := lockDir(dir)
@@ -78,7 +78,7 @@ func Start(ctx context.Context, dir, bin string) (*Cluster, error) {
 // Attach serves a command other than serve (M7): it connects to serve's server when serve holds
 // the lock, and otherwise starts a temporary server that Stop ends.
 func Attach(ctx context.Context, dir, bin string) (*Cluster, error) {
-	if err := refuseRoot(os.Geteuid()); err != nil {
+	if err := checkPrivileges(); err != nil {
 		return nil, err
 	}
 	lock, err := lockDir(dir)
@@ -114,12 +114,9 @@ func lockDir(dir string) (*os.File, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open lock: %w", err)
 	}
-	if err := syscall.Flock(int(f.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
+	if err := lockFile(f); err != nil {
 		_ = f.Close()
-		if errors.Is(err, syscall.EWOULDBLOCK) {
-			return nil, ErrBusy
-		}
-		return nil, fmt.Errorf("lock data directory: %w", err)
+		return nil, err
 	}
 	return f, nil
 }
@@ -129,7 +126,7 @@ func start(ctx context.Context, dir, bin string, lock *os.File) (*Cluster, error
 	if err != nil {
 		return nil, err
 	}
-	if err := ensurePrivateDir(socket); err != nil {
+	if err := privateDir(socket); err != nil {
 		return nil, err
 	}
 	major, err := Major(ctx, filepath.Join(bin, "postgres"))
@@ -150,16 +147,23 @@ func start(ctx context.Context, dir, bin string, lock *os.File) (*Cluster, error
 	cmd := exec.Command(filepath.Join(bin, "postgres"), "-D", pgdata, "-k", socket, //nolint:gosec,noctx // G204: the programs directory is the owner's configuration.
 		"-c", "listen_addresses=", "-c", "max_connections="+maxConnections)
 	cmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr
-	// Its own process group: a terminal's Ctrl-C reaches serve only, which stops the server last.
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	p, err := newProc(cmd)
+	if err != nil {
+		return nil, err
+	}
 	if err := cmd.Start(); err != nil {
+		p.close()
 		return nil, fmt.Errorf("start postgres: %w", err)
 	}
-	c := &Cluster{dir: dir, bin: bin, socket: socket, lock: lock, cmd: cmd, done: make(chan struct{})}
+	c := &Cluster{dir: dir, bin: bin, socket: socket, lock: lock, cmd: cmd, proc: p, done: make(chan struct{})}
 	go func() {
 		c.exitErr = cmd.Wait()
 		close(c.done)
 	}()
+	if err := p.started(cmd); err != nil {
+		_ = c.stopChild()
+		return nil, err
+	}
 	if err := c.waitReady(ctx); err != nil {
 		_ = c.stopChild()
 		return nil, err
@@ -294,15 +298,16 @@ func (c *Cluster) stopChild() error {
 		return nil
 	default:
 	}
-	if err := c.cmd.Process.Signal(syscall.SIGINT); err != nil && !errors.Is(err, os.ErrProcessDone) {
-		return fmt.Errorf("signal postgres: %w", err)
+	defer c.proc.close()
+	if err := c.proc.stop(c, false); err != nil {
+		return err
 	}
 	select {
 	case <-c.done:
 		return nil
 	case <-time.After(stopWait):
 		// Immediate shutdown; the next start runs crash recovery.
-		_ = c.cmd.Process.Signal(syscall.SIGQUIT)
+		_ = c.proc.stop(c, true)
 		<-c.done
 		return fmt.Errorf("postgres did not stop within %s; sent immediate shutdown", stopWait)
 	}

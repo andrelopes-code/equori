@@ -1,3 +1,5 @@
+//go:build unix
+
 package pgcluster
 
 import (
@@ -27,10 +29,10 @@ func TestSocketDir(t *testing.T) {
 	}
 }
 
-func TestEnsurePrivateDirCreates(t *testing.T) {
+func TestPrivateDirCreates(t *testing.T) {
 	t.Parallel()
 	path := filepath.Join(t.TempDir(), "run")
-	if err := ensurePrivateDir(path); err != nil {
+	if err := privateDir(path); err != nil {
 		t.Fatal(err)
 	}
 	info, err := os.Stat(path)
@@ -39,7 +41,7 @@ func TestEnsurePrivateDirCreates(t *testing.T) {
 	}
 }
 
-func TestEnsurePrivateDirRefusesForeignMode(t *testing.T) {
+func TestPrivateDirRefusesForeignMode(t *testing.T) {
 	t.Parallel()
 	path := filepath.Join(t.TempDir(), "run")
 	if err := os.Mkdir(path, 0o777); err != nil {
@@ -48,7 +50,7 @@ func TestEnsurePrivateDirRefusesForeignMode(t *testing.T) {
 	if err := os.Chmod(path, 0o777); err != nil {
 		t.Fatal(err)
 	}
-	if err := ensurePrivateDir(path); err == nil {
+	if err := privateDir(path); err == nil {
 		t.Fatal("a directory with mode 0777: want an error")
 	}
 }
