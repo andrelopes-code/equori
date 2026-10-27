@@ -150,8 +150,81 @@ jobs:
           subject-digest: ${{ steps.push-standalone.outputs.digest }}
           push-to-registry: true
 
+  # The Windows installer (W-R4 to W-R7 of docs/superpowers/specs/2026-10-27-distribution-windows-design.md).
+  # It is built and tested on every tag and published only when signed (W-R6).
+  windows:
+    needs: check
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      SIGN: ${{ secrets.AZURE_CLIENT_ID != '' }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      ARTIFACT_SIGNING_ENDPOINT: ${{ secrets.ARTIFACT_SIGNING_ENDPOINT }}
+      ARTIFACT_SIGNING_ACCOUNT: ${{ secrets.ARTIFACT_SIGNING_ACCOUNT }}
+      ARTIFACT_SIGNING_PROFILE: ${{ secrets.ARTIFACT_SIGNING_PROFILE }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: web/.node-version
+      - run: corepack enable
+      # W-P4: no release ships a PostgreSQL minor older than the current one.
+      - run: scripts/postgres-current.ps1
+      - run: scripts/windows-postgres.ps1 -Out "$env:RUNNER_TEMP\payload\postgresql"
+      - run: |
+          Set-Location web
+          pnpm install --frozen-lockfile
+          pnpm build
+      - run: go build -trimpath -ldflags "-s -w -X main.version=$env:GITHUB_REF_NAME" -o "$env:RUNNER_TEMP\payload\equori.exe" ./cmd/equori
+      # W-R5: every PE file the installer holds is signed, the EDB build's included.
+      - if: env.SIGN == 'true'
+        run: scripts/windows-sign.ps1 @(Get-ChildItem -Recurse -File "$env:RUNNER_TEMP\payload" -Include *.exe, *.dll | ForEach-Object FullName)
+      - run: |
+          $iscc = @('/Qp', "/DAppVersion=$($env:GITHUB_REF_NAME -replace '^v', '')", "/DPayload=$env:RUNNER_TEMP\payload", "/O$env:RUNNER_TEMP\installer")
+          if ($env:SIGN -eq 'true') { $iscc += '/DSign', "/Ssigntool=pwsh -NoProfile -File `"$pwd\scripts\windows-sign.ps1`" `$f" }
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" @iscc packaging\windows\equori.iss
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+      # R4: the installer works and reports the tag before anything is published.
+      - run: scripts/windows-smoke.ps1 -Installer (Get-Item "$env:RUNNER_TEMP\installer\*.exe").FullName -Tag $env:GITHUB_REF_NAME -Region US -Currency USD
+      # W-R7: from the second tag whose release holds a Windows installer.
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $prev = git describe --tags --abbrev=0 --match 'v*.*.*' HEAD^ 2>$null
+          $installer = if ($prev) { gh release view $prev --json assets -q '.assets[].name' | Where-Object { $_ -like '*_windows_amd64_setup.exe' } }
+          if (-not $installer) { "no earlier release holds a Windows installer; nothing to upgrade from"; exit 0 }
+          gh release download $prev -p $installer -D "$env:RUNNER_TEMP\prev"
+          Remove-Item -Recurse -Force "$env:ProgramData\equori"
+          $version = (Get-Content packaging\windows\postgresql.env | Where-Object { $_ -match '^PG_VERSION=' }) -replace '^PG_VERSION=', ''
+          $psql = Join-Path ([IO.Path]::GetTempPath()) "equori-pg-$version\pgsql\bin\psql.exe"
+          scripts/windows-upgrade-test.ps1 -Previous "$env:RUNNER_TEMP\prev\$installer" -New (Get-Item "$env:RUNNER_TEMP\installer\*.exe").FullName -PreviousRef $prev -Psql $psql
+      - if: env.SIGN == 'true'
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: ${{ runner.temp }}/installer/*.exe
+      - if: env.SIGN == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows
+          path: ${{ runner.temp }}/installer/*.exe
+      - if: env.SIGN != 'true'
+        run: '"::notice::Windows installer not published: signing secrets are not set (W-R6)"'
+
   release:
-    needs: [dist, image]
+    needs: [dist, image, windows]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -166,13 +239,25 @@ jobs:
           version=${GITHUB_REF_NAME#v}
           sed -e "s/\${EQUORI_VERSION:-dev}/\${EQUORI_VERSION:-$version}/" -e '/^    build: \.$/d' compose.yaml > dist/compose.yaml
           grep -q "equori:\${EQUORI_VERSION:-$version}" dist/compose.yaml
+      # Present only when the windows job signed it (W-R6).
+      - uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          name: windows
+          path: dist/
       - name: GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           flags=(--generate-notes --verify-tag)
           if [[ "$GITHUB_REF_NAME" == *-* ]]; then flags+=(--prerelease); fi
-          gh release create "$GITHUB_REF_NAME" "${flags[@]}" dist/*.tar.gz dist/SHA256SUMS dist/compose.yaml
+          assets=(dist/*.tar.gz dist/compose.yaml)
+          for installer in dist/*_windows_amd64_setup.exe; do
+            [[ -e "$installer" ]] || continue
+            (cd dist && sha256sum "$(basename "$installer")" >> SHA256SUMS)
+            assets+=("$installer")
+          done
+          gh release create "$GITHUB_REF_NAME" "${flags[@]}" "${assets[@]}" dist/SHA256SUMS
 
   # R5: in 0.x every tag moves the formula; from 1.0 only a tag without a pre-release suffix.
   #   v0.3.0 → true, v0.3.0-beta.1 → true, v1.0.0 → true, v1.1.0-rc.1 → false
