@@ -101,3 +101,22 @@ export function planTotals(
         : base.reference - base.installments - base.savings - planned,
   };
 }
+
+// A percent typed with a point or a comma and at most two decimals, as basis points; an empty
+// text is zero, anything else undefined. String arithmetic only (O7).
+export function bpFromText(text: string): number | undefined {
+  const match = /^(\d*)(?:[.,](\d{0,2}))?$/.exec(text.trim());
+  if (match === null) return undefined;
+  const whole = match[1] ?? "";
+  const fraction = (match[2] ?? "").padEnd(2, "0");
+  return Number(whole === "" ? "0" : whole) * 100 + Number(fraction);
+}
+
+// Basis points as the percent a field shows: "12.5" for 1250.
+export function textFromBp(bp: number): string {
+  const whole = Math.trunc(bp / 100);
+  const fraction = String(bp % 100)
+    .padStart(2, "0")
+    .replace(/0+$/, "");
+  return fraction === "" ? String(whole) : `${String(whole)}.${fraction}`;
+}

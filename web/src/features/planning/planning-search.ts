@@ -1,9 +1,13 @@
 export type PlanningTab = "agenda" | "schedules" | "subscriptions" | "budgets";
 
+export type BudgetView = "plan" | "track";
+
 export interface PlanningSearch {
   tab?: Exclude<PlanningTab, "agenda">;
   // YYYY-MM; the current month when absent.
   month?: string;
+  // The budgets tab's view; absent, a month after the current one opens in plan.
+  view?: BudgetView;
 }
 
 const tabs: readonly PlanningTab[] = [
@@ -22,9 +26,12 @@ export function validatePlanningSearch(
     typeof raw.month === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(raw.month)
       ? raw.month
       : undefined;
+  const view =
+    raw.view === "plan" || raw.view === "track" ? raw.view : undefined;
   return {
     ...(tab === undefined ? {} : { tab }),
     ...(month === undefined ? {} : { month }),
+    ...(view === undefined ? {} : { view }),
   };
 }
 

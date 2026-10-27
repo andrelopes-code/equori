@@ -1,6 +1,7 @@
 import { useField } from "@slotted/react/field";
 import { TextField } from "@slotted/react/text-field";
 import { useEffect } from "react";
+import type { KeyboardEvent } from "react";
 
 import { minorFromTyped } from "@/ui/money-entry";
 import styles from "@/ui/money-input.module.css";
@@ -22,6 +23,10 @@ export function MoneyInput({
   sign,
   autoFocus = false,
   size = "panel",
+  "aria-label": ariaLabel,
+  invalid,
+  readOnly,
+  onKeyDown,
 }: {
   // Minor units, at least zero; the sign belongs to the entry's kind.
   value: number;
@@ -33,6 +38,11 @@ export function MoneyInput({
   // field: a control as tall as the text fields beside it, for a form that asks for several
   // amounts at once, none of them the page's largest figure. It does not take autoFocus.
   size?: "panel" | "field";
+  // The name of a field-sized input with no Field around it, such as a cell of a table.
+  "aria-label"?: string;
+  invalid?: boolean;
+  readOnly?: boolean;
+  onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
 }) {
   const fmt = useMoneyFormat();
   const field = useField();
@@ -58,6 +68,10 @@ export function MoneyInput({
       <TextField
         inputMode="numeric"
         autoComplete="off"
+        {...(ariaLabel === undefined ? {} : { "aria-label": ariaLabel })}
+        {...(invalid === undefined ? {} : { invalid })}
+        {...(readOnly === undefined ? {} : { readOnly })}
+        {...(onKeyDown === undefined ? {} : { onKeyDown })}
         value={parts.integer + parts.fraction}
         start={marks[sign] + parts.symbol}
         onChange={(event) => {

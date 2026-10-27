@@ -15,7 +15,7 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useDeferredValue, useState } from "react";
 
 import { AgendaTab } from "@/features/planning/agenda-tab";
-import { BudgetsTab } from "@/features/planning/budgets-tab";
+import { BudgetsArea } from "@/features/planning/budgets-area";
 import { SchedulesTab } from "@/features/planning/schedules-tab";
 import { SubscriptionsTab } from "@/features/planning/subscriptions-tab";
 import type {
@@ -144,7 +144,18 @@ export function PlanningPage() {
           {shownTab === "schedules" && <SchedulesTab onCreate={create} />}
           {shownTab === "subscriptions" && <SubscriptionsTab />}
           {shownTab === "budgets" && (
-            <BudgetsTab month={month} onCreate={createBudget} />
+            <BudgetsArea
+              month={month}
+              view={search.view}
+              onView={(view) =>
+                navigate({
+                  to: "/planning",
+                  search: { ...search, view },
+                  replace: true,
+                })
+              }
+              onCreate={createBudget}
+            />
           )}
         </div>
       </PageBody>

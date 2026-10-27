@@ -8,7 +8,7 @@ import { budgetApi, foodBudget, health } from "@/testing/budget-api";
 import { json } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 
-const november = "/planning?tab=budgets&month=2026-11";
+const november = "/planning?tab=budgets&view=track&month=2026-11";
 
 function words(key: keyof typeof catalogEn, values: Record<string, string>) {
   return Object.entries(values).reduce<string>(
@@ -19,7 +19,7 @@ function words(key: keyof typeof catalogEn, values: Record<string, string>) {
 
 describe("PlanningPage budgets", () => {
   it("carries the month before into available (S60)", async () => {
-    await renderApp("/planning?tab=budgets&month=2026-12", {
+    await renderApp("/planning?tab=budgets&view=track&month=2026-12", {
       fetch: budgetApi(),
     });
     const food = await screen.findByRole("article", { name: "Food" });

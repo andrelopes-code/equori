@@ -7,6 +7,8 @@ import {
   planShare,
   planTotals,
   suggestion,
+  bpFromText,
+  textFromBp,
 } from "@/features/planning/plan-math";
 import type { PlanDraftRow } from "@/features/planning/plan-math";
 
@@ -140,5 +142,22 @@ describe("planTotals", () => {
         savings: 0,
       }),
     ).toEqual({ planned: 1, unassigned: undefined });
+  });
+});
+
+describe("percent text", () => {
+  it("reads a typed percent as basis points", () => {
+    expect(bpFromText("12")).toBe(1200);
+    expect(bpFromText("12,5")).toBe(1250);
+    expect(bpFromText("0.25")).toBe(25);
+    expect(bpFromText("")).toBe(0);
+    expect(bpFromText("1.2.3")).toBeUndefined();
+    expect(bpFromText("-3")).toBeUndefined();
+  });
+
+  it("writes basis points with up to two decimals", () => {
+    expect(textFromBp(1250)).toBe("12.5");
+    expect(textFromBp(1200)).toBe("12");
+    expect(textFromBp(25)).toBe("0.25");
   });
 });
