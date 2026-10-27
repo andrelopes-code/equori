@@ -102,7 +102,7 @@ export const calculatorsEn = {
   "calc.compound.formula2": "M2: Sn = (1 + j) · ((1 + j)^n − 1) / j · p",
   "calc.compound.formula3": "M5: annual = (1 + monthly)^12 − 1",
   "calc.compound.formula4": "M6: real = (1 + nominal) / (1 + inflation) − 1",
-  "calc.compound.symbols":
+  "calc.compound.formula6":
     "Sn: amount after n months; q0: initial amount; p: monthly deposit; j: monthly rate; n: months.",
   "calc.compound.assumption1":
     "Each deposit is made at the start of the month (Banco Central do Brasil method).",
@@ -128,4 +128,54 @@ export const calculatorsEn = {
     "For the range, monthly returns are independent and log-normal; the draws use a fixed seed, so the same inputs give the same range.",
   "calc.compound.limit4":
     "The range is not a forecast. With withdrawals, one fixed return understates the range of outcomes (Pfau 2016).",
+  "calc.noIndexes":
+    "This instance fetches no index, so no index can be chosen; an administrator enables them in EQUORI_INDEX_FEEDS (docs/operations/price-feeds.md).",
+  "calc.index": "Index",
+  "calc.index.none": "None",
+  "calc.rates.rate": "Rate",
+  "calc.rates.inflation": "Annual inflation (optional)",
+  "calc.rates.percent": "Percent of the index",
+  "calc.rates.monthly": "Monthly rate",
+  "calc.rates.annual": "Annual rate",
+  "calc.rates.real": "Annual rate after inflation",
+  "calc.rates.ofIndex": "Annual rate of the percent of the index",
+  "calc.rates.step1":
+    "A monthly rate compounds 12 times in a year; an annual rate is converted back by the 12th root.",
+  "calc.rates.step2":
+    "The real rate divides the growth of the nominal rate by the growth of prices.",
+  "calc.rates.step3":
+    "A percent of a daily index applies that percent to each day's rate of the last 12 months, then compounds the days.",
+  "calc.rates.formula1":
+    "M5: annual = (1 + monthly)^12 − 1; monthly = (1 + annual)^(1/12) − 1",
+  "calc.rates.formula2": "M6: real = (1 + nominal) / (1 + inflation) − 1",
+  "calc.rates.formula3":
+    "Percent of an index: Π (1 + k · dᵢ) − 1 over the days i of the last 12 months; k the percent, dᵢ the rate of day i",
+  "calc.rates.assumption1": "Rates compound monthly; a year is 12 months.",
+  "calc.rates.assumption2":
+    "The last 12 months of an index stand for its annual rate.",
+  "calc.rates.limit1": "A past index rate does not predict the next one.",
+  "calc.rates.limit2":
+    "Contracts quoted on business days use another day count, so their figures differ.",
+  "calc.correction.amount": "Amount",
+  "calc.correction.from": "Start month",
+  "calc.correction.to": "End month",
+  "calc.correction.corrected": "Corrected amount",
+  "calc.correction.factor": "Accumulated factor",
+  "calc.correction.percent": "Accumulated change",
+  "calc.correction.months": "Months used",
+  "calc.correction.order": "The start month must not come after the end month.",
+  "calc.correction.range":
+    "The stored rates of this index run from {first} to {last}.",
+  "calc.correction.step1":
+    "The rates of the index are read for every month from the start month to the end month, both included; a daily index gives every day of those months.",
+  "calc.correction.step2":
+    "The factor is the product of (1 + rate) over those rates.",
+  "calc.correction.step3":
+    "The corrected amount is the amount times the factor, rounded to the minor unit.",
+  "calc.correction.formula1":
+    "M7: corrected = amount × Π (1 + rᵢ); rᵢ the rate of each month or day i",
+  "calc.correction.assumption1":
+    "The rates are the ones the index source published and this instance stored.",
+  "calc.correction.limit1":
+    "Results can differ from those of an institution, which may use other dates or rounding (Banco Central do Brasil, Calculadora do Cidadão).",
 } as const;

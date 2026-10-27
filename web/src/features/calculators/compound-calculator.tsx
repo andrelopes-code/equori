@@ -23,7 +23,7 @@ import {
 import { CountField } from "@/features/calculators/count-field";
 import { FilledNote } from "@/features/calculators/filled-note";
 import { formatRate, rateText } from "@/features/calculators/format-rate";
-import { MethodSection } from "@/features/calculators/method-section";
+import { CalculatorMethod } from "@/features/calculators/calculator-method";
 import type { Source } from "@/features/calculators/method-section";
 import { RateField } from "@/features/calculators/rate-field";
 import { annualToMonthly } from "@/features/calculators/rate-math";
@@ -36,7 +36,6 @@ import {
   useIndexes,
   useTrailingRate,
 } from "@/features/calculators/use-index-rate";
-import type { MessageKey } from "@/i18n/catalog.en";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
@@ -65,37 +64,6 @@ const sources: Source[] = [
       "Stango and Zinman 2009, Exponential Growth Bias and Household Finance, Journal of Finance 64(6)",
     url: "https://doi.org/10.1111/j.1540-6261.2009.01518.x",
   },
-];
-
-const steps: MessageKey[] = [
-  "calc.compound.step1",
-  "calc.compound.step2",
-  "calc.compound.step3",
-  "calc.compound.step4",
-  "calc.compound.step5",
-  "calc.compound.step6",
-  "calc.compound.step7",
-];
-const formula: MessageKey[] = [
-  "calc.compound.formula1",
-  "calc.compound.formula2",
-  "calc.compound.formula3",
-  "calc.compound.formula4",
-  "calc.compound.formula5",
-  "calc.compound.symbols",
-];
-const assumptions: MessageKey[] = [
-  "calc.compound.assumption1",
-  "calc.compound.assumption2",
-  "calc.compound.assumption3",
-  "calc.compound.assumption4",
-  "calc.compound.assumption5",
-];
-const limits: MessageKey[] = [
-  "calc.compound.limit1",
-  "calc.compound.limit2",
-  "calc.compound.limit3",
-  "calc.compound.limit4",
 ];
 
 // Design §5, compound: what an initial amount and monthly deposits reach (M1, M2), or the
@@ -414,13 +382,10 @@ export function CompoundCalculator() {
       inputs={inputs}
       results={results}
       method={
-        <MethodSection
-          answers={t("calc.compound.question")}
-          steps={steps.map((k) => t(k))}
-          formula={formula.map((k) => t(k))}
-          assumptions={assumptions.map((k) => t(k))}
-          limits={limits.map((k) => t(k))}
+        <CalculatorMethod
+          id="compound"
           sources={sources}
+          noIndexes={indexes.length === 0}
         />
       }
     />
