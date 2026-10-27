@@ -1,4 +1,5 @@
 import { Button } from "@slotted/react/button";
+import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 
 import type { CategoryEntry } from "@/features/categories";
@@ -22,7 +23,11 @@ export function CategoryCell({
 }) {
   const t = useT();
   if (row.transfer) {
-    return <Text tone="muted">{t("transactions.transfer")}</Text>;
+    return (
+      <Text size="sm" tone="muted">
+        {t("transactions.transfer")}
+      </Text>
+    );
   }
   const entries = row.categoryIds.flatMap((id) => {
     const entry = categories.get(id);
@@ -33,7 +38,9 @@ export function CategoryCell({
     if (!row.uncategorized) return null;
     const label = t("transactions.categorize");
     return onCategorize === undefined ? (
-      <Text tone="warning">{t("transactions.uncategorized")}</Text>
+      <Tag size="sm" tone="warning">
+        {t("transactions.uncategorized")}
+      </Tag>
     ) : (
       <Button size="sm" variant="outline" tone="warning" onClick={onCategorize}>
         {label}
