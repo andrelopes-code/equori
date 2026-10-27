@@ -37,11 +37,14 @@ export function MessageItem({
   message,
   onRetry,
   steps,
+  reveal = false,
 }: {
   message: AssistantMessage;
   onRetry?: (() => void) | undefined;
   // The steps of the turn that produced this answer, when this session saw it.
   steps?: string[] | undefined;
+  // The answer just arrived; its last card brings its actions into view (P13).
+  reveal?: boolean;
 }) {
   const t = useT();
   const { hidden } = usePrivacy();
@@ -108,8 +111,12 @@ export function MessageItem({
                 </AlertContent>
               </Alert>
             )}
-            {message.proposals.map((proposal) => (
-              <ProposalCard key={proposal.id} proposal={proposal} />
+            {message.proposals.map((proposal, i) => (
+              <ProposalCard
+                key={proposal.id}
+                proposal={proposal}
+                reveal={reveal && i === message.proposals.length - 1}
+              />
             ))}
           </Stack>
         )}

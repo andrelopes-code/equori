@@ -25,6 +25,9 @@ import type { MessageKey } from "@/i18n/catalog.en";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { useEffect, useRef } from "react";
+
+import { useExpired } from "@/features/assistant/use-expired";
 
 type Proposal = components["schemas"]["AssistantProposal"];
 type Value = components["schemas"]["AssistantValue"];
@@ -74,8 +77,16 @@ function failureDetail(result: unknown): string | undefined {
 
 // Families read: card, badge, description-list, alert, button. A write the assistant proposes:
 // what it does and to what, each value it changes, and the two decisions while it waits.
-export function ProposalCard({ proposal }: { proposal: Proposal }) {
+export function ProposalCard({
+  proposal,
+  reveal = false,
+}: {
+  proposal: Proposal;
+  // The last card of a new answer brings its actions into view (P13).
+  reveal?: boolean;
+}) {
   const t = useT();
+  const [locale] = useAppLocale();
   const valueText = useValueText();
   const confirm = useConfirmProposal();
   const reject = useRejectProposal();
@@ -86,8 +97,16 @@ export function ProposalCard({ proposal }: { proposal: Proposal }) {
   const actionKey = catalogKey(`assistant.action.${preview.action}`);
   const detail =
     shown.status === "failed" ? failureDetail(shown.result) : undefined;
-  const pending = shown.status === "pending";
+  // The server's answer to a confirm in flight wins over the timer (P15).
+  const passed = useExpired(shown.expires_at, shown.status === "pending");
+  const status =
+    shown.status === "pending" && passed && !busy ? "expired" : shown.status;
+  const pending = status === "pending";
   const destructive = preview.destructive === true;
+  const actions = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (reveal) actions.current?.scrollIntoView({ block: "nearest" });
+  }, [reveal]);
 
   return (
     <Card size="sm" fill={pending ? "elevated" : "outline"}>
@@ -97,13 +116,23 @@ export function ProposalCard({ proposal }: { proposal: Proposal }) {
             <Text weight="semibold">
               {actionKey === undefined ? preview.action : t(actionKey)}
             </Text>
-            <Badge tone={tones[shown.status]} size="sm">
-              {t(`assistant.proposal.status.${shown.status}`)}
+            <Badge tone={tones[status]} size="sm">
+              {t(`assistant.proposal.status.${status}`)}
             </Badge>
           </span>
           {preview.target !== undefined && (
             <Text size="sm" tone="muted">
               {valueText({ text: preview.target })}
+            </Text>
+          )}
+          {pending && (
+            <Text size="xs" tone="muted">
+              {t("assistant.proposal.expires", {
+                time: new Intl.DateTimeFormat(locale, {
+                  hour: "numeric",
+                  minute: "2-digit",
+                }).format(new Date(shown.expires_at)),
+              })}
             </Text>
           )}
         </Stack>
@@ -155,7 +184,7 @@ export function ProposalCard({ proposal }: { proposal: Proposal }) {
       </CardBody>
       {pending && (
         <CardFooter>
-          <span className={styles.proposalActions}>
+          <span className={styles.proposalActions} ref={actions}>
             <Button
               variant="ghost"
               tone="secondary"

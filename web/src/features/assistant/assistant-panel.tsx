@@ -308,6 +308,10 @@ export function AssistantPanel({
                     message={m}
                     onRetry={m === last && !orphan ? retry : undefined}
                     steps={turn.activity[m.id]}
+                    reveal={
+                      m === last &&
+                      m.proposals.some((p) => p.status === "pending")
+                    }
                   />
                 </MessageScrollerItem>
               ))}

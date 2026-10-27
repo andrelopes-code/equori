@@ -742,6 +742,64 @@ describe("AssistantPanel", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
+  // P13, U10: an answer with proposals brings the last card's actions into view.
+  it("scrolls the actions of the last card into view (U10)", async () => {
+    const scrolled: Element[] = [];
+    const original = Object.getOwnPropertyDescriptor(
+      Element.prototype,
+      "scrollIntoView",
+    );
+    Object.defineProperty(Element.prototype, "scrollIntoView", {
+      configurable: true,
+      value(this: Element) {
+        scrolled.push(this);
+      },
+    });
+    try {
+      const proposal = (id: string) => ({
+        id,
+        tool: "record_transaction",
+        status: "pending",
+        preview: { action: "record_transaction", changes: [] },
+        created_at: "2026-10-23T10:00:00Z",
+        expires_at: "2099-10-23T10:15:00Z",
+      });
+      const withCards = {
+        ...message("Two changes."),
+        proposals: [proposal("p1"), proposal("p2")],
+      };
+      const stream = turnStream();
+      setup({
+        "POST /api/v1/assistant/turns": () => stream.response(),
+        "GET /api/v1/assistant/conversations/c1": () =>
+          json(200, {
+            ...detail(""),
+            messages: [detail("").messages[0], withCards],
+          }),
+      });
+      await ask("How much?");
+      act(() => {
+        stream.write(
+          `event: turn\ndata: {"conversation_id":"c1","message_id":"m1"}\n\nevent: answer\ndata: ${JSON.stringify(withCards)}\n\n`,
+        );
+        stream.close();
+      });
+      const confirms = await screen.findAllByRole("button", {
+        name: catalogEn["assistant.proposal.confirm"],
+      });
+      const last = confirms.at(-1);
+      await waitFor(() => {
+        expect(
+          scrolled.some((el) => last !== undefined && el.contains(last)),
+        ).toBe(true);
+      });
+    } finally {
+      if (original === undefined)
+        Reflect.deleteProperty(Element.prototype, "scrollIntoView");
+      else Object.defineProperty(Element.prototype, "scrollIntoView", original);
+    }
+  });
+
   it("says when the quota returns after an exhausted error event", async () => {
     let refused = false;
     setup({

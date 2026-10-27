@@ -1,6 +1,6 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { components } from "@/api/schema.gen";
 import { ProposalCard } from "@/features/assistant/proposal-card";
@@ -28,7 +28,8 @@ const pending: Proposal = {
     ],
   },
   created_at: "2026-10-23T10:00:00Z",
-  expires_at: "2026-10-23T10:15:00Z",
+  // P15 expires a card at this instant; the fixture stays pending.
+  expires_at: "2099-10-23T10:15:00Z",
 };
 
 const leaks = ["1234.56", "1.234,56", "1,234.56"];
@@ -124,5 +125,82 @@ describe("ProposalCard", () => {
     );
     expect(within(container).getByText("Amount")).toBeInTheDocument();
     expectNoAmounts(container, leaks);
+  });
+
+  // P15: a pending card shows its expiry and turns expired at that instant without a click.
+  it("shows the expiry and turns expired without a click (P15)", () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
+    vi.setSystemTime(new Date("2026-10-23T10:00:00Z"));
+    try {
+      renderWithProviders(
+        <ProposalCard
+          proposal={{ ...pending, expires_at: "2026-10-23T10:05:00Z" }}
+        />,
+        { fetch: fakeApi({}) },
+      );
+      expect(screen.getByText(/^Expires at /)).toBeInTheDocument();
+      act(() => {
+        vi.advanceTimersByTime(5 * 60_000);
+      });
+      expect(
+        screen.getByText(catalogEn["assistant.proposal.status.expired"]),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Confirm" })).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  // Review Focus 4 of phase 4: the server's answer to a confirm in flight wins over the timer.
+  it("keeps the server's answer when the expiry passes during a confirm", async () => {
+    vi.useFakeTimers({
+      toFake: ["setTimeout", "clearTimeout", "Date"],
+      shouldAdvanceTime: true,
+    });
+    vi.setSystemTime(new Date("2026-10-23T10:04:59Z"));
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    try {
+      renderWithProviders(
+        <ProposalCard
+          proposal={{ ...pending, expires_at: "2026-10-23T10:05:00Z" }}
+        />,
+        {
+          fetch: fakeApi({
+            "POST /api/v1/assistant/proposals/p1/confirm": async () => {
+              await gate;
+              return json(200, { ...pending, status: "executed" });
+            },
+          }),
+        },
+      );
+      await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+      act(() => {
+        vi.advanceTimersByTime(2_000);
+      });
+      release();
+      expect(
+        await screen.findByText(
+          catalogEn["assistant.proposal.status.executed"],
+        ),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByText(catalogEn["assistant.proposal.status.expired"]),
+      ).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  // P14: the fields stand in two columns; the family folds them to one below its own threshold.
+  it("lays the fields in two columns (P14)", () => {
+    renderWithProviders(<ProposalCard proposal={pending} />, {
+      fetch: fakeApi({}),
+    });
+    expect(
+      document.querySelector('[data-ui="description-list"]'),
+    ).toHaveAttribute("data-columns", "2");
   });
 });
