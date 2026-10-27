@@ -85,6 +85,17 @@ export function yieldCapable(kind: Kind): boolean {
   return kind === "savings" || kind === "reserve";
 }
 
+// The kinds the liquidity indicator counts (analytics design 4.1).
+export function liquidCapable(kind: Kind): boolean {
+  return (
+    kind === "checking" ||
+    kind === "savings" ||
+    kind === "cash" ||
+    kind === "wallet" ||
+    kind === "reserve"
+  );
+}
+
 export const kindTitle: Record<Kind, MessageKey> = {
   checking: "kind.title.checking",
   savings: "kind.title.savings",

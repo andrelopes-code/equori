@@ -21,6 +21,7 @@ import type { AccountDraft } from "@/features/accounts/account-draft";
 import {
   classOf,
   kindTitle,
+  liquidCapable,
   yieldCapable,
 } from "@/features/accounts/account-kinds";
 import { CardSetupSection } from "@/features/accounts/card-setup-section";
@@ -234,6 +235,21 @@ export function AccountForm({
                 </Switch>
                 <FieldDescription>
                   {t("accountForm.yieldHint")}
+                </FieldDescription>
+              </Field>
+            )}
+            {mode === "edit" && liquidCapable(kind) && (
+              <Field>
+                <Switch
+                  checked={draft.excludedFromLiquidity}
+                  onCheckedChange={(excludedFromLiquidity) => {
+                    set({ excludedFromLiquidity });
+                  }}
+                >
+                  {t("accountForm.excludeFromLiquidity")}
+                </Switch>
+                <FieldDescription>
+                  {t("accountForm.excludeFromLiquidityHint")}
                 </FieldDescription>
               </Field>
             )}
