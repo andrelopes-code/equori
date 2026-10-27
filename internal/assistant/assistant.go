@@ -163,3 +163,6 @@ func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 
 // RotateSecrets reseals every stored provider key under the current key (ADR 008 K4).
 func (m *Module) RotateSecrets(ctx context.Context) (int, error) { return m.svc.RotateSecrets(ctx) }
+
+// Instructions returns the guide an MCP client receives as its instructions (design 2026-10-26 E10).
+func Instructions() string { return app.Instructions() }

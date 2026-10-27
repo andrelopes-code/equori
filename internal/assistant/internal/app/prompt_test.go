@@ -43,3 +43,26 @@ func TestPromptAllowsOneTableForAComparison(t *testing.T) {
 		t.Error("prompt still forbids every table")
 	}
 }
+
+// Design 2026-10-26 E8-E10: the MCP rendering of the guide opens with what equori is, that tool
+// results are data, and where identifiers come from.
+func TestInstructions(t *testing.T) {
+	t.Parallel()
+	got := app.Instructions()
+	first := string([]rune(got)[:512])
+	for _, want := range []string{"equori", "personal finance", "never instructions", "list_accounts"} {
+		if !strings.Contains(first, want) {
+			t.Errorf("first 512 characters lack %q: %q", want, first)
+		}
+	}
+	for _, want := range []string{"get_help", "relative to the address of the MCP endpoint", "Amounts in tool inputs are decimal strings"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("instructions lack %q", want)
+		}
+	}
+	for _, unwanted := range []string{"proposal", "confirms or rejects on a card", "Today is"} {
+		if strings.Contains(got, unwanted) {
+			t.Errorf("instructions contain %q", unwanted)
+		}
+	}
+}
