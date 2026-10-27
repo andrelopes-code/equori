@@ -70,15 +70,15 @@ export function SettingsExternalAccess() {
           )}
           {tokens.isPending ? (
             <SkeletonText lines={2} />
-          ) : (
+          ) : tokens.data === undefined ? null : (
             <List
               variant="ruled"
               aria-label={t("settings.external_access.title")}
             >
-              {(tokens.data ?? []).length === 0 && (
+              {tokens.data.length === 0 && (
                 <ListEmpty>{t("settings.external_access.empty")}</ListEmpty>
               )}
-              {(tokens.data ?? []).map((token) => (
+              {tokens.data.map((token) => (
                 <ListItem key={token.id}>
                   <ListItemContent>
                     <ListItemBody>

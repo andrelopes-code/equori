@@ -4,6 +4,7 @@ package mcp
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"slices"
@@ -23,8 +24,11 @@ type Grant struct {
 	Write   bool
 }
 
-// Verify checks a token; any error answers 401.
+// Verify checks a token. ErrInvalidToken answers 401; any other error answers 500.
 type Verify func(ctx context.Context, token string) (Grant, error)
+
+// ErrInvalidToken is a token Verify refuses: malformed, unknown, expired or deleted.
+var ErrInvalidToken = errors.New("invalid access token")
 
 type Config struct {
 	Registry *tool.Registry

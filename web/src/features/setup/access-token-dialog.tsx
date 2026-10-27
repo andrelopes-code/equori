@@ -41,10 +41,12 @@ export function AccessTokenDialog({ onClose }: { onClose: () => void }) {
   const [summary, setSummary] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [token, setToken] = useState<string | null>(null);
+  // Closing while the token is created would hide a text the server never shows again.
   const change = useStableCallback((open: boolean) => {
-    if (!open) onClose();
+    if (!open && !create.isPending) onClose();
   });
   const submit = () => {
+    if (create.isPending) return;
     setSummary(null);
     setErrors({});
     create
@@ -188,7 +190,12 @@ export function AccessTokenDialog({ onClose }: { onClose: () => void }) {
         <DialogFooter>
           {token === null ? (
             <>
-              <Button variant="ghost" tone="secondary" onClick={onClose}>
+              <Button
+                variant="ghost"
+                tone="secondary"
+                disabled={create.isPending}
+                onClick={onClose}
+              >
                 {t("detail.cancel")}
               </Button>
               <Button

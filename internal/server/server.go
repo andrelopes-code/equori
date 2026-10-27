@@ -5,6 +5,7 @@ package server
 import (
 	"cmp"
 	"context"
+	"errors"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -193,6 +194,9 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		Registry: tools, Names: chatNames, Instructions: assistant.Instructions(), Prompts: mcpPrompts(), Version: version, Log: log,
 		Verify: func(ctx context.Context, token string) (mcp.Grant, error) {
 			g, err := identityModule.VerifyAccessToken(ctx, token)
+			if errors.Is(err, identity.ErrInvalidAccessToken) {
+				return mcp.Grant{}, mcp.ErrInvalidToken
+			}
 			if err != nil {
 				return mcp.Grant{}, err
 			}

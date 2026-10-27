@@ -28,7 +28,7 @@ const EventExportRequested = "reporting.export_requested.v1"
 // notExported are the tables with user_id that stay out of the archive (export design E2).
 var notExported = []string{
 	"assistant_chain_target", "assistant_provider", "assistant_usage", "assistant_usage_limit",
-	"capture_category_hint", "identity_session", "outbox_event",
+	"capture_category_hint", "identity_access_token", "identity_session", "outbox_event",
 	"portfolio_income_event", "portfolio_position_day", "portfolio_realized_result",
 	"reporting_account_day", "reporting_export",
 }

@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import { catalogPtBR as pt } from "@/i18n/catalog.pt-BR";
-import { fakeApi, json } from "@/testing/fake-api";
+import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 
 interface Sent {
@@ -20,7 +20,7 @@ const created = {
 };
 const tokenText = "eqt_ABCDEFGHIJKLMNOPQRSTUVWXYZ234567ABCDEFGHIJKLMNOPQRST";
 
-function api(sent: Sent[]) {
+function api(sent: Sent[], hold?: Promise<void>, failList = false) {
   let items: unknown[] = [];
   return fakeApi({
     "GET /api/v1/me": () =>
@@ -34,9 +34,11 @@ function api(sent: Sent[]) {
     "GET /api/v1/settings": () => json(200, { base_currency: "BRL" }),
     "GET /api/v1/transactions": () => json(200, { items: [] }),
     "GET /api/v1/instruments": () => json(200, { items: [] }),
-    "GET /api/v1/access-tokens": () => json(200, { items }),
+    "GET /api/v1/access-tokens": () =>
+      failList ? problem(500, "internal_error") : json(200, { items }),
     "POST /api/v1/access-tokens": async (req) => {
       sent.push({ route: "POST", body: await req.json() });
+      await hold;
       items = [created];
       return json(201, { ...created, token: tokenText });
     },
@@ -162,6 +164,55 @@ describe("external access settings", () => {
     await waitFor(() => {
       expect(sent.map((s) => s.route)).toEqual(["POST", "DELETE"]);
     });
+  });
+
+  // Review of phase 3: closing during the creation would hide a token that exists.
+  it("stays open while the token is being created", async () => {
+    let release: () => void = () => undefined;
+    const hold = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await renderApp("/settings?section=external_access", {
+      fetch: api([], hold),
+    });
+    const view = await section();
+    await userEvent.click(
+      await view.findByRole("button", {
+        name: pt["settings.external_access.create"],
+      }),
+    );
+    const dialog = within(await screen.findByRole("dialog"));
+    await userEvent.type(
+      dialog.getByLabelText(
+        new RegExp(`^${pt["settings.external_access.name"]}`),
+      ),
+      "Claude Code",
+    );
+    await userEvent.click(
+      dialog.getByRole("button", {
+        name: pt["settings.external_access.create"],
+      }),
+    );
+    await userEvent.keyboard("{Escape}");
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(
+      dialog.getByRole("button", { name: pt["detail.cancel"] }),
+    ).toBeDisabled();
+    release();
+    expect(
+      await dialog.findByText(pt["settings.external_access.tokenTitle"]),
+    ).toBeInTheDocument();
+  });
+
+  it("shows no empty list when the tokens fail to load", async () => {
+    await renderApp("/settings?section=external_access", {
+      fetch: api([], undefined, true),
+    });
+    const view = await section();
+    expect(
+      await view.findByText(pt["problem.internal_error"]),
+    ).toBeInTheDocument();
+    expect(view.queryByText(pt["settings.external_access.empty"])).toBeNull();
   });
 
   it("notes that cloud clients need a public address on a private origin", async () => {

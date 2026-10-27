@@ -2,6 +2,7 @@ package mcp
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -30,8 +31,12 @@ func authenticate(verify Verify, next http.Handler) http.Handler {
 			return
 		}
 		g, err := verify(r.Context(), token)
-		if err != nil {
+		if errors.Is(err, ErrInvalidToken) {
 			unauthorized(w)
+			return
+		}
+		if err != nil {
+			http.Error(w, "the token could not be verified", http.StatusInternalServerError)
 			return
 		}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), grantKey{}, g)))

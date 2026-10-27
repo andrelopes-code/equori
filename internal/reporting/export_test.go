@@ -137,7 +137,7 @@ func TestExport(t *testing.T) {
 			t.Errorf("%s: %d lines, manifest %d", table.Name, n, table.Rows)
 		}
 	}
-	for _, name := range []string{"identity_user", "identity_session", "assistant_provider", "outbox_event", "reporting_account_day", "reporting_export", "capture_category_hint"} {
+	for _, name := range []string{"identity_user", "identity_session", "identity_access_token", "assistant_provider", "outbox_event", "reporting_account_day", "reporting_export", "capture_category_hint"} {
 		if _, ok := rows[name]; ok {
 			t.Errorf("%s is exported", name)
 		}
