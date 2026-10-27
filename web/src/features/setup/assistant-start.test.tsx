@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import { catalogPtBR as pt } from "@/i18n/catalog.pt-BR";
-import { fakeApi, json } from "@/testing/fake-api";
+import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 
 vi.mock("@slotted/react/chart", () => ({
@@ -43,7 +43,13 @@ const instance = {
 
 // Providers and the chat state the server answers; a deletion empties the list.
 function api(
-  state: { providers: unknown[]; available: boolean },
+  state: {
+    providers: unknown[];
+    available: boolean;
+    retryAt?: string;
+    chatFails?: boolean;
+    presets?: unknown[];
+  },
   posts: unknown[] = [],
 ) {
   return fakeApi({
@@ -58,11 +64,17 @@ function api(
     "GET /api/v1/settings": () => json(200, { base_currency: "BRL" }),
     "GET /api/v1/transactions": () => json(200, { items: [] }),
     "GET /api/v1/instruments": () => json(200, { items: [] }),
-    "GET /api/v1/assistant/presets": () => json(200, { items: presets }),
+    "GET /api/v1/assistant/presets": () =>
+      json(200, { items: state.presets ?? presets }),
     "GET /api/v1/assistant/providers": () =>
       json(200, { items: state.providers }),
     "GET /api/v1/assistant/chat": () =>
-      json(200, { available: state.available }),
+      state.chatFails === true
+        ? problem(500, "internal_error")
+        : json(200, {
+            available: state.available,
+            ...(state.retryAt === undefined ? {} : { retry_at: state.retryAt }),
+          }),
     "GET /api/v1/assistant/uses": () => json(200, { items: [] }),
     "GET /api/v1/assistant/usage": () => json(200, { items: [] }),
     "GET /api/v1/assistant/usage/days": () => json(200, { items: [] }),
@@ -198,5 +210,55 @@ describe("assistant start (S1)", () => {
     expect(document.activeElement).toBe(local);
     await user.keyboard("{Enter}");
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
+  });
+
+  // Review of phase 5: an instance provider over its quota still serves the reader.
+  it("offers no choice when the instance provider is over its limit", async () => {
+    await renderApp("/settings?section=assistant", {
+      fetch: api({
+        providers: [instance],
+        available: false,
+        retryAt: "2099-01-01T00:00:00Z",
+      }),
+    });
+    const view = await section();
+    await view.findByText("aistudio");
+    expect(
+      screen.queryByRole("button", { name: pt["assistant.start.gemini"] }),
+    ).toBeNull();
+  });
+
+  it("says when the chat state cannot be read", async () => {
+    await renderApp("/settings?section=assistant", {
+      fetch: api({ providers: [], available: false, chatFails: true }),
+    });
+    const view = await section();
+    expect(
+      await view.findByText(pt["problem.internal_error"]),
+    ).toBeInTheDocument();
+  });
+
+  it("describes each choice to the reader of its button", async () => {
+    await renderApp("/settings?section=assistant", {
+      fetch: api({ providers: [], available: false }),
+    });
+    expect(
+      await choice(pt["assistant.start.gemini"]),
+    ).toHaveAccessibleDescription(
+      new RegExp(pt["assistant.notice.trains.detail"].slice(0, 30)),
+    );
+  });
+
+  it("falls back to the first preset the server offers", async () => {
+    await renderApp("/settings?section=assistant", {
+      fetch: api({
+        providers: [],
+        available: false,
+        presets: [presets[0]],
+      }),
+    });
+    await userEvent.click(await choice(pt["assistant.start.local"]));
+    const dialog = within(await screen.findByRole("dialog"));
+    expect(dialog.getByText("Google Gemini")).toBeInTheDocument();
   });
 });

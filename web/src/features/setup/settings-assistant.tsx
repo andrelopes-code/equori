@@ -76,14 +76,21 @@ export function SettingsAssistant() {
   const close = () => {
     setOpen(null);
   };
-  const failure = providers.error ?? uses.error ?? usage.error ?? remove.error;
+  const failure =
+    providers.error ?? uses.error ?? usage.error ?? remove.error ?? chat.error;
   const presetItems = presets.data?.items ?? [];
   const providerItems = providers.data?.items ?? [];
   // S1: no provider of the reader's own and none of the instance serving the chat.
   const starting =
     providers.data !== undefined &&
     chat.data?.available === false &&
+    // A limit (retry_at) means a provider serves the reader and is resting.
+    chat.data.retry_at === undefined &&
     providerItems.every((p) => p.instance);
+  // S2: open while the reader set more than the default state; it follows data that arrives later.
+  const advancedOpen =
+    providerItems.filter((p) => !p.instance).length > 1 ||
+    (uses.data?.items ?? []).some((use) => !use.default);
   // The providers whose free tier trains on what a use sends, when that use sends financial data.
   const training = [
     ...new Set(
@@ -241,10 +248,8 @@ export function SettingsAssistant() {
               {/* S2: closed while the reader keeps one provider and the default chains. */}
               <Collapsible
                 mount="active"
-                defaultOpen={
-                  providerItems.filter((p) => !p.instance).length > 1 ||
-                  (uses.data?.items ?? []).some((use) => !use.default)
-                }
+                key={String(advancedOpen)}
+                defaultOpen={advancedOpen}
               >
                 <CollapsibleHeader>
                   <CollapsibleTrigger>

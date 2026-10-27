@@ -3,6 +3,7 @@ import { Card, CardBody } from "@slotted/react/card";
 import { Link } from "@slotted/react/link";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
+import { useId } from "react";
 
 import { useT } from "@/i18n/i18n-provider";
 
@@ -19,6 +20,7 @@ export function AssistantStart({
   onExternal: () => void;
 }) {
   const t = useT();
+  const id = useId();
   return (
     <Stack gap={3}>
       <Text size="md" weight="semibold">
@@ -29,13 +31,14 @@ export function AssistantStart({
           <Stack gap={2} align="start">
             <Button
               variant="outline"
+              aria-describedby={`${id}-gemini`}
               onClick={() => {
                 onPreset("gemini");
               }}
             >
               {t("assistant.start.gemini")}
             </Button>
-            <Text size="sm" tone="muted">
+            <Text size="sm" tone="muted" id={`${id}-gemini`}>
               {[
                 t("assistant.start.gemini.detail"),
                 t("assistant.notice.trains.detail"),
@@ -58,13 +61,14 @@ export function AssistantStart({
           <Stack gap={2} align="start">
             <Button
               variant="outline"
+              aria-describedby={`${id}-local`}
               onClick={() => {
                 onPreset("ollama");
               }}
             >
               {t("assistant.start.local")}
             </Button>
-            <Text size="sm" tone="muted">
+            <Text size="sm" tone="muted" id={`${id}-local`}>
               {t("assistant.start.local.detail")}
             </Text>
           </Stack>
@@ -73,10 +77,14 @@ export function AssistantStart({
       <Card size="sm">
         <CardBody>
           <Stack gap={2} align="start">
-            <Button variant="outline" onClick={onExternal}>
+            <Button
+              variant="outline"
+              aria-describedby={`${id}-external`}
+              onClick={onExternal}
+            >
               {t("assistant.start.external")}
             </Button>
-            <Text size="sm" tone="muted">
+            <Text size="sm" tone="muted" id={`${id}-external`}>
               {t("assistant.start.external.detail")}
             </Text>
           </Stack>

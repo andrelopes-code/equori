@@ -1,4 +1,5 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
+import { focusManager } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -538,6 +539,34 @@ describe("assistant settings", () => {
         fetch: api([], { uses: [defaultSuggest, customChat] }),
       });
       expect(await advanced()).toHaveAttribute("aria-expanded", "true");
+    });
+
+    // Review of phase 5: the disclosure follows data that arrives after it mounted.
+    it("opens when a custom chain arrives later", async () => {
+      let custom = false;
+      const base = api([], { uses: [defaultSuggest] });
+      const fetch = Object.assign(
+        (input: RequestInfo | URL, init?: RequestInit) => {
+          const req = new Request(input, init);
+          if (custom && req.url.endsWith("/api/v1/assistant/uses"))
+            return Promise.resolve(
+              json(200, { items: [defaultSuggest, customChat] }),
+            );
+          return base(input, init);
+        },
+        { calls: base.calls },
+      );
+      await renderApp("/settings?section=assistant", { fetch });
+      expect(await advanced()).toHaveAttribute("aria-expanded", "false");
+      custom = true;
+      // A return to the window refetches stale queries, as after a change made elsewhere.
+      act(() => {
+        focusManager.setFocused(false);
+        focusManager.setFocused(true);
+      });
+      await waitFor(async () => {
+        expect(await advanced()).toHaveAttribute("aria-expanded", "true");
+      });
     });
 
     it("opens with two providers", async () => {

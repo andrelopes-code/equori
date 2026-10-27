@@ -45,7 +45,11 @@ export function ProviderDialog({
   const create = useCreateProvider();
   const update = useUpdateProvider();
   const [presetId, setPresetId] = useState(
-    provider?.preset ?? initialPreset ?? presets[0]?.id ?? "",
+    provider?.preset ??
+      // A start choice names a preset the server may not offer.
+      presets.find((p) => p.id === initialPreset)?.id ??
+      presets[0]?.id ??
+      "",
   );
   const [name, setName] = useState(provider?.name ?? "");
   const [baseURL, setBaseURL] = useState(provider?.base_url ?? "");
