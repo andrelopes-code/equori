@@ -6,7 +6,6 @@ import {
   AlertDescription,
 } from "@slotted/react/alert";
 import { SkeletonText } from "@slotted/react/skeleton";
-import { Stack } from "@slotted/react/stack";
 import { Switch } from "@slotted/react/switch";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -110,7 +109,7 @@ export function SettingsMarketData() {
           <SkeletonText lines={4} />
         </SettingsGroup>
       ) : (
-        <Stack gap={3}>
+        <>
           {enabled.length === 0 && (
             <Alert tone="info">
               <AlertContent>
@@ -124,7 +123,10 @@ export function SettingsMarketData() {
                     onClick={() => {
                       void (async () => {
                         for (const f of suggested)
-                          await set.mutateAsync({ id: f.id, enabled: true });
+                          await set.mutateAsync({
+                            id: f.id,
+                            enabled: true,
+                          });
                       })().catch(() => undefined);
                     }}
                   >
@@ -157,6 +159,7 @@ export function SettingsMarketData() {
               </AlertContent>
             </Alert>
           )}
+
           <SettingsGroup
             title={t("marketData.prices")}
             actions={
@@ -188,7 +191,7 @@ export function SettingsMarketData() {
             {rows("index")}
             {rows("expectation")}
           </SettingsGroup>
-        </Stack>
+        </>
       )}
     </SettingsSection>
   );
