@@ -1,4 +1,5 @@
 import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
@@ -23,6 +24,7 @@ import {
   parkingBudget,
 } from "@/testing/budget-api";
 import { occurrence, salaryID, schedules } from "@/testing/planning-api";
+import { indicatorsFixture } from "@/testing/report-api";
 
 const incomeID = "a1000000-0000-4000-8000-0000000000f1";
 const accounts = [
@@ -110,6 +112,7 @@ function api(overrides: Record<string, (req: Request) => Response> = {}) {
         total: money(300000),
       }),
     "GET /api/v1/reports/net-worth": netWorth,
+    "GET /api/v1/reports/indicators": () => json(200, indicatorsFixture()),
     "GET /api/v1/reports/categories": () =>
       json(200, {
         items: categoryAccounts.map((a, i) => ({
@@ -139,11 +142,68 @@ beforeEach(() => {
   localStorage.clear();
 });
 
+function words(key: keyof typeof catalogEn, values: Record<string, string>) {
+  return Object.entries(values).reduce<string>(
+    (text, [k, v]) => text.replace(`{${k}}`, v),
+    catalogEn[key],
+  );
+}
+
 function block(name: string) {
   return screen.getByRole("region", { name });
 }
 
 describe("overview page", () => {
+  it("hides a block and shows it again", async () => {
+    localStorage.clear();
+    await renderApp("/", { width: 800, fetch: api() });
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: words("overview.block.options", {
+          block: catalogEn["overview.goals.title"],
+        }),
+      }),
+    );
+    await userEvent.click(
+      await screen.findByRole("menuitem", {
+        name: catalogEn["overview.block.hide"],
+      }),
+    );
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("heading", {
+          name: catalogEn["overview.goals.title"],
+        }),
+      ).toBeNull();
+    });
+    expect(localStorage.getItem("equori.overview.hidden")).toBe('["goals"]');
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: words("overview.block.showHidden", { count: "1" }),
+      }),
+    );
+    expect(
+      await screen.findByRole("heading", {
+        name: catalogEn["overview.goals.title"],
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps the attention list without a hide control", async () => {
+    localStorage.clear();
+    await renderApp("/", { width: 800, fetch: api() });
+    await screen.findByRole("heading", {
+      name: catalogEn["overview.attention.title"],
+    });
+    expect(
+      screen.queryByRole("button", {
+        name: words("overview.block.options", {
+          block: catalogEn["overview.attention.title"],
+        }),
+      }),
+    ).toBeNull();
+  });
+
   it("S129: shows assets, liabilities, net and the change against the previous month end", async () => {
     await renderApp("/", { width: 800, fetch: api() });
     const worth = await screen.findByRole("region", { name: "Net worth" });

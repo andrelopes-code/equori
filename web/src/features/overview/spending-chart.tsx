@@ -1,6 +1,7 @@
 import { Chart } from "@slotted/react/chart";
 import type { ChartSeries } from "@slotted/core/chart";
 
+import { HideBlockMenu } from "@/features/overview/hide-block-menu";
 import { OverviewBlock } from "@/features/overview/overview-block";
 import styles from "@/features/overview/spending-chart.module.css";
 import { OverviewLink } from "@/features/overview/overview-link";
@@ -10,7 +11,13 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 // The desk draws the ranking as bars; loading, failure and an empty month keep the block.
-export function SpendingChart({ month }: { month: string }) {
+export function SpendingChart({
+  month,
+  onHide,
+}: {
+  month: string;
+  onHide?: (() => void) | undefined;
+}) {
   const t = useT();
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
@@ -18,6 +25,7 @@ export function SpendingChart({ month }: { month: string }) {
   if (loading || error !== null || rows.length === 0 || base === undefined)
     return (
       <OverviewBlock
+        onHide={onHide}
         title={t("overview.spending.title")}
         loading={loading}
         error={error}
@@ -57,6 +65,12 @@ export function SpendingChart({ month }: { month: string }) {
           >
             {t("overview.open")}
           </OverviewLink>
+          {onHide !== undefined && (
+            <HideBlockMenu
+              block={t("overview.spending.title")}
+              onHide={onHide}
+            />
+          )}
         </div>
       }
     />

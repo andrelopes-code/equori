@@ -88,8 +88,10 @@ func apiOptString(s string) *string {
 }
 
 func toAccountAPI(a domain.Account) Account {
+	excluded := a.ExcludedFromLiquidity
 	out := Account{
-		Id: a.ID, Name: a.Name, Class: AccountClass(a.Class), Currency: string(a.Instrument),
+		ExcludedFromLiquidity: &excluded,
+		Id:                    a.ID, Name: a.Name, Class: AccountClass(a.Class), Currency: string(a.Instrument),
 		ParentId: apiOptUUID(a.ParentID), InstitutionId: apiOptUUID(a.InstitutionID),
 		OpenedOn: apiDate(a.OpenedOn), ClosedOn: apiOptDate(a.ClosedOn),
 		YieldMode: AccountYieldMode(a.YieldMode), SystemRole: apiOptString(string(a.SystemRole)),

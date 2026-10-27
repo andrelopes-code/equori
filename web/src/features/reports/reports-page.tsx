@@ -17,6 +17,7 @@ import { useDeferredValue, useState } from "react";
 import { useApi } from "@/api/api-context";
 import { CategoriesTab } from "@/features/reports/categories-tab";
 import { FlowsTab } from "@/features/reports/flows-tab";
+import { IndicatorsTab } from "@/features/reports/indicators-tab";
 import { NetWorthTab } from "@/features/reports/net-worth-tab";
 import { periodLabel } from "@/features/reports/period-label";
 import { defaultPeriod } from "@/features/reports/report-period";
@@ -37,6 +38,7 @@ const tabLabels: Record<ReportsTab, MessageKey> = {
   "net-worth": "report.tab.netWorth",
   categories: "report.tab.categories",
   flows: "report.tab.flows",
+  indicators: "report.tab.indicators",
 };
 
 // What the books held and moved over time, one tab per report. The state of the tab lives in
@@ -83,7 +85,7 @@ export function ReportsPage() {
                 {t("report.subtitle")}
               </PageHeaderSubheading>
             </PageHeaderTitle>
-            {current !== "net-worth" && (
+            {(current === "categories" || current === "flows") && (
               <PageHeaderActions>
                 <PeriodControl
                   quarters
@@ -153,6 +155,16 @@ export function ReportsPage() {
           )}
           {shownTab === "flows" && (
             <FlowsTab period={period} search={search} onChange={onChange} />
+          )}
+          {shownTab === "indicators" && (
+            <IndicatorsTab
+              month={search.month ?? today.slice(0, 7)}
+              onMonth={(next) => {
+                onChange({
+                  month: next === today.slice(0, 7) ? undefined : next,
+                });
+              }}
+            />
           )}
         </div>
       </PageBody>

@@ -192,7 +192,7 @@ Functions, budget detail:
 
 Status: Delivered. `features/overview/` draws one block per question; each block reads its own queries and fails alone. The net worth block links to the net worth tab of `/reports`; the attention list links connections to `/accounts/links`.
 
-Operations: `getNetWorth`, `listBalances`, `getBalanceSeries`, `getAccountFlows`, `getCategoryTotals`, `listOccurrences`, `getCommitted`, budgets (item 6), `listStatements`, `listGoals`, `listConnections`, `getReconciliationStatus`, `listTransactions` with `uncategorized`.
+Operations: `getNetWorth`, `listBalances`, `getBalanceSeries`, `getAccountFlows`, `getCategoryTotals`, `listOccurrences`, `getCommitted`, budgets (item 6), `listStatements`, `listGoals`, `listConnections`, `getReconciliationStatus`, `listTransactions` with `uncategorized`, `getIndicators`.
 
 Functions, one block per question, each linked to the screen that owns its data:
 - Net worth: assets, liabilities, net, in the base currency; change against the previous month.
@@ -203,6 +203,8 @@ Functions, one block per question, each linked to the screen that owns its data:
 - Budgets: categories over or near their amount.
 - Goals: progress summary.
 - Attention list: uncategorized transactions, unconfirmed import records, connections in `needs_owner` or `failed`, accounts whose reconciliation status has an open difference.
+- Indicators: savings rate with its 12-month mean, reserve in months, committed income and debt payments of the month, cash basis, each with a 12-month sparkline (getIndicators; analytics design 5.1).
+- Hide: each block except the attention list, the desk figures and the balance chart hides from its own menu; the page header shows every hidden block again (analytics design 5.2).
 
 Layout: desktop shows a grid of blocks; phone width shows one column ordered by the attention list first. Privacy mode masks every amount (ADR 018).
 
@@ -282,7 +284,7 @@ Region: tax classes and treatments come from the user's jurisdiction.
 
 ## 12. Reports
 
-Status: Delivered. Operations: `getNetWorth`, `getCategoryTotals`, `getAccountFlows` (`features/reports/`: the net worth, categories and flows tabs of `/reports`, state in the address). `getCategoryTotals` and `getAccountFlows` also serve `features/categories/category-charts.tsx` and `features/cards`. The accrual and cash views and the statement analytics (S30) wait for phase P9: no operation is declared.
+Status: Delivered. Operations: `getNetWorth`, `getCategoryTotals`, `getAccountFlows`, `getIndicators` (`features/reports/`: the net worth, categories and flows tabs and the indicators tab of `/reports`, state in the address). `getCategoryTotals` and `getAccountFlows` also serve `features/categories/category-charts.tsx` and `features/cards`. The accrual and cash views and the statement analytics (S30) wait for phase P9: no operation is declared.
 
 Route: a reports destination, for example `/reports`.
 
@@ -291,6 +293,7 @@ Functions:
 - Income and expense by category for a period of at most 366 days, with drill-down into the subtree and into `/transactions` filtered by category and period.
 - Flows by account: inflow and outflow per day or aggregated per month.
 - Period comparison: the same report for two periods side by side.
+- Indicators: one chart per indicator over the 12 months ending at a chosen month.
 
 Domain: phase P9 adds accrual and cash views and statement analytics (S30); those operations are not declared yet.
 

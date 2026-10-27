@@ -90,6 +90,31 @@ func (s *Service) cashTotals(ctx context.Context, userID int64, from, to time.Ti
 	return out, nil
 }
 
+// cashMonthTotals is the cash view of [from, to] per category and per month, keyed by the
+// first day of the month (CV1 to CV9).
+func (s *Service) cashMonthTotals(ctx context.Context, userID int64, from, to time.Time) (map[time.Time]Shares, error) {
+	out, err := s.repo.OffCardMonthTotals(ctx, userID, from, to)
+	if err != nil {
+		return nil, err
+	}
+	facts, err := s.repo.CardFacts(ctx, userID, to)
+	if err != nil {
+		return nil, err
+	}
+	payments, _ := allocate(facts)
+	for _, p := range payments {
+		if p.date.Before(from) || p.date.After(to) {
+			continue
+		}
+		m := firstOfMonth(p.date)
+		if out[m] == nil {
+			out[m] = Shares{}
+		}
+		add(out[m], p.shares)
+	}
+	return out, nil
+}
+
 // CategoryCashPayments lists the card amounts of one category in the cash view of [from, to],
 // signed as its postings, in the order the payments apply (CV10).
 func (s *Service) CategoryCashPayments(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) ([]CashPayment, string, error) {

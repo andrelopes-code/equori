@@ -210,7 +210,10 @@ func (s *Server) accountAPI(ctx context.Context, userID int64, a domain.Account)
 }
 
 func (s *Server) UpdateAccount(ctx context.Context, req UpdateAccountRequestObject) (UpdateAccountResponseObject, error) {
-	patch := app.AccountPatch{Name: req.Body.Name, ParentID: req.Body.ParentId, InstitutionID: req.Body.InstitutionId}
+	patch := app.AccountPatch{
+		Name: req.Body.Name, ParentID: req.Body.ParentId, InstitutionID: req.Body.InstitutionId,
+		ExcludedFromLiquidity: req.Body.ExcludedFromLiquidity,
+	}
 	if req.Body.YieldMode != nil {
 		mode := domain.YieldMode(*req.Body.YieldMode)
 		patch.YieldMode = &mode

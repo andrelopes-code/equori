@@ -15,6 +15,7 @@ import { Skeleton } from "@slotted/react/skeleton";
 import type { NavigateOptions } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import { HideBlockMenu } from "@/features/overview/hide-block-menu";
 import { OverviewLink } from "@/features/overview/overview-link";
 import { QueryError } from "@/ui/query-error";
 
@@ -27,6 +28,7 @@ export function OverviewBlock({
   error,
   onRetry,
   empty,
+  onHide,
   children,
 }: {
   title: string;
@@ -36,6 +38,8 @@ export function OverviewBlock({
   onRetry: () => void;
   // The sentence of an empty block; undefined when the block holds something.
   empty?: string | undefined;
+  // Set for a block the owner may hide (analytics design 5.2).
+  onHide?: (() => void) | undefined;
   children?: ReactNode;
 }) {
   let body = children;
@@ -55,9 +59,14 @@ export function OverviewBlock({
         <SectionTitle>
           <SectionHeading>{title}</SectionHeading>
         </SectionTitle>
-        {link !== undefined && (
+        {(link !== undefined || onHide !== undefined) && (
           <SectionActions>
-            <OverviewLink options={link.options}>{link.label}</OverviewLink>
+            {link !== undefined && (
+              <OverviewLink options={link.options}>{link.label}</OverviewLink>
+            )}
+            {onHide !== undefined && (
+              <HideBlockMenu block={title} onHide={onHide} />
+            )}
           </SectionActions>
         )}
       </SectionHeader>

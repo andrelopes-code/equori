@@ -46,6 +46,9 @@ function movedPatch(start: AccountDraft, draft: AccountDraft): AccountPatch {
     yieldCapable(draft.kind)
       ? { yield_mode: draft.yieldAuto ? "auto" : "none" }
       : {}),
+    ...(draft.excludedFromLiquidity !== start.excludedFromLiquidity
+      ? { excluded_from_liquidity: draft.excludedFromLiquidity }
+      : {}),
   };
 }
 

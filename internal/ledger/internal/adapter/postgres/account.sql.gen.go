@@ -97,7 +97,7 @@ func (q *Queries) AccountTransactionsBetween(ctx context.Context, arg AccountTra
 }
 
 const getAccount = `-- name: GetAccount :one
-SELECT id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon FROM ledger_account WHERE user_id = $1 AND id = $2
+SELECT id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity FROM ledger_account WHERE user_id = $1 AND id = $2
 `
 
 type GetAccountParams struct {
@@ -126,12 +126,13 @@ func (q *Queries) GetAccount(ctx context.Context, arg GetAccountParams) (LedgerA
 		&i.UpdatedAt,
 		&i.Color,
 		&i.Icon,
+		&i.ExcludedFromLiquidity,
 	)
 	return i, err
 }
 
 const getAccountForUpdate = `-- name: GetAccountForUpdate :one
-SELECT id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon FROM ledger_account WHERE user_id = $1 AND id = $2 FOR UPDATE
+SELECT id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity FROM ledger_account WHERE user_id = $1 AND id = $2 FOR UPDATE
 `
 
 type GetAccountForUpdateParams struct {
@@ -160,12 +161,13 @@ func (q *Queries) GetAccountForUpdate(ctx context.Context, arg GetAccountForUpda
 		&i.UpdatedAt,
 		&i.Color,
 		&i.Icon,
+		&i.ExcludedFromLiquidity,
 	)
 	return i, err
 }
 
 const getAccountsByIDs = `-- name: GetAccountsByIDs :many
-SELECT id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon FROM ledger_account WHERE user_id = $1 AND id = ANY($2::uuid[])
+SELECT id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity FROM ledger_account WHERE user_id = $1 AND id = ANY($2::uuid[])
 `
 
 type GetAccountsByIDsParams struct {
@@ -200,6 +202,7 @@ func (q *Queries) GetAccountsByIDs(ctx context.Context, arg GetAccountsByIDsPara
 			&i.UpdatedAt,
 			&i.Color,
 			&i.Icon,
+			&i.ExcludedFromLiquidity,
 		); err != nil {
 			return nil, err
 		}
@@ -219,7 +222,7 @@ INSERT INTO ledger_account (
     $1, $2, $3, $4, $5, $6, $7,
     $8, $9, $10, $11, $12,
     $13, $14
-) RETURNING id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon
+) RETURNING id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
 `
 
 type InsertAccountParams struct {
@@ -275,12 +278,13 @@ func (q *Queries) InsertAccount(ctx context.Context, arg InsertAccountParams) (L
 		&i.UpdatedAt,
 		&i.Color,
 		&i.Icon,
+		&i.ExcludedFromLiquidity,
 	)
 	return i, err
 }
 
 const listAccounts = `-- name: ListAccounts :many
-SELECT id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, lower(name)::text AS sort_name FROM ledger_account
+SELECT id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity, lower(name)::text AS sort_name FROM ledger_account
 WHERE user_id = $1
   AND ($2::text IS NULL
        OR (account_class, lower(name), id) > ($2::text, $3::text, $4::uuid))
@@ -297,24 +301,25 @@ type ListAccountsParams struct {
 }
 
 type ListAccountsRow struct {
-	ID                  uuid.UUID
-	UserID              int64
-	Name                string
-	AccountClass        string
-	Kind                *string
-	Instrument          string
-	ParentID            uuid.NullUUID
-	InstitutionID       uuid.NullUUID
-	CounterpartyPayeeID uuid.NullUUID
-	OpenedOn            time.Time
-	ClosedOn            *time.Time
-	YieldMode           string
-	SystemRole          *string
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
-	Color               *int16
-	Icon                *string
-	SortName            string
+	ID                    uuid.UUID
+	UserID                int64
+	Name                  string
+	AccountClass          string
+	Kind                  *string
+	Instrument            string
+	ParentID              uuid.NullUUID
+	InstitutionID         uuid.NullUUID
+	CounterpartyPayeeID   uuid.NullUUID
+	OpenedOn              time.Time
+	ClosedOn              *time.Time
+	YieldMode             string
+	SystemRole            *string
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
+	Color                 *int16
+	Icon                  *string
+	ExcludedFromLiquidity bool
+	SortName              string
 }
 
 func (q *Queries) ListAccounts(ctx context.Context, arg ListAccountsParams) ([]ListAccountsRow, error) {
@@ -350,6 +355,7 @@ func (q *Queries) ListAccounts(ctx context.Context, arg ListAccountsParams) ([]L
 			&i.UpdatedAt,
 			&i.Color,
 			&i.Icon,
+			&i.ExcludedFromLiquidity,
 			&i.SortName,
 		); err != nil {
 			return nil, err
@@ -414,21 +420,23 @@ const updateAccount = `-- name: UpdateAccount :one
 UPDATE ledger_account
 SET name = $1, parent_id = $2, institution_id = $3,
     closed_on = $4, yield_mode = $5, color = $6, icon = $7,
+    excluded_from_liquidity = $8,
     updated_at = now()
-WHERE user_id = $8 AND id = $9
-RETURNING id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon
+WHERE user_id = $9 AND id = $10
+RETURNING id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
 `
 
 type UpdateAccountParams struct {
-	Name          string
-	ParentID      uuid.NullUUID
-	InstitutionID uuid.NullUUID
-	ClosedOn      *time.Time
-	YieldMode     string
-	Color         *int16
-	Icon          *string
-	UserID        int64
-	ID            uuid.UUID
+	Name                  string
+	ParentID              uuid.NullUUID
+	InstitutionID         uuid.NullUUID
+	ClosedOn              *time.Time
+	YieldMode             string
+	Color                 *int16
+	Icon                  *string
+	ExcludedFromLiquidity bool
+	UserID                int64
+	ID                    uuid.UUID
 }
 
 func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (LedgerAccount, error) {
@@ -440,6 +448,7 @@ func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (L
 		arg.YieldMode,
 		arg.Color,
 		arg.Icon,
+		arg.ExcludedFromLiquidity,
 		arg.UserID,
 		arg.ID,
 	)
@@ -462,6 +471,7 @@ func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (L
 		&i.UpdatedAt,
 		&i.Color,
 		&i.Icon,
+		&i.ExcludedFromLiquidity,
 	)
 	return i, err
 }

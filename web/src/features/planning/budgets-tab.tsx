@@ -134,7 +134,6 @@ export function BudgetsTab({
     ...groups.map((g) => ({
       name: g.root.name,
       spent: g.subtotal.spent.amount,
-      ...(g.root.color === undefined ? {} : { slot: g.root.color }),
     })),
     {
       name: t("budget.unbudgetedSlice"),

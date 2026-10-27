@@ -34,6 +34,7 @@ export interface AccountDraft {
   openedOn: string;
   parentId: string | null;
   yieldAuto: boolean;
+  excludedFromLiquidity: boolean;
   color: number | null;
   // Minor units, at least zero: what an asset holds or what a liability owes on opening.
   opening: number;
@@ -66,6 +67,7 @@ export function emptyAccountDraft(
     openedOn: today,
     parentId: null,
     yieldAuto: false,
+    excludedFromLiquidity: false,
     color: null,
     opening: 0,
     card: emptyCardSetup(),
@@ -159,6 +161,7 @@ export function draftFromAccount(account: Account): AccountDraft {
     openedOn: account.opened_on ?? "",
     parentId: account.parent_id ?? null,
     yieldAuto: account.yield_mode === "auto",
+    excludedFromLiquidity: account.excluded_from_liquidity === true,
     color: account.color ?? null,
     opening: 0,
     card: emptyCardSetup(),

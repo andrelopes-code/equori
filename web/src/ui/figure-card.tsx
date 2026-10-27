@@ -7,6 +7,7 @@ import {
   StatCardHeader,
   StatCardLabel,
   StatCardMessage,
+  StatCardTrend,
   StatCardValue,
 } from "@slotted/react/stat-card";
 import type { ReactNode } from "react";
@@ -19,6 +20,7 @@ export function FigureCard({
   note,
   action,
   delta,
+  trend,
   goodWhen = "up",
   loading = false,
 }: {
@@ -29,7 +31,10 @@ export function FigureCard({
   action?: ReactNode;
   // A fraction: 0.124 reads "+12.4%".
   delta?: number | undefined;
-  goodWhen?: "up" | "down";
+  // A Sparkline of the figure's recent values.
+  trend?: ReactNode;
+  // "none" for a figure with no good direction.
+  goodWhen?: "up" | "down" | "none";
   loading?: boolean;
 }) {
   return (
@@ -50,6 +55,7 @@ export function FigureCard({
         <StatCardValue value={value} />
         {delta !== undefined && <StatCardDelta />}
       </StatCardFigure>
+      {trend !== undefined && <StatCardTrend>{trend}</StatCardTrend>}
       <StatCardComparison>{note}</StatCardComparison>
       {/* A card with no value drops the comparison; the same words stand as its message. */}
       <StatCardMessage>{note}</StatCardMessage>

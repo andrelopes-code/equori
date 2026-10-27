@@ -168,6 +168,7 @@ describe("Reports net worth", () => {
       catalogEn["report.tab.netWorth"],
       catalogEn["report.tab.categories"],
       catalogEn["report.tab.flows"],
+      catalogEn["report.tab.indicators"],
     ]);
     await userEvent
       .setup()

@@ -48,6 +48,7 @@ type Repository interface {
 	FlowRepository
 	CashRepository
 	AnalyticsRepository
+	IndicatorRepository
 	AccountCurrency(ctx context.Context, userID int64, accountID uuid.UUID) (string, error)
 	AccountName(ctx context.Context, userID int64, accountID uuid.UUID) (string, error)
 	Rebuild(ctx context.Context, userID int64, accountID uuid.UUID, from time.Time) error
@@ -58,7 +59,9 @@ type Repository interface {
 }
 
 type Service struct {
-	repo Repository
+	repo        Repository
+	commitments Commitments
+	valuations  Valuations
 }
 
 func NewService(repo Repository) *Service { return &Service{repo: repo} }

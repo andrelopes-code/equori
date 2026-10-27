@@ -85,7 +85,8 @@ func toAccount(row LedgerAccount) domain.Account {
 		Kind: domain.Kind(deref(row.Kind)), Instrument: money.Currency(row.Instrument),
 		ParentID: row.ParentID.UUID, InstitutionID: row.InstitutionID.UUID, CounterpartyID: row.CounterpartyPayeeID.UUID,
 		OpenedOn: row.OpenedOn, ClosedOn: row.ClosedOn, YieldMode: domain.YieldMode(row.YieldMode),
-		SystemRole: domain.SystemRole(deref(row.SystemRole)), Color: colorOf(row.Color), Icon: deref(row.Icon),
+		ExcludedFromLiquidity: row.ExcludedFromLiquidity,
+		SystemRole:            domain.SystemRole(deref(row.SystemRole)), Color: colorOf(row.Color), Icon: deref(row.Icon),
 	}
 }
 

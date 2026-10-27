@@ -275,7 +275,8 @@ func (r *Repository) ListAccounts(ctx context.Context, userID int64, p page.Requ
 				Instrument: row.Instrument, ParentID: row.ParentID, InstitutionID: row.InstitutionID,
 				CounterpartyPayeeID: row.CounterpartyPayeeID, OpenedOn: row.OpenedOn, ClosedOn: row.ClosedOn,
 				YieldMode: row.YieldMode, SystemRole: row.SystemRole, Color: row.Color, Icon: row.Icon,
-				CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
+				ExcludedFromLiquidity: row.ExcludedFromLiquidity,
+				CreatedAt:             row.CreatedAt, UpdatedAt: row.UpdatedAt,
 			})
 		},
 		func(row ListAccountsRow) app.AccountKey {
@@ -302,7 +303,7 @@ func (r *Repository) UpdateAccount(ctx context.Context, a domain.Account) (domai
 	row, err := r.q.UpdateAccount(ctx, UpdateAccountParams{
 		UserID: a.UserID, ID: a.ID, Name: a.Name, ParentID: nullUUID(a.ParentID),
 		InstitutionID: nullUUID(a.InstitutionID), ClosedOn: a.ClosedOn, YieldMode: string(a.YieldMode),
-		Color: nullColor(a.Color), Icon: nullString(a.Icon),
+		Color: nullColor(a.Color), Icon: nullString(a.Icon), ExcludedFromLiquidity: a.ExcludedFromLiquidity,
 	})
 	if err != nil {
 		return domain.Account{}, referenceError(notFound(err))

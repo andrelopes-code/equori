@@ -796,6 +796,9 @@ export const catalogPtBR: Catalog = {
   "category.kpi.previousToDate": "{amount} em {month}, até o dia {day}",
   "category.chart.composition": "Composição do mês",
   "category.chart.trend": "Últimos seis meses",
+  "category.chart.amount": "Valor",
+  "category.chart.trendDescription":
+    "Selecione um grupo na legenda com Shift para vê-lo sozinho sobre a linha de base.",
   "category.refresh": "Atualizar",
   "appearance.title": "Aparência",
   "appearance.color": "Cor",
@@ -1627,6 +1630,7 @@ export const catalogPtBR: Catalog = {
   "budget.planned": "Planejado",
   "budget.carried": "Transportado",
   "budget.spent": "Gasto",
+  "budget.spentTotal": "Gasto {amount}",
   "budget.available": "Disponível",
   "budget.meter": "Gasto de {name}",
   "budget.overspent": "Estourado",
@@ -1700,12 +1704,39 @@ export const catalogPtBR: Catalog = {
   "overview.subtitle":
     "Onde o dinheiro está, o que vem pela frente e o que pede decisão",
   "overview.attention.title": "Atenção",
+  "overview.block.options": "Opções de {block}",
+  "overview.block.hide": "Ocultar bloco",
+  "overview.block.showHidden": "Mostrar blocos ocultos ({count})",
   "overview.netWorth.title": "Patrimônio líquido",
   "overview.netWorth.open": "Abrir patrimônio líquido",
   "overview.netWorth.assets": "Ativos",
   "overview.netWorth.liabilities": "Passivos",
   "overview.netWorth.net": "Líquido",
   "overview.netWorth.figures": "Valores do patrimônio líquido",
+  "overview.indicators.title": "Indicadores",
+  "overview.indicators.open": "Abrir indicadores",
+  "overview.indicators.label": "Indicadores do mês",
+  "overview.indicators.savings": "Taxa de poupança",
+  "overview.indicators.reserve": "Reserva",
+  "overview.indicators.committed": "Renda comprometida",
+  "overview.indicators.debt": "Prestações de dívida",
+  "overview.indicators.months": "{months} meses",
+  "overview.indicators.savingsNote":
+    "Renda que sobrou depois das despesas neste mês, visão de caixa. Média de 12 meses: {mean}.",
+  "overview.indicators.savingsNoteShort":
+    "Renda que sobrou depois das despesas neste mês, visão de caixa.",
+  "overview.indicators.reserveNote":
+    "{liquid} em contas correntes, poupanças, dinheiro, carteiras e reservas contra uma despesa média mensal de {expense}.",
+  "overview.indicators.committedNote":
+    "{committed} em contas, assinaturas e parcelas deste mês contra uma renda média mensal de {income}.",
+  "overview.indicators.debtNote":
+    "{debt} de principal e juros de empréstimos neste mês contra uma renda média mensal de {income}.",
+  "overview.indicators.reason.no_income":
+    "Nenhuma receita registrada no período.",
+  "overview.indicators.reason.no_expense":
+    "Nenhuma despesa registrada nos últimos 12 meses.",
+  "overview.indicators.reason.insufficient_history":
+    "Precisa de pelo menos 3 meses completos de registros.",
   "overview.netWorth.since": "{change} desde {date}",
   "overview.flows.title": "Fluxo do mês",
   "overview.flows.open": "Abrir transações",

@@ -126,6 +126,9 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "accountForm.yield": "Rende automaticamente",
   "accountForm.yieldHint":
     "Quando a instituição informa um saldo maior, a diferença é registrada como rendimento.",
+  "accountForm.excludeFromLiquidity": "Deixar fora da reserva",
+  "accountForm.excludeFromLiquidityHint":
+    "O indicador de reserva deixa de contar este saldo, para dinheiro que não pode ser sacado na hora.",
   "accountForm.color": "Cor",
   "accountForm.colorHint":
     "Pintada atrás das iniciais da conta quando a instituição não tem logo.",

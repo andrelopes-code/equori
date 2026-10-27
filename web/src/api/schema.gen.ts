@@ -1012,6 +1012,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/reports/indicators": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Savings rate, liquidity, committed share, debt service share and liabilities of a month and the 11 months before it, cash view (analytics design 4). */
+        get: operations["getIndicators"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/calendars": {
         parameters: {
             query?: never;
@@ -4294,6 +4311,8 @@ export interface components {
             closed_on?: string;
             system_role?: string;
             card?: components["schemas"]["CardSummary"];
+            /** @description Leaves the account out of the liquidity indicator (analytics design 4.3). */
+            excluded_from_liquidity?: boolean;
         };
         AccountList: {
             items: components["schemas"]["Account"][];
@@ -4308,6 +4327,37 @@ export interface components {
             institution_id?: string;
             /** @enum {string} */
             yield_mode?: "none" | "auto";
+            /** @description Leaves the account out of the liquidity indicator (analytics design 4.3). */
+            excluded_from_liquidity?: boolean;
+        };
+        Indicators: {
+            /** @description The base currency of every amount. */
+            currency: string;
+            /** @description Oldest first; the last entry is the month asked. */
+            months: components["schemas"]["IndicatorMonth"][];
+        };
+        IndicatorMonth: {
+            month: string;
+            income: components["schemas"]["Money"];
+            expense: components["schemas"]["Money"];
+            committed: components["schemas"]["Money"];
+            debt_service: components["schemas"]["Money"];
+            liquid_balance: components["schemas"]["Money"];
+            liabilities: components["schemas"]["Money"];
+            mean_income?: components["schemas"]["Money"];
+            mean_expense?: components["schemas"]["Money"];
+            savings_rate: components["schemas"]["IndicatorRatio"];
+            trailing_savings_rate: components["schemas"]["IndicatorRatio"];
+            liquidity: components["schemas"]["IndicatorRatio"];
+            committed_share: components["schemas"]["IndicatorRatio"];
+            debt_service_share: components["schemas"]["IndicatorRatio"];
+        };
+        /** @description Either bp, in basis points truncated toward zero, or the reason there is no value. */
+        IndicatorRatio: {
+            /** Format: int64 */
+            bp?: number;
+            /** @enum {string} */
+            reason?: "no_income" | "no_expense" | "insufficient_history";
         };
         CategoryTotals: {
             items: components["schemas"]["CategoryTotal"][];
@@ -6908,6 +6958,31 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+        };
+    };
+    getIndicators: {
+        parameters: {
+            query: {
+                month: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Indicators"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     listCalendars: {

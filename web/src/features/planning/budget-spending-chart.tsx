@@ -1,19 +1,17 @@
+import type { ChartSeries } from "@slotted/core/chart";
 import { Chart } from "@slotted/react/chart";
-import { Stack } from "@slotted/react/stack";
-import { Text } from "@slotted/react/typography";
 
-import { useT } from "@/i18n/i18n-provider";
+import { spendingBars } from "@/features/planning/spending-bars";
+import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 export interface SpendingSlice {
   name: string;
   spent: number;
-  // The category's colour, 1 to 8, so a group keeps the colour it has in the category tree.
-  slot?: number;
 }
 
-// Where the month's spending went: one slice per top category with budgets, one for what no
-// budget covers, and the total in the middle.
+// Where the month's spending went: one bar per top category with budgets and one for what no
+// budget covers, ranked, each labelled with its share; the total stands in the description.
 export function BudgetSpendingChart({
   slices,
   currency,
@@ -26,40 +24,31 @@ export function BudgetSpendingChart({
   loading: boolean;
 }) {
   const t = useT();
+  const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
   const money = (amount: number) => fmt.money({ amount, currency }, scale);
-  const shown = slices.filter((s) => s.spent > 0);
-  const total = shown.reduce((sum, s) => sum + s.spent, 0);
+  const total = slices.reduce((sum, s) => sum + Math.max(s.spent, 0), 0);
+  const series: ChartSeries[] = [
+    {
+      id: "spent",
+      kind: "bar",
+      field: "spent",
+      label: t("budget.spent"),
+      format: money,
+    },
+  ];
   return (
     <Chart
       variant="card"
       size="sm"
-      legendValues
-      legendOverflow="wrap"
+      orientation="horizontal"
       loading={loading}
-      data={shown.map((s) => ({ ...s }))}
-      series={[
-        {
-          kind: "pie",
-          field: "spent",
-          label: t("budget.spent"),
-          innerRadius: 0.64,
-          slotField: "slot",
-          format: money,
-        },
-      ]}
+      data={spendingBars(slices, locale)}
+      series={series}
       title={t("budget.spendingChart")}
-      x={{ field: "name" }}
-      renderCenter={() => (
-        <Stack gap={0} align="center">
-          <Text size="xs" tone="muted">
-            {t("budget.spent")}
-          </Text>
-          <Text size="md" weight="semibold" numeric="tabular">
-            {money(total)}
-          </Text>
-        </Stack>
-      )}
+      description={t("budget.spentTotal", { amount: money(total) })}
+      x={{ field: "label" }}
+      y={{ format: money }}
     />
   );
 }

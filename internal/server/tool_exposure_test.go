@@ -89,6 +89,7 @@ var exposure = map[string]string{
 	"getBalanceSeries":                 "get_account_history",
 	"getAccountFlows":                  "get_account_history",
 	"getCategoryTotals":                "get_category_totals",
+	"getIndicators":                    "get_financial_indicators",
 	"listCalendars":                    "get_market_data",
 	"listHolidays":                     "get_market_data",
 	"listIndexes":                      "get_market_data",
