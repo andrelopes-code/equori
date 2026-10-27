@@ -220,14 +220,14 @@ export function CategoriesTab({
     </TableRow>
   );
   const shown = level.rows.slice(0, chartRows);
-  const series: ChartSeries[] = [
+  const series: ChartSeries<"previous" | "name" | "current">[] = [
     { id: "current", kind: "bar", field: "current", label, format: money },
     ...(compare
       ? [
           {
             id: "previous",
             kind: "bar" as const,
-            field: "previous",
+            field: "previous" as const,
             label: t("report.compare.before"),
             tone: "neutral" as const,
             format: money,

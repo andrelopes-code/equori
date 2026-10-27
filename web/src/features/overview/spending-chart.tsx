@@ -25,7 +25,7 @@ export function SpendingChart({
     base === undefined
       ? ""
       : fmt.money({ amount: value, currency: base }, digits);
-  const series: ChartSeries[] = [
+  const series: ChartSeries<"amount" | "name">[] = [
     {
       id: "amount",
       kind: "bar",

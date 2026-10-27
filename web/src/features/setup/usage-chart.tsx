@@ -26,7 +26,7 @@ import { useToday } from "@/i18n/today";
 import { QueryError } from "@/ui/query-error";
 
 const days = 30;
-const xAxis = { field: "label" };
+const xAxis = { field: "label" } as const;
 
 // Requests and tokens per day over the last 30 days, summed over every provider and model,
 // with a table of the days that had use as the text alternative of the charts.

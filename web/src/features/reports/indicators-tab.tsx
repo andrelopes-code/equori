@@ -22,6 +22,16 @@ import { QueryError } from "@/ui/query-error";
 
 // One line chart per indicator over the 12 months ending at month, each on its own value axis
 // (analytics design 6).
+
+// The fields of a row of the indicator charts.
+type IndicatorField =
+  | "label"
+  | "savings"
+  | "committed"
+  | "liabilities"
+  | "liquidity"
+  | "debt"
+  | "trailing";
 export function IndicatorsTab({
   month,
   onMonth,
@@ -72,14 +82,21 @@ export function IndicatorsTab({
     formatReferenceMonth(m, locale),
   ).map((row) => ({ ...row }));
   const line = (
-    id: string,
+    id: Exclude<IndicatorField, "label">,
     label: string,
     format: (value: number) => string,
     stroke: "solid" | "dashed" = "solid",
-  ): ChartSeries => ({ id, kind: "line", field: id, label, format, stroke });
+  ): ChartSeries<IndicatorField> => ({
+    id,
+    kind: "line",
+    field: id,
+    label,
+    format,
+    stroke,
+  });
   const chart = (
     title: string,
-    series: ChartSeries[],
+    series: ChartSeries<IndicatorField>[],
     format: (v: number) => string,
   ) => (
     <Chart

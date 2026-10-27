@@ -295,7 +295,7 @@ export function CompoundCalculator() {
       </Stack>
     );
     const format = (v: number) => money.format(v);
-    const series: ChartSeries[] = [
+    const series: ChartSeries<"label" | "balance" | "deposited">[] = [
       {
         id: "balance",
         kind: "line",

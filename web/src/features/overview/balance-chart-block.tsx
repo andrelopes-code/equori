@@ -39,7 +39,7 @@ export function BalanceChartBlock({
           { amount: value, currency: overview.base },
           scale(overview.base),
         );
-  const series: ChartSeries[] = [
+  const series: ChartSeries<"label" | "date" | "balance" | "projection">[] = [
     {
       id: "balance",
       kind: "line",

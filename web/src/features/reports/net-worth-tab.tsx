@@ -73,7 +73,7 @@ export function NetWorthTab({
     .filter((_, i) => results[i]?.isError === true)
     .map((m) => label(m.month));
   const title = t("report.netWorth.title");
-  const series: ChartSeries[] = [
+  const series: ChartSeries<"label" | "assets" | "liabilities" | "net">[] = [
     {
       id: "net",
       kind: "line",

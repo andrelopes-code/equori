@@ -62,7 +62,9 @@ export const BalanceChart = memo(function BalanceChart({
 
   const money = (value: number) =>
     fmt.money({ amount: value, currency: account.currency }, scale);
-  const chartSeries: ChartSeries[] = [
+  const chartSeries: ChartSeries<
+    "label" | "date" | "balance" | "projection"
+  >[] = [
     {
       id: "balance",
       kind: "line",

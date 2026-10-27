@@ -93,7 +93,7 @@ export function PortfolioAllocation({
     allocation.isPending ||
     scale === null ||
     (by === "institution" && institutions.isPending);
-  const series: ChartSeries[] = [
+  const series: ChartSeries<"value" | "name">[] = [
     {
       id: "value",
       kind: "pie",

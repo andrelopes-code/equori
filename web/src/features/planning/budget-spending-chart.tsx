@@ -28,7 +28,7 @@ export function BudgetSpendingChart({
   const fmt = useMoneyFormat();
   const money = (amount: number) => fmt.money({ amount, currency }, scale);
   const total = slices.reduce((sum, s) => sum + Math.max(s.spent, 0), 0);
-  const series: ChartSeries[] = [
+  const series: ChartSeries<"label" | "spent">[] = [
     {
       id: "spent",
       kind: "bar",

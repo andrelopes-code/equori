@@ -60,7 +60,7 @@ export const StatementsChart = memo(function StatementsChart({
   }, [statements, commitments, locale]);
   const money = (value: number) =>
     fmt.money({ amount: value, currency }, scale);
-  const series: ChartSeries[] = [
+  const series: ChartSeries<"label" | "month" | "committed" | "billed">[] = [
     {
       id: "billed",
       kind: "bar",

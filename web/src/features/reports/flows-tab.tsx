@@ -141,7 +141,7 @@ export function FlowsTab({
   // Inflow rises above zero and outflow hangs below it in one stack, so the two never hide each
   // other; the result stays in the table and the tooltip, not as a third mark.
   const shown = (value: number) => money(Math.abs(value));
-  const series: ChartSeries[] = [
+  const series: ChartSeries<"label" | "inflow" | "outflow">[] = [
     {
       id: "inflow",
       kind: "bar",

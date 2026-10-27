@@ -49,7 +49,9 @@ export function AnalysisView({
     charges: r.charges.amount,
     credits: r.credits.amount,
   }));
-  const series: ChartSeries[] = parts.map((part) => ({
+  const series: ChartSeries<
+    "installments" | "name" | "charges" | "credits" | "purchases"
+  >[] = parts.map((part) => ({
     id: part,
     kind: "bar",
     field: part,
