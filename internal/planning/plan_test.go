@@ -161,3 +161,168 @@ func TestBudgetPlanMonthBounds(t *testing.T) {
 		f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/budget-plan?month="+m, nil), http.StatusUnprocessableEntity, "validation_failed", "month")
 	}
 }
+
+func (f fixture) savePlan(month string, body map[string]any) planView {
+	f.h.T().Helper()
+	var out planView
+	f.h.MustDo(http.MethodPut, "/api/v1/budget-plan?month="+month, body, http.StatusOK, &out)
+	return out
+}
+
+func amounts(pairs ...any) []map[string]any {
+	out := make([]map[string]any, 0, len(pairs)/2)
+	for i := 0; i < len(pairs); i += 2 {
+		out = append(out, map[string]any{"category_id": pairs[i], "amount": pairs[i+1]})
+	}
+	return out
+}
+
+type budgetAmounts struct {
+	Amounts []struct {
+		EffectiveFrom string `json:"effective_from"`
+		Amount        money  `json:"amount"`
+	} `json:"amounts"`
+}
+
+func (f fixture) budgetAmounts(id string) budgetAmounts {
+	f.h.T().Helper()
+	var out budgetAmounts
+	f.h.MustDo(http.MethodGet, "/api/v1/budgets/"+id, nil, http.StatusOK, &out)
+	return out
+}
+
+// S161: a plan save replaces the amount of its month and keeps the later versions.
+func TestS161SaveReplacesVersion(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-10")
+	food := f.h.Account("Food", "expense", "", nil)
+	id := f.budget(food, 180000, "2026-11", false)
+	f.h.MustDo(http.MethodPost, "/api/v1/budgets/"+id+"/amounts", map[string]any{"effective_from": "2027-01", "amount": apitest.BRL(200000)}, http.StatusCreated, nil)
+	body := map[string]any{"source": "average_income", "amounts": amounts(food, apitest.BRL(150000))}
+	for range 2 {
+		got := f.savePlan("2026-11", body)
+		if len(got.Rows) != 1 || got.Rows[0].Planned.Amount != 150000 || got.Rows[0].NextChange != "2027-01" || got.Planned.Amount != 150000 {
+			t.Fatalf("plan = %+v", got)
+		}
+		b := f.budgetAmounts(id)
+		if len(b.Amounts) != 2 || b.Amounts[0].EffectiveFrom != "2026-11" || b.Amounts[0].Amount.Amount != 150000 ||
+			b.Amounts[1].EffectiveFrom != "2027-01" || b.Amounts[1].Amount.Amount != 200000 {
+			t.Fatalf("amounts = %+v", b.Amounts)
+		}
+	}
+	// A month between two versions gets its own.
+	f.savePlan("2026-12", map[string]any{"source": "average_income", "amounts": amounts(food, apitest.BRL(160000))})
+	if b := f.budgetAmounts(id); len(b.Amounts) != 3 || b.Amounts[1].EffectiveFrom != "2026-12" || b.Amounts[1].Amount.Amount != 160000 {
+		t.Fatalf("amounts = %+v", b.Amounts)
+	}
+}
+
+type budgetList struct {
+	Items []struct {
+		ID         string `json:"id"`
+		CategoryID string `json:"category_id"`
+		Rollover   bool   `json:"rollover"`
+		Amounts    []struct {
+			EffectiveFrom string `json:"effective_from"`
+			Amount        money  `json:"amount"`
+		} `json:"amounts"`
+	} `json:"items"`
+}
+
+func (f fixture) budgetList() budgetList {
+	f.h.T().Helper()
+	var out budgetList
+	f.h.MustDo(http.MethodGet, "/api/v1/budgets", nil, http.StatusOK, &out)
+	return out
+}
+
+// S162: a plan save creates the budget of a category without one, unless its amount is zero.
+func TestS162SaveCreatesBudget(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-10")
+	pets := f.h.Account("Pets", "expense", "", nil)
+	gifts := f.h.Account("Gifts", "expense", "", nil)
+	f.savePlan("2026-11", map[string]any{"source": "average_income", "amounts": amounts(pets, apitest.BRL(21000), gifts, apitest.BRL(0))})
+	got := f.budgetList()
+	if len(got.Items) != 1 {
+		t.Fatalf("budgets = %+v", got.Items)
+	}
+	b := got.Items[0]
+	if b.CategoryID != pets || b.Rollover || len(b.Amounts) != 1 || b.Amounts[0].EffectiveFrom != "2026-11" || b.Amounts[0].Amount.Amount != 21000 {
+		t.Fatalf("budget = %+v", b)
+	}
+}
+
+// S163: a plan save is checked as a whole before anything is written.
+func TestS163SaveErrors(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-10")
+	food := f.h.Account("Food", "expense", "", nil)
+	old := f.h.Account("Old", "expense", "", nil)
+	f.h.MustDo(http.MethodPost, "/api/v1/accounts/"+old+"/close", map[string]string{"closed_on": "2026-11-01"}, http.StatusOK, nil)
+	id := f.budget(food, 180000, "2026-11", false)
+	other := f.h.Login("other@example.com")
+	var foreign struct {
+		ID string `json:"id"`
+	}
+	r := f.h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Theirs", "class": "expense", "currency": "BRL"})
+	if r.Status != http.StatusCreated {
+		t.Fatalf("other category: %d %s", r.Status, r.Body)
+	}
+	r.Decode(t, &foreign)
+	usd := map[string]any{"amount": 100, "currency": "USD"}
+	tests := []struct {
+		name, month, field string
+		body               map[string]any
+	}{
+		{"past month", "2026-10", "month", map[string]any{"source": "average_income", "amounts": amounts(food, apitest.BRL(1))}},
+		{"category twice", "2026-11", "amounts[1].category_id", map[string]any{"source": "average_income", "amounts": amounts(food, apitest.BRL(1), food, apitest.BRL(2))}},
+		{"another user's category", "2026-11", "amounts[0].category_id", map[string]any{"source": "average_income", "amounts": amounts(foreign.ID, apitest.BRL(1))}},
+		{"income category", "2026-11", "amounts[0].category_id", map[string]any{"source": "average_income", "amounts": amounts(f.salary, apitest.BRL(1))}},
+		{"closed category", "2026-11", "amounts[0].category_id", map[string]any{"source": "average_income", "amounts": amounts(old, apitest.BRL(1))}},
+		{"negative amount", "2026-11", "amounts[0].amount", map[string]any{"source": "average_income", "amounts": amounts(food, apitest.BRL(-1))}},
+		{"other currency", "2026-11", "amounts[0].amount.currency", map[string]any{"source": "average_income", "amounts": amounts(food, usd)}},
+		{"fixed without an amount", "2026-11", "fixed", map[string]any{"source": "fixed", "amounts": amounts(food, apitest.BRL(1))}},
+		{"fixed in another currency", "2026-11", "fixed.currency", map[string]any{"source": "fixed", "fixed": usd, "amounts": amounts(food, apitest.BRL(1))}},
+		{"negative fixed", "2026-11", "fixed", map[string]any{"source": "fixed", "fixed": apitest.BRL(-1), "amounts": amounts(food, apitest.BRL(1))}},
+	}
+	for _, tt := range tests {
+		t.Log(tt.name)
+		f.h.ExpectProblem(f.h.Do(http.MethodPut, "/api/v1/budget-plan?month="+tt.month, tt.body), http.StatusUnprocessableEntity, "validation_failed", tt.field)
+	}
+	if b := f.budgetAmounts(id); len(b.Amounts) != 1 || b.Amounts[0].Amount.Amount != 180000 {
+		t.Errorf("amounts after errors = %+v", b.Amounts)
+	}
+	if got := f.budgetList(); len(got.Items) != 1 {
+		t.Errorf("budgets after errors = %+v", got.Items)
+	}
+	if got := f.plan("2026-11"); got.Source != "fixed" {
+		t.Errorf("source after errors = %s", got.Source)
+	}
+}
+
+// S164: the reference choice is stored with the plan.
+func TestS164ReferenceRoundTrip(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-10")
+	got := f.savePlan("2026-11", map[string]any{"source": "fixed", "fixed": apitest.BRL(600000), "amounts": []map[string]any{}})
+	if got.Source != "fixed" || amountOf(got.Fixed) != 600000 || amountOf(got.Reference) != 600000 || amountOf(got.Unassigned) != 600000 {
+		t.Fatalf("plan = %+v", got)
+	}
+	if again := f.plan("2026-12"); again.Source != "fixed" || amountOf(again.Reference) != 600000 {
+		t.Fatalf("next month = %+v", again)
+	}
+}
+
+func TestSavePlanListsOnlyItsCategories(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-10")
+	food := f.h.Account("Food", "expense", "", nil)
+	health := f.h.Account("Health", "expense", "", nil)
+	f.budget(food, 180000, "2026-11", false)
+	hid := f.budget(health, 48000, "2026-11", false)
+	f.savePlan("2026-11", map[string]any{"source": "average_income", "amounts": amounts(food, apitest.BRL(150000))})
+	if b := f.budgetAmounts(hid); len(b.Amounts) != 1 || b.Amounts[0].Amount.Amount != 48000 {
+		t.Fatalf("health amounts = %+v", b.Amounts)
+	}
+}

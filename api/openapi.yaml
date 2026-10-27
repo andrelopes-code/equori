@@ -5154,6 +5154,34 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+    put:
+      tags: [planning]
+      operationId: saveBudgetPlan
+      summary: Save the reference choice and the amounts of a month from the current one on, in one transaction (budget plan A130).
+      description: |
+        Each listed category gets the amount from the month on, replacing the version of that month; a category without a
+        budget and an amount above zero gets a budget without rollover. Versions of other months are not touched.
+      parameters:
+        - $ref: "#/components/parameters/PlanMonth"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BudgetPlanInput"
+      responses:
+        "200":
+          description: The plan after the save.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetPlan"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /occurrences/{id}/unrealize:
     post:
       tags: [planning]
@@ -5931,6 +5959,31 @@ components:
         next_change:
           type: string
           description: The month of the budget's first amount after this month.
+    BudgetPlanAmount:
+      type: object
+      additionalProperties: false
+      required: [category_id, amount]
+      properties:
+        category_id:
+          type: string
+          format: uuid
+        amount:
+          $ref: "#/components/schemas/Money"
+    BudgetPlanInput:
+      type: object
+      additionalProperties: false
+      required: [source, amounts]
+      properties:
+        source:
+          $ref: "#/components/schemas/BudgetPlanSource"
+        fixed:
+          $ref: "#/components/schemas/Money"
+        amounts:
+          type: array
+          description: The changed categories only.
+          maxItems: 500
+          items:
+            $ref: "#/components/schemas/BudgetPlanAmount"
     BudgetPlan:
       type: object
       required: [month, currency, source, received_income, installments, savings, planned, rows]

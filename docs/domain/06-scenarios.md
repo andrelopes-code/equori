@@ -670,9 +670,21 @@ Today 2026-12-01. Salary of 6,000.00 on 2026-09-05, 2026-10-05 and 2026-11-05: a
 
 Budgets Food 1,800.00 and Supermarket 1,000.00, a child of Food, from 2026-11: planned 1,800.00; the Supermarket row is not counted.
 
+### S161 A plan save replaces the version of its month
+
+Today 2026-11-10. Food 1,800.00 from 2026-11 and 2,000.00 from 2027-01. Saving the plan of 2026-11 with Food 1,500.00 leaves the versions 2026-11 1,500.00 and 2027-01 2,000.00, and the row reports its next change in 2027-01; the same save twice changes nothing more. Saving 2026-12 with 1,600.00 adds a version between them.
+
+### S162 A plan save creates budgets
+
+Pets 210.00 and Gifts 0.00, neither with a budget: Pets gets a budget without rollover from 2026-11; Gifts gets none.
+
+### S163 A plan save is checked before anything is written
+
+Each is a 422 that names its field and writes nothing: a month before the current one (`month`); a category listed twice (`amounts[1].category_id`); a category of another user, an income category or a closed category (`amounts[0].category_id`); a negative amount (`amounts[0].amount`); an amount in another currency (`amounts[0].amount.currency`); the fixed source without an amount, with a negative one (`fixed`) or in another currency (`fixed.currency`).
+
 ### S164 Reference choice
 
-Without postings, schedules or a stored choice the source is `fixed` with no reference and no unassigned amount. After a salary of 6,000.00 on 2026-11-05, the source is `average_income` and the reference 6,000.00.
+Without postings, schedules or a stored choice the source is `fixed` with no reference and no unassigned amount. After a salary of 6,000.00 on 2026-11-05, the source is `average_income` and the reference 6,000.00. Saving a plan with the fixed source of 6,000.00 stores the choice for every month.
 
 ### S144 Delete a budget
 

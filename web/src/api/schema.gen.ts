@@ -3078,7 +3078,12 @@ export interface paths {
         };
         /** The reference income of a month, what is committed and the budgets to distribute it across (budget plan A129, A131). */
         get: operations["getBudgetPlan"];
-        put?: never;
+        /**
+         * Save the reference choice and the amounts of a month from the current one on, in one transaction (budget plan A130).
+         * @description Each listed category gets the amount from the month on, replacing the version of that month; a category without a
+         *     budget and an amount above zero gets a budget without rollover. Versions of other months are not touched.
+         */
+        put: operations["saveBudgetPlan"];
         post?: never;
         delete?: never;
         options?: never;
@@ -3512,6 +3517,17 @@ export interface components {
             counted: boolean;
             /** @description The month of the budget's first amount after this month. */
             next_change?: string;
+        };
+        BudgetPlanAmount: {
+            /** Format: uuid */
+            category_id: string;
+            amount: components["schemas"]["Money"];
+        };
+        BudgetPlanInput: {
+            source: components["schemas"]["BudgetPlanSource"];
+            fixed?: components["schemas"]["Money"];
+            /** @description The changed categories only. */
+            amounts: components["schemas"]["BudgetPlanAmount"][];
         };
         /**
          * @description installments are those billed on the month's statements for purchases booked before it; savings are the month's
@@ -11015,6 +11031,35 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetPlan"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    saveBudgetPlan: {
+        parameters: {
+            query: {
+                month: components["parameters"]["PlanMonth"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BudgetPlanInput"];
+            };
+        };
+        responses: {
+            /** @description The plan after the save. */
             200: {
                 headers: {
                     [name: string]: unknown;

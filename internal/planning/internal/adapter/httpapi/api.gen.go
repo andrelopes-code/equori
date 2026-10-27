@@ -226,11 +226,25 @@ type BudgetPlan struct {
 	Unassigned     *Money           `json:"unassigned,omitempty"`
 }
 
+// BudgetPlanAmount defines model for BudgetPlanAmount.
+type BudgetPlanAmount struct {
+	Amount     Money              `json:"amount"`
+	CategoryId openapi_types.UUID `json:"category_id"`
+}
+
 // BudgetPlanIncome defines model for BudgetPlanIncome.
 type BudgetPlanIncome struct {
 	Amount      Money              `json:"amount"`
 	Description string             `json:"description"`
 	ScheduleId  openapi_types.UUID `json:"schedule_id"`
+}
+
+// BudgetPlanInput defines model for BudgetPlanInput.
+type BudgetPlanInput struct {
+	// Amounts The changed categories only.
+	Amounts []BudgetPlanAmount `json:"amounts"`
+	Fixed   *Money             `json:"fixed,omitempty"`
+	Source  BudgetPlanSource   `json:"source"`
 }
 
 // BudgetPlanRow A category of the plan. last_month and average read the subtree of a budgeted category and the own postings
@@ -595,6 +609,11 @@ type GetBudgetPlanParams struct {
 	Month PlanMonth `form:"month" json:"month"`
 }
 
+// SaveBudgetPlanParams defines parameters for SaveBudgetPlan.
+type SaveBudgetPlanParams struct {
+	Month PlanMonth `form:"month" json:"month"`
+}
+
 // ListBudgetsParams defines parameters for ListBudgets.
 type ListBudgetsParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
@@ -631,6 +650,9 @@ type ListSchedulesParams struct {
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 }
+
+// SaveBudgetPlanJSONRequestBody defines body for SaveBudgetPlan for application/json ContentType.
+type SaveBudgetPlanJSONRequestBody = BudgetPlanInput
 
 // CreateBudgetJSONRequestBody defines body for CreateBudget for application/json ContentType.
 type CreateBudgetJSONRequestBody = BudgetInput
@@ -673,6 +695,9 @@ type ServerInterface interface {
 	// GetBudgetPlan The reference income of a month, what is committed and the budgets to distribute it across (budget plan A129, A131).
 	// (GET /budget-plan)
 	GetBudgetPlan(w http.ResponseWriter, r *http.Request, params GetBudgetPlanParams)
+	// SaveBudgetPlan Save the reference choice and the amounts of a month from the current one on, in one transaction (budget plan A130).
+	// (PUT /budget-plan)
+	SaveBudgetPlan(w http.ResponseWriter, r *http.Request, params SaveBudgetPlanParams)
 	// ListBudgets Budgets in creation order.
 	// (GET /budgets)
 	ListBudgets(w http.ResponseWriter, r *http.Request, params ListBudgetsParams)
@@ -819,6 +844,39 @@ func (siw *ServerInterfaceWrapper) GetBudgetPlan(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetBudgetPlan(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SaveBudgetPlan operation middleware
+func (siw *ServerInterfaceWrapper) SaveBudgetPlan(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params SaveBudgetPlanParams
+
+	// ------------- Required query parameter "month" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "month", r.URL.Query(), &params.Month, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "month"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "month", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SaveBudgetPlan(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1676,6 +1734,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/projection", wrapper.GetProjection)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/commitments", wrapper.GetCommitted)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/budget-plan", wrapper.GetBudgetPlan)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/budget-plan", wrapper.SaveBudgetPlan)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/occurrences/{id}/unrealize", wrapper.UnrealizeOccurrence)
 
 	return m
@@ -1805,6 +1864,73 @@ func (response GetBudgetPlan401ApplicationProblemPlusJSONResponse) VisitGetBudge
 type GetBudgetPlan422ApplicationProblemPlusJSONResponse Problem
 
 func (response GetBudgetPlan422ApplicationProblemPlusJSONResponse) VisitGetBudgetPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveBudgetPlanRequestObject struct {
+	Params SaveBudgetPlanParams
+	Body   *SaveBudgetPlanJSONRequestBody
+}
+
+type SaveBudgetPlanResponseObject interface {
+	VisitSaveBudgetPlanResponse(w http.ResponseWriter) error
+}
+
+type SaveBudgetPlan200JSONResponse BudgetPlan
+
+func (response SaveBudgetPlan200JSONResponse) VisitSaveBudgetPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveBudgetPlan400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SaveBudgetPlan400ApplicationProblemPlusJSONResponse) VisitSaveBudgetPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveBudgetPlan401ApplicationProblemPlusJSONResponse Problem
+
+func (response SaveBudgetPlan401ApplicationProblemPlusJSONResponse) VisitSaveBudgetPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SaveBudgetPlan422ApplicationProblemPlusJSONResponse Problem
+
+func (response SaveBudgetPlan422ApplicationProblemPlusJSONResponse) VisitSaveBudgetPlanResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -3439,6 +3565,9 @@ type StrictServerInterface interface {
 	// GetBudgetPlan The reference income of a month, what is committed and the budgets to distribute it across (budget plan A129, A131).
 	// (GET /budget-plan)
 	GetBudgetPlan(ctx context.Context, request GetBudgetPlanRequestObject) (GetBudgetPlanResponseObject, error)
+	// SaveBudgetPlan Save the reference choice and the amounts of a month from the current one on, in one transaction (budget plan A130).
+	// (PUT /budget-plan)
+	SaveBudgetPlan(ctx context.Context, request SaveBudgetPlanRequestObject) (SaveBudgetPlanResponseObject, error)
 	// ListBudgets Budgets in creation order.
 	// (GET /budgets)
 	ListBudgets(ctx context.Context, request ListBudgetsRequestObject) (ListBudgetsResponseObject, error)
@@ -3595,6 +3724,39 @@ func (sh *strictHandler) GetBudgetPlan(w http.ResponseWriter, r *http.Request, p
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetBudgetPlanResponseObject); ok {
 		if err := validResponse.VisitGetBudgetPlanResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SaveBudgetPlan operation middleware
+func (sh *strictHandler) SaveBudgetPlan(w http.ResponseWriter, r *http.Request, params SaveBudgetPlanParams) {
+	var request SaveBudgetPlanRequestObject
+
+	request.Params = params
+
+	var body SaveBudgetPlanJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SaveBudgetPlan(ctx, request.(SaveBudgetPlanRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SaveBudgetPlan")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SaveBudgetPlanResponseObject); ok {
+		if err := validResponse.VisitSaveBudgetPlanResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
