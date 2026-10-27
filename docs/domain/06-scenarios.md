@@ -855,3 +855,23 @@ Statement 2026-11 of S145 receives 263.34 on 2026-11-10: November 2026 Food › 
 | `GET /indexes/ipca/rates?from=2026-01-01&to=2026-02-28` | the two stored months, oldest first, rates as decimal fractions |
 | `GET /indexes/selic/rates?...` | 404 `not_found` |
 | range of 7,321 days | 422 `validation_failed` on `to` |
+
+## 6.22 Financial indicators
+
+`GET /reports/indicators?month=` (`docs/superpowers/specs/2026-10-26-analytics-design.md`, section 4) returns 12 month entries, oldest first, the last one the month asked. Ratios are basis points truncated toward zero.
+
+### S154 Indicators of a month
+
+Today 2026-10-20, base BRL. Every month from 2026-04 to 2026-10: salary 5,000.00 on the 5th, rent 1,500.00 on the 10th, food 1,000.00 on the 15th, all on Checking. A personal loan of 10,000.00 enters Checking on 2026-06-01; installments of 1,250.00 (principal 900.00, interest 350.00 on the system category Interest) leave Checking on the 20th from 2026-07 to 2026-10. Checking moves 3,000.00 to Savings on 2026-08-01, 4,000.00 to Locked CDB (savings, `excluded_from_liquidity`) on 2026-08-02, 600.00 to Meal card (benefit) on 2026-10-01, and exchanges 500.00 for 100.00 USD into Dollars (wallet, USD) on 2026-10-01; USD is priced 5 BRL on 2026-10-20. A subscription of 50.00 to Streaming is expected on 2026-10-25.
+
+Month 2026-10: income 5,000.00; expense 2,850.00; committed 50.00; debt service 1,250.00; liquid balance 17,900.00 (Checking 14,400.00, Savings 3,000.00, Dollars 500.00); liabilities 6,400.00; mean income 5,000.00 and mean expense 2,675.00 over 2026-04 to 2026-09. Savings rate 4300; trailing savings rate 4650; liquidity 66915; committed share 100; debt service share 2500.
+
+Savings rate by month from 2025-11: `no_income` five times, then 5000 (2026-04 to 2026-06), then 4300 (2026-07 to 2026-10). Trailing savings rate: `insufficient_history` from 2025-11 to 2026-06, then 5000, 4825, 4720, 4650.
+
+### S155 Books without history
+
+Today 2026-10-20. The owner has no posting; another user records a salary of 5,000.00 in 2026-10. The owner's 2026-10: every amount 0.00, no mean, savings rate `no_income`, the four other ratios `insufficient_history`.
+
+### S156 Income without expense
+
+Today 2026-10-20. Salary 5,000.00 on the 5th of 2026-07 to 2026-10, nothing else. Month 2026-10: savings rate 10000; trailing savings rate 10000; liquidity `no_expense`; committed share 0; debt service share 0.
