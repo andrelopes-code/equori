@@ -1,8 +1,10 @@
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { useCallback } from "react";
 
-// A search value longer than this is not an input of a calculator.
+// A search value longer than this is not an input of a calculator; the debt rows of the payoff
+// calculator hold up to 20 rows of five fields (debt-rows.ts).
 const maxLength = 64;
+const maxDebtsLength = 2400;
 const maxMinor = 10 ** 15;
 
 // The inputs of a calculator, as text, from the address (design §4, "Address"). The router parses
@@ -18,7 +20,11 @@ export function validateCalculatorSearch(
         : typeof value === "number" && Number.isFinite(value)
           ? String(value)
           : undefined;
-    if (text !== undefined && text.length <= maxLength) out[key] = text;
+    if (
+      text !== undefined &&
+      text.length <= (key === "debts" ? maxDebtsLength : maxLength)
+    )
+      out[key] = text;
   }
   return out;
 }

@@ -79,3 +79,57 @@ export function calculatorApiRoutes(
     ),
   };
 }
+
+export const visaDebtID = "d0000000-0000-4000-8000-000000000001";
+export const carLoanID = "d0000000-0000-4000-8000-000000000002";
+
+// A card owing 1,000.00, a loan owing 3,000.00 and a checking account; the liabilities' balances
+// are negative, as the ledger stores what they owe.
+export function debtApiRoutes(): Record<string, (req: Request) => Response> {
+  const base = { currency: "BRL", opened_on: "2026-01-01", yield_mode: "none" };
+  return {
+    ...calculatorApiRoutes(),
+    "GET /api/v1/accounts": () =>
+      json(200, {
+        items: [
+          {
+            ...base,
+            id: visaDebtID,
+            name: "Visa",
+            class: "liability",
+            kind: "credit_card",
+          },
+          {
+            ...base,
+            id: carLoanID,
+            name: "Car loan",
+            class: "liability",
+            kind: "loan",
+          },
+          {
+            ...base,
+            id: "d0000000-0000-4000-8000-000000000003",
+            name: "Checking",
+            class: "asset",
+            kind: "checking",
+          },
+        ],
+      }),
+    "GET /api/v1/balances": (req: Request) => {
+      const date = new URL(req.url).searchParams.get("date") ?? "";
+      const at = (account_id: string, amount: number) => ({
+        account_id,
+        date,
+        basis: "booked",
+        balance: { amount, currency: "BRL" },
+      });
+      return json(200, {
+        items: [
+          at(visaDebtID, -100000),
+          at(carLoanID, -300000),
+          at("d0000000-0000-4000-8000-000000000003", 50000),
+        ],
+      });
+    },
+  };
+}

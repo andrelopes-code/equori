@@ -358,4 +358,45 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "As regras de imposto mudam por lei; as da região valem na data em que foram conferidas.",
   "calc.fixed-income.limit2":
     "Taxas de administração e custódia não são contadas.",
+  "calc.debt.row": "Dívida {n}",
+  "calc.debt.name": "Nome da dívida {n}",
+  "calc.debt.balance": "Saldo da dívida {n}",
+  "calc.debt.rate": "Taxa mensal da dívida {n}",
+  "calc.debt.minimum": "Pagamento mínimo da dívida {n}",
+  "calc.debt.remove": "Remover a dívida {n}",
+  "calc.debt.add": "Adicionar uma dívida",
+  "calc.debt.budget": "Orçamento mensal para as dívidas",
+  "calc.debt.origin": "{account}, saldo em {date}",
+  "calc.debt.compare": "Avalanche e bola de neve",
+  "calc.debt.figure": "Valor",
+  "calc.debt.avalanche": "Avalanche",
+  "calc.debt.snowball": "Bola de neve",
+  "calc.debt.months": "Meses até o último pagamento",
+  "calc.debt.interest": "Total de juros",
+  "calc.debt.closes": "{name} termina no mês",
+  "calc.debt.notClosedCell": "não termina",
+  "calc.debt.avalancheLower": "A avalanche paga menos juros em",
+  "calc.debt.snowballLower": "A bola de neve paga menos juros em",
+  "calc.debt.sameInterest": "Diferença de juros",
+  "calc.debt.belowMinimums":
+    "O orçamento é menor que a soma dos pagamentos mínimos, então nenhum plano paga todas as dívidas.",
+  "calc.debt.notClosed":
+    "Após 1.200 meses uma dívida segue aberta: o orçamento não supera os juros.",
+  "calc.debt-payoff.step1":
+    "A cada mês cada dívida aberta acumula juros: saldo vezes a sua taxa mensal, arredondado.",
+  "calc.debt-payoff.step2":
+    "Cada dívida aberta recebe então o seu pagamento mínimo, no máximo o seu saldo.",
+  "calc.debt-payoff.step3":
+    "O resto do orçamento vai para as dívidas abertas na sequência da ordem, cada uma no máximo o seu saldo; uma dívida que termina libera o seu mínimo para as outras.",
+  "calc.debt-payoff.step4":
+    "Avalanche: a maior taxa primeiro, empates pelo menor saldo. Bola de neve: o menor saldo primeiro, empates pela maior taxa.",
+  "calc.debt-payoff.formula1":
+    "juros do mês = arredondar(saldo × taxa mensal); pagamento = mínimo + parte de (orçamento − Σ mínimos) na ordem",
+  "calc.debt-payoff.assumption1":
+    "Taxas, mínimos e orçamento ficam iguais em todos os meses, e nenhuma dívida nova é contraída.",
+  "calc.debt-payoff.assumption2":
+    "A taxa e o prazo do contrato de um empréstimo não são guardados, então cada taxa e mínimo é digitado.",
+  "calc.debt-payoff.limit1":
+    "A avalanche dá o menor total de juros; fechar primeiro as contas pequenas previu a quitação de todas as dívidas em dados de 6.000 clientes de renegociação (Gal e McShane 2012). A escolha é da pessoa.",
+  "calc.debt-payoff.limit2": "Um plano para em 1.200 meses.",
 };

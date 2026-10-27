@@ -7,6 +7,7 @@ import { CashOrInstallmentsCalculator } from "@/features/calculators/cash-or-ins
 import { CompoundCalculator } from "@/features/calculators/compound-calculator";
 import { CorrectionCalculator } from "@/features/calculators/correction-calculator";
 import { CreditCostCalculator } from "@/features/calculators/credit-cost-calculator";
+import { DebtPayoffCalculator } from "@/features/calculators/debt-payoff-calculator";
 import { FinancingCalculator } from "@/features/calculators/financing-calculator";
 import { FixedIncomeCalculator } from "@/features/calculators/fixed-income-calculator";
 import { RatesCalculator } from "@/features/calculators/rates-calculator";
@@ -19,6 +20,7 @@ const screens: Partial<Record<CalculatorId, ComponentType>> = {
   financing: FinancingCalculator,
   "cash-or-installments": CashOrInstallmentsCalculator,
   "credit-cost": CreditCostCalculator,
+  "debt-payoff": DebtPayoffCalculator,
 };
 
 // The route validates the id; a calculator not yet written shows its frame alone.

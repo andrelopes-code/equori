@@ -356,4 +356,45 @@ export const calculatorsEn = {
   "calc.fixed-income.limit1":
     "Tax rules change by law; the region's rules hold on the date they were checked.",
   "calc.fixed-income.limit2": "Fees and custody charges are not counted.",
+  "calc.debt.row": "Debt {n}",
+  "calc.debt.name": "Name of debt {n}",
+  "calc.debt.balance": "Balance of debt {n}",
+  "calc.debt.rate": "Monthly rate of debt {n}",
+  "calc.debt.minimum": "Minimum payment of debt {n}",
+  "calc.debt.remove": "Remove debt {n}",
+  "calc.debt.add": "Add a debt",
+  "calc.debt.budget": "Monthly budget for the debts",
+  "calc.debt.origin": "{account}, balance on {date}",
+  "calc.debt.compare": "Avalanche and snowball",
+  "calc.debt.figure": "Figure",
+  "calc.debt.avalanche": "Avalanche",
+  "calc.debt.snowball": "Snowball",
+  "calc.debt.months": "Months to the last payment",
+  "calc.debt.interest": "Total interest",
+  "calc.debt.closes": "{name} closes in month",
+  "calc.debt.notClosedCell": "not closed",
+  "calc.debt.avalancheLower": "The avalanche pays less interest by",
+  "calc.debt.snowballLower": "The snowball pays less interest by",
+  "calc.debt.sameInterest": "Difference in interest",
+  "calc.debt.belowMinimums":
+    "The budget is below the sum of the minimum payments, so no plan pays every debt.",
+  "calc.debt.notClosed":
+    "After 1,200 months a debt is still open: the budget does not outgrow the interest.",
+  "calc.debt-payoff.step1":
+    "Each month every open debt accrues its interest: balance times its monthly rate, rounded.",
+  "calc.debt-payoff.step2":
+    "Every open debt then receives its minimum payment, at most its balance.",
+  "calc.debt-payoff.step3":
+    "The rest of the budget goes to the open debts in the order's sequence, each at most its balance; a debt that closes frees its minimum for the others.",
+  "calc.debt-payoff.step4":
+    "Avalanche: the highest rate first, ties by the smaller balance. Snowball: the smaller balance first, ties by the higher rate.",
+  "calc.debt-payoff.formula1":
+    "interest of a month = round(balance × monthly rate); payment = minimum + share of (budget − Σ minimums) in the order",
+  "calc.debt-payoff.assumption1":
+    "Rates, minimums and the budget stay the same every month, and no new debt is taken.",
+  "calc.debt-payoff.assumption2":
+    "The contract rate and term of a loan are not stored, so each rate and minimum is typed.",
+  "calc.debt-payoff.limit1":
+    "The avalanche gives the lowest total interest; closing small accounts first predicted paying off all debt in data on 6,000 debt-settlement clients (Gal and McShane 2012). The choice is the person's.",
+  "calc.debt-payoff.limit2": "A plan stops at 1,200 months.",
 } as const;
