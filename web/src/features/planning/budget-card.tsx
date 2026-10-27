@@ -2,6 +2,7 @@ import { IconButton } from "@slotted/react/button";
 import { Card, CardActions, CardBody, CardHeader } from "@slotted/react/card";
 import { Glyph, Icon } from "@slotted/react/icon";
 import { Inline } from "@slotted/react/inline";
+import { Link } from "@slotted/react/link";
 import {
   Menu,
   MenuContent,
@@ -12,7 +13,7 @@ import {
 import { ProgressBar } from "@slotted/react/progress-indicator";
 import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 import type { components } from "@/api/schema.gen";
@@ -23,6 +24,7 @@ import { budgetState, usedShare } from "@/features/planning/budget-month";
 import styles from "@/features/planning/budgets.module.css";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { useAppLink } from "@/ui/use-app-link";
 
 type Money = components["schemas"]["Money"];
 type Budget = components["schemas"]["Budget"];
@@ -50,6 +52,7 @@ export function BudgetCard({
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
   const navigate = useNavigate();
+  const follow = useAppLink();
   const p = row.progress;
   const state = budgetState(p);
   const share = usedShare(p);
@@ -76,9 +79,12 @@ export function BudgetCard({
       />
       <Text size="md" weight="medium" className={styles.name}>
         <Link
-          to="/planning/budgets/$id"
-          params={{ id: row.budget.id }}
-          search={{ month }}
+          href={`/planning/budgets/${row.budget.id}?month=${month}`}
+          onClick={follow({
+            to: "/planning/budgets/$id",
+            params: { id: row.budget.id },
+            search: { month },
+          })}
         >
           {row.label}
         </Link>
