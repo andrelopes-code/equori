@@ -31,6 +31,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 	"github.com/andrelopes-code/equori/internal/platform/spa"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
+	"github.com/andrelopes-code/equori/internal/platform/tool/mcp"
 	"github.com/andrelopes-code/equori/internal/portfolio"
 	"github.com/andrelopes-code/equori/internal/reporting"
 	"github.com/andrelopes-code/equori/web"
@@ -148,13 +149,14 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	chatTools, err := tools.Select(slices.Collect(func(yield func(string) bool) {
+	chatNames := slices.Collect(func(yield func(string) bool) {
 		for _, t := range tools.Tools() {
 			if !yield(t.Spec().Name) {
 				return
 			}
 		}
-	})...)
+	})
+	chatTools, err := tools.Select(chatNames...)
 	if err != nil {
 		return nil, err
 	}
@@ -185,8 +187,22 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		mux.Handle("/", spa.Handler(cfg.Web))
 	}
 
+	// /mcp sits outside /api/ and its session gate: a personal access token opens it, and only it (ADR 024).
+	root := http.NewServeMux()
+	root.Handle("/mcp", mcp.New(mcp.Config{
+		Registry: tools, Names: chatNames, Instructions: assistant.Instructions(), Version: version, Log: log,
+		Verify: func(ctx context.Context, token string) (mcp.Grant, error) {
+			g, err := identityModule.VerifyAccessToken(ctx, token)
+			if err != nil {
+				return mcp.Grant{}, err
+			}
+			return mcp.Grant{TokenID: g.TokenID.String(), UserID: g.UserID, Write: g.Scope == "write"}, nil
+		},
+	}))
+	root.Handle("/", identityModule.RequireSession(validator.Middleware(mux)))
+
 	return &App{
-		Handler: httpserver.Middleware(identityModule.RequireSession(validator.Middleware(mux)), log,
+		Handler: httpserver.Middleware(root, log,
 			slices.Concat(ledgerModule.BodyLimits(), ingestionModule.BodyLimits(), reportingModule.BodyLimits())...),
 		Dispatcher: dispatcher,
 		Tools:      tools,

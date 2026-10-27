@@ -40,9 +40,13 @@ The official MCP Go SDK (`github.com/modelcontextprotocol/go-sdk` v1.7.0) infers
 
 ## Deferred
 
-- MCP transport at `/mcp`: authentication by personal access token (an amendment to ADR 003), the SDK dependency, and the selection of tools exposed to external clients.
+- MCP transport at `/mcp`: resolved by ADR 024.
 - Tools with effect `Write` or `Destructive`, each introduced with its first consuming agent.
 
 ## Revisit criterion
 
 A model provider that rejects schemas produced under T4, or a tool whose input cannot be expressed in that subset.
+
+## Amendment of 2026-10-27 (ADR 024)
+
+- T13: a call through MCP also writes the line `mcp call` with the token ID beside the user ID, tool, effect, outcome, duration and size; never arguments, results or the token.
