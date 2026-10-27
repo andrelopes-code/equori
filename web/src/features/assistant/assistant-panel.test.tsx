@@ -426,6 +426,71 @@ describe("AssistantPanel", () => {
     }
   });
 
+  it("offers no retry while the chat is blocked", async () => {
+    sessionStorage.setItem("equori.assistant.conversation", "c1");
+    setup({
+      "GET /api/v1/assistant/chat": () =>
+        json(200, { available: false, retry_at: "2099-01-01T00:00:00Z" }),
+      "GET /api/v1/assistant/conversations/c1": () =>
+        json(200, unanswered("failed")),
+    });
+    expect(
+      await screen.findByText(catalogEn["assistant.no_answer"]),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: catalogEn["assistant.retry"] }),
+    ).toBeNull();
+  });
+
+  // The turn failed after the stream started and no failed answer was stored.
+  it("offers a retry on a question left without an answer", async () => {
+    sessionStorage.setItem("equori.assistant.conversation", "c1");
+    const d = detail("");
+    setup({
+      "GET /api/v1/assistant/conversations/c1": () =>
+        json(200, { ...d, messages: [d.messages[0]] }),
+    });
+    expect(
+      await screen.findByText(catalogEn["assistant.no_answer"]),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: catalogEn["assistant.retry"] }),
+    ).toBeInTheDocument();
+  });
+
+  // A client clock ahead of the server's sees retry_at pass while the server still blocks.
+  it("keeps asking for the chat state while a passed retry_at still blocks", async () => {
+    vi.useFakeTimers({
+      toFake: ["setTimeout", "clearTimeout", "Date"],
+      shouldAdvanceTime: true,
+    });
+    vi.setSystemTime(new Date("2026-10-23T10:00:00Z"));
+    let calls = 0;
+    try {
+      setup({
+        "GET /api/v1/assistant/chat": () =>
+          calls++ < 2
+            ? json(200, { available: false, retry_at: "2026-10-23T09:59:00Z" })
+            : json(200, chat),
+      });
+      const input = await screen.findByPlaceholderText(
+        catalogEn["assistant.composer.placeholder"],
+      );
+      await waitFor(() => {
+        expect(calls).toBe(2);
+      });
+      expect(input).toBeDisabled();
+      act(() => {
+        vi.advanceTimersByTime(10_000);
+      });
+      await waitFor(() => {
+        expect(input).toBeEnabled();
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("links the settings when no provider serves the assistant (U14, P8)", async () => {
     const { navigate, onOpenChange } = setup({
       "GET /api/v1/assistant/chat": () => json(200, { available: false }),

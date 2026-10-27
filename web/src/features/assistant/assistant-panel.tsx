@@ -123,7 +123,7 @@ export function AssistantPanel({
     }).format(new Date(iso));
   const messages =
     turn.conversationId === undefined ? [] : (stored.data?.messages ?? []);
-  useRetryAt(chat.data?.retry_at, () => {
+  useRetryAt(chat.data?.retry_at, chat.dataUpdatedAt, () => {
     void queryClient.invalidateQueries({ queryKey: assistantKeys.chat() });
   });
   const blocked = chat.data?.available === false;
@@ -182,10 +182,21 @@ export function AssistantPanel({
     turn.send(text);
   };
   const last = messages.at(-1);
-  const retryText =
-    last?.outcome === "failed" || last?.outcome === "canceled"
-      ? messages.at(-2)?.content
-      : undefined;
+  // A question the server stored without any answer (the answer failed to store) reads as failed.
+  const orphan = last?.role === "user" && turn.pending === null;
+  const retryText = blocked
+    ? undefined
+    : orphan
+      ? last.content
+      : last?.outcome === "failed" || last?.outcome === "canceled"
+        ? messages.at(-2)?.content
+        : undefined;
+  const retry =
+    retryText === undefined
+      ? undefined
+      : () => {
+          send(retryText);
+        };
   // While the first turn runs, the conversation is named after the question (U13).
   const storedTitle =
     stored.data === undefined && turn.pending !== null
@@ -282,16 +293,25 @@ export function AssistantPanel({
                       >
                         <MessageItem
                           message={m}
-                          onRetry={
-                            m === last && retryText !== undefined
-                              ? () => {
-                                  send(retryText);
-                                }
-                              : undefined
-                          }
+                          onRetry={m === last && !orphan ? retry : undefined}
                         />
                       </MessageScrollerItem>
                     ))}
+                    {orphan && (
+                      <MessageScrollerItem messageId="unanswered">
+                        <MessageItem
+                          message={{
+                            id: "unanswered",
+                            role: "assistant",
+                            content: "",
+                            outcome: "failed",
+                            created_at: last.created_at,
+                            proposals: [],
+                          }}
+                          onRetry={retry}
+                        />
+                      </MessageScrollerItem>
+                    )}
                     {turn.pending !== null && (
                       <>
                         <MessageScrollerItem messageId="pending" anchor>
