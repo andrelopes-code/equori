@@ -27,7 +27,8 @@ func TestEveryTableIsClassified(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	other := []string{"goose_db_version", "identity_user", "ledger_transaction_version", "outbox_delivery"}
+	// marketdata_feed holds the instance's feed settings (ADR 025 F1), no user's rows.
+	other := []string{"goose_db_version", "identity_user", "ledger_transaction_version", "marketdata_feed", "outbox_delivery"}
 	for _, table := range all {
 		if !slices.Contains(facts, table) && !slices.Contains(sharedTables, table) && !slices.Contains(notExported, table) && !slices.Contains(other, table) {
 			t.Errorf("table %s is neither exported nor named as left out", table)
