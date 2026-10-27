@@ -56,10 +56,11 @@ func prepareDataDir(dir string, accounts []string) error {
 	return checkDACL(dir)
 }
 
-// privateDir creates path for SYSTEM and the process account, or checks an existing one (W-M4).
+// privateDir creates the socket directory inside the data directory, whose entries it inherits,
+// so every account the data directory grants reaches the socket; then it checks it (W-M4).
 func privateDir(path string) error {
-	if _, err := createPrivate(path, nil); err != nil {
-		return err
+	if err := os.MkdirAll(path, 0o700); err != nil { //nolint:gosec // G703: the data directory is the owner's configuration.
+		return fmt.Errorf("create %s: %w", path, err)
 	}
 	return checkDACL(path)
 }
