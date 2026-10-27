@@ -35,6 +35,11 @@ export default defineConfig({
         changeOrigin: true,
         headers: { origin: "http://127.0.0.1:8080" },
       },
+      // The MCP endpoint (ADR 024) sits outside /api/; a client that reaches the Vite address uses it too.
+      "/mcp": {
+        target: "http://127.0.0.1:8080",
+        changeOrigin: true,
+      },
     },
   },
   test: {
