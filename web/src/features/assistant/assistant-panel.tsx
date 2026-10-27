@@ -34,7 +34,8 @@ import {
   MessageScrollerViewport,
 } from "@slotted/react/message-scroller";
 import { Text } from "@slotted/react/typography";
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import type { RefObject } from "react";
 
 import { useApi } from "@/api/api-context";
 import { problemMessage } from "@/api/problem";
@@ -84,9 +85,12 @@ const stateCodes = new Set([
 export function AssistantPanel({
   open,
   onOpenChange,
+  returnFocus,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // The element focused before the panel opened; focus returns to it on close (P18).
+  returnFocus?: RefObject<HTMLElement | null>;
 }) {
   const t = useT();
   const api = useApi();
@@ -97,6 +101,7 @@ export function AssistantPanel({
   const page = useRouterState({ select: (s) => s.location.pathname });
   const turn = useAssistantTurn(page);
   const [listing, setListing] = useState(false);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
   const { hidden } = usePrivacy();
   const chat = useQuery({ ...chatStateQuery(api), enabled: open });
   const stored = useQuery({
@@ -116,6 +121,11 @@ export function AssistantPanel({
   });
   const blocked = chat.data?.available === false;
   const started = messages.length > 0 || turn.pending !== null;
+  const canType = open && !listing && chat.data !== undefined && !blocked;
+  // The composer is disabled while the chat state loads, when the drawer moves focus on open.
+  useEffect(() => {
+    if (canType) composerRef.current?.focus();
+  }, [canType]);
   const retryAt = chat.data?.retry_at;
   const blockedNotice =
     chat.data?.available !== false ? null : retryAt !== undefined ? (
@@ -193,6 +203,8 @@ export function AssistantPanel({
       size={phone ? "full" : "xl"}
       modal={phone}
       outsidePress="none"
+      initialFocus={listing ? "first" : composerRef}
+      {...(returnFocus === undefined ? {} : { finalFocus: returnFocus })}
     >
       <DrawerPanel className={styles.panel}>
         {phone && <DrawerResizer />}
@@ -316,6 +328,7 @@ export function AssistantPanel({
                 disabled={blocked || chat.data === undefined}
                 busy={turn.pending !== null}
                 onSend={send}
+                inputRef={composerRef}
               />
             </div>
           </DrawerFooter>

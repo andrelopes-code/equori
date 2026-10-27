@@ -164,6 +164,36 @@ describe("desktop column", () => {
     });
   });
 
+  it("focuses the assistant composer and returns focus on close (U7, P18)", async () => {
+    const user = userEvent.setup();
+    const routes = newFetch();
+    const fetch = Object.assign(
+      (input: RequestInfo | URL, init?: RequestInit) =>
+        new Request(input, init).url.endsWith("/api/v1/assistant/chat")
+          ? Promise.resolve(
+              json(200, { available: true, provider_name: "G", model: "m" }),
+            )
+          : routes(input, init),
+      { calls: routes.calls },
+    );
+    await renderApp("/", { fetch });
+    const search = screen.getByRole("button", {
+      name: new RegExp(`^${catalogEn["nav.search"]}`),
+    });
+    search.focus();
+    await user.keyboard("a");
+    const input = await screen.findByPlaceholderText(
+      catalogEn["assistant.composer.placeholder"],
+    );
+    await waitFor(() => {
+      expect(document.activeElement).toBe(input);
+    });
+    await user.keyboard("{Escape}");
+    await waitFor(() => {
+      expect(document.activeElement).toBe(search);
+    });
+  });
+
   it("marks the commands' keys as keyboard input", async () => {
     await renderApp("/", { fetch: newFetch() });
     const entry = screen.getByRole("button", {

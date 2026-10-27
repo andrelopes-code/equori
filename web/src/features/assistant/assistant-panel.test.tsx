@@ -158,6 +158,16 @@ describe("AssistantPanel", () => {
     );
   });
 
+  it("focuses the composer on open (U7, P18)", async () => {
+    setup({});
+    const input = await screen.findByPlaceholderText(
+      catalogEn["assistant.composer.placeholder"],
+    );
+    await waitFor(() => {
+      expect(document.activeElement).toBe(input);
+    });
+  });
+
   // A message typed while the history was open went to no visible conversation; the history now
   // holds no composer, and leaving it brings the composer back.
   it("hides the composer while the conversation history is open", async () => {

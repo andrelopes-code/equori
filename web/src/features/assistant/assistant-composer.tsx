@@ -6,6 +6,7 @@ import {
 } from "@slotted/react/prompt-composer";
 import { Text } from "@slotted/react/typography";
 import { useState } from "react";
+import type { RefObject } from "react";
 
 import styles from "@/features/assistant/assistant-panel.module.css";
 import { useT } from "@/i18n/i18n-provider";
@@ -15,10 +16,12 @@ export function AssistantComposer({
   disabled,
   busy,
   onSend,
+  inputRef,
 }: {
   disabled: boolean;
   busy: boolean;
   onSend: (text: string) => void;
+  inputRef?: RefObject<HTMLTextAreaElement | null>;
 }) {
   const t = useT();
   const [value, setValue] = useState("");
@@ -43,6 +46,7 @@ export function AssistantComposer({
         }}
       >
         <PromptComposerInput
+          ref={inputRef}
           aria-label={t("assistant.composer.placeholder")}
           placeholder={t("assistant.composer.placeholder")}
           maxLength={4000}

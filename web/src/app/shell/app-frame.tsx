@@ -48,7 +48,12 @@ export function AppFrame() {
   const [barExtent, barRef] = useExtent();
   const [dockExtent, dockRef] = useExtent();
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const returnTo = useRef<HTMLElement | null>(null);
   const openAssistant = useCallback(() => {
+    returnTo.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
     setAssistantOpen(true);
   }, []);
   const editing = useEditing();
@@ -145,7 +150,11 @@ export function AppFrame() {
         </AppShellFooter>
       )}
       <CommandMenu ref={palette} onAssistant={openAssistant} />
-      <AssistantPanel open={assistantOpen} onOpenChange={setAssistantOpen} />
+      <AssistantPanel
+        open={assistantOpen}
+        onOpenChange={setAssistantOpen}
+        returnFocus={returnTo}
+      />
       <ToastRegion />
     </AppShell>
   );
