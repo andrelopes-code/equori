@@ -3,6 +3,8 @@ package toolapi
 import (
 	"context"
 
+	"github.com/google/uuid"
+
 	"github.com/andrelopes-code/equori/internal/planning/internal/app"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/page"
@@ -11,11 +13,11 @@ import (
 
 type getBudgetsAndGoalsKind string
 
-func (getBudgetsAndGoalsKind) Values() []string { return []string{"budgets", "goals", "both"} }
+func (getBudgetsAndGoalsKind) Values() []string { return []string{"budgets", "goals", "both", "plan"} }
 
 type getBudgetsAndGoalsIn struct {
 	Month string                 `json:"month,omitzero" jsonschema:"month of the budget progress; the current month when absent; written YYYY-MM"`
-	Kind  getBudgetsAndGoalsKind `json:"kind,omitzero" jsonschema:"budgets, goals or both; both when absent"`
+	Kind  getBudgetsAndGoalsKind `json:"kind,omitzero" jsonschema:"budgets, goals or both; both when absent; plan returns only the month's budget plan"`
 }
 
 type budgetView struct {
@@ -39,10 +41,88 @@ type goalView struct {
 	TrailingReturnBP int        `json:"trailing_return_bp,omitzero"`
 }
 
+type planRowView struct {
+	CategoryID   string     `json:"category_id"`
+	CategoryName string     `json:"category_name"`
+	Planned      tool.Money `json:"planned"`
+	LastMonth    tool.Money `json:"last_month"`
+	Average      tool.Money `json:"average"`
+	Counted      bool       `json:"counted"`
+	NextChange   string     `json:"next_change,omitzero"`
+}
+
+// planView is the budget plan of the month (budget plan amendment A129): the reference income
+// less installments, savings and the counted budgets is the unassigned amount.
+type planView struct {
+	Source         string        `json:"source"`
+	ExpectedIncome tool.Money    `json:"expected_income,omitzero"`
+	AverageIncome  tool.Money    `json:"average_income,omitzero"`
+	AverageMonths  int           `json:"average_months,omitzero"`
+	Reference      tool.Money    `json:"reference,omitzero"`
+	Installments   tool.Money    `json:"installments"`
+	Savings        tool.Money    `json:"savings"`
+	Planned        tool.Money    `json:"planned"`
+	Unassigned     tool.Money    `json:"unassigned,omitzero"`
+	Rows           []planRowView `json:"rows"`
+}
+
 type getBudgetsAndGoalsOut struct {
 	Month   string       `json:"month"`
 	Budgets []budgetView `json:"budgets"`
 	Goals   []goalView   `json:"goals"`
+	Plan    planView     `json:"plan,omitzero"`
+}
+
+// toPlanView leaves a figure the plan does not have at its zero value, which the output omits.
+func toPlanView(p app.Plan, accounts map[uuid.UUID]Account) (planView, error) {
+	m := func(amount int64) (tool.Money, error) { return moneyOf(amount, p.Currency) }
+	optional := func(v *int64) (tool.Money, error) {
+		if v == nil {
+			return tool.Money{}, nil
+		}
+		return m(*v)
+	}
+	out := planView{Source: string(p.Reference.Source), AverageMonths: p.AverageMonths, Rows: make([]planRowView, len(p.Rows))}
+	var err error
+	if out.ExpectedIncome, err = optional(p.Expected); err != nil {
+		return planView{}, err
+	}
+	if out.AverageIncome, err = optional(p.Average); err != nil {
+		return planView{}, err
+	}
+	if ref, ok := p.ReferenceAmount(); ok {
+		rest, _ := p.Unassigned()
+		if out.Reference, err = optional(&ref); err != nil {
+			return planView{}, err
+		}
+		if out.Unassigned, err = optional(&rest); err != nil {
+			return planView{}, err
+		}
+	}
+	for _, f := range []struct {
+		amount int64
+		into   *tool.Money
+	}{{p.Installments, &out.Installments}, {p.Savings, &out.Savings}, {p.Planned, &out.Planned}} {
+		if *f.into, err = m(f.amount); err != nil {
+			return planView{}, err
+		}
+	}
+	for i, r := range p.Rows {
+		v := planRowView{CategoryID: r.CategoryID.String(), CategoryName: accountName(accounts, r.CategoryID), Counted: r.Counted}
+		if r.HasNextChange {
+			v.NextChange = r.NextChange.Format(monthLayout)
+		}
+		for _, f := range []struct {
+			amount int64
+			into   *tool.Money
+		}{{r.Planned, &v.Planned}, {r.LastMonth, &v.LastMonth}, {r.Average, &v.Average}} {
+			if *f.into, err = m(f.amount); err != nil {
+				return planView{}, err
+			}
+		}
+		out.Rows[i] = v
+	}
+	return out, nil
 }
 
 func toGoalView(g app.GoalView) (goalView, error) {
@@ -66,7 +146,8 @@ func getBudgetsAndGoals(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 	return tool.New(tool.Spec{
 		Name: "get_budgets_and_goals",
 		Description: "Returns the monthly budgets with planned, carried, spent and available amounts for a month, and the goals with their target, current value, progress and trailing return. " +
-			"Use it for how a budget or goal is going. " +
+			"With kind plan it returns the month's budget plan instead: the reference income, the installments and savings it pays, the budgets and the unassigned rest. " +
+			"Use it for how a budget or goal is going, or how much income still has no budget. " +
 			"Do not use it for spending by category without a budget: get_category_totals does.",
 		Effect: tool.ReadOnly, Idempotent: true,
 	}, func(ctx context.Context, userID int64, in getBudgetsAndGoalsIn) (getBudgetsAndGoalsOut, error) {
@@ -75,6 +156,18 @@ func getBudgetsAndGoals(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 			return getBudgetsAndGoalsOut{}, err
 		}
 		out := getBudgetsAndGoalsOut{Month: month.Format(monthLayout), Budgets: []budgetView{}, Goals: []goalView{}}
+		if in.Kind == "plan" {
+			p, err := svc.BudgetPlan(ctx, userID, month)
+			if err != nil {
+				return out, err
+			}
+			accounts, err := l.Accounts(ctx, userID)
+			if err != nil {
+				return out, err
+			}
+			out.Plan, err = toPlanView(p, accounts)
+			return out, err
+		}
 		if in.Kind != "goals" {
 			accounts, err := l.Accounts(ctx, userID)
 			if err != nil {

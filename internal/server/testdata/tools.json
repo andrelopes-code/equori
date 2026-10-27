@@ -957,7 +957,7 @@
   },
   {
     "name": "get_budgets_and_goals",
-    "description": "Returns the monthly budgets with planned, carried, spent and available amounts for a month, and the goals with their target, current value, progress and trailing return. Use it for how a budget or goal is going. Do not use it for spending by category without a budget: get_category_totals does.",
+    "description": "Returns the monthly budgets with planned, carried, spent and available amounts for a month, and the goals with their target, current value, progress and trailing return. With kind plan it returns the month's budget plan instead: the reference income, the installments and savings it pays, the budgets and the unassigned rest. Use it for how a budget or goal is going, or how much income still has no budget. Do not use it for spending by category without a budget: get_category_totals does.",
     "effect": "read_only",
     "idempotent": true,
     "input_schema": {
@@ -969,11 +969,12 @@
         },
         "kind": {
           "type": "string",
-          "description": "budgets, goals or both; both when absent",
+          "description": "budgets, goals or both; both when absent; plan returns only the month's budget plan",
           "enum": [
             "budgets",
             "goals",
-            "both"
+            "both",
+            "plan"
           ]
         }
       },
@@ -1171,6 +1172,234 @@
             ],
             "additionalProperties": false
           }
+        },
+        "plan": {
+          "type": "object",
+          "properties": {
+            "source": {
+              "type": "string"
+            },
+            "expected_income": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
+            "average_income": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
+            "average_months": {
+              "type": "integer"
+            },
+            "reference": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
+            "installments": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
+            "savings": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
+            "planned": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
+            "unassigned": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
+            "rows": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "category_id": {
+                    "type": "string"
+                  },
+                  "category_name": {
+                    "type": "string"
+                  },
+                  "planned": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "last_month": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "average": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "counted": {
+                    "type": "boolean"
+                  },
+                  "next_change": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "category_id",
+                  "category_name",
+                  "planned",
+                  "last_month",
+                  "average",
+                  "counted"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "source",
+            "installments",
+            "savings",
+            "planned",
+            "rows"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -4490,7 +4719,7 @@
   },
   {
     "name": "manage_budget_or_goal",
-    "description": "Proposes creating a monthly budget for a category, setting a budget's amount from a month on, deleting a budget, or creating, changing or deleting a goal. Use it when the user sets a spending limit or a savings target. Do not use it for recurring payments: manage_schedule does. Deleting a budget or a goal cannot be undone; the user confirms every change.",
+    "description": "Proposes creating a monthly budget for a category, setting a budget's amount from a month on, deleting a budget, saving a month's budget plan (several amounts and the reference income at once), or creating, changing or deleting a goal. Use it when the user sets a spending limit or a savings target. Do not use it for recurring payments: manage_schedule does. Deleting a budget or a goal cannot be undone; the user confirms every change.",
     "effect": "destructive",
     "idempotent": false,
     "input_schema": {
@@ -4505,7 +4734,8 @@
             "delete_budget",
             "create_goal",
             "update_goal",
-            "delete_goal"
+            "delete_goal",
+            "save_plan"
           ]
         },
         "budget_id": {
@@ -4522,11 +4752,42 @@
         },
         "amount": {
           "type": "string",
-          "description": "for create_budget and set_budget_amount: positive monthly amount; for create_goal and update_goal: positive target"
+          "description": "for create_budget and set_budget_amount: positive monthly amount; for create_goal and update_goal: positive target; for save_plan: the fixed reference income"
         },
         "month": {
           "type": "string",
-          "description": "for create_budget and set_budget_amount: first month the amount applies to; written YYYY-MM"
+          "description": "for create_budget, set_budget_amount and save_plan: first month the amount applies to; written YYYY-MM"
+        },
+        "source": {
+          "type": "string",
+          "description": "for save_plan: reference income of the plan; the stored one when absent",
+          "enum": [
+            "expected_income",
+            "average_income",
+            "fixed"
+          ]
+        },
+        "amounts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "category_id": {
+                "type": "string",
+                "description": "expense category from list_accounts or a row of get_budgets_and_goals with kind plan"
+              },
+              "amount": {
+                "type": "string",
+                "description": "monthly amount, zero or more"
+              }
+            },
+            "required": [
+              "category_id",
+              "amount"
+            ],
+            "additionalProperties": false
+          },
+          "description": "for save_plan: the categories whose amount changes from month on; a version of that month is replaced"
         },
         "rollover": {
           "type": "boolean",

@@ -2,6 +2,7 @@ package toolapi
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -17,7 +18,18 @@ import (
 type manageBudgetOrGoalAction string
 
 func (manageBudgetOrGoalAction) Values() []string {
-	return []string{"create_budget", "set_budget_amount", "delete_budget", "create_goal", "update_goal", "delete_goal"}
+	return []string{"create_budget", "set_budget_amount", "delete_budget", "create_goal", "update_goal", "delete_goal", "save_plan"}
+}
+
+type planSource string
+
+func (planSource) Values() []string {
+	return []string{string(domain.SourceExpectedIncome), string(domain.SourceAverageIncome), string(domain.SourceFixed)}
+}
+
+type planAmountIn struct {
+	CategoryID string `json:"category_id" jsonschema:"expense category from list_accounts or a row of get_budgets_and_goals with kind plan"`
+	Amount     string `json:"amount" jsonschema:"monthly amount, zero or more"`
 }
 
 type manageBudgetOrGoalIn struct {
@@ -25,8 +37,10 @@ type manageBudgetOrGoalIn struct {
 	BudgetID   string                   `json:"budget_id,omitzero" jsonschema:"for set_budget_amount and delete_budget: budget from get_budgets_and_goals"`
 	GoalID     string                   `json:"goal_id,omitzero" jsonschema:"for update_goal and delete_goal: goal from get_budgets_and_goals"`
 	CategoryID string                   `json:"category_id,omitzero" jsonschema:"for create_budget: expense category from list_accounts"`
-	Amount     string                   `json:"amount,omitzero" jsonschema:"for create_budget and set_budget_amount: positive monthly amount; for create_goal and update_goal: positive target"`
-	Month      string                   `json:"month,omitzero" jsonschema:"for create_budget and set_budget_amount: first month the amount applies to; written YYYY-MM"`
+	Amount     string                   `json:"amount,omitzero" jsonschema:"for create_budget and set_budget_amount: positive monthly amount; for create_goal and update_goal: positive target; for save_plan: the fixed reference income"`
+	Month      string                   `json:"month,omitzero" jsonschema:"for create_budget, set_budget_amount and save_plan: first month the amount applies to; written YYYY-MM"`
+	Source     planSource               `json:"source,omitzero" jsonschema:"for save_plan: reference income of the plan; the stored one when absent"`
+	Amounts    []planAmountIn           `json:"amounts,omitzero" jsonschema:"for save_plan: the categories whose amount changes from month on; a version of that month is replaced"`
 	Rollover   bool                     `json:"rollover,omitzero" jsonschema:"for create_budget: the unspent amount carries to the next month"`
 	Name       string                   `json:"name,omitzero" jsonschema:"for create_goal and update_goal: goal name"`
 	DueOn      tool.Date                `json:"due_on,omitzero" jsonschema:"for create_goal and update_goal: date the target should be reached"`
@@ -49,6 +63,9 @@ type budgetGoalPlan struct {
 	amount                       *money.Money
 	accountIDs                   []uuid.UUID
 	accountNames                 []string
+	plan                         app.Plan
+	planAmounts                  []app.PlanAmount
+	planNames                    []string
 }
 
 func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, userID int64, in manageBudgetOrGoalIn) (budgetGoalPlan, error) {
@@ -56,6 +73,7 @@ func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, userID
 		{"budget_id", in.BudgetID != ""}, {"goal_id", in.GoalID != ""}, {"category_id", in.CategoryID != ""},
 		{"amount", in.Amount != ""}, {"month", in.Month != ""}, {"rollover", in.Rollover}, {"name", in.Name != ""},
 		{"due_on", !in.DueOn.IsZero()}, {"account_ids", len(in.AccountIDs) > 0},
+		{"source", in.Source != ""}, {"amounts", len(in.Amounts) > 0},
 	}
 	name := string(in.Action)
 	var err error
@@ -72,6 +90,8 @@ func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, userID
 		err = required(name, fields, []string{"goal_id"}, "name", "amount", "due_on", "account_ids")
 	case "delete_goal":
 		err = required(name, fields, []string{"goal_id"})
+	case "save_plan":
+		err = required(name, fields, []string{"month", "amounts"}, "source", "amount")
 	}
 	if err != nil {
 		return budgetGoalPlan{}, err
@@ -121,6 +141,29 @@ func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, userID
 		}
 	case "create_goal":
 		currency, err = l.BaseCurrency(ctx, userID)
+	case "save_plan":
+		if currency, err = l.BaseCurrency(ctx, userID); err != nil {
+			return budgetGoalPlan{}, err
+		}
+		if p.plan, err = svc.BudgetPlan(ctx, userID, p.month); err != nil {
+			return budgetGoalPlan{}, err
+		}
+		unit, err := unitOf(currency)
+		if err != nil {
+			return budgetGoalPlan{}, err
+		}
+		for i, a := range in.Amounts {
+			id, err := optionalID(a.CategoryID, fmt.Sprintf("amounts[%d].category_id", i))
+			if err != nil {
+				return budgetGoalPlan{}, err
+			}
+			m, err := tool.ParseAmount(fmt.Sprintf("amounts[%d].amount", i), a.Amount, unit)
+			if err != nil {
+				return budgetGoalPlan{}, err
+			}
+			p.planAmounts = append(p.planAmounts, app.PlanAmount{CategoryID: id, Amount: m})
+			p.planNames = append(p.planNames, accounts[id].Name)
+		}
 	case "update_goal", "delete_goal":
 		if p.goal, err = svc.Goal(ctx, userID, p.goalID); err == nil {
 			currency = p.goal.Currency
@@ -146,7 +189,7 @@ func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, userID
 func manageBudgetOrGoal(svc *app.Service, l Ledger, _ clock.Clock) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_budget_or_goal",
-		Description: "Proposes creating a monthly budget for a category, setting a budget's amount from a month on, deleting a budget, or creating, changing or deleting a goal. " +
+		Description: "Proposes creating a monthly budget for a category, setting a budget's amount from a month on, deleting a budget, saving a month's budget plan (several amounts and the reference income at once), or creating, changing or deleting a goal. " +
 			"Use it when the user sets a spending limit or a savings target. " +
 			"Do not use it for recurring payments: manage_schedule does. " +
 			"Deleting a budget or a goal cannot be undone; the user confirms every change.",
@@ -206,6 +249,27 @@ func manageBudgetOrGoal(svc *app.Service, l Ledger, _ clock.Clock) tool.Tool {
 		case "delete_goal":
 			pv.Target, pv.Destructive = "Goal "+p.goal.Name, true
 			pv.Changes = []tool.Change{{Field: "goal", Before: tool.TextValue(p.goal.Name)}}
+		case "save_plan":
+			pv.Target = "Budget plan " + p.month.Format(monthLayout)
+			pv.Changes = []tool.Change{{Field: "date", After: tool.DateValue(p.month)}}
+			if in.Source != "" {
+				pv.Changes = append(pv.Changes, tool.Change{Field: "source", After: tool.TextValue(string(in.Source))})
+			}
+			if p.amount != nil {
+				pv.Changes = append(pv.Changes, tool.Change{Field: "reference", After: tool.MoneyValue(*p.amount)})
+			}
+			planned := make(map[uuid.UUID]int64, len(p.plan.Rows))
+			for _, r := range p.plan.Rows {
+				planned[r.CategoryID] = r.Planned
+			}
+			for i, a := range p.planAmounts {
+				before, err := money.New(planned[a.CategoryID], p.plan.Currency)
+				if err != nil {
+					return tool.Preview{}, err
+				}
+				pv.Changes = append(pv.Changes, tool.Change{Field: "budget", After: tool.TextValue(p.planNames[i])},
+					tool.Change{Field: "amount", Before: tool.MoneyValue(before), After: tool.MoneyValue(a.Amount)})
+			}
 		}
 		return pv, nil
 	}, func(ctx context.Context, userID int64, in manageBudgetOrGoalIn) (manageBudgetOrGoalOut, error) {
@@ -225,6 +289,20 @@ func manageBudgetOrGoal(svc *app.Service, l Ledger, _ clock.Clock) tool.Tool {
 		case "create_goal":
 			g, err := svc.CreateGoal(ctx, userID, in.Name, *p.amount, in.DueOn.Time, p.accountIDs)
 			return manageBudgetOrGoalOut{GoalID: g.ID.String()}, err
+		case "save_plan":
+			source, fixed := domain.ReferenceSource(in.Source), p.amount
+			if source == "" {
+				source = p.plan.Reference.Source
+				if p.plan.Reference.HasFixed && fixed == nil {
+					m, err := money.New(p.plan.Reference.Fixed, p.plan.Currency)
+					if err != nil {
+						return manageBudgetOrGoalOut{}, err
+					}
+					fixed = &m
+				}
+			}
+			_, err := svc.SaveBudgetPlan(ctx, userID, p.month, source, fixed, p.planAmounts)
+			return manageBudgetOrGoalOut{}, err
 		case "update_goal":
 			patch := app.GoalPatch{Target: p.amount}
 			if in.Name != "" {

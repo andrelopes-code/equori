@@ -1504,6 +1504,8 @@ export const catalogPtBR: Catalog = {
   "assistant.field.count": "Quantidade de itens",
   "assistant.field.rate": "Taxa",
   "assistant.field.transaction": "Transação",
+  "assistant.field.source": "Base de referência",
+  "assistant.field.reference": "Renda de referência",
   "nav.planning": "Planejamento",
   "planning.subtitle": "O que os agendamentos preveem e o que já aconteceu",
   "planning.tabs": "Visões do planejamento",

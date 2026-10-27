@@ -233,3 +233,69 @@ func TestBudgetAndGoalToolsOtherUser(t *testing.T) {
 	}
 	f.h.ExpectToolError(f.h.Tool("manage_budget_or_goal", map[string]any{"action": "create_budget", "category_id": cat.ID, "amount": "10.00", "month": "2026-10"}), "validation_failed", "category_id")
 }
+
+// S165: the plan of a month through the assistant matches the HTTP figures.
+func TestS165PlanTool(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-12-01")
+	f.h.Record("2026-11-05", apitest.Posting(f.checking, 600000), apitest.Posting(f.salary, -600000))
+	f.budget(f.rent, 210000, "2026-12", false)
+	var got struct {
+		Month string `json:"month"`
+		Plan  struct {
+			Source     string    `json:"source"`
+			Reference  toolMoney `json:"reference"`
+			Planned    toolMoney `json:"planned"`
+			Unassigned toolMoney `json:"unassigned"`
+			Rows       []struct {
+				CategoryName string    `json:"category_name"`
+				Planned      toolMoney `json:"planned"`
+				Counted      bool      `json:"counted"`
+			} `json:"rows"`
+		} `json:"plan"`
+	}
+	toolOutput(t, f.h, "get_budgets_and_goals", map[string]any{"month": "2026-12", "kind": "plan"}, &got)
+	http := f.plan("2026-12")
+	if got.Month != "2026-12" || got.Plan.Source != http.Source || got.Plan.Reference != (toolMoney{"6000.00", "BRL"}) ||
+		got.Plan.Planned != (toolMoney{"2100.00", "BRL"}) || got.Plan.Unassigned != (toolMoney{"3900.00", "BRL"}) || amountOf(http.Unassigned) != 390000 {
+		t.Fatalf("plan = %+v, http %+v", got, http)
+	}
+	if len(got.Plan.Rows) != 1 || got.Plan.Rows[0].CategoryName != "Rent" || !got.Plan.Rows[0].Counted {
+		t.Errorf("rows = %+v", got.Plan.Rows)
+	}
+}
+
+// S166: saving a plan through the assistant is previewed before it writes.
+func TestS166SavePlanTool(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-10")
+	food := f.h.Account("Food", "expense", "", nil)
+	f.budget(food, 180000, "2026-11", false)
+	args := map[string]any{"action": "save_plan", "month": "2026-11", "source": "fixed", "amount": "8500.00",
+		"amounts": []map[string]any{{"category_id": food, "amount": "1500.00"}, {"category_id": f.rent, "amount": "2100.00"}}}
+	p, r := preview(t, f.h, "manage_budget_or_goal", args)
+	if r.IsError {
+		t.Fatalf("preview = error %s", r.Content)
+	}
+	want := tool.Preview{Action: "manage_budget_or_goal.save_plan", Target: "Budget plan 2026-11", Changes: []tool.Change{
+		{Field: "date", After: tool.Value{Date: "2026-11-01"}},
+		{Field: "source", After: tool.TextValue("fixed")},
+		{Field: "reference", After: tool.Value{Amount: "8500.00", Currency: "BRL"}},
+		{Field: "budget", After: tool.TextValue("Food")},
+		{Field: "amount", Before: tool.Value{Amount: "1800.00", Currency: "BRL"}, After: tool.Value{Amount: "1500.00", Currency: "BRL"}},
+		{Field: "budget", After: tool.TextValue("Rent")},
+		{Field: "amount", Before: tool.Value{Amount: "0.00", Currency: "BRL"}, After: tool.Value{Amount: "2100.00", Currency: "BRL"}},
+	}}
+	if !reflect.DeepEqual(p, want) {
+		t.Errorf("preview = %+v, want %+v", p, want)
+	}
+	if got := f.plan("2026-11"); got.Planned.Amount != 180000 || got.Source != "fixed" || got.Reference != nil {
+		t.Fatalf("plan after the preview = %+v", got)
+	}
+	var out toolManaged
+	toolOutput(t, f.h, "manage_budget_or_goal", args, &out)
+	if got := f.plan("2026-11"); got.Planned.Amount != 360000 || amountOf(got.Reference) != 850000 || amountOf(got.Unassigned) != 490000 {
+		t.Fatalf("plan after the save = %+v", got)
+	}
+	f.h.ExpectToolError(f.h.Tool("manage_budget_or_goal", map[string]any{"action": "save_plan", "month": "2026-11"}), "invalid_arguments", "amounts")
+}

@@ -1480,6 +1480,8 @@ export const catalogEn = {
   "assistant.field.count": "Count",
   "assistant.field.rate": "Rate",
   "assistant.field.transaction": "Transaction",
+  "assistant.field.source": "Reference source",
+  "assistant.field.reference": "Reference income",
   "nav.planning": "Planning",
   "planning.subtitle": "What the schedules expect and what already happened",
   "planning.tabs": "Planning views",

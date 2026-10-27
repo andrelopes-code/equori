@@ -686,6 +686,14 @@ Each is a 422 that names its field and writes nothing: a month before the curren
 
 Without postings, schedules or a stored choice the source is `fixed` with no reference and no unassigned amount. After a salary of 6,000.00 on 2026-11-05, the source is `average_income` and the reference 6,000.00. Saving a plan with the fixed source of 6,000.00 stores the choice for every month.
 
+### S165 The plan through the assistant
+
+Today 2026-12-01, a salary of 6,000.00 on 2026-11-05 and a Rent budget of 2,100.00 from 2026-12: `get_budgets_and_goals` with kind `plan` returns source `average_income`, reference 6,000.00, planned 2,100.00 and unassigned 3,900.00, the figures of `GET /budget-plan`.
+
+### S166 Saving a plan through the assistant
+
+`manage_budget_or_goal` with `save_plan` for 2026-11, source `fixed` 8,500.00, Food 1,500.00 (from 1,800.00) and Rent 2,100.00 (no budget) previews the date, the source, the reference and each budget with its amount before and after, and writes nothing; running it leaves planned 3,600.00 and unassigned 4,900.00. Without `amounts` it is an argument error.
+
 ### S144 Delete a budget
 
 A budget of Food 1,800.00 from 2026-10, with 50.00 booked on Food on 2026-11-10: `DELETE /budgets/{id}` returns 204 and removes its amounts; the budget then reads as 404 from `GET` and from a second `DELETE`, and the list no longer holds it. Another user's budget is a 404. The category and its postings stay, and the category takes a new budget of 1,500.00 from 2026-11 whose progress in 2026-11 is planned 1,500.00, carried 0.00, spent 50.00, available 1,450.00. Through the assistant, `manage_budget_or_goal` with `delete_budget` previews the deletion as destructive before it runs.
