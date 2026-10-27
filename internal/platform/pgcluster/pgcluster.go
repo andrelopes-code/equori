@@ -203,19 +203,19 @@ func initialize(ctx context.Context, bin, pgdata string, major int) error {
 		return fmt.Errorf("initdb: %w: %s", err, out)
 	}
 	// M5: one local line; access control is the mode of the socket directory.
-	return os.WriteFile(filepath.Join(pgdata, "pg_hba.conf"), []byte("local all all trust\n"), 0o600)
+	return os.WriteFile(filepath.Join(pgdata, "pg_hba.conf"), []byte("local all all trust\n"), 0o600) //nolint:gosec // G703: the data directory is the owner's configuration.
 }
 
 func stopLeftover(ctx context.Context, bin, pgdata, socket string) error {
 	pidFile := filepath.Join(pgdata, "postmaster.pid")
-	if _, err := os.Stat(pidFile); errors.Is(err, fs.ErrNotExist) {
+	if _, err := os.Stat(pidFile); errors.Is(err, fs.ErrNotExist) { //nolint:gosec // G703: as above.
 		return nil
 	}
 	if !answers(ctx, socket) {
 		// Stale: this process holds equori.lock and no server answers on the socket. After a container
 		// restart the file's PID names another process, and postgres would refuse to start beside it.
 		for _, name := range []string{pidFile, filepath.Join(socket, ".s.PGSQL.5432.lock")} {
-			if err := os.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			if err := os.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) { //nolint:gosec // G703: as above.
 				return fmt.Errorf("remove stale %s: %w", name, err)
 			}
 		}
