@@ -5,7 +5,8 @@ import { RateField } from "@/features/calculators/rate-field";
 import { useT } from "@/i18n/i18n-provider";
 
 // How a rate follows the chosen daily index: the form, then the percent of the index or the
-// spread over it. Switching the form clears both, so a value never reads in the other form.
+// spread over it, then the basis of the index's rate. Switching the form clears both values, so a
+// value never reads in the other form.
 export function FloatingFields({
   indexId,
   floating,
@@ -62,6 +63,17 @@ export function FloatingFields({
           }}
         />
       )}
+      <ChoiceField
+        label={t("calc.floating.basis")}
+        choices={[
+          { value: "current", label: t("calc.floating.basis.current") },
+          { value: "trailing", label: t("calc.floating.basis.trailing") },
+        ]}
+        value={floating.basis}
+        onChange={(next) => {
+          set({ [keys.basis]: next === "trailing" ? next : undefined });
+        }}
+      />
     </>
   );
 }

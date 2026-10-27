@@ -32,6 +32,25 @@ describe("Rate converter", () => {
     expect(await result(catalogEn["calc.rates.ofIndex"])).toBe("12.1666%");
   });
 
+  it("takes the last rate of a daily index over a year, or its trailing 12 months", async () => {
+    const cdi = cdiFixture();
+    cdi.rates[cdi.rates.length - 1] = { date: "2026-10-16", rate: "0.0005" };
+    // Design §4, "Index basis": 1.0005^261 − 1 by default.
+    await open("percent=100&index=cdi", calculatorApiRoutes([cdi]));
+    expect(await result(catalogEn["calc.rates.ofIndex"])).toBe("13.9361%");
+  });
+
+  it("takes the trailing 12 months of a daily index when chosen", async () => {
+    const cdi = cdiFixture();
+    cdi.rates[cdi.rates.length - 1] = { date: "2026-10-16", rate: "0.0005" };
+    // 1.0004^260 × 1.0005 − 1.
+    await open(
+      "percent=100&index=cdi&basis=trailing",
+      calculatorApiRoutes([cdi]),
+    );
+    expect(await result(catalogEn["calc.rates.ofIndex"])).toBe("11.0132%");
+  });
+
   it("gives the annual rate of a daily index plus a spread", async () => {
     await open("spread=2&index=cdi", calculatorApiRoutes([cdiFixture()]));
     // 1.0004^261 × 1.02 − 1: a spread compounds with an index of business days.

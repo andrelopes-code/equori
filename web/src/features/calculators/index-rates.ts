@@ -27,6 +27,17 @@ function trailingYear(rates: readonly IndexRate[]): IndexRate[] | null {
   return rates.filter((r) => r.date > start);
 }
 
+// Which rates of a daily index make its annual rate: the stored ones of the trailing year, or
+// the last stored one repeated over the same days (design §4, "Index basis").
+export type Basis = "current" | "trailing";
+
+function yearOf(rates: readonly IndexRate[], basis: Basis): IndexRate[] | null {
+  const year = trailingYear(rates);
+  const last = rates.at(-1);
+  if (year === null || last === undefined || basis === "trailing") return year;
+  return year.map((r) => ({ date: r.date, rate: last.rate }));
+}
+
 export function trailingDaily(rates: readonly IndexRate[]): number | null {
   const year = trailingYear(rates);
   return year === null ? null : accumulated(year);
@@ -41,8 +52,9 @@ export function trailingMonthly(rates: readonly IndexRate[]): number | null {
 export function percentOfDaily(
   rates: readonly IndexRate[],
   multiplier: number,
+  basis: Basis = "trailing",
 ): number | null {
-  const year = trailingYear(rates);
+  const year = yearOf(rates, basis);
   return year === null
     ? null
     : year.reduce((p, r) => p * (1 + multiplier * r.rate), 1) - 1;
@@ -55,8 +67,9 @@ export function spreadOverDaily(
   rates: readonly IndexRate[],
   spread: number,
   perDay: boolean,
+  basis: Basis = "trailing",
 ): number | null {
-  const year = trailingYear(rates);
+  const year = yearOf(rates, basis);
   if (year === null) return null;
   return perDay
     ? year.reduce((p, r) => p * (1 + r.rate + spread / 360), 1) - 1

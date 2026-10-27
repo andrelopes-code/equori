@@ -8,7 +8,7 @@ import {
 } from "@/features/calculators/rate-math";
 import {
   useIndexes,
-  useTrailingRate,
+  useIndexRate,
 } from "@/features/calculators/use-index-rate";
 import type { Index } from "@/features/calculators/use-index-rate";
 import type { RatePeriod } from "@/ui/rate-input";
@@ -29,8 +29,8 @@ export interface RateSource {
   noIndexes: boolean;
 }
 
-// A rate typed with its period, or an annual rate taken from a daily index over its last 12
-// months, at a percent of it or plus a spread (design §4, "Filled inputs").
+// A rate typed with its period, or an annual rate taken from a daily index (design §4, "Index
+// basis"), at a percent of it or plus a spread (design §4, "Filled inputs").
 export function useRateSource(
   search: Record<string, string>,
   rateKey: string,
@@ -44,12 +44,13 @@ export function useRateSource(
     form: `${rateKey}Form`,
     percent: `${rateKey}Percent`,
     spread: `${rateKey}Spread`,
+    basis: `${rateKey}Basis`,
   };
   const indexes = useIndexes();
   const daily = indexes.filter((i) => i.period === "day");
   const index = daily.find((i) => i.id === search[keys.index]);
   const floating = readFloating(search, floatingKeys, index?.id ?? "");
-  const fromIndex = useTrailingRate(index, floating);
+  const fromIndex = useIndexRate(index, floating);
   if (index !== undefined) {
     const annual = fromIndex?.rate ?? null;
     return {

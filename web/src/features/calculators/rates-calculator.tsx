@@ -26,7 +26,7 @@ import { ResultList } from "@/features/calculators/result-list";
 import type { Result } from "@/features/calculators/result-list";
 import {
   useIndexes,
-  useTrailingRate,
+  useIndexRate,
 } from "@/features/calculators/use-index-rate";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
@@ -47,7 +47,7 @@ export function RatesCalculator() {
   const daily = indexes.filter((i) => i.period === "day");
   const index = daily.find((i) => i.id === search.index);
   const floating = readFloating(search, floatingKeys, index?.id ?? "");
-  const ofIndex = useTrailingRate(index, floating);
+  const ofIndex = useIndexRate(index, floating);
 
   const period = search.period === "month" ? "month" : "year";
   const rate = readRate(search.rate);

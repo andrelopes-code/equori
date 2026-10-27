@@ -61,6 +61,13 @@ export const calculatorsEn = {
   "calc.origin.daily": "{percent} of {index} over the 12 months to {date}",
   "calc.origin.spread":
     "{index} + {spread} a year over the 12 months to {date}",
+  "calc.origin.daily.current":
+    "{percent} of {index} at its rate of {date}, over a year",
+  "calc.origin.spread.current":
+    "{index} + {spread} a year at its rate of {date}, over a year",
+  "calc.floating.basis": "Rate of the index",
+  "calc.floating.basis.current": "Current, kept for a year",
+  "calc.floating.basis.trailing": "Last 12 months",
   "calc.floating.form": "How the rate follows the index",
   "calc.floating.percent": "Percent of the index",
   "calc.floating.spread": "Index + spread",

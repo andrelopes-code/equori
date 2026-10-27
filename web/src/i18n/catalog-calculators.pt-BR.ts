@@ -61,6 +61,13 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "Uma estimativa: a taxa é suposta constante, sem imposto nem tarifa.",
   "calc.origin.daily": "{percent} do {index} nos 12 meses até {date}",
   "calc.origin.spread": "{index} + {spread} ao ano nos 12 meses até {date}",
+  "calc.origin.daily.current":
+    "{percent} do {index} pela taxa de {date}, por um ano",
+  "calc.origin.spread.current":
+    "{index} + {spread} ao ano pela taxa de {date}, por um ano",
+  "calc.floating.basis": "Taxa do índice",
+  "calc.floating.basis.current": "Atual, mantida por um ano",
+  "calc.floating.basis.trailing": "Últimos 12 meses",
   "calc.floating.form": "Como a taxa segue o índice",
   "calc.floating.percent": "Percentual do índice",
   "calc.floating.spread": "Índice + spread",

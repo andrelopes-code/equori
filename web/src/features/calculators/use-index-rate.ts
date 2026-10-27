@@ -26,12 +26,17 @@ function windowStart(last: string): string {
   return d.toISOString().slice(0, 10);
 }
 
-// The trailing 12 months of an index (design §4): of a daily index at a percent of each day's
-// rate or plus a spread, of a monthly index over its last 12 months. Null while the rates load,
-// when they cover less than a year, or when the percent or the spread is not a number.
-export function useTrailingRate(
+// The annual rate of an index (design §4): of a daily index at a percent of each day's rate or
+// plus a spread, on its current or trailing basis; of a monthly index over its last 12 months.
+// Null while the rates load, when they cover less than a year, or when the percent or the spread
+// is not a number.
+export function useIndexRate(
   index: Index | undefined,
-  floating: Pick<Floating, "form" | "value"> = { form: "percent", value: 1 },
+  floating: Pick<Floating, "form" | "value" | "basis"> = {
+    form: "percent",
+    value: 1,
+    basis: "current",
+  },
 ): { rate: number; to: string } | null {
   const api = useApi();
   const rates = useQuery({
@@ -51,7 +56,12 @@ export function useTrailingRate(
   if (floating.value === null) return null;
   const rate =
     floating.form === "percent"
-      ? percentOfDaily(rates, floating.value)
-      : spreadOverDaily(rates, floating.value, dailySpread(index.id));
+      ? percentOfDaily(rates, floating.value, floating.basis)
+      : spreadOverDaily(
+          rates,
+          floating.value,
+          dailySpread(index.id),
+          floating.basis,
+        );
   return rate === null ? null : { rate, to: index.last };
 }

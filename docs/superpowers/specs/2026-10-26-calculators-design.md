@@ -53,6 +53,7 @@ Anti-goals:
 | Filled inputs | A filled input shows "From your data: <origin>" below it, and a control to fill it again. Editing it removes the note. |
 | Index data | Inputs that read an index list only the indexes returned by `GET /indexes`. With none, the index options are absent and the "How it is calculated" section states that the instance fetches no index (`docs/operations/price-feeds.md`). |
 | Trailing 12 months | Of a daily index: product of (1 + rate) over the dates after the last stored date minus one year, up to it, minus 1. Of a monthly index: product over the last 12 stored months, minus 1. The origin note names the period. |
+| Index basis | A rate over a daily index takes a basis, address key `basis` (`<rateKey>Basis` in a rate source). `current`, the default: the last stored rate replaces each rate of the trailing 12 months, so the year keeps its count of stored days (252 business days for the CDI, 365 calendar days for an actual/360 index). `trailing`: the stored rates of the trailing 12 months. A monthly index always takes its trailing 12 months. The origin note names the basis and the date. Amendment of 2026-10-27: the trailing basis follows a change of the policy rate a year late. |
 | Empty and invalid | Results show only when every required input is valid. A method that finds no solution states why in words (section 5). |
 
 ## 5. Calculators

@@ -52,6 +52,22 @@ describe("index rates", () => {
     ).toBeLessThan(1e-12);
   });
 
+  it("repeats the last daily rate over the days of the trailing year for the current rate", () => {
+    const rates = weekdays();
+    rates[rates.length - 1] = { date: "2026-01-02", rate: 0.0005 };
+    const n = rates.filter((r) => r.date > "2025-01-02").length;
+    expect(
+      Math.abs(
+        (percentOfDaily(rates, 1.1, "current") ?? 0) - (1.00055 ** n - 1),
+      ),
+    ).toBeLessThan(1e-12);
+    expect(spreadOverDaily(rates, 0.02, false, "current")).toBeCloseTo(
+      1.0005 ** n * 1.02 - 1,
+      12,
+    );
+    expect(percentOfDaily(rates.slice(100), 1, "current")).toBeNull();
+  });
+
   it("needs a year of daily data", () => {
     expect(trailingDaily(weekdays().slice(100))).toBeNull();
   });

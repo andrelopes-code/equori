@@ -1,8 +1,8 @@
 import type { ChartSeries } from "@slotted/core/chart";
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import { Chart } from "@slotted/react/chart";
 import { Inline } from "@slotted/react/inline";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
 import { Heading, Text } from "@slotted/react/typography";
 
@@ -57,7 +57,7 @@ import { useSimulation } from "@/features/calculators/use-simulation";
 import { useCalculatorMoney } from "@/features/calculators/use-calculator-money";
 import {
   useIndexes,
-  useTrailingRate,
+  useIndexRate,
 } from "@/features/calculators/use-index-rate";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -102,9 +102,9 @@ export function CompoundCalculator() {
   const monthly = indexes.filter((i) => i.period === "month");
   const index = daily.find((i) => i.id === search.index);
   const floating = readFloating(search, floatingKeys, index?.id ?? "");
-  const fromIndex = useTrailingRate(index, floating);
+  const fromIndex = useIndexRate(index, floating);
   const inflationIndex = monthly.find((i) => i.id === search.inflationIndex);
-  const fromInflationIndex = useTrailingRate(inflationIndex);
+  const fromInflationIndex = useIndexRate(inflationIndex);
 
   const target = search.mode === "target";
   const period = search.period === "month" ? "month" : "year";
@@ -268,9 +268,13 @@ export function CompoundCalculator() {
             {t("calc.compound.income")}
           </Heading>
           {lasting === null && (
-            <InlineMessage tone="warning">
-              {t("calc.compound.income.none")}
-            </InlineMessage>
+            <Alert tone="warning">
+              <AlertContent>
+                <AlertDescription>
+                  {t("calc.compound.income.none")}
+                </AlertDescription>
+              </AlertContent>
+            </Alert>
           )}
           {income.length > 0 && (
             <ResultList label={t("calc.compound.income")} results={income} />
