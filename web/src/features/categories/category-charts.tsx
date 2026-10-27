@@ -4,6 +4,7 @@ import { Grid } from "@slotted/react/grid";
 import { useMemo } from "react";
 
 import type { Trend } from "@/features/categories/category-figures";
+import { compositionRows } from "@/features/categories/composition-rows";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
@@ -11,9 +12,9 @@ function isSlot(color: number | undefined): color is ChartSlot {
   return color !== undefined && color >= 1 && color <= 8;
 }
 
-// OV-05: two peer tiles in one grid, each a chart with its own title. Both read the same
-// series, one per top-level group in the group's own colour, so a colour means the same group
-// here, in the tree and on the rows.
+// OV-05: two peer tiles in one grid, each a chart with its own title. The composition ranks the
+// last month's top-level groups as bars with their share; the trend stacks one series per group
+// in the group's own colour, so a colour means the same group there, in the tree and on the rows.
 export function CategoryCharts({
   trend,
   currency,
@@ -29,7 +30,7 @@ export function CategoryCharts({
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
 
-  const { months, composition, series, compositionSeries } = useMemo(() => {
+  const { months, composition, series } = useMemo(() => {
     const money = (value: number) =>
       fmt.money({ amount: value, currency }, scale);
     const short = new Intl.DateTimeFormat(locale, {
@@ -66,9 +67,15 @@ export function CategoryCharts({
     const last = records[records.length - 1];
     return {
       months: records,
-      composition: last === undefined ? [] : [last],
+      composition:
+        last === undefined
+          ? []
+          : compositionRows(
+              all.map((g) => ({ field: g.field, label: g.label ?? g.field })),
+              last,
+              locale,
+            ),
       series: all,
-      compositionSeries: all.filter((s) => Number(last?.[s.field]) > 0),
     };
   }, [trend, currency, scale, locale, t, fmt]);
 
@@ -79,15 +86,22 @@ export function CategoryCharts({
         variant="card"
         size="sm"
         orientation="horizontal"
-        stackMode="percent"
-        trigger="item"
-        legendValues
-        legendOverflow="wrap"
         loading={loading}
         data={empty ? [] : composition}
-        series={compositionSeries}
+        series={[
+          {
+            id: "amount",
+            kind: "bar",
+            field: "amount",
+            label: t("category.chart.amount"),
+            format: (value) => fmt.money({ amount: value, currency }, scale),
+          },
+        ]}
         title={t("category.chart.composition")}
         x={{ field: "label" }}
+        y={{
+          format: (value) => fmt.money({ amount: value, currency }, scale),
+        }}
       />
       <Chart
         variant="card"
@@ -97,6 +111,7 @@ export function CategoryCharts({
         data={empty ? [] : months}
         series={series}
         title={t("category.chart.trend")}
+        description={t("category.chart.trendDescription")}
         x={{ field: "label" }}
         y={{
           format: (value) => fmt.money({ amount: value, currency }, scale),

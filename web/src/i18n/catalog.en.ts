@@ -791,6 +791,9 @@ export const catalogEn = {
   "category.kpi.previousToDate": "{amount} in {month}, up to day {day}",
   "category.chart.composition": "Composition of the month",
   "category.chart.trend": "Last six months",
+  "category.chart.amount": "Amount",
+  "category.chart.trendDescription":
+    "Select a group in the legend with Shift to show it alone on the baseline.",
   "category.refresh": "Refresh",
   "appearance.title": "Appearance",
   "appearance.color": "Colour",
@@ -1609,6 +1612,7 @@ export const catalogEn = {
   "budget.planned": "Planned",
   "budget.carried": "Carried",
   "budget.spent": "Spent",
+  "budget.spentTotal": "Spent {amount}",
   "budget.available": "Available",
   "budget.meter": "Spent of {name}",
   "budget.overspent": "Overspent",

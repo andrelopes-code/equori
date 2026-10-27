@@ -796,6 +796,9 @@ export const catalogPtBR: Catalog = {
   "category.kpi.previousToDate": "{amount} em {month}, até o dia {day}",
   "category.chart.composition": "Composição do mês",
   "category.chart.trend": "Últimos seis meses",
+  "category.chart.amount": "Valor",
+  "category.chart.trendDescription":
+    "Selecione um grupo na legenda com Shift para vê-lo sozinho sobre a linha de base.",
   "category.refresh": "Atualizar",
   "appearance.title": "Aparência",
   "appearance.color": "Cor",
@@ -1627,6 +1630,7 @@ export const catalogPtBR: Catalog = {
   "budget.planned": "Planejado",
   "budget.carried": "Transportado",
   "budget.spent": "Gasto",
+  "budget.spentTotal": "Gasto {amount}",
   "budget.available": "Disponível",
   "budget.meter": "Gasto de {name}",
   "budget.overspent": "Estourado",
