@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/platform/page"
@@ -78,6 +79,11 @@ func (s *Service) AssertSynced(ctx context.Context, userID int64, accountID uuid
 		if err != nil {
 			return err
 		}
+		if reserve {
+			if err := s.redecideOpenReserve(ctx, r, a, date, assertions); err != nil {
+				return err
+			}
+		}
 		var repeated bool
 		for _, found := range assertions {
 			if found.Source != SourceAggregator || !found.Date.Equal(date) || found.Amount != amount.Amount() {
@@ -106,6 +112,38 @@ func (s *Service) AssertSynced(ctx context.Context, userID int64, accountID uuid
 		return err
 	})
 	return res, err
+}
+
+// redecideOpenReserve decides again, oldest date first, the open aggregator assertions of a
+// reserve dated after its last reconciliation and before date: a transfer recorded after the
+// sync of its day closes that day's difference, and each day books its own yield within its own
+// bound (D3 amendment). Of one date, only the newest assertion that reconciles counts.
+func (s *Service) redecideOpenReserve(ctx context.Context, r Repository, a domain.Account, date time.Time, assertions []BalanceAssertion) error {
+	last, err := r.LastReconciledOn(ctx, a.UserID, a.ID)
+	if err != nil {
+		return err
+	}
+	open := slices.DeleteFunc(slices.Clone(assertions), func(b BalanceAssertion) bool {
+		return b.Source != SourceAggregator || b.Reconciled || !b.Date.Before(date)
+	})
+	slices.SortStableFunc(open, func(x, y BalanceAssertion) int { return x.Date.Compare(y.Date) })
+	for _, found := range open {
+		if last != nil && !found.Date.After(*last) {
+			continue
+		}
+		amount, err := money.New(found.Amount, a.Instrument)
+		if err != nil {
+			return err
+		}
+		decided, err := s.decideAssertion(ctx, r, a, found.Date, amount, SourceAggregator, true, &found)
+		if err != nil {
+			return err
+		}
+		if decided.Assertion.Reconciled {
+			last = &found.Date
+		}
+	}
+	return nil
 }
 
 // lockAssertionTarget locks the account and checks that an assertion of date and amount may
@@ -149,7 +187,7 @@ func (s *Service) decideAssertion(ctx context.Context, r Repository, a domain.Ac
 		if prev != nil {
 			days = int(date.Sub(*prev) / (24 * time.Hour))
 		}
-		outcome = domain.DecideSyncedReserve(amount.Amount(), settled, days, a.YieldMode)
+		outcome = domain.DecideSyncedReserve(amount.Amount(), settled, days, a.YieldMode, s.defaults.ReserveYieldPercent(a.Instrument))
 	case source == SourceAggregator:
 		// P6 A42: yield arrives as feed lines; a line the feed lacks today is not yield.
 		outcome = domain.DecideAssertion(amount.Amount(), settled, domain.YieldNone)

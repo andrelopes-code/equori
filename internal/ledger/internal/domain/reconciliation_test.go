@@ -47,21 +47,23 @@ func TestYieldBound(t *testing.T) {
 		name    string
 		settled int64
 		days    int
+		percent int64
 		want    int64
 	}{
-		{"one day rounds down", 100292, 1, 100},
-		{"exact one day", 100000, 1, 100},
-		{"one below the next unit", 99999, 1, 99},
-		{"thirty days", 100000, 30, 3000},
-		{"three days", 102000, 3, 306},
-		{"zero days count as one", 100000, 0, 100},
-		{"zero balance", 0, 5, 0},
-		{"negative balance", -5, 5, 0},
-		{"largest balance and span", 9007199254740991, 36500, 328762772798046171},
+		{"one day rounds down", 100292, 1, 3, 100},
+		{"exact one day", 100000, 1, 3, 100},
+		{"one below the next unit", 99999, 1, 3, 99},
+		{"thirty days", 100000, 30, 3, 3000},
+		{"three days", 102000, 3, 3, 306},
+		{"zero days count as one", 100000, 0, 3, 100},
+		{"zero balance", 0, 5, 3, 0},
+		{"negative balance", -5, 5, 3, 0},
+		{"largest balance and span", 9007199254740991, 36500, 3, 328762772798046171},
+		{"no rate", 100000, 30, 0, 0},
 	}
 	for _, tt := range tests {
-		if got := YieldBound(tt.settled, tt.days); got != tt.want {
-			t.Errorf("%s: YieldBound(%d, %d) = %d, want %d", tt.name, tt.settled, tt.days, got, tt.want)
+		if got := YieldBound(tt.settled, tt.days, tt.percent); got != tt.want {
+			t.Errorf("%s: YieldBound(%d, %d, %d) = %d, want %d", tt.name, tt.settled, tt.days, tt.percent, got, tt.want)
 		}
 	}
 }
@@ -84,9 +86,14 @@ func TestDecideSyncedReserve(t *testing.T) {
 		{"equal without a previous assertion", 100292, 100292, 0, YieldAuto, AssertionOutcome{Resolution: ResolutionNone}},
 		{"equal with yield mode none", 100292, 100292, 1, YieldNone, AssertionOutcome{Resolution: ResolutionNone}},
 	}
+	const percent = 3
 	for _, tt := range tests {
-		if got := DecideSyncedReserve(tt.asserted, tt.settled, tt.days, tt.mode); got != tt.want {
+		if got := DecideSyncedReserve(tt.asserted, tt.settled, tt.days, tt.mode, percent); got != tt.want {
 			t.Errorf("%s: %+v, want %+v", tt.name, got, tt.want)
 		}
+	}
+	// A currency without a bound books no yield: the difference stays open for the owner.
+	if got := DecideSyncedReserve(100352, 100292, 1, YieldAuto, 0); got != (AssertionOutcome{Difference: 60}) {
+		t.Errorf("without a bound: %+v, want the difference open", got)
 	}
 }

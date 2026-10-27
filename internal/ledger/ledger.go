@@ -176,6 +176,10 @@ func (regionDefaults) WithholdingBP(region, incomeType string) int {
 	return DefaultWithholdingBP(region, incomeType)
 }
 
+func (regionDefaults) ReserveYieldPercent(currency money.Currency) int64 {
+	return DefaultReserveYieldPercent(currency)
+}
+
 type pricesAdapter struct{ md MarketData }
 
 func (p pricesAdapter) Convert(ctx context.Context, q money.Money, to money.Currency, date time.Time) (app.Conversion, error) {

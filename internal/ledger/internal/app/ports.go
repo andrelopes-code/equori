@@ -101,10 +101,12 @@ type Profiles interface {
 	Profile(ctx context.Context, userID int64) (locale.Locale, error)
 }
 
-// RegionDefaults gives the values a record takes from the region of its owner.
+// RegionDefaults gives the values a record takes from the region of its owner, or from the
+// currency of its account.
 type RegionDefaults interface {
 	ForeignChargeBP(region string) int
 	WithholdingBP(region, incomeType string) int
+	ReserveYieldPercent(currency money.Currency) int64
 }
 
 type CreditLimit struct {

@@ -38,30 +38,27 @@ func DecideAssertion(asserted, settled int64, mode YieldMode) AssertionOutcome {
 	}
 }
 
-// reserveYieldPercentPer30Days bounds the yield a sync books on a reserved balance (A75):
-// 0.1% per day, above the 0.0644% per day of 140% CDI at 12.3% per year.
-const reserveYieldPercentPer30Days = 3
-
 // YieldBound is the largest yield, in minor units, that settled can accrue over days
-// calendar days: reserveYieldPercentPer30Days per 30 days, rounded down, at least one day.
-func YieldBound(settled int64, days int) int64 {
+// calendar days: percent per 30 days, rounded down, at least one day.
+func YieldBound(settled int64, days int, percent int64) int64 {
 	if settled <= 0 {
 		return 0
 	}
-	n := new(big.Int).Mul(big.NewInt(settled), big.NewInt(reserveYieldPercentPer30Days))
+	n := new(big.Int).Mul(big.NewInt(settled), big.NewInt(percent))
 	n.Mul(n, big.NewInt(int64(max(days, 1))))
 	return n.Div(n, big.NewInt(100*30)).Int64()
 }
 
 // DecideSyncedReserve compares a reserved balance reported by an aggregator with the settled
-// balance. days is the span since the previous assertion; 0 means there is none. Only a
-// difference within YieldBound on an account with automatic yield becomes yield (A75).
-func DecideSyncedReserve(asserted, settled int64, days int, mode YieldMode) AssertionOutcome {
+// balance. days is the span since the previous assertion; 0 means there is none. percent is the
+// bound per 30 days of the account's currency. Only a difference within YieldBound on an account
+// with automatic yield becomes yield (A75).
+func DecideSyncedReserve(asserted, settled int64, days int, mode YieldMode, percent int64) AssertionOutcome {
 	diff := asserted - settled
 	switch {
 	case diff == 0:
 		return AssertionOutcome{Resolution: ResolutionNone}
-	case mode == YieldAuto && days > 0 && diff > 0 && diff <= YieldBound(settled, days):
+	case mode == YieldAuto && days > 0 && diff > 0 && diff <= YieldBound(settled, days, percent):
 		return AssertionOutcome{Difference: diff, Resolution: ResolutionYield, Yield: diff}
 	default:
 		return AssertionOutcome{Difference: diff}

@@ -357,6 +357,38 @@ func TestS69BoundedReserveYield(t *testing.T) {
 		}
 	})
 
+	// A transfer whose line arrives after the sync of its day leaves that day open; the next
+	// sync decides it again before its own assertion, so each day books its own yield.
+	t.Run("transfer recorded after the sync of its day", func(t *testing.T) {
+		f, reserve, checkingID := reserveAfterFirstSync(t, "auto")
+		// 100292 + 60 of yield − 20000 withdrawn.
+		f.syncReserve(checkingID, "2026-11-11", "803.52")
+		if d, open := f.reserveDifference(reserve); !open || d != -19940 {
+			t.Fatalf("open difference = %d, %v; want -19940", d, open)
+		}
+		f.h.Record("2026-11-11", apitest.Posting(reserve, -20000), apitest.Posting(openingBalances(f), 20000))
+		// B = floor(80352 * 3 * 1 / 3000) = 80; 60 + 48 in one difference would exceed it.
+		f.syncReserve(checkingID, "2026-11-12", "804.00")
+		as := f.assertions(reserve)
+		if len(as) != 3 || !as[0].Reconciled || !as[1].Reconciled || !as[2].Reconciled {
+			t.Fatalf("assertions = %+v", as)
+		}
+		ys := f.yieldTransactions(reserve)
+		if len(ys) != 2 || ys[0].Description != "Yield 2026-11-11 to 2026-11-11" || ys[1].Description != "Yield 2026-11-12 to 2026-11-12" {
+			t.Fatalf("yield transactions = %+v", ys)
+		}
+		for i, want := range []int64{60, 48} {
+			for _, p := range ys[i].Postings {
+				if p.AccountID == reserve && p.Amount.Amount != want {
+					t.Fatalf("yield %d on the reserve = %d, want %d", i, p.Amount.Amount, want)
+				}
+			}
+		}
+		if _, open := f.reserveDifference(reserve); open {
+			t.Fatal("both days booked their yield; no difference stays open")
+		}
+	})
+
 	t.Run("yield mode none", func(t *testing.T) {
 		f, reserve, checkingID := reserveAfterFirstSync(t, "none")
 		f.syncReserve(checkingID, "2026-11-11", "1003.52")
@@ -391,6 +423,44 @@ func TestS69BoundedReserveYield(t *testing.T) {
 			t.Fatalf("none reconciliations = %d, want 1", n)
 		}
 	})
+}
+
+// The yield bound is chosen by the reserve's currency (D3 amendment, ADR 016): a currency
+// without a case books no yield from a sync, and its difference stays open for the owner.
+func TestS69ReserveYieldBoundByCurrency(t *testing.T) {
+	t.Parallel()
+	a := newAggregator(t)
+	it := pluggy.Item{ID: mercadoPagoItem, Status: pluggy.StatusUpdated, LastUpdatedAt: new("2026-11-10T15:00:00.000Z")}
+	it.Connector.Name = "Mercado Pago"
+	a.p.AddItemTo(pluggyClient, it)
+	checkingID := mercadoPagoItem + "-checking"
+	a.p.AddAccount(mercadoPagoItem, pluggy.Account{ID: checkingID, Type: "BANK", Subtype: pluggy.SubtypeChecking, Name: "Mercado Pago", Number: checkingNumber, Balance: "500.05", CurrencyCode: "EUR"})
+	a.p.AddReservedBalance(checkingID, pluggy.ReservedBalance{
+		Name: "Cofrinho Mercado Livre", Identification: "res-cofrinho",
+		AvailableAmounts: []pluggy.ReservedAmount{{Amount: "1002.92", CurrencyCode: "EUR"}},
+	})
+	in := a.integrate(a.h.Client, "Meu Pluggy", pluggyClient, pluggySecret)
+	f := syncFixture{aggregator: a, conn: a.mustConnect(a.h.Client, in.ID, mercadoPagoItem)}
+	reserve := a.h.Account("MP Cofrinho", "asset", "reserve", map[string]any{"yield_mode": "auto", "currency": "EUR"})
+	opening := a.h.Account("EUR opening", "equity", "", map[string]any{"currency": "EUR"})
+	eur := func(account string, amount int64) map[string]any {
+		return map[string]any{"account_id": account, "amount": map[string]any{"amount": amount, "currency": "EUR"}, "weight": apitest.BRL(amount * 6)}
+	}
+	a.h.MustDo(http.MethodPost, "/api/v1/transactions", map[string]any{
+		"date": "2026-11-10", "description": "test",
+		"postings": []map[string]any{eur(reserve, 100292), eur(opening, -100292)},
+	}, http.StatusCreated, nil)
+	if r := a.mapAccount(a.h.Client, f.conn.ID, reservedByName(f.conn, "Cofrinho Mercado Livre").ID, map[string]any{"account_id": reserve, "sync_from": "2026-11-11"}); r.Status != http.StatusOK {
+		t.Fatalf("map status %d: %s", r.Status, r.Body)
+	}
+	f.sync()
+	f.syncReserve(checkingID, "2026-11-11", "1003.52")
+	if d, open := f.reserveDifference(reserve); !open || d != 60 {
+		t.Fatalf("open difference = %d, %v; want 60", d, open)
+	}
+	if n := len(f.yieldTransactions(reserve)); n != 0 {
+		t.Fatalf("yield transactions = %d, want 0", n)
+	}
 }
 
 func reserveLine(id, date, description string, amount pluggy.Decimal) pluggy.Transaction {

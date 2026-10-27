@@ -89,7 +89,19 @@ business-day assertions accrue 0.0644% per day on the 2026-10 CDI (0.046% per bu
 12.3% per year). A bound of 2% per 30 days (0.0667% per day) leaves 140% CDI below it only
 until a CDI of 12.75% per year, so the bound is 3%, which covers 200% CDI at 15% per year. A
 transfer under 3% per 30 days of the balance that D4 does not recognize books as yield; voiding
-the transaction reverses it. The rate is one named constant of the ledger domain.
+the transaction reverses it.
+
+Amendment of 2026-10-27:
+
+- The 3% of condition 3 is the bound of the currency BRL. `DefaultReserveYieldPercent` in
+  `internal/ledger/region_defaults.go` selects the bound by the reserve's currency (ADR 016).
+  A currency without a case has the bound 0: no sync books yield, and the difference stays open
+  for the owner.
+- Before deciding a new assertion, a sync decides again, oldest date first, the open aggregator
+  assertions of the reserve dated after its last reconciliation and before the new date. A
+  transfer line that arrives after the sync of its day then closes that day's difference, and
+  each day books its own yield within its own bound. Without this step, the next difference
+  holds the yield of both days and exceeds the bound of one day.
 
 ### D4 Transfers between checking and a reserved balance (A76)
 
