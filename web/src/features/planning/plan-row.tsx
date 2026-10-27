@@ -162,19 +162,23 @@ export function PlanRow({
       <TableCell numeric>
         <div className={styles.planned} data-plan-cell="">
           <div className={styles.plannedInput}>
-            {away && editable && !format.hidden && review === undefined && (
-              <Button
-                size="sm"
-                variant="ghost"
-                tone="accent"
-                onClick={() => {
-                  setTyped(null);
-                  onChange(average);
-                }}
-              >
-                {t("plan.averageChip", { amount: format.money(average) })}
-              </Button>
-            )}
+            {away &&
+              editable &&
+              !format.hidden &&
+              !compact &&
+              review === undefined && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  tone="accent"
+                  onClick={() => {
+                    setTyped(null);
+                    onChange(average);
+                  }}
+                >
+                  {t("plan.averageChip", { amount: format.money(average) })}
+                </Button>
+              )}
             {input}
           </div>
           {changed && (

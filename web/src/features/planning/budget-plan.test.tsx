@@ -21,6 +21,9 @@ function words(key: keyof typeof catalogEn, values: Record<string, string>) {
 
 const panel = () =>
   screen.findByRole("region", { name: catalogEn["plan.panel"] });
+// The unassigned figure tweens to a new amount; a loaded runner can hold animation frames.
+const figure = async (text: string) =>
+  within(await panel()).findByText(text, undefined, { timeout: 5000 });
 const input = (name: string) =>
   screen.findByRole("textbox", { name: words("plan.input", { name }) });
 
@@ -52,9 +55,7 @@ describe("Budget plan", () => {
     await userEvent.type(field, "20500");
     expect(field).toHaveValue("205.00");
     // The figure moves to the new amount over 180 ms.
-    expect(
-      await within(await panel()).findByText("R$2,135.00"),
-    ).toBeInTheDocument();
+    expect(await figure("R$2,135.00")).toBeInTheDocument();
     expect(
       screen.getByText(words("plan.was", { amount: "R$180.00" })),
     ).toBeInTheDocument();
@@ -77,9 +78,7 @@ describe("Budget plan", () => {
     expect(field).toHaveValue("1,800.00");
     await userEvent.keyboard("{Escape}");
     expect(field).toHaveValue("180.00");
-    expect(
-      await within(await panel()).findByText("R$2,160.00"),
-    ).toBeInTheDocument();
+    expect(await figure("R$2,160.00")).toBeInTheDocument();
   });
 
   it("moves to the next row with Enter", async () => {
@@ -282,9 +281,7 @@ describe("Budget plan", () => {
         name: words("plan.applyChecked", { count: "8" }),
       }),
     );
-    expect(
-      await within(await panel()).findByText("R$0.00"),
-    ).toBeInTheDocument();
+    expect(await figure("R$0.00")).toBeInTheDocument();
   });
 
   it("distributes the rest in proportion", async () => {
@@ -297,9 +294,7 @@ describe("Budget plan", () => {
         name: catalogEn["plan.distribute.proportional"],
       }),
     );
-    expect(
-      await within(await panel()).findByText("R$0.00"),
-    ).toBeInTheDocument();
+    expect(await figure("R$0.00")).toBeInTheDocument();
     expect(await input("Rent")).toHaveValue("3,033.68");
   });
 
