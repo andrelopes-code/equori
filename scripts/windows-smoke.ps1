@@ -108,6 +108,22 @@ try {
 Wait-Healthy 30
 "9 a taken port is named in equori.log, and the service starts once it is free"
 
+Stop-Service equori
+Copy-Item "$data\equori.env" "$env:TEMP\equori.env"
+Add-Content "$data\equori.env" 'EQUORI_LOG_LEVEL=verbose'
+Start-Service equori -ErrorAction SilentlyContinue
+$found = $false
+for ($i = 0; $i -lt 30 -and -not $found; $i++) {
+    Start-Sleep -Seconds 1
+    $found = [bool](Select-String -Quiet -Path "$data\log\equori.log" -Pattern 'EQUORI_LOG_LEVEL' -SimpleMatch)
+}
+Stop-Service equori -ErrorAction SilentlyContinue
+Copy-Item -Force "$env:TEMP\equori.env" "$data\equori.env"
+Start-Service equori
+if (-not $found) { Get-Content -Tail 20 "$data\log\equori.log"; throw 'equori.log does not name the setting of equori.env that stops the start' }
+Wait-Healthy 30
+"9b a wrong setting of equori.env is named in equori.log"
+
 $p = Start-Process -PassThru -Wait "$app\unins000.exe" -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART'
 if ($p.ExitCode -ne 0) { throw "uninstaller exited with $($p.ExitCode)" }
 for ($i = 0; $i -lt 30 -and (Test-Path $app); $i++) { Start-Sleep -Seconds 1 }
