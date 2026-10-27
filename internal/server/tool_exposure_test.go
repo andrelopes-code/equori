@@ -201,6 +201,7 @@ var exposure = map[string]string{
 	"getBudget":                        "get_budgets_and_goals",
 	"addBudgetAmount":                  "manage_budget_or_goal",
 	"getBudgetProgress":                "get_budgets_and_goals",
+	"getBudgetPlan":                    "get_budgets_and_goals",
 	"listGoals":                        "get_budgets_and_goals",
 	"createGoal":                       "manage_budget_or_goal",
 	"getGoal":                          "get_budgets_and_goals",

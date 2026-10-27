@@ -145,6 +145,7 @@ erDiagram
   planning_occurrence }o--o| ledger_transaction : "realized by"
   planning_budget ||--|{ planning_budget_amount : versions
   planning_budget }o--|| ledger_account : category
+  planning_budget_reference |o--|| identity_user : reference
   planning_goal ||--|{ planning_goal_account : tracks
 
   classification_rule ||--o{ classification_categorization : "applied by"
@@ -167,6 +168,7 @@ erDiagram
 | `planning_schedule_pause` | `user_id`, `schedule_id`, `period daterange` | `EXCLUDE USING gist (schedule_id WITH =, period WITH &&)`, extension `btree_gist` |
 | `planning_occurrence` | `id`, `user_id`, `schedule_id`, `sequence`, `expected_on`, `expected_amount`, `state`, `transaction_id`, `realized_by`, `moved_from`, `skip_reason`, `declined_transaction_id` | `UNIQUE (schedule_id, sequence)`; `UNIQUE (user_id, transaction_id) WHERE transaction_id IS NOT NULL` (I07); state `expected`, `realized` or `skipped`, overdue derived (A50); `transaction_id` and `realized_by` set exactly when realized |
 | `planning_budget`, `planning_budget_amount` | `id`, `user_id`, `category_account_id`, `period_type`, `rollover`, `currency`; `budget_id`, `effective_from`, `amount` | `UNIQUE (user_id, category_account_id)`; category class `expense` or `income`, checked by the domain; amounts from the first day of a month, `PRIMARY KEY (budget_id, effective_from)` (A54) |
+| `planning_budget_reference` | `user_id`, `source`, `amount`, `currency` | `PRIMARY KEY (user_id)`; `source IN ('expected_income', 'average_income', 'fixed')`; `amount` set exactly when `source` is `fixed`, at least zero (budget plan A131) |
 | `planning_goal`, `planning_goal_account` | `id`, `user_id`, `name`, `target`, `currency`, `due_on`, `created_at`; `user_id`, `goal_id`, `account_id` | `UNIQUE (user_id, name)`; `target > 0`; accounts by composite foreign key (A55) |
 | `classification_rule` | `id`, `user_id`, `name`, `priority`, `enabled`, `stop_processing`, `conditions jsonb`, `actions jsonb`, `schema_version` | `UNIQUE (user_id, priority)`, deferrable for reordering |
 | `classification_payee_alias` | `id`, `user_id`, `pattern`, `match_type`, `payee_id` | `UNIQUE (user_id, match_type, pattern)` |

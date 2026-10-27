@@ -155,7 +155,7 @@ func (p ledgerPort) AccountFacts(ctx context.Context, userID int64) ([]app.Accou
 	facts, err := p.l.AccountFacts(ctx, userID)
 	out := make([]app.Account, len(facts))
 	for i, a := range facts {
-		out[i] = app.Account{ID: a.ID, ParentID: a.ParentID, Class: a.Class, Kind: a.Kind, Instrument: a.Instrument}
+		out[i] = app.Account{ID: a.ID, ParentID: a.ParentID, Class: a.Class, Kind: a.Kind, Instrument: a.Instrument, Closed: a.ClosedOn != nil}
 	}
 	return out, err
 }
@@ -236,6 +236,30 @@ func (p pricesPort) Convert(ctx context.Context, q money.Money, to money.Currenc
 func (p ledgerPort) Commitment(ctx context.Context, userID int64, cardID uuid.UUID, month time.Time) (int64, error) {
 	m, err := p.l.Commitment(ctx, userID, cardID, month)
 	return m.Amount(), err
+}
+
+func (p ledgerPort) PriorInstallments(ctx context.Context, userID int64, cardID uuid.UUID, month time.Time) (int64, error) {
+	m, err := p.l.PriorInstallments(ctx, userID, cardID, month)
+	return m.Amount(), err
+}
+
+func (p ledgerPort) OwnCategoryMonthlyTotals(ctx context.Context, userID int64, class string, from, to time.Time) (map[uuid.UUID]map[time.Time]int64, error) {
+	rows, err := p.l.OwnCategoryMonthlyTotals(ctx, userID, class, from, to)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[uuid.UUID]map[time.Time]int64)
+	for _, r := range rows {
+		if out[r.CategoryID] == nil {
+			out[r.CategoryID] = make(map[time.Time]int64)
+		}
+		out[r.CategoryID][r.Month] = r.Total.Amount()
+	}
+	return out, nil
+}
+
+func (p ledgerPort) FirstPosting(ctx context.Context, userID int64, accountIDs []uuid.UUID) (time.Time, bool, error) {
+	return p.l.FirstPosting(ctx, userID, accountIDs)
 }
 
 func (p ledgerPort) CategoryMonthlyTotals(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (map[time.Time]int64, error) {

@@ -423,6 +423,8 @@ type Repository interface {
 	ResolveDispute(ctx context.Context, d Dispute) (Dispute, error)
 	SystemAccount(ctx context.Context, userID int64, role domain.SystemRole) (domain.Account, error)
 	CommittedInstallments(ctx context.Context, userID int64, accountID uuid.UUID, month domain.ReferenceMonth, today time.Time) (int64, error)
+	// PriorInstallments sums the installments billed on statement month of purchases booked before it.
+	PriorInstallments(ctx context.Context, userID int64, accountID uuid.UUID, month domain.ReferenceMonth) (int64, error)
 	StatementPostings(ctx context.Context, userID int64, statementID uuid.UUID) ([]StatementPosting, error)
 
 	LockAccount(ctx context.Context, userID int64, id uuid.UUID) (domain.Account, error)
@@ -499,4 +501,6 @@ type Repository interface {
 	CategoryTotal(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) (int64, error)
 	// CategoryMonthlyTotals returns CategoryTotal by first day of month, months without postings omitted.
 	CategoryMonthlyTotals(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) (map[time.Time]int64, error)
+	// OwnCategoryMonthlyTotals returns the own postings of every category of class by month in [from, to).
+	OwnCategoryMonthlyTotals(ctx context.Context, userID int64, class string, from, to time.Time) ([]CategoryMonth, error)
 }

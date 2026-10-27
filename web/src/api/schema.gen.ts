@@ -3069,6 +3069,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/budget-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The reference income of a month, what is committed and the budgets to distribute it across (budget plan A129, A131). */
+        get: operations["getBudgetPlan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/occurrences/{id}/unrealize": {
         parameters: {
             query?: never;
@@ -3471,6 +3488,54 @@ export interface components {
             carried: components["schemas"]["Money"];
             spent: components["schemas"]["Money"];
             available: components["schemas"]["Money"];
+        };
+        /** @enum {string} */
+        BudgetPlanSource: "expected_income" | "average_income" | "fixed";
+        BudgetPlanIncome: {
+            /** Format: uuid */
+            schedule_id: string;
+            description: string;
+            amount: components["schemas"]["Money"];
+        };
+        /**
+         * @description A category of the plan. last_month and average read the subtree of a budgeted category and the own postings
+         *     of another; counted is false for a budget under a category whose budget is in force.
+         */
+        BudgetPlanRow: {
+            /** Format: uuid */
+            category_id: string;
+            /** Format: uuid */
+            budget_id?: string;
+            planned: components["schemas"]["Money"];
+            last_month: components["schemas"]["Money"];
+            average: components["schemas"]["Money"];
+            counted: boolean;
+            /** @description The month of the budget's first amount after this month. */
+            next_change?: string;
+        };
+        /**
+         * @description installments are those billed on the month's statements for purchases booked before it; savings are the month's
+         *     occurrences of savings schedules; unassigned is reference - installments - savings - planned and is absent with
+         *     reference, which is absent when the source has no figure.
+         */
+        BudgetPlan: {
+            month: string;
+            currency: string;
+            source: components["schemas"]["BudgetPlanSource"];
+            fixed?: components["schemas"]["Money"];
+            expected_income?: components["schemas"]["Money"];
+            expected_items?: components["schemas"]["BudgetPlanIncome"][];
+            average_income?: components["schemas"]["Money"];
+            average_months?: number;
+            received_income: components["schemas"]["Money"];
+            reference?: components["schemas"]["Money"];
+            installments: components["schemas"]["Money"];
+            savings: components["schemas"]["Money"];
+            planned: components["schemas"]["Money"];
+            unassigned?: components["schemas"]["Money"];
+            /** @description Prices that value occurrences in another currency at today (P8 amendment A72). */
+            prices?: components["schemas"]["Price"][];
+            rows: components["schemas"]["BudgetPlanRow"][];
         };
         GoalInput: {
             name: string;
@@ -5458,6 +5523,7 @@ export interface components {
         /** @description Year in which the tax year of the owner's jurisdiction starts. */
         Year: number;
         ID: string;
+        PlanMonth: string;
         TagName: string;
         Limit: number;
         Cursor: string;
@@ -10930,6 +10996,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Committed"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getBudgetPlan: {
+        parameters: {
+            query: {
+                month: components["parameters"]["PlanMonth"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetPlan"];
                 };
             };
             400: components["responses"]["Problem"];

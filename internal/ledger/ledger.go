@@ -357,6 +357,37 @@ func (m *Module) Commitment(ctx context.Context, userID int64, accountID uuid.UU
 	return m.svc.Commitment(ctx, userID, accountID, domain.MonthOf(month))
 }
 
+// PriorInstallments sums the installments billed on the statement of month of purchases booked
+// before month (budget plan amendment A129).
+func (m *Module) PriorInstallments(ctx context.Context, userID int64, accountID uuid.UUID, month time.Time) (money.Money, error) {
+	return m.svc.PriorInstallments(ctx, userID, accountID, domain.MonthOf(month))
+}
+
+// CategoryMonth is the total of a category's own postings in one month.
+type CategoryMonth struct {
+	CategoryID uuid.UUID
+	Month      time.Time
+	Total      money.Money
+}
+
+// OwnCategoryMonthlyTotals returns the own postings of every category of class (income or
+// expense) by month in [from, to), in the base currency.
+func (m *Module) OwnCategoryMonthlyTotals(ctx context.Context, userID int64, class string, from, to time.Time) ([]CategoryMonth, error) {
+	rows, base, err := m.svc.OwnCategoryMonthlyTotals(ctx, userID, class, from, to)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]CategoryMonth, len(rows))
+	for i, r := range rows {
+		total, err := money.New(r.Total, base)
+		if err != nil {
+			return nil, err
+		}
+		out[i] = CategoryMonth{CategoryID: r.CategoryID, Month: r.Month, Total: total}
+	}
+	return out, nil
+}
+
 // CategoryMonthlyTotals is CategoryTotal for each month in [from, to), keyed by its first day.
 func (m *Module) CategoryMonthlyTotals(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (map[time.Time]money.Money, error) {
 	return m.svc.CategoryMonthlyTotals(ctx, userID, categoryID, from, to)

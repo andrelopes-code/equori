@@ -82,6 +82,16 @@ WHERE p.user_id = @user_id AND p.account_id = @account_id AND NOT p.voided
   AND p.installment_plan_id IS NOT NULL AND p.card_role = 'charge'
   AND s.reference_month = @reference_month AND s.closing_date > @today;
 
+-- name: PriorInstallments :one
+-- Budget plan amendment A129: installments billed on statement M of purchases booked before M,
+-- which the accrual view counted in an earlier month.
+SELECT coalesce(-sum(p.amount), 0)::bigint
+FROM ledger_posting p
+JOIN ledger_statement s ON s.id = p.statement_id
+WHERE p.user_id = @user_id AND p.account_id = @account_id AND NOT p.voided
+  AND p.installment_plan_id IS NOT NULL AND p.card_role = 'charge'
+  AND s.reference_month = @reference_month AND p.booked_on < @reference_month;
+
 -- name: SetStatementFinanced :exec
 UPDATE ledger_statement SET financed_by_plan_id = @plan_id WHERE id = @id;
 

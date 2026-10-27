@@ -88,6 +88,25 @@ func (s *Service) CategoryTotal(ctx context.Context, userID int64, categoryID uu
 	return money.New(total, settings.BaseCurrency)
 }
 
+// CategoryMonth is the total of a category's own postings in one month, in minor units of the
+// base currency.
+type CategoryMonth struct {
+	CategoryID uuid.UUID
+	Month      time.Time
+	Total      int64
+}
+
+// OwnCategoryMonthlyTotals returns the own postings of every category of class by month in
+// [from, to), in the base currency (budget plan amendment A129).
+func (s *Service) OwnCategoryMonthlyTotals(ctx context.Context, userID int64, class string, from, to time.Time) ([]CategoryMonth, money.Currency, error) {
+	settings, err := s.repo.Settings(ctx, userID)
+	if err != nil {
+		return nil, "", err
+	}
+	rows, err := s.repo.OwnCategoryMonthlyTotals(ctx, userID, class, from, to)
+	return rows, settings.BaseCurrency, err
+}
+
 // CategoryMonthlyTotals is CategoryTotal for each month in [from, to), keyed by its first day.
 func (s *Service) CategoryMonthlyTotals(ctx context.Context, userID int64, categoryID uuid.UUID, from, to time.Time) (map[time.Time]money.Money, error) {
 	settings, err := s.repo.Settings(ctx, userID)

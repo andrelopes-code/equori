@@ -121,3 +121,13 @@ WITH RECURSIVE tree AS (
 SELECT coalesce(min(p.booked_on), DATE '0001-01-01')::date AS first_on, (count(*) > 0)::boolean AS found
 FROM ledger_posting p
 WHERE p.user_id = @user_id AND NOT p.voided AND p.account_id IN (SELECT id FROM tree);
+
+-- name: OwnCategoryMonthlyTotals :many
+-- Budget plan amendment A129: own postings of every category of a class, by month.
+SELECT p.account_id, date_trunc('month', p.booked_on)::date AS month, sum(p.weight)::bigint AS total
+FROM ledger_posting p
+JOIN ledger_account a ON a.id = p.account_id AND a.user_id = p.user_id
+WHERE p.user_id = @user_id AND a.account_class = @account_class
+  AND NOT p.voided
+  AND p.booked_on >= @from_date AND p.booked_on < @to_date
+GROUP BY 1, 2;

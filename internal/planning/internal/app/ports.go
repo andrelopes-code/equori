@@ -65,6 +65,7 @@ type Account struct {
 	ID, ParentID uuid.UUID
 	Class, Kind  string
 	Instrument   money.Currency
+	Closed       bool
 }
 
 // Valuation is the value of an account tree in one currency, the prices it used and the value
@@ -105,6 +106,15 @@ type Ledger interface {
 	ValuedBalance(ctx context.Context, userID int64, accountID uuid.UUID, date time.Time, in money.Currency) (Valuation, error)
 	// Commitment sums the installments of a card billed on the statement of month while it is open.
 	Commitment(ctx context.Context, userID int64, cardID uuid.UUID, month time.Time) (int64, error)
+	// PriorInstallments sums the installments of a card billed on the statement of month of
+	// purchases booked before month (A129).
+	PriorInstallments(ctx context.Context, userID int64, cardID uuid.UUID, month time.Time) (int64, error)
+	// OwnCategoryMonthlyTotals returns the own postings of each category of class by category and
+	// first day of month in [from, to), in minor units of the base currency.
+	OwnCategoryMonthlyTotals(ctx context.Context, userID int64, class string, from, to time.Time) (map[uuid.UUID]map[time.Time]int64, error)
+	// FirstPosting is the booked date of the earliest posting of the accounts and their
+	// sub-accounts; false when they have none.
+	FirstPosting(ctx context.Context, userID int64, accountIDs []uuid.UUID) (time.Time, bool, error)
 }
 
 // ErrUnknownCalendar is returned by Calendar.Holidays for an id no calendar answers to.

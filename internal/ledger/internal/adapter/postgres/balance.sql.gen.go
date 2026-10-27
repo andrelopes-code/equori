@@ -230,6 +230,55 @@ func (q *Queries) CategoryTotal(ctx context.Context, arg CategoryTotalParams) (i
 	return column_1, err
 }
 
+const ownCategoryMonthlyTotals = `-- name: OwnCategoryMonthlyTotals :many
+SELECT p.account_id, date_trunc('month', p.booked_on)::date AS month, sum(p.weight)::bigint AS total
+FROM ledger_posting p
+JOIN ledger_account a ON a.id = p.account_id AND a.user_id = p.user_id
+WHERE p.user_id = $1 AND a.account_class = $2
+  AND NOT p.voided
+  AND p.booked_on >= $3 AND p.booked_on < $4
+GROUP BY 1, 2
+`
+
+type OwnCategoryMonthlyTotalsParams struct {
+	UserID       int64
+	AccountClass string
+	FromDate     time.Time
+	ToDate       time.Time
+}
+
+type OwnCategoryMonthlyTotalsRow struct {
+	AccountID uuid.UUID
+	Month     time.Time
+	Total     int64
+}
+
+// Budget plan amendment A129: own postings of every category of a class, by month.
+func (q *Queries) OwnCategoryMonthlyTotals(ctx context.Context, arg OwnCategoryMonthlyTotalsParams) ([]OwnCategoryMonthlyTotalsRow, error) {
+	rows, err := q.db.Query(ctx, ownCategoryMonthlyTotals,
+		arg.UserID,
+		arg.AccountClass,
+		arg.FromDate,
+		arg.ToDate,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []OwnCategoryMonthlyTotalsRow
+	for rows.Next() {
+		var i OwnCategoryMonthlyTotalsRow
+		if err := rows.Scan(&i.AccountID, &i.Month, &i.Total); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const treeBalancesByInstrument = `-- name: TreeBalancesByInstrument :many
 WITH RECURSIVE tree AS (
     SELECT a.id, a.instrument FROM ledger_account a WHERE a.user_id = $3 AND a.id = $4

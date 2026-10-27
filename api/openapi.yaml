@@ -5134,6 +5134,26 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /budget-plan:
+    get:
+      tags: [planning]
+      operationId: getBudgetPlan
+      summary: The reference income of a month, what is committed and the budgets to distribute it across (budget plan A129, A131).
+      parameters:
+        - $ref: "#/components/parameters/PlanMonth"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetPlan"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /occurrences/{id}/unrealize:
     post:
       tags: [planning]
@@ -5179,6 +5199,13 @@ components:
       schema:
         type: string
         format: uuid
+    PlanMonth:
+      name: month
+      in: query
+      required: true
+      schema:
+        type: string
+        pattern: "^[0-9]{4}-[0-9]{2}$"
     TagName:
       name: name
       in: path
@@ -5866,6 +5893,93 @@ components:
           $ref: "#/components/schemas/Money"
         available:
           $ref: "#/components/schemas/Money"
+    BudgetPlanSource:
+      type: string
+      enum: [expected_income, average_income, fixed]
+    BudgetPlanIncome:
+      type: object
+      required: [schedule_id, description, amount]
+      properties:
+        schedule_id:
+          type: string
+          format: uuid
+        description:
+          type: string
+        amount:
+          $ref: "#/components/schemas/Money"
+    BudgetPlanRow:
+      type: object
+      required: [category_id, planned, last_month, average, counted]
+      description: |
+        A category of the plan. last_month and average read the subtree of a budgeted category and the own postings
+        of another; counted is false for a budget under a category whose budget is in force.
+      properties:
+        category_id:
+          type: string
+          format: uuid
+        budget_id:
+          type: string
+          format: uuid
+        planned:
+          $ref: "#/components/schemas/Money"
+        last_month:
+          $ref: "#/components/schemas/Money"
+        average:
+          $ref: "#/components/schemas/Money"
+        counted:
+          type: boolean
+        next_change:
+          type: string
+          description: The month of the budget's first amount after this month.
+    BudgetPlan:
+      type: object
+      required: [month, currency, source, received_income, installments, savings, planned, rows]
+      description: |
+        installments are those billed on the month's statements for purchases booked before it; savings are the month's
+        occurrences of savings schedules; unassigned is reference - installments - savings - planned and is absent with
+        reference, which is absent when the source has no figure.
+      properties:
+        month:
+          type: string
+        currency:
+          type: string
+        source:
+          $ref: "#/components/schemas/BudgetPlanSource"
+        fixed:
+          $ref: "#/components/schemas/Money"
+        expected_income:
+          $ref: "#/components/schemas/Money"
+        expected_items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BudgetPlanIncome"
+        average_income:
+          $ref: "#/components/schemas/Money"
+        average_months:
+          type: integer
+          minimum: 1
+          maximum: 3
+        received_income:
+          $ref: "#/components/schemas/Money"
+        reference:
+          $ref: "#/components/schemas/Money"
+        installments:
+          $ref: "#/components/schemas/Money"
+        savings:
+          $ref: "#/components/schemas/Money"
+        planned:
+          $ref: "#/components/schemas/Money"
+        unassigned:
+          $ref: "#/components/schemas/Money"
+        prices:
+          type: array
+          description: Prices that value occurrences in another currency at today (P8 amendment A72).
+          items:
+            $ref: "#/components/schemas/Price"
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/BudgetPlanRow"
     GoalInput:
       type: object
       additionalProperties: false

@@ -18,6 +18,27 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for BudgetPlanSource.
+const (
+	AverageIncome  BudgetPlanSource = "average_income"
+	ExpectedIncome BudgetPlanSource = "expected_income"
+	Fixed          BudgetPlanSource = "fixed"
+)
+
+// Valid indicates whether the value is a known member of the BudgetPlanSource enum.
+func (e BudgetPlanSource) Valid() bool {
+	switch e {
+	case AverageIncome:
+		return true
+	case ExpectedIncome:
+		return true
+	case Fixed:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for OccurrenceState.
 const (
 	Expected OccurrenceState = "expected"
@@ -180,6 +201,54 @@ type BudgetPage struct {
 	// NextCursor Absent on the last page.
 	NextCursor *string `json:"next_cursor,omitempty"`
 }
+
+// BudgetPlan installments are those billed on the month's statements for purchases booked before it; savings are the month's
+// occurrences of savings schedules; unassigned is reference - installments - savings - planned and is absent with
+// reference, which is absent when the source has no figure.
+type BudgetPlan struct {
+	AverageIncome  *Money              `json:"average_income,omitempty"`
+	AverageMonths  *int                `json:"average_months,omitempty"`
+	Currency       string              `json:"currency"`
+	ExpectedIncome *Money              `json:"expected_income,omitempty"`
+	ExpectedItems  *[]BudgetPlanIncome `json:"expected_items,omitempty"`
+	Fixed          *Money              `json:"fixed,omitempty"`
+	Installments   Money               `json:"installments"`
+	Month          string              `json:"month"`
+	Planned        Money               `json:"planned"`
+
+	// Prices Prices that value occurrences in another currency at today (P8 amendment A72).
+	Prices         *[]Price         `json:"prices,omitempty"`
+	ReceivedIncome Money            `json:"received_income"`
+	Reference      *Money           `json:"reference,omitempty"`
+	Rows           []BudgetPlanRow  `json:"rows"`
+	Savings        Money            `json:"savings"`
+	Source         BudgetPlanSource `json:"source"`
+	Unassigned     *Money           `json:"unassigned,omitempty"`
+}
+
+// BudgetPlanIncome defines model for BudgetPlanIncome.
+type BudgetPlanIncome struct {
+	Amount      Money              `json:"amount"`
+	Description string             `json:"description"`
+	ScheduleId  openapi_types.UUID `json:"schedule_id"`
+}
+
+// BudgetPlanRow A category of the plan. last_month and average read the subtree of a budgeted category and the own postings
+// of another; counted is false for a budget under a category whose budget is in force.
+type BudgetPlanRow struct {
+	Average    Money               `json:"average"`
+	BudgetId   *openapi_types.UUID `json:"budget_id,omitempty"`
+	CategoryId openapi_types.UUID  `json:"category_id"`
+	Counted    bool                `json:"counted"`
+	LastMonth  Money               `json:"last_month"`
+
+	// NextChange The month of the budget's first amount after this month.
+	NextChange *string `json:"next_change,omitempty"`
+	Planned    Money   `json:"planned"`
+}
+
+// BudgetPlanSource defines model for BudgetPlanSource.
+type BudgetPlanSource string
 
 // BudgetProgress carried is the previous month's available amount when rollover is set, else zero; available is
 // planned + carried - spent, negative when overspent.
@@ -510,12 +579,20 @@ type ID = openapi_types.UUID
 // Limit defines model for Limit.
 type Limit = int
 
+// PlanMonth defines model for PlanMonth.
+type PlanMonth = string
+
 // TagName defines model for TagName.
 type TagName = string
 
 // GetProjectionParams defines parameters for GetProjection.
 type GetProjectionParams struct {
 	To openapi_types.Date `form:"to" json:"to"`
+}
+
+// GetBudgetPlanParams defines parameters for GetBudgetPlan.
+type GetBudgetPlanParams struct {
+	Month PlanMonth `form:"month" json:"month"`
 }
 
 // ListBudgetsParams defines parameters for ListBudgets.
@@ -593,6 +670,9 @@ type ServerInterface interface {
 	// GetProjection Projected balance of a balance account to a date after today, at most today + 12 months (P7 amendment A56).
 	// (GET /accounts/{id}/projection)
 	GetProjection(w http.ResponseWriter, r *http.Request, id ID, params GetProjectionParams)
+	// GetBudgetPlan The reference income of a month, what is committed and the budgets to distribute it across (budget plan A129, A131).
+	// (GET /budget-plan)
+	GetBudgetPlan(w http.ResponseWriter, r *http.Request, params GetBudgetPlanParams)
 	// ListBudgets Budgets in creation order.
 	// (GET /budgets)
 	ListBudgets(w http.ResponseWriter, r *http.Request, params ListBudgetsParams)
@@ -706,6 +786,39 @@ func (siw *ServerInterfaceWrapper) GetProjection(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetProjection(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetBudgetPlan operation middleware
+func (siw *ServerInterfaceWrapper) GetBudgetPlan(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetBudgetPlanParams
+
+	// ------------- Required query parameter "month" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "month", r.URL.Query(), &params.Month, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "month"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "month", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetBudgetPlan(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1562,6 +1675,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/goals/{id}", wrapper.UpdateGoal)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/projection", wrapper.GetProjection)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/commitments", wrapper.GetCommitted)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/budget-plan", wrapper.GetBudgetPlan)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/occurrences/{id}/unrealize", wrapper.UnrealizeOccurrence)
 
 	return m
@@ -1625,6 +1739,72 @@ func (response GetProjection401ApplicationProblemPlusJSONResponse) VisitGetProje
 type GetProjection422ApplicationProblemPlusJSONResponse Problem
 
 func (response GetProjection422ApplicationProblemPlusJSONResponse) VisitGetProjectionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetBudgetPlanRequestObject struct {
+	Params GetBudgetPlanParams
+}
+
+type GetBudgetPlanResponseObject interface {
+	VisitGetBudgetPlanResponse(w http.ResponseWriter) error
+}
+
+type GetBudgetPlan200JSONResponse BudgetPlan
+
+func (response GetBudgetPlan200JSONResponse) VisitGetBudgetPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetBudgetPlan400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetBudgetPlan400ApplicationProblemPlusJSONResponse) VisitGetBudgetPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetBudgetPlan401ApplicationProblemPlusJSONResponse Problem
+
+func (response GetBudgetPlan401ApplicationProblemPlusJSONResponse) VisitGetBudgetPlanResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetBudgetPlan422ApplicationProblemPlusJSONResponse Problem
+
+func (response GetBudgetPlan422ApplicationProblemPlusJSONResponse) VisitGetBudgetPlanResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -3256,6 +3436,9 @@ type StrictServerInterface interface {
 	// GetProjection Projected balance of a balance account to a date after today, at most today + 12 months (P7 amendment A56).
 	// (GET /accounts/{id}/projection)
 	GetProjection(ctx context.Context, request GetProjectionRequestObject) (GetProjectionResponseObject, error)
+	// GetBudgetPlan The reference income of a month, what is committed and the budgets to distribute it across (budget plan A129, A131).
+	// (GET /budget-plan)
+	GetBudgetPlan(ctx context.Context, request GetBudgetPlanRequestObject) (GetBudgetPlanResponseObject, error)
 	// ListBudgets Budgets in creation order.
 	// (GET /budgets)
 	ListBudgets(ctx context.Context, request ListBudgetsRequestObject) (ListBudgetsResponseObject, error)
@@ -3386,6 +3569,32 @@ func (sh *strictHandler) GetProjection(w http.ResponseWriter, r *http.Request, i
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetProjectionResponseObject); ok {
 		if err := validResponse.VisitGetProjectionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetBudgetPlan operation middleware
+func (sh *strictHandler) GetBudgetPlan(w http.ResponseWriter, r *http.Request, params GetBudgetPlanParams) {
+	var request GetBudgetPlanRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetBudgetPlan(ctx, request.(GetBudgetPlanRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetBudgetPlan")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetBudgetPlanResponseObject); ok {
+		if err := validResponse.VisitGetBudgetPlanResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

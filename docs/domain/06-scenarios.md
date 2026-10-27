@@ -440,7 +440,7 @@ An OFX credit card statement for Itaú Visa: −230.00 on 2026-10-14 is a `charg
 | M28 | S02 |
 | M29 | S31 |
 
-The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44 and S98 (amendment A105); the category tree and its tools by S72–S79 (amendments A73–A84 of `docs/superpowers/specs/2026-10-19-categorization-design.md`); transfers from imports by S45–S50; aggregator sync by S51–S59, S68–S71 and S90; matching by score by S91–S97 (amendments A98–A104); card statements from the institution by S80–S89 (amendments A85–A93); schedules (F7) by S27–S29 and the planning views by S60–S63; deleting a budget by S144; currencies and investments (F9) by S16, S17, S21, S22 and S64–S67; editing and deleting goals by S119 and S120; goals over brokerage accounts by S121; tax treatment by instrument subtype by S122; the return of an account tree by S126 and S127 and of a goal by S130; allocation and net worth by S128 and S129; fixed income accrual by S123 to S125; reimbursement of recorded expenses by S113 and S114 (amendment A117); text capture and the transaction batch by S99–S112 and S151–S153 (amendments A106–A116 of `docs/superpowers/specs/2026-10-21-text-capture-design.md`); the assistant by S131–S142 (section 6.20).
+The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44 and S98 (amendment A105); the category tree and its tools by S72–S79 (amendments A73–A84 of `docs/superpowers/specs/2026-10-19-categorization-design.md`); transfers from imports by S45–S50; aggregator sync by S51–S59, S68–S71 and S90; matching by score by S91–S97 (amendments A98–A104); card statements from the institution by S80–S89 (amendments A85–A93); schedules (F7) by S27–S29 and the planning views by S60–S63; deleting a budget by S144; the budget plan by S158 to S166 (`docs/superpowers/specs/2026-10-27-budget-plan-design.md`); currencies and investments (F9) by S16, S17, S21, S22 and S64–S67; editing and deleting goals by S119 and S120; goals over brokerage accounts by S121; tax treatment by instrument subtype by S122; the return of an account tree by S126 and S127 and of a goal by S130; allocation and net worth by S128 and S129; fixed income accrual by S123 to S125; reimbursement of recorded expenses by S113 and S114 (amendment A117); text capture and the transaction batch by S99–S112 and S151–S153 (amendments A106–A116 of `docs/superpowers/specs/2026-10-21-text-capture-design.md`); the assistant by S131–S142 (section 6.20).
 
 ## 6.13 Classification
 
@@ -657,6 +657,22 @@ Planning scenarios of phase P7 (chapter 3, F7; chapter 5, 5.3). The clock is 202
 ### S60 Budget with rollover
 
 Budget Food 1,800.00 from 2026-10 with rollover; October spends 1,500.00 (Supermarket 1,000.00, Restaurant 500.00), November 2,300.00; 2,000.00 is effective from 2026-12. October: planned 1,800.00, carried 0.00, available 300.00. November: planned 1,800.00, carried 300.00, available −200.00. December: planned 2,000.00, carried −200.00, spent 0.00, available 1,800.00.
+
+### S158 Budget plan figures
+
+Today 2026-12-02. A card closing on day 3 holds a 3-installment purchase of 900.00 on 2026-10-20 and a 2-installment purchase of 400.00 on 2026-12-02; both bill an installment on the 2026-12 statement, so `/commitments` reports 500.00. Income schedules Salary 7,200.00 and Freelance 1,300.00, a savings schedule of 500.00, a rent bill of 2,100.00 and a Rent budget of 2,100.00 from 2026-12. The plan of 2026-12: source `expected_income`, expected income 8,500.00 in two items, reference 8,500.00, installments 300.00 (the October purchase only), savings 500.00, planned 2,100.00, unassigned 5,600.00. The bill is not subtracted.
+
+### S159 Average income
+
+Today 2026-12-01. Salary of 6,000.00 on 2026-09-05, 2026-10-05 and 2026-11-05: average income 6,000.00 over 3 months. With only 2026-11-05: 6,000.00 over 1 month. With no posting, no average.
+
+### S160 Nested budgets in the plan
+
+Budgets Food 1,800.00 and Supermarket 1,000.00, a child of Food, from 2026-11: planned 1,800.00; the Supermarket row is not counted.
+
+### S164 Reference choice
+
+Without postings, schedules or a stored choice the source is `fixed` with no reference and no unassigned amount. After a salary of 6,000.00 on 2026-11-05, the source is `average_income` and the reference 6,000.00.
 
 ### S144 Delete a budget
 

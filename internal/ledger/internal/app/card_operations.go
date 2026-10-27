@@ -192,6 +192,20 @@ func (s *Service) Commitment(ctx context.Context, userID int64, accountID uuid.U
 	return money.New(total, a.Instrument)
 }
 
+// PriorInstallments sums the installments billed on the statement of month of purchases booked
+// before month: the accrual view counted them in an earlier month (budget plan amendment A129).
+func (s *Service) PriorInstallments(ctx context.Context, userID int64, accountID uuid.UUID, month domain.ReferenceMonth) (money.Money, error) {
+	a, err := s.card(ctx, userID, accountID)
+	if err != nil {
+		return money.Money{}, err
+	}
+	total, err := s.repo.PriorInstallments(ctx, userID, accountID, month)
+	if err != nil {
+		return money.Money{}, err
+	}
+	return money.New(total, a.Instrument)
+}
+
 // statementView loads a statement with its derived summary inside r.
 func (s *Service) statementView(ctx context.Context, r Repository, userID int64, statementID uuid.UUID) (StatementView, domain.Account, error) {
 	accountID, err := r.StatementAccount(ctx, userID, statementID)

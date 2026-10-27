@@ -879,6 +879,30 @@ func (q *Queries) PlanState(ctx context.Context, arg PlanStateParams) (PlanState
 	return i, err
 }
 
+const priorInstallments = `-- name: PriorInstallments :one
+SELECT coalesce(-sum(p.amount), 0)::bigint
+FROM ledger_posting p
+JOIN ledger_statement s ON s.id = p.statement_id
+WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided
+  AND p.installment_plan_id IS NOT NULL AND p.card_role = 'charge'
+  AND s.reference_month = $3 AND p.booked_on < $3
+`
+
+type PriorInstallmentsParams struct {
+	UserID         int64
+	AccountID      uuid.UUID
+	ReferenceMonth time.Time
+}
+
+// Budget plan amendment A129: installments billed on statement M of purchases booked before M,
+// which the accrual view counted in an earlier month.
+func (q *Queries) PriorInstallments(ctx context.Context, arg PriorInstallmentsParams) (int64, error) {
+	row := q.db.QueryRow(ctx, priorInstallments, arg.UserID, arg.AccountID, arg.ReferenceMonth)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const refundedTotal = `-- name: RefundedTotal :one
 SELECT coalesce(sum(p.amount), 0)::bigint
 FROM ledger_link l

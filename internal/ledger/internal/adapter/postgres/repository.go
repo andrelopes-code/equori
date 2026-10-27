@@ -795,6 +795,18 @@ func (r *Repository) CategoryMonthlyTotals(ctx context.Context, userID int64, ac
 	return out, nil
 }
 
+func (r *Repository) OwnCategoryMonthlyTotals(ctx context.Context, userID int64, class string, from, to time.Time) ([]app.CategoryMonth, error) {
+	rows, err := r.q.OwnCategoryMonthlyTotals(ctx, OwnCategoryMonthlyTotalsParams{UserID: userID, AccountClass: class, FromDate: from, ToDate: to})
+	if err != nil {
+		return nil, fmt.Errorf("own category monthly totals: %w", err)
+	}
+	out := make([]app.CategoryMonth, len(rows))
+	for i, row := range rows {
+		out[i] = app.CategoryMonth{CategoryID: row.AccountID, Month: row.Month, Total: row.Total}
+	}
+	return out, nil
+}
+
 func (r *Repository) InsertBillingRule(ctx context.Context, userID int64, accountID uuid.UUID, rule domain.BillingCycleRule) (domain.BillingCycleRule, error) {
 	p := InsertBillingRuleParams{
 		UserID: userID, AccountID: accountID, EffectiveFrom: rule.EffectiveFrom.FirstDay(),
@@ -1018,6 +1030,10 @@ func (r *Repository) SystemAccount(ctx context.Context, userID int64, role domai
 		return domain.Account{}, notFound(err)
 	}
 	return toAccount(row), nil
+}
+
+func (r *Repository) PriorInstallments(ctx context.Context, userID int64, accountID uuid.UUID, month domain.ReferenceMonth) (int64, error) {
+	return r.q.PriorInstallments(ctx, PriorInstallmentsParams{UserID: userID, AccountID: accountID, ReferenceMonth: month.FirstDay()})
 }
 
 func (r *Repository) CommittedInstallments(ctx context.Context, userID int64, accountID uuid.UUID, month domain.ReferenceMonth, today time.Time) (int64, error) {
