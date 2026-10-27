@@ -377,4 +377,20 @@ describe("Budget plan", () => {
       }),
     ).not.toBeInTheDocument();
   });
+
+  it("hides the fixed reference in privacy mode", async () => {
+    localStorage.setItem("equori.privacy", "hidden");
+    const { container } = await renderPlan(
+      budgetPlanApi((month) =>
+        budgetPlan(month, {
+          source: "fixed",
+          fixed: money(600000),
+          reference: money(600000),
+          unassigned: money(-34000),
+        }),
+      ),
+    );
+    await screen.findByText(catalogEn["plan.privacy"]);
+    expectNoAmounts(container, ["6,000.00", "600000", "340.00"]);
+  });
 });

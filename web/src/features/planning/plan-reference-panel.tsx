@@ -73,6 +73,11 @@ export function PlanReferencePanel({
           ? t("plan.averageOfOne")
           : t("plan.averageOf", { count: String(months) })}
       </Text>
+    ) : format.hidden ? (
+      // entry() is never masked (ADR 018 P4): privacy shows the masked figure instead.
+      <Text size="sm" tone="muted" numeric="tabular">
+        {format.money(fixed ?? 0)}
+      </Text>
     ) : (
       <div className={styles.fixed}>
         <MoneyInput
