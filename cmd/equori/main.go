@@ -45,7 +45,10 @@ func main() {
 	switch cmd {
 	case "serve":
 		if winsvc.IsService() {
-			// The service has no console: serve's error goes to the log that setup opened.
+			// The service has no console: serve's error goes to the log opened before the configuration.
+			if err = openServiceLog(); err != nil {
+				break
+			}
 			err = winsvc.Run(serviceName, func(ctx context.Context) error {
 				err := serve(ctx)
 				if err != nil {
@@ -340,14 +343,6 @@ func setup() (config.Config, *slog.Logger, error) {
 		if cfg.SecretKey, err = secret.LoadOrCreateKey(filepath.Join(cfg.DataDir, "secret.key")); err != nil {
 			return config.Config{}, nil, err
 		}
-	}
-	if cfg.Managed() && winsvc.IsService() {
-		// W-S4: the service has no console; equori and its postgres write to the log file.
-		f, err := winsvc.OpenLog(filepath.Join(cfg.DataDir, "log", "equori.log"), 10<<20)
-		if err != nil {
-			return config.Config{}, nil, err
-		}
-		os.Stdout, os.Stderr = f, f
 	}
 	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: cfg.LogLevel}))
 	return cfg, log, nil
