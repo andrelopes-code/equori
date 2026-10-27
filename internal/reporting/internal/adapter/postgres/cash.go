@@ -68,6 +68,21 @@ func (r *Repository) OffCardTotals(ctx context.Context, userID int64, from, to t
 	return out, nil
 }
 
+func (r *Repository) OffCardMonthTotals(ctx context.Context, userID int64, from, to time.Time) (map[time.Time]app.Shares, error) {
+	rows, err := r.q.CashOffCardMonthTotals(ctx, CashOffCardMonthTotalsParams{UserID: userID, FromDate: from, ToDate: to})
+	if err != nil {
+		return nil, err
+	}
+	out := map[time.Time]app.Shares{}
+	for _, row := range rows {
+		if out[row.Month] == nil {
+			out[row.Month] = app.Shares{}
+		}
+		out[row.Month][row.AccountID] = row.Total
+	}
+	return out, nil
+}
+
 func (r *Repository) StatementCard(ctx context.Context, userID int64, id uuid.UUID) (uuid.UUID, error) {
 	card, err := r.q.StatementCard(ctx, StatementCardParams{UserID: userID, ID: id})
 	if errors.Is(err, pgx.ErrNoRows) {

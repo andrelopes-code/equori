@@ -1702,6 +1702,31 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /reports/indicators:
+    get:
+      tags: [reporting]
+      operationId: getIndicators
+      summary: Savings rate, liquidity, committed share, debt service share and liabilities of a month and the 11 months before it, cash view (analytics design 4).
+      parameters:
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Indicators"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /calendars:
     get:
       tags: [marketdata]
@@ -7551,6 +7576,64 @@ components:
         excluded_from_liquidity:
           type: boolean
           description: Leaves the account out of the liquidity indicator (analytics design 4.3).
+    Indicators:
+      type: object
+      required: [currency, months]
+      properties:
+        currency:
+          type: string
+          description: The base currency of every amount.
+        months:
+          type: array
+          minItems: 12
+          maxItems: 12
+          description: Oldest first; the last entry is the month asked.
+          items:
+            $ref: "#/components/schemas/IndicatorMonth"
+    IndicatorMonth:
+      type: object
+      required: [month, income, expense, committed, debt_service, liquid_balance, liabilities, savings_rate, trailing_savings_rate, liquidity, committed_share, debt_service_share]
+      properties:
+        month:
+          type: string
+          pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+        income:
+          $ref: "#/components/schemas/Money"
+        expense:
+          $ref: "#/components/schemas/Money"
+        committed:
+          $ref: "#/components/schemas/Money"
+        debt_service:
+          $ref: "#/components/schemas/Money"
+        liquid_balance:
+          $ref: "#/components/schemas/Money"
+        liabilities:
+          $ref: "#/components/schemas/Money"
+        mean_income:
+          $ref: "#/components/schemas/Money"
+        mean_expense:
+          $ref: "#/components/schemas/Money"
+        savings_rate:
+          $ref: "#/components/schemas/IndicatorRatio"
+        trailing_savings_rate:
+          $ref: "#/components/schemas/IndicatorRatio"
+        liquidity:
+          $ref: "#/components/schemas/IndicatorRatio"
+        committed_share:
+          $ref: "#/components/schemas/IndicatorRatio"
+        debt_service_share:
+          $ref: "#/components/schemas/IndicatorRatio"
+    IndicatorRatio:
+      type: object
+      additionalProperties: false
+      description: Either bp, in basis points truncated toward zero, or the reason there is no value.
+      properties:
+        bp:
+          type: integer
+          format: int64
+        reason:
+          type: string
+          enum: [no_income, no_expense, insufficient_history]
     CategoryTotals:
       type: object
       required: [items]

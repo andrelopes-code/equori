@@ -180,6 +180,54 @@ func (q *Queries) CashCategoryPostings(ctx context.Context, arg CashCategoryPost
 	return items, nil
 }
 
+const cashOffCardMonthTotals = `-- name: CashOffCardMonthTotals :many
+SELECT date_trunc('month', p.booked_on)::date AS month, p.account_id, sum(p.amount)::bigint AS total
+FROM ledger_posting p
+JOIN ledger_account a ON a.id = p.account_id
+WHERE p.user_id = $1 AND NOT p.voided AND a.account_class IN ('expense', 'income')
+  AND p.booked_on BETWEEN $2::date AND $3::date
+  AND NOT EXISTS (
+    SELECT 1 FROM ledger_posting q
+    JOIN ledger_account qa ON qa.id = q.account_id
+    JOIN ledger_settings st ON st.user_id = q.user_id
+    WHERE q.transaction_id = p.transaction_id AND q.user_id = p.user_id AND NOT q.voided
+      AND qa.kind = 'credit_card' AND qa.instrument = st.base_currency AND q.card_role IN ('charge', 'credit'))
+GROUP BY 1, p.account_id
+`
+
+type CashOffCardMonthTotalsParams struct {
+	UserID   int64
+	FromDate time.Time
+	ToDate   time.Time
+}
+
+type CashOffCardMonthTotalsRow struct {
+	Month     time.Time
+	AccountID uuid.UUID
+	Total     int64
+}
+
+// CV1 per month: category postings in [from, to] of transactions without a card line.
+func (q *Queries) CashOffCardMonthTotals(ctx context.Context, arg CashOffCardMonthTotalsParams) ([]CashOffCardMonthTotalsRow, error) {
+	rows, err := q.db.Query(ctx, cashOffCardMonthTotals, arg.UserID, arg.FromDate, arg.ToDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CashOffCardMonthTotalsRow
+	for rows.Next() {
+		var i CashOffCardMonthTotalsRow
+		if err := rows.Scan(&i.Month, &i.AccountID, &i.Total); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const cashOffCardTotals = `-- name: CashOffCardTotals :many
 SELECT p.account_id, sum(p.amount)::bigint AS total
 FROM ledger_posting p

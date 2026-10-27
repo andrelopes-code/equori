@@ -85,6 +85,24 @@ func (s *Service) valuedBalances(ctx context.Context, userID int64, date time.Ti
 	return out, nil
 }
 
+// BaseValues values each account's own balance at the end of date in the base currency; an
+// account with a zero balance is absent. A missing price wraps ErrPriceMissing.
+func (s *Service) BaseValues(ctx context.Context, userID int64, date time.Time) (map[uuid.UUID]money.Money, error) {
+	in, err := s.reportCurrency(ctx, userID, "")
+	if err != nil {
+		return nil, err
+	}
+	balances, err := s.valuedBalances(ctx, userID, date, in)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[uuid.UUID]money.Money, len(balances))
+	for _, v := range balances {
+		out[v.balance.AccountID] = v.value
+	}
+	return out, nil
+}
+
 func (s *Service) reportCurrency(ctx context.Context, userID int64, in money.Currency) (money.Currency, error) {
 	if in != "" {
 		return in, nil

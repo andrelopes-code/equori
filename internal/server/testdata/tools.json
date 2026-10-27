@@ -1313,6 +1313,288 @@
     }
   },
   {
+    "name": "get_financial_indicators",
+    "description": "Returns 12 months of financial indicators in the cash view, oldest first, the last one the month asked: savings rate, trailing 12-month savings rate, liquidity (10000 bp = one month of mean expense), committed share and debt service share of mean income, with their amounts. A ratio with a reason has no value. Use it for how much is saved, how long the reserve lasts, and how much income is committed or spent on debt. Do not use it for category totals: get_category_totals lists them.",
+    "effect": "read_only",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "month": {
+          "type": "string",
+          "description": "the last month of the series, written YYYY-MM; the current month when absent"
+        }
+      },
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "months": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "month": {
+                "type": "string"
+              },
+              "income": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "expense": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "committed": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "debt_service": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "liquid_balance": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "liabilities": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "mean_income": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "description": "absent when the trailing window holds fewer than 3 months",
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "mean_expense": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "description": "absent when the trailing window holds fewer than 3 months",
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "savings_rate": {
+                "type": "object",
+                "properties": {
+                  "bp": {
+                    "type": "integer",
+                    "description": "basis points truncated toward zero; 0 and meaningless when reason is present"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "description": "present when the ratio has no value: no_income, no_expense or insufficient_history"
+                  }
+                },
+                "required": [
+                  "bp"
+                ],
+                "additionalProperties": false
+              },
+              "trailing_savings_rate": {
+                "type": "object",
+                "properties": {
+                  "bp": {
+                    "type": "integer",
+                    "description": "basis points truncated toward zero; 0 and meaningless when reason is present"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "description": "present when the ratio has no value: no_income, no_expense or insufficient_history"
+                  }
+                },
+                "required": [
+                  "bp"
+                ],
+                "additionalProperties": false
+              },
+              "liquidity": {
+                "type": "object",
+                "properties": {
+                  "bp": {
+                    "type": "integer",
+                    "description": "basis points truncated toward zero; 0 and meaningless when reason is present"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "description": "present when the ratio has no value: no_income, no_expense or insufficient_history"
+                  }
+                },
+                "required": [
+                  "bp"
+                ],
+                "additionalProperties": false
+              },
+              "committed_share": {
+                "type": "object",
+                "properties": {
+                  "bp": {
+                    "type": "integer",
+                    "description": "basis points truncated toward zero; 0 and meaningless when reason is present"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "description": "present when the ratio has no value: no_income, no_expense or insufficient_history"
+                  }
+                },
+                "required": [
+                  "bp"
+                ],
+                "additionalProperties": false
+              },
+              "debt_service_share": {
+                "type": "object",
+                "properties": {
+                  "bp": {
+                    "type": "integer",
+                    "description": "basis points truncated toward zero; 0 and meaningless when reason is present"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "description": "present when the ratio has no value: no_income, no_expense or insufficient_history"
+                  }
+                },
+                "required": [
+                  "bp"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "month",
+              "income",
+              "expense",
+              "committed",
+              "debt_service",
+              "liquid_balance",
+              "liabilities",
+              "savings_rate",
+              "trailing_savings_rate",
+              "liquidity",
+              "committed_share",
+              "debt_service_share"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "months"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "get_help",
     "description": "Returns an article of the equori guide: what a concept means in this app, how a task is done, and the screens where it is done with their paths. Use it for how-to and where-is questions, for concepts such as postings, statements or reconciliation, and for tasks the assistant cannot do, such as adding bank credentials or importing a file. Do not use it for the user's own data: the other tools return it.",
     "effect": "read_only",

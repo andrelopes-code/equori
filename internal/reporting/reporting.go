@@ -4,6 +4,7 @@ package reporting
 import (
 	"context"
 	"encoding/json/v2"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -14,8 +15,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andrelopes-code/equori/internal/ledger"
+	"github.com/andrelopes-code/equori/internal/marketdata"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 	"github.com/andrelopes-code/equori/internal/reporting/internal/adapter/httpapi"
@@ -28,6 +31,7 @@ type Module struct {
 	svc     *app.Service
 	exports *app.Exports
 	http    *httpapi.Server
+	clk     clock.Clock
 }
 
 // appVersion is the version of the running app, written in each export manifest (ADR 021).
@@ -47,7 +51,7 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, clk clock.Clock, log
 	for _, eventType := range []string{ledger.EventTransactionRecorded, ledger.EventTransactionCorrected, ledger.EventTransactionCategorized, ledger.EventTransactionVoided} {
 		dispatcher.Subscribe("reporting-series", eventType, rebuildSeries)
 	}
-	return &Module{svc: svc, exports: exports, http: httpapi.NewServer(svc, exports, clk, log)}
+	return &Module{svc: svc, exports: exports, http: httpapi.NewServer(svc, exports, clk, log), clk: clk}
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
@@ -66,7 +70,47 @@ func (m *Module) BodyLimits() []httpserver.BodyLimit {
 
 // Tools returns the reporting module's tools for language models (ADR 012).
 func (m *Module) Tools() tool.Group {
-	return tool.Group{Tools: toolapi.Tools(m.svc), Errors: tool.FromProblem(httpapi.ToProblem)}
+	return tool.Group{Tools: toolapi.Tools(m.svc, m.clk), Errors: tool.FromProblem(httpapi.ToProblem)}
+}
+
+// Commitments is the committed amount of a month, lent by planning.
+type Commitments interface {
+	CommittedTotal(ctx context.Context, userID int64, month time.Time) (money.Money, error)
+}
+
+// Valuations values each account's own balance at the end of a date in the base currency, lent by portfolio.
+type Valuations interface {
+	ValuedBalances(ctx context.Context, userID int64, date time.Time) (map[uuid.UUID]money.Money, error)
+}
+
+// UseIndicatorSources lends the indicators their two sources; internal/server binds them late
+// because planning and portfolio are built after reporting.
+func (m *Module) UseIndicatorSources(c Commitments, v Valuations) {
+	m.svc.UseIndicatorSources(priced{c, v}, priced{c, v})
+}
+
+// priced turns a missing price of either source into app.ErrPriceMissing, so the operation
+// answers price_missing.
+type priced struct {
+	c Commitments
+	v Valuations
+}
+
+func (p priced) CommittedTotal(ctx context.Context, userID int64, month time.Time) (money.Money, error) {
+	c, err := p.c.CommittedTotal(ctx, userID, month)
+	return c, priceMissing(err)
+}
+
+func (p priced) ValuedBalances(ctx context.Context, userID int64, date time.Time) (map[uuid.UUID]money.Money, error) {
+	v, err := p.v.ValuedBalances(ctx, userID, date)
+	return v, priceMissing(err)
+}
+
+func priceMissing(err error) error {
+	if errors.Is(err, marketdata.ErrPriceMissing) {
+		return fmt.Errorf("%w: %w", app.ErrPriceMissing, err)
+	}
+	return err
 }
 
 // RebuildAll recomputes every account's series from its first posting (equori reporting rebuild).
