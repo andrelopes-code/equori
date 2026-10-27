@@ -85,6 +85,11 @@ func Install(name, exe string, args []string, account string) error {
 	if err := s.SetRecoveryActions([]mgr.RecoveryAction{{Type: mgr.ServiceRestart, Delay: 5 * time.Second}}, 86400); err != nil {
 		return fmt.Errorf("set recovery of service %s: %w", name, err)
 	}
+	// serve that fails, a taken port for one, stops with an exit code instead of crashing; the
+	// restart applies to that too.
+	if err := s.SetRecoveryActionsOnNonCrashFailures(true); err != nil {
+		return fmt.Errorf("set recovery of service %s: %w", name, err)
+	}
 	return nil
 }
 
