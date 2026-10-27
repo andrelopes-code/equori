@@ -1,4 +1,4 @@
-import styles from "@/features/setup/accent-swatches.module.css";
+import styles from "@/features/setup/seed-swatches.module.css";
 import { useT } from "@/i18n/i18n-provider";
 import { accentSeeds, accents, useAccent } from "@/theme/accent";
 

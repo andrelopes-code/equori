@@ -1,6 +1,6 @@
 import { Switch } from "@slotted/react/switch";
 
-import { AccentSwatches } from "@/features/setup/accent-swatches";
+import { AccentSwatches } from "@/features/setup/seed-swatches";
 import { CornersPreview } from "@/features/setup/corners-preview";
 import { DensityPreview } from "@/features/setup/density-preview";
 import { SchemePreview } from "@/features/setup/scheme-preview";
