@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { budgetPlan, budgetPlanApi, energy } from "@/testing/budget-plan-api";
+import { money } from "@/testing/account-api";
 import { json } from "@/testing/fake-api";
 import { expectNoAmounts } from "@/testing/privacy";
 import { renderApp } from "@/testing/render-app";
@@ -203,5 +204,177 @@ describe("Budget plan", () => {
       }),
     ).not.toBeInTheDocument();
     expectNoAmounts(container, ["2,160.00", "180.00", "8,500.00"]);
+  });
+
+  it("reviews a suggestion before applying it", async () => {
+    let saves = 0;
+    const fetch = budgetPlanApi(undefined, {
+      "PUT /api/v1/budget-plan": () => {
+        saves += 1;
+        return json(200, budgetPlan("2026-11"));
+      },
+    });
+    await renderPlan(fetch);
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["plan.suggest"] }),
+    );
+    await userEvent.click(
+      await screen.findByRole("menuitem", {
+        name: catalogEn["plan.suggest.average"],
+      }),
+    );
+    expect(
+      await screen.findByText(
+        words("plan.review", {
+          basis: "3-month average",
+          count: "8",
+          delta: "+R$715.00",
+          rest: "R$1,445.00",
+        }),
+      ),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole("checkbox", {
+        name: words("plan.take", { name: "Restaurants" }),
+      }),
+    );
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: words("plan.applyChecked", { count: "7" }),
+      }),
+    );
+    expect(await input("Energy")).toHaveValue("205.00");
+    expect(await input("Restaurants")).toHaveValue("400.00");
+    expect(saves).toBe(0);
+    const [undo] = await screen.findAllByRole("button", {
+      name: catalogEn["plan.undo"],
+    });
+    if (undo === undefined) throw new Error("no undo action");
+    await userEvent.click(undo);
+    await waitFor(async () => {
+      expect(await input("Energy")).toHaveValue("180.00");
+    });
+  });
+
+  it("fits a suggestion to the reference", async () => {
+    await renderPlan();
+    await userEvent.click(
+      screen.getByRole("radio", { name: catalogEn["plan.source.fixed"] }),
+    );
+    const fixed = await screen.findByRole("textbox", {
+      name: catalogEn["plan.fixedAmount"],
+    });
+    await userEvent.clear(fixed);
+    await userEvent.type(fixed, "600000");
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["plan.suggest"] }),
+    );
+    await userEvent.click(
+      await screen.findByRole("menuitem", {
+        name: catalogEn["plan.suggest.average"],
+      }),
+    );
+    expect(
+      await screen.findByRole("switch", { name: catalogEn["plan.fit"] }),
+    ).toBeChecked();
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: words("plan.applyChecked", { count: "8" }),
+      }),
+    );
+    expect(
+      await within(await panel()).findByText("R$0.00"),
+    ).toBeInTheDocument();
+  });
+
+  it("distributes the rest in proportion", async () => {
+    await renderPlan();
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["plan.distribute"] }),
+    );
+    await userEvent.click(
+      await screen.findByRole("menuitem", {
+        name: catalogEn["plan.distribute.proportional"],
+      }),
+    );
+    expect(
+      await within(await panel()).findByText("R$0.00"),
+    ).toBeInTheDocument();
+    expect(await input("Rent")).toHaveValue("3,033.68");
+  });
+
+  it("asks before discarding pending changes", async () => {
+    await renderPlan();
+    await userEvent.type(await input("Energy"), "0");
+    await userEvent.click(
+      screen.getByRole("radio", { name: catalogEn["plan.view.track"] }),
+    );
+    const dialog = await screen.findByRole("dialog", {
+      name: catalogEn["plan.discardTitleOne"],
+    });
+    await userEvent.click(
+      within(dialog).getByRole("button", {
+        name: catalogEn["plan.keepEditing"],
+      }),
+    );
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+    expect(await input("Energy")).toHaveValue("1,800.00");
+    expect(
+      screen.getByRole("radio", { name: catalogEn["plan.view.plan"] }),
+    ).toBeChecked();
+  });
+
+  it("reads past months only", async () => {
+    await renderPlan(
+      budgetPlanApi(),
+      "/planning?tab=budgets&view=plan&month=2026-10",
+    );
+    expect(
+      await screen.findByText(catalogEn["plan.pastMonth"]),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", {
+        name: words("plan.input", { name: "Energy" }),
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: catalogEn["plan.suggest"] }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("lists top-level categories when there is no history", async () => {
+    await renderPlan(
+      budgetPlanApi((month) =>
+        budgetPlan(month, {
+          rows: [],
+          planned: money(0),
+          unassigned: money(786000),
+        }),
+      ),
+    );
+    expect(await input("Housing")).toHaveValue("0.00");
+    expect(await input("Gifts")).toHaveValue("0.00");
+    expect(
+      screen.queryByRole("textbox", {
+        name: words("plan.input", { name: "Rent" }),
+      }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText(catalogEn["plan.noHistory"])).toBeInTheDocument();
+  });
+
+  it("keeps the save bar and drops the history columns on a phone", async () => {
+    await renderApp(november, { fetch: budgetPlanApi(), today, width: 390 });
+    await panel();
+    await userEvent.type(await input("Energy"), "0");
+    expect(
+      await screen.findByRole("button", { name: catalogEn["plan.save"] }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("columnheader", {
+        name: catalogEn["plan.col.average"],
+      }),
+    ).not.toBeInTheDocument();
   });
 });

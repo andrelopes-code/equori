@@ -15,19 +15,23 @@ export function BudgetsArea({
   view,
   onView,
   onCreate,
+  onStay,
 }: {
   month: string;
   view: BudgetView | undefined;
   onView: (view: BudgetView) => Promise<unknown>;
   onCreate: () => void;
+  // The reader kept unsaved changes over a navigation the page started.
+  onStay: () => void;
 }) {
   const t = useT();
   const today = useToday();
   const current: BudgetView =
     view ?? (month > today.slice(0, 7) ? "plan" : "track");
-  // CP-09: the control moves at once; the view renders from the deferred value.
+  // CP-09: the control moves at once; the view renders from the address, deferred, so a
+  // navigation the Plan view blocks over unsaved changes leaves it mounted.
   const [chosen, setChosen] = useState<BudgetView | null>(null);
-  const shown = useDeferredValue(chosen ?? current);
+  const shown = useDeferredValue(current);
   return (
     <Stack gap={5}>
       <SegmentedControl
@@ -46,7 +50,13 @@ export function BudgetsArea({
       </SegmentedControl>
       <div aria-busy={shown !== (chosen ?? current) || undefined}>
         {shown === "plan" ? (
-          <BudgetPlanTab month={month} />
+          <BudgetPlanTab
+            month={month}
+            onStay={() => {
+              setChosen(null);
+              onStay();
+            }}
+          />
         ) : (
           <BudgetsTab month={month} onCreate={onCreate} />
         )}

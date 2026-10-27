@@ -54,9 +54,10 @@ export function PlanningPage() {
   const queryClient = useQueryClient();
   const month = search.month ?? today.slice(0, 7);
   const current: PlanningTab = search.tab ?? "agenda";
-  // CP-09: the strip moves at once; the tab's region renders from the deferred value.
+  // CP-09: the strip moves at once; the tab's region renders from the address, deferred, so a
+  // navigation the budget plan blocks over unsaved changes leaves the tab mounted.
   const [chosen, setChosen] = useState<PlanningTab | null>(null);
-  const shownTab = useDeferredValue(chosen ?? current);
+  const shownTab = useDeferredValue(current);
   const create = () => {
     void navigate({ to: "/planning/schedules/new" });
   };
@@ -117,7 +118,7 @@ export function PlanningPage() {
                 to: "/planning",
                 search: withTab(search, entry.tab),
                 replace: true,
-              }).then(() => {
+              }).finally(() => {
                 setChosen(null);
               });
             }}
@@ -155,6 +156,9 @@ export function PlanningPage() {
                 })
               }
               onCreate={createBudget}
+              onStay={() => {
+                setChosen(null);
+              }}
             />
           )}
         </div>

@@ -16,7 +16,13 @@ type BudgetPlan = components["schemas"]["BudgetPlan"];
 // The Plan view of the budgets tab: the month's plan once its categories and currency scale
 // are known. A user with no budget and no history starts from the top-level expense
 // categories at zero (spec 5.3).
-export function BudgetPlanTab({ month }: { month: string }) {
+export function BudgetPlanTab({
+  month,
+  onStay,
+}: {
+  month: string;
+  onStay: () => void;
+}) {
   const api = useApi();
   const plan = useQuery(budgetPlanQuery(api, month));
   const accounts = useQuery(accountsQuery(api));
@@ -63,6 +69,7 @@ export function BudgetPlanTab({ month }: { month: string }) {
       scale={scale(plan.data.currency)}
       month={month}
       noHistory={noHistory}
+      onStay={onStay}
     />
   );
 }

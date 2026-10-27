@@ -104,12 +104,15 @@ export function PlanEditor({
   scale,
   month,
   noHistory,
+  onStay,
 }: {
   plan: BudgetPlan;
   entries: readonly CategoryEntry[];
   scale: number;
   month: string;
   noHistory: boolean;
+  // The reader kept editing over a navigation: the control that started it returns.
+  onStay: () => void;
 }) {
   const t = useT();
   const today = useToday();
@@ -132,10 +135,16 @@ export function PlanEditor({
   } | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [panelVisible, setPanelVisible] = useState(true);
-  const blocker = useBlocker({
-    shouldBlockFn: () => draft.pending > 0,
+  // A navigation over unsaved changes waits on the reader's answer.
+  const [asking, setAsking] = useState<((block: boolean) => void) | null>(null);
+  useBlocker({
+    shouldBlockFn: () =>
+      draft.pending === 0
+        ? false
+        : new Promise<boolean>((resolve) => {
+            setAsking(() => resolve);
+          }),
     enableBeforeUnload: () => draft.pending > 0,
-    withResolver: true,
   });
 
   useEffect(() => {
@@ -565,14 +574,19 @@ export function PlanEditor({
           }}
         />
       )}
-      {blocker.status === "blocked" && (
+      {asking !== null && (
         <PlanDiscardDialog
           pending={draft.pending}
           month={format.month(month)}
-          onKeep={blocker.reset}
+          onKeep={() => {
+            asking(true);
+            setAsking(null);
+            onStay();
+          }}
           onDiscard={() => {
             draft.discard();
-            blocker.proceed();
+            asking(false);
+            setAsking(null);
           }}
         />
       )}
