@@ -1,3 +1,4 @@
+import type { CodeToken } from "@slotted/core/code";
 import { Button } from "@slotted/react/button";
 import { CodeBlock } from "@slotted/react/code-block";
 import {
@@ -69,9 +70,14 @@ export function AccessTokenDialog({ onClose }: { onClose: () => void }) {
     token === null
       ? null
       : clientSnippets(`${window.location.origin}/mcp`, token);
+  // The screen shows the token masked; the copy control copies the code, which holds it whole.
+  const masked = (code: CodeToken) =>
+    token === null
+      ? code.text
+      : code.text.replaceAll(token, `${token.slice(0, 8)}${"•".repeat(16)}`);
 
   return (
-    <Dialog open size="md" onOpenChange={change}>
+    <Dialog open size={token === null ? "md" : "lg"} onOpenChange={change}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
@@ -93,11 +99,13 @@ export function AccessTokenDialog({ onClose }: { onClose: () => void }) {
               <CodeBlock
                 code={token}
                 title={t("settings.external_access.token")}
+                renderToken={masked}
               />
               <CodeBlock
                 code={snippets.claudeCode}
                 language="shell"
                 title={t("settings.external_access.claudeCode")}
+                renderToken={masked}
                 defaultWrap
               />
               <CodeBlock
@@ -109,6 +117,7 @@ export function AccessTokenDialog({ onClose }: { onClose: () => void }) {
                 code={snippets.json}
                 language="json"
                 title={t("settings.external_access.json")}
+                renderToken={masked}
               />
             </Stack>
           ) : (

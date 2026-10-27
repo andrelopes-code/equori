@@ -101,9 +101,16 @@ describe("external access settings", () => {
       ]);
     });
     const endpoint = `${window.location.origin}/mcp`;
-    expect(await dialog.findAllByText(new RegExp(tokenText))).not.toHaveLength(
-      0,
-    );
+    // The token is masked on screen; the copy control copies it whole.
+    expect(
+      await dialog.findAllByText(new RegExp(`${tokenText.slice(0, 8)}•{16}`)),
+    ).toHaveLength(3);
+    expect(dialog.queryByText(new RegExp(tokenText))).toBeNull();
+    const clipboard = userEvent.setup();
+    const [copyToken] = dialog.getAllByRole("button", { name: /copi/i });
+    if (copyToken === undefined) throw new Error("no copy control");
+    await clipboard.click(copyToken);
+    expect(await navigator.clipboard.readText()).toBe(tokenText);
     expect(
       dialog.getByText(
         new RegExp(`claude mcp add --transport http equori ${endpoint}`),

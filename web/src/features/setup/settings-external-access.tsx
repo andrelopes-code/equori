@@ -1,3 +1,4 @@
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import { InlineMessage } from "@slotted/react/inline-message";
 import { List, ListEmpty } from "@slotted/react/list";
@@ -50,18 +51,17 @@ export function SettingsExternalAccess() {
     >
       <SettingsGroup>
         <Stack gap={5}>
-          <Stack gap={2}>
-            <Text size="sm" tone="muted">
-              {t("settings.external_access.privacy")}
-            </Text>
-            <Text size="sm" tone="muted">
-              {t("settings.external_access.write_warning")}
-            </Text>
-          </Stack>
+          <Text size="sm" tone="muted">
+            {t("settings.external_access.privacy")}
+          </Text>
           {isPrivateOrigin(window.location.origin) && (
-            <InlineMessage tone="info">
-              {t("settings.external_access.reachability")}
-            </InlineMessage>
+            <Alert tone="info">
+              <AlertContent>
+                <AlertDescription>
+                  {t("settings.external_access.reachability")}
+                </AlertDescription>
+              </AlertContent>
+            </Alert>
           )}
           {tokens.error !== null && (
             <InlineMessage tone="danger">
