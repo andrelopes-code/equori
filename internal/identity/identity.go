@@ -35,6 +35,10 @@ type User struct {
 
 type Config struct {
 	SecureCookies bool
+	// DefaultCurrency is the base currency of a region (ADR 016); SetupDone runs after the
+	// first-user setup (W-U5).
+	DefaultCurrency func(region string) (money.Currency, bool)
+	SetupDone       func()
 }
 
 type Module struct {
@@ -44,10 +48,14 @@ type Module struct {
 
 func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) *Module {
 	svc := app.NewService(postgres.NewRepository(pool), time.Now)
+	svc.UseSetupHooks(app.SetupHooks{DefaultCurrency: cfg.DefaultCurrency, Done: cfg.SetupDone})
 	return &Module{svc: svc, http: httpapi.NewServer(svc, cfg.SecureCookies, log)}
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
+
+// StartSetup returns the token of the first-user setup while no user exists, and "" afterwards.
+func (m *Module) StartSetup(ctx context.Context) (string, error) { return m.svc.StartSetup(ctx) }
 
 // Profile returns the language and region of a user.
 func (m *Module) Profile(ctx context.Context, userID int64) (locale.Locale, error) {

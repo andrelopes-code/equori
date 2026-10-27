@@ -136,11 +136,24 @@ func serve(parent context.Context) error {
 	clk := clock.New(cfg.TimeZone, time.Now)
 	scfg := serverConfig(cfg, &clk)
 	scfg.Web, scfg.WebDevPort, scfg.Version = web.Dist(), cfg.WebDevPort, buildVersion()
+	scfg.SetupDone = func() {
+		if err := removeSetupFile(cfg); err != nil {
+			log.Error("first user setup", "error", err)
+		}
+	}
 	app, err := server.New(db.Pool, scfg, log)
 	if err != nil {
 		return err
 	}
 	if err := app.Marketdata.ReconcileCurrencies(ctx); err != nil {
+		return err
+	}
+	// W-U1: until the first user exists, the browser creates it with this token.
+	token, err := app.Identity.StartSetup(ctx)
+	if err != nil {
+		return err
+	}
+	if err := announceSetup(cfg, log, token); err != nil {
 		return err
 	}
 
