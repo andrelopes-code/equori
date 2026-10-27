@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   accumulated,
   percentOfDaily,
+  spreadOverDaily,
   trailingDaily,
   trailingMonthly,
   type IndexRate,
@@ -53,5 +54,27 @@ describe("index rates", () => {
 
   it("needs a year of daily data", () => {
     expect(trailingDaily(weekdays().slice(100))).toBeNull();
+  });
+
+  it("compounds a spread with an index of business days over the year", () => {
+    const year = trailingDaily(weekdays()) ?? Number.NaN;
+    expect(spreadOverDaily(weekdays(), 0.02, false)).toBeCloseTo(
+      (1 + year) * 1.02 - 1,
+      12,
+    );
+  });
+
+  it("adds a 360th of the spread to each calendar day of an actual/360 index", () => {
+    const days: IndexRate[] = [];
+    for (let i = 0; i <= 365; i++)
+      days.push({
+        date: new Date(Date.UTC(2025, 0, 1 + i)).toISOString().slice(0, 10),
+        rate: 0.0001,
+      });
+    // 365 days after 2025-01-01 at 0.01% plus 2%/360 each.
+    expect(spreadOverDaily(days, 0.02, true)).toBeCloseTo(
+      0.05841590614385339,
+      12,
+    );
   });
 });

@@ -12,6 +12,8 @@ Registry of the findings reported to the Slotted owner (`web/CLAUDE.md`, "Slotte
 
 | Title                                                                                               | State    |
 | --------------------------------------------------------------------------------------------------- | -------- |
+| The page publishes no block size of its scrollport for a sticky element's height cap                | open     |
+| compose-screen does not route a screen with a sticky element of its own to LA-06                    | reported |
 | A calendar day cannot carry a mark of what falls on it                                              | reported |
 | A data-grid editor cannot commit the value it sets in the same event                                | open     |
 | a dialog or drawer mounted open plays no enter transition, and one unmounted on close plays no exit | open     |

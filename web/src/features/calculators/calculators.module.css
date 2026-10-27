@@ -1,19 +1,84 @@
 @layer app {
-  /* Inputs, then results; side by side once both columns hold a money panel, one column below. */
+  /* Inputs, results, then the optional inputs; from 1024 px the results take the right column
+     beside both. */
   .work {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "inputs" "results" "options";
+    gap: var(--slotted-space-8);
+  }
+
+  .inputs {
+    grid-area: inputs;
+  }
+
+  .options {
+    grid-area: options;
+  }
+
+  .results {
+    grid-area: results;
+  }
+
+  @media (min-width: 1024px) {
+    .work {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      grid-template-rows: auto 1fr;
+      grid-template-areas: "inputs results" "options results";
+      align-items: start;
+    }
+
+    /* The results stay in view while the inputs scroll, under the page's stuck header (LA-06);
+       results taller than the view scroll inside. Workaround for Slotted finding "The page
+       publishes no block size of its scrollport for a sticky element's height cap": 100dvh
+       counts the app shell's frame above and below the page's scroller, 12 px each in equori's
+       inset canvas, measured at 1440 × 900. */
+    .results {
+      position: sticky;
+      inset-block-start: calc(
+        var(--slotted-page-sticky-top, 0px) + var(--slotted-space-6)
+      );
+      max-block-size: calc(
+        100dvh - var(--slotted-page-sticky-top, 0px) - 2 *
+          var(--slotted-space-6) - 24px
+      );
+      overflow: auto;
+    }
+  }
+
+  /* Two tables or panels side by side from 1024 px. */
+  .pair {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: var(--slotted-space-6);
   }
 
-  @media (min-width: 960px) {
-    .work {
+  @media (min-width: 1024px) {
+    .pair {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       align-items: start;
     }
   }
 
+  /* The scroller of a long schedule: it scrolls under its sticky header. */
+  .scroll {
+    max-block-size: 28rem;
+  }
+
+  .list {
+    display: grid;
+    gap: var(--slotted-space-2);
+    margin: 0;
+    padding-inline-start: var(--slotted-space-6);
+    font-size: var(--slotted-font-size-sm);
+  }
+
   .formula {
+    display: grid;
+    gap: var(--slotted-space-2);
+    padding: var(--slotted-space-4);
+    border-radius: var(--slotted-radius-md);
+    background: var(--slotted-surface-sunken);
     font-family: var(--slotted-font-family-mono);
     white-space: pre-wrap;
   }

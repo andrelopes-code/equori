@@ -13,7 +13,7 @@ const open = (search = "") =>
   });
 
 const debts =
-  "?debts=card~100000~3~5000;loan~300000~1~10000;store~50000~2~2500&budget=30000";
+  "?debts=card~100000~3~5000;loan~300000~1~10000;store~50000~2~2500&budget=30000&ratePeriod=month";
 
 const label = (key: "calc.debt.name" | "calc.debt.rate", n: number) =>
   catalogEn[key].replace("{n}", String(n));

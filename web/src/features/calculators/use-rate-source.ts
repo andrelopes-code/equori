@@ -1,4 +1,6 @@
 import { readRate } from "@/features/calculators/calculator-search";
+import { readFloating } from "@/features/calculators/floating";
+import type { Floating, FloatingKeys } from "@/features/calculators/floating";
 import { rateText } from "@/features/calculators/format-rate";
 import {
   annualToMonthly,
@@ -12,12 +14,12 @@ import type { Index } from "@/features/calculators/use-index-rate";
 import type { RatePeriod } from "@/ui/rate-input";
 
 export interface RateSource {
-  // The address keys: the rate text, its period, the index and the percent of it.
-  keys: { rate: string; period: string; index: string; percent: string };
+  // The address keys: the rate text, its period, the index, and how the rate follows it.
+  keys: { rate: string; period: string; index: string };
+  floatingKeys: FloatingKeys;
   daily: Index[];
   index: Index | undefined;
-  percentText: string;
-  percent: number | null;
+  floating: Floating;
   fromIndex: { rate: number; to: string } | null;
   // What the rate field shows: the typed text, or the annual rate taken from the index.
   text: string;
@@ -27,8 +29,8 @@ export interface RateSource {
   noIndexes: boolean;
 }
 
-// A rate typed with its period, or an annual rate taken from a percent of a daily index over
-// its last 12 months (design §4, "Filled inputs").
+// A rate typed with its period, or an annual rate taken from a daily index over its last 12
+// months, at a percent of it or plus a spread (design §4, "Filled inputs").
 export function useRateSource(
   search: Record<string, string>,
   rateKey: string,
@@ -37,25 +39,25 @@ export function useRateSource(
     rate: rateKey,
     period: `${rateKey}Period`,
     index: `${rateKey}Index`,
+  };
+  const floatingKeys = {
+    form: `${rateKey}Form`,
     percent: `${rateKey}Percent`,
+    spread: `${rateKey}Spread`,
   };
   const indexes = useIndexes();
   const daily = indexes.filter((i) => i.period === "day");
   const index = daily.find((i) => i.id === search[keys.index]);
-  const percentText = search[keys.percent] ?? "100";
-  const percent = readRate(percentText);
-  const fromIndex = useTrailingRate(
-    percent === null ? undefined : index,
-    percent ?? 1,
-  );
+  const floating = readFloating(search, floatingKeys, index?.id ?? "");
+  const fromIndex = useTrailingRate(index, floating);
   if (index !== undefined) {
     const annual = fromIndex?.rate ?? null;
     return {
       keys,
+      floatingKeys,
       daily,
       index,
-      percentText,
-      percent,
+      floating,
       fromIndex,
       text: annual === null ? "" : rateText(annual),
       period: "year",
@@ -70,10 +72,10 @@ export function useRateSource(
     typed === null ? null : period === "month" ? typed : annualToMonthly(typed);
   return {
     keys,
+    floatingKeys,
     daily,
     index,
-    percentText,
-    percent,
+    floating,
     fromIndex,
     text: search[keys.rate] ?? "",
     period,

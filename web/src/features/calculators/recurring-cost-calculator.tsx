@@ -1,4 +1,5 @@
 import { Field, FieldLabel } from "@slotted/react/field";
+import { Stack } from "@slotted/react/stack";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
@@ -11,11 +12,13 @@ import {
   readRate,
   useCalculatorSearch,
 } from "@/features/calculators/calculator-search";
+import { ChoiceField } from "@/features/calculators/choice-field";
 import { CountField } from "@/features/calculators/count-field";
 import { FilledNote } from "@/features/calculators/filled-note";
 import type { Source } from "@/features/calculators/method-section";
 import { recurringCost } from "@/features/calculators/plan-math";
 import { RateField } from "@/features/calculators/rate-field";
+import { ResultLead } from "@/features/calculators/result-lead";
 import { ResultList } from "@/features/calculators/result-list";
 import type { Result } from "@/features/calculators/result-list";
 import { useCalculatorMoney } from "@/features/calculators/use-calculator-money";
@@ -86,9 +89,7 @@ export function RecurringCostCalculator() {
   let results = null;
   if (amount !== null && years !== null) {
     const got = recurringCost(amount, per === "month" ? 12 : 1, years, rate);
-    const rows: Result[] = [
-      { label: t("calc.recurring.total"), value: money.format(got.total) },
-    ];
+    const rows: Result[] = [];
     if (got.futureValue !== null)
       rows.push(
         {
@@ -100,7 +101,21 @@ export function RecurringCostCalculator() {
           value: money.format(got.futureValue - got.total),
         },
       );
-    results = <ResultList results={rows} />;
+    results = (
+      <Stack gap={5}>
+        <ResultLead
+          label={t("calc.recurring.total")}
+          value={money.format(got.total)}
+          summary={t(
+            per === "month"
+              ? "calc.recurring.summaryMonth"
+              : "calc.recurring.summaryYear",
+            { amount: money.format(amount), years },
+          )}
+        />
+        {rows.length > 0 && <ResultList results={rows} />}
+      </Stack>
+    );
   }
 
   const inputs = (
@@ -144,48 +159,50 @@ export function RecurringCostCalculator() {
           />
         )}
       </AmountField>
-      <Field>
-        <FieldLabel>{t("calc.recurring.per")}</FieldLabel>
-        <ChoiceSelect
-          label={t("calc.recurring.per")}
-          choices={[
-            { value: "month", label: t("calc.recurring.per.month") },
-            { value: "year", label: t("calc.recurring.per.year") },
-          ]}
-          value={per}
-          multiple={false}
-          onChange={(next) => {
-            set({
-              per: next === "year" ? "year" : undefined,
-              schedule: undefined,
-              ...(amount === null ? {} : { amount: String(amount) }),
-            });
-          }}
-        />
-      </Field>
+      <ChoiceField
+        label={t("calc.recurring.per")}
+        choices={[
+          { value: "month", label: t("calc.recurring.per.month") },
+          { value: "year", label: t("calc.recurring.per.year") },
+        ]}
+        value={per}
+        onChange={(next) => {
+          set({
+            per: next === "year" ? "year" : undefined,
+            schedule: undefined,
+            ...(amount === null ? {} : { amount: String(amount) }),
+          });
+        }}
+      />
       <CountField
         label={t("calc.recurring.years")}
+        unit={t("calc.unit.years")}
         name="years"
         value={search.years ?? ""}
         onChange={(v) => {
           set({ years: v });
         }}
       />
-      <RateField
-        label={t("calc.recurring.rate")}
-        name="rate"
-        value={search.rate ?? ""}
-        onChange={(v) => {
-          set({ rate: v });
-        }}
-      />
     </>
+  );
+
+  const options = (
+    <RateField
+      label={t("calc.recurring.rate")}
+      hint={t("calc.recurring.rate.hint")}
+      name="rate"
+      value={search.rate ?? ""}
+      onChange={(v) => {
+        set({ rate: v });
+      }}
+    />
   );
 
   return (
     <CalculatorFrame
       id="recurring-cost"
       inputs={inputs}
+      options={options}
       results={results}
       method={<CalculatorMethod id="recurring-cost" sources={sources} />}
     />

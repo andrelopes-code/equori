@@ -47,3 +47,18 @@ export function percentOfDaily(
     ? null
     : year.reduce((p, r) => p * (1 + multiplier * r.rate), 1) - 1;
 }
+
+// The annual rate of a daily index plus a spread a year: added as its 360th to each stored day
+// when the index stores calendar days on an actual/360 basis, compounded with the index's year
+// otherwise ((1 + index) × (1 + spread) − 1).
+export function spreadOverDaily(
+  rates: readonly IndexRate[],
+  spread: number,
+  perDay: boolean,
+): number | null {
+  const year = trailingYear(rates);
+  if (year === null) return null;
+  return perDay
+    ? year.reduce((p, r) => p * (1 + r.rate + spread / 360), 1) - 1
+    : (1 + accumulated(year)) * (1 + spread) - 1;
+}

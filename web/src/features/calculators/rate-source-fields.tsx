@@ -1,95 +1,91 @@
-import { Field, FieldLabel } from "@slotted/react/field";
-
 import { FilledNote } from "@/features/calculators/filled-note";
-import { formatRate } from "@/features/calculators/format-rate";
+import { clearFloating } from "@/features/calculators/floating";
+import { FloatingFields } from "@/features/calculators/floating-fields";
+import { floatingOrigin } from "@/features/calculators/floating-origin";
+import { IndexChoice } from "@/features/calculators/index-choice";
 import { RateField } from "@/features/calculators/rate-field";
 import type { RateSource } from "@/features/calculators/use-rate-source";
-import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/choice-select";
 
-// The fields of a RateSource: the choice of a fixed rate or a daily index, the percent of the
-// index, and the rate itself, which names its origin while it comes from the index. Typing in
+// The fields of a RateSource: the choice of a fixed rate or a daily index, how the rate follows
+// the index, and the rate itself, which names its origin while it comes from the index. Typing in
 // the rate makes it fixed again.
 export function RateSourceFields({
   label,
+  hint,
   sourceLabel,
   source,
   set,
 }: {
   label: string;
+  // What the rate is, while the reader types it.
+  hint?: string;
   sourceLabel: string;
   source: RateSource;
   set: (patch: Record<string, string | undefined>) => void;
 }) {
   const t = useT();
   const [locale] = useAppLocale();
-  const { keys, index, fromIndex, percent } = source;
+  const { keys, floatingKeys, index, fromIndex, floating } = source;
+  const forget = clearFloating(floatingKeys);
   return (
     <>
       {source.daily.length > 0 && (
-        <Field>
-          <FieldLabel>{sourceLabel}</FieldLabel>
-          <ChoiceSelect
-            label={sourceLabel}
-            choices={[
-              { value: "", label: t("calc.rateSource.fixed") },
-              ...source.daily.map((i) => ({
-                value: i.id,
-                label: i.id.toUpperCase(),
-              })),
-            ]}
-            value={index?.id ?? ""}
-            multiple={false}
-            onChange={(next) => {
-              set(
-                typeof next === "string" && next !== ""
-                  ? { [keys.index]: next, [keys.rate]: undefined }
-                  : { [keys.index]: undefined, [keys.percent]: undefined },
-              );
-            }}
-          />
-        </Field>
+        <IndexChoice
+          label={sourceLabel}
+          hint={t("calc.rateSource.hint")}
+          none={t("calc.rateSource.fixed")}
+          indexes={source.daily}
+          value={index?.id}
+          onChange={(next) => {
+            set({
+              ...forget,
+              ...(next === undefined
+                ? { [keys.index]: undefined }
+                : { [keys.index]: next, [keys.rate]: undefined }),
+            });
+          }}
+        />
       )}
       {index !== undefined && (
-        <RateField
-          label={t("calc.compound.percent")}
-          name={keys.percent}
-          value={source.percentText}
-          onChange={(v) => {
-            set({ [keys.percent]: v });
-          }}
+        <FloatingFields
+          indexId={index.id}
+          floating={floating}
+          keys={floatingKeys}
+          percentLabel={t("calc.compound.percent")}
+          set={set}
         />
       )}
       <RateField
         label={label}
+        {...(hint === undefined || index !== undefined ? {} : { hint })}
         name={keys.rate}
         value={source.text}
         onChange={(v) => {
-          set({
-            [keys.rate]: v,
-            [keys.index]: undefined,
-            [keys.percent]: undefined,
-          });
+          set({ ...forget, [keys.rate]: v, [keys.index]: undefined });
         }}
         period={source.period}
         onPeriodChange={(p) => {
           set({
+            ...forget,
             [keys.period]: p === "month" ? "month" : undefined,
             [keys.index]: undefined,
-            [keys.percent]: undefined,
           });
         }}
       >
-        {index !== undefined && fromIndex !== null && percent !== null && (
-          <FilledNote
-            origin={t("calc.origin.daily", {
-              percent: formatRate(percent, locale),
-              index: index.id.toUpperCase(),
-              date: formatDate(fromIndex.to, locale),
-            })}
-          />
-        )}
+        {index !== undefined &&
+          fromIndex !== null &&
+          floating.value !== null && (
+            <FilledNote
+              origin={floatingOrigin(
+                t,
+                locale,
+                index.id,
+                { ...floating, value: floating.value },
+                fromIndex.to,
+              )}
+            />
+          )}
       </RateField>
     </>
   );

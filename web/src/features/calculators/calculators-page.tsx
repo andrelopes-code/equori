@@ -18,6 +18,7 @@ import {
 import {
   Section,
   SectionBody,
+  SectionDescription,
   SectionHeader,
   SectionHeading,
   SectionTitle,
@@ -54,6 +55,9 @@ export function CalculatorsPage() {
               <SectionHeader>
                 <SectionTitle>
                   <SectionHeading>{t(`calc.group.${group}`)}</SectionHeading>
+                  <SectionDescription>
+                    {t(`calc.group.${group}.description`)}
+                  </SectionDescription>
                 </SectionTitle>
               </SectionHeader>
               <SectionBody>

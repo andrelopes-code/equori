@@ -35,7 +35,6 @@ export function CalculatorMethod({
   const words = (part: string) => keys(id, part).map((k) => t(k));
   return (
     <MethodSection
-      answers={t(`calc.${id}.question`)}
       steps={words("step")}
       notes={notes}
       formula={words("formula")}

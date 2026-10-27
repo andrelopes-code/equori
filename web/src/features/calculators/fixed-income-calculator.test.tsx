@@ -48,8 +48,21 @@ describe("Fixed income calculator", () => {
     expect(screen.queryByText(catalogEn["calc.fixedIncome.gross"])).toBeNull();
   });
 
+  it("applies the German rate of 26.375% with no tax rate to type", async () => {
+    await open("amount=1000000&rate=12&days=400", "DE");
+    // A gross yield of 1,322.38 times 26.375%.
+    expect(await result(catalogEn["calc.fixedIncome.tax"])).toMatch(
+      /348[.,]78/,
+    );
+    expect(
+      screen.queryByRole("textbox", {
+        name: catalogEn["calc.fixedIncome.taxRate"],
+      }),
+    ).toBeNull();
+  });
+
   it("asks for the tax rate in a region without a rule", async () => {
-    await open("amount=1000000&rate=12&days=400&taxRate=17.5", "DE");
+    await open("amount=1000000&rate=12&days=400&taxRate=17.5", "ES");
     expect(
       await screen.findByRole("textbox", {
         name: catalogEn["calc.fixedIncome.taxRate"],

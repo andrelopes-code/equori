@@ -31,4 +31,10 @@ describe("Rate converter", () => {
     // 261 days at 110% of 0.04%: 1.00044^261 − 1.
     expect(await result(catalogEn["calc.rates.ofIndex"])).toBe("12.1666%");
   });
+
+  it("gives the annual rate of a daily index plus a spread", async () => {
+    await open("spread=2&index=cdi", calculatorApiRoutes([cdiFixture()]));
+    // 1.0004^261 × 1.02 − 1: a spread compounds with an index of business days.
+    expect(await result(catalogEn["calc.rates.ofIndex"])).toBe("13.2222%");
+  });
 });

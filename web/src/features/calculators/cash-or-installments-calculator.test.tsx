@@ -43,12 +43,10 @@ describe("Cash or installments calculator", () => {
       "cash=100000&count=10&installment=11000",
       calculatorApiRoutes([cdiFixture()]),
     );
-    await user.click(
-      await screen.findByRole("combobox", {
-        name: catalogEn["calc.cash.rateSource"],
-      }),
-    );
-    await user.click(await screen.findByRole("option", { name: "CDI" }));
+    const source = await screen.findByRole("radiogroup", {
+      name: catalogEn["calc.cash.rateSource"],
+    });
+    await user.click(within(source).getByRole("radio", { name: "CDI" }));
     const rate = await screen.findByRole("textbox", {
       name: catalogEn["calc.cash.compare"],
     });

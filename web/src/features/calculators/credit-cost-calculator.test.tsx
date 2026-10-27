@@ -1,5 +1,5 @@
 import { screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { calculatorApiRoutes } from "@/testing/calculator-api";
@@ -34,6 +34,11 @@ const open = (region?: string) =>
   });
 
 describe("Cost of credit calculator", () => {
+  // The profile's region is kept in the browser between renders.
+  afterEach(() => {
+    localStorage.removeItem("equori.locale");
+  });
+
   it("computes the effective annual cost with 2 decimals", async () => {
     await open();
     expect(await result(catalogEn["calc.credit.annual"])).toBe("17.14%");
@@ -48,6 +53,16 @@ describe("Cost of credit calculator", () => {
     expect(rows).toHaveLength(13);
     // 2026-02-10 is 31 days after 2026-01-10.
     expect(rows[1]?.textContent).toContain("31");
+  });
+
+  it("states the APR of a United States contract beside the effective cost", async () => {
+    const { unmount } = await open("BR");
+    await result(catalogEn["calc.credit.annual"]);
+    expect(screen.queryByText(catalogEn["calc.credit.us.apr"])).toBeNull();
+    unmount();
+    await open("US");
+    // 17.14% a year is 1.3271% a month, times 12.
+    expect(await result(catalogEn["calc.credit.us.apr"])).toBe("15.92%");
   });
 
   it("names the CET only for Brazil", async () => {

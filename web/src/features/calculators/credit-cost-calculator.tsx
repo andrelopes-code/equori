@@ -1,9 +1,10 @@
 import { Field, FieldLabel } from "@slotted/react/field";
+import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
-import { Text } from "@slotted/react/typography";
 
 import { AmountField } from "@/features/calculators/amount-field";
 import { CalcTable } from "@/features/calculators/calc-table";
+import styles from "@/features/calculators/calculators.module.css";
 import { CalculatorFrame } from "@/features/calculators/calculator-frame";
 import { CalculatorMethod } from "@/features/calculators/calculator-method";
 import {
@@ -20,6 +21,7 @@ import {
 import { formatRate } from "@/features/calculators/format-rate";
 import type { Source } from "@/features/calculators/method-section";
 import { annualToMonthly } from "@/features/calculators/rate-math";
+import { ResultLead } from "@/features/calculators/result-lead";
 import { ResultList } from "@/features/calculators/result-list";
 import { roundHalfEven } from "@/features/calculators/round";
 import { useCalculatorMoney } from "@/features/calculators/use-calculator-money";
@@ -43,13 +45,22 @@ const sources: Source[] = [
   },
 ];
 
-// The name the region gives this cost, where it has one (CLAUDE.md, Regions).
-function regionalName(region: string): MessageKey | null {
+// The words a region gives this cost (CLAUDE.md, Regions): the name its law gives it, said after
+// the method's steps, and the label of the nominal annual rate its contracts state instead,
+// shown beside the effective cost.
+function regionalTerms(region: string): {
+  note: MessageKey | null;
+  nominal: MessageKey | null;
+} {
   switch (region) {
     case "BR":
-      return "calc.credit.cet";
+      return { note: "calc.credit.cet", nominal: null };
+    // A contract states the APR: the monthly rate times 12 (Regulation Z, 12 CFR 1026.22 and
+    // appendix J).
+    case "US":
+      return { note: "calc.credit.us.aprNote", nominal: "calc.credit.us.apr" };
     default:
-      return null;
+      return { note: null, nominal: null };
   }
 }
 
@@ -70,12 +81,12 @@ export function CreditCostCalculator() {
   const today = useToday();
   const money = useCalculatorMoney();
   const [search, set] = useCalculatorSearch();
-  const name = regionalName(profile.region);
+  const terms = regionalTerms(profile.region);
   const method = (
     <CalculatorMethod
       id="credit-cost"
       sources={sources}
-      notes={name === null ? [] : [t(name)]}
+      notes={terms.note === null ? [] : [t(terms.note)]}
     />
   );
   if (money === null)
@@ -96,8 +107,11 @@ export function CreditCostCalculator() {
   const firstDue = readDate(search.firstDue);
 
   let results = null;
+  let details;
   if (firstDue !== null && firstDue <= releaseDate)
-    results = <Text size="sm">{t("calc.credit.order")}</Text>;
+    results = (
+      <InlineMessage tone="warning">{t("calc.credit.order")}</InlineMessage>
+    );
   else if (
     released !== null &&
     installment !== null &&
@@ -110,47 +124,68 @@ export function CreditCostCalculator() {
     }));
     const cost = effectiveAnnualCost(released, fees, releaseDate, flows);
     const shown = cost === null ? null : roundHalfEven(cost * 10000) / 10000;
-    results = (
-      <Stack gap={5}>
-        {shown === null ? (
-          <Text size="sm">{t("calc.credit.noSolution")}</Text>
-        ) : (
+    const paid = fees + installment * count;
+    results =
+      shown === null ? (
+        <InlineMessage tone="warning">
+          {t("calc.credit.noSolution")}
+        </InlineMessage>
+      ) : (
+        <Stack gap={5}>
+          <ResultLead
+            label={t("calc.credit.annual")}
+            value={formatRate(shown, locale, { min: 2, max: 2 })}
+            summary={t("calc.credit.summary", {
+              paid: money.format(paid),
+              released: money.format(released),
+            })}
+          />
           <ResultList
             results={[
-              {
-                label: t("calc.credit.annual"),
-                value: formatRate(shown, locale, { min: 2, max: 2 }),
-              },
               {
                 label: t("calc.credit.monthly"),
                 value: formatRate(annualToMonthly(shown), locale),
               },
+              ...(terms.nominal === null
+                ? []
+                : [
+                    {
+                      label: t(terms.nominal),
+                      value: formatRate(annualToMonthly(shown) * 12, locale, {
+                        min: 2,
+                        max: 2,
+                      }),
+                    },
+                  ]),
+              { label: t("calc.credit.paid"), value: money.format(paid) },
               {
-                label: t("calc.credit.paid"),
-                value: money.format(fees + installment * count),
+                label: t("calc.credit.cost"),
+                value: money.format(paid - released),
               },
             ]}
           />
-        )}
-        <CalcTable
-          caption={t("calc.credit.flows")}
-          headers={[
-            t("calc.credit.col.number"),
-            t("calc.credit.col.date"),
-            t("calc.credit.col.days"),
-            t("calc.credit.col.amount"),
-          ]}
-          rows={flows.map((f, i) => ({
-            key: f.date,
-            cells: [
-              String(i + 1),
-              formatDate(f.date, locale),
-              String(daysBetween(releaseDate, f.date)),
-              money.format(f.amount),
-            ],
-          }))}
-        />
-      </Stack>
+        </Stack>
+      );
+    details = (
+      <CalcTable
+        long
+        caption={t("calc.credit.flows")}
+        headers={[
+          t("calc.credit.col.number"),
+          t("calc.credit.col.date"),
+          t("calc.credit.col.days"),
+          t("calc.credit.col.amount"),
+        ]}
+        rows={flows.map((f, i) => ({
+          key: f.date,
+          cells: [
+            String(i + 1),
+            formatDate(f.date, locale),
+            String(daysBetween(releaseDate, f.date)),
+            money.format(f.amount),
+          ],
+        }))}
+      />
     );
   }
 
@@ -158,6 +193,7 @@ export function CreditCostCalculator() {
     <>
       <AmountField
         label={t("calc.credit.released")}
+        hint={t("calc.credit.released.hint")}
         value={search.released}
         money={money}
         onChange={(v) => {
@@ -166,50 +202,56 @@ export function CreditCostCalculator() {
       />
       <AmountField
         label={t("calc.credit.fees")}
+        hint={t("calc.credit.fees.hint")}
         value={search.fees}
         money={money}
         onChange={(v) => {
           set({ fees: v });
         }}
       />
-      <AmountField
-        label={t("calc.credit.installment")}
-        value={search.installment}
-        money={money}
-        onChange={(v) => {
-          set({ installment: v });
-        }}
-      />
-      <CountField
-        label={t("calc.credit.count")}
-        name="count"
-        value={search.count ?? ""}
-        onChange={(v) => {
-          set({ count: v });
-        }}
-      />
-      <Field>
-        <FieldLabel>{t("calc.credit.releaseDate")}</FieldLabel>
-        <DateInput
-          name="releaseDate"
-          value={releaseDate}
-          shortcuts={false}
+      <div className={styles.pair}>
+        <CountField
+          label={t("calc.credit.count")}
+          unit={t("calc.unit.installments")}
+          name="count"
+          value={search.count ?? ""}
           onChange={(v) => {
-            set({ releaseDate: v });
+            set({ count: v });
           }}
         />
-      </Field>
-      <Field>
-        <FieldLabel>{t("calc.credit.firstDue")}</FieldLabel>
-        <DateInput
-          name="firstDue"
-          value={firstDue ?? monthlyDates(releaseDate, 2)[1] ?? releaseDate}
-          shortcuts={false}
+        <AmountField
+          label={t("calc.credit.installment")}
+          value={search.installment}
+          money={money}
           onChange={(v) => {
-            set({ firstDue: v });
+            set({ installment: v });
           }}
         />
-      </Field>
+      </div>
+      <div className={styles.pair}>
+        <Field>
+          <FieldLabel>{t("calc.credit.releaseDate")}</FieldLabel>
+          <DateInput
+            name="releaseDate"
+            value={releaseDate}
+            shortcuts={false}
+            onChange={(v) => {
+              set({ releaseDate: v });
+            }}
+          />
+        </Field>
+        <Field>
+          <FieldLabel>{t("calc.credit.firstDue")}</FieldLabel>
+          <DateInput
+            name="firstDue"
+            value={firstDue ?? monthlyDates(releaseDate, 2)[1] ?? releaseDate}
+            shortcuts={false}
+            onChange={(v) => {
+              set({ firstDue: v });
+            }}
+          />
+        </Field>
+      </div>
     </>
   );
 
@@ -217,7 +259,14 @@ export function CreditCostCalculator() {
     <CalculatorFrame
       id="credit-cost"
       inputs={inputs}
-      results={results}
+      results={
+        results === null ? null : (
+          <Stack gap={6}>
+            {results}
+            {details}
+          </Stack>
+        )
+      }
       method={method}
     />
   );

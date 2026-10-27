@@ -3,8 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { indexesQuery, indexRatesQuery } from "@/features/calculators/api";
+import type { Floating } from "@/features/calculators/floating";
+import { dailySpread } from "@/features/calculators/index-catalog";
 import {
   percentOfDaily,
+  spreadOverDaily,
   trailingMonthly,
 } from "@/features/calculators/index-rates";
 
@@ -23,12 +26,12 @@ function windowStart(last: string): string {
   return d.toISOString().slice(0, 10);
 }
 
-// The trailing 12 months of an index (design §4): of a daily index at multiplier of each day's
-// rate, of a monthly index over its last 12 months. Null while the rates load or when they
-// cover less than a year.
+// The trailing 12 months of an index (design §4): of a daily index at a percent of each day's
+// rate or plus a spread, of a monthly index over its last 12 months. Null while the rates load,
+// when they cover less than a year, or when the percent or the spread is not a number.
 export function useTrailingRate(
   index: Index | undefined,
-  multiplier = 1,
+  floating: Pick<Floating, "form" | "value"> = { form: "percent", value: 1 },
 ): { rate: number; to: string } | null {
   const api = useApi();
   const rates = useQuery({
@@ -41,9 +44,14 @@ export function useTrailingRate(
     enabled: index !== undefined,
   }).data;
   if (index === undefined || rates === undefined) return null;
+  if (index.period !== "day") {
+    const rate = trailingMonthly(rates);
+    return rate === null ? null : { rate, to: index.last };
+  }
+  if (floating.value === null) return null;
   const rate =
-    index.period === "day"
-      ? percentOfDaily(rates, multiplier)
-      : trailingMonthly(rates);
+    floating.form === "percent"
+      ? percentOfDaily(rates, floating.value)
+      : spreadOverDaily(rates, floating.value, dailySpread(index.id));
   return rate === null ? null : { rate, to: index.last };
 }

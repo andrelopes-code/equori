@@ -67,7 +67,7 @@ describe("Compound interest calculator", () => {
     await open("initial=100000&months=12&rate=12");
     await result(catalogEn["calc.compound.final"]);
     expect(
-      screen.queryByRole("combobox", {
+      screen.queryByRole("radiogroup", {
         name: catalogEn["calc.compound.rateSource"],
       }),
     ).toBeNull();
@@ -77,12 +77,10 @@ describe("Compound interest calculator", () => {
   it("fills the annual rate from a percent of a daily index", async () => {
     const user = userEvent.setup();
     await open("initial=100000&months=12", calculatorApiRoutes([cdiFixture()]));
-    await user.click(
-      await screen.findByRole("combobox", {
-        name: catalogEn["calc.compound.rateSource"],
-      }),
-    );
-    await user.click(await screen.findByRole("option", { name: "CDI" }));
+    const source = await screen.findByRole("radiogroup", {
+      name: catalogEn["calc.compound.rateSource"],
+    });
+    await user.click(within(source).getByRole("radio", { name: "CDI" }));
     // 261 days at 0.04% from 2025-10-17 to 2026-10-16.
     const rate = await screen.findByRole("textbox", {
       name: catalogEn["calc.compound.rate"],
@@ -101,6 +99,31 @@ describe("Compound interest calculator", () => {
   });
 
   // The amounts typed in the inputs stay readable to the person typing them (MoneyInput).
+  it("states the monthly income the final amount pays after inflation", async () => {
+    await open(
+      "initial=100000&months=12&rate=12.682503&inflation=4&withdraw=10",
+    );
+    // 1,126.83 at 1% a month against 4% a year of inflation (0.3274% a month).
+    expect(
+      await result(catalogEn["calc.compound.income.lastingAtEnd"]),
+    ).toContain("7.58");
+    // The same income less a year of inflation: 7.58 / 1.04.
+    expect(
+      await result(catalogEn["calc.compound.income.lastingToday"]),
+    ).toContain("7.29");
+    // Spent over 10 years with an income that follows inflation.
+    expect(
+      await result(catalogEn["calc.compound.income.spendingToday"]),
+    ).toContain("13.21");
+  });
+
+  it("states that no income keeps the purchasing power above the rate", async () => {
+    await open("initial=100000&months=12&rate=3&inflation=4");
+    expect(
+      await screen.findByText(catalogEn["calc.compound.income.none"]),
+    ).toBeInTheDocument();
+  });
+
   it("masks every computed amount and keeps the rate in privacy mode", async () => {
     hideAmounts();
     await open(

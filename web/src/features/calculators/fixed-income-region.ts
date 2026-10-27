@@ -39,6 +39,40 @@ export function fixedIncomeRules(region: string): FixedIncomeRules | null {
         ],
         notes: ["calc.fixedIncome.br.table", "calc.fixedIncome.br.days252"],
       };
+    case "DE":
+      return {
+        // EStG § 32d (1): 25% on income from capital; SolzG § 4: 5.5% of that tax, with no
+        // allowance on tax withheld at source. Church tax and the yearly saver's allowance
+        // depend on the person and are left out (the notes say so).
+        taxBp: () => 2637.5,
+        minimumDays: 0,
+        checkedOn: "2026-10-27",
+        sources: [
+          {
+            title: "Einkommensteuergesetz (EStG), § 32d",
+            url: "https://www.gesetze-im-internet.de/estg/__32d.html",
+          },
+          {
+            title: "Solidaritätszuschlaggesetz 1995 (SolzG 1995), § 4",
+            url: "https://www.gesetze-im-internet.de/solzg_1995/__4.html",
+          },
+        ],
+        notes: ["calc.fixedIncome.de.rate", "calc.fixedIncome.de.left"],
+      };
+    case "PT":
+      return {
+        // CIRS art. 71.º, 1: interest is withheld at the final rate of 28%.
+        taxBp: () => 2800,
+        minimumDays: 0,
+        checkedOn: "2026-10-27",
+        sources: [
+          {
+            title: "Código do IRS, artigo 71.º (Taxas liberatórias)",
+            url: "https://info.portaldasfinancas.gov.pt/pt/informacao_fiscal/codigos_tributarios/cirs_rep/Pages/irs71.aspx",
+          },
+        ],
+        notes: ["calc.fixedIncome.pt.rate", "calc.fixedIncome.pt.left"],
+      };
     default:
       return null;
   }

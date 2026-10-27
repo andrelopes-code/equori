@@ -12,12 +12,23 @@ export interface Result {
   value: string;
 }
 
-// The figures a calculator returns, each under the words that name it. No tone: a result is
-// not judged (design §2).
-export function ResultList({ results }: { results: readonly Result[] }) {
+// The figures a calculator returns beside its lead, each under the words that name it. No tone:
+// a result is not judged (design §2).
+export function ResultList({
+  results,
+  label,
+}: {
+  results: readonly Result[];
+  label?: string;
+}) {
   const t = useT();
   return (
-    <DescriptionList layout="stack" aria-label={t("calc.results")}>
+    <DescriptionList
+      layout="stack"
+      columns={2}
+      variant="ruled"
+      aria-label={label ?? t("calc.results")}
+    >
       {results.map((r) => (
         <DescriptionListItem key={r.label}>
           <DescriptionListTerm>{r.label}</DescriptionListTerm>

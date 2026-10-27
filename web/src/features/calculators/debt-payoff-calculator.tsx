@@ -1,6 +1,8 @@
 import { Button } from "@slotted/react/button";
+import { Card, CardActions, CardBody, CardHeader } from "@slotted/react/card";
 import { Field, FieldLabel } from "@slotted/react/field";
 import { Inline } from "@slotted/react/inline";
+import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import { Text } from "@slotted/react/typography";
@@ -10,6 +12,7 @@ import { useApi } from "@/api/api-context";
 import { accountsQuery, balancesQuery } from "@/features/accounts";
 import { AmountField } from "@/features/calculators/amount-field";
 import { CalcTable } from "@/features/calculators/calc-table";
+import styles from "@/features/calculators/calculators.module.css";
 import { CalculatorFrame } from "@/features/calculators/calculator-frame";
 import { CalculatorMethod } from "@/features/calculators/calculator-method";
 import {
@@ -17,6 +20,7 @@ import {
   readRate,
   useCalculatorSearch,
 } from "@/features/calculators/calculator-search";
+import { ChoiceField } from "@/features/calculators/choice-field";
 import { payoffPlan } from "@/features/calculators/debt-math";
 import type { Debt, PayoffPlan } from "@/features/calculators/debt-math";
 import {
@@ -25,13 +29,17 @@ import {
   maxDebts,
 } from "@/features/calculators/debt-rows";
 import type { DebtRow } from "@/features/calculators/debt-rows";
+import {
+  debtRateQuote,
+  monthlyDebtRate,
+} from "@/features/calculators/debt-region";
 import { FilledNote } from "@/features/calculators/filled-note";
 import type { Source } from "@/features/calculators/method-section";
 import { RateField } from "@/features/calculators/rate-field";
-import { ResultList } from "@/features/calculators/result-list";
+import { ResultLead } from "@/features/calculators/result-lead";
 import { useCalculatorMoney } from "@/features/calculators/use-calculator-money";
 import { formatDate } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useAppLocale, useAppLocaleState, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 
 const sources: Source[] = [
@@ -49,6 +57,7 @@ const debtKinds = new Set(["loan", "credit_card"]);
 export function DebtPayoffCalculator() {
   const t = useT();
   const [locale] = useAppLocale();
+  const { locale: profile } = useAppLocaleState();
   const api = useApi();
   const today = useToday();
   const money = useCalculatorMoney();
@@ -94,6 +103,11 @@ export function DebtPayoffCalculator() {
     setRows(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   };
 
+  const quote = debtRateQuote(profile.region);
+  const period =
+    search.ratePeriod === "month" || search.ratePeriod === "year"
+      ? search.ratePeriod
+      : quote.period;
   const budget = readMinor(search.budget);
   const debts: Debt[] = [];
   for (const r of rows) {
@@ -102,7 +116,12 @@ export function DebtPayoffCalculator() {
     const minimum = readMinor(r.minimum);
     if (balance === null || rate === null || rate < 0 || minimum === null)
       break;
-    debts.push({ name: r.name, balance, rate, minimum });
+    debts.push({
+      name: r.name,
+      balance,
+      rate: monthlyDebtRate(rate, period, quote.nominal),
+      minimum,
+    });
   }
 
   let results = null;
@@ -110,7 +129,11 @@ export function DebtPayoffCalculator() {
     const avalanche = payoffPlan(debts, budget, "avalanche");
     const snowball = payoffPlan(debts, budget, "snowball");
     if (avalanche === "below_minimums" || snowball === "below_minimums")
-      results = <Text size="sm">{t("calc.debt.belowMinimums")}</Text>;
+      results = (
+        <InlineMessage tone="warning">
+          {t("calc.debt.belowMinimums")}
+        </InlineMessage>
+      );
     else {
       const plans = [avalanche, snowball];
       const cell = (pick: (p: PayoffPlan) => string) =>
@@ -139,12 +162,31 @@ export function DebtPayoffCalculator() {
           ],
         })),
       ];
-      const a = avalanche === "not_closed" ? null : avalanche.interest;
-      const s = snowball === "not_closed" ? null : snowball.interest;
+      const a = avalanche === "not_closed" ? null : avalanche;
+      const s = snowball === "not_closed" ? null : snowball;
       results = (
-        <Stack gap={4}>
+        <Stack gap={5}>
           {(a === null || s === null) && (
-            <Text size="sm">{t("calc.debt.notClosed")}</Text>
+            <InlineMessage tone="warning">
+              {t("calc.debt.notClosed")}
+            </InlineMessage>
+          )}
+          {a !== null && s !== null && (
+            // A comparison states which order is lower and by how much (design §2).
+            <ResultLead
+              label={t(
+                a.interest < s.interest
+                  ? "calc.debt.avalancheLower"
+                  : a.interest > s.interest
+                    ? "calc.debt.snowballLower"
+                    : "calc.debt.sameInterest",
+              )}
+              value={money.format(Math.abs(a.interest - s.interest))}
+              summary={t("calc.debt.summary", {
+                avalanche: a.months,
+                snowball: s.months,
+              })}
+            />
           )}
           <CalcTable
             caption={t("calc.debt.compare")}
@@ -155,23 +197,6 @@ export function DebtPayoffCalculator() {
             ]}
             rows={rowsOf}
           />
-          {a !== null && s !== null && (
-            // A comparison states which order is lower and by how much (design §2).
-            <ResultList
-              results={[
-                {
-                  label: t(
-                    a < s
-                      ? "calc.debt.avalancheLower"
-                      : a > s
-                        ? "calc.debt.snowballLower"
-                        : "calc.debt.sameInterest",
-                  ),
-                  value: money.format(Math.abs(a - s)),
-                },
-              ]}
-            />
-          )}
         </Stack>
       );
     }
@@ -179,71 +204,107 @@ export function DebtPayoffCalculator() {
 
   const inputs = (
     <>
+      <AmountField
+        label={t("calc.debt.budget")}
+        hint={t("calc.debt.budget.hint")}
+        value={search.budget}
+        money={money}
+        onChange={(v) => {
+          set({ budget: v });
+        }}
+      />
+      <ChoiceField
+        label={t("calc.debt.ratePeriod")}
+        {...(period === "year"
+          ? {
+              hint: t(
+                quote.nominal
+                  ? "calc.debt.ratePeriod.nominal"
+                  : "calc.debt.ratePeriod.effective",
+              ),
+            }
+          : {})}
+        choices={[
+          { value: "month", label: t("calc.period.month") },
+          { value: "year", label: t("calc.period.year") },
+        ]}
+        value={period}
+        onChange={(next) => {
+          set({ ratePeriod: next === quote.period ? undefined : next });
+        }}
+      />
       {rows.map((r, i) => {
         const n = i + 1;
         const source =
           r.account === undefined ? undefined : owed.get(r.account);
         return (
           // A row's position is its identity: the rows have no other key.
-          <Stack key={i} gap={3}>
-            <Inline justify="between" align="center">
+          <Card key={i} fill="subtle" size="sm">
+            <CardHeader>
               <Text size="sm" weight="semibold">
                 {t("calc.debt.row", { n })}
               </Text>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setRows(rows.filter((_, j) => j !== i));
-                }}
-              >
-                {t("calc.debt.remove", { n })}
-              </Button>
-            </Inline>
-            <Field>
-              <FieldLabel>{t("calc.debt.name", { n })}</FieldLabel>
-              <TextField
-                name={`debt-${String(n)}-name`}
-                value={r.name}
-                onChange={(event) => {
-                  update(i, { name: event.target.value });
-                }}
-              />
-            </Field>
-            <AmountField
-              label={t("calc.debt.balance", { n })}
-              value={r.balance === "" ? undefined : r.balance}
-              money={money}
-              onChange={(v) => {
-                update(i, { balance: v ?? "", account: undefined });
-              }}
-            >
-              {source !== undefined && (
-                <FilledNote
-                  origin={t("calc.debt.origin", {
-                    account: source.name,
-                    date: formatDate(today, locale),
-                  })}
+              <CardActions>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  tone="secondary"
+                  onClick={() => {
+                    setRows(rows.filter((_, j) => j !== i));
+                  }}
+                >
+                  {t("calc.debt.remove", { n })}
+                </Button>
+              </CardActions>
+            </CardHeader>
+            <CardBody>
+              <div className={styles.pair}>
+                <Field>
+                  <FieldLabel>{t("calc.debt.name", { n })}</FieldLabel>
+                  <TextField
+                    name={`debt-${String(n)}-name`}
+                    value={r.name}
+                    onChange={(event) => {
+                      update(i, { name: event.target.value });
+                    }}
+                  />
+                </Field>
+                <AmountField
+                  label={t("calc.debt.balance", { n })}
+                  value={r.balance === "" ? undefined : r.balance}
+                  money={money}
+                  onChange={(v) => {
+                    update(i, { balance: v ?? "", account: undefined });
+                  }}
+                >
+                  {source !== undefined && (
+                    <FilledNote
+                      origin={t("calc.debt.origin", {
+                        account: source.name,
+                        date: formatDate(today, locale),
+                      })}
+                    />
+                  )}
+                </AmountField>
+                <RateField
+                  label={t("calc.debt.rate", { n })}
+                  name={`debt-${String(n)}-rate`}
+                  value={r.rate}
+                  onChange={(v) => {
+                    update(i, { rate: v });
+                  }}
                 />
-              )}
-            </AmountField>
-            <RateField
-              label={t("calc.debt.rate", { n })}
-              name={`debt-${String(n)}-rate`}
-              value={r.rate}
-              onChange={(v) => {
-                update(i, { rate: v });
-              }}
-            />
-            <AmountField
-              label={t("calc.debt.minimum", { n })}
-              value={r.minimum === "" ? undefined : r.minimum}
-              money={money}
-              onChange={(v) => {
-                update(i, { minimum: v ?? "" });
-              }}
-            />
-          </Stack>
+                <AmountField
+                  label={t("calc.debt.minimum", { n })}
+                  value={r.minimum === "" ? undefined : r.minimum}
+                  money={money}
+                  onChange={(v) => {
+                    update(i, { minimum: v ?? "" });
+                  }}
+                />
+              </div>
+            </CardBody>
+          </Card>
         );
       })}
       {rows.length < maxDebts && (
@@ -268,14 +329,6 @@ export function DebtPayoffCalculator() {
           </Button>
         </Inline>
       )}
-      <AmountField
-        label={t("calc.debt.budget")}
-        value={search.budget}
-        money={money}
-        onChange={(v) => {
-          set({ budget: v });
-        }}
-      />
     </>
   );
 

@@ -1,3 +1,9 @@
+import {
+  Collapsible,
+  CollapsibleHeader,
+  CollapsiblePanel,
+  CollapsibleTrigger,
+} from "@slotted/react/collapsible";
 import { Link } from "@slotted/react/link";
 import {
   Section,
@@ -19,10 +25,11 @@ export interface Source {
   url: string;
 }
 
-// "How it is calculated" (design §4, "Explanation"): what the calculator answers, the steps in
-// words, the formula with each symbol, the assumptions, the limits and the sources.
+// "How it is calculated" (design §4, "Explanation"): the steps in words, the formula with each
+// symbol, the assumptions, the limits and the sources. The page's subheading states what the
+// calculator answers. Closed until asked for: the reader comes for the result, and the method
+// is its reference.
 export function MethodSection({
-  answers,
   steps,
   formula,
   assumptions,
@@ -30,7 +37,6 @@ export function MethodSection({
   sources,
   notes = [],
 }: {
-  answers: string;
   steps: readonly string[];
   formula: readonly string[];
   assumptions: readonly string[];
@@ -47,53 +53,73 @@ export function MethodSection({
           <SectionHeading>{t(title)}</SectionHeading>
         </SectionTitle>
       </SectionHeader>
-      <SectionBody>
-        <Stack gap={2}>{children}</Stack>
-      </SectionBody>
+      <SectionBody>{children}</SectionBody>
     </Section>
   );
-  const lines = (texts: readonly string[]) =>
-    texts.map((line) => (
-      <Text key={line} size="sm">
-        {line}
-      </Text>
+  const list = (texts: readonly string[], ordered = false) => {
+    const items = texts.map((line) => (
+      <li key={line}>
+        <Text size="sm" wrap="pretty">
+          {line}
+        </Text>
+      </li>
     ));
+    return ordered ? (
+      <ol className={styles.list}>{items}</ol>
+    ) : (
+      <ul className={styles.list}>{items}</ul>
+    );
+  };
   return (
-    <Section divider={false}>
-      <SectionHeader>
-        <SectionTitle>
-          <SectionHeading>{t("calc.method")}</SectionHeading>
-        </SectionTitle>
-      </SectionHeader>
-      <SectionBody>
-        <Stack gap={5}>
-          {part("calc.method.answers", lines([answers]))}
-          {part("calc.method.steps", [
-            ...lines(steps.map((s, i) => `${String(i + 1)}. ${s}`)),
-            ...lines(notes),
-          ])}
-          {part(
-            "calc.method.formula",
-            formula.map((line) => (
-              <Text key={line} size="sm" className={styles.formula}>
-                {line}
-              </Text>
-            )),
-          )}
-          {part("calc.method.assumptions", lines(assumptions))}
-          {part("calc.method.limits", lines(limits))}
-          {part(
-            "calc.method.sources",
-            sources.map((s) => (
-              <Text key={s.url} size="sm">
-                <Link href={s.url} external>
-                  {s.title}
-                </Link>
-              </Text>
-            )),
-          )}
-        </Stack>
-      </SectionBody>
-    </Section>
+    <Collapsible variant="framed" level="2" size="lg">
+      <CollapsibleHeader>
+        <CollapsibleTrigger description={t("calc.method.description")}>
+          {t("calc.method")}
+        </CollapsibleTrigger>
+      </CollapsibleHeader>
+      <CollapsiblePanel>
+        <div className={styles.pair}>
+          <Stack gap={6}>
+            {part(
+              "calc.method.steps",
+              <Stack gap={3}>
+                {list(steps, true)}
+                {notes.map((line) => (
+                  <Text key={line} size="sm" tone="muted" wrap="pretty">
+                    {line}
+                  </Text>
+                ))}
+              </Stack>,
+            )}
+            {part(
+              "calc.method.formula",
+              <div className={styles.formula}>
+                {formula.map((line) => (
+                  <Text key={line} size="sm">
+                    {line}
+                  </Text>
+                ))}
+              </div>,
+            )}
+          </Stack>
+          <Stack gap={6}>
+            {part("calc.method.assumptions", list(assumptions))}
+            {part("calc.method.limits", list(limits))}
+            {part(
+              "calc.method.sources",
+              <Stack gap={2}>
+                {sources.map((s) => (
+                  <Text key={s.url} size="sm">
+                    <Link href={s.url} external>
+                      {s.title}
+                    </Link>
+                  </Text>
+                ))}
+              </Stack>,
+            )}
+          </Stack>
+        </div>
+      </CollapsiblePanel>
+    </Collapsible>
   );
 }

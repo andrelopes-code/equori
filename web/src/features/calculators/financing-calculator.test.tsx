@@ -1,9 +1,9 @@
 import { screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { calculatorApiRoutes } from "@/testing/calculator-api";
-import { fakeApi } from "@/testing/fake-api";
+import { fakeApi, json } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 
 async function result(label: string): Promise<string> {
@@ -11,14 +11,33 @@ async function result(label: string): Promise<string> {
   return term.parentElement?.querySelector("dd")?.textContent ?? "";
 }
 
-const open = (search: string) =>
+const open = (search: string, region?: string) =>
   renderApp(`/calculators/financing?${search}`, {
-    fetch: fakeApi(calculatorApiRoutes()),
+    fetch: fakeApi({
+      ...calculatorApiRoutes(),
+      ...(region === undefined
+        ? {}
+        : {
+            "GET /api/v1/me": () =>
+              json(200, {
+                id: 1,
+                email: "a@b.c",
+                role: "admin",
+                language: "en",
+                region,
+              }),
+          }),
+    }),
   });
 
 const loan = "amount=1000000&rate=1&period=month&months=12";
 
 describe("Financing calculator", () => {
+  // The profile's region is kept in the browser between renders.
+  afterEach(() => {
+    localStorage.removeItem("equori.locale");
+  });
+
   it("compares Price and SAC side by side", async () => {
     await open(loan);
     const table = await screen.findByRole("table", {
@@ -32,6 +51,37 @@ describe("Financing calculator", () => {
     expect(row(catalogEn["calc.financing.last"])).toContain("888.47");
     expect(row(catalogEn["calc.financing.interest"])).toContain("661.86");
     expect(row(catalogEn["calc.financing.interest"])).toContain("650.00");
+  });
+
+  it("reads a term typed in years as its months", async () => {
+    await open("amount=1000000&rate=1&period=month&months=1&monthsUnit=year");
+    const grid = await screen.findByRole("table", {
+      name: catalogEn["calc.financing.priceTable"],
+    });
+    expect(within(grid).getAllByRole("row")).toHaveLength(13);
+    expect(within(grid).getAllByRole("row")[1]?.textContent).toContain(
+      "888.49",
+    );
+  });
+
+  it("names the systems Price and SAC only for Brazil", async () => {
+    const { unmount } = await open(loan);
+    expect(
+      await screen.findByRole("table", {
+        name: catalogEn["calc.financing.compare"],
+      }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(catalogEn["calc.financing.br.sac"])).toBeNull();
+    unmount();
+    await open(loan, "BR");
+    const table = await screen.findByRole("table", {
+      name: catalogEn["calc.financing.br.compare"],
+    });
+    expect(
+      within(table).getByRole("columnheader", {
+        name: catalogEn["calc.financing.br.sac"],
+      }),
+    ).toBeInTheDocument();
   });
 
   it("lists the 12 months of each system", async () => {

@@ -10,25 +10,37 @@ import {
   TableRowHeader,
 } from "@slotted/react/table";
 
+import styles from "@/features/calculators/calculators.module.css";
+
 export interface CalcTableRow {
   key: string;
   cells: readonly string[];
 }
 
 // A table of computed figures: the first cell of a row names it, the others are numbers in the
-// column whose header has the same index.
+// column whose header has the same index. A long table (a schedule) scrolls in its own frame
+// under a header that stays.
 export function CalcTable({
   caption,
   headers,
   rows,
+  long = false,
 }: {
   caption: string;
   headers: readonly string[];
   rows: readonly CalcTableRow[];
+  long?: boolean;
 }) {
   return (
-    <Table columns={headers.length} variant="framed">
-      <TableContent>
+    <Table
+      columns={headers.length}
+      variant="framed"
+      striped={long}
+      stickyHeader={long}
+    >
+      <TableContent
+        {...(long ? { scrollProps: { className: styles.scroll } } : {})}
+      >
         <TableCaption>{caption}</TableCaption>
         <TableHead>
           <TableRow>

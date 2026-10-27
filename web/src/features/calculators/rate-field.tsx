@@ -1,12 +1,13 @@
-import { Field, FieldLabel } from "@slotted/react/field";
+import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import type { ReactNode } from "react";
 
 import { RateInput } from "@/ui/rate-input";
 import type { RatePeriod } from "@/ui/rate-input";
 
-// A rate in percent under its label, with an optional period and a note below it.
+// A rate in percent under its label, with an optional period, a hint and a note below it.
 export function RateField({
   label,
+  hint,
   name,
   value,
   onChange,
@@ -15,6 +16,7 @@ export function RateField({
   children,
 }: {
   label: string;
+  hint?: string;
   name: string;
   value: string;
   onChange: (text: string) => void;
@@ -32,6 +34,7 @@ export function RateField({
         {...(period === undefined ? {} : { period })}
         {...(onPeriodChange === undefined ? {} : { onPeriodChange })}
       />
+      {hint !== undefined && <FieldDescription>{hint}</FieldDescription>}
       {children}
     </Field>
   );

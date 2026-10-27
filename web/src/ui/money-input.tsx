@@ -1,4 +1,5 @@
 import { useField } from "@slotted/react/field";
+import { TextField } from "@slotted/react/text-field";
 import { useEffect } from "react";
 
 import { minorFromTyped } from "@/ui/money-entry";
@@ -20,6 +21,7 @@ export function MoneyInput({
   scale,
   sign,
   autoFocus = false,
+  size = "panel",
 }: {
   // Minor units, at least zero; the sign belongs to the entry's kind.
   value: number;
@@ -28,15 +30,44 @@ export function MoneyInput({
   scale: number;
   sign: "expense" | "income" | "neutral";
   autoFocus?: boolean;
+  // field: a control as tall as the text fields beside it, for a form that asks for several
+  // amounts at once, none of them the page's largest figure. It does not take autoFocus.
+  size?: "panel" | "field";
 }) {
   const fmt = useMoneyFormat();
   const field = useField();
   const register = field?.registerControl;
+  const inField = size === "field";
   useEffect(() => {
-    register?.();
-  }, [register]);
+    // The text field registers itself with the field around it.
+    if (!inField) register?.();
+  }, [register, inField]);
   const parts = fmt.entry({ amount: value, currency }, scale);
   const marks = { expense: "−", income: "+", neutral: "" };
+  const typed = (text: string) => {
+    onChange(minorFromTyped(text, maxDigits));
+  };
+  const caretAtEnd = (input: HTMLInputElement) => {
+    // Digits enter at the right: the caret waits at the end.
+    requestAnimationFrame(() => {
+      input.setSelectionRange(input.value.length, input.value.length);
+    });
+  };
+  if (inField)
+    return (
+      <TextField
+        inputMode="numeric"
+        autoComplete="off"
+        value={parts.integer + parts.fraction}
+        start={marks[sign] + parts.symbol}
+        onChange={(event) => {
+          typed(event.target.value);
+        }}
+        onFocus={(event) => {
+          caretAtEnd(event.currentTarget);
+        }}
+      />
+    );
   return (
     // A label around the input: a press anywhere on the panel focuses it, as the platform
     // does for a label; the field's own label still names it through aria-labelledby.
@@ -67,14 +98,10 @@ export function MoneyInput({
         autoFocus={autoFocus}
         value={parts.integer + parts.fraction}
         onChange={(event) => {
-          onChange(minorFromTyped(event.target.value, maxDigits));
+          typed(event.target.value);
         }}
         onFocus={(event) => {
-          const input = event.currentTarget;
-          // Digits enter at the right: the caret waits at the end.
-          requestAnimationFrame(() => {
-            input.setSelectionRange(input.value.length, input.value.length);
-          });
+          caretAtEnd(event.currentTarget);
         }}
       />
       <span className={styles.code} aria-hidden="true">

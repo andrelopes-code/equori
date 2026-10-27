@@ -1,7 +1,8 @@
-import { Field, FieldLabel } from "@slotted/react/field";
-import { Text } from "@slotted/react/typography";
+import { InlineMessage } from "@slotted/react/inline-message";
+import { Stack } from "@slotted/react/stack";
 
 import { AmountField } from "@/features/calculators/amount-field";
+import styles from "@/features/calculators/calculators.module.css";
 import { CalculatorFrame } from "@/features/calculators/calculator-frame";
 import { CalculatorMethod } from "@/features/calculators/calculator-method";
 import {
@@ -9,18 +10,19 @@ import {
   readMinor,
   useCalculatorSearch,
 } from "@/features/calculators/calculator-search";
+import { ChoiceField } from "@/features/calculators/choice-field";
 import { CountField } from "@/features/calculators/count-field";
 import { impliedRate, presentValue } from "@/features/calculators/credit-math";
 import { formatRate } from "@/features/calculators/format-rate";
 import type { Source } from "@/features/calculators/method-section";
 import { RateSourceFields } from "@/features/calculators/rate-source-fields";
 import { monthlyToAnnual } from "@/features/calculators/rate-math";
+import { ResultLead } from "@/features/calculators/result-lead";
 import { ResultList } from "@/features/calculators/result-list";
 import type { Result } from "@/features/calculators/result-list";
 import { useCalculatorMoney } from "@/features/calculators/use-calculator-money";
 import { useRateSource } from "@/features/calculators/use-rate-source";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/choice-select";
 
 const maxInstallments = 1200;
 
@@ -62,43 +64,70 @@ export function CashOrInstallmentsCalculator() {
   let results = null;
   if (cash !== null && cash > 0 && count !== null && installment !== null) {
     const implied = impliedRate(cash, count, installment, firstNow);
-    const rows: Result[] = [
-      { label: t("calc.cash.total"), value: money.format(count * installment) },
-    ];
-    if (typeof implied === "number")
-      rows.push(
-        { label: t("calc.cash.monthly"), value: formatRate(implied, locale) },
-        {
-          label: t("calc.cash.annual"),
-          value: formatRate(monthlyToAnnual(implied), locale),
-        },
-      );
-    if (compare.monthly !== null) {
+    const total = {
+      label: t("calc.cash.total"),
+      value: money.format(count * installment),
+    };
+    const rows: Result[] = [];
+    const rate =
+      typeof implied === "number"
+        ? {
+            monthly: formatRate(implied, locale),
+            annual: formatRate(monthlyToAnnual(implied), locale),
+          }
+        : null;
+    const comparing = compare.monthly !== null && compare.annual !== null;
+    // Without a comparison the monthly rate is the lead, which the list does not repeat.
+    if (rate !== null && comparing)
+      rows.push({ label: t("calc.cash.monthly"), value: rate.monthly });
+    if (rate !== null)
+      rows.push({ label: t("calc.cash.annual"), value: rate.annual });
+    rows.push(total);
+    let lead = null;
+    if (compare.monthly !== null && compare.annual !== null) {
       const value = presentValue(count, installment, compare.monthly, firstNow);
       rows.push({
         label: t("calc.cash.presentValue"),
         value: money.format(value),
       });
       // A comparison states which figure is lower and by how much (design §2).
-      rows.push({
-        label: t(
-          value > cash
-            ? "calc.cash.cashLower"
-            : value < cash
-              ? "calc.cash.installmentsLower"
-              : "calc.cash.same",
-        ),
-        value: money.format(Math.abs(value - cash)),
-      });
-    }
+      lead = (
+        <ResultLead
+          label={t(
+            value > cash
+              ? "calc.cash.cashLower"
+              : value < cash
+                ? "calc.cash.installmentsLower"
+                : "calc.cash.same",
+          )}
+          value={money.format(Math.abs(value - cash))}
+          summary={t("calc.cash.verdictSummary", {
+            rate: formatRate(compare.annual, locale),
+            value: money.format(value),
+          })}
+        />
+      );
+    } else if (rate !== null)
+      lead = (
+        <ResultLead
+          label={t("calc.cash.monthly")}
+          value={rate.monthly}
+          summary={t("calc.cash.summary", rate)}
+        />
+      );
     results = (
-      <>
+      <Stack gap={5}>
         {implied === "no_interest" && (
-          <Text size="sm">{t("calc.cash.noInterest")}</Text>
+          <InlineMessage tone="info">{t("calc.cash.noInterest")}</InlineMessage>
         )}
-        {implied === null && <Text size="sm">{t("calc.cash.noSolution")}</Text>}
+        {implied === null && (
+          <InlineMessage tone="warning">
+            {t("calc.cash.noSolution")}
+          </InlineMessage>
+        )}
+        {lead}
         <ResultList results={rows} />
-      </>
+      </Stack>
     );
   }
 
@@ -112,50 +141,54 @@ export function CashOrInstallmentsCalculator() {
           set({ cash: v });
         }}
       />
-      <CountField
-        label={t("calc.cash.count")}
-        name="count"
-        value={search.count ?? ""}
-        onChange={(v) => {
-          set({ count: v });
-        }}
-      />
-      <AmountField
-        label={t("calc.cash.installment")}
-        value={search.installment}
-        money={money}
-        onChange={(v) => {
-          set({ installment: v });
-        }}
-      />
-      <Field>
-        <FieldLabel>{t("calc.cash.first")}</FieldLabel>
-        <ChoiceSelect
-          label={t("calc.cash.first")}
-          choices={[
-            { value: "later", label: t("calc.cash.first.later") },
-            { value: "now", label: t("calc.cash.first.now") },
-          ]}
-          value={firstNow ? "now" : "later"}
-          multiple={false}
-          onChange={(next) => {
-            set({ first: next === "now" ? "now" : undefined });
+      <div className={styles.pair}>
+        <CountField
+          label={t("calc.cash.count")}
+          unit={t("calc.unit.installments")}
+          name="count"
+          value={search.count ?? ""}
+          onChange={(v) => {
+            set({ count: v });
           }}
         />
-      </Field>
-      <RateSourceFields
-        label={t("calc.cash.compare")}
-        sourceLabel={t("calc.cash.rateSource")}
-        source={compare}
-        set={set}
+        <AmountField
+          label={t("calc.cash.installment")}
+          value={search.installment}
+          money={money}
+          onChange={(v) => {
+            set({ installment: v });
+          }}
+        />
+      </div>
+      <ChoiceField
+        label={t("calc.cash.first")}
+        choices={[
+          { value: "later", label: t("calc.cash.first.later") },
+          { value: "now", label: t("calc.cash.first.now") },
+        ]}
+        value={firstNow ? "now" : "later"}
+        onChange={(next) => {
+          set({ first: next === "now" ? "now" : undefined });
+        }}
       />
     </>
+  );
+
+  const options = (
+    <RateSourceFields
+      label={t("calc.cash.compare")}
+      hint={t("calc.cash.compare.hint")}
+      sourceLabel={t("calc.cash.rateSource")}
+      source={compare}
+      set={set}
+    />
   );
 
   return (
     <CalculatorFrame
       id="cash-or-installments"
       inputs={inputs}
+      options={options}
       results={results}
       method={
         <CalculatorMethod

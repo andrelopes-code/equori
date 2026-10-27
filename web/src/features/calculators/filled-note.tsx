@@ -16,7 +16,8 @@ export function FilledNote({
   const t = useT();
   return (
     <Inline gap={2} align="center">
-      <Text size="sm" tone="muted">
+      {/* xs: the step a field's description is drawn at, so the note reads as one. */}
+      <Text size="xs" tone="muted">
         {t("calc.filled", { origin })}
       </Text>
       {onRefill !== undefined && (

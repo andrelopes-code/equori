@@ -35,7 +35,9 @@ Capture reads its separators and date order from `locale.ConventionsOf` through 
 | `web/src/i18n/locale.ts` | `Locale` and `tagOf`: the `language-region` tag passed to `Intl` | `web/src/i18n/format.test.ts` |
 | `web/src/features/accounts/institution-logo.ts` | `logoOf`: a `switch` on the identifier scheme that returns a logo URL; a scheme without a case has no logo (ADR 013) | `web/src/features/accounts/institution-logo.test.ts` |
 | `web/src/features/calculators/fixed-income-region.ts` | `fixedIncomeRules`: a `switch` on the region that returns the tax on fixed-income yield; a region without a case asks for the rate | `web/src/features/calculators/fixed-income-region.test.ts` |
-| `web/src/features/calculators/credit-cost-calculator.tsx` | `regionalName`: a `switch` on the region that returns the name the region gives the effective annual cost of credit (CET in Brazil); a region without a case names none | `web/src/features/calculators/credit-cost-calculator.test.tsx` |
+| `web/src/features/calculators/credit-cost-calculator.tsx` | `regionalTerms`: a `switch` on the region that returns the name the region gives the effective annual cost of credit (CET in Brazil) and the nominal rate its contracts state beside it (APR in the United States); a region without a case has neither | `web/src/features/calculators/credit-cost-calculator.test.tsx` |
+| `web/src/features/calculators/financing-region.ts` | `systemNames`: a `switch` on the region that returns the names of the fixed-installment and fixed-amortization systems (Price and SAC in Brazil); a region without a case names them by what each keeps fixed | `web/src/features/calculators/financing-calculator.test.tsx` |
+| `web/src/features/calculators/debt-region.ts` | `debtRateQuote`: a `switch` on the region that returns the period a debt's rate is quoted in and whether an annual rate is nominal (an APR in the United States); a region without a case quotes a monthly rate | `web/src/features/calculators/debt-region.test.ts` |
 
 ## Checklist
 

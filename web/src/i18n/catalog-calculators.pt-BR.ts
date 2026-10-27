@@ -9,12 +9,10 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.group.credit": "Crédito e dívidas",
   "calc.group.plan": "Planejar",
   "calc.back": "Calculadoras",
-  "calc.inputs": "Entradas",
-  "calc.results": "Resultados",
+  "calc.results": "Resultado",
   "calc.results.empty":
-    "Preencha as entradas obrigatórias para ver os resultados.",
+    "Preencha os dados; o resultado é recalculado a cada alteração.",
   "calc.method": "Como é calculado",
-  "calc.method.answers": "O que responde",
   "calc.method.steps": "Passos",
   "calc.method.formula": "Fórmula",
   "calc.method.assumptions": "Premissas",
@@ -38,7 +36,7 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "Quanto sobra após o imposto, e que taxa isenta equivale a uma tributada?",
   "calc.financing.title": "Financiamento",
   "calc.financing.question":
-    "Quanto custa um empréstimo, em Price e em SAC, e o que muda uma amortização extra?",
+    "Quanto custa um empréstimo com prestação fixa ou com amortização fixa, e o que muda uma amortização extra?",
   "calc.cash-or-installments.title": "À vista ou parcelado",
   "calc.cash-or-installments.question":
     "O preço à vista ou o parcelamento sai mais barato?",
@@ -59,35 +57,68 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "De quanto os investimentos precisam para pagar as despesas, e quando chegam lá?",
   "calc.own-or-rent.title": "Comprar ou alugar",
   "calc.own-or-rent.question": "Ter o imóvel custa menos por ano que alugar?",
-  "calc.months": "Meses",
   "calc.estimate":
     "Uma estimativa: a taxa é suposta constante, sem imposto nem tarifa.",
   "calc.origin.daily": "{percent} do {index} nos 12 meses até {date}",
+  "calc.origin.spread": "{index} + {spread} ao ano nos 12 meses até {date}",
+  "calc.floating.form": "Como a taxa segue o índice",
+  "calc.floating.percent": "Percentual do índice",
+  "calc.floating.spread": "Índice + spread",
+  "calc.floating.spreadRate": "Spread ao ano",
+  "calc.floating.spread.daily":
+    "Somado à taxa do índice a cada dia, como 1/360 dele, como acumulam os contratos sobre este índice.",
+  "calc.floating.spread.compound":
+    "Composto com o índice no ano: (1 + índice) × (1 + spread) − 1.",
   "calc.origin.monthly": "{index} nos 12 meses até {date}",
   "calc.useIndex": "Usar {index}, últimos 12 meses",
-  "calc.rateSource.fixed": "Taxa fixa",
-  "calc.compound.mode": "Calcular",
+  "calc.rateSource.fixed": "Digitada",
+  "calc.compound.mode": "O que calcular",
   "calc.compound.mode.final": "Valor final",
-  "calc.compound.mode.target": "Depósito para uma meta",
+  "calc.compound.mode.target": "Depósito necessário",
   "calc.compound.initial": "Valor inicial",
   "calc.compound.deposit": "Depósito mensal",
   "calc.compound.target": "Meta",
   "calc.compound.rateSource": "Origem da taxa",
-  "calc.compound.rate": "Taxa anual",
+  "calc.compound.rate": "Taxa de juros",
   "calc.compound.percent": "Percentual do índice",
-  "calc.compound.inflation": "Inflação anual (opcional)",
-  "calc.compound.delay": "Atraso em meses",
+  "calc.compound.inflation": "Inflação anual",
+  "calc.compound.delay": "Começar mais tarde",
   "calc.compound.final": "Valor final",
   "calc.compound.deposited": "Total depositado",
   "calc.compound.interest": "Juros",
   "calc.compound.real": "Valor final em dinheiro de hoje",
   "calc.compound.delayed": "Valor final começando {months} meses depois",
-  "calc.compound.difference": "Diferença para começar agora",
+  "calc.compound.difference": "Custo de esperar",
   "calc.compound.depositNeeded": "Depósito mensal necessário",
   "calc.compound.chart": "Saldo e depósitos por mês",
   "calc.compound.chart.balance": "Saldo",
   "calc.compound.chart.deposited": "Depositado",
   "calc.compound.chart.month": "Mês {month}",
+  "calc.compound.income": "Renda mensal depois do prazo",
+  "calc.compound.income.lasting": "Renda que mantém o patrimônio",
+  "calc.compound.income.lastingToday":
+    "Renda que mantém o poder de compra, em dinheiro de hoje",
+  "calc.compound.income.lastingAtEnd":
+    "A mesma renda, em dinheiro do fim do prazo",
+  "calc.compound.income.spending":
+    "Renda que consome o patrimônio no prazo de saque",
+  "calc.compound.income.spendingToday":
+    "Renda que consome o patrimônio no prazo de saque, em dinheiro de hoje",
+  "calc.compound.income.none":
+    "Com a inflação igual ou acima da rentabilidade, nenhuma renda mantém o poder de compra; um prazo de saque dá uma renda que consome o patrimônio.",
+  "calc.compound.income.realNote":
+    "Sacada no fim de cada mês e corrigida todo mês pela inflação informada; em dinheiro de hoje, a inflação até o fim do prazo é descontada.",
+  "calc.compound.income.nominalNote":
+    "Sem uma inflação informada, a renda mantém o valor nominal do patrimônio, não o seu poder de compra.",
+  "calc.compound.withdraw": "Sacar a renda por",
+  "calc.compound.withdraw.hint":
+    "Vazio: a renda dura e mantém o patrimônio. Com um prazo: a renda consome o patrimônio nesse prazo.",
+  "calc.compound.step8":
+    "Depois do prazo, a renda que mantém o poder de compra é o valor final vezes (j − g), sendo g a inflação mensal; num prazo de saque de n meses, a renda cresce com a inflação e consome o valor final.",
+  "calc.compound.formula7":
+    "W = F · (j − g); em n meses: W = F · (j − g) / (1 − ((1 + g) / (1 + j))^n)",
+  "calc.compound.assumption6":
+    "A renda é sacada no fim de cada mês, e a rentabilidade e a inflação continuam as mesmas depois do prazo.",
   "calc.compound.step1":
     "A taxa anual vira uma taxa mensal: j = (1 + taxa anual)^(1/12) − 1.",
   "calc.compound.step2": "O valor inicial cresce por n meses à taxa j.",
@@ -118,10 +149,10 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "As famílias subestimam o valor futuro de um investimento e a taxa implícita em um fluxo de pagamentos (Stango e Zinman 2009).",
   "calc.compound.limit3":
     "Os valores são arredondados para a menor unidade; um contrato pode arredondar de outro modo.",
-  "calc.compound.volatility": "Volatilidade anual (opcional)",
-  "calc.compound.p10": "Valor final, percentil 10",
-  "calc.compound.p50": "Valor final, percentil 50",
-  "calc.compound.p90": "Valor final, percentil 90",
+  "calc.compound.volatility": "Volatilidade anual",
+  "calc.compound.p10": "Cenário desfavorável (percentil 10)",
+  "calc.compound.p50": "Cenário central (mediana)",
+  "calc.compound.p90": "Cenário favorável (percentil 90)",
   "calc.compound.step7":
     "Com uma volatilidade, 2.000 trajetórias de retornos mensais são sorteadas e os percentis 10, 50 e 90 dos seus valores finais são mostrados.",
   "calc.compound.formula5":
@@ -135,18 +166,18 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.index": "Índice",
   "calc.index.none": "Nenhum",
   "calc.rates.rate": "Taxa",
-  "calc.rates.inflation": "Inflação anual (opcional)",
+  "calc.rates.inflation": "Inflação anual",
   "calc.rates.percent": "Percentual do índice",
   "calc.rates.monthly": "Taxa mensal",
   "calc.rates.annual": "Taxa anual",
   "calc.rates.real": "Taxa anual descontada a inflação",
-  "calc.rates.ofIndex": "Taxa anual do percentual do índice",
+  "calc.rates.ofIndex": "Taxa anual pelo índice",
   "calc.rates.step1":
     "Uma taxa mensal se capitaliza 12 vezes em um ano; uma taxa anual volta pela raiz 12.",
   "calc.rates.step2":
     "A taxa real divide o crescimento da taxa nominal pelo crescimento dos preços.",
   "calc.rates.step3":
-    "Um percentual de um índice diário aplica esse percentual à taxa de cada dia dos últimos 12 meses e capitaliza os dias.",
+    "Um percentual de um índice diário aplica esse percentual à taxa de cada dia dos últimos 12 meses e capitaliza os dias; um spread soma 1/360 dele a cada dia no €STR e no SOFR, e se compõe com o ano do índice nos demais.",
   "calc.rates.formula1":
     "M5: anual = (1 + mensal)^12 − 1; mensal = (1 + anual)^(1/12) − 1",
   "calc.rates.formula2": "M6: real = (1 + nominal) / (1 + inflação) − 1",
@@ -181,33 +212,40 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "As taxas são as que a fonte do índice publicou e esta instância guardou.",
   "calc.correction.limit1":
     "Os resultados podem diferir dos de uma instituição, que pode usar outras datas ou arredondamentos (Banco Central do Brasil, Calculadora do Cidadão).",
-  "calc.financing.solve": "Calcular",
+  "calc.financing.solve": "O que calcular",
   "calc.financing.solve.installment": "Prestação",
-  "calc.financing.solve.amount": "Valor financiado",
+  "calc.financing.solve.amount": "Valor",
   "calc.financing.solve.rate": "Taxa",
   "calc.financing.solve.months": "Prazo",
   "calc.financing.amount": "Valor financiado",
   "calc.financing.rate": "Taxa de juros",
-  "calc.financing.installment": "Prestação Price",
-  "calc.financing.prepayMonth": "Amortização extra após a prestação (opcional)",
+  "calc.financing.installment": "Prestação fixa",
+  "calc.financing.prepayMonth": "Amortização extra após a prestação nº",
   "calc.financing.prepayAmount": "Valor da amortização extra",
-  "calc.financing.solved.installment": "Prestação Price",
   "calc.financing.solved.amount": "Valor financiado",
   "calc.financing.solved.rate": "Taxa mensal",
   "calc.financing.solved.annual": "Taxa anual",
   "calc.financing.solved.months": "Prazo em meses",
   "calc.financing.noSolution":
     "Nenhum valor resolve: a prestação não cobre os juros, ou a taxa ficaria fora de 0% a 100% ao mês.",
-  "calc.financing.compare": "Price e SAC",
+  "calc.financing.compare": "Prestação fixa e amortização fixa",
   "calc.financing.figure": "Valor",
-  "calc.financing.price": "Price",
-  "calc.financing.sac": "SAC",
+  "calc.financing.price": "Prestação fixa",
+  "calc.financing.sac": "Amortização fixa",
   "calc.financing.first": "Primeira prestação",
   "calc.financing.last": "Última prestação",
   "calc.financing.paid": "Total pago",
   "calc.financing.interest": "Total de juros",
-  "calc.financing.priceTable": "Tabela Price por mês",
-  "calc.financing.sacTable": "Tabela SAC por mês",
+  "calc.financing.priceTable": "Prestação fixa, mês a mês",
+  "calc.financing.sacTable": "Amortização fixa, mês a mês",
+  "calc.financing.br.price": "Price",
+  "calc.financing.br.sac": "SAC",
+  "calc.financing.br.installment": "Prestação Price",
+  "calc.financing.br.compare": "Price e SAC",
+  "calc.financing.br.priceTable": "Tabela Price por mês",
+  "calc.financing.br.sacTable": "Tabela SAC por mês",
+  "calc.financing.br.names":
+    "No Brasil, a prestação fixa é a Tabela Price, e a amortização fixa é o Sistema de Amortização Constante (SAC).",
   "calc.financing.col.month": "Mês",
   "calc.financing.col.installment": "Prestação",
   "calc.financing.col.interest": "Juros",
@@ -223,9 +261,9 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.financing.prepay.invalid":
     "O mês da amortização extra deve estar entre 1 e o prazo menos um.",
   "calc.financing.step1":
-    "Price: a prestação p é fixa e vem de M3; ela é arredondada uma vez.",
+    "Prestação fixa: a prestação p é fixa e vem de M3; ela é arredondada uma vez.",
   "calc.financing.step2":
-    "SAC: a amortização A = q0 / n é fixa e arredondada uma vez; os juros caem a cada mês.",
+    "Amortização fixa: a amortização A = q0 / n é fixa e arredondada uma vez; os juros caem a cada mês.",
   "calc.financing.step3":
     "Os juros de cada mês são o saldo vezes j, arredondados; a última prestação zera o saldo.",
   "calc.financing.step4":
@@ -249,8 +287,8 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.cash.count": "Número de parcelas",
   "calc.cash.installment": "Parcela",
   "calc.cash.first": "Primeira parcela",
-  "calc.cash.first.later": "Em um mês",
-  "calc.cash.first.now": "Agora",
+  "calc.cash.first.later": "Daqui a um mês",
+  "calc.cash.first.now": "No ato",
   "calc.cash.rateSource": "Origem da taxa de comparação",
   "calc.cash.compare": "Taxa de comparação",
   "calc.cash.monthly": "Taxa mensal implícita",
@@ -301,6 +339,9 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "Nenhum custo anual de −99% a 10.000% iguala os fluxos ao valor liberado menos as tarifas.",
   "calc.credit.cet":
     "No Brasil este custo é o Custo Efetivo Total (CET), definido pela Resolução CMN nº 4.881.",
+  "calc.credit.us.apr": "APR (taxa mensal × 12)",
+  "calc.credit.us.aprNote":
+    "Nos Estados Unidos o contrato informa a APR, a taxa mensal vezes 12 (Regulation Z, apêndice J); ela é menor que o custo efetivo anual, que compõe os meses.",
   "calc.credit-cost.step1":
     "Cada prestação é datada mensalmente a partir do primeiro vencimento; um dia que o mês não tem vira o seu último dia.",
   "calc.credit-cost.step2":
@@ -319,7 +360,7 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.fixedIncome.amount": "Valor aplicado",
   "calc.fixedIncome.rateSource": "Origem da taxa",
   "calc.fixedIncome.rate": "Taxa bruta",
-  "calc.fixedIncome.days": "Dias de aplicação",
+  "calc.fixedIncome.days": "Prazo da aplicação",
   "calc.fixedIncome.kind": "Tributação",
   "calc.fixedIncome.kind.taxable": "Tributado",
   "calc.fixedIncome.kind.exempt": "Isento",
@@ -335,6 +376,14 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "Abaixo de 30 dias incide um imposto sobre o resgate (IOF), que esta calculadora não calcula.",
   "calc.fixedIncome.checked":
     "As regras de imposto da região foram conferidas em {date}.",
+  "calc.fixedIncome.de.rate":
+    "Na Alemanha, o imposto sobre juros é de 25% mais o adicional de solidariedade de 5,5% desse imposto: 26,375% (EStG § 32d; SolzG § 4).",
+  "calc.fixedIncome.de.left":
+    "O imposto de igreja e a isenção anual do poupador dependem da pessoa e não são descontados.",
+  "calc.fixedIncome.pt.rate":
+    "Em Portugal, os juros sofrem retenção à taxa liberatória de 28% (Código do IRS, artigo 71.º, 1).",
+  "calc.fixedIncome.pt.left":
+    "Uma taxa reduzida pela residência da pessoa ou pelo prazo do depósito não é aplicada.",
   "calc.fixedIncome.br.table":
     "No Brasil o imposto sobre um rendimento tributado é 22,5% até 180 dias, 20% de 181 a 360, 17,5% de 361 a 720 e 15% acima de 720 (Lei 11.033/2004, art. 1).",
   "calc.fixedIncome.br.days252":
@@ -361,7 +410,12 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.debt.row": "Dívida {n}",
   "calc.debt.name": "Nome da dívida {n}",
   "calc.debt.balance": "Saldo da dívida {n}",
-  "calc.debt.rate": "Taxa mensal da dívida {n}",
+  "calc.debt.rate": "Taxa da dívida {n}",
+  "calc.debt.ratePeriod": "Taxas das dívidas",
+  "calc.debt.ratePeriod.effective":
+    "Uma taxa anual é lida como efetiva: a taxa do mês, composta por 12 meses, chega a ela.",
+  "calc.debt.ratePeriod.nominal":
+    "Uma taxa anual é lida como APR: a taxa do mês é a APR dividida por 12.",
   "calc.debt.minimum": "Pagamento mínimo da dívida {n}",
   "calc.debt.remove": "Remover a dívida {n}",
   "calc.debt.add": "Adicionar uma dívida",
@@ -399,14 +453,14 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.debt-payoff.limit1":
     "A avalanche dá o menor total de juros; fechar primeiro as contas pequenas previu a quitação de todas as dívidas em dados de 6.000 clientes de renegociação (Gal e McShane 2012). A escolha é da pessoa.",
   "calc.debt-payoff.limit2": "Um plano para em 1.200 meses.",
-  "calc.recurring.schedule": "Agendamento (opcional)",
+  "calc.recurring.schedule": "Preencher de um agendamento",
   "calc.recurring.schedule.none": "Nenhum",
   "calc.recurring.amount": "Valor por ocorrência",
   "calc.recurring.per": "Frequência",
   "calc.recurring.per.month": "Todo mês",
   "calc.recurring.per.year": "Todo ano",
   "calc.recurring.years": "Anos",
-  "calc.recurring.rate": "Taxa anual (opcional)",
+  "calc.recurring.rate": "Taxa anual",
   "calc.recurring.origin": "agendamento {name}",
   "calc.recurring.total": "Total pago",
   "calc.recurring.futureValue": "Os mesmos pagamentos investidos à taxa",
@@ -460,4 +514,94 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "A fórmula vem do imposto de renda federal dos Estados Unidos; os impostos de outro país entram por ω e τ.",
   "calc.own-or-rent.limit2":
     "A valorização esperada e o prêmio de risco são estimativas escolhidas pela pessoa.",
+  "calc.results.emptyTitle": "O resultado aparece aqui",
+  "calc.options": "Ajustes opcionais",
+  "calc.method.description": "Passos, fórmula, premissas, limites e fontes",
+  "calc.term": "Prazo",
+  "calc.unit": "Unidade",
+  "calc.fixedIncome.days.equivalent":
+    "{days} dias corridos de hoje até o resgate.",
+  "calc.unit.months": "meses",
+  "calc.unit.days": "dias",
+  "calc.unit.years": "anos",
+  "calc.unit.installments": "parcelas",
+  "calc.rateSource.hint":
+    "Uma taxa digitada abaixo, ou a dos últimos 12 meses de um índice.",
+  "calc.percent.hint": "100 é o próprio índice; 110 é 10% acima dele.",
+  "calc.compound.initial.hint": "O que já está investido hoje.",
+  "calc.compound.deposit.hint": "Feito no início de cada mês.",
+  "calc.compound.target.hint": "O saldo a alcançar no fim do prazo.",
+  "calc.compound.rate.hint":
+    "Rentabilidade esperada, antes de impostos e tarifas.",
+  "calc.compound.inflation.hint":
+    "Acrescenta o valor final em dinheiro de hoje.",
+  "calc.compound.delay.hint":
+    "Acrescenta quanto o valor final perde se os depósitos começarem este número de meses depois.",
+  "calc.compound.volatility.hint":
+    "Quanto os retornos anuais variam (desvio padrão). Acrescenta uma faixa de valores finais tirada de 2.000 trajetórias simuladas.",
+  "calc.compound.summary":
+    "{deposited} depositados em {months} meses rendem {interest} de juros.",
+  "calc.compound.targetSummary":
+    "Com este depósito todo mês por {months} meses, o saldo chega a {target}.",
+  "calc.rates.rate.hint": "A taxa como foi informada, com o seu período.",
+  "calc.rates.inflation.hint": "Acrescenta a taxa descontada a inflação.",
+  "calc.rates.index.hint":
+    "Acrescenta a taxa anual de um percentual do índice nos últimos 12 meses.",
+  "calc.correction.amount.hint": "O valor no mês inicial.",
+  "calc.correction.summary":
+    "O {index} variou {percent} de {from} a {to}, em {months} meses.",
+  "calc.fixedIncome.days.hint": "Dias corridos da aplicação ao resgate.",
+  "calc.fixedIncome.kind.hint":
+    "Isento: o rendimento não paga imposto de renda.",
+  "calc.fixedIncome.summary":
+    "Rendimento bruto de {gross}, menos {tax} de imposto ({share}), em {days} dias.",
+  "calc.financing.solve.hint": "Informe os outros três valores.",
+  "calc.financing.installment.hint": "A prestação que fica igual todo mês.",
+  "calc.financing.prepayMonth.hint":
+    "Acrescenta o que um pagamento extra muda: prazo menor ou prestação menor.",
+  "calc.financing.summary":
+    "{priceName}: {price} todo mês. {sacName}: de {sacFirst} caindo até {sacLast}.",
+  "calc.financing.prepay.title": "Com a amortização extra",
+  "calc.financing.schedule": "Mês a mês",
+  "calc.cash.compare.hint":
+    "Quanto o dinheiro renderia enquanto as parcelas são pagas. Com ela, o resultado diz qual opção custa menos.",
+  "calc.cash.summary":
+    "Parcelar custa {monthly} ao mês ({annual} ao ano) sobre o preço à vista.",
+  "calc.cash.verdictSummary":
+    "A {rate} ao ano, as parcelas valem hoje {value}.",
+  "calc.credit.released.hint": "O que cai na conta.",
+  "calc.credit.fees.hint":
+    "Tarifas, seguros e impostos pagos no início ou descontados do valor liberado.",
+  "calc.credit.cost": "Juros e tarifas",
+  "calc.credit.summary": "{paid} pagos por {released} recebidos.",
+  "calc.debt.budget.hint":
+    "Tudo o que vai para as dívidas por mês, somando os mínimos.",
+  "calc.debt.list": "Dívidas",
+  "calc.debt.summary":
+    "A última dívida termina no mês {avalanche} com a avalanche e no mês {snowball} com a bola de neve.",
+  "calc.recurring.rate.hint":
+    "Acrescenta quanto os mesmos pagamentos alcançariam se fossem investidos.",
+  "calc.recurring.summaryMonth": "{amount} todo mês por {years} anos.",
+  "calc.recurring.summaryYear": "{amount} todo ano por {years} anos.",
+  "calc.own.rent.hint": "Doze meses de aluguel de um imóvel equivalente.",
+  "calc.own.riskFree.hint":
+    "O que o dinheiro do imóvel renderia sem risco, por ano.",
+  "calc.own.propertyTax.hint": "Imposto anual sobre o imóvel, em % do preço.",
+  "calc.own.deductibleTax.hint":
+    "Só onde os juros do financiamento são dedutíveis; 0 nos demais casos.",
+  "calc.own.mortgage.hint": "Usada só na dedução.",
+  "calc.own.maintenanceRate.hint": "Reparos e desgaste por ano, em % do preço.",
+  "calc.own.appreciationRate.hint": "Alta anual esperada do preço.",
+  "calc.own.riskPremiumRate.hint": "Compensação pelo risco de o preço cair.",
+  "calc.own.summary":
+    "Ter o imóvel custa {own} por ano, contra {rent} de aluguel.",
+  "calc.unavailable": "Esta calculadora ainda não está disponível",
+  "calc.unavailable.description":
+    "Ela lê valores das suas contas que esta versão ainda não calcula.",
+  "calc.group.invest.description":
+    "Como um valor cresce, o que uma taxa significa e o que sobra após o imposto.",
+  "calc.group.credit.description":
+    "Quanto custa um empréstimo ou um parcelamento, e como quitar dívidas.",
+  "calc.group.plan.description":
+    "Custos recorrentes, reservas e a escolha entre comprar e alugar.",
 };

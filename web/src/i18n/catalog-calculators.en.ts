@@ -8,11 +8,9 @@ export const calculatorsEn = {
   "calc.group.credit": "Credit and debt",
   "calc.group.plan": "Plan",
   "calc.back": "Calculators",
-  "calc.inputs": "Inputs",
-  "calc.results": "Results",
-  "calc.results.empty": "Fill in the required inputs to see the results.",
+  "calc.results": "Result",
+  "calc.results.empty": "Fill in the inputs; the result updates as you type.",
   "calc.method": "How it is calculated",
-  "calc.method.answers": "What it answers",
   "calc.method.steps": "Steps",
   "calc.method.formula": "Formula",
   "calc.method.assumptions": "Assumptions",
@@ -37,7 +35,7 @@ export const calculatorsEn = {
     "What remains after tax, and which exempt rate matches a taxable one?",
   "calc.financing.title": "Financing",
   "calc.financing.question":
-    "What does a loan cost, in Price and in SAC, and what does a prepayment change?",
+    "What does a loan cost with a fixed installment or a fixed amortization, and what does a prepayment change?",
   "calc.cash-or-installments.title": "Cash or installments",
   "calc.cash-or-installments.question":
     "Is the cash price or the installment plan cheaper?",
@@ -58,35 +56,69 @@ export const calculatorsEn = {
     "How large must investments be to pay the expenses, and when are they reached?",
   "calc.own-or-rent.title": "Own or rent",
   "calc.own-or-rent.question": "Does owning cost less per year than renting?",
-  "calc.months": "Months",
   "calc.estimate":
     "An estimate: the rate is assumed constant, with no tax or fee.",
   "calc.origin.daily": "{percent} of {index} over the 12 months to {date}",
+  "calc.origin.spread":
+    "{index} + {spread} a year over the 12 months to {date}",
+  "calc.floating.form": "How the rate follows the index",
+  "calc.floating.percent": "Percent of the index",
+  "calc.floating.spread": "Index + spread",
+  "calc.floating.spreadRate": "Spread a year",
+  "calc.floating.spread.daily":
+    "Added to the index's rate each day, as its 360th, as contracts on this index accrue.",
+  "calc.floating.spread.compound":
+    "Compounded with the index over the year: (1 + index) × (1 + spread) − 1.",
   "calc.origin.monthly": "{index} over the 12 months to {date}",
   "calc.useIndex": "Use {index}, last 12 months",
-  "calc.rateSource.fixed": "Fixed rate",
-  "calc.compound.mode": "Calculate",
+  "calc.rateSource.fixed": "Typed",
+  "calc.compound.mode": "What to calculate",
   "calc.compound.mode.final": "Final amount",
-  "calc.compound.mode.target": "Deposit for a target",
+  "calc.compound.mode.target": "Required deposit",
   "calc.compound.initial": "Initial amount",
   "calc.compound.deposit": "Monthly deposit",
   "calc.compound.target": "Target",
   "calc.compound.rateSource": "Rate source",
-  "calc.compound.rate": "Annual rate",
+  "calc.compound.rate": "Interest rate",
   "calc.compound.percent": "Percent of the index",
-  "calc.compound.inflation": "Annual inflation (optional)",
-  "calc.compound.delay": "Delay in months",
+  "calc.compound.inflation": "Annual inflation",
+  "calc.compound.delay": "Start later",
   "calc.compound.final": "Final amount",
   "calc.compound.deposited": "Total deposited",
   "calc.compound.interest": "Interest",
   "calc.compound.real": "Final amount in today's money",
   "calc.compound.delayed": "Final amount when starting {months} months later",
-  "calc.compound.difference": "Difference to starting now",
+  "calc.compound.difference": "Cost of waiting",
   "calc.compound.depositNeeded": "Monthly deposit needed",
   "calc.compound.chart": "Balance and deposits by month",
   "calc.compound.chart.balance": "Balance",
   "calc.compound.chart.deposited": "Deposited",
   "calc.compound.chart.month": "Month {month}",
+  "calc.compound.income": "Monthly income after the term",
+  "calc.compound.income.lasting": "Income that keeps the balance",
+  "calc.compound.income.lastingToday":
+    "Income that keeps the purchasing power, in today's money",
+  "calc.compound.income.lastingAtEnd":
+    "The same income, in money of the term's end",
+  "calc.compound.income.spending":
+    "Income that spends the balance over the withdrawal term",
+  "calc.compound.income.spendingToday":
+    "Income that spends the balance over the withdrawal term, in today's money",
+  "calc.compound.income.none":
+    "With inflation at or above the rate, no income keeps the purchasing power; a withdrawal term gives one that spends the balance.",
+  "calc.compound.income.realNote":
+    "Withdrawn at the end of each month and raised each month with the inflation typed; today's money removes that inflation up to the end of the term.",
+  "calc.compound.income.nominalNote":
+    "Without an inflation, the income keeps the balance's nominal value, not its purchasing power.",
+  "calc.compound.withdraw": "Withdraw the income for",
+  "calc.compound.withdraw.hint":
+    "Empty: the income lasts and keeps the balance. With a term: the income spends the balance over it.",
+  "calc.compound.step8":
+    "After the term, the income that keeps the purchasing power is the final amount times (j − g), g being the monthly inflation; over a withdrawal term of n months the income grows with inflation and spends the final amount.",
+  "calc.compound.formula7":
+    "W = F · (j − g); over n months: W = F · (j − g) / (1 − ((1 + g) / (1 + j))^n)",
+  "calc.compound.assumption6":
+    "The income is withdrawn at the end of each month, and the rate and the inflation stay the same after the term.",
   "calc.compound.step1":
     "The annual rate becomes a monthly rate: j = (1 + annual rate)^(1/12) − 1.",
   "calc.compound.step2": "The initial amount grows for n months at j.",
@@ -116,10 +148,10 @@ export const calculatorsEn = {
     "Households underestimate the future value of an investment and the rate implied by a payment stream (Stango and Zinman 2009).",
   "calc.compound.limit3":
     "Amounts are rounded to the minor unit; a contract may round differently.",
-  "calc.compound.volatility": "Annual volatility (optional)",
-  "calc.compound.p10": "Final amount, 10th percentile",
-  "calc.compound.p50": "Final amount, 50th percentile",
-  "calc.compound.p90": "Final amount, 90th percentile",
+  "calc.compound.volatility": "Annual volatility",
+  "calc.compound.p10": "Unfavourable case (10th percentile)",
+  "calc.compound.p50": "Middle case (median)",
+  "calc.compound.p90": "Favourable case (90th percentile)",
   "calc.compound.step7":
     "With a volatility, 2,000 paths of monthly returns are drawn and the 10th, 50th and 90th percentile of their final amounts are shown.",
   "calc.compound.formula5":
@@ -133,18 +165,18 @@ export const calculatorsEn = {
   "calc.index": "Index",
   "calc.index.none": "None",
   "calc.rates.rate": "Rate",
-  "calc.rates.inflation": "Annual inflation (optional)",
+  "calc.rates.inflation": "Annual inflation",
   "calc.rates.percent": "Percent of the index",
   "calc.rates.monthly": "Monthly rate",
   "calc.rates.annual": "Annual rate",
   "calc.rates.real": "Annual rate after inflation",
-  "calc.rates.ofIndex": "Annual rate of the percent of the index",
+  "calc.rates.ofIndex": "Annual rate from the index",
   "calc.rates.step1":
     "A monthly rate compounds 12 times in a year; an annual rate is converted back by the 12th root.",
   "calc.rates.step2":
     "The real rate divides the growth of the nominal rate by the growth of prices.",
   "calc.rates.step3":
-    "A percent of a daily index applies that percent to each day's rate of the last 12 months, then compounds the days.",
+    "A percent of a daily index applies that percent to each day's rate of the last 12 months, then compounds the days; a spread is added to each day as its 360th for €STR and SOFR, and compounds with the index's year otherwise.",
   "calc.rates.formula1":
     "M5: annual = (1 + monthly)^12 − 1; monthly = (1 + annual)^(1/12) − 1",
   "calc.rates.formula2": "M6: real = (1 + nominal) / (1 + inflation) − 1",
@@ -178,33 +210,40 @@ export const calculatorsEn = {
     "The rates are the ones the index source published and this instance stored.",
   "calc.correction.limit1":
     "Results can differ from those of an institution, which may use other dates or rounding (Banco Central do Brasil, Calculadora do Cidadão).",
-  "calc.financing.solve": "Solve for",
+  "calc.financing.solve": "What to calculate",
   "calc.financing.solve.installment": "Installment",
   "calc.financing.solve.amount": "Amount",
   "calc.financing.solve.rate": "Rate",
   "calc.financing.solve.months": "Term",
   "calc.financing.amount": "Amount financed",
   "calc.financing.rate": "Interest rate",
-  "calc.financing.installment": "Price installment",
-  "calc.financing.prepayMonth": "Prepayment after installment (optional)",
+  "calc.financing.installment": "Fixed installment",
+  "calc.financing.prepayMonth": "Extra payment after installment no.",
   "calc.financing.prepayAmount": "Prepayment amount",
-  "calc.financing.solved.installment": "Price installment",
   "calc.financing.solved.amount": "Amount financed",
   "calc.financing.solved.rate": "Monthly rate",
   "calc.financing.solved.annual": "Annual rate",
   "calc.financing.solved.months": "Term in months",
   "calc.financing.noSolution":
     "No value solves it: the installment does not cover the interest, or the rate would fall outside 0% to 100% a month.",
-  "calc.financing.compare": "Price and SAC",
+  "calc.financing.compare": "Fixed installment and fixed amortization",
   "calc.financing.figure": "Figure",
-  "calc.financing.price": "Price",
-  "calc.financing.sac": "SAC",
+  "calc.financing.price": "Fixed installment",
+  "calc.financing.sac": "Fixed amortization",
   "calc.financing.first": "First installment",
   "calc.financing.last": "Last installment",
   "calc.financing.paid": "Total paid",
   "calc.financing.interest": "Total interest",
-  "calc.financing.priceTable": "Price table by month",
-  "calc.financing.sacTable": "SAC table by month",
+  "calc.financing.priceTable": "Fixed installment by month",
+  "calc.financing.sacTable": "Fixed amortization by month",
+  "calc.financing.br.price": "Price",
+  "calc.financing.br.sac": "SAC",
+  "calc.financing.br.installment": "Price installment",
+  "calc.financing.br.compare": "Price and SAC",
+  "calc.financing.br.priceTable": "Price table by month",
+  "calc.financing.br.sacTable": "SAC table by month",
+  "calc.financing.br.names":
+    "In Brazil the fixed installment is the Price table and the fixed amortization is the Constant Amortization System (SAC).",
   "calc.financing.col.month": "Month",
   "calc.financing.col.installment": "Installment",
   "calc.financing.col.interest": "Interest",
@@ -220,9 +259,9 @@ export const calculatorsEn = {
   "calc.financing.prepay.invalid":
     "The prepayment month must be between 1 and the term less one.",
   "calc.financing.step1":
-    "Price: the installment p is fixed and found from M3; it is rounded once.",
+    "Fixed installment: the installment p is fixed and found from M3; it is rounded once.",
   "calc.financing.step2":
-    "SAC: the amortization A = q0 / n is fixed and rounded once; the interest falls each month.",
+    "Fixed amortization: the amortization A = q0 / n is fixed and rounded once; the interest falls each month.",
   "calc.financing.step3":
     "Each month's interest is the balance times j, rounded; the last installment closes the balance.",
   "calc.financing.step4":
@@ -300,6 +339,9 @@ export const calculatorsEn = {
     "No annual cost from −99% to 10,000% makes the flows equal the amount released less the fees.",
   "calc.credit.cet":
     "In Brazil this cost is the Custo Efetivo Total (CET), defined by Resolução CMN nº 4.881.",
+  "calc.credit.us.apr": "APR (monthly rate × 12)",
+  "calc.credit.us.aprNote":
+    "In the United States a contract states the APR, the monthly rate times 12 (Regulation Z, appendix J); it is lower than the effective annual cost, which compounds the months.",
   "calc.credit-cost.step1":
     "Each installment is dated monthly from the first due date; a day the month lacks becomes its last day.",
   "calc.credit-cost.step2":
@@ -318,7 +360,7 @@ export const calculatorsEn = {
   "calc.fixedIncome.amount": "Amount invested",
   "calc.fixedIncome.rateSource": "Rate source",
   "calc.fixedIncome.rate": "Gross rate",
-  "calc.fixedIncome.days": "Days held",
+  "calc.fixedIncome.days": "Holding term",
   "calc.fixedIncome.kind": "Taxation",
   "calc.fixedIncome.kind.taxable": "Taxable",
   "calc.fixedIncome.kind.exempt": "Exempt",
@@ -334,6 +376,14 @@ export const calculatorsEn = {
     "Below 30 days a tax on the redemption (IOF) applies, which this calculator does not compute.",
   "calc.fixedIncome.checked":
     "The tax rules of the region were checked on {date}.",
+  "calc.fixedIncome.de.rate":
+    "In Germany the tax on interest is 25% plus the solidarity surcharge of 5.5% of that tax: 26.375% (EStG § 32d; SolzG § 4).",
+  "calc.fixedIncome.de.left":
+    "Church tax and the yearly saver's allowance depend on the person and are not subtracted.",
+  "calc.fixedIncome.pt.rate":
+    "In Portugal interest is withheld at the final rate of 28% (Código do IRS, article 71, 1).",
+  "calc.fixedIncome.pt.left":
+    "A reduced rate that applies to the person's residence or to the deposit's term is not applied.",
   "calc.fixedIncome.br.table":
     "In Brazil the tax on a taxable yield is 22.5% up to 180 days, 20% from 181 to 360, 17.5% from 361 to 720 and 15% above 720 (Lei 11.033/2004, art. 1).",
   "calc.fixedIncome.br.days252":
@@ -359,7 +409,12 @@ export const calculatorsEn = {
   "calc.debt.row": "Debt {n}",
   "calc.debt.name": "Name of debt {n}",
   "calc.debt.balance": "Balance of debt {n}",
-  "calc.debt.rate": "Monthly rate of debt {n}",
+  "calc.debt.rate": "Rate of debt {n}",
+  "calc.debt.ratePeriod": "Debt rates quoted",
+  "calc.debt.ratePeriod.effective":
+    "An annual rate is read as effective: the month's rate compounds to it over 12 months.",
+  "calc.debt.ratePeriod.nominal":
+    "An annual rate is read as an APR: the month's rate is the APR divided by 12.",
   "calc.debt.minimum": "Minimum payment of debt {n}",
   "calc.debt.remove": "Remove debt {n}",
   "calc.debt.add": "Add a debt",
@@ -397,14 +452,14 @@ export const calculatorsEn = {
   "calc.debt-payoff.limit1":
     "The avalanche gives the lowest total interest; closing small accounts first predicted paying off all debt in data on 6,000 debt-settlement clients (Gal and McShane 2012). The choice is the person's.",
   "calc.debt-payoff.limit2": "A plan stops at 1,200 months.",
-  "calc.recurring.schedule": "Schedule (optional)",
+  "calc.recurring.schedule": "Fill from a schedule",
   "calc.recurring.schedule.none": "None",
   "calc.recurring.amount": "Amount per occurrence",
   "calc.recurring.per": "Frequency",
   "calc.recurring.per.month": "Every month",
   "calc.recurring.per.year": "Every year",
   "calc.recurring.years": "Years",
-  "calc.recurring.rate": "Annual rate (optional)",
+  "calc.recurring.rate": "Annual rate",
   "calc.recurring.origin": "schedule {name}",
   "calc.recurring.total": "Total paid",
   "calc.recurring.futureValue": "The same payments invested at the rate",
@@ -457,4 +512,94 @@ export const calculatorsEn = {
     "The formula comes from the United States federal income tax; another country's taxes enter through ω and τ.",
   "calc.own-or-rent.limit2":
     "Expected appreciation and the risk premium are estimates the person chooses.",
+  "calc.results.emptyTitle": "The result appears here",
+  "calc.options": "Optional adjustments",
+  "calc.method.description": "Steps, formula, assumptions, limits and sources",
+  "calc.term": "Term",
+  "calc.unit": "Unit",
+  "calc.fixedIncome.days.equivalent":
+    "{days} calendar days from today to the redemption.",
+  "calc.unit.months": "months",
+  "calc.unit.days": "days",
+  "calc.unit.years": "years",
+  "calc.unit.installments": "installments",
+  "calc.rateSource.hint":
+    "A rate typed below, or the last 12 months of an index.",
+  "calc.percent.hint": "100 is the index itself; 110 is 10% above it.",
+  "calc.compound.initial.hint": "What is invested today.",
+  "calc.compound.deposit.hint": "Made at the start of each month.",
+  "calc.compound.target.hint": "The balance to reach at the end.",
+  "calc.compound.rate.hint": "Expected return, before tax and fees.",
+  "calc.compound.inflation.hint": "Adds the final amount in today's money.",
+  "calc.compound.delay.hint":
+    "Adds what the final amount loses when the deposits start this many months later.",
+  "calc.compound.volatility.hint":
+    "How much yearly returns vary (standard deviation). Adds a range of final amounts from 2,000 simulated paths.",
+  "calc.compound.summary":
+    "{deposited} deposited over {months} months earn {interest} in interest.",
+  "calc.compound.targetSummary":
+    "This deposit each month for {months} months reaches {target}.",
+  "calc.rates.rate.hint": "The rate as quoted, with its period.",
+  "calc.rates.inflation.hint": "Adds the rate after inflation.",
+  "calc.rates.index.hint":
+    "Adds the annual rate of a percent of the index over its last 12 months.",
+  "calc.correction.amount.hint": "The amount on the start month.",
+  "calc.correction.summary":
+    "{index} varied {percent} from {from} to {to}, over {months} months.",
+  "calc.fixedIncome.days.hint":
+    "Calendar days from the investment to the redemption.",
+  "calc.fixedIncome.kind.hint": "Exempt: the yield pays no income tax.",
+  "calc.fixedIncome.summary":
+    "{gross} of gross yield, less {tax} of tax ({share}), over {days} days.",
+  "calc.financing.solve.hint": "Fill in the other three figures.",
+  "calc.financing.installment.hint":
+    "The installment that stays the same every month.",
+  "calc.financing.prepayMonth.hint":
+    "Adds what an extra payment changes: a shorter term or a smaller installment.",
+  "calc.financing.summary":
+    "{priceName}: {price} every month. {sacName}: from {sacFirst} down to {sacLast}.",
+  "calc.financing.prepay.title": "With the extra payment",
+  "calc.financing.schedule": "Month by month",
+  "calc.cash.compare.hint":
+    "What the money would earn meanwhile. With it, the result states which option costs less.",
+  "calc.cash.summary":
+    "Paying in installments costs {monthly} a month ({annual} a year) over the cash price.",
+  "calc.cash.verdictSummary":
+    "At {rate} a year, the installments are worth {value} today.",
+  "calc.credit.released.hint": "What reaches the account.",
+  "calc.credit.fees.hint":
+    "Fees, insurance and taxes paid at the start or taken from the amount released.",
+  "calc.credit.cost": "Interest and fees",
+  "calc.credit.summary": "{paid} paid back for {released} received.",
+  "calc.debt.budget.hint":
+    "All that goes to the debts each month, minimums included.",
+  "calc.debt.list": "Debts",
+  "calc.debt.summary":
+    "The last debt closes in month {avalanche} with the avalanche and in month {snowball} with the snowball.",
+  "calc.recurring.rate.hint":
+    "Adds what the same payments would reach if invested.",
+  "calc.recurring.summaryMonth": "{amount} every month for {years} years.",
+  "calc.recurring.summaryYear": "{amount} every year for {years} years.",
+  "calc.own.rent.hint": "Twelve months of rent for a comparable home.",
+  "calc.own.riskFree.hint":
+    "What the money in the home would earn at no risk, a year.",
+  "calc.own.propertyTax.hint": "Yearly property tax, as a share of the price.",
+  "calc.own.deductibleTax.hint":
+    "Only where mortgage interest is deductible; 0 elsewhere.",
+  "calc.own.mortgage.hint": "Used only for the deduction.",
+  "calc.own.maintenanceRate.hint":
+    "Repairs and wear, a year, as a share of the price.",
+  "calc.own.appreciationRate.hint": "Expected yearly rise of the price.",
+  "calc.own.riskPremiumRate.hint":
+    "Compensation for the risk of the price falling.",
+  "calc.own.summary": "Owning costs {own} a year against {rent} of rent.",
+  "calc.unavailable": "This calculator is not available yet",
+  "calc.unavailable.description":
+    "It reads figures of your accounts that this version does not compute yet.",
+  "calc.group.invest.description":
+    "How an amount grows, what a rate means and what is left after tax.",
+  "calc.group.credit.description":
+    "What a loan or an installment plan costs, and how to pay debts off.",
+  "calc.group.plan.description":
+    "Recurring costs, reserves and the choice between owning and renting.",
 } as const;

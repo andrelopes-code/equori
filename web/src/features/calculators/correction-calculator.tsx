@@ -1,10 +1,12 @@
 import { Field, FieldLabel } from "@slotted/react/field";
-import { Text } from "@slotted/react/typography";
+import { InlineMessage } from "@slotted/react/inline-message";
+import { Stack } from "@slotted/react/stack";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
 import { AmountField } from "@/features/calculators/amount-field";
 import { indexRatesQuery } from "@/features/calculators/api";
+import styles from "@/features/calculators/calculators.module.css";
 import { CalculatorFrame } from "@/features/calculators/calculator-frame";
 import { CalculatorMethod } from "@/features/calculators/calculator-method";
 import {
@@ -12,9 +14,12 @@ import {
   readMonth,
   useCalculatorSearch,
 } from "@/features/calculators/calculator-search";
+import { ChoiceField } from "@/features/calculators/choice-field";
 import { formatRate } from "@/features/calculators/format-rate";
+import { indexName } from "@/features/calculators/index-catalog";
 import { accumulated } from "@/features/calculators/index-rates";
 import type { Source } from "@/features/calculators/method-section";
+import { ResultLead } from "@/features/calculators/result-lead";
 import { ResultList } from "@/features/calculators/result-list";
 import { roundHalfEven } from "@/features/calculators/round";
 import { useCalculatorMoney } from "@/features/calculators/use-calculator-money";
@@ -22,7 +27,6 @@ import { useIndexes } from "@/features/calculators/use-index-rate";
 import { shiftMonth } from "@/features/overview";
 import { formatReferenceMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/choice-select";
 import { MonthControl } from "@/ui/month-control";
 
 const sources: Source[] = [
@@ -89,42 +93,59 @@ export function CorrectionCalculator() {
 
   let results = null;
   if (index === undefined)
-    results = <Text size="sm">{t("calc.noIndexes")}</Text>;
+    results = <InlineMessage tone="info">{t("calc.noIndexes")}</InlineMessage>;
   else if (from !== null && to !== null && !ordered)
-    results = <Text size="sm">{t("calc.correction.order")}</Text>;
+    results = (
+      <InlineMessage tone="warning">{t("calc.correction.order")}</InlineMessage>
+    );
   else if (!inRange && first !== undefined && last !== undefined)
     results = (
-      <Text size="sm">
+      <InlineMessage tone="warning">
         {t("calc.correction.range", {
           first: formatReferenceMonth(first, locale),
           last: formatReferenceMonth(last, locale),
         })}
-      </Text>
+      </InlineMessage>
     );
-  else if (amount !== null && rates !== undefined && rates.length > 0) {
+  else if (
+    amount !== null &&
+    from !== null &&
+    to !== null &&
+    rates !== undefined &&
+    rates.length > 0
+  ) {
     const change = accumulated(rates);
     const months = new Set(rates.map((r) => r.date.slice(0, 7))).size;
     results = (
-      <ResultList
-        results={[
-          {
-            label: t("calc.correction.corrected"),
-            value: money.format(roundHalfEven(amount * (1 + change))),
-          },
-          {
-            label: t("calc.correction.factor"),
-            value: new Intl.NumberFormat(locale, {
-              minimumFractionDigits: 8,
-              maximumFractionDigits: 8,
-            }).format(1 + change),
-          },
-          {
-            label: t("calc.correction.percent"),
-            value: formatRate(change, locale),
-          },
-          { label: t("calc.correction.months"), value: String(months) },
-        ]}
-      />
+      <Stack gap={5}>
+        <ResultLead
+          label={t("calc.correction.corrected")}
+          value={money.format(roundHalfEven(amount * (1 + change)))}
+          summary={t("calc.correction.summary", {
+            index: indexName(index.id),
+            percent: formatRate(change, locale),
+            from: formatReferenceMonth(from, locale),
+            to: formatReferenceMonth(to, locale),
+            months,
+          })}
+        />
+        <ResultList
+          results={[
+            {
+              label: t("calc.correction.factor"),
+              value: new Intl.NumberFormat(locale, {
+                minimumFractionDigits: 8,
+                maximumFractionDigits: 8,
+              }).format(1 + change),
+            },
+            {
+              label: t("calc.correction.percent"),
+              value: formatRate(change, locale),
+            },
+            { label: t("calc.correction.months"), value: String(months) },
+          ]}
+        />
+      </Stack>
     );
   }
 
@@ -132,6 +153,7 @@ export function CorrectionCalculator() {
     <>
       <AmountField
         label={t("calc.correction.amount")}
+        hint={t("calc.correction.amount.hint")}
         value={search.amount}
         money={money}
         onChange={(v) => {
@@ -140,45 +162,43 @@ export function CorrectionCalculator() {
       />
       {index !== undefined && (
         <>
-          <Field>
-            <FieldLabel>{t("calc.index")}</FieldLabel>
-            <ChoiceSelect
-              label={t("calc.index")}
-              choices={indexes.map((i) => ({
-                value: i.id,
-                label: i.id.toUpperCase(),
-              }))}
-              value={index.id}
-              multiple={false}
-              onChange={(next) => {
-                if (typeof next === "string") set({ index: next });
-              }}
-            />
-          </Field>
-          {from !== null && (
-            <Field>
-              <FieldLabel>{t("calc.correction.from")}</FieldLabel>
-              <MonthControl
-                label={t("calc.correction.from")}
-                value={from}
-                onChange={(m) => {
-                  set({ from: m });
-                }}
-              />
-            </Field>
-          )}
-          {to !== null && (
-            <Field>
-              <FieldLabel>{t("calc.correction.to")}</FieldLabel>
-              <MonthControl
-                label={t("calc.correction.to")}
-                value={to}
-                onChange={(m) => {
-                  set({ to: m });
-                }}
-              />
-            </Field>
-          )}
+          <ChoiceField
+            label={t("calc.index")}
+            choices={indexes.map((i) => ({
+              value: i.id,
+              label: indexName(i.id),
+            }))}
+            value={index.id}
+            onChange={(next) => {
+              set({ index: next });
+            }}
+          />
+          <div className={styles.pair}>
+            {from !== null && (
+              <Field>
+                <FieldLabel>{t("calc.correction.from")}</FieldLabel>
+                <MonthControl
+                  label={t("calc.correction.from")}
+                  value={from}
+                  onChange={(m) => {
+                    set({ from: m });
+                  }}
+                />
+              </Field>
+            )}
+            {to !== null && (
+              <Field>
+                <FieldLabel>{t("calc.correction.to")}</FieldLabel>
+                <MonthControl
+                  label={t("calc.correction.to")}
+                  value={to}
+                  onChange={(m) => {
+                    set({ to: m });
+                  }}
+                />
+              </Field>
+            )}
+          </div>
         </>
       )}
     </>

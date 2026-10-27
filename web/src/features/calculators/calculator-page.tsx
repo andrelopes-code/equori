@@ -35,6 +35,7 @@ export function CalculatorPage() {
   return Screen === undefined ? (
     <CalculatorFrame
       id={calculatorId}
+      unavailable
       inputs={null}
       results={null}
       method={null}

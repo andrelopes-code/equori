@@ -46,3 +46,22 @@ export function balances(
   }
   return out;
 }
+
+// The monthly income a balance pays at the monthly rate j, withdrawn at the end of each month and
+// raised each month with inflation g, in money of the balance's date. Without a term it keeps
+// the balance's purchasing power: W = F × (j − g), and none exists when g ≥ j. Over a term of n
+// months it spends the balance: W = F × (j − g) / (1 − ((1 + g) / (1 + j))^n), or
+// F × (1 + j) / n when j = g. Minor units, rounded half to even.
+export function monthlyIncome(
+  balance: number,
+  j: number,
+  g: number,
+  months?: number,
+): number | null {
+  if (months === undefined)
+    return j > g ? roundHalfEven(balance * (j - g)) : null;
+  if (j === g) return roundHalfEven((balance * (1 + j)) / months);
+  return roundHalfEven(
+    (balance * (j - g)) / (1 - ((1 + g) / (1 + j)) ** months),
+  );
+}
