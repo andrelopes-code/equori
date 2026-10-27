@@ -73,7 +73,13 @@ import {
   validateBudgetSearch,
   validatePlanningSearch,
 } from "@/features/planning";
-import { LoginPage, meQuery, rememberDeviceUser } from "@/features/session";
+import {
+  LoginPage,
+  SetupPage,
+  meQuery,
+  rememberDeviceUser,
+  setupQuery,
+} from "@/features/session";
 import { SettingsPage, validateSettingsSearch } from "@/features/setup";
 import {
   CapturePage,
@@ -121,8 +127,41 @@ const loginRoute = createRoute({
         ? search.redirect
         : undefined,
   }),
+  // W-U6 of the Windows design: while no user exists, the login leads to the first-user setup.
+  // A failed answer (no server, an older one) leaves the login as it is.
+  beforeLoad: async ({ context }) => {
+    const setup = await setupState(context);
+    // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirects are thrown objects.
+    if (setup?.required === true) throw redirect({ to: "/setup" });
+  },
   component: LoginPage,
 });
+
+const setupRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/setup",
+  beforeLoad: async ({ context }) => {
+    const setup = await setupState(context);
+    if (setup?.required === false)
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirects are thrown objects.
+      throw redirect({ to: "/login", search: { redirect: undefined } });
+  },
+  component: SetupPage,
+});
+
+async function setupState(context: {
+  queryClient: QueryClient;
+  api: Client<paths>;
+}): Promise<{ required: boolean } | undefined> {
+  try {
+    return await context.queryClient.query({
+      ...setupQuery(context.api),
+      retry: false,
+    });
+  } catch {
+    return undefined;
+  }
+}
 
 const authedRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -423,6 +462,7 @@ const previewRoutes = import.meta.env.DEV
 
 export const routeTree = rootRoute.addChildren([
   loginRoute,
+  setupRoute,
   offlineRoute,
   ...previewRoutes,
   authedRoute.addChildren([
@@ -495,7 +535,8 @@ export function AppRouterProvider({ router }: { router: AppRouter }) {
     () =>
       expiry.install(() => {
         const { pathname, href } = router.state.location;
-        if (pathname === "/login") {
+        // Neither screen holds a session to lose; leaving /setup would also drop its token.
+        if (pathname === "/login" || pathname === "/setup") {
           queryClient.clear();
           return;
         }

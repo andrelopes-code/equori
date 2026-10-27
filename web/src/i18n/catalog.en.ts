@@ -250,6 +250,25 @@ export const catalogEn = {
   "login.email": "Email",
   "login.password": "Password",
   "login.submit": "Sign in",
+  "setup.title": "Create the first user",
+  "setup.subtitle":
+    "This user administers the instance. Its language and region set how equori writes numbers, dates and money.",
+  "setup.email": "Email",
+  "setup.password": "Password",
+  "setup.password.help": "At least 12 characters.",
+  "setup.language": "Language",
+  "setup.region": "Region",
+  "setup.region.placeholder": "Choose a region",
+  "setup.currency": "Base currency",
+  "setup.currency.help":
+    "A three-letter code such as the one on a bank statement. Leave it empty to use the region's currency, when it has one.",
+  "setup.submit": "Create and sign in",
+  "setup.required": "Required.",
+  "setup.token_missing":
+    'This address has no setup token. Open the address equori printed when it first started: the setup.url file in its data directory, or the line "first user setup" of its log.',
+  "problem.setup_token_invalid":
+    "This setup address is not the one this instance issued. Open the address from setup.url or from the log again.",
+  "problem.setup_complete": "The first user exists. Sign in instead.",
   "scheme.dark": "Dark",
   "scheme.light": "Light",
   "scheme.system": "System",
