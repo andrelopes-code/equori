@@ -13,6 +13,8 @@ import (
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/index"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/index/brsgs"
+	"github.com/andrelopes-code/equori/internal/marketdata/internal/index/cpi"
+	"github.com/andrelopes-code/equori/internal/marketdata/internal/index/overnight"
 )
 
 // indexWindowDays bounds one fetch: the SGS refuses a daily series over ten years, and five years
@@ -33,6 +35,10 @@ func indexEntries() []indexEntry {
 	return []indexEntry{
 		{"br_cdi", sgs, func(hc *http.Client, url string) index.Source { return brsgs.CDI(hc, url) }},
 		{"br_ipca", sgs, func(hc *http.Client, url string) index.Source { return brsgs.IPCA(hc, url) }},
+		{"eu_estr", "https://data-api.ecb.europa.eu", func(hc *http.Client, url string) index.Source { return overnight.ESTR(hc, url) }},
+		{"ea_hicp", "https://ec.europa.eu", func(hc *http.Client, url string) index.Source { return cpi.HICP(hc, url) }},
+		{"us_sofr", "https://markets.newyorkfed.org", func(hc *http.Client, url string) index.Source { return overnight.SOFR(hc, url) }},
+		{"us_cpi", "https://api.bls.gov", func(hc *http.Client, url string) index.Source { return cpi.CPIU(hc, url) }},
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -166,7 +167,7 @@ func TestIndexFeedsIPCA(t *testing.T) {
 
 func TestNewIndexSources(t *testing.T) {
 	t.Parallel()
-	if got := marketdata.IndexSourceIDs(); len(got) != 2 || got[0] != "br_cdi" || got[1] != "br_ipca" {
+	if got := marketdata.IndexSourceIDs(); !slices.Equal(got, []string{"br_cdi", "br_ipca", "eu_estr", "ea_hicp", "us_sofr", "us_cpi"}) {
 		t.Fatalf("IndexSourceIDs = %v", got)
 	}
 	if _, err := marketdata.NewIndexSources([]string{"nope"}, nil, http.DefaultClient); err == nil || !strings.Contains(err.Error(), "EQUORI_INDEX_FEEDS") || !strings.Contains(err.Error(), "nope") {
