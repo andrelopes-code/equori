@@ -116,4 +116,16 @@ export const calculatorsEn = {
     "Households underestimate the future value of an investment and the rate implied by a payment stream (Stango and Zinman 2009).",
   "calc.compound.limit3":
     "Amounts are rounded to the minor unit; a contract may round differently.",
+  "calc.compound.volatility": "Annual volatility (optional)",
+  "calc.compound.p10": "Final amount, 10th percentile",
+  "calc.compound.p50": "Final amount, 50th percentile",
+  "calc.compound.p90": "Final amount, 90th percentile",
+  "calc.compound.step7":
+    "With a volatility, 2,000 paths of monthly returns are drawn and the 10th, 50th and 90th percentile of their final amounts are shown.",
+  "calc.compound.formula5":
+    "Range: return of a month = exp(μ + σ·z) − 1, σ = volatility / √12, μ = ln(1 + annual rate) / 12 − σ²/2, z standard normal",
+  "calc.compound.assumption5":
+    "For the range, monthly returns are independent and log-normal; the draws use a fixed seed, so the same inputs give the same range.",
+  "calc.compound.limit4":
+    "The range is not a forecast. With withdrawals, one fixed return understates the range of outcomes (Pfau 2016).",
 } as const;

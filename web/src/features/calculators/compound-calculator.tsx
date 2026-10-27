@@ -30,6 +30,7 @@ import { annualToMonthly } from "@/features/calculators/rate-math";
 import { ResultList } from "@/features/calculators/result-list";
 import type { Result } from "@/features/calculators/result-list";
 import { roundHalfEven } from "@/features/calculators/round";
+import { useSimulation } from "@/features/calculators/use-simulation";
 import { useCalculatorMoney } from "@/features/calculators/use-calculator-money";
 import {
   useIndexes,
@@ -73,12 +74,14 @@ const steps: MessageKey[] = [
   "calc.compound.step4",
   "calc.compound.step5",
   "calc.compound.step6",
+  "calc.compound.step7",
 ];
 const formula: MessageKey[] = [
   "calc.compound.formula1",
   "calc.compound.formula2",
   "calc.compound.formula3",
   "calc.compound.formula4",
+  "calc.compound.formula5",
   "calc.compound.symbols",
 ];
 const assumptions: MessageKey[] = [
@@ -86,11 +89,13 @@ const assumptions: MessageKey[] = [
   "calc.compound.assumption2",
   "calc.compound.assumption3",
   "calc.compound.assumption4",
+  "calc.compound.assumption5",
 ];
 const limits: MessageKey[] = [
   "calc.compound.limit1",
   "calc.compound.limit2",
   "calc.compound.limit3",
+  "calc.compound.limit4",
 ];
 
 // Design §5, compound: what an initial amount and monthly deposits reach (M1, M2), or the
@@ -127,6 +132,18 @@ export function CompoundCalculator() {
       : readInt(search.delay, 0, maxMonths);
   const initial = readMinor(search.initial) ?? 0;
   const goal = readMinor(search.target);
+  const j = annual === null ? null : annualToMonthly(annual);
+  const deposit =
+    j === null || months === null
+      ? null
+      : target
+        ? goal === null
+          ? null
+          : depositForTarget(goal, initial, j, months)
+        : (readMinor(search.deposit) ?? 0);
+  // Empty by default: no source gives a volatility (design §2, anti-goals).
+  const volatility = readRate(search.volatility);
+  const range = useSimulation(initial, deposit, months, annual, volatility);
 
   if (money === null)
     return (
@@ -137,16 +154,6 @@ export function CompoundCalculator() {
         method={null}
       />
     );
-
-  const j = annual === null ? null : annualToMonthly(annual);
-  const deposit =
-    j === null || months === null
-      ? null
-      : target
-        ? goal === null
-          ? null
-          : depositForTarget(goal, initial, j, months)
-        : (readMinor(search.deposit) ?? 0);
 
   let results = null;
   if (j !== null && months !== null && deposit !== null) {
@@ -189,6 +196,12 @@ export function CompoundCalculator() {
         },
       );
     }
+    if (range !== null)
+      rows.push(
+        { label: t("calc.compound.p10"), value: money.format(range.p10) },
+        { label: t("calc.compound.p50"), value: money.format(range.p50) },
+        { label: t("calc.compound.p90"), value: money.format(range.p90) },
+      );
     const format = (v: number) => money.format(v);
     const series: ChartSeries[] = [
       {
@@ -382,6 +395,14 @@ export function CompoundCalculator() {
         value={search.delay ?? String(defaultDelay)}
         onChange={(v) => {
           set({ delay: v });
+        }}
+      />
+      <RateField
+        label={t("calc.compound.volatility")}
+        name="volatility"
+        value={search.volatility ?? ""}
+        onChange={(v) => {
+          set({ volatility: v });
         }}
       />
     </>

@@ -115,4 +115,20 @@ describe("Compound interest calculator", () => {
       screen.getByRole("textbox", { name: catalogEn["calc.compound.rate"] }),
     ).toHaveValue("12.682503");
   });
+
+  it("shows the range of outcomes only with a volatility", async () => {
+    const { unmount } = await open(
+      "initial=100000&deposit=10000&months=12&rate=12",
+    );
+    await result(catalogEn["calc.compound.final"]);
+    expect(screen.queryByText(catalogEn["calc.compound.p10"])).toBeNull();
+    unmount();
+    await open("initial=100000&deposit=10000&months=12&rate=12&volatility=20");
+    for (const key of [
+      "calc.compound.p10",
+      "calc.compound.p50",
+      "calc.compound.p90",
+    ] as const)
+      expect(await result(catalogEn[key])).toMatch(/\d/);
+  });
 });

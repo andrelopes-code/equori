@@ -118,4 +118,16 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "As famílias subestimam o valor futuro de um investimento e a taxa implícita em um fluxo de pagamentos (Stango e Zinman 2009).",
   "calc.compound.limit3":
     "Os valores são arredondados para a menor unidade; um contrato pode arredondar de outro modo.",
+  "calc.compound.volatility": "Volatilidade anual (opcional)",
+  "calc.compound.p10": "Valor final, percentil 10",
+  "calc.compound.p50": "Valor final, percentil 50",
+  "calc.compound.p90": "Valor final, percentil 90",
+  "calc.compound.step7":
+    "Com uma volatilidade, 2.000 trajetórias de retornos mensais são sorteadas e os percentis 10, 50 e 90 dos seus valores finais são mostrados.",
+  "calc.compound.formula5":
+    "Faixa: retorno de um mês = exp(μ + σ·z) − 1, σ = volatilidade / √12, μ = ln(1 + taxa anual) / 12 − σ²/2, z normal padrão",
+  "calc.compound.assumption5":
+    "Para a faixa, os retornos mensais são independentes e log-normais; os sorteios usam uma semente fixa, então as mesmas entradas dão a mesma faixa.",
+  "calc.compound.limit4":
+    "A faixa não é uma previsão. Com resgates, um retorno fixo subestima a faixa de resultados (Pfau 2016).",
 };
