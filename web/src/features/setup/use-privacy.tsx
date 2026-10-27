@@ -35,7 +35,13 @@ export function UsePrivacy({ use }: { use: ModelUse }) {
           )}
         </Tag>
         {use.needs.length > 0 && (
-          <Tag size="sm" tone="secondary">
+          <Tag
+            size="sm"
+            tone="secondary"
+            title={use.needs
+              .map((c) => t(`assistant.capability.${c}.hint`))
+              .join(" ")}
+          >
             {t("assistant.chain.needs", {
               list: use.needs.map(capability).join(", "),
             })}

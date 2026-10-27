@@ -112,6 +112,8 @@ function api(
     me?: { language: string; region: string };
     daysQueries?: string[];
     days?: boolean;
+    providers?: unknown[];
+    uses?: unknown[];
   } = {},
 ) {
   const record =
@@ -134,9 +136,11 @@ function api(
     "GET /api/v1/instruments": () => json(200, { items: [] }),
     "GET /api/v1/assistant/presets": () => json(200, { items: presets }),
     "GET /api/v1/assistant/providers": () =>
-      json(200, { items: [groq, instance] }),
+      json(200, { items: answers.providers ?? [groq, instance] }),
     "GET /api/v1/assistant/uses": () =>
-      json(200, { items: [defaultSuggest, customChat, lackingUse] }),
+      json(200, {
+        items: answers.uses ?? [defaultSuggest, customChat, lackingUse],
+      }),
     "POST /api/v1/assistant/providers": record(
       "POST /assistant/providers",
       answers.create ?? (() => json(201, groq)),
@@ -513,5 +517,61 @@ describe("assistant settings", () => {
         },
       ]);
     });
+  });
+
+  // S2: with one provider and default chains, the features, chains, usage and limits stay closed.
+  describe("advanced", () => {
+    const advanced = () =>
+      screen.findByRole("button", { name: pt["assistant.advanced"] });
+
+    it("stays closed with one provider and default chains", async () => {
+      await renderApp("/settings?section=assistant", {
+        fetch: api([], { uses: [defaultSuggest] }),
+      });
+      expect(await advanced()).toHaveAttribute("aria-expanded", "false");
+      expect(screen.queryByText(pt["assistant.uses"])).toBeNull();
+    });
+
+    // Review Focus 3 of phase 5.
+    it("opens on a custom chain", async () => {
+      await renderApp("/settings?section=assistant", {
+        fetch: api([], { uses: [defaultSuggest, customChat] }),
+      });
+      expect(await advanced()).toHaveAttribute("aria-expanded", "true");
+    });
+
+    it("opens with two providers", async () => {
+      await renderApp("/settings?section=assistant", {
+        fetch: api([], {
+          uses: [defaultSuggest],
+          providers: [groq, { ...groq, id: "p2", name: "Other" }],
+        }),
+      });
+      expect(await advanced()).toHaveAttribute("aria-expanded", "true");
+    });
+  });
+
+  // S3: each capability badge and each Default or Custom badge explains itself.
+  it("explains the badges", async () => {
+    await renderApp("/settings?section=assistant", {
+      fetch: api([], { uses: [defaultSuggest, customChat] }),
+    });
+    const tag = (el: HTMLElement) => el.closest('[data-ui="tag"]');
+    expect(
+      tag(await screen.findByText(pt["assistant.use.custom"])),
+    ).toHaveAccessibleDescription(pt["assistant.use.custom.hint"]);
+    expect(
+      tag(screen.getByText(pt["assistant.use.default"])),
+    ).toHaveAccessibleDescription(pt["assistant.use.default.hint"]);
+    const needs = screen.getAllByText(
+      pt["assistant.chain.needs"].replace(
+        "{list}",
+        pt["assistant.capability.tools"],
+      ),
+    )[0];
+    if (needs === undefined) throw new Error("no needs tag");
+    expect(tag(needs)).toHaveAccessibleDescription(
+      pt["assistant.capability.tools.hint"],
+    );
   });
 });

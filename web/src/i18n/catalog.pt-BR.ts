@@ -197,6 +197,17 @@ export const catalogPtBR: Catalog = {
   "assistant.use.assistant.chat": "Conversa com o assistente",
   "assistant.use.default": "Padrão",
   "assistant.use.custom": "Personalizada",
+  "assistant.advanced": "Avançado",
+  "assistant.use.default.hint":
+    "A cadeia que o equori escolheu para esta função; ela acompanha os provedores que você adiciona.",
+  "assistant.use.custom.hint":
+    "Uma cadeia que você definiu para esta função; o equori a mantém como você deixou.",
+  "assistant.capability.tools.hint":
+    "O modelo chama as ferramentas do equori para ler e alterar seus registros.",
+  "assistant.capability.structured_output.hint":
+    "O modelo responde na estrutura exata que o equori pede.",
+  "assistant.capability.image_input.hint":
+    "O modelo lê imagens, como um recibo ou uma página de fatura.",
   "assistant.use.none": "Nenhum provedor atende esta função.",
   "assistant.use.sends": "Envia dados financeiros",
   "assistant.use.local": "Não envia dados financeiros",

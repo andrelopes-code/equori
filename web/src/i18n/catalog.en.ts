@@ -192,6 +192,17 @@ export const catalogEn = {
   "assistant.use.assistant.chat": "Assistant chat",
   "assistant.use.default": "Default",
   "assistant.use.custom": "Custom",
+  "assistant.advanced": "Advanced",
+  "assistant.use.default.hint":
+    "The chain equori chose for this feature; it follows the providers you add.",
+  "assistant.use.custom.hint":
+    "A chain you set for this feature; equori keeps it as you left it.",
+  "assistant.capability.tools.hint":
+    "The model calls equori's tools to read and change your records.",
+  "assistant.capability.structured_output.hint":
+    "The model answers in the exact structure equori asks for.",
+  "assistant.capability.image_input.hint":
+    "The model reads images, such as a receipt or a statement page.",
   "assistant.use.none": "No provider serves this feature.",
   "assistant.use.sends": "Sends financial data",
   "assistant.use.local": "Sends no financial data",
