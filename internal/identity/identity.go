@@ -74,6 +74,11 @@ func (m *Module) Profile(ctx context.Context, userID int64) (locale.Locale, erro
 	return m.svc.Profile(ctx, userID)
 }
 
+// IsAdmin reports whether a user has the role admin.
+func (m *Module) IsAdmin(ctx context.Context, userID int64) (bool, error) {
+	return m.svc.IsAdmin(ctx, userID)
+}
+
 // RequireSession must wrap the whole HTTP handler: it is the single authentication gate for /api/.
 // Tools returns the identity module's tools for language models (ADR 012).
 func (m *Module) Tools() tool.Group {

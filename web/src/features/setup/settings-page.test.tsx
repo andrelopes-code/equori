@@ -478,6 +478,7 @@ describe("settings page", () => {
         catalogPtBR["settings.ledger.title"],
         catalogPtBR["calendar.title"],
         catalogPtBR["settings.integrations.title"],
+        catalogPtBR["settings.market_data.title"],
         catalogPtBR["settings.assistant.title"],
         catalogPtBR["settings.external_access.title"],
         catalogPtBR["settings.data.title"],

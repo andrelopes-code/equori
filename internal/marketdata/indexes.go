@@ -27,18 +27,21 @@ const indexHistoryYears = 20
 type indexEntry struct {
 	id         string
 	defaultURL string
-	build      func(hc *http.Client, url string) index.Source
+	// lag is the number of calendar days after the end of a period by which its rate is due
+	// (ADR 025 F9).
+	lag   int
+	build func(hc *http.Client, url string) index.Source
 }
 
 func indexEntries() []indexEntry {
 	const sgs = "https://api.bcb.gov.br"
 	return []indexEntry{
-		{"br_cdi", sgs, func(hc *http.Client, url string) index.Source { return brsgs.CDI(hc, url) }},
-		{"br_ipca", sgs, func(hc *http.Client, url string) index.Source { return brsgs.IPCA(hc, url) }},
-		{"eu_estr", "https://data-api.ecb.europa.eu", func(hc *http.Client, url string) index.Source { return overnight.ESTR(hc, url) }},
-		{"ea_hicp", "https://ec.europa.eu", func(hc *http.Client, url string) index.Source { return cpi.HICP(hc, url) }},
-		{"us_sofr", "https://markets.newyorkfed.org", func(hc *http.Client, url string) index.Source { return overnight.SOFR(hc, url) }},
-		{"us_cpi", "https://api.bls.gov", func(hc *http.Client, url string) index.Source { return cpi.CPIU(hc, url) }},
+		{"br_cdi", sgs, 5, func(hc *http.Client, url string) index.Source { return brsgs.CDI(hc, url) }},
+		{"br_ipca", sgs, 20, func(hc *http.Client, url string) index.Source { return brsgs.IPCA(hc, url) }},
+		{"eu_estr", "https://data-api.ecb.europa.eu", 5, func(hc *http.Client, url string) index.Source { return overnight.ESTR(hc, url) }},
+		{"ea_hicp", "https://ec.europa.eu", 25, func(hc *http.Client, url string) index.Source { return cpi.HICP(hc, url) }},
+		{"us_sofr", "https://markets.newyorkfed.org", 5, func(hc *http.Client, url string) index.Source { return overnight.SOFR(hc, url) }},
+		{"us_cpi", "https://api.bls.gov", 20, func(hc *http.Client, url string) index.Source { return cpi.CPIU(hc, url) }},
 	}
 }
 
@@ -73,18 +76,9 @@ func NewIndexSources(ids []string, urls map[string]string, hc *http.Client) ([]i
 	return out, nil
 }
 
-// TickIndexes fetches, for each enabled index, the rates from the day after the latest stored
-// one to today; a first fetch starts 20 years before today, or at the earliest issue date of a
-// security that follows the index when that is earlier. A failure is logged; the next tick
-// fetches the same days again.
-func (m *Module) TickIndexes(ctx context.Context) {
-	for _, src := range m.feeds.Indexes {
-		if err := m.tickIndex(ctx, src); err != nil {
-			m.logFeed(ctx, err, "source", src.ID())
-		}
-	}
-}
-
+// tickIndex fetches the rates of an index from the day after the latest stored one to today; a
+// first fetch starts 20 years before today, or at the earliest issue date of a security that
+// follows the index when that is earlier. On a failure the next tick fetches the same days again.
 func (m *Module) tickIndex(ctx context.Context, src index.Source) error {
 	followed := src.Index()
 	issued, err := m.q.IndexTermsStart(ctx, &followed)
@@ -120,11 +114,17 @@ func (m *Module) tickIndex(ctx context.Context, src index.Source) error {
 	return nil
 }
 
-// Indexes lists the enabled indexes with at least one stored rate, in the order of
-// EQUORI_INDEX_FEEDS.
+// Indexes lists the enabled indexes with at least one stored rate, in the order of the registry.
 func (m *Module) Indexes(ctx context.Context) ([]IndexSummary, error) {
+	on, err := m.enabledFeeds(ctx)
+	if err != nil {
+		return nil, err
+	}
 	out := []IndexSummary{}
 	for _, src := range m.feeds.Indexes {
+		if !on[src.ID()] {
+			continue
+		}
 		r, err := m.q.IndexRange(ctx, src.Index())
 		if err != nil {
 			return nil, fmt.Errorf("read the range of %s: %w", src.Index(), err)
@@ -138,7 +138,11 @@ func (m *Module) Indexes(ctx context.Context) ([]IndexSummary, error) {
 
 // IndexRates returns the stored rates of an enabled index in [from, to], oldest first.
 func (m *Module) IndexRates(ctx context.Context, id string, from, to time.Time) ([]IndexRate, error) {
-	if !slices.ContainsFunc(m.feeds.Indexes, func(s index.Source) bool { return s.Index() == id }) {
+	on, err := m.enabledFeeds(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !slices.ContainsFunc(m.feeds.Indexes, func(s index.Source) bool { return s.Index() == id && on[s.ID()] }) {
 		return nil, domain.ErrUnknownIndex
 	}
 	if err := domain.ValidIndexRange(from, to); err != nil {

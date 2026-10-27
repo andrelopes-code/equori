@@ -65,9 +65,9 @@ type Config struct {
 	LLMFactory func(api, baseURL, key string) llm.Provider
 	// LLMWait blocks a chat turn until a transient cooldown ends; nil uses a timer on Clock.
 	LLMWait func(ctx context.Context, until time.Time) error
-	// PriceFeeds names the enabled price feeds; FeedURLs overrides their base URLs by identifier.
+	// PriceFeeds and IndexFeeds name the feeds enabled while no feed setting is stored (ADR 025
+	// F2); FeedURLs overrides the base URLs of every feed by identifier.
 	PriceFeeds []string
-	// IndexFeeds names the enabled index feeds; FeedURLs overrides their base URLs too.
 	IndexFeeds []string
 	FeedURLs   map[string]string
 	// ExtraTools join the registry and the chat set; production passes none.
@@ -106,18 +106,26 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		SecureCookies: cfg.SecureCookies, DefaultCurrency: ledger.DefaultBaseCurrency, SetupDone: cfg.SetupDone,
 	}, log)
 	feedClient := &http.Client{Timeout: time.Minute}
-	sources, err := marketdata.NewSources(cfg.PriceFeeds, cfg.FeedURLs, feedClient)
+	// The variables are validated here and seed the stored feed settings (ADR 025 F2, F4).
+	if _, err := marketdata.NewSources(cfg.PriceFeeds, nil, feedClient); err != nil {
+		return nil, err
+	}
+	if _, err := marketdata.NewIndexSources(cfg.IndexFeeds, nil, feedClient); err != nil {
+		return nil, err
+	}
+	sources, err := marketdata.NewSources(marketdata.SourceIDs(), cfg.FeedURLs, feedClient)
 	if err != nil {
 		return nil, err
 	}
-	indexSources, err := marketdata.NewIndexSources(cfg.IndexFeeds, cfg.FeedURLs, feedClient)
+	indexSources, err := marketdata.NewIndexSources(marketdata.IndexSourceIDs(), cfg.FeedURLs, feedClient)
 	if err != nil {
 		return nil, err
 	}
 	marketdataModule := marketdata.New(pool).WithFeeds(marketdata.FeedConfig{
-		Sources: sources, Indexes: indexSources, Client: feedClient, Clock: clk, Log: log,
+		Sources: sources, Indexes: indexSources, Seed: slices.Concat(cfg.PriceFeeds, cfg.IndexFeeds),
+		Client: feedClient, Clock: clk, Log: log,
 	})
-	marketdataModule.WithProfiles(identityModule)
+	marketdataModule.WithProfiles(identityModule).WithAdmins(identityModule)
 	ledgerModule := ledger.New(pool, dispatcher, marketdataModule, identityModule, clk, log)
 	version := cmp.Or(cfg.Version, "dev")
 	reportingModule := reporting.New(pool, dispatcher, clk, log, version)

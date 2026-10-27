@@ -124,6 +124,24 @@ func (e InstrumentType) Valid() bool {
 	}
 }
 
+// Defines values for MarketDataFeedKind.
+const (
+	MarketDataFeedKindIndex MarketDataFeedKind = "index"
+	MarketDataFeedKindPrice MarketDataFeedKind = "price"
+)
+
+// Valid indicates whether the value is a known member of the MarketDataFeedKind enum.
+func (e MarketDataFeedKind) Valid() bool {
+	switch e {
+	case MarketDataFeedKindIndex:
+		return true
+	case MarketDataFeedKindPrice:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for TermsDayCount.
 const (
 	Act365 TermsDayCount = "act365"
@@ -277,6 +295,41 @@ type InstrumentList struct {
 // InstrumentType defines model for InstrumentType.
 type InstrumentType string
 
+// MarketDataFeed defines model for MarketDataFeed.
+type MarketDataFeed struct {
+	Enabled bool `json:"enabled"`
+
+	// Error The failure of that tick, null when it succeeded.
+	Error *string            `json:"error"`
+	Id    string             `json:"id"`
+	Kind  MarketDataFeedKind `json:"kind"`
+
+	// Last The latest date the feed stored.
+	Last *openapi_types.Date `json:"last"`
+
+	// LastRun The last tick that ran the feed since the process started.
+	LastRun *time.Time `json:"last_run"`
+
+	// Stale Enabled, and its next publication is overdue (ADR 025 F9).
+	Stale bool `json:"stale"`
+
+	// Suggested Suggested for the calling user's region (ADR 025 F3); a suggestion enables nothing.
+	Suggested bool `json:"suggested"`
+}
+
+// MarketDataFeedKind defines model for MarketDataFeed.Kind.
+type MarketDataFeedKind string
+
+// MarketDataFeedInput defines model for MarketDataFeedInput.
+type MarketDataFeedInput struct {
+	Enabled bool `json:"enabled"`
+}
+
+// MarketDataFeedList defines model for MarketDataFeedList.
+type MarketDataFeedList struct {
+	Items []MarketDataFeed `json:"items"`
+}
+
 // Price defines model for Price.
 type Price struct {
 	Date            openapi_types.Date `json:"date"`
@@ -389,6 +442,9 @@ type DefineInstrumentJSONRequestBody = InstrumentInput
 // PutInstrumentTermsJSONRequestBody defines body for PutInstrumentTerms for application/json ContentType.
 type PutInstrumentTermsJSONRequestBody = FixedIncomeTermsInput
 
+// SetMarketDataFeedJSONRequestBody defines body for SetMarketDataFeed for application/json ContentType.
+type SetMarketDataFeedJSONRequestBody = MarketDataFeedInput
+
 // RecordPriceJSONRequestBody defines body for RecordPrice for application/json ContentType.
 type RecordPriceJSONRequestBody = PriceInput
 
@@ -403,7 +459,7 @@ type ServerInterface interface {
 	// ListHolidays Non-business days of a calendar in a year, weekends excluded.
 	// (GET /calendars/{name}/holidays)
 	ListHolidays(w http.ResponseWriter, r *http.Request, name string, params ListHolidaysParams)
-	// ListIndexes The enabled indexes with at least one stored rate, in the order of EQUORI_INDEX_FEEDS.
+	// ListIndexes The enabled indexes with at least one stored rate, in the order of the registry (ADR 025).
 	// (GET /indexes)
 	ListIndexes(w http.ResponseWriter, r *http.Request)
 	// ListIndexRates The stored rates of an enabled index in [from, to], at most 7,320 days, oldest first.
@@ -424,6 +480,15 @@ type ServerInterface interface {
 	// PutInstrumentTerms Set the terms of a fixed income instrument, replacing the earlier ones and the prices accrued from them.
 	// (PUT /instruments/{code}/terms)
 	PutInstrumentTerms(w http.ResponseWriter, r *http.Request, code string)
+	// ListMarketDataFeeds Every price and index feed of the instance with its state (ADR 025 F5).
+	// (GET /market-data/feeds)
+	ListMarketDataFeeds(w http.ResponseWriter, r *http.Request)
+	// SetMarketDataFeed Enable or disable a feed for the whole instance; admin only (ADR 025 F6, F8).
+	// (PUT /market-data/feeds/{id})
+	SetMarketDataFeed(w http.ResponseWriter, r *http.Request, id string)
+	// RefreshMarketData Run the enabled feeds now; admin only (ADR 025 F7, F8).
+	// (POST /market-data/refresh)
+	RefreshMarketData(w http.ResponseWriter, r *http.Request)
 	// ListPrices The chosen price of each date with prices in [from, to], at most 366 days (P8 amendment A60).
 	// (GET /prices)
 	ListPrices(w http.ResponseWriter, r *http.Request, params ListPricesParams)
@@ -694,6 +759,60 @@ func (siw *ServerInterfaceWrapper) PutInstrumentTerms(w http.ResponseWriter, r *
 	handler.ServeHTTP(w, r)
 }
 
+// ListMarketDataFeeds operation middleware
+func (siw *ServerInterfaceWrapper) ListMarketDataFeeds(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListMarketDataFeeds(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetMarketDataFeed operation middleware
+func (siw *ServerInterfaceWrapper) SetMarketDataFeed(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetMarketDataFeed(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RefreshMarketData operation middleware
+func (siw *ServerInterfaceWrapper) RefreshMarketData(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RefreshMarketData(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListPrices operation middleware
 func (siw *ServerInterfaceWrapper) ListPrices(w http.ResponseWriter, r *http.Request) {
 
@@ -918,6 +1037,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/calendars/{name}/holidays", wrapper.ListHolidays)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/indexes", wrapper.ListIndexes)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/indexes/{id}/rates", wrapper.ListIndexRates)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/market-data/feeds", wrapper.ListMarketDataFeeds)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/market-data/feeds/{id}", wrapper.SetMarketDataFeed)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/market-data/refresh", wrapper.RefreshMarketData)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instruments", wrapper.ListInstruments)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/instruments", wrapper.DefineInstrument)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instruments/{code}", wrapper.GetInstrument)
@@ -1509,6 +1631,197 @@ func (response PutInstrumentTerms422ApplicationProblemPlusJSONResponse) VisitPut
 	return err
 }
 
+type ListMarketDataFeedsRequestObject struct {
+}
+
+type ListMarketDataFeedsResponseObject interface {
+	VisitListMarketDataFeedsResponse(w http.ResponseWriter) error
+}
+
+type ListMarketDataFeeds200JSONResponse MarketDataFeedList
+
+func (response ListMarketDataFeeds200JSONResponse) VisitListMarketDataFeedsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListMarketDataFeeds401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListMarketDataFeeds401ApplicationProblemPlusJSONResponse) VisitListMarketDataFeedsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetMarketDataFeedRequestObject struct {
+	Id   string `json:"id"`
+	Body *SetMarketDataFeedJSONRequestBody
+}
+
+type SetMarketDataFeedResponseObject interface {
+	VisitSetMarketDataFeedResponse(w http.ResponseWriter) error
+}
+
+type SetMarketDataFeed200JSONResponse MarketDataFeed
+
+func (response SetMarketDataFeed200JSONResponse) VisitSetMarketDataFeedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetMarketDataFeed400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetMarketDataFeed400ApplicationProblemPlusJSONResponse) VisitSetMarketDataFeedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetMarketDataFeed401ApplicationProblemPlusJSONResponse Problem
+
+func (response SetMarketDataFeed401ApplicationProblemPlusJSONResponse) VisitSetMarketDataFeedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetMarketDataFeed403ApplicationProblemPlusJSONResponse Problem
+
+func (response SetMarketDataFeed403ApplicationProblemPlusJSONResponse) VisitSetMarketDataFeedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetMarketDataFeed404ApplicationProblemPlusJSONResponse Problem
+
+func (response SetMarketDataFeed404ApplicationProblemPlusJSONResponse) VisitSetMarketDataFeedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetMarketDataFeed422ApplicationProblemPlusJSONResponse Problem
+
+func (response SetMarketDataFeed422ApplicationProblemPlusJSONResponse) VisitSetMarketDataFeedResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RefreshMarketDataRequestObject struct {
+}
+
+type RefreshMarketDataResponseObject interface {
+	VisitRefreshMarketDataResponse(w http.ResponseWriter) error
+}
+
+type RefreshMarketData202Response struct {
+}
+
+func (response RefreshMarketData202Response) VisitRefreshMarketDataResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
+	return nil
+}
+
+type RefreshMarketData401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RefreshMarketData401ApplicationProblemPlusJSONResponse) VisitRefreshMarketDataResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RefreshMarketData403ApplicationProblemPlusJSONResponse Problem
+
+func (response RefreshMarketData403ApplicationProblemPlusJSONResponse) VisitRefreshMarketDataResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RefreshMarketData409ApplicationProblemPlusJSONResponse Problem
+
+func (response RefreshMarketData409ApplicationProblemPlusJSONResponse) VisitRefreshMarketDataResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListPricesRequestObject struct {
 	Params ListPricesParams
 }
@@ -1729,7 +2042,7 @@ type StrictServerInterface interface {
 	// ListHolidays Non-business days of a calendar in a year, weekends excluded.
 	// (GET /calendars/{name}/holidays)
 	ListHolidays(ctx context.Context, request ListHolidaysRequestObject) (ListHolidaysResponseObject, error)
-	// ListIndexes The enabled indexes with at least one stored rate, in the order of EQUORI_INDEX_FEEDS.
+	// ListIndexes The enabled indexes with at least one stored rate, in the order of the registry (ADR 025).
 	// (GET /indexes)
 	ListIndexes(ctx context.Context, request ListIndexesRequestObject) (ListIndexesResponseObject, error)
 	// ListIndexRates The stored rates of an enabled index in [from, to], at most 7,320 days, oldest first.
@@ -1750,6 +2063,15 @@ type StrictServerInterface interface {
 	// PutInstrumentTerms Set the terms of a fixed income instrument, replacing the earlier ones and the prices accrued from them.
 	// (PUT /instruments/{code}/terms)
 	PutInstrumentTerms(ctx context.Context, request PutInstrumentTermsRequestObject) (PutInstrumentTermsResponseObject, error)
+	// ListMarketDataFeeds Every price and index feed of the instance with its state (ADR 025 F5).
+	// (GET /market-data/feeds)
+	ListMarketDataFeeds(ctx context.Context, request ListMarketDataFeedsRequestObject) (ListMarketDataFeedsResponseObject, error)
+	// SetMarketDataFeed Enable or disable a feed for the whole instance; admin only (ADR 025 F6, F8).
+	// (PUT /market-data/feeds/{id})
+	SetMarketDataFeed(ctx context.Context, request SetMarketDataFeedRequestObject) (SetMarketDataFeedResponseObject, error)
+	// RefreshMarketData Run the enabled feeds now; admin only (ADR 025 F7, F8).
+	// (POST /market-data/refresh)
+	RefreshMarketData(ctx context.Context, request RefreshMarketDataRequestObject) (RefreshMarketDataResponseObject, error)
 	// ListPrices The chosen price of each date with prices in [from, to], at most 366 days (P8 amendment A60).
 	// (GET /prices)
 	ListPrices(ctx context.Context, request ListPricesRequestObject) (ListPricesResponseObject, error)
@@ -2037,6 +2359,87 @@ func (sh *strictHandler) PutInstrumentTerms(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(PutInstrumentTermsResponseObject); ok {
 		if err := validResponse.VisitPutInstrumentTermsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListMarketDataFeeds operation middleware
+func (sh *strictHandler) ListMarketDataFeeds(w http.ResponseWriter, r *http.Request) {
+	var request ListMarketDataFeedsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListMarketDataFeeds(ctx, request.(ListMarketDataFeedsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListMarketDataFeeds")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListMarketDataFeedsResponseObject); ok {
+		if err := validResponse.VisitListMarketDataFeedsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetMarketDataFeed operation middleware
+func (sh *strictHandler) SetMarketDataFeed(w http.ResponseWriter, r *http.Request, id string) {
+	var request SetMarketDataFeedRequestObject
+
+	request.Id = id
+
+	var body SetMarketDataFeedJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetMarketDataFeed(ctx, request.(SetMarketDataFeedRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetMarketDataFeed")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetMarketDataFeedResponseObject); ok {
+		if err := validResponse.VisitSetMarketDataFeedResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RefreshMarketData operation middleware
+func (sh *strictHandler) RefreshMarketData(w http.ResponseWriter, r *http.Request) {
+	var request RefreshMarketDataRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RefreshMarketData(ctx, request.(RefreshMarketDataRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RefreshMarketData")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RefreshMarketDataResponseObject); ok {
+		if err := validResponse.VisitRefreshMarketDataResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

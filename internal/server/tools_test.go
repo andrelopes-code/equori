@@ -21,14 +21,15 @@ var update = flag.Bool("update", false, "rewrite testdata/tools.json from the re
 
 // exclusions are the reasons an operation has no tool (ADR 012 T14, amended by spec 7.2).
 var exclusions = map[string]bool{
-	"-session": true, // authentication
-	"-binary":  true, // file content
-	"-capture": true, // the capture screen's typing loop; a language model reads text without it (capture A116)
-	"-llm":     true, // language model credentials, endpoints and the chat itself are never handed to a language model (ADR 019)
-	"-secret":  true, // credentials and the aggregator's connect flow
-	"-file":    true, // file content or the reading of files
-	"-visual":  true, // colour, icon and logo identifiers chosen by looking at them
-	"-setup":   true, // the base currency changes only before the first transaction, during provisioning
+	"-session":  true, // authentication
+	"-binary":   true, // file content
+	"-capture":  true, // the capture screen's typing loop; a language model reads text without it (capture A116)
+	"-llm":      true, // language model credentials, endpoints and the chat itself are never handed to a language model (ADR 019)
+	"-secret":   true, // credentials and the aggregator's connect flow
+	"-file":     true, // file content or the reading of files
+	"-visual":   true, // colour, icon and logo identifiers chosen by looking at them
+	"-setup":    true, // the base currency changes only before the first transaction, during provisioning
+	"-instance": true, // the instance's outbound sources are chosen by an admin, not handed to a language model (ADR 025)
 }
 
 // withoutOperation are the tools that map to no operation, with the reason.

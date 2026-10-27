@@ -8,6 +8,8 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -49,8 +51,18 @@ type Module struct {
 	feeds FeedConfig
 
 	profiles Profiles
+	admins   Admins
 
 	calendars registry.Registry[calendar.Calendar]
+
+	// running is set while a tick runs, scheduled or requested (ADR 025 F7); a requested tick
+	// joins refreshes and stops with life.
+	running   atomic.Bool
+	refreshes sync.WaitGroup
+	life      context.Context
+	stop      context.CancelFunc
+	runsMu    sync.Mutex
+	runs      map[string]feedRun
 }
 
 // Profiles gives the language and region of a user (identity).

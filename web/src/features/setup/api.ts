@@ -465,3 +465,53 @@ export function useDeleteAccessToken() {
       ),
   });
 }
+
+const marketDataKeys = {
+  feeds: ["setup", "market-data-feeds"] as const,
+};
+
+type MarketDataFeed = components["schemas"]["MarketDataFeed"];
+
+// ADR 025 F5. runsBefore holds the last_run of each enabled feed when an update was requested;
+// the list is read every 5 seconds until each of them ran again.
+export function marketDataFeedsQuery(
+  api: Client<paths>,
+  runsBefore: ReadonlyMap<string, string | null> | null = null,
+) {
+  return queryOptions({
+    queryKey: marketDataKeys.feeds,
+    queryFn: async () =>
+      (await unwrap(await api.GET("/market-data/feeds"))).items,
+    refetchInterval: (query) =>
+      runsBefore !== null &&
+      (query.state.data ?? []).some(
+        (f: MarketDataFeed) =>
+          runsBefore.has(f.id) && runsBefore.get(f.id) === f.last_run,
+      )
+        ? 5_000
+        : false,
+  });
+}
+
+export function useSetMarketDataFeed() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) =>
+      unwrap(
+        await api.PUT("/market-data/feeds/{id}", {
+          params: { path: { id } },
+          body: { enabled },
+        }),
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: marketDataKeys.feeds }),
+  });
+}
+
+export function useRefreshMarketData() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async () => unwrap(await api.POST("/market-data/refresh")),
+  });
+}

@@ -91,7 +91,7 @@ Simulation of `compound` (E4): 2,000 paths of monthly returns. Each month's retu
 
 | Rule | Detail |
 |---|---|
-| History | An index enabled in `EQUORI_INDEX_FEEDS` is fetched from the earlier of today minus 20 years and the earliest issue date of a security that follows it. Fetching no longer waits for a security. |
+| History | An enabled index (ADR 025) is fetched from the earlier of today minus 20 years and the earliest issue date of a security that follows it. Fetching no longer waits for a security. |
 | `GET /indexes` | Tag `marketdata`, `listIndexes`. Items: `id`, `period` (`day` or `month`), `first` and `last` stored dates. Only enabled indexes with at least one stored rate. |
 | `GET /indexes/{id}/rates?from&to` | `listIndexRates`. Items: `date`, `rate` as a decimal string fraction, oldest first. A range above 7,320 days is 422 on `to`; an unknown or disabled index is 404 `not_found`. |
 | Tool | The assistant tool `get_market_data` gains the views `indexes` and `index_rates`. |

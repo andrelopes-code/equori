@@ -18,28 +18,39 @@ import (
 // feedWindowDays bounds how far back a feed fetches (P8 amendment A62).
 const feedWindowDays = 30
 
-// FeedConfig lists the price sources TickFeeds runs.
+// FeedConfig lists every price and index source of the registry; the stored settings choose
+// the ones TickFeeds runs (ADR 025).
 type FeedConfig struct {
 	Sources []feed.Source
-	// Indexes are the index sources TickIndexes runs (investments design 4.2).
+	// Indexes are the index sources (investments design 4.2).
 	Indexes []index.Source
-	Client  *http.Client
-	Clock   clock.Clock
-	Log     *slog.Logger
+	// Seed names the sources enabled while no setting is stored: EQUORI_PRICE_FEEDS and
+	// EQUORI_INDEX_FEEDS (ADR 025 F2).
+	Seed   []string
+	Client *http.Client
+	Clock  clock.Clock
+	Log    *slog.Logger
 }
 
-// WithFeeds sets the feeds TickFeeds runs; the composition root calls it once.
+// WithFeeds sets the feeds; the composition root calls it once.
 func (m *Module) WithFeeds(cfg FeedConfig) *Module {
 	m.feeds = cfg
+	m.life, m.stop = context.WithCancel(context.Background())
 	return m
 }
 
-// RunFeeds ticks now and then every interval until ctx ends.
+// RunFeeds ticks now and then every interval until ctx ends, skipping a tick while a requested
+// one runs; then it stops a requested tick and waits for it.
 func (m *Module) RunFeeds(ctx context.Context, interval time.Duration) {
 	t := time.NewTicker(interval)
 	defer t.Stop()
+	defer m.refreshes.Wait()
+	defer m.stop()
 	for {
-		m.TickFeeds(ctx)
+		if m.running.CompareAndSwap(false, true) {
+			m.TickFeeds(ctx)
+			m.running.Store(false)
+		}
 		select {
 		case <-ctx.Done():
 			return
@@ -48,22 +59,38 @@ func (m *Module) RunFeeds(ctx context.Context, interval time.Duration) {
 	}
 }
 
-// TickFeeds fetches each source from the day after its latest price (per code), never
+// TickFeeds fetches each enabled source from the day after its latest price (per code), never
 // earlier than today − 30 days, to today. Consecutive codes with the same start share one
-// fetch. A failure is logged; the next tick fetches the same days again.
+// fetch. A failure is logged and kept as the feed's state; the next tick fetches the same days
+// again.
 func (m *Module) TickFeeds(ctx context.Context) {
-	for _, src := range m.feeds.Sources {
-		m.tick(ctx, src)
+	on, err := m.enabledFeeds(ctx)
+	if err != nil {
+		m.logFeed(ctx, err)
+		return
 	}
-	m.TickIndexes(ctx)
+	for _, src := range m.feeds.Sources {
+		if on[src.ID()] {
+			m.ran(src.ID(), m.tick(ctx, src))
+		}
+	}
+	for _, src := range m.feeds.Indexes {
+		if on[src.ID()] {
+			err := m.tickIndex(ctx, src)
+			if err != nil {
+				m.logFeed(ctx, err, "source", src.ID())
+			}
+			m.ran(src.ID(), err)
+		}
+	}
 	m.TickAccrual(ctx)
 }
 
-func (m *Module) tick(ctx context.Context, src feed.Source) {
+func (m *Module) tick(ctx context.Context, src feed.Source) error {
 	list, err := m.ListInstruments(ctx, "")
 	if err != nil {
 		m.logFeed(ctx, err, "source", src.ID())
-		return
+		return err
 	}
 	ins := make([]feed.Instrument, len(list))
 	for i, in := range list {
@@ -71,7 +98,7 @@ func (m *Module) tick(ctx context.Context, src feed.Source) {
 	}
 	codes := src.Codes(ins)
 	if len(codes) == 0 {
-		return
+		return nil
 	}
 	today := m.feeds.Clock.Today()
 	starts := make([]time.Time, len(codes))
@@ -79,9 +106,10 @@ func (m *Module) tick(ctx context.Context, src feed.Source) {
 		starts[i], err = m.feedStart(ctx, src.ID(), code, today)
 		if err != nil {
 			m.logFeed(ctx, err, "source", src.ID(), "instrument", code)
-			return
+			return err
 		}
 	}
+	var failed error
 	for i := 0; i < len(codes); {
 		j := i + 1
 		for j < len(codes) && starts[j].Equal(starts[i]) {
@@ -93,9 +121,11 @@ func (m *Module) tick(ctx context.Context, src feed.Source) {
 				err = storeErr
 			}
 			m.logFetchError(ctx, src.ID(), err)
+			failed = errors.Join(failed, err)
 		}
 		i = j
 	}
+	return failed
 }
 
 func (m *Module) logFetchError(ctx context.Context, source string, err error) {

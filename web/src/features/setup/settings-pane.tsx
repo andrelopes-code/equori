@@ -7,6 +7,7 @@ import { SettingsExternalAccess } from "@/features/setup/settings-external-acces
 import { SettingsIntegrations } from "@/features/setup/settings-integrations";
 import { SettingsLanguage } from "@/features/setup/settings-language";
 import { SettingsLedger } from "@/features/setup/settings-ledger";
+import { SettingsMarketData } from "@/features/setup/settings-market-data";
 import { SettingsPrivacy } from "@/features/setup/settings-privacy";
 import type { SettingsTopic } from "@/features/setup/settings-topics";
 
@@ -26,6 +27,8 @@ export function SettingsPane({ topic }: { topic: SettingsTopic }) {
       return <SettingsCalendars />;
     case "integrations":
       return <SettingsIntegrations />;
+    case "market_data":
+      return <SettingsMarketData />;
     case "assistant":
       return <SettingsAssistant />;
     case "external_access":

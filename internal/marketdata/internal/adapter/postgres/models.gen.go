@@ -10,6 +10,11 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type MarketdataFeed struct {
+	ID      string
+	Enabled bool
+}
+
 type MarketdataFixedIncomeTerm struct {
 	InstrumentCode   string
 	IssuedOn         time.Time

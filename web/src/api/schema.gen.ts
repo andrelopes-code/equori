@@ -1133,7 +1133,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The enabled indexes with at least one stored rate, in the order of EQUORI_INDEX_FEEDS. */
+        /** The enabled indexes with at least one stored rate, in the order of the registry (ADR 025). */
         get: operations["listIndexes"];
         put?: never;
         post?: never;
@@ -1154,6 +1154,60 @@ export interface paths {
         get: operations["listIndexRates"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/market-data/feeds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every price and index feed of the instance with its state (ADR 025 F5). */
+        get: operations["listMarketDataFeeds"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/market-data/feeds/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Enable or disable a feed for the whole instance; admin only (ADR 025 F6, F8). */
+        put: operations["setMarketDataFeed"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/market-data/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run the enabled feeds now; admin only (ADR 025 F7, F8).
+         * @description The tick runs after the response. 409 refresh_running while a tick, scheduled or requested, runs.
+         */
+        post: operations["refreshMarketData"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4160,6 +4214,34 @@ export interface components {
         };
         IndexList: {
             items: components["schemas"]["Index"][];
+        };
+        MarketDataFeed: {
+            id: string;
+            /** @enum {string} */
+            kind: "price" | "index";
+            enabled: boolean;
+            /** @description Suggested for the calling user's region (ADR 025 F3); a suggestion enables nothing. */
+            suggested: boolean;
+            /**
+             * Format: date
+             * @description The latest date the feed stored.
+             */
+            last: string | null;
+            /** @description Enabled, and its next publication is overdue (ADR 025 F9). */
+            stale: boolean;
+            /**
+             * Format: date-time
+             * @description The last tick that ran the feed since the process started.
+             */
+            last_run: string | null;
+            /** @description The failure of that tick, null when it succeeded. */
+            error: string | null;
+        };
+        MarketDataFeedList: {
+            items: components["schemas"]["MarketDataFeed"][];
+        };
+        MarketDataFeedInput: {
+            enabled: boolean;
         };
         IndexRate: {
             /**
@@ -7303,6 +7385,79 @@ export interface operations {
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    listMarketDataFeeds: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketDataFeedList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    setMarketDataFeed: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarketDataFeedInput"];
+            };
+        };
+        responses: {
+            /** @description Stored. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketDataFeed"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    refreshMarketData: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted; the tick runs. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
         };
     };
     listInstruments: {

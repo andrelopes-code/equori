@@ -1880,7 +1880,7 @@ paths:
     get:
       tags: [marketdata]
       operationId: listIndexes
-      summary: The enabled indexes with at least one stored rate, in the order of EQUORI_INDEX_FEEDS.
+      summary: The enabled indexes with at least one stored rate, in the order of the registry (ADR 025).
       responses:
         "200":
           description: OK.
@@ -1931,6 +1931,71 @@ paths:
         "404":
           $ref: "#/components/responses/Problem"
         "422":
+          $ref: "#/components/responses/Problem"
+  /market-data/feeds:
+    get:
+      tags: [marketdata]
+      operationId: listMarketDataFeeds
+      summary: Every price and index feed of the instance with its state (ADR 025 F5).
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketDataFeedList"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /market-data/feeds/{id}:
+    put:
+      tags: [marketdata]
+      operationId: setMarketDataFeed
+      summary: Enable or disable a feed for the whole instance; admin only (ADR 025 F6, F8).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-z0-9_]{2,40}$"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarketDataFeedInput"
+      responses:
+        "200":
+          description: Stored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketDataFeed"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /market-data/refresh:
+    post:
+      tags: [marketdata]
+      operationId: refreshMarketData
+      summary: Run the enabled feeds now; admin only (ADR 025 F7, F8).
+      description: |
+        The tick runs after the response. 409 refresh_running while a tick, scheduled or requested, runs.
+      responses:
+        "202":
+          description: Accepted; the tick runs.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "409":
           $ref: "#/components/responses/Problem"
   /instruments:
     get:
@@ -7217,6 +7282,54 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Index"
+    MarketDataFeed:
+      type: object
+      additionalProperties: false
+      required: [id, kind, enabled, suggested, last, stale, last_run, error]
+      properties:
+        id:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+        kind:
+          type: string
+          enum: [price, index]
+        enabled:
+          type: boolean
+        suggested:
+          type: boolean
+          description: Suggested for the calling user's region (ADR 025 F3); a suggestion enables nothing.
+        last:
+          type: string
+          format: date
+          nullable: true
+          description: The latest date the feed stored.
+        stale:
+          type: boolean
+          description: Enabled, and its next publication is overdue (ADR 025 F9).
+        last_run:
+          type: string
+          format: date-time
+          nullable: true
+          description: The last tick that ran the feed since the process started.
+        error:
+          type: string
+          nullable: true
+          description: The failure of that tick, null when it succeeded.
+    MarketDataFeedList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketDataFeed"
+    MarketDataFeedInput:
+      type: object
+      additionalProperties: false
+      required: [enabled]
+      properties:
+        enabled:
+          type: boolean
     IndexRate:
       type: object
       additionalProperties: false

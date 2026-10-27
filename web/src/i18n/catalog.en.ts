@@ -1,4 +1,5 @@
 import { calculatorsEn } from "@/i18n/catalog-calculators.en";
+import { marketDataEn } from "@/i18n/catalog-market-data.en";
 import { accountsEn } from "@/i18n/catalog-accounts.en";
 import { instrumentsEn } from "@/i18n/catalog-instruments.en";
 import { portfolioEn } from "@/i18n/catalog-portfolio.en";
@@ -7,6 +8,7 @@ import { settingsEn } from "@/i18n/catalog-settings.en";
 
 export const catalogEn = {
   ...calculatorsEn,
+  ...marketDataEn,
   ...accountsEn,
   ...instrumentsEn,
   ...portfolioEn,

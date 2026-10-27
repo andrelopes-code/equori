@@ -39,6 +39,9 @@ type Service interface {
 	ListPrices(ctx context.Context, instrument, quote money.Currency, from, to time.Time) ([]domain.Price, error)
 	Indexes(ctx context.Context) ([]domain.IndexSummary, error)
 	IndexRates(ctx context.Context, id string, from, to time.Time) ([]domain.IndexRate, error)
+	Feeds(ctx context.Context) ([]domain.Feed, error)
+	SetFeed(ctx context.Context, id string, enabled bool) (domain.Feed, error)
+	Refresh(ctx context.Context) error
 }
 
 var _ StrictServerInterface = (*Server)(nil)
@@ -99,6 +102,12 @@ func ToProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusNotFound, "not_found", "unknown index"), true
 	case errors.Is(err, domain.ErrNoTerms):
 		return problem.New(http.StatusNotFound, "not_found", "the instrument has no terms"), true
+	case errors.Is(err, domain.ErrUnknownFeed):
+		return problem.New(http.StatusNotFound, "not_found", "unknown feed"), true
+	case errors.Is(err, domain.ErrAdminRequired):
+		return problem.New(http.StatusForbidden, "admin_required", "only an admin changes the instance's market data feeds"), true
+	case errors.Is(err, domain.ErrRefreshRunning):
+		return problem.New(http.StatusConflict, "refresh_running", "a tick of the market data feeds is running"), true
 	case errors.Is(err, domain.ErrInstrumentExists):
 		return problem.New(http.StatusConflict, "instrument_exists", err.Error()), true
 	}

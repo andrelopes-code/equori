@@ -6,12 +6,16 @@ need no key. Phase P8 of the roadmap describes the rules (amendments A60–A62 o
 
 ## 1. Enabling
 
+An admin enables and disables each feed under Settings, "Market data" (ADR 025). The screen suggests the feeds of the admin's region, shows the latest stored date of each feed, warns when a publication is overdue or the last run failed, and runs every enabled feed on request. Every 6 hours the enabled feeds run without a request.
+
+`EQUORI_PRICE_FEEDS` and `EQUORI_INDEX_FEEDS` enable feeds only while no setting is stored: the first change on the screen stores them with it, and later values of the two variables are ignored.
+
 | Variable | Default | Meaning |
 |---|---|---|
-| `EQUORI_PRICE_FEEDS` | empty | Comma list of `bcb_ptax`, `b3_cotahist`, `ecb`. Empty: equori sends no feed request (N17). |
+| `EQUORI_PRICE_FEEDS` | empty | Comma list of `bcb_ptax`, `b3_cotahist`, `ecb`, enabled while no setting is stored. With both variables empty and no setting stored, equori sends no feed request (N17). |
 | `EQUORI_FEED_BCB_PTAX_URL` | `https://olinda.bcb.gov.br/olinda/service/PTAX/version/v1/odata` | Base URL of the BCB PTAX service. |
 | `EQUORI_FEED_ECB_URL` | `https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist-90d.xml` | URL of the ECB reference rates XML file (last 90 days). |
-| `EQUORI_INDEX_FEEDS` | empty | Comma list of `br_cdi`, `br_ipca`, `eu_estr`, `ea_hicp`, `us_sofr`, `us_cpi`: the index series that accrue the price of a fixed income security that has terms (`PUT /instruments/{code}/terms`). Empty: no index request. An enabled index is fetched from 20 years before today, or from the earliest issue date of a security that follows it when that is earlier. The calculators read the stored rates (`GET /indexes`). |
+| `EQUORI_INDEX_FEEDS` | empty | Comma list of `br_cdi`, `br_ipca`, `eu_estr`, `ea_hicp`, `us_sofr`, `us_cpi`, enabled while no setting is stored: the index series that accrue the price of a fixed income security that has terms (`PUT /instruments/{code}/terms`). Empty: no index request. An enabled index is fetched from 20 years before today, or from the earliest issue date of a security that follows it when that is earlier. The calculators read the stored rates (`GET /indexes`). |
 | `EQUORI_FEED_BR_CDI_URL`, `EQUORI_FEED_BR_IPCA_URL` | `https://api.bcb.gov.br` | Base URL of the BCB SGS service: series 12 (CDI, percent a day) and 433 (IPCA, percent a month). |
 | `EQUORI_FEED_EU_ESTR_URL` | `https://data-api.ecb.europa.eu` | Base URL of the ECB Data Portal: series `EST.B.EU000A2X2A25.WT`, the euro short-term rate (€STR), percent a year on an actual/360 basis, one value per TARGET2 business day. Each calendar day is stored as the rate last published on or before it, over 360. |
 | `EQUORI_FEED_EA_HICP_URL` | `https://ec.europa.eu` | Base URL of the Eurostat dissemination API: dataset `prc_hicp_minr`, the euro area's all-items HICP (`geo=EA`, `coicop18=TOTAL`, index 2025 = 100). Each month is stored as its level over the month before, minus 1, on its first day. |

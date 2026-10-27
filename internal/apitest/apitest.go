@@ -219,7 +219,18 @@ func (h *Harness) Login(email string) *http.Client {
 // LoginAs creates the user, runs the outbox so the ledger provisions it, and returns a client with its session.
 func (h *Harness) LoginAs(email string, l locale.Locale, base money.Currency) *http.Client {
 	h.t.Helper()
-	if _, err := h.App.Identity.CreateUser(h.t.Context(), email, Password, identity.RoleAdmin, l, base); err != nil {
+	return h.login(email, identity.RoleAdmin, l, base)
+}
+
+// LoginMember is Login for a user with the role member.
+func (h *Harness) LoginMember(email string) *http.Client {
+	h.t.Helper()
+	return h.login(email, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL")
+}
+
+func (h *Harness) login(email, role string, l locale.Locale, base money.Currency) *http.Client {
+	h.t.Helper()
+	if _, err := h.App.Identity.CreateUser(h.t.Context(), email, Password, role, l, base); err != nil {
 		h.t.Fatal(err)
 	}
 	h.Dispatch()

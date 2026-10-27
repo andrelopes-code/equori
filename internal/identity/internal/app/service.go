@@ -121,6 +121,15 @@ func (s *Service) Profile(ctx context.Context, userID int64) (locale.Locale, err
 	return locale.Locale{Language: user.Language, Region: user.Region}, nil
 }
 
+// IsAdmin reports whether a user has the role admin (ADR 025 F8).
+func (s *Service) IsAdmin(ctx context.Context, userID int64) (bool, error) {
+	user, err := s.repo.UserByID(ctx, userID)
+	if err != nil {
+		return false, fmt.Errorf("load user %d: %w", userID, err)
+	}
+	return user.Role == domain.RoleAdmin, nil
+}
+
 // ProfileChange returns a user's language and region before and after UpdateProfile with the
 // same arguments, validated, without storing anything.
 func (s *Service) ProfileChange(ctx context.Context, userID int64, language, region string) (before, after locale.Locale, err error) {

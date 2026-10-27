@@ -38,3 +38,19 @@ func TestSchemaRejectsInvalidPrices(t *testing.T) {
 		})
 	}
 }
+
+// ADR 025 F1.
+func TestSchemaRejectsInvalidFeeds(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+	for name, sql := range map[string]string{
+		"identifier outside the pattern": `INSERT INTO marketdata_feed (id, enabled) VALUES ('B3', true)`,
+		"no state":                       `INSERT INTO marketdata_feed (id) VALUES ('b3_cotahist')`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := pool.Exec(t.Context(), sql); err == nil {
+				t.Fatal("accepted")
+			}
+		})
+	}
+}

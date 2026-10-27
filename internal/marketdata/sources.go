@@ -13,14 +13,16 @@ import (
 type sourceEntry struct {
 	id         string
 	defaultURL string
-	build      func(hc *http.Client, url string) feed.Source
+	// lag is the number of calendar days after a day by which its prices are due (ADR 025 F9).
+	lag   int
+	build func(hc *http.Client, url string) feed.Source
 }
 
 func sourceEntries() []sourceEntry {
 	return []sourceEntry{
-		{"b3_cotahist", "https://bvmf.bmfbovespa.com.br/InstDados/SerHist", func(hc *http.Client, url string) feed.Source { return b3cotahist.New(hc, url) }},
-		{"bcb_ptax", "https://olinda.bcb.gov.br/olinda/service/PTAX/version/v1/odata", func(hc *http.Client, url string) feed.Source { return bcbptax.New(hc, url) }},
-		{"ecb", "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist-90d.xml", func(hc *http.Client, url string) feed.Source { return ecb.New(hc, url) }},
+		{"b3_cotahist", "https://bvmf.bmfbovespa.com.br/InstDados/SerHist", 5, func(hc *http.Client, url string) feed.Source { return b3cotahist.New(hc, url) }},
+		{"bcb_ptax", "https://olinda.bcb.gov.br/olinda/service/PTAX/version/v1/odata", 5, func(hc *http.Client, url string) feed.Source { return bcbptax.New(hc, url) }},
+		{"ecb", "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-hist-90d.xml", 5, func(hc *http.Client, url string) feed.Source { return ecb.New(hc, url) }},
 	}
 }
 

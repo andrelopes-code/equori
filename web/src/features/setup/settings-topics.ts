@@ -53,6 +53,12 @@ export const settingsTopics = [
     summary: "settings.summary.integrations",
   },
   {
+    id: "market_data",
+    group: "connections",
+    title: "settings.market_data.title",
+    summary: "settings.summary.market_data",
+  },
+  {
     id: "assistant",
     group: "connections",
     title: "settings.assistant.title",

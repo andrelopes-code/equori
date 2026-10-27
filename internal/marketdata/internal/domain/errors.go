@@ -10,6 +10,9 @@ var (
 	ErrPriceMissing      = errors.New("price missing")
 	ErrNoTerms           = errors.New("no terms")
 	ErrUnknownIndex      = errors.New("unknown index")
+	ErrUnknownFeed       = errors.New("unknown feed")
+	ErrAdminRequired     = errors.New("admin required")
+	ErrRefreshRunning    = errors.New("refresh running")
 )
 
 // FieldError names the request field that failed validation, as in the API.
