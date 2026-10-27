@@ -13,10 +13,18 @@ const accounts = new Map<string, Account>(
       ["savings", "asset"],
       ["food", "expense"],
       ["salary", "income"],
-    ] as const
-  ).map(([id, accountClass]) => [
+      ["yield", "income"],
+      ["interest", "income", "yield"],
+    ] satisfies [string, Account["class"], string?][]
+  ).map(([id, accountClass, parentID]) => [
     id,
-    { id, name: id, class: accountClass, currency: "BRL" },
+    {
+      id,
+      name: id,
+      class: accountClass,
+      currency: "BRL",
+      ...(parentID === undefined ? {} : { parent_id: parentID }),
+    },
   ]),
 );
 
@@ -48,11 +56,28 @@ describe("rowAmount", () => {
     });
   });
 
-  it("takes the filtered account posting", () => {
+  it("shows a category filter as the outflow of an expense", () => {
     expect(rowAmount(expense, accounts, "food")).toEqual({
-      money: { amount: 12000, currency: "BRL" },
+      money: { amount: -12000, currency: "BRL" },
       transfer: false,
     });
+  });
+
+  it("takes the filtered balance account posting", () => {
+    expect(rowAmount(expense, accounts, "checking")).toEqual({
+      money: { amount: -12000, currency: "BRL" },
+      transfer: false,
+    });
+  });
+
+  it("shows a category filter as the inflow of an income", () => {
+    const income = tx(["interest", -419], ["checking", 419]);
+    expect(rowAmount(income, accounts, "interest").money.amount).toBe(419);
+  });
+
+  it("sums the descendants of the filtered category", () => {
+    const income = tx(["interest", -419], ["checking", 419]);
+    expect(rowAmount(income, accounts, "yield").money.amount).toBe(419);
   });
 
   it("shows the outflow side of a transfer", () => {
