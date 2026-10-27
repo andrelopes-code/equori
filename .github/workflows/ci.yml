@@ -62,13 +62,13 @@ jobs:
           key: postgres-${{ hashFiles('packaging/windows/postgresql.env', 'scripts/windows-postgres.ps1') }}
       - if: steps.pg.outputs.cache-hit != 'true'
         run: scripts/windows-postgres.ps1 -Out "$env:RUNNER_TEMP\pg"
-      # The test server of pgtest, from the same bundle (db-test of compose.dev.yaml on Linux).
+      # The test server of pgtest, from the same bundle; the libc provider, as db-test of compose.dev.yaml.
       - run: |
           "EQUORI_TEST_POSTGRES_BIN=$env:RUNNER_TEMP\pg\bin" >> $env:GITHUB_ENV
           "EQUORI_TEST_DATABASE_URL=postgres://equori:equori@127.0.0.1:54339/postgres?sslmode=disable" >> $env:GITHUB_ENV
           $pg = "$env:RUNNER_TEMP\pg\bin"
           Set-Content -NoNewline -Path "$env:RUNNER_TEMP\pw" -Value equori
-          & "$pg\initdb.exe" -D "$env:RUNNER_TEMP\testdb" -U equori --pwfile="$env:RUNNER_TEMP\pw" --auth=scram-sha-256 --encoding=UTF8 --locale=C --locale-provider=builtin --builtin-locale=C.UTF-8 | Out-Null
+          & "$pg\initdb.exe" -D "$env:RUNNER_TEMP\testdb" -U equori --pwfile="$env:RUNNER_TEMP\pw" --auth=scram-sha-256 --encoding=UTF8 --locale=C | Out-Null
           & "$pg\pg_ctl.exe" start -w -D "$env:RUNNER_TEMP\testdb" -l "$env:RUNNER_TEMP\testdb.log" -o "-p 54339 -c listen_addresses=127.0.0.1 -c max_connections=300 -c fsync=off"
           if ($LASTEXITCODE -ne 0) { Get-Content "$env:RUNNER_TEMP\testdb.log"; exit 1 }
       - run: go test ./internal/platform/... ./cmd/...

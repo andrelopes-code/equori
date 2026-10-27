@@ -15,10 +15,7 @@ func TestLoadOrCreateKey(t *testing.T) {
 	if err != nil || len(first) != 32 {
 		t.Fatalf("first call: %d bytes, %v", len(first), err)
 	}
-	info, err := os.Stat(path)
-	if err != nil || info.Mode().Perm() != 0o600 {
-		t.Fatalf("mode = %v, %v; want 0600", info.Mode().Perm(), err)
-	}
+	assertPrivateMode(t, path)
 	second, err := LoadOrCreateKey(path)
 	if err != nil || second != first {
 		t.Fatal("second call returned another key")
