@@ -5365,7 +5365,7 @@ components:
         id: {type: string, format: uuid}
         role: {type: string, enum: [user, assistant]}
         content: {type: string}
-        outcome: {type: string, enum: [answered, step_limit, failed]}
+        outcome: {type: string, enum: [answered, step_limit, failed, canceled]}
         created_at: {type: string, format: date-time}
         proposals:
           type: array

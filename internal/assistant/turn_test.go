@@ -284,7 +284,8 @@ func TestTurnFailed(t *testing.T) {
 	if err := json.Unmarshal([]byte(events[0].Data), &turn); err != nil {
 		t.Fatal(err)
 	}
-	if msgs := conversationMessages(t, h, turn.ConversationID); len(msgs) != 1 || msgs[0].Role != "user" {
+	msgs := conversationMessages(t, h, turn.ConversationID)
+	if len(msgs) != 2 || msgs[0].Role != "user" || msgs[1].Role != "assistant" || msgs[1].Outcome != "failed" || msgs[1].Content != "" {
 		t.Fatalf("messages = %+v", msgs)
 	}
 }
@@ -303,7 +304,7 @@ func (b *blockingProvider) Generate(ctx context.Context, _ string, _ llm.Request
 	return llm.Response{}, ctx.Err()
 }
 
-// Review focus 2: a disconnect stops the turn; the user message stays and no answer is stored.
+// Review focus 2, amended by E11: a disconnect stops the turn and stores a canceled answer.
 func TestTurnClientDisconnect(t *testing.T) {
 	t.Parallel()
 	bp := &blockingProvider{entered: make(chan struct{})}
@@ -333,10 +334,11 @@ func TestTurnClientDisconnect(t *testing.T) {
 	if line := lastTurnLog(h); !strings.Contains(line, "outcome=canceled") {
 		t.Fatalf("turn log = %q, want outcome=canceled", line)
 	}
-	var count int
-	if err := h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM assistant_message WHERE role = 'assistant'`).Scan(&count); err != nil || count != 0 {
-		t.Fatalf("assistant messages = %d, %v", count, err)
+	var outcome string
+	if err := h.Pool.QueryRow(t.Context(), `SELECT outcome FROM assistant_message WHERE role = 'assistant'`).Scan(&outcome); err != nil || outcome != "canceled" {
+		t.Fatalf("assistant outcome = %q, %v", outcome, err)
 	}
+	var count int
 	if err := h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM assistant_message WHERE role = 'user'`).Scan(&count); err != nil || count != 1 {
 		t.Fatalf("user messages = %d, %v", count, err)
 	}

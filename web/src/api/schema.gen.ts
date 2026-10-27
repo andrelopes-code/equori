@@ -3148,7 +3148,7 @@ export interface components {
             role: "user" | "assistant";
             content: string;
             /** @enum {string} */
-            outcome?: "answered" | "step_limit" | "failed";
+            outcome?: "answered" | "step_limit" | "failed" | "canceled";
             /** Format: date-time */
             created_at: string;
             proposals: components["schemas"]["AssistantProposal"][];

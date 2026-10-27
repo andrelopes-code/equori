@@ -21,6 +21,7 @@ const (
 	OutcomeAnswered  Outcome = "answered"
 	OutcomeStepLimit Outcome = "step_limit"
 	OutcomeFailed    Outcome = "failed"
+	OutcomeCanceled  Outcome = "canceled"
 )
 
 const (

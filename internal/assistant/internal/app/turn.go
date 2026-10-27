@@ -202,6 +202,16 @@ func (s *Service) Turn(ctx context.Context, userID int64, in TurnInput, ev TurnE
 			}
 		}
 		s.logTurn(ctx, userID, conv.ID, outcome, res, now)
+		stored := domain.OutcomeFailed
+		if outcome == outcomeCancel {
+			stored = domain.OutcomeCanceled
+		}
+		// The message records that the user's text got no answer; the client may already be gone.
+		if _, err := s.repo.AppendMessage(context.WithoutCancel(ctx), userID, domain.Message{
+			ID: uuid.New(), ConversationID: conv.ID, Role: domain.RoleAssistant, Outcome: stored, CreatedAt: s.now(),
+		}); err != nil {
+			s.log.ErrorContext(ctx, "assistant unanswered turn not stored", "error", err)
+		}
 		if outcome == outcomeCancel {
 			return nil
 		}

@@ -65,6 +65,7 @@ func TestSchema(t *testing.T) {
 	add("user message with outcome", func() (string, []any) { return msg(a, "user", "x", "answered") }, checkViolation)
 	add("assistant message without outcome", func() (string, []any) { return msg(a, "assistant", "x", nil) }, checkViolation)
 	add("content over 16000", func() (string, []any) { return msg(a, "assistant", strings.Repeat("x", 16001), "answered") }, checkViolation)
+	add("assistant message unknown outcome", func() (string, []any) { return msg(a, "assistant", "", "lost") }, checkViolation)
 	add("empty user content", func() (string, []any) { return msg(a, "user", "", nil) }, checkViolation)
 	add("proposal status", func() (string, []any) { return proposal("done", hash, "", "2026-10-23T10:15:00Z") }, checkViolation)
 	add("executed without decided_at", func() (string, []any) { return proposal("executed", hash, "", "2026-10-23T10:15:00Z") }, checkViolation)
@@ -80,6 +81,9 @@ func TestSchema(t *testing.T) {
 	sql, args := msg(a, "assistant", "", "answered")
 	if _, err := pool.Exec(ctx, sql, args...); err != nil {
 		t.Errorf("assistant message with empty content rejected: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO assistant_message VALUES (gen_random_uuid(), $1, $2, 2, 'assistant', '', 'canceled', now())`, a, conv); err != nil {
+		t.Errorf("assistant message canceled rejected: %v", err)
 	}
 }
 

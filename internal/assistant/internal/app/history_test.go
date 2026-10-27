@@ -51,4 +51,14 @@ func TestHistory(t *testing.T) {
 			t.Fatalf("history = %+v, want assistant text %q", got, want)
 		}
 	})
+	t.Run("failed and canceled exchanges", func(t *testing.T) {
+		t.Parallel()
+		msgs := turns(2, 3, 3)
+		msgs[1].Content, msgs[1].Outcome = "", domain.OutcomeFailed
+		msgs[3].Content, msgs[3].Outcome = "", domain.OutcomeCanceled
+		got := app.History(msgs, nil, now)
+		if len(got) != 4 || got[1].Text != app.NoAnswer || got[3].Text != app.NoAnswer {
+			t.Fatalf("history = %+v, want 4 messages with %q answers", got, app.NoAnswer)
+		}
+	})
 }

@@ -22,6 +22,7 @@ import (
 // Defines values for AssistantMessageOutcome.
 const (
 	AssistantMessageOutcomeAnswered  AssistantMessageOutcome = "answered"
+	AssistantMessageOutcomeCanceled  AssistantMessageOutcome = "canceled"
 	AssistantMessageOutcomeFailed    AssistantMessageOutcome = "failed"
 	AssistantMessageOutcomeStepLimit AssistantMessageOutcome = "step_limit"
 )
@@ -30,6 +31,8 @@ const (
 func (e AssistantMessageOutcome) Valid() bool {
 	switch e {
 	case AssistantMessageOutcomeAnswered:
+		return true
+	case AssistantMessageOutcomeCanceled:
 		return true
 	case AssistantMessageOutcomeFailed:
 		return true

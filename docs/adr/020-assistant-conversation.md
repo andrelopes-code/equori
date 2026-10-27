@@ -37,6 +37,7 @@ ADR 019 declares the use `assistant.chat` and ADR 012 the tool registry, with fo
 - ADR 012 T14: exclusion reasons are `-session`, `-binary`, `-capture`, `-llm`, `-secret`, `-file`, `-visual` and `-setup`; `-write` and `-pending` no longer exist. A tool that covers no operation (`get_help`) is listed with its reason in the test.
 - ADR 019 P14: daily limits are enforced at resolution, for every use.
 - ADR 019 design G7: the agent use starts on Gemini Flash-Lite, not Flash (C14).
+- C2, C3 (design 2026-10-26 E11, E12): a turn that stored its user message and ends without an answer stores an assistant message with outcome `failed` or, when the request context ended, `canceled`, and empty content. History renders such an exchange as the user text followed by `[no answer]`.
 
 ## Consequences
 

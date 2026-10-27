@@ -11,6 +11,7 @@ import (
 const (
 	HistoryBytes = 8000
 	HistoryTurns = 6
+	NoAnswer     = "[no answer]" // text of a failed or canceled answer (design 2026-10-26 E12)
 )
 
 // HistoryMessage is one earlier message sent to the model as text.
@@ -30,6 +31,9 @@ func History(messages []domain.Message, proposals []domain.Proposal, now time.Ti
 			continue
 		}
 		text := a.Content
+		if a.Outcome == domain.OutcomeFailed || a.Outcome == domain.OutcomeCanceled {
+			text = NoAnswer
+		}
 		for _, p := range proposals {
 			if p.MessageID != a.ID {
 				continue
