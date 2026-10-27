@@ -43,11 +43,11 @@ func mkdirSDDL(t *testing.T, path, sddl string) {
 	}
 }
 
-// W-M3: a created directory is protected and grants SYSTEM and the process account only.
-func TestPrivateDirCreates(t *testing.T) {
+// W-M3: a created data directory is protected and grants SYSTEM and the process account only.
+func TestPrepareDataDirCreates(t *testing.T) {
 	t.Parallel()
-	path := filepath.Join(t.TempDir(), "run")
-	if err := privateDir(path); err != nil {
+	path := filepath.Join(t.TempDir(), "equori")
+	if err := PrepareDataDir(path); err != nil {
 		t.Fatal(err)
 	}
 	// String renders well-known accounts by alias (LA for the built-in Administrator of the runner).
@@ -107,5 +107,27 @@ func TestPrepareDataDirAddsAccounts(t *testing.T) {
 	}
 	if got := daclOf(t, existing); !strings.Contains(got, want) {
 		t.Fatalf("DACL of an existing directory = %s, want %s", got, want)
+	}
+}
+
+// W-M3, W-S2: the socket directory inherits the data directory's entries, so the account that
+// installed the service reaches the service's socket.
+func TestPrivateDirInheritsTheDataDirectory(t *testing.T) {
+	t.Parallel()
+	const account = `NT SERVICE\TrustedInstaller`
+	sid, _, _, err := windows.LookupSID("", account)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir := filepath.Join(t.TempDir(), "equori")
+	if err := PrepareDataDir(dir, account); err != nil {
+		t.Fatal(err)
+	}
+	run := filepath.Join(dir, "run")
+	if err := privateDir(run); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := daclOf(t, run), "(A;OICIID;FA;;;"+sid.String()+")"; !strings.Contains(got, want) {
+		t.Fatalf("DACL of run = %s, want the inherited entry %s", got, want)
 	}
 }
