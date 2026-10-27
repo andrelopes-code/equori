@@ -300,6 +300,14 @@ export function formatBasisPoints(bp: number, locale: string): string {
   }).format(bp / 10000);
 }
 
+// Basis points of a month as months with one decimal: 66915 reads "6.7" in en-US.
+export function formatMonths(bp: number, locale: string): string {
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(bp / 10000);
+}
+
 // A change in basis points as a signed percentage of the locale: 688 reads "+6.88%" in en-US.
 export function formatSignedBasisPoints(bp: number, locale: string): string {
   return new Intl.NumberFormat(locale, {

@@ -20,6 +20,19 @@ export function netWorthQuery(
   });
 }
 
+// Twelve months of indicators ending at month (analytics design 4.4).
+export function indicatorsQuery(api: Client<paths>, month: string) {
+  return queryOptions({
+    queryKey: ["reports", "indicators", month] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/reports/indicators", {
+          params: { query: { month } },
+        }),
+      ),
+  });
+}
+
 const uncategorizedPage = 200;
 
 // One page is enough to say "many": a longer list reads as at least a page.

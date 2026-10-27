@@ -23,6 +23,7 @@ import {
   parkingBudget,
 } from "@/testing/budget-api";
 import { occurrence, salaryID, schedules } from "@/testing/planning-api";
+import { indicatorsFixture } from "@/testing/report-api";
 
 const incomeID = "a1000000-0000-4000-8000-0000000000f1";
 const accounts = [
@@ -110,6 +111,7 @@ function api(overrides: Record<string, (req: Request) => Response> = {}) {
         total: money(300000),
       }),
     "GET /api/v1/reports/net-worth": netWorth,
+    "GET /api/v1/reports/indicators": () => json(200, indicatorsFixture()),
     "GET /api/v1/reports/categories": () =>
       json(200, {
         items: categoryAccounts.map((a, i) => ({

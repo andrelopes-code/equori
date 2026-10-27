@@ -1,5 +1,6 @@
 // A formatted amount of any scale-2 currency in either decimal convention: "1.234,56", "1,234.56".
-const amountPattern = /\d[.,]\d{2}(?!\d)/g;
+// A percentage is not an amount: privacy mode leaves it visible (ADR 018).
+const amountPattern = /\d[.,]\d{2}(?!\d)(?!\s?%)/g;
 
 // Stores the choice the way PrivacyProvider reads it; call before rendering.
 export function hideAmounts(): void {

@@ -14,6 +14,7 @@ import { BudgetsBlock } from "@/features/overview/budgets-block";
 import { CardsBlock } from "@/features/overview/cards-block";
 import { DesktopFigures } from "@/features/overview/desktop-figures";
 import { GoalsBlock } from "@/features/overview/goals-block";
+import { IndicatorsBlock } from "@/features/overview/indicators-block";
 import { MonthFlowsBlock } from "@/features/overview/month-flows-block";
 import { NetWorthBlock } from "@/features/overview/net-worth-block";
 import styles from "@/features/overview/overview-page.module.css";
@@ -50,6 +51,9 @@ export function OverviewPage() {
             <div className={styles.full}>
               <DesktopFigures month={month} />
             </div>
+            <div className={styles.full}>
+              <IndicatorsBlock month={month} />
+            </div>
             <div className={styles.chart}>
               <BalanceChartBlock month={month} />
             </div>
@@ -78,6 +82,7 @@ export function OverviewPage() {
               <AttentionBlock />
             </div>
             <NetWorthBlock month={month} />
+            <IndicatorsBlock month={month} />
             <MonthFlowsBlock month={month} />
             <SpendingBlock month={month} />
             <UpcomingBlock />
