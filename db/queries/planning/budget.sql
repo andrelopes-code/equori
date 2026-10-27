@@ -25,3 +25,12 @@ SELECT * FROM planning_budget WHERE user_id = @user_id AND id = @id FOR UPDATE;
 -- name: DeleteBudget :execrows
 -- S144: the amounts go with the budget (ON DELETE CASCADE).
 DELETE FROM planning_budget WHERE user_id = @user_id AND id = @id;
+
+-- name: UpsertBudgetAmount :exec
+-- A130: a plan save replaces the version of its month.
+INSERT INTO planning_budget_amount (user_id, budget_id, effective_from, amount)
+VALUES (@user_id, @budget_id, @effective_from, @amount)
+ON CONFLICT (budget_id, effective_from) DO UPDATE SET amount = EXCLUDED.amount;
+
+-- name: ListAllBudgets :many
+SELECT * FROM planning_budget WHERE user_id = @user_id ORDER BY id;

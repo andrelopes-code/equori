@@ -67,3 +67,19 @@ func (b Budget) Progress(month time.Time, spent func(month time.Time) (int64, er
 	}
 	return p, true, nil
 }
+
+// ReferenceSource names where the reference income of a budget plan comes from (A131).
+type ReferenceSource string
+
+const (
+	SourceExpectedIncome ReferenceSource = "expected_income"
+	SourceAverageIncome  ReferenceSource = "average_income"
+	SourceFixed          ReferenceSource = "fixed"
+)
+
+// Reference is a user's choice of reference income; Fixed holds the amount of SourceFixed.
+type Reference struct {
+	Source   ReferenceSource
+	Fixed    int64
+	HasFixed bool
+}

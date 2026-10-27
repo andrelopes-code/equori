@@ -512,6 +512,49 @@ func (r *Repository) ListBudgets(ctx context.Context, userID int64, p page.Reque
 	return out, next, err
 }
 
+func (r *Repository) Budgets(ctx context.Context, userID int64) ([]domain.Budget, error) {
+	rows, err := r.q.ListAllBudgets(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("list all budgets: %w", err)
+	}
+	return r.completeBudgets(ctx, rows)
+}
+
+func (r *Repository) UpsertBudgetAmount(ctx context.Context, userID int64, budgetID uuid.UUID, a domain.BudgetAmount) error {
+	err := r.q.UpsertBudgetAmount(ctx, UpsertBudgetAmountParams{UserID: userID, BudgetID: budgetID, EffectiveFrom: a.EffectiveFrom, Amount: a.Amount})
+	if err != nil {
+		return fmt.Errorf("upsert budget amount: %w", err)
+	}
+	return nil
+}
+
+func (r *Repository) BudgetReference(ctx context.Context, userID int64) (domain.Reference, bool, error) {
+	row, err := r.q.GetBudgetReference(ctx, userID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return domain.Reference{}, false, nil
+	}
+	if err != nil {
+		return domain.Reference{}, false, fmt.Errorf("get budget reference: %w", err)
+	}
+	out := domain.Reference{Source: domain.ReferenceSource(row.Source)}
+	if row.Amount != nil {
+		out.Fixed, out.HasFixed = *row.Amount, true
+	}
+	return out, true, nil
+}
+
+func (r *Repository) SaveBudgetReference(ctx context.Context, userID int64, ref domain.Reference, currency money.Currency) error {
+	var amount *int64
+	if ref.HasFixed {
+		amount = &ref.Fixed
+	}
+	err := r.q.UpsertBudgetReference(ctx, UpsertBudgetReferenceParams{UserID: userID, Source: string(ref.Source), Amount: amount, Currency: string(currency)})
+	if err != nil {
+		return fmt.Errorf("save budget reference: %w", err)
+	}
+	return nil
+}
+
 func (r *Repository) InsertGoal(ctx context.Context, userID int64, g domain.Goal) (domain.Goal, error) {
 	row, err := r.q.InsertGoal(ctx, InsertGoalParams{UserID: userID, Name: g.Name, Target: g.Target, Currency: string(g.Currency), DueOn: g.DueOn})
 	if pe, ok := errors.AsType[*pgconn.PgError](err); ok && pe.Code == uniqueViolation {

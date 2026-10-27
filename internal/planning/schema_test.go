@@ -47,6 +47,16 @@ func TestSchemaInvariants(t *testing.T) {
 		t.Fatalf("other account: %d %s", r.Status, r.Body)
 	}
 	r.Decode(t, &foreign)
+	reference := func(source string, amount any) error {
+		return exec(`INSERT INTO planning_budget_reference (user_id, source, amount, currency) VALUES ($1, $2, $3, 'BRL')`, uid, source, amount)
+	}
+	if err := reference("fixed", 0); err != nil {
+		t.Fatal(err)
+	}
+	var otherID int64
+	if err := h.Pool.QueryRow(ctx, `SELECT id FROM identity_user WHERE email = 'other@example.com'`).Scan(&otherID); err != nil {
+		t.Fatal(err)
+	}
 
 	tests := []struct {
 		name string
@@ -79,6 +89,19 @@ func TestSchemaInvariants(t *testing.T) {
 		{"sequence twice", func() error {
 			return exec(`INSERT INTO planning_occurrence (user_id, schedule_id, sequence, expected_on, expected_amount, state)
 				VALUES ($1, $2, 1, '2026-11-05', 210000, 'expected')`, uid, id)
+		}},
+		{"two references for one user", func() error { return reference("fixed", 100) }},
+		{"reference with an unknown source", func() error {
+			return exec(`INSERT INTO planning_budget_reference (user_id, source, amount, currency) VALUES ($1, 'monthly_income', NULL, 'BRL')`, otherID)
+		}},
+		{"fixed reference without an amount", func() error {
+			return exec(`INSERT INTO planning_budget_reference (user_id, source, amount, currency) VALUES ($1, 'fixed', NULL, 'BRL')`, otherID)
+		}},
+		{"average reference with an amount", func() error {
+			return exec(`INSERT INTO planning_budget_reference (user_id, source, amount, currency) VALUES ($1, 'average_income', 100, 'BRL')`, otherID)
+		}},
+		{"negative fixed reference", func() error {
+			return exec(`INSERT INTO planning_budget_reference (user_id, source, amount, currency) VALUES ($1, 'fixed', -1, 'BRL')`, otherID)
 		}},
 	}
 	for _, tt := range tests {

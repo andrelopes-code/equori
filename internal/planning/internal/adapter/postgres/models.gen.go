@@ -27,6 +27,13 @@ type PlanningBudgetAmount struct {
 	Amount        int64
 }
 
+type PlanningBudgetReference struct {
+	UserID   int64
+	Source   string
+	Amount   *int64
+	Currency string
+}
+
 type PlanningGoal struct {
 	ID        uuid.UUID
 	UserID    int64

@@ -109,6 +109,38 @@ func (q *Queries) InsertBudgetAmount(ctx context.Context, arg InsertBudgetAmount
 	return err
 }
 
+const listAllBudgets = `-- name: ListAllBudgets :many
+SELECT id, user_id, category_account_id, period_type, rollover, currency, created_at FROM planning_budget WHERE user_id = $1 ORDER BY id
+`
+
+func (q *Queries) ListAllBudgets(ctx context.Context, userID int64) ([]PlanningBudget, error) {
+	rows, err := q.db.Query(ctx, listAllBudgets, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []PlanningBudget
+	for rows.Next() {
+		var i PlanningBudget
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.CategoryAccountID,
+			&i.PeriodType,
+			&i.Rollover,
+			&i.Currency,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listBudgetAmounts = `-- name: ListBudgetAmounts :many
 SELECT user_id, budget_id, effective_from, amount FROM planning_budget_amount WHERE user_id = $1 AND budget_id = ANY($2::uuid[]) ORDER BY budget_id, effective_from
 `
@@ -206,4 +238,28 @@ func (q *Queries) LockBudget(ctx context.Context, arg LockBudgetParams) (Plannin
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const upsertBudgetAmount = `-- name: UpsertBudgetAmount :exec
+INSERT INTO planning_budget_amount (user_id, budget_id, effective_from, amount)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (budget_id, effective_from) DO UPDATE SET amount = EXCLUDED.amount
+`
+
+type UpsertBudgetAmountParams struct {
+	UserID        int64
+	BudgetID      uuid.UUID
+	EffectiveFrom time.Time
+	Amount        int64
+}
+
+// A130: a plan save replaces the version of its month.
+func (q *Queries) UpsertBudgetAmount(ctx context.Context, arg UpsertBudgetAmountParams) error {
+	_, err := q.db.Exec(ctx, upsertBudgetAmount,
+		arg.UserID,
+		arg.BudgetID,
+		arg.EffectiveFrom,
+		arg.Amount,
+	)
+	return err
 }
