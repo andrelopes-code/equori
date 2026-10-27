@@ -4294,6 +4294,8 @@ export interface components {
             closed_on?: string;
             system_role?: string;
             card?: components["schemas"]["CardSummary"];
+            /** @description Leaves the account out of the liquidity indicator (analytics design 4.3). */
+            excluded_from_liquidity?: boolean;
         };
         AccountList: {
             items: components["schemas"]["Account"][];
@@ -4308,6 +4310,8 @@ export interface components {
             institution_id?: string;
             /** @enum {string} */
             yield_mode?: "none" | "auto";
+            /** @description Leaves the account out of the liquidity indicator (analytics design 4.3). */
+            excluded_from_liquidity?: boolean;
         };
         CategoryTotals: {
             items: components["schemas"]["CategoryTotal"][];

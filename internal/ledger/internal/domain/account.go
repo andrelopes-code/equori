@@ -131,7 +131,9 @@ type Account struct {
 	OpenedOn       time.Time
 	ClosedOn       *time.Time
 	YieldMode      YieldMode
-	SystemRole     SystemRole
+	// ExcludedFromLiquidity leaves the account out of the liquidity indicator (analytics design 4.3).
+	ExcludedFromLiquidity bool
+	SystemRole            SystemRole
 	// Color is a theme data slot 1..8 and Icon a key of the API icon set; zero values mean none (A83).
 	Color int
 	Icon  string

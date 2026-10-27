@@ -203,7 +203,7 @@ func (q *Queries) GetStatementByDueDate(ctx context.Context, arg GetStatementByD
 }
 
 const getSystemAccount = `-- name: GetSystemAccount :one
-SELECT id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon FROM ledger_account WHERE user_id = $1 AND system_role = $2
+SELECT id, user_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity FROM ledger_account WHERE user_id = $1 AND system_role = $2
 `
 
 type GetSystemAccountParams struct {
@@ -232,6 +232,7 @@ func (q *Queries) GetSystemAccount(ctx context.Context, arg GetSystemAccountPara
 		&i.UpdatedAt,
 		&i.Color,
 		&i.Icon,
+		&i.ExcludedFromLiquidity,
 	)
 	return i, err
 }

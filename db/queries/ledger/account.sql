@@ -12,6 +12,7 @@ INSERT INTO ledger_account (
 UPDATE ledger_account
 SET name = @name, parent_id = sqlc.narg(parent_id), institution_id = sqlc.narg(institution_id),
     closed_on = sqlc.narg(closed_on), yield_mode = @yield_mode, color = sqlc.narg(color), icon = sqlc.narg(icon),
+    excluded_from_liquidity = @excluded_from_liquidity,
     updated_at = now()
 WHERE user_id = @user_id AND id = @id
 RETURNING *;

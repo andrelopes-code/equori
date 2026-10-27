@@ -1064,6 +1064,9 @@ type Account struct {
 	// Currency Instrument of the account; a security only for a child of a brokerage account (P8 amendment A63).
 	Currency string `json:"currency"`
 
+	// ExcludedFromLiquidity Leaves the account out of the liquidity indicator (analytics design 4.3).
+	ExcludedFromLiquidity *bool `json:"excluded_from_liquidity,omitempty"`
+
 	// Icon Kebab-case name of a lucide-react icon of the curated category set (A83).
 	Icon          *CategoryIcon       `json:"icon,omitempty"`
 	Id            openapi_types.UUID  `json:"id"`
@@ -1132,10 +1135,12 @@ type AccountParent struct {
 
 // AccountPatch defines model for AccountPatch.
 type AccountPatch struct {
-	InstitutionId *openapi_types.UUID    `json:"institution_id,omitempty"`
-	Name          *string                `json:"name,omitempty"`
-	ParentId      *openapi_types.UUID    `json:"parent_id,omitempty"`
-	YieldMode     *AccountPatchYieldMode `json:"yield_mode,omitempty"`
+	// ExcludedFromLiquidity Leaves the account out of the liquidity indicator (analytics design 4.3).
+	ExcludedFromLiquidity *bool                  `json:"excluded_from_liquidity,omitempty"`
+	InstitutionId         *openapi_types.UUID    `json:"institution_id,omitempty"`
+	Name                  *string                `json:"name,omitempty"`
+	ParentId              *openapi_types.UUID    `json:"parent_id,omitempty"`
+	YieldMode             *AccountPatchYieldMode `json:"yield_mode,omitempty"`
 }
 
 // AccountPatchYieldMode defines model for AccountPatch.YieldMode.

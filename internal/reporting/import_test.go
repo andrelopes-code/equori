@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
+	"github.com/andrelopes-code/equori/internal/reporting/internal/app"
 )
 
 type books struct {
@@ -182,7 +183,7 @@ func TestImportRejects(t *testing.T) {
 		return zipOf(t, out)
 	}
 	// ADR 021, V4.
-	m["archive_version"] = 2.0
+	m["archive_version"] = float64(app.ArchiveVersion + 1)
 	r := empty.Upload(importPath, "a.zip", withManifest(m))
 	empty.ExpectProblem(r, http.StatusUnprocessableEntity, "archive_too_new", "file")
 	var tooNew struct {
@@ -190,12 +191,12 @@ func TestImportRejects(t *testing.T) {
 		InstanceVersion int `json:"instance_version"`
 	}
 	r.Decode(t, &tooNew)
-	if tooNew.ArchiveVersion != 2 || tooNew.InstanceVersion != 1 {
+	if tooNew.ArchiveVersion != app.ArchiveVersion+1 || tooNew.InstanceVersion != app.ArchiveVersion {
 		t.Errorf("archive_too_new = %s", r.Body)
 	}
 	m["archive_version"] = 0.0
 	empty.ExpectProblem(empty.Upload(importPath, "a.zip", withManifest(m)), http.StatusUnprocessableEntity, "archive_invalid", "file")
-	m["archive_version"] = 1.0
+	m["archive_version"] = float64(app.ArchiveVersion)
 
 	tables := m["tables"].([]any)
 	tables[0].(map[string]any)["name"] = "identity_user"

@@ -7517,6 +7517,9 @@ components:
               type: string
             card:
               $ref: "#/components/schemas/CardSummary"
+            excluded_from_liquidity:
+              type: boolean
+              description: Leaves the account out of the liquidity indicator (analytics design 4.3).
     AccountList:
       type: object
       required: [items]
@@ -7545,6 +7548,9 @@ components:
         yield_mode:
           type: string
           enum: [none, auto]
+        excluded_from_liquidity:
+          type: boolean
+          description: Leaves the account out of the liquidity indicator (analytics design 4.3).
     CategoryTotals:
       type: object
       required: [items]

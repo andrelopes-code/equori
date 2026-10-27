@@ -12,23 +12,24 @@ import (
 )
 
 type LedgerAccount struct {
-	ID                  uuid.UUID
-	UserID              int64
-	Name                string
-	AccountClass        string
-	Kind                *string
-	Instrument          string
-	ParentID            uuid.NullUUID
-	InstitutionID       uuid.NullUUID
-	CounterpartyPayeeID uuid.NullUUID
-	OpenedOn            time.Time
-	ClosedOn            *time.Time
-	YieldMode           string
-	SystemRole          *string
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
-	Color               *int16
-	Icon                *string
+	ID                    uuid.UUID
+	UserID                int64
+	Name                  string
+	AccountClass          string
+	Kind                  *string
+	Instrument            string
+	ParentID              uuid.NullUUID
+	InstitutionID         uuid.NullUUID
+	CounterpartyPayeeID   uuid.NullUUID
+	OpenedOn              time.Time
+	ClosedOn              *time.Time
+	YieldMode             string
+	SystemRole            *string
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
+	Color                 *int16
+	Icon                  *string
+	ExcludedFromLiquidity bool
 }
 
 type LedgerAttachment struct {

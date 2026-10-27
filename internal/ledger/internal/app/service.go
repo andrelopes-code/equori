@@ -184,10 +184,11 @@ func (s *Service) CreateAccount(ctx context.Context, userID int64, a domain.Acco
 }
 
 type AccountPatch struct {
-	Name          *string
-	ParentID      *uuid.UUID
-	InstitutionID *uuid.UUID
-	YieldMode     *domain.YieldMode
+	Name                  *string
+	ParentID              *uuid.UUID
+	InstitutionID         *uuid.UUID
+	YieldMode             *domain.YieldMode
+	ExcludedFromLiquidity *bool
 }
 
 func (s *Service) UpdateAccount(ctx context.Context, userID int64, id uuid.UUID, p AccountPatch) (domain.Account, error) {
@@ -208,6 +209,9 @@ func (s *Service) UpdateAccount(ctx context.Context, userID int64, id uuid.UUID,
 		}
 		if p.YieldMode != nil {
 			a.YieldMode = *p.YieldMode
+		}
+		if p.ExcludedFromLiquidity != nil {
+			a.ExcludedFromLiquidity = *p.ExcludedFromLiquidity
 		}
 		if err := s.describeInstrument(ctx, &a); err != nil {
 			return err
