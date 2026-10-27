@@ -3,6 +3,7 @@ package main
 import (
 	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -26,6 +27,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/llm/aistudio"
 	"github.com/andrelopes-code/equori/internal/platform/postgres"
 	"github.com/andrelopes-code/equori/internal/platform/secret"
+	"github.com/andrelopes-code/equori/internal/platform/winsvc"
 	"github.com/andrelopes-code/equori/internal/server"
 	"github.com/andrelopes-code/equori/web"
 )
@@ -41,7 +43,25 @@ func main() {
 	var err error
 	switch cmd {
 	case "serve":
-		err = serve()
+		if winsvc.IsService() {
+			// The service has no console: serve's error goes to the log that setup opened.
+			err = winsvc.Run(serviceName, func(ctx context.Context) error {
+				err := serve(ctx)
+				if err != nil {
+					fmt.Fprintln(os.Stderr, err)
+				}
+				return err
+			})
+			break
+		}
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		err = serve(ctx)
+		stop()
+	case "service":
+		if err = serviceCommand(os.Args[2:]); errors.Is(err, winsvc.ErrUnsupported) {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(2)
+		}
 	case "user":
 		err = userCommand(os.Args[2:])
 	case "reporting":
@@ -64,7 +84,7 @@ func main() {
 			fmt.Print(text)
 		}
 	default:
-		fmt.Fprintf(os.Stderr, "unknown command %q; available: serve, user, reporting, portfolio, planning, secrets, backup, restore, healthcheck, version\n", cmd)
+		fmt.Fprintf(os.Stderr, "unknown command %q; available: serve, user, reporting, portfolio, planning, secrets, backup, restore, service, healthcheck, version\n", cmd)
 		os.Exit(2)
 	}
 	if err != nil {
@@ -73,7 +93,7 @@ func main() {
 	}
 }
 
-func serve() error {
+func serve(parent context.Context) error {
 	cfg, log, err := setup()
 	if err != nil {
 		return err
@@ -84,7 +104,7 @@ func serve() error {
 	}
 	log.Info("starting equori", "version", buildVersion(), "schema", schema, "timezone", cfg.TimeZone.String())
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	ctx, stop := context.WithCancel(parent)
 	defer stop()
 
 	db, err := openDatabase(ctx, cfg, log, true)
@@ -300,6 +320,14 @@ func setup() (config.Config, *slog.Logger, error) {
 		if cfg.SecretKey, err = secret.LoadOrCreateKey(filepath.Join(cfg.DataDir, "secret.key")); err != nil {
 			return config.Config{}, nil, err
 		}
+	}
+	if cfg.Managed() && winsvc.IsService() {
+		// W-S4: the service has no console; equori and its postgres write to the log file.
+		f, err := winsvc.OpenLog(filepath.Join(cfg.DataDir, "log", "equori.log"), 10<<20)
+		if err != nil {
+			return config.Config{}, nil, err
+		}
+		os.Stdout, os.Stderr = f, f
 	}
 	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: cfg.LogLevel}))
 	return cfg, log, nil
