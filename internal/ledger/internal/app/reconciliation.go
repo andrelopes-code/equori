@@ -460,10 +460,13 @@ func (s *Service) recordYield(ctx context.Context, r Repository, a domain.Accoun
 	if err != nil {
 		return uuid.Nil, err
 	}
+	w, err := s.writerFor(ctx, a.UserID)
+	if err != nil {
+		return uuid.Nil, err
+	}
 	t, err := s.insert(ctx, r, domain.Transaction{
-		UserID: a.UserID, Date: end, Origin: domain.OriginSystem,
-		Description: "Yield " + start.Format(time.DateOnly) + " to " + end.Format(time.DateOnly),
-		Postings:    []domain.Posting{{AccountID: a.ID, Amount: gain}, {AccountID: income.ID, Amount: gain.Neg()}},
+		UserID: a.UserID, Date: end, Origin: domain.OriginSystem, Description: w.yield(start, end),
+		Postings: []domain.Posting{{AccountID: a.ID, Amount: gain}, {AccountID: income.ID, Amount: gain.Neg()}},
 	})
 	return t.ID, err
 }
@@ -473,8 +476,12 @@ func (s *Service) recordAdjustment(ctx context.Context, r Repository, a domain.A
 	if err != nil {
 		return uuid.Nil, err
 	}
+	w, err := s.writerFor(ctx, a.UserID)
+	if err != nil {
+		return uuid.Nil, err
+	}
 	t, err := s.insert(ctx, r, domain.Transaction{
-		UserID: a.UserID, Date: date, Origin: domain.OriginSystem, Description: "Balance adjustment",
+		UserID: a.UserID, Date: date, Origin: domain.OriginSystem, Description: w.BalanceAdjustment,
 		Postings: []domain.Posting{{AccountID: a.ID, Amount: diff}, {AccountID: equity.ID, Amount: diff.Neg()}},
 	})
 	return t.ID, err

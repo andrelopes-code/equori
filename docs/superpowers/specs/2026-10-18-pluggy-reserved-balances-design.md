@@ -102,6 +102,11 @@ Amendment of 2026-10-27:
   transfer line that arrives after the sync of its day then closes that day's difference, and
   each day books its own yield within its own bound. Without this step, the next difference
   holds the yield of both days and exceeds the bound of one day.
+- The description is written in the owner's language, with dates in the layout of the owner's
+  region: "Yield <day>" for one day and "Yield <first day> to <assertion date>" for a longer
+  period in English, "Rendimento de <dia>" and "Rendimento de <primeiro dia> a <data>" in
+  Portuguese. The other descriptions the ledger writes follow the same rule
+  (`internal/ledger/internal/domain/wording_*.go`).
 
 ### D4 Transfers between checking and a reserved balance (A76)
 

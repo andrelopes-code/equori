@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
+	"github.com/andrelopes-code/equori/internal/platform/locale"
 )
 
 type assertionResult struct {
@@ -56,18 +57,65 @@ func TestAssertionRecordsYield(t *testing.T) {
 	}
 	yield := r.h.Transaction(res.ResolutionTransactionID)
 	if amountsByAccount(yield)[r.reserve] != 8341 || yield.Date != "2026-10-31" || yield.Origin != "system" ||
-		yield.Description != "Yield 2026-10-01 to 2026-10-31" {
+		yield.Description != "Rendimento de 01/10/2026 a 31/10/2026" {
 		t.Fatalf("yield = %+v", yield)
 	}
 
 	var next assertionResult
 	assertBalance(r.h, r.reserve, "2026-11-04", 1009000).Decode(t, &next)
-	if got := r.h.Transaction(next.ResolutionTransactionID).Description; got != "Yield 2026-11-01 to 2026-11-04" {
+	if got := r.h.Transaction(next.ResolutionTransactionID).Description; got != "Rendimento de 01/11/2026 a 04/11/2026" {
 		t.Fatalf("second yield description = %q", got)
 	}
 	for _, p := range r.h.Transaction(r.transfer).Postings {
 		if want := map[bool]string{true: "reconciled", false: "cleared"}[p.AccountID == r.reserve]; p.Status != want {
 			t.Fatalf("posting of %s: status %q, want %q", p.AccountID, p.Status, want)
+		}
+	}
+}
+
+// The ledger writes the descriptions of the transactions it creates in the owner's language,
+// with dates in the conventions of the owner's region; a language without wording reads English.
+func TestYieldDescriptionInOwnerLanguage(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t, apitest.Today("2026-11-05"))
+	for _, c := range []struct {
+		locale      locale.Locale
+		day, range_ string
+	}{
+		{locale.Locale{Language: "en", Region: "US"}, "Yield 11/01/2026", "Yield 10/01/2026 to 10/31/2026"},
+		{locale.Locale{Language: "de", Region: "DE"}, "Yield 01/11/2026", "Yield 01/10/2026 to 31/10/2026"},
+	} {
+		client := h.LoginAs(c.locale.Language+"@example.com", c.locale, "BRL")
+		call := func(method, path string, body any, status int, out any) {
+			t.Helper()
+			r := h.Call(client, method, path, body)
+			if r.Status != status {
+				t.Fatalf("%s %s status = %d: %s", method, path, r.Status, r.Body)
+			}
+			if out != nil {
+				r.Decode(t, out)
+			}
+		}
+		var checking, reserve struct {
+			ID string `json:"id"`
+		}
+		call(http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Checking", "class": "asset", "kind": "checking", "currency": "BRL"}, http.StatusCreated, &checking)
+		call(http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Reserve", "class": "asset", "kind": "reserve", "currency": "BRL"}, http.StatusCreated, &reserve)
+		call(http.MethodPost, "/api/v1/transactions", map[string]any{"date": "2026-10-01", "description": "test", "postings": []map[string]any{
+			apitest.Posting(checking.ID, -1000000), apitest.Posting(reserve.ID, 1000000),
+		}}, http.StatusCreated, nil)
+		for _, a := range []struct {
+			date        string
+			amount      int64
+			description string
+		}{{"2026-10-31", 1008341, c.range_}, {"2026-11-01", 1008600, c.day}} {
+			var res assertionResult
+			call(http.MethodPost, "/api/v1/accounts/"+reserve.ID+"/balance-assertions", map[string]any{"date": a.date, "amount": apitest.BRL(a.amount)}, http.StatusCreated, &res)
+			var yield apitest.TransactionView
+			call(http.MethodGet, "/api/v1/transactions/"+res.ResolutionTransactionID, nil, http.StatusOK, &yield)
+			if yield.Description != a.description {
+				t.Errorf("%v: yield of %s = %q, want %q", c.locale, a.date, yield.Description, a.description)
+			}
 		}
 	}
 }
@@ -233,7 +281,7 @@ func TestYieldResolvesPositiveDifference(t *testing.T) {
 	if res.Resolution != "yield" || res.Difference.Amount != 10 || r[checking] != 10 || len(r) != 2 {
 		t.Fatalf("result = %+v, postings = %v", res, r)
 	}
-	if tx.Description != "Yield 2026-10-01 to 2026-10-31" {
+	if tx.Description != "Rendimento de 01/10/2026 a 31/10/2026" {
 		t.Fatalf("description = %q", tx.Description)
 	}
 	if s := reconciliationOf(h, checking); s.LastReconciledOn != "2026-10-31" || s.OpenDifference != nil {

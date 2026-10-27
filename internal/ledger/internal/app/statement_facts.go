@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -281,8 +282,12 @@ func (s *Service) RecordCardOpening(ctx context.Context, userID int64, cardID uu
 		if date.Before(card.OpenedOn) {
 			date = card.OpenedOn
 		}
+		w, err := s.writerFor(ctx, userID)
+		if err != nil {
+			return err
+		}
 		_, err = s.insert(ctx, r, domain.Transaction{
-			UserID: userID, Date: date, Description: "Opening balance " + card.Name, Origin: domain.OriginSystem,
+			UserID: userID, Date: date, Description: fmt.Sprintf(w.CardOpeningBalance, card.Name), Origin: domain.OriginSystem,
 			Postings: []domain.Posting{
 				{AccountID: cardID, Amount: total.Neg(), Statement: &ref},
 				{AccountID: opening.ID, Amount: total},

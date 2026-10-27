@@ -15,6 +15,17 @@ type Conventions struct {
 	Order          DateOrder
 }
 
+// DateLayout returns the time layout of a numeric date in the conventions' order.
+func (c Conventions) DateLayout() string {
+	switch c.Order {
+	case DMY:
+		return "02/01/2006"
+	case MDY:
+		return "01/02/2006"
+	}
+	return "2006-01-02"
+}
+
 // ConventionsOf returns the conventions of the locale's region.
 func ConventionsOf(l Locale) Conventions {
 	switch l.Region {

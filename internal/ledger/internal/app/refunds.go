@@ -103,8 +103,12 @@ func (s *Service) RefundPurchase(ctx context.Context, userID int64, originID uui
 			return err
 		}
 		postings := append([]domain.Posting{{AccountID: pu.card.ID, Amount: amount, CardRole: domain.RoleCredit, Statement: statement}}, reversals...)
+		w, err := s.writerFor(ctx, userID)
+		if err != nil {
+			return err
+		}
 		created, err = s.insert(ctx, r, domain.Transaction{
-			UserID: userID, Date: date, Description: "Refund: " + pu.tx.Description, PayeeID: pu.tx.PayeeID,
+			UserID: userID, Date: date, Description: fmt.Sprintf(w.Refund, pu.tx.Description), PayeeID: pu.tx.PayeeID,
 			Postings: postings, Links: []domain.Link{{Type: domain.LinkRefundOf, Target: originID}},
 		})
 		return err
@@ -163,8 +167,12 @@ func (s *Service) CancelPlan(ctx context.Context, userID int64, planID uuid.UUID
 		if err != nil {
 			return err
 		}
+		w, err := s.writerFor(ctx, userID)
+		if err != nil {
+			return err
+		}
 		created, err = s.insert(ctx, r, domain.Transaction{
-			UserID: userID, Date: date, Description: "Cancellation: " + pu.tx.Description, PayeeID: pu.tx.PayeeID,
+			UserID: userID, Date: date, Description: fmt.Sprintf(w.Cancellation, pu.tx.Description), PayeeID: pu.tx.PayeeID,
 			Postings: append(postings, reversals...), Links: []domain.Link{{Type: domain.LinkCancellationOf, Target: pu.tx.ID}},
 		})
 		return err
@@ -216,8 +224,12 @@ func (s *Service) AnticipatePlan(ctx context.Context, userID int64, planID uuid.
 			}
 			postings = append(postings, domain.Posting{AccountID: discounts.ID, Amount: m})
 		}
+		w, err := s.writerFor(ctx, userID)
+		if err != nil {
+			return err
+		}
 		created, err = s.insert(ctx, r, domain.Transaction{
-			UserID: userID, Date: date, Description: "Anticipation: " + pu.tx.Description, PayeeID: pu.tx.PayeeID,
+			UserID: userID, Date: date, Description: fmt.Sprintf(w.Anticipation, pu.tx.Description), PayeeID: pu.tx.PayeeID,
 			Postings: postings, Links: []domain.Link{{Type: domain.LinkAnticipationOf, Target: pu.tx.ID}},
 		})
 		return err

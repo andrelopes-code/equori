@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -74,8 +75,12 @@ func (s *Service) ResolveDispute(ctx context.Context, userID int64, id uuid.UUID
 				if err != nil {
 					return err
 				}
+				w, err := s.writerFor(ctx, userID)
+				if err != nil {
+					return err
+				}
 				refund, err := s.insert(ctx, r, domain.Transaction{
-					UserID: userID, Date: resolvedOn, Description: "Chargeback: " + pu.tx.Description, PayeeID: pu.tx.PayeeID,
+					UserID: userID, Date: resolvedOn, Description: fmt.Sprintf(w.Chargeback, pu.tx.Description), PayeeID: pu.tx.PayeeID,
 					Postings: append([]domain.Posting{{AccountID: pu.card.ID, Amount: remaining, CardRole: domain.RoleCredit, Statement: statement}}, reversals...),
 					Links:    []domain.Link{{Type: domain.LinkChargebackOf, Target: pu.tx.ID}},
 				})

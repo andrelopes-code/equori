@@ -22,6 +22,18 @@ func TestConventionsOf(t *testing.T) {
 	}
 }
 
+func TestDateLayout(t *testing.T) {
+	for order, want := range map[locale.DateOrder]string{
+		locale.DMY: "02/01/2006",
+		locale.MDY: "01/02/2006",
+		locale.YMD: "2006-01-02",
+	} {
+		if got := (locale.Conventions{Order: order}).DateLayout(); got != want {
+			t.Errorf("DateLayout of %s = %q, want %q", order, got, want)
+		}
+	}
+}
+
 func TestEnglishName(t *testing.T) {
 	for l, want := range map[locale.Locale]string{{"pt", "BR"}: "Portuguese (Brazil)", {"en", "GB"}: "English (United Kingdom)", {"pt", "AO"}: "Portuguese (AO)"} {
 		if got := locale.EnglishName(l); got != want {

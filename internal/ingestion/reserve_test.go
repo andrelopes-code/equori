@@ -246,7 +246,7 @@ func (f syncFixture) yieldTransactions(account string) []apitest.TransactionView
 	rows, err := f.h.Pool.Query(f.h.T().Context(), `
 		SELECT DISTINCT t.id::text, t.date FROM ledger_transaction t
 		JOIN ledger_posting p ON p.transaction_id = t.id
-		WHERE p.account_id = $1 AND t.description LIKE 'Yield %' ORDER BY t.date`, account)
+		WHERE p.account_id = $1 AND t.description LIKE 'Rendimento %' ORDER BY t.date`, account)
 	if err != nil {
 		f.h.T().Fatal(err)
 	}
@@ -313,7 +313,7 @@ func TestS69BoundedReserveYield(t *testing.T) {
 		if len(as) != 2 || as[0].Date != "2026-11-11" || !as[0].Reconciled || as[0].Amount.Amount != 100352 {
 			t.Fatalf("assertions = %+v", as)
 		}
-		wantYield(t, f, reserve, "Yield 2026-11-11 to 2026-11-11", 60)
+		wantYield(t, f, reserve, "Rendimento de 11/11/2026", 60)
 		if _, open := f.reserveDifference(reserve); open {
 			t.Fatal("a yield leaves no open difference")
 		}
@@ -341,7 +341,7 @@ func TestS69BoundedReserveYield(t *testing.T) {
 			t.Fatalf("assertions = %+v", as)
 		}
 		ys := f.yieldTransactions(reserve)
-		if len(ys) != 2 || ys[1].Description != "Yield 2026-11-12 to 2026-11-12" || ys[1].Postings[0].Amount.Amount+ys[1].Postings[1].Amount.Amount != 0 {
+		if len(ys) != 2 || ys[1].Description != "Rendimento de 12/11/2026" || ys[1].Postings[0].Amount.Amount+ys[1].Postings[1].Amount.Amount != 0 {
 			t.Fatalf("yield transactions = %+v", ys)
 		}
 	})
@@ -374,7 +374,7 @@ func TestS69BoundedReserveYield(t *testing.T) {
 			t.Fatalf("assertions = %+v", as)
 		}
 		ys := f.yieldTransactions(reserve)
-		if len(ys) != 2 || ys[0].Description != "Yield 2026-11-11 to 2026-11-11" || ys[1].Description != "Yield 2026-11-12 to 2026-11-12" {
+		if len(ys) != 2 || ys[0].Description != "Rendimento de 11/11/2026" || ys[1].Description != "Rendimento de 12/11/2026" {
 			t.Fatalf("yield transactions = %+v", ys)
 		}
 		for i, want := range []int64{60, 48} {
@@ -415,7 +415,7 @@ func TestS69BoundedReserveYield(t *testing.T) {
 		if len(as) != 3 || !as[0].Reconciled || !as[1].Reconciled || !as[2].Reconciled {
 			t.Fatalf("assertions = %+v", as)
 		}
-		wantYield(t, f, reserve, "Yield 2026-11-11 to 2026-11-11", 60)
+		wantYield(t, f, reserve, "Rendimento de 11/11/2026", 60)
 		if n := f.count(`SELECT count(*) FROM ledger_reconciliation WHERE account_id = $1 AND date = '2026-11-11' AND resolution = 'yield' AND difference = 60`, reserve); n != 1 {
 			t.Fatalf("yield reconciliations = %d, want 1", n)
 		}

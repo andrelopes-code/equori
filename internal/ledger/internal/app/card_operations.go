@@ -227,8 +227,12 @@ func (s *Service) PayStatement(ctx context.Context, userID int64, statementID uu
 			return validationError("amount", "must be positive")
 		}
 		ref := v.Input.Reference
+		w, err := s.writerFor(ctx, userID)
+		if err != nil {
+			return err
+		}
 		created, err = s.insert(ctx, r, domain.Transaction{
-			UserID: userID, Date: date, Description: "Statement payment " + ref.String(),
+			UserID: userID, Date: date, Description: fmt.Sprintf(w.StatementPayment, ref.String()),
 			Postings: []domain.Posting{
 				{AccountID: card.ID, Amount: amount, CardRole: domain.RolePayment},
 				{AccountID: from, Amount: amount.Neg()},
@@ -286,8 +290,12 @@ func (s *Service) FinanceStatement(ctx context.Context, userID int64, statementI
 			}
 			postings = append(postings, domain.Posting{AccountID: interestAccount.ID, Amount: interest})
 		}
+		w, err := s.writerFor(ctx, userID)
+		if err != nil {
+			return err
+		}
 		created, err = s.insert(ctx, r, domain.Transaction{
-			UserID: userID, Date: date, Description: "Statement financing " + ref.String(), Postings: postings,
+			UserID: userID, Date: date, Description: fmt.Sprintf(w.StatementFinancing, ref.String()), Postings: postings,
 		})
 		if err != nil {
 			return err
