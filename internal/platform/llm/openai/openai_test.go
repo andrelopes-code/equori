@@ -271,3 +271,85 @@ func TestGenerateToolChoiceNone(t *testing.T) {
 		}
 	}
 }
+
+// Design 2026-10-26 E2.
+func TestStream(t *testing.T) {
+	t.Parallel()
+	frames := func(fs ...string) string {
+		var b strings.Builder
+		for _, f := range fs {
+			b.WriteString("data: " + f + "\n\n")
+		}
+		return b.String()
+	}
+	tests := []struct {
+		name  string
+		body  string
+		check func(t *testing.T, resp llm.Response, chunks []string, err error)
+	}{
+		{
+			name: "text and usage",
+			body: frames(`{"choices":[{"index":0,"delta":{"role":"assistant","content":"A"}}]}`,
+				`{"choices":[{"index":0,"delta":{"content":"B"}}]}`,
+				`{"choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}`,
+				`{"choices":[],"usage":{"prompt_tokens":4,"completion_tokens":2}}`, "[DONE]"),
+			check: func(t *testing.T, resp llm.Response, chunks []string, err error) {
+				if err != nil || !slices.Equal(chunks, []string{"A", "B"}) || resp.Text() != "AB" ||
+					resp.Usage != (llm.Usage{InputTokens: 4, OutputTokens: 2}) || resp.FinishReason != llm.FinishStop {
+					t.Fatalf("resp = %+v, chunks = %v, err = %v", resp, chunks, err)
+				}
+			},
+		},
+		{
+			name: "tool calls by index",
+			body: frames(`{"choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"c0","type":"function","function":{"name":"get_x","arguments":"{\"a\""}}]}}]}`,
+				`{"choices":[{"index":0,"delta":{"tool_calls":[{"index":1,"id":"c1","type":"function","function":{"name":"get_y","arguments":""}}]}}]}`,
+				`{"choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":":1"}}]}}]}`,
+				`{"choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"}"}},{"index":1,"function":{"arguments":"{}"}}]}}]}`,
+				`{"choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]}`, "[DONE]"),
+			check: func(t *testing.T, resp llm.Response, chunks []string, err error) {
+				p := resp.Message.Parts
+				if err != nil || len(p) != 2 || p[0].ToolCall == nil || p[1].ToolCall == nil ||
+					p[0].ToolCall.ID != "c0" || p[0].ToolCall.Name != "get_x" || string(p[0].ToolCall.Args) != `{"a":1}` ||
+					p[1].ToolCall.ID != "c1" || p[1].ToolCall.Name != "get_y" || string(p[1].ToolCall.Args) != `{}` ||
+					resp.FinishReason != llm.FinishToolCalls || len(chunks) != 0 {
+					t.Fatalf("resp = %+v, err = %v", resp, err)
+				}
+			},
+		},
+		{
+			// Review Focus 2: a server that ignores stream_options sends no usage chunk.
+			name: "no usage chunk",
+			body: frames(`{"choices":[{"index":0,"delta":{"content":"A"}}]}`, `{"choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}`, "[DONE]"),
+			check: func(t *testing.T, resp llm.Response, _ []string, err error) {
+				if err != nil || resp.Usage != (llm.Usage{}) || resp.Text() != "A" {
+					t.Fatalf("resp = %+v, err = %v", resp, err)
+				}
+			},
+		},
+		{
+			name: "cut stream",
+			body: frames(`{"choices":[{"index":0,"delta":{"content":"A"}}]}`),
+			check: func(t *testing.T, _ llm.Response, _ []string, err error) {
+				if !errors.Is(err, llm.ErrTransient) {
+					t.Fatalf("err = %v, want ErrTransient", err)
+				}
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			var got received
+			srv := serve(t, 200, http.Header{}, tt.body, &got)
+			var chunks []string
+			resp, err := openai.New(srv.URL, "", srv.Client()).Stream(context.Background(), "m",
+				llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "oi"}}}}},
+				func(s string) { chunks = append(chunks, s) })
+			if got.body["stream"] != true || !reflect.DeepEqual(got.body["stream_options"], map[string]any{"include_usage": true}) {
+				t.Fatalf("request body = %v", got.body)
+			}
+			tt.check(t, resp, chunks, err)
+		})
+	}
+}

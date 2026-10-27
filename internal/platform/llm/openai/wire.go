@@ -15,6 +15,12 @@ type chatRequest struct {
 	ResponseFormat *responseFormat `json:"response_format,omitempty"`
 	MaxTokens      int             `json:"max_tokens,omitzero"`
 	Temperature    *float64        `json:"temperature,omitempty"`
+	Stream         bool            `json:"stream,omitempty"`
+	StreamOptions  *streamOptions  `json:"stream_options,omitempty"`
+}
+
+type streamOptions struct {
+	IncludeUsage bool `json:"include_usage"`
 }
 
 // message keeps content without omitempty: an assistant turn with only tool calls sends
@@ -59,14 +65,34 @@ type jsonSchema struct {
 }
 
 type chatResponse struct {
+	Choices []choice `json:"choices"`
+	Usage   usage    `json:"usage"`
+}
+
+type choice struct {
+	Message      message `json:"message"`
+	FinishReason string  `json:"finish_reason"`
+}
+
+type usage struct {
+	PromptTokens     int `json:"prompt_tokens"`
+	CompletionTokens int `json:"completion_tokens"`
+}
+
+// chatChunk is one server-sent event of a streamed chat completion.
+type chatChunk struct {
 	Choices []struct {
-		Message      message `json:"message"`
-		FinishReason string  `json:"finish_reason"`
+		Delta struct {
+			Content   string `json:"content"`
+			ToolCalls []struct {
+				Index    int      `json:"index"`
+				ID       string   `json:"id"`
+				Function function `json:"function"`
+			} `json:"tool_calls"`
+		} `json:"delta"`
+		FinishReason string `json:"finish_reason"`
 	} `json:"choices"`
-	Usage struct {
-		PromptTokens     int `json:"prompt_tokens"`
-		CompletionTokens int `json:"completion_tokens"`
-	} `json:"usage"`
+	Usage *usage `json:"usage"`
 }
 
 type modelList struct {
