@@ -52,6 +52,38 @@ func TestBinFromPath(t *testing.T) {
 	}
 }
 
+func TestBinBesideExecutable(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "postgresql", "bin")
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "postgres"), []byte("#!/bin/sh\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", t.TempDir())
+	if got, err := bin("", filepath.Join(root, "equori")); err != nil || got != dir {
+		t.Fatalf(`bin("", exe) = %q, %v; want %q`, got, err, dir)
+	}
+}
+
+func TestBinExplicitWins(t *testing.T) {
+	root := t.TempDir()
+	beside := filepath.Join(root, "postgresql", "bin")
+	explicit := t.TempDir()
+	for _, dir := range []string{beside, explicit} {
+		if err := os.MkdirAll(dir, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "postgres"), []byte("#!/bin/sh\n"), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got, err := bin(explicit, filepath.Join(root, "equori")); err != nil || got != explicit {
+		t.Fatalf("bin(explicit, exe) = %q, %v; want %q", got, err, explicit)
+	}
+}
+
 func TestRefuseRoot(t *testing.T) {
 	t.Parallel()
 	if !errors.Is(refuseRoot(0), ErrRoot) || refuseRoot(1000) != nil {

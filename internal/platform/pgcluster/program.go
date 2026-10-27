@@ -20,14 +20,28 @@ var (
 
 var versionLine = regexp.MustCompile(`\(PostgreSQL\) (\d+)`)
 
-// Bin returns the directory of the PostgreSQL programs (M2): explicit when set, else the
-// directory of postgres on PATH.
+// Bin returns the directory of the PostgreSQL programs (M2, W-M2): explicit when set, else
+// postgresql/bin beside the running executable, else the directory of postgres on PATH.
 func Bin(explicit string) (string, error) {
+	exe, err := os.Executable()
+	if err != nil {
+		exe = ""
+	}
+	return bin(explicit, exe)
+}
+
+func bin(explicit, exe string) (string, error) {
 	if explicit != "" {
-		if _, err := os.Stat(filepath.Join(explicit, "postgres")); err != nil {
+		if _, err := exec.LookPath(filepath.Join(explicit, "postgres")); err != nil {
 			return "", fmt.Errorf("EQUORI_POSTGRES_BIN %s: %w", explicit, err)
 		}
 		return explicit, nil
+	}
+	if exe != "" {
+		bundled := filepath.Join(filepath.Dir(exe), "postgresql", "bin")
+		if _, err := exec.LookPath(filepath.Join(bundled, "postgres")); err == nil {
+			return bundled, nil
+		}
 	}
 	path, err := exec.LookPath("postgres")
 	if err != nil {
