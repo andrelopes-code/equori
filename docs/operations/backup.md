@@ -20,6 +20,11 @@ keeps running; `pg_dump` reads one consistent snapshot.
 
 In the standalone image: `docker exec equori equori backup`.
 
+On Windows: `equori backup` in a terminal of the account that installed equori. The dump lands
+in `%ProgramData%\equori\backups`, which only SYSTEM, the service and that account can read. A
+dump written with `--out` elsewhere takes the permissions of its folder, which the mode 0600 of
+the other systems does not replace (ADR 023, W-B1).
+
 Compose keeps the dump inside the `db` container, because the application image holds no
 `pg_dump`. Commands run from the directory of `compose.yaml`:
 
@@ -43,7 +48,9 @@ another disk or host.
 equori restore FILE
 ```
 
-Stop `equori serve` first: in managed mode the command refuses to run beside it. The command
+Stop `equori serve` first: in managed mode the command refuses to run beside it. On Windows,
+run `equori service stop`, then `equori restore FILE`, then `Restart-Service equori`, all in an
+administrator terminal. The command
 drops the database, recreates it from `template0` with the builtin `C.UTF-8` locale, and runs
 `pg_restore --no-owner --exit-on-error`. A dump of a schema version above the binary's highest
 migration is refused before anything is dropped. On the next start the application applies the
@@ -63,7 +70,7 @@ docker compose start app
 ## Moving between forms
 
 A dump of any form restores into any other form (B4): a computer to a server, compose to the
-standalone image. Take `equori backup` (or the compose dump) on the source, copy the file, and
+standalone image, Windows to compose and back (tested in ci, ADR 023, W-R2). Take `equori backup` (or the compose dump) on the source, copy the file, and
 run `equori restore FILE` (or the compose restore) on the target.
 
 ## Secret key

@@ -22,6 +22,7 @@ Paths are relative to the repository root. `<module>` stands for the module dire
 | CSV number and date reading | `internal/ingestion/internal/domain/profile.go` (profile fields `date_layout`, `group_separator`) | Profile data, not code | None | The CSV profile of the account | `internal/ingestion/internal/csvfile/csvfile_test.go`, `internal/ingestion/profile_test.go` |
 | Capture lexicon | `internal/capture/internal/domain/lexicon.go` (`Lexicon`, `Merge`) | `internal/capture/internal/domain/lexicon_pt.go` (`Portuguese`), `lexicon_en.go` (`English`) | `lexiconOf` in `internal/capture/internal/app/service.go` | `lexiconOf` selects by profile language; a language without a lexicon reads with `English` | `internal/capture/internal/domain/lexicon_test.go`, `internal/capture/locale_test.go` |
 | Locale conventions | `internal/platform/locale/conventions.go` (`Conventions`, `ConventionsOf`) | Same file: one case of `ConventionsOf` | `ConventionsOf` | Same function: the region selects the decimal separator, the group separator and the date order | `internal/platform/locale/locale_test.go` |
+| Installer language | `packaging/windows/equori.iss` (`[Languages]`) | Same file: one `[Languages]` entry and its `[CustomMessages]` per web catalog | None | None: the Windows display language selects it; it sets no language or region of a user | `scripts/windows-smoke.ps1` compiles and installs the script |
 
 Capture reads its separators and date order from `locale.ConventionsOf` through `domain.Conventions` in `internal/capture/internal/domain/conventions.go`.
 

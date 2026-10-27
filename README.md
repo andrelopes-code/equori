@@ -21,13 +21,25 @@ Archives: each release attaches `equori_<version>_<os>_<arch>.tar.gz` for Linux 
 gh attestation verify equori_<version>_linux_amd64.tar.gz --repo andrelopes-code/equori
 ```
 
+### Windows
+
+Each release attaches `equori_<version>_windows_amd64_setup.exe` for Windows 10 (1803 or later) and Windows 11, on x64 and on Arm through emulation. The installer holds PostgreSQL 18 and installs the service `equori`, which starts with Windows and listens on `http://127.0.0.1:8080`. It asks for administrator rights once.
+
+When it finishes, the browser opens on the screen that creates the first user. To use equori in a window of its own, open it in Edge or Chrome and choose "Install this site as an app". The Start menu entry `equori` opens it later.
+
+- Data, backups, `secret.key`, `equori.env` and the log (`log\equori.log`) live in `%ProgramData%\equori`.
+- Another port: set `EQUORI_HTTP_ADDR=127.0.0.1:<port>` in `%ProgramData%\equori\equori.env`, then restart the service (`Restart-Service equori` in an administrator terminal).
+- Before `equori restore`, stop the service: `equori service stop` in an administrator terminal.
+- Uninstalling from Settings > Apps asks whether to delete `%ProgramData%\equori`; the answer No keeps it for a later installation.
+
 ### Homebrew (macOS, Linux)
 
 ```sh
 brew install andrelopes-code/equori/equori
 brew services start equori
-equori user create --email you@example.com --language <code> --region <country> --admin
 ```
+
+Then open the setup URL that the first start writes to `setup.url` in the data directory (`~/Library/Application Support/equori` on macOS, `~/.local/share/equori` on Linux) and to the log.
 
 Phone access over HTTPS: [docs/operations/remote-access.md](docs/operations/remote-access.md).
 
@@ -37,8 +49,10 @@ The standalone image holds the application and PostgreSQL; the data lives in the
 
 ```sh
 docker run -d --name equori -p 8080:8080 -v equori:/data ghcr.io/andrelopes-code/equori:<version>-standalone
-docker exec -it equori equori user create --email you@example.com --language <code> --region <country> --admin
+docker logs equori 2>&1 | grep 'first user setup'
 ```
+
+The line holds the URL of the screen that creates the first user (`/setup#token=...`); `docker exec equori cat /data/setup.url` prints it too.
 
 The app listens on `http://localhost:8080`. `GET /healthz` returns `200` when the database is reachable.
 
@@ -46,7 +60,7 @@ API groups under `/api/v1` (contract: [api/openapi.yaml](api/openapi.yaml)): ses
 
 API conventions ([ADR 007](docs/adr/007-api-conventions.md)): every request is validated against `api/openapi.yaml`, and a request outside the contract returns 400 `invalid_request` listing each invalid field; domain rule failures return 422. Errors are RFC 9457 problems with a stable `code` ([ADR 004](docs/adr/004-api-errors.md)). Amounts are `{"amount": <minor units>, "currency": "BRL"}`. Lists that grow take `limit` and `cursor` and return `next_cursor`. Creating a record returns 201 with `Location`; a state change (`void`, `close`, `unlock`, `resolve`, `reconcile`) returns 200 with the updated resource.
 
-Create the first admin (the password is prompted without echo):
+Create the first user: while no user exists, every start logs a line `first user setup` whose URL opens the screen that creates it, an admin, with a one-time token (`docker compose logs app | grep 'first user setup'`). The command line does the same (the password is prompted without echo):
 
 ```sh
 docker compose exec app /equori user create --email you@example.com --language <code> --region <country> --admin
@@ -55,8 +69,8 @@ docker compose exec app /equori user create --email you@example.com --language <
 | Variable | Default | Description |
 |---|---|---|
 | `EQUORI_DATABASE_URL` | set by `compose.yaml` | PostgreSQL connection URL; unset, equori runs its own PostgreSQL server over `EQUORI_DATA_DIR` (managed mode) |
-| `EQUORI_DATA_DIR` | per-user data directory | Data directory of managed mode |
-| `EQUORI_POSTGRES_BIN` | directory of `postgres` on `PATH` | Directory of the PostgreSQL 18 programs for managed mode, `equori backup` and `equori restore` |
+| `EQUORI_DATA_DIR` | per-user data directory; `%ProgramData%\equori` on Windows | Data directory of managed mode |
+| `EQUORI_POSTGRES_BIN` | `postgresql/bin` beside the executable, else the directory of `postgres` on `PATH` | Directory of the PostgreSQL 18 programs for managed mode, `equori backup` and `equori restore` |
 | `EQUORI_BACKUP_DIR` | `<data directory>/backups` | Directory of the automatic backups of managed mode |
 | `EQUORI_HTTP_ADDR` | `:8080` | HTTP listen address |
 | `EQUORI_LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
@@ -75,7 +89,7 @@ Data lives in the `pgdata` Docker volume. Back it up with:
 docker compose exec db pg_dump -U equori equori > equori.sql
 ```
 
-Commands: `serve` (the default), `user create`, `backup`, `restore`, `secrets key`, `secrets rotate`, `reporting rebuild`, `portfolio rebuild`, `planning backfill`, `healthcheck`, `version`.
+Commands: `serve` (the default), `user create`, `backup`, `restore`, `secrets key`, `secrets rotate`, `reporting rebuild`, `portfolio rebuild`, `planning backfill`, `service install|stop|uninstall` (Windows), `healthcheck`, `version`.
 
 Backup and restore: [docs/operations/backup.md](docs/operations/backup.md). Export, import and archive compatibility between versions: [docs/operations/export.md](docs/operations/export.md). Bank sync through Pluggy and Meu Pluggy: [docs/operations/pluggy.md](docs/operations/pluggy.md).
 

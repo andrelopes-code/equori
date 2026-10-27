@@ -68,7 +68,7 @@ Every requirement has a measurable criterion and a verification method. Performa
 
 | ID | Requirement |
 |---|---|
-| N24 | Container images for linux/amd64 and linux/arm64; archives for linux/amd64, linux/arm64, darwin/amd64 and darwin/arm64 (ADR 022); PostgreSQL 18 or later. |
+| N24 | Container images for linux/amd64 and linux/arm64; archives for linux/amd64, linux/arm64, darwin/amd64 and darwin/arm64 (ADR 022); a Windows installer for x64 (ADR 023); PostgreSQL 18 or later. |
 | N25 | Browsers: the last two major versions of Chrome, Firefox, Safari and Edge. |
 | N26 | Limits: 500 postings per transaction; 420 installments per plan; 10 MiB per attachment and per imported file; 1 MiB per request body except attachment upload and file import (11 MiB). |
 | N27 | A binary refuses a database that holds a migration it does not know (ADR 022, V4); verified by `TestMigrateRefusesNewerSchema`. |

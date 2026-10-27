@@ -29,3 +29,7 @@ In SQLite, these changes require the 12-step table rebuild (create new table, co
 - Managed mode runs PostgreSQL as a child of `equori` over a data directory (`internal/platform/pgcluster`).
 - The minimum major is 18: the migrations call `uuidv7()`.
 - Major upgrades stay the host's responsibility for compose and follow ADR 022 V6 for managed mode.
+
+## Amendment of 2026-10-27 (ADR 023)
+
+- On Windows, managed mode runs the EDB build of PostgreSQL 18 bundled in the installer, pinned by SHA-256; every other form keeps the PostgreSQL of a package manager.

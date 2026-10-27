@@ -113,3 +113,9 @@ Managed mode is the mode in which `equori` runs its own PostgreSQL server as a c
 - `latest` stays a moving image tag, and no document names it.
 - A release that fails `make check` or R7 publishes nothing.
 - The first tag skips R7.
+
+## Amendment of 2026-10-27 (ADR 023)
+
+- D1 gains the Windows installer. A3's row "Windows archive or installer" reads "adopted: installer".
+- M1, M2, M3, M5, M6 and M8 hold on Windows as W-M1 to W-M7 of ADR 023 state them; M9 is replaced by W-M8: managed mode runs on Linux, macOS and Windows.
+- R1 to R4 and R7 gain the Windows checks of W-R1 to W-R7.
