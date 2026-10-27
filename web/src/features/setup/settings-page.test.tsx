@@ -479,6 +479,7 @@ describe("settings page", () => {
         catalogPtBR["calendar.title"],
         catalogPtBR["settings.integrations.title"],
         catalogPtBR["settings.assistant.title"],
+        catalogPtBR["settings.external_access.title"],
         catalogPtBR["settings.data.title"],
       ]);
     });

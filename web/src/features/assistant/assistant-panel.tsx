@@ -163,6 +163,19 @@ export function AssistantPanel({
           >
             {t("assistant.setup")}
           </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              onOpenChange(false);
+              void navigate({
+                to: "/settings",
+                search: { section: "external_access" },
+              });
+            }}
+          >
+            {t("assistant.use_mcp")}
+          </Button>
         </AlertActions>
       </Alert>
     );

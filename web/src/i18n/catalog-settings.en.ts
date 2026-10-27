@@ -13,6 +13,42 @@ export const settingsEn = {
   "settings.summary.calendars": "Holidays that move scheduled dates.",
   "settings.summary.integrations": "Aggregator credentials.",
   "settings.summary.assistant": "Language model providers, uses and spending.",
+  "settings.external_access.title": "External access (MCP)",
+  "settings.summary.external_access": "Claude, Codex and other agents.",
+  "settings.external_access.description":
+    "MCP lets an agent you already use, such as Claude Code or Codex, read and change your finances with the assistant's tools.",
+  "settings.external_access.privacy":
+    "The client's model provider receives the data the client reads.",
+  "settings.external_access.write_warning":
+    "A read and write token lets the client record and delete without equori's confirmation card, under the client's own approval prompt.",
+  "settings.external_access.reachability":
+    "claude.ai, Claude Desktop connectors and the mobile apps connect from Anthropic's servers and need a public HTTPS address for equori. Clients on this computer or network, such as Claude Code and Codex, connect as is.",
+  "settings.external_access.empty":
+    "No token yet. A token connects one client.",
+  "settings.external_access.create": "Create token",
+  "settings.external_access.name": "Name",
+  "settings.external_access.scope": "Access",
+  "settings.external_access.scope.read": "Read only",
+  "settings.external_access.scope.write": "Read and write",
+  "settings.external_access.expiry": "Expires in",
+  "settings.external_access.days": "{count} days",
+  "settings.external_access.created": "created {date}",
+  "settings.external_access.used": "last used {date}",
+  "settings.external_access.unused": "never used",
+  "settings.external_access.expires": "expires {date}",
+  "settings.external_access.delete": "Delete",
+  "settings.external_access.deleteTitle": "Delete the token {name}?",
+  "settings.external_access.deleteHint":
+    "A client that uses it fails at its next request.",
+  "settings.external_access.tokenTitle": "Copy the token now",
+  "settings.external_access.tokenHint":
+    "equori shows it only once. Paste one of the setups below into the client.",
+  "settings.external_access.token": "Token",
+  "settings.external_access.claudeCode": "Claude Code",
+  "settings.external_access.codex":
+    "Codex (config.toml); set EQUORI_TOKEN to the token",
+  "settings.external_access.json": "Other clients (JSON)",
+  "settings.external_access.done": "Done",
   "settings.summary.data": "Export and import of the books.",
   "settings.browserOnly.tag": "This browser",
   "settings.account.session": "Session",

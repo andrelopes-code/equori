@@ -16,6 +16,42 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "settings.summary.integrations": "Credenciais de agregadores.",
   "settings.summary.assistant":
     "Provedores de modelos de linguagem, usos e gastos.",
+  "settings.external_access.title": "Acesso externo (MCP)",
+  "settings.summary.external_access": "Claude, Codex e outros agentes.",
+  "settings.external_access.description":
+    "O MCP permite que um agente que você já usa, como o Claude Code ou o Codex, leia e altere suas finanças com as ferramentas do assistente.",
+  "settings.external_access.privacy":
+    "O provedor do modelo do cliente recebe os dados que o cliente lê.",
+  "settings.external_access.write_warning":
+    "Um token de leitura e escrita permite que o cliente lance e exclua sem o cartão de confirmação do equori, sob o pedido de aprovação do próprio cliente.",
+  "settings.external_access.reachability":
+    "O claude.ai, os conectores do Claude Desktop e os aplicativos móveis se conectam a partir dos servidores da Anthropic e precisam de um endereço HTTPS público para o equori. Clientes neste computador ou nesta rede, como o Claude Code e o Codex, se conectam assim mesmo.",
+  "settings.external_access.empty":
+    "Nenhum token ainda. Um token conecta um cliente.",
+  "settings.external_access.create": "Criar token",
+  "settings.external_access.name": "Nome",
+  "settings.external_access.scope": "Acesso",
+  "settings.external_access.scope.read": "Somente leitura",
+  "settings.external_access.scope.write": "Leitura e escrita",
+  "settings.external_access.expiry": "Expira em",
+  "settings.external_access.days": "{count} dias",
+  "settings.external_access.created": "criado em {date}",
+  "settings.external_access.used": "último uso em {date}",
+  "settings.external_access.unused": "nunca usado",
+  "settings.external_access.expires": "expira em {date}",
+  "settings.external_access.delete": "Excluir",
+  "settings.external_access.deleteTitle": "Excluir o token {name}?",
+  "settings.external_access.deleteHint":
+    "Um cliente que o usa falha na próxima requisição.",
+  "settings.external_access.tokenTitle": "Copie o token agora",
+  "settings.external_access.tokenHint":
+    "O equori o mostra só uma vez. Cole uma das configurações abaixo no cliente.",
+  "settings.external_access.token": "Token",
+  "settings.external_access.claudeCode": "Claude Code",
+  "settings.external_access.codex":
+    "Codex (config.toml); defina EQUORI_TOKEN com o token",
+  "settings.external_access.json": "Outros clientes (JSON)",
+  "settings.external_access.done": "Concluir",
   "settings.summary.data": "Exportação e importação dos livros.",
   "settings.browserOnly.tag": "Este navegador",
   "settings.account.session": "Sessão",

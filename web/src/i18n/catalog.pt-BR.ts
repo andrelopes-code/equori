@@ -1259,6 +1259,7 @@ export const catalogPtBR: Catalog = {
   "assistant.canceled": "Interrompida",
   "assistant.retry": "Tentar de novo",
   "assistant.setup": "Configurar o assistente",
+  "assistant.use_mcp": "Usar Claude ou Codex",
   "assistant.unavailable.body":
     "O assistente precisa de um provedor de modelo de linguagem; adicione um em Configurações.",
   "assistant.conversations.today": "Hoje",

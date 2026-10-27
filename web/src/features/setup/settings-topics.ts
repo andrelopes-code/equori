@@ -59,6 +59,12 @@ export const settingsTopics = [
     summary: "settings.summary.assistant",
   },
   {
+    id: "external_access",
+    group: "connections",
+    title: "settings.external_access.title",
+    summary: "settings.summary.external_access",
+  },
+  {
     id: "data",
     group: "system",
     title: "settings.data.title",

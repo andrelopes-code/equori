@@ -3,6 +3,7 @@ import { SettingsAppearance } from "@/features/setup/settings-appearance";
 import { SettingsAssistant } from "@/features/setup/settings-assistant";
 import { SettingsCalendars } from "@/features/setup/settings-calendars";
 import { SettingsData } from "@/features/setup/settings-data";
+import { SettingsExternalAccess } from "@/features/setup/settings-external-access";
 import { SettingsIntegrations } from "@/features/setup/settings-integrations";
 import { SettingsLanguage } from "@/features/setup/settings-language";
 import { SettingsLedger } from "@/features/setup/settings-ledger";
@@ -27,6 +28,8 @@ export function SettingsPane({ topic }: { topic: SettingsTopic }) {
       return <SettingsIntegrations />;
     case "assistant":
       return <SettingsAssistant />;
+    case "external_access":
+      return <SettingsExternalAccess />;
     case "data":
       return <SettingsData />;
   }

@@ -1254,6 +1254,7 @@ export const catalogEn = {
   "assistant.canceled": "Stopped",
   "assistant.retry": "Try again",
   "assistant.setup": "Set up the assistant",
+  "assistant.use_mcp": "Use Claude or Codex",
   "assistant.unavailable.body":
     "The assistant needs a language model provider; add one in Settings.",
   "assistant.conversations.today": "Today",

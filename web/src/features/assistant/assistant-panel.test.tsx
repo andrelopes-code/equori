@@ -724,6 +724,24 @@ describe("AssistantPanel", () => {
     ).toBeVisible();
   });
 
+  it("links the MCP settings when no provider serves the assistant (P8)", async () => {
+    const { navigate, onOpenChange } = setup({
+      "GET /api/v1/assistant/chat": () => json(200, { available: false }),
+    });
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["assistant.use_mcp"],
+      }),
+    );
+    expect(navigate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "/settings",
+        search: { section: "external_access" },
+      }),
+    );
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
   it("says when the quota returns after an exhausted error event", async () => {
     let refused = false;
     setup({

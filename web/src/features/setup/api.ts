@@ -434,3 +434,34 @@ export function useImportArchive() {
     },
   });
 }
+
+export type AccessToken = components["schemas"]["AccessToken"];
+
+export const accessTokenKeys = {
+  list: ["access-tokens"] as const,
+};
+
+export function accessTokensQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: accessTokenKeys.list,
+    queryFn: async () => (await unwrap(await api.GET("/access-tokens"))).items,
+  });
+}
+
+export function useCreateAccessToken() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (body: components["schemas"]["AccessTokenInput"]) =>
+      unwrap(await api.POST("/access-tokens", { body })),
+  });
+}
+
+export function useDeleteAccessToken() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      unwrap(
+        await api.DELETE("/access-tokens/{id}", { params: { path: { id } } }),
+      ),
+  });
+}
