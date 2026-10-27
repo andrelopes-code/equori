@@ -30,14 +30,17 @@ var (
 	ErrInstrumentExists  = domain.ErrInstrumentExists
 	ErrPriceMissing      = domain.ErrPriceMissing
 	ErrNoTerms           = domain.ErrNoTerms
+	ErrUnknownIndex      = domain.ErrUnknownIndex
 )
 
 // sourceAccrual is the source of the prices computed from the terms of a fixed income security.
 const sourceAccrual = "accrual"
 
 type (
-	Instrument = domain.Instrument
-	Price      = domain.Price
+	Instrument   = domain.Instrument
+	Price        = domain.Price
+	IndexSummary = domain.IndexSummary
+	IndexRate    = domain.IndexRate
 )
 
 type Module struct {

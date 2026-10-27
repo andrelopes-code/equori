@@ -105,6 +105,7 @@ describe("desktop column", () => {
       catalogEn["nav.instruments"],
       catalogEn["nav.portfolio"],
       catalogEn["nav.reports"],
+      catalogEn["nav.calculators"],
     ]);
     expect(links[1]).toHaveAttribute("aria-current", "page");
     expect(links.filter((link) => link.hasAttribute("aria-current"))).toEqual([
@@ -625,6 +626,7 @@ describe("phone dock", () => {
     ["nav.instruments", "/instruments"],
     ["nav.portfolio", "/portfolio"],
     ["nav.reports", "/reports"],
+    ["nav.calculators", "/calculators"],
     ["more.settings", "/settings"],
   ] as const)("opens %s from More", async (label, path) => {
     const { router } = await renderApp("/", { width: 390, fetch: newFetch() });

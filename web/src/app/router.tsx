@@ -5,6 +5,7 @@ import {
   createRootRouteWithContext,
   createRoute,
   createRouter,
+  notFound,
   Outlet,
   redirect,
 } from "@tanstack/react-router";
@@ -45,6 +46,12 @@ import {
   validateYearSearch,
 } from "@/features/portfolio";
 import { ReportsPage, validateReportsSearch } from "@/features/reports";
+import {
+  CalculatorPage,
+  CalculatorsPage,
+  isCalculatorId,
+  validateCalculatorSearch,
+} from "@/features/calculators";
 import { OverviewPage } from "@/features/overview";
 import {
   CardPage,
@@ -359,6 +366,27 @@ const reportsRoute = createRoute({
   component: ReportsPage,
 });
 
+const calculatorsRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "calculators",
+  component: CalculatorsPage,
+});
+
+const calculatorRoute = createRoute({
+  getParentRoute: () => authedRoute,
+  path: "calculators/$id",
+  // Declared without keys: an index signature would join the search type of every route and
+  // retype their keys. The values are strings (validateCalculatorSearch).
+  validateSearch: (raw): object => validateCalculatorSearch(raw),
+  beforeLoad: ({ params }) => {
+    // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router not-found results are thrown objects.
+    if (!isCalculatorId(params.id)) throw notFound();
+  },
+  // A failed chunk load falls to the Chart error state instead of the route error screen.
+  loader: () => preloadChartEngine(["line"]).catch(() => undefined),
+  component: CalculatorPage,
+});
+
 const accountsLayoutRoute = createRoute({
   getParentRoute: () => authedRoute,
   path: "accounts",
@@ -462,6 +490,8 @@ export const routeTree = rootRoute.addChildren([
     portfolioRoute,
     portfolioYearRoute,
     reportsRoute,
+    calculatorsRoute,
+    calculatorRoute,
     instrumentRoute,
     settingsRoute,
   ]),

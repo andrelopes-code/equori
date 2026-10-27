@@ -13,15 +13,16 @@ import (
 type getMarketDataView string
 
 func (getMarketDataView) Values() []string {
-	return []string{"instruments", "instrument", "prices", "calendars", "holidays"}
+	return []string{"instruments", "instrument", "prices", "calendars", "holidays", "indexes", "index_rates"}
 }
 
 type getMarketDataIn struct {
 	View     getMarketDataView `json:"view" jsonschema:"what to return"`
 	Code     string            `json:"code,omitzero" jsonschema:"for instrument and prices: instrument code, such as a ticker or currency code"`
 	Quote    string            `json:"quote,omitzero" jsonschema:"for prices: code of the currency the price is quoted in"`
-	From     tool.Date         `json:"from,omitzero" jsonschema:"for prices: first date"`
-	To       tool.Date         `json:"to,omitzero" jsonschema:"for prices: last date; at most 366 days after from"`
+	From     tool.Date         `json:"from,omitzero" jsonschema:"for prices and index_rates: first date"`
+	To       tool.Date         `json:"to,omitzero" jsonschema:"for prices and index_rates: last date; at most 366 days after from for prices, 7320 for index_rates"`
+	Index    string            `json:"index,omitzero" jsonschema:"for index_rates: index id from the indexes view"`
 	Calendar string            `json:"calendar,omitzero" jsonschema:"for holidays: calendar identifier from the calendars view"`
 	Year     int               `json:"year,omitzero" jsonschema:"for holidays: calendar year"`
 }
@@ -62,12 +63,26 @@ type holidayView struct {
 	Source string    `json:"source"`
 }
 
+type indexView struct {
+	ID     string    `json:"id"`
+	Period string    `json:"period"`
+	First  tool.Date `json:"first"`
+	Last   tool.Date `json:"last"`
+}
+
+type indexRateView struct {
+	Date tool.Date `json:"date"`
+	Rate string    `json:"rate"`
+}
+
 type getMarketDataOut struct {
 	Instruments []instrumentView `json:"instruments,omitzero"`
 	Instrument  instrumentView   `json:"instrument,omitzero"`
 	Prices      []priceView      `json:"prices,omitzero"`
 	Calendars   []calendarView   `json:"calendars,omitzero"`
 	Holidays    []holidayView    `json:"holidays,omitzero"`
+	Indexes     []indexView      `json:"indexes,omitzero"`
+	IndexRates  []indexRateView  `json:"index_rates,omitzero"`
 }
 
 func toInstrumentView(in domain.Instrument) instrumentView {
@@ -77,15 +92,16 @@ func toInstrumentView(in domain.Instrument) instrumentView {
 func getMarketData(svc Service, cals Calendars) tool.Tool {
 	return tool.New(tool.Spec{
 		Name: "get_market_data",
-		Description: "Returns market data of the instance: instruments with their type and scale, one instrument with its fixed income terms, prices of an instrument in a period, business-day calendars or a calendar's holidays in a year. " +
-			"Use it for prices, securities and holidays. " +
+		Description: "Returns market data of the instance: instruments with their type and scale, one instrument with its fixed income terms, prices of an instrument in a period, business-day calendars, a calendar's holidays in a year, " +
+			"the stored economic indexes, or the rates of one index in a period. " +
+			"Use it for prices, securities, holidays and index rates. " +
 			"Do not use it for the user's holdings: get_portfolio does.",
 		Effect:     tool.ReadOnly,
 		Idempotent: true,
 	}, func(ctx context.Context, _ int64, in getMarketDataIn) (getMarketDataOut, error) {
 		fields := []field{
 			{"code", in.Code != ""}, {"quote", in.Quote != ""}, {"from", !in.From.IsZero()}, {"to", !in.To.IsZero()},
-			{"calendar", in.Calendar != ""}, {"year", in.Year != 0},
+			{"calendar", in.Calendar != ""}, {"year", in.Year != 0}, {"index", in.Index != ""},
 		}
 		name := "view " + string(in.View)
 		var err error
@@ -96,6 +112,8 @@ func getMarketData(svc Service, cals Calendars) tool.Tool {
 			err = required(name, fields, "code", "quote", "from", "to")
 		case "holidays":
 			err = required(name, fields, "calendar", "year")
+		case "index_rates":
+			err = required(name, fields, "index", "from", "to")
 		default:
 			err = required(name, fields)
 		}
@@ -133,6 +151,20 @@ func getMarketData(svc Service, cals Calendars) tool.Tool {
 			out := getMarketDataOut{Prices: []priceView{}}
 			for _, p := range rows {
 				out.Prices = append(out.Prices, priceView{Date: tool.DateOf(p.Date), Value: p.Value.Reduced().String()})
+			}
+			return out, err
+		case "indexes":
+			rows, err := svc.Indexes(ctx)
+			out := getMarketDataOut{Indexes: []indexView{}}
+			for _, x := range rows {
+				out.Indexes = append(out.Indexes, indexView{ID: x.ID, Period: x.Period, First: tool.DateOf(x.First), Last: tool.DateOf(x.Last)})
+			}
+			return out, err
+		case "index_rates":
+			rows, err := svc.IndexRates(ctx, in.Index, in.From.Time, in.To.Time)
+			out := getMarketDataOut{IndexRates: []indexRateView{}}
+			for _, r := range rows {
+				out.IndexRates = append(out.IndexRates, indexRateView{Date: tool.DateOf(r.Date), Rate: r.Rate})
 			}
 			return out, err
 		case "calendars":

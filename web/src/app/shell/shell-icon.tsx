@@ -8,6 +8,7 @@ export type ShellIconName =
   | "planning"
   | "instruments"
   | "reports"
+  | "calculator"
   | "settings"
   | "plus"
   | "form"
@@ -25,7 +26,7 @@ export type ShellIconName =
   | "eye-off";
 
 // Lucide geometry (ISC licence) on its 24-unit grid: house, arrow-left-right, tags, credit-card,
-// wallet, target, calendar, shield, settings, plus, square-pen, text, search, layout-grid, arrow-left,
+// wallet, target, calendar, shield, calculator, settings, plus, square-pen, text, search, layout-grid, arrow-left,
 // moon, globe, log-out, chevrons-up-down, rows-3, eye and eye-off.
 const PATHS: Record<ShellIconName, readonly string[]> = {
   assistant: [
@@ -52,6 +53,18 @@ const PATHS: Record<ShellIconName, readonly string[]> = {
   accounts: [
     "M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1",
     "M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4",
+  ],
+  calculator: [
+    "M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z",
+    "M8 6h8",
+    "M16 14v4",
+    "M16 10h.01",
+    "M12 10h.01",
+    "M8 10h.01",
+    "M12 14h.01",
+    "M8 14h.01",
+    "M12 18h.01",
+    "M8 18h.01",
   ],
   goals: [
     "M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z",

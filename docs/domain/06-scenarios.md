@@ -845,3 +845,13 @@ Statement 2026-11 of S145, amount due 563.34, receives a payment of 163.34 on 20
 ### S150 Revolving credit
 
 Statement 2026-11 of S145 receives 263.34 on 2026-11-10: November 2026 Food › Supermarket 107.51, Electronics 155.83. The unpaid 300.00 revolves; the issuer bills revolving interest of 45.00 on 2026-12-01 on statement 2026-12, beside laptop 2/3 333.33 (CV9). A payment of 500.00 on 2026-12-10 pays the 300.00 left of 2026-11 (Supermarket 122.49, Electronics 177.51), then 200.00 of 2026-12 (Electronics 176.22, Interest 23.78: 20,000 × 4,500 / 37,833 = 2,378.86, floor). A payment of 178.33 on 2027-01-05 pays the rest of 2026-12. Cash view: December 2026 Food › Supermarket 122.49, Electronics 353.73, Interest 23.78; January 2027 Electronics 157.11, Interest 21.22.
+
+### S157 Index history for calculators
+
+| Step | Expected |
+|---|---|
+| `br_cdi` and `br_ipca` enabled, today 2026-03-15, no security follows them, one feed tick | CDI requested from 2006-03-15 in windows of at most 1,826 days; IPCA from 2006-03-15 |
+| `GET /indexes` | `cdi` with period `day`, `ipca` with period `month`, each with its first and last stored date |
+| `GET /indexes/ipca/rates?from=2026-01-01&to=2026-02-28` | the two stored months, oldest first, rates as decimal fractions |
+| `GET /indexes/selic/rates?...` | 404 `not_found` |
+| range of 7,321 days | 422 `validation_failed` on `to` |

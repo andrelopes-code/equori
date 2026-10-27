@@ -25,6 +25,14 @@ type IndexRate struct {
 	Rate string
 }
 
+// IndexSummary is an enabled index with stored rates: its period (day or month) and the dates
+// of its first and last rate.
+type IndexSummary struct {
+	ID          string
+	Period      string
+	First, Last time.Time
+}
+
 // DatedPrice is the price of one unit on a date, a decimal with 12 decimals.
 type DatedPrice struct {
 	Date  time.Time

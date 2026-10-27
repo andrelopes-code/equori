@@ -34,6 +34,8 @@ Capture reads its separators and date order from `locale.ConventionsOf` through 
 | `web/src/i18n/regions.ts` | `regions`: the ISO 3166-1 alpha-2 codes, in the order of `internal/platform/locale/regions.go` | None |
 | `web/src/i18n/locale.ts` | `Locale` and `tagOf`: the `language-region` tag passed to `Intl` | `web/src/i18n/format.test.ts` |
 | `web/src/features/accounts/institution-logo.ts` | `logoOf`: a `switch` on the identifier scheme that returns a logo URL; a scheme without a case has no logo (ADR 013) | `web/src/features/accounts/institution-logo.test.ts` |
+| `web/src/features/calculators/fixed-income-region.ts` | `fixedIncomeRules`: a `switch` on the region that returns the tax on fixed-income yield; a region without a case asks for the rate | `web/src/features/calculators/fixed-income-region.test.ts` |
+| `web/src/features/calculators/credit-cost-calculator.tsx` | `regionalName`: a `switch` on the region that returns the name the region gives the effective annual cost of credit (CET in Brazil); a region without a case names none | `web/src/features/calculators/credit-cost-calculator.test.tsx` |
 
 ## Checklist
 
