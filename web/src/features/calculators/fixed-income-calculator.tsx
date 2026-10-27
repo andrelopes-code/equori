@@ -1,4 +1,4 @@
-import { InlineMessage } from "@slotted/react/inline-message";
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Stack } from "@slotted/react/stack";
 
 import { AmountField } from "@/features/calculators/amount-field";
@@ -95,7 +95,11 @@ export function FixedIncomeCalculator() {
   let results = null;
   if (rules !== null && days !== null && days < rules.minimumDays)
     results = (
-      <InlineMessage tone="warning">{t("calc.fixedIncome.iof")}</InlineMessage>
+      <Alert tone="warning">
+        <AlertContent>
+          <AlertDescription>{t("calc.fixedIncome.iof")}</AlertDescription>
+        </AlertContent>
+      </Alert>
     );
   else if (
     amount !== null &&

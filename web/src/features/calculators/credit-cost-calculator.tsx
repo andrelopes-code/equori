@@ -1,5 +1,5 @@
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Field, FieldLabel } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
 
 import { AmountField } from "@/features/calculators/amount-field";
@@ -110,7 +110,11 @@ export function CreditCostCalculator() {
   let details;
   if (firstDue !== null && firstDue <= releaseDate)
     results = (
-      <InlineMessage tone="warning">{t("calc.credit.order")}</InlineMessage>
+      <Alert tone="warning">
+        <AlertContent>
+          <AlertDescription>{t("calc.credit.order")}</AlertDescription>
+        </AlertContent>
+      </Alert>
     );
   else if (
     released !== null &&
@@ -127,9 +131,11 @@ export function CreditCostCalculator() {
     const paid = fees + installment * count;
     results =
       shown === null ? (
-        <InlineMessage tone="warning">
-          {t("calc.credit.noSolution")}
-        </InlineMessage>
+        <Alert tone="warning">
+          <AlertContent>
+            <AlertDescription>{t("calc.credit.noSolution")}</AlertDescription>
+          </AlertContent>
+        </Alert>
       ) : (
         <Stack gap={5}>
           <ResultLead

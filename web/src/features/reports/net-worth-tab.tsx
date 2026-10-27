@@ -1,6 +1,6 @@
 import type { ChartSeries } from "@slotted/core/chart";
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Chart } from "@slotted/react/chart";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { Stack } from "@slotted/react/stack";
 import {
@@ -135,14 +135,18 @@ export function NetWorthTab({
         />
       )}
       {failed.length > 0 && (
-        <InlineMessage tone="warning">
-          {t("report.netWorth.unavailable", {
-            months: new Intl.ListFormat(tag, { type: "conjunction" }).format(
-              failed,
-            ),
-            currency,
-          })}
-        </InlineMessage>
+        <Alert tone="warning">
+          <AlertContent>
+            <AlertDescription>
+              {t("report.netWorth.unavailable", {
+                months: new Intl.ListFormat(tag, {
+                  type: "conjunction",
+                }).format(failed),
+                currency,
+              })}
+            </AlertDescription>
+          </AlertContent>
+        </Alert>
       )}
       <Table columns={6} variant="framed">
         <TableContent>

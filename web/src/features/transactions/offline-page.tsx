@@ -1,5 +1,5 @@
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Page, PageBody } from "@slotted/react/page";
 import {
   PageHeader,
@@ -51,9 +51,11 @@ export function OfflinePage() {
       </PageHeader>
       <PageBody>
         {user === null ? (
-          <InlineMessage tone="info" size="md">
-            {t("offline.noUser")}
-          </InlineMessage>
+          <Alert tone="info">
+            <AlertContent>
+              <AlertDescription>{t("offline.noUser")}</AlertDescription>
+            </AlertContent>
+          </Alert>
         ) : (
           <OfflineQueue user={user} />
         )}

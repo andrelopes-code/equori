@@ -1,4 +1,5 @@
 import type { UploadFile } from "@slotted/core/upload";
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import {
   Dialog,
@@ -67,9 +68,13 @@ export function PriceImportDialog({ onClose }: { onClose: () => void }) {
         </DialogHeader>
         <DialogBody>
           <Stack gap={4}>
-            <InlineMessage tone="info">
-              {t("prices.import.allOrNothing")}
-            </InlineMessage>
+            <Alert tone="info">
+              <AlertContent>
+                <AlertDescription>
+                  {t("prices.import.allOrNothing")}
+                </AlertDescription>
+              </AlertContent>
+            </Alert>
             {recorded !== null ? (
               <InlineMessage tone="success">
                 {t("prices.import.recorded", { count: recorded })}

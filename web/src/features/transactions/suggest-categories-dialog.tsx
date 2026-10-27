@@ -1,3 +1,4 @@
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import { Checkbox } from "@slotted/react/checkbox";
 import { CheckboxGroup } from "@slotted/react/checkbox-group";
@@ -76,9 +77,13 @@ export function SuggestCategoriesDialog({
             ) : (
               <>
                 {!suggestions.data.available && (
-                  <InlineMessage tone="warning">
-                    {t("suggest.unavailable")}
-                  </InlineMessage>
+                  <Alert tone="warning">
+                    <AlertContent>
+                      <AlertDescription>
+                        {t("suggest.unavailable")}
+                      </AlertDescription>
+                    </AlertContent>
+                  </Alert>
                 )}
                 {named.length > 0 && (
                   <CheckboxGroup

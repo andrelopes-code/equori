@@ -1,4 +1,5 @@
 import { parseISODate, toISODate } from "@slotted/core/date";
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { DatePicker } from "@slotted/react/date-picker";
 import {
   Field,
@@ -6,7 +7,6 @@ import {
   FieldError,
   FieldLabel,
 } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 import { TextField } from "@slotted/react/text-field";
@@ -70,9 +70,13 @@ export function ForeignForm({
       <EntryKindPicker value="foreign_purchase" onChange={onKind} investments />
 
       {view.ready && view.cards.length === 0 && (
-        <InlineMessage tone="info">
-          {t("foreignPurchase.noCard", { currency: base ?? "" })}
-        </InlineMessage>
+        <Alert tone="info">
+          <AlertContent>
+            <AlertDescription>
+              {t("foreignPurchase.noCard", { currency: base ?? "" })}
+            </AlertDescription>
+          </AlertContent>
+        </Alert>
       )}
       <Field invalid={errors.account_id !== undefined}>
         <FieldLabel>{t("foreignPurchase.card")}</FieldLabel>

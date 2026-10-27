@@ -1,5 +1,5 @@
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Field, FieldLabel } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
 import { useQuery } from "@tanstack/react-query";
 
@@ -93,19 +93,33 @@ export function CorrectionCalculator() {
 
   let results = null;
   if (index === undefined)
-    results = <InlineMessage tone="info">{t("calc.noIndexes")}</InlineMessage>;
+    results = (
+      <Alert tone="info">
+        <AlertContent>
+          <AlertDescription>{t("calc.noIndexes")}</AlertDescription>
+        </AlertContent>
+      </Alert>
+    );
   else if (from !== null && to !== null && !ordered)
     results = (
-      <InlineMessage tone="warning">{t("calc.correction.order")}</InlineMessage>
+      <Alert tone="warning">
+        <AlertContent>
+          <AlertDescription>{t("calc.correction.order")}</AlertDescription>
+        </AlertContent>
+      </Alert>
     );
   else if (!inRange && first !== undefined && last !== undefined)
     results = (
-      <InlineMessage tone="warning">
-        {t("calc.correction.range", {
-          first: formatReferenceMonth(first, locale),
-          last: formatReferenceMonth(last, locale),
-        })}
-      </InlineMessage>
+      <Alert tone="warning">
+        <AlertContent>
+          <AlertDescription>
+            {t("calc.correction.range", {
+              first: formatReferenceMonth(first, locale),
+              last: formatReferenceMonth(last, locale),
+            })}
+          </AlertDescription>
+        </AlertContent>
+      </Alert>
     );
   else if (
     amount !== null &&

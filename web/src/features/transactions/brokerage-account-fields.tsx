@@ -1,10 +1,10 @@
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldLabel,
 } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 
 import type { components } from "@/api/schema.gen";
 import { AccountField } from "@/features/transactions/account-field";
@@ -48,9 +48,11 @@ export function BrokerageAccountFields({
   return (
     <>
       {ready && securities.length === 0 && (
-        <InlineMessage tone="info">
-          {t("trade.noSecurityAccount")}
-        </InlineMessage>
+        <Alert tone="info">
+          <AlertContent>
+            <AlertDescription>{t("trade.noSecurityAccount")}</AlertDescription>
+          </AlertContent>
+        </Alert>
       )}
       <Field invalid={errors.account_id !== undefined}>
         <FieldLabel>{t("trade.securityAccount")}</FieldLabel>

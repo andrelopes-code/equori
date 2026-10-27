@@ -1,4 +1,4 @@
-import { InlineMessage } from "@slotted/react/inline-message";
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 
 import { ProblemError } from "@/api/problem";
 import { useT } from "@/i18n/i18n-provider";
@@ -18,9 +18,13 @@ export function PortfolioProblem({
   const t = useT();
   if (error instanceof ProblemError && error.problem.code === "price_missing")
     return (
-      <InlineMessage tone="warning">
-        {t("portfolio.priceMissing", { currency: currency ?? "" })}
-      </InlineMessage>
+      <Alert tone="warning">
+        <AlertContent>
+          <AlertDescription>
+            {t("portfolio.priceMissing", { currency: currency ?? "" })}
+          </AlertDescription>
+        </AlertContent>
+      </Alert>
     );
   return <QueryError error={error} onRetry={onRetry} />;
 }

@@ -1,8 +1,8 @@
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import { Card, CardActions, CardBody, CardHeader } from "@slotted/react/card";
 import { Field, FieldLabel } from "@slotted/react/field";
 import { Inline } from "@slotted/react/inline";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import { Text } from "@slotted/react/typography";
@@ -130,9 +130,11 @@ export function DebtPayoffCalculator() {
     const snowball = payoffPlan(debts, budget, "snowball");
     if (avalanche === "below_minimums" || snowball === "below_minimums")
       results = (
-        <InlineMessage tone="warning">
-          {t("calc.debt.belowMinimums")}
-        </InlineMessage>
+        <Alert tone="warning">
+          <AlertContent>
+            <AlertDescription>{t("calc.debt.belowMinimums")}</AlertDescription>
+          </AlertContent>
+        </Alert>
       );
     else {
       const plans = [avalanche, snowball];
@@ -167,9 +169,11 @@ export function DebtPayoffCalculator() {
       results = (
         <Stack gap={5}>
           {(a === null || s === null) && (
-            <InlineMessage tone="warning">
-              {t("calc.debt.notClosed")}
-            </InlineMessage>
+            <Alert tone="warning">
+              <AlertContent>
+                <AlertDescription>{t("calc.debt.notClosed")}</AlertDescription>
+              </AlertContent>
+            </Alert>
           )}
           {a !== null && s !== null && (
             // A comparison states which order is lower and by how much (design §2).

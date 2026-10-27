@@ -1,5 +1,5 @@
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Field, FieldLabel } from "@slotted/react/field";
-import { InlineMessage } from "@slotted/react/inline-message";
 import { Skeleton } from "@slotted/react/skeleton";
 import { Stack } from "@slotted/react/stack";
 import {
@@ -116,13 +116,17 @@ export function PortfolioReturn({
     );
   else if (problem !== undefined)
     body = (
-      <InlineMessage tone="warning">
-        {t(
-          problem === "tooLong"
-            ? "portfolio.return.periodTooLong"
-            : "portfolio.return.periodReversed",
-        )}
-      </InlineMessage>
+      <Alert tone="warning">
+        <AlertContent>
+          <AlertDescription>
+            {t(
+              problem === "tooLong"
+                ? "portfolio.return.periodTooLong"
+                : "portfolio.return.periodReversed",
+            )}
+          </AlertDescription>
+        </AlertContent>
+      </Alert>
     );
   else if (report.isError) {
     const undefinedReturn =

@@ -1,4 +1,5 @@
 import { useRouter, useRouterState } from "@tanstack/react-router";
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import {
   Field,
@@ -113,9 +114,13 @@ export function SetupPage() {
               <Text tone="muted">{t("setup.subtitle")}</Text>
             </Stack>
             {token === "" ? (
-              <InlineMessage tone="warning" size="md">
-                {t("setup.token_missing")}
-              </InlineMessage>
+              <Alert tone="warning">
+                <AlertContent>
+                  <AlertDescription>
+                    {t("setup.token_missing")}
+                  </AlertDescription>
+                </AlertContent>
+              </Alert>
             ) : (
               <Form
                 onSubmit={submit}

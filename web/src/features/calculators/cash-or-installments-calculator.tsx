@@ -1,4 +1,4 @@
-import { InlineMessage } from "@slotted/react/inline-message";
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Stack } from "@slotted/react/stack";
 
 import { AmountField } from "@/features/calculators/amount-field";
@@ -119,12 +119,18 @@ export function CashOrInstallmentsCalculator() {
     results = (
       <Stack gap={5}>
         {implied === "no_interest" && (
-          <InlineMessage tone="info">{t("calc.cash.noInterest")}</InlineMessage>
+          <Alert tone="info">
+            <AlertContent>
+              <AlertDescription>{t("calc.cash.noInterest")}</AlertDescription>
+            </AlertContent>
+          </Alert>
         )}
         {implied === null && (
-          <InlineMessage tone="warning">
-            {t("calc.cash.noSolution")}
-          </InlineMessage>
+          <Alert tone="warning">
+            <AlertContent>
+              <AlertDescription>{t("calc.cash.noSolution")}</AlertDescription>
+            </AlertContent>
+          </Alert>
         )}
         {lead}
         <ResultList results={rows} />

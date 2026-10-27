@@ -1,3 +1,4 @@
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
 import { Heading, Text } from "@slotted/react/typography";
@@ -129,9 +130,11 @@ export function FinancingCalculator() {
   let details;
   if (complete && solved === null)
     results = (
-      <InlineMessage tone="warning">
-        {t("calc.financing.noSolution")}
-      </InlineMessage>
+      <Alert tone="warning">
+        <AlertContent>
+          <AlertDescription>{t("calc.financing.noSolution")}</AlertDescription>
+        </AlertContent>
+      </Alert>
     );
   else if (solved !== null && solved.amount > 0) {
     const price = priceSchedule(solved.amount, solved.rate, solved.months);
