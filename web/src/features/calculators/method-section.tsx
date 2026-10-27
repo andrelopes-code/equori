@@ -28,6 +28,7 @@ export function MethodSection({
   assumptions,
   limits,
   sources,
+  notes = [],
 }: {
   answers: string;
   steps: readonly string[];
@@ -35,6 +36,8 @@ export function MethodSection({
   assumptions: readonly string[];
   limits: readonly string[];
   sources: readonly Source[];
+  // Words that follow the steps unnumbered, such as a regional name of the method.
+  notes?: readonly string[];
 }) {
   const t = useT();
   const part = (title: MessageKey, children: ReactNode) => (
@@ -65,10 +68,10 @@ export function MethodSection({
       <SectionBody>
         <Stack gap={5}>
           {part("calc.method.answers", lines([answers]))}
-          {part(
-            "calc.method.steps",
-            lines(steps.map((s, i) => `${String(i + 1)}. ${s}`)),
-          )}
+          {part("calc.method.steps", [
+            ...lines(steps.map((s, i) => `${String(i + 1)}. ${s}`)),
+            ...lines(notes),
+          ])}
           {part(
             "calc.method.formula",
             formula.map((line) => (

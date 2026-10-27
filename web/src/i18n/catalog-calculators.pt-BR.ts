@@ -245,4 +245,75 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "As regras de consumo sobre descontos na antecipação são nacionais e não são aplicadas.",
   "calc.financing.limit2":
     "Os resultados podem diferir dos de um contrato, que pode arredondar ou datar as prestações de outro modo (Banco Central do Brasil).",
+  "calc.cash.price": "Preço à vista",
+  "calc.cash.count": "Número de parcelas",
+  "calc.cash.installment": "Parcela",
+  "calc.cash.first": "Primeira parcela",
+  "calc.cash.first.later": "Em um mês",
+  "calc.cash.first.now": "Agora",
+  "calc.cash.rateSource": "Origem da taxa de comparação",
+  "calc.cash.compare": "Taxa de comparação",
+  "calc.cash.monthly": "Taxa mensal implícita",
+  "calc.cash.annual": "Taxa anual implícita",
+  "calc.cash.total": "Total das parcelas",
+  "calc.cash.presentValue": "Valor presente das parcelas à taxa de comparação",
+  "calc.cash.cashLower": "O preço à vista é menor em",
+  "calc.cash.installmentsLower": "O valor presente das parcelas é menor em",
+  "calc.cash.same": "Diferença para o preço à vista",
+  "calc.cash.noInterest":
+    "As parcelas somam o preço à vista ou menos, então não têm juros.",
+  "calc.cash.noSolution":
+    "Nenhuma taxa até 100% ao mês iguala as parcelas ao preço à vista.",
+  "calc.cash-or-installments.step1":
+    "A taxa implícita j é aquela em que as parcelas, cada uma descontada para hoje, somam o preço à vista.",
+  "calc.cash-or-installments.step2":
+    "Ela é encontrada por bisseção até a soma diferir do preço à vista menos de 0,000001 dele.",
+  "calc.cash-or-installments.step3":
+    "As parcelas também são descontadas à taxa de comparação e comparadas ao preço à vista.",
+  "calc.cash-or-installments.formula1":
+    "à vista = Σ p / (1 + j)^k, k = 1 … n (k = 0 … n − 1 quando a primeira vence agora)",
+  "calc.cash-or-installments.formula2":
+    "p: parcela; n: número de parcelas; j: taxa mensal.",
+  "calc.cash-or-installments.assumption1": "As parcelas são mensais e iguais.",
+  "calc.cash-or-installments.assumption2":
+    "A taxa de comparação é o que o dinheiro rende em outro lugar nesse meio-tempo.",
+  "calc.cash-or-installments.limit1":
+    "As famílias subestimam a taxa implícita em um fluxo de pagamentos (Stango e Zinman 2009).",
+  "calc.cash-or-installments.limit2":
+    "Tarifas, impostos e seguros fora das parcelas não são contados.",
+  "calc.credit.released": "Valor liberado",
+  "calc.credit.fees": "Tarifas pagas no início",
+  "calc.credit.installment": "Prestação",
+  "calc.credit.count": "Número de prestações",
+  "calc.credit.releaseDate": "Data da liberação",
+  "calc.credit.firstDue": "Primeiro vencimento",
+  "calc.credit.annual": "Custo efetivo anual",
+  "calc.credit.monthly": "Equivalente mensal",
+  "calc.credit.paid": "Total pago",
+  "calc.credit.flows": "Fluxos da oferta",
+  "calc.credit.col.number": "Prestação",
+  "calc.credit.col.date": "Vencimento",
+  "calc.credit.col.days": "Dias desde a liberação",
+  "calc.credit.col.amount": "Valor",
+  "calc.credit.order":
+    "O primeiro vencimento deve vir depois da data da liberação.",
+  "calc.credit.noSolution":
+    "Nenhum custo anual de −99% a 10.000% iguala os fluxos ao valor liberado menos as tarifas.",
+  "calc.credit.cet":
+    "No Brasil este custo é o Custo Efetivo Total (CET), definido pela Resolução CMN nº 4.881.",
+  "calc.credit-cost.step1":
+    "Cada prestação é datada mensalmente a partir do primeiro vencimento; um dia que o mês não tem vira o seu último dia.",
+  "calc.credit-cost.step2":
+    "Cada prestação é descontada pelos seus dias desde a liberação sobre 365.",
+  "calc.credit-cost.step3":
+    "O custo anual c é aquele em que as prestações descontadas igualam o valor liberado menos as tarifas pagas no início; ele é mostrado com 2 casas, arredondado para o par mais próximo.",
+  "calc.credit-cost.formula1": "FC0 = Σ FCj / (1 + c)^((dj − d0) / 365)",
+  "calc.credit-cost.formula2":
+    "FC0: valor liberado menos as tarifas pagas no início; FCj: prestação j; dj: seu vencimento; d0: a data da liberação; c: custo anual.",
+  "calc.credit-cost.assumption1":
+    "Todo valor cobrado está nas prestações ou nas tarifas pagas no início.",
+  "calc.credit-cost.limit1":
+    "Taxas flutuantes e índices de preços ficam fora do custo (CMN 4.881, art. 5).",
+  "calc.credit-cost.limit2":
+    "Cheque especial e crédito rotativo usam prazo de 30 dias e o limite contratado, que esta calculadora não modela (CMN 4.881, art. 6).",
 };

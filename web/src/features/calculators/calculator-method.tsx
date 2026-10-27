@@ -22,11 +22,14 @@ export function CalculatorMethod({
   id,
   sources,
   noIndexes = false,
+  notes = [],
 }: {
   id: CalculatorId;
   sources: readonly Source[];
   // The calculator reads indexes and the instance stores none (design §4, "Index data").
   noIndexes?: boolean;
+  // Words added after the steps, such as a regional name of the method.
+  notes?: readonly string[];
 }) {
   const t = useT();
   const words = (part: string) => keys(id, part).map((k) => t(k));
@@ -34,6 +37,7 @@ export function CalculatorMethod({
     <MethodSection
       answers={t(`calc.${id}.question`)}
       steps={words("step")}
+      notes={notes}
       formula={words("formula")}
       assumptions={words("assumption")}
       limits={[...words("limit"), ...(noIndexes ? [t("calc.noIndexes")] : [])]}

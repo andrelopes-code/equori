@@ -242,4 +242,77 @@ export const calculatorsEn = {
     "Consumer rules on prepayment discounts are national and are not applied.",
   "calc.financing.limit2":
     "Results can differ from those of a contract, which may round or date installments otherwise (Banco Central do Brasil).",
+  "calc.cash.price": "Cash price",
+  "calc.cash.count": "Number of installments",
+  "calc.cash.installment": "Installment",
+  "calc.cash.first": "First installment",
+  "calc.cash.first.later": "In one month",
+  "calc.cash.first.now": "Now",
+  "calc.cash.rateSource": "Comparison rate source",
+  "calc.cash.compare": "Comparison rate",
+  "calc.cash.monthly": "Implied monthly rate",
+  "calc.cash.annual": "Implied annual rate",
+  "calc.cash.total": "Total of the installments",
+  "calc.cash.presentValue":
+    "Present value of the installments at the comparison rate",
+  "calc.cash.cashLower": "The cash price is lower by",
+  "calc.cash.installmentsLower":
+    "The present value of the installments is lower by",
+  "calc.cash.same": "Difference to the cash price",
+  "calc.cash.noInterest":
+    "The installments total the cash price or less, so they carry no interest.",
+  "calc.cash.noSolution":
+    "No rate up to 100% a month makes the installments equal the cash price.",
+  "calc.cash-or-installments.step1":
+    "The implied rate j is the one at which the installments, each discounted to today, add up to the cash price.",
+  "calc.cash-or-installments.step2":
+    "It is found by bisection until the sum differs from the cash price by less than 0.000001 of it.",
+  "calc.cash-or-installments.step3":
+    "The installments are also discounted at the comparison rate and set against the cash price.",
+  "calc.cash-or-installments.formula1":
+    "cash = Σ p / (1 + j)^k, k = 1 … n (k = 0 … n − 1 when the first is due now)",
+  "calc.cash-or-installments.formula2":
+    "p: installment; n: number of installments; j: monthly rate.",
+  "calc.cash-or-installments.assumption1":
+    "Installments are monthly and equal.",
+  "calc.cash-or-installments.assumption2":
+    "The comparison rate is what the money earns elsewhere in the meantime.",
+  "calc.cash-or-installments.limit1":
+    "Households underestimate the rate implied by a payment stream (Stango and Zinman 2009).",
+  "calc.cash-or-installments.limit2":
+    "Fees, taxes and insurance outside the installments are not counted.",
+  "calc.credit.released": "Amount released",
+  "calc.credit.fees": "Fees paid upfront",
+  "calc.credit.installment": "Installment",
+  "calc.credit.count": "Number of installments",
+  "calc.credit.releaseDate": "Release date",
+  "calc.credit.firstDue": "First due date",
+  "calc.credit.annual": "Effective annual cost",
+  "calc.credit.monthly": "Monthly equivalent",
+  "calc.credit.paid": "Total paid",
+  "calc.credit.flows": "Flows of the offer",
+  "calc.credit.col.number": "Installment",
+  "calc.credit.col.date": "Due date",
+  "calc.credit.col.days": "Days from release",
+  "calc.credit.col.amount": "Amount",
+  "calc.credit.order": "The first due date must come after the release date.",
+  "calc.credit.noSolution":
+    "No annual cost from −99% to 10,000% makes the flows equal the amount released less the fees.",
+  "calc.credit.cet":
+    "In Brazil this cost is the Custo Efetivo Total (CET), defined by Resolução CMN nº 4.881.",
+  "calc.credit-cost.step1":
+    "Each installment is dated monthly from the first due date; a day the month lacks becomes its last day.",
+  "calc.credit-cost.step2":
+    "Each installment is discounted by its days from the release over 365.",
+  "calc.credit-cost.step3":
+    "The annual cost c is the one at which the discounted installments equal the amount released less the fees paid upfront; it is shown with 2 decimals, rounded half to even.",
+  "calc.credit-cost.formula1": "FC0 = Σ FCj / (1 + c)^((dj − d0) / 365)",
+  "calc.credit-cost.formula2":
+    "FC0: amount released less the fees paid upfront; FCj: installment j; dj: its due date; d0: the release date; c: annual cost.",
+  "calc.credit-cost.assumption1":
+    "Every amount charged is in the installments or in the fees paid upfront.",
+  "calc.credit-cost.limit1":
+    "Floating rates and price indexes are left out of the cost (CMN 4.881, art. 5).",
+  "calc.credit-cost.limit2":
+    "Overdraft and revolving credit use a 30-day term and the agreed limit, which this calculator does not model (CMN 4.881, art. 6).",
 } as const;
