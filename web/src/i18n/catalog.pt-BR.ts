@@ -1,3 +1,4 @@
+import { calculatorsPtBR } from "@/i18n/catalog-calculators.pt-BR";
 import { accountsPtBR } from "@/i18n/catalog-accounts.pt-BR";
 import { instrumentsPtBR } from "@/i18n/catalog-instruments.pt-BR";
 import { portfolioPtBR } from "@/i18n/catalog-portfolio.pt-BR";
@@ -5,6 +6,7 @@ import { reportsPtBR } from "@/i18n/catalog-reports.pt-BR";
 import type { Catalog } from "@/i18n/catalog.en";
 
 export const catalogPtBR: Catalog = {
+  ...calculatorsPtBR,
   ...accountsPtBR,
   ...instrumentsPtBR,
   ...portfolioPtBR,

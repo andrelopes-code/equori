@@ -332,6 +332,22 @@
     ]
   },
   {
+    "path": "/calculators",
+    "topics": ["investments", "reports"],
+    "screen": "Calculators",
+    "tasks": ["choose a calculator: invest, credit and debt, plan"]
+  },
+  {
+    "path": "/calculators/$id",
+    "topics": ["investments", "reports"],
+    "screen": "Calculator",
+    "tasks": [
+      "simulate an investment",
+      "compare cash and installments",
+      "plan the payoff of debts"
+    ]
+  },
+  {
     "path": "/settings",
     "topics": ["settings_language_and_region", "privacy_and_the_assistant"],
     "screen": "Settings",
