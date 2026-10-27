@@ -6,12 +6,19 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { MoneyFigure } from "@/ui/money-figure";
 
 // The five categories that took the most of the month.
-export function SpendingBlock({ month }: { month: string }) {
+export function SpendingBlock({
+  month,
+  onHide,
+}: {
+  month: string;
+  onHide?: (() => void) | undefined;
+}) {
   const t = useT();
   const [locale] = useAppLocale();
   const { base, scale, error, loading, rows, retry } = useSpending(month);
   return (
     <OverviewBlock
+      onHide={onHide}
       title={t("overview.spending.title")}
       link={{
         label: t("overview.spending.open"),

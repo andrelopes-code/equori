@@ -1682,6 +1682,9 @@ export const catalogEn = {
   "overview.subtitle":
     "Where the money stands, what is coming and what needs a decision",
   "overview.attention.title": "Attention",
+  "overview.block.options": "Options for {block}",
+  "overview.block.hide": "Hide block",
+  "overview.block.showHidden": "Show hidden blocks ({count})",
   "overview.netWorth.title": "Net worth",
   "overview.netWorth.open": "Open net worth",
   "overview.netWorth.assets": "Assets",

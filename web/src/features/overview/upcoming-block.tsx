@@ -18,7 +18,11 @@ import { MoneyFigure } from "@/ui/money-figure";
 // The read reaches 180 days back for overdue occurrences; the contract allows 366 days.
 const lookBackDays = 180;
 
-export function UpcomingBlock() {
+export function UpcomingBlock({
+  onHide,
+}: {
+  onHide?: (() => void) | undefined;
+}) {
   const t = useT();
   const api = useApi();
   const [locale] = useAppLocale();
@@ -64,6 +68,7 @@ export function UpcomingBlock() {
         });
   return (
     <OverviewBlock
+      onHide={onHide}
       title={t("overview.upcoming.title")}
       link={{
         label: t("overview.upcoming.open"),

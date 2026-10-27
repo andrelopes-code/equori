@@ -1700,6 +1700,9 @@ export const catalogPtBR: Catalog = {
   "overview.subtitle":
     "Onde o dinheiro está, o que vem pela frente e o que pede decisão",
   "overview.attention.title": "Atenção",
+  "overview.block.options": "Opções de {block}",
+  "overview.block.hide": "Ocultar bloco",
+  "overview.block.showHidden": "Mostrar blocos ocultos ({count})",
   "overview.netWorth.title": "Patrimônio líquido",
   "overview.netWorth.open": "Abrir patrimônio líquido",
   "overview.netWorth.assets": "Ativos",

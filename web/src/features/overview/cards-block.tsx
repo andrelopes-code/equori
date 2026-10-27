@@ -16,7 +16,7 @@ import { MoneyFigure } from "@/ui/money-figure";
 // Twelve months back hold every closed statement still owing in practice.
 const lookBackMonths = 12;
 
-export function CardsBlock() {
+export function CardsBlock({ onHide }: { onHide?: (() => void) | undefined }) {
   const t = useT();
   const api = useApi();
   const [locale] = useAppLocale();
@@ -69,6 +69,7 @@ export function CardsBlock() {
         }));
   return (
     <OverviewBlock
+      onHide={onHide}
       title={t("overview.cards.title")}
       link={{ label: t("overview.cards.open"), options: { to: "/cards" } }}
       loading={loading && error === null}

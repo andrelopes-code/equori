@@ -11,7 +11,13 @@ import { FigureGrid } from "@/ui/figure-grid";
 
 // Income, outflow and result of the Available accounts in the month, and the balance the
 // expected occurrences leave at its end.
-export function MonthFlowsBlock({ month }: { month: string }) {
+export function MonthFlowsBlock({
+  month,
+  onHide,
+}: {
+  month: string;
+  onHide?: (() => void) | undefined;
+}) {
   const t = useT();
   const fmt = useMoneyFormat();
   const [locale] = useAppLocale();
@@ -28,6 +34,7 @@ export function MonthFlowsBlock({ month }: { month: string }) {
   const flows = overview?.flows;
   return (
     <OverviewBlock
+      onHide={onHide}
       title={t("overview.flows.title")}
       link={{
         label: t("overview.flows.open"),

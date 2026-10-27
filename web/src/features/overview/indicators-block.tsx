@@ -20,7 +20,13 @@ import { FigureGrid } from "@/ui/figure-grid";
 
 // Savings rate, reserve, committed income and debt payments of the month in the cash view, each
 // with its 12-month line and no judgment of good or bad (analytics design 5.1).
-export function IndicatorsBlock({ month }: { month: string }) {
+export function IndicatorsBlock({
+  month,
+  onHide,
+}: {
+  month: string;
+  onHide?: (() => void) | undefined;
+}) {
   const t = useT();
   const api = useApi();
   const fmt = useMoneyFormat();
@@ -71,6 +77,7 @@ export function IndicatorsBlock({ month }: { month: string }) {
 
   return (
     <OverviewBlock
+      onHide={onHide}
       title={t("overview.indicators.title")}
       link={{
         label: t("overview.indicators.open"),
