@@ -25,11 +25,8 @@ export function PriceChart({
     () =>
       [...prices]
         .sort((a, b) => a.date.localeCompare(b.date))
-        .map((p) => ({
-          label: formatDayMonth(p.date, locale),
-          price: Number(p.value),
-        })),
-    [prices, locale],
+        .map((p) => ({ date: p.date, price: Number(p.value) })),
+    [prices],
   );
   const format = (value: number) =>
     fmt.hidden
@@ -37,13 +34,15 @@ export function PriceChart({
       : new Intl.NumberFormat(locale, { maximumFractionDigits: 6 }).format(
           value,
         );
-  const series: ChartSeries[] = [
+  const series: ChartSeries<"date" | "price">[] = [
     {
       id: "price",
       kind: "line",
       field: "price",
       label: t("instrument.chart.title"),
       format,
+      // A time axis keeps the gaps between recorded prices; a marker shows each recorded price.
+      markers: "all",
     },
   ];
   return (
@@ -54,7 +53,12 @@ export function PriceChart({
       title={t("instrument.chart.title")}
       data={data}
       series={series}
-      x={{ field: "label" }}
+      x={{
+        field: "date",
+        type: "time",
+        format: (value) =>
+          formatDayMonth(new Date(value).toISOString().slice(0, 10), locale),
+      }}
       y={{ format }}
     />
   );
