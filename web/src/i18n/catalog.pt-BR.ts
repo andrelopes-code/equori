@@ -1238,10 +1238,7 @@ export const catalogPtBR: Catalog = {
     "Este provedor roda num servidor que você configurou; seus dados vão só para lá.",
   "assistant.chat_notice.provider_terms":
     "O que o provedor faz com seus dados depende dos termos dele.",
-  "assistant.unavailable":
-    "Nenhum modelo de linguagem atende o assistente. Adicione um provedor em Configurações.",
   "assistant.exhausted": "O assistente volta às {time}.",
-  "assistant.failed": "O provedor recusou esta solicitação. Tente de novo.",
   "assistant.empty_answer": "O assistente não retornou texto.",
   "assistant.back": "Voltar",
   "assistant.history": "Histórico de conversas",
@@ -1256,6 +1253,12 @@ export const catalogPtBR: Catalog = {
   "assistant.exhausted.title": "Limite de uso atingido",
   "assistant.unavailable.title": "Assistente indisponível",
   "assistant.failed.title": "Sem resposta",
+  "assistant.no_answer": "Sem resposta do provedor",
+  "assistant.canceled": "Interrompida",
+  "assistant.retry": "Tentar de novo",
+  "assistant.setup": "Configurar o assistente",
+  "assistant.unavailable.body":
+    "O assistente precisa de um provedor de modelo de linguagem; adicione um em Configurações.",
   "assistant.conversations.today": "Hoje",
   "assistant.conversations.week": "Últimos 7 dias",
   "assistant.conversations.older": "Anteriores",

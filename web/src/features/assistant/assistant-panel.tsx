@@ -1,11 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
-import { useRouterState } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Alert,
+  AlertActions,
   AlertContent,
   AlertDescription,
   AlertTitle,
 } from "@slotted/react/alert";
+import { Button } from "@slotted/react/button";
 import {
   Drawer,
   DrawerBody,
@@ -37,7 +39,11 @@ import { useState, useSyncExternalStore } from "react";
 import { useApi } from "@/api/api-context";
 import { problemMessage } from "@/api/problem";
 import styles from "@/features/assistant/assistant-panel.module.css";
-import { chatStateQuery, conversationQuery } from "@/features/assistant/api";
+import {
+  assistantKeys,
+  chatStateQuery,
+  conversationQuery,
+} from "@/features/assistant/api";
 import { AssistantComposer } from "@/features/assistant/assistant-composer";
 import { ChatWelcome } from "@/features/assistant/chat-welcome";
 import { ConversationList } from "@/features/assistant/conversation-list";
@@ -46,10 +52,9 @@ import { MessageItem } from "@/features/assistant/message-item";
 import { catalogKey } from "@/features/assistant/proposal-card";
 import { HeaderActions } from "@/features/assistant/header-actions";
 import { ProviderNotice } from "@/features/assistant/provider-notice";
-import type { AssistantProblem } from "@/features/assistant/sse";
 import { useAssistantTurn } from "@/features/assistant/use-assistant-turn";
+import { useRetryAt } from "@/features/assistant/use-retry-at";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import type { TFunction } from "@/i18n/i18n-provider";
 import { usePrivacy } from "@/privacy/privacy-provider";
 
 const PHONE_QUERY = "(max-width: 599px)";
@@ -66,24 +71,12 @@ function usePhone(): boolean {
   return useSyncExternalStore(subscribe, () => matchMedia(PHONE_QUERY).matches);
 }
 
-function problemText(
-  problem: AssistantProblem,
-  t: TFunction,
-  time: (iso: string) => string,
-): string {
-  switch (problem.code) {
-    case "assistant_exhausted":
-      return problem.retry_at === undefined
-        ? t("assistant.failed")
-        : t("assistant.exhausted", { time: time(problem.retry_at) });
-    case "assistant_unavailable":
-      return t("assistant.unavailable");
-    case "assistant_failed":
-      return t("assistant.failed");
-    default:
-      return problemMessage(problem, t);
-  }
-}
+// The chat state answers these codes; the stored conversation shows a failed turn (P6, P7).
+const stateCodes = new Set([
+  "assistant_exhausted",
+  "assistant_unavailable",
+  "assistant_failed",
+]);
 
 // A side panel beside the page from 600 px; a full-height bottom sheet on a phone, whose composer
 // is the sheet's footer and stays at the screen's foot while the sheet is dragged. Its state
@@ -99,6 +92,8 @@ export function AssistantPanel({
   const api = useApi();
   const [locale] = useAppLocale();
   const phone = usePhone();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const page = useRouterState({ select: (s) => s.location.pathname });
   const turn = useAssistantTurn(page);
   const [listing, setListing] = useState(false);
@@ -116,38 +111,64 @@ export function AssistantPanel({
     }).format(new Date(iso));
   const messages =
     turn.conversationId === undefined ? [] : (stored.data?.messages ?? []);
-  const exhausted =
-    turn.error?.code === "assistant_exhausted" ||
-    (chat.data?.available === false && chat.data.retry_at !== undefined);
-  const blocked =
-    chat.data?.available === false ||
-    turn.error?.code === "assistant_exhausted";
-  const blockedText =
-    turn.error !== null
-      ? problemText(turn.error, t, time)
-      : chat.data?.available === false
-        ? chat.data.retry_at === undefined
-          ? t("assistant.unavailable")
-          : t("assistant.exhausted", { time: time(chat.data.retry_at) })
-        : null;
+  useRetryAt(chat.data?.retry_at, () => {
+    void queryClient.invalidateQueries({ queryKey: assistantKeys.chat() });
+  });
+  const blocked = chat.data?.available === false;
   const started = messages.length > 0 || turn.pending !== null;
-  const blockedTitle = exhausted
-    ? t("assistant.exhausted.title")
-    : turn.error === null
-      ? t("assistant.unavailable.title")
-      : t("assistant.failed.title");
-  const blockedNotice = blockedText !== null && (
-    <Alert tone={exhausted ? "warning" : "danger"} live="polite">
-      <AlertContent>
-        <AlertTitle>{blockedTitle}</AlertTitle>
-        <AlertDescription>{blockedText}</AlertDescription>
-      </AlertContent>
-    </Alert>
-  );
+  const retryAt = chat.data?.retry_at;
+  const blockedNotice =
+    chat.data?.available !== false ? null : retryAt !== undefined ? (
+      <Alert tone="warning" live="polite">
+        <AlertContent>
+          <AlertTitle>{t("assistant.exhausted.title")}</AlertTitle>
+          <AlertDescription>
+            {t("assistant.exhausted", { time: time(retryAt) })}
+          </AlertDescription>
+        </AlertContent>
+      </Alert>
+    ) : (
+      <Alert tone="info" live="polite">
+        <AlertContent>
+          <AlertTitle>{t("assistant.unavailable.title")}</AlertTitle>
+          <AlertDescription>{t("assistant.unavailable.body")}</AlertDescription>
+        </AlertContent>
+        <AlertActions>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              onOpenChange(false);
+              void navigate({
+                to: "/settings",
+                search: { section: "assistant" },
+              });
+            }}
+          >
+            {t("assistant.setup")}
+          </Button>
+        </AlertActions>
+      </Alert>
+    );
+  const errorNotice = turn.error !== null &&
+    !stateCodes.has(turn.error.code) && (
+      <Alert tone="danger" live="polite">
+        <AlertContent>
+          <AlertTitle>{t("assistant.failed.title")}</AlertTitle>
+          <AlertDescription>{problemMessage(turn.error, t)}</AlertDescription>
+        </AlertContent>
+      </Alert>
+    );
   const send = (text: string) => {
+    if (turn.pending !== null) return;
     setListing(false);
     turn.send(text);
   };
+  const last = messages.at(-1);
+  const retryText =
+    last?.outcome === "failed" || last?.outcome === "canceled"
+      ? messages.at(-2)?.content
+      : undefined;
   // While the first turn runs, the conversation is named after the question (U13).
   const storedTitle =
     stored.data === undefined && turn.pending !== null
@@ -218,6 +239,7 @@ export function AssistantPanel({
                   notices={
                     <>
                       {blockedNotice}
+                      {errorNotice}
                       {chat.data !== undefined && (
                         <ProviderNotice chat={chat.data} />
                       )}
@@ -239,7 +261,16 @@ export function AssistantPanel({
                         messageId={m.id}
                         anchor={m.role === "user"}
                       >
-                        <MessageItem message={m} />
+                        <MessageItem
+                          message={m}
+                          onRetry={
+                            m === last && retryText !== undefined
+                              ? () => {
+                                  send(retryText);
+                                }
+                              : undefined
+                          }
+                        />
                       </MessageScrollerItem>
                     ))}
                     {turn.pending !== null && (
@@ -280,6 +311,7 @@ export function AssistantPanel({
           <DrawerFooter>
             <div className={styles.composer}>
               {started && blockedNotice}
+              {started && errorNotice}
               <AssistantComposer
                 disabled={blocked || chat.data === undefined}
                 busy={turn.pending !== null}

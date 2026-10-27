@@ -6,9 +6,11 @@ import {
   MessageBody,
 } from "@slotted/react/message";
 import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
+import { Button } from "@slotted/react/button";
 import { Markdown } from "@slotted/react/markdown";
 import type { MarkdownRenderers } from "@slotted/react/markdown";
 import { Stack } from "@slotted/react/stack";
+import { Text } from "@slotted/react/typography";
 import { useMemo } from "react";
 
 import styles from "@/features/assistant/assistant-panel.module.css";
@@ -30,15 +32,46 @@ const renderers: MarkdownRenderers = {
     ),
 };
 
-export function MessageItem({ message }: { message: AssistantMessage }) {
+export function MessageItem({
+  message,
+  onRetry,
+}: {
+  message: AssistantMessage;
+  onRetry?: (() => void) | undefined;
+}) {
   const t = useT();
   const { hidden } = usePrivacy();
   const own = message.role === "user";
+  const unanswered =
+    message.outcome === "failed" || message.outcome === "canceled";
   const tree = useMemo(() => {
     if (own || message.content === "") return null;
     const parsed = parseAnswer(message.content);
     return hidden ? maskAmounts(parsed, maskMatch) : parsed;
   }, [own, message.content, hidden]);
+
+  if (unanswered) {
+    return (
+      <Message align="start">
+        <MessageBody>
+          <Stack gap={2} align="start">
+            <Text size="sm" tone="muted">
+              {t(
+                message.outcome === "failed"
+                  ? "assistant.no_answer"
+                  : "assistant.canceled",
+              )}
+            </Text>
+            {onRetry !== undefined && (
+              <Button variant="outline" size="sm" onClick={onRetry}>
+                {t("assistant.retry")}
+              </Button>
+            )}
+          </Stack>
+        </MessageBody>
+      </Message>
+    );
+  }
 
   return (
     <Message align={own ? "end" : "start"}>
@@ -54,9 +87,7 @@ export function MessageItem({ message }: { message: AssistantMessage }) {
             )}
           </BubbleContent>
         </Bubble>
-        {(message.outcome === "step_limit" ||
-          message.outcome === "failed" ||
-          message.proposals.length > 0) && (
+        {(message.outcome === "step_limit" || message.proposals.length > 0) && (
           <Stack gap={3} className={styles.attached}>
             {message.outcome === "step_limit" && (
               <Alert tone="warning" reach="inline">
@@ -64,13 +95,6 @@ export function MessageItem({ message }: { message: AssistantMessage }) {
                   <AlertDescription>
                     {t("assistant.step_limit")}
                   </AlertDescription>
-                </AlertContent>
-              </Alert>
-            )}
-            {message.outcome === "failed" && (
-              <Alert tone="danger" reach="inline">
-                <AlertContent>
-                  <AlertDescription>{t("assistant.failed")}</AlertDescription>
                 </AlertContent>
               </Alert>
             )}

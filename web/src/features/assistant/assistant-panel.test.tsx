@@ -85,12 +85,51 @@ function setup(
       init,
     )) as typeof fetch;
   vi.stubGlobal("fetch", absolute);
+  const onOpenChange = vi.fn();
   const { router } = renderWithRouter(
-    <AssistantPanel open onOpenChange={vi.fn()} />,
+    <AssistantPanel open onOpenChange={onOpenChange} />,
     { path: "/overview", fetch: absolute },
   );
   const navigate = vi.spyOn(router, "navigate").mockResolvedValue(undefined);
-  return { navigate };
+  return { navigate, onOpenChange };
+}
+
+// A conversation whose answer to "How much?" ended with outcome.
+function unanswered(outcome: "failed" | "canceled") {
+  const d = detail("");
+  return {
+    ...d,
+    messages: [d.messages[0], { ...message(""), outcome }],
+  };
+}
+
+// Asks "How much?" in conversation c1, whose turn ends with an assistant_failed event; later
+// POSTs answer with the streams of more, and posts collects every request body.
+async function failedTurn(
+  outcome: "failed" | "canceled",
+  more: ReturnType<typeof turnStream>[] = [],
+) {
+  const posts: unknown[] = [];
+  const first = turnStream();
+  const streams = [first, ...more];
+  setup({
+    "POST /api/v1/assistant/turns": async (req) => {
+      posts.push(await req.json());
+      const next = streams.shift();
+      if (next === undefined) throw new Error("no stream left");
+      return next.response();
+    },
+    "GET /api/v1/assistant/conversations/c1": () =>
+      json(200, unanswered(outcome)),
+  });
+  await ask("How much?");
+  act(() => {
+    first.write(
+      'event: turn\ndata: {"conversation_id":"c1","message_id":"m1"}\n\nevent: error\ndata: {"status":502,"code":"assistant_failed"}\n\n',
+    );
+    first.close();
+  });
+  return posts;
 }
 
 async function ask(text: string) {
@@ -243,12 +282,131 @@ describe("AssistantPanel", () => {
     ).toBeGreaterThan(1);
   });
 
+  it("offers a retry on a failed answer that sends the same text (U5, P6)", async () => {
+    const posts = await failedTurn("failed", [turnStream()]);
+    expect(
+      await screen.findByText(catalogEn["assistant.no_answer"]),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["assistant.retry"] }),
+    );
+    await waitFor(() => {
+      expect(posts).toHaveLength(2);
+    });
+    expect(posts[1]).toMatchObject({
+      conversation_id: "c1",
+      text: "How much?",
+    });
+  });
+
+  it("shows the stop on a canceled answer", async () => {
+    await failedTurn("canceled");
+    expect(
+      await screen.findByText(catalogEn["assistant.canceled"]),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: catalogEn["assistant.retry"] }),
+    ).toBeInTheDocument();
+  });
+
+  it("does not block after a failed turn event", async () => {
+    await failedTurn("failed");
+    expect(
+      await screen.findByText(catalogEn["assistant.no_answer"]),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(catalogEn["assistant.composer.placeholder"]),
+    ).toBeEnabled();
+    expect(
+      screen.queryByText(catalogEn["assistant.exhausted.title"]),
+    ).toBeNull();
+    expect(document.querySelector('[data-tone="danger"]')).toBeNull();
+  });
+
+  // Review Focus 5: a retry while a turn runs is refused like any send during a turn.
+  it("sends nothing on a retry while a turn runs", async () => {
+    const running = turnStream();
+    const posts = await failedTurn("failed", [running]);
+    expect(
+      await screen.findByText(catalogEn["assistant.no_answer"]),
+    ).toBeInTheDocument();
+    await ask("Again?");
+    await waitFor(() => {
+      expect(posts).toHaveLength(2);
+    });
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["assistant.retry"] }),
+    );
+    expect(posts).toHaveLength(2);
+    running.close();
+  });
+
+  it("re-enables the composer when retry_at passes (U4, P7)", async () => {
+    vi.useFakeTimers({
+      toFake: ["setTimeout", "clearTimeout", "Date"],
+      shouldAdvanceTime: true,
+    });
+    vi.setSystemTime(new Date("2026-10-23T10:00:00Z"));
+    let calls = 0;
+    try {
+      setup({
+        "GET /api/v1/assistant/chat": () =>
+          calls++ === 0
+            ? json(200, { available: false, retry_at: "2026-10-23T10:01:00Z" })
+            : json(200, chat),
+      });
+      const input = await screen.findByPlaceholderText(
+        catalogEn["assistant.composer.placeholder"],
+      );
+      await screen.findByText(/^The assistant returns at /);
+      expect(input).toBeDisabled();
+      act(() => {
+        vi.advanceTimersByTime(60_000);
+      });
+      await waitFor(() => {
+        expect(input).toBeEnabled();
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("links the settings when no provider serves the assistant (U14, P8)", async () => {
+    const { navigate, onOpenChange } = setup({
+      "GET /api/v1/assistant/chat": () => json(200, { available: false }),
+    });
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["assistant.setup"],
+      }),
+    );
+    expect(navigate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "/settings",
+        search: { section: "assistant" },
+      }),
+    );
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(document.querySelector('[data-tone="danger"]')).toBeNull();
+  });
+
+  // P7: the notice reads the chat state, which the refetch after the refused turn brings.
   it("says when the quota returns after an exhausted error event", async () => {
+    let refused = false;
     setup({
-      "POST /api/v1/assistant/turns": () =>
-        problem(429, "assistant_exhausted", {
+      "GET /api/v1/assistant/chat": () =>
+        json(
+          200,
+          refused
+            ? { available: false, retry_at: "2026-10-24T00:00:00Z" }
+            : chat,
+        ),
+      "POST /api/v1/assistant/turns": () => {
+        refused = true;
+        return problem(429, "assistant_exhausted", {
           retry_at: "2026-10-24T00:00:00Z",
-        }),
+        });
+      },
     });
     await ask("Hello");
     expect(

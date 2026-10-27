@@ -1232,10 +1232,7 @@ export const catalogEn = {
     "This provider runs on a host you configured; your data goes only there.",
   "assistant.chat_notice.provider_terms":
     "What the provider does with your data depends on its terms.",
-  "assistant.unavailable":
-    "No language model serves the assistant. Add a provider in Settings.",
   "assistant.exhausted": "The assistant returns at {time}.",
-  "assistant.failed": "The provider refused this request. Try again.",
   "assistant.empty_answer": "The assistant returned no text.",
   "assistant.back": "Back",
   "assistant.history": "Conversation history",
@@ -1251,6 +1248,12 @@ export const catalogEn = {
   "assistant.exhausted.title": "Usage limit reached",
   "assistant.unavailable.title": "Assistant unavailable",
   "assistant.failed.title": "No answer",
+  "assistant.no_answer": "No answer from the provider",
+  "assistant.canceled": "Stopped",
+  "assistant.retry": "Try again",
+  "assistant.setup": "Set up the assistant",
+  "assistant.unavailable.body":
+    "The assistant needs a language model provider; add one in Settings.",
   "assistant.conversations.today": "Today",
   "assistant.conversations.week": "Last 7 days",
   "assistant.conversations.older": "Earlier",
