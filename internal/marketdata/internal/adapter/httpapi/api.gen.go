@@ -459,7 +459,7 @@ type ServerInterface interface {
 	// ListHolidays Non-business days of a calendar in a year, weekends excluded.
 	// (GET /calendars/{name}/holidays)
 	ListHolidays(w http.ResponseWriter, r *http.Request, name string, params ListHolidaysParams)
-	// ListIndexes The enabled indexes with at least one stored rate, in the order of the registry (ADR 025).
+	// ListIndexes The enabled indexes with at least one stored rate, those of the caller's region first (ADR 025 F3).
 	// (GET /indexes)
 	ListIndexes(w http.ResponseWriter, r *http.Request)
 	// ListIndexRates The stored rates of an enabled index in [from, to], at most 7,320 days, oldest first.
@@ -2042,7 +2042,7 @@ type StrictServerInterface interface {
 	// ListHolidays Non-business days of a calendar in a year, weekends excluded.
 	// (GET /calendars/{name}/holidays)
 	ListHolidays(ctx context.Context, request ListHolidaysRequestObject) (ListHolidaysResponseObject, error)
-	// ListIndexes The enabled indexes with at least one stored rate, in the order of the registry (ADR 025).
+	// ListIndexes The enabled indexes with at least one stored rate, those of the caller's region first (ADR 025 F3).
 	// (GET /indexes)
 	ListIndexes(ctx context.Context, request ListIndexesRequestObject) (ListIndexesResponseObject, error)
 	// ListIndexRates The stored rates of an enabled index in [from, to], at most 7,320 days, oldest first.

@@ -1880,7 +1880,7 @@ paths:
     get:
       tags: [marketdata]
       operationId: listIndexes
-      summary: The enabled indexes with at least one stored rate, in the order of the registry (ADR 025).
+      summary: The enabled indexes with at least one stored rate, those of the caller's region first (ADR 025 F3).
       responses:
         "200":
           description: OK.

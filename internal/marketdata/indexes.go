@@ -1,6 +1,7 @@
 package marketdata
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/index/brsgs"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/index/cpi"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/index/overnight"
+	"github.com/andrelopes-code/equori/internal/platform/auth"
 )
 
 // indexWindowDays bounds one fetch: the SGS refuses a daily series over ten years, and five years
@@ -114,14 +116,24 @@ func (m *Module) tickIndex(ctx context.Context, src index.Source) error {
 	return nil
 }
 
-// Indexes lists the enabled indexes with at least one stored rate, in the order of the registry.
+// Indexes lists the enabled indexes with at least one stored rate: those suggested for the
+// caller's region first (ADR 025 F3), each part in the order of the registry.
 func (m *Module) Indexes(ctx context.Context) ([]IndexSummary, error) {
 	on, err := m.enabledFeeds(ctx)
 	if err != nil {
 		return nil, err
 	}
+	l, err := m.profiles.Profile(ctx, auth.MustUserID(ctx))
+	if err != nil {
+		return nil, err
+	}
+	suggested := SuggestedFeeds(l.Region)
+	srcs := slices.Clone(m.feeds.Indexes)
+	slices.SortStableFunc(srcs, func(a, b index.Source) int {
+		return cmp.Compare(rank(suggested, a.ID()), rank(suggested, b.ID()))
+	})
 	out := []IndexSummary{}
-	for _, src := range m.feeds.Indexes {
+	for _, src := range srcs {
 		if !on[src.ID()] {
 			continue
 		}
@@ -174,4 +186,11 @@ func (m *Module) storeRates(ctx context.Context, src index.Source, rates []index
 		}
 	}
 	return nil
+}
+
+func rank(suggested []string, id string) int {
+	if slices.Contains(suggested, id) {
+		return 0
+	}
+	return 1
 }

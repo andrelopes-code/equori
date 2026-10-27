@@ -1133,7 +1133,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The enabled indexes with at least one stored rate, in the order of the registry (ADR 025). */
+        /** The enabled indexes with at least one stored rate, those of the caller's region first (ADR 025 F3). */
         get: operations["listIndexes"];
         put?: never;
         post?: never;

@@ -1,15 +1,18 @@
 package marketdata_test
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
+	"github.com/andrelopes-code/equori/internal/platform/locale"
 )
 
 type apiIndex struct {
@@ -76,4 +79,40 @@ func TestS157IndexHistory(t *testing.T) {
 	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/indexes/selic/rates?from=2026-01-01&to=2026-02-28", nil), http.StatusNotFound, "not_found", "")
 	// 2006-01-01 to 2026-01-17 is 7,321 days.
 	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/indexes/ipca/rates?from=2006-01-01&to=2026-01-17", nil), http.StatusUnprocessableEntity, "validation_failed", "to")
+}
+
+// ADR 025 F3: the indexes of the caller's region come first, the others in the registry's order.
+func TestIndexesOfTheRegionFirst(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t, apitest.IndexFeeds([]string{"br_cdi", "eu_estr", "us_sofr"}, nil))
+	for _, id := range []string{"cdi", "estr", "sofr"} {
+		if _, err := h.Pool.Exec(t.Context(), `INSERT INTO marketdata_index_rate (index_id, date, rate, source) VALUES ($1, '2026-10-26', 0.0005, 'test')`, id); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for region, want := range map[string][]string{
+		"BR": {"cdi", "estr", "sofr"},
+		"US": {"sofr", "cdi", "estr"},
+		"DE": {"estr", "cdi", "sofr"},
+		"JP": {"cdi", "estr", "sofr"},
+	} {
+		c := h.LoginAs(strings.ToLower(region)+"@example.com", locale.Locale{Language: "en", Region: region}, "USD")
+		r := h.Call(c, http.MethodGet, "/api/v1/indexes", nil)
+		if r.Status != http.StatusOK {
+			t.Fatalf("%s: status %d", region, r.Status)
+		}
+		var list struct {
+			Items []apiIndex `json:"items"`
+		}
+		if err := json.Unmarshal(r.Body, &list); err != nil {
+			t.Fatal(err)
+		}
+		got := make([]string, len(list.Items))
+		for i, x := range list.Items {
+			got[i] = x.ID
+		}
+		if !slices.Equal(got, want) {
+			t.Errorf("%s: indexes = %v, want %v", region, got, want)
+		}
+	}
 }
