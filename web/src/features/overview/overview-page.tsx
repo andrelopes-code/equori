@@ -1,4 +1,8 @@
 import { Button } from "@slotted/react/button";
+import {
+  DashboardGrid,
+  usePersistedDashboardLayout,
+} from "@slotted/react/dashboard-grid";
 import { Page, PageBody } from "@slotted/react/page";
 import {
   PageHeader,
@@ -9,38 +13,83 @@ import {
   PageHeaderTitleArea,
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
+import { useState } from "react";
 
 import { AttentionBlock } from "@/features/overview/attention-block";
 import { BalanceChartBlock } from "@/features/overview/balance-chart-block";
 import { BudgetsBlock } from "@/features/overview/budgets-block";
 import { CardsBlock } from "@/features/overview/cards-block";
-import { DesktopFigures } from "@/features/overview/desktop-figures";
+import {
+  DesktopFigure,
+  type DesktopFigureKind,
+} from "@/features/overview/desktop-figure";
 import { GoalsBlock } from "@/features/overview/goals-block";
-import { IndicatorsBlock } from "@/features/overview/indicators-block";
-import { MonthFlowsBlock } from "@/features/overview/month-flows-block";
-import { NetWorthBlock } from "@/features/overview/net-worth-block";
-import styles from "@/features/overview/overview-page.module.css";
+import { indicatorFigures } from "@/features/overview/indicator-figures";
+import {
+  MonthFlowFigure,
+  type MonthFlowKind,
+} from "@/features/overview/month-flow-figure";
+import {
+  NetWorthFigure,
+  type NetWorthKind,
+} from "@/features/overview/net-worth-figure";
+import { placement } from "@/features/overview/overview-block";
 import { SpendingBlock } from "@/features/overview/spending-block";
 import { SpendingChart } from "@/features/overview/spending-chart";
 import { UpcomingBlock } from "@/features/overview/upcoming-block";
-import {
-  useHiddenBlocks,
-  type BlockID,
-} from "@/features/overview/use-hidden-blocks";
+import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
 
-// Below 1024 px the blocks stand in the order a phone reads them. The desk leads with figures
-// and the balance chart and keeps the attention list to a column beside it.
+const desk: [DesktopFigureKind, MessageKey][] = [
+  ["net", "overview.figures.net"],
+  ["result", "overview.figures.result"],
+  ["balance", "overview.figures.balance"],
+  ["committed", "overview.figures.committed"],
+];
+const worth: [NetWorthKind, MessageKey][] = [
+  ["assets", "overview.netWorth.assets"],
+  ["liabilities", "overview.netWorth.liabilities"],
+  ["net", "overview.netWorth.title"],
+];
+const flows: [MonthFlowKind, MessageKey][] = [
+  ["income", "overview.flows.income"],
+  ["outflow", "overview.flows.outflow"],
+  ["result", "overview.figures.result"],
+];
+
+// Per browser, as the privacy choice is kept (analytics design 5.2).
+export const layoutKey = "equori.overview.layout";
+
+// One grid of widgets the owner moves, resizes and hides. The grid stacks each column under its
+// own widgets and places a widget with no stored cell in the first one free, in the order of the
+// children: the widgets of one row share one height, so every row starts on one line. Below 1024 px the blocks stand in the
+// order a phone reads them; the desk leads with the figures and the balance chart and keeps the
+// attention list to a column beside it.
 export function OverviewPage() {
   const t = useT();
   const month = useToday().slice(0, 7);
   const wide = useMediaQuery(wideQuery);
-  const { hidden, hide, showAll } = useHiddenBlocks();
-  const hideOf = (id: BlockID) => () => {
-    hide(id);
+  const [editing, setEditing] = useState(false);
+  const persisted = usePersistedDashboardLayout({ key: layoutKey });
+  // The blocks both layouts draw, under one key each, so a block hidden at the desk is hidden on
+  // the phone.
+  const at = {
+    attention: placement(
+      "attention",
+      t("overview.attention.title"),
+      4,
+      4,
+      false,
+    ),
+    spending: placement("spending", t("overview.spending.title"), 4, 5),
+    upcoming: placement("upcoming", t("overview.upcoming.title"), 4, 5),
+    budgets: placement("budgets", t("overview.budgets.title"), 4, 5),
+    cards: placement("cards", t("overview.cards.title"), 6, 4),
+    goals: placement("goals", t("overview.goals.title"), 6, 4),
   };
+  const indicators = indicatorFigures(month, t);
   return (
     <Page width="full">
       <PageHeader size="lg">
@@ -52,12 +101,15 @@ export function OverviewPage() {
                 {t("overview.subtitle")}
               </PageHeaderSubheading>
             </PageHeaderTitle>
-            {hidden.size > 0 && (
+            {!editing && (
               <PageHeaderActions>
-                <Button variant="ghost" onClick={showAll}>
-                  {t("overview.block.showHidden", {
-                    count: String(hidden.size),
-                  })}
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setEditing(true);
+                  }}
+                >
+                  {t("overview.block.edit")}
                 </Button>
               </PageHeaderActions>
             )}
@@ -65,75 +117,68 @@ export function OverviewPage() {
         </PageHeaderTitleArea>
       </PageHeader>
       <PageBody>
-        {wide ? (
-          <div className={styles.desk}>
-            <div className={styles.full}>
-              <DesktopFigures month={month} />
-            </div>
-            {!hidden.has("indicators") && (
-              <div className={styles.full}>
-                <IndicatorsBlock month={month} onHide={hideOf("indicators")} />
-              </div>
-            )}
-            <div className={styles.chart}>
-              <BalanceChartBlock month={month} />
-            </div>
-            <div className={styles.side}>
-              <AttentionBlock limit={4} />
-            </div>
-            {!hidden.has("spending") && (
-              <div className={styles.third}>
-                <SpendingChart month={month} onHide={hideOf("spending")} />
-              </div>
-            )}
-            {!hidden.has("upcoming") && (
-              <div className={styles.third}>
-                <UpcomingBlock onHide={hideOf("upcoming")} />
-              </div>
-            )}
-            {!hidden.has("budgets") && (
-              <div className={styles.third}>
-                <BudgetsBlock month={month} onHide={hideOf("budgets")} />
-              </div>
-            )}
-            {!hidden.has("cards") && (
-              <div className={styles.half}>
-                <CardsBlock onHide={hideOf("cards")} />
-              </div>
-            )}
-            {!hidden.has("goals") && (
-              <div className={styles.half}>
-                <GoalsBlock onHide={hideOf("goals")} />
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className={styles.grid}>
-            <div className={styles.wide}>
-              <AttentionBlock />
-            </div>
-            {!hidden.has("net-worth") && (
-              <NetWorthBlock month={month} onHide={hideOf("net-worth")} />
-            )}
-            {!hidden.has("indicators") && (
-              <IndicatorsBlock month={month} onHide={hideOf("indicators")} />
-            )}
-            {!hidden.has("month-flows") && (
-              <MonthFlowsBlock month={month} onHide={hideOf("month-flows")} />
-            )}
-            {!hidden.has("spending") && (
-              <SpendingBlock month={month} onHide={hideOf("spending")} />
-            )}
-            {!hidden.has("upcoming") && (
-              <UpcomingBlock onHide={hideOf("upcoming")} />
-            )}
-            {!hidden.has("cards") && <CardsBlock onHide={hideOf("cards")} />}
-            {!hidden.has("budgets") && (
-              <BudgetsBlock month={month} onHide={hideOf("budgets")} />
-            )}
-            {!hidden.has("goals") && <GoalsBlock onHide={hideOf("goals")} />}
-          </div>
-        )}
+        <DashboardGrid
+          aria-label={t("overview.block.label")}
+          editing={editing}
+          onEditingChange={setEditing}
+          layout={persisted.layout}
+          onLayoutChange={persisted.onLayoutChange}
+        >
+          {wide
+            ? [
+                ...desk.map(([kind, key]) => (
+                  <DesktopFigure
+                    key={kind}
+                    month={month}
+                    kind={kind}
+                    {...placement(`figure-${kind}`, t(key), 3, 2, false)}
+                  />
+                )),
+                ...indicators,
+                <BalanceChartBlock
+                  key="balance"
+                  month={month}
+                  {...placement(
+                    "balance",
+                    t("overview.balance.title"),
+                    8,
+                    4,
+                    false,
+                  )}
+                />,
+                <AttentionBlock key="attention" limit={4} {...at.attention} />,
+                <SpendingChart key="spending" month={month} {...at.spending} />,
+                <UpcomingBlock key="upcoming" {...at.upcoming} />,
+                <BudgetsBlock key="budgets" month={month} {...at.budgets} />,
+                <CardsBlock key="cards" {...at.cards} />,
+                <GoalsBlock key="goals" {...at.goals} />,
+              ]
+            : [
+                <AttentionBlock key="attention" {...at.attention} />,
+                ...worth.map(([kind, key]) => (
+                  <NetWorthFigure
+                    key={kind}
+                    month={month}
+                    kind={kind}
+                    {...placement(kind, t(key), 4, 2)}
+                  />
+                )),
+                ...indicators,
+                ...flows.map(([kind, key]) => (
+                  <MonthFlowFigure
+                    key={kind}
+                    month={month}
+                    kind={kind}
+                    {...placement(`flow-${kind}`, t(key), 4, 2)}
+                  />
+                )),
+                <SpendingBlock key="spending" month={month} {...at.spending} />,
+                <UpcomingBlock key="upcoming" {...at.upcoming} />,
+                <CardsBlock key="cards" {...at.cards} />,
+                <BudgetsBlock key="budgets" month={month} {...at.budgets} />,
+                <GoalsBlock key="goals" {...at.goals} />,
+              ]}
+        </DashboardGrid>
       </PageBody>
     </Page>
   );

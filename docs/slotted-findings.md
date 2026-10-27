@@ -96,3 +96,8 @@ Registry of the findings reported to the Slotted owner (`web/CLAUDE.md`, "Slotte
 | Attachment preview thumbnail is not lazy-loaded                                                     | open     |
 | The list-item anatomy does not say which part holds which                                           | reported |
 | A list item with its parts out of order renders without layout or a warning                         | reported |
+| Dashboard grid reads widget props only from its direct children                                     | open     |
+| The overviews guideline does not lead to the dashboard grid                                         | reported |
+| A dashboard widget with automatic rows rounds its height up to whole rows of 4.5rem                 | reported |
+| Reset returns the dashboard grid to an empty layout instead of its default layout                   | reported |
+| A chart in a dashboard widget keeps a plot of one and a half rows whatever the widget's height      | open     |

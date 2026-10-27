@@ -4,7 +4,10 @@ import { useApi } from "@/api/api-context";
 import { accountsQuery } from "@/features/accounts";
 import { currentAndUnpaid, statementsQuery } from "@/features/cards";
 import { owedStatements } from "@/features/overview/open-statements";
-import { OverviewBlock } from "@/features/overview/overview-block";
+import {
+  OverviewBlock,
+  type Placement,
+} from "@/features/overview/overview-block";
 import { OverviewRows } from "@/features/overview/overview-rows";
 import { useBase } from "@/features/overview/use-base";
 import { shiftMonth } from "@/features/overview/forecast";
@@ -16,7 +19,7 @@ import { MoneyFigure } from "@/ui/money-figure";
 // Twelve months back hold every closed statement still owing in practice.
 const lookBackMonths = 12;
 
-export function CardsBlock({ onHide }: { onHide?: (() => void) | undefined }) {
+export function CardsBlock(placement: Placement) {
   const t = useT();
   const api = useApi();
   const [locale] = useAppLocale();
@@ -69,8 +72,7 @@ export function CardsBlock({ onHide }: { onHide?: (() => void) | undefined }) {
         }));
   return (
     <OverviewBlock
-      onHide={onHide}
-      title={t("overview.cards.title")}
+      placement={placement}
       link={{ label: t("overview.cards.open"), options: { to: "/cards" } }}
       loading={loading && error === null}
       error={error}

@@ -1,4 +1,7 @@
-import { OverviewBlock } from "@/features/overview/overview-block";
+import {
+  OverviewBlock,
+  type Placement,
+} from "@/features/overview/overview-block";
 import { OverviewRows } from "@/features/overview/overview-rows";
 import { useSpending } from "@/features/overview/use-spending";
 import { formatMonthName } from "@/i18n/format";
@@ -8,18 +11,14 @@ import { MoneyFigure } from "@/ui/money-figure";
 // The five categories that took the most of the month.
 export function SpendingBlock({
   month,
-  onHide,
-}: {
-  month: string;
-  onHide?: (() => void) | undefined;
-}) {
+  ...placement
+}: { month: string } & Placement) {
   const t = useT();
   const [locale] = useAppLocale();
   const { base, scale, error, loading, rows, retry } = useSpending(month);
   return (
     <OverviewBlock
-      onHide={onHide}
-      title={t("overview.spending.title")}
+      placement={placement}
       link={{
         label: t("overview.spending.open"),
         options: { to: "/categories" },

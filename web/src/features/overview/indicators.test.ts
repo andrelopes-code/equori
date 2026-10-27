@@ -1,31 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  lastMonth,
-  ratioSeries,
-  showsDebt,
-} from "@/features/overview/indicators";
+import { lastMonth, showsDebt } from "@/features/overview/indicators";
 import { formatMonths } from "@/i18n/format";
 import { indicatorsFixture } from "@/testing/report-api";
 
 describe("indicators", () => {
-  it("reads the last month and the series of a ratio", () => {
+  it("reads the last month", () => {
     const report = indicatorsFixture();
     expect(lastMonth(report).month).toBe("2026-10");
-    expect(ratioSeries(report, "trailing_savings_rate")).toEqual([
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      5000,
-      4825,
-      4720,
-      4650,
-    ]);
   });
   it("writes liquidity in months with one decimal", () => {
     expect(formatMonths(66915, "en-US")).toBe("6.7");

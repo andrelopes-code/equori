@@ -3,15 +3,22 @@ import type { ChartSeries } from "@slotted/core/chart";
 import { useMemo } from "react";
 
 import { balanceRows } from "@/features/overview/balance-rows";
+import styles from "@/features/overview/chart-fill.module.css";
+import {
+  OverviewBlock,
+  type Placement,
+} from "@/features/overview/overview-block";
 import { useOverview } from "@/features/overview/use-overview";
 import { formatDayMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { QueryError } from "@/ui/query-error";
 
 // The Available accounts day by day: the balance up to today, then the forecast, dashed.
-export function BalanceChartBlock({ month }: { month: string }) {
+export function BalanceChartBlock({
+  month,
+  ...placement
+}: { month: string } & Placement) {
   const t = useT();
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
@@ -25,7 +32,6 @@ export function BalanceChartBlock({ month }: { month: string }) {
       })),
     [overview, locale],
   );
-  if (failed !== null) return <QueryError error={failed} onRetry={retry} />;
   const money = (value: number) =>
     overview === undefined || scale === null
       ? ""
@@ -51,27 +57,35 @@ export function BalanceChartBlock({ month }: { month: string }) {
     },
   ];
   return (
-    <Chart
-      variant="card"
-      size="sm"
+    <OverviewBlock
+      placement={placement}
       loading={overview === undefined}
-      title={t("overview.balance.title")}
-      data={data}
-      series={series}
-      x={{ field: "label" }}
-      y={{ format: money }}
-      annotations={
-        overview?.current === true
-          ? [
-              {
-                kind: "line",
-                axis: "x",
-                value: formatDayMonth(today, locale),
-                label: t("overview.balance.today"),
-              },
-            ]
-          : []
-      }
-    />
+      error={failed}
+      onRetry={retry}
+    >
+      <div className={styles.fill}>
+        <div className={styles.plot}>
+          <Chart
+            title={t("overview.balance.balance")}
+            data={data}
+            series={series}
+            x={{ field: "label" }}
+            y={{ format: money }}
+            annotations={
+              overview?.current === true
+                ? [
+                    {
+                      kind: "line",
+                      axis: "x",
+                      value: formatDayMonth(today, locale),
+                      label: t("overview.balance.today"),
+                    },
+                  ]
+                : []
+            }
+          />
+        </div>
+      </div>
+    </OverviewBlock>
   );
 }

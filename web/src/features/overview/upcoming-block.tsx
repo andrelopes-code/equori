@@ -1,7 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
-import { OverviewBlock } from "@/features/overview/overview-block";
+import {
+  OverviewBlock,
+  type Placement,
+} from "@/features/overview/overview-block";
 import { OverviewRows } from "@/features/overview/overview-rows";
 import { upcomingDays, upcomingWindow } from "@/features/overview/upcoming";
 import { useBase } from "@/features/overview/use-base";
@@ -18,11 +21,7 @@ import { MoneyFigure } from "@/ui/money-figure";
 // The read reaches 180 days back for overdue occurrences; the contract allows 366 days.
 const lookBackDays = 180;
 
-export function UpcomingBlock({
-  onHide,
-}: {
-  onHide?: (() => void) | undefined;
-}) {
+export function UpcomingBlock(placement: Placement) {
   const t = useT();
   const api = useApi();
   const [locale] = useAppLocale();
@@ -68,8 +67,7 @@ export function UpcomingBlock({
         });
   return (
     <OverviewBlock
-      onHide={onHide}
-      title={t("overview.upcoming.title")}
+      placement={placement}
       link={{
         label: t("overview.upcoming.open"),
         options: { to: "/planning" },

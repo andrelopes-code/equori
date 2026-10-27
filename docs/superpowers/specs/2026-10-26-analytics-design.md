@@ -6,7 +6,7 @@ Evidence: `docs/superpowers/specs/2026-10-26-analytics-study.md` (cited below as
 
 ## 1. Intent
 
-The overview answers the four questions shared by the CFPB scale, the I-SFB and the Financial Health Network indicators (study §1.1): whether current obligations are met, whether a shock can be absorbed, whether goals progress, and how much income is free. Today it answers the first and the third only in amounts of one month (study §5.2). This design adds indicators that answer all four as ratios over time, keeps the overview a fixed default layout with a local hide control, and replaces the encodings that study §5.3 found against the perception evidence.
+The overview answers the four questions shared by the CFPB scale, the I-SFB and the Financial Health Network indicators (study §1.1): whether current obligations are met, whether a shock can be absorbed, whether goals progress, and how much income is free. Today it answers the first and the third only in amounts of one month (study §5.2). This design adds indicators that answer all four as ratios over time, keeps the overview a grid of widgets the owner arranges per browser, and replaces the encodings that study §5.3 found against the perception evidence.
 
 ## 2. Goals, non-goals, anti-goals
 
@@ -16,10 +16,10 @@ Goals:
 |---|---|
 | AG1 | One operation returns the indicators of section 4 for a month, with a 12-month series per indicator. The web and the assistant read the same numbers. |
 | AG2 | The overview shows the indicators in one block; `/reports` shows their series in a new tab. |
-| AG3 | The owner hides an overview block from the block itself and shows every hidden block again from the page. |
+| AG3 | The owner hides, moves and resizes overview blocks and adds a hidden block back, in the edit mode of the overview grid (5.2). |
 | AG4 | Comparison charts use position or length (V1, V2, V5). |
 
-Non-goals: reference thresholds or benchmarks; personal targets per indicator (goals over accounts already exist); housing cost ratio and fixed versus discretionary spending (no stored attribute, study §5.2); a dashboard builder, several dashboards, free resizing; a survey-based well-being score.
+Non-goals: reference thresholds or benchmarks; personal targets per indicator (goals over accounts already exist); housing cost ratio and fixed versus discretionary spending (no stored attribute, study §5.2); new widget types chosen by the owner, several dashboards; a survey-based well-being score.
 
 Anti-goals:
 
@@ -83,27 +83,29 @@ A ledger account attribute `excluded_from_liquidity` (boolean, default false) re
 
 ## 5. Overview
 
-### 5.1 Indicators block
+### 5.1 Indicators
 
-New block placed after net worth in the default order. It shows I1 with I2 beside it, I3, I4 and I5. I5 shows only when I6 is above zero or debt service of `m` is above zero. Each figure shows:
+Placed after net worth in the default order, one widget per figure (5.2): I1 with I2 in its line, I3, I4 and I5. I5 reads a value only when I6 is above zero or debt service of `m` is above zero; otherwise its widget keeps its cell and says in one sentence that the books hold no loan or financing. Each figure shows:
 
 - the value: percent for I1, I2, I4, I5; months with one decimal for I3;
-- a sparkline of the 12-month series, whose generated description states the direction in words (V8);
 - one line that defines the figure in plain words and names its inputs (V10);
 - the reason in words when the value is null.
 
-The block header links to the indicators tab of `/reports`. No figure carries a judgment color, a delta tone or a threshold.
+A figure draws no sparkline: the 12-month series is the indicators tab of `/reports` (section 6), which each widget header links to. Amended on 2026-10-27 by the owner review: a sparkline inside a figure widget reads as an ornament beside the value. No figure carries a judgment color, a delta tone or a threshold.
 
-### 5.2 Hide
+### 5.2 Layout
+
+Amended on 2026-10-27 by the owner review: the overview is one Slotted `dashboard-grid`, and each block is one of its widgets.
 
 | Rule | Detail |
 |---|---|
-| Controls | Each hideable block header has a menu with "Hide block". The page header has "Show hidden blocks (n)" while n > 0, which shows every hidden block again. Placing the control on the block follows C2 and C3. |
-| Hideable | The blocks drawn through `OverviewBlock`: net worth, month flows, spending, upcoming, cards, budgets, goals, indicators. |
-| Fixed | The attention list cannot be hidden: it holds exceptions, and hiding a block that holds exceptions degrades the outcome (C3). The desk figures and the balance chart have no block header and stay. |
-| Reorder | Out of scope: the desk grid places blocks in slots of fixed width (`web/src/features/overview/overview-page.module.css`), so a moved block changes width. |
-| Storage | Per browser in `localStorage`, as ADR 018 P1 stores the privacy preference, under key `equori.overview.hidden`, a JSON array of block ids. A value that cannot be read yields no hidden block. An id unknown to the current build is dropped. |
-| Phone | The phone layout applies the same hidden set and keeps the attention list first (`docs/web-roadmap.md` §7). |
+| Controls | The page header has "Edit layout". While editing, the grid's own bar and each widget's handle move, resize and hide a block, add a hidden block back, reset the layout, cancel or finish. |
+| Frame | The widget is the block's only frame: a figure inside it is a plain stat card and a chart a plain chart (Slotted OV-05). |
+| Figures | Each figure is a widget of its own, with no sparkline (5.1): its title is the figure's label, and a link in its header opens the screen that owns the figure. |
+| Hideable | Each indicator, each net worth and month flow figure of the phone, spending, upcoming, cards, budgets and goals. |
+| Fixed | The attention list, the desk figures and the balance chart cannot be hidden. The attention list holds exceptions, and hiding a block that holds exceptions degrades the outcome (C3). They still move and resize. With nothing to show, the attention list says so in one sentence and keeps its cell. |
+| Storage | Per browser in `localStorage`, as ADR 018 P1 stores the privacy preference, under key `equori.overview.layout`, through `usePersistedDashboardLayout`. A value that cannot be read yields the default layout. |
+| Phone | Below 1024 px the page draws the phone set of blocks in the order of `docs/web-roadmap.md` §7, and the grid flows them in halves from 600 px and in one column below. The same stored layout hides the same blocks. |
 
 ## 6. Reports
 

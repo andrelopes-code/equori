@@ -4,7 +4,10 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 import { useApi } from "@/api/api-context";
 import { accountsQuery } from "@/features/accounts";
 import { budgetAlerts } from "@/features/overview/budget-alerts";
-import { OverviewBlock } from "@/features/overview/overview-block";
+import {
+  OverviewBlock,
+  type Placement,
+} from "@/features/overview/overview-block";
 import { OverviewRows } from "@/features/overview/overview-rows";
 import {
   budgetProgressQuery,
@@ -18,11 +21,8 @@ import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
 // budgets tab of Planning draws.
 export function BudgetsBlock({
   month,
-  onHide,
-}: {
-  month: string;
-  onHide?: (() => void) | undefined;
-}) {
+  ...placement
+}: { month: string } & Placement) {
   const t = useT();
   const api = useApi();
   const [locale] = useAppLocale();
@@ -92,8 +92,7 @@ export function BudgetsBlock({
         }));
   return (
     <OverviewBlock
-      onHide={onHide}
-      title={t("overview.budgets.title")}
+      placement={placement}
       link={{
         label: t("overview.budgets.open"),
         options: { to: "/planning", search: { tab: "budgets" } },

@@ -2,7 +2,10 @@ import { ProgressBar } from "@slotted/react/progress-indicator";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
-import { OverviewBlock } from "@/features/overview/overview-block";
+import {
+  OverviewBlock,
+  type Placement,
+} from "@/features/overview/overview-block";
 import { OverviewRows } from "@/features/overview/overview-rows";
 import { useBase } from "@/features/overview/use-base";
 import { goalsQuery } from "@/features/planning";
@@ -10,7 +13,7 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
 
-export function GoalsBlock({ onHide }: { onHide?: (() => void) | undefined }) {
+export function GoalsBlock(placement: Placement) {
   const t = useT();
   const api = useApi();
   const fmt = useMoneyFormat();
@@ -49,8 +52,7 @@ export function GoalsBlock({ onHide }: { onHide?: (() => void) | undefined }) {
         }));
   return (
     <OverviewBlock
-      onHide={onHide}
-      title={t("overview.goals.title")}
+      placement={placement}
       link={{ label: t("overview.goals.open"), options: { to: "/goals" } }}
       loading={loading && goals.error === null}
       error={goals.error}

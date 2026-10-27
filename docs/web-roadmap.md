@@ -203,8 +203,8 @@ Functions, one block per question, each linked to the screen that owns its data:
 - Budgets: categories over or near their amount.
 - Goals: progress summary.
 - Attention list: uncategorized transactions, unconfirmed import records, connections in `needs_owner` or `failed`, accounts whose reconciliation status has an open difference.
-- Indicators: savings rate with its 12-month mean, reserve in months, committed income and debt payments of the month, cash basis, each with a 12-month sparkline (getIndicators; analytics design 5.1).
-- Hide: each block except the attention list, the desk figures and the balance chart hides from its own menu; the page header shows every hidden block again (analytics design 5.2).
+- Indicators: savings rate with its 12-month mean, reserve in months, committed income and debt payments of the month, cash basis, one widget each, linked to the indicators tab of reports for the 12-month series (getIndicators; analytics design 5.1).
+- Layout: the overview is one `dashboard-grid`; "Edit layout" in the page header moves, resizes and hides blocks, and adds a hidden block back. The attention list, the desk figures and the balance chart cannot be hidden (analytics design 5.2).
 
 Layout: desktop shows a grid of blocks; phone width shows one column ordered by the attention list first. Privacy mode masks every amount (ADR 018).
 

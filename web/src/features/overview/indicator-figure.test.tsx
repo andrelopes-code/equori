@@ -1,7 +1,8 @@
+import { DashboardGrid } from "@slotted/react/dashboard-grid";
 import { screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { IndicatorsBlock } from "@/features/overview/indicators-block";
+import { indicatorFigures } from "@/features/overview/indicator-figures";
 import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json } from "@/testing/fake-api";
 import { expectNoAmounts, hideAmounts } from "@/testing/privacy";
@@ -10,8 +11,16 @@ import { indicatorsFixture, reportApiRoutes } from "@/testing/report-api";
 
 type Fixture = ReturnType<typeof indicatorsFixture>;
 
+function Indicators() {
+  return (
+    <DashboardGrid aria-label="Overview blocks">
+      {indicatorFigures("2026-10", (key) => catalogEn[key])}
+    </DashboardGrid>
+  );
+}
+
 function renderBlock(fixture: Fixture = indicatorsFixture()) {
-  return renderWithRouter(<IndicatorsBlock month="2026-10" />, {
+  return renderWithRouter(<Indicators />, {
     path: "/",
     fetch: fakeApi({
       ...reportApiRoutes(),
@@ -20,7 +29,7 @@ function renderBlock(fixture: Fixture = indicatorsFixture()) {
   });
 }
 
-describe("IndicatorsBlock", () => {
+describe("indicator figures", () => {
   beforeEach(() => {
     localStorage.clear();
   });
@@ -52,13 +61,15 @@ describe("IndicatorsBlock", () => {
     ).toBeGreaterThan(0);
   });
 
-  it("hides debt payments without liabilities", async () => {
+  it("reads no debt payments without liabilities", async () => {
     const zero = { amount: 0, currency: "BRL" };
     renderBlock(indicatorsFixture({ liabilities: zero, debt_service: zero }));
     await screen.findByText("43.00%");
-    expect(
-      screen.queryByText(catalogEn["overview.indicators.debt"]),
-    ).toBeNull();
+    const debt = screen.getByRole("article", {
+      name: catalogEn["overview.indicators.debt"],
+    });
+    expect(debt).toHaveTextContent(catalogEn["overview.indicators.noDebt"]);
+    expect(debt).not.toHaveTextContent("%");
   });
 
   it("masks amounts and keeps ratios in privacy mode", async () => {

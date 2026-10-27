@@ -11,7 +11,10 @@ import {
 import { uncategorizedQuery } from "@/features/overview/api";
 import { attentionItems } from "@/features/overview/attention";
 import type { AttentionItem } from "@/features/overview/attention";
-import { OverviewBlock } from "@/features/overview/overview-block";
+import {
+  OverviewBlock,
+  type Placement,
+} from "@/features/overview/overview-block";
 import { OverviewRows } from "@/features/overview/overview-rows";
 import { useBase } from "@/features/overview/use-base";
 import { connectionsQuery } from "@/features/connections";
@@ -19,7 +22,10 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { MoneyFigure } from "@/ui/money-figure";
 
 // What waits for a decision. The block is not drawn when nothing does.
-export function AttentionBlock({ limit }: { limit?: number }) {
+export function AttentionBlock({
+  limit,
+  ...placement
+}: { limit?: number } & Placement) {
   const t = useT();
   const api = useApi();
   const [locale] = useAppLocale();
@@ -67,7 +73,6 @@ export function AttentionBlock({ limit }: { limit?: number }) {
             difference: reconciliations[i]?.data?.open_difference?.difference,
           })),
         });
-  if (!loading && error === null && items.length === 0) return null;
   const number = new Intl.NumberFormat(locale);
   const shown = limit === undefined ? items : items.slice(0, limit);
   const hidden = items.length - shown.length;
@@ -98,9 +103,11 @@ export function AttentionBlock({ limit }: { limit?: number }) {
     } as (typeof rows)[number]);
   return (
     <OverviewBlock
-      title={t("overview.attention.title")}
+      placement={placement}
       loading={loading && error === null}
       error={error}
+      // The widget keeps its cell when nothing needs attention, so the grid holds no hole.
+      empty={items.length === 0 ? t("overview.attention.empty") : undefined}
       onRetry={() => {
         for (const query of sources) {
           if (query.isError) void query.refetch();

@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -142,84 +142,75 @@ beforeEach(() => {
   localStorage.clear();
 });
 
-function words(key: keyof typeof catalogEn, values: Record<string, string>) {
-  return Object.entries(values).reduce<string>(
-    (text, [k, v]) => text.replace(`{${k}}`, v),
-    catalogEn[key],
-  );
-}
-
 function block(name: string) {
-  return screen.getByRole("region", { name });
+  return screen.getByRole("article", { name });
 }
 
 describe("overview page", () => {
-  it("hides a block and shows it again", async () => {
-    localStorage.clear();
+  it("hides a block in the edit mode and adds it back", async () => {
     await renderApp("/", { width: 800, fetch: api() });
     await userEvent.click(
       await screen.findByRole("button", {
-        name: words("overview.block.options", {
-          block: catalogEn["overview.goals.title"],
-        }),
+        name: catalogEn["overview.block.edit"],
       }),
     );
     await userEvent.click(
-      await screen.findByRole("menuitem", {
-        name: catalogEn["overview.block.hide"],
-      }),
+      await screen.findByRole("button", { name: "Rearrange Goals" }),
+    );
+    await userEvent.click(
+      await screen.findByRole("menuitem", { name: "Hide" }),
     );
     await waitFor(() => {
-      expect(
-        screen.queryByRole("heading", {
-          name: catalogEn["overview.goals.title"],
-        }),
-      ).toBeNull();
+      expect(screen.queryByRole("article", { name: "Goals" })).toBeNull();
     });
-    expect(localStorage.getItem("equori.overview.hidden")).toBe('["goals"]');
+    // The choice survives a new visit.
+    cleanup();
+    await renderApp("/", { width: 800, fetch: api() });
+    await screen.findByRole("article", { name: "Attention" });
+    expect(screen.queryByRole("article", { name: "Goals" })).toBeNull();
     await userEvent.click(
-      screen.getByRole("button", {
-        name: words("overview.block.showHidden", { count: "1" }),
-      }),
+      screen.getByRole("button", { name: catalogEn["overview.block.edit"] }),
+    );
+    await userEvent.click(screen.getByRole("button", { name: /Add widget/ }));
+    await userEvent.click(
+      await screen.findByRole("menuitem", { name: "Goals" }),
     );
     expect(
-      await screen.findByRole("heading", {
-        name: catalogEn["overview.goals.title"],
-      }),
+      await screen.findByRole("article", { name: "Goals" }),
     ).toBeInTheDocument();
   });
 
-  it("keeps the attention list without a hide control", async () => {
-    localStorage.clear();
+  it("keeps the attention list without a hide entry", async () => {
     await renderApp("/", { width: 800, fetch: api() });
-    await screen.findByRole("heading", {
-      name: catalogEn["overview.attention.title"],
-    });
-    expect(
-      screen.queryByRole("button", {
-        name: words("overview.block.options", {
-          block: catalogEn["overview.attention.title"],
-        }),
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["overview.block.edit"],
       }),
-    ).toBeNull();
+    );
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Rearrange Attention" }),
+    );
+    await screen.findAllByRole("menuitem");
+    expect(screen.queryByRole("menuitem", { name: "Hide" })).toBeNull();
   });
 
   it("S129: shows assets, liabilities, net and the change against the previous month end", async () => {
     await renderApp("/", { width: 800, fetch: api() });
-    const worth = await screen.findByRole("region", { name: "Net worth" });
+    const assets = await screen.findByRole("article", { name: "Assets" });
     await waitFor(() => {
-      expect(worth).toHaveTextContent("2,205.00");
+      expect(assets).toHaveTextContent("2,205.00");
     });
-    expect(worth).toHaveTextContent("1,200.00");
-    expect(worth).toHaveTextContent("1,005.00");
-    expect(worth).toHaveTextContent("+17.5%");
+    expect(block("Liabilities")).toHaveTextContent("1,200.00");
+    expect(block("Net worth")).toHaveTextContent("1,005.00");
+    expect(block("Net worth")).toHaveTextContent("+17.5%");
   });
 
   it.each([800, 1280])(
     "links the net worth to the reports tab at %i px",
     async (width) => {
       await renderApp("/", { width, fetch: api() });
-      const link = await screen.findByRole("link", {
+      const worth = await screen.findByRole("article", { name: "Net worth" });
+      const link = await within(worth).findByRole("link", {
         name: catalogEn["overview.netWorth.open"],
       });
       expect(link).toHaveAttribute("href", "/reports");
@@ -228,17 +219,17 @@ describe("overview page", () => {
 
   it("shows the income, outflow and result of the month", async () => {
     await renderApp("/", { width: 800, fetch: api() });
-    const flows = await screen.findByRole("region", { name: "Month flows" });
+    const income = await screen.findByRole("article", { name: "Income" });
     await waitFor(() => {
-      expect(flows).toHaveTextContent("1,000.00");
+      expect(income).toHaveTextContent("1,000.00");
     });
-    expect(flows).toHaveTextContent("25.00");
-    expect(flows).toHaveTextContent("975.00");
+    expect(block("Outflow")).toHaveTextContent("25.00");
+    expect(block("Month result")).toHaveTextContent("975.00");
   });
 
   it("lists the five largest categories of the month", async () => {
     await renderApp("/", { width: 800, fetch: api() });
-    const spending = await screen.findByRole("region", {
+    const spending = await screen.findByRole("article", {
       name: "Spending by category",
     });
     await waitFor(() => {
@@ -260,9 +251,9 @@ describe("overview page", () => {
         "GET /api/v1/reports/net-worth": () => problem(500, "internal_error"),
       }),
     });
-    const worth = await screen.findByRole("region", { name: "Net worth" });
+    const worth = await screen.findByRole("article", { name: "Net worth" });
     await within(worth).findByRole("button", { name: "Try again" });
-    const spending = await screen.findByRole("region", {
+    const spending = await screen.findByRole("article", {
       name: "Spending by category",
     });
     await waitFor(() => {
@@ -273,7 +264,7 @@ describe("overview page", () => {
   it("masks every amount in privacy mode", async () => {
     hideAmounts();
     const { container } = await renderApp("/", { width: 800, fetch: api() });
-    const spending = await screen.findByRole("region", {
+    const spending = await screen.findByRole("article", {
       name: "Spending by category",
     });
     await waitFor(() => {
@@ -287,8 +278,8 @@ describe("overview page", () => {
 
   it("puts the attention list before the figures on a phone", async () => {
     await renderApp("/", { fetch: api(), width: 390 });
-    const attention = await screen.findByRole("region", { name: "Attention" });
-    const worth = await screen.findByRole("region", { name: "Net worth" });
+    const attention = await screen.findByRole("article", { name: "Attention" });
+    const worth = await screen.findByRole("article", { name: "Net worth" });
     expect(
       attention.compareDocumentPosition(worth) &
         Node.DOCUMENT_POSITION_FOLLOWING,
@@ -357,7 +348,7 @@ describe("overview page", () => {
 
     it("lists the overdue occurrences and those of the next 7 days", async () => {
       await renderApp("/", { fetch: full() });
-      const region = await screen.findByRole("region", { name: "Upcoming" });
+      const region = await screen.findByRole("article", { name: "Upcoming" });
       await waitFor(() => {
         expect(within(region).getAllByRole("listitem")).toHaveLength(3);
       });
@@ -367,7 +358,7 @@ describe("overview page", () => {
 
     it("lists the open and the unpaid closed statements with amount and due date", async () => {
       await renderApp("/", { fetch: full() });
-      const region = await screen.findByRole("region", { name: "Cards" });
+      const region = await screen.findByRole("article", { name: "Cards" });
       await waitFor(() => {
         expect(within(region).getAllByRole("listitem")).toHaveLength(2);
       });
@@ -377,7 +368,7 @@ describe("overview page", () => {
 
     it("lists the overspent and the near-limit budgets only", async () => {
       await renderApp("/", { fetch: full() });
-      const region = await screen.findByRole("region", { name: "Budgets" });
+      const region = await screen.findByRole("article", { name: "Budgets" });
       await waitFor(() => {
         expect(within(region).getAllByRole("listitem")).toHaveLength(2);
       });
@@ -388,7 +379,7 @@ describe("overview page", () => {
 
     it("shows the progress of each goal", async () => {
       await renderApp("/", { fetch: full() });
-      const region = await screen.findByRole("region", { name: "Goals" });
+      const region = await screen.findByRole("article", { name: "Goals" });
       await waitFor(() => {
         expect(region).toHaveTextContent("Trip");
       });
@@ -402,11 +393,11 @@ describe("overview page", () => {
           "GET /api/v1/goals": () => json(200, { items: [goal] }),
         }),
       });
-      const upcomingRegion = await screen.findByRole("region", {
+      const upcomingRegion = await screen.findByRole("article", {
         name: "Upcoming",
       });
       await within(upcomingRegion).findByRole("button", { name: "Try again" });
-      const goals = await screen.findByRole("region", { name: "Goals" });
+      const goals = await screen.findByRole("article", { name: "Goals" });
       await waitFor(() => {
         expect(goals).toHaveTextContent("Trip");
       });
@@ -439,7 +430,7 @@ describe("overview page", () => {
             json(200, reconciliation),
         }),
       });
-      const region = await screen.findByRole("region", { name: "Attention" });
+      const region = await screen.findByRole("article", { name: "Attention" });
       await waitFor(() => {
         expect(within(region).getAllByRole("listitem")).toHaveLength(4);
       });
@@ -463,17 +454,20 @@ describe("overview page", () => {
       );
     });
 
-    it("draws no block when nothing needs attention", async () => {
+    it("says that nothing needs attention", async () => {
       await renderApp("/", {
         fetch: api({ "GET /api/v1/transactions": uncategorized([]) }),
       });
       await waitFor(() => {
-        expect(screen.getByRole("region", { name: "Goals" })).toHaveTextContent(
-          "No goals yet",
-        );
+        expect(
+          screen.getByRole("article", { name: "Goals" }),
+        ).toHaveTextContent("No goals yet");
       });
+      // The widget keeps its cell and says so (analytics design 5.2).
       await waitFor(() => {
-        expect(screen.queryByRole("region", { name: "Attention" })).toBeNull();
+        expect(block("Attention")).toHaveTextContent(
+          catalogEn["overview.attention.empty"],
+        );
       });
     });
 
@@ -500,7 +494,7 @@ describe("overview page", () => {
             json(200, {}),
         }),
       });
-      const region = await screen.findByRole("region", { name: "Attention" });
+      const region = await screen.findByRole("article", { name: "Attention" });
       await waitFor(() => {
         expect(within(region).getAllByRole("listitem")).toHaveLength(2);
       });
@@ -517,10 +511,10 @@ describe("overview page", () => {
           "GET /api/v1/connections": () => problem(500, "internal_error"),
         }),
       });
-      const region = await screen.findByRole("region", { name: "Attention" });
+      const region = await screen.findByRole("article", { name: "Attention" });
       await within(region).findByRole("button", { name: "Try again" });
       await waitFor(() => {
-        expect(block("Net worth")).toHaveTextContent("2,205.00");
+        expect(block("Assets")).toHaveTextContent("2,205.00");
       });
     });
   });
@@ -543,15 +537,15 @@ describe("overview page", () => {
 
     it("leads with net worth, month result, month-end balance and committed", async () => {
       await renderApp("/", { fetch: api(projection) });
-      const figures = await screen.findByRole("region", {
-        name: "Overview figures",
+      const balance = await screen.findByRole("article", {
+        name: "Month-end balance",
       });
       await waitFor(() => {
-        expect(figures).toHaveTextContent("3,140.55");
+        expect(balance).toHaveTextContent("3,140.55");
       });
-      expect(figures).toHaveTextContent("1,005.00");
-      expect(figures).toHaveTextContent("975.00");
-      expect(figures).toHaveTextContent("3,000.00");
+      expect(block("Net worth")).toHaveTextContent("1,005.00");
+      expect(block("Month result")).toHaveTextContent("975.00");
+      expect(block("Committed")).toHaveTextContent("3,000.00");
     });
 
     it("draws the balance of the month as a chart", async () => {
@@ -564,9 +558,8 @@ describe("overview page", () => {
       const { container } = await renderApp("/", { fetch: api(projection) });
       await screen.findByText("Balance of the month");
       await waitFor(() => {
-        expect(
-          screen.getByRole("region", { name: "Overview figures" }),
-        ).toHaveTextContent("•");
+        for (const name of ["Net worth", "Month result", "Month-end balance"])
+          expect(block(name)).toHaveTextContent("•");
       });
       expectNoAmounts(container, ["3,140.55", "1,005.00", "975.00"]);
     });
@@ -594,7 +587,7 @@ describe("overview page", () => {
             }),
         }),
       });
-      const region = await screen.findByRole("region", { name: "Attention" });
+      const region = await screen.findByRole("article", { name: "Attention" });
       await waitFor(() => {
         expect(within(region).getAllByRole("listitem")).toHaveLength(5);
       });

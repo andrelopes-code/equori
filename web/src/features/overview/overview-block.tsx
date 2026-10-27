@@ -1,76 +1,90 @@
-import {
-  ResultState,
-  ResultStateContent,
-  ResultStateTitle,
-} from "@slotted/react/result-state";
-import {
-  Section,
-  SectionActions,
-  SectionBody,
-  SectionHeader,
-  SectionHeading,
-  SectionTitle,
-} from "@slotted/react/section";
-import { Skeleton } from "@slotted/react/skeleton";
+import { DashboardWidget } from "@slotted/react/dashboard-grid";
 import type { NavigateOptions } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
-import { HideBlockMenu } from "@/features/overview/hide-block-menu";
+import { ProblemError, problemMessage } from "@/api/problem";
 import { OverviewLink } from "@/features/overview/overview-link";
-import { QueryError } from "@/ui/query-error";
+import { useT } from "@/i18n/i18n-provider";
 
-// One question of the overview. It loads, fails and stays empty on its own, so a failed
-// operation never takes another block with it.
+// Workaround for Slotted finding "Dashboard grid reads widget props only from its direct children": the page
+// sets these on each block element, and the block hands them to its widget.
+export interface Placement {
+  value: string;
+  title: string;
+  defaultColumns: number;
+  defaultRows: number;
+  removable: boolean;
+}
+
+// Columns are of the twelve at the desk; rows are the grid's, 4.5rem each. A block that holds
+// exceptions stays on the page (analytics design 5.2).
+export function placement(
+  value: string,
+  title: string,
+  columns: number,
+  rows: number,
+  removable = true,
+): Placement {
+  return {
+    value,
+    title,
+    defaultColumns: columns,
+    defaultRows: rows,
+    removable,
+  };
+}
+
+// One question of the overview, one widget of its grid. It loads, fails and stays empty on its
+// own, so a failed operation never takes another block with it. The widget is the block's only
+// frame: what it holds is drawn plain (OV-05).
 export function OverviewBlock({
-  title,
+  placement,
   link,
   loading,
   error,
   onRetry,
   empty,
-  onHide,
+  footer,
   children,
 }: {
-  title: string;
+  placement: Placement;
   link?: { label: string; options: NavigateOptions } | undefined;
   loading: boolean;
   error: Error | null;
   onRetry: () => void;
   // The sentence of an empty block; undefined when the block holds something.
   empty?: string | undefined;
-  // Set for a block the owner may hide (analytics design 5.2).
-  onHide?: (() => void) | undefined;
+  footer?: ReactNode;
   children?: ReactNode;
 }) {
-  let body = children;
-  if (error !== null) body = <QueryError error={error} onRetry={onRetry} />;
-  else if (loading) body = <Skeleton shape="block" blockSize="6rem" />;
-  else if (empty !== undefined)
-    body = (
-      <ResultState status="empty" reach="section">
-        <ResultStateContent>
-          <ResultStateTitle>{empty}</ResultStateTitle>
-        </ResultStateContent>
-      </ResultState>
-    );
+  const t = useT();
+  let status: "ready" | "empty" | "error" = "ready";
+  if (error !== null) status = "error";
+  else if (!loading && empty !== undefined) status = "empty";
   return (
-    <Section ground="surface" size="sm">
-      <SectionHeader>
-        <SectionTitle>
-          <SectionHeading>{title}</SectionHeading>
-        </SectionTitle>
-        {(link !== undefined || onHide !== undefined) && (
-          <SectionActions>
-            {link !== undefined && (
-              <OverviewLink options={link.options}>{link.label}</OverviewLink>
-            )}
-            {onHide !== undefined && (
-              <HideBlockMenu block={title} onHide={onHide} />
-            )}
-          </SectionActions>
-        )}
-      </SectionHeader>
-      <SectionBody>{body}</SectionBody>
-    </Section>
+    <DashboardWidget
+      {...placement}
+      loading={loading && error === null}
+      status={status}
+      emptyTitle={empty}
+      errorTitle={t("common.error.title")}
+      errorDescription={
+        error instanceof ProblemError
+          ? problemMessage(error.problem, t)
+          : undefined
+      }
+      onRetry={onRetry}
+      footer={footer}
+      actions={
+        link !== undefined && (
+          // The visible word stays short so a narrow widget keeps its title on one line.
+          <OverviewLink options={link.options} label={link.label}>
+            {t("overview.open")}
+          </OverviewLink>
+        )
+      }
+    >
+      {children}
+    </DashboardWidget>
   );
 }
