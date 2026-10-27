@@ -45,7 +45,7 @@ An instance holds financial data of several users, for example the members of on
 The instance has one user until further notice. Data stays isolated by `user_id`, so more users need no migration. Deferred until a second user exists:
 
 - Admin endpoints to create and disable users (the CLI creates users meanwhile).
-- Password change endpoint (must delete the user's sessions).
+- Password change endpoint (must delete the user's sessions and personal access tokens).
 - Per-IP login limit (requires a trusted-proxy setting).
 
 ## Not covered
@@ -61,3 +61,10 @@ The first admin is also created from the browser. "No HTTP setup endpoint exists
 - `GET /api/v1/setup` reports whether the setup is required. `POST /api/v1/setup` creates the first user, an admin, with the token, and starts its session. Another token is 403 `setup_token_invalid`; an existing user is 409 `setup_complete`. The creation locks `identity_user`, so two requests yield one admin.
 - `equori user create` keeps working.
 
+## Amendment of 2026-10-27 (ADR 024, design 2026-10-26 X5-X13)
+
+Personal access tokens open the MCP endpoint, and only it:
+
+- `identity_access_token` holds `id`, `user_id`, `name`, `scope` (`read` or `write`), the SHA-256 `token_hash`, `created_at`, `expires_at` and `last_used_at`. The token text is `eqt_` and 32 random bytes in unpadded base32; the API shows it once, in the answer of `createAccessToken`.
+- Expiry is chosen at creation: 30, 90 or 365 days. `last_used_at` is written at most once a minute per token. Deleting a token takes effect on the next request.
+- `/mcp` accepts only `Authorization: Bearer <token>`; a token in the query string is never read; the session cookie is not accepted there, and a token is not accepted on `/api/`.

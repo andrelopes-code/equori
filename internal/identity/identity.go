@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andrelopes-code/equori/internal/identity/internal/adapter/httpapi"
@@ -25,7 +26,18 @@ const (
 	RoleMember = string(domain.RoleMember)
 )
 
-var ErrEmailTaken = app.ErrEmailTaken
+var (
+	ErrEmailTaken = app.ErrEmailTaken
+	// ErrInvalidAccessToken is a malformed, unknown, expired or deleted access token.
+	ErrInvalidAccessToken = app.ErrInvalidAccessToken
+)
+
+// AccessGrant is what a valid personal access token allows: one user's tools under a scope (design 2026-10-26 X12).
+type AccessGrant struct {
+	TokenID uuid.UUID
+	UserID  int64
+	Scope   string
+}
 
 type User struct {
 	ID    int64
@@ -69,6 +81,15 @@ func (m *Module) Tools() tool.Group {
 }
 
 func (m *Module) RequireSession(next http.Handler) http.Handler { return m.http.RequireSession(next) }
+
+// VerifyAccessToken returns the grant of a valid personal access token, or ErrInvalidAccessToken.
+func (m *Module) VerifyAccessToken(ctx context.Context, token string) (AccessGrant, error) {
+	t, err := m.svc.VerifyAccessToken(ctx, token)
+	if err != nil {
+		return AccessGrant{}, err
+	}
+	return AccessGrant{TokenID: t.ID, UserID: t.UserID, Scope: t.Scope}, nil
+}
 
 func (m *Module) CreateUser(ctx context.Context, email, password, role string, l locale.Locale, baseCurrency money.Currency) (User, error) {
 	u, err := m.svc.CreateUser(ctx, email, password, domain.Role(role), l, baseCurrency)

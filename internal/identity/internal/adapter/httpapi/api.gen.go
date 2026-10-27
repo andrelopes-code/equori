@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/oapi-codegen/runtime"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // Defines values for UserRole.
@@ -32,6 +33,34 @@ func (e UserRole) Valid() bool {
 	default:
 		return false
 	}
+}
+
+// AccessToken defines model for AccessToken.
+type AccessToken struct {
+	CreatedAt  time.Time          `json:"created_at"`
+	ExpiresAt  time.Time          `json:"expires_at"`
+	Id         openapi_types.UUID `json:"id"`
+	LastUsedAt *time.Time         `json:"last_used_at,omitempty"`
+	Name       string             `json:"name"`
+	Scope      string             `json:"scope"`
+
+	// Token Present only in the answer of createAccessToken.
+	Token *string `json:"token,omitempty"`
+}
+
+// AccessTokenInput defines model for AccessTokenInput.
+type AccessTokenInput struct {
+	// ExpiresInDays 30, 90 or 365.
+	ExpiresInDays int    `json:"expires_in_days"`
+	Name          string `json:"name"`
+
+	// Scope read lists and calls only the read tools; write every tool of the chat set.
+	Scope string `json:"scope"`
+}
+
+// AccessTokenList defines model for AccessTokenList.
+type AccessTokenList struct {
+	Items []AccessToken `json:"items"`
 }
 
 // Credentials defines model for Credentials.
@@ -110,6 +139,9 @@ type User struct {
 // UserRole defines model for User.Role.
 type UserRole string
 
+// ID defines model for ID.
+type ID = openapi_types.UUID
+
 // SessionCookie defines model for SessionCookie.
 type SessionCookie = string
 
@@ -120,6 +152,9 @@ type TagName = string
 type DeleteSessionParams struct {
 	EquoriSession *SessionCookie `form:"equori_session,omitempty" json:"equori_session,omitempty"`
 }
+
+// CreateAccessTokenJSONRequestBody defines body for CreateAccessToken for application/json ContentType.
+type CreateAccessTokenJSONRequestBody = AccessTokenInput
 
 // UpdateCurrentUserJSONRequestBody defines body for UpdateCurrentUser for application/json ContentType.
 type UpdateCurrentUserJSONRequestBody = UpdateUserInput
@@ -132,6 +167,15 @@ type CompleteSetupJSONRequestBody = SetupInput
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// ListAccessTokens The user's personal access tokens for MCP, newest first, without their text.
+	// (GET /access-tokens)
+	ListAccessTokens(w http.ResponseWriter, r *http.Request)
+	// CreateAccessToken Create a personal access token that opens /mcp only; the answer holds its text once.
+	// (POST /access-tokens)
+	CreateAccessToken(w http.ResponseWriter, r *http.Request)
+	// DeleteAccessToken Delete a personal access token; it stops working at once.
+	// (DELETE /access-tokens/{id})
+	DeleteAccessToken(w http.ResponseWriter, r *http.Request, id ID)
 	// GetCurrentUser Return the authenticated user.
 	// (GET /me)
 	GetCurrentUser(w http.ResponseWriter, r *http.Request)
@@ -160,6 +204,60 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// ListAccessTokens operation middleware
+func (siw *ServerInterfaceWrapper) ListAccessTokens(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListAccessTokens(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateAccessToken operation middleware
+func (siw *ServerInterfaceWrapper) CreateAccessToken(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateAccessToken(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteAccessToken operation middleware
+func (siw *ServerInterfaceWrapper) DeleteAccessToken(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteAccessToken(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // GetCurrentUser operation middleware
 func (siw *ServerInterfaceWrapper) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
@@ -392,11 +490,149 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/setup", wrapper.CompleteSetup)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/me", wrapper.GetCurrentUser)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/me", wrapper.UpdateCurrentUser)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/access-tokens", wrapper.ListAccessTokens)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/access-tokens", wrapper.CreateAccessToken)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/access-tokens/{id}", wrapper.DeleteAccessToken)
 
 	return m
 }
 
 type ProblemApplicationProblemPlusJSONResponse Problem
+
+type ListAccessTokensRequestObject struct {
+}
+
+type ListAccessTokensResponseObject interface {
+	VisitListAccessTokensResponse(w http.ResponseWriter) error
+}
+
+type ListAccessTokens200JSONResponse AccessTokenList
+
+func (response ListAccessTokens200JSONResponse) VisitListAccessTokensResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListAccessTokens401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListAccessTokens401ApplicationProblemPlusJSONResponse) VisitListAccessTokensResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateAccessTokenRequestObject struct {
+	Body *CreateAccessTokenJSONRequestBody
+}
+
+type CreateAccessTokenResponseObject interface {
+	VisitCreateAccessTokenResponse(w http.ResponseWriter) error
+}
+
+type CreateAccessToken201JSONResponse AccessToken
+
+func (response CreateAccessToken201JSONResponse) VisitCreateAccessTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateAccessToken401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateAccessToken401ApplicationProblemPlusJSONResponse) VisitCreateAccessTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateAccessToken422ApplicationProblemPlusJSONResponse Problem
+
+func (response CreateAccessToken422ApplicationProblemPlusJSONResponse) VisitCreateAccessTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteAccessTokenRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type DeleteAccessTokenResponseObject interface {
+	VisitDeleteAccessTokenResponse(w http.ResponseWriter) error
+}
+
+type DeleteAccessToken204Response struct {
+}
+
+func (response DeleteAccessToken204Response) VisitDeleteAccessTokenResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteAccessToken401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeleteAccessToken401ApplicationProblemPlusJSONResponse) VisitDeleteAccessTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteAccessToken404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeleteAccessToken404ApplicationProblemPlusJSONResponse) VisitDeleteAccessTokenResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
 
 type GetCurrentUserRequestObject struct {
 }
@@ -764,6 +1000,15 @@ func (response CompleteSetup503ApplicationProblemPlusJSONResponse) VisitComplete
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// ListAccessTokens The user's personal access tokens for MCP, newest first, without their text.
+	// (GET /access-tokens)
+	ListAccessTokens(ctx context.Context, request ListAccessTokensRequestObject) (ListAccessTokensResponseObject, error)
+	// CreateAccessToken Create a personal access token that opens /mcp only; the answer holds its text once.
+	// (POST /access-tokens)
+	CreateAccessToken(ctx context.Context, request CreateAccessTokenRequestObject) (CreateAccessTokenResponseObject, error)
+	// DeleteAccessToken Delete a personal access token; it stops working at once.
+	// (DELETE /access-tokens/{id})
+	DeleteAccessToken(ctx context.Context, request DeleteAccessTokenRequestObject) (DeleteAccessTokenResponseObject, error)
 	// GetCurrentUser Return the authenticated user.
 	// (GET /me)
 	GetCurrentUser(ctx context.Context, request GetCurrentUserRequestObject) (GetCurrentUserResponseObject, error)
@@ -821,6 +1066,87 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// ListAccessTokens operation middleware
+func (sh *strictHandler) ListAccessTokens(w http.ResponseWriter, r *http.Request) {
+	var request ListAccessTokensRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListAccessTokens(ctx, request.(ListAccessTokensRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListAccessTokens")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListAccessTokensResponseObject); ok {
+		if err := validResponse.VisitListAccessTokensResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateAccessToken operation middleware
+func (sh *strictHandler) CreateAccessToken(w http.ResponseWriter, r *http.Request) {
+	var request CreateAccessTokenRequestObject
+
+	var body CreateAccessTokenJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateAccessToken(ctx, request.(CreateAccessTokenRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateAccessToken")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateAccessTokenResponseObject); ok {
+		if err := validResponse.VisitCreateAccessTokenResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteAccessToken operation middleware
+func (sh *strictHandler) DeleteAccessToken(w http.ResponseWriter, r *http.Request, id ID) {
+	var request DeleteAccessTokenRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteAccessToken(ctx, request.(DeleteAccessTokenRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteAccessToken")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteAccessTokenResponseObject); ok {
+		if err := validResponse.VisitDeleteAccessTokenResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // GetCurrentUser operation middleware

@@ -36,6 +36,7 @@ type Repository interface {
 	UserBySession(ctx context.Context, tokenHash []byte, now time.Time) (domain.User, error)
 	DeleteSession(ctx context.Context, tokenHash []byte) error
 	DeleteExpiredSessions(ctx context.Context, now time.Time) error
+	AccessTokenRepository
 }
 
 const (

@@ -4,6 +4,9 @@ package server_test
 // exclusion (ADR 012 T14). A new operation fails TestToolExposure until it has an entry.
 var exposure = map[string]string{
 	"createSession":                    "-session",
+	"listAccessTokens":                 "-secret",
+	"createAccessToken":                "-secret",
+	"deleteAccessToken":                "-secret",
 	"getSetup":                         "-session",
 	"completeSetup":                    "-session",
 	"listPresets":                      "-llm",

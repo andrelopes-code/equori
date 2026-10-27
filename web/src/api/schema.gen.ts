@@ -64,6 +64,45 @@ export interface paths {
         patch: operations["updateCurrentUser"];
         trace?: never;
     };
+    "/access-tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The user's personal access tokens for MCP, newest first, without their text. */
+        get: operations["listAccessTokens"];
+        put?: never;
+        /**
+         * Create a personal access token that opens /mcp only; the answer holds its text once.
+         * @description 422 validation_failed when the name is empty or over 80 characters, the scope is not read or
+         *     write, or expires_in_days is not 30, 90 or 365.
+         */
+        post: operations["createAccessToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/access-tokens/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a personal access token; it stops working at once. */
+        delete: operations["deleteAccessToken"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/settings": {
         parameters: {
             query?: never;
@@ -5205,6 +5244,30 @@ export interface components {
             email: string;
             password: string;
         };
+        AccessTokenInput: {
+            name: string;
+            /** @description read lists and calls only the read tools; write every tool of the chat set. */
+            scope: string;
+            /** @description 30, 90 or 365. */
+            expires_in_days: number;
+        };
+        AccessToken: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            scope: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** Format: date-time */
+            last_used_at?: string;
+            /** @description Present only in the answer of createAccessToken. */
+            token?: string;
+        };
+        AccessTokenList: {
+            items: components["schemas"]["AccessToken"][];
+        };
         User: {
             /** Format: int64 */
             id: number;
@@ -5437,6 +5500,75 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    listAccessTokens: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessTokenList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    createAccessToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccessTokenInput"];
+            };
+        };
+        responses: {
+            /** @description Created; token is shown only here. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessToken"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    deleteAccessToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
         };
     };
     getSettings: {

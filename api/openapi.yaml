@@ -160,6 +160,58 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /access-tokens:
+    get:
+      tags: [identity]
+      operationId: listAccessTokens
+      summary: The user's personal access tokens for MCP, newest first, without their text.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessTokenList"
+        "401":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [identity]
+      operationId: createAccessToken
+      summary: Create a personal access token that opens /mcp only; the answer holds its text once.
+      description: |
+        422 validation_failed when the name is empty or over 80 characters, the scope is not read or
+        write, or expires_in_days is not 30, 90 or 365.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccessTokenInput"
+      responses:
+        "201":
+          description: Created; token is shown only here.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessToken"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /access-tokens/{id}:
+    delete:
+      tags: [identity]
+      operationId: deleteAccessToken
+      summary: Delete a personal access token; it stops working at once.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
   /settings:
     get:
       tags: [ledger]
@@ -9358,6 +9410,50 @@ components:
           type: string
         password:
           type: string
+    AccessTokenInput:
+      type: object
+      additionalProperties: false
+      required: [name, scope, expires_in_days]
+      properties:
+        name:
+          type: string
+        scope:
+          type: string
+          description: read lists and calls only the read tools; write every tool of the chat set.
+        expires_in_days:
+          type: integer
+          description: 30, 90 or 365.
+    AccessToken:
+      type: object
+      required: [id, name, scope, created_at, expires_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        scope:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        last_used_at:
+          type: string
+          format: date-time
+        token:
+          type: string
+          description: Present only in the answer of createAccessToken.
+    AccessTokenList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccessToken"
     User:
       type: object
       required: [id, email, role, language, region]

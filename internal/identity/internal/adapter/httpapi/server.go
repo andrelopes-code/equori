@@ -208,6 +208,8 @@ func ToProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusForbidden, "setup_token_invalid", "the setup token is not the one this instance issued"), true
 	case errors.Is(err, app.ErrSetupComplete):
 		return problem.New(http.StatusConflict, "setup_complete", "the first user exists; sign in instead"), true
+	case errors.Is(err, app.ErrAccessTokenNotFound):
+		return problem.New(http.StatusNotFound, "access_token_not_found", "no access token of the user has this ID"), true
 	case errors.Is(err, app.ErrBusy):
 		return problem.New(http.StatusServiceUnavailable, "server_busy", "server is busy; retry shortly"), true
 	}
