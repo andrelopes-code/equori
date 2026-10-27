@@ -6,6 +6,6 @@ import (
 	"github.com/andrelopes-code/equori/internal/reporting/internal/app"
 )
 
-func Tools(svc *app.Service) []tool.Tool {
-	return []tool.Tool{getCategoryTotals(svc), getAccountHistory(svc)}
+func Tools(svc *app.Service, clk app.Clock) []tool.Tool {
+	return []tool.Tool{getCategoryTotals(svc), getAccountHistory(svc), getFinancialIndicators(svc, clk)}
 }

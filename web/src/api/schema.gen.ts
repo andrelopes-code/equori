@@ -1036,6 +1036,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/reports/indicators": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Savings rate, liquidity, committed share, debt service share and liabilities of a month and the 11 months before it, cash view (analytics design 4). */
+        get: operations["getIndicators"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/calendars": {
         parameters: {
             query?: never;
@@ -1062,6 +1079,40 @@ export interface paths {
         };
         /** Non-business days of a calendar in a year, weekends excluded. */
         get: operations["listHolidays"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/indexes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The enabled indexes with at least one stored rate, in the order of EQUORI_INDEX_FEEDS. */
+        get: operations["listIndexes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/indexes/{id}/rates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The stored rates of an enabled index in [from, to], at most 7,320 days, oldest first. */
+        get: operations["listIndexRates"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4055,6 +4106,36 @@ export interface components {
         HolidayList: {
             items: components["schemas"]["Holiday"][];
         };
+        Index: {
+            id: string;
+            /**
+             * @description The span one rate covers.
+             * @enum {string}
+             */
+            period: "day" | "month";
+            /** Format: date */
+            first: string;
+            /** Format: date */
+            last: string;
+        };
+        IndexList: {
+            items: components["schemas"]["Index"][];
+        };
+        IndexRate: {
+            /**
+             * Format: date
+             * @description The date the rate is published for; the first day of the month for a monthly index.
+             */
+            date: string;
+            /**
+             * @description Exact decimal fraction, negative when the index fell (0.0042 is 0.42%).
+             * @example 0.004200000000
+             */
+            rate: string;
+        };
+        IndexRateList: {
+            items: components["schemas"]["IndexRate"][];
+        };
         /** @enum {string} */
         InstrumentType: "currency" | "stock" | "etf" | "reit" | "depositary_receipt" | "fixed_income" | "fund" | "crypto";
         Instrument: {
@@ -4254,6 +4335,8 @@ export interface components {
             closed_on?: string;
             system_role?: string;
             card?: components["schemas"]["CardSummary"];
+            /** @description Leaves the account out of the liquidity indicator (analytics design 4.3). */
+            excluded_from_liquidity?: boolean;
         };
         AccountList: {
             items: components["schemas"]["Account"][];
@@ -4268,6 +4351,37 @@ export interface components {
             institution_id?: string;
             /** @enum {string} */
             yield_mode?: "none" | "auto";
+            /** @description Leaves the account out of the liquidity indicator (analytics design 4.3). */
+            excluded_from_liquidity?: boolean;
+        };
+        Indicators: {
+            /** @description The base currency of every amount. */
+            currency: string;
+            /** @description Oldest first; the last entry is the month asked. */
+            months: components["schemas"]["IndicatorMonth"][];
+        };
+        IndicatorMonth: {
+            month: string;
+            income: components["schemas"]["Money"];
+            expense: components["schemas"]["Money"];
+            committed: components["schemas"]["Money"];
+            debt_service: components["schemas"]["Money"];
+            liquid_balance: components["schemas"]["Money"];
+            liabilities: components["schemas"]["Money"];
+            mean_income?: components["schemas"]["Money"];
+            mean_expense?: components["schemas"]["Money"];
+            savings_rate: components["schemas"]["IndicatorRatio"];
+            trailing_savings_rate: components["schemas"]["IndicatorRatio"];
+            liquidity: components["schemas"]["IndicatorRatio"];
+            committed_share: components["schemas"]["IndicatorRatio"];
+            debt_service_share: components["schemas"]["IndicatorRatio"];
+        };
+        /** @description Either bp, in basis points truncated toward zero, or the reason there is no value. */
+        IndicatorRatio: {
+            /** Format: int64 */
+            bp?: number;
+            /** @enum {string} */
+            reason?: "no_income" | "no_expense" | "insufficient_history";
         };
         CategoryTotals: {
             items: components["schemas"]["CategoryTotal"][];
@@ -6933,6 +7047,31 @@ export interface operations {
             404: components["responses"]["Problem"];
         };
     };
+    getIndicators: {
+        parameters: {
+            query: {
+                month: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Indicators"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
     listCalendars: {
         parameters: {
             query?: never;
@@ -6979,6 +7118,58 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+        };
+    };
+    listIndexes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndexList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    listIndexRates: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndexRateList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     listInstruments: {

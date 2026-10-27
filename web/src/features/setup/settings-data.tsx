@@ -24,6 +24,7 @@ import {
   useImportArchive,
   useRequestExport,
 } from "@/features/setup/api";
+import { SettingsGroup } from "@/features/setup/settings-group";
 import { SettingsSection } from "@/features/setup/settings-section";
 import { formatFileSize } from "@/features/transactions";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -82,121 +83,123 @@ export function SettingsData() {
       title={t("settings.data.title")}
       description={t("settings.data.description")}
     >
-      <Stack gap={5}>
-        {current.isError ? (
-          <QueryError
-            error={current.error}
-            onRetry={() => void current.refetch()}
-          />
-        ) : current.isPending || hasTransactions.isPending ? (
-          <SkeletonText lines={4} />
-        ) : (
-          <List variant="ruled" aria-label={t("settings.data.title")}>
-            <ListItem>
-              <ListItemContent>
-                <ListItemBody>
-                  <ListItemLabel>{t("export.label")}</ListItemLabel>
-                  <ListItemDescription>{status()}</ListItemDescription>
-                </ListItemBody>
-              </ListItemContent>
-              <ListItemActions>
-                {current.data?.status === "ready" && (
-                  <ButtonLink
-                    size="sm"
-                    variant="outline"
-                    tone="secondary"
-                    href={exportContentURL}
-                    download
-                  >
-                    {t("export.download")}
-                  </ButtonLink>
-                )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  tone="secondary"
-                  loading={
-                    request.isPending || current.data?.status === "pending"
-                  }
-                  onClick={() => {
-                    setMessage(null);
-                    request.mutateAsync().catch((caught: unknown) => {
-                      setMessage({
-                        tone: "danger",
-                        text: errorText(caught, t),
-                      });
-                    });
-                  }}
-                >
-                  {t("export.request")}
-                </Button>
-              </ListItemActions>
-            </ListItem>
-            <ListItem>
-              <ListItemContent>
-                <ListItemBody>
-                  <ListItemLabel>{t("import.label")}</ListItemLabel>
-                  <ListItemDescription>
-                    {hasTransactions.data === true
-                      ? t("import.blocked")
-                      : t("import.description")}
-                  </ListItemDescription>
-                </ListItemBody>
-              </ListItemContent>
-              {hasTransactions.data === false && (
+      <SettingsGroup>
+        <Stack gap={5}>
+          {current.isError ? (
+            <QueryError
+              error={current.error}
+              onRetry={() => void current.refetch()}
+            />
+          ) : current.isPending || hasTransactions.isPending ? (
+            <SkeletonText lines={4} />
+          ) : (
+            <List variant="ruled" aria-label={t("settings.data.title")}>
+              <ListItem>
+                <ListItemContent>
+                  <ListItemBody>
+                    <ListItemLabel>{t("export.label")}</ListItemLabel>
+                    <ListItemDescription>{status()}</ListItemDescription>
+                  </ListItemBody>
+                </ListItemContent>
                 <ListItemActions>
-                  <VisuallyHidden>
-                    <input
-                      ref={input}
-                      type="file"
-                      accept="application/zip,.zip"
-                      aria-label={t("import.choose")}
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        event.target.value = "";
-                        if (file === undefined) return;
-                        setMessage(null);
-                        importing
-                          .mutateAsync(file)
-                          .then((result) => {
-                            setMessage({
-                              tone: "success",
-                              text: t("import.done", {
-                                rows: result.tables.reduce(
-                                  (sum, table) => sum + table.rows,
-                                  0,
-                                ),
-                                version: result.archive_version,
-                              }),
-                            });
-                          })
-                          .catch((caught: unknown) => {
-                            setMessage({
-                              tone: "danger",
-                              text: importError(caught),
-                            });
-                          });
-                      }}
-                    />
-                  </VisuallyHidden>
+                  {current.data?.status === "ready" && (
+                    <ButtonLink
+                      size="sm"
+                      variant="outline"
+                      tone="secondary"
+                      href={exportContentURL}
+                      download
+                    >
+                      {t("export.download")}
+                    </ButtonLink>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"
                     tone="secondary"
-                    loading={importing.isPending}
-                    onClick={() => input.current?.click()}
+                    loading={
+                      request.isPending || current.data?.status === "pending"
+                    }
+                    onClick={() => {
+                      setMessage(null);
+                      request.mutateAsync().catch((caught: unknown) => {
+                        setMessage({
+                          tone: "danger",
+                          text: errorText(caught, t),
+                        });
+                      });
+                    }}
                   >
-                    {t("import.choose")}
+                    {t("export.request")}
                   </Button>
                 </ListItemActions>
-              )}
-            </ListItem>
-          </List>
-        )}
-        {message !== null && (
-          <InlineMessage tone={message.tone}>{message.text}</InlineMessage>
-        )}
-      </Stack>
+              </ListItem>
+              <ListItem>
+                <ListItemContent>
+                  <ListItemBody>
+                    <ListItemLabel>{t("import.label")}</ListItemLabel>
+                    <ListItemDescription>
+                      {hasTransactions.data === true
+                        ? t("import.blocked")
+                        : t("import.description")}
+                    </ListItemDescription>
+                  </ListItemBody>
+                </ListItemContent>
+                {hasTransactions.data === false && (
+                  <ListItemActions>
+                    <VisuallyHidden>
+                      <input
+                        ref={input}
+                        type="file"
+                        accept="application/zip,.zip"
+                        aria-label={t("import.choose")}
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          event.target.value = "";
+                          if (file === undefined) return;
+                          setMessage(null);
+                          importing
+                            .mutateAsync(file)
+                            .then((result) => {
+                              setMessage({
+                                tone: "success",
+                                text: t("import.done", {
+                                  rows: result.tables.reduce(
+                                    (sum, table) => sum + table.rows,
+                                    0,
+                                  ),
+                                  version: result.archive_version,
+                                }),
+                              });
+                            })
+                            .catch((caught: unknown) => {
+                              setMessage({
+                                tone: "danger",
+                                text: importError(caught),
+                              });
+                            });
+                        }}
+                      />
+                    </VisuallyHidden>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      tone="secondary"
+                      loading={importing.isPending}
+                      onClick={() => input.current?.click()}
+                    >
+                      {t("import.choose")}
+                    </Button>
+                  </ListItemActions>
+                )}
+              </ListItem>
+            </List>
+          )}
+          {message !== null && (
+            <InlineMessage tone={message.tone}>{message.text}</InlineMessage>
+          )}
+        </Stack>
+      </SettingsGroup>
     </SettingsSection>
   );
 }

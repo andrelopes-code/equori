@@ -39,6 +39,7 @@ function api(region = "DE") {
             { id: "weekend", weekend: ["saturday", "sunday"] },
           ],
         }),
+      "GET /api/v1/calendars/weekend/holidays": () => json(200, { items: [] }),
       "GET /api/v1/calendars/gulf/holidays": (req) => {
         const year = new URL(req.url).searchParams.get("year") ?? "";
         years.push(year);
@@ -55,7 +56,7 @@ function section() {
 
 describe("Calendars section", () => {
   it("lists the region's calendar first with its weekend days named by the locale", async () => {
-    await renderApp("/settings", { fetch: api().fetch });
+    await renderApp("/settings?section=calendars", { fetch: api().fetch });
     const list = await within(section()).findByRole("list", {
       name: catalogEn["calendar.title"],
     });
@@ -70,9 +71,30 @@ describe("Calendars section", () => {
     expect(section()).not.toHaveTextContent(/br_banking|Brazil|Brasil|dias/i);
   });
 
+  it("says what a calendar is for and shows the region's calendar until another is chosen", async () => {
+    await renderApp("/settings?section=calendars", { fetch: api().fetch });
+    expect(
+      await within(section()).findByText(catalogEn["calendar.purpose"]),
+    ).toBeVisible();
+    expect(
+      await within(section()).findByText(
+        "No holidays in 2026. Only weekends are not business days.",
+      ),
+    ).toBeVisible();
+    const list = within(section()).getByRole("list", {
+      name: catalogEn["calendar.title"],
+    });
+    expect(within(list).getAllByRole("listitem")[0]).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+  });
+
   it("lists the holidays of the chosen calendar by month with their source", async () => {
     const { fetch, years } = api();
-    const { router } = await renderApp("/settings", { fetch });
+    const { router } = await renderApp("/settings?section=calendars", {
+      fetch,
+    });
     await userEvent.click(
       await within(section()).findByRole("link", { name: /gulf/ }),
     );
@@ -93,7 +115,10 @@ describe("Calendars section", () => {
 
   it("steps the year and says so when only weekends are not business days", async () => {
     const { fetch, years } = api();
-    const { router } = await renderApp("/settings?calendar=gulf", { fetch });
+    const { router } = await renderApp(
+      "/settings?section=calendars&calendar=gulf",
+      { fetch },
+    );
     await screen.findByText("Spring Day");
     await userEvent.click(
       screen.getByRole("button", { name: catalogEn["calendar.year.next"] }),
@@ -118,7 +143,9 @@ describe("Calendars section", () => {
 
   it("reopens the same view from the address", async () => {
     const { fetch, years } = api();
-    await renderApp("/settings?calendar=gulf&year=2026", { fetch });
+    await renderApp("/settings?section=calendars&calendar=gulf&year=2026", {
+      fetch,
+    });
     expect(await screen.findByText("Winter Day")).toBeInTheDocument();
     expect(years).toEqual(["2026"]);
   });

@@ -1,12 +1,11 @@
 @layer app {
-  /* Eight boxes on one row: each is the comfortable target wide and narrows on a phone, where eight
+  /* Every box on one row: each is the comfortable target wide and narrows on a phone, where eight
      of 44 px do not fit. At 390 px a box is 40 px, room for the 36 px of a swatch and its ring. */
   .swatches {
     display: grid;
-    grid-template-columns: repeat(
-      8,
-      minmax(0, var(--slotted-target-comfortable))
-    );
+    grid-auto-columns: minmax(0, var(--slotted-target-comfortable));
+    grid-auto-flow: column;
+    justify-content: start;
   }
 
   /* The ring stays inside the box, so it never covers a neighbour. */

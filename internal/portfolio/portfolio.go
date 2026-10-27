@@ -118,6 +118,12 @@ func (m *Module) accountNames(ctx context.Context, userID int64) (map[uuid.UUID]
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 
+// ValuedBalances values each account's own balance at the end of date in the base currency;
+// an account with a zero balance is absent. A missing price wraps ErrPriceMissing.
+func (m *Module) ValuedBalances(ctx context.Context, userID int64, date time.Time) (map[uuid.UUID]money.Money, error) {
+	return m.svc.BaseValues(ctx, userID, date)
+}
+
 type ledgerPort struct {
 	l  *ledger.Module
 	md *marketdata.Module

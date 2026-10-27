@@ -101,7 +101,7 @@ function section() {
 describe("Data section", () => {
   it("requests an export and offers the ready archive for download", async () => {
     const { fetch, sent } = api({ hasTransactions: true });
-    await renderApp("/settings", { fetch });
+    await renderApp("/settings?section=data", { fetch });
     expect(
       await within(section()).findByText(catalogEn["export.none"]),
     ).toBeInTheDocument();
@@ -130,7 +130,7 @@ describe("Data section", () => {
 
   it("imports an archive into books without transactions", async () => {
     const { fetch, sent } = api({ hasTransactions: false });
-    await renderApp("/settings", { fetch });
+    await renderApp("/settings?section=data", { fetch });
     const input = await within(section()).findByLabelText(
       catalogEn["import.choose"],
     );
@@ -152,7 +152,7 @@ describe("Data section", () => {
 
   it("names both versions of an archive written by a later version", async () => {
     const { fetch } = api({ hasTransactions: false, tooNew: true });
-    await renderApp("/settings", { fetch });
+    await renderApp("/settings?section=data", { fetch });
     const input = await within(section()).findByLabelText(
       catalogEn["import.choose"],
     );

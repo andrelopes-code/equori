@@ -5,7 +5,7 @@
   var scheme = "dark";
   try {
     var stored = localStorage.getItem("equori.scheme");
-    if (stored === "light") scheme = "light";
+    if (stored === "light" || stored === "high-contrast") scheme = stored;
     if (stored === "system") {
       scheme = matchMedia("(prefers-color-scheme: dark)").matches
         ? "dark"
@@ -17,5 +17,12 @@
   document.documentElement.setAttribute("data-slotted-scheme", scheme);
   document
     .querySelector('meta[name="theme-color"]')
-    .setAttribute("content", scheme === "light" ? "#f9fafe" : "#0c0c0f");
+    .setAttribute(
+      "content",
+      scheme === "dark"
+        ? "#0c0c0f"
+        : scheme === "light"
+          ? "#f9fafe"
+          : "#ffffff",
+    );
 })();

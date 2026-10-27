@@ -1,11 +1,5 @@
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldLabel,
-} from "@slotted/react/field";
-import { Link } from "@slotted/react/link";
-import { Text } from "@slotted/react/typography";
+import { ButtonLink } from "@slotted/react/button";
+import { Field, FieldError } from "@slotted/react/field";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
@@ -17,6 +11,8 @@ import {
   settingsQuery,
   useUpdateSettings,
 } from "@/features/setup/api";
+import { SettingsGroup } from "@/features/setup/settings-group";
+import { SettingsRow } from "@/features/setup/settings-row";
 import { SettingsSection } from "@/features/setup/settings-section";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
@@ -54,35 +50,49 @@ export function SettingsLedger() {
       title={t("settings.ledger.title")}
       description={t("settings.ledger.description")}
     >
-      <Field invalid={currencyError !== undefined}>
-        <FieldLabel>{t("settings.baseCurrency")}</FieldLabel>
-        <ChoiceSelect
+      <SettingsGroup>
+        <SettingsRow
           label={t("settings.baseCurrency")}
-          choices={currencyChoices}
-          value={settings.data?.base_currency ?? null}
-          multiple={false}
-          readOnly={locked || update.isPending}
-          invalid={currencyError !== undefined}
-          onChange={(next) => {
-            if (typeof next === "string") {
-              update.mutate({ base_currency: next });
-            }
-          }}
-        />
-        <FieldDescription>
-          {locked
-            ? t("settings.baseCurrency.locked")
-            : t("settings.baseCurrency.help")}
-        </FieldDescription>
-        {currencyError !== undefined && (
-          <FieldError>{currencyError}</FieldError>
-        )}
-      </Field>
-      <Text size="sm">
-        <Link href="/instruments" onClick={follow({ to: "/instruments" })}>
-          {t("settings.ledger.instruments")}
-        </Link>
-      </Text>
+          description={
+            locked
+              ? t("settings.baseCurrency.locked")
+              : t("settings.baseCurrency.help")
+          }
+        >
+          <Field invalid={currencyError !== undefined}>
+            <ChoiceSelect
+              label={t("settings.baseCurrency")}
+              choices={currencyChoices}
+              value={settings.data?.base_currency ?? null}
+              multiple={false}
+              readOnly={locked || update.isPending}
+              invalid={currencyError !== undefined}
+              onChange={(next) => {
+                if (typeof next === "string") {
+                  update.mutate({ base_currency: next });
+                }
+              }}
+            />
+            {currencyError !== undefined && (
+              <FieldError>{currencyError}</FieldError>
+            )}
+          </Field>
+        </SettingsRow>
+        <SettingsRow
+          label={t("settings.ledger.instrumentsTitle")}
+          description={t("settings.ledger.instrumentsDescription")}
+        >
+          <ButtonLink
+            variant="outline"
+            tone="secondary"
+            fullWidth
+            href="/instruments"
+            onClick={follow({ to: "/instruments" })}
+          >
+            {t("settings.ledger.instruments")}
+          </ButtonLink>
+        </SettingsRow>
+      </SettingsGroup>
     </SettingsSection>
   );
 }

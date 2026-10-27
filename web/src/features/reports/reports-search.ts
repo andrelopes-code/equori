@@ -1,9 +1,10 @@
-export type ReportsTab = "net-worth" | "categories" | "flows";
+export type ReportsTab = "net-worth" | "categories" | "flows" | "indicators";
 
 export const reportsTabs: readonly ReportsTab[] = [
   "net-worth",
   "categories",
   "flows",
+  "indicators",
 ];
 
 export type NetWorthMonths = 6 | 12 | 24;
@@ -35,6 +36,8 @@ export interface ReportsSearch {
   by?: "month" | undefined;
   // The period before is read beside the period.
   compare?: true | undefined;
+  // YYYY-MM, the last month of the indicators tab; the current month when absent.
+  month?: string | undefined;
 }
 
 // A change to the address: a key set to undefined returns to its default.
@@ -72,5 +75,6 @@ export function validateReportsSearch(
     account: matching(raw.account, uuidPattern),
     by: raw.by === "month" ? "month" : undefined,
     compare: raw.compare === true || raw.compare === "true" ? true : undefined,
+    month: matching(raw.month, /^\d{4}-(0[1-9]|1[0-2])$/),
   };
 }

@@ -107,6 +107,15 @@ func (t toolLedger) BaseCurrency(ctx context.Context, userID int64) (money.Curre
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 
+// CommittedTotal is the committed amount of month (A57), in the base currency.
+func (m *Module) CommittedTotal(ctx context.Context, userID int64, month time.Time) (money.Money, error) {
+	c, err := m.svc.Committed(ctx, userID, month)
+	if err != nil {
+		return money.Money{}, err
+	}
+	return money.New(c.Total, c.Currency)
+}
+
 // Tick extends the occurrences of every schedule to the horizon (P7 amendment A53) and logs
 // each failure by schedule id.
 func (m *Module) Tick(ctx context.Context) {

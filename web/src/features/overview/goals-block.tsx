@@ -10,7 +10,7 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
 
-export function GoalsBlock() {
+export function GoalsBlock({ onHide }: { onHide?: (() => void) | undefined }) {
   const t = useT();
   const api = useApi();
   const fmt = useMoneyFormat();
@@ -49,6 +49,7 @@ export function GoalsBlock() {
         }));
   return (
     <OverviewBlock
+      onHide={onHide}
       title={t("overview.goals.title")}
       link={{ label: t("overview.goals.open"), options: { to: "/goals" } }}
       loading={loading && goals.error === null}

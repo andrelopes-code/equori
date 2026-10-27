@@ -351,8 +351,7 @@ export function ScheduleFormPage() {
                     <FieldDescription>
                       <Link
                         to="/settings"
-                        search={{ calendar }}
-                        hash="calendars"
+                        search={{ section: "calendars", calendar }}
                       >
                         {t("calendar.open")}
                       </Link>

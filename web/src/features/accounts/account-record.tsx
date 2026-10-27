@@ -147,8 +147,9 @@ export function AccountRecord({
   });
 
   // A phone reads the records under the tabs first, and the figures after them (mobile.md M2, M4).
+  // The figures belong to the activity tab: under another tab they would push its content below the fold.
   const compact = useMediaQuery(compactQuery);
-  const overview = (
+  const overview = shownTab === "activity" && (
     <>
       <AccountFigures account={account} scale={scale} />
       <BalanceChart

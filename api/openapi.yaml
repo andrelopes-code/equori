@@ -1754,6 +1754,31 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /reports/indicators:
+    get:
+      tags: [reporting]
+      operationId: getIndicators
+      summary: Savings rate, liquidity, committed share, debt service share and liabilities of a month and the 11 months before it, cash view (analytics design 4).
+      parameters:
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Indicators"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /calendars:
     get:
       tags: [marketdata]
@@ -1798,6 +1823,62 @@ paths:
         "401":
           $ref: "#/components/responses/Problem"
         "404":
+          $ref: "#/components/responses/Problem"
+  /indexes:
+    get:
+      tags: [marketdata]
+      operationId: listIndexes
+      summary: The enabled indexes with at least one stored rate, in the order of EQUORI_INDEX_FEEDS.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IndexList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /indexes/{id}/rates:
+    get:
+      tags: [marketdata]
+      operationId: listIndexRates
+      summary: The stored rates of an enabled index in [from, to], at most 7,320 days, oldest first.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IndexRateList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
           $ref: "#/components/responses/Problem"
   /instruments:
     get:
@@ -7058,6 +7139,52 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Holiday"
+    Index:
+      type: object
+      additionalProperties: false
+      required: [id, period, first, last]
+      properties:
+        id:
+          type: string
+        period:
+          type: string
+          enum: [day, month]
+          description: The span one rate covers.
+        first:
+          type: string
+          format: date
+        last:
+          type: string
+          format: date
+    IndexList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Index"
+    IndexRate:
+      type: object
+      additionalProperties: false
+      required: [date, rate]
+      properties:
+        date:
+          type: string
+          format: date
+          description: The date the rate is published for; the first day of the month for a monthly index.
+        rate:
+          type: string
+          description: Exact decimal fraction, negative when the index fell (0.0042 is 0.42%).
+          example: "0.004200000000"
+    IndexRateList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/IndexRate"
     InstrumentType:
       type: string
       enum: [currency, stock, etf, reit, depositary_receipt, fixed_income, fund, crypto]
@@ -7467,6 +7594,9 @@ components:
               type: string
             card:
               $ref: "#/components/schemas/CardSummary"
+            excluded_from_liquidity:
+              type: boolean
+              description: Leaves the account out of the liquidity indicator (analytics design 4.3).
     AccountList:
       type: object
       required: [items]
@@ -7495,6 +7625,67 @@ components:
         yield_mode:
           type: string
           enum: [none, auto]
+        excluded_from_liquidity:
+          type: boolean
+          description: Leaves the account out of the liquidity indicator (analytics design 4.3).
+    Indicators:
+      type: object
+      required: [currency, months]
+      properties:
+        currency:
+          type: string
+          description: The base currency of every amount.
+        months:
+          type: array
+          minItems: 12
+          maxItems: 12
+          description: Oldest first; the last entry is the month asked.
+          items:
+            $ref: "#/components/schemas/IndicatorMonth"
+    IndicatorMonth:
+      type: object
+      required: [month, income, expense, committed, debt_service, liquid_balance, liabilities, savings_rate, trailing_savings_rate, liquidity, committed_share, debt_service_share]
+      properties:
+        month:
+          type: string
+          pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+        income:
+          $ref: "#/components/schemas/Money"
+        expense:
+          $ref: "#/components/schemas/Money"
+        committed:
+          $ref: "#/components/schemas/Money"
+        debt_service:
+          $ref: "#/components/schemas/Money"
+        liquid_balance:
+          $ref: "#/components/schemas/Money"
+        liabilities:
+          $ref: "#/components/schemas/Money"
+        mean_income:
+          $ref: "#/components/schemas/Money"
+        mean_expense:
+          $ref: "#/components/schemas/Money"
+        savings_rate:
+          $ref: "#/components/schemas/IndicatorRatio"
+        trailing_savings_rate:
+          $ref: "#/components/schemas/IndicatorRatio"
+        liquidity:
+          $ref: "#/components/schemas/IndicatorRatio"
+        committed_share:
+          $ref: "#/components/schemas/IndicatorRatio"
+        debt_service_share:
+          $ref: "#/components/schemas/IndicatorRatio"
+    IndicatorRatio:
+      type: object
+      additionalProperties: false
+      description: Either bp, in basis points truncated toward zero, or the reason there is no value.
+      properties:
+        bp:
+          type: integer
+          format: int64
+        reason:
+          type: string
+          enum: [no_income, no_expense, insufficient_history]
     CategoryTotals:
       type: object
       required: [items]

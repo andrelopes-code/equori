@@ -127,6 +127,9 @@ export const accountsEn = {
   "accountForm.yield": "Yields automatically",
   "accountForm.yieldHint":
     "When the institution reports a higher balance, the difference is recorded as yield.",
+  "accountForm.excludeFromLiquidity": "Leave out of the reserve",
+  "accountForm.excludeFromLiquidityHint":
+    "The reserve indicator stops counting this balance, for money that cannot be withdrawn at once.",
   "accountForm.color": "Colour",
   "accountForm.colorHint":
     "Drawn behind the account's initials when its institution has no logo.",

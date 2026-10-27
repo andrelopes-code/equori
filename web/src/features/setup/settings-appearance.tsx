@@ -1,50 +1,92 @@
+import { Button } from "@slotted/react/button";
+import { ColorField } from "@slotted/react/color-picker";
+import { Field, FieldLabel } from "@slotted/react/field";
 import { Switch } from "@slotted/react/switch";
 
-import { AccentSwatches } from "@/features/setup/accent-swatches";
+import { AppearancePreview } from "@/features/setup/appearance-preview";
+import { CustomTypefaceField } from "@/features/setup/custom-typeface-field";
 import { CornersPreview } from "@/features/setup/corners-preview";
 import { DensityPreview } from "@/features/setup/density-preview";
 import { SchemePreview } from "@/features/setup/scheme-preview";
-import { SettingsSection } from "@/features/setup/settings-section";
+import { SeedSwatches } from "@/features/setup/seed-swatches";
+import { SettingsGroup } from "@/features/setup/settings-group";
 import styles from "@/features/setup/settings-page.module.css";
+import { SettingsRow } from "@/features/setup/settings-row";
+import { SettingsSection } from "@/features/setup/settings-section";
+import { TextSizeSlider } from "@/features/setup/text-size-slider";
+import { TypefacePreview } from "@/features/setup/typeface-preview";
 import { useT } from "@/i18n/i18n-provider";
+import { accentSeed, accentSeeds, accents, useAccent } from "@/theme/accent";
+import type { AccentPreset } from "@/theme/accent";
+import { resetAppearance } from "@/theme/appearance";
 import { cornerStyles, useCorners } from "@/theme/corners";
-import type { Corners } from "@/theme/corners";
 import { densities, useDensity } from "@/theme/density";
-import type { Density } from "@/theme/density";
-import { useScheme } from "@/theme/scheme";
-import type { Scheme } from "@/theme/scheme";
+import { useMotion } from "@/theme/motion";
+import { schemes, useScheme } from "@/theme/scheme";
+import { toneSeed, toneSeeds, tones, useTone } from "@/theme/tone";
+import { typefaces, useTypeface } from "@/theme/typeface";
 import { useVisual } from "@/theme/visual";
 import { ChoiceCards } from "@/ui/choice-cards";
 
-const schemes: readonly Scheme[] = ["dark", "light", "system"];
-
-function isScheme(value: string): value is Scheme {
-  return (schemes as readonly string[]).includes(value);
+function oneOf<T extends string>(
+  values: readonly T[],
+  value: string,
+): value is T {
+  return (values as readonly string[]).includes(value);
 }
 
-function isDensity(value: string): value is Density {
-  return (densities as readonly string[]).includes(value);
-}
-
-function isCorners(value: string): value is Corners {
-  return (cornerStyles as readonly string[]).includes(value);
-}
+const hexColor = /^#[0-9a-f]{6}$/;
 
 export function SettingsAppearance() {
   const t = useT();
   const [scheme, setScheme] = useScheme();
-  const [density, setDensity] = useDensity();
+  const [accent, setAccent] = useAccent();
+  const [tone, setTone] = useTone();
   const [corners, setCorners] = useCorners();
+  const [density, setDensity] = useDensity();
+  const [typeface, setTypeface] = useTypeface();
+  const [motion, setMotion] = useMotion();
   const [visual, setVisual] = useVisual();
+
+  // A colour typed or picked that equals a preset is that preset, so its swatch reads as chosen.
+  const pickAccent = (value: string) => {
+    const hex = value.toLowerCase();
+    if (!hexColor.test(hex)) return;
+    const preset = accents.find((a) => accentSeeds[a] === hex);
+    setAccent(preset ?? (hex as `#${string}`));
+  };
+  const pickTone = (value: string) => {
+    const hex = value.toLowerCase();
+    if (!hexColor.test(hex)) return;
+    const preset = tones.find((s) => toneSeeds[s] === hex);
+    setTone(preset ?? (hex as `#${string}`));
+  };
+
   return (
     <SettingsSection
       topic="appearance"
       title={t("settings.appearance.title")}
-      description={t("settings.browserOnly")}
+      description={t("settings.summary.appearance")}
+      local
     >
-      <div className={styles.groups}>
-        <div className={styles.choice}>
-          <h3 className={styles.legend}>{t("more.scheme")}</h3>
+      <SettingsGroup
+        title={t("settings.preview")}
+        description={t("settings.preview.description")}
+        footer={
+          <Button variant="ghost" tone="secondary" onClick={resetAppearance}>
+            {t("settings.appearance.reset")}
+          </Button>
+        }
+      >
+        <AppearancePreview />
+      </SettingsGroup>
+
+      <SettingsGroup title={t("settings.appearance.theme")}>
+        <SettingsRow
+          label={t("more.scheme")}
+          description={t("settings.scheme.description")}
+          stacked
+        >
           <ChoiceCards
             name="scheme"
             label={t("more.scheme")}
@@ -55,17 +97,75 @@ export function SettingsAppearance() {
               preview: <SchemePreview scheme={s} />,
             }))}
             onChange={(next) => {
-              if (isScheme(next)) setScheme(next);
+              if (oneOf(schemes, next)) setScheme(next);
             }}
           />
-        </div>
-        <div className={styles.choice}>
-          <h3 className={styles.legend}>{t("settings.accent")}</h3>
-          <p className={styles.hint}>{t("settings.accent.description")}</p>
-          <AccentSwatches label={t("settings.accent")} />
-        </div>
-        <div className={styles.choice}>
-          <h3 className={styles.legend}>{t("settings.corners")}</h3>
+        </SettingsRow>
+      </SettingsGroup>
+
+      <SettingsGroup title={t("settings.appearance.colour")}>
+        <SettingsRow
+          label={t("settings.accent")}
+          description={t("settings.accent.description")}
+          stacked
+        >
+          <SeedSwatches<AccentPreset>
+            name="accent"
+            label={t("settings.accent")}
+            value={accent}
+            choices={accents.map((a) => ({
+              value: a,
+              label: t(`accent.${a}`),
+              color: accentSeeds[a],
+            }))}
+            onChange={setAccent}
+          />
+          <Field className={styles.customAccent}>
+            <FieldLabel>{t("settings.accent.custom")}</FieldLabel>
+            <ColorField
+              value={accentSeed(accent)}
+              format="hex"
+              alpha={false}
+              presets={accents.map((a) => accentSeeds[a])}
+              onValueChange={pickAccent}
+            />
+          </Field>
+        </SettingsRow>
+        <SettingsRow
+          label={t("settings.tone")}
+          description={t("settings.tone.description")}
+          stacked
+        >
+          <SeedSwatches
+            name="tone"
+            label={t("settings.tone")}
+            value={tone}
+            choices={tones.map((s) => ({
+              value: s,
+              label: t(`tone.${s}`),
+              color: toneSeeds[s],
+            }))}
+            onChange={setTone}
+          />
+          <Field className={styles.customAccent}>
+            <FieldLabel>{t("settings.tone.custom")}</FieldLabel>
+            <ColorField
+              value={toneSeed(tone)}
+              format="hex"
+              alpha={false}
+              presets={tones.map((s) => toneSeeds[s])}
+              onValueChange={pickTone}
+            />
+          </Field>
+        </SettingsRow>
+      </SettingsGroup>
+
+      <SettingsGroup title={t("settings.appearance.shape")}>
+        <SettingsRow
+          label={t("settings.corners")}
+          description={t("settings.corners.description")}
+          stacked
+        >
           <ChoiceCards
             name="corners"
             label={t("settings.corners")}
@@ -76,12 +176,15 @@ export function SettingsAppearance() {
               preview: <CornersPreview corners={c} />,
             }))}
             onChange={(next) => {
-              if (isCorners(next)) setCorners(next);
+              if (oneOf(cornerStyles, next)) setCorners(next);
             }}
           />
-        </div>
-        <div className={styles.choice}>
-          <h3 className={styles.legend}>{t("more.density")}</h3>
+        </SettingsRow>
+        <SettingsRow
+          label={t("more.density")}
+          description={t("settings.density.description")}
+          stacked
+        >
           <ChoiceCards
             name="density"
             label={t("more.density")}
@@ -92,24 +195,64 @@ export function SettingsAppearance() {
               preview: <DensityPreview density={d} />,
             }))}
             onChange={(next) => {
-              if (isDensity(next)) setDensity(next);
+              if (oneOf(densities, next)) setDensity(next);
             }}
           />
-        </div>
-        <div className={styles.choice}>
-          <h3 className={styles.legend}>{t("settings.experimental.title")}</h3>
-          <Switch
-            labelPlacement="start"
-            checked={visual === "glass"}
-            onCheckedChange={(on) => {
-              setVisual(on ? "glass" : "standard");
+        </SettingsRow>
+      </SettingsGroup>
+
+      <SettingsGroup title={t("settings.appearance.text")}>
+        <SettingsRow
+          label={t("settings.textSize")}
+          description={t("settings.textSize.description")}
+          stacked
+        >
+          <TextSizeSlider />
+        </SettingsRow>
+        <SettingsRow
+          label={t("settings.typeface")}
+          description={t("settings.typeface.description")}
+          stacked
+        >
+          <ChoiceCards
+            name="typeface"
+            label={t("settings.typeface")}
+            value={typeface}
+            choices={typefaces.map((f) => ({
+              value: f,
+              label: t(`typeface.${f}`),
+              preview: <TypefacePreview typeface={f} />,
+            }))}
+            onChange={(next) => {
+              if (oneOf(typefaces, next)) setTypeface(next);
             }}
-            description={t("settings.experimental.glassDescription")}
-          >
-            {t("settings.experimental.glass")}
-          </Switch>
-        </div>
-      </div>
+          />
+          <CustomTypefaceField />
+        </SettingsRow>
+      </SettingsGroup>
+
+      <SettingsGroup title={t("settings.appearance.motion")}>
+        <Switch
+          labelPlacement="start"
+          checked={motion === "reduced"}
+          onCheckedChange={(on) => {
+            setMotion(on ? "reduced" : "system");
+          }}
+          description={t("settings.motion.description")}
+        >
+          {t("settings.motion")}
+        </Switch>
+        <Switch
+          labelPlacement="start"
+          checked={visual === "glass"}
+          onCheckedChange={(on) => {
+            setVisual(on ? "glass" : "standard");
+          }}
+          description={t("settings.experimental.glassDescription")}
+        >
+          {t("settings.experimental.glass")}
+        </Switch>
+      </SettingsGroup>
     </SettingsSection>
   );
 }

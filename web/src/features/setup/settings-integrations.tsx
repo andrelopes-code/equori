@@ -24,6 +24,7 @@ import {
 import type { Integration } from "@/features/setup/api";
 import { IntegrationDeleteDialog } from "@/features/setup/integration-delete-dialog";
 import { IntegrationDialog } from "@/features/setup/integration-dialog";
+import { SettingsGroup } from "@/features/setup/settings-group";
 import { SettingsSection } from "@/features/setup/settings-section";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -58,81 +59,83 @@ export function SettingsIntegrations() {
       title={t("settings.integrations.title")}
       description={t("settings.integrations.description")}
     >
-      <Stack gap={5}>
-        {failure !== null && (
-          <InlineMessage tone="danger">{errorText(failure, t)}</InlineMessage>
-        )}
-        {integrations.isPending ? (
-          <SkeletonText lines={3} />
-        ) : (
-          <List variant="ruled" aria-label={t("settings.integrations.title")}>
-            {(integrations.data ?? []).length === 0 && (
-              <ListEmpty>{t("settings.integrations.empty")}</ListEmpty>
-            )}
-            {(integrations.data ?? []).map((integration) => (
-              <ListItem key={integration.id}>
-                <ListItemContent>
-                  <ListItemBody>
-                    <ListItemLabel>{integration.name}</ListItemLabel>
-                    <ListItemDescription>
-                      {[
-                        names.get(integration.aggregator) ??
-                          integration.aggregator,
-                        t("settings.integrations.updated", {
-                          date: formatDate(
-                            integration.updated_at.slice(0, 10),
-                            locale,
-                          ),
-                        }),
-                        t("settings.integrations.connections", {
-                          count: new Intl.NumberFormat(locale).format(
-                            count(integration.id),
-                          ),
-                        }),
-                      ].join(" · ")}
-                    </ListItemDescription>
-                  </ListItemBody>
-                </ListItemContent>
-                <ListItemActions>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    tone="secondary"
-                    onClick={() => {
-                      setOpen({ kind: "rotate", integration });
-                    }}
-                  >
-                    {t("settings.integrations.rotate")}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    tone="danger"
-                    onClick={() => {
-                      setOpen({ kind: "delete", integration });
-                    }}
-                  >
-                    {t("settings.integrations.delete")}
-                  </Button>
-                </ListItemActions>
-              </ListItem>
-            ))}
-          </List>
-        )}
-        <div>
-          <Button
-            size="sm"
-            variant="outline"
-            tone="secondary"
-            disabled={(aggregators.data ?? []).length === 0}
-            onClick={() => {
-              setOpen({ kind: "create" });
-            }}
-          >
-            {t("settings.integrations.add")}
-          </Button>
-        </div>
-      </Stack>
+      <SettingsGroup>
+        <Stack gap={5}>
+          {failure !== null && (
+            <InlineMessage tone="danger">{errorText(failure, t)}</InlineMessage>
+          )}
+          {integrations.isPending ? (
+            <SkeletonText lines={3} />
+          ) : (
+            <List variant="ruled" aria-label={t("settings.integrations.title")}>
+              {(integrations.data ?? []).length === 0 && (
+                <ListEmpty>{t("settings.integrations.empty")}</ListEmpty>
+              )}
+              {(integrations.data ?? []).map((integration) => (
+                <ListItem key={integration.id}>
+                  <ListItemContent>
+                    <ListItemBody>
+                      <ListItemLabel>{integration.name}</ListItemLabel>
+                      <ListItemDescription>
+                        {[
+                          names.get(integration.aggregator) ??
+                            integration.aggregator,
+                          t("settings.integrations.updated", {
+                            date: formatDate(
+                              integration.updated_at.slice(0, 10),
+                              locale,
+                            ),
+                          }),
+                          t("settings.integrations.connections", {
+                            count: new Intl.NumberFormat(locale).format(
+                              count(integration.id),
+                            ),
+                          }),
+                        ].join(" · ")}
+                      </ListItemDescription>
+                    </ListItemBody>
+                  </ListItemContent>
+                  <ListItemActions>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      tone="secondary"
+                      onClick={() => {
+                        setOpen({ kind: "rotate", integration });
+                      }}
+                    >
+                      {t("settings.integrations.rotate")}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      tone="danger"
+                      onClick={() => {
+                        setOpen({ kind: "delete", integration });
+                      }}
+                    >
+                      {t("settings.integrations.delete")}
+                    </Button>
+                  </ListItemActions>
+                </ListItem>
+              ))}
+            </List>
+          )}
+          <div>
+            <Button
+              size="sm"
+              variant="outline"
+              tone="secondary"
+              disabled={(aggregators.data ?? []).length === 0}
+              onClick={() => {
+                setOpen({ kind: "create" });
+              }}
+            >
+              {t("settings.integrations.add")}
+            </Button>
+          </div>
+        </Stack>
+      </SettingsGroup>
       {open?.kind === "create" && (
         <IntegrationDialog
           aggregators={aggregators.data ?? []}

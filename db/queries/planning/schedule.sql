@@ -1,6 +1,6 @@
 -- name: InsertSchedule :one
-INSERT INTO planning_schedule (user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, generated_until, calendar)
-VALUES (@user_id, @kind, @account_id, @counterpart_id, sqlc.narg(payee_id), @description, @currency, @match_tolerance_bp, @grace_days, @generated_until, @calendar)
+INSERT INTO planning_schedule (user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, generated_until, calendar, created_at)
+VALUES (@user_id, @kind, @account_id, @counterpart_id, sqlc.narg(payee_id), @description, @currency, @match_tolerance_bp, @grace_days, @generated_until, @calendar, @created_at)
 RETURNING *;
 
 -- name: InsertTerms :exec

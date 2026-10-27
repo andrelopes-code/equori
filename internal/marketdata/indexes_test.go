@@ -109,15 +109,6 @@ func TestIndexFeeds(t *testing.T) {
 	t.Cleanup(srv.Close)
 	h := apitest.New(t, apitest.Today("2026-01-09"), apitest.IndexFeeds([]string{"br_cdi", "br_ipca"}, indexURLs(srv)))
 
-	// No security follows an index: nothing is fetched.
-	h.App.Marketdata.TickFeeds(t.Context())
-	if got := s.take(); len(got) != 0 {
-		t.Fatalf("requests without terms = %v", got)
-	}
-
-	defineFixedIncome(t, h, "CDBXPTO")
-	h.MustDo(http.MethodPut, "/api/v1/instruments/CDBXPTO/terms", cdbTerms(), http.StatusOK, nil)
-
 	// A source that answers 503 is logged and fetched again on the next tick.
 	s.setFail(true)
 	h.App.Marketdata.TickFeeds(t.Context())
@@ -130,9 +121,15 @@ func TestIndexFeeds(t *testing.T) {
 	s.take()
 	s.setFail(false)
 
+	// An enabled index is fetched from 20 years before today, though no security follows it.
 	h.App.Marketdata.TickFeeds(t.Context())
-	got := s.take()
-	if len(got) != 1 || !strings.Contains(got[0], "bcdata.sgs.12/dados") || !strings.Contains(got[0], "dataInicial=02%2F01%2F2026") || !strings.Contains(got[0], "dataFinal=09%2F01%2F2026") {
+	var got []string
+	for _, r := range s.take() {
+		if strings.Contains(r, "bcdata.sgs.12/dados") {
+			got = append(got, r)
+		}
+	}
+	if len(got) != 5 || !strings.Contains(got[0], "dataInicial=09%2F01%2F2006") || !strings.Contains(got[4], "dataFinal=09%2F01%2F2026") {
 		t.Fatalf("requests = %v", got)
 	}
 	rates := indexRates(t, h, "cdi")
@@ -140,10 +137,13 @@ func TestIndexFeeds(t *testing.T) {
 		t.Fatalf("rates = %+v", rates)
 	}
 
-	// Everything up to today is stored: the next tick sends no request.
+	// Every CDI day up to today is stored: the next tick sends no CDI request. The IPCA's
+	// latest rate is of January 1, so its series is asked again from January 2.
 	h.App.Marketdata.TickFeeds(t.Context())
-	if got := s.take(); len(got) != 0 {
-		t.Fatalf("requests after a complete fetch = %v", got)
+	for _, r := range s.take() {
+		if strings.Contains(r, "bcdata.sgs.12/dados") {
+			t.Fatalf("CDI request after a complete fetch: %s", r)
+		}
 	}
 }
 

@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
+	"github.com/andrelopes-code/equori/internal/reporting/internal/app"
 )
 
 type exportView struct {
@@ -73,7 +74,7 @@ func export(t *testing.T, h *apitest.Harness) []byte {
 	h.Dispatch()
 	var done exportView
 	h.MustDo(http.MethodGet, "/api/v1/exports/current", nil, http.StatusOK, &done)
-	if done.Status != "ready" || done.ID != requested.ID || done.ArchiveVersion != 1 {
+	if done.Status != "ready" || done.ID != requested.ID || done.ArchiveVersion != app.ArchiveVersion {
 		t.Fatalf("export = %+v, requested %+v", done, requested)
 	}
 	r := h.Do(http.MethodGet, "/api/v1/exports/current/content", nil)
@@ -122,7 +123,7 @@ func TestExport(t *testing.T) {
 		t.Fatalf("manifest: %v", err)
 	}
 	// ADR 021, V1.
-	if m.Format != "equori-export" || m.FormatVersion != 1 || m.ArchiveVersion != 1 || m.AppVersion != "dev" || m.SchemaVersion == 0 {
+	if m.Format != "equori-export" || m.FormatVersion != 1 || m.ArchiveVersion != app.ArchiveVersion || m.AppVersion != "dev" || m.SchemaVersion == 0 {
 		t.Fatalf("manifest = %+v", m)
 	}
 	rows := map[string]int{}

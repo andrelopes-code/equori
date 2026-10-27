@@ -1,7 +1,7 @@
 import { seedStyle } from "@slotted/theme/seeds";
 import { useSyncExternalStore } from "react";
 
-export type Accent =
+export type AccentPreset =
   | "indigo"
   | "violet"
   | "pink"
@@ -11,9 +11,12 @@ export type Accent =
   | "cyan"
   | "blue";
 
+// A preset, or a colour the reader picked, written as #rrggbb.
+export type Accent = AccentPreset | `#${string}`;
+
 // The accent seed of each choice. Every accent token derives from it within the theme's contrast
 // bounds, so a choice keeps the ratios of every scheme. indigo is the seed of equori.theme.ts.
-export const accentSeeds: Readonly<Record<Accent, string>> = {
+export const accentSeeds: Readonly<Record<AccentPreset, string>> = {
   indigo: "#7c6cff",
   violet: "#a855f7",
   pink: "#ec4899",
@@ -24,21 +27,32 @@ export const accentSeeds: Readonly<Record<Accent, string>> = {
   blue: "#3b82f6",
 };
 
-export const accents = Object.keys(accentSeeds) as readonly Accent[];
+export const accents = Object.keys(accentSeeds) as readonly AccentPreset[];
 
 const STORAGE_KEY = "equori.accent";
-const DEFAULT_ACCENT: Accent = "indigo";
+export const defaultAccent: Accent = "indigo";
+
+function isPreset(value: unknown): value is AccentPreset {
+  return (accents as readonly unknown[]).includes(value);
+}
 
 function isAccent(value: unknown): value is Accent {
-  return (accents as readonly unknown[]).includes(value);
+  return (
+    isPreset(value) ||
+    (typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value))
+  );
+}
+
+export function accentSeed(accent: Accent): string {
+  return isPreset(accent) ? accentSeeds[accent] : accent;
 }
 
 export function readAccent(): Accent {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return isAccent(stored) ? stored : DEFAULT_ACCENT;
+    return isAccent(stored) ? stored : defaultAccent;
   } catch {
-    return DEFAULT_ACCENT;
+    return defaultAccent;
   }
 }
 
@@ -69,9 +83,9 @@ export function applyAccent(accent: Accent): void {
   }
   const root = document.documentElement.style;
   for (const [property, value] of Object.entries(
-    seedStyle({ accent: accentSeeds[accent] }),
+    seedStyle({ accent: accentSeed(accent) }),
   )) {
-    if (accent === DEFAULT_ACCENT) root.removeProperty(property);
+    if (accent === defaultAccent) root.removeProperty(property);
     else root.setProperty(property, value);
   }
   listeners.forEach((listener) => {

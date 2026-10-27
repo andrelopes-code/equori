@@ -30,20 +30,22 @@ type Source struct {
 	id     string
 	index  string
 	series int
+	period string
 }
 
 // CDI is the daily CDI rate (identifier br_cdi, index cdi).
 func CDI(hc *http.Client, base string) Source {
-	return Source{hc: hc, base: base, id: "br_cdi", index: "cdi", series: seriesCDI}
+	return Source{hc: hc, base: base, id: "br_cdi", index: "cdi", series: seriesCDI, period: index.PeriodDay}
 }
 
 // IPCA is the monthly IPCA variation (identifier br_ipca, index ipca).
 func IPCA(hc *http.Client, base string) Source {
-	return Source{hc: hc, base: base, id: "br_ipca", index: "ipca", series: seriesIPCA}
+	return Source{hc: hc, base: base, id: "br_ipca", index: "ipca", series: seriesIPCA, period: index.PeriodMonth}
 }
 
-func (s Source) ID() string    { return s.id }
-func (s Source) Index() string { return s.index }
+func (s Source) ID() string     { return s.id }
+func (s Source) Index() string  { return s.index }
+func (s Source) Period() string { return s.period }
 
 type item struct {
 	Date  string `json:"data"`

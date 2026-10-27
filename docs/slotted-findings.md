@@ -26,6 +26,7 @@ Registry of the findings reported to the Slotted owner (`web/CLAUDE.md`, "Slotte
 | AppShellFooter drops its ref when render is given                                                   | open     |
 | Autofill tint is painted on the input element, over the frame's border                              | open     |
 | ButtonLink render props cannot be spread onto a router link                                         | open     |
+| Chart data rejects rows typed as an interface                                                       | open     |
 | Closing a drawer to navigate is undone by the drawer's history step back                            | open     |
 | CommandPalette has no backdrop-filter token for a material surface                                  | open     |
 | currency-field holds the amount as a float in major units                                           | open     |
@@ -74,7 +75,7 @@ Registry of the findings reported to the Slotted owner (`web/CLAUDE.md`, "Slotte
 | A bottom sheet drags at a low frame rate and a fast downward fling ends without a continuous exit   | reported |
 | No runtime axis for the corner radius                                                               | open     |
 | A sticky table of contents has no inset under the page chrome                                       | open     |
-| A section divider on a surface stops at the inset                                                   | open     |
+| A section divider on a surface stops at the inset                                                   | reported |
 | The section anatomy does not say the description belongs inside the title                           | reported |
 | A soft key cap has no surface token of its own                                                      | open     |
 | A popup's positioner fade suppresses its content's backdrop blur until the fade ends                | open     |

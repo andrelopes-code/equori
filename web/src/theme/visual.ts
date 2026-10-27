@@ -8,7 +8,7 @@ import { useScheme } from "@/theme/scheme";
 export type Visual = "standard" | "glass";
 
 const STORAGE_KEY = "equori.visual";
-const DEFAULT_VISUAL: Visual = "standard";
+export const defaultVisual: Visual = "standard";
 
 const THEME: Readonly<Record<Visual, string>> = {
   standard: "equori",
@@ -22,9 +22,9 @@ function isVisual(value: unknown): value is Visual {
 export function readVisual(): Visual {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return isVisual(stored) ? stored : DEFAULT_VISUAL;
+    return isVisual(stored) ? stored : defaultVisual;
   } catch {
-    return DEFAULT_VISUAL;
+    return defaultVisual;
   }
 }
 
@@ -75,7 +75,7 @@ export function applyVisual(visual: Visual): void {
 // Puts the stored style on the page at start. The standard style is the page's own theme, so
 // there is nothing to do for it.
 export function restoreVisual(): void {
-  if (snapshot() !== DEFAULT_VISUAL) void showTheme(snapshot());
+  if (snapshot() !== defaultVisual) void showTheme(snapshot());
 }
 
 // Every reader sees the choice at once, so the settings page and the gradient never disagree.

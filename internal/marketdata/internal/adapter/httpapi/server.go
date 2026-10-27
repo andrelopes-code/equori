@@ -37,6 +37,8 @@ type Service interface {
 	RecordPrices(ctx context.Context, ps []domain.Price) error
 	ImportPrices(ctx context.Context, content []byte) (int, error)
 	ListPrices(ctx context.Context, instrument, quote money.Currency, from, to time.Time) ([]domain.Price, error)
+	Indexes(ctx context.Context) ([]domain.IndexSummary, error)
+	IndexRates(ctx context.Context, id string, from, to time.Time) ([]domain.IndexRate, error)
 }
 
 var _ StrictServerInterface = (*Server)(nil)
@@ -93,6 +95,8 @@ func ToProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusNotFound, "not_found", "unknown calendar"), true
 	case errors.Is(err, domain.ErrUnknownInstrument):
 		return problem.New(http.StatusNotFound, "not_found", "unknown instrument"), true
+	case errors.Is(err, domain.ErrUnknownIndex):
+		return problem.New(http.StatusNotFound, "not_found", "unknown index"), true
 	case errors.Is(err, domain.ErrNoTerms):
 		return problem.New(http.StatusNotFound, "not_found", "the instrument has no terms"), true
 	case errors.Is(err, domain.ErrInstrumentExists):

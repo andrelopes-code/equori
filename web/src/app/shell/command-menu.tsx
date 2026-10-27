@@ -20,10 +20,7 @@ import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
 import { languages } from "@/i18n/languages";
 import { usePrivacy } from "@/privacy/privacy-provider";
 import { densities, useDensity } from "@/theme/density";
-import { useScheme } from "@/theme/scheme";
-import type { Scheme } from "@/theme/scheme";
-
-const schemes: readonly Scheme[] = ["dark", "light", "system"];
+import { schemes, useScheme } from "@/theme/scheme";
 
 // The one palette of the application: every destination and every account action, opened by
 // Ctrl+K anywhere, by the column's search control and by the phone's search, through its

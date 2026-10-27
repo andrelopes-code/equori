@@ -72,9 +72,11 @@ function api(sent: Sent[], options: Options = {}) {
 }
 
 describe("settings page", () => {
+  // The region list holds every region of the catalogue, about 250 options, opened twice; naming
+  // them in jsdom takes most of the default timeout on a loaded machine.
   it("names the regions in the active locale and sends the chosen one", async () => {
     const sent: Sent[] = [];
-    await renderApp("/settings", {
+    await renderApp("/settings?section=language", {
       fetch: api(sent),
     });
     await userEvent.click(
@@ -96,11 +98,11 @@ describe("settings page", () => {
       });
     });
     expect(document.documentElement.lang).toBe("pt-PT");
-  });
+  }, 30_000);
 
   it("sends the base currency", async () => {
     const sent: Sent[] = [];
-    await renderApp("/settings", {
+    await renderApp("/settings?section=finances", {
       fetch: api(sent),
     });
     await userEvent.click(
@@ -117,7 +119,7 @@ describe("settings page", () => {
 
   it("shows the catalog message when transactions lock the currency", async () => {
     const sent: Sent[] = [];
-    await renderApp("/settings", {
+    await renderApp("/settings?section=finances", {
       fetch: api(sent, { put: () => problem(409, "settings_locked") }),
     });
     await userEvent.click(
@@ -160,7 +162,7 @@ describe("settings page", () => {
     });
 
     it("applies the chosen colour scheme and remembers it", async () => {
-      await renderApp("/settings", { fetch: api([]) });
+      await renderApp("/settings?section=appearance", { fetch: api([]) });
       const group = await screen.findByRole("radiogroup", {
         name: catalogPtBR["more.scheme"],
       });
@@ -181,7 +183,7 @@ describe("settings page", () => {
     });
 
     it("applies the chosen density and remembers it", async () => {
-      await renderApp("/settings", { fetch: api([]) });
+      await renderApp("/settings?section=appearance", { fetch: api([]) });
       const group = await screen.findByRole("radiogroup", {
         name: catalogPtBR["more.density"],
       });
@@ -198,7 +200,7 @@ describe("settings page", () => {
     });
 
     it("applies the chosen accent colour and remembers it", async () => {
-      await renderApp("/settings", { fetch: api([]) });
+      await renderApp("/settings?section=appearance", { fetch: api([]) });
       const group = await screen.findByRole("radiogroup", {
         name: catalogPtBR["settings.accent"],
       });
@@ -221,7 +223,7 @@ describe("settings page", () => {
     });
 
     it("applies the chosen corners and remembers them", async () => {
-      await renderApp("/settings", { fetch: api([]) });
+      await renderApp("/settings?section=appearance", { fetch: api([]) });
       const group = await screen.findByRole("radiogroup", {
         name: catalogPtBR["settings.corners"],
       });
@@ -235,21 +237,228 @@ describe("settings page", () => {
       ).toBe("16px");
       expect(localStorage.getItem("equori.corners")).toBe("round");
     });
+
+    it("applies the high contrast scheme and remembers it", async () => {
+      await renderApp("/settings?section=appearance", { fetch: api([]) });
+      const group = await screen.findByRole("radiogroup", {
+        name: catalogPtBR["more.scheme"],
+      });
+      await userEvent.click(
+        within(group).getByRole("radio", {
+          name: catalogPtBR["scheme.high-contrast"],
+        }),
+      );
+      expect(document.documentElement).toHaveAttribute(
+        "data-slotted-scheme",
+        "high-contrast",
+      );
+      expect(localStorage.getItem("equori.scheme")).toBe("high-contrast");
+    });
+
+    it("applies the chosen surface tone and remembers it", async () => {
+      await renderApp("/settings?section=appearance", { fetch: api([]) });
+      const group = await screen.findByRole("radiogroup", {
+        name: catalogPtBR["settings.tone"],
+      });
+      await userEvent.click(
+        within(group).getByRole("radio", { name: catalogPtBR["tone.stone"] }),
+      );
+      expect(
+        document.documentElement.style.getPropertyValue(
+          "--slotted-seed-neutral",
+        ),
+      ).toBe("#78716c");
+      expect(localStorage.getItem("equori.tone")).toBe("stone");
+    });
+
+    it("applies the chosen text size and remembers it", async () => {
+      await renderApp("/settings?section=appearance", { fetch: api([]) });
+      const slider = await screen.findByRole("slider", {
+        name: catalogPtBR["settings.textSize"],
+      });
+      slider.focus();
+      await userEvent.keyboard("{ArrowRight}{ArrowRight}{ArrowRight}");
+      await waitFor(() => {
+        expect(document.documentElement.style.fontSize).toBe("115%");
+      });
+      expect(localStorage.getItem("equori.textSize")).toBe("115");
+    });
+
+    it("uses a face installed on the device by its family name", async () => {
+      await renderApp("/settings?section=appearance", { fetch: api([]) });
+      const field = await screen.findByRole("textbox", {
+        name: catalogPtBR["settings.typeface.custom"],
+      });
+      await userEvent.type(field, "Fira Sans");
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: catalogPtBR["settings.typeface.use"],
+        }),
+      );
+      expect(
+        document.documentElement.style.getPropertyValue(
+          "--slotted-font-family-sans",
+        ),
+      ).toBe('"Fira Sans", system-ui, sans-serif');
+      expect(localStorage.getItem("equori.typeface")).toBe("custom:Fira Sans");
+    });
+
+    it("refuses a family name that could leave its string", async () => {
+      await renderApp("/settings?section=appearance", { fetch: api([]) });
+      await userEvent.type(
+        await screen.findByRole("textbox", {
+          name: catalogPtBR["settings.typeface.custom"],
+        }),
+        'x"; color: red',
+      );
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: catalogPtBR["settings.typeface.use"],
+        }),
+      );
+      expect(
+        screen.getByText(catalogPtBR["settings.typeface.invalid"]),
+      ).toBeVisible();
+      expect(localStorage.getItem("equori.typeface")).toBeNull();
+    });
+
+    it("applies the chosen typeface and remembers it", async () => {
+      await renderApp("/settings?section=appearance", { fetch: api([]) });
+      const group = await screen.findByRole("radiogroup", {
+        name: catalogPtBR["settings.typeface"],
+      });
+      await userEvent.click(
+        within(group).getByRole("radio", {
+          name: catalogPtBR["typeface.system"],
+        }),
+      );
+      expect(
+        document.documentElement.style.getPropertyValue(
+          "--slotted-font-family-sans",
+        ),
+      ).toBe("system-ui, sans-serif");
+      expect(localStorage.getItem("equori.typeface")).toBe("system");
+    });
+
+    it("shortens every transition when motion is reduced", async () => {
+      await renderApp("/settings?section=appearance", { fetch: api([]) });
+      await userEvent.click(
+        await screen.findByRole("switch", {
+          name: catalogPtBR["settings.motion"],
+        }),
+      );
+      expect(
+        document.documentElement.style.getPropertyValue(
+          "--slotted-duration-medium",
+        ),
+      ).toBe("1ms");
+      expect(localStorage.getItem("equori.motion")).toBe("reduced");
+    });
+
+    it("restores every choice to the default", async () => {
+      await renderApp("/settings?section=appearance", { fetch: api([]) });
+      const tones = await screen.findByRole("radiogroup", {
+        name: catalogPtBR["settings.tone"],
+      });
+      await userEvent.click(
+        within(tones).getByRole("radio", { name: catalogPtBR["tone.sage"] }),
+      );
+      screen
+        .getByRole("slider", { name: catalogPtBR["settings.textSize"] })
+        .focus();
+      await userEvent.keyboard("{ArrowRight}");
+      await waitFor(() => {
+        expect(document.documentElement.style.fontSize).toBe("105%");
+      });
+      await userEvent.click(
+        screen.getByRole("button", {
+          name: catalogPtBR["settings.appearance.reset"],
+        }),
+      );
+      expect(
+        within(tones).getByRole("radio", {
+          name: catalogPtBR["tone.graphite"],
+        }),
+      ).toBeChecked();
+      expect(
+        document.documentElement.style.getPropertyValue(
+          "--slotted-seed-neutral",
+        ),
+      ).toBe("");
+      expect(document.documentElement.style.fontSize).toBe("");
+      expect(localStorage.getItem("equori.textSize")).toBe("100");
+    });
   });
 
   describe("sections", () => {
-    // The family styles a description only inside the title part; outside it the text takes the
-    // browser's paragraph size and reads larger than the heading.
-    it("sets each description inside its section's title", async () => {
+    it("shows one pane at a time and switches it from the navigation", async () => {
       await renderApp("/settings", { fetch: api([]) });
-      await screen.findByText("a@b.c");
-      const descriptions = document.querySelectorAll(
-        '[data-ui="section"] > [data-part="header"] [data-part="description"]',
+      expect(
+        await screen.findByRole("heading", {
+          level: 2,
+          name: catalogPtBR["settings.account.title"],
+        }),
+      ).toBeVisible();
+      const contents = screen.getByRole("navigation", {
+        name: catalogPtBR["settings.contents"],
+      });
+      await userEvent.click(
+        within(contents).getByRole("link", {
+          name: catalogPtBR["settings.appearance.title"],
+        }),
       );
-      expect(descriptions.length).toBeGreaterThan(0);
-      for (const description of descriptions) {
-        expect(description.parentElement).toHaveAttribute("data-part", "title");
-      }
+      expect(
+        await screen.findByRole("heading", {
+          level: 2,
+          name: catalogPtBR["settings.appearance.title"],
+        }),
+      ).toBeVisible();
+      expect(
+        screen.queryByRole("heading", {
+          level: 2,
+          name: catalogPtBR["settings.account.title"],
+        }),
+      ).toBeNull();
+      expect(
+        within(contents).getByRole("link", {
+          name: catalogPtBR["settings.appearance.title"],
+        }),
+      ).toHaveAttribute("aria-current", "page");
+    });
+
+    it("lists the panes as an index on a phone and returns to it", async () => {
+      await renderApp("/settings", { fetch: api([]), width: 390 });
+      const contents = await screen.findByRole("navigation", {
+        name: catalogPtBR["settings.contents"],
+      });
+      expect(
+        within(contents).getByText(catalogPtBR["settings.summary.privacy"]),
+      ).toBeVisible();
+      expect(screen.queryByRole("heading", { level: 2 })).toBeNull();
+      await userEvent.click(
+        within(contents).getByRole("link", {
+          name: new RegExp(catalogPtBR["settings.privacy.title"]),
+        }),
+      );
+      expect(
+        await screen.findByRole("heading", {
+          level: 2,
+          name: catalogPtBR["settings.privacy.title"],
+        }),
+      ).toBeVisible();
+      expect(
+        screen.queryByRole("navigation", {
+          name: catalogPtBR["settings.contents"],
+        }),
+      ).toBeNull();
+      await userEvent.click(
+        screen.getByRole("link", { name: catalogPtBR["more.settings"] }),
+      );
+      expect(
+        await screen.findByRole("navigation", {
+          name: catalogPtBR["settings.contents"],
+        }),
+      ).toBeVisible();
     });
 
     it("lists every section in the page's contents", async () => {
@@ -281,7 +490,7 @@ describe("settings page", () => {
     });
 
     it("hides the amounts through a switch and remembers it", async () => {
-      await renderApp("/settings", { fetch: api([]) });
+      await renderApp("/settings?section=privacy", { fetch: api([]) });
       const toggle = await screen.findByRole("switch", {
         name: catalogPtBR["privacy.hide"],
       });
@@ -294,7 +503,7 @@ describe("settings page", () => {
 
   describe("format example", () => {
     it("writes the date and the number as the pt-BR locale does", async () => {
-      await renderApp("/settings", { fetch: api([]) });
+      await renderApp("/settings?section=language", { fetch: api([]) });
       const example = await screen.findByRole("group", {
         name: catalogPtBR["settings.language.example"],
       });
@@ -303,7 +512,7 @@ describe("settings page", () => {
     });
 
     it("writes the date and the number as the en-US locale does", async () => {
-      await renderApp("/settings", {
+      await renderApp("/settings?section=language", {
         fetch: api([], { language: "en", region: "US" }),
       });
       const example = await screen.findByRole("group", {
@@ -317,7 +526,7 @@ describe("settings page", () => {
   describe("base currency lock", () => {
     it("states why the currency cannot change once a transaction exists", async () => {
       const sent: Sent[] = [];
-      await renderApp("/settings", {
+      await renderApp("/settings?section=finances", {
         fetch: api(sent, { transactions: true }),
       });
       expect(
@@ -331,7 +540,7 @@ describe("settings page", () => {
     });
 
     it("states what the currency is for while it can still change", async () => {
-      await renderApp("/settings", { fetch: api([]) });
+      await renderApp("/settings?section=finances", { fetch: api([]) });
       expect(
         await screen.findByText(catalogPtBR["settings.baseCurrency.help"]),
       ).toBeVisible();

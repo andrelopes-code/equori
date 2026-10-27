@@ -1,9 +1,10 @@
 import styles from "@/features/setup/appearance-previews.module.css";
 import type { Scheme } from "@/theme/scheme";
 
-const layers: Record<Scheme, readonly ("light" | "dark")[]> = {
+const layers: Record<Scheme, readonly Exclude<Scheme, "system">[]> = {
   light: ["light"],
   dark: ["dark"],
+  "high-contrast": ["high-contrast"],
   system: ["light", "dark"],
 };
 

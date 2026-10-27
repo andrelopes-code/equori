@@ -41,6 +41,27 @@ func (e ExportStatus) Valid() bool {
 	}
 }
 
+// Defines values for IndicatorRatioReason.
+const (
+	InsufficientHistory IndicatorRatioReason = "insufficient_history"
+	NoExpense           IndicatorRatioReason = "no_expense"
+	NoIncome            IndicatorRatioReason = "no_income"
+)
+
+// Valid indicates whether the value is a known member of the IndicatorRatioReason enum.
+func (e IndicatorRatioReason) Valid() bool {
+	switch e {
+	case InsufficientHistory:
+		return true
+	case NoExpense:
+		return true
+	case NoIncome:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for GetBalanceSeriesParamsBasis.
 const (
 	Booked  GetBalanceSeriesParamsBasis = "booked"
@@ -194,6 +215,52 @@ type FlowDay struct {
 	Outflow Money              `json:"outflow"`
 }
 
+// IndicatorMonth defines model for IndicatorMonth.
+type IndicatorMonth struct {
+	Committed Money `json:"committed"`
+
+	// CommittedShare Either bp, in basis points truncated toward zero, or the reason there is no value.
+	CommittedShare IndicatorRatio `json:"committed_share"`
+	DebtService    Money          `json:"debt_service"`
+
+	// DebtServiceShare Either bp, in basis points truncated toward zero, or the reason there is no value.
+	DebtServiceShare IndicatorRatio `json:"debt_service_share"`
+	Expense          Money          `json:"expense"`
+	Income           Money          `json:"income"`
+	Liabilities      Money          `json:"liabilities"`
+	LiquidBalance    Money          `json:"liquid_balance"`
+
+	// Liquidity Either bp, in basis points truncated toward zero, or the reason there is no value.
+	Liquidity   IndicatorRatio `json:"liquidity"`
+	MeanExpense *Money         `json:"mean_expense,omitempty"`
+	MeanIncome  *Money         `json:"mean_income,omitempty"`
+	Month       string         `json:"month"`
+
+	// SavingsRate Either bp, in basis points truncated toward zero, or the reason there is no value.
+	SavingsRate IndicatorRatio `json:"savings_rate"`
+
+	// TrailingSavingsRate Either bp, in basis points truncated toward zero, or the reason there is no value.
+	TrailingSavingsRate IndicatorRatio `json:"trailing_savings_rate"`
+}
+
+// IndicatorRatio Either bp, in basis points truncated toward zero, or the reason there is no value.
+type IndicatorRatio struct {
+	Bp     *int64                `json:"bp,omitempty"`
+	Reason *IndicatorRatioReason `json:"reason,omitempty"`
+}
+
+// IndicatorRatioReason defines model for IndicatorRatio.Reason.
+type IndicatorRatioReason string
+
+// Indicators defines model for Indicators.
+type Indicators struct {
+	// Currency The base currency of every amount.
+	Currency string `json:"currency"`
+
+	// Months Oldest first; the last entry is the month asked.
+	Months []IndicatorMonth `json:"months"`
+}
+
 // Money defines model for Money.
 type Money struct {
 	// Amount Integer units of the instrument scale (ADR 005).
@@ -331,6 +398,11 @@ type GetAccountFlowsParams struct {
 	To        openapi_types.Date `form:"to" json:"to"`
 }
 
+// GetIndicatorsParams defines parameters for GetIndicators.
+type GetIndicatorsParams struct {
+	Month string `form:"month" json:"month"`
+}
+
 // ImportArchiveMultipartRequestBody defines body for ImportArchive for multipart/form-data ContentType.
 type ImportArchiveMultipartRequestBody ImportArchiveMultipartBody
 
@@ -363,6 +435,9 @@ type ServerInterface interface {
 	// GetAccountFlows Booked inflow and outflow of one account, one item per day in [from, to] that has a posting (A119).
 	// (GET /reports/flows)
 	GetAccountFlows(w http.ResponseWriter, r *http.Request, params GetAccountFlowsParams)
+	// GetIndicators Savings rate, liquidity, committed share, debt service share and liabilities of a month and the 11 months before it, cash view (analytics design 4).
+	// (GET /reports/indicators)
+	GetIndicators(w http.ResponseWriter, r *http.Request, params GetIndicatorsParams)
 	// GetStatementAnalytics A statement split into purchases, installments, charges and credits, per category (P9).
 	// (GET /statements/{id}/analytics)
 	GetStatementAnalytics(w http.ResponseWriter, r *http.Request, id ID)
@@ -717,6 +792,39 @@ func (siw *ServerInterfaceWrapper) GetAccountFlows(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
+// GetIndicators operation middleware
+func (siw *ServerInterfaceWrapper) GetIndicators(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetIndicatorsParams
+
+	// ------------- Required query parameter "month" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "month", r.URL.Query(), &params.Month, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "month"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "month", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetIndicators(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetStatementAnalytics operation middleware
 func (siw *ServerInterfaceWrapper) GetStatementAnalytics(w http.ResponseWriter, r *http.Request) {
 
@@ -873,6 +981,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/flows", wrapper.GetAccountFlows)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/categories", wrapper.GetCategoryTotals)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/categories/{id}/cash-payments", wrapper.ListCategoryCashPayments)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports/indicators", wrapper.GetIndicators)
 
 	return m
 }
@@ -1457,6 +1566,72 @@ func (response GetAccountFlows404ApplicationProblemPlusJSONResponse) VisitGetAcc
 	return err
 }
 
+type GetIndicatorsRequestObject struct {
+	Params GetIndicatorsParams
+}
+
+type GetIndicatorsResponseObject interface {
+	VisitGetIndicatorsResponse(w http.ResponseWriter) error
+}
+
+type GetIndicators200JSONResponse Indicators
+
+func (response GetIndicators200JSONResponse) VisitGetIndicatorsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetIndicators400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response GetIndicators400ApplicationProblemPlusJSONResponse) VisitGetIndicatorsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetIndicators401ApplicationProblemPlusJSONResponse Problem
+
+func (response GetIndicators401ApplicationProblemPlusJSONResponse) VisitGetIndicatorsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetIndicators422ApplicationProblemPlusJSONResponse Problem
+
+func (response GetIndicators422ApplicationProblemPlusJSONResponse) VisitGetIndicatorsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetStatementAnalyticsRequestObject struct {
 	Id ID `json:"id"`
 }
@@ -1538,6 +1713,9 @@ type StrictServerInterface interface {
 	// GetAccountFlows Booked inflow and outflow of one account, one item per day in [from, to] that has a posting (A119).
 	// (GET /reports/flows)
 	GetAccountFlows(ctx context.Context, request GetAccountFlowsRequestObject) (GetAccountFlowsResponseObject, error)
+	// GetIndicators Savings rate, liquidity, committed share, debt service share and liabilities of a month and the 11 months before it, cash view (analytics design 4).
+	// (GET /reports/indicators)
+	GetIndicators(ctx context.Context, request GetIndicatorsRequestObject) (GetIndicatorsResponseObject, error)
 	// GetStatementAnalytics A statement split into purchases, installments, charges and credits, per category (P9).
 	// (GET /statements/{id}/analytics)
 	GetStatementAnalytics(ctx context.Context, request GetStatementAnalyticsRequestObject) (GetStatementAnalyticsResponseObject, error)
@@ -1809,6 +1987,32 @@ func (sh *strictHandler) GetAccountFlows(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetAccountFlowsResponseObject); ok {
 		if err := validResponse.VisitGetAccountFlowsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetIndicators operation middleware
+func (sh *strictHandler) GetIndicators(w http.ResponseWriter, r *http.Request, params GetIndicatorsParams) {
+	var request GetIndicatorsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetIndicators(ctx, request.(GetIndicatorsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetIndicators")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetIndicatorsResponseObject); ok {
+		if err := validResponse.VisitGetIndicatorsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

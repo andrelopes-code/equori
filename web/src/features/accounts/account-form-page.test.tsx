@@ -280,6 +280,24 @@ describe("Edit account", () => {
     expect(sent).toEqual([{ route: "PATCH", body: { name: "Nubank PF" } }]);
   });
 
+  it("leaves the account out of the reserve", async () => {
+    const sent: Sent[] = [];
+    await renderApp(`/accounts/${checkingID}/edit`, { fetch: api(sent) });
+    const exclude = await screen.findByRole("switch", {
+      name: catalogEn["accountForm.excludeFromLiquidity"],
+    });
+    expect(exclude).not.toBeChecked();
+    await userEvent.click(exclude);
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["detail.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toEqual([
+        { route: "PATCH", body: { excluded_from_liquidity: true } },
+      ]);
+    });
+  });
+
   it("moves the account under a parent and states a refusal under the field", async () => {
     const sent: Sent[] = [];
     await renderApp(`/accounts/${checkingID}/edit`, { fetch: api(sent) });

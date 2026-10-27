@@ -23,10 +23,8 @@ import { isLanguage, languages } from "@/i18n/languages";
 import { usePrivacy } from "@/privacy/privacy-provider";
 import { densities, useDensity } from "@/theme/density";
 import type { Density } from "@/theme/density";
-import { useScheme } from "@/theme/scheme";
+import { schemes, useScheme } from "@/theme/scheme";
 import type { Scheme } from "@/theme/scheme";
-
-const schemes: readonly Scheme[] = ["dark", "light", "system"];
 
 function isScheme(value: string): value is Scheme {
   return (schemes as readonly string[]).includes(value);

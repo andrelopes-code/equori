@@ -57,6 +57,21 @@ WHERE p.user_id = @user_id AND NOT p.voided AND a.account_class IN ('expense', '
       AND qa.kind = 'credit_card' AND qa.instrument = st.base_currency AND q.card_role IN ('charge', 'credit'))
 GROUP BY p.account_id;
 
+-- name: CashOffCardMonthTotals :many
+-- CV1 per month: category postings in [from, to] of transactions without a card line.
+SELECT date_trunc('month', p.booked_on)::date AS month, p.account_id, sum(p.amount)::bigint AS total
+FROM ledger_posting p
+JOIN ledger_account a ON a.id = p.account_id
+WHERE p.user_id = @user_id AND NOT p.voided AND a.account_class IN ('expense', 'income')
+  AND p.booked_on BETWEEN @from_date::date AND @to_date::date
+  AND NOT EXISTS (
+    SELECT 1 FROM ledger_posting q
+    JOIN ledger_account qa ON qa.id = q.account_id
+    JOIN ledger_settings st ON st.user_id = q.user_id
+    WHERE q.transaction_id = p.transaction_id AND q.user_id = p.user_id AND NOT q.voided
+      AND qa.kind = 'credit_card' AND qa.instrument = st.base_currency AND q.card_role IN ('charge', 'credit'))
+GROUP BY 1, p.account_id;
+
 -- name: AnalyticsStatements :many
 -- The card's statements with the closing of the one before each, newest first.
 SELECT s.id, s.account_id, s.reference_month, s.closing_date, a.instrument,

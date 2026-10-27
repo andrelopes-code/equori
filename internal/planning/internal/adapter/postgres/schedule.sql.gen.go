@@ -92,8 +92,8 @@ func (q *Queries) InsertPause(ctx context.Context, arg InsertPauseParams) error 
 }
 
 const insertSchedule = `-- name: InsertSchedule :one
-INSERT INTO planning_schedule (user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, generated_until, calendar)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+INSERT INTO planning_schedule (user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, generated_until, calendar, created_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 RETURNING id, user_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar
 `
 
@@ -109,6 +109,7 @@ type InsertScheduleParams struct {
 	GraceDays        int32
 	GeneratedUntil   time.Time
 	Calendar         string
+	CreatedAt        time.Time
 }
 
 func (q *Queries) InsertSchedule(ctx context.Context, arg InsertScheduleParams) (PlanningSchedule, error) {
@@ -124,6 +125,7 @@ func (q *Queries) InsertSchedule(ctx context.Context, arg InsertScheduleParams) 
 		arg.GraceDays,
 		arg.GeneratedUntil,
 		arg.Calendar,
+		arg.CreatedAt,
 	)
 	var i PlanningSchedule
 	err := row.Scan(

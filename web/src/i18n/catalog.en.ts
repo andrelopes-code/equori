@@ -1,13 +1,17 @@
+import { calculatorsEn } from "@/i18n/catalog-calculators.en";
 import { accountsEn } from "@/i18n/catalog-accounts.en";
 import { instrumentsEn } from "@/i18n/catalog-instruments.en";
 import { portfolioEn } from "@/i18n/catalog-portfolio.en";
 import { reportsEn } from "@/i18n/catalog-reports.en";
+import { settingsEn } from "@/i18n/catalog-settings.en";
 
 export const catalogEn = {
+  ...calculatorsEn,
   ...accountsEn,
   ...instrumentsEn,
   ...portfolioEn,
   ...reportsEn,
+  ...settingsEn,
   "nav.home": "Home",
   "nav.label": "Main navigation",
   "nav.transactions": "Transactions",
@@ -56,7 +60,6 @@ export const catalogEn = {
   "settings.region": "Region",
   "settings.baseCurrency": "Base currency",
   "settings.subtitle": "Account, appearance and finances.",
-  "settings.browserOnly": "Kept in this browser only.",
   "settings.account.title": "Account",
   "settings.account.role.admin": "Administrator",
   "settings.account.role.member": "Member",
@@ -84,7 +87,6 @@ export const catalogEn = {
   "corners.soft": "Soft",
   "corners.standard": "Standard",
   "corners.round": "Round",
-  "settings.experimental.title": "Experimental",
   "settings.experimental.glass": "Glass surfaces and moving gradient",
   "settings.experimental.glassDescription":
     "Translucent surfaces over a soft, slowly moving gradient. Dark scheme only.",
@@ -808,6 +810,9 @@ export const catalogEn = {
   "category.kpi.previousToDate": "{amount} in {month}, up to day {day}",
   "category.chart.composition": "Composition of the month",
   "category.chart.trend": "Last six months",
+  "category.chart.amount": "Amount",
+  "category.chart.trendDescription":
+    "Select a group in the legend with Shift to show it alone on the baseline.",
   "category.refresh": "Refresh",
   "appearance.title": "Appearance",
   "appearance.color": "Colour",
@@ -1529,12 +1534,9 @@ export const catalogEn = {
   "calendar.br_banking": "Brazilian banking days",
   "calendar.weekend": "Weekends only",
   "calendar.title": "Calendars",
-  "calendar.description":
-    "Business-day calendars of this instance. A schedule uses one to move its due dates.",
   "calendar.regionMark": "Your region's calendar",
   "calendar.weekendDays": "Weekend: {days}",
   "calendar.holidaysOf": "Holidays of {name} in {year}",
-  "calendar.pick": "Select a calendar to see its holidays.",
   "calendar.year.previous": "Previous year",
   "calendar.year.next": "Next year",
   "calendar.source.rule": "Calendar rule",
@@ -1629,6 +1631,7 @@ export const catalogEn = {
   "budget.planned": "Planned",
   "budget.carried": "Carried",
   "budget.spent": "Spent",
+  "budget.spentTotal": "Spent {amount}",
   "budget.available": "Available",
   "budget.meter": "Spent of {name}",
   "budget.overspent": "Overspent",
@@ -1702,12 +1705,39 @@ export const catalogEn = {
   "overview.subtitle":
     "Where the money stands, what is coming and what needs a decision",
   "overview.attention.title": "Attention",
+  "overview.block.options": "Options for {block}",
+  "overview.block.hide": "Hide block",
+  "overview.block.showHidden": "Show hidden blocks ({count})",
   "overview.netWorth.title": "Net worth",
   "overview.netWorth.open": "Open net worth",
   "overview.netWorth.assets": "Assets",
   "overview.netWorth.liabilities": "Liabilities",
   "overview.netWorth.net": "Net",
   "overview.netWorth.figures": "Net worth figures",
+  "overview.indicators.title": "Indicators",
+  "overview.indicators.open": "Open indicators",
+  "overview.indicators.label": "Indicators of the month",
+  "overview.indicators.savings": "Savings rate",
+  "overview.indicators.reserve": "Reserve",
+  "overview.indicators.committed": "Committed income",
+  "overview.indicators.debt": "Debt payments",
+  "overview.indicators.months": "{months} months",
+  "overview.indicators.savingsNote":
+    "Income left after expenses this month, cash basis. 12-month mean: {mean}.",
+  "overview.indicators.savingsNoteShort":
+    "Income left after expenses this month, cash basis.",
+  "overview.indicators.reserveNote":
+    "{liquid} in checking, savings, cash, wallets and reserves against a mean monthly expense of {expense}.",
+  "overview.indicators.committedNote":
+    "{committed} of bills, subscriptions and installments this month against a mean monthly income of {income}.",
+  "overview.indicators.debtNote":
+    "{debt} of loan principal and interest this month against a mean monthly income of {income}.",
+  "overview.indicators.reason.no_income":
+    "No income was recorded in this period.",
+  "overview.indicators.reason.no_expense":
+    "No expense was recorded in the last 12 months.",
+  "overview.indicators.reason.insufficient_history":
+    "Needs at least 3 complete months of records.",
   "overview.netWorth.since": "{change} since {date}",
   "overview.flows.title": "Month flows",
   "overview.flows.open": "Open transactions",

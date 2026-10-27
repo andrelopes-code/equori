@@ -103,8 +103,9 @@ export function CardRecord({
   };
 
   // A phone reads the records under the tabs first, and the figures after them (mobile.md M2, M4).
+  // The figures belong to the statements tab: under another tab they would push its content below the fold.
   const compact = useMediaQuery(compactQuery);
-  const overview = (
+  const overview = shown === "statements" && (
     <>
       <CardFigures
         account={account}

@@ -105,7 +105,7 @@ async function section(title: string) {
 
 describe("integrations settings", () => {
   it("lists each integration with its aggregator, update and number of connections", async () => {
-    await renderApp("/settings", { fetch: api([]) });
+    await renderApp("/settings?section=integrations", { fetch: api([]) });
     const view = await section(pt["settings.integrations.title"]);
     const row = (await view.findByText("Personal")).closest("li");
     if (row === null) throw new Error("no row");
@@ -122,7 +122,7 @@ describe("integrations settings", () => {
 
   it("builds the credential fields from the aggregator and sends them without showing them again", async () => {
     const sent: Sent[] = [];
-    await renderApp("/settings", { fetch: api(sent) });
+    await renderApp("/settings?section=integrations", { fetch: api(sent) });
     const view = await section(pt["settings.integrations.title"]);
     await userEvent.click(
       await view.findByRole("button", {
@@ -168,7 +168,7 @@ describe("integrations settings", () => {
     ["aggregator_unavailable", 502],
     ["integration_unavailable", 409],
   ] as const)("keeps the dialog open on %s", async (code, status) => {
-    await renderApp("/settings", {
+    await renderApp("/settings?section=integrations", {
       fetch: api([], { create: () => problem(status, code) }),
     });
     const view = await section(pt["settings.integrations.title"]);
@@ -197,7 +197,7 @@ describe("integrations settings", () => {
   it("rotates the credentials and shows the refusal of the aggregator", async () => {
     const sent: Sent[] = [];
     let refuse = true;
-    await renderApp("/settings", {
+    await renderApp("/settings?section=integrations", {
       fetch: api(sent, {
         rotate: () =>
           refuse ? problem(422, "aggregator_unauthorized") : json(200, pluggy),
@@ -233,7 +233,7 @@ describe("integrations settings", () => {
   });
 
   it("names the connections that block a delete", async () => {
-    await renderApp("/settings", {
+    await renderApp("/settings?section=integrations", {
       fetch: api([], { remove: () => problem(409, "integration_in_use") }),
     });
     const view = await section(pt["settings.integrations.title"]);
@@ -258,7 +258,7 @@ describe("integrations settings", () => {
 
   it("deletes an integration and words the section in English for another region", async () => {
     const sent: Sent[] = [];
-    await renderApp("/settings", {
+    await renderApp("/settings?section=integrations", {
       fetch: api(sent, {
         locale: { language: "en", region: "DE", currency: "EUR" },
       }),

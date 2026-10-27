@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json/v2"
 	"errors"
 	"slices"
 	"strings"
@@ -50,5 +51,31 @@ func TestMigrateArchive(t *testing.T) {
 	}
 	if ArchiveVersion != len(archiveSteps)+1 {
 		t.Fatalf("ArchiveVersion = %d with %d steps", ArchiveVersion, len(archiveSteps))
+	}
+}
+
+// Analytics design 4.3, ADR 021 V3: version 1 rows of ledger_account gain excluded_from_liquidity false.
+func TestAddExcludedFromLiquidity(t *testing.T) {
+	t.Parallel()
+	v1 := []ArchiveTable{
+		{Name: "ledger_account", Rows: [][]byte{[]byte(`{"id":"a","name":"Checking"}`)}},
+		{Name: "ledger_payee", Rows: [][]byte{[]byte(`{"id":"b","name":"Market"}`)}},
+	}
+	got, err := addExcludedFromLiquidity(v1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var row map[string]any
+	if err := json.Unmarshal(got[0].Rows[0], &row); err != nil {
+		t.Fatal(err)
+	}
+	if row["excluded_from_liquidity"] != false || row["name"] != "Checking" || row["id"] != "a" {
+		t.Fatalf("ledger_account row = %s", got[0].Rows[0])
+	}
+	if string(got[1].Rows[0]) != `{"id":"b","name":"Market"}` {
+		t.Fatalf("ledger_payee row = %s", got[1].Rows[0])
+	}
+	if string(v1[0].Rows[0]) != `{"id":"a","name":"Checking"}` {
+		t.Fatalf("the step changed its input: %s", v1[0].Rows[0])
 	}
 }

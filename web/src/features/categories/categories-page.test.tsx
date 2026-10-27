@@ -458,10 +458,12 @@ describe("CategoriesPage", () => {
     });
     const trend = await chartOf(catalogEn["category.chart.trend"]);
     const composition = await chartOf(catalogEn["category.chart.composition"]);
-    for (const chart of [trend, composition]) {
-      expect(within(chart).getAllByText("Food").length).toBeGreaterThan(0);
-      expect(within(chart).getAllByText("Fun").length).toBeGreaterThan(0);
-    }
+    expect(within(trend).getAllByText("Food").length).toBeGreaterThan(0);
+    expect(within(trend).getAllByText("Fun").length).toBeGreaterThan(0);
+    // Analytics design 7: the composition ranks the groups as bars, each label with its share.
+    expect(composition.textContent).toContain(
+      "from Food · 75.00% to Fun · 25.00%",
+    );
     const froms = new Set(queries.map((q) => q.get("from")));
     for (const month of [
       "2026-05",

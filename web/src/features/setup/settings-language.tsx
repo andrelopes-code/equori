@@ -1,11 +1,11 @@
-import { Field, FieldLabel } from "@slotted/react/field";
 import { useMemo } from "react";
 
 import { useChooseLanguage } from "@/features/session";
 import { useChooseRegion } from "@/features/setup/api";
 import { SettingsExample } from "@/features/setup/settings-example";
+import { SettingsGroup } from "@/features/setup/settings-group";
+import { SettingsRow } from "@/features/setup/settings-row";
 import { SettingsSection } from "@/features/setup/settings-section";
-import styles from "@/features/setup/settings-page.module.css";
 import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
 import { languages } from "@/i18n/languages";
 import { regions } from "@/i18n/regions";
@@ -36,9 +36,11 @@ export function SettingsLanguage() {
       title={t("settings.language.title")}
       description={t("settings.language.description")}
     >
-      <div className={styles.fields}>
-        <Field>
-          <FieldLabel>{t("settings.language")}</FieldLabel>
+      <SettingsGroup>
+        <SettingsRow
+          label={t("settings.language")}
+          description={t("settings.language.help")}
+        >
           <ChoiceSelect
             label={t("settings.language")}
             choices={languageChoices}
@@ -49,9 +51,11 @@ export function SettingsLanguage() {
               if (chosen !== undefined) chooseLanguage(chosen.language);
             }}
           />
-        </Field>
-        <Field>
-          <FieldLabel>{t("settings.region")}</FieldLabel>
+        </SettingsRow>
+        <SettingsRow
+          label={t("settings.region")}
+          description={t("settings.region.help")}
+        >
           <ChoiceSelect
             label={t("settings.region")}
             choices={regionChoices}
@@ -61,9 +65,14 @@ export function SettingsLanguage() {
               if (typeof next === "string") chooseRegion(next);
             }}
           />
-        </Field>
+        </SettingsRow>
+      </SettingsGroup>
+      <SettingsGroup
+        title={t("settings.language.example")}
+        description={t("settings.language.exampleDescription")}
+      >
         <SettingsExample />
-      </div>
+      </SettingsGroup>
     </SettingsSection>
   );
 }

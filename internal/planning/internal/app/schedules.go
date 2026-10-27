@@ -85,6 +85,8 @@ func (s *Service) CreateSchedule(ctx context.Context, userID int64, in ScheduleI
 	// Nothing is generated yet: occurrences start at the rule's first date, which a preceding
 	// adjustment may move before its start (A127).
 	sch.GeneratedUntil = time.Time{}
+	// The creation date bounds the skipped past (A127), so it follows the application clock.
+	sch.CreatedAt = s.clk.Now()
 	var created domain.Schedule
 	err := s.repo.InTx(ctx, func(repo Repository) error {
 		var err error

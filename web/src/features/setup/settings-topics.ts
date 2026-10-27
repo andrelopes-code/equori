@@ -1,17 +1,78 @@
 import type { MessageKey } from "@/i18n/catalog.en";
 
-// The sections of the settings page, in reading order. Each id is a section's anchor and the
-// value of its entry in the page's contents.
-export const settingsTopics = [
-  { id: "account", title: "settings.account.title" },
-  { id: "appearance", title: "settings.appearance.title" },
-  { id: "language", title: "settings.language.title" },
-  { id: "privacy", title: "settings.privacy.title" },
-  { id: "finances", title: "settings.ledger.title" },
-  { id: "calendars", title: "calendar.title" },
-  { id: "integrations", title: "settings.integrations.title" },
-  { id: "assistant", title: "settings.assistant.title" },
-  { id: "data", title: "settings.data.title" },
+export const settingsGroups = [
+  { id: "personal", title: "settings.group.personal" },
+  { id: "books", title: "settings.group.books" },
+  { id: "connections", title: "settings.group.connections" },
+  { id: "system", title: "settings.group.system" },
 ] as const satisfies readonly { id: string; title: MessageKey }[];
 
+// The panes of the settings page, in reading order. Each id is the value of the page's section
+// search key and of its entry in the page's navigation.
+export const settingsTopics = [
+  {
+    id: "account",
+    group: "personal",
+    title: "settings.account.title",
+    summary: "settings.summary.account",
+  },
+  {
+    id: "appearance",
+    group: "personal",
+    title: "settings.appearance.title",
+    summary: "settings.summary.appearance",
+  },
+  {
+    id: "language",
+    group: "personal",
+    title: "settings.language.title",
+    summary: "settings.summary.language",
+  },
+  {
+    id: "privacy",
+    group: "personal",
+    title: "settings.privacy.title",
+    summary: "settings.summary.privacy",
+  },
+  {
+    id: "finances",
+    group: "books",
+    title: "settings.ledger.title",
+    summary: "settings.summary.finances",
+  },
+  {
+    id: "calendars",
+    group: "books",
+    title: "calendar.title",
+    summary: "settings.summary.calendars",
+  },
+  {
+    id: "integrations",
+    group: "connections",
+    title: "settings.integrations.title",
+    summary: "settings.summary.integrations",
+  },
+  {
+    id: "assistant",
+    group: "connections",
+    title: "settings.assistant.title",
+    summary: "settings.summary.assistant",
+  },
+  {
+    id: "data",
+    group: "system",
+    title: "settings.data.title",
+    summary: "settings.summary.data",
+  },
+] as const satisfies readonly {
+  id: string;
+  group: (typeof settingsGroups)[number]["id"];
+  title: MessageKey;
+  summary: MessageKey;
+}[];
+
 export type SettingsTopic = (typeof settingsTopics)[number]["id"];
+
+export function isSettingsTopic(value: unknown): value is SettingsTopic {
+  return settingsTopics.some((topic) => topic.id === value);
+}

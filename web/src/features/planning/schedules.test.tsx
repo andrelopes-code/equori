@@ -236,7 +236,7 @@ describe("Schedule calendar links", () => {
     });
     expect(link).toHaveAttribute(
       "href",
-      "/settings?calendar=br_banking#calendars",
+      "/settings?section=calendars&calendar=br_banking",
     );
   });
 
@@ -252,7 +252,7 @@ describe("Schedule calendar links", () => {
     });
     expect(link).toHaveAttribute(
       "href",
-      "/settings?calendar=br_banking#calendars",
+      "/settings?section=calendars&calendar=br_banking",
     );
   });
 });

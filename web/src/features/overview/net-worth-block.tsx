@@ -15,7 +15,13 @@ import { FigureGrid } from "@/ui/figure-grid";
 
 // Assets, liabilities and net, each against the end of the month before. The link goes to the
 // net worth report.
-export function NetWorthBlock({ month }: { month: string }) {
+export function NetWorthBlock({
+  month,
+  onHide,
+}: {
+  month: string;
+  onHide?: (() => void) | undefined;
+}) {
   const t = useT();
   const api = useApi();
   const fmt = useMoneyFormat();
@@ -73,6 +79,7 @@ export function NetWorthBlock({ month }: { month: string }) {
   };
   return (
     <OverviewBlock
+      onHide={onHide}
       title={t("overview.netWorth.title")}
       link={{
         label: t("overview.netWorth.open"),

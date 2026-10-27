@@ -9,7 +9,7 @@ export const densities: readonly Density[] = [
 ];
 
 const STORAGE_KEY = "equori.density";
-const DEFAULT_DENSITY: Density = "comfortable";
+export const defaultDensity: Density = "comfortable";
 
 function isDensity(value: unknown): value is Density {
   return (densities as readonly unknown[]).includes(value);
@@ -18,9 +18,9 @@ function isDensity(value: unknown): value is Density {
 export function readDensity(): Density {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return isDensity(stored) ? stored : DEFAULT_DENSITY;
+    return isDensity(stored) ? stored : defaultDensity;
   } catch {
-    return DEFAULT_DENSITY;
+    return defaultDensity;
   }
 }
 

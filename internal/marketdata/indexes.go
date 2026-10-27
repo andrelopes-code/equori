@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/adapter/postgres"
+	"github.com/andrelopes-code/equori/internal/marketdata/internal/domain"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/index"
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/index/brsgs"
 )
@@ -16,6 +18,9 @@ import (
 // indexWindowDays bounds one fetch: the SGS refuses a daily series over ten years, and five years
 // leave room.
 const indexWindowDays = 1825
+
+// indexHistoryYears is how far back an enabled index is fetched (calculators design §6).
+const indexHistoryYears = 20
 
 type indexEntry struct {
 	id         string
@@ -62,9 +67,10 @@ func NewIndexSources(ids []string, urls map[string]string, hc *http.Client) ([]i
 	return out, nil
 }
 
-// TickIndexes fetches, for each index some security follows, the rates from the day after the
-// latest stored one (from the earliest issue date for a first fetch) to today. A failure is
-// logged; the next tick fetches the same days again.
+// TickIndexes fetches, for each enabled index, the rates from the day after the latest stored
+// one to today; a first fetch starts 20 years before today, or at the earliest issue date of a
+// security that follows the index when that is earlier. A failure is logged; the next tick
+// fetches the same days again.
 func (m *Module) TickIndexes(ctx context.Context) {
 	for _, src := range m.feeds.Indexes {
 		if err := m.tickIndex(ctx, src); err != nil {
@@ -79,18 +85,18 @@ func (m *Module) tickIndex(ctx context.Context, src index.Source) error {
 	if err != nil {
 		return err
 	}
-	if issued.N == 0 {
-		return nil
+	today := m.feeds.Clock.Today()
+	from := today.AddDate(-indexHistoryYears, 0, 0)
+	if issued.N > 0 && issued.IssuedOn.Before(from) {
+		from = issued.IssuedOn
 	}
 	latest, err := m.q.LatestIndexRate(ctx, src.Index())
 	if err != nil {
 		return err
 	}
-	from := issued.IssuedOn
 	if latest.Found && latest.Latest.AddDate(0, 0, 1).After(from) {
 		from = latest.Latest.AddDate(0, 0, 1)
 	}
-	today := m.feeds.Clock.Today()
 	for !from.After(today) {
 		to := from.AddDate(0, 0, indexWindowDays)
 		if to.After(today) {
@@ -106,6 +112,45 @@ func (m *Module) tickIndex(ctx context.Context, src index.Source) error {
 		from = to.AddDate(0, 0, 1)
 	}
 	return nil
+}
+
+// Indexes lists the enabled indexes with at least one stored rate, in the order of
+// EQUORI_INDEX_FEEDS.
+func (m *Module) Indexes(ctx context.Context) ([]IndexSummary, error) {
+	out := []IndexSummary{}
+	for _, src := range m.feeds.Indexes {
+		r, err := m.q.IndexRange(ctx, src.Index())
+		if err != nil {
+			return nil, fmt.Errorf("read the range of %s: %w", src.Index(), err)
+		}
+		if r.N > 0 {
+			out = append(out, IndexSummary{ID: src.Index(), Period: src.Period(), First: r.First, Last: r.Last})
+		}
+	}
+	return out, nil
+}
+
+// IndexRates returns the stored rates of an enabled index in [from, to], oldest first.
+func (m *Module) IndexRates(ctx context.Context, id string, from, to time.Time) ([]IndexRate, error) {
+	if !slices.ContainsFunc(m.feeds.Indexes, func(s index.Source) bool { return s.Index() == id }) {
+		return nil, domain.ErrUnknownIndex
+	}
+	if err := domain.ValidIndexRange(from, to); err != nil {
+		return nil, err
+	}
+	rows, err := m.q.ListIndexRatesBetween(ctx, postgres.ListIndexRatesBetweenParams{IndexID: id, FromDate: from, ToDate: to})
+	if err != nil {
+		return nil, fmt.Errorf("list the rates of %s: %w", id, err)
+	}
+	out := make([]IndexRate, len(rows))
+	for i, r := range rows {
+		v, err := r.Rate.Value()
+		if err != nil {
+			return nil, fmt.Errorf("rate of %s: %w", r.Date.Format(time.DateOnly), err)
+		}
+		out[i] = IndexRate{Date: r.Date, Rate: fmt.Sprint(v)}
+	}
+	return out, nil
 }
 
 func (m *Module) storeRates(ctx context.Context, src index.Source, rates []index.Rate) error {

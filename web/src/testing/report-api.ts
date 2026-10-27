@@ -1,3 +1,4 @@
+import type { components } from "@/api/schema.gen";
 import { json } from "@/testing/fake-api";
 import {
   accounts as sharedAccounts,
@@ -163,5 +164,81 @@ export function flowReportRoutes() {
         items: days.filter((d) => d.date >= from && d.date <= to),
       });
     },
+  };
+}
+
+type IndicatorMonth = components["schemas"]["IndicatorMonth"];
+type Indicators = components["schemas"]["Indicators"];
+
+const indicatorMonths = [
+  "2025-11",
+  "2025-12",
+  "2026-01",
+  "2026-02",
+  "2026-03",
+  "2026-04",
+  "2026-05",
+  "2026-06",
+  "2026-07",
+  "2026-08",
+  "2026-09",
+  "2026-10",
+];
+const savingsRates = [
+  ...Array<{ reason: "no_income" }>(5).fill({ reason: "no_income" }),
+  { bp: 5000 },
+  { bp: 5000 },
+  { bp: 5000 },
+  { bp: 4300 },
+  { bp: 4300 },
+  { bp: 4300 },
+  { bp: 4300 },
+];
+const trailingRates = [
+  ...Array<{ reason: "insufficient_history" }>(8).fill({
+    reason: "insufficient_history",
+  }),
+  { bp: 5000 },
+  { bp: 4825 },
+  { bp: 4720 },
+  { bp: 4650 },
+];
+
+// S154: 12 months from 2025-11 to 2026-10; last overrides fields of the last entry.
+export function indicatorsFixture(
+  last: Partial<IndicatorMonth> = {},
+): Indicators {
+  const short = { reason: "insufficient_history" } as const;
+  const months: IndicatorMonth[] = indicatorMonths.map((month, i) => ({
+    month,
+    income: brl(0),
+    expense: brl(0),
+    committed: brl(0),
+    debt_service: brl(0),
+    liquid_balance: brl(0),
+    liabilities: brl(0),
+    savings_rate: savingsRates[i] ?? short,
+    trailing_savings_rate: trailingRates[i] ?? short,
+    liquidity: short,
+    committed_share: short,
+    debt_service_share: short,
+  }));
+  const lastEntry = {
+    income: brl(500000),
+    expense: brl(285000),
+    committed: brl(5000),
+    debt_service: brl(125000),
+    liquid_balance: brl(1790000),
+    liabilities: brl(640000),
+    mean_income: brl(500000),
+    mean_expense: brl(267500),
+    liquidity: { bp: 66915 },
+    committed_share: { bp: 100 },
+    debt_service_share: { bp: 2500 },
+    ...last,
+  };
+  return {
+    currency: "BRL",
+    months: months.map((m, i) => (i === 11 ? { ...m, ...lastEntry } : m)),
   };
 }

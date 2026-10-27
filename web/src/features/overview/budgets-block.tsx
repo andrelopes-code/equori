@@ -16,7 +16,13 @@ import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
 
 // The budgets of the month that are over their amount or at 90 % of it, the state the
 // budgets tab of Planning draws.
-export function BudgetsBlock({ month }: { month: string }) {
+export function BudgetsBlock({
+  month,
+  onHide,
+}: {
+  month: string;
+  onHide?: (() => void) | undefined;
+}) {
   const t = useT();
   const api = useApi();
   const [locale] = useAppLocale();
@@ -86,6 +92,7 @@ export function BudgetsBlock({ month }: { month: string }) {
         }));
   return (
     <OverviewBlock
+      onHide={onHide}
       title={t("overview.budgets.title")}
       link={{
         label: t("overview.budgets.open"),

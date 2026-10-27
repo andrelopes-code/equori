@@ -66,6 +66,7 @@ func (r *Repository) InsertSchedule(ctx context.Context, userID int64, s domain.
 		UserID: userID, Kind: string(s.Kind), AccountID: s.AccountID, CounterpartID: s.CounterpartID,
 		PayeeID: nullUUID(s.PayeeID), Description: s.Description, Currency: string(s.Currency),
 		MatchToleranceBp: int32(s.ToleranceBP), GraceDays: int32(s.GraceDays), GeneratedUntil: s.GeneratedUntil, Calendar: s.Calendar, //nolint:gosec // validated to 0-10000 and 0-31
+		CreatedAt: s.CreatedAt,
 	})
 	if err != nil {
 		return domain.Schedule{}, fmt.Errorf("insert schedule: %w", err)

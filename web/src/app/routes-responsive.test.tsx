@@ -5,6 +5,7 @@ import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { writeLocale } from "@/i18n/locale";
 import { fakeApi, json } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
+import { indicatorsFixture } from "@/testing/report-api";
 
 const checkingID = "11111111-1111-4111-8111-111111111111";
 const foodID = "22222222-2222-4222-8222-222222222222";
@@ -95,6 +96,7 @@ function newFetch() {
       return json(200, { assets: zero, liabilities: zero, net: zero });
     },
     "GET /api/v1/reports/categories": () => json(200, { items: [] }),
+    "GET /api/v1/reports/indicators": () => json(200, indicatorsFixture()),
     [`GET /api/v1/accounts/${checkingID}/reconciliation`]: () => json(200, {}),
     [`GET /api/v1/accounts/${checkingID}/unconfirmed`]: () =>
       json(200, { items: [] }),
@@ -222,8 +224,11 @@ describe.each([360, 768, 1280])("routes at %i px", (width) => {
       ).toBeNull();
 
       const bar = container.querySelector('[data-own="navigation-bar"]');
-      // The column from 1024 px, the navigation bar below.
-      const column = container.querySelector('[data-ui="side-navigation"]');
+      // The column from 1024 px, the navigation bar below. A page's own side navigation (settings)
+      // stands in the main region and is not the shell's column.
+      const column = container.querySelector(
+        '[data-ui="app-shell"] [data-part="nav"] [data-ui="side-navigation"]',
+      );
       if (!authenticated) {
         expect(bar).toBeNull();
         expect(column).toBeNull();

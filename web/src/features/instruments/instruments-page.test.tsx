@@ -226,7 +226,7 @@ describe("Instrument catalog", () => {
   });
 
   it("is a destination of the shell and the settings link opens it", async () => {
-    await renderApp("/settings", { fetch: api() });
+    await renderApp("/settings?section=finances", { fetch: api() });
     const link = await screen.findByRole("link", {
       name: catalogEn["settings.ledger.instruments"],
     });

@@ -1,0 +1,20 @@
+@layer app {
+  /* Inputs, then results; side by side once both columns hold a money panel, one column below. */
+  .work {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-6);
+  }
+
+  @media (min-width: 960px) {
+    .work {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      align-items: start;
+    }
+  }
+
+  .formula {
+    font-family: var(--slotted-font-family-mono);
+    white-space: pre-wrap;
+  }
+}
