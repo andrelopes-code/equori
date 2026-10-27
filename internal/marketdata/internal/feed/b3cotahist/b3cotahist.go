@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed"
 	"github.com/andrelopes-code/equori/internal/platform/money"
@@ -104,7 +105,7 @@ func (c Source) FetchDay(ctx context.Context, day time.Time, tickers []string) (
 	var out []feed.Quote
 	sc := bufio.NewScanner(f)
 	for line := 1; sc.Scan(); line++ {
-		rec := strings.TrimRight(sc.Text(), "\r")
+		rec := strings.Map(ascii, strings.TrimRight(sc.Text(), "\r"))
 		if !strings.HasPrefix(rec, "01") {
 			continue
 		}
@@ -129,4 +130,14 @@ func (c Source) FetchDay(ctx context.Context, day time.Time, tickers []string) (
 		return nil, fmt.Errorf("read %s: %w", name, err)
 	}
 	return out, nil
+}
+
+// ascii keeps the byte offsets of the layout when a company name holds a character outside
+// ASCII, which the B3 writes in Latin-1 and, in the file of 2026-10-22, in UTF-8: each such
+// character, one or two bytes, becomes one '?'.
+func ascii(r rune) rune {
+	if r > unicode.MaxASCII {
+		return '?'
+	}
+	return r
 }

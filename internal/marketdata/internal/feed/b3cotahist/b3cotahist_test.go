@@ -2,8 +2,10 @@ package b3cotahist_test
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/internal/feed"
@@ -57,6 +59,29 @@ func TestCOTAHIST(t *testing.T) {
 		if _, err := src.FetchDay(t.Context(), day(d), []string{"MXRF11"}); err == nil || errors.Is(err, feed.ErrNoData) {
 			t.Fatalf("%s err = %v", d, err)
 		}
+	}
+}
+
+// The file of 2026-10-22 carried a company name in UTF-8 ("FROTA OCEÂNI"), a record of 246 bytes.
+func TestCOTAHISTReadsNamesOutsideASCII(t *testing.T) {
+	t.Parallel()
+	named := func(ticker, name string, close int64) string {
+		return strings.Replace(cotahistRecord("20261022", ticker, "010", close), "NAME        ", name, 1)
+	}
+	latin1 := strings.Replace(named("FRTA3", "OCEANICA    ", 512), "OCEANICA", "OCE\xc2NICA", 1)
+	file := cotahistZIP(t, "20261022",
+		named("FRTA3", fmt.Sprintf("%-12s", "OCEÂNICA"), 511),
+		latin1,
+		cotahistRecord("20261022", "PETR4", "010", 3842),
+	)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write(file) }))
+	t.Cleanup(srv.Close)
+	got, err := b3cotahist.New(srv.Client(), srv.URL).FetchDay(t.Context(), day("2026-10-22"), []string{"FRTA3", "PETR4"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 3 || got[0].Value.String() != "5.11" || got[1].Value.String() != "5.12" || got[2].Value.String() != "38.42" {
+		t.Fatalf("quotes %+v", got)
 	}
 }
 
