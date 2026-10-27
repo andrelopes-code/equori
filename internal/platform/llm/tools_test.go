@@ -330,3 +330,18 @@ func TestRunSumsUsage(t *testing.T) {
 		t.Fatalf("Usage = %+v, want %+v", res.Usage, want)
 	}
 }
+
+// Design 2026-10-26 E3: Run streams the text of every model call when OnText is set.
+func TestRunStreams(t *testing.T) {
+	t.Parallel()
+	first := llmtest.Step{Model: "m1", Chunks: []string{"Vou ", "ver."}, Response: calls(llm.ToolCall{Name: "get_x", Args: json.RawMessage(`{}`)})}
+	a := llmtest.New("a", first, llmtest.Step{Model: "m1", Chunks: []string{"R$ ", "10"}, Response: text("R$ 10")})
+	f := newFixture(a)
+	var got []string
+	_, err := llm.Run(context.Background(), f.router.Client(target("a/m1")), prompt(),
+		map[string]llm.ToolHandler{"get_x": handler(`{}`, nil)},
+		llm.LoopOptions{MaxSteps: 3, OnText: func(s string) { got = append(got, s) }})
+	if want := []string{"Vou ", "ver.", "R$ ", "10"}; err != nil || !reflect.DeepEqual(got, want) {
+		t.Fatalf("chunks = %v, err = %v, want %v", got, err, want)
+	}
+}

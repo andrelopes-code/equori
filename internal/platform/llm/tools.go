@@ -28,13 +28,15 @@ func RunTools(ctx context.Context, client *Client, req Request, handlers map[str
 // LoopOptions tunes Run. MaxSteps bounds the model calls of one attempt. ForceAnswer makes the
 // last allowed call a ToolChoiceNone call whose response is never executed. Pin keeps every
 // call after the first on the target that answered the first. OnToolCall runs before each
-// tool; OnRestart runs when a pinned call finds its target exhausted.
+// tool; OnRestart runs when a pinned call finds its target exhausted. OnText, when set, receives
+// the text of every model call as it arrives.
 type LoopOptions struct {
 	MaxSteps    int
 	ForceAnswer bool
 	Pin         bool
 	OnToolCall  func(ToolCall)
 	OnRestart   func()
+	OnText      func(string)
 }
 
 // Result is the outcome of Run. Steps counts the model calls of the final attempt, Usage
@@ -66,7 +68,7 @@ func Run(ctx context.Context, client *Client, req Request, handlers map[string]T
 		if forced {
 			req.ToolChoice = ToolChoiceNone
 		}
-		resp, err := client.Generate(ctx, req)
+		resp, err := client.Stream(ctx, req, opts.OnText)
 		if err != nil {
 			if pin != (Target{}) && !res.Restarted && errors.Is(err, ErrExhausted) {
 				if opts.OnRestart != nil {

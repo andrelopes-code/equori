@@ -95,6 +95,13 @@ func (c *Client) bindings(ctx context.Context) ([]Binding, error) {
 // Generate sends req to the first available target of the chain and moves to the next one
 // on quota exhaustion or transient failure. It never waits for a cooldown to end.
 func (c *Client) Generate(ctx context.Context, req Request) (Response, error) {
+	return c.Stream(ctx, req, nil)
+}
+
+// Stream is Generate that hands the answer's text to onText as it arrives, when onText is set and
+// the target's provider is a Streamer. A failure after the first text ends the call with that
+// error: the text already handed out belongs to this target (design 2026-10-26 E3).
+func (c *Client) Stream(ctx context.Context, req Request, onText func(string)) (Response, error) {
 	r := c.router
 	bindings, err := c.bindings(ctx)
 	if err != nil {
@@ -112,7 +119,16 @@ func (c *Client) Generate(ctx context.Context, req Request) (Response, error) {
 			continue
 		}
 		begin := r.clk.Now()
-		resp, err := p.Generate(ctx, t.Model, req)
+		started := false
+		var resp Response
+		if s, ok := p.(Streamer); ok && onText != nil {
+			resp, err = s.Stream(ctx, t.Model, req, func(text string) {
+				started = true
+				onText(text)
+			})
+		} else {
+			resp, err = p.Generate(ctx, t.Model, req)
+		}
 		elapsed := r.clk.Now().Sub(begin)
 		if err == nil {
 			resp.Target = t
@@ -133,7 +149,7 @@ func (c *Client) Generate(ctx context.Context, req Request) (Response, error) {
 			return Response{}, fmt.Errorf("generate with %s: %w", t, ctx.Err())
 		}
 		outcome, wait := classify(err)
-		if wait == 0 {
+		if wait == 0 || started {
 			c.record(ctx, Attempt{Target: t, Outcome: outcome})
 			r.log.Warn("llm call", "provider", t.Provider, "model", t.Model, "outcome", outcome, "duration", elapsed)
 			return Response{}, fmt.Errorf("generate with %s: %w", t, err)

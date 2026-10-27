@@ -623,3 +623,57 @@ func TestExhaustedTransient(t *testing.T) {
 		}
 	})
 }
+
+// generateOnly hides the Stream method of the provider it wraps.
+type generateOnly struct{ p *llmtest.Provider }
+
+func (g generateOnly) Name() string { return g.p.Name() }
+
+func (g generateOnly) Generate(ctx context.Context, model string, req llm.Request) (llm.Response, error) {
+	return g.p.Generate(ctx, model, req)
+}
+
+// Design 2026-10-26 E1, E3.
+func TestClientStream(t *testing.T) {
+	t.Parallel()
+	transient := fmt.Errorf("x: %w", llm.ErrTransient)
+	collect := func(texts *[]string) func(string) { return func(s string) { *texts = append(*texts, s) } }
+	t.Run("streams the chunks", func(t *testing.T) {
+		t.Parallel()
+		f := newFixture(llmtest.New("a", llmtest.Step{Model: "m1", Chunks: []string{"Sal", "do"}, Response: text("Saldo")}))
+		var got []string
+		resp, err := f.router.Client(target("a/m1")).Stream(context.Background(), prompt(), collect(&got))
+		if err != nil || resp.Text() != "Saldo" || !slices.Equal(got, []string{"Sal", "do"}) {
+			t.Fatalf("resp = %q, err = %v, chunks = %v", resp.Text(), err, got)
+		}
+	})
+	t.Run("a failure after the first text ends the call", func(t *testing.T) {
+		t.Parallel()
+		b := llmtest.New("b", llmtest.Step{Model: "m1", Response: text("ok")})
+		f := newFixture(llmtest.New("a", llmtest.Step{Model: "m1", Chunks: []string{"x"}, Err: transient}), b)
+		var got []string
+		_, err := f.router.Client(target("a/m1"), target("b/m1")).Stream(context.Background(), prompt(), collect(&got))
+		if !errors.Is(err, llm.ErrTransient) || len(b.Requests()) != 0 {
+			t.Fatalf("err = %v, second target calls = %d", err, len(b.Requests()))
+		}
+	})
+	t.Run("a failure before the first text falls back", func(t *testing.T) {
+		t.Parallel()
+		f := newFixture(llmtest.New("a", llmtest.Step{Model: "m1", Err: transient}),
+			llmtest.New("b", llmtest.Step{Model: "m1", Chunks: []string{"ok"}, Response: text("ok")}))
+		var got []string
+		resp, err := f.router.Client(target("a/m1"), target("b/m1")).Stream(context.Background(), prompt(), collect(&got))
+		if err != nil || resp.Target != target("b/m1") || !slices.Equal(got, []string{"ok"}) {
+			t.Fatalf("resp = %v, err = %v, chunks = %v", resp.Target, err, got)
+		}
+	})
+	t.Run("a provider without Stream generates", func(t *testing.T) {
+		t.Parallel()
+		f := newFixture(generateOnly{llmtest.New("a", llmtest.Step{Model: "m1", Chunks: []string{"x"}, Response: text("ok")})})
+		var got []string
+		resp, err := f.router.Client(target("a/m1")).Stream(context.Background(), prompt(), collect(&got))
+		if err != nil || resp.Text() != "ok" || len(got) != 0 {
+			t.Fatalf("resp = %q, err = %v, chunks = %v", resp.Text(), err, got)
+		}
+	})
+}
