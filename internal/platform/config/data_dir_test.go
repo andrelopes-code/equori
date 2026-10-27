@@ -15,6 +15,9 @@ func TestDefaultDataDir(t *testing.T) {
 		{"darwin", map[string]string{"HOME": "/Users/a"}, "/Users/a/Library/Application Support/equori"},
 		{"linux", map[string]string{}, ""},
 		{"windows", map[string]string{"HOME": "C:/a"}, ""},
+		{"windows", map[string]string{"ProgramData": `C:\ProgramData`}, `C:\ProgramData\equori`},
+		{"windows", map[string]string{"ProgramData": `C:\ProgramData`, "HOME": ""}, `C:\ProgramData\equori`},
+		{"windows", map[string]string{}, ""},
 	}
 	for _, tt := range tests {
 		if got := DefaultDataDir(tt.goos, env(tt.env)); got != tt.want {
