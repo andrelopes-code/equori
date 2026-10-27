@@ -58,4 +58,62 @@ export const calculatorsEn = {
     "How large must investments be to pay the expenses, and when are they reached?",
   "calc.own-or-rent.title": "Own or rent",
   "calc.own-or-rent.question": "Does owning cost less per year than renting?",
+  "calc.months": "Months",
+  "calc.estimate":
+    "An estimate: the rate is assumed constant, with no tax or fee.",
+  "calc.origin.daily": "{percent} of {index} over the 12 months to {date}",
+  "calc.origin.monthly": "{index} over the 12 months to {date}",
+  "calc.useIndex": "Use {index}, last 12 months",
+  "calc.rateSource.fixed": "Fixed rate",
+  "calc.compound.mode": "Calculate",
+  "calc.compound.mode.final": "Final amount",
+  "calc.compound.mode.target": "Deposit for a target",
+  "calc.compound.initial": "Initial amount",
+  "calc.compound.deposit": "Monthly deposit",
+  "calc.compound.target": "Target",
+  "calc.compound.rateSource": "Rate source",
+  "calc.compound.rate": "Annual rate",
+  "calc.compound.percent": "Percent of the index",
+  "calc.compound.inflation": "Annual inflation (optional)",
+  "calc.compound.delay": "Delay in months",
+  "calc.compound.final": "Final amount",
+  "calc.compound.deposited": "Total deposited",
+  "calc.compound.interest": "Interest",
+  "calc.compound.real": "Final amount in today's money",
+  "calc.compound.delayed": "Final amount when starting {months} months later",
+  "calc.compound.difference": "Difference to starting now",
+  "calc.compound.depositNeeded": "Monthly deposit needed",
+  "calc.compound.chart": "Balance and deposits by month",
+  "calc.compound.chart.balance": "Balance",
+  "calc.compound.chart.deposited": "Deposited",
+  "calc.compound.chart.month": "Month {month}",
+  "calc.compound.step1":
+    "The annual rate becomes a monthly rate: j = (1 + annual rate)^(1/12) − 1.",
+  "calc.compound.step2": "The initial amount grows for n months at j.",
+  "calc.compound.step3":
+    "Each deposit enters at the start of its month and grows until the end.",
+  "calc.compound.step4":
+    "The final amount is the sum of both; interest is the final amount less what was deposited.",
+  "calc.compound.step5":
+    "With inflation, the final amount is divided by (1 + inflation)^(n/12) to read in today's money.",
+  "calc.compound.step6":
+    "For a target, the deposit p is the one that makes M1 plus M2 equal to the target.",
+  "calc.compound.formula1": "M1: Sn = q0 · (1 + j)^n",
+  "calc.compound.formula2": "M2: Sn = (1 + j) · ((1 + j)^n − 1) / j · p",
+  "calc.compound.formula3": "M5: annual = (1 + monthly)^12 − 1",
+  "calc.compound.formula4": "M6: real = (1 + nominal) / (1 + inflation) − 1",
+  "calc.compound.symbols":
+    "Sn: amount after n months; q0: initial amount; p: monthly deposit; j: monthly rate; n: months.",
+  "calc.compound.assumption1":
+    "Each deposit is made at the start of the month (Banco Central do Brasil method).",
+  "calc.compound.assumption2": "The rate stays the same every month.",
+  "calc.compound.assumption3": "No tax, fee or withdrawal is taken.",
+  "calc.compound.assumption4":
+    "A percent of a daily index uses its last 12 months as the annual rate.",
+  "calc.compound.limit1":
+    "People tend to expect savings to grow in a straight line; the growth is exponential (McKenzie and Liersch 2011).",
+  "calc.compound.limit2":
+    "Households underestimate the future value of an investment and the rate implied by a payment stream (Stango and Zinman 2009).",
+  "calc.compound.limit3":
+    "Amounts are rounded to the minor unit; a contract may round differently.",
 } as const;

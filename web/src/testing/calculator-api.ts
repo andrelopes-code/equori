@@ -7,12 +7,12 @@ interface IndexFixture {
   rates: { date: string; rate: string }[];
 }
 
-// 0.04% on each weekday from 2025-10-17 to 2026-10-16: a year of a daily index before
+// 0.04% on each weekday from 2025-10-01 to 2026-10-16: more than a year of a daily index before
 // the fake today, 2026-10-17.
 export function cdiFixture(): IndexFixture {
   const rates: { date: string; rate: string }[] = [];
   for (
-    let d = new Date(Date.UTC(2025, 9, 17));
+    let d = new Date(Date.UTC(2025, 9, 1));
     d <= new Date(Date.UTC(2026, 9, 16));
     d = new Date(d.getTime() + 86400000)
   ) {
