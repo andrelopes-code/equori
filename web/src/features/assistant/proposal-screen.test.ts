@@ -29,3 +29,14 @@ describe("proposalScreen", () => {
     expect(proposalScreen("record_transaction", null)).toBeUndefined();
   });
 });
+
+describe("proposalScreen of a deletion", () => {
+  it("links no record the proposal deleted", () => {
+    expect(
+      proposalScreen("manage_budget_or_goal", {
+        budget_id: "b1",
+        deleted: true,
+      }),
+    ).toBeUndefined();
+  });
+});

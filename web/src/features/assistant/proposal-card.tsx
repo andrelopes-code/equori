@@ -85,12 +85,18 @@ export function ProposalCard({
   proposal,
   reveal = false,
   decision,
+  locked = false,
+  onDecided,
 }: {
   proposal: Proposal;
   // The last card of a new answer brings its actions into view (P13).
   reveal?: boolean;
   // The outcome of this proposal in a "confirm all" of its answer (P17).
   decision?: Decision | undefined;
+  // A "confirm all" of the answer is running; the card takes no decision of its own.
+  locked?: boolean;
+  // Reports the card's own decision, so a "confirm all" leaves it out.
+  onDecided?: (id: string, decision: Decision) => void;
 }) {
   const t = useT();
   const follow = useAppLink();
@@ -100,7 +106,7 @@ export function ProposalCard({
   const reject = useRejectProposal();
   const shown = confirm.data ?? reject.data ?? decision?.proposal ?? proposal;
   const { preview } = shown;
-  const busy = confirm.isPending || reject.isPending;
+  const busy = confirm.isPending || reject.isPending || locked;
   const error = confirm.error ?? reject.error ?? decision?.error ?? null;
   const screen =
     shown.status === "executed"
@@ -210,7 +216,9 @@ export function ProposalCard({
               disabled={busy}
               loading={reject.isPending}
               onClick={() => {
-                reject.mutate(shown.id);
+                reject.mutate(shown.id, {
+                  onSuccess: (proposal) => onDecided?.(shown.id, { proposal }),
+                });
               }}
             >
               {t("assistant.proposal.reject")}
@@ -220,7 +228,11 @@ export function ProposalCard({
               disabled={busy}
               loading={confirm.isPending}
               onClick={() => {
-                if (!busy) confirm.mutate(shown.id);
+                if (!busy)
+                  confirm.mutate(shown.id, {
+                    onSuccess: (proposal) =>
+                      onDecided?.(shown.id, { proposal }),
+                  });
               }}
             >
               {t("assistant.proposal.confirm")}

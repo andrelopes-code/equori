@@ -24,7 +24,10 @@ export function proposalScreen(
   const entry = screens[tool];
   if (entry === undefined || typeof result !== "object" || result === null)
     return undefined;
-  const id = (result as Record<string, unknown>)[entry.field];
+  const fields = result as Record<string, unknown>;
+  // A deletion leaves no record to open.
+  if (fields.deleted === true) return undefined;
+  const id = fields[entry.field];
   if (typeof id !== "string" || id === "") return undefined;
   const path = entry.path.replace("$id", encodeURIComponent(id));
   return matchScreen(path) === undefined ? undefined : path;

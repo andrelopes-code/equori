@@ -63,6 +63,14 @@ export function MessageItem({
   const own = message.role === "user";
   const [decisions, setDecisions] = useState<Record<string, Decision>>({});
   const [copied, setCopied] = useState(false);
+  const [running, setRunning] = useState(false);
+  const decide = (id: string, decision: Decision) => {
+    setDecisions((d) => ({ ...d, [id]: decision }));
+  };
+  const open = message.proposals.filter(
+    (p) => p.status === "pending" && decisions[p.id] === undefined,
+  );
+  const lastOpen = open.at(-1)?.id;
   const unanswered =
     message.outcome === "failed" || message.outcome === "canceled";
   const tree = useMemo(() => {
@@ -125,25 +133,24 @@ export function MessageItem({
                 </AlertContent>
               </Alert>
             )}
-            {message.proposals.map((proposal, i) => (
+            {message.proposals.map((proposal) => (
               <ProposalCard
                 key={proposal.id}
                 proposal={proposal}
-                reveal={reveal && i === message.proposals.length - 1}
+                reveal={reveal && proposal.id === lastOpen}
                 decision={decisions[proposal.id]}
+                locked={running}
+                onDecided={decide}
               />
             ))}
             <ConfirmAll
-              proposals={message.proposals.filter(
-                (p) => p.status === "pending",
-              )}
-              onDecided={(id, decision) => {
-                setDecisions((d) => ({ ...d, [id]: decision }));
-              }}
+              proposals={open}
+              onDecided={decide}
+              onRunning={setRunning}
             />
           </Stack>
         )}
-        {!own && tree !== null && !streaming && (
+        {!own && tree !== null && !streaming && "clipboard" in navigator && (
           <MessageFooter>
             <MessageActions>
               <IconButton
@@ -155,12 +162,17 @@ export function MessageItem({
                   const text = hidden
                     ? maskAmountText(message.content)
                     : message.content;
-                  void navigator.clipboard.writeText(text).then(() => {
-                    setCopied(true);
-                    setTimeout(() => {
-                      setCopied(false);
-                    }, 2000);
-                  });
+                  navigator.clipboard.writeText(text).then(
+                    () => {
+                      setCopied(true);
+                      setTimeout(() => {
+                        setCopied(false);
+                      }, 2000);
+                    },
+                    () => {
+                      // A refused write leaves the label as it was.
+                    },
+                  );
                 }}
               >
                 <Icon>

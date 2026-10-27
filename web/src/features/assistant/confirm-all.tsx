@@ -12,19 +12,36 @@ export interface Decision {
   error?: unknown;
 }
 
-// Families read: button. Confirms the pending proposals of one answer in order and stops at the
-// first failure; each card shows its own outcome (P17).
+// Families read: button. Confirms the still pending proposals of one answer in order and stops at
+// the first one that does not execute; each card shows its own outcome (P17). The cards stay locked
+// while it runs, so no single confirm interleaves with it.
 export function ConfirmAll({
   proposals,
   onDecided,
+  onRunning,
 }: {
   proposals: readonly Proposal[];
   onDecided: (id: string, decision: Decision) => void;
+  onRunning: (running: boolean) => void;
 }) {
   const t = useT();
   const confirm = useConfirmProposal();
   const [ran, setRan] = useState(false);
   if (ran || proposals.length < 2) return null;
+  const run = async () => {
+    for (const p of proposals) {
+      // A card the timer expired is not sent; the server would refuse it.
+      if (Date.parse(p.expires_at) <= Date.now()) continue;
+      try {
+        const result = await confirm.mutateAsync(p.id);
+        onDecided(p.id, { proposal: result });
+        if (result.status !== "executed") return;
+      } catch (error) {
+        onDecided(p.id, { error });
+        return;
+      }
+    }
+  };
   return (
     <div>
       <Button
@@ -32,16 +49,10 @@ export function ConfirmAll({
         variant="outline"
         onClick={() => {
           setRan(true);
-          void (async () => {
-            for (const p of proposals) {
-              try {
-                onDecided(p.id, { proposal: await confirm.mutateAsync(p.id) });
-              } catch (error) {
-                onDecided(p.id, { error });
-                return;
-              }
-            }
-          })();
+          onRunning(true);
+          void run().finally(() => {
+            onRunning(false);
+          });
         }}
       >
         {t("assistant.proposal.confirm_all")}

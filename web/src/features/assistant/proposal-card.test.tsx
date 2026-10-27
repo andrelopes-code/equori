@@ -181,6 +181,9 @@ describe("ProposalCard", () => {
       act(() => {
         vi.advanceTimersByTime(2_000);
       });
+      expect(
+        screen.queryByText(catalogEn["assistant.proposal.status.expired"]),
+      ).toBeNull();
       release();
       expect(
         await screen.findByText(
@@ -271,6 +274,10 @@ describe("ProposalCard", () => {
     ).toBeInTheDocument();
     // The failure reads as the card's alert.
     expect(within(second).getByRole("status")).toBeInTheDocument();
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(order).toEqual(["p1", "p2"]);
     expect(
       within(third).getByRole("button", { name: "Confirm" }),
     ).toBeEnabled();
@@ -300,5 +307,99 @@ describe("ProposalCard", () => {
         name: catalogEn["assistant.proposal.confirm_all"],
       }),
     ).toBeNull();
+  });
+
+  // Review of phase 4: a tool that fails answers 200 with status failed; the run stops there.
+  it("stops confirm all at a proposal whose tool failed", async () => {
+    const order: string[] = [];
+    const answer = (id: string) => () => {
+      order.push(id);
+      return json(200, {
+        ...pending,
+        id,
+        status: id === "p2" ? "failed" : "executed",
+        result: id === "p2" ? { code: "x", detail: "the tool failed" } : {},
+      });
+    };
+    renderWithProviders(
+      <MessageItem
+        message={{
+          id: "m2",
+          role: "assistant",
+          content: "Three changes.",
+          outcome: "answered",
+          created_at: "2026-10-23T10:00:01Z",
+          proposals: ["p1", "p2", "p3"].map((id) => ({ ...pending, id })),
+        }}
+      />,
+      {
+        fetch: fakeApi({
+          "POST /api/v1/assistant/proposals/p1/confirm": answer("p1"),
+          "POST /api/v1/assistant/proposals/p2/confirm": answer("p2"),
+          "POST /api/v1/assistant/proposals/p3/confirm": answer("p3"),
+        }),
+      },
+    );
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: catalogEn["assistant.proposal.confirm_all"],
+      }),
+    );
+    expect(await screen.findByText("the tool failed")).toBeInTheDocument();
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(order).toEqual(["p1", "p2"]);
+  });
+
+  // Review of phase 4: a proposal confirmed by its own card leaves the run, and no card confirms during it.
+  it("confirms all only what is still pending and locks the cards meanwhile", async () => {
+    const order: string[] = [];
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const answer = (id: string) => async () => {
+      order.push(id);
+      if (id === "p2") await gate;
+      return json(200, { ...pending, id, status: "executed" });
+    };
+    renderWithProviders(
+      <MessageItem
+        message={{
+          id: "m2",
+          role: "assistant",
+          content: "Three changes.",
+          outcome: "answered",
+          created_at: "2026-10-23T10:00:01Z",
+          proposals: ["p1", "p2", "p3"].map((id) => ({ ...pending, id })),
+        }}
+      />,
+      {
+        fetch: fakeApi({
+          "POST /api/v1/assistant/proposals/p1/confirm": answer("p1"),
+          "POST /api/v1/assistant/proposals/p2/confirm": answer("p2"),
+          "POST /api/v1/assistant/proposals/p3/confirm": answer("p3"),
+        }),
+      },
+    );
+    const [first] = screen.getAllByRole("button", { name: "Confirm" });
+    if (first === undefined) throw new Error("no confirm");
+    await userEvent.click(first);
+    await screen.findByText(catalogEn["assistant.proposal.status.executed"]);
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: catalogEn["assistant.proposal.confirm_all"],
+      }),
+    );
+    await waitFor(() => {
+      expect(order).toEqual(["p1", "p2"]);
+    });
+    for (const button of screen.getAllByRole("button", { name: "Confirm" }))
+      expect(button).toBeDisabled();
+    release();
+    await waitFor(() => {
+      expect(order).toEqual(["p1", "p2", "p3"]);
+    });
   });
 });
