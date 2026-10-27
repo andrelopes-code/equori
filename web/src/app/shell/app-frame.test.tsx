@@ -6,13 +6,35 @@ import {
   within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { fakeApi, json } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 import { setViewport } from "@/testing/viewport";
+
+// newFetch with the assistant's chat state and a turn route that streams what the test writes.
+function assistantFetch(turn?: () => Response) {
+  const routes = newFetch();
+  let posts = 0;
+  const impl = (input: RequestInfo | URL, init?: RequestInit) => {
+    const req = new Request(input, init);
+    if (req.url.endsWith("/api/v1/assistant/chat"))
+      return Promise.resolve(
+        json(200, { available: true, provider_name: "G", model: "m" }),
+      );
+    if (req.url.endsWith("/api/v1/assistant/turns") && turn !== undefined) {
+      posts++;
+      return Promise.resolve(turn());
+    }
+    return routes(input, init);
+  };
+  return Object.assign(impl, {
+    calls: routes.calls,
+    posts: () => posts,
+  });
+}
 
 const html = document.documentElement;
 
@@ -194,6 +216,102 @@ describe("desktop column", () => {
     });
   });
 
+  // P9, U8: from 1200 px the assistant is the shell's pane beside the page.
+  it("places the assistant beside the page from 1200 px", async () => {
+    const user = userEvent.setup();
+    await renderApp("/", { width: 1440, fetch: assistantFetch() });
+    await user.keyboard("a");
+    const input = await screen.findByPlaceholderText(
+      catalogEn["assistant.composer.placeholder"],
+    );
+    expect(
+      input.closest('[data-ui="app-shell"] [data-part="aside"]'),
+    ).not.toBeNull();
+    expect(document.querySelector('[data-ui="drawer"]')).toBeNull();
+    expect(
+      document.querySelector('[data-ui="app-shell"] [data-part="main"]'),
+    ).not.toHaveAttribute("inert");
+    // Review Focus 2 of phase 4: the pane moves no focus itself; the composer takes it.
+    await waitFor(() => {
+      expect(document.activeElement).toBe(input);
+    });
+  });
+
+  it("overlays the assistant without a scrim from 600 to 1199 px", async () => {
+    const user = userEvent.setup();
+    await renderApp("/", { width: 1024, fetch: assistantFetch() });
+    await user.keyboard("a");
+    await screen.findByPlaceholderText(
+      catalogEn["assistant.composer.placeholder"],
+    );
+    // jsdom measures no layout, so the scrim's absence (scrimFrom) is checked in the browser.
+    expect(document.querySelector('[data-ui="drawer"]')).not.toBeNull();
+    expect(document.querySelector('[aria-modal="true"]')).toBeNull();
+    expect(
+      document.querySelector('[data-ui="app-shell"] [data-part="main"]'),
+    ).not.toHaveAttribute("inert");
+  });
+
+  // Review Focus 1 of phase 4: a resize across 1200 px keeps the running turn and the typed text.
+  it("keeps the turn and the typed text across 1200 px", async () => {
+    const user = userEvent.setup();
+    const encoder = new TextEncoder();
+    let controller: ReadableStreamDefaultController<Uint8Array> | undefined;
+    const fetch = assistantFetch(
+      () =>
+        new Response(
+          new ReadableStream<Uint8Array>({
+            start(c) {
+              controller = c;
+            },
+          }),
+          { status: 200, headers: { "Content-Type": "text/event-stream" } },
+        ),
+    );
+    // The turn streams through the global fetch, with an absolute address.
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) =>
+      fetch(
+        typeof input === "string" ? `http://localhost${input}` : input,
+        init,
+      ),
+    );
+    await renderApp("/", { width: 1440, fetch });
+    await user.keyboard("a");
+    const input = await screen.findByPlaceholderText(
+      catalogEn["assistant.composer.placeholder"],
+    );
+    await waitFor(() => {
+      expect(input).toBeEnabled();
+    });
+    await user.type(input, "How much?");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    act(() => {
+      controller?.enqueue(
+        encoder.encode(
+          'event: turn\ndata: {"conversation_id":"c1","message_id":"m1"}\n\nevent: delta\ndata: {"text":"Half way"}\n\n',
+        ),
+      );
+    });
+    await waitFor(() => {
+      expect(fetch.posts()).toBe(1);
+    });
+    expect(await screen.findByText("Half way")).toBeInTheDocument();
+    await user.type(
+      screen.getByPlaceholderText(catalogEn["assistant.composer.placeholder"]),
+      "next",
+    );
+    act(() => {
+      setViewport(1024);
+    });
+    expect(await screen.findByText("Half way")).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText(catalogEn["assistant.composer.placeholder"]),
+    ).toHaveValue("next");
+    expect(fetch.posts()).toBe(1);
+    controller?.close();
+    vi.unstubAllGlobals();
+  });
+
   it("marks the commands' keys as keyboard input", async () => {
     await renderApp("/", { fetch: newFetch() });
     const entry = screen.getByRole("button", {
@@ -357,9 +475,10 @@ describe("desktop column", () => {
   });
 });
 
+// P9: below 1200 px the assistant is a dialog; from 1200 px it is the shell's pane (tested above).
 describe("assistant shortcut", () => {
   it.each(["A", "a"])("opens the assistant on %s", async (key) => {
-    await renderApp("/", { fetch: newFetch() });
+    await renderApp("/", { width: 1024, fetch: newFetch() });
     fireEvent.keyDown(document.body, { key });
     expect(
       await screen.findByRole("dialog", { name: "Assistant" }),
@@ -367,7 +486,7 @@ describe("assistant shortcut", () => {
   });
 
   it("leaves Ctrl+A to the browser", async () => {
-    await renderApp("/", { fetch: newFetch() });
+    await renderApp("/", { width: 1024, fetch: newFetch() });
     fireEvent.keyDown(document.body, { key: "a", ctrlKey: true });
     await act(async () => {
       await Promise.resolve();

@@ -1,4 +1,5 @@
 export { AssistantPanel } from "@/features/assistant/assistant-panel";
+export { useBeside } from "@/features/assistant/use-beside";
 export {
   assistantKeys,
   chatStateQuery,

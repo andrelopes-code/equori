@@ -28,7 +28,7 @@ import { useNavPreference } from "@/app/shell/use-nav-preference";
 import { useExtent } from "@/app/shell/use-extent";
 import { useScrollState } from "@/app/shell/use-scroll-state";
 import { useWide } from "@/app/shell/use-wide";
-import { AssistantPanel } from "@/features/assistant";
+import { AssistantPanel, useBeside } from "@/features/assistant";
 import { useCaptureQueueNotice } from "@/features/transactions";
 import { useT } from "@/i18n/i18n-provider";
 import { applyDensity, readDensity } from "@/theme/density";
@@ -48,6 +48,7 @@ export function AppFrame() {
   const [barExtent, barRef] = useExtent();
   const [dockExtent, dockRef] = useExtent();
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const beside = useBeside();
   const returnTo = useRef<HTMLElement | null>(null);
   const openAssistant = useCallback(() => {
     returnTo.current =
@@ -88,10 +89,15 @@ export function AppFrame() {
         if (wide) setNavOpen(next);
       }}
       collapsedTo={wide ? "rail" : "hidden"}
+      // P9: from 1200 px the assistant is a pane beside the page, which narrows.
+      asideMode="inline"
+      asideOpen={beside && assistantOpen}
+      onAsideOpenChange={setAssistantOpen}
       messages={{
         nav: t("nav.label"),
         open: t("nav.expand"),
         close: t("nav.collapse"),
+        aside: t("assistant.title"),
       }}
     >
       {wide ? (
@@ -154,6 +160,7 @@ export function AppFrame() {
         open={assistantOpen}
         onOpenChange={setAssistantOpen}
         returnFocus={returnTo}
+        beside={beside}
       />
       <ToastRegion />
     </AppShell>

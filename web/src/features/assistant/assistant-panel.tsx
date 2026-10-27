@@ -31,7 +31,14 @@ import {
   MessageScrollerItem,
   MessageScrollerViewport,
 } from "@slotted/react/message-scroller";
-import { Text } from "@slotted/react/typography";
+import { Heading, Text } from "@slotted/react/typography";
+import {
+  AppShellAside,
+  AppShellAsideBody,
+  AppShellAsideFooter,
+  AppShellAsideHeader,
+  AppShellAsideResizer,
+} from "@slotted/react/app-shell";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { RefObject } from "react";
 
@@ -78,16 +85,19 @@ const stateCodes = new Set([
   "assistant_failed",
 ]);
 
-// A side panel beside the page from 600 px; a full-height bottom sheet on a phone, whose composer
-// is the sheet's footer and stays at the screen's foot while the sheet is dragged. Its state
-// outlives closing it.
+// The shell's pane beside the page from 1200 px; an overlay without a scrim from 600 px; a
+// full-height bottom sheet on a phone, whose composer is the sheet's footer and stays at the screen's
+// foot while the sheet is dragged (P9). Its state outlives closing it and a change of placement.
 export function AssistantPanel({
   open,
   onOpenChange,
   returnFocus,
+  beside = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // The shell's pane holds the panel; the caller renders it inside an AppShell (P9).
+  beside?: boolean;
   // The element focused before the panel opened; focus returns to it on close (P18).
   returnFocus?: RefObject<HTMLElement | null>;
 }) {
@@ -100,6 +110,8 @@ export function AssistantPanel({
   const page = useRouterState({ select: (s) => s.location.pathname });
   const turn = useAssistantTurn(page);
   const [listing, setListing] = useState(false);
+  // The composer's text lives here so that a move between the drawer and the pane keeps it.
+  const [draftText, setDraftText] = useState("");
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const { hidden } = usePrivacy();
   const chat = useQuery({ ...chatStateQuery(api), enabled: open });
@@ -129,9 +141,16 @@ export function AssistantPanel({
   const started = messages.length > 0 || turn.pending !== null;
   const canType = open && !listing && chat.data !== undefined && !blocked;
   // The composer is disabled while the chat state loads, when the drawer moves focus on open.
+  // A move between the drawer and the pane mounts a new composer; it takes focus again.
   useEffect(() => {
     if (canType) composerRef.current?.focus();
-  }, [canType]);
+  }, [canType, beside]);
+  // The pane moves no focus on close; the element focused before opening takes it back (P18).
+  const wasOpen = useRef(open);
+  useEffect(() => {
+    if (wasOpen.current && !open && beside) returnFocus?.current?.focus();
+    wasOpen.current = open;
+  }, [open, beside, returnFocus]);
   const retryAt = chat.data?.retry_at;
   const blockedNotice =
     chat.data?.available !== false ? null : retryAt !== undefined ? (
@@ -226,6 +245,179 @@ export function AssistantPanel({
   // A step clears the text at once (E4); only its growth waits for a frame.
   const draft = turn.draft === "" ? "" : framed;
 
+  const headerActions = (
+    <HeaderActions
+      listing={listing}
+      onBack={() => {
+        setListing(false);
+      }}
+      onHistory={() => {
+        setListing(true);
+      }}
+      onNew={() => {
+        turn.reset();
+        setListing(false);
+      }}
+      onClose={() => {
+        onOpenChange(false);
+      }}
+    />
+  );
+  const thread = (
+    <div data-own="assistant-panel" className={styles.thread}>
+      {listing ? (
+        <div className={styles.scroll}>
+          <ConversationList
+            current={turn.conversationId}
+            onOpen={(id) => {
+              turn.open(id);
+              setListing(false);
+            }}
+          />
+        </div>
+      ) : !started ? (
+        // Workaround for Slotted finding "A message scroller without items keeps its content hidden": before the first message the notices sit outside the scroller.
+        <div className={styles.scroll}>
+          <ChatWelcome
+            canAsk={!blocked && chat.data !== undefined}
+            onAsk={send}
+            notices={
+              <>
+                {blockedNotice}
+                {errorNotice}
+                {chat.data !== undefined && <ProviderNotice chat={chat.data} />}
+              </>
+            }
+          />
+        </div>
+      ) : (
+        <MessageScroller
+          follow
+          defaultPosition="end"
+          busy={turn.pending !== null}
+        >
+          <MessageScrollerViewport className={styles.viewport}>
+            <MessageScrollerContent className={styles.feed}>
+              {messages.map((m) => (
+                <MessageScrollerItem
+                  key={m.id}
+                  messageId={m.id}
+                  anchor={m.role === "user"}
+                >
+                  <MessageItem
+                    message={m}
+                    onRetry={m === last && !orphan ? retry : undefined}
+                    steps={turn.activity[m.id]}
+                  />
+                </MessageScrollerItem>
+              ))}
+              {orphan && (
+                <MessageScrollerItem messageId="unanswered">
+                  <MessageItem
+                    message={{
+                      id: "unanswered",
+                      role: "assistant",
+                      content: "",
+                      outcome: turn.stopped ? "canceled" : "failed",
+                      created_at: last.created_at,
+                      proposals: [],
+                    }}
+                    onRetry={retry}
+                  />
+                </MessageScrollerItem>
+              )}
+              {turn.pending !== null && (
+                <>
+                  <MessageScrollerItem messageId="pending" anchor>
+                    <Message align="end">
+                      <MessageBody>
+                        <Bubble>
+                          <BubbleContent>{turn.pending}</BubbleContent>
+                        </Bubble>
+                      </MessageBody>
+                    </Message>
+                  </MessageScrollerItem>
+                  {(turn.steps.length > 0 || draft === "") && (
+                    <Message status="streaming">
+                      <MessageBody>
+                        {turn.steps.length > 0 ? (
+                          <TurnActivity steps={turn.steps} running />
+                        ) : (
+                          <Bubble>
+                            <BubbleTyping />
+                          </Bubble>
+                        )}
+                      </MessageBody>
+                    </Message>
+                  )}
+                  {draft !== "" && (
+                    <MessageItem
+                      message={{
+                        id: "draft",
+                        role: "assistant",
+                        content: draft,
+                        created_at: "",
+                        proposals: [],
+                      }}
+                    />
+                  )}
+                </>
+              )}
+            </MessageScrollerContent>
+          </MessageScrollerViewport>
+        </MessageScroller>
+      )}
+    </div>
+  );
+  const footer = !listing && (
+    <div className={styles.composer}>
+      {started && blockedNotice}
+      {started && errorNotice}
+      <AssistantComposer
+        disabled={blocked || chat.data === undefined}
+        busy={turn.pending !== null}
+        onSend={send}
+        onStop={turn.stop}
+        inputRef={composerRef}
+        value={draftText}
+        onValueChange={setDraftText}
+      />
+    </div>
+  );
+
+  if (beside) {
+    return (
+      <AppShellAside
+        // An inline pane is not a layer, so the shell leaves Escape alone; the assistant closes on it.
+        onKeyDown={(event) => {
+          if (event.key === "Escape" && !event.defaultPrevented) {
+            onOpenChange(false);
+          }
+        }}
+      >
+        <AppShellAsideResizer />
+        <AppShellAsideHeader>
+          {/* One child: the pane's header gives each child of its own an equal share of the row. */}
+          <div className={styles.asideHeader}>
+            <div className={styles.asideTitle}>
+              <Heading level={2} size="md">
+                {t("assistant.title")}
+              </Heading>
+              <Text size="sm" tone="muted" truncate>
+                {title}
+              </Text>
+            </div>
+            {headerActions}
+          </div>
+        </AppShellAsideHeader>
+        <AppShellAsideBody>{thread}</AppShellAsideBody>
+        {footer !== false && (
+          <AppShellAsideFooter>{footer}</AppShellAsideFooter>
+        )}
+      </AppShellAside>
+    );
+  }
+
   return (
     <Drawer
       open={open}
@@ -233,6 +425,8 @@ export function AssistantPanel({
       side={phone ? "bottom" : "end"}
       size={phone ? "full" : "xl"}
       modal={phone}
+      // P9: from 600 px the overlay paints no scrim and leaves the page usable.
+      scrimFrom={phone ? 0 : 1}
       outsidePress="none"
       initialFocus={listing ? "first" : composerRef}
       {...(returnFocus === undefined ? {} : { finalFocus: returnFocus })}
@@ -244,146 +438,10 @@ export function AssistantPanel({
           <DrawerDescription>
             <Text truncate>{title}</Text>
           </DrawerDescription>
-          <HeaderActions
-            listing={listing}
-            onBack={() => {
-              setListing(false);
-            }}
-            onHistory={() => {
-              setListing(true);
-            }}
-            onNew={() => {
-              turn.reset();
-              setListing(false);
-            }}
-            onClose={() => {
-              onOpenChange(false);
-            }}
-          />
+          {headerActions}
         </DrawerHeader>
-        <DrawerBody>
-          <div data-own="assistant-panel" className={styles.thread}>
-            {listing ? (
-              <div className={styles.scroll}>
-                <ConversationList
-                  current={turn.conversationId}
-                  onOpen={(id) => {
-                    turn.open(id);
-                    setListing(false);
-                  }}
-                />
-              </div>
-            ) : !started ? (
-              // Workaround for Slotted finding "A message scroller without items keeps its content hidden": before the first message the notices sit outside the scroller.
-              <div className={styles.scroll}>
-                <ChatWelcome
-                  canAsk={!blocked && chat.data !== undefined}
-                  onAsk={send}
-                  notices={
-                    <>
-                      {blockedNotice}
-                      {errorNotice}
-                      {chat.data !== undefined && (
-                        <ProviderNotice chat={chat.data} />
-                      )}
-                    </>
-                  }
-                />
-              </div>
-            ) : (
-              <MessageScroller
-                follow
-                defaultPosition="end"
-                busy={turn.pending !== null}
-              >
-                <MessageScrollerViewport className={styles.viewport}>
-                  <MessageScrollerContent className={styles.feed}>
-                    {messages.map((m) => (
-                      <MessageScrollerItem
-                        key={m.id}
-                        messageId={m.id}
-                        anchor={m.role === "user"}
-                      >
-                        <MessageItem
-                          message={m}
-                          onRetry={m === last && !orphan ? retry : undefined}
-                          steps={turn.activity[m.id]}
-                        />
-                      </MessageScrollerItem>
-                    ))}
-                    {orphan && (
-                      <MessageScrollerItem messageId="unanswered">
-                        <MessageItem
-                          message={{
-                            id: "unanswered",
-                            role: "assistant",
-                            content: "",
-                            outcome: turn.stopped ? "canceled" : "failed",
-                            created_at: last.created_at,
-                            proposals: [],
-                          }}
-                          onRetry={retry}
-                        />
-                      </MessageScrollerItem>
-                    )}
-                    {turn.pending !== null && (
-                      <>
-                        <MessageScrollerItem messageId="pending" anchor>
-                          <Message align="end">
-                            <MessageBody>
-                              <Bubble>
-                                <BubbleContent>{turn.pending}</BubbleContent>
-                              </Bubble>
-                            </MessageBody>
-                          </Message>
-                        </MessageScrollerItem>
-                        {(turn.steps.length > 0 || draft === "") && (
-                          <Message status="streaming">
-                            <MessageBody>
-                              {turn.steps.length > 0 ? (
-                                <TurnActivity steps={turn.steps} running />
-                              ) : (
-                                <Bubble>
-                                  <BubbleTyping />
-                                </Bubble>
-                              )}
-                            </MessageBody>
-                          </Message>
-                        )}
-                        {draft !== "" && (
-                          <MessageItem
-                            message={{
-                              id: "draft",
-                              role: "assistant",
-                              content: draft,
-                              created_at: "",
-                              proposals: [],
-                            }}
-                          />
-                        )}
-                      </>
-                    )}
-                  </MessageScrollerContent>
-                </MessageScrollerViewport>
-              </MessageScroller>
-            )}
-          </div>
-        </DrawerBody>
-        {!listing && (
-          <DrawerFooter>
-            <div className={styles.composer}>
-              {started && blockedNotice}
-              {started && errorNotice}
-              <AssistantComposer
-                disabled={blocked || chat.data === undefined}
-                busy={turn.pending !== null}
-                onSend={send}
-                onStop={turn.stop}
-                inputRef={composerRef}
-              />
-            </div>
-          </DrawerFooter>
-        )}
+        <DrawerBody>{thread}</DrawerBody>
+        {footer !== false && <DrawerFooter>{footer}</DrawerFooter>}
       </DrawerPanel>
     </Drawer>
   );

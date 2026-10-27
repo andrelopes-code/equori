@@ -5,7 +5,6 @@ import {
   PromptComposerSubmit,
 } from "@slotted/react/prompt-composer";
 import { Text } from "@slotted/react/typography";
-import { useState } from "react";
 import type { RefObject } from "react";
 
 import styles from "@/features/assistant/assistant-panel.module.css";
@@ -18,21 +17,24 @@ export function AssistantComposer({
   onSend,
   onStop,
   inputRef,
+  value,
+  onValueChange,
 }: {
   disabled: boolean;
   busy: boolean;
   onSend: (text: string) => void;
   onStop: () => void;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
+  value: string;
+  onValueChange: (value: string) => void;
 }) {
   const t = useT();
-  const [value, setValue] = useState("");
   return (
     <div className={styles.halo} data-busy={busy || undefined}>
       <PromptComposer
         value={value}
         onValueChange={(next) => {
-          setValue(next);
+          onValueChange(next);
         }}
         disabled={disabled}
         status={busy ? "streaming" : "ready"}

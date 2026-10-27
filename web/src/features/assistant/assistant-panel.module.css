@@ -37,6 +37,20 @@
     }
   }
 
+  /* In the shell's pane the title and the conversation's name take the row; the actions keep their size. */
+  .asideHeader {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-3);
+    inline-size: 100%;
+  }
+
+  .asideTitle {
+    display: grid;
+    flex: 1;
+    min-inline-size: 0;
+  }
+
   /* The conversations stand one step apart. */
   .conversations {
     --slotted-list-gap: var(--slotted-space-4);

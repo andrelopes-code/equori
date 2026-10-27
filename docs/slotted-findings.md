@@ -101,3 +101,4 @@ Registry of the findings reported to the Slotted owner (`web/CLAUDE.md`, "Slotte
 | A dashboard widget with automatic rows rounds its height up to whole rows of 4.5rem                 | reported |
 | Reset returns the dashboard grid to an empty layout instead of its default layout                   | reported |
 | A chart in a dashboard widget keeps a plot of one and a half rows whatever the widget's height      | open     |
+| The app-shell pane resizer draws no line or grip of the splitter                                    | reported |
