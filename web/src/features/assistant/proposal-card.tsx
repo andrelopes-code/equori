@@ -27,7 +27,11 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { useEffect, useRef } from "react";
 
+import type { Decision } from "@/features/assistant/confirm-all";
+import { proposalScreen } from "@/features/assistant/proposal-screen";
 import { useExpired } from "@/features/assistant/use-expired";
+import { useAppLink } from "@/ui/use-app-link";
+import { Link } from "@slotted/react/link";
 
 type Proposal = components["schemas"]["AssistantProposal"];
 type Value = components["schemas"]["AssistantValue"];
@@ -80,20 +84,28 @@ function failureDetail(result: unknown): string | undefined {
 export function ProposalCard({
   proposal,
   reveal = false,
+  decision,
 }: {
   proposal: Proposal;
   // The last card of a new answer brings its actions into view (P13).
   reveal?: boolean;
+  // The outcome of this proposal in a "confirm all" of its answer (P17).
+  decision?: Decision | undefined;
 }) {
   const t = useT();
+  const follow = useAppLink();
   const [locale] = useAppLocale();
   const valueText = useValueText();
   const confirm = useConfirmProposal();
   const reject = useRejectProposal();
-  const shown = confirm.data ?? reject.data ?? proposal;
+  const shown = confirm.data ?? reject.data ?? decision?.proposal ?? proposal;
   const { preview } = shown;
   const busy = confirm.isPending || reject.isPending;
-  const error = confirm.error ?? reject.error;
+  const error = confirm.error ?? reject.error ?? decision?.error ?? null;
+  const screen =
+    shown.status === "executed"
+      ? proposalScreen(shown.tool, shown.result)
+      : undefined;
   const actionKey = catalogKey(`assistant.action.${preview.action}`);
   const detail =
     shown.status === "failed" ? failureDetail(shown.result) : undefined;
@@ -172,6 +184,13 @@ export function ProposalCard({
                 <AlertDescription>{detail}</AlertDescription>
               </AlertContent>
             </Alert>
+          )}
+          {screen !== undefined && (
+            <Text size="sm">
+              <Link href={screen} onClick={follow({ href: screen })}>
+                {t("assistant.proposal.open")}
+              </Link>
+            </Text>
           )}
           {error !== null && (
             <Alert tone="danger" reach="inline" live="polite">

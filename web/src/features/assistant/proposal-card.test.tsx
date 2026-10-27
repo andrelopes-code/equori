@@ -3,9 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import type { components } from "@/api/schema.gen";
+import { MessageItem } from "@/features/assistant/message-item";
 import { ProposalCard } from "@/features/assistant/proposal-card";
 import { catalogEn } from "@/i18n/catalog.en";
-import { fakeApi, json } from "@/testing/fake-api";
+import { fakeApi, json, problem } from "@/testing/fake-api";
 import { expectNoAmounts, hideAmounts } from "@/testing/privacy";
 import { renderWithProviders } from "@/testing/render-app";
 
@@ -202,5 +203,102 @@ describe("ProposalCard", () => {
     expect(
       document.querySelector('[data-ui="description-list"]'),
     ).toHaveAttribute("data-columns", "2");
+  });
+
+  // P16: an executed proposal whose result names a record links to its screen.
+  it("opens the transaction an executed proposal recorded", () => {
+    renderWithProviders(
+      <ProposalCard
+        proposal={{
+          ...pending,
+          status: "executed",
+          result: { transaction_id: "t1" },
+        }}
+      />,
+      { fetch: fakeApi({}) },
+    );
+    expect(
+      screen.getByRole("link", { name: catalogEn["assistant.proposal.open"] }),
+    ).toHaveAttribute("href", "/transactions/t1");
+  });
+
+  // P17 and Review Focus 3 of phase 4.
+  it("confirms all in order and stops at the first failure", async () => {
+    const order: string[] = [];
+    const answer = (id: string) => async () => {
+      order.push(id);
+      await Promise.resolve();
+      return id === "p2"
+        ? problem(409, "proposal_stale")
+        : json(200, { ...pending, id, status: "executed" });
+    };
+    const three = ["p1", "p2", "p3"].map((id) => ({ ...pending, id }));
+    renderWithProviders(
+      <MessageItem
+        message={{
+          id: "m2",
+          role: "assistant",
+          content: "Three changes.",
+          outcome: "answered",
+          created_at: "2026-10-23T10:00:01Z",
+          proposals: three,
+        }}
+      />,
+      {
+        fetch: fakeApi({
+          "POST /api/v1/assistant/proposals/p1/confirm": answer("p1"),
+          "POST /api/v1/assistant/proposals/p2/confirm": answer("p2"),
+          "POST /api/v1/assistant/proposals/p3/confirm": answer("p3"),
+        }),
+      },
+    );
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: catalogEn["assistant.proposal.confirm_all"],
+      }),
+    );
+    await waitFor(() => {
+      expect(order).toEqual(["p1", "p2"]);
+    });
+    const cards = document.querySelectorAll('[data-ui="card"]');
+    const [first, second, third] = [...cards] as HTMLElement[];
+    if (first === undefined || second === undefined || third === undefined)
+      throw new Error("three cards");
+    expect(
+      await within(first).findByText(
+        catalogEn["assistant.proposal.status.executed"],
+      ),
+    ).toBeInTheDocument();
+    // The failure reads as the card's alert.
+    expect(within(second).getByRole("status")).toBeInTheDocument();
+    expect(
+      within(third).getByRole("button", { name: "Confirm" }),
+    ).toBeEnabled();
+    expect(
+      screen.queryByRole("button", {
+        name: catalogEn["assistant.proposal.confirm_all"],
+      }),
+    ).toBeNull();
+  });
+
+  it("offers no confirm all for one pending proposal", () => {
+    renderWithProviders(
+      <MessageItem
+        message={{
+          id: "m2",
+          role: "assistant",
+          content: "One change.",
+          outcome: "answered",
+          created_at: "2026-10-23T10:00:01Z",
+          proposals: [pending],
+        }}
+      />,
+      { fetch: fakeApi({}) },
+    );
+    expect(
+      screen.queryByRole("button", {
+        name: catalogEn["assistant.proposal.confirm_all"],
+      }),
+    ).toBeNull();
   });
 });

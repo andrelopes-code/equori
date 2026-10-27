@@ -1274,6 +1274,8 @@ export const catalogPtBR: Catalog = {
     "O assistente parou no limite de passos; a resposta pode estar incompleta.",
   "assistant.proposal.confirm": "Confirmar",
   "assistant.proposal.expires": "Expira às {time}",
+  "assistant.proposal.open": "Abrir",
+  "assistant.proposal.confirm_all": "Confirmar todas",
   "assistant.proposal.reject": "Rejeitar",
   "assistant.proposal.destructive": "Não pode ser desfeito",
   "assistant.proposal.status.pending": "Aguardando sua confirmação",

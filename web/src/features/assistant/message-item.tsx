@@ -11,12 +11,14 @@ import { Markdown } from "@slotted/react/markdown";
 import type { MarkdownRenderers } from "@slotted/react/markdown";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import styles from "@/features/assistant/assistant-panel.module.css";
 import type { AssistantMessage } from "@/features/assistant/sse";
 import { parseAnswer } from "@/features/assistant/answer-markdown";
 import { maskAmounts, maskMatch } from "@/features/assistant/mask-amounts";
+import { ConfirmAll } from "@/features/assistant/confirm-all";
+import type { Decision } from "@/features/assistant/confirm-all";
 import { ProposalCard } from "@/features/assistant/proposal-card";
 import { TurnActivity } from "@/features/assistant/turn-activity";
 import { useT } from "@/i18n/i18n-provider";
@@ -49,6 +51,7 @@ export function MessageItem({
   const t = useT();
   const { hidden } = usePrivacy();
   const own = message.role === "user";
+  const [decisions, setDecisions] = useState<Record<string, Decision>>({});
   const unanswered =
     message.outcome === "failed" || message.outcome === "canceled";
   const tree = useMemo(() => {
@@ -116,8 +119,17 @@ export function MessageItem({
                 key={proposal.id}
                 proposal={proposal}
                 reveal={reveal && i === message.proposals.length - 1}
+                decision={decisions[proposal.id]}
               />
             ))}
+            <ConfirmAll
+              proposals={message.proposals.filter(
+                (p) => p.status === "pending",
+              )}
+              onDecided={(id, decision) => {
+                setDecisions((d) => ({ ...d, [id]: decision }));
+              }}
+            />
           </Stack>
         )}
       </MessageBody>

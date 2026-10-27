@@ -1269,6 +1269,8 @@ export const catalogEn = {
     "The assistant stopped at its step limit; the answer may be incomplete.",
   "assistant.proposal.confirm": "Confirm",
   "assistant.proposal.expires": "Expires at {time}",
+  "assistant.proposal.open": "Open",
+  "assistant.proposal.confirm_all": "Confirm all",
   "assistant.proposal.reject": "Reject",
   "assistant.proposal.destructive": "Cannot be undone",
   "assistant.proposal.status.pending": "Waiting for your confirmation",
