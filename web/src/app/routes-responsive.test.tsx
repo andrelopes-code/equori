@@ -5,6 +5,7 @@ import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { writeLocale } from "@/i18n/locale";
 import { fakeApi, json } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
+import { indicatorsFixture } from "@/testing/report-api";
 
 const checkingID = "11111111-1111-4111-8111-111111111111";
 const foodID = "22222222-2222-4222-8222-222222222222";
@@ -95,6 +96,7 @@ function newFetch() {
       return json(200, { assets: zero, liabilities: zero, net: zero });
     },
     "GET /api/v1/reports/categories": () => json(200, { items: [] }),
+    "GET /api/v1/reports/indicators": () => json(200, indicatorsFixture()),
     [`GET /api/v1/accounts/${checkingID}/reconciliation`]: () => json(200, {}),
     [`GET /api/v1/accounts/${checkingID}/unconfirmed`]: () =>
       json(200, { items: [] }),
