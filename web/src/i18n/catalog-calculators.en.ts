@@ -178,4 +178,68 @@ export const calculatorsEn = {
     "The rates are the ones the index source published and this instance stored.",
   "calc.correction.limit1":
     "Results can differ from those of an institution, which may use other dates or rounding (Banco Central do Brasil, Calculadora do Cidadão).",
+  "calc.financing.solve": "Solve for",
+  "calc.financing.solve.installment": "Installment",
+  "calc.financing.solve.amount": "Amount",
+  "calc.financing.solve.rate": "Rate",
+  "calc.financing.solve.months": "Term",
+  "calc.financing.amount": "Amount financed",
+  "calc.financing.rate": "Interest rate",
+  "calc.financing.installment": "Price installment",
+  "calc.financing.prepayMonth": "Prepayment after installment (optional)",
+  "calc.financing.prepayAmount": "Prepayment amount",
+  "calc.financing.solved.installment": "Price installment",
+  "calc.financing.solved.amount": "Amount financed",
+  "calc.financing.solved.rate": "Monthly rate",
+  "calc.financing.solved.annual": "Annual rate",
+  "calc.financing.solved.months": "Term in months",
+  "calc.financing.noSolution":
+    "No value solves it: the installment does not cover the interest, or the rate would fall outside 0% to 100% a month.",
+  "calc.financing.compare": "Price and SAC",
+  "calc.financing.figure": "Figure",
+  "calc.financing.price": "Price",
+  "calc.financing.sac": "SAC",
+  "calc.financing.first": "First installment",
+  "calc.financing.last": "Last installment",
+  "calc.financing.paid": "Total paid",
+  "calc.financing.interest": "Total interest",
+  "calc.financing.priceTable": "Price table by month",
+  "calc.financing.sacTable": "SAC table by month",
+  "calc.financing.col.month": "Month",
+  "calc.financing.col.installment": "Installment",
+  "calc.financing.col.interest": "Interest",
+  "calc.financing.col.amortization": "Amortization",
+  "calc.financing.col.balance": "Balance",
+  "calc.financing.prepay.balance": "Balance after the prepayment",
+  "calc.financing.prepay.without": "Interest left without the prepayment",
+  "calc.financing.prepay.months": "Months left, keeping the installment",
+  "calc.financing.prepay.keepInstallmentInterest":
+    "Interest left, keeping the installment",
+  "calc.financing.prepay.installment": "New installment, keeping the term",
+  "calc.financing.prepay.keepTermInterest": "Interest left, keeping the term",
+  "calc.financing.prepay.invalid":
+    "The prepayment month must be between 1 and the term less one.",
+  "calc.financing.step1":
+    "Price: the installment p is fixed and found from M3; it is rounded once.",
+  "calc.financing.step2":
+    "SAC: the amortization A = q0 / n is fixed and rounded once; the interest falls each month.",
+  "calc.financing.step3":
+    "Each month's interest is the balance times j, rounded; the last installment closes the balance.",
+  "calc.financing.step4":
+    "A prepayment lowers the balance right after its installment; the loan then keeps either the installment or the term.",
+  "calc.financing.step5":
+    "A missing rate is found by bisection until the installment differs by less than 0.000001 of it.",
+  "calc.financing.formula1": "M3: q0 = (1 − (1 + j)^−n) / j · p",
+  "calc.financing.formula2":
+    "M4: A = q0 / n; interest of month k = j · (q0 − (k − 1) · A); installment = A + interest",
+  "calc.financing.formula3":
+    "q0: amount financed; p: installment; j: monthly rate; n: months; A: amortization.",
+  "calc.financing.assumption1":
+    "The first installment is due one month after the loan.",
+  "calc.financing.assumption2":
+    "The rate is fixed; no fee, insurance or tax is included.",
+  "calc.financing.limit1":
+    "Consumer rules on prepayment discounts are national and are not applied.",
+  "calc.financing.limit2":
+    "Results can differ from those of a contract, which may round or date installments otherwise (Banco Central do Brasil).",
 } as const;

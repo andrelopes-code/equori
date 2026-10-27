@@ -181,4 +181,68 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "As taxas são as que a fonte do índice publicou e esta instância guardou.",
   "calc.correction.limit1":
     "Os resultados podem diferir dos de uma instituição, que pode usar outras datas ou arredondamentos (Banco Central do Brasil, Calculadora do Cidadão).",
+  "calc.financing.solve": "Calcular",
+  "calc.financing.solve.installment": "Prestação",
+  "calc.financing.solve.amount": "Valor financiado",
+  "calc.financing.solve.rate": "Taxa",
+  "calc.financing.solve.months": "Prazo",
+  "calc.financing.amount": "Valor financiado",
+  "calc.financing.rate": "Taxa de juros",
+  "calc.financing.installment": "Prestação Price",
+  "calc.financing.prepayMonth": "Amortização extra após a prestação (opcional)",
+  "calc.financing.prepayAmount": "Valor da amortização extra",
+  "calc.financing.solved.installment": "Prestação Price",
+  "calc.financing.solved.amount": "Valor financiado",
+  "calc.financing.solved.rate": "Taxa mensal",
+  "calc.financing.solved.annual": "Taxa anual",
+  "calc.financing.solved.months": "Prazo em meses",
+  "calc.financing.noSolution":
+    "Nenhum valor resolve: a prestação não cobre os juros, ou a taxa ficaria fora de 0% a 100% ao mês.",
+  "calc.financing.compare": "Price e SAC",
+  "calc.financing.figure": "Valor",
+  "calc.financing.price": "Price",
+  "calc.financing.sac": "SAC",
+  "calc.financing.first": "Primeira prestação",
+  "calc.financing.last": "Última prestação",
+  "calc.financing.paid": "Total pago",
+  "calc.financing.interest": "Total de juros",
+  "calc.financing.priceTable": "Tabela Price por mês",
+  "calc.financing.sacTable": "Tabela SAC por mês",
+  "calc.financing.col.month": "Mês",
+  "calc.financing.col.installment": "Prestação",
+  "calc.financing.col.interest": "Juros",
+  "calc.financing.col.amortization": "Amortização",
+  "calc.financing.col.balance": "Saldo",
+  "calc.financing.prepay.balance": "Saldo após a amortização extra",
+  "calc.financing.prepay.without": "Juros restantes sem a amortização extra",
+  "calc.financing.prepay.months": "Meses restantes, mantendo a prestação",
+  "calc.financing.prepay.keepInstallmentInterest":
+    "Juros restantes, mantendo a prestação",
+  "calc.financing.prepay.installment": "Nova prestação, mantendo o prazo",
+  "calc.financing.prepay.keepTermInterest": "Juros restantes, mantendo o prazo",
+  "calc.financing.prepay.invalid":
+    "O mês da amortização extra deve estar entre 1 e o prazo menos um.",
+  "calc.financing.step1":
+    "Price: a prestação p é fixa e vem de M3; ela é arredondada uma vez.",
+  "calc.financing.step2":
+    "SAC: a amortização A = q0 / n é fixa e arredondada uma vez; os juros caem a cada mês.",
+  "calc.financing.step3":
+    "Os juros de cada mês são o saldo vezes j, arredondados; a última prestação zera o saldo.",
+  "calc.financing.step4":
+    "Uma amortização extra reduz o saldo logo após a sua prestação; o empréstimo então mantém a prestação ou o prazo.",
+  "calc.financing.step5":
+    "Uma taxa ausente é encontrada por bisseção até a prestação diferir menos de 0,000001 dela.",
+  "calc.financing.formula1": "M3: q0 = (1 − (1 + j)^−n) / j · p",
+  "calc.financing.formula2":
+    "M4: A = q0 / n; juros do mês k = j · (q0 − (k − 1) · A); prestação = A + juros",
+  "calc.financing.formula3":
+    "q0: valor financiado; p: prestação; j: taxa mensal; n: meses; A: amortização.",
+  "calc.financing.assumption1":
+    "A primeira prestação vence um mês após o empréstimo.",
+  "calc.financing.assumption2":
+    "A taxa é fixa; nenhuma tarifa, seguro ou imposto está incluído.",
+  "calc.financing.limit1":
+    "As regras de consumo sobre descontos na antecipação são nacionais e não são aplicadas.",
+  "calc.financing.limit2":
+    "Os resultados podem diferir dos de um contrato, que pode arredondar ou datar as prestações de outro modo (Banco Central do Brasil).",
 };
