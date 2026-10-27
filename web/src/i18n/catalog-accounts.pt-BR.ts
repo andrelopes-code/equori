@@ -354,6 +354,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "positions.costBasis": "Custo",
   "positions.marketValue": "Valor de mercado",
   "positions.result": "Resultado não realizado",
+  "positions.priceOf": "Preço de {date}",
   "positions.noPrice": "Sem cotação",
   "positions.empty": "Esta corretora não tem ativos.",
   "positions.total": "Total das posições cotadas",

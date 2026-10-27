@@ -24,6 +24,7 @@ import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { MASK } from "@/privacy/mask";
 import { PhoneList } from "@/ui/phone-list";
+import { PricedValue, usePriceOf } from "@/ui/priced-value";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
@@ -40,6 +41,7 @@ export function PositionsTab({
 }) {
   const t = useT();
   const fmt = useMoneyFormat();
+  const priceOf = usePriceOf();
   const api = useApi();
   const today = useToday();
   const positions = useQuery(positionsQuery(api, today));
@@ -85,7 +87,9 @@ export function PositionsTab({
                   t("positions.marketValue"),
                   p.market_value === undefined
                     ? t("positions.noPrice")
-                    : money(p.market_value),
+                    : [money(p.market_value), priceOf(p.prices)]
+                        .filter(Boolean)
+                        .join(" · "),
                 ].join(": "),
               ],
               end:
@@ -164,7 +168,10 @@ export function PositionsTab({
                           {t("positions.noPrice")}
                         </Text>
                       ) : (
-                        money(p.market_value)
+                        <PricedValue
+                          value={money(p.market_value)}
+                          prices={p.prices}
+                        />
                       )}
                     </TableCell>
                     <TableCell numeric>

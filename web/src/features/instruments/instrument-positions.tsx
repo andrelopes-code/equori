@@ -27,6 +27,7 @@ import { useToday } from "@/i18n/today";
 import { MASK } from "@/privacy/mask";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { PhoneList } from "@/ui/phone-list";
+import { PricedValue } from "@/ui/priced-value";
 import { QueryError } from "@/ui/query-error";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
@@ -72,7 +73,7 @@ export function InstrumentPositions({ code }: { code: string }) {
         {t("positions.noPrice")}
       </Text>
     ) : (
-      money(p.market_value)
+      <PricedValue value={money(p.market_value)} prices={p.prices} />
     );
   if (compact)
     return (

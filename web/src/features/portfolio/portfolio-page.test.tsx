@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { json } from "@/testing/fake-api";
-import { portfolioApi } from "@/testing/portfolio-api";
+import { petrID, portfolioApi } from "@/testing/portfolio-api";
 import { hideAmounts, expectNoAmounts } from "@/testing/privacy";
 import { renderApp } from "@/testing/render-app";
 
@@ -233,6 +233,54 @@ describe("Portfolio positions", () => {
     const amounts = document.createElement("div");
     amounts.innerHTML = container.innerHTML.replace(/[\d.,]+\s?%/g, "");
     expectNoAmounts(amounts, ["R$105.00", "R$141.00", "10.0000"]);
+  });
+
+  // The value is as recent as the oldest price it used: PETR4 in USD on 10-23, USD in BRL on 10-22.
+  const priced = {
+    account_id: petrID,
+    instrument: "PETR4",
+    quantity: { amount: 5, currency: "PETR4" },
+    cost_basis: { amount: 1500, currency: "BRL" },
+    market_value: { amount: 2000, currency: "BRL" },
+    prices: [
+      {
+        instrument: "PETR4",
+        quote_instrument: "USD",
+        date: "2026-10-23",
+        value: "0.8",
+        source: "manual",
+      },
+      {
+        instrument: "USD",
+        quote_instrument: "BRL",
+        date: "2026-10-22",
+        value: "5",
+        source: "bcb_ptax",
+      },
+    ],
+  };
+  const pricedApi = () =>
+    portfolioApi({
+      "GET /api/v1/positions": () => json(200, { items: [priced] }),
+    });
+
+  it("dates the market value by the oldest price it used", async () => {
+    await renderApp("/portfolio", { fetch: pricedApi() });
+    const table = await positionsTable();
+    expect(
+      await within(table).findByText(
+        catalogEn["positions.priceOf"].replace("{date}", "10/22/2026"),
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("dates the market value on a phone line", async () => {
+    await renderApp("/portfolio", { width: 390, fetch: pricedApi() });
+    expect(
+      await screen.findByText(
+        `${catalogEn["positions.marketValue"]}: R$20.00 · ${catalogEn["positions.priceOf"].replace("{date}", "10/22/2026")}`,
+      ),
+    ).toBeInTheDocument();
   });
 
   it("writes each phone line as a label and its value", async () => {

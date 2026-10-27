@@ -46,6 +46,7 @@ import { MASK } from "@/privacy/mask";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { PhoneGroup } from "@/ui/phone-group";
 import { PhoneList } from "@/ui/phone-list";
+import { PricedValue, usePriceOf } from "@/ui/priced-value";
 import { QueryError } from "@/ui/query-error";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
@@ -63,6 +64,7 @@ export function PortfolioPositions({
   date: string;
   valueIn: string | undefined;
 }) {
+  const priceOf = usePriceOf();
   const t = useT();
   const [tag] = useAppLocale();
   const api = useApi();
@@ -118,7 +120,7 @@ export function PortfolioPositions({
         {t("positions.noPrice")}
       </Text>
     ) : (
-      money(p.market_value)
+      <PricedValue value={money(p.market_value)} prices={p.prices} />
     );
   const resultCell = (p: Position) => {
     if (p.market_value === undefined) return "";
@@ -221,7 +223,12 @@ export function PortfolioPositions({
                       t("positions.marketValue"),
                       row.position.market_value === undefined
                         ? t("positions.noPrice")
-                        : money(row.position.market_value),
+                        : [
+                            money(row.position.market_value),
+                            priceOf(row.position.prices),
+                          ]
+                            .filter(Boolean)
+                            .join(" · "),
                     ].join(": "),
                     row.share === undefined
                       ? ""
