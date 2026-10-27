@@ -190,7 +190,7 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 	// /mcp sits outside /api/ and its session gate: a personal access token opens it, and only it (ADR 024).
 	root := http.NewServeMux()
 	root.Handle("/mcp", mcp.New(mcp.Config{
-		Registry: tools, Names: chatNames, Instructions: assistant.Instructions(), Version: version, Log: log,
+		Registry: tools, Names: chatNames, Instructions: assistant.Instructions(), Prompts: mcpPrompts(), Version: version, Log: log,
 		Verify: func(ctx context.Context, token string) (mcp.Grant, error) {
 			g, err := identityModule.VerifyAccessToken(ctx, token)
 			if err != nil {
@@ -216,4 +216,17 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*App, error) {
 		Portfolio:  portfolioModule,
 		Marketdata: marketdataModule,
 	}, nil
+}
+
+// mcpPrompts hands the assistant's prompts to the MCP adapter, which knows no module.
+func mcpPrompts() []mcp.Prompt {
+	var out []mcp.Prompt
+	for _, p := range assistant.Prompts() {
+		args := make([]mcp.PromptArgument, 0, len(p.Arguments))
+		for _, a := range p.Arguments {
+			args = append(args, mcp.PromptArgument(a))
+		}
+		out = append(out, mcp.Prompt{Name: p.Name, Description: p.Description, Arguments: args, Render: p.Render})
+	}
+	return out
 }

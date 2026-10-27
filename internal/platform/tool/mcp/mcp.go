@@ -31,6 +31,7 @@ type Config struct {
 	// Names are the tools of the chat set; a read grant reaches only the ReadOnly ones.
 	Names        []string
 	Instructions string
+	Prompts      []Prompt
 	Version      string
 	Verify       Verify
 	Log          *slog.Logger
@@ -80,6 +81,9 @@ func newServer(cfg Config, write bool) *sdk.Server {
 			Name: spec.Name, Description: spec.Description, InputSchema: t.InputSchema(), OutputSchema: t.OutputSchema(),
 			Annotations: &sdk.ToolAnnotations{ReadOnlyHint: spec.Effect == tool.ReadOnly, DestructiveHint: &destructive, IdempotentHint: spec.Idempotent},
 		}, callTool(cfg, spec))
+	}
+	for _, p := range cfg.Prompts {
+		addPrompt(s, p)
 	}
 	if !write {
 		// X14: a read token reaches no write tool, also by calling it without listing it.

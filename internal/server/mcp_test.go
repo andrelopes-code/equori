@@ -293,3 +293,52 @@ func TestMCPInstructions(t *testing.T) {
 		t.Fatalf("protocol = %s", s.InitializeResult().ProtocolVersion)
 	}
 }
+
+// X18: three prompts, each a user message that names registry tools.
+func TestMCPPrompts(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	s := mcpSession(t, h, mcpToken(t, h, h.Client, "read"))
+	var names []string
+	for p, err := range s.Prompts(t.Context(), nil) {
+		if err != nil {
+			t.Fatal(err)
+		}
+		names = append(names, p.Name)
+	}
+	slices.Sort(names)
+	if !slices.Equal(names, []string{"categorize_pending", "monthly_review", "reconcile_account"}) {
+		t.Fatalf("prompts = %v", names)
+	}
+	got, err := s.GetPrompt(t.Context(), &mcp.GetPromptParams{Name: "monthly_review", Arguments: map[string]string{"month": "2026-09"}})
+	if err != nil || len(got.Messages) != 1 || got.Messages[0].Role != "user" {
+		t.Fatalf("monthly_review = %+v, %v", got, err)
+	}
+	text := got.Messages[0].Content.(*mcp.TextContent).Text
+	for _, want := range []string{"2026-09", "get_category_totals", "search_transactions"} {
+		if !strings.Contains(text, want) {
+			t.Errorf("monthly_review lacks %q: %s", want, text)
+		}
+	}
+	for _, p := range []string{"monthly_review", "categorize_pending", "reconcile_account"} {
+		args := map[string]string{"month": "2026-09", "account": "Nubank"}
+		r, err := s.GetPrompt(t.Context(), &mcp.GetPromptParams{Name: p, Arguments: args})
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Every snake_case word of a prompt is a registry tool.
+		for _, word := range strings.FieldsFunc(r.Messages[0].Content.(*mcp.TextContent).Text, func(r rune) bool {
+			return r != '_' && (r < 'a' || r > 'z')
+		}) {
+			if _, ok := h.App.Tools.Tool(word); strings.Contains(word, "_") && !ok {
+				t.Errorf("%s names %s, not a registry tool", p, word)
+			}
+		}
+	}
+	if _, err := s.GetPrompt(t.Context(), &mcp.GetPromptParams{Name: "monthly_review", Arguments: map[string]string{"month": "2026-13"}}); err == nil {
+		t.Error("monthly_review accepts month 2026-13")
+	}
+	if _, err := s.GetPrompt(t.Context(), &mcp.GetPromptParams{Name: "reconcile_account", Arguments: map[string]string{}}); err == nil {
+		t.Error("reconcile_account accepts no account")
+	}
+}

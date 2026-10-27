@@ -166,3 +166,28 @@ func (m *Module) RotateSecrets(ctx context.Context) (int, error) { return m.svc.
 
 // Instructions returns the guide an MCP client receives as its instructions (design 2026-10-26 E10).
 func Instructions() string { return app.Instructions() }
+
+// Prompt is a user message an MCP client offers its user; the module does not import the SDK.
+type Prompt struct {
+	Name, Description string
+	Arguments         []PromptArgument
+	Render            func(args map[string]string) (string, error)
+}
+
+type PromptArgument struct {
+	Name, Description string
+	Required          bool
+}
+
+// Prompts returns the MCP prompts (design 2026-10-26 X18).
+func Prompts() []Prompt {
+	var out []Prompt
+	for _, p := range app.MCPPrompts() {
+		args := make([]PromptArgument, 0, len(p.Arguments))
+		for _, a := range p.Arguments {
+			args = append(args, PromptArgument(a))
+		}
+		out = append(out, Prompt{Name: p.Name, Description: p.Description, Arguments: args, Render: p.Render})
+	}
+	return out
+}
