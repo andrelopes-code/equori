@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AssistantPanel } from "@/features/assistant/assistant-panel";
+import { maskAmountText } from "@/features/assistant/mask-amounts";
 import { catalogEn } from "@/i18n/catalog.en";
 import { writeLocale } from "@/i18n/locale";
 import { fakeApi, json, problem } from "@/testing/fake-api";
@@ -77,6 +78,7 @@ function turnStream() {
 
 function setup(
   routes: Record<string, (req: Request) => Response | Promise<Response>>,
+  path = "/overview",
 ) {
   setViewport(1280);
   const fake = fakeApi({
@@ -93,7 +95,7 @@ function setup(
   const onOpenChange = vi.fn();
   const { router } = renderWithRouter(
     <AssistantPanel open onOpenChange={onOpenChange} />,
-    { path: "/overview", fetch: absolute },
+    { path, fetch: absolute },
   );
   const navigate = vi.spyOn(router, "navigate").mockResolvedValue(undefined);
   return { navigate, onOpenChange };
@@ -799,6 +801,48 @@ describe("AssistantPanel", () => {
       else Object.defineProperty(Element.prototype, "scrollIntoView", original);
     }
   });
+
+  // P20: the welcome suggests questions about the current screen.
+  it("suggests questions about the transactions screen", async () => {
+    setup({}, "/transactions");
+    for (const n of ["1", "2", "3"] as const) {
+      expect(
+        await screen.findByRole("button", {
+          name: catalogEn[`assistant.suggestion.transactions.${n}`],
+        }),
+      ).toBeInTheDocument();
+    }
+  });
+
+  // P21 and Review Focus 5 of phase 4: copying gives the answer's Markdown, masked while privacy is on.
+  it.each([false, true])(
+    "copies the answer's Markdown (privacy %s)",
+    async (masked) => {
+      const written: string[] = [];
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: {
+          writeText: (text: string) => {
+            written.push(text);
+            return Promise.resolve();
+          },
+        },
+      });
+      await answer("Gastou R$ 1.234,56 em **outubro**", masked);
+      await screen.findByText("outubro");
+      await userEvent.click(
+        screen.getByRole("button", { name: catalogEn["assistant.copy"] }),
+      );
+      await waitFor(() => {
+        expect(written).toHaveLength(1);
+      });
+      expect(written[0]).toBe(
+        masked
+          ? maskAmountText("Gastou R$ 1.234,56 em **outubro**")
+          : "Gastou R$ 1.234,56 em **outubro**",
+      );
+    },
+  );
 
   it("says when the quota returns after an exhausted error event", async () => {
     let refused = false;

@@ -1241,11 +1241,33 @@ export const catalogEn = {
   "assistant.welcome.title": "How can I help?",
   "assistant.welcome.body":
     "Ask about balances, spending and statements, have a transaction recorded or fixed, or ask where something is in the app. Nothing changes until you confirm it.",
-  "assistant.suggestion.balance": "What are my account balances?",
-  "assistant.suggestion.spending":
-    "How much did I spend by category this month?",
-  "assistant.suggestion.statement": "When does my next card statement close?",
   "assistant.composer.hint": "Enter sends · Shift+Enter adds a line",
+  "assistant.suggestion.overview.1": "What are my account balances?",
+  "assistant.suggestion.overview.2":
+    "How much did I spend by category this month?",
+  "assistant.suggestion.overview.3": "What changed in my net worth this month?",
+  "assistant.suggestion.transactions.1": "Which transactions have no category?",
+  "assistant.suggestion.transactions.2":
+    "What were my largest expenses this month?",
+  "assistant.suggestion.transactions.3":
+    "Record a lunch of 45.90 paid today from my checking account.",
+  "assistant.suggestion.cards.1": "When does my next card statement close?",
+  "assistant.suggestion.cards.2": "How much is on my open card statements?",
+  "assistant.suggestion.cards.3": "Which installments are still to be paid?",
+  "assistant.suggestion.planning.1":
+    "How am I doing against my budgets this month?",
+  "assistant.suggestion.planning.2": "Which bills are due in the next 30 days?",
+  "assistant.suggestion.planning.3": "How far am I from my goals?",
+  "assistant.suggestion.reports.1":
+    "How did my spending change against last month?",
+  "assistant.suggestion.reports.2": "What is my savings rate this year?",
+  "assistant.suggestion.reports.3":
+    "Which categories grew most in the last three months?",
+  "assistant.suggestion.other.1": "What can you do in equori?",
+  "assistant.suggestion.other.2": "Where do I import a bank statement?",
+  "assistant.suggestion.other.3": "What are my account balances?",
+  "assistant.copy": "Copy",
+  "assistant.copied": "Copied",
   "assistant.notice.title": "About your data",
   "assistant.exhausted.title": "Usage limit reached",
   "assistant.unavailable.title": "Assistant unavailable",

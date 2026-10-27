@@ -1247,10 +1247,35 @@ export const catalogPtBR: Catalog = {
   "assistant.welcome.title": "Como posso ajudar?",
   "assistant.welcome.body":
     "Pergunte sobre saldos, gastos e faturas, peça para lançar ou corrigir uma transação, ou pergunte onde fica algo no app. Nada muda sem a sua confirmação.",
-  "assistant.suggestion.balance": "Qual o saldo das minhas contas?",
-  "assistant.suggestion.spending": "Quanto gastei por categoria este mês?",
-  "assistant.suggestion.statement": "Quando fecha a próxima fatura do cartão?",
   "assistant.composer.hint": "Enter envia · Shift+Enter quebra a linha",
+  "assistant.suggestion.overview.1": "Qual o saldo das minhas contas?",
+  "assistant.suggestion.overview.2": "Quanto gastei por categoria este mês?",
+  "assistant.suggestion.overview.3": "O que mudou no meu patrimônio este mês?",
+  "assistant.suggestion.transactions.1":
+    "Quais transações estão sem categoria?",
+  "assistant.suggestion.transactions.2":
+    "Quais foram meus maiores gastos este mês?",
+  "assistant.suggestion.transactions.3":
+    "Lance um almoço de 45,90 pago hoje na conta corrente.",
+  "assistant.suggestion.cards.1": "Quando fecha a próxima fatura do cartão?",
+  "assistant.suggestion.cards.2":
+    "Quanto há nas faturas abertas dos meus cartões?",
+  "assistant.suggestion.cards.3": "Quais parcelas ainda faltam pagar?",
+  "assistant.suggestion.planning.1":
+    "Como estou em relação aos orçamentos deste mês?",
+  "assistant.suggestion.planning.2":
+    "Quais contas vencem nos próximos 30 dias?",
+  "assistant.suggestion.planning.3": "Quanto falta para as minhas metas?",
+  "assistant.suggestion.reports.1":
+    "Como meus gastos mudaram em relação ao mês passado?",
+  "assistant.suggestion.reports.2": "Qual a minha taxa de poupança neste ano?",
+  "assistant.suggestion.reports.3":
+    "Quais categorias mais cresceram nos últimos três meses?",
+  "assistant.suggestion.other.1": "O que você consegue fazer no equori?",
+  "assistant.suggestion.other.2": "Onde importo um extrato bancário?",
+  "assistant.suggestion.other.3": "Qual o saldo das minhas contas?",
+  "assistant.copy": "Copiar",
+  "assistant.copied": "Copiado",
   "assistant.notice.title": "Sobre os seus dados",
   "assistant.exhausted.title": "Limite de uso atingido",
   "assistant.unavailable.title": "Assistente indisponível",

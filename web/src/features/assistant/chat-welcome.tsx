@@ -9,20 +9,17 @@ import styles from "@/features/assistant/assistant-panel.module.css";
 import { useT } from "@/i18n/i18n-provider";
 import type { MessageKey } from "@/i18n/catalog.en";
 
-const suggestions: readonly MessageKey[] = [
-  "assistant.suggestion.balance",
-  "assistant.suggestion.spending",
-  "assistant.suggestion.statement",
-];
-
 // Families read: typography, button, stack. A conversation without messages: what the
 // assistant does, three questions to start from, and the notices before anything is sent.
 export function ChatWelcome({
   notices,
   canAsk,
   onAsk,
+  suggestions,
 }: {
   notices: ReactNode;
+  // The questions for the current screen (P20).
+  suggestions: readonly MessageKey[];
   canAsk: boolean;
   onAsk: (text: string) => void;
 }) {

@@ -3,10 +3,13 @@ import {
   Bubble,
   BubbleContent,
   Message,
+  MessageActions,
   MessageBody,
+  MessageFooter,
 } from "@slotted/react/message";
+import { Glyph, Icon } from "@slotted/react/icon";
 import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
-import { Button } from "@slotted/react/button";
+import { Button, IconButton } from "@slotted/react/button";
 import { Markdown } from "@slotted/react/markdown";
 import type { MarkdownRenderers } from "@slotted/react/markdown";
 import { Stack } from "@slotted/react/stack";
@@ -16,7 +19,11 @@ import { useMemo, useState } from "react";
 import styles from "@/features/assistant/assistant-panel.module.css";
 import type { AssistantMessage } from "@/features/assistant/sse";
 import { parseAnswer } from "@/features/assistant/answer-markdown";
-import { maskAmounts, maskMatch } from "@/features/assistant/mask-amounts";
+import {
+  maskAmountText,
+  maskAmounts,
+  maskMatch,
+} from "@/features/assistant/mask-amounts";
 import { ConfirmAll } from "@/features/assistant/confirm-all";
 import type { Decision } from "@/features/assistant/confirm-all";
 import { ProposalCard } from "@/features/assistant/proposal-card";
@@ -40,6 +47,7 @@ export function MessageItem({
   onRetry,
   steps,
   reveal = false,
+  streaming = false,
 }: {
   message: AssistantMessage;
   onRetry?: (() => void) | undefined;
@@ -47,11 +55,14 @@ export function MessageItem({
   steps?: string[] | undefined;
   // The answer just arrived; its last card brings its actions into view (P13).
   reveal?: boolean;
+  // The answer is still arriving; it has nothing to copy yet.
+  streaming?: boolean;
 }) {
   const t = useT();
   const { hidden } = usePrivacy();
   const own = message.role === "user";
   const [decisions, setDecisions] = useState<Record<string, Decision>>({});
+  const [copied, setCopied] = useState(false);
   const unanswered =
     message.outcome === "failed" || message.outcome === "canceled";
   const tree = useMemo(() => {
@@ -131,6 +142,33 @@ export function MessageItem({
               }}
             />
           </Stack>
+        )}
+        {!own && tree !== null && !streaming && (
+          <MessageFooter>
+            <MessageActions>
+              <IconButton
+                aria-label={t(copied ? "assistant.copied" : "assistant.copy")}
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  // P21: the answer's Markdown, masked like the screen while privacy is on.
+                  const text = hidden
+                    ? maskAmountText(message.content)
+                    : message.content;
+                  void navigator.clipboard.writeText(text).then(() => {
+                    setCopied(true);
+                    setTimeout(() => {
+                      setCopied(false);
+                    }, 2000);
+                  });
+                }}
+              >
+                <Icon>
+                  <Glyph name={copied ? "check" : "copy"} />
+                </Icon>
+              </IconButton>
+            </MessageActions>
+          </MessageFooter>
         )}
       </MessageBody>
     </Message>

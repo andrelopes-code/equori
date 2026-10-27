@@ -60,6 +60,7 @@ import { ProviderNotice } from "@/features/assistant/provider-notice";
 import { useAssistantTurn } from "@/features/assistant/use-assistant-turn";
 import { useFrameValue } from "@/features/assistant/use-frame-value";
 import { TurnActivity } from "@/features/assistant/turn-activity";
+import { routeSuggestions } from "@/features/assistant/route-suggestions";
 import { useRetryAt } from "@/features/assistant/use-retry-at";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { usePrivacy } from "@/privacy/privacy-provider";
@@ -280,6 +281,7 @@ export function AssistantPanel({
         <div className={styles.scroll}>
           <ChatWelcome
             canAsk={!blocked && chat.data !== undefined}
+            suggestions={routeSuggestions(page)}
             onAsk={send}
             notices={
               <>
@@ -363,6 +365,7 @@ export function AssistantPanel({
                         created_at: "",
                         proposals: [],
                       }}
+                      streaming
                     />
                   )}
                 </>
