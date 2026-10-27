@@ -28,7 +28,7 @@ function Install-Equori {
 }
 
 function Transactions {
-    (Invoke-RestMethod -WebSession $session "$base/api/v1/transactions").items.Count
+    (Invoke-RestMethod -Headers $auth "$base/api/v1/transactions").items.Count
 }
 
 Install-Equori
@@ -42,18 +42,21 @@ if ($version -ne "equori $Tag") { throw "version is '$version', want 'equori $Ta
 $url = (Get-Content "$data\setup.url" -Raw).Trim()
 $token = ([uri]$url).Fragment -replace '^#token=', ''
 $body = @{ token = $token; email = 'smoke@equori.test'; password = 'equori-smoke-test'; language = 'en'; region = $Region; base_currency = $Currency } | ConvertTo-Json
-$r = Invoke-WebRequest -UseBasicParsing -SessionVariable session -Method Post -ContentType 'application/json' -Body $body "$base/api/v1/setup"
+$r = Invoke-WebRequest -UseBasicParsing -Method Post -ContentType 'application/json' -Body $body "$base/api/v1/setup"
 if ($r.StatusCode -ne 201) { throw "setup answered $($r.StatusCode)" }
+# The cookie is Secure: a browser sends it to the loopback address, the .NET client does not.
+$cookie = (@($r.Headers['Set-Cookie']) -join ';') -replace '^.*?(equori_session=[^;]+).*$', '$1'
+$auth = @{ Cookie = $cookie }
 if (Test-Path "$data\setup.url") { throw 'setup.url is still there after the setup' }
 "3 first user created with the token of setup.url"
 
-$account = { param($name, $class) (Invoke-RestMethod -WebSession $session -Method Post -ContentType 'application/json' -Body (@{ name = $name; class = $class; currency = $Currency } | ConvertTo-Json) "$base/api/v1/accounts").id }
+$account = { param($name, $class) (Invoke-RestMethod -Headers $auth -Method Post -ContentType 'application/json' -Body (@{ name = $name; class = $class; currency = $Currency } | ConvertTo-Json) "$base/api/v1/accounts").id }
 $checking = & $account 'Checking' 'asset'
 $food = & $account 'Food' 'expense'
 $tx = @{ date = '2026-10-14'; description = 'smoke'; postings = @(
         @{ account_id = $checking; amount = @{ amount = -2300; currency = $Currency } },
         @{ account_id = $food; amount = @{ amount = 2300; currency = $Currency } }) } | ConvertTo-Json -Depth 5
-Invoke-RestMethod -WebSession $session -Method Post -ContentType 'application/json' -Body $tx "$base/api/v1/transactions" | Out-Null
+Invoke-RestMethod -Headers $auth -Method Post -ContentType 'application/json' -Body $tx "$base/api/v1/transactions" | Out-Null
 if ((Transactions) -ne 1) { throw 'the transaction is not listed' }
 "4 an account and a transaction recorded"
 
