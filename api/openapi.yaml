@@ -1747,6 +1747,62 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /indexes:
+    get:
+      tags: [marketdata]
+      operationId: listIndexes
+      summary: The enabled indexes with at least one stored rate, in the order of EQUORI_INDEX_FEEDS.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IndexList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /indexes/{id}/rates:
+    get:
+      tags: [marketdata]
+      operationId: listIndexRates
+      summary: The stored rates of an enabled index in [from, to], at most 7,320 days, oldest first.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IndexRateList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /instruments:
     get:
       tags: [marketdata]
@@ -7006,6 +7062,52 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Holiday"
+    Index:
+      type: object
+      additionalProperties: false
+      required: [id, period, first, last]
+      properties:
+        id:
+          type: string
+        period:
+          type: string
+          enum: [day, month]
+          description: The span one rate covers.
+        first:
+          type: string
+          format: date
+        last:
+          type: string
+          format: date
+    IndexList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Index"
+    IndexRate:
+      type: object
+      additionalProperties: false
+      required: [date, rate]
+      properties:
+        date:
+          type: string
+          format: date
+          description: The date the rate is published for; the first day of the month for a monthly index.
+        rate:
+          type: string
+          description: Exact decimal fraction, negative when the index fell (0.0042 is 0.42%).
+          example: "0.004200000000"
+    IndexRateList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/IndexRate"
     InstrumentType:
       type: string
       enum: [currency, stock, etf, reit, depositary_receipt, fixed_income, fund, crypto]

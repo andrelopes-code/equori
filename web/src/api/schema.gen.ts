@@ -1046,6 +1046,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/indexes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The enabled indexes with at least one stored rate, in the order of EQUORI_INDEX_FEEDS. */
+        get: operations["listIndexes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/indexes/{id}/rates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The stored rates of an enabled index in [from, to], at most 7,320 days, oldest first. */
+        get: operations["listIndexRates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/instruments": {
         parameters: {
             query?: never;
@@ -4031,6 +4065,36 @@ export interface components {
         HolidayList: {
             items: components["schemas"]["Holiday"][];
         };
+        Index: {
+            id: string;
+            /**
+             * @description The span one rate covers.
+             * @enum {string}
+             */
+            period: "day" | "month";
+            /** Format: date */
+            first: string;
+            /** Format: date */
+            last: string;
+        };
+        IndexList: {
+            items: components["schemas"]["Index"][];
+        };
+        IndexRate: {
+            /**
+             * Format: date
+             * @description The date the rate is published for; the first day of the month for a monthly index.
+             */
+            date: string;
+            /**
+             * @description Exact decimal fraction, negative when the index fell (0.0042 is 0.42%).
+             * @example 0.004200000000
+             */
+            rate: string;
+        };
+        IndexRateList: {
+            items: components["schemas"]["IndexRate"][];
+        };
         /** @enum {string} */
         InstrumentType: "currency" | "stock" | "etf" | "reit" | "depositary_receipt" | "fixed_income" | "fund" | "crypto";
         Instrument: {
@@ -6892,6 +6956,58 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+        };
+    };
+    listIndexes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndexList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    listIndexRates: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndexRateList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     listInstruments: {

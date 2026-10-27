@@ -18,7 +18,8 @@ const (
 	SourceCSV    = "csv"
 
 	MaxImportLines = 10000
-	MaxPriceRange  = 366 // days in a GET /prices range
+	MaxPriceRange  = 366  // days in a GET /prices range
+	MaxIndexRange  = 7320 // days in a GET /indexes/{id}/rates range: 20 years and their leap days
 )
 
 type Price struct {
@@ -88,12 +89,17 @@ func StorableRate(r money.Rate) bool {
 }
 
 // ValidRange checks a GET /prices range.
-func ValidRange(from, to time.Time) error {
+func ValidRange(from, to time.Time) error { return validRange(from, to, MaxPriceRange) }
+
+// ValidIndexRange checks a GET /indexes/{id}/rates range.
+func ValidIndexRange(from, to time.Time) error { return validRange(from, to, MaxIndexRange) }
+
+func validRange(from, to time.Time, maxDays int) error {
 	if to.Before(from) {
 		return invalid("to", "must not be before from")
 	}
-	if to.Sub(from) > MaxPriceRange*24*time.Hour {
-		return invalid("to", fmt.Sprintf("must be at most %d days after from", MaxPriceRange))
+	if to.Sub(from) > time.Duration(maxDays)*24*time.Hour {
+		return invalid("to", fmt.Sprintf("must be at most %d days after from", maxDays))
 	}
 	return nil
 }

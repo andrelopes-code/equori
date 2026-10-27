@@ -14,3 +14,11 @@ FROM marketdata_fixed_income_terms WHERE index_id = @index_id;
 
 -- name: ListIndexRates :many
 SELECT date, rate FROM marketdata_index_rate WHERE index_id = @index_id AND date >= @from_date ORDER BY date;
+
+-- name: IndexRange :one
+-- n is 0, and first and last meaningless, when the index has no rate.
+SELECT coalesce(min(date), DATE '0001-01-01')::date AS first, coalesce(max(date), DATE '0001-01-01')::date AS last, count(*) AS n
+FROM marketdata_index_rate WHERE index_id = @index_id;
+
+-- name: ListIndexRatesBetween :many
+SELECT date, rate FROM marketdata_index_rate WHERE index_id = @index_id AND date >= @from_date AND date <= @to_date ORDER BY date;

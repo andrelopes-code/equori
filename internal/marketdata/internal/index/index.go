@@ -14,12 +14,20 @@ type Rate struct {
 	Value string
 }
 
+// Periods of an index: the span one rate covers.
+const (
+	PeriodDay   = "day"
+	PeriodMonth = "month"
+)
+
 // Source reads the rates of one index from one public source.
 type Source interface {
 	// ID identifies the source; it is the value of EQUORI_INDEX_FEEDS.
 	ID() string
 	// Index is the identifier the rates are stored under, the index_id of the terms.
 	Index() string
+	// Period is PeriodDay or PeriodMonth.
+	Period() string
 	// Fetch returns the rates published for [from, to].
 	Fetch(ctx context.Context, from, to time.Time) ([]Rate, error)
 }

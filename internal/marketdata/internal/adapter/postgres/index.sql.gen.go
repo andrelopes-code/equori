@@ -12,6 +12,25 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const indexRange = `-- name: IndexRange :one
+SELECT coalesce(min(date), DATE '0001-01-01')::date AS first, coalesce(max(date), DATE '0001-01-01')::date AS last, count(*) AS n
+FROM marketdata_index_rate WHERE index_id = $1
+`
+
+type IndexRangeRow struct {
+	First time.Time
+	Last  time.Time
+	N     int64
+}
+
+// n is 0, and first and last meaningless, when the index has no rate.
+func (q *Queries) IndexRange(ctx context.Context, indexID string) (IndexRangeRow, error) {
+	row := q.db.QueryRow(ctx, indexRange, indexID)
+	var i IndexRangeRow
+	err := row.Scan(&i.First, &i.Last, &i.N)
+	return i, err
+}
+
 const indexTermsStart = `-- name: IndexTermsStart :one
 SELECT coalesce(min(issued_on), DATE '0001-01-01')::date AS issued_on, count(*) AS n
 FROM marketdata_fixed_income_terms WHERE index_id = $1
@@ -71,6 +90,41 @@ func (q *Queries) ListIndexRates(ctx context.Context, arg ListIndexRatesParams) 
 	var items []ListIndexRatesRow
 	for rows.Next() {
 		var i ListIndexRatesRow
+		if err := rows.Scan(&i.Date, &i.Rate); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listIndexRatesBetween = `-- name: ListIndexRatesBetween :many
+SELECT date, rate FROM marketdata_index_rate WHERE index_id = $1 AND date >= $2 AND date <= $3 ORDER BY date
+`
+
+type ListIndexRatesBetweenParams struct {
+	IndexID  string
+	FromDate time.Time
+	ToDate   time.Time
+}
+
+type ListIndexRatesBetweenRow struct {
+	Date time.Time
+	Rate pgtype.Numeric
+}
+
+func (q *Queries) ListIndexRatesBetween(ctx context.Context, arg ListIndexRatesBetweenParams) ([]ListIndexRatesBetweenRow, error) {
+	rows, err := q.db.Query(ctx, listIndexRatesBetween, arg.IndexID, arg.FromDate, arg.ToDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListIndexRatesBetweenRow
+	for rows.Next() {
+		var i ListIndexRatesBetweenRow
 		if err := rows.Scan(&i.Date, &i.Rate); err != nil {
 			return nil, err
 		}

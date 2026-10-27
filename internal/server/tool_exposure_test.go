@@ -91,6 +91,8 @@ var exposure = map[string]string{
 	"getCategoryTotals":                "get_category_totals",
 	"listCalendars":                    "get_market_data",
 	"listHolidays":                     "get_market_data",
+	"listIndexes":                      "get_market_data",
+	"listIndexRates":                   "get_market_data",
 	"listInstruments":                  "get_market_data",
 	"defineInstrument":                 "manage_instrument",
 	"getInstrument":                    "get_market_data",

@@ -2,6 +2,7 @@ package marketdata_test
 
 import (
 	"encoding/json"
+	"net/http/httptest"
 	"reflect"
 	"testing"
 
@@ -197,6 +198,34 @@ func TestGetMarketDataToolCalendars(t *testing.T) {
 		t.Errorf("holidays = %+v", hols.Holidays)
 	}
 	h.ExpectToolError(h.Tool("get_market_data", map[string]any{"view": "holidays", "calendar": "nope", "year": 2026}), "not_found", "")
+}
+
+func TestGetMarketDataToolIndexes(t *testing.T) {
+	t.Parallel()
+	s := &sgsServer{cdi: cdiWeek, ipca: [][2]string{{"01/01/2026", "0.42"}, {"01/02/2026", "-0.30"}}}
+	srv := httptest.NewServer(s)
+	t.Cleanup(srv.Close)
+	h := apitest.New(t, apitest.Today("2026-03-15"), apitest.IndexFeeds([]string{"br_cdi", "br_ipca"}, indexURLs(srv)))
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	var list struct {
+		Indexes []apiIndex `json:"indexes"`
+	}
+	toolOutput(t, h, "get_market_data", map[string]any{"view": "indexes"}, &list)
+	want := []apiIndex{{"cdi", "day", "2026-01-02", "2026-01-09"}, {"ipca", "month", "2026-01-01", "2026-02-01"}}
+	if !reflect.DeepEqual(list.Indexes, want) {
+		t.Fatalf("indexes = %+v, want %+v", list.Indexes, want)
+	}
+	var rates struct {
+		IndexRates []apiIndexRate `json:"index_rates"`
+	}
+	toolOutput(t, h, "get_market_data", map[string]any{"view": "index_rates", "index": "ipca", "from": "2026-01-01", "to": "2026-02-28"}, &rates)
+	wantRates := []apiIndexRate{{"2026-01-01", "0.004200000000"}, {"2026-02-01", "-0.003000000000"}}
+	if !reflect.DeepEqual(rates.IndexRates, wantRates) {
+		t.Fatalf("index rates = %+v, want %+v", rates.IndexRates, wantRates)
+	}
+	h.ExpectToolError(h.Tool("get_market_data", map[string]any{"view": "index_rates", "index": "selic", "from": "2026-01-01", "to": "2026-02-28"}), "not_found", "")
+	h.ExpectToolError(h.Tool("get_market_data", map[string]any{"view": "index_rates", "from": "2026-01-01", "to": "2026-02-28"}), "invalid_arguments", "index")
 }
 
 func TestGetMarketDataToolInvalidArguments(t *testing.T) {

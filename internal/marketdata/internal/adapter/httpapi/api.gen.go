@@ -70,6 +70,24 @@ func (e HolidaySource) Valid() bool {
 	}
 }
 
+// Defines values for IndexPeriod.
+const (
+	Day   IndexPeriod = "day"
+	Month IndexPeriod = "month"
+)
+
+// Valid indicates whether the value is a known member of the IndexPeriod enum.
+func (e IndexPeriod) Valid() bool {
+	switch e {
+	case Day:
+		return true
+	case Month:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InstrumentType.
 const (
 	Crypto            InstrumentType = "crypto"
@@ -191,6 +209,40 @@ type HolidayList struct {
 	Items []Holiday `json:"items"`
 }
 
+// Index defines model for Index.
+type Index struct {
+	First openapi_types.Date `json:"first"`
+	Id    string             `json:"id"`
+	Last  openapi_types.Date `json:"last"`
+
+	// Period The span one rate covers.
+	Period IndexPeriod `json:"period"`
+}
+
+// IndexPeriod The span one rate covers.
+type IndexPeriod string
+
+// IndexList defines model for IndexList.
+type IndexList struct {
+	Items []Index `json:"items"`
+}
+
+// IndexRate defines model for IndexRate.
+type IndexRate struct {
+	// Date The date the rate is published for; the first day of the month for a monthly index.
+	Date openapi_types.Date `json:"date"`
+
+	// Rate Exact decimal fraction, negative when the index fell (0.0042 is 0.42%).
+	//
+	// Example: 0.004200000000
+	Rate string `json:"rate"`
+}
+
+// IndexRateList defines model for IndexRateList.
+type IndexRateList struct {
+	Items []IndexRate `json:"items"`
+}
+
 // Instrument defines model for Instrument.
 type Instrument struct {
 	Code     string  `json:"code"`
@@ -306,6 +358,12 @@ type ListHolidaysParams struct {
 	Year int `form:"year" json:"year"`
 }
 
+// ListIndexRatesParams defines parameters for ListIndexRates.
+type ListIndexRatesParams struct {
+	From openapi_types.Date `form:"from" json:"from"`
+	To   openapi_types.Date `form:"to" json:"to"`
+}
+
 // ListInstrumentsParams defines parameters for ListInstruments.
 type ListInstrumentsParams struct {
 	Type *InstrumentType `form:"type,omitempty" json:"type,omitempty"`
@@ -344,6 +402,12 @@ type ServerInterface interface {
 	// ListHolidays Non-business days of a calendar in a year, weekends excluded.
 	// (GET /calendars/{name}/holidays)
 	ListHolidays(w http.ResponseWriter, r *http.Request, name string, params ListHolidaysParams)
+	// ListIndexes The enabled indexes with at least one stored rate, in the order of EQUORI_INDEX_FEEDS.
+	// (GET /indexes)
+	ListIndexes(w http.ResponseWriter, r *http.Request)
+	// ListIndexRates The stored rates of an enabled index in [from, to], at most 7,320 days, oldest first.
+	// (GET /indexes/{id}/rates)
+	ListIndexRates(w http.ResponseWriter, r *http.Request, id string, params ListIndexRatesParams)
 	// ListInstruments Instruments of the instance in code order.
 	// (GET /instruments)
 	ListInstruments(w http.ResponseWriter, r *http.Request, params ListInstrumentsParams)
@@ -426,6 +490,75 @@ func (siw *ServerInterfaceWrapper) ListHolidays(w http.ResponseWriter, r *http.R
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListHolidays(w, r, name, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListIndexes operation middleware
+func (siw *ServerInterfaceWrapper) ListIndexes(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListIndexes(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListIndexRates operation middleware
+func (siw *ServerInterfaceWrapper) ListIndexRates(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListIndexRatesParams
+
+	// ------------- Required query parameter "from" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "from", r.URL.Query(), &params.From, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		}
+		return
+	}
+
+	// ------------- Required query parameter "to" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "to", r.URL.Query(), &params.To, runtime.BindQueryParameterOptions{Type: "string", Format: "date"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListIndexRates(w, r, id, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -782,6 +915,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/calendars", wrapper.ListCalendars)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/calendars/{name}/holidays", wrapper.ListHolidays)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/indexes", wrapper.ListIndexes)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/indexes/{id}/rates", wrapper.ListIndexRates)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instruments", wrapper.ListInstruments)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/instruments", wrapper.DefineInstrument)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instruments/{code}", wrapper.GetInstrument)
@@ -896,6 +1031,152 @@ func (response ListHolidays404ApplicationProblemPlusJSONResponse) VisitListHolid
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListIndexesRequestObject struct {
+}
+
+type ListIndexesResponseObject interface {
+	VisitListIndexesResponse(w http.ResponseWriter) error
+}
+
+type ListIndexes200JSONResponse IndexList
+
+func (response ListIndexes200JSONResponse) VisitListIndexesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListIndexes400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListIndexes400ApplicationProblemPlusJSONResponse) VisitListIndexesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListIndexes401ApplicationProblemPlusJSONResponse Problem
+
+func (response ListIndexes401ApplicationProblemPlusJSONResponse) VisitListIndexesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListIndexes422ApplicationProblemPlusJSONResponse Problem
+
+func (response ListIndexes422ApplicationProblemPlusJSONResponse) VisitListIndexesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListIndexRatesRequestObject struct {
+	Id     string `json:"id"`
+	Params ListIndexRatesParams
+}
+
+type ListIndexRatesResponseObject interface {
+	VisitListIndexRatesResponse(w http.ResponseWriter) error
+}
+
+type ListIndexRates200JSONResponse IndexRateList
+
+func (response ListIndexRates200JSONResponse) VisitListIndexRatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListIndexRates400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ListIndexRates400ApplicationProblemPlusJSONResponse) VisitListIndexRatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListIndexRates401ApplicationProblemPlusJSONResponse Problem
+
+func (response ListIndexRates401ApplicationProblemPlusJSONResponse) VisitListIndexRatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListIndexRates404ApplicationProblemPlusJSONResponse Problem
+
+func (response ListIndexRates404ApplicationProblemPlusJSONResponse) VisitListIndexRatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListIndexRates422ApplicationProblemPlusJSONResponse Problem
+
+func (response ListIndexRates422ApplicationProblemPlusJSONResponse) VisitListIndexRatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -1447,6 +1728,12 @@ type StrictServerInterface interface {
 	// ListHolidays Non-business days of a calendar in a year, weekends excluded.
 	// (GET /calendars/{name}/holidays)
 	ListHolidays(ctx context.Context, request ListHolidaysRequestObject) (ListHolidaysResponseObject, error)
+	// ListIndexes The enabled indexes with at least one stored rate, in the order of EQUORI_INDEX_FEEDS.
+	// (GET /indexes)
+	ListIndexes(ctx context.Context, request ListIndexesRequestObject) (ListIndexesResponseObject, error)
+	// ListIndexRates The stored rates of an enabled index in [from, to], at most 7,320 days, oldest first.
+	// (GET /indexes/{id}/rates)
+	ListIndexRates(ctx context.Context, request ListIndexRatesRequestObject) (ListIndexRatesResponseObject, error)
 	// ListInstruments Instruments of the instance in code order.
 	// (GET /instruments)
 	ListInstruments(ctx context.Context, request ListInstrumentsRequestObject) (ListInstrumentsResponseObject, error)
@@ -1556,6 +1843,57 @@ func (sh *strictHandler) ListHolidays(w http.ResponseWriter, r *http.Request, na
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListHolidaysResponseObject); ok {
 		if err := validResponse.VisitListHolidaysResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListIndexes operation middleware
+func (sh *strictHandler) ListIndexes(w http.ResponseWriter, r *http.Request) {
+	var request ListIndexesRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListIndexes(ctx, request.(ListIndexesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListIndexes")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListIndexesResponseObject); ok {
+		if err := validResponse.VisitListIndexesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListIndexRates operation middleware
+func (sh *strictHandler) ListIndexRates(w http.ResponseWriter, r *http.Request, id string, params ListIndexRatesParams) {
+	var request ListIndexRatesRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListIndexRates(ctx, request.(ListIndexRatesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListIndexRates")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListIndexRatesResponseObject); ok {
+		if err := validResponse.VisitListIndexRatesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
