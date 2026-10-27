@@ -19,7 +19,10 @@ export interface AssistantTurn {
   conversationId: string | undefined;
   // The text of the message being answered, shown until the stored conversation holds it.
   pending: string | null;
-  step: string | null;
+  // The steps of the running turn, in order (P5).
+  steps: string[];
+  // The steps of each answer this session received, by answer message ID.
+  activity: Record<string, string[]>;
   // The answer's text since the last step (E4).
   draft: string;
   error: AssistantProblem | null;
@@ -33,8 +36,9 @@ export function useAssistantTurn(page: string): AssistantTurn {
   const queryClient = useQueryClient();
   const [conversationId, setConversationId] = useState(readOpenConversation);
   const [pending, setPending] = useState<string | null>(null);
-  const [step, setStep] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [steps, setSteps] = useState<string[]>([]);
+  const [activity, setActivity] = useState<Record<string, string[]>>({});
   const [error, setError] = useState<AssistantProblem | null>(null);
   const abort = useRef<AbortController | null>(null);
   const current = useRef(conversationId);
@@ -52,8 +56,8 @@ export function useAssistantTurn(page: string): AssistantTurn {
     writeOpenConversation(undefined);
     setConversationId(undefined);
     setPending(null);
-    setStep(null);
     setDraft("");
+    setSteps([]);
     setError(null);
   }, []);
 
@@ -76,10 +80,11 @@ export function useAssistantTurn(page: string): AssistantTurn {
       const controller = new AbortController();
       abort.current = controller;
       setPending(text);
-      setStep(null);
       setDraft("");
+      setSteps([]);
       setError(null);
       let userMessageId = "";
+      const turnSteps: string[] = [];
       const onEvent = (event: AssistantEvent) => {
         if (event.type === "turn") {
           current.current = event.conversationId;
@@ -90,7 +95,8 @@ export function useAssistantTurn(page: string): AssistantTurn {
           setDraft((d) => d + event.text);
         } else if (event.type === "step") {
           setDraft("");
-          setStep(event.tool);
+          turnSteps.push(event.tool);
+          setSteps([...turnSteps]);
         } else if (event.type === "answer") {
           const id = current.current;
           if (id === undefined) return;
@@ -116,10 +122,14 @@ export function useAssistantTurn(page: string): AssistantTurn {
                   }
                 : { ...old, messages: [...old.messages, user, event.message] },
           );
+          if (turnSteps.length > 0) {
+            const answerId = event.message.id;
+            setActivity((a) => ({ ...a, [answerId]: [...turnSteps] }));
+          }
           if (abort.current === controller) {
             setPending(null);
-            setStep(null);
             setDraft("");
+            setSteps([]);
           }
         } else {
           setError(event.problem);
@@ -145,8 +155,8 @@ export function useAssistantTurn(page: string): AssistantTurn {
         .finally(() => {
           if (abort.current === controller) {
             setPending(null);
-            setStep(null);
             setDraft("");
+            setSteps([]);
           }
         });
     },
@@ -156,7 +166,8 @@ export function useAssistantTurn(page: string): AssistantTurn {
   return {
     conversationId,
     pending,
-    step,
+    steps,
+    activity,
     draft,
     error,
     send,

@@ -18,6 +18,7 @@ import type { AssistantMessage } from "@/features/assistant/sse";
 import { parseAnswer } from "@/features/assistant/answer-markdown";
 import { maskAmounts, maskMatch } from "@/features/assistant/mask-amounts";
 import { ProposalCard } from "@/features/assistant/proposal-card";
+import { TurnActivity } from "@/features/assistant/turn-activity";
 import { useT } from "@/i18n/i18n-provider";
 import { matchScreen } from "@/navigation/navigation-map";
 import { usePrivacy } from "@/privacy/privacy-provider";
@@ -35,9 +36,12 @@ const renderers: MarkdownRenderers = {
 export function MessageItem({
   message,
   onRetry,
+  steps,
 }: {
   message: AssistantMessage;
   onRetry?: (() => void) | undefined;
+  // The steps of the turn that produced this answer, when this session saw it.
+  steps?: string[] | undefined;
 }) {
   const t = useT();
   const { hidden } = usePrivacy();
@@ -76,6 +80,7 @@ export function MessageItem({
   return (
     <Message align={own ? "end" : "start"}>
       <MessageBody>
+        {steps !== undefined && <TurnActivity steps={steps} running={false} />}
         <Bubble className={own ? undefined : styles.answer}>
           <BubbleContent className={own ? undefined : styles.answerContent}>
             {own ? (

@@ -270,9 +270,10 @@ describe("AssistantPanel", () => {
       stream.close();
     });
     expect(await screen.findByText("10 items")).toBeInTheDocument();
-    await waitFor(() => {
-      expect(screen.queryByText("Searching transactions")).toBeNull();
-    });
+    // P5: after the answer the steps fold into one closed line.
+    expect(
+      await screen.findByRole("button", { name: /Sources consulted: 1/ }),
+    ).toHaveAttribute("aria-expanded", "false");
   });
 
   it("never shows the welcome between the first turn event and the answer (U1)", async () => {
@@ -625,6 +626,55 @@ describe("AssistantPanel", () => {
     ).toBeNull();
     stream.close();
     expect(await screen.findByText("10 items")).toBeInTheDocument();
+  });
+
+  it("lists every step of the turn (U16)", async () => {
+    const stream = turnStream();
+    setup({ "POST /api/v1/assistant/turns": () => stream.response() });
+    await ask("How much?");
+    act(() => {
+      stream.write(
+        'event: turn\ndata: {"conversation_id":"c1","message_id":"m1"}\n\nevent: step\ndata: {"tool":"search_transactions"}\n\nevent: step\ndata: {"tool":"get_balances"}\n\n',
+      );
+    });
+    const first = await screen.findByText("Searching transactions");
+    const second = await screen.findByText(
+      catalogEn["assistant.step.get_balances"],
+    );
+    expect(first.closest('[data-part="activity-step"]')).toHaveAttribute(
+      "data-complete",
+    );
+    expect(second.closest('[data-part="activity-step"]')).toHaveAttribute(
+      "aria-current",
+      "step",
+    );
+    stream.close();
+  });
+
+  it("collapses the steps after the answer", async () => {
+    const stream = turnStream();
+    setup({
+      "POST /api/v1/assistant/turns": () => stream.response(),
+      "GET /api/v1/assistant/conversations/c1": () =>
+        json(200, detail("You spent **10 items**.")),
+    });
+    await ask("How much?");
+    act(() => {
+      stream.write(
+        `event: turn\ndata: {"conversation_id":"c1","message_id":"m1"}\n\nevent: step\ndata: {"tool":"search_transactions"}\n\nevent: step\ndata: {"tool":"get_balances"}\n\nevent: answer\ndata: ${JSON.stringify(message("You spent **10 items**."))}\n\n`,
+      );
+      stream.close();
+    });
+    const summary = await screen.findByRole("button", {
+      name: /Sources consulted: 2/,
+    });
+    expect(summary).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(summary);
+    expect(summary).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Searching transactions")).toBeVisible();
+    expect(
+      screen.getByText(catalogEn["assistant.step.get_balances"]),
+    ).toBeVisible();
   });
 
   it("says when the quota returns after an exhausted error event", async () => {

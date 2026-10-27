@@ -23,8 +23,6 @@ import {
   BubbleContent,
   BubbleTyping,
   Message,
-  MessageActivity,
-  MessageActivityStep,
   MessageBody,
 } from "@slotted/react/message";
 import {
@@ -50,11 +48,11 @@ import { ChatWelcome } from "@/features/assistant/chat-welcome";
 import { ConversationList } from "@/features/assistant/conversation-list";
 import { maskAmountText } from "@/features/assistant/mask-amounts";
 import { MessageItem } from "@/features/assistant/message-item";
-import { catalogKey } from "@/features/assistant/proposal-card";
 import { HeaderActions } from "@/features/assistant/header-actions";
 import { ProviderNotice } from "@/features/assistant/provider-notice";
 import { useAssistantTurn } from "@/features/assistant/use-assistant-turn";
 import { useFrameValue } from "@/features/assistant/use-frame-value";
+import { TurnActivity } from "@/features/assistant/turn-activity";
 import { useRetryAt } from "@/features/assistant/use-retry-at";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { usePrivacy } from "@/privacy/privacy-provider";
@@ -211,9 +209,9 @@ export function AssistantPanel({
       : hidden
         ? maskAmountText(storedTitle)
         : storedTitle;
-  const draft = useFrameValue(turn.draft);
-  const stepKey =
-    turn.step === null ? undefined : catalogKey(`assistant.step.${turn.step}`);
+  const framed = useFrameValue(turn.draft);
+  // A step clears the text at once (E4); only its growth waits for a frame.
+  const draft = turn.draft === "" ? "" : framed;
 
   return (
     <Drawer
@@ -296,6 +294,7 @@ export function AssistantPanel({
                         <MessageItem
                           message={m}
                           onRetry={m === last && !orphan ? retry : undefined}
+                          steps={turn.activity[m.id]}
                         />
                       </MessageScrollerItem>
                     ))}
@@ -325,7 +324,20 @@ export function AssistantPanel({
                             </MessageBody>
                           </Message>
                         </MessageScrollerItem>
-                        {draft !== "" ? (
+                        {(turn.steps.length > 0 || draft === "") && (
+                          <Message status="streaming">
+                            <MessageBody>
+                              {turn.steps.length > 0 ? (
+                                <TurnActivity steps={turn.steps} running />
+                              ) : (
+                                <Bubble>
+                                  <BubbleTyping />
+                                </Bubble>
+                              )}
+                            </MessageBody>
+                          </Message>
+                        )}
+                        {draft !== "" && (
                           <MessageItem
                             message={{
                               id: "draft",
@@ -335,22 +347,6 @@ export function AssistantPanel({
                               proposals: [],
                             }}
                           />
-                        ) : (
-                          <Message status="streaming">
-                            <MessageBody>
-                              {stepKey === undefined ? (
-                                <Bubble>
-                                  <BubbleTyping />
-                                </Bubble>
-                              ) : (
-                                <MessageActivity>
-                                  <MessageActivityStep>
-                                    {t(stepKey)}
-                                  </MessageActivityStep>
-                                </MessageActivity>
-                              )}
-                            </MessageBody>
-                          </Message>
                         )}
                       </>
                     )}

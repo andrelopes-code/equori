@@ -1231,6 +1231,7 @@ export const catalogPtBR: Catalog = {
   "assistant.composer.placeholder": "Pergunte sobre suas finanças",
   "assistant.composer.send": "Enviar",
   "assistant.composer.stop": "Parar",
+  "assistant.activity.summary": "Fontes consultadas: {count}",
   "assistant.notice.provider":
     "As respostas vêm de {provider}, modelo {model}.",
   "assistant.chat_notice.trains":
