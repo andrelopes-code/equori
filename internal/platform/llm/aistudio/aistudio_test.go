@@ -3,6 +3,7 @@ package aistudio_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -241,6 +242,135 @@ func TestGenerateToolChoiceNone(t *testing.T) {
 		has := strings.Contains(string(got.body), `"toolConfig":{"functionCallingConfig":{"mode":"NONE"}}`)
 		if has != tt.want || (!tt.want && strings.Contains(string(got.body), "toolConfig")) {
 			t.Fatalf("choice %q: body %s", tt.choice, got.body)
+		}
+	}
+}
+
+// sse starts a fake Gemini API that answers with status and frames as server-sent events.
+func sse(t *testing.T, status int, frames []string, got *received) *httptest.Server {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		b, _ := io.ReadAll(r.Body)
+		*got = received{method: r.Method, path: r.URL.Path, key: r.Header.Get("x-goog-api-key"), query: r.URL.RawQuery, body: b}
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.WriteHeader(status)
+		for _, f := range frames {
+			_, _ = io.WriteString(w, "data: "+f+"\r\n\r\n")
+		}
+	}))
+	t.Cleanup(srv.Close)
+	return srv
+}
+
+// Design 2026-10-26 E2.
+func TestStream(t *testing.T) {
+	t.Parallel()
+	text := func(s, finish string) string {
+		f := `{"candidates":[{"content":{"role":"model","parts":[{"text":` + strings.TrimSpace(mustJSON(s)) + `}]}`
+		if finish != "" {
+			f += `,"finishReason":"` + finish + `"`
+		}
+		return f + `}]}`
+	}
+	tests := []struct {
+		name   string
+		status int
+		frames []string
+		check  func(t *testing.T, resp llm.Response, chunks []string, err error)
+	}{
+		{
+			name:   "text",
+			status: 200,
+			frames: []string{text("A", ""), text("B", ""),
+				`{"candidates":[{"content":{"role":"model","parts":[{"text":"C"}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":7,"candidatesTokenCount":3,"thoughtsTokenCount":2}}`},
+			check: func(t *testing.T, resp llm.Response, chunks []string, err error) {
+				if err != nil || !reflect.DeepEqual(chunks, []string{"A", "B", "C"}) || len(resp.Message.Parts) != 1 ||
+					resp.Text() != "ABC" || resp.Usage != (llm.Usage{InputTokens: 7, OutputTokens: 5}) || resp.FinishReason != llm.FinishStop {
+					t.Fatalf("resp = %+v, chunks = %v, err = %v", resp, chunks, err)
+				}
+			},
+		},
+		{
+			name:   "function call with signature",
+			status: 200,
+			frames: []string{`{"candidates":[{"content":{"role":"model","parts":[{"functionCall":{"name":"get_x","args":{}},"thoughtSignature":"AQI="}]},"finishReason":"STOP"}]}`},
+			check: func(t *testing.T, resp llm.Response, chunks []string, err error) {
+				p := resp.Message.Parts
+				if err != nil || len(p) != 1 || p[0].ToolCall == nil || p[0].ToolCall.Name != "get_x" || p[0].Signature == nil ||
+					!reflect.DeepEqual(p[0].Signature.Data, []byte{1, 2}) || resp.FinishReason != llm.FinishToolCalls || len(chunks) != 0 {
+					t.Fatalf("resp = %+v, err = %v", resp, err)
+				}
+			},
+		},
+		{
+			name:   "signature on the last empty text part",
+			status: 200,
+			frames: []string{text("Hi", ""), `{"candidates":[{"content":{"role":"model","parts":[{"text":"","thoughtSignature":"AQI="}]},"finishReason":"STOP"}]}`},
+			check: func(t *testing.T, resp llm.Response, chunks []string, err error) {
+				p := resp.Message.Parts
+				if err != nil || len(p) != 1 || p[0].Text != "Hi" || p[0].Signature == nil || !reflect.DeepEqual(p[0].Signature.Data, []byte{1, 2}) {
+					t.Fatalf("resp = %+v, err = %v", resp, err)
+				}
+			},
+		},
+		{
+			// Review Focus 1: a stream cut before its last chunk is not a finished answer.
+			name:   "no finish reason",
+			status: 200,
+			frames: []string{text("A", ""), text("B", "")},
+			check: func(t *testing.T, _ llm.Response, _ []string, err error) {
+				if !errors.Is(err, llm.ErrTransient) {
+					t.Fatalf("err = %v, want ErrTransient", err)
+				}
+			},
+		},
+		{
+			name:   "quota",
+			status: 429,
+			check: func(t *testing.T, _ llm.Response, _ []string, err error) {
+				if _, ok := errors.AsType[*llm.QuotaError](err); !ok {
+					t.Fatalf("err = %v, want QuotaError", err)
+				}
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			var got received
+			srv := sse(t, tt.status, tt.frames, &got)
+			var chunks []string
+			resp, err := aistudio.New(srv.URL, "k", srv.Client()).Stream(context.Background(), "m",
+				llm.Request{Messages: []llm.Message{user("oi")}}, func(s string) { chunks = append(chunks, s) })
+			if got.path != "/v1beta/models/m:streamGenerateContent" || got.query != "alt=sse" || got.key != "k" {
+				t.Fatalf("request = %s ? %s, key %q", got.path, got.query, got.key)
+			}
+			tt.check(t, resp, chunks, err)
+		})
+	}
+}
+
+func mustJSON(s string) string {
+	b, _ := json.Marshal(s)
+	return string(b)
+}
+
+// Design 2026-10-26 E14: low thinking maps to thinkingLevel LOW (ai.google.dev/api/generate-content#ThinkingLevel).
+func TestThinkingWire(t *testing.T) {
+	t.Parallel()
+	for _, tt := range []struct {
+		thinking string
+		want     any
+	}{{"low", map[string]any{"thinkingLevel": "LOW"}}, {"", nil}} {
+		var got received
+		srv := serve(t, 200, "text.json", &got)
+		if _, err := aistudio.New(srv.URL, "k", srv.Client()).Generate(context.Background(), "m",
+			llm.Request{Messages: []llm.Message{user("oi")}, Thinking: tt.thinking}); err != nil {
+			t.Fatal(err)
+		}
+		cfg, _ := decode(t, got.body)["generationConfig"].(map[string]any)
+		if !reflect.DeepEqual(cfg["thinkingConfig"], tt.want) {
+			t.Fatalf("Thinking %q: generationConfig = %v, want thinkingConfig %v", tt.thinking, cfg, tt.want)
 		}
 	}
 }

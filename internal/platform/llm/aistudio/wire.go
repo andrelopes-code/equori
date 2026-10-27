@@ -59,6 +59,11 @@ type generationConfig struct {
 	ResponseJSONSchema json.RawMessage `json:"responseJsonSchema,omitempty"`
 	MaxOutputTokens    int             `json:"maxOutputTokens,omitempty"`
 	Temperature        *float64        `json:"temperature,omitempty"`
+	ThinkingConfig     *thinkingConfig `json:"thinkingConfig,omitempty"`
+}
+
+type thinkingConfig struct {
+	ThinkingLevel string `json:"thinkingLevel"`
 }
 
 type generateResponse struct {

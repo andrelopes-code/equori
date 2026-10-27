@@ -18,6 +18,8 @@ type Request struct {
 	ToolChoice ToolChoice
 	// Pin restricts Client.Generate to one target; the zero value allows any target.
 	Pin Target
+	// Thinking is "" for the model's default reasoning depth or "low" (design 2026-10-26 E14).
+	Thinking string
 }
 
 type ToolChoice string
