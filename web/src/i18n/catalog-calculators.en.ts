@@ -315,4 +315,45 @@ export const calculatorsEn = {
     "Floating rates and price indexes are left out of the cost (CMN 4.881, art. 5).",
   "calc.credit-cost.limit2":
     "Overdraft and revolving credit use a 30-day term and the agreed limit, which this calculator does not model (CMN 4.881, art. 6).",
+  "calc.fixedIncome.amount": "Amount invested",
+  "calc.fixedIncome.rateSource": "Rate source",
+  "calc.fixedIncome.rate": "Gross rate",
+  "calc.fixedIncome.days": "Days held",
+  "calc.fixedIncome.kind": "Taxation",
+  "calc.fixedIncome.kind.taxable": "Taxable",
+  "calc.fixedIncome.kind.exempt": "Exempt",
+  "calc.fixedIncome.taxRate": "Tax on the yield",
+  "calc.fixedIncome.gross": "Gross yield",
+  "calc.fixedIncome.tax": "Tax",
+  "calc.fixedIncome.net": "Net yield",
+  "calc.fixedIncome.netRate": "Net annual rate",
+  "calc.fixedIncome.taxShare": "Tax rate applied",
+  "calc.fixedIncome.equivalentTaxable": "Equivalent taxable rate",
+  "calc.fixedIncome.equivalentExempt": "Equivalent exempt rate",
+  "calc.fixedIncome.iof":
+    "Below 30 days a tax on the redemption (IOF) applies, which this calculator does not compute.",
+  "calc.fixedIncome.checked":
+    "The tax rules of the region were checked on {date}.",
+  "calc.fixedIncome.br.table":
+    "In Brazil the tax on a taxable yield is 22.5% up to 180 days, 20% from 181 to 360, 17.5% from 361 to 720 and 15% above 720 (Lei 11.033/2004, art. 1).",
+  "calc.fixedIncome.br.days252":
+    "Brazilian contracts quote rates on 252 business days a year, so a contract figure differs from this 365-day figure.",
+  "calc.fixed-income.step1":
+    "The gross yield is the amount grown at the annual rate for the days held, on a 365-day year.",
+  "calc.fixed-income.step2":
+    "The tax is the region's share of the gross yield for the days held; an exempt security pays none.",
+  "calc.fixed-income.step3":
+    "The net annual rate is the net yield brought back to a year.",
+  "calc.fixed-income.step4":
+    "The equivalent rate is the rate of the other kind that leaves the same yield after tax.",
+  "calc.fixed-income.formula1":
+    "yield = amount × ((1 + r)^(days / 365) − 1); tax = yield × t",
+  "calc.fixed-income.formula2": "r_e = r_t × (1 − t); r_t = r_e / (1 − t)",
+  "calc.fixed-income.formula3":
+    "r: annual gross rate; t: tax rate; r_e: exempt rate; r_t: taxable rate.",
+  "calc.fixed-income.assumption1":
+    "The rate stays the same for the whole period and the amount is redeemed once, at the end.",
+  "calc.fixed-income.limit1":
+    "Tax rules change by law; the region's rules hold on the date they were checked.",
+  "calc.fixed-income.limit2": "Fees and custody charges are not counted.",
 } as const;

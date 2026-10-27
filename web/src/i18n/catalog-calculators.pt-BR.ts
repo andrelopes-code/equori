@@ -316,4 +316,46 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
     "Taxas flutuantes e índices de preços ficam fora do custo (CMN 4.881, art. 5).",
   "calc.credit-cost.limit2":
     "Cheque especial e crédito rotativo usam prazo de 30 dias e o limite contratado, que esta calculadora não modela (CMN 4.881, art. 6).",
+  "calc.fixedIncome.amount": "Valor aplicado",
+  "calc.fixedIncome.rateSource": "Origem da taxa",
+  "calc.fixedIncome.rate": "Taxa bruta",
+  "calc.fixedIncome.days": "Dias de aplicação",
+  "calc.fixedIncome.kind": "Tributação",
+  "calc.fixedIncome.kind.taxable": "Tributado",
+  "calc.fixedIncome.kind.exempt": "Isento",
+  "calc.fixedIncome.taxRate": "Imposto sobre o rendimento",
+  "calc.fixedIncome.gross": "Rendimento bruto",
+  "calc.fixedIncome.tax": "Imposto",
+  "calc.fixedIncome.net": "Rendimento líquido",
+  "calc.fixedIncome.netRate": "Taxa anual líquida",
+  "calc.fixedIncome.taxShare": "Alíquota aplicada",
+  "calc.fixedIncome.equivalentTaxable": "Taxa tributada equivalente",
+  "calc.fixedIncome.equivalentExempt": "Taxa isenta equivalente",
+  "calc.fixedIncome.iof":
+    "Abaixo de 30 dias incide um imposto sobre o resgate (IOF), que esta calculadora não calcula.",
+  "calc.fixedIncome.checked":
+    "As regras de imposto da região foram conferidas em {date}.",
+  "calc.fixedIncome.br.table":
+    "No Brasil o imposto sobre um rendimento tributado é 22,5% até 180 dias, 20% de 181 a 360, 17,5% de 361 a 720 e 15% acima de 720 (Lei 11.033/2004, art. 1).",
+  "calc.fixedIncome.br.days252":
+    "Contratos brasileiros cotam taxas em 252 dias úteis ao ano, então o número de um contrato difere deste em 365 dias.",
+  "calc.fixed-income.step1":
+    "O rendimento bruto é o valor capitalizado à taxa anual pelos dias de aplicação, em um ano de 365 dias.",
+  "calc.fixed-income.step2":
+    "O imposto é a parcela da região sobre o rendimento bruto para os dias de aplicação; um título isento não paga nenhum.",
+  "calc.fixed-income.step3":
+    "A taxa anual líquida é o rendimento líquido levado de volta a um ano.",
+  "calc.fixed-income.step4":
+    "A taxa equivalente é a taxa do outro tipo que deixa o mesmo rendimento após o imposto.",
+  "calc.fixed-income.formula1":
+    "rendimento = valor × ((1 + r)^(dias / 365) − 1); imposto = rendimento × t",
+  "calc.fixed-income.formula2": "r_e = r_t × (1 − t); r_t = r_e / (1 − t)",
+  "calc.fixed-income.formula3":
+    "r: taxa bruta anual; t: alíquota; r_e: taxa isenta; r_t: taxa tributada.",
+  "calc.fixed-income.assumption1":
+    "A taxa é a mesma em todo o período e o valor é resgatado uma vez, no fim.",
+  "calc.fixed-income.limit1":
+    "As regras de imposto mudam por lei; as da região valem na data em que foram conferidas.",
+  "calc.fixed-income.limit2":
+    "Taxas de administração e custódia não são contadas.",
 };
