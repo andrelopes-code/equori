@@ -81,17 +81,22 @@ export function MessageItem({
     <Message align={own ? "end" : "start"}>
       <MessageBody>
         {steps !== undefined && <TurnActivity steps={steps} running={false} />}
-        <Bubble className={own ? undefined : styles.answer}>
-          <BubbleContent className={own ? undefined : styles.answerContent}>
-            {own ? (
-              message.content
-            ) : tree === null ? (
-              t("assistant.empty_answer")
+        {own ? (
+          <Bubble>
+            <BubbleContent>{message.content}</BubbleContent>
+          </Bubble>
+        ) : (
+          // P10: an answer spans the thread without a bubble.
+          <div className={styles.answer}>
+            {tree === null ? (
+              <Text size="md" tone="muted">
+                {t("assistant.empty_answer")}
+              </Text>
             ) : (
               <Markdown tree={tree} size="md" renderers={renderers} />
             )}
-          </BubbleContent>
-        </Bubble>
+          </div>
+        )}
         {(message.outcome === "step_limit" || message.proposals.length > 0) && (
           <Stack gap={3} className={styles.attached}>
             {message.outcome === "step_limit" && (

@@ -66,3 +66,15 @@ func TestInstructions(t *testing.T) {
 		}
 	}
 }
+
+// Design 2026-10-26 P11: the chat asks for amount columns aligned to the end.
+func TestPromptAlignsAmountColumns(t *testing.T) {
+	t.Parallel()
+	got := app.Prompt(app.PromptInput{Today: time.Date(2026, 10, 26, 12, 0, 0, 0, time.UTC), Locale: locale.Locale{Language: "en", Region: "DE"}})
+	if want := "Align columns of amounts and counts to the right with ---: in the separator row."; !strings.Contains(got, want) {
+		t.Fatalf("prompt lacks %q", want)
+	}
+	if strings.Contains(app.Instructions(), "---:") {
+		t.Fatal("the MCP instructions carry the chat's format rule")
+	}
+}

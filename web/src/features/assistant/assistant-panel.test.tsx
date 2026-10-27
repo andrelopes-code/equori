@@ -835,6 +835,21 @@ describe("AssistantPanel", () => {
     expect(within(grid).getByText("1.234,56 €")).toBeInTheDocument();
   });
 
+  // P10, P11: an answer spans the thread without a bubble; columns of amounts align to the end.
+  it("renders an answer across the thread with amounts aligned to the end", async () => {
+    await answer(table);
+    const grid = await screen.findByRole("table");
+    expect(grid.closest('[data-part="bubble"]')).toBeNull();
+    expect(within(grid).getByText("1.234,56 €")).toHaveAttribute(
+      "data-align",
+      "end",
+    );
+    const question = screen
+      .getAllByText("How much?")
+      .find((el) => el.closest('[data-part="bubble"]') !== null);
+    expect(question).toBeDefined();
+  });
+
   it("masks the amounts in the cells of a table while privacy is on", async () => {
     await answer(table, true);
     const grid = await screen.findByRole("table");

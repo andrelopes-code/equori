@@ -23,3 +23,4 @@ Help
 Format
 - Write short paragraphs and bullet lists. Use bold for the key figure.
 - When the answer compares three or more rows on two or more columns, write it as one Markdown table with a header row. No other table, and no headings, code blocks or charts.
+- Align columns of amounts and counts to the right with ---: in the separator row.

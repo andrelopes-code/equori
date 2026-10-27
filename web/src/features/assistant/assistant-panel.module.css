@@ -173,14 +173,10 @@
     }
   }
 
-  /* Workaround for Slotted finding "A markdown tree in a message bubble collapses the bubble to its padding": the bubble of an answer takes the width its row allows. */
+  /* An answer takes the thread's width (P10). */
   .answer {
     inline-size: 100%;
-  }
-
-  /* Workaround for Slotted finding "A markdown tree in a message bubble collapses the bubble to its padding": the bubble lays its content out at its start, so the answer's content stretches. */
-  .answerContent {
-    align-self: stretch;
+    min-inline-size: 0;
   }
 
   .attached {
