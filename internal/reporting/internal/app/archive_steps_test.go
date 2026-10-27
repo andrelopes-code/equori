@@ -79,3 +79,20 @@ func TestAddExcludedFromLiquidity(t *testing.T) {
 		t.Fatalf("the step changed its input: %s", v1[0].Rows[0])
 	}
 }
+
+// Budget plan amendment A131, ADR 021 V2: version 2 holds no planning_budget_reference; the
+// step carries every table over unchanged and the instance reads the default reference.
+func TestAddBudgetReference(t *testing.T) {
+	t.Parallel()
+	v2 := []ArchiveTable{{Name: "planning_budget", Rows: [][]byte{[]byte(`{"id":"a"}`)}}}
+	got, err := addBudgetReference(v2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0].Name != "planning_budget" || string(got[0].Rows[0]) != `{"id":"a"}` {
+		t.Fatalf("tables = %+v", got)
+	}
+	if ArchiveVersion != 3 {
+		t.Fatalf("ArchiveVersion = %d, want 3", ArchiveVersion)
+	}
+}
