@@ -66,7 +66,8 @@ export function IndicatorsTab({
   const digits = scale(report.currency);
   const money = (amount: number) =>
     fmt.money({ amount, currency: report.currency }, digits);
-  // A spread object, not the interface, satisfies the chart's record type.
+  // Workaround for Slotted finding "Chart data rejects rows typed as an interface": a spread
+  // object satisfies the record type.
   const data = indicatorRows(report, (m) =>
     formatReferenceMonth(m, locale),
   ).map((row) => ({ ...row }));
