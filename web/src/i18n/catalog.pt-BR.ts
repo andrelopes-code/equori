@@ -1230,6 +1230,7 @@ export const catalogPtBR: Catalog = {
     "Apagar todas as conversas e as propostas pendentes delas?",
   "assistant.composer.placeholder": "Pergunte sobre suas finanças",
   "assistant.composer.send": "Enviar",
+  "assistant.composer.stop": "Parar",
   "assistant.notice.provider":
     "As respostas vêm de {provider}, modelo {model}.",
   "assistant.chat_notice.trains":

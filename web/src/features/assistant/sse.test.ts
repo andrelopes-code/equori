@@ -16,6 +16,13 @@ describe("parseEvents", () => {
     });
   });
 
+  it("reads a delta event (E4)", () => {
+    expect(parseEvents('event: delta\ndata: {"text":"Sal"}\n\n', "")).toEqual({
+      events: [{ type: "delta", text: "Sal" }],
+      carry: "",
+    });
+  });
+
   it("carries an event split across chunks", () => {
     const first = parseEvents('event: step\ndata: {"to', "");
     expect(first.events).toEqual([]);

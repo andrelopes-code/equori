@@ -54,6 +54,7 @@ import { catalogKey } from "@/features/assistant/proposal-card";
 import { HeaderActions } from "@/features/assistant/header-actions";
 import { ProviderNotice } from "@/features/assistant/provider-notice";
 import { useAssistantTurn } from "@/features/assistant/use-assistant-turn";
+import { useFrameValue } from "@/features/assistant/use-frame-value";
 import { useRetryAt } from "@/features/assistant/use-retry-at";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { usePrivacy } from "@/privacy/privacy-provider";
@@ -210,6 +211,7 @@ export function AssistantPanel({
       : hidden
         ? maskAmountText(storedTitle)
         : storedTitle;
+  const draft = useFrameValue(turn.draft);
   const stepKey =
     turn.step === null ? undefined : catalogKey(`assistant.step.${turn.step}`);
 
@@ -323,21 +325,33 @@ export function AssistantPanel({
                             </MessageBody>
                           </Message>
                         </MessageScrollerItem>
-                        <Message status="streaming">
-                          <MessageBody>
-                            {stepKey === undefined ? (
-                              <Bubble>
-                                <BubbleTyping />
-                              </Bubble>
-                            ) : (
-                              <MessageActivity>
-                                <MessageActivityStep>
-                                  {t(stepKey)}
-                                </MessageActivityStep>
-                              </MessageActivity>
-                            )}
-                          </MessageBody>
-                        </Message>
+                        {draft !== "" ? (
+                          <MessageItem
+                            message={{
+                              id: "draft",
+                              role: "assistant",
+                              content: draft,
+                              created_at: "",
+                              proposals: [],
+                            }}
+                          />
+                        ) : (
+                          <Message status="streaming">
+                            <MessageBody>
+                              {stepKey === undefined ? (
+                                <Bubble>
+                                  <BubbleTyping />
+                                </Bubble>
+                              ) : (
+                                <MessageActivity>
+                                  <MessageActivityStep>
+                                    {t(stepKey)}
+                                  </MessageActivityStep>
+                                </MessageActivity>
+                              )}
+                            </MessageBody>
+                          </Message>
+                        )}
                       </>
                     )}
                   </MessageScrollerContent>
@@ -355,6 +369,7 @@ export function AssistantPanel({
                 disabled={blocked || chat.data === undefined}
                 busy={turn.pending !== null}
                 onSend={send}
+                onStop={turn.stop}
                 inputRef={composerRef}
               />
             </div>

@@ -511,6 +511,122 @@ describe("AssistantPanel", () => {
   });
 
   // P7: the notice reads the chat state, which the refetch after the refused turn brings.
+  it("shows the answer while it streams (G2)", async () => {
+    const stream = turnStream();
+    setup({ "POST /api/v1/assistant/turns": () => stream.response() });
+    await ask("How much?");
+    act(() => {
+      stream.write(
+        'event: turn\ndata: {"conversation_id":"c1","message_id":"m1"}\n\nevent: delta\ndata: {"text":"You spent "}\n\nevent: delta\ndata: {"text":"**10 items**"}\n\n',
+      );
+    });
+    const strong = await screen.findByText("10 items");
+    expect(strong.closest("strong")).not.toBeNull();
+    stream.close();
+  });
+
+  it("drops the text of a step", async () => {
+    const stream = turnStream();
+    setup({ "POST /api/v1/assistant/turns": () => stream.response() });
+    await ask("How much?");
+    act(() => {
+      stream.write(
+        'event: turn\ndata: {"conversation_id":"c1","message_id":"m1"}\n\nevent: delta\ndata: {"text":"Let me check"}\n\n',
+      );
+    });
+    expect(await screen.findByText("Let me check")).toBeInTheDocument();
+    act(() => {
+      stream.write('event: step\ndata: {"tool":"search_transactions"}\n\n');
+    });
+    expect(
+      await screen.findByText("Searching transactions"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Let me check")).toBeNull();
+    stream.close();
+  });
+
+  it("stops a running turn (P3)", async () => {
+    const stream = turnStream();
+    let signal: AbortSignal | undefined;
+    setup({
+      "POST /api/v1/assistant/turns": (req) => {
+        signal = req.signal;
+        return stream.response();
+      },
+      "GET /api/v1/assistant/conversations/c1": () =>
+        json(200, unanswered("canceled")),
+    });
+    await ask("How much?");
+    act(() => {
+      stream.write(
+        'event: turn\ndata: {"conversation_id":"c1","message_id":"m1"}\n\n',
+      );
+    });
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["assistant.composer.stop"],
+      }),
+    );
+    expect(signal?.aborted).toBe(true);
+    expect(
+      await screen.findByText(catalogEn["assistant.canceled"]),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps the text of the field on Enter during a turn (P4)", async () => {
+    const stream = turnStream();
+    let posts = 0;
+    setup({
+      "POST /api/v1/assistant/turns": () => {
+        posts++;
+        return stream.response();
+      },
+    });
+    await ask("How much?");
+    act(() => {
+      stream.write(
+        'event: turn\ndata: {"conversation_id":"c1","message_id":"m1"}\n\n',
+      );
+    });
+    const input = screen.getByPlaceholderText(
+      catalogEn["assistant.composer.placeholder"],
+    );
+    await userEvent.type(input, "next{Enter}");
+    expect(input).toHaveValue("next");
+    expect(posts).toBe(1);
+    expect(
+      screen.getByRole("button", {
+        name: catalogEn["assistant.composer.stop"],
+      }),
+    ).toBeInTheDocument();
+    stream.close();
+  });
+
+  // Review Focus 4 of phase 2: once the answer event arrives the turn is over for the reader; the
+  // stop control is gone and the answer stays.
+  it("keeps the answer that arrived before the stream closed", async () => {
+    const stream = turnStream();
+    setup({
+      "POST /api/v1/assistant/turns": () => stream.response(),
+      "GET /api/v1/assistant/conversations/c1": () =>
+        json(200, detail("You spent **10 items**.")),
+    });
+    await ask("How much?");
+    act(() => {
+      stream.write(
+        `event: turn\ndata: {"conversation_id":"c1","message_id":"m1"}\n\nevent: answer\ndata: ${JSON.stringify(message("You spent **10 items**."))}\n\n`,
+      );
+    });
+    expect(await screen.findByText("10 items")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: catalogEn["assistant.composer.stop"],
+      }),
+    ).toBeNull();
+    stream.close();
+    expect(await screen.findByText("10 items")).toBeInTheDocument();
+  });
+
   it("says when the quota returns after an exhausted error event", async () => {
     let refused = false;
     setup({

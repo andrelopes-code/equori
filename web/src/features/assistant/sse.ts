@@ -5,6 +5,7 @@ export type AssistantProblem = components["schemas"]["Problem"];
 
 export type AssistantEvent =
   | { type: "turn"; conversationId: string; messageId: string }
+  | { type: "delta"; text: string }
   | { type: "step"; tool: string }
   | { type: "answer"; message: AssistantMessage }
   | { type: "error"; problem: AssistantProblem };
@@ -18,6 +19,8 @@ function toEvent(name: string, data: string): AssistantEvent | undefined {
         conversationId: body.conversation_id as string,
         messageId: body.message_id as string,
       };
+    case "delta":
+      return { type: "delta", text: body.text as string };
     case "step":
       return { type: "step", tool: body.tool as string };
     case "answer":

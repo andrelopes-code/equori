@@ -20,8 +20,11 @@ export interface AssistantTurn {
   // The text of the message being answered, shown until the stored conversation holds it.
   pending: string | null;
   step: string | null;
+  // The answer's text since the last step (E4).
+  draft: string;
   error: AssistantProblem | null;
   send: (text: string) => void;
+  stop: () => void;
   open: (id: string) => void;
   reset: () => void;
 }
@@ -31,6 +34,7 @@ export function useAssistantTurn(page: string): AssistantTurn {
   const [conversationId, setConversationId] = useState(readOpenConversation);
   const [pending, setPending] = useState<string | null>(null);
   const [step, setStep] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
   const [error, setError] = useState<AssistantProblem | null>(null);
   const abort = useRef<AbortController | null>(null);
   const current = useRef(conversationId);
@@ -49,7 +53,12 @@ export function useAssistantTurn(page: string): AssistantTurn {
     setConversationId(undefined);
     setPending(null);
     setStep(null);
+    setDraft("");
     setError(null);
+  }, []);
+
+  const stop = useCallback(() => {
+    abort.current?.abort();
   }, []);
 
   const open = useCallback(
@@ -68,6 +77,7 @@ export function useAssistantTurn(page: string): AssistantTurn {
       abort.current = controller;
       setPending(text);
       setStep(null);
+      setDraft("");
       setError(null);
       let userMessageId = "";
       const onEvent = (event: AssistantEvent) => {
@@ -76,7 +86,10 @@ export function useAssistantTurn(page: string): AssistantTurn {
           writeOpenConversation(event.conversationId);
           userMessageId = event.messageId;
           setConversationId(event.conversationId);
+        } else if (event.type === "delta") {
+          setDraft((d) => d + event.text);
         } else if (event.type === "step") {
+          setDraft("");
           setStep(event.tool);
         } else if (event.type === "answer") {
           const id = current.current;
@@ -106,6 +119,7 @@ export function useAssistantTurn(page: string): AssistantTurn {
           if (abort.current === controller) {
             setPending(null);
             setStep(null);
+            setDraft("");
           }
         } else {
           setError(event.problem);
@@ -132,11 +146,22 @@ export function useAssistantTurn(page: string): AssistantTurn {
           if (abort.current === controller) {
             setPending(null);
             setStep(null);
+            setDraft("");
           }
         });
     },
     [page, queryClient],
   );
 
-  return { conversationId, pending, step, error, send, open, reset };
+  return {
+    conversationId,
+    pending,
+    step,
+    draft,
+    error,
+    send,
+    stop,
+    open,
+    reset,
+  };
 }

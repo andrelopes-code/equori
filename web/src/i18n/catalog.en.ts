@@ -1225,6 +1225,7 @@ export const catalogEn = {
     "Delete every conversation and its pending proposals?",
   "assistant.composer.placeholder": "Ask about your finances",
   "assistant.composer.send": "Send",
+  "assistant.composer.stop": "Stop",
   "assistant.notice.provider": "Answers come from {provider}, model {model}.",
   "assistant.chat_notice.trains":
     "On this free tier the provider uses what you send, including your financial data, to improve its products, and people may read it.",

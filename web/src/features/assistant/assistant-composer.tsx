@@ -16,11 +16,13 @@ export function AssistantComposer({
   disabled,
   busy,
   onSend,
+  onStop,
   inputRef,
 }: {
   disabled: boolean;
   busy: boolean;
   onSend: (text: string) => void;
+  onStop: () => void;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
 }) {
   const t = useT();
@@ -33,10 +35,14 @@ export function AssistantComposer({
           setValue(next);
         }}
         disabled={disabled}
-        status={busy ? "submitted" : "ready"}
+        status={busy ? "streaming" : "ready"}
+        onStop={onStop}
         emphasis="ring"
         className={styles.ring}
-        messages={{ send: t("assistant.composer.send") }}
+        messages={{
+          send: t("assistant.composer.send"),
+          stop: t("assistant.composer.stop"),
+        }}
         onValueSubmit={(next, request) => {
           if (busy || next.trim() === "") {
             request.cancel();
