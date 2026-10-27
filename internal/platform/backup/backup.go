@@ -93,7 +93,7 @@ func parseDumpVersion(script string) (int64, error) {
 	var latest int64
 	in, found := false, false
 	for line := range strings.Lines(script) {
-		line = strings.TrimSuffix(line, "\n")
+		line = strings.TrimRight(line, "\r\n")
 		switch {
 		case strings.HasPrefix(line, "COPY public.goose_db_version "):
 			in, found = true, true
