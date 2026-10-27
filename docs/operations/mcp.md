@@ -20,7 +20,7 @@ The token text (`eqt_` followed by 52 characters) is shown once, with the three 
 
 ## Client setups
 
-`<url>` is the address of the instance followed by `/mcp`, for example `http://127.0.0.1:8080/mcp`; `<token>` is the token text.
+`<url>` is the address of the instance followed by `/mcp`, for example `http://127.0.0.1:8080/mcp`; `<token>` is the token text. In development (`make run-dev`), the Vite address forwards `/mcp` to the app as it forwards `/api`, so the address shown in the settings works while `make dev` runs.
 
 Claude Code:
 
