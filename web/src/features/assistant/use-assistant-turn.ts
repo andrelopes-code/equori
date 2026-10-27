@@ -3,6 +3,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { components } from "@/api/schema.gen";
 import { assistantKeys, sendMessage } from "@/features/assistant/api";
+import {
+  readOpenConversation,
+  writeOpenConversation,
+} from "@/features/assistant/open-conversation";
 import type {
   AssistantEvent,
   AssistantMessage,
@@ -24,12 +28,12 @@ export interface AssistantTurn {
 
 export function useAssistantTurn(page: string): AssistantTurn {
   const queryClient = useQueryClient();
-  const [conversationId, setConversationId] = useState<string>();
+  const [conversationId, setConversationId] = useState(readOpenConversation);
   const [pending, setPending] = useState<string | null>(null);
   const [step, setStep] = useState<string | null>(null);
   const [error, setError] = useState<AssistantProblem | null>(null);
   const abort = useRef<AbortController | null>(null);
-  const current = useRef<string>(undefined);
+  const current = useRef(conversationId);
 
   useEffect(
     () => () => {
@@ -41,6 +45,7 @@ export function useAssistantTurn(page: string): AssistantTurn {
   const reset = useCallback(() => {
     abort.current?.abort();
     current.current = undefined;
+    writeOpenConversation(undefined);
     setConversationId(undefined);
     setPending(null);
     setStep(null);
@@ -51,6 +56,7 @@ export function useAssistantTurn(page: string): AssistantTurn {
     (id: string) => {
       reset();
       current.current = id;
+      writeOpenConversation(id);
       setConversationId(id);
     },
     [reset],
@@ -67,6 +73,7 @@ export function useAssistantTurn(page: string): AssistantTurn {
       const onEvent = (event: AssistantEvent) => {
         if (event.type === "turn") {
           current.current = event.conversationId;
+          writeOpenConversation(event.conversationId);
           userMessageId = event.messageId;
           setConversationId(event.conversationId);
         } else if (event.type === "step") {

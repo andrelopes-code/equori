@@ -38,7 +38,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { RefObject } from "react";
 
 import { useApi } from "@/api/api-context";
-import { problemMessage } from "@/api/problem";
+import { ProblemError, problemMessage } from "@/api/problem";
 import styles from "@/features/assistant/assistant-panel.module.css";
 import {
   assistantKeys,
@@ -108,6 +108,13 @@ export function AssistantPanel({
     ...conversationQuery(api, turn.conversationId ?? ""),
     enabled: open && turn.conversationId !== undefined && turn.pending === null,
   });
+  // A kept conversation that was deleted, or belongs to another user, opens a new one (P19).
+  const gone =
+    stored.error instanceof ProblemError && stored.error.status === 404;
+  const { reset } = turn;
+  useEffect(() => {
+    if (gone) reset();
+  }, [gone, reset]);
 
   const time = (iso: string) =>
     new Intl.DateTimeFormat(locale, {

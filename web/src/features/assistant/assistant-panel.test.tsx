@@ -145,6 +145,7 @@ async function ask(text: string) {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  sessionStorage.clear();
 });
 
 describe("AssistantPanel", () => {
@@ -165,6 +166,50 @@ describe("AssistantPanel", () => {
     );
     await waitFor(() => {
       expect(document.activeElement).toBe(input);
+    });
+  });
+
+  it("reopens the last conversation after a reload (U12)", async () => {
+    sessionStorage.setItem("equori.assistant.conversation", "c1");
+    setup({
+      "GET /api/v1/assistant/conversations/c1": () =>
+        json(200, detail("You spent **10 items**.")),
+    });
+    expect(await screen.findByText("10 items")).toBeInTheDocument();
+  });
+
+  it("starts a new conversation after New conversation", async () => {
+    sessionStorage.setItem("equori.assistant.conversation", "c1");
+    setup({
+      "GET /api/v1/assistant/conversations/c1": () =>
+        json(200, detail("You spent **10 items**.")),
+    });
+    await screen.findByText("10 items");
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: catalogEn["assistant.new_conversation"],
+      }),
+    );
+    expect(
+      await screen.findByText(catalogEn["assistant.welcome.title"]),
+    ).toBeInTheDocument();
+    expect(sessionStorage.getItem("equori.assistant.conversation")).toBeNull();
+  });
+
+  // Review Focus 4: a stored conversation the server no longer has opens a new one.
+  it("starts a new conversation when the stored one is gone", async () => {
+    sessionStorage.setItem("equori.assistant.conversation", "c9");
+    setup({
+      "GET /api/v1/assistant/conversations/c9": () =>
+        problem(404, "conversation_not_found"),
+    });
+    expect(
+      await screen.findByText(catalogEn["assistant.welcome.title"]),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        sessionStorage.getItem("equori.assistant.conversation"),
+      ).toBeNull();
     });
   });
 
