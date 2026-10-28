@@ -1,6 +1,6 @@
-import { Button } from "@slotted/react/button";
+import { Button, IconButton } from "@slotted/react/button";
+import { ButtonGroup } from "@slotted/react/button-group";
 import { Icon } from "@slotted/react/icon";
-import { Inline } from "@slotted/react/inline";
 import { List, ListSection } from "@slotted/react/list";
 import {
   ListItem,
@@ -29,13 +29,12 @@ import {
 import { CalendarDay } from "@/features/setup/calendar-day";
 import { CalendarShiftExample } from "@/features/setup/calendar-shift-example";
 import { SettingsGroup } from "@/features/setup/settings-group";
-import { SettingsIcon } from "@/features/setup/settings-icon";
-import styles from "@/features/setup/settings-page.module.css";
 import { maxYear, minYear } from "@/features/setup/settings-search";
 import { SettingsSection } from "@/features/setup/settings-section";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { QueryError } from "@/ui/query-error";
+import { StepGlyph } from "@/ui/step-glyph";
 import { useAppLink } from "@/ui/use-app-link";
 
 type Holiday = components["schemas"]["Holiday"];
@@ -199,39 +198,42 @@ export function SettingsCalendars() {
         <SettingsGroup
           title={holidaysLabel}
           actions={
-            <Inline gap={2} align="center">
-              <Button
-                size="sm"
-                variant="ghost"
-                tone="secondary"
+            // CP-04: the year steps like the month and the period of the other screens.
+            <ButtonGroup
+              aria-label={holidaysLabel}
+              variant="outline"
+              tone="secondary"
+            >
+              <IconButton
                 aria-label={t("calendar.year.previous")}
                 disabled={year <= minYear}
                 onClick={() => {
                   stepYear(year - 1);
                 }}
               >
-                <Icon size="sm" directional>
-                  <SettingsIcon name="previous" />
+                <Icon>
+                  <StepGlyph direction="previous" />
                 </Icon>
-              </Button>
-              <Text size="md" weight="semibold" className={styles.year}>
-                {String(year)}
-              </Text>
+              </IconButton>
               <Button
-                size="sm"
-                variant="ghost"
-                tone="secondary"
+                onClick={() => {
+                  stepYear(Number(today.slice(0, 4)));
+                }}
+              >
+                {String(year)}
+              </Button>
+              <IconButton
                 aria-label={t("calendar.year.next")}
                 disabled={year >= maxYear}
                 onClick={() => {
                   stepYear(year + 1);
                 }}
               >
-                <Icon size="sm" directional>
-                  <SettingsIcon name="next" />
+                <Icon>
+                  <StepGlyph direction="next" />
                 </Icon>
-              </Button>
-            </Inline>
+              </IconButton>
+            </ButtonGroup>
           }
         >
           {holidays.isPending ? (
