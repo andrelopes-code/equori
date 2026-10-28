@@ -47,6 +47,7 @@ import { StatementFigures } from "@/features/cards/statement-figures";
 import { neighbours } from "@/features/cards/statement-groups";
 import { StatementAnalysis } from "@/features/cards/statement-analysis";
 import { StatementLines } from "@/features/cards/statement-lines";
+import { unconfirmedQuery } from "@/features/accounts";
 import {
   statementStatusTone,
   statementStatusWords,
@@ -83,6 +84,8 @@ export function StatementPage() {
   const all = useQuery(
     statementsQuery(api, accountId, addMonths(currentMonth(today), -24)),
   );
+  // A secondary mark: a failed read leaves the lines unmarked.
+  const unconfirmed = useQuery(unconfirmedQuery(api, accountId));
   const remove = useRemoveStatementFacts();
   const [dialog, setDialog] = useState<Dialog | null>(
     search.pay === true ? "pay" : null,
@@ -271,6 +274,11 @@ export function StatementPage() {
             <StatementLines
               lines={s.postings}
               scale={sc}
+              unconfirmed={
+                new Set(
+                  (unconfirmed.data ?? []).map((entry) => entry.transaction_id),
+                )
+              }
               lineActions={(line) =>
                 line.card_role === "charge" ? (
                   <ChargeActions line={line} onAction={setAction} />

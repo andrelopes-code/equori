@@ -46,9 +46,12 @@ export function StatementLines({
   lines,
   scale,
   lineActions,
+  unconfirmed,
 }: {
   lines: readonly StatementPosting[];
   scale: (code: string) => number;
+  // Transactions of the card no bank line confirmed (A133).
+  unconfirmed?: ReadonlySet<string>;
   // The commands of a charge besides opening its transaction (refund, dispute, installment plan).
   lineActions?: (line: StatementPosting) => ReactNode;
 }) {
@@ -130,6 +133,11 @@ export function StatementLines({
                           )}
                           {line.card_role === "charge" && (
                             <DisputeTag transactionId={line.transaction_id} />
+                          )}
+                          {unconfirmed?.has(line.transaction_id) === true && (
+                            <Tag size="sm" tone="warning">
+                              {t("statement.unconfirmed")}
+                            </Tag>
                           )}
                         </Inline>
                       </TableRowHeader>

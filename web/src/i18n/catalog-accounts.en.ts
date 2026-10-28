@@ -316,7 +316,7 @@ export const accountsEn = {
   "reconciliation.unconfirmedEmpty":
     "Every entry in the institution's period has a matching line.",
   "reconciliation.unconfirmedNote":
-    "Entries dated from the first institution line, up to 10 days before the last synced or imported day, that no line confirmed.",
+    "The bank reported no line for these entries. A duplicated or mistyped entry is resolved by voiding or correcting the transaction. A correct entry is confirmed when the balance the bank reports matches.",
   "imports.caption": "Imports",
   "imports.file": "File",
   "imports.started": "Imported on",
@@ -701,6 +701,7 @@ export const accountsEn = {
   "statement.role.credit": "Credit",
   "statement.role.payment": "Payment",
   "statement.installment": "{number}/{count}",
+  "statement.unconfirmed": "No bank line",
   "statement.lineActions": "Actions for {name}",
   "statement.openTransaction": "Open transaction",
   "statement.title": "Statement",
