@@ -1,3 +1,13 @@
+import { PageBody } from "@slotted/react/page";
+import {
+  PageHeader,
+  PageHeaderHeading,
+  PageHeaderMarks,
+  PageHeaderSubheading,
+  PageHeaderTitle,
+  PageHeaderTitleArea,
+  PageHeaderTitleRow,
+} from "@slotted/react/page-header";
 import { Tag } from "@slotted/react/tag";
 import { Heading, Text } from "@slotted/react/typography";
 import type { ReactNode } from "react";
@@ -24,20 +34,44 @@ export function SettingsSection({
 }) {
   const t = useT();
   const heading = `settings-${topic}`;
-  // On a phone the pane is the page, so its title is the page's.
   const compact = useMediaQuery(compactQuery);
+  const tag = local && (
+    <Tag size="sm" tone="secondary">
+      {t("settings.browserOnly.tag")}
+    </Tag>
+  );
+  // On a phone the pane is the page: it takes the page header every other page has.
+  if (compact)
+    return (
+      <>
+        <PageHeader size="lg">
+          <PageHeaderTitleArea>
+            <PageHeaderTitleRow>
+              <PageHeaderTitle>
+                <PageHeaderHeading>{title}</PageHeaderHeading>
+                {tag && <PageHeaderMarks>{tag}</PageHeaderMarks>}
+                {description !== undefined && (
+                  <PageHeaderSubheading>{description}</PageHeaderSubheading>
+                )}
+              </PageHeaderTitle>
+            </PageHeaderTitleRow>
+          </PageHeaderTitleArea>
+        </PageHeader>
+        <PageBody>
+          <section id={topic} aria-label={title} className={styles.pane}>
+            {children}
+          </section>
+        </PageBody>
+      </>
+    );
   return (
     <section id={topic} aria-labelledby={heading} className={styles.pane}>
       <header className={styles.paneHeader}>
         <div className={styles.paneTitle}>
-          <Heading level={compact ? 1 : 2} size="2xl" id={heading}>
+          <Heading level={2} size="2xl" id={heading}>
             {title}
           </Heading>
-          {local && (
-            <Tag size="sm" tone="secondary">
-              {t("settings.browserOnly.tag")}
-            </Tag>
-          )}
+          {tag}
         </div>
         {description !== undefined && (
           <Text size="md" tone="muted">

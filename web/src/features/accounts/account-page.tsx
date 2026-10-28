@@ -1,9 +1,7 @@
 import { Page, PageBody } from "@slotted/react/page";
 import {
   PageHeader,
-  PageHeaderBack,
   PageHeaderHeading,
-  PageHeaderNav,
   PageHeaderTitle,
   PageHeaderTitleArea,
   PageHeaderTitleRow,
@@ -31,6 +29,7 @@ import { accountQuery } from "@/features/accounts/api";
 import { useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { QueryError } from "@/ui/query-error";
+import { PageBack } from "@/ui/page-back";
 
 export function AccountPage() {
   const t = useT();
@@ -63,13 +62,9 @@ export function AccountPage() {
     <Page width="full">
       <PageHeader size="lg">
         <PageHeaderTitleArea>
-          <PageHeaderNav>
-            <PageHeaderBack
-              render={(props) => <Link {...props} to="/accounts" />}
-            >
-              {t("nav.accounts")}
-            </PageHeaderBack>
-          </PageHeaderNav>
+          <PageBack render={(props) => <Link {...props} to="/accounts" />}>
+            {t("nav.accounts")}
+          </PageBack>
           <PageHeaderTitleRow>
             <PageHeaderTitle>
               <PageHeaderHeading>

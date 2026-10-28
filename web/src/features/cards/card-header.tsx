@@ -10,10 +10,8 @@ import {
 import {
   PageHeader,
   PageHeaderActions,
-  PageHeaderBack,
   PageHeaderHeading,
   PageHeaderMarks,
-  PageHeaderNav,
   PageHeaderSubheading,
   PageHeaderTabs,
   PageHeaderTitle,
@@ -34,6 +32,7 @@ import {
 } from "@/features/cards/statement-words";
 import { useT } from "@/i18n/i18n-provider";
 import { compactQuery, useMediaQuery, wideQuery } from "@/ui/use-media-query";
+import { PageBack } from "@/ui/page-back";
 
 type Account = components["schemas"]["Account"];
 type Statement = components["schemas"]["StatementSummary"];
@@ -82,11 +81,9 @@ export function CardHeader({
     <PageHeader size="lg">
       <PageHeaderTitleArea>
         {wide && (
-          <PageHeaderNav>
-            <PageHeaderBack render={(props) => <Link {...props} to="/cards" />}>
-              {t("nav.cards")}
-            </PageHeaderBack>
-          </PageHeaderNav>
+          <PageBack render={(props) => <Link {...props} to="/cards" />}>
+            {t("nav.cards")}
+          </PageBack>
         )}
         <PageHeaderTitleRow>
           <PageHeaderVisual>

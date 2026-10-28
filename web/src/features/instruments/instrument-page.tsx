@@ -8,9 +8,7 @@ import { Page, PageBody } from "@slotted/react/page";
 import {
   PageHeader,
   PageHeaderActions,
-  PageHeaderBack,
   PageHeaderHeading,
-  PageHeaderNav,
   PageHeaderSubheading,
   PageHeaderTitle,
   PageHeaderTitleArea,
@@ -39,6 +37,7 @@ import { settingsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { HeaderAction } from "@/ui/header-action";
 import { QueryError } from "@/ui/query-error";
+import { PageBack } from "@/ui/page-back";
 
 // One instrument: its data, its price history, the positions that hold it and the manual price form.
 export function InstrumentPage() {
@@ -77,13 +76,9 @@ export function InstrumentPage() {
     <Page width="full">
       <PageHeader size="lg">
         <PageHeaderTitleArea>
-          <PageHeaderNav>
-            <PageHeaderBack
-              render={(props) => <Link {...props} to="/instruments" />}
-            >
-              {t("nav.instruments")}
-            </PageHeaderBack>
-          </PageHeaderNav>
+          <PageBack render={(props) => <Link {...props} to="/instruments" />}>
+            {t("nav.instruments")}
+          </PageBack>
           <PageHeaderTitleRow>
             <PageHeaderTitle>
               <PageHeaderHeading>{i.name}</PageHeaderHeading>

@@ -6,10 +6,8 @@ import { Page, PageBody } from "@slotted/react/page";
 import {
   PageHeader,
   PageHeaderActions,
-  PageHeaderBack,
   PageHeaderHeading,
   PageHeaderMarks,
-  PageHeaderNav,
   PageHeaderSubheading,
   PageHeaderTitle,
   PageHeaderTitleArea,
@@ -60,6 +58,7 @@ import { useToday } from "@/i18n/today";
 import { QueryError } from "@/ui/query-error";
 import { Presence } from "@/ui/presence";
 import { useAppLink } from "@/ui/use-app-link";
+import { PageBack } from "@/ui/page-back";
 
 type Dialog = "pay" | "finance" | "reconcile" | "facts";
 
@@ -133,19 +132,17 @@ export function StatementPage() {
     <Page width="full">
       <PageHeader size="lg">
         <PageHeaderTitleArea>
-          <PageHeaderNav>
-            <PageHeaderBack
-              render={(props) => (
-                <RouterLink
-                  {...props}
-                  to="/cards/$accountId"
-                  params={{ accountId }}
-                />
-              )}
-            >
-              {t("nav.cards")}
-            </PageHeaderBack>
-          </PageHeaderNav>
+          <PageBack
+            render={(props) => (
+              <RouterLink
+                {...props}
+                to="/cards/$accountId"
+                params={{ accountId }}
+              />
+            )}
+          >
+            {t("nav.cards")}
+          </PageBack>
           <PageHeaderTitleRow>
             <PageHeaderTitle>
               <PageHeaderHeading>

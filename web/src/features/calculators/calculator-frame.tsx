@@ -2,9 +2,7 @@ import { Card, CardBody } from "@slotted/react/card";
 import { Page, PageBody } from "@slotted/react/page";
 import {
   PageHeader,
-  PageHeaderBack,
   PageHeaderHeading,
-  PageHeaderNav,
   PageHeaderSubheading,
   PageHeaderTitle,
   PageHeaderTitleArea,
@@ -24,6 +22,7 @@ import type { ReactNode } from "react";
 import styles from "@/features/calculators/calculators.module.css";
 import type { CalculatorId } from "@/features/calculators/calculators";
 import { useT } from "@/i18n/i18n-provider";
+import { PageBack } from "@/ui/page-back";
 
 // One calculator (design §4, "Layout"): the inputs beside the results, which stay in view while
 // the inputs scroll and carry their own evidence (a chart, a short table); the optional inputs
@@ -54,13 +53,9 @@ export function CalculatorFrame({
     <Page width="full">
       <PageHeader size="lg">
         <PageHeaderTitleArea>
-          <PageHeaderNav>
-            <PageHeaderBack
-              render={(props) => <Link {...props} to="/calculators" />}
-            >
-              {t("calc.back")}
-            </PageHeaderBack>
-          </PageHeaderNav>
+          <PageBack render={(props) => <Link {...props} to="/calculators" />}>
+            {t("calc.back")}
+          </PageBack>
           <PageHeaderTitleRow>
             <PageHeaderTitle>
               <PageHeaderHeading>{t(`calc.${id}.title`)}</PageHeaderHeading>

@@ -145,3 +145,12 @@ test("a raised toast is a material over the page", () => {
   );
   assert.match(item, /backdrop-filter: var\(--slotted-material-backdrop\)/);
 });
+
+// The card or the content under a page header separates it; a rule under it repeated that edge
+// (owner review, 2026-10-28).
+test("a page header draws no rule under it", () => {
+  assert.equal(
+    theme.components?.["--slotted-page-header-border"],
+    "transparent",
+  );
+});

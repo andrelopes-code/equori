@@ -196,6 +196,7 @@
     --slotted-top-navigation-color: var(--slotted-text-muted);
     --slotted-top-navigation-current-color: var(--slotted-text);
     --slotted-top-navigation-current-background: transparent;
+    --slotted-page-header-border: transparent;
     --slotted-table-surface: transparent;
     --slotted-table-header-surface: transparent;
     --slotted-table-border-color-strong: color-mix(in oklch, var(--slotted-border-subtle) 50%, var(--slotted-border-strong));

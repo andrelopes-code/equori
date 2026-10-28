@@ -11,10 +11,8 @@ import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import {
   PageHeader,
   PageHeaderActions,
-  PageHeaderBack,
   PageHeaderDescription,
   PageHeaderHeading,
-  PageHeaderNav,
   PageHeaderTitle,
   PageHeaderTitleArea,
   PageHeaderTitleRow,
@@ -74,6 +72,7 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useDebounced } from "@/ui/use-debounced";
 import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
+import { PageBack } from "@/ui/page-back";
 
 // The pause after the last key before the text is read again.
 const readDelay = 250;
@@ -327,13 +326,11 @@ export function CapturePage() {
         <PageHeaderTitleArea>
           {/* Below 1024 px the shell's top app bar carries the way back. */}
           {wide && (
-            <PageHeaderNav>
-              <PageHeaderBack
-                render={(props) => <Link {...props} to="/transactions" />}
-              >
-                {t("nav.transactions")}
-              </PageHeaderBack>
-            </PageHeaderNav>
+            <PageBack
+              render={(props) => <Link {...props} to="/transactions" />}
+            >
+              {t("nav.transactions")}
+            </PageBack>
           )}
           <PageHeaderTitleRow>
             <PageHeaderTitle>

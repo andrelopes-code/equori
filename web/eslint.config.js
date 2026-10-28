@@ -37,6 +37,21 @@ const unmaskedMoney = [
   message: `Write amounts through useMoneyFormat() so privacy mode can mask them (O9). ${importName} is for @/i18n and @/privacy.`,
 }));
 
+// O13: a router link drawn on its own takes the browser's colour and size. It is only the
+// element a Slotted part renders through its render prop, which spreads the part's props.
+const bareRouterLink = {
+  selector:
+    'JSXOpeningElement[name.name="Link"]:has(JSXAttribute[name.name="to"]):not(:has(JSXSpreadAttribute))',
+  message:
+    "Draw a link with AppLink (@/ui/app-link) or the Slotted Link with useAppLink (O13).",
+};
+
+// Below 1024 px the shell's top app bar carries a page's way back; PageBack draws it only above.
+const pageHeaderBack = {
+  selector: 'JSXOpeningElement[name.name="PageHeaderBack"]',
+  message: "Draw a page's way back with PageBack (@/ui/page-back).",
+};
+
 // Flat-config rule options replace instead of merging: every block below
 // restates the full option list for its files.
 const restrict = ({ patterns, paths = [] }) => ["error", { patterns, paths }];
@@ -175,18 +190,12 @@ export default defineConfig(
         { noStrings: true, ignoreProps: true },
       ],
       "react/no-multi-comp": ["error", { ignoreStateless: false }],
-      // O13: a router link drawn on its own takes the browser's colour and size. It is only the
-      // element a Slotted part renders through its render prop, which spreads the part's props.
-      "no-restricted-syntax": [
-        "error",
-        {
-          selector:
-            'JSXOpeningElement[name.name="Link"]:has(JSXAttribute[name.name="to"]):not(:has(JSXSpreadAttribute))',
-          message:
-            "Draw a link with AppLink (@/ui/app-link) or the Slotted Link with useAppLink (O13).",
-        },
-      ],
+      "no-restricted-syntax": ["error", bareRouterLink, pageHeaderBack],
     },
+  },
+  {
+    files: ["src/ui/page-back.tsx"],
+    rules: { "no-restricted-syntax": ["error", bareRouterLink] },
   },
   { files: ["**/*.js"], extends: [tseslint.configs.disableTypeChecked] },
   {

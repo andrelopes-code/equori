@@ -11,9 +11,7 @@ import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import {
   PageHeader,
   PageHeaderActions,
-  PageHeaderBack,
   PageHeaderHeading,
-  PageHeaderNav,
   PageHeaderTitle,
   PageHeaderTitleArea,
   PageHeaderTitleRow,
@@ -64,6 +62,7 @@ import { useRuleWords } from "@/features/categories/use-rule-words";
 import { payeesQuery, settingsQuery, useScale } from "@/features/setup";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
+import { PageBack } from "@/ui/page-back";
 
 type Rule = components["schemas"]["Rule"];
 
@@ -206,13 +205,11 @@ export function RuleEditor({ rule }: { rule: Rule | null }) {
       <PageHeader size="lg">
         <PageHeaderTitleArea>
           {wide && (
-            <PageHeaderNav>
-              <PageHeaderBack
-                render={(props) => <Link {...props} to="/categories/rules" />}
-              >
-                {t("categories.tab.rules")}
-              </PageHeaderBack>
-            </PageHeaderNav>
+            <PageBack
+              render={(props) => <Link {...props} to="/categories/rules" />}
+            >
+              {t("categories.tab.rules")}
+            </PageBack>
           )}
           <PageHeaderTitleRow>
             <PageHeaderTitle>

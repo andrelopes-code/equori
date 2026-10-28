@@ -22,30 +22,31 @@ export function SettingsPage() {
   const { section } = useSearch({ from: "/_authed/settings" });
   const compact = useMediaQuery(compactQuery);
   const current = section ?? (compact ? null : "account");
+  // On a phone an open pane is the page: it draws the header and the body, and the top bar holds
+  // the way back.
+  if (compact && current !== null)
+    return (
+      <Page width="full">
+        <SettingsPane topic={current} />
+      </Page>
+    );
   return (
     <Page width="full">
-      {/* On a phone the pane's own title heads the page and the top bar holds the way back. */}
-      {!(compact && current !== null) && (
-        <PageHeader size="lg">
-          <PageHeaderTitleArea>
-            <PageHeaderTitleRow>
-              <PageHeaderTitle>
-                <PageHeaderHeading>{t("more.settings")}</PageHeaderHeading>
-                <PageHeaderSubheading>
-                  {t("settings.subtitle")}
-                </PageHeaderSubheading>
-              </PageHeaderTitle>
-            </PageHeaderTitleRow>
-          </PageHeaderTitleArea>
-        </PageHeader>
-      )}
+      <PageHeader size="lg">
+        <PageHeaderTitleArea>
+          <PageHeaderTitleRow>
+            <PageHeaderTitle>
+              <PageHeaderHeading>{t("more.settings")}</PageHeaderHeading>
+              <PageHeaderSubheading>
+                {t("settings.subtitle")}
+              </PageHeaderSubheading>
+            </PageHeaderTitle>
+          </PageHeaderTitleRow>
+        </PageHeaderTitleArea>
+      </PageHeader>
       <PageBody>
         {compact ? (
-          current === null ? (
-            <SettingsNavigation current={null} index />
-          ) : (
-            <SettingsPane topic={current} />
-          )
+          <SettingsNavigation current={null} index />
         ) : (
           <div className={styles.layout}>
             <div className={styles.navigation}>

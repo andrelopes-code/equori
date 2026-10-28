@@ -14,9 +14,7 @@ import { InlineMessage } from "@slotted/react/inline-message";
 import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import {
   PageHeader,
-  PageHeaderBack,
   PageHeaderHeading,
-  PageHeaderNav,
   PageHeaderSubheading,
   PageHeaderTitle,
   PageHeaderTitleArea,
@@ -52,6 +50,7 @@ import {
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
+import { PageBack } from "@/ui/page-back";
 
 type Account = components["schemas"]["Account"];
 type Payee = components["schemas"]["Payee"];
@@ -200,19 +199,17 @@ export function CorrectionForm({
       <PageHeader size="lg">
         <PageHeaderTitleArea>
           {wide && (
-            <PageHeaderNav>
-              <PageHeaderBack
-                render={(props) => (
-                  <Link
-                    {...props}
-                    to="/transactions/$id"
-                    params={{ id: transaction.id }}
-                  />
-                )}
-              >
-                {transaction.description || t("detail.title")}
-              </PageHeaderBack>
-            </PageHeaderNav>
+            <PageBack
+              render={(props) => (
+                <Link
+                  {...props}
+                  to="/transactions/$id"
+                  params={{ id: transaction.id }}
+                />
+              )}
+            >
+              {transaction.description || t("detail.title")}
+            </PageBack>
           )}
           <PageHeaderTitleRow>
             <PageHeaderTitle>

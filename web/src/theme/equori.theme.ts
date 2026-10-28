@@ -267,6 +267,8 @@ export default extendTheme(
       "--slotted-top-navigation-color": "var(--slotted-text-muted)",
       "--slotted-top-navigation-current-color": "var(--slotted-text)",
       "--slotted-top-navigation-current-background": "transparent",
+      // The card or the content under a page header separates it; a rule repeated that edge.
+      "--slotted-page-header-border": "transparent",
       // A table is lines on the page, not a surface over it.
       "--slotted-table-surface": "transparent",
       "--slotted-table-header-surface": "transparent",

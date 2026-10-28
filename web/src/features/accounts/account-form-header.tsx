@@ -1,8 +1,6 @@
 import {
   PageHeader,
-  PageHeaderBack,
   PageHeaderHeading,
-  PageHeaderNav,
   PageHeaderSubheading,
   PageHeaderTitle,
   PageHeaderTitleArea,
@@ -11,6 +9,7 @@ import {
 import { Link } from "@tanstack/react-router";
 
 import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
+import { PageBack } from "@/ui/page-back";
 
 // FM-01: the form stands on its own route, and the way back is the header's back part.
 export function AccountFormHeader({
@@ -33,11 +32,9 @@ export function AccountFormHeader({
       <PageHeaderTitleArea>
         {/* Below 1024 px the shell's top app bar carries the way back. */}
         {wide && (
-          <PageHeaderNav>
-            <PageHeaderBack render={(props) => <Link {...props} {...back} />}>
-              {backLabel}
-            </PageHeaderBack>
-          </PageHeaderNav>
+          <PageBack render={(props) => <Link {...props} {...back} />}>
+            {backLabel}
+          </PageBack>
         )}
         <PageHeaderTitleRow>
           <PageHeaderTitle>

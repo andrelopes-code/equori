@@ -7,9 +7,7 @@ import { Page, PageBody } from "@slotted/react/page";
 import {
   PageHeader,
   PageHeaderActions,
-  PageHeaderBack,
   PageHeaderHeading,
-  PageHeaderNav,
   PageHeaderSubheading,
   PageHeaderTitle,
   PageHeaderTitleArea,
@@ -60,6 +58,7 @@ import { MonthControl } from "@/ui/month-control";
 import { QueryError } from "@/ui/query-error";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 import styles from "@/features/planning/budgets.module.css";
+import { PageBack } from "@/ui/page-back";
 
 // How many months the chart compares, ending at the month the page reads.
 const chartMonths = 6;
@@ -140,19 +139,17 @@ export function BudgetPage() {
     <Page width="full">
       <PageHeader size="lg">
         <PageHeaderTitleArea>
-          <PageHeaderNav>
-            <PageHeaderBack
-              render={(props) => (
-                <Link
-                  {...props}
-                  to="/planning"
-                  search={{ tab: "budgets", month }}
-                />
-              )}
-            >
-              {t("planning.tab.budgets")}
-            </PageHeaderBack>
-          </PageHeaderNav>
+          <PageBack
+            render={(props) => (
+              <Link
+                {...props}
+                to="/planning"
+                search={{ tab: "budgets", month }}
+              />
+            )}
+          >
+            {t("planning.tab.budgets")}
+          </PageBack>
           <PageHeaderTitleRow>
             <PageHeaderTitle>
               <PageHeaderHeading>{name}</PageHeaderHeading>

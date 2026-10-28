@@ -8,10 +8,8 @@ import { Glyph, Icon } from "@slotted/react/icon";
 import {
   PageHeader,
   PageHeaderActions,
-  PageHeaderBack,
   PageHeaderHeading,
   PageHeaderMarks,
-  PageHeaderNav,
   PageHeaderSubheading,
   PageHeaderTitle,
   PageHeaderTitleArea,
@@ -53,8 +51,8 @@ import { VoidDialog } from "@/features/transactions/void-dialog";
 import styles from "@/features/transactions/transaction-detail.module.css";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { PageBack } from "@/ui/page-back";
 
 // One transaction as a page of its own (level 1) or as the pane beside the list.
 export function TransactionDetail({
@@ -71,7 +69,6 @@ export function TransactionDetail({
   const fmt = useMoneyFormat();
   const data = useTransactionData(id);
   const navigate = useNavigate();
-  const wide = useMediaQuery(wideQuery);
   const [voiding, setVoiding] = useState(false);
   const [transferring, setTransferring] = useState(false);
   const [reimbursing, setReimbursing] = useState(false);
@@ -101,16 +98,11 @@ export function TransactionDetail({
         </Icon>
       </IconButton>
     ) : null;
-  // Below 1024 px the shell's top app bar carries the way back.
   const back =
-    host === "page" && wide ? (
-      <PageHeaderNav>
-        <PageHeaderBack
-          render={(props) => <Link {...props} to="/transactions" />}
-        >
-          {t("nav.transactions")}
-        </PageHeaderBack>
-      </PageHeaderNav>
+    host === "page" ? (
+      <PageBack render={(props) => <Link {...props} to="/transactions" />}>
+        {t("nav.transactions")}
+      </PageBack>
     ) : null;
 
   if (ready === undefined) {

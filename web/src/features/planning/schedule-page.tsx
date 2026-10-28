@@ -8,9 +8,7 @@ import { Page, PageBody } from "@slotted/react/page";
 import {
   PageHeader,
   PageHeaderActions,
-  PageHeaderBack,
   PageHeaderHeading,
-  PageHeaderNav,
   PageHeaderSubheading,
   PageHeaderTitle,
   PageHeaderTitleArea,
@@ -57,6 +55,7 @@ import { useMoneyFormat } from "@/privacy/use-money-format";
 import { AppLink } from "@/ui/app-link";
 import { HeaderAction } from "@/ui/header-action";
 import { QueryError } from "@/ui/query-error";
+import { PageBack } from "@/ui/page-back";
 
 type Dialog = "terms" | "pause" | "end";
 
@@ -110,15 +109,13 @@ export function SchedulePage() {
     <Page width="full">
       <PageHeader size="lg">
         <PageHeaderTitleArea>
-          <PageHeaderNav>
-            <PageHeaderBack
-              render={(props) => (
-                <Link {...props} to="/planning" search={{ tab: "schedules" }} />
-              )}
-            >
-              {t("planning.tab.schedules")}
-            </PageHeaderBack>
-          </PageHeaderNav>
+          <PageBack
+            render={(props) => (
+              <Link {...props} to="/planning" search={{ tab: "schedules" }} />
+            )}
+          >
+            {t("planning.tab.schedules")}
+          </PageBack>
           <PageHeaderTitleRow>
             <PageHeaderTitle>
               <PageHeaderHeading>{name}</PageHeaderHeading>
