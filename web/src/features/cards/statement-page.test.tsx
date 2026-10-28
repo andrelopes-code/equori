@@ -207,6 +207,33 @@ describe("StatementPage", () => {
     ).toBeNull();
   });
 
+  it("leaves a line unmarked when its unconfirmed posting is on another statement", async () => {
+    await renderApp(path, {
+      fetch: api([], {
+        [`GET /api/v1/accounts/${cardID}/unconfirmed`]: () =>
+          json(200, {
+            items: [
+              {
+                transaction_id: "tx2",
+                date: "2026-11-03",
+                amount: { amount: -100000, currency: "BRL" },
+                description: "Geladeira",
+                statement_id: openStatementID,
+              },
+            ],
+          }),
+      }),
+    });
+    const table = await screen.findByRole("table", {
+      name: catalogEn["statement.lines"],
+    });
+    const row = await within(table).findByRole("row", { name: /Geladeira/ });
+    await waitFor(() => {
+      expect(within(row).getByText("2/10")).toBeInTheDocument();
+    });
+    expect(within(row).queryByText("No bank line")).toBeNull();
+  });
+
   it("steps to the next statement", async () => {
     const { router } = await renderApp(path, { fetch: api() });
     await userEvent.click(

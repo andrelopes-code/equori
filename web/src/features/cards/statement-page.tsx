@@ -275,8 +275,11 @@ export function StatementPage() {
               lines={s.postings}
               scale={sc}
               unconfirmed={
+                // One transaction (an installment plan) spans statements; the entry names its own.
                 new Set(
-                  (unconfirmed.data ?? []).map((entry) => entry.transaction_id),
+                  (unconfirmed.data ?? [])
+                    .filter((entry) => entry.statement_id === statementId)
+                    .map((entry) => entry.transaction_id),
                 )
               }
               lineActions={(line) =>
