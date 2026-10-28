@@ -1,6 +1,12 @@
+import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { applyVisual, readVisual, restoreVisual } from "@/theme/visual";
+import {
+  applyVisual,
+  readVisual,
+  restoreVisual,
+  useGlass,
+} from "@/theme/visual";
 
 const html = document.documentElement;
 
@@ -66,5 +72,18 @@ describe("visual", () => {
   it("leaves the theme alone at start when the style is standard", () => {
     restoreVisual();
     expect(html.getAttribute("data-slotted-theme")).toBe("equori");
+  });
+
+  it("draws the glass when the system scheme resolves to dark", () => {
+    const real = window.matchMedia.bind(window);
+    vi.spyOn(window, "matchMedia").mockImplementation((query) => {
+      const list = real(query);
+      if (query === "(prefers-color-scheme: dark)")
+        Object.defineProperty(list, "matches", { value: true });
+      return list;
+    });
+    localStorage.setItem("equori.visual", "glass");
+    localStorage.setItem("equori.scheme", "system");
+    expect(renderHook(() => useGlass()).result.current).toBe(true);
   });
 });

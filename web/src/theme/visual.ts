@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 
 import { useScheme } from "@/theme/scheme";
+import { useMediaQuery } from "@/ui/use-media-query";
 
 // "glass" is an experimental style: translucent surfaces over a moving gradient (theme/glass). Its
 // theme is a stylesheet of its own, loaded the first time it is turned on, so a reader who never
@@ -83,9 +84,15 @@ export function useVisual(): [Visual, (visual: Visual) => void] {
   return [useSyncExternalStore(subscribe, snapshot), applyVisual];
 }
 
-// The glass is made for the dark scheme, where the gradient behind it can be seen.
+// The glass is made for the dark scheme, where the gradient behind it can be seen. The system
+// scheme counts once it resolves to dark: without the gradient the glass shell is clear over the
+// boot page's fixed ground.
 export function useGlass(): boolean {
   const [visual] = useVisual();
   const [scheme] = useScheme();
-  return visual === "glass" && scheme === "dark";
+  const systemDark = useMediaQuery("(prefers-color-scheme: dark)");
+  return (
+    visual === "glass" &&
+    (scheme === "dark" || (scheme === "system" && systemDark))
+  );
 }
