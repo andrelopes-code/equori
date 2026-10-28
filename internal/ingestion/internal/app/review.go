@@ -102,8 +102,9 @@ func (s *Service) Resolve(ctx context.Context, userID int64, recordID uuid.UUID,
 	return rec, b, nil
 }
 
-// Unconfirmed lists the account's entries that no institution line confirmed: dated within its
-// feed and more than MatchHardLimit days before the feed's end, oldest first (A103).
+// Unconfirmed lists the account's entries that neither an institution line nor an institution
+// balance confirmed, expected within its feed and more than MatchHardLimit days before the
+// feed's end, oldest first (A103, A133).
 func (s *Service) Unconfirmed(ctx context.Context, userID int64, accountID uuid.UUID) ([]domain.LedgerPosting, money.Currency, error) {
 	target, err := s.ledger.ImportTarget(ctx, userID, accountID)
 	if err != nil {
@@ -117,6 +118,6 @@ func (s *Service) Unconfirmed(ctx context.Context, userID int64, accountID uuid.
 	if to.Before(*feed.From) {
 		return nil, target.Currency, nil
 	}
-	ps, err := s.ledger.UnlinkedPostings(ctx, userID, accountID, *feed.From, to)
+	ps, err := s.ledger.UnconfirmedPostings(ctx, userID, accountID, *feed.From, to)
 	return ps, target.Currency, err
 }

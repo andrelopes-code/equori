@@ -288,6 +288,12 @@ func (m *Module) UnlinkedPostings(ctx context.Context, userID int64, accountID u
 	return m.svc.UnlinkedPostings(ctx, userID, accountID, from, to)
 }
 
+// UnconfirmedPostings lists the account's postings that neither a line nor a balance
+// confirms, dated by when the institution reports them, in [from, to] (A133).
+func (m *Module) UnconfirmedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]UnlinkedPosting, error) {
+	return m.svc.UnconfirmedPostings(ctx, userID, accountID, from, to)
+}
+
 // ConfirmLine corrects a transaction to the amount and date of the statement line matched to
 // it on the account (A101).
 func (m *Module) ConfirmLine(ctx context.Context, userID int64, txID, accountID uuid.UUID, amount int64, date time.Time) error {

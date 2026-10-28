@@ -116,6 +116,70 @@ func (q *Queries) ListTransactionsByExternalRecords(ctx context.Context, arg Lis
 	return items, nil
 }
 
+const listUnconfirmedPostings = `-- name: ListUnconfirmedPostings :many
+SELECT u.transaction_id, u.expected_on, u.amount, t.payee_id, t.description, u.statement_id FROM (
+    SELECT DISTINCT ON (p.transaction_id) p.transaction_id,
+        coalesce(p.settled_on, p.booked_on)::date AS expected_on, p.amount, p.statement_id
+    FROM ledger_posting p
+    WHERE p.user_id = $1 AND p.account_id = $2 AND NOT p.voided
+      AND p.external_record_id IS NULL AND p.status <> 'reconciled'
+      AND coalesce(p.settled_on, p.booked_on) BETWEEN $3::date AND $4::date
+    ORDER BY p.transaction_id, expected_on, p.position
+) u
+JOIN ledger_transaction t ON t.id = u.transaction_id
+ORDER BY u.expected_on, u.transaction_id
+`
+
+type ListUnconfirmedPostingsParams struct {
+	UserID    int64
+	AccountID uuid.UUID
+	FromDate  time.Time
+	ToDate    time.Time
+}
+
+type ListUnconfirmedPostingsRow struct {
+	TransactionID uuid.UUID
+	ExpectedOn    time.Time
+	Amount        int64
+	PayeeID       uuid.NullUUID
+	Description   string
+	StatementID   uuid.NullUUID
+}
+
+// A133: the first posting of each non-voided transaction on the account that neither a line
+// links nor a balance reconciled, by the date the institution reports its line.
+func (q *Queries) ListUnconfirmedPostings(ctx context.Context, arg ListUnconfirmedPostingsParams) ([]ListUnconfirmedPostingsRow, error) {
+	rows, err := q.db.Query(ctx, listUnconfirmedPostings,
+		arg.UserID,
+		arg.AccountID,
+		arg.FromDate,
+		arg.ToDate,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListUnconfirmedPostingsRow
+	for rows.Next() {
+		var i ListUnconfirmedPostingsRow
+		if err := rows.Scan(
+			&i.TransactionID,
+			&i.ExpectedOn,
+			&i.Amount,
+			&i.PayeeID,
+			&i.Description,
+			&i.StatementID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listUnlinkedPostings = `-- name: ListUnlinkedPostings :many
 SELECT u.transaction_id, u.booked_on, u.amount, t.payee_id, t.description FROM (
     SELECT DISTINCT ON (p.transaction_id) p.transaction_id, p.booked_on, p.amount

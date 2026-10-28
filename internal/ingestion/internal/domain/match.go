@@ -37,6 +37,8 @@ type LedgerPosting struct {
 	Amount        int64
 	PayeeID       uuid.UUID
 	Description   string
+	// StatementID is the card statement of the posting, uuid.Nil without one.
+	StatementID uuid.UUID
 }
 
 // MatchLine is what matching compares of a statement line; PayeeID is the payee

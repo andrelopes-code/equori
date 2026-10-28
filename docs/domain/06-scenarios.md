@@ -602,6 +602,10 @@ With "Cofrinho Mercado Livre" and "Algum dinheiro" mapped from 2026-11-11, check
 
 The scenarios of `docs/superpowers/specs/2026-10-20-record-matching-design.md`: a manual entry linked by identical amount, day and payee (S91); a probable entry corrected to the line's amount on match (S92); two rides of one payee and amount ambiguous (S93); another payee creating a transaction (S94); a hotel entry seven days away linked (S95); a linked line's change corrected or, on a reconciled posting, described (S96); entries no line confirmed listed (S97).
 
+### S167–S170 Unconfirmed entries confirmed by line or balance (A133)
+
+The scenarios of `docs/superpowers/specs/2026-10-28-unconfirmed-entries-design.md`: reserve transfers confirmed by the reserve's balance (S167); a manual entry confirmed by the account's balance (S168); an installment expected at its statement's closing (S169); cancelled installments offsetting their reversals (S170).
+
 ### S71 Synced assertion re-evaluated
 
 Nubank checking mapped from 2026-10-01 with the S52 lines and balance 3,834.10, without an opening balance: the first sync records an assertion with an open difference of 1,000.00. The owner records an opening balance of 1,000.00; the next sync, with the same balance, creates no assertion, and the existing one becomes `reconciled` with resolution `none`. An open synced assertion with a second assertion of the same date and amount created through `POST /accounts/{id}/balance-assertions` is reconciled by the next sync; all assertions are `reconciled`.

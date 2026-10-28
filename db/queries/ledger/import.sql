@@ -15,6 +15,21 @@ SELECT u.transaction_id, u.booked_on, u.amount, t.payee_id, t.description FROM (
 JOIN ledger_transaction t ON t.id = u.transaction_id
 ORDER BY u.booked_on, u.transaction_id;
 
+-- name: ListUnconfirmedPostings :many
+-- A133: the first posting of each non-voided transaction on the account that neither a line
+-- links nor a balance reconciled, by the date the institution reports its line.
+SELECT u.transaction_id, u.expected_on, u.amount, t.payee_id, t.description, u.statement_id FROM (
+    SELECT DISTINCT ON (p.transaction_id) p.transaction_id,
+        coalesce(p.settled_on, p.booked_on)::date AS expected_on, p.amount, p.statement_id
+    FROM ledger_posting p
+    WHERE p.user_id = @user_id AND p.account_id = @account_id AND NOT p.voided
+      AND p.external_record_id IS NULL AND p.status <> 'reconciled'
+      AND coalesce(p.settled_on, p.booked_on) BETWEEN @from_date::date AND @to_date::date
+    ORDER BY p.transaction_id, expected_on, p.position
+) u
+JOIN ledger_transaction t ON t.id = u.transaction_id
+ORDER BY u.expected_on, u.transaction_id;
+
 -- name: LinkExternalRecord :exec
 UPDATE ledger_posting SET external_record_id = @external_record_id
 WHERE user_id = @user_id AND id = @id;

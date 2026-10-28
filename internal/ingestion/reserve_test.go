@@ -470,11 +470,10 @@ func reserveLine(id, date, description string, amount pluggy.Decimal) pluggy.Tra
 	}
 }
 
-// S70: a checking line that names exactly one mapped reserve and is dated on or after its
-// start date is booked as a transfer to the reserve; any other line follows the normal
-// pipeline (D4, A76).
-func TestS70ReserveTransfers(t *testing.T) {
-	t.Parallel()
+// reserveTransfers maps checking "Mercado Pago" and reserves "Cofrinho Mercado Livre" and
+// "Algum dinheiro" from 2026-11-11, and serves the checking lines of S70 unsynced.
+func reserveTransfers(t *testing.T) (f syncFixture, checking, cofrinho, algum string) {
+	t.Helper()
 	a := newAggregator(t)
 	it := pluggy.Item{ID: mercadoPagoItem, Status: pluggy.StatusUpdated, LastUpdatedAt: new("2026-11-11T15:00:00.000Z")}
 	it.Connector.Name = "Mercado Pago"
@@ -484,11 +483,11 @@ func TestS70ReserveTransfers(t *testing.T) {
 	a.p.AddReservedBalance(checkingID, reserved("Cofrinho Mercado Livre", "res-cofrinho", "300.00"))
 	a.p.AddReservedBalance(checkingID, reserved("Algum dinheiro", "res-algum", "100.00"))
 	in := a.integrate(a.h.Client, "Meu Pluggy", pluggyClient, pluggySecret)
-	f := syncFixture{aggregator: a, conn: a.mustConnect(a.h.Client, in.ID, mercadoPagoItem)}
+	f = syncFixture{aggregator: a, conn: a.mustConnect(a.h.Client, in.ID, mercadoPagoItem)}
 
-	checking := a.h.Account("Mercado Pago", "asset", "checking", nil)
-	cofrinho := a.h.Account("MP Cofrinho", "asset", "reserve", nil)
-	algum := a.h.Account("MP Algum dinheiro", "asset", "reserve", nil)
+	checking = a.h.Account("Mercado Pago", "asset", "checking", nil)
+	cofrinho = a.h.Account("MP Cofrinho", "asset", "reserve", nil)
+	algum = a.h.Account("MP Algum dinheiro", "asset", "reserve", nil)
 	a.h.Record("2026-10-31", apitest.Posting(checking, 100000), apitest.Posting(openingBalances(f), -100000))
 	a.h.Record("2026-11-10", apitest.Posting(cofrinho, 10000), apitest.Posting(openingBalances(f), -10000))
 	a.h.Record("2026-11-10", apitest.Posting(algum, 20000), apitest.Posting(openingBalances(f), -20000))
@@ -506,7 +505,15 @@ func TestS70ReserveTransfers(t *testing.T) {
 	a.p.AddTransaction(checkingID, reserveLine("t-out", "2026-11-11", "Dinheiro retirado Algum dinheiro", "100.00"))
 	a.p.AddTransaction(checkingID, reserveLine("t-unknown", "2026-11-11", "Dinheiro retirado Aaa", "50.00"))
 	a.p.AddTransaction(checkingID, reserveLine("t-before", "2026-11-10", "Dinheiro reservado Cofrinho Mercado Livre", "-30.00"))
+	return f, checking, cofrinho, algum
+}
 
+// S70: a checking line that names exactly one mapped reserve and is dated on or after its
+// start date is booked as a transfer to the reserve; any other line follows the normal
+// pipeline (D4, A76).
+func TestS70ReserveTransfers(t *testing.T) {
+	t.Parallel()
+	f, checking, cofrinho, algum := reserveTransfers(t)
 	f.sync()
 	// Reserves sync after the checking account: each reserve assertion meets its settled
 	// balance, with the transfers booked, and reconciles with no resolution.

@@ -26,6 +26,16 @@ func (r *Repository) UnlinkedPostings(ctx context.Context, userID int64, account
 	}), err
 }
 
+func (r *Repository) UnconfirmedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]app.UnlinkedPosting, error) {
+	rows, err := r.q.ListUnconfirmedPostings(ctx, ListUnconfirmedPostingsParams{UserID: userID, AccountID: accountID, FromDate: from, ToDate: to})
+	return mapAll(rows, func(row ListUnconfirmedPostingsRow) app.UnlinkedPosting {
+		return app.UnlinkedPosting{
+			TransactionID: row.TransactionID, Date: row.ExpectedOn, Amount: row.Amount, PayeeID: row.PayeeID.UUID,
+			Description: row.Description, StatementID: row.StatementID.UUID,
+		}
+	}), err
+}
+
 func (r *Repository) LinkExternalRecord(ctx context.Context, userID int64, postingID, recordID uuid.UUID) error {
 	err := r.q.LinkExternalRecord(ctx, LinkExternalRecordParams{UserID: userID, ID: postingID, ExternalRecordID: nullUUID(recordID)})
 	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == uniqueViolation {
