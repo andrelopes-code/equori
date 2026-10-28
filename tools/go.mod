@@ -99,7 +99,7 @@ require (
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/fzipp/gocyclo v0.6.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.15 // indirect
-	github.com/getkin/kin-openapi v0.142.0 // indirect
+	github.com/getkin/kin-openapi v0.152.0 // indirect
 	github.com/ghostiam/protogetter v1.0.1 // indirect
 	github.com/go-critic/go-critic v0.15.0 // indirect
 	github.com/go-faster/city v1.0.1 // indirect
