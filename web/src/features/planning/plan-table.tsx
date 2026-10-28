@@ -1,4 +1,3 @@
-import { Button } from "@slotted/react/button";
 import { Glyph, Icon } from "@slotted/react/icon";
 import {
   Table,
@@ -50,6 +49,7 @@ export function PlanTable({
   format,
   unit,
   reference,
+  rest,
   editable,
   invalid,
   highlighted,
@@ -66,6 +66,7 @@ export function PlanTable({
   format: PlanFormat;
   unit: "money" | "share";
   reference: number | undefined;
+  rest: number;
   editable: boolean;
   invalid: ReadonlySet<string>;
   highlighted: string | null;
@@ -124,23 +125,27 @@ export function PlanTable({
                   }}
                 >
                   <TableRowHeader id={`plan-group-${group.id}`}>
-                    <Button
-                      variant="ghost"
-                      tone="secondary"
-                      size="sm"
+                    {/* The disclosure of a group, drawn here because a ghost button pads its
+                        icon apart from the label; the chevron stands in the column of the
+                        category marks below it so the names line up. */}
+                    <button
+                      type="button"
+                      className={styles.groupToggle}
                       aria-expanded={open}
                       aria-label={t("plan.toggle", { name: group.name })}
                       onClick={() => {
                         onToggle(group.id);
                       }}
                     >
-                      <Icon>
-                        <Glyph name={open ? "chevron-down" : "chevron-right"} />
-                      </Icon>
+                      <span className={styles.chevron} aria-hidden="true">
+                        <Icon>
+                          <Glyph name="chevron-down" />
+                        </Icon>
+                      </span>
                       <Text size="sm" weight="semibold">
                         {group.name}
                       </Text>
-                    </Button>
+                    </button>
                   </TableRowHeader>
                   {!compact && (
                     <TableCell numeric>
@@ -172,10 +177,13 @@ export function PlanTable({
                       format={format}
                       unit={unit}
                       reference={reference}
+                      rest={rest}
+                      previousMonth={previousMonth}
                       editable={editable}
                       invalid={invalid.has(line.row.category_id)}
                       lit={lit}
                       compact={compact}
+                      reviewing={review !== undefined}
                       review={review?.get(line.row.category_id)}
                       onChange={(amount) => {
                         onChange(line.row.category_id, amount);

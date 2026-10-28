@@ -61,14 +61,57 @@ describe("Budget plan", () => {
     ).toBeInTheDocument();
   });
 
-  it("applies the average from the chip", async () => {
+  // Spec 5.2, row menu: fills a row from its history without typing.
+  it("fills a row from its menu", async () => {
     await renderPlan();
-    await userEvent.click(
-      await screen.findByRole("button", {
-        name: words("plan.averageChip", { amount: "R$205.00" }),
-      }),
-    );
+    const row = (await input("Energy")).closest("tr");
+    if (row === null) throw new Error("no row for Energy");
+    const pick = async (name: string) => {
+      await userEvent.click(
+        within(row).getByRole("button", {
+          name: words("plan.fill", { name: "Energy" }),
+        }),
+      );
+      const menu = await screen.findByRole("menu");
+      await userEvent.click(
+        within(menu).getByRole("menuitem", { name: new RegExp(name) }),
+      );
+    };
+    await pick(catalogEn["plan.suggest.average"]);
     expect(await input("Energy")).toHaveValue("205.00");
+    await pick(catalogEn["plan.fill.rest"]);
+    // 205.00 and the 2,135.00 that was still unassigned.
+    expect(await input("Energy")).toHaveValue("2,340.00");
+    expect(await figure("R$0.00")).toBeInTheDocument();
+  });
+
+  // Spec 5.2, arrow steps: ten units of the currency, a hundred with Shift, never below zero.
+  it("steps a row with the arrow keys", async () => {
+    await renderPlan();
+    const field = await input("Energy");
+    await userEvent.click(field);
+    await userEvent.keyboard("{ArrowUp}");
+    expect(field).toHaveValue("190.00");
+    await userEvent.keyboard("{Shift>}{ArrowDown}{/Shift}");
+    expect(field).toHaveValue("90.00");
+    await userEvent.keyboard("{Shift>}{ArrowDown}{/Shift}");
+    expect(field).toHaveValue("0.00");
+    await userEvent.keyboard("{ArrowUp}{ArrowUp}");
+    expect(field).toHaveValue("20.00");
+  });
+
+  it("itemizes the reference and what was received of it", async () => {
+    await renderPlan();
+    const region = await panel();
+    expect(
+      within(region).getByText(catalogEn["plan.base"]),
+    ).toBeInTheDocument();
+    expect(within(region).getByText("R$8,500.00")).toBeInTheDocument();
+    expect(
+      within(region).getByRole("progressbar", {
+        name: catalogEn["plan.received"],
+      }),
+    ).toHaveAttribute("aria-valuenow", "84");
   });
 
   it("reverts a row with Escape", async () => {
@@ -253,6 +296,24 @@ describe("Budget plan", () => {
     await waitFor(async () => {
       expect(await input("Energy")).toHaveValue("180.00");
     });
+  });
+
+  it("gives every row a suggested cell while a suggestion is under review", async () => {
+    await renderPlan();
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["plan.suggest"] }),
+    );
+    await userEvent.click(
+      await screen.findByRole("menuitem", {
+        name: catalogEn["plan.suggest.average"],
+      }),
+    );
+    await screen.findByRole("columnheader", {
+      name: catalogEn["plan.col.suggested"],
+    });
+    const rows = within(screen.getByRole("table")).getAllByRole("row");
+    for (const row of rows.slice(1))
+      expect(within(row).getAllByRole("cell")).toHaveLength(5);
   });
 
   it("fits a suggestion to the reference", async () => {

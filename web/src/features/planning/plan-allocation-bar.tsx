@@ -52,7 +52,12 @@ export function PlanAllocationBar({
   const t = useT();
   const scale = segments.reduce((sum, s) => sum + s.amount, 0);
   return (
-    <div className={styles.bar} role="group" aria-label={t("plan.bar")}>
+    <div
+      className={styles.bar}
+      role="group"
+      aria-label={t("plan.bar")}
+      data-focus={highlighted === null ? undefined : ""}
+    >
       {segments.map((s) => {
         const share =
           format.share(planShare(s.amount, reference)) ?? t("plan.dash");

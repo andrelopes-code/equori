@@ -5,41 +5,102 @@
     min-inline-size: 0;
   }
 
+  .card {
+    container-type: inline-size;
+  }
+
   .panel {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    justify-content: space-between;
+    display: grid;
     gap: var(--slotted-space-5);
+  }
+
+  @container (min-inline-size: 48rem) {
+    .panel {
+      grid-template-columns: minmax(0, 1fr) minmax(20rem, 28rem);
+      gap: var(--slotted-space-7);
+    }
+
+    .source {
+      padding-inline-start: var(--slotted-space-6);
+      border-inline-start: var(--slotted-border-width-thin) solid
+        var(--slotted-border-subtle);
+    }
   }
 
   .answer,
   .source,
-  .breakdown,
   .categoryText,
   .planned,
-  .stripFigure {
+  .stripFigure,
+  .unavailable,
+  .received {
     display: grid;
     gap: var(--slotted-space-1);
     min-inline-size: 0;
   }
 
   .answer {
+    display: flex;
+    flex-direction: column;
     gap: var(--slotted-space-2);
+  }
+
+  /* The bar closes the column, level with the end of the reference's ledger. */
+  .answerBar {
+    margin-block-start: auto;
+    padding-block-start: var(--slotted-space-5);
+  }
+
+  .answerBar .bar {
+    margin-block-start: 0;
   }
 
   .source {
-    justify-items: end;
-    gap: var(--slotted-space-2);
-    text-align: end;
+    align-content: start;
+    gap: var(--slotted-space-4);
   }
 
-  .breakdown {
-    justify-items: end;
+  .source > :first-child {
+    justify-self: stretch;
+  }
+
+  .ledger {
+    display: grid;
+    gap: var(--slotted-space-2);
+  }
+
+  .ledgerLine {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-4);
+    min-inline-size: 0;
+  }
+
+  .ledgerLine > :first-child {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ledgerLine[data-total] {
+    padding-block-start: var(--slotted-space-2);
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  .ledgerLine:only-child[data-total] {
+    padding-block-start: 0;
+    border-block-start: none;
+  }
+
+  .received {
+    gap: var(--slotted-space-2);
   }
 
   .fixed {
-    inline-size: 12rem;
+    inline-size: 11rem;
   }
 
   .bar {
@@ -79,13 +140,19 @@
     block-size: var(--slotted-space-3);
     border-radius: var(--slotted-radius-xs);
     background: var(--plan-tone);
-    transition: transform var(--slotted-duration-medium)
+    transition: opacity var(--slotted-duration-short)
       var(--slotted-easing-standard);
   }
 
-  .segment[data-lit] .swatch,
-  .segment:hover:not(:disabled) .swatch {
-    transform: scaleY(1.5);
+  /* One group in focus: the others step back, so its share reads against the whole. */
+  .bar[data-focus] .segment:not([data-lit]) .swatch,
+  .bar[data-focus] .segment:not([data-lit]) .segmentLabel {
+    opacity: 0.32;
+  }
+
+  .segmentLabel {
+    transition: opacity var(--slotted-duration-short)
+      var(--slotted-easing-standard);
   }
 
   .segment[data-tone="commitment"] {
@@ -128,6 +195,7 @@
   .segmentLabel {
     display: none;
     min-inline-size: 0;
+    padding-inline-end: var(--slotted-space-2);
   }
 
   .segmentLabel[data-wide] {
@@ -169,10 +237,10 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: var(--slotted-space-2);
+    gap: var(--slotted-space-1);
   }
 
-  .plannedInput > :last-child {
+  .plannedInput > :first-child {
     inline-size: 9rem;
   }
 
@@ -180,15 +248,121 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: var(--slotted-space-2);
+    gap: var(--slotted-space-3);
+  }
+
+  .suggestedText {
+    display: grid;
+    justify-items: end;
   }
 
   .groupRow > * {
-    background: var(--slotted-surface-sunken);
+    background: var(--slotted-surface-raised);
   }
 
-  [data-lit] > * {
+  .groupToggle {
+    all: unset;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--slotted-space-3);
+    min-block-size: var(--slotted-target-min);
+    padding-inline-end: var(--slotted-space-2);
+    border-radius: var(--slotted-radius-sm);
+    cursor: pointer;
+  }
+
+  .groupToggle:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  /* As wide as the category marks of the rows under it, so the names share one edge. */
+  .chevron {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    inline-size: var(--slotted-avatar-size-md);
+    block-size: var(--slotted-avatar-size-md);
+    border-radius: var(--slotted-radius-sm);
+    color: var(--slotted-text-muted);
+    transition:
+      transform var(--slotted-duration-short) var(--slotted-easing-standard),
+      background-color var(--slotted-duration-short)
+        var(--slotted-easing-standard),
+      color var(--slotted-duration-short) var(--slotted-easing-standard);
+  }
+
+  .groupToggle[aria-expanded="false"] .chevron {
+    transform: rotate(-90deg);
+  }
+
+  .groupToggle:hover .chevron {
+    background: var(--slotted-tone-secondary-subtle-hover);
+    color: var(--slotted-text);
+  }
+
+  /* The rows of the group whose segment of the bar is in focus. */
+  /* A tint of the accent over the row's own ground: the theme's accent surface is the page's
+     ground in the dark scheme, so the lit rows would not read apart from the others. */
+  tr[data-lit] > * {
+    background: color-mix(
+      in oklch,
+      var(--slotted-tone-accent-solid) 12%,
+      var(--slotted-surface)
+    );
+  }
+
+  tr.groupRow[data-lit] > * {
+    background: color-mix(
+      in oklch,
+      var(--slotted-tone-accent-solid) 18%,
+      var(--slotted-surface-raised)
+    );
+  }
+
+  tr > * {
+    transition: background-color var(--slotted-duration-short)
+      var(--slotted-easing-standard);
+  }
+
+  .review {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--slotted-space-3) var(--slotted-space-4);
+    padding: var(--slotted-space-3) var(--slotted-space-4);
+    border: var(--slotted-border-width-thin) solid
+      var(--slotted-tone-accent-border);
+    border-radius: var(--slotted-radius-md);
     background: var(--slotted-tone-accent-surface);
+  }
+
+  .reviewMark {
+    display: inline-grid;
+    flex: none;
+    color: var(--slotted-tone-accent-text);
+  }
+
+  .reviewText {
+    flex: 1 1 20rem;
+    min-inline-size: 0;
+  }
+
+  .reviewActions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--slotted-space-2);
+    margin-inline-start: auto;
+  }
+
+  .reviewRule {
+    align-self: stretch;
+    inline-size: var(--slotted-border-width-thin);
+    margin-inline: var(--slotted-space-2);
+    background: var(--slotted-tone-accent-border);
   }
 
   .strip {
@@ -223,7 +397,10 @@
 
   @media (prefers-reduced-motion: reduce) {
     .segment,
-    .swatch {
+    .swatch,
+    .segmentLabel,
+    .chevron,
+    tr > * {
       transition: none;
     }
   }

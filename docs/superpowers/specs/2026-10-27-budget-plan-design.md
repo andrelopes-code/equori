@@ -155,13 +155,14 @@ The page is `planning-page.tsx`, with its month selector. The budgets tab gets a
 
 1. **Reference panel.**
    - Left: the label "Unassigned" and `unassigned` as the page's largest figure. Under it, one sentence: "{share} of {source name} for {month} has a destination". Over the reference, the sentence reads "{amount} over the reference". The figure and the sentence take the danger tone.
-   - Right: the source segmented control, then the breakdown of the chosen source.
-     - Expected income: each `expected_items` entry with its amount.
-     - Average income: "average of {n} months".
-     - Fixed amount: a `MoneyInput` of size `field`.
-     - All three also show `received_income` as "received so far".
+   - Right, beside a rule: the source segmented control, then a ledger of the chosen source, each label at the start and its amount at the end.
+     - Expected income: each `expected_items` entry with its amount, then a ruled total line "Reference" with the reference.
+     - Average income: one total line, "average of {n} months", with the reference.
+     - Fixed amount: one total line, "reference amount", holding a `MoneyInput` of size `field`.
+     - All three end with "received so far" and `received_income`, over a progress bar of the whole per cent of the reference received.
+   - The allocation bar closes the left column, level with the end of the ledger.
    - A source without a figure is disabled, with its reason as a tooltip.
-2. **Allocation bar,** full width.
+2. **Allocation bar,** at the foot of the reference panel's left column.
    - Segments, in order: installments and savings in the neutral tone; one segment per root group, by planned amount descending, in steps of the accent; the unassigned rest as a dashed outline.
    - Labels sit under each segment wide enough for them (8 % or more), with name, amount and share. Narrower segments show their label on hover and on focus.
    - Over the reference, the scale becomes `installments + savings + planned`. A danger segment marks the excess past a tick at the reference.
@@ -182,15 +183,17 @@ The page is `planning-page.tsx`, with its month selector. The budgets tab gets a
 
 - **Live figures.** Each keystroke recomputes the row's share, its group sums, `planned`, `unassigned`, the bar and the sentence. The largest figure tweens over 180 ms; the bar segments animate their size over 200 ms. Under `prefers-reduced-motion`, both change at once.
 - **Changed rows.** The input takes the accent border, and the row shows "was {amount}" under it. **Esc** in the input reverts that row.
-- **Average hint.** When the average is above zero and `|planned − average| ≥ 10 %` of the average, a chip "average {amount}" sits beside the input. Activating it sets the planned value to the average.
+- **Row menu.** A button after each input opens a menu of amounts with each figure beside it: *3-month average*, *Spent in {previous month}*, *Saved amount* when the row changed, *Add what is unassigned* on a counted row while `unassigned` > 0, and *Clear* while the row is above zero. Choosing one sets the row. It replaces the average chip of the first version (owner review of 2026-10-28).
+- **Arrow steps.** In the currency unit, **Arrow Up** and **Arrow Down** move the row by ten units of the currency, a hundred with **Shift**, never below zero.
 - **Keyboard.**
   - **Enter** moves to the next row's input, and **Shift+Enter** to the previous one, skipping collapsed groups.
   - **Ctrl/Cmd+S** saves the plan.
   - **Ctrl/Cmd+Z** outside an input undoes the last bulk action (suggestion, distribution, discard).
-- **Bar and table link.** Hovering or focusing a segment highlights its group rows, and hovering a group row highlights its segment. Activating a segment expands its group and scrolls it into view. Segments are buttons, with the accessible name "{group}, {amount}, {share} of the reference".
+- **Bar and table link.** Hovering or focusing a segment highlights its group rows with a tint of the accent and dims the other segments, and hovering a group row does the same from the table. Activating a segment expands its group and scrolls it into view. Segments are buttons, with the accessible name "{group}, {amount}, {share} of the reference".
 - **Suggestion review.**
   - Choosing a basis enters review mode. A banner states the basis, the number of rows that change, the net change and the resulting `unassigned`, plus the **Fit to reference** switch when A132 applies.
-  - A Suggested column appears with the delta, or "new" for a row without a budget, and a checkbox per row, checked by default.
+  - A Suggested column appears on every row. A row with a proposal shows the suggested amount over its delta, or "new" for a row without a budget, and a checkbox, checked by default. An unchecked proposal takes the muted tone.
+  - The banner holds its text and its actions on one line, the actions at the end.
   - **Apply {n} checked** turns them into pending changes, and a toast offers **Undo**. **Discard** leaves review mode with no change.
 - **Distribution.** It turns into pending changes on the affected rows, and a toast offers **Undo**.
 - **Sticky strip.** When the reference panel leaves the viewport, a strip pins under the page header. It holds `unassigned`, a thin copy of the bar and "of {reference}". The panel is watched by an `IntersectionObserver`.
@@ -240,7 +243,7 @@ The page is `planning-page.tsx`, with its month selector. The budgets tab gets a
 - Schema tests for `planning_budget_reference`: an unknown source, a fixed source without an amount, a non-fixed source with an amount, and a negative amount are each rejected.
 - Web tests:
   - the largest-remainder split and the fit-to-reference scaling, as unit tests of a pure module beside `budget-month.ts`;
-  - the Plan view: live recompute, average chip, Esc revert, Enter navigation, suggestion review with apply and undo, distribution, the save payload holding changed rows only, the pending-changes guard, the past-month read-only state and privacy masking.
+  - the Plan view: live recompute, row menu, arrow steps, the reference ledger, Esc revert, Enter navigation, suggestion review with apply and undo, distribution, the save payload holding changed rows only, the pending-changes guard, the past-month read-only state and privacy masking.
 
 ## 7. Regional values
 

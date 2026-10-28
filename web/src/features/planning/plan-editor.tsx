@@ -531,6 +531,7 @@ export function PlanEditor({
             format={format}
             unit={unit}
             reference={reference}
+            rest={unassigned ?? 0}
             editable={editable}
             invalid={failure?.invalid ?? new Set()}
             highlighted={highlighted}

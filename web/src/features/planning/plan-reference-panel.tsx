@@ -1,6 +1,8 @@
 import { Card, CardBody } from "@slotted/react/card";
+import { ProgressBar } from "@slotted/react/progress-indicator";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { Text } from "@slotted/react/typography";
+import { Fragment } from "react";
 import type { ReactNode } from "react";
 
 import type { components } from "@/api/schema.gen";
@@ -60,44 +62,87 @@ export function PlanReferencePanel({
       ? undefined
       : planShare(reference - unassigned, reference);
   const months = plan.average_months ?? 0;
-  const breakdown =
-    source === "expected_income" ? (
-      (plan.expected_items ?? []).map((item) => (
-        <Text key={item.schedule_id} size="sm" tone="muted" numeric="tabular">
-          {item.description} {format.money(item.amount.amount)}
+  const line = (label: string, amount: ReactNode, total = false) => (
+    <div className={styles.ledgerLine} data-total={total ? "" : undefined}>
+      <Text
+        size="sm"
+        tone={total ? "default" : "muted"}
+        weight={total ? "medium" : "regular"}
+      >
+        {label}
+      </Text>
+      {typeof amount === "string" ? (
+        <Text
+          size="sm"
+          numeric="tabular"
+          weight={total ? "semibold" : "regular"}
+        >
+          {amount}
         </Text>
-      ))
+      ) : (
+        amount
+      )}
+    </div>
+  );
+  const total =
+    reference === undefined ? t("plan.dash") : format.money(reference);
+  // What the reference is made of, each part beside its amount and the reference under them.
+  const ledger =
+    source === "expected_income" ? (
+      <>
+        {(plan.expected_items ?? []).map((item) => (
+          <Fragment key={item.schedule_id}>
+            {line(item.description, format.money(item.amount.amount))}
+          </Fragment>
+        ))}
+        {line(t("plan.base"), total, true)}
+      </>
     ) : source === "average_income" ? (
-      <Text size="sm" tone="muted">
-        {months === 1
+      line(
+        months === 1
           ? t("plan.averageOfOne")
-          : t("plan.averageOf", { count: String(months) })}
-      </Text>
-    ) : format.hidden ? (
-      // entry() is never masked (ADR 018 P4): privacy shows the masked figure instead.
-      <Text size="sm" tone="muted" numeric="tabular">
-        {format.money(fixed ?? 0)}
-      </Text>
+          : t("plan.averageOf", { count: String(months) }),
+        total,
+        true,
+      )
     ) : (
-      <div className={styles.fixed}>
-        <MoneyInput
-          size="field"
-          aria-label={t("plan.fixedAmount")}
-          value={fixed ?? 0}
-          currency={plan.currency}
-          scale={format.scale}
-          sign="neutral"
-          readOnly={!editable}
-          onChange={(amount) => {
-            onSource("fixed", amount);
-          }}
-        />
-      </div>
+      line(
+        t("plan.fixedAmount"),
+        format.hidden ? (
+          // entry() is never masked (ADR 018 P4): privacy shows the masked figure instead.
+          <Text size="sm" numeric="tabular" weight="semibold">
+            {format.money(fixed ?? 0)}
+          </Text>
+        ) : (
+          <div className={styles.fixed}>
+            <MoneyInput
+              size="field"
+              aria-label={t("plan.fixedAmount")}
+              value={fixed ?? 0}
+              currency={plan.currency}
+              scale={format.scale}
+              sign="neutral"
+              readOnly={!editable}
+              onChange={(amount) => {
+                onSource("fixed", amount);
+              }}
+            />
+          </div>
+        ),
+        true,
+      )
     );
+  const received = plan.received_income.amount;
+  // Whole per cent of the reference received, at most a hundred.
+  const receivedPercent =
+    reference === undefined || reference <= 0
+      ? undefined
+      : Math.min(100, Math.floor((received * 100) / reference));
   return (
     <Card
       render={(props) => <section {...props} aria-label={t("plan.panel")} />}
       fill="outline"
+      className={styles.card}
     >
       <CardBody>
         <div className={styles.panel}>
@@ -134,6 +179,7 @@ export function PlanReferencePanel({
                       month: format.month(plan.month),
                     })}
             </Text>
+            <div className={styles.answerBar}>{bar}</div>
           </div>
           <div className={styles.source}>
             <SegmentedControl
@@ -156,27 +202,35 @@ export function PlanReferencePanel({
                 </Segment>
               ))}
             </SegmentedControl>
-            <div className={styles.breakdown}>
-              {breakdown}
-              {!available.expected_income && (
-                <Text size="xs" tone="muted">
-                  {t("plan.noExpected")}
-                </Text>
+            {(!available.expected_income || !available.average_income) && (
+              <div className={styles.unavailable}>
+                {!available.expected_income && (
+                  <Text size="xs" tone="muted">
+                    {t("plan.noExpected")}
+                  </Text>
+                )}
+                {!available.average_income && (
+                  <Text size="xs" tone="muted">
+                    {t("plan.noAverage")}
+                  </Text>
+                )}
+              </div>
+            )}
+            <div className={styles.ledger}>{ledger}</div>
+            <div className={styles.received}>
+              {line(t("plan.received"), format.money(received))}
+              {receivedPercent !== undefined && (
+                <ProgressBar
+                  size="sm"
+                  tone="success"
+                  label={t("plan.received")}
+                  hideLabel
+                  value={receivedPercent}
+                />
               )}
-              {!available.average_income && (
-                <Text size="xs" tone="muted">
-                  {t("plan.noAverage")}
-                </Text>
-              )}
-              <Text size="xs" tone="muted" numeric="tabular">
-                {t("plan.received", {
-                  amount: format.money(plan.received_income.amount),
-                })}
-              </Text>
             </div>
           </div>
         </div>
-        {bar}
       </CardBody>
     </Card>
   );
