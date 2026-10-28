@@ -1,12 +1,8 @@
-import {
-  Alert,
-  AlertActions,
-  AlertContent,
-  AlertDescription,
-} from "@slotted/react/alert";
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import { Switch } from "@slotted/react/switch";
 
+import { AlertActions } from "@/ui/alert-actions";
 import styles from "@/features/planning/budget-plan.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
@@ -35,7 +31,7 @@ export function PlanSuggestionBanner({
       <AlertContent>
         <AlertDescription>{summary}</AlertDescription>
       </AlertContent>
-      <AlertActions>
+      <AlertActions tone="accent">
         {canFit && (
           <Switch
             size="sm"
@@ -48,10 +44,10 @@ export function PlanSuggestionBanner({
           </Switch>
         )}
         {canFit && <span className={styles.reviewRule} aria-hidden="true" />}
-        <Button variant="ghost" tone="secondary" size="sm" onClick={onDiscard}>
+        <Button variant="ghost" onClick={onDiscard}>
           {t("plan.discard")}
         </Button>
-        <Button size="sm" disabled={checked === 0} onClick={onApply}>
+        <Button disabled={checked === 0} onClick={onApply}>
           {checked === 1
             ? t("plan.applyOne")
             : t("plan.applyChecked", { count: String(checked) })}

@@ -47,6 +47,13 @@ const bareRouterLink = {
     "Draw a link with AppLink (@/ui/app-link) or the Slotted Link with useAppLink (O13).",
 };
 
+// Buttons in an alert take its tone; the Slotted AlertActions leaves them at accent.
+const slottedAlertActions = {
+  selector:
+    'ImportDeclaration[source.value=/^@slotted\\/react(\\/alert)?$/] > ImportSpecifier[imported.name="AlertActions"]',
+  message: "Draw an alert's actions with AlertActions (@/ui/alert-actions).",
+};
+
 // Below 1024 px the shell's top app bar carries a page's way back; PageBack draws it only above.
 const pageHeaderBack = {
   selector: 'JSXOpeningElement[name.name="PageHeaderBack"]',
@@ -191,12 +198,25 @@ export default defineConfig(
         { noStrings: true, ignoreProps: true },
       ],
       "react/no-multi-comp": ["error", { ignoreStateless: false }],
-      "no-restricted-syntax": ["error", bareRouterLink, pageHeaderBack],
+      "no-restricted-syntax": [
+        "error",
+        bareRouterLink,
+        pageHeaderBack,
+        slottedAlertActions,
+      ],
     },
   },
   {
     files: ["src/ui/page-back.tsx"],
-    rules: { "no-restricted-syntax": ["error", bareRouterLink] },
+    rules: {
+      "no-restricted-syntax": ["error", bareRouterLink, slottedAlertActions],
+    },
+  },
+  {
+    files: ["src/ui/alert-actions.tsx"],
+    rules: {
+      "no-restricted-syntax": ["error", bareRouterLink, pageHeaderBack],
+    },
   },
   { files: ["**/*.js"], extends: [tseslint.configs.disableTypeChecked] },
   {

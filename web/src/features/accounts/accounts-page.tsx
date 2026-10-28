@@ -1,10 +1,5 @@
 import { parseISODate, toISODate } from "@slotted/core/date";
-import {
-  Alert,
-  AlertActions,
-  AlertContent,
-  AlertDescription,
-} from "@slotted/react/alert";
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import { DatePicker } from "@slotted/react/date-picker";
 import { Inline } from "@slotted/react/inline";
@@ -23,6 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { use, useDeferredValue, useEffect, useMemo } from "react";
 
+import { AlertActions } from "@/ui/alert-actions";
 import { RefreshButton } from "@/ui/refresh-button";
 import { useRefresh } from "@/ui/use-refresh";
 import { useApi } from "@/api/api-context";
@@ -197,10 +193,8 @@ export function AccountsPage() {
                     {t("balanceSheet.pendingLinks", { count: pending })}
                   </AlertDescription>
                 </AlertContent>
-                <AlertActions>
+                <AlertActions tone="accent">
                   <Button
-                    size="sm"
-                    variant="outline"
                     onClick={() => {
                       void navigate({ to: "/accounts/links" });
                     }}

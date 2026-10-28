@@ -151,8 +151,9 @@ describe("attachments of a transaction", () => {
       }),
     ).toHaveAttribute("download", "receipt-1.png");
     await user.keyboard("{Escape}");
+    // Presence completes an exit one frame after its node detaches.
     await act(async () => {
-      await Promise.resolve();
+      await new Promise((resolve) => requestAnimationFrame(resolve));
     });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "receipt-1.png" })).toHaveFocus();
