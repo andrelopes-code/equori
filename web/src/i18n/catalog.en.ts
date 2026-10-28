@@ -91,9 +91,9 @@ export const catalogEn = {
   "corners.soft": "Soft",
   "corners.standard": "Standard",
   "corners.round": "Round",
-  "settings.experimental.glass": "Glass surfaces and moving gradient",
+  "settings.experimental.glass": "Glass surfaces",
   "settings.experimental.glassDescription":
-    "Translucent surfaces over a soft, slowly moving gradient. Dark scheme only.",
+    "Translucent panels over a ground of lights in the tone's colour. Dark scheme only, the system's included.",
   "settings.privacy.title": "Privacy",
   "settings.privacy.description": "Replaces every amount with ••••.",
   "settings.integrations.title": "Integrations",

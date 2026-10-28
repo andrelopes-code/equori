@@ -92,10 +92,9 @@ export const catalogPtBR: Catalog = {
   "corners.soft": "Suaves",
   "corners.standard": "Padrão",
   "corners.round": "Arredondados",
-  "settings.experimental.glass":
-    "Superfícies de vidro e gradiente em movimento",
+  "settings.experimental.glass": "Superfícies de vidro",
   "settings.experimental.glassDescription":
-    "Superfícies translúcidas sobre um gradiente suave que se move devagar. Somente no esquema escuro.",
+    "Painéis translúcidos sobre um fundo de luzes na cor do tom. Só no esquema escuro, inclusive o do sistema.",
   "settings.privacy.title": "Privacidade",
   "settings.privacy.description": "Substitui todos os valores por ••••.",
   "settings.integrations.title": "Integrações",
