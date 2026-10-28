@@ -106,3 +106,4 @@ Registry of the findings reported to the Slotted owner (`web/CLAUDE.md`, "Slotte
 | The inline-message docs place it at a section while its rules bind it to a field                         | reported |
 | An alert cannot hold its actions at the end of a one-line message                                        | open     |
 | A portal reads its seeds from the opener's computed style on every open                                  | open     |
+| A collapsible trigger without a description splits its height over an empty second row                   | open     |
