@@ -112,7 +112,13 @@ Write a comment only when it carries information the code cannot: a non-obvious 
 
 Conventional Commits 1.0: `<type>(<scope>): <summary>`, imperative, lowercase, no trailing period, summary at most 72 characters. Types: `feat`, `fix`, `refactor`, `perf`, `test`, `docs`, `build`, `ci`, `chore`. Scope is the module, `platform`, `api`, `web` or `deps`. A breaking change uses `!` after the scope and a `BREAKING CHANGE:` footer. The body explains what changed and why, wrapped at 72 columns.
 
-Agents commit without asking, directly on `main` in the main checkout. Agents never create a branch or a worktree unless the owner asks. Each vertical slice is one commit, made as soon as its checks pass. Agents never push.
+Commit policy for agents:
+
+- Work on `main` in the main checkout. Create a branch or a worktree only when the owner asks for one.
+- Commit a vertical slice as soon as its tests and the pre-commit hook pass. The commit needs no confirmation from the owner.
+- Stage only the files the slice changed, by path. Never use `git add -A` or `git add .`: another session can hold changes in the same checkout.
+- Never amend, rebase or reset a commit. A correction is a new commit.
+- Never push.
 
 Commits, pull requests, tags and release notes never mention AI tools or assistants: no `Co-Authored-By` trailers, no "generated with" footers, no tool names. `.claude/settings.json` sets empty attribution.
 
