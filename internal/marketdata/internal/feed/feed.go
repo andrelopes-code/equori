@@ -16,7 +16,8 @@ import (
 // ErrNoData means the source has nothing for the request (404 or an empty file).
 var ErrNoData = errors.New("no data")
 
-// maxResponseBytes bounds one answer; a COTAHIST daily ZIP is about 0.7 MiB.
+// maxResponseBytes bounds one answer; a COTAHIST daily ZIP is about 0.7 MiB, a B3 consolidated
+// trades file about 6 MiB.
 const maxResponseBytes = 16 << 20
 
 type Quote struct {
@@ -53,6 +54,11 @@ func (e *ScopeError) Error() string { return e.Key + " " + e.Value + ": " + e.Er
 
 func (e *ScopeError) Unwrap() error { return e.Err }
 
+// StatusError is an answer other than 200 and 404.
+type StatusError struct{ Code int }
+
+func (e *StatusError) Error() string { return fmt.Sprintf("status %d", e.Code) }
+
 // Get returns the body of url; a 404 answer returns ErrNoData.
 func Get(ctx context.Context, c *http.Client, url string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -68,7 +74,7 @@ func Get(ctx context.Context, c *http.Client, url string) ([]byte, error) {
 		return nil, ErrNoData
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status %d", resp.StatusCode)
+		return nil, &StatusError{Code: resp.StatusCode}
 	}
 	return io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))
 }

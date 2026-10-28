@@ -21,6 +21,7 @@ export const marketDataEn = {
   "problem.refresh_running":
     "An update is already running. The dates change when it ends.",
   "marketData.feed.b3_cotahist": "B3 daily quotes",
+  "marketData.feed.b3_consolidated": "B3 consolidated trades",
   "marketData.feed.bcb_ptax": "PTAX exchange rates (Banco Central do Brasil)",
   "marketData.feed.ecb": "ECB euro reference rates",
   "marketData.feed.br_cdi": "CDI (Banco Central do Brasil)",

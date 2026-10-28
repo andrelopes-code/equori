@@ -23,6 +23,7 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "problem.refresh_running":
     "Uma atualização já está em andamento. As datas mudam quando ela termina.",
   "marketData.feed.b3_cotahist": "Cotações diárias da B3",
+  "marketData.feed.b3_consolidated": "Negócios consolidados da B3",
   "marketData.feed.bcb_ptax": "Câmbio PTAX (Banco Central do Brasil)",
   "marketData.feed.ecb": "Taxas de referência do euro (BCE)",
   "marketData.feed.br_cdi": "CDI (Banco Central do Brasil)",
