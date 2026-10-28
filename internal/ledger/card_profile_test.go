@@ -52,7 +52,23 @@ func TestCreditLimitAndAvailableLimit(t *testing.T) {
 	h := apitest.New(t)
 	card := h.Account("Itaú Visa", "liability", "credit_card", nil)
 	h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/credit-limits",
+		map[string]any{"effective_from": "2026-01-01", "amount": apitest.BRL(500000)}, http.StatusCreated, nil)
+	// A version from a day that already has one replaces it.
+	h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/credit-limits",
 		map[string]any{"effective_from": "2026-01-01", "amount": apitest.BRL(1000000)}, http.StatusCreated, nil)
+
+	var limits struct {
+		Items []struct {
+			EffectiveFrom string `json:"effective_from"`
+			Amount        struct {
+				Amount int64 `json:"amount"`
+			} `json:"amount"`
+		} `json:"items"`
+	}
+	h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/credit-limits", nil, http.StatusOK, &limits)
+	if len(limits.Items) != 1 || limits.Items[0].EffectiveFrom != "2026-01-01" || limits.Items[0].Amount.Amount != 1000000 {
+		t.Fatalf("limits = %+v, want one version of 1000000 from 2026-01-01", limits.Items)
+	}
 
 	var acc struct {
 		Card struct {

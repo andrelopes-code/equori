@@ -330,7 +330,10 @@ func (q *Queries) InsertCard(ctx context.Context, arg InsertCardParams) (LedgerC
 }
 
 const insertCreditLimit = `-- name: InsertCreditLimit :one
-INSERT INTO ledger_credit_limit (user_id, account_id, effective_from, amount) VALUES ($1, $2, $3, $4) RETURNING user_id, account_id, effective_from, amount, created_at
+INSERT INTO ledger_credit_limit (user_id, account_id, effective_from, amount) VALUES ($1, $2, $3, $4)
+ON CONFLICT (account_id, effective_from) DO UPDATE SET amount = EXCLUDED.amount
+WHERE ledger_credit_limit.user_id = EXCLUDED.user_id
+RETURNING user_id, account_id, effective_from, amount, created_at
 `
 
 type InsertCreditLimitParams struct {

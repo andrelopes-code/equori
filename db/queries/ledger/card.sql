@@ -10,7 +10,10 @@ RETURNING *;
 SELECT * FROM ledger_billing_cycle_rule WHERE user_id = $1 AND account_id = $2 ORDER BY effective_from;
 
 -- name: InsertCreditLimit :one
-INSERT INTO ledger_credit_limit (user_id, account_id, effective_from, amount) VALUES ($1, $2, $3, $4) RETURNING *;
+INSERT INTO ledger_credit_limit (user_id, account_id, effective_from, amount) VALUES ($1, $2, $3, $4)
+ON CONFLICT (account_id, effective_from) DO UPDATE SET amount = EXCLUDED.amount
+WHERE ledger_credit_limit.user_id = EXCLUDED.user_id
+RETURNING *;
 
 -- name: ListCreditLimits :many
 SELECT * FROM ledger_credit_limit WHERE user_id = $1 AND account_id = $2 ORDER BY effective_from;

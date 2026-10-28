@@ -836,7 +836,7 @@ func (r *Repository) BillingRules(ctx context.Context, userID int64, accountID u
 func (r *Repository) InsertCreditLimit(ctx context.Context, userID int64, l app.CreditLimit) (app.CreditLimit, error) {
 	_, err := r.q.InsertCreditLimit(ctx, InsertCreditLimitParams{UserID: userID, AccountID: l.AccountID, EffectiveFrom: l.EffectiveFrom, Amount: l.Amount.Amount()})
 	if err != nil {
-		return app.CreditLimit{}, duplicate(err, "effective_from")
+		return app.CreditLimit{}, err
 	}
 	return l, nil
 }
