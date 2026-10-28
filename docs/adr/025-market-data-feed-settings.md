@@ -23,7 +23,7 @@ Market data is public and shared by the instance: `marketdata_price` and `market
 | F6 | `PUT /api/v1/market-data/feeds/{id}` (`setMarketDataFeed`) with `{enabled}` stores the row. On the first write with no row, the current enabled set of F2 is stored first, so a write never changes the state of another feed. An unknown identifier is 404 `not_found`. |
 | F7 | `POST /api/v1/market-data/refresh` (`refreshMarketData`) starts a tick and answers 202. While a tick runs, scheduled or requested, it answers 409 `refresh_running`. The tick runs on the context of `RunFeeds`, not of the request. |
 | F8 | F6 and F7 change the instance. They require the role `admin`; another user gets 403 `admin_required`. F5 is open to every user. |
-| F9 | Each source declares `Lag`, in calendar days: the delay after the end of a period by which its publication is due. A feed is `stale` when it is enabled, has a `last`, and today is later than the end of the period of `last` plus `Lag`. The end of a daily period is the next day; the end of a monthly period is the first day of the next month. Values: `b3_cotahist`, `bcb_ptax`, `ecb`, `br_cdi`, `eu_estr`, `us_sofr` 5; `br_ipca` 20; `us_cpi` 20; `ea_hicp` 25. |
+| F9 | Each source declares `Lag`, in calendar days: the delay after the end of a period by which its publication is due. A feed is `stale` when it is enabled, has a `last`, and today is later than the end of the period after the period of `last` plus `Lag`. The end of a daily period is the next day; the end of a monthly period is the first day of the next month. Values: `b3_cotahist`, `bcb_ptax`, `ecb`, `br_cdi`, `eu_estr`, `us_sofr` 5; `br_ipca` 20; `us_cpi` 20; `ea_hicp` 25. |
 | F10 | The settings screen shows one row per feed: its name, kind, switch, `last`, a warning when `stale` or `error` is set, and one "Update now" action for the instance. While no feed is enabled and some are suggested, it offers one action that enables the suggested feeds. |
 | F11 | The three operations have no tool for language models: their exclusion is `-instance` (ADR 012 T14). |
 
@@ -39,6 +39,10 @@ Market data is public and shared by the instance: `marketdata_price` and `market
 - Per-instrument staleness of prices: a feed is stale by its latest stored date over all instruments.
 - Notifications of a stale feed outside the settings screen.
 - Price sources for exchanges outside the B3.
+
+## Amendment of 2026-10-28
+
+F9 measured `Lag` from the end of the period of `last`, whose publication has already arrived. A monthly feed was stale from that date until its next publication: `br_ipca` with `last` 2026-09-01 was stale from 2026-10-22, while the rate of October is published in November. F9 now measures `Lag` from the end of the next period, the one due.
 
 ## Revisit criterion
 

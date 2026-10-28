@@ -19,15 +19,15 @@ type IndexExpectations = domain.IndexExpectations
 type expectationEntry struct {
 	id         string
 	defaultURL string
-	// lag is the number of calendar days after a survey's day by which the next one is due
-	// (ADR 026 E4).
+	// lag is the number of calendar days after the end of the day after a survey by which the
+	// next survey is due (ADR 025 F9, ADR 026 E4).
 	lag   int
 	build func(hc *http.Client, url string) expectation.Source
 }
 
 func expectationEntries() []expectationEntry {
 	return []expectationEntry{
-		{"br_focus", "https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata", 7, func(hc *http.Client, url string) expectation.Source { return brfocus.New(hc, url) }},
+		{"br_focus", "https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata", 9, func(hc *http.Client, url string) expectation.Source { return brfocus.New(hc, url) }},
 	}
 }
 

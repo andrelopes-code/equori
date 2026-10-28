@@ -122,11 +122,12 @@ func (m *Module) Feeds(ctx context.Context) ([]Feed, error) {
 func (m *Module) feed(id, kind, period string, last *time.Time, on map[string]bool, suggested []string, lags map[string]int) Feed {
 	f := Feed{ID: id, Kind: kind, Enabled: on[id], Suggested: slices.Contains(suggested, id), Last: last}
 	if f.Enabled && last != nil {
-		end := last.AddDate(0, 0, 1)
+		// The period of last is published; the one due is the next, ending two periods after last.
+		due := last.AddDate(0, 0, 2+lags[id])
 		if period == index.PeriodMonth {
-			end = last.AddDate(0, 1, 0)
+			due = last.AddDate(0, 2, lags[id])
 		}
-		f.Stale = m.feeds.Clock.Today().After(end.AddDate(0, 0, lags[id]))
+		f.Stale = m.feeds.Clock.Today().After(due)
 	}
 	m.runsMu.Lock()
 	run, ok := m.runs[id]

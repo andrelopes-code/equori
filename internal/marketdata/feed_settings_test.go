@@ -142,11 +142,11 @@ func TestFeedSettingsRefresh(t *testing.T) {
 	h.App.Marketdata.WaitRefresh()
 }
 
-// ADR 025 F9: a daily feed is stale once today passes the day after its last date plus 5 days.
-// Last 2026-10-30: due by 2026-10-31 + 5 = 2026-11-05.
+// ADR 025 F9: a daily feed is stale once today passes the end of the day after its last date
+// plus 5 days. Last 2026-10-30: 2026-10-31 is due by 2026-11-01 + 5 = 2026-11-06.
 func TestFeedSettingsStale(t *testing.T) {
 	t.Parallel()
-	for today, stale := range map[string]bool{"2026-11-05": false, "2026-11-06": true} {
+	for today, stale := range map[string]bool{"2026-11-06": false, "2026-11-07": true} {
 		t.Run(today, func(t *testing.T) {
 			t.Parallel()
 			f := &feedServer{}
@@ -157,6 +157,24 @@ func TestFeedSettingsStale(t *testing.T) {
 			h.App.Marketdata.TickFeeds(t.Context())
 			if b := feedsOf(t, h)["b3_cotahist"]; b.Stale != stale || b.Last == nil || *b.Last != "2026-10-30" {
 				t.Fatalf("b3_cotahist = %+v", b)
+			}
+		})
+	}
+}
+
+// ADR 025 F9: the rate of September, published in October, leaves October's due by
+// 2026-11-01 + 20 = 2026-11-21.
+func TestFeedSettingsStaleMonthly(t *testing.T) {
+	t.Parallel()
+	for today, stale := range map[string]bool{"2026-10-28": false, "2026-11-21": false, "2026-11-22": true} {
+		t.Run(today, func(t *testing.T) {
+			t.Parallel()
+			h := apitest.New(t, apitest.Today(today), apitest.IndexFeeds([]string{"br_ipca"}, nil))
+			if _, err := h.Pool.Exec(t.Context(), `INSERT INTO marketdata_index_rate (index_id, date, rate, source) VALUES ('ipca', '2026-09-01', 0.0082, 'br_ipca')`); err != nil {
+				t.Fatal(err)
+			}
+			if f := feedsOf(t, h)["br_ipca"]; f.Stale != stale || f.Last == nil || *f.Last != "2026-09-01" {
+				t.Fatalf("br_ipca = %+v", f)
 			}
 		})
 	}

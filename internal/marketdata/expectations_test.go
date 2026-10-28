@@ -69,15 +69,21 @@ func TestIndexExpectations(t *testing.T) {
 	}
 }
 
-// ADR 026 E4: a survey older than 7 days after its day is overdue.
+// ADR 026 E4: the survey of Friday 2026-10-23 leaves the next one due by 2026-10-25 + 9 =
+// 2026-11-03, the Tuesday after its publication.
 func TestIndexExpectationsStale(t *testing.T) {
 	t.Parallel()
-	srv := expectationServer(t)
-	h := apitest.New(t, apitest.Today("2026-11-01"), apitest.IndexFeeds(nil, map[string]string{"br_focus": srv.URL}))
-	h.MustDo(http.MethodPut, "/api/v1/market-data/feeds/br_focus", map[string]bool{"enabled": true}, http.StatusOK, nil)
-	h.App.Marketdata.TickFeeds(t.Context())
-	if f := feedsOf(t, h)["br_focus"]; !f.Stale {
-		t.Fatalf("br_focus = %+v", f)
+	for today, stale := range map[string]bool{"2026-11-03": false, "2026-11-04": true} {
+		t.Run(today, func(t *testing.T) {
+			t.Parallel()
+			srv := expectationServer(t)
+			h := apitest.New(t, apitest.Today(today), apitest.IndexFeeds(nil, map[string]string{"br_focus": srv.URL}))
+			h.MustDo(http.MethodPut, "/api/v1/market-data/feeds/br_focus", map[string]bool{"enabled": true}, http.StatusOK, nil)
+			h.App.Marketdata.TickFeeds(t.Context())
+			if f := feedsOf(t, h)["br_focus"]; f.Stale != stale || f.Last == nil || *f.Last != "2026-10-23" {
+				t.Fatalf("br_focus = %+v", f)
+			}
+		})
 	}
 }
 
