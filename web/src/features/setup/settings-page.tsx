@@ -1,7 +1,6 @@
 import { Page, PageBody } from "@slotted/react/page";
 import {
   PageHeader,
-  PageHeaderBack,
   PageHeaderHeading,
   PageHeaderSubheading,
   PageHeaderTitle,
@@ -14,39 +13,32 @@ import { SettingsNavigation } from "@/features/setup/settings-navigation";
 import { SettingsPane } from "@/features/setup/settings-pane";
 import styles from "@/features/setup/settings-page.module.css";
 import { useT } from "@/i18n/i18n-provider";
-import { useAppLink } from "@/ui/use-app-link";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 // One pane at a time beside the grouped navigation. On a phone the navigation is the page's index
-// and a pane takes the whole width, with the way back to the index above it.
+// and a pane takes the whole width, with the way back to the index in the top bar.
 export function SettingsPage() {
   const t = useT();
-  const follow = useAppLink();
   const { section } = useSearch({ from: "/_authed/settings" });
   const compact = useMediaQuery(compactQuery);
   const current = section ?? (compact ? null : "account");
   return (
     <Page width="full">
-      <PageHeader size="lg">
-        <PageHeaderTitleArea>
-          {compact && current !== null && (
-            <PageHeaderBack
-              href="/settings"
-              onClick={follow({ to: "/settings" })}
-            >
-              {t("more.settings")}
-            </PageHeaderBack>
-          )}
-          <PageHeaderTitleRow>
-            <PageHeaderTitle>
-              <PageHeaderHeading>{t("more.settings")}</PageHeaderHeading>
-              <PageHeaderSubheading>
-                {t("settings.subtitle")}
-              </PageHeaderSubheading>
-            </PageHeaderTitle>
-          </PageHeaderTitleRow>
-        </PageHeaderTitleArea>
-      </PageHeader>
+      {/* On a phone the pane's own title heads the page and the top bar holds the way back. */}
+      {!(compact && current !== null) && (
+        <PageHeader size="lg">
+          <PageHeaderTitleArea>
+            <PageHeaderTitleRow>
+              <PageHeaderTitle>
+                <PageHeaderHeading>{t("more.settings")}</PageHeaderHeading>
+                <PageHeaderSubheading>
+                  {t("settings.subtitle")}
+                </PageHeaderSubheading>
+              </PageHeaderTitle>
+            </PageHeaderTitleRow>
+          </PageHeaderTitleArea>
+        </PageHeader>
+      )}
       <PageBody>
         {compact ? (
           current === null ? (

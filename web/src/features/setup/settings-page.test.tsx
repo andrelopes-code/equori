@@ -442,7 +442,7 @@ describe("settings page", () => {
       );
       expect(
         await screen.findByRole("heading", {
-          level: 2,
+          level: 1,
           name: catalogPtBR["settings.privacy.title"],
         }),
       ).toBeVisible();
@@ -452,7 +452,7 @@ describe("settings page", () => {
         }),
       ).toBeNull();
       await userEvent.click(
-        screen.getByRole("link", { name: catalogPtBR["more.settings"] }),
+        screen.getByRole("button", { name: catalogPtBR["nav.back"] }),
       );
       expect(
         await screen.findByRole("navigation", {

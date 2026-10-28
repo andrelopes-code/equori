@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import styles from "@/features/setup/settings-page.module.css";
 import type { SettingsTopic } from "@/features/setup/settings-topics";
 import { useT } from "@/i18n/i18n-provider";
+import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 // One pane of the settings page: its title, what it holds, and its groups. local marks a pane whose
 // choices stay in this browser rather than in the account.
@@ -23,11 +24,13 @@ export function SettingsSection({
 }) {
   const t = useT();
   const heading = `settings-${topic}`;
+  // On a phone the pane is the page, so its title is the page's.
+  const compact = useMediaQuery(compactQuery);
   return (
     <section id={topic} aria-labelledby={heading} className={styles.pane}>
       <header className={styles.paneHeader}>
         <div className={styles.paneTitle}>
-          <Heading level={2} size="2xl" id={heading}>
+          <Heading level={compact ? 1 : 2} size="2xl" id={heading}>
             {title}
           </Heading>
           {local && (

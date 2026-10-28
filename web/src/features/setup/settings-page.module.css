@@ -45,6 +45,14 @@
       var(--slotted-border-subtle);
   }
 
+  /* On a phone the pane's header is the page's header, which draws no rule. */
+  @media (max-width: 599px) {
+    .paneHeader {
+      padding-block-end: 0;
+      border-block-end: none;
+    }
+  }
+
   .paneTitle {
     display: flex;
     flex-wrap: wrap;
@@ -301,11 +309,5 @@
     font-variant-numeric: tabular-nums;
     font-weight: var(--slotted-font-weight-semibold);
     line-height: var(--slotted-line-height-xl);
-  }
-
-  .year {
-    min-inline-size: 4ch;
-    font-variant-numeric: tabular-nums;
-    text-align: center;
   }
 }

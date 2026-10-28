@@ -23,7 +23,13 @@ export function TopAppBar({
   const t = useT();
   const router = useRouter();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { destination, topLevel } = matchDestination(pathname);
+  // A settings pane is chosen by the search, below its destination's own route.
+  const pane = useRouterState({
+    select: (s) => "section" in s.location.search,
+  });
+  const match = matchDestination(pathname);
+  const { destination } = match;
+  const topLevel = match.topLevel && !pane;
 
   const back = () => {
     // A deep link has no entry of the application's own to return to.
