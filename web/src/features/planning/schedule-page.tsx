@@ -54,6 +54,7 @@ import { formatDate, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { AppLink } from "@/ui/app-link";
 import { HeaderAction } from "@/ui/header-action";
 import { QueryError } from "@/ui/query-error";
 
@@ -185,12 +186,14 @@ export function SchedulePage() {
                 {t("schedule.calendar")}
               </DescriptionListTerm>
               <DescriptionListDescription>
-                <Link
-                  to="/settings"
-                  search={{ section: "calendars", calendar: s.calendar }}
+                <AppLink
+                  to={{
+                    to: "/settings",
+                    search: { section: "calendars", calendar: s.calendar },
+                  }}
                 >
                   {calendarLabel(t, s.calendar)}
-                </Link>
+                </AppLink>
               </DescriptionListDescription>
             </DescriptionListItem>
             <DescriptionListItem>

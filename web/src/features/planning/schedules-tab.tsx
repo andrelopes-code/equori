@@ -20,7 +20,6 @@ import {
   TableRowHeader,
 } from "@slotted/react/table";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 import { Fragment } from "react";
 
 import { useApi } from "@/api/api-context";
@@ -39,6 +38,7 @@ import { formatDate, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { AppLink } from "@/ui/app-link";
 import { QueryError } from "@/ui/query-error";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
@@ -136,14 +136,18 @@ export function SchedulesTab({ onCreate }: { onCreate: () => void }) {
                     return (
                       <TableRow key={s.id} value={s.id}>
                         <TableRowHeader text="truncate">
-                          <Link
-                            to="/planning/schedules/$id"
-                            params={{ id: s.id }}
+                          <AppLink
+                            variant="neutral"
+                            underline="hover"
+                            to={{
+                              to: "/planning/schedules/$id",
+                              params: { id: s.id },
+                            }}
                           >
                             {s.description === ""
                               ? t("ledger.untitled")
                               : s.description}
-                          </Link>
+                          </AppLink>
                         </TableRowHeader>
                         <TableCell text="truncate">
                           {names.get(s.account_id)}

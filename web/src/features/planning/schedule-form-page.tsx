@@ -31,7 +31,7 @@ import {
 import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
@@ -47,6 +47,7 @@ import { payeesQuery, settingsQuery, useScale } from "@/features/setup";
 import { AccountField, PayeeField } from "@/features/transactions";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { AppLink } from "@/ui/app-link";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { MoneyInput } from "@/ui/money-input";
 
@@ -349,12 +350,14 @@ export function ScheduleFormPage() {
                   />
                   {calendar !== "" && (
                     <FieldDescription>
-                      <Link
-                        to="/settings"
-                        search={{ section: "calendars", calendar }}
+                      <AppLink
+                        to={{
+                          to: "/settings",
+                          search: { section: "calendars", calendar },
+                        }}
                       >
                         {t("calendar.open")}
-                      </Link>
+                      </AppLink>
                     </FieldDescription>
                   )}
                 </Field>

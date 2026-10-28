@@ -4,7 +4,7 @@ import { DataGrid } from "@slotted/react/data-grid";
 import { FilterBar } from "@slotted/react/filter-bar";
 import type { FilterBarField } from "@slotted/react/filter-bar";
 import { Text } from "@slotted/react/typography";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useMemo, useState } from "react";
 
 import type { CatalogRow } from "@/features/instruments/catalog-rows";
@@ -15,6 +15,7 @@ import {
 import { LatestPriceCell } from "@/features/instruments/latest-price-cell";
 import styles from "@/features/instruments/instruments-page.module.css";
 import { useT } from "@/i18n/i18n-provider";
+import { AppLink } from "@/ui/app-link";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 const initialQuery: GridQuery = {
@@ -155,9 +156,13 @@ export function InstrumentsGrid({
   const cellRenderers = useMemo(
     () => ({
       code: ({ row }: { row: CatalogRow }) => (
-        <Link to="/instruments/$code" params={{ code: row.code }}>
+        <AppLink
+          variant="neutral"
+          underline="hover"
+          to={{ to: "/instruments/$code", params: { code: row.code } }}
+        >
           {row.code}
-        </Link>
+        </AppLink>
       ),
       price: ({ row }: { row: CatalogRow }) => (
         <LatestPriceCell row={row} part="price" />

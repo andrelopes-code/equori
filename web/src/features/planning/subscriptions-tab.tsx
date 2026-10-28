@@ -14,7 +14,6 @@ import {
 } from "@slotted/react/table";
 import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 import { Fragment } from "react";
 
 import { useApi } from "@/api/api-context";
@@ -32,6 +31,7 @@ import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { AppLink } from "@/ui/app-link";
 import { QueryError } from "@/ui/query-error";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
@@ -138,12 +138,16 @@ export function SubscriptionsTab() {
                 return (
                   <TableRow key={schedule.id} value={schedule.id}>
                     <TableRowHeader text="truncate">
-                      <Link
-                        to="/planning/schedules/$id"
-                        params={{ id: schedule.id }}
+                      <AppLink
+                        variant="neutral"
+                        underline="hover"
+                        to={{
+                          to: "/planning/schedules/$id",
+                          params: { id: schedule.id },
+                        }}
                       >
                         {name}
-                      </Link>
+                      </AppLink>
                     </TableRowHeader>
                     <TableCell text="truncate">
                       {names.get(schedule.account_id)}

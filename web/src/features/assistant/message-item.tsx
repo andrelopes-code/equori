@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router";
 import {
   Bubble,
   BubbleContent,
@@ -15,6 +14,7 @@ import type { MarkdownRenderers } from "@slotted/react/markdown";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 import { useMemo, useState } from "react";
+import type { NavigateOptions } from "@tanstack/react-router";
 
 import styles from "@/features/assistant/assistant-panel.module.css";
 import type { AssistantMessage } from "@/features/assistant/sse";
@@ -31,6 +31,7 @@ import { TurnActivity } from "@/features/assistant/turn-activity";
 import { useT } from "@/i18n/i18n-provider";
 import { matchScreen } from "@/navigation/navigation-map";
 import { usePrivacy } from "@/privacy/privacy-provider";
+import { AppLink } from "@/ui/app-link";
 
 // A link to a screen of the navigation map becomes a router link; any other link is its label.
 const renderers: MarkdownRenderers = {
@@ -38,7 +39,10 @@ const renderers: MarkdownRenderers = {
     matchScreen(element.href) === undefined ? (
       children
     ) : (
-      <Link to={element.href}>{children}</Link>
+      // matchScreen has checked that the path is a screen of the router.
+      <AppLink to={{ to: element.href as NonNullable<NavigateOptions["to"]> }}>
+        {children}
+      </AppLink>
     ),
 };
 

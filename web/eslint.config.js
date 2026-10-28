@@ -175,6 +175,17 @@ export default defineConfig(
         { noStrings: true, ignoreProps: true },
       ],
       "react/no-multi-comp": ["error", { ignoreStateless: false }],
+      // O13: a router link drawn on its own takes the browser's colour and size. It is only the
+      // element a Slotted part renders through its render prop, which spreads the part's props.
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            'JSXOpeningElement[name.name="Link"]:has(JSXAttribute[name.name="to"]):not(:has(JSXSpreadAttribute))',
+          message:
+            "Draw a link with AppLink (@/ui/app-link) or the Slotted Link with useAppLink (O13).",
+        },
+      ],
     },
   },
   { files: ["**/*.js"], extends: [tseslint.configs.disableTypeChecked] },

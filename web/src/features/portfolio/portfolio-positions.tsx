@@ -21,7 +21,6 @@ import {
   TableSummary,
 } from "@slotted/react/table";
 import { Text } from "@slotted/react/typography";
-import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -44,6 +43,7 @@ import { formatBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { MASK } from "@/privacy/mask";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { AppLink } from "@/ui/app-link";
 import { PhoneGroup } from "@/ui/phone-group";
 import { PhoneList } from "@/ui/phone-list";
 import { PricedValue, usePriceOf } from "@/ui/priced-value";
@@ -110,9 +110,13 @@ export function PortfolioPositions({
     );
   };
   const instrumentCell = (p: Position) => (
-    <Link to="/instruments/$code" params={{ code: p.instrument }}>
+    <AppLink
+      variant="neutral"
+      underline="hover"
+      to={{ to: "/instruments/$code", params: { code: p.instrument } }}
+    >
       {p.instrument}
-    </Link>
+    </AppLink>
   );
   const marketCell = (p: Position) =>
     p.market_value === undefined ? (

@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
@@ -11,6 +10,7 @@ import { decimalText } from "@/features/transactions/decimal-text";
 import { FactItem } from "@/features/transactions/fact-item";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { AppLink } from "@/ui/app-link";
 
 type Trade = components["schemas"]["Trade"];
 
@@ -31,9 +31,9 @@ export function TradeFacts({ trade }: { trade: Trade }) {
         {t(trade.side === "buy" ? "trade.side.buy" : "trade.side.sell")}
       </FactItem>
       <FactItem label={t("transaction.facts.instrument")}>
-        <Link to="/instruments/$code" params={{ code }}>
+        <AppLink to={{ to: "/instruments/$code", params: { code } }}>
           {code}
-        </Link>
+        </AppLink>
       </FactItem>
       <FactItem label={t("transaction.facts.quantity")}>
         {formatRate(decimalText(trade.quantity.amount, scale(code)), tag)}

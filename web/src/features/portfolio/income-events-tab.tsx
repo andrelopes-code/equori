@@ -17,7 +17,6 @@ import {
 } from "@slotted/react/table";
 import { Heading } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
@@ -30,6 +29,7 @@ import { catalogLabel, useScale } from "@/features/setup";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { AppLink } from "@/ui/app-link";
 import { PhoneList } from "@/ui/phone-list";
 import { QueryError } from "@/ui/query-error";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
@@ -83,9 +83,13 @@ export function IncomeEventsTab({ year }: { year: number }) {
     );
   };
   const dateCell = (e: Event) => (
-    <Link to="/transactions/$id" params={{ id: e.transaction_id }}>
+    <AppLink
+      variant="neutral"
+      underline="hover"
+      to={{ to: "/transactions/$id", params: { id: e.transaction_id } }}
+    >
       {formatDate(e.date, tag)}
-    </Link>
+    </AppLink>
   );
   const totalsTable = (
     caption: string,
@@ -209,12 +213,16 @@ export function IncomeEventsTab({ year }: { year: number }) {
                   >
                     <TableCell>{dateCell(e)}</TableCell>
                     <TableCell>
-                      <Link
-                        to="/instruments/$code"
-                        params={{ code: e.instrument }}
+                      <AppLink
+                        variant="neutral"
+                        underline="hover"
+                        to={{
+                          to: "/instruments/$code",
+                          params: { code: e.instrument },
+                        }}
                       >
                         {e.instrument}
-                      </Link>
+                      </AppLink>
                     </TableCell>
                     <TableCell>{accountCell(e)}</TableCell>
                     <TableCell>{typeLabel(e.income_type)}</TableCell>

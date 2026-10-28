@@ -108,3 +108,4 @@ Registry of the findings reported to the Slotted owner (`web/CLAUDE.md`, "Slotte
 | A portal reads its seeds from the opener's computed style on every open                                  | open     |
 | A collapsible trigger without a description splits its height over an empty second row                   | open     |
 | A page-header back outside the nav part renders as an unstyled link                                      | reported |
+| The agent snippet does not say that a router link is drawn only through a family render prop             | reported |

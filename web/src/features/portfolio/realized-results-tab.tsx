@@ -17,7 +17,6 @@ import {
 } from "@slotted/react/table";
 import { Heading, Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
@@ -30,6 +29,7 @@ import { catalogLabel, useScale } from "@/features/setup";
 import { formatDate, formatMonthName } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { AppLink } from "@/ui/app-link";
 import { PhoneList } from "@/ui/phone-list";
 import { QueryError } from "@/ui/query-error";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
@@ -79,9 +79,13 @@ export function RealizedResultsTab({ year }: { year: number }) {
     );
   };
   const dateCell = (r: Result) => (
-    <Link to="/transactions/$id" params={{ id: r.transaction_id }}>
+    <AppLink
+      variant="neutral"
+      underline="hover"
+      to={{ to: "/transactions/$id", params: { id: r.transaction_id } }}
+    >
       {formatDate(r.date, tag)}
-    </Link>
+    </AppLink>
   );
   const quantity = (r: Result) =>
     fmt.plain(r.quantity, scale?.(r.quantity.currency) ?? 0);
@@ -207,12 +211,16 @@ export function RealizedResultsTab({ year }: { year: number }) {
                   >
                     <TableCell>{dateCell(r)}</TableCell>
                     <TableCell>
-                      <Link
-                        to="/instruments/$code"
-                        params={{ code: r.instrument }}
+                      <AppLink
+                        variant="neutral"
+                        underline="hover"
+                        to={{
+                          to: "/instruments/$code",
+                          params: { code: r.instrument },
+                        }}
                       >
                         {r.instrument}
-                      </Link>
+                      </AppLink>
                     </TableCell>
                     <TableCell>{accountCell(r)}</TableCell>
                     <TableCell numeric>{quantity(r)}</TableCell>
