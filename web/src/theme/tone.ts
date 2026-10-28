@@ -33,6 +33,11 @@ export const tone = preference<Tone>(
   (value) => isPreset(value) || /^#[0-9a-f]{6}$/.test(value),
   "graphite",
   (value) => {
+    // Any tone but the theme's own lights the glass aurora in its hue (aurora-background).
+    document.documentElement.toggleAttribute(
+      "data-tone",
+      value !== tone.fallback,
+    );
     const root = document.documentElement.style;
     for (const [property, seed] of Object.entries(
       seedStyle({ neutral: toneSeed(value) }),

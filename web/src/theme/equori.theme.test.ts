@@ -30,6 +30,22 @@ test("the dark ground is near black and each layer steps clear of the one below"
   assert.equal(darkSeedDerivation("--slotted-surface-raised").l, 0.2);
 });
 
+// A saturated tone (settings, appearance) tints the ground: #ff0000 gives a chroma of 0.057, not
+// the 0.03 that read as black. The graphite seed stays under 0.008.
+test("the dark ground carries a tone's chroma up to 0.08", () => {
+  for (const token of [
+    "--slotted-surface-sunken",
+    "--slotted-surface",
+    "--slotted-surface-raised",
+  ]) {
+    assert.deepEqual(
+      darkSeedDerivation(token).c,
+      { scale: 0.22, max: 0.08 },
+      token,
+    );
+  }
+});
+
 test("the dark accent edge and text keep the indigo's hue", () => {
   for (const token of [
     "--slotted-tone-accent-border",

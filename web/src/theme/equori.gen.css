@@ -369,7 +369,7 @@
       --slotted-border-subtle: oklch(from var(--slotted-seed-neutral) 0.275 min(calc(c * 0.22), 0.051) h);
       --slotted-text: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
       --slotted-text-muted: oklch(from var(--slotted-seed-neutral) 0.712 min(calc(c * 0.318), 0.06) h);
-      --slotted-disabled-background: oklch(from var(--slotted-seed-neutral) 0.19 min(calc(c * 0.22), 0.03) h);
+      --slotted-disabled-background: oklch(from var(--slotted-seed-neutral) 0.19 min(calc(c * 0.22), 0.08) h);
       --slotted-disabled-foreground: oklch(from var(--slotted-seed-neutral) 0.552 min(calc(c * 0.339), 0.06) h);
       --slotted-disabled-border: oklch(from var(--slotted-seed-neutral) 0.25 min(calc(c * 0.22), 0.046) h);
       --slotted-tone-accent-solid: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-accent) clamp(0, calc(l + 0.058), 1) min(calc(c * 0.991), 0.25) h) l c h / c) min(l, calc(0.5586 + alpha * (((0.01357 + (a / max(alpha, 0.00001)) * (0.12873 + (a / max(alpha, 0.00001)) * (0.00094 + (a / max(alpha, 0.00001)) * (-0.08492 + (a / max(alpha, 0.00001)) * (0.04896))))) + (b / max(alpha, 0.00001)) * (0.00929 + (a / max(alpha, 0.00001)) * (0.0188 + (a / max(alpha, 0.00001)) * (-0.14544 + (a / max(alpha, 0.00001)) * (0.07248))))) + alpha * (((0.03631 + (a / max(alpha, 0.00001)) * (-0.15883 + (a / max(alpha, 0.00001)) * (-0.01744 + (a / max(alpha, 0.00001)) * (1.45252 + (a / max(alpha, 0.00001)) * (-0.98552))))) + (b / max(alpha, 0.00001)) * (-0.38033 + (a / max(alpha, 0.00001)) * (0.03424 + (a / max(alpha, 0.00001)) * (2.5058 + (a / max(alpha, 0.00001)) * (-1.8248))))) + alpha * ((0.17717 + (a / max(alpha, 0.00001)) * (1.22898 + (a / max(alpha, 0.00001)) * (-1.73714 + (a / max(alpha, 0.00001)) * (-3.70144 + (a / max(alpha, 0.00001)) * (2.99352))))) + (b / max(alpha, 0.00001)) * (0.87033 + (a / max(alpha, 0.00001)) * (-1.33962 + (a / max(alpha, 0.00001)) * (-6.3798 + (a / max(alpha, 0.00001)) * (6.06448))))))))) a b / 1) l c h);
@@ -417,9 +417,9 @@
       --slotted-tone-danger-text: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-danger) clamp(0, calc(l + 0.231), 1) min(calc(c * 0.481), 0.25) calc(h + -8)) l c h / c) max(l, calc(0.611 + alpha * (((0.03846 + (a / max(alpha, 0.00001)) * (0.14272 + (a / max(alpha, 0.00001)) * (-0.13044 + (a / max(alpha, 0.00001)) * (-0.0182 + (a / max(alpha, 0.00001)) * (0.09656))))) + (b / max(alpha, 0.00001)) * (-0.04588 + (a / max(alpha, 0.00001)) * (-0.02674 + (a / max(alpha, 0.00001)) * (0.05892 + (a / max(alpha, 0.00001)) * (0.03952))))) + alpha * (((-0.46314 + (a / max(alpha, 0.00001)) * (-0.25933 + (a / max(alpha, 0.00001)) * (2.06252 + (a / max(alpha, 0.00001)) * (0.3038 + (a / max(alpha, 0.00001)) * (-1.66096))))) + (b / max(alpha, 0.00001)) * (0.56457 + (a / max(alpha, 0.00001)) * (0.4557 + (a / max(alpha, 0.00001)) * (-1.00784 + (a / max(alpha, 0.00001)) * (-0.66128))))) + alpha * ((2.46442 + (a / max(alpha, 0.00001)) * (0.96347 + (a / max(alpha, 0.00001)) * (-8.42548 + (a / max(alpha, 0.00001)) * (-1.12116 + (a / max(alpha, 0.00001)) * (6.26304))))) + (b / max(alpha, 0.00001)) * (-2.25633 + (a / max(alpha, 0.00001)) * (-1.6379 + (a / max(alpha, 0.00001)) * (3.93092 + (a / max(alpha, 0.00001)) * (2.42616))))))))) a b / 1) l c h);
       --slotted-tone-danger-subtle-hover: oklch(from var(--slotted-seed-danger) 0.187 min(calc(c * 0.055), 0.06) h);
       --slotted-tone-danger-subtle-active: oklch(from var(--slotted-seed-danger) 0.209 min(calc(c * 0.1), 0.06) calc(h + -8));
-      --slotted-surface: oklch(from var(--slotted-seed-neutral) 0.155 min(calc(c * 0.22), 0.03) h);
-      --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
-      --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0.13 min(calc(c * 0.22), 0.03) h);
+      --slotted-surface: oklch(from var(--slotted-seed-neutral) 0.155 min(calc(c * 0.22), 0.08) h);
+      --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.08) h);
+      --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0.13 min(calc(c * 0.22), 0.08) h);
       --slotted-surface-inverse: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
       --slotted-tone-neutral-solid: var(--slotted-surface-inverse);
       --slotted-tone-neutral-solid-hover: var(--slotted-surface-inverse-hover);
@@ -432,7 +432,7 @@
       --slotted-tone-neutral-text: var(--slotted-text);
       --slotted-surface-inverse-hover: color-mix(in oklch, var(--slotted-surface-inverse), oklch(from var(--slotted-surface-inverse) clamp(0, calc((0.9 - l) * 1000000), 1) 0 none) 8%);
       --slotted-surface-inverse-active: color-mix(in oklch, var(--slotted-surface-inverse), oklch(from var(--slotted-surface-inverse) clamp(0, calc((0.9 - l) * 1000000), 1) 0 none) 15%);
-      --slotted-text-inverse: oklch(from var(--slotted-seed-neutral) 0.155 min(calc(c * 0.22), 0.03) h);
+      --slotted-text-inverse: oklch(from var(--slotted-seed-neutral) 0.155 min(calc(c * 0.22), 0.08) h);
       --slotted-border-strong: oklch(from var(--slotted-seed-neutral) 0.552 min(calc(c * 0.339), 0.06) h);
       --slotted-control-border-color: oklch(from var(--slotted-seed-neutral) 0.36 min(calc(c * 0.332), 0.06) h);
       --slotted-control-surface: var(--slotted-surface);
@@ -787,7 +787,7 @@
         --slotted-border-subtle: oklch(from var(--slotted-seed-neutral) 0.275 min(calc(c * 0.22), 0.051) h);
         --slotted-text: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
         --slotted-text-muted: oklch(from var(--slotted-seed-neutral) 0.712 min(calc(c * 0.318), 0.06) h);
-        --slotted-disabled-background: oklch(from var(--slotted-seed-neutral) 0.19 min(calc(c * 0.22), 0.03) h);
+        --slotted-disabled-background: oklch(from var(--slotted-seed-neutral) 0.19 min(calc(c * 0.22), 0.08) h);
         --slotted-disabled-foreground: oklch(from var(--slotted-seed-neutral) 0.552 min(calc(c * 0.339), 0.06) h);
         --slotted-disabled-border: oklch(from var(--slotted-seed-neutral) 0.25 min(calc(c * 0.22), 0.046) h);
         --slotted-tone-accent-solid: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-accent) clamp(0, calc(l + 0.058), 1) min(calc(c * 0.991), 0.25) h) l c h / c) min(l, calc(0.5586 + alpha * (((0.01357 + (a / max(alpha, 0.00001)) * (0.12873 + (a / max(alpha, 0.00001)) * (0.00094 + (a / max(alpha, 0.00001)) * (-0.08492 + (a / max(alpha, 0.00001)) * (0.04896))))) + (b / max(alpha, 0.00001)) * (0.00929 + (a / max(alpha, 0.00001)) * (0.0188 + (a / max(alpha, 0.00001)) * (-0.14544 + (a / max(alpha, 0.00001)) * (0.07248))))) + alpha * (((0.03631 + (a / max(alpha, 0.00001)) * (-0.15883 + (a / max(alpha, 0.00001)) * (-0.01744 + (a / max(alpha, 0.00001)) * (1.45252 + (a / max(alpha, 0.00001)) * (-0.98552))))) + (b / max(alpha, 0.00001)) * (-0.38033 + (a / max(alpha, 0.00001)) * (0.03424 + (a / max(alpha, 0.00001)) * (2.5058 + (a / max(alpha, 0.00001)) * (-1.8248))))) + alpha * ((0.17717 + (a / max(alpha, 0.00001)) * (1.22898 + (a / max(alpha, 0.00001)) * (-1.73714 + (a / max(alpha, 0.00001)) * (-3.70144 + (a / max(alpha, 0.00001)) * (2.99352))))) + (b / max(alpha, 0.00001)) * (0.87033 + (a / max(alpha, 0.00001)) * (-1.33962 + (a / max(alpha, 0.00001)) * (-6.3798 + (a / max(alpha, 0.00001)) * (6.06448))))))))) a b / 1) l c h);
@@ -835,9 +835,9 @@
         --slotted-tone-danger-text: oklch(from oklab(from oklch(from oklch(from var(--slotted-seed-danger) clamp(0, calc(l + 0.231), 1) min(calc(c * 0.481), 0.25) calc(h + -8)) l c h / c) max(l, calc(0.611 + alpha * (((0.03846 + (a / max(alpha, 0.00001)) * (0.14272 + (a / max(alpha, 0.00001)) * (-0.13044 + (a / max(alpha, 0.00001)) * (-0.0182 + (a / max(alpha, 0.00001)) * (0.09656))))) + (b / max(alpha, 0.00001)) * (-0.04588 + (a / max(alpha, 0.00001)) * (-0.02674 + (a / max(alpha, 0.00001)) * (0.05892 + (a / max(alpha, 0.00001)) * (0.03952))))) + alpha * (((-0.46314 + (a / max(alpha, 0.00001)) * (-0.25933 + (a / max(alpha, 0.00001)) * (2.06252 + (a / max(alpha, 0.00001)) * (0.3038 + (a / max(alpha, 0.00001)) * (-1.66096))))) + (b / max(alpha, 0.00001)) * (0.56457 + (a / max(alpha, 0.00001)) * (0.4557 + (a / max(alpha, 0.00001)) * (-1.00784 + (a / max(alpha, 0.00001)) * (-0.66128))))) + alpha * ((2.46442 + (a / max(alpha, 0.00001)) * (0.96347 + (a / max(alpha, 0.00001)) * (-8.42548 + (a / max(alpha, 0.00001)) * (-1.12116 + (a / max(alpha, 0.00001)) * (6.26304))))) + (b / max(alpha, 0.00001)) * (-2.25633 + (a / max(alpha, 0.00001)) * (-1.6379 + (a / max(alpha, 0.00001)) * (3.93092 + (a / max(alpha, 0.00001)) * (2.42616))))))))) a b / 1) l c h);
         --slotted-tone-danger-subtle-hover: oklch(from var(--slotted-seed-danger) 0.187 min(calc(c * 0.055), 0.06) h);
         --slotted-tone-danger-subtle-active: oklch(from var(--slotted-seed-danger) 0.209 min(calc(c * 0.1), 0.06) calc(h + -8));
-        --slotted-surface: oklch(from var(--slotted-seed-neutral) 0.155 min(calc(c * 0.22), 0.03) h);
-        --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.03) h);
-        --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0.13 min(calc(c * 0.22), 0.03) h);
+        --slotted-surface: oklch(from var(--slotted-seed-neutral) 0.155 min(calc(c * 0.22), 0.08) h);
+        --slotted-surface-raised: oklch(from var(--slotted-seed-neutral) 0.2 min(calc(c * 0.22), 0.08) h);
+        --slotted-surface-sunken: oklch(from var(--slotted-seed-neutral) 0.13 min(calc(c * 0.22), 0.08) h);
         --slotted-surface-inverse: oklch(from var(--slotted-seed-neutral) 0.985 min(calc(c * 0.22), 0.006) h);
         --slotted-tone-neutral-solid: var(--slotted-surface-inverse);
         --slotted-tone-neutral-solid-hover: var(--slotted-surface-inverse-hover);
@@ -850,7 +850,7 @@
         --slotted-tone-neutral-text: var(--slotted-text);
         --slotted-surface-inverse-hover: color-mix(in oklch, var(--slotted-surface-inverse), oklch(from var(--slotted-surface-inverse) clamp(0, calc((0.9 - l) * 1000000), 1) 0 none) 8%);
         --slotted-surface-inverse-active: color-mix(in oklch, var(--slotted-surface-inverse), oklch(from var(--slotted-surface-inverse) clamp(0, calc((0.9 - l) * 1000000), 1) 0 none) 15%);
-        --slotted-text-inverse: oklch(from var(--slotted-seed-neutral) 0.155 min(calc(c * 0.22), 0.03) h);
+        --slotted-text-inverse: oklch(from var(--slotted-seed-neutral) 0.155 min(calc(c * 0.22), 0.08) h);
         --slotted-border-strong: oklch(from var(--slotted-seed-neutral) 0.552 min(calc(c * 0.339), 0.06) h);
         --slotted-control-border-color: oklch(from var(--slotted-seed-neutral) 0.36 min(calc(c * 0.332), 0.06) h);
         --slotted-control-surface: var(--slotted-surface);

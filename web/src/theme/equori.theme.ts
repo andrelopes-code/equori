@@ -126,10 +126,12 @@ const indigoKept = (token: string, offset: number, scale: number) => {
   return { ...derivation, l: { offset }, c: { scale, max: 0.25 }, h: 0 };
 };
 
+// The cap leaves room for a saturated tone (settings, appearance): at 0.03 a red ground read as
+// black. The graphite seed scales to under 0.008 and never reaches it.
 const darkNeutral = (l: number) => ({
   seed: "neutral" as const,
   l,
-  c: { scale: 0.22, max: 0.03 },
+  c: { scale: 0.22, max: 0.08 },
 });
 
 // Workaround for Slotted finding "A full-screen dialog without a body places its footer in the stretched row": the

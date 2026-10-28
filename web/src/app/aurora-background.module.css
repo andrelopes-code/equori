@@ -5,56 +5,56 @@
      for the dark scheme and the component is only mounted there (theme/visual.ts). */
   .aurora {
     --aurora-strength: 11%;
+    --light-accent: var(--slotted-tone-accent-solid);
+    --light-info: var(--slotted-tone-info-solid);
+    --light-secondary: var(--slotted-tone-secondary-solid);
+    --light-success: var(--slotted-tone-success-solid);
 
     /* One light's falloff: an eased curve with no visible rings. */
     --fall-accent:
       color-mix(
           in oklab,
-          var(--slotted-tone-accent-solid) var(--aurora-strength),
+          var(--light-accent) var(--aurora-strength),
           transparent
         )
         0%,
       color-mix(
           in oklab,
-          var(--slotted-tone-accent-solid) calc(var(--aurora-strength) * 0.78),
+          var(--light-accent) calc(var(--aurora-strength) * 0.78),
           transparent
         )
         22%,
       color-mix(
           in oklab,
-          var(--slotted-tone-accent-solid) calc(var(--aurora-strength) * 0.44),
+          var(--light-accent) calc(var(--aurora-strength) * 0.44),
           transparent
         )
         48%,
       color-mix(
           in oklab,
-          var(--slotted-tone-accent-solid) calc(var(--aurora-strength) * 0.16),
+          var(--light-accent) calc(var(--aurora-strength) * 0.16),
           transparent
         )
         74%,
       transparent 100%;
     --fall-info:
-      color-mix(
-          in oklab,
-          var(--slotted-tone-info-solid) var(--aurora-strength),
-          transparent
-        )
+      color-mix(in oklab, var(--light-info) var(--aurora-strength), transparent)
         0%,
       color-mix(
           in oklab,
-          var(--slotted-tone-info-solid) calc(var(--aurora-strength) * 0.78),
+          var(--light-info) calc(var(--aurora-strength) * 0.78),
           transparent
         )
         22%,
       color-mix(
           in oklab,
-          var(--slotted-tone-info-solid) calc(var(--aurora-strength) * 0.44),
+          var(--light-info) calc(var(--aurora-strength) * 0.44),
           transparent
         )
         48%,
       color-mix(
           in oklab,
-          var(--slotted-tone-info-solid) calc(var(--aurora-strength) * 0.16),
+          var(--light-info) calc(var(--aurora-strength) * 0.16),
           transparent
         )
         74%,
@@ -62,28 +62,25 @@
     --fall-secondary:
       color-mix(
           in oklab,
-          var(--slotted-tone-secondary-solid) var(--aurora-strength),
+          var(--light-secondary) var(--aurora-strength),
           transparent
         )
         0%,
       color-mix(
           in oklab,
-          var(--slotted-tone-secondary-solid)
-            calc(var(--aurora-strength) * 0.78),
+          var(--light-secondary) calc(var(--aurora-strength) * 0.78),
           transparent
         )
         22%,
       color-mix(
           in oklab,
-          var(--slotted-tone-secondary-solid)
-            calc(var(--aurora-strength) * 0.44),
+          var(--light-secondary) calc(var(--aurora-strength) * 0.44),
           transparent
         )
         48%,
       color-mix(
           in oklab,
-          var(--slotted-tone-secondary-solid)
-            calc(var(--aurora-strength) * 0.16),
+          var(--light-secondary) calc(var(--aurora-strength) * 0.16),
           transparent
         )
         74%,
@@ -91,25 +88,25 @@
     --fall-success:
       color-mix(
           in oklab,
-          var(--slotted-tone-success-solid) calc(var(--aurora-strength) * 0.55),
+          var(--light-success) calc(var(--aurora-strength) * 0.55),
           transparent
         )
         0%,
       color-mix(
           in oklab,
-          var(--slotted-tone-success-solid) calc(var(--aurora-strength) * 0.43),
+          var(--light-success) calc(var(--aurora-strength) * 0.43),
           transparent
         )
         22%,
       color-mix(
           in oklab,
-          var(--slotted-tone-success-solid) calc(var(--aurora-strength) * 0.24),
+          var(--light-success) calc(var(--aurora-strength) * 0.24),
           transparent
         )
         48%,
       color-mix(
           in oklab,
-          var(--slotted-tone-success-solid) calc(var(--aurora-strength) * 0.09),
+          var(--light-success) calc(var(--aurora-strength) * 0.09),
           transparent
         )
         74%,
@@ -153,6 +150,18 @@
       );
     background-color: var(--slotted-surface-sunken);
     background-blend-mode: overlay, normal, normal, normal, normal, normal;
+  }
+
+  /* A tone other than the theme's own (settings, appearance; theme/tone.ts) lights the ground in
+     its hue. The neutral presets are greys of chroma 0.01 to 0.04, so the light takes at least
+     0.12 and its hue shows. Two lights are a step lighter or darker and turned 20 degrees, so the
+     lights still read apart. */
+  :global(:root[data-tone]) .aurora {
+    --light-tone: oklch(from var(--slotted-seed-neutral) 0.62 max(c, 0.12) h);
+    --light-accent: var(--light-tone);
+    --light-info: oklch(from var(--light-tone) calc(l + 0.08) c calc(h - 20));
+    --light-secondary: oklch(from var(--light-tone) calc(l - 0.08) c h);
+    --light-success: oklch(from var(--light-tone) l c calc(h + 20));
   }
 
   @media (forced-colors: active) {
