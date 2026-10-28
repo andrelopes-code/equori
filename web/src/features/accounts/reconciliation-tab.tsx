@@ -1,5 +1,6 @@
 import {
   Alert,
+  AlertActions,
   AlertContent,
   AlertDescription,
   AlertTitle,
@@ -28,7 +29,6 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
-import { AlertActions } from "@/ui/alert-actions";
 import { useApi } from "@/api/api-context";
 import { ProblemError, errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
@@ -179,9 +179,7 @@ export function ReconciliationTab({
                   </AlertDescription>
                 </AlertContent>
                 {outcome.transactionId !== undefined && (
-                  <AlertActions
-                    tone={outcome.kind === "open" ? "warning" : "success"}
-                  >
+                  <AlertActions>
                     <Link
                       render={routeTo({
                         to: "/transactions/$id",
@@ -207,7 +205,7 @@ export function ReconciliationTab({
                     {remains ?? t("reconciliation.openHint")}
                   </AlertDescription>
                 </AlertContent>
-                <AlertActions tone="warning">
+                <AlertActions>
                   <Button
                     loading={
                       resolve.isPending &&

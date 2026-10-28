@@ -1,10 +1,14 @@
-import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
+import {
+  Alert,
+  AlertActions,
+  AlertContent,
+  AlertDescription,
+} from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import { toast } from "@slotted/react/toast";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
-import { AlertActions } from "@/ui/alert-actions";
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import {
@@ -66,7 +70,7 @@ export function ReimbursementSuggestion({
         </AlertDescription>
         {error !== null && <AlertDescription>{error}</AlertDescription>}
       </AlertContent>
-      <AlertActions tone={suggested.length > 0 ? "accent" : "secondary"}>
+      <AlertActions>
         {suggested.length > 0 ? (
           <>
             <Button

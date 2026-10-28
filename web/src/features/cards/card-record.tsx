@@ -1,4 +1,9 @@
-import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
+import {
+  Alert,
+  AlertActions,
+  AlertContent,
+  AlertDescription,
+} from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import { Page, PageBody } from "@slotted/react/page";
 import { Stack } from "@slotted/react/stack";
@@ -7,7 +12,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useDeferredValue, useState } from "react";
 
-import { AlertActions } from "@/ui/alert-actions";
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import {
@@ -156,7 +160,7 @@ export function CardRecord({
               <AlertContent>
                 <AlertDescription>{t("card.ruleMissing")}</AlertDescription>
               </AlertContent>
-              <AlertActions tone="warning">
+              <AlertActions>
                 <Button
                   onClick={() => {
                     setChosen("settings");

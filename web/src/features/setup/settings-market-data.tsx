@@ -1,11 +1,15 @@
 import { Button } from "@slotted/react/button";
-import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
+import {
+  Alert,
+  AlertActions,
+  AlertContent,
+  AlertDescription,
+} from "@slotted/react/alert";
 import { SkeletonText } from "@slotted/react/skeleton";
 import { Switch } from "@slotted/react/switch";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
-import { AlertActions } from "@/ui/alert-actions";
 import { useApi } from "@/api/api-context";
 import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
@@ -112,7 +116,7 @@ export function SettingsMarketData() {
                 <AlertDescription>{t("marketData.none")}</AlertDescription>
               </AlertContent>
               {admin && suggested.length > 0 && (
-                <AlertActions tone="info">
+                <AlertActions>
                   <Button
                     loading={set.isPending}
                     onClick={() => {

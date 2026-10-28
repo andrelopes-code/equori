@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Alert,
+  AlertActions,
   AlertContent,
   AlertDescription,
   AlertTitle,
@@ -42,7 +43,6 @@ import {
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { RefObject } from "react";
 
-import { AlertActions } from "@/ui/alert-actions";
 import { useApi } from "@/api/api-context";
 import { ProblemError, problemMessage } from "@/api/problem";
 import styles from "@/features/assistant/assistant-panel.module.css";
@@ -174,7 +174,7 @@ export function AssistantPanel({
           <AlertTitle>{t("assistant.unavailable.title")}</AlertTitle>
           <AlertDescription>{t("assistant.unavailable.body")}</AlertDescription>
         </AlertContent>
-        <AlertActions tone="info">
+        <AlertActions>
           <Button
             variant="ghost"
             onClick={() => {

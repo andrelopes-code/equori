@@ -1840,7 +1840,6 @@
     [data-ui="drawer"][data-mode="overlay"][data-side="bottom"][data-drag] {
       --slotted-drawer-slide-duration: 480ms;
       --slotted-drawer-slide-exit-duration: 260ms;
-      --slotted-easing-enter: var(--slotted-easing-standard);
     }
   }
 }

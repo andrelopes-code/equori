@@ -1,12 +1,12 @@
 import {
   Alert,
+  AlertActions,
   AlertContent,
   AlertDescription,
   AlertTitle,
 } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 
-import { AlertActions } from "@/ui/alert-actions";
 import type { MovedField } from "@/features/transactions/moved-fields";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
@@ -48,7 +48,7 @@ export function CorrectionConflict({
             : t("conflict.moved", { fields })}
         </AlertDescription>
       </AlertContent>
-      <AlertActions tone="warning">
+      <AlertActions>
         <Button variant="ghost" onClick={onRestart}>
           {t("conflict.restart")}
         </Button>

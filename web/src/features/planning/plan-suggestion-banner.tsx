@@ -1,8 +1,12 @@
-import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
+import {
+  Alert,
+  AlertActions,
+  AlertContent,
+  AlertDescription,
+} from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import { Switch } from "@slotted/react/switch";
 
-import { AlertActions } from "@/ui/alert-actions";
 import styles from "@/features/planning/budget-plan.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
@@ -31,7 +35,7 @@ export function PlanSuggestionBanner({
       <AlertContent>
         <AlertDescription>{summary}</AlertDescription>
       </AlertContent>
-      <AlertActions tone="accent">
+      <AlertActions>
         {canFit && (
           <Switch
             size="sm"

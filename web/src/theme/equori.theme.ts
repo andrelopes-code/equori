@@ -60,13 +60,10 @@ const darkNeutral = (l: number) => ({
 });
 
 // A bottom sheet slides in 480 ms and out in 260 ms; 240 ms and 280 ms read abrupt on the way in.
-// Workaround for Slotted issue #16: the entrance glide runs on the emphasized decelerate curve and
-// covers a third of its travel in the first frame; the standard curve leaves the edge from rest.
 const sheetSlideRule = `
 [data-ui="drawer"][data-mode="overlay"][data-side="bottom"][data-drag] {
   --slotted-drawer-slide-duration: 480ms;
   --slotted-drawer-slide-exit-duration: 260ms;
-  --slotted-easing-enter: var(--slotted-easing-standard);
 }
 `;
 

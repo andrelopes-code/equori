@@ -1,5 +1,6 @@
 import {
   Alert,
+  AlertActions,
   AlertContent,
   AlertDescription,
   AlertTitle,
@@ -13,7 +14,6 @@ import { useBlocker } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 
-import { AlertActions } from "@/ui/alert-actions";
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import type { CategoryEntry } from "@/features/categories";
@@ -403,7 +403,7 @@ export function PlanEditor({
             <AlertContent>
               <AlertDescription>{t("plan.privacy")}</AlertDescription>
             </AlertContent>
-            <AlertActions tone="info">
+            <AlertActions>
               <Button onClick={privacy.toggle}>{t("plan.showAmounts")}</Button>
             </AlertActions>
           </Alert>
