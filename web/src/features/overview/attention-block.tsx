@@ -63,10 +63,17 @@ export function AttentionBlock({
       ? []
       : attentionItems({
           uncategorized: uncategorized.data?.count ?? 0,
-          unconfirmed: open.map((account, i) => ({
-            account,
-            count: unconfirmed[i]?.data?.length ?? 0,
-          })),
+          unconfirmed: open.map((account, i) => {
+            // Entries come oldest first; a card's earliest one names the statement to open.
+            const statementId = unconfirmed[i]?.data?.find(
+              (entry) => entry.statement_id !== undefined,
+            )?.statement_id;
+            return {
+              account,
+              count: unconfirmed[i]?.data?.length ?? 0,
+              ...(statementId === undefined ? {} : { statementId }),
+            };
+          }),
           connections: connections.data?.items ?? [],
           differences: open.map((account, i) => ({
             account,
@@ -79,7 +86,17 @@ export function AttentionBlock({
   const rows = shown.map((item) => ({
     key: `${item.kind}-${item.account?.id ?? ""}`,
     title: t(`overview.attention.${item.kind}`),
-    ...(item.account === undefined ? {} : { line: item.account.name }),
+    ...(item.account === undefined
+      ? {}
+      : {
+          line:
+            item.unconfirmed === undefined
+              ? item.account.name
+              : t("overview.attention.withUnconfirmed", {
+                  account: item.account.name,
+                  count: number.format(item.unconfirmed),
+                }),
+        }),
     end:
       item.difference !== undefined && scale !== null ? (
         <MoneyFigure
@@ -125,6 +142,11 @@ function destination(item: AttentionItem): NavigateOptions {
   if (item.kind === "connections") return { to: "/accounts/links" };
   const account = item.account;
   if (account === undefined) return { to: "/accounts" };
+  if (item.kind === "unconfirmed" && item.statementId !== undefined)
+    return {
+      to: "/cards/$accountId/statements/$statementId",
+      params: { accountId: account.id, statementId: item.statementId },
+    };
   const route = accountRoute(account);
   return account.kind === "credit_card"
     ? route

@@ -23,11 +23,29 @@ describe("attentionItems", () => {
         { account: account("b"), difference: undefined },
       ],
     });
+    // A133: an account with a difference carries its unconfirmed count on that one row.
     expect(items.map((i) => [i.kind, i.count, i.account?.id])).toEqual([
       ["uncategorized", 3, undefined],
-      ["unconfirmed", 2, "a"],
       ["connections", 2, undefined],
       ["difference", 1, "a"],
+    ]);
+    expect(items[2]?.unconfirmed).toBe(2);
+  });
+
+  it("keeps the statement of an account's earliest unconfirmed entry", () => {
+    const items = attentionItems({
+      uncategorized: 0,
+      unconfirmed: [{ account: account("b"), count: 1, statementId: "s1" }],
+      connections: [],
+      differences: [{ account: account("b"), difference: undefined }],
+    });
+    expect(items).toEqual([
+      {
+        kind: "unconfirmed",
+        count: 1,
+        account: account("b"),
+        statementId: "s1",
+      },
     ]);
   });
 
