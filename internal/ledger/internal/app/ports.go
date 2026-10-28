@@ -407,6 +407,10 @@ type Repository interface {
 	// AnticipatedReferences returns the statements credited by non-voided anticipations of the origin purchase.
 	AnticipatedReferences(ctx context.Context, userID int64, originID uuid.UUID) (map[domain.ReferenceMonth]struct{}, error)
 	RefundedTotal(ctx context.Context, userID int64, originID uuid.UUID) (int64, error)
+	// AnticipationCharges returns the charges of non-voided anticipations of the origin purchase, without installment numbers (A135).
+	AnticipationCharges(ctx context.Context, userID int64, originID uuid.UUID) ([]PlanInstallment, error)
+	// AnticipationDiscount returns the discount non-voided anticipations of the origin purchase granted, positive (A135).
+	AnticipationDiscount(ctx context.Context, userID int64, originID uuid.UUID) (int64, error)
 	// ReimbursedTotal returns what the non-voided transactions other than exceptFrom repay of the origin expense (A117).
 	ReimbursedTotal(ctx context.Context, userID int64, originID, exceptFrom uuid.UUID) (int64, error)
 	// ReimbursementCandidates returns the expenses with an amount left to reimburse, ranked as the query asks (A117).

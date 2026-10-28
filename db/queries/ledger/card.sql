@@ -104,31 +104,50 @@ SELECT * FROM ledger_installment_plan WHERE user_id = $1 AND id = $2;
 -- name: ListPlanInstallments :many
 SELECT p.installment_number, p.amount, s.reference_month, s.closing_date
 FROM ledger_posting p
-JOIN ledger_statement s ON s.id = p.statement_id
+JOIN ledger_statement s ON s.user_id = p.user_id AND s.id = p.statement_id
 WHERE p.user_id = $1 AND p.installment_plan_id = $2 AND NOT p.voided AND p.card_role = 'charge'
 ORDER BY p.installment_number;
 
 -- name: PlanState :one
 SELECT
-  EXISTS (SELECT 1 FROM ledger_link l JOIN ledger_transaction t ON t.id = l.from_transaction_id
+  EXISTS (SELECT 1 FROM ledger_link l JOIN ledger_transaction t ON t.user_id = l.user_id AND t.id = l.from_transaction_id
           WHERE l.user_id = @user_id AND l.to_transaction_id = @origin_id
             AND l.link_type = 'cancellation_of' AND t.voided_at IS NULL) AS cancelled,
-  EXISTS (SELECT 1 FROM ledger_link l JOIN ledger_transaction t ON t.id = l.from_transaction_id
+  EXISTS (SELECT 1 FROM ledger_link l JOIN ledger_transaction t ON t.user_id = l.user_id AND t.id = l.from_transaction_id
           WHERE l.user_id = @user_id AND l.to_transaction_id = @origin_id
             AND l.link_type = 'anticipation_of' AND t.voided_at IS NULL) AS anticipated;
 
 -- name: AnticipatedReferences :many
 SELECT DISTINCT s.reference_month
 FROM ledger_link l
-JOIN ledger_transaction t ON t.id = l.from_transaction_id AND t.voided_at IS NULL
-JOIN ledger_posting p ON p.transaction_id = t.id AND p.card_role = 'credit' AND NOT p.voided
-JOIN ledger_statement s ON s.id = p.statement_id
+JOIN ledger_transaction t ON t.user_id = l.user_id AND t.id = l.from_transaction_id AND t.voided_at IS NULL
+JOIN ledger_posting p ON p.user_id = l.user_id AND p.transaction_id = t.id AND p.card_role = 'credit' AND NOT p.voided
+JOIN ledger_statement s ON s.user_id = l.user_id AND s.id = p.statement_id
+WHERE l.user_id = @user_id AND l.to_transaction_id = @origin_id AND l.link_type = 'anticipation_of';
+
+-- name: ListAnticipationCharges :many
+-- A135: what non-voided anticipations of the origin purchase charged, by statement.
+SELECT p.amount, s.reference_month, s.closing_date
+FROM ledger_link l
+JOIN ledger_transaction t ON t.user_id = l.user_id AND t.id = l.from_transaction_id AND t.voided_at IS NULL
+JOIN ledger_posting p ON p.user_id = l.user_id AND p.transaction_id = t.id AND p.card_role = 'charge' AND NOT p.voided
+JOIN ledger_statement s ON s.user_id = l.user_id AND s.id = p.statement_id
+WHERE l.user_id = @user_id AND l.to_transaction_id = @origin_id AND l.link_type = 'anticipation_of'
+ORDER BY s.reference_month, p.id;
+
+-- name: AnticipationDiscount :one
+-- A135: the discount non-voided anticipations of the origin purchase granted, positive.
+SELECT coalesce(-sum(p.amount), 0)::bigint
+FROM ledger_link l
+JOIN ledger_transaction t ON t.user_id = l.user_id AND t.id = l.from_transaction_id AND t.voided_at IS NULL
+JOIN ledger_posting p ON p.user_id = l.user_id AND p.transaction_id = t.id AND NOT p.voided
+JOIN ledger_account a ON a.user_id = l.user_id AND a.id = p.account_id AND a.system_role = 'discounts'
 WHERE l.user_id = @user_id AND l.to_transaction_id = @origin_id AND l.link_type = 'anticipation_of';
 
 -- name: RefundedTotal :one
 SELECT coalesce(sum(p.amount), 0)::bigint
 FROM ledger_link l
-JOIN ledger_posting p ON p.transaction_id = l.from_transaction_id
+JOIN ledger_posting p ON p.user_id = l.user_id AND p.transaction_id = l.from_transaction_id
 WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND l.link_type IN ('refund_of', 'cancellation_of', 'chargeback_of')
   AND p.card_role = 'credit' AND NOT p.voided;
 

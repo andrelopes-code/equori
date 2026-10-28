@@ -606,6 +606,10 @@ The scenarios of `docs/superpowers/specs/2026-10-20-record-matching-design.md`: 
 
 The scenarios of `docs/superpowers/specs/2026-10-28-unconfirmed-entries-design.md`: reserve transfers confirmed by the reserve's balance (S167); a manual entry confirmed by the account's balance (S168); an installment expected at its statement's closing (S169); cancelled installments offsetting their reversals (S170).
 
+### S172–S175 Plan reversal after anticipation (A135)
+
+The scenarios of `docs/superpowers/specs/2026-10-28-plan-reversal-after-anticipation-design.md`: a cancellation after an anticipation whose statement is open (S172) or closed (S173) reverses each installment once and returns the discount; an installment already anticipated or a cancelled plan is not anticipated (S174); an anticipation's charge offsets the cancellation that reverses it in the unconfirmed list (S175).
+
 ### S71 Synced assertion re-evaluated
 
 Nubank checking mapped from 2026-10-01 with the S52 lines and balance 3,834.10, without an opening balance: the first sync records an assertion with an open difference of 1,000.00. The owner records an opening balance of 1,000.00; the next sync, with the same balance, creates no assertion, and the existing one becomes `reconciled` with resolution `none`. An open synced assertion with a second assertion of the same date and amount created through `POST /accounts/{id}/balance-assertions` is reconciled by the next sync; all assertions are `reconciled`.

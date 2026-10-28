@@ -15,9 +15,9 @@ import (
 const anticipatedReferences = `-- name: AnticipatedReferences :many
 SELECT DISTINCT s.reference_month
 FROM ledger_link l
-JOIN ledger_transaction t ON t.id = l.from_transaction_id AND t.voided_at IS NULL
-JOIN ledger_posting p ON p.transaction_id = t.id AND p.card_role = 'credit' AND NOT p.voided
-JOIN ledger_statement s ON s.id = p.statement_id
+JOIN ledger_transaction t ON t.user_id = l.user_id AND t.id = l.from_transaction_id AND t.voided_at IS NULL
+JOIN ledger_posting p ON p.user_id = l.user_id AND p.transaction_id = t.id AND p.card_role = 'credit' AND NOT p.voided
+JOIN ledger_statement s ON s.user_id = l.user_id AND s.id = p.statement_id
 WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND l.link_type = 'anticipation_of'
 `
 
@@ -44,6 +44,28 @@ func (q *Queries) AnticipatedReferences(ctx context.Context, arg AnticipatedRefe
 		return nil, err
 	}
 	return items, nil
+}
+
+const anticipationDiscount = `-- name: AnticipationDiscount :one
+SELECT coalesce(-sum(p.amount), 0)::bigint
+FROM ledger_link l
+JOIN ledger_transaction t ON t.user_id = l.user_id AND t.id = l.from_transaction_id AND t.voided_at IS NULL
+JOIN ledger_posting p ON p.user_id = l.user_id AND p.transaction_id = t.id AND NOT p.voided
+JOIN ledger_account a ON a.user_id = l.user_id AND a.id = p.account_id AND a.system_role = 'discounts'
+WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND l.link_type = 'anticipation_of'
+`
+
+type AnticipationDiscountParams struct {
+	UserID   int64
+	OriginID uuid.UUID
+}
+
+// A135: the discount non-voided anticipations of the origin purchase granted, positive.
+func (q *Queries) AnticipationDiscount(ctx context.Context, arg AnticipationDiscountParams) (int64, error) {
+	row := q.db.QueryRow(ctx, anticipationDiscount, arg.UserID, arg.OriginID)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
 }
 
 const committedInstallments = `-- name: CommittedInstallments :one
@@ -419,6 +441,48 @@ func (q *Queries) InsertInstallmentPlan(ctx context.Context, arg InsertInstallme
 	return err
 }
 
+const listAnticipationCharges = `-- name: ListAnticipationCharges :many
+SELECT p.amount, s.reference_month, s.closing_date
+FROM ledger_link l
+JOIN ledger_transaction t ON t.user_id = l.user_id AND t.id = l.from_transaction_id AND t.voided_at IS NULL
+JOIN ledger_posting p ON p.user_id = l.user_id AND p.transaction_id = t.id AND p.card_role = 'charge' AND NOT p.voided
+JOIN ledger_statement s ON s.user_id = l.user_id AND s.id = p.statement_id
+WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND l.link_type = 'anticipation_of'
+ORDER BY s.reference_month, p.id
+`
+
+type ListAnticipationChargesParams struct {
+	UserID   int64
+	OriginID uuid.UUID
+}
+
+type ListAnticipationChargesRow struct {
+	Amount         int64
+	ReferenceMonth time.Time
+	ClosingDate    time.Time
+}
+
+// A135: what non-voided anticipations of the origin purchase charged, by statement.
+func (q *Queries) ListAnticipationCharges(ctx context.Context, arg ListAnticipationChargesParams) ([]ListAnticipationChargesRow, error) {
+	rows, err := q.db.Query(ctx, listAnticipationCharges, arg.UserID, arg.OriginID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListAnticipationChargesRow
+	for rows.Next() {
+		var i ListAnticipationChargesRow
+		if err := rows.Scan(&i.Amount, &i.ReferenceMonth, &i.ClosingDate); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listBillingRules = `-- name: ListBillingRules :many
 SELECT user_id, account_id, effective_from, closing_day, due_day, closing_day_assignment, due_date_adjustment, calendar, created_at, closing_mode, closing_days_before_due, closing_adjustment FROM ledger_billing_cycle_rule WHERE user_id = $1 AND account_id = $2 ORDER BY effective_from
 `
@@ -622,7 +686,7 @@ func (q *Queries) ListOpenStatementsFrom(ctx context.Context, arg ListOpenStatem
 const listPlanInstallments = `-- name: ListPlanInstallments :many
 SELECT p.installment_number, p.amount, s.reference_month, s.closing_date
 FROM ledger_posting p
-JOIN ledger_statement s ON s.id = p.statement_id
+JOIN ledger_statement s ON s.user_id = p.user_id AND s.id = p.statement_id
 WHERE p.user_id = $1 AND p.installment_plan_id = $2 AND NOT p.voided AND p.card_role = 'charge'
 ORDER BY p.installment_number
 `
@@ -857,10 +921,10 @@ func (q *Queries) LockPlanInstallment(ctx context.Context, arg LockPlanInstallme
 
 const planState = `-- name: PlanState :one
 SELECT
-  EXISTS (SELECT 1 FROM ledger_link l JOIN ledger_transaction t ON t.id = l.from_transaction_id
+  EXISTS (SELECT 1 FROM ledger_link l JOIN ledger_transaction t ON t.user_id = l.user_id AND t.id = l.from_transaction_id
           WHERE l.user_id = $1 AND l.to_transaction_id = $2
             AND l.link_type = 'cancellation_of' AND t.voided_at IS NULL) AS cancelled,
-  EXISTS (SELECT 1 FROM ledger_link l JOIN ledger_transaction t ON t.id = l.from_transaction_id
+  EXISTS (SELECT 1 FROM ledger_link l JOIN ledger_transaction t ON t.user_id = l.user_id AND t.id = l.from_transaction_id
           WHERE l.user_id = $1 AND l.to_transaction_id = $2
             AND l.link_type = 'anticipation_of' AND t.voided_at IS NULL) AS anticipated
 `
@@ -909,7 +973,7 @@ func (q *Queries) PriorInstallments(ctx context.Context, arg PriorInstallmentsPa
 const refundedTotal = `-- name: RefundedTotal :one
 SELECT coalesce(sum(p.amount), 0)::bigint
 FROM ledger_link l
-JOIN ledger_posting p ON p.transaction_id = l.from_transaction_id
+JOIN ledger_posting p ON p.user_id = l.user_id AND p.transaction_id = l.from_transaction_id
 WHERE l.user_id = $1 AND l.to_transaction_id = $2 AND l.link_type IN ('refund_of', 'cancellation_of', 'chargeback_of')
   AND p.card_role = 'credit' AND NOT p.voided
 `

@@ -72,14 +72,19 @@ func (pu purchase) reverseCategories(amount int64) ([]domain.Posting, error) {
 	return out, nil
 }
 
-// checkCeiling enforces I06: refunds and cancellations never exceed the charged total.
+// checkCeiling enforces I06: refunds and cancellations never exceed the charged total less
+// the discount of anticipations (A135).
 func (s *Service) checkCeiling(ctx context.Context, r Repository, pu purchase, adding int64) error {
 	done, err := r.RefundedTotal(ctx, pu.tx.UserID, pu.tx.ID)
 	if err != nil {
 		return err
 	}
-	if done+adding > pu.charged {
-		return validationError("amount", fmt.Sprintf("refunds would total %d, above the charged %d", done+adding, pu.charged))
+	discount, err := r.AnticipationDiscount(ctx, pu.tx.UserID, pu.tx.ID)
+	if err != nil {
+		return err
+	}
+	if charged := pu.charged - discount; done+adding > charged {
+		return validationError("amount", fmt.Sprintf("refunds would total %d, above the charged %d", done+adding, charged))
 	}
 	return nil
 }
@@ -130,7 +135,9 @@ func (s *Service) lockPlan(ctx context.Context, r Repository, userID int64, plan
 }
 
 // CancelPlan reverses unbilled installments on their statements and credits billed ones
-// on creditStatement (default: the statement the date falls in) (M25, S14, T08).
+// on creditStatement (default: the statement the date falls in) (M25, S14, T08). An
+// installment an anticipation reversed stays reversed; the anticipation's charge is reversed
+// or credited in its place and its discount returns (A135).
 func (s *Service) CancelPlan(ctx context.Context, userID int64, planID uuid.UUID, date time.Time, creditStatement *domain.ReferenceMonth) (domain.Transaction, error) {
 	var created domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
@@ -138,10 +145,29 @@ func (s *Service) CancelPlan(ctx context.Context, userID int64, planID uuid.UUID
 		if err != nil {
 			return err
 		}
+		anticipated, err := r.AnticipatedReferences(ctx, userID, pu.tx.ID)
+		if err != nil {
+			return err
+		}
+		charges, err := r.AnticipationCharges(ctx, userID, pu.tx.ID)
+		if err != nil {
+			return err
+		}
+		discount, err := r.AnticipationDiscount(ctx, userID, pu.tx.ID)
+		if err != nil {
+			return err
+		}
 		var postings []domain.Posting
-		var total, billed int64
+		var total, billed, credited int64
+		open := charges
 		for _, in := range installments {
 			total -= in.Amount
+			if _, ok := anticipated[in.Reference]; !ok {
+				open = append(open, in)
+			}
+		}
+		for _, in := range open {
+			credited -= in.Amount
 			if !in.Closing.After(date) {
 				billed -= in.Amount
 				continue
@@ -160,12 +186,23 @@ func (s *Service) CancelPlan(ctx context.Context, userID int64, planID uuid.UUID
 			}
 			postings = append(postings, domain.Posting{AccountID: pu.card.ID, Amount: m, CardRole: domain.RoleCredit, Statement: creditStatement})
 		}
-		if err := s.checkCeiling(ctx, r, pu, total); err != nil {
+		if err := s.checkCeiling(ctx, r, pu, credited); err != nil {
 			return err
 		}
 		reversals, err := pu.reverseCategories(total)
 		if err != nil {
 			return err
+		}
+		if discount > 0 {
+			discounts, err := r.SystemAccount(ctx, userID, domain.RoleDiscounts)
+			if err != nil {
+				return err
+			}
+			m, err := money.New(discount, pu.card.Instrument)
+			if err != nil {
+				return err
+			}
+			reversals = append(reversals, domain.Posting{AccountID: discounts.ID, Amount: m})
 		}
 		w, err := s.writerFor(ctx, userID)
 		if err != nil {
@@ -192,6 +229,17 @@ func (s *Service) AnticipatePlan(ctx context.Context, userID int64, planID uuid.
 		if from < 1 || to < from || to > plan.Count {
 			return validationError("from_installment", fmt.Sprintf("installments must be within 1..%d", plan.Count))
 		}
+		cancelled, _, err := r.PlanState(ctx, userID, pu.tx.ID)
+		if err != nil {
+			return err
+		}
+		if cancelled {
+			return validationError("from_installment", "the plan is cancelled")
+		}
+		anticipated, err := r.AnticipatedReferences(ctx, userID, pu.tx.ID)
+		if err != nil {
+			return err
+		}
 		var postings []domain.Posting
 		var sum int64
 		for _, in := range installments {
@@ -200,6 +248,9 @@ func (s *Service) AnticipatePlan(ctx context.Context, userID int64, planID uuid.
 			}
 			if !in.Closing.After(date) {
 				return validationError("from_installment", fmt.Sprintf("installment %d is already billed", in.Number))
+			}
+			if _, ok := anticipated[in.Reference]; ok {
+				return validationError("from_installment", fmt.Sprintf("installment %d is already anticipated", in.Number))
 			}
 			ref := in.Reference
 			m, err := money.New(-in.Amount, pu.card.Instrument)

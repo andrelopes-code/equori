@@ -1088,6 +1088,22 @@ func (r *Repository) AnticipatedReferences(ctx context.Context, userID int64, or
 	return out, nil
 }
 
+func (r *Repository) AnticipationCharges(ctx context.Context, userID int64, originID uuid.UUID) ([]app.PlanInstallment, error) {
+	rows, err := r.q.ListAnticipationCharges(ctx, ListAnticipationChargesParams{UserID: userID, OriginID: originID})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]app.PlanInstallment, len(rows))
+	for i, row := range rows {
+		out[i] = app.PlanInstallment{Amount: row.Amount, Reference: domain.MonthOf(row.ReferenceMonth), Closing: row.ClosingDate}
+	}
+	return out, nil
+}
+
+func (r *Repository) AnticipationDiscount(ctx context.Context, userID int64, originID uuid.UUID) (int64, error) {
+	return r.q.AnticipationDiscount(ctx, AnticipationDiscountParams{UserID: userID, OriginID: originID})
+}
+
 func (r *Repository) PlanInstallments(ctx context.Context, userID int64, planID uuid.UUID) ([]app.PlanInstallment, error) {
 	rows, err := r.q.ListPlanInstallments(ctx, ListPlanInstallmentsParams{UserID: userID, InstallmentPlanID: nullUUID(planID)})
 	if err != nil {
