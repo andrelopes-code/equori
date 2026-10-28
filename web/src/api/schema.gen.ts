@@ -2545,11 +2545,14 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Entries of the account that no institution line confirmed (A103).
-         * @description Postings without an external record, dated on or after the start of the account's lines
-         *     from an institution (the mapping's start date, or the first imported file's period) and
-         *     more than 10 days before the last synced date or the end of the last imported period,
-         *     oldest first. An account without lines from an institution lists none.
+         * Entries of the account that neither an institution line nor balance confirmed (A103, A133).
+         * @description The first posting of each transaction that carries no external record and that no
+         *     balance assertion or statement reconciled, expected on or after the start of the
+         *     account's lines from an institution (the mapping's start date, or the first imported
+         *     file's period) and more than 10 days before the last synced date or the end of the
+         *     last imported period, oldest first. A card posting is expected at its statement's
+         *     closing date. An installment and its reversal on one statement offset and are not
+         *     listed. An account without lines from an institution lists none.
          */
         get: operations["listUnconfirmed"];
         put?: never;
@@ -3849,8 +3852,16 @@ export interface components {
         UnconfirmedEntry: {
             /** Format: uuid */
             transaction_id: string;
-            /** Format: date */
+            /**
+             * Format: date
+             * @description The date by which the institution reports the line.
+             */
             date: string;
+            /**
+             * Format: uuid
+             * @description The card statement of the posting.
+             */
+            statement_id?: string;
             amount: components["schemas"]["Money"];
             description: string;
             /** Format: uuid */

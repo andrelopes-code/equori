@@ -87,6 +87,9 @@ func (s *Server) ListUnconfirmed(ctx context.Context, req ListUnconfirmedRequest
 		if p.PayeeID != uuid.Nil {
 			out.Items[i].PayeeId = &p.PayeeID
 		}
+		if p.StatementID != uuid.Nil {
+			out.Items[i].StatementId = &p.StatementID
+		}
 	}
 	return out, nil
 }

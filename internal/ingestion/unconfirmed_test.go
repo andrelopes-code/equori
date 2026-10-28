@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
+
+	pluggy "github.com/andrelopes-code/equori/internal/ingestion/internal/aggregator/pluggy/client"
 )
 
 type unconfirmedView struct {
@@ -52,5 +54,58 @@ func TestS168EntryConfirmedByBalance(t *testing.T) {
 	}
 	if got := m.unconfirmed(m.checking); len(got) != 0 {
 		t.Fatalf("unconfirmed = %+v, want none", got)
+	}
+}
+
+// installmentPlanFromLine creates a 6 × 100.00 plan from the line of installment 1 on a card
+// closing on day 3, mapped from 2026-08-01.
+func installmentPlanFromLine(t *testing.T) (f syncFixture, card, planTx, planID string) {
+	t.Helper()
+	f = newSyncFixture(t)
+	card = f.h.Card("Nubank card", 3, 10, "next")
+	f.mapCard(card, "2026-08-01")
+	f.line(pluggy.SubtypeCard, installmentLine(1, "2026-08-14", "100.00", nil))
+	f.sync()
+	if err := f.h.Pool.QueryRow(t.Context(), `SELECT id::text, origin_transaction_id::text FROM ledger_installment_plan WHERE account_id = $1`, card).Scan(&planID, &planTx); err != nil {
+		t.Fatal(err)
+	}
+	return f, card, planTx, planID
+}
+
+func (f syncFixture) statementID(card, reference string) string {
+	f.h.T().Helper()
+	var id string
+	if err := f.h.Pool.QueryRow(f.h.T().Context(), `SELECT id::text FROM ledger_statement WHERE account_id = $1 AND reference_month = $2::date`, card, reference).Scan(&id); err != nil {
+		f.h.T().Fatal(err)
+	}
+	return id
+}
+
+// S169 (A133): an installment is expected at its statement's closing.
+func TestS169InstallmentDueAtItsStatementClosing(t *testing.T) {
+	t.Parallel()
+	f, card, planTx, _ := installmentPlanFromLine(t)
+	got := f.unconfirmed(card)
+	want := unconfirmedView{TransactionID: planTx, Date: "2026-10-03", StatementID: f.statementID(card, "2026-10-01")}
+	want.Amount.Amount = -10000
+	if len(got) != 1 || got[0] != want {
+		t.Fatalf("unconfirmed = %+v, want [%+v]", got, want)
+	}
+}
+
+// S170 (A133): cancelled installments offset their reversals one to one; the credit of the
+// billed installment stays expected as the institution's refund line.
+func TestS170CancelledInstallmentsOffsetTheirReversals(t *testing.T) {
+	t.Parallel()
+	f, card, _, planID := installmentPlanFromLine(t)
+	var cancellation struct {
+		ID string `json:"id"`
+	}
+	f.h.MustDo(http.MethodPost, "/api/v1/installment-plans/"+planID+"/cancellation", map[string]any{"date": "2026-09-20"}, http.StatusCreated, &cancellation)
+	got := f.unconfirmed(card)
+	want := unconfirmedView{TransactionID: cancellation.ID, Date: "2026-10-03", StatementID: f.statementID(card, "2026-10-01")}
+	want.Amount.Amount = 10000
+	if len(got) != 1 || got[0] != want {
+		t.Fatalf("unconfirmed = %+v, want [%+v]", got, want)
 	}
 }
