@@ -47,6 +47,10 @@ export const instrumentsEn = {
   "instruments.source.csv": "CSV import",
   "instruments.source.accrual": "Accrual",
   "instrument.facts": "Instrument data",
+  "instrument.edit": "Edit instrument",
+  "instrument.edit.description":
+    "Code, type, decimal places and quote currency stay as defined. The change applies to every account of the instance.",
+  "instrument.edit.save": "Save",
   "instrument.prices.title": "Price history",
   "instrument.prices.caption": "Prices by date",
   "instrument.prices.empty": "No prices in this range",

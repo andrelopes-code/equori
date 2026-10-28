@@ -87,6 +87,25 @@ export function useDefineInstrument() {
   });
 }
 
+export function useEditInstrument() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async ({
+      code,
+      edit,
+    }: {
+      code: string;
+      edit: components["schemas"]["InstrumentEdit"];
+    }) =>
+      unwrap(
+        await api.PATCH("/instruments/{code}", {
+          params: { path: { code } },
+          body: edit,
+        }),
+      ),
+  });
+}
+
 export function instrumentQuery(api: Client<paths>, code: string) {
   return queryOptions({
     queryKey: instrumentKeys.instrument(code),

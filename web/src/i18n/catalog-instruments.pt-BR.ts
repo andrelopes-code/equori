@@ -46,6 +46,10 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instruments.source.csv": "Importação CSV",
   "instruments.source.accrual": "Apropriação",
   "instrument.facts": "Dados do instrumento",
+  "instrument.edit": "Editar instrumento",
+  "instrument.edit.description":
+    "Código, tipo, casas decimais e moeda de cotação permanecem como definidos. A alteração vale para todas as contas da instância.",
+  "instrument.edit.save": "Salvar",
   "instrument.prices.title": "Histórico de preços",
   "instrument.prices.caption": "Preços por data",
   "instrument.prices.empty": "Nenhum preço neste intervalo",

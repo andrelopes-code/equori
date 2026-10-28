@@ -98,6 +98,38 @@ func TestDefineInstrumentValidation(t *testing.T) {
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/instruments", with("code", "mxrf11")), http.StatusBadRequest, "invalid_request", "")
 }
 
+// S171: editing replaces name, exchange and subtype and keeps the rest of the instrument (amendment A134).
+func TestS171EditInstrument(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
+	h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "MXRF11", "quote_instrument": "BRL", "date": "2026-10-22", "value": "10.50"}, http.StatusCreated, nil)
+
+	var got instrumentAPI
+	h.MustDo(http.MethodPatch, "/api/v1/instruments/MXRF11", map[string]any{"name": "Maxi Renda FII", "subtype": "fii_papel"}, http.StatusOK, &got)
+	want := instrumentAPI{Code: "MXRF11", Type: "reit", Scale: 0, Name: "Maxi Renda FII", QuoteCurrency: "BRL", Subtype: "fii_papel"}
+	if got != want {
+		t.Fatalf("edited = %+v, want %+v", got, want)
+	}
+	var read instrumentAPI
+	h.MustDo(http.MethodGet, "/api/v1/instruments/MXRF11", nil, http.StatusOK, &read)
+	if read != want {
+		t.Fatalf("read = %+v, want %+v", read, want)
+	}
+	var prices struct {
+		Items []priceAPI `json:"items"`
+	}
+	h.MustDo(http.MethodGet, "/api/v1/prices?instrument=MXRF11&quote_instrument=BRL&from=2026-10-01&to=2026-10-31", nil, http.StatusOK, &prices)
+	if len(prices.Items) != 1 || prices.Items[0] != (priceAPI{Instrument: "MXRF11", QuoteInstrument: "BRL", Date: "2026-10-22", Value: "10.5", Source: "manual"}) {
+		t.Fatalf("prices = %+v", prices.Items)
+	}
+
+	h.ExpectProblem(h.Do(http.MethodPatch, "/api/v1/instruments/MXRF11", map[string]any{"name": "  "}), http.StatusUnprocessableEntity, "validation_failed", "name")
+	h.ExpectProblem(h.Do(http.MethodPatch, "/api/v1/instruments/BRL", map[string]any{"name": "Real"}), http.StatusUnprocessableEntity, "validation_failed", "code")
+	h.ExpectProblem(h.Do(http.MethodPatch, "/api/v1/instruments/PETR4", map[string]any{"name": "Petrobras"}), http.StatusNotFound, "not_found", "")
+	h.ExpectProblem(h.Do(http.MethodPatch, "/api/v1/instruments/MXRF11", map[string]any{"name": "x", "exchange": "B3"}), http.StatusBadRequest, "invalid_request", "")
+}
+
 func TestReconcileCurrencies(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)

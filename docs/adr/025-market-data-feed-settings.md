@@ -17,13 +17,13 @@ Market data is public and shared by the instance: `marketdata_price` and `market
 |---|---|
 | F1 | Table `marketdata_feed (id text PRIMARY KEY CHECK (id ~ '^[a-z0-9_]{2,40}$'), enabled boolean NOT NULL)`. It has no `user_id`. A row exists for each feed whose state was stored. |
 | F2 | The enabled set is read on each tick. With at least one row, it is the rows with `enabled`. With no row, it is the identifiers of `EQUORI_PRICE_FEEDS` and `EQUORI_INDEX_FEEDS`, empty when neither is set. |
-| F3 | `SuggestedFeeds(region)` in `internal/marketdata/region_defaults.go` names the feeds suggested to a user of `region`; a suggestion enables nothing. `GET /indexes` lists the suggested indexes first, so a calculator offers the region's index as its first choice. `BR` → `b3_cotahist`, `bcb_ptax`, `br_cdi`, `br_ipca`; `US` → `us_sofr`, `us_cpi`; a member of the euro area → `ecb`, `eu_estr`, `ea_hicp`; any other region → none. |
+| F3 | `SuggestedFeeds(region)` in `internal/marketdata/region_defaults.go` names the feeds suggested to a user of `region`; a suggestion enables nothing. `GET /indexes` lists the suggested indexes first, so a calculator offers the region's index as its first choice. `BR` → `b3_consolidated`, `bcb_ptax`, `br_cdi`, `br_ipca`; `US` → `us_sofr`, `us_cpi`; a member of the euro area → `ecb`, `eu_estr`, `ea_hicp`; any other region → none. |
 | F4 | Every feed of the registry is built at startup; `EQUORI_FEED_<ID>_URL` keeps overriding its address. An unknown identifier in the two variables still stops the process (ADR 016 X6). |
 | F5 | `GET /api/v1/market-data/feeds` (`listMarketDataFeeds`): every feed of the registry with `id`, `kind` (`price` or `index`), `enabled`, `suggested` (by F3 for the calling user's region), `last` (latest stored date of its source, or null), `stale`, `last_run` (time of the last tick that ran it, or null) and `error` (message of its last failure, or null). The tick status is kept in memory and is empty after a restart. |
 | F6 | `PUT /api/v1/market-data/feeds/{id}` (`setMarketDataFeed`) with `{enabled}` stores the row. On the first write with no row, the current enabled set of F2 is stored first, so a write never changes the state of another feed. An unknown identifier is 404 `not_found`. |
 | F7 | `POST /api/v1/market-data/refresh` (`refreshMarketData`) starts a tick and answers 202. While a tick runs, scheduled or requested, it answers 409 `refresh_running`. The tick runs on the context of `RunFeeds`, not of the request. |
 | F8 | F6 and F7 change the instance. They require the role `admin`; another user gets 403 `admin_required`. F5 is open to every user. |
-| F9 | Each source declares `Lag`, in calendar days: the delay after the end of a period by which its publication is due. A feed is `stale` when it is enabled, has a `last`, and today is later than the end of the period after the period of `last` plus `Lag`. The end of a daily period is the next day; the end of a monthly period is the first day of the next month. Values: `b3_cotahist`, `bcb_ptax`, `ecb`, `br_cdi`, `eu_estr`, `us_sofr` 5; `br_ipca` 20; `us_cpi` 20; `ea_hicp` 25. |
+| F9 | Each source declares `Lag`, in calendar days: the delay after the end of a period by which its publication is due. A feed is `stale` when it is enabled, has a `last`, and today is later than the end of the period after the period of `last` plus `Lag`. The end of a daily period is the next day; the end of a monthly period is the first day of the next month. Values: `b3_cotahist`, `b3_consolidated`, `bcb_ptax`, `ecb`, `br_cdi`, `eu_estr`, `us_sofr` 5; `br_ipca` 20; `us_cpi` 20; `ea_hicp` 25. |
 | F10 | The settings screen shows one row per feed: its name, kind, switch, `last`, a warning when `stale` or `error` is set, and one "Update now" action for the instance. While no feed is enabled and some are suggested, it offers one action that enables the suggested feeds. |
 | F11 | The three operations have no tool for language models: their exclusion is `-instance` (ADR 012 T14). |
 
@@ -43,6 +43,8 @@ Market data is public and shared by the instance: `marketdata_price` and `market
 ## Amendment of 2026-10-28
 
 F9 measured `Lag` from the end of the period of `last`, whose publication has already arrived. A monthly feed was stale from that date until its next publication: `br_ipca` with `last` 2026-09-01 was stale from 2026-10-22, while the rate of October is published in November. F9 now measures `Lag` from the end of the next period, the one due.
+
+The price source `b3_consolidated` reads the B3 consolidated trades file, which holds every segment. COTAHIST omits the fixed income ETFs (`AUPO11`, `LFTS11`, `IMAB11`, checked against the files of 2026-01-02 to 2026-10-27). F3 suggests `b3_consolidated` to `BR` in place of `b3_cotahist`, which stays in the registry for the instances that enabled it.
 
 ## Revisit criterion
 

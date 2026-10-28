@@ -140,3 +140,28 @@ func (q *Queries) ListInstrumentsByType(ctx context.Context, instrumentType stri
 	}
 	return items, nil
 }
+
+const updateInstrument = `-- name: UpdateInstrument :execrows
+UPDATE marketdata_instrument SET name = $1, exchange = $2, subtype = $3
+WHERE code = $4
+`
+
+type UpdateInstrumentParams struct {
+	Name     string
+	Exchange *string
+	Subtype  *string
+	Code     string
+}
+
+func (q *Queries) UpdateInstrument(ctx context.Context, arg UpdateInstrumentParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateInstrument,
+		arg.Name,
+		arg.Exchange,
+		arg.Subtype,
+		arg.Code,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}

@@ -295,6 +295,13 @@ type Instrument struct {
 	Type          InstrumentType `json:"type"`
 }
 
+// InstrumentEdit defines model for InstrumentEdit.
+type InstrumentEdit struct {
+	Exchange *string `json:"exchange,omitempty"`
+	Name     string  `json:"name"`
+	Subtype  *string `json:"subtype,omitempty"`
+}
+
 // InstrumentInput defines model for InstrumentInput.
 type InstrumentInput struct {
 	Code          string  `json:"code"`
@@ -460,6 +467,9 @@ type ImportPricesMultipartBody struct {
 // DefineInstrumentJSONRequestBody defines body for DefineInstrument for application/json ContentType.
 type DefineInstrumentJSONRequestBody = InstrumentInput
 
+// EditInstrumentJSONRequestBody defines body for EditInstrument for application/json ContentType.
+type EditInstrumentJSONRequestBody = InstrumentEdit
+
 // PutInstrumentTermsJSONRequestBody defines body for PutInstrumentTerms for application/json ContentType.
 type PutInstrumentTermsJSONRequestBody = FixedIncomeTermsInput
 
@@ -498,6 +508,9 @@ type ServerInterface interface {
 	// GetInstrument One instrument.
 	// (GET /instruments/{code})
 	GetInstrument(w http.ResponseWriter, r *http.Request, code string)
+	// EditInstrument Replace the name, exchange and subtype of a security; an absent exchange or subtype is cleared (A134).
+	// (PATCH /instruments/{code})
+	EditInstrument(w http.ResponseWriter, r *http.Request, code string)
 	// GetInstrumentTerms The terms of a fixed income instrument (investments design 4.2).
 	// (GET /instruments/{code}/terms)
 	GetInstrumentTerms(w http.ResponseWriter, r *http.Request, code string)
@@ -748,6 +761,32 @@ func (siw *ServerInterfaceWrapper) GetInstrument(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetInstrument(w, r, code)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// EditInstrument operation middleware
+func (siw *ServerInterfaceWrapper) EditInstrument(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "code" -------------
+	var code string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "code", r.PathValue("code"), &code, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "code", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.EditInstrument(w, r, code)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1094,6 +1133,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instruments", wrapper.ListInstruments)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/instruments", wrapper.DefineInstrument)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instruments/{code}", wrapper.GetInstrument)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/instruments/{code}", wrapper.EditInstrument)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instruments/{code}/terms", wrapper.GetInstrumentTerms)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/instruments/{code}/terms", wrapper.PutInstrumentTerms)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/prices", wrapper.ListPrices)
@@ -1597,6 +1637,87 @@ func (response GetInstrument404ApplicationProblemPlusJSONResponse) VisitGetInstr
 	}
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EditInstrumentRequestObject struct {
+	Code string `json:"code"`
+	Body *EditInstrumentJSONRequestBody
+}
+
+type EditInstrumentResponseObject interface {
+	VisitEditInstrumentResponse(w http.ResponseWriter) error
+}
+
+type EditInstrument200JSONResponse Instrument
+
+func (response EditInstrument200JSONResponse) VisitEditInstrumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EditInstrument400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response EditInstrument400ApplicationProblemPlusJSONResponse) VisitEditInstrumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EditInstrument401ApplicationProblemPlusJSONResponse Problem
+
+func (response EditInstrument401ApplicationProblemPlusJSONResponse) VisitEditInstrumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EditInstrument404ApplicationProblemPlusJSONResponse Problem
+
+func (response EditInstrument404ApplicationProblemPlusJSONResponse) VisitEditInstrumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EditInstrument422ApplicationProblemPlusJSONResponse Problem
+
+func (response EditInstrument422ApplicationProblemPlusJSONResponse) VisitEditInstrumentResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -2163,6 +2284,9 @@ type StrictServerInterface interface {
 	// GetInstrument One instrument.
 	// (GET /instruments/{code})
 	GetInstrument(ctx context.Context, request GetInstrumentRequestObject) (GetInstrumentResponseObject, error)
+	// EditInstrument Replace the name, exchange and subtype of a security; an absent exchange or subtype is cleared (A134).
+	// (PATCH /instruments/{code})
+	EditInstrument(ctx context.Context, request EditInstrumentRequestObject) (EditInstrumentResponseObject, error)
 	// GetInstrumentTerms The terms of a fixed income instrument (investments design 4.2).
 	// (GET /instruments/{code}/terms)
 	GetInstrumentTerms(ctx context.Context, request GetInstrumentTermsRequestObject) (GetInstrumentTermsResponseObject, error)
@@ -2432,6 +2556,39 @@ func (sh *strictHandler) GetInstrument(w http.ResponseWriter, r *http.Request, c
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetInstrumentResponseObject); ok {
 		if err := validResponse.VisitGetInstrumentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// EditInstrument operation middleware
+func (sh *strictHandler) EditInstrument(w http.ResponseWriter, r *http.Request, code string) {
+	var request EditInstrumentRequestObject
+
+	request.Code = code
+
+	var body EditInstrumentJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.EditInstrument(ctx, request.(EditInstrumentRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "EditInstrument")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(EditInstrumentResponseObject); ok {
+		if err := validResponse.VisitEditInstrumentResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

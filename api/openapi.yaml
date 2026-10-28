@@ -2093,6 +2093,37 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+    patch:
+      tags: [marketdata]
+      operationId: editInstrument
+      summary: Replace the name, exchange and subtype of a security; an absent exchange or subtype is cleared (A134).
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstrumentEdit"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instrument"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /instruments/{code}/terms:
     parameters:
       - name: code
@@ -7627,6 +7658,21 @@ components:
           type: string
           pattern: "^[a-z0-9_]{2,40}$"
           description: Refines the type for the owner's jurisdiction, such as cri, cdb or equity_fund (investments design 4.1).
+    InstrumentEdit:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        exchange:
+          type: string
+          pattern: "^[A-Z0-9]{4}$"
+        subtype:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
     InstrumentList:
       type: object
       required: [items]

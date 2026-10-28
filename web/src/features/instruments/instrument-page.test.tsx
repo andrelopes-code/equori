@@ -163,6 +163,55 @@ describe("Instrument page", () => {
     });
   });
 
+  it("edits the name, exchange and subtype of a security and sends a cleared exchange as absent", async () => {
+    const sent: unknown[] = [];
+    const fetch = api({
+      "PATCH /api/v1/instruments/PETR4": async (req) => {
+        sent.push(await req.json());
+        return json(200, {
+          code: "PETR4",
+          type: "stock",
+          scale: 0,
+          name: "Petrobras PN Nova",
+          quote_currency: "BRL",
+        });
+      },
+    });
+    await renderApp("/instruments/PETR4", { fetch });
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole("button", { name: catalogEn["instrument.edit"] }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    const name = within(dialog).getByRole("textbox", { name: /^Name/ });
+    const exchange = within(dialog).getByRole("textbox", {
+      name: /^Exchange/,
+    });
+    expect(name).toHaveValue("Petrobras PN");
+    expect(exchange).toHaveValue("B3SA");
+    await user.clear(name);
+    await user.type(name, "Petrobras PN Nova");
+    await user.clear(exchange);
+    await user.click(
+      within(dialog).getByRole("button", {
+        name: catalogEn["instrument.edit.save"],
+      }),
+    );
+    await waitFor(() => {
+      expect(sent).toEqual([{ name: "Petrobras PN Nova" }]);
+    });
+  });
+
+  it("offers no edit on a currency", async () => {
+    await renderApp("/instruments/USD", { fetch: api() });
+    expect(
+      await screen.findByRole("heading", { name: "Dollar" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: catalogEn["instrument.edit"] }),
+    ).toBeNull();
+  });
+
   it("lists the positions that hold the instrument, linked to their accounts", async () => {
     await renderApp("/instruments/PETR4", { fetch: api() });
     const table = await screen.findByRole("table", {

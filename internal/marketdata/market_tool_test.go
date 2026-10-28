@@ -89,6 +89,29 @@ func TestManageInstrumentToolDefine(t *testing.T) {
 	h.ExpectToolError(r, "instrument_exists", "")
 }
 
+func TestManageInstrumentToolRename(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	h.MustDo("POST", "/api/v1/instruments", mxrf11(), 201, nil)
+	args := map[string]any{"action": "rename", "code": "MXRF11", "name": "Maxi Renda FII"}
+	p, r := preview(t, h, "manage_instrument", args)
+	if r.IsError || len(p.Changes) != 1 || p.Changes[0].Field != "name" || p.Changes[0].Before.Text != "Maxi Renda" || p.Changes[0].After.Text != "Maxi Renda FII" {
+		t.Fatalf("preview = %+v %s", p, r.Content)
+	}
+	var out struct {
+		Instrument toolInstrument `json:"instrument"`
+	}
+	toolOutput(t, h, "manage_instrument", args, &out)
+	var read instrumentAPI
+	h.MustDo("GET", "/api/v1/instruments/MXRF11", nil, 200, &read)
+	want := instrumentAPI{Code: "MXRF11", Type: "reit", Name: "Maxi Renda FII", QuoteCurrency: "BRL", Exchange: "BVMF"}
+	if out.Instrument.Name != "Maxi Renda FII" || read != want {
+		t.Fatalf("renamed %+v, read %+v", out.Instrument, read)
+	}
+	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "rename", "code": "MXRF11"}), "invalid_arguments", "name")
+	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "rename", "code": "BRL", "name": "Real"}), "validation_failed", "code")
+}
+
 func contains(s []string, v string) bool {
 	for _, x := range s {
 		if x == v {

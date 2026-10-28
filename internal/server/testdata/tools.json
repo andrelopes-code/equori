@@ -5078,7 +5078,7 @@
   },
   {
     "name": "manage_instrument",
-    "description": "Proposes defining a security for the whole instance, recording a manual price, or setting the terms of a fixed income instrument. Use it when the user needs a security that does not exist yet or a price that is missing. Do not use it to buy or sell: record_investment does. Instruments and prices are shared by every user of the instance; the user confirms first.",
+    "description": "Proposes defining or renaming a security for the whole instance, recording a manual price, or setting the terms of a fixed income instrument. Use it when the user needs a security that does not exist yet or a price that is missing. Do not use it to buy or sell: record_investment does. Instruments and prices are shared by every user of the instance; the user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -5089,6 +5089,7 @@
           "description": "operation to propose",
           "enum": [
             "define",
+            "rename",
             "record_price",
             "set_terms"
           ]
@@ -5099,7 +5100,7 @@
         },
         "name": {
           "type": "string",
-          "description": "for define: instrument name"
+          "description": "for define and rename: instrument name"
         },
         "type": {
           "type": "string",
