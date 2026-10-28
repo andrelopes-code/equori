@@ -15,8 +15,16 @@ export const reportsEn = {
   "report.indicators.committed": "Committed income",
   "report.indicators.debt": "Debt payments",
   "report.indicators.liabilities": "Liabilities",
-  "report.indicators.description":
-    "Cash basis. A gap is a month without enough records.",
+  "report.indicators.savingsNote":
+    "Share of income left after expenses each month, cash basis.",
+  "report.indicators.reserveNote":
+    "Months of mean expense covered by checking, savings, cash, wallets and reserves.",
+  "report.indicators.committedNote":
+    "Share of mean monthly income taken by bills, subscriptions and installments.",
+  "report.indicators.debtNote":
+    "Share of mean monthly income taken by loan principal and interest.",
+  "report.indicators.liabilitiesNote":
+    "Balance owed on liability accounts at the end of each month.",
   "report.valueIn": "Value in",
   "report.none": "—",
   "report.month": "Month",
@@ -28,8 +36,6 @@ export const reportsEn = {
   "report.netWorth.assets": "Assets",
   "report.netWorth.liabilities": "Liabilities",
   "report.netWorth.net": "Net",
-  "report.netWorth.unavailable":
-    "No value for {months}. A price in {currency} may be missing.",
   "report.total": "Total",
   "report.compare": "Compare with the period before",
   "report.compare.before": "Before",

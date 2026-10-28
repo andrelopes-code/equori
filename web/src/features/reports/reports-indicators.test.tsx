@@ -24,6 +24,11 @@ describe("Reports indicators", () => {
       "report.indicators.committed",
       "report.indicators.debt",
       "report.indicators.liabilities",
+      "report.indicators.savingsNote",
+      "report.indicators.reserveNote",
+      "report.indicators.committedNote",
+      "report.indicators.debtNote",
+      "report.indicators.liabilitiesNote",
     ] as const) {
       expect(
         (await screen.findAllByText(catalogEn[key])).length,

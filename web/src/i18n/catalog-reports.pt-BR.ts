@@ -16,8 +16,16 @@ export const reportsPtBR: Record<keyof typeof reportsEn, string> = {
   "report.indicators.committed": "Renda comprometida",
   "report.indicators.debt": "Prestações de dívida",
   "report.indicators.liabilities": "Passivos",
-  "report.indicators.description":
-    "Visão de caixa. Um intervalo é um mês sem registros suficientes.",
+  "report.indicators.savingsNote":
+    "Parte da receita que sobra após as despesas em cada mês, visão de caixa.",
+  "report.indicators.reserveNote":
+    "Meses de despesa média cobertos por conta corrente, poupança, dinheiro, carteiras e reservas.",
+  "report.indicators.committedNote":
+    "Parte da receita mensal média tomada por contas, assinaturas e parcelas.",
+  "report.indicators.debtNote":
+    "Parte da receita mensal média tomada por principal e juros de empréstimos.",
+  "report.indicators.liabilitiesNote":
+    "Saldo devido nas contas de passivo ao fim de cada mês.",
   "report.valueIn": "Avaliar em",
   "report.none": "—",
   "report.month": "Mês",
@@ -29,8 +37,6 @@ export const reportsPtBR: Record<keyof typeof reportsEn, string> = {
   "report.netWorth.assets": "Ativos",
   "report.netWorth.liabilities": "Passivos",
   "report.netWorth.net": "Líquido",
-  "report.netWorth.unavailable":
-    "Sem valor para {months}. Pode faltar um preço em {currency}.",
   "report.total": "Total",
   "report.compare": "Comparar com o período anterior",
   "report.compare.before": "Antes",

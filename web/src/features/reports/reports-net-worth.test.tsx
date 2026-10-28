@@ -106,11 +106,6 @@ describe("Reports net worth", () => {
       `Sep 2026|R$2,055.00|R$1,200.00|R$855.00|${none}|${none}`,
     );
     expect(rows[1]).toContain("R$1,005.00");
-    expect(
-      await screen.findByText(
-        "No value for Aug 2026. A price in BRL may be missing.",
-      ),
-    ).toBeInTheDocument();
   });
 
   it("sends value_in, the base currency by default and the chosen one from the address", async () => {

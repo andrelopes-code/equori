@@ -1,5 +1,4 @@
 import type { ChartSeries } from "@slotted/core/chart";
-import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Chart } from "@slotted/react/chart";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { Stack } from "@slotted/react/stack";
@@ -69,9 +68,6 @@ export function NetWorthTab({
   const money = (amount: number) => fmt.money({ amount, currency }, digits);
   const label = (month: string) => formatReferenceMonth(month, tag);
   const none = t("report.none");
-  const failed = months
-    .filter((_, i) => results[i]?.isError === true)
-    .map((m) => label(m.month));
   const title = t("report.netWorth.title");
   const series: ChartSeries<"label" | "assets" | "liabilities" | "net">[] = [
     {
@@ -133,20 +129,6 @@ export function NetWorthTab({
           x={{ field: "label" }}
           y={{ format: money }}
         />
-      )}
-      {failed.length > 0 && (
-        <Alert tone="warning">
-          <AlertContent>
-            <AlertDescription>
-              {t("report.netWorth.unavailable", {
-                months: new Intl.ListFormat(tag, {
-                  type: "conjunction",
-                }).format(failed),
-                currency,
-              })}
-            </AlertDescription>
-          </AlertContent>
-        </Alert>
       )}
       <Table columns={6} variant="framed">
         <TableContent>

@@ -96,6 +96,7 @@ export function IndicatorsTab({
   });
   const chart = (
     title: string,
+    description: string,
     series: ChartSeries<IndicatorField>[],
     format: (v: number) => string,
   ) => (
@@ -103,7 +104,7 @@ export function IndicatorsTab({
       variant="card"
       size="sm"
       title={title}
-      description={t("report.indicators.description")}
+      description={description}
       data={data}
       series={series}
       x={{ field: "label" }}
@@ -113,9 +114,10 @@ export function IndicatorsTab({
   return (
     <Stack gap={4}>
       {controls}
-      <Grid gap={4} minItemWidth="lg">
+      <Grid columns={2} gap={4} minItemWidth="lg">
         {chart(
           t("report.indicators.savings"),
+          t("report.indicators.savingsNote"),
           [
             line("savings", t("report.indicators.savings"), percent),
             line(
@@ -129,21 +131,25 @@ export function IndicatorsTab({
         )}
         {chart(
           t("report.indicators.reserve"),
+          t("report.indicators.reserveNote"),
           [line("liquidity", t("report.indicators.reserve"), months)],
           months,
         )}
         {chart(
           t("report.indicators.committed"),
+          t("report.indicators.committedNote"),
           [line("committed", t("report.indicators.committed"), percent)],
           percent,
         )}
         {chart(
           t("report.indicators.debt"),
+          t("report.indicators.debtNote"),
           [line("debt", t("report.indicators.debt"), percent)],
           percent,
         )}
         {chart(
           t("report.indicators.liabilities"),
+          t("report.indicators.liabilitiesNote"),
           [line("liabilities", t("report.indicators.liabilities"), money)],
           money,
         )}
