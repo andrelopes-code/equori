@@ -17,8 +17,8 @@ export interface Surface {
     readonly select: string;
     readonly declarations: Declarations;
   }[];
-  // Elements over moving content: they blur what is behind them. A card over the aurora blurs a
-  // gradient that is already smooth, and the aurora moves, so a blurred card is redrawn each frame.
+  // Elements over content that moves or carries detail: they blur what is behind them. A card over
+  // the aurora blurs a gradient that is already smooth, so a card blurs only over a detailed ground.
   readonly blur?: readonly string[];
   // A family that reads its blur as a token: the token it reads, written on the family.
   readonly blurToken?: string;
@@ -57,12 +57,19 @@ const OVERLAY_DRAWER_FOOTER = `${OVERLAY_DRAWER} > [data-part="footer"]`;
 const NOT_PALETTE = ':not(:has(> [data-ui="command-palette"]))';
 
 export const surfaces: readonly Surface[] = [
-  byToken("card", {
-    background: fill("card"),
-    "border-color": ring,
-    shadow: elevation(1),
-    "shadow-hover": elevation(2),
-  }),
+  {
+    ...byToken("card", {
+      background: fill("card"),
+      "border-color": ring,
+      shadow: elevation(1),
+      "shadow-hover": elevation(2),
+    }),
+    // While editing, the dashboard grid draws its lattice of dots under every widget, and the dots
+    // show through a card's translucent fill.
+    blur: [
+      `${family("dashboard-grid")}[data-editing] [data-part="widget"] > ${family("card")}`,
+    ],
+  },
   byToken("stat-card", {
     background: fill("card"),
     "border-color": ring,

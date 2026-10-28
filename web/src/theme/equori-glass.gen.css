@@ -2143,6 +2143,7 @@
       --slotted-section-surface: var(--glass-fill-card);
     }
 
+    &[data-slotted-scheme="dark"] [data-ui="dashboard-grid"][data-editing] [data-part="widget"] > [data-ui="card"],
     &[data-slotted-scheme="dark"] [data-ui="menu"] > [data-part="content"],
     &[data-slotted-scheme="dark"] [data-ui="popover"] > [data-part="content"],
     &[data-slotted-scheme="dark"] [data-ui="tooltip"] > [data-part="content"],
@@ -2595,6 +2596,7 @@
         --glass-alpha-modal: 100%;
       }
 
+      &[data-slotted-scheme="dark"] [data-ui="dashboard-grid"][data-editing] [data-part="widget"] > [data-ui="card"],
       &[data-slotted-scheme="dark"] [data-ui="menu"] > [data-part="content"],
       &[data-slotted-scheme="dark"] [data-ui="popover"] > [data-part="content"],
       &[data-slotted-scheme="dark"] [data-ui="tooltip"] > [data-part="content"],

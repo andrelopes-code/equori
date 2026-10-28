@@ -117,6 +117,39 @@ test("an overlay drawer's footer blurs the body that scrolls under it", () => {
   );
 });
 
+// The grid draws its lattice of dots under the widgets while editing, and a card's fill is
+// translucent: without a blur the dots show through the card.
+test("a dashboard widget's card blurs only while the grid is editing", () => {
+  const editing =
+    '[data-ui="dashboard-grid"][data-editing] [data-part="widget"] > [data-ui="card"]';
+  const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)];
+  const bodies = rules
+    .filter(([, selectors]) => selectors?.includes(editing))
+    .map(([, , body]) => body ?? "");
+  assert.ok(
+    bodies.some((body) =>
+      body.includes("backdrop-filter: blur(var(--glass-blur)"),
+    ),
+    "the editing widget's card is not blurred",
+  );
+  assert.ok(
+    bodies.some((body) => body.includes("backdrop-filter: none")),
+    "reduced transparency keeps the editing widget's card blurred",
+  );
+  const bareCard = rules.filter(
+    ([, selectors, body]) =>
+      body?.includes("backdrop-filter: blur(") &&
+      (selectors ?? "")
+        .split(",")
+        .some(
+          (selector) =>
+            selector.trim().endsWith(' [data-ui="card"]') &&
+            !selector.includes("data-editing"),
+        ),
+  );
+  assert.deepEqual(bareCard, [], "a card outside an editing grid is blurred");
+});
+
 // A plain bar stands on the page footer, which is already a blurred material; a second blur inside
 // it samples the footer and reads as a more solid ground.
 test("only a raised action bar blurs what is behind it", () => {
