@@ -48,6 +48,22 @@ func (s *Server) GetInstrument(ctx context.Context, req GetInstrumentRequestObje
 	return GetInstrument200JSONResponse(toInstrumentAPI(in)), nil
 }
 
+func (s *Server) EditInstrument(ctx context.Context, req EditInstrumentRequestObject) (EditInstrumentResponseObject, error) {
+	b := req.Body
+	var exchange, subtype string
+	if b.Exchange != nil {
+		exchange = *b.Exchange
+	}
+	if b.Subtype != nil {
+		subtype = *b.Subtype
+	}
+	out, err := s.svc.EditInstrument(ctx, req.Code, b.Name, exchange, subtype)
+	if err != nil {
+		return nil, err
+	}
+	return EditInstrument200JSONResponse(toInstrumentAPI(out)), nil
+}
+
 func toInstrumentAPI(in domain.Instrument) Instrument {
 	out := Instrument{Code: string(in.Code), Type: InstrumentType(in.Type), Scale: in.Scale, Name: in.Name}
 	if in.QuoteCurrency != "" {

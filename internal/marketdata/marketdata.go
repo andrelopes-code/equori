@@ -215,6 +215,32 @@ func (m *Module) DefineInstrument(ctx context.Context, in Instrument) (Instrumen
 	return in, nil
 }
 
+// EditInstrument replaces the name, exchange and subtype of a security; the other fields are
+// immutable (A59, A134).
+func (m *Module) EditInstrument(ctx context.Context, code, name, exchange, subtype string) (Instrument, error) {
+	in, err := m.Instrument(ctx, code)
+	if err != nil {
+		return Instrument{}, err
+	}
+	if in.Type == domain.TypeCurrency {
+		return Instrument{}, &domain.FieldError{Field: "code", Message: "is a currency"}
+	}
+	in.Name, in.Exchange, in.Subtype = name, exchange, subtype
+	if in, err = in.Validate(); err != nil {
+		return Instrument{}, err
+	}
+	n, err := m.q.UpdateInstrument(ctx, postgres.UpdateInstrumentParams{
+		Code: code, Name: in.Name, Exchange: optional(in.Exchange), Subtype: optional(in.Subtype),
+	})
+	if err != nil {
+		return Instrument{}, fmt.Errorf("update instrument: %w", err)
+	}
+	if n == 0 {
+		return Instrument{}, ErrUnknownInstrument
+	}
+	return in, nil
+}
+
 func optional(s string) *string {
 	if s == "" {
 		return nil

@@ -1263,7 +1263,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Replace the name, exchange and subtype of a security; an absent exchange or subtype is cleared (A134). */
+        patch: operations["editInstrument"];
         trace?: never;
     };
     "/instruments/{code}/terms": {
@@ -4403,6 +4404,11 @@ export interface components {
             quote_currency: string;
             exchange?: string;
             /** @description Refines the type for the owner's jurisdiction, such as cri, cdb or equity_fund (investments design 4.1). */
+            subtype?: string;
+        };
+        InstrumentEdit: {
+            name: string;
+            exchange?: string;
             subtype?: string;
         };
         InstrumentList: {
@@ -7686,6 +7692,36 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+        };
+    };
+    editInstrument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstrumentEdit"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Instrument"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     getInstrumentTerms: {

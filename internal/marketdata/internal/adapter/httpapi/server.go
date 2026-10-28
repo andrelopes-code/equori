@@ -32,6 +32,7 @@ type Service interface {
 	DefineInstrument(ctx context.Context, in domain.Instrument) (domain.Instrument, error)
 	ListInstruments(ctx context.Context, typ string) ([]domain.Instrument, error)
 	Instrument(ctx context.Context, code string) (domain.Instrument, error)
+	EditInstrument(ctx context.Context, code, name, exchange, subtype string) (domain.Instrument, error)
 	PutTerms(ctx context.Context, code string, t domain.Terms) (domain.Terms, error)
 	Terms(ctx context.Context, code string) (domain.Terms, error)
 	RecordPrices(ctx context.Context, ps []domain.Price) error

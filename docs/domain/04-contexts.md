@@ -127,7 +127,7 @@ Trades and investment income are Ledger transactions. Portfolio derives everythi
 | Item | Content |
 |---|---|
 | Responsibility | Instruments (currencies, securities), prices with source and date, conversion between instruments, business-day calendars. |
-| Commands | `DefineInstrument` (`POST /instruments`, A59), `RecordPrice` (`POST /prices`), `ImportPrices` (`POST /prices/import`), `DefineHoliday`; the feeds `bcb_ptax`, `b3_cotahist` and `ecb` when named in `EQUORI_PRICE_FEEDS`, each with an optional `EQUORI_FEED_<ID>_URL` (A62, `docs/operations/price-feeds.md`, `SourceIDs` in `internal/marketdata/sources.go`). |
+| Commands | `DefineInstrument` (`POST /instruments`, A59), `EditInstrument` (`PATCH /instruments/{code}`, A134), `RecordPrice` (`POST /prices`), `ImportPrices` (`POST /prices/import`), `DefineHoliday`; the feeds `bcb_ptax`, `b3_cotahist` and `ecb` when named in `EQUORI_PRICE_FEEDS`, each with an optional `EQUORI_FEED_<ID>_URL` (A62, `docs/operations/price-feeds.md`, `SourceIDs` in `internal/marketdata/sources.go`). |
 | Queries | Instrument by code, chosen price of each date (`GET /prices`), price on or before a date, `Convert` by direct, inverse or intermediate-instrument path with the prices used (A61), business days in a range of a calendar registered in `internal/marketdata/marketdata.go` (`br_banking`, `weekend`). |
 
 ### 4.3.7 Reporting

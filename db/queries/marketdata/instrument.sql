@@ -12,6 +12,10 @@ INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_cur
 VALUES (@code, @instrument_type, @scale, @name, @quote_currency, sqlc.narg(exchange), sqlc.narg(subtype))
 ON CONFLICT (code) DO NOTHING;
 
+-- name: UpdateInstrument :execrows
+UPDATE marketdata_instrument SET name = @name, exchange = sqlc.narg(exchange), subtype = sqlc.narg(subtype)
+WHERE code = @code;
+
 -- name: InsertMissingCurrencies :exec
 INSERT INTO marketdata_instrument (code, instrument_type, scale, name)
 SELECT unnest(@codes::text[]), 'currency', unnest(@scales::smallint[]), unnest(@names::text[])

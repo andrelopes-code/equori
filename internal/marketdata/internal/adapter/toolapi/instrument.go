@@ -15,7 +15,7 @@ import (
 type manageInstrumentAction string
 
 func (manageInstrumentAction) Values() []string {
-	return []string{"define", "record_price", "set_terms"}
+	return []string{"define", "rename", "record_price", "set_terms"}
 }
 
 type manageInstrumentType string
@@ -27,7 +27,7 @@ func (manageInstrumentType) Values() []string {
 type manageInstrumentIn struct {
 	Action           manageInstrumentAction `json:"action" jsonschema:"operation to propose"`
 	Code             string                 `json:"code" jsonschema:"instrument code"`
-	Name             string                 `json:"name,omitzero" jsonschema:"for define: instrument name"`
+	Name             string                 `json:"name,omitzero" jsonschema:"for define and rename: instrument name"`
 	Type             manageInstrumentType   `json:"type,omitzero" jsonschema:"for define: instrument type"`
 	QuoteCurrency    string                 `json:"quote_currency,omitzero" jsonschema:"for define: currency the instrument is priced in"`
 	Scale            int                    `json:"scale,omitzero" jsonschema:"for define: decimal places of a quantity"`
@@ -65,6 +65,8 @@ func checkInstrumentArgs(in manageInstrumentIn) error {
 	case "define":
 		// A zero scale is valid and cannot be told from an absent one.
 		return required(name, slices.DeleteFunc(slices.Clone(fields), func(f field) bool { return f.name == "scale" }), "name", "type", "quote_currency")
+	case "rename":
+		return required(name, fields, "name")
 	case "record_price":
 		return required(name, fields, "date", "price")
 	}
@@ -115,7 +117,7 @@ func termsText(t domain.Terms) string {
 func manageInstrument(svc Service) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_instrument",
-		Description: "Proposes defining a security for the whole instance, recording a manual price, or setting the terms of a fixed income instrument. " +
+		Description: "Proposes defining or renaming a security for the whole instance, recording a manual price, or setting the terms of a fixed income instrument. " +
 			"Use it when the user needs a security that does not exist yet or a price that is missing. " +
 			"Do not use it to buy or sell: record_investment does. " +
 			"Instruments and prices are shared by every user of the instance; the user confirms first.",
@@ -143,6 +145,20 @@ func manageInstrument(svc Service) tool.Tool {
 				{Field: "instrument", After: tool.TextValue(string(def.Code))}, {Field: "name", After: tool.TextValue(def.Name)},
 				{Field: "kind", After: tool.TextValue(def.Type)}, {Field: "currency", After: tool.TextValue(string(def.QuoteCurrency))},
 			}
+		case "rename":
+			inst, err := svc.Instrument(ctx, in.Code)
+			if err != nil {
+				return tool.Preview{}, err
+			}
+			if inst.Type == domain.TypeCurrency {
+				return tool.Preview{}, &domain.FieldError{Field: "code", Message: "is a currency"}
+			}
+			before := inst.Name
+			inst.Name = in.Name
+			if inst, err = inst.Validate(); err != nil {
+				return tool.Preview{}, err
+			}
+			p.Changes = []tool.Change{{Field: "name", Before: tool.TextValue(before), After: tool.TextValue(inst.Name)}}
 		case "record_price":
 			inst, err := svc.Instrument(ctx, in.Code)
 			if err != nil {
@@ -187,6 +203,13 @@ func manageInstrument(svc Service) tool.Tool {
 		case "define":
 			def, err := svc.DefineInstrument(ctx, in.instrument())
 			return manageInstrumentOut{Instrument: toInstrumentView(def)}, err
+		case "rename":
+			inst, err := svc.Instrument(ctx, in.Code)
+			if err != nil {
+				return manageInstrumentOut{}, err
+			}
+			inst, err = svc.EditInstrument(ctx, in.Code, in.Name, inst.Exchange, inst.Subtype)
+			return manageInstrumentOut{Instrument: toInstrumentView(inst)}, err
 		case "record_price":
 			inst, err := svc.Instrument(ctx, in.Code)
 			if err != nil {

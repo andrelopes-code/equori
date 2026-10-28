@@ -29,6 +29,7 @@ import {
   typeLabel,
 } from "@/features/instruments/instrument-labels";
 import { PriceHistory } from "@/features/instruments/price-history";
+import { EditInstrumentDialog } from "@/features/instruments/edit-instrument-dialog";
 import { RecordPriceDialog } from "@/features/instruments/record-price-dialog";
 import { TermsDialog } from "@/features/instruments/terms-dialog";
 import { TermsSection } from "@/features/instruments/terms-section";
@@ -39,7 +40,8 @@ import { HeaderAction } from "@/ui/header-action";
 import { QueryError } from "@/ui/query-error";
 import { PageBack } from "@/ui/page-back";
 
-// One instrument: its data, its price history, the positions that hold it and the manual price form.
+// One instrument: its data, its price history, the positions that hold it, the manual price form
+// and the edit form of a security.
 export function InstrumentPage() {
   const t = useT();
   const api = useApi();
@@ -48,6 +50,7 @@ export function InstrumentPage() {
   const base = useQuery(settingsQuery(api)).data?.base_currency;
   const [recording, setRecording] = useState(false);
   const [editingTerms, setEditingTerms] = useState(false);
+  const [editing, setEditing] = useState(false);
   const fixedIncome = instrument.data?.type === "fixed_income";
   const terms = useQuery({ ...termsQuery(api, code), enabled: fixedIncome });
   if (instrument.isError)
@@ -85,6 +88,17 @@ export function InstrumentPage() {
               <PageHeaderSubheading>{subheading}</PageHeaderSubheading>
             </PageHeaderTitle>
             <PageHeaderActions>
+              {i.type !== "currency" && (
+                <HeaderAction
+                  label={t("instrument.edit")}
+                  // Workaround for Slotted issue #12: no pencil glyph; file-text names the action below 600 px.
+                  glyph="file-text"
+                  wordsOnly
+                  onClick={() => {
+                    setEditing(true);
+                  }}
+                />
+              )}
               {fixedIncome && quote !== null && terms.data !== undefined && (
                 <HeaderAction
                   label={t(terms.data === null ? "terms.set" : "terms.change")}
@@ -167,6 +181,17 @@ export function InstrumentPage() {
           }}
           onCancel={() => {
             setRecording(false);
+          }}
+        />
+      )}
+      {editing && (
+        <EditInstrumentDialog
+          instrument={i}
+          onDone={() => {
+            setEditing(false);
+          }}
+          onCancel={() => {
+            setEditing(false);
           }}
         />
       )}
