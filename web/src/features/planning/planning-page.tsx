@@ -13,9 +13,11 @@ import { Tab, TabList, Tabs } from "@slotted/react/tabs";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useDeferredValue, useState } from "react";
+import type { ReactNode } from "react";
 
 import { AgendaTab } from "@/features/planning/agenda-tab";
 import { BudgetsArea } from "@/features/planning/budgets-area";
+import { PlanningFooter } from "@/features/planning/planning-footer";
 import { SchedulesTab } from "@/features/planning/schedules-tab";
 import { SubscriptionsTab } from "@/features/planning/subscriptions-tab";
 import type {
@@ -58,6 +60,7 @@ export function PlanningPage() {
   // navigation the budget plan blocks over unsaved changes leaves the tab mounted.
   const [chosen, setChosen] = useState<PlanningTab | null>(null);
   const shownTab = useDeferredValue(current);
+  const [footer, setFooter] = useState<ReactNode>(null);
   const create = () => {
     void navigate({ to: "/planning/schedules/new" });
   };
@@ -75,7 +78,7 @@ export function PlanningPage() {
     queryClient.invalidateQueries({ queryKey: ["planning"] }),
   );
   return (
-    <Page width="full">
+    <Page width="full" footer={footer ?? undefined}>
       <PageHeader size="lg">
         <PageHeaderTitleArea>
           <PageHeaderTitleRow>
@@ -138,30 +141,32 @@ export function PlanningPage() {
         />
       </PageHeader>
       <PageBody>
-        <div aria-busy={shownTab !== (chosen ?? current) || undefined}>
-          {shownTab === "agenda" && (
-            <AgendaTab month={month} onMonth={changeMonth} />
-          )}
-          {shownTab === "schedules" && <SchedulesTab onCreate={create} />}
-          {shownTab === "subscriptions" && <SubscriptionsTab />}
-          {shownTab === "budgets" && (
-            <BudgetsArea
-              month={month}
-              view={search.view}
-              onView={(view) =>
-                navigate({
-                  to: "/planning",
-                  search: { ...search, view },
-                  replace: true,
-                })
-              }
-              onCreate={createBudget}
-              onStay={() => {
-                setChosen(null);
-              }}
-            />
-          )}
-        </div>
+        <PlanningFooter.Provider value={setFooter}>
+          <div aria-busy={shownTab !== (chosen ?? current) || undefined}>
+            {shownTab === "agenda" && (
+              <AgendaTab month={month} onMonth={changeMonth} />
+            )}
+            {shownTab === "schedules" && <SchedulesTab onCreate={create} />}
+            {shownTab === "subscriptions" && <SubscriptionsTab />}
+            {shownTab === "budgets" && (
+              <BudgetsArea
+                month={month}
+                view={search.view}
+                onView={(view) =>
+                  navigate({
+                    to: "/planning",
+                    search: { ...search, view },
+                    replace: true,
+                  })
+                }
+                onCreate={createBudget}
+                onStay={() => {
+                  setChosen(null);
+                }}
+              />
+            )}
+          </div>
+        </PlanningFooter.Provider>
       </PageBody>
     </Page>
   );

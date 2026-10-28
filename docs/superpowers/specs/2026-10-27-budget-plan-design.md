@@ -175,7 +175,7 @@ The page is `planning-page.tsx`, with its month selector. The budgets tab gets a
    - Rows are grouped by root category. A group row shows the sums of its counted rows, a share meter and a caret. Groups collapse; the collapsed state is a per-browser convenience in `localStorage`.
    - A group "Without a budget" collects the rows without `budget_id`, after the others.
    - A row that is not counted shows "inside {ancestor}" and is left out of the sums.
-5. **Save bar.** It floats at the bottom while at least one change is pending.
+5. **Save bar.** The page's footer carries it, edge to edge under the content, while at least one change is pending.
    - Left: the number of changes, the net change of `planned`, and the validity text "applies from {month}", or "applies from {month} to {month before next_change}" when a changed row has `next_change`.
    - Right: **Discard** and **Save plan**.
 

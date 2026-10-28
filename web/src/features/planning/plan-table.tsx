@@ -137,10 +137,12 @@ export function PlanTable({
                         onToggle(group.id);
                       }}
                     >
-                      <span className={styles.chevron} aria-hidden="true">
-                        <Icon>
-                          <Glyph name="chevron-down" />
-                        </Icon>
+                      <span className={styles.chevronSlot} aria-hidden="true">
+                        <span className={styles.chevron}>
+                          <Icon>
+                            <Glyph name="chevron-down" />
+                          </Icon>
+                        </span>
                       </span>
                       <Text size="sm" weight="semibold">
                         {group.name}

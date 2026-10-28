@@ -279,12 +279,19 @@
   }
 
   /* As wide as the category marks of the rows under it, so the names share one edge. */
-  .chevron {
+  .chevronSlot {
     display: inline-grid;
     flex: none;
     place-items: center;
     inline-size: var(--slotted-avatar-size-md);
-    block-size: var(--slotted-avatar-size-md);
+  }
+
+  /* The size of the data-grid's own tree toggle, so every expandable row of the app has one. */
+  .chevron {
+    display: inline-grid;
+    place-items: center;
+    inline-size: var(--slotted-control-inner-size-md);
+    block-size: var(--slotted-control-inner-size-md);
     border-radius: var(--slotted-radius-sm);
     color: var(--slotted-text-muted);
     transition:

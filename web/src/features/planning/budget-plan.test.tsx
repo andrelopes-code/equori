@@ -134,6 +134,22 @@ describe("Budget plan", () => {
     expect(await input("Energy")).toHaveFocus();
   });
 
+  // Spec 5.1, save bar: the page's own footer carries it, edge to edge under the content.
+  it("holds the save bar in the page footer", async () => {
+    await renderPlan();
+    expect(
+      screen.queryByRole("button", { name: catalogEn["plan.save"] }),
+    ).not.toBeInTheDocument();
+    const field = await input("Energy");
+    await userEvent.type(field, "0");
+    const save = await screen.findByRole("button", {
+      name: catalogEn["plan.save"],
+    });
+    const footer = save.closest("footer");
+    expect(footer).not.toBeNull();
+    expect(footer?.parentElement?.closest("main")).not.toBeNull();
+  });
+
   it("saves only changed rows", async () => {
     let sent: unknown;
     const fetch = budgetPlanApi(undefined, {
