@@ -4195,12 +4195,15 @@ paths:
     get:
       tags: [ingestion]
       operationId: listUnconfirmed
-      summary: Entries of the account that no institution line confirmed (A103).
+      summary: Entries of the account that neither an institution line nor balance confirmed (A103, A133).
       description: |
-        Postings without an external record, dated on or after the start of the account's lines
-        from an institution (the mapping's start date, or the first imported file's period) and
-        more than 10 days before the last synced date or the end of the last imported period,
-        oldest first. An account without lines from an institution lists none.
+        The first posting of each transaction that carries no external record and that no
+        balance assertion or statement reconciled, expected on or after the start of the
+        account's lines from an institution (the mapping's start date, or the first imported
+        file's period) and more than 10 days before the last synced date or the end of the
+        last imported period, oldest first. A card posting is expected at its statement's
+        closing date. An installment and its reversal on one statement offset and are not
+        listed. An account without lines from an institution lists none.
       parameters:
         - $ref: "#/components/parameters/ID"
       responses:
@@ -6583,6 +6586,11 @@ components:
         date:
           type: string
           format: date
+          description: The date by which the institution reports the line.
+        statement_id:
+          type: string
+          format: uuid
+          description: The card statement of the posting.
         amount:
           $ref: "#/components/schemas/Money"
         description:

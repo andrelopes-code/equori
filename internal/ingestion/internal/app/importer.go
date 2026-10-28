@@ -88,6 +88,9 @@ type Ledger interface {
 	// UnlinkedPostings lists the account's postings in [from, to] that no external record
 	// confirms and whose transaction is not voided.
 	UnlinkedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]domain.LedgerPosting, error)
+	// UnconfirmedPostings lists the account's postings that neither a line nor a balance
+	// confirms, dated by when the institution reports them (A133).
+	UnconfirmedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]domain.LedgerPosting, error)
 	// LinePayees returns the payee classification decides for each line, uuid.Nil for none,
 	// in input order (A99).
 	LinePayees(ctx context.Context, userID int64, lines []Line) ([]uuid.UUID, error)

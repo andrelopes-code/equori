@@ -265,6 +265,18 @@ func (p ledgerPort) UnlinkedPostings(ctx context.Context, userID int64, accountI
 	return out, p.translate(err)
 }
 
+func (p ledgerPort) UnconfirmedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]domain.LedgerPosting, error) {
+	ps, err := p.l.UnconfirmedPostings(ctx, userID, accountID, from, to)
+	out := make([]domain.LedgerPosting, len(ps))
+	for i, x := range ps {
+		out[i] = domain.LedgerPosting{
+			TransactionID: x.TransactionID, Date: x.Date, Amount: x.Amount, PayeeID: x.PayeeID,
+			Description: x.Description, StatementID: x.StatementID,
+		}
+	}
+	return out, p.translate(err)
+}
+
 func (p ledgerPort) ClearMatched(ctx context.Context, userID int64, ms []app.Match) ([]int, error) {
 	matches := make([]ledger.Match, len(ms))
 	for i, m := range ms {

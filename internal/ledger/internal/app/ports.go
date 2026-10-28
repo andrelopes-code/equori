@@ -459,6 +459,7 @@ type Repository interface {
 	// returns them in position order.
 	LockAccountPostingLinks(ctx context.Context, userID int64, txID, accountID uuid.UUID) ([]PostingLink, error)
 	UnlinkedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]UnlinkedPosting, error)
+	UnconfirmedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]UnlinkedPosting, error)
 	// LinkExternalRecord returns ErrAlreadyMatched when another posting carries the record.
 	LinkExternalRecord(ctx context.Context, userID int64, postingID, recordID uuid.UUID) error
 	ClearPendingPostings(ctx context.Context, userID int64, txID, accountID uuid.UUID) error

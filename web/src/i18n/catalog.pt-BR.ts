@@ -1845,7 +1845,9 @@ export const catalogPtBR: Catalog = {
   "overview.goals.of": "{current} de {target}",
   "overview.goals.empty": "Nenhuma meta ainda",
   "overview.attention.uncategorized": "Transações sem categoria",
-  "overview.attention.unconfirmed": "Registros não confirmados",
+  "overview.attention.unconfirmed": "Lançamentos que o banco não informou",
+  "overview.attention.withUnconfirmed":
+    "{account} · {count} sem confirmação do banco",
   "overview.attention.connections": "Conexões que pedem ação",
   "overview.attention.difference": "Diferença aberta na conciliação",
   "overview.attention.atLeast": "{count}+",

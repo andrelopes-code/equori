@@ -314,7 +314,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "reconciliation.unconfirmedEmpty":
     "Todo lançamento no período da instituição tem uma linha correspondente.",
   "reconciliation.unconfirmedNote":
-    "Lançamentos datados desde a primeira linha da instituição, até 10 dias antes do último dia sincronizado ou importado, que nenhuma linha confirmou.",
+    "Estes lançamentos não têm linha do banco. Um lançamento duplicado ou digitado errado se resolve anulando ou corrigindo a transação. Um lançamento correto se confirma quando o saldo informado pelo banco bate.",
   "imports.caption": "Importações",
   "imports.file": "Arquivo",
   "imports.started": "Importado em",
@@ -699,6 +699,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "statement.role.credit": "Crédito",
   "statement.role.payment": "Pagamento",
   "statement.installment": "{number}/{count}",
+  "statement.unconfirmed": "Sem linha do banco",
   "statement.lineActions": "Ações de {name}",
   "statement.openTransaction": "Abrir transação",
   "statement.title": "Fatura",

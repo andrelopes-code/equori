@@ -56,6 +56,8 @@ A later change of amount or date of a linked aggregator line (A36), matched or c
 
 ## A103 Unconfirmed entries
 
+Amended by A133 (`2026-10-28-unconfirmed-entries-design.md`): a posting a balance reconciled is confirmed; a card posting is expected at its statement's closing; an installment and its reversal offset.
+
 A posting on an account with a mapped external account or a file import, without an external record, dated more than 10 days before the account's last synced or imported date and after the mapping's start date, is unconfirmed. `GET /accounts/{id}/unconfirmed` lists them oldest first; the account list reports the count. An unconfirmed entry is not an error: it may be a cash adjustment or a line the institution has not sent.
 
 ## A104 Scope

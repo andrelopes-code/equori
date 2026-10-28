@@ -1824,7 +1824,9 @@ export const catalogEn = {
   "overview.goals.of": "{current} of {target}",
   "overview.goals.empty": "No goals yet",
   "overview.attention.uncategorized": "Uncategorized transactions",
-  "overview.attention.unconfirmed": "Unconfirmed records",
+  "overview.attention.unconfirmed": "Entries the bank did not report",
+  "overview.attention.withUnconfirmed":
+    "{account} · {count} not confirmed by the bank",
   "overview.attention.connections": "Connections that need action",
   "overview.attention.difference": "Open reconciliation difference",
   "overview.attention.atLeast": "{count}+",

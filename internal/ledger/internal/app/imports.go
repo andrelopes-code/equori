@@ -316,6 +316,15 @@ type UnlinkedPosting struct {
 	Amount        int64
 	PayeeID       uuid.UUID
 	Description   string
+	// StatementID is the card statement of the posting, uuid.Nil without one.
+	StatementID uuid.UUID
+}
+
+// UnconfirmedPostings lists the first posting of each transaction on the account that no
+// external record links and no balance reconciled, with Date the date by which the
+// institution reports its line, in [from, to] (A133).
+func (s *Service) UnconfirmedPostings(ctx context.Context, userID int64, accountID uuid.UUID, from, to time.Time) ([]UnlinkedPosting, error) {
+	return s.repo.UnconfirmedPostings(ctx, userID, accountID, from, to)
 }
 
 // UnlinkedPostings lists the account's postings in [from, to] whose transaction is not

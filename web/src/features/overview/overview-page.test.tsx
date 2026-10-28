@@ -11,6 +11,7 @@ import {
   accountRoutes,
   cardRoutes,
   reserveID,
+  cardID,
   connectionFixture,
   checkingID,
   foodID,
@@ -438,7 +439,7 @@ describe("overview page", () => {
         .getAllByRole("listitem")
         .map((row) => row.textContent);
       expect(rows[0]).toMatch(/Uncategorized transactions.*3/);
-      expect(rows[1]).toMatch(/Unconfirmed records.*Nubank.*2/);
+      expect(rows[1]).toMatch(/Entries the bank did not report.*Nubank.*2/);
       expect(rows[2]).toMatch(/Connections that need action.*1/);
       expect(rows[3]).toMatch(/Reserva de emergência.*15\.00/);
       expect(
@@ -452,6 +453,50 @@ describe("overview page", () => {
           `/accounts/${reserveID}?tab=reconciliation`,
         ]),
       );
+    });
+
+    it("puts an account's unconfirmed count on its difference row", async () => {
+      await renderApp("/", {
+        fetch: api({
+          "GET /api/v1/transactions": uncategorized([]),
+          [`GET /api/v1/accounts/${reserveID}/unconfirmed`]: () =>
+            json(200, { items: [{}, {}] }),
+          [`GET /api/v1/accounts/${reserveID}/reconciliation`]: () =>
+            json(200, reconciliation),
+        }),
+      });
+      const region = await screen.findByRole("article", { name: "Attention" });
+      await waitFor(() => {
+        expect(within(region).getAllByRole("listitem")).toHaveLength(1);
+      });
+      expect(region).toHaveTextContent(
+        /Open reconciliation difference.*2 not confirmed by the bank.*15\.00/,
+      );
+    });
+
+    it("leads a card's unconfirmed entries to their statement", async () => {
+      await renderApp("/", {
+        fetch: api({
+          "GET /api/v1/transactions": uncategorized([]),
+          [`GET /api/v1/accounts/${cardID}/unconfirmed`]: () =>
+            json(200, {
+              items: [
+                {
+                  transaction_id: "t1",
+                  date: "2026-10-03",
+                  amount: money(-10000),
+                  description: "Loja",
+                  statement_id: "s1",
+                },
+              ],
+            }),
+        }),
+      });
+      const region = await screen.findByRole("article", { name: "Attention" });
+      const link = await within(region).findByRole("link", {
+        name: /Entries the bank did not report/,
+      });
+      expect(link.getAttribute("href")).toBe(`/cards/${cardID}/statements/s1`);
     });
 
     it("says that nothing needs attention", async () => {
@@ -501,7 +546,9 @@ describe("overview page", () => {
       expect(
         within(region).queryByRole("button", { name: "Try again" }),
       ).toBeNull();
-      expect(region).toHaveTextContent(/Unconfirmed records.*Itaú checking.*1/);
+      expect(region).toHaveTextContent(
+        /Entries the bank did not report.*Itaú checking.*1/,
+      );
     });
 
     it("fails alone when the connections cannot be read", async () => {
@@ -586,7 +633,7 @@ describe("overview page", () => {
               : json(200, { items: [] }),
           [`GET /api/v1/accounts/${checkingID}/unconfirmed`]: () =>
             json(200, { items: [{}, {}] }),
-          [`GET /api/v1/accounts/${reserveID}/unconfirmed`]: () =>
+          [`GET /api/v1/accounts/${cardID}/unconfirmed`]: () =>
             json(200, { items: [{}] }),
           "GET /api/v1/connections": () =>
             json(200, { items: [{ ...connectionFixture, state: "failed" }] }),

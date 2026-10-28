@@ -687,10 +687,15 @@ type SyncResult struct {
 
 // UnconfirmedEntry defines model for UnconfirmedEntry.
 type UnconfirmedEntry struct {
-	Amount        Money               `json:"amount"`
-	Date          openapi_types.Date  `json:"date"`
-	Description   string              `json:"description"`
-	PayeeId       *openapi_types.UUID `json:"payee_id,omitempty"`
+	Amount Money `json:"amount"`
+
+	// Date The date by which the institution reports the line.
+	Date        openapi_types.Date  `json:"date"`
+	Description string              `json:"description"`
+	PayeeId     *openapi_types.UUID `json:"payee_id,omitempty"`
+
+	// StatementId The card statement of the posting.
+	StatementId   *openapi_types.UUID `json:"statement_id,omitempty"`
 	TransactionId openapi_types.UUID  `json:"transaction_id"`
 }
 
@@ -780,7 +785,7 @@ type ServerInterface interface {
 	// ImportFile Import an OFX or CSV statement into a balance account.
 	// (POST /accounts/{id}/imports)
 	ImportFile(w http.ResponseWriter, r *http.Request, id ID)
-	// ListUnconfirmed Entries of the account that no institution line confirmed (A103).
+	// ListUnconfirmed Entries of the account that neither an institution line nor balance confirmed (A103, A133).
 	// (GET /accounts/{id}/unconfirmed)
 	ListUnconfirmed(w http.ResponseWriter, r *http.Request, id ID)
 	// ListAggregators Aggregators this instance offers, with the credential fields each requires.
@@ -2938,7 +2943,7 @@ type StrictServerInterface interface {
 	// ImportFile Import an OFX or CSV statement into a balance account.
 	// (POST /accounts/{id}/imports)
 	ImportFile(ctx context.Context, request ImportFileRequestObject) (ImportFileResponseObject, error)
-	// ListUnconfirmed Entries of the account that no institution line confirmed (A103).
+	// ListUnconfirmed Entries of the account that neither an institution line nor balance confirmed (A103, A133).
 	// (GET /accounts/{id}/unconfirmed)
 	ListUnconfirmed(ctx context.Context, request ListUnconfirmedRequestObject) (ListUnconfirmedResponseObject, error)
 	// ListAggregators Aggregators this instance offers, with the credential fields each requires.
