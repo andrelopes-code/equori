@@ -1,6 +1,5 @@
 import {
   Alert,
-  AlertActions,
   AlertContent,
   AlertDescription,
   AlertTitle,
@@ -29,6 +28,7 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
+import { AlertActions } from "@/ui/alert-actions";
 import { useApi } from "@/api/api-context";
 import { ProblemError, errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
@@ -179,7 +179,9 @@ export function ReconciliationTab({
                   </AlertDescription>
                 </AlertContent>
                 {outcome.transactionId !== undefined && (
-                  <AlertActions>
+                  <AlertActions
+                    tone={outcome.kind === "open" ? "warning" : "success"}
+                  >
                     <Link
                       render={routeTo({
                         to: "/transactions/$id",
@@ -205,9 +207,8 @@ export function ReconciliationTab({
                     {remains ?? t("reconciliation.openHint")}
                   </AlertDescription>
                 </AlertContent>
-                <AlertActions>
+                <AlertActions tone="warning">
                   <Button
-                    size="sm"
                     loading={
                       resolve.isPending &&
                       resolve.variables.resolution === "adjustment"
@@ -222,7 +223,7 @@ export function ReconciliationTab({
                   </Button>
                   {open.difference.amount > 0 && (
                     <Button
-                      size="sm"
+                      variant="ghost"
                       loading={
                         resolve.isPending &&
                         resolve.variables.resolution === "yield"
@@ -237,8 +238,7 @@ export function ReconciliationTab({
                     </Button>
                   )}
                   <Button
-                    size="sm"
-                    variant="outline"
+                    variant="ghost"
                     loading={
                       resolve.isPending &&
                       resolve.variables.resolution === "transactions_added"

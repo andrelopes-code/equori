@@ -1,14 +1,10 @@
-import {
-  Alert,
-  AlertActions,
-  AlertContent,
-  AlertDescription,
-} from "@slotted/react/alert";
+import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import { toast } from "@slotted/react/toast";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { AlertActions } from "@/ui/alert-actions";
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import {
@@ -70,11 +66,10 @@ export function ReimbursementSuggestion({
         </AlertDescription>
         {error !== null && <AlertDescription>{error}</AlertDescription>}
       </AlertContent>
-      <AlertActions>
+      <AlertActions tone={suggested.length > 0 ? "accent" : "secondary"}>
         {suggested.length > 0 ? (
           <>
             <Button
-              size="sm"
               loading={reimburse.isPending}
               onClick={() => {
                 setError(null);
@@ -99,19 +94,12 @@ export function ReimbursementSuggestion({
             >
               {t("reimbursement.confirm")}
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              tone="secondary"
-              onClick={onChooseAnother}
-            >
+            <Button variant="ghost" onClick={onChooseAnother}>
               {t("reimbursement.other")}
             </Button>
           </>
         ) : (
-          <Button size="sm" onClick={onChooseAnother}>
-            {t("reimbursement.match")}
-          </Button>
+          <Button onClick={onChooseAnother}>{t("reimbursement.match")}</Button>
         )}
       </AlertActions>
     </Alert>

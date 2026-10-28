@@ -1,7 +1,6 @@
 import { Button } from "@slotted/react/button";
 import {
   Alert,
-  AlertActions,
   AlertContent,
   AlertDescription,
   AlertTitle,
@@ -10,6 +9,7 @@ import { toast } from "@slotted/react/toast";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
+import { AlertActions } from "@/ui/alert-actions";
 import { useApi } from "@/api/api-context";
 import { errorText } from "@/api/problem";
 import { accountsQuery } from "@/features/accounts/api";
@@ -72,14 +72,12 @@ export function AccountSetupMessage({ accountId }: { accountId: string }) {
             t("accountSetup.remaining", { count: steps.length - pending.done })}
         </AlertDescription>
       </AlertContent>
-      <AlertActions>
-        <Button size="sm" loading={running} onClick={() => void retry()}>
+      <AlertActions tone="warning">
+        <Button loading={running} onClick={() => void retry()}>
           {t("accountSetup.retry")}
         </Button>
         <Button
-          size="sm"
           variant="ghost"
-          tone="secondary"
           onClick={() => {
             clearPendingSetup(accountId);
             setPending(null);
