@@ -5,7 +5,7 @@ import { AssistantIcon } from "@/features/assistant/assistant-icon";
 import styles from "@/features/assistant/assistant-panel.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
-// Workaround for Slotted finding "The drawer header has no slot for actions beside the title": the header's second column holds this group, the close included, in place of the drawer's own close.
+// The pane's and the sheet's header actions; the close is the group's last button in both.
 export function HeaderActions({
   listing,
   onBack,

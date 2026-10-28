@@ -1,7 +1,0 @@
-@layer app {
-  /* Workaround for Slotted finding "A collapsible trigger without a description splits its height over an empty second row":
-     the rows keep their content's height and sit in the middle of the trigger. */
-  .trigger {
-    align-content: center;
-  }
-}

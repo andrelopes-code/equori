@@ -39,6 +39,7 @@ export const portfolioEn = {
   "portfolio.subtitle":
     "Positions, allocation and return of the investment accounts at a date.",
   "portfolio.date": "Valuation date",
+  "portfolio.dateChange": "Valuation date, {date}",
   "portfolio.positions.title": "Positions",
   "portfolio.group": "Group by",
   "portfolio.group.account": "Account",

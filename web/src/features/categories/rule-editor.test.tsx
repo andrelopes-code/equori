@@ -106,6 +106,23 @@ describe("rule editor", () => {
     });
   });
 
+  it("frames the reading and the preview as sections like the steps between them", async () => {
+    await renderApp("/categories/rules/new", { fetch: api([]) });
+    for (const key of [
+      "ruleEditor.reading",
+      "ruleEditor.when",
+      "preview.title",
+    ] as const) {
+      const heading = await screen.findByRole("heading", {
+        name: catalogEn[key],
+      });
+      expect(heading.closest('[data-ui="section"]')).toHaveAttribute(
+        "data-ground",
+        "surface",
+      );
+    }
+  });
+
   it("marks what the server would refuse before sending anything", async () => {
     const sent: Sent[] = [];
     await renderApp("/categories/rules/new", { fetch: api(sent) });

@@ -79,8 +79,9 @@ function turnStream() {
 function setup(
   routes: Record<string, (req: Request) => Response | Promise<Response>>,
   path = "/overview",
+  width = 1280,
 ) {
-  setViewport(1280);
+  setViewport(width);
   const fake = fakeApi({
     "GET /api/v1/assistant/chat": () => json(200, chat),
     "GET /api/v1/assistant/conversations": () => json(200, { items: [] }),
@@ -174,6 +175,17 @@ describe("AssistantPanel", () => {
     await waitFor(() => {
       expect(document.activeElement).toBe(input);
     });
+  });
+
+  it("leaves the composer unfocused when the sheet opens on a phone", async () => {
+    setup({}, "/overview", 390);
+    const input = await screen.findByPlaceholderText(
+      catalogEn["assistant.composer.placeholder"],
+    );
+    await waitFor(() => {
+      expect(input.hasAttribute("disabled")).toBe(false);
+    });
+    expect(document.activeElement).not.toBe(input);
   });
 
   it("reopens the last conversation after a reload (U12)", async () => {

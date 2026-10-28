@@ -11,7 +11,9 @@ import {
   formatMonthName,
   formatMonthTitle,
   formatSigned,
+  formatSignedBasisPoints,
   formatPlain,
+  numberFormatter,
   formatReferenceMonth,
   parseAmount,
   todayISO,
@@ -212,6 +214,14 @@ describe("month and signed formats", () => {
     expect(formatSigned({ amount: 0, currency: "BRL" }, 2, "en")).toBe(
       "R$0.00",
     );
+  });
+
+  it("writes every negative number with the minus sign of an amount", () => {
+    expect(formatSignedBasisPoints(-688, "en")).toBe("\u22126.88%");
+    expect(numberFormatter("pt-BR", { style: "percent" }).format(-0.25)).toBe(
+      "\u221225%",
+    );
+    expect(numberFormatter("en").format(-1234)).toBe("\u22121,234");
   });
 });
 

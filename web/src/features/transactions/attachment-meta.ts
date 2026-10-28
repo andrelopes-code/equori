@@ -1,3 +1,5 @@
+import { numberFormatter } from "@/i18n/format";
+
 const units = [
   { unit: "byte", limit: 1024 },
   { unit: "kilobyte", limit: 1024 ** 2 },
@@ -9,7 +11,7 @@ const units = [
 export function formatFileSize(bytes: number, tag: string): string {
   const index = units.findIndex(({ limit }) => bytes < limit);
   const value = bytes / 1024 ** index;
-  return new Intl.NumberFormat(tag, {
+  return numberFormatter(tag, {
     style: "unit",
     unit: units[index]?.unit ?? "byte",
     unitDisplay: "short",

@@ -12,7 +12,7 @@ import { useNavigate } from "@tanstack/react-router";
 
 import type { components } from "@/api/schema.gen";
 import styles from "@/features/categories/coverage.module.css";
-import { formatMonthName } from "@/i18n/format";
+import { formatMonthName, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 type Statistics = components["schemas"]["CategorizationStatistics"];
@@ -38,12 +38,12 @@ export function Coverage({
   const share =
     s === undefined || s.total === 0
       ? undefined
-      : new Intl.NumberFormat(locale, {
+      : numberFormatter(locale, {
           style: "percent",
           maximumFractionDigits: 0,
         }).format(automatic / s.total);
   const count = (n: number | undefined) =>
-    n === undefined ? undefined : new Intl.NumberFormat(locale).format(n);
+    n === undefined ? undefined : numberFormatter(locale).format(n);
   const tiles: {
     key: string;
     label: string;

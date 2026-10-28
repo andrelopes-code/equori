@@ -46,14 +46,17 @@ import { BudgetAmountDialog } from "@/features/planning/budget-amount-dialog";
 import { DeleteBudgetDialog } from "@/features/planning/delete-budget-dialog";
 import { budgetState, usedShare } from "@/features/planning/budget-month";
 import { useScale } from "@/features/setup";
-import { formatMonthName, formatMonthTitle } from "@/i18n/format";
+import {
+  formatMonthName,
+  formatMonthTitle,
+  numberFormatter,
+} from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
 import { HeaderAction } from "@/ui/header-action";
-import { useAppLink } from "@/ui/use-app-link";
 import { MonthControl } from "@/ui/month-control";
 import { QueryError } from "@/ui/query-error";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
@@ -73,7 +76,6 @@ export function BudgetPage() {
   const fmt = useMoneyFormat();
   const scale = useScale();
   const navigate = useNavigate();
-  const follow = useAppLink();
   const { id } = useParams({ from: "/_authed/planning/budgets/$id" });
   const search = useSearch({ from: "/_authed/planning/budgets/$id" });
   const month = search.month ?? today.slice(0, 7);
@@ -134,7 +136,7 @@ export function BudgetPage() {
   const current = progress.find((p) => p.data?.month === month)?.data;
   const state = current === undefined ? undefined : budgetState(current);
   const percent = (share: number) =>
-    new Intl.NumberFormat(locale, { style: "percent" }).format(share / 100);
+    numberFormatter(locale, { style: "percent" }).format(share / 100);
   return (
     <Page width="full">
       <PageHeader size="lg">
@@ -310,13 +312,13 @@ export function BudgetPage() {
             y={{ format: (value) => money(value) }}
           />
           {/* The header keeps one row at 360 px (LA-03): the door to the records stands in the body. */}
-          {/* Workaround for Slotted finding "ButtonLink render props cannot be spread onto a router link": the anchor keeps its href, a plain click navigates inside the application. */}
           <Inline>
             <ButtonLink
               variant="outline"
               tone="secondary"
-              href={`/transactions?${new URLSearchParams(transactions).toString()}`}
-              onClick={follow({ to: "/transactions", search: transactions })}
+              render={(props) => (
+                <Link {...props} to="/transactions" search={transactions} />
+              )}
             >
               {t("budget.transactions", {
                 month: formatMonthTitle(month, locale),

@@ -17,7 +17,6 @@ import { flowsQuery } from "@/features/cards/api";
 import { formatDate, formatDayMonth, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { useAppLink } from "@/ui/use-app-link";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
@@ -51,7 +50,6 @@ export function CardTile({
   const fmt = useMoneyFormat();
   const api = useApi();
   const navigate = useNavigate();
-  const follow = useAppLink();
   const today = useToday();
   const elapsed = daysSinceMonday(today);
   const monday = shiftDate(today, -elapsed);
@@ -75,11 +73,10 @@ export function CardTile({
       kind="credit"
       color={accountCardColor(account.color)}
       title={account.name}
-      href={`/cards/${account.id}`}
-      onClick={follow({
+      link={{
         to: "/cards/$accountId",
         params: { accountId: account.id },
-      })}
+      }}
       institutionName={institution?.name}
       logo={logoOf(institution?.identifier, index.data)}
       currency={account.currency}

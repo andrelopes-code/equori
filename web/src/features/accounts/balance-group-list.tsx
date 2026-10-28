@@ -13,13 +13,13 @@ import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
 import { AccountAvatar } from "@/features/accounts/account-avatar";
-import { accountHref, accountRoute } from "@/features/accounts/account-route";
+import { accountRoute } from "@/features/accounts/account-route";
 import { AccountRowStatus } from "@/features/accounts/account-row-status";
 import type { SheetRow } from "@/features/accounts/balance-sheet";
 import styles from "@/features/accounts/balance-group-list.module.css";
 import { useT } from "@/i18n/i18n-provider";
 import { MoneyFigure } from "@/ui/money-figure";
-import { useAppLink } from "@/ui/use-app-link";
+import { routeTo } from "@/ui/route-to";
 
 type Institution = components["schemas"]["Institution"];
 type Money = components["schemas"]["Money"];
@@ -42,7 +42,6 @@ export function BalanceGroupList({
   scale: (code: string) => number;
 }) {
   const t = useT();
-  const follow = useAppLink();
   return (
     <Stack gap={2}>
       <Stack gap={0}>
@@ -68,10 +67,7 @@ export function BalanceGroupList({
               : institutions.get(row.account.institution_id)?.name;
           return (
             <ListItem key={row.account.id} className={styles.row}>
-              <ListItemLink
-                href={accountHref(row.account)}
-                onClick={follow(accountRoute(row.account))}
-              >
+              <ListItemLink render={routeTo(accountRoute(row.account))}>
                 <ListItemStart>
                   <AccountAvatar account={row.account} size="sm" />
                 </ListItemStart>

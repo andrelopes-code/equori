@@ -553,6 +553,19 @@ describe("overview page", () => {
       expect(await screen.findByText("Balance of the month")).toBeVisible();
     });
 
+    it("names each chart by its widget and draws no caption under the widget's title", async () => {
+      await renderApp("/", { fetch: api(projection) });
+      for (const name of ["Balance of the month", "Spending by category"]) {
+        const widget = await screen.findByRole("article", { name });
+        expect(
+          await within(widget).findByRole("group", { name }),
+        ).toBeVisible();
+        expect(
+          widget.querySelector('[data-ui="chart"] [data-part="title"]'),
+        ).toBeNull();
+      }
+    });
+
     it("masks the figures in privacy mode", async () => {
       hideAmounts();
       const { container } = await renderApp("/", { fetch: api(projection) });

@@ -1,7 +1,0 @@
-@layer app {
-  /* Workaround for Slotted finding "A link in a card, chart or section action takes the slot's font size and has no size axis": the same link reads 12 px in a figure card, 14 px in a chart and 16 px in a section header. */
-  .link {
-    font-size: var(--slotted-font-size-sm);
-    line-height: var(--slotted-line-height-sm);
-  }
-}

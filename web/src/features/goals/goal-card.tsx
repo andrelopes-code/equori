@@ -17,7 +17,7 @@ import { goalState, monthsLeft } from "@/features/goals/goal-state";
 import type { Goal } from "@/features/goals/goal-line";
 import { GoalWhatIf } from "@/features/goals/goal-what-if";
 import styles from "@/features/goals/goals.module.css";
-import { formatDate } from "@/i18n/format";
+import { formatDate, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -48,7 +48,7 @@ export function GoalCard({
   const state = goalState(goal, today);
   const left = monthsLeft(today, goal.due_on);
   const money = (m: Goal["target"]) => fmt.money(m, scale(m.currency));
-  const percent = new Intl.NumberFormat(locale, { style: "percent" }).format(
+  const percent = numberFormatter(locale, { style: "percent" }).format(
     Math.floor(goal.progress_bp / 100) / 100,
   );
   const tone =

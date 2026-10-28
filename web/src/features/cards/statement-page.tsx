@@ -1,6 +1,6 @@
-import { Button, IconButton } from "@slotted/react/button";
+import { Button, IconButton, IconButtonLink } from "@slotted/react/button";
+import { ButtonGroup } from "@slotted/react/button-group";
 import { Glyph, Icon } from "@slotted/react/icon";
-import { Link } from "@slotted/react/link";
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "@slotted/react/menu";
 import { Page, PageBody } from "@slotted/react/page";
 import {
@@ -57,7 +57,7 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { QueryError } from "@/ui/query-error";
 import { Presence } from "@/ui/presence";
-import { useAppLink } from "@/ui/use-app-link";
+import { StepGlyph } from "@/ui/step-glyph";
 import { PageBack } from "@/ui/page-back";
 
 type Dialog = "pay" | "finance" | "reconcile" | "facts";
@@ -71,7 +71,6 @@ export function StatementPage() {
   const api = useApi();
   const today = useToday();
   const navigate = useNavigate();
-  const follow = useAppLink();
   const scale = useScale();
   const { accountId, statementId } = useParams({
     from: "/_authed/cards/$accountId/statements/$statementId",
@@ -109,24 +108,32 @@ export function StatementPage() {
   const step = (
     id: string | undefined,
     key: "statement.previous" | "statement.next",
-    glyph: "arrow-left" | "chevron-right",
-  ) =>
-    id === undefined ? null : (
-      <Link
-        variant="neutral"
-        underline="none"
-        aria-label={t(key)}
-        href={`/cards/${accountId}/statements/${id}`}
-        onClick={follow({
-          to: "/cards/$accountId/statements/$statementId",
-          params: { accountId, statementId: id },
-        })}
-      >
-        <Icon>
-          <Glyph name={glyph} />
-        </Icon>
-      </Link>
+    direction: "previous" | "next",
+  ) => {
+    const glyph = (
+      <Icon>
+        <StepGlyph direction={direction} />
+      </Icon>
     );
+    return id === undefined ? (
+      <IconButton aria-label={t(key)} disabled>
+        {glyph}
+      </IconButton>
+    ) : (
+      <IconButtonLink
+        aria-label={t(key)}
+        render={(props) => (
+          <RouterLink
+            {...props}
+            to="/cards/$accountId/statements/$statementId"
+            params={{ accountId, statementId: id }}
+          />
+        )}
+      >
+        {glyph}
+      </IconButtonLink>
+    );
+  };
 
   return (
     <Page width="full">
@@ -174,8 +181,14 @@ export function StatementPage() {
               )}
             </PageHeaderTitle>
             <PageHeaderActions>
-              {step(around.previous, "statement.previous", "arrow-left")}
-              {step(around.next, "statement.next", "chevron-right")}
+              <ButtonGroup
+                aria-label={t("statement.steps")}
+                variant="outline"
+                tone="secondary"
+              >
+                {step(around.previous, "statement.previous", "previous")}
+                {step(around.next, "statement.next", "next")}
+              </ButtonGroup>
               {s !== undefined && owing.has(s.status) && (
                 <Button
                   variant="outline"

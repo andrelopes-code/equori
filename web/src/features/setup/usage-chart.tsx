@@ -20,7 +20,12 @@ import { useCallback, useMemo } from "react";
 import { useApi } from "@/api/api-context";
 import { usageDaysQuery } from "@/features/setup/api";
 import { usageDayRows } from "@/features/setup/usage-days";
-import { formatDate, formatDayMonth, shiftDate } from "@/i18n/format";
+import {
+  formatDate,
+  formatDayMonth,
+  numberFormatter,
+  shiftDate,
+} from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { QueryError } from "@/ui/query-error";
@@ -37,7 +42,7 @@ export function UsageChart() {
   const to = useToday();
   const from = shiftDate(to, 1 - days);
   const query = useQuery(usageDaysQuery(api, from, to));
-  const number = useMemo(() => new Intl.NumberFormat(tag), [tag]);
+  const number = useMemo(() => numberFormatter(tag), [tag]);
   const rows = useMemo(
     () => usageDayRows(query.data ?? [], from, to),
     [query.data, from, to],

@@ -16,14 +16,16 @@ import {
 } from "@slotted/react/result-state";
 import { Skeleton } from "@slotted/react/skeleton";
 import { Stack } from "@slotted/react/stack";
-import type { MouseEventHandler, ReactNode } from "react";
+import type { LinkOptions } from "@tanstack/react-router";
+import type { ReactNode } from "react";
+
+import { routeTo } from "@/ui/route-to";
 
 export interface PhoneRow {
   key: string;
   title: ReactNode;
-  // A row with an href opens its record; a row without one only shows it.
-  href?: string;
-  onOpen?: MouseEventHandler<HTMLAnchorElement>;
+  // A row with a link opens its record; a row without one only shows it.
+  link?: LinkOptions;
   // One line each under the title; a tag or a status stands on a line of its own.
   lines?: ReactNode[];
   end?: ReactNode;
@@ -75,15 +77,10 @@ export function PhoneList({
         );
         return (
           <ListItem key={row.key}>
-            {row.href === undefined ? (
+            {row.link === undefined ? (
               <ListItemContent>{body}</ListItemContent>
             ) : (
-              <ListItemLink
-                href={row.href}
-                {...(row.onOpen === undefined ? {} : { onClick: row.onOpen })}
-              >
-                {body}
-              </ListItemLink>
+              <ListItemLink render={routeTo(row.link)}>{body}</ListItemLink>
             )}
             {row.actions !== undefined && (
               <ListItemActions>{row.actions}</ListItemActions>

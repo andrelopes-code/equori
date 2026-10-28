@@ -1,6 +1,7 @@
 import { Skeleton, SkeletonRegion } from "@slotted/react/skeleton";
+import type { LinkOptions } from "@tanstack/react-router";
 import { useId } from "react";
-import type { CSSProperties, MouseEventHandler, ReactNode } from "react";
+import type { ComponentPropsWithRef, CSSProperties, ReactNode } from "react";
 
 import { AccountCardArt } from "@/features/accounts/account-card-art";
 import { AccountCardChip } from "@/features/accounts/account-card-chip";
@@ -16,6 +17,7 @@ import styles from "@/features/accounts/account-card.module.css";
 import { monogram } from "@/features/accounts/account-mark";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { routeTo } from "@/ui/route-to";
 
 const hiddenFigure = "••••";
 
@@ -29,7 +31,7 @@ export function AccountCard({
   color,
   title,
   href,
-  onClick,
+  link,
   institutionName,
   logo,
   currency,
@@ -48,7 +50,8 @@ export function AccountCard({
   color?: string | undefined;
   title: string;
   href?: string | undefined;
-  onClick?: MouseEventHandler<HTMLAnchorElement> | undefined;
+  // A screen of the application: the router's anchor, in place of href.
+  link?: LinkOptions | undefined;
   // The source of the monogram when there is no logo; the title stands in for it.
   institutionName?: string | undefined;
   logo?: string | undefined;
@@ -218,23 +221,26 @@ export function AccountCard({
       data-colour={color === undefined ? undefined : ""}
       aria-label={title}
     >
-      {href === undefined ? (
+      {href === undefined && link === undefined ? (
         <div className={styles.card} role="group" aria-label={name}>
           {content}
         </div>
       ) : (
-        <a
-          className={styles.card}
-          href={href}
-          onClick={onClick}
-          aria-label={name}
-          aria-describedby={description === "" ? undefined : descriptionId}
-        >
-          {content}
-          <span id={descriptionId} hidden>
-            {description}
-          </span>
-        </a>
+        (link === undefined
+          ? (props: ComponentPropsWithRef<"a">) => <a {...props} href={href} />
+          : routeTo(link))({
+          className: styles.card,
+          "aria-label": name,
+          "aria-describedby": description === "" ? undefined : descriptionId,
+          children: (
+            <>
+              {content}
+              <span id={descriptionId} hidden>
+                {description}
+              </span>
+            </>
+          ),
+        })
       )}
       {children}
     </article>

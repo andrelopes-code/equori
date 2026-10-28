@@ -63,4 +63,4 @@ pre-push:
     - name: web-node-test
       root: web/
       glob: "web/src/**"
-      run: node --test src/theme/equori.theme.test.ts src/theme/equori-glass.theme.test.ts src/testing/slotted-findings.test.ts
+      run: node --test src/theme/equori.theme.test.ts src/theme/equori-glass.theme.test.ts src/testing/slotted-issues.test.ts

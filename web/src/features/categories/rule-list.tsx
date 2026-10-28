@@ -85,9 +85,6 @@ export function RuleList({
     [t, words],
   );
 
-  // Workaround for Slotted finding "Data-grid re-renders every row when messages or a renderer
-  // changes identity": a render of the page around the list, a dialog opening, would render every
-  // row, so the renderers keep their identity and read the page's handlers through stable ones.
   const toggle = useStableCallback(onToggle);
   const act = useStableCallback(onAction);
   const renderHeader = useCallback(

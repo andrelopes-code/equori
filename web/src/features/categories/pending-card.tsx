@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 
 import { FigureCard } from "@/ui/figure-card";
 import type { CategoryClass } from "@/features/categories/category-paths";
+import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
@@ -30,7 +31,7 @@ export function PendingCard({
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
   const navigate = useNavigate();
-  const percent = new Intl.NumberFormat(locale, {
+  const percent = numberFormatter(locale, {
     style: "percent",
     maximumFractionDigits: 1,
   }).format(share);

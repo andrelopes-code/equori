@@ -16,6 +16,7 @@ import { useState } from "react";
 import { useApi } from "@/api/api-context";
 import { errorText } from "@/api/problem";
 import { tagUsageQuery, useDeleteTag } from "@/features/categories/api";
+import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
@@ -51,7 +52,7 @@ export function DeleteTagDialog({
                 ? t("tags.deleteOne", { name: tag })
                 : t("tags.deleteMany", {
                     name: tag,
-                    count: new Intl.NumberFormat(locale).format(count),
+                    count: numberFormatter(locale).format(count),
                   })}
           </DialogDescription>
         </DialogHeader>

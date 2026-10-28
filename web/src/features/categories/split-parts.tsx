@@ -100,12 +100,14 @@ export function SplitParts({
               <CurrencyField
                 aria-label={label("ruleEditor.partValue")}
                 currency={currency}
-                value={majorFromMinor(part.amount?.amount ?? 0, scale)}
+                unit="minor"
+                fractionDigits={scale}
+                value={part.amount?.amount ?? 0}
                 onValueChange={(value: number | null) => {
                   set(index, {
                     category_id: part.category_id,
                     amount: {
-                      amount: minorFromMajor(value ?? 0, scale),
+                      amount: value ?? 0,
                       currency,
                     },
                   });

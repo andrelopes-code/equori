@@ -1,3 +1,5 @@
+import { numberFormatter } from "@/i18n/format";
+
 // A percent travels as basis points, an integer (10000 is 100%). Text and integer convert by
 // string manipulation, never by floating-point arithmetic.
 const percent = /^(\d+)(?:[.,](\d{1,2}))?$/;
@@ -19,7 +21,7 @@ export function bpText(bp: number): string {
 }
 
 export function formatPercentBp(bp: number, locale: string): string {
-  return new Intl.NumberFormat(locale, {
+  return numberFormatter(locale, {
     style: "percent",
     maximumFractionDigits: 2,
   }).format(bp / 10000);

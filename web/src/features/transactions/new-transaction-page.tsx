@@ -2,12 +2,11 @@ import {
   ActionBar,
   ActionBarAction,
   ActionBarActions,
+  ActionBarOverflow,
 } from "@slotted/react/action-bar";
-import { Button, ButtonLink, IconButton } from "@slotted/react/button";
-import { Glyph, Icon } from "@slotted/react/icon";
-import { Inline } from "@slotted/react/inline";
+import { Button, ButtonLink } from "@slotted/react/button";
 import { InlineMessage } from "@slotted/react/inline-message";
-import { Menu, MenuContent, MenuItem, MenuTrigger } from "@slotted/react/menu";
+import { MenuItem } from "@slotted/react/menu";
 import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import {
   PageHeader,
@@ -258,60 +257,37 @@ export function NewTransactionPage() {
           )}
           <ActionBar aria-label={t("entry.actions")}>
             <ActionBarActions>
-              {compact ? (
-                // Workaround for Slotted finding "Action-bar stacks every action below 24rem and
-                // hides its overflow": stacked, the three actions took a fifth of a phone's
-                // screen. Save fills the bar's one row; Discard and Save another wait in a menu.
-                <ActionBarAction>
-                  <Inline gap={2} wrap="nowrap">
-                    <Menu>
-                      <MenuTrigger
-                        render={(props) => (
-                          <IconButton
-                            {...props}
-                            aria-label={t("entry.moreActions")}
-                            variant="outline"
-                            tone="secondary"
-                          >
-                            <Icon>
-                              <Glyph name="ellipsis" />
-                            </Icon>
-                          </IconButton>
-                        )}
-                      />
-                      <MenuContent>
-                        <MenuItem onSelect={discard}>
-                          {t("entry.discard")}
-                        </MenuItem>
-                        <MenuItem disabled={!ready} onSelect={saveAnother}>
-                          {t("entry.saveAnother")}
-                        </MenuItem>
-                      </MenuContent>
-                    </Menu>
-                    {save}
-                  </Inline>
-                </ActionBarAction>
-              ) : (
-                <>
-                  <ActionBarAction>
-                    <Button variant="ghost" tone="secondary" onClick={discard}>
-                      {t("entry.discard")}
-                    </Button>
-                  </ActionBarAction>
-                  <ActionBarAction>
-                    <Button
-                      variant="outline"
-                      tone="secondary"
-                      disabled={!ready}
-                      loading={pending}
-                      onClick={saveAnother}
-                    >
-                      {t("entry.saveAnother")}
-                    </Button>
-                  </ActionBarAction>
-                  <ActionBarAction>{save}</ActionBarAction>
-                </>
-              )}
+              {/* On a phone the bar keeps one row: Save, and a menu with the other two. */}
+              <ActionBarAction
+                priority={compact ? "always" : "low"}
+                counterpart={
+                  <MenuItem onSelect={discard}>{t("entry.discard")}</MenuItem>
+                }
+              >
+                <Button variant="ghost" tone="secondary" onClick={discard}>
+                  {t("entry.discard")}
+                </Button>
+              </ActionBarAction>
+              <ActionBarAction
+                priority={compact ? "always" : "low"}
+                counterpart={
+                  <MenuItem disabled={!ready} onSelect={saveAnother}>
+                    {t("entry.saveAnother")}
+                  </MenuItem>
+                }
+              >
+                <Button
+                  variant="outline"
+                  tone="secondary"
+                  disabled={!ready}
+                  loading={pending}
+                  onClick={saveAnother}
+                >
+                  {t("entry.saveAnother")}
+                </Button>
+              </ActionBarAction>
+              <ActionBarAction>{save}</ActionBarAction>
+              <ActionBarOverflow label={t("entry.moreActions")} />
             </ActionBarActions>
           </ActionBar>
         </PageFooter>
@@ -335,22 +311,9 @@ export function NewTransactionPage() {
               <ButtonLink
                 variant="outline"
                 tone="secondary"
-                href="/transactions/capture"
-                // Workaround for Slotted finding "ButtonLink render props cannot be spread onto a
-                // router link": the anchor keeps its href for a modified click, and a plain click
-                // navigates inside the application.
-                onClick={(event) => {
-                  if (
-                    event.button !== 0 ||
-                    event.metaKey ||
-                    event.ctrlKey ||
-                    event.shiftKey ||
-                    event.altKey
-                  )
-                    return;
-                  event.preventDefault();
-                  void navigate({ to: "/transactions/capture" });
-                }}
+                render={(props) => (
+                  <Link {...props} to="/transactions/capture" />
+                )}
               >
                 {t("capture.useText")}
               </ButtonLink>

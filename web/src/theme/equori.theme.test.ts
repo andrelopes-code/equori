@@ -113,44 +113,17 @@ test("the header and total rules of a table take the softened rule colour", () =
   assert.match(summary, /solid var\(--slotted-table-border-color-strong\)/);
 });
 
-// Workaround for Slotted finding "PageHeader paints its stuck ground without a transition".
-test("a plain page header fades its ground in and out as it sticks", () => {
-  const ground = /background-color var\(--slotted-duration-medium\)/;
-  const root =
-    /\[data-ui="page-header"\]\[data-variant="plain"\] \{([^}]*)\}/.exec(
-      css,
-    )?.[1] ?? "";
-  assert.match(root, ground);
-  assert.match(root, /inset-block-start var\(--slotted-duration-medium\)/);
-  const titleArea =
-    /\[data-ui="page-header"\]\[data-variant="plain"\] \[data-part="title-area"\] \{([^}]*)\}/.exec(
-      css,
-    )?.[1] ?? "";
-  assert.match(titleArea, ground);
-});
-
-// Workaround for Slotted finding "Toast has no backdrop-filter token for a material surface".
-test("a raised toast is a material over the page", () => {
+test("a raised toast and the palette are materials over the page", () => {
   assert.match(
     css,
     /--slotted-toast-surface:\s*var\(--slotted-surface-material\)/,
   );
-  const item =
-    /\[data-ui="toast"\] > \[data-part="list"\] > \[data-part="item"\]\[data-variant="raised"\] \{([^}]*)\}/.exec(
-      css,
-    )?.[1] ?? "";
-  assert.ok(
-    item !== "",
-    "the raised toast rule is missing from equori.gen.css",
+  assert.match(
+    css,
+    /--slotted-toast-backdrop-filter:\s*var\(--slotted-material-backdrop\)/,
   );
-  assert.match(item, /backdrop-filter: var\(--slotted-material-backdrop\)/);
-});
-
-// The card or the content under a page header separates it; a rule under it repeated that edge
-// (owner review, 2026-10-28).
-test("a page header draws no rule under it", () => {
-  assert.equal(
-    theme.components?.["--slotted-page-header-border"],
-    "transparent",
+  assert.match(
+    css,
+    /--slotted-command-palette-backdrop-filter:\s*var\(--slotted-material-backdrop\)/,
   );
 });

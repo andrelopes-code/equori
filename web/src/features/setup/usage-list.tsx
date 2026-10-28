@@ -16,6 +16,7 @@ import { useMemo } from "react";
 
 import type { UsageRow } from "@/features/setup/api";
 import { usageStatus } from "@/features/setup/usage-rows";
+import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 const tones = {
@@ -42,7 +43,7 @@ export function UsageList({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
-  const number = useMemo(() => new Intl.NumberFormat(locale), [locale]);
+  const number = useMemo(() => numberFormatter(locale), [locale]);
   const time = useMemo(
     () =>
       new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }),

@@ -295,6 +295,22 @@ describe("Portfolio positions", () => {
     ).toBeInTheDocument();
   });
 
+  it("names the header's currency and date without a visible label", async () => {
+    await renderApp("/portfolio?date=2026-09-30", { fetch: portfolioApi() });
+    const currency = await screen.findByRole("combobox", {
+      name: catalogEn["portfolio.valueIn"],
+    });
+    const header = currency.closest('[data-ui="page-header"]');
+    expect(header).not.toBeNull();
+    expect(
+      within(header as HTMLElement).getByRole("button", {
+        name: /^Valuation date, /,
+      }),
+    ).toBeVisible();
+    expect(header).not.toHaveTextContent(catalogEn["portfolio.valueIn"]);
+    expect(header).not.toHaveTextContent(catalogEn["portfolio.date"]);
+  });
+
   it("moves the date and currency out of the header on a phone", async () => {
     await renderApp("/portfolio", { width: 390, fetch: portfolioApi() });
     const currency = await screen.findByRole("combobox", {

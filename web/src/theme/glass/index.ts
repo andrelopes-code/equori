@@ -6,7 +6,6 @@
 //   surfaces.ts   one entry per family: its tokens, its own paint, the elements that blur
 //   states.ts     hover, press, selection and tinted surfaces as washes over glass
 //   sticky.ts     bars that pinned content scrolls under
-//   popups.ts     how a popup enters and leaves, so its blur shows from the first frame
 //   ground.ts     what the theme leaves clear so the aurora shows through
 //   lite.ts       phones and touch screens: bars without a blur
 //   fallbacks.ts  reduced transparency
@@ -22,7 +21,6 @@ import { fallbackRules } from "./fallbacks.ts";
 import { groundRules } from "./ground.ts";
 import { liteRules } from "./lite.ts";
 import { material } from "./material.ts";
-import { popupRules } from "./popups.ts";
 import { stateRules } from "./states.ts";
 import { stickyRules } from "./sticky.ts";
 import {
@@ -42,9 +40,9 @@ const surfaceRules = surfaces.flatMap((surface) => [
   ),
 ]);
 
-// Workaround for Slotted finding "Overlay surfaces have no backdrop-filter token for a material surface":
-// the families expose the surface as a token and no filter behind it, so the filter is written on
-// the content element.
+// A family with a backdrop-filter token reads its blur from it. Workaround for Slotted issue #2:
+// the chart's tooltip, menu and help content and the drawer's footer have none, so the filter is
+// written on them.
 const blurRules = [
   rule(blurred, blur("var(--glass-blur)", "var(--glass-saturate)")),
   ...blurTokens.map(({ family: name, token }) =>
@@ -61,12 +59,10 @@ const blocks: readonly Block[] = [
   ...blurRules,
   ...stateRules,
   ...stickyRules,
-  ...popupRules,
   ...liteRules,
   ...fallbackRules,
 ];
 
-// Workaround for Slotted finding "A theme rule's bare scheme attribute matches nothing on the theme root":
 // `&` is the theme's root element inside the theme's scope, and it is the element that carries the
 // scheme; a bare `[data-slotted-scheme="dark"]` would look for a descendant of the root instead.
 const inDark = (selector: string) =>

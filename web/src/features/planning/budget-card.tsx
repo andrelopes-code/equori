@@ -22,9 +22,10 @@ import { monthEnd } from "@/features/planning/agenda";
 import type { BudgetRow } from "@/features/planning/budget-month";
 import { budgetState, usedShare } from "@/features/planning/budget-month";
 import styles from "@/features/planning/budgets.module.css";
+import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { useAppLink } from "@/ui/use-app-link";
+import { routeTo } from "@/ui/route-to";
 
 type Money = components["schemas"]["Money"];
 type Budget = components["schemas"]["Budget"];
@@ -52,12 +53,11 @@ export function BudgetCard({
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
   const navigate = useNavigate();
-  const follow = useAppLink();
   const p = row.progress;
   const state = budgetState(p);
   const share = usedShare(p);
   const money = (m: Money) => fmt.money(m, scale(m.currency));
-  const percent = new Intl.NumberFormat(locale, { style: "percent" }).format(
+  const percent = numberFormatter(locale, { style: "percent" }).format(
     share / 100,
   );
   const rest =
@@ -79,8 +79,7 @@ export function BudgetCard({
       />
       <Text size="md" weight="medium" className={styles.name}>
         <Link
-          href={`/planning/budgets/${row.budget.id}?month=${month}`}
-          onClick={follow({
+          render={routeTo({
             to: "/planning/budgets/$id",
             params: { id: row.budget.id },
             search: { month },

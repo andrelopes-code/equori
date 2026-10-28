@@ -6,7 +6,7 @@ import type { MouseEvent } from "react";
 import type { components } from "@/api/schema.gen";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
-import { useAppLink } from "@/ui/use-app-link";
+import { routeTo } from "@/ui/route-to";
 
 type Categorization = components["schemas"]["Categorization"];
 type Method = NonNullable<Categorization["method"]>;
@@ -26,7 +26,6 @@ export function CategorizationMark({
   categorization: Categorization | undefined;
 }) {
   const t = useT();
-  const follow = useAppLink();
   const method = categorization?.method;
   if (method === undefined || method === null) return null;
   const { short, label } = words[method];
@@ -38,16 +37,14 @@ export function CategorizationMark({
   );
   const ruleId = categorization?.rule_id;
   if (method !== "rule" || ruleId === undefined) return badge;
-  const open = follow({ to: "/categories/rules/$id", params: { id: ruleId } });
   return (
     <Link
       variant="neutral"
       underline="none"
-      href={`/categories/rules/${ruleId}`}
+      render={routeTo({ to: "/categories/rules/$id", params: { id: ruleId } })}
       onClick={(event: MouseEvent<HTMLAnchorElement>) => {
         // The row opens the transaction on a click; the mark opens the rule instead.
         event.stopPropagation();
-        open(event);
       }}
     >
       {badge}

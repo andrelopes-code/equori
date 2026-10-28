@@ -47,7 +47,7 @@ export function MethodSection({
 }) {
   const t = useT();
   const part = (title: MessageKey, children: ReactNode) => (
-    <Section size="sm" divider={false}>
+    <Section size="sm">
       <SectionHeader>
         <SectionTitle>
           <SectionHeading>{t(title)}</SectionHeading>

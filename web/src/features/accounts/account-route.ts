@@ -12,9 +12,3 @@ export function accountRoute(
     ? { to: "/cards/$accountId", params: { accountId: account.id } }
     : { to: "/accounts/$id", params: { id: account.id } };
 }
-
-export function accountHref(account: Pick<Account, "id" | "kind">): string {
-  return account.kind === "credit_card"
-    ? `/cards/${account.id}`
-    : `/accounts/${account.id}`;
-}

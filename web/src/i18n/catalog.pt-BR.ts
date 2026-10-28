@@ -478,7 +478,6 @@ export const catalogPtBR: Catalog = {
   "detail.correct": "Corrigir",
   "detail.transfer": "Marcar como transferência",
   "detail.void": "Anular",
-  "detail.moreActions": "Mais ações ({count})",
   "detail.notFound": "Esta transação não existe",
   "detail.notFoundHint": "Ela pode ser de outro usuário ou o link está errado.",
   "detail.loadFailed": "Não foi possível carregar a transação",
@@ -1148,6 +1147,7 @@ export const catalogPtBR: Catalog = {
     "Um padrão na sintaxe RE2, comparado ao texto como o banco escreveu, com maiúsculas; comece com (?i) para ignorá-las. Exemplo: (?i)^(uber|99)",
   "ruleEditor.regexPlaceholder": "(?i)^(uber|99)",
   "ruleEditor.stepLabel": "Passo {n}",
+  "ruleEditor.reading": "A regra por extenso",
   "capture.title": "Lançar por texto",
   "capture.subheading":
     "Uma transação por linha. Nada é registrado antes da confirmação.",

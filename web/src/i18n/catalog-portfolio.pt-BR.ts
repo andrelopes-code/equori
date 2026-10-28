@@ -40,6 +40,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.subtitle":
     "Posições, alocação e retorno das contas de investimento em uma data.",
   "portfolio.date": "Data de avaliação",
+  "portfolio.dateChange": "Data de avaliação, {date}",
   "portfolio.positions.title": "Posições",
   "portfolio.group": "Agrupar por",
   "portfolio.group.account": "Conta",

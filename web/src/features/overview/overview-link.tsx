@@ -1,10 +1,8 @@
 import { Link } from "@slotted/react/link";
-import { useRouter } from "@tanstack/react-router";
 import type { NavigateOptions } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
-import styles from "@/features/overview/overview-link.module.css";
-import { useAppLink } from "@/ui/use-app-link";
+import { routeTo } from "@/ui/route-to";
 
 export function OverviewLink({
   options,
@@ -16,13 +14,10 @@ export function OverviewLink({
   label?: string;
   children: ReactNode;
 }) {
-  const router = useRouter();
-  const follow = useAppLink();
   return (
     <Link
-      className={styles.link}
-      href={router.buildLocation(options).href}
-      onClick={follow(options)}
+      size="sm"
+      render={routeTo(options)}
       {...(label === undefined ? {} : { "aria-label": label })}
     >
       {children}

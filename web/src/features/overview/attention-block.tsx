@@ -18,6 +18,7 @@ import {
 import { OverviewRows } from "@/features/overview/overview-rows";
 import { useBase } from "@/features/overview/use-base";
 import { connectionsQuery } from "@/features/connections";
+import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { MoneyFigure } from "@/ui/money-figure";
 
@@ -73,7 +74,7 @@ export function AttentionBlock({
             difference: reconciliations[i]?.data?.open_difference?.difference,
           })),
         });
-  const number = new Intl.NumberFormat(locale);
+  const number = numberFormatter(locale);
   const shown = limit === undefined ? items : items.slice(0, limit);
   const hidden = items.length - shown.length;
   const rows = shown.map((item) => ({

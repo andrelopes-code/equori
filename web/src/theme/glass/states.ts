@@ -63,10 +63,9 @@ const selection = {
   range: accent("var(--glass-tone-surface)"),
 };
 
-// Workaround for Slotted finding "A soft key cap has no surface token of its own": a key cap reads
-// the secondary surface, which the washes make translucent; over an accent button it would take
-// the button's colour. It keeps the opaque surface of the standard theme's dark recipe. The theme
-// root cannot hold a copy for it: the compiler refuses a rule on the root itself.
+// A soft key cap falls back to the secondary surface, which the washes make translucent; over an
+// accent button it would take the button's colour. It keeps the opaque surface of the standard
+// theme's dark recipe.
 const SECONDARY_SURFACE = "--slotted-tone-secondary-surface";
 
 function opaqueSecondarySurface(): string {
@@ -78,7 +77,9 @@ function opaqueSecondarySurface(): string {
 
 export const stateRules: readonly Rule[] = [
   rule(scope, toneStates()),
-  rule(family("kbd"), { [SECONDARY_SURFACE]: opaqueSecondarySurface() }),
+  rule(`${family("kbd")}[data-variant="soft"]`, {
+    "--slotted-kbd-surface": opaqueSecondarySurface(),
+  }),
   rule(family("table"), {
     "--slotted-table-row-surface-selected": selection.rest,
     "--slotted-table-row-surface-selected-hover": selection.hover,

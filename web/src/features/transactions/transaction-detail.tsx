@@ -240,7 +240,7 @@ export function TransactionDetail({
           </PageHeaderTitleRow>
         </PageHeaderTitleArea>
       </PageHeader>
-      <SectionDefaultsProvider divider={false} sticky>
+      <SectionDefaultsProvider sticky>
         <DetailPanelBody
           aside={
             <TransactionFacts

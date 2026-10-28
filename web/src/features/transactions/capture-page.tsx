@@ -340,22 +340,7 @@ export function CapturePage() {
               <ButtonLink
                 variant="outline"
                 tone="secondary"
-                href="/transactions/new"
-                // Workaround for Slotted finding "ButtonLink render props cannot be spread onto a
-                // router link": the anchor keeps its href for a modified click, and a plain click
-                // navigates inside the application.
-                onClick={(event) => {
-                  if (
-                    event.button !== 0 ||
-                    event.metaKey ||
-                    event.ctrlKey ||
-                    event.shiftKey ||
-                    event.altKey
-                  )
-                    return;
-                  event.preventDefault();
-                  void navigate({ to: "/transactions/new" });
-                }}
+                render={(props) => <Link {...props} to="/transactions/new" />}
               >
                 {t("capture.useForm")}
               </ButtonLink>
@@ -363,21 +348,9 @@ export function CapturePage() {
                 <ButtonLink
                   variant="outline"
                   tone="secondary"
-                  href="/transactions/queue"
-                  // Workaround for Slotted finding "ButtonLink render props cannot be spread onto a
-                  // router link": as above.
-                  onClick={(event) => {
-                    if (
-                      event.button !== 0 ||
-                      event.metaKey ||
-                      event.ctrlKey ||
-                      event.shiftKey ||
-                      event.altKey
-                    )
-                      return;
-                    event.preventDefault();
-                    void navigate({ to: "/transactions/queue" });
-                  }}
+                  render={(props) => (
+                    <Link {...props} to="/transactions/queue" />
+                  )}
                 >
                   {t("capture.queue", { count: waiting })}
                 </ButtonLink>

@@ -8,7 +8,7 @@ import { ProposalCard } from "@/features/assistant/proposal-card";
 import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { expectNoAmounts, hideAmounts } from "@/testing/privacy";
-import { renderWithProviders } from "@/testing/render-app";
+import { renderWithProviders, renderWithRouter } from "@/testing/render-app";
 
 type Proposal = components["schemas"]["AssistantProposal"];
 
@@ -210,7 +210,7 @@ describe("ProposalCard", () => {
 
   // P16: an executed proposal whose result names a record links to its screen.
   it("opens the transaction an executed proposal recorded", () => {
-    renderWithProviders(
+    renderWithRouter(
       <ProposalCard
         proposal={{
           ...pending,
@@ -218,7 +218,7 @@ describe("ProposalCard", () => {
           result: { transaction_id: "t1" },
         }}
       />,
-      { fetch: fakeApi({}) },
+      { path: "/", fetch: fakeApi({}) },
     );
     expect(
       screen.getByRole("link", { name: catalogEn["assistant.proposal.open"] }),

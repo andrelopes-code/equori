@@ -6,7 +6,7 @@ import type {
   DataGridHandle,
 } from "@slotted/react/data-grid";
 import type { KeyboardEvent, ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 
 import type { CategoryEntry } from "@/features/categories";
 import { AmountCell } from "@/features/transactions/amount-cell";
@@ -21,7 +21,6 @@ import type {
 import { formatDate, formatDayHeader } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { useStableCallback } from "@/ui/use-stable-callback";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 export function TransactionsGrid({
@@ -56,35 +55,7 @@ export function TransactionsGrid({
   const handle = useRef<DataGridHandle>(null);
   const current = useRef<GridCell | null>(null);
 
-  // Workaround for Slotted finding "The data-grid's load-more fires until hasMore is false when
-  // the grid does not scroll": below 600 px the grid is as tall as its rows, so it would ask for
-  // every page at once. There it is told nothing more exists, and the page's scroller asks for the
-  // next page when the grid's end comes within one screen of the bottom of the view.
   const growsWithPage = height === undefined;
-  const loadMore = useStableCallback(list.loadMore);
-  useEffect(() => {
-    const grid = handle.current?.element;
-    if (!growsWithPage || !list.hasMore || !grid) return;
-    const root = scrollParent(grid);
-    let frame = 0;
-    const check = () => {
-      frame = 0;
-      const view = root?.getBoundingClientRect().bottom ?? innerHeight;
-      const screen = root?.clientHeight ?? innerHeight;
-      if (grid.getBoundingClientRect().bottom - view < screen) loadMore();
-    };
-    const onScroll = () => {
-      if (frame === 0) frame = requestAnimationFrame(check);
-    };
-    const scroller = root ?? window;
-    scroller.addEventListener("scroll", onScroll, { passive: true });
-    // A page that already ends within the screen asks at once.
-    onScroll();
-    return () => {
-      scroller.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(frame);
-    };
-  }, [growsWithPage, list.hasMore, list.rows, loadMore]);
 
   const editCategory = useCallback((key: string) => {
     handle.current?.startEdit({ row: key, column: "category" });
@@ -178,12 +149,9 @@ export function TransactionsGrid({
     [list.rows],
   );
 
-  // Workaround for Slotted finding "Data-grid re-renders every row when messages or a renderer
-  // changes identity": a new messages object or renderGroup on a page render (a selection, an
-  // answered query) renders every mounted row again, so both keep their identity.
   const messages = useMemo(
     () => ({
-      // Workaround for Slotted finding "The selection checkbox of a data-grid row is named by its key".
+      // Workaround for Slotted issue #7.
       selectRow: ({ row }: { row: string }) =>
         t("transactions.selectRow", { row: titles.get(row) ?? row }),
     }),
@@ -196,8 +164,6 @@ export function TransactionsGrid({
     [scale],
   );
 
-  // Renderers keep their identity across renders, so a page render that does not touch the
-  // rows does not hand the grid new cells.
   const cellRenderers = useMemo(
     () => ({
       title: ({ row }: { row: ListRow }) => (
@@ -233,14 +199,8 @@ export function TransactionsGrid({
   );
   const editorRenderers = useMemo(
     () => ({
-      category: ({
-        row,
-        draft,
-        setDraft,
-        commit,
-      }: DataGridEditorContext<ListRow>) => (
+      category: ({ row, setDraft, commit }: DataGridEditorContext<ListRow>) => (
         <CategoryEditor
-          draft={draft}
           setDraft={setDraft}
           commit={commit}
           amount={row.money.amount}
@@ -274,15 +234,13 @@ export function TransactionsGrid({
       rows={list.rows}
       rowKey="id"
       {...(height === undefined ? {} : { height })}
-      // Workaround for Slotted finding "A server-mode data-grid does not group the rows it is
-      // given": the server already orders and filters, and client mode with an empty sort keeps
-      // that order while it groups by day.
+      // Workaround for Slotted issue #6: the server already orders and filters, and client mode
+      // with an empty sort keeps that order while it groups by day.
       mode="client"
-      hasMore={!growsWithPage && list.hasMore}
+      hasMore={list.hasMore}
       onLoadMore={list.loadMore}
-      // Workaround for Slotted finding "Toggling aria-busy restyles every element below it": the
-      // grid's loading writes aria-busy, which costs 340 ms at 70 rows, so it covers the first
-      // read only and the header's bar shows a refresh.
+      // Workaround for Slotted issue #5: the grid's loading writes aria-busy, which costs 340 ms at
+      // 70 rows, so it covers the first read only and the header's bar shows a refresh.
       loading={list.pending}
       error={list.error === null ? null : t("transactions.loadFailed")}
       onRetry={list.retry}
@@ -302,13 +260,4 @@ export function TransactionsGrid({
       renderGroup={renderGroup}
     />
   );
-}
-
-// The nearest ancestor that scrolls; null, the viewport, when none does yet.
-function scrollParent(element: Element): Element | null {
-  for (let node = element.parentElement; node; node = node.parentElement) {
-    const scrolls = /auto|scroll/.test(getComputedStyle(node).overflowY);
-    if (scrolls && node.scrollHeight > node.clientHeight) return node;
-  }
-  return null;
 }

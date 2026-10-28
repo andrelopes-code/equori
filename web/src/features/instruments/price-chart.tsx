@@ -3,7 +3,7 @@ import { Chart } from "@slotted/react/chart";
 import { useMemo } from "react";
 
 import type { components } from "@/api/schema.gen";
-import { formatDayMonth } from "@/i18n/format";
+import { formatDayMonth, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { MASK } from "@/privacy/mask";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -31,9 +31,7 @@ export function PriceChart({
   const format = (value: number) =>
     fmt.hidden
       ? MASK
-      : new Intl.NumberFormat(locale, { maximumFractionDigits: 6 }).format(
-          value,
-        );
+      : numberFormatter(locale, { maximumFractionDigits: 6 }).format(value);
   const series: ChartSeries<"date" | "price">[] = [
     {
       id: "price",
@@ -50,7 +48,7 @@ export function PriceChart({
       variant="card"
       size="sm"
       loading={loading}
-      title={t("instrument.chart.title")}
+      aria-label={t("instrument.prices.title")}
       data={data}
       series={series}
       x={{

@@ -190,6 +190,20 @@ describe("StatementPage", () => {
     });
   });
 
+  it("steps between statements with the chevron pair of the period control", async () => {
+    await renderApp(path, { fetch: api() });
+    const next = await screen.findByRole("link", {
+      name: catalogEn["statement.next"],
+    });
+    const group = next.closest('[data-ui="button-group"]');
+    expect(group).not.toBeNull();
+    expect(
+      [...(group as HTMLElement).querySelectorAll('[data-ui="button"]')].map(
+        (step) => step.querySelector("path")?.getAttribute("d"),
+      ),
+    ).toEqual(["m15 18-6-6 6-6", "m9 18 6-6-6-6"]);
+  });
+
   it("offers what a closed statement allows and only payment and facts on an open one", async () => {
     await renderApp(path, { fetch: api() });
     for (const key of [

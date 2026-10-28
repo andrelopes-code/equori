@@ -45,7 +45,7 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { PeriodControl } from "@/ui/period-control";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
-import { useAppLink } from "@/ui/use-app-link";
+import { routeTo } from "@/ui/route-to";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
@@ -82,7 +82,6 @@ export function AccountLedger({
   const today = useToday();
   const compact = useMediaQuery(compactQuery);
   const navigate = useNavigate();
-  const follow = useAppLink();
   const to = search.to ?? today;
   const from = search.from ?? shiftDate(to, -89);
   const leaf = descendants.length === 0;
@@ -271,8 +270,7 @@ export function AccountLedger({
                                   <Link
                                     variant="neutral"
                                     underline="hover"
-                                    href={`/transactions/${row.id}`}
-                                    onClick={follow({
+                                    render={routeTo({
                                       to: "/transactions/$id",
                                       params: { id: row.id },
                                     })}

@@ -9,7 +9,7 @@ import type { components } from "@/api/schema.gen";
 import type { BudgetState, Figures } from "@/features/planning/budget-month";
 import { budgetState, usedShare } from "@/features/planning/budget-month";
 import styles from "@/features/planning/budgets.module.css";
-import { formatDate } from "@/i18n/format";
+import { formatDate, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
@@ -49,11 +49,11 @@ export function BudgetSummary({
   const fmt = useMoneyFormat();
   const money = (m: Money) => fmt.money(m, scale(m.currency));
   const percent = (share: number) =>
-    new Intl.NumberFormat(locale, { style: "percent" }).format(share / 100);
+    numberFormatter(locale, { style: "percent" }).format(share / 100);
   const rate = (p: Price) =>
     t("budget.price", {
       instrument: p.instrument,
-      rate: new Intl.NumberFormat(locale, {
+      rate: numberFormatter(locale, {
         minimumFractionDigits: p.value.split(".")[1]?.length ?? 0,
       }).format(Number(p.value)),
       quote: p.quote_instrument,

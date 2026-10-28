@@ -138,8 +138,8 @@ export function AppFrame() {
       >
         {/* 32 px beside a column, 16 px on a phone. */}
         <PageDefaultsProvider inset={wide ? 9 : 6}>
-          <PageHeaderDefaultsProvider variant="plain">
-            <SectionDefaultsProvider size="sm" divider>
+          <PageHeaderDefaultsProvider variant="plain" material>
+            <SectionDefaultsProvider size="sm">
               <Outlet />
             </SectionDefaultsProvider>
           </PageHeaderDefaultsProvider>
@@ -147,10 +147,10 @@ export function AppFrame() {
       </AppShellMain>
       {wide || editing ? null : (
         // A div: the dock is navigation, not the page's contentinfo.
-        // Workaround for Slotted finding "AppShellFooter drops its ref when render is given": the ref is set on the div itself.
         <AppShellFooter
+          ref={dockRef}
           className={styles.footer}
-          render={(props) => <div {...props} ref={dockRef} />}
+          render={(props) => <div {...props} />}
         >
           <PhoneDock onReselect={scrollToTop} extent={dockExtent} />
         </AppShellFooter>

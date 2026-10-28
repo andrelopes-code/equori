@@ -54,12 +54,9 @@ export function TagsPage() {
       .map((name) => ({ name }));
   }, [tags.data, shownQuery, locale]);
 
-  // Workaround for Slotted finding "Data-grid re-renders every row when messages or a renderer
-  // changes identity": a selection renders the page, and new messages or renderers would render
-  // every row with it, so they keep their identity.
   const messages = useMemo(
     () => ({
-      // Workaround for Slotted finding "The selection checkbox of a data-grid row is named by its key".
+      // Workaround for Slotted issue #7.
       selectRow: ({ row }: { row: string }) =>
         t("transactions.selectRow", { row }),
     }),

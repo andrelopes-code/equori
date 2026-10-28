@@ -42,11 +42,19 @@ test("every glass selector is held to the dark scheme, on the theme's root", () 
 });
 
 test("an overlay's content blurs what is behind it", () => {
-  for (const name of ["menu", "popover", "tooltip", "select"]) {
-    const selector = `&[data-slotted-scheme="dark"] [data-ui="${name}"] > [data-part="content"]`;
-    assert.ok(css.includes(selector), `${name} content is not blurred`);
+  for (const [name, token] of [
+    ["menu", "--slotted-menu-backdrop-filter"],
+    ["popover", "--slotted-popover-backdrop-filter"],
+    ["tooltip", "--slotted-tooltip-backdrop-filter"],
+    ["select", "--slotted-select-content-backdrop-filter"],
+  ] as const) {
+    assert.ok(
+      css.includes(
+        `[data-ui="${name}"] {\n      ${token}: blur(var(--glass-blur))`,
+      ),
+      `${name} content is not blurred`,
+    );
   }
-  assert.match(css, /backdrop-filter: blur\(var\(--glass-blur\)/);
 });
 
 test("a hover and a selected row are washes over the glass, not opaque steps", () => {
@@ -69,29 +77,24 @@ test("reduced transparency turns every role opaque and drops the blur", () => {
 });
 
 test("a section's sticky header is filled only while it is stuck", () => {
-  const stuck = /@container scroll-state\(stuck: top\) \{([^]*?)\n {4}\}/.exec(
-    css,
-  )?.[1];
-  const block = stuck ?? "";
-  assert.ok(block !== "", "the stuck rule is missing");
-  assert.match(block, /\[data-part="header"\]::before/);
-  assert.match(block, /backdrop-filter: blur\(var\(--glass-blur-strong\)/);
-  assert.match(block, /background-color: var\(--glass-fill-frost\)/);
   assert.match(
-    block,
-    /inset-block-end: calc\(-1 \* var\(--slotted-space-4\)\)/,
+    css,
+    /\[data-part="header"\]\[data-stuck\]::before \{[^}]*background-color: var\(--glass-fill-frost\);[^}]*backdrop-filter: blur\(var\(--glass-blur-strong\)/,
+  );
+  assert.match(
+    css,
+    /:not\(\[data-divider\]\) > \[data-part="header"\]\[data-stuck\]::before \{\s*inset-block-end: calc\(-1 \* var\(--slotted-space-4\)\)/,
   );
 });
 
-test("a dialog blurs through its own token and a drawer on its panel", () => {
+test("a dialog and a drawer blur through their own tokens", () => {
   assert.match(
     css,
     /\[data-ui="dialog"\] \{[^}]*--slotted-dialog-backdrop-filter: blur\(var\(--glass-blur\)/,
   );
-  assert.ok(
-    css.includes(
-      '&[data-slotted-scheme="dark"] [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]',
-    ),
+  assert.match(
+    css,
+    /\[data-ui="drawer"\] \{[^}]*--slotted-drawer-backdrop-filter: blur\(var\(--glass-blur\)/,
   );
 });
 
@@ -153,12 +156,16 @@ test("a dashboard widget's card blurs only while the grid is editing", () => {
 // A plain bar stands on the page footer, which is already a blurred material; a second blur inside
 // it samples the footer and reads as a more solid ground.
 test("only a raised action bar blurs what is behind it", () => {
+  // The library reads the token on the raised bar only.
+  assert.match(
+    css,
+    /\[data-ui="action-bar"\] \{\s*--slotted-action-bar-backdrop-filter: blur\(var\(--glass-blur\)/,
+  );
   const blurs = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter(
     ([, selectors, body]) =>
       selectors?.includes('[data-ui="action-bar"]') &&
-      body?.includes("backdrop-filter: blur(var(--glass-blur)"),
+      /(^|\s)backdrop-filter: blur\(var\(--glass-blur\)/.test(body ?? ""),
   );
-  assert.ok(blurs.length > 0, "the action bar is not blurred at all");
   for (const [, selectors] of blurs) {
     for (const selector of (selectors ?? "").split(",")) {
       if (!selector.includes('[data-ui="action-bar"]')) continue;
@@ -184,7 +191,7 @@ test("a section and a detail panel publish no page ground of their own", () => {
 test("a key cap keeps the opaque secondary surface", () => {
   assert.match(
     css,
-    /&\[data-slotted-scheme="dark"\] \[data-ui="kbd"\] \{\s*--slotted-tone-secondary-surface: oklch\(from var\(--slotted-seed-neutral\) 0\.274 min\(calc\(c \* 0\.22\), 0\.046\) h\);/,
+    /&\[data-slotted-scheme="dark"\] \[data-ui="kbd"\]\[data-variant="soft"\] \{\s*--slotted-kbd-surface: oklch\(from var\(--slotted-seed-neutral\) 0\.274 min\(calc\(c \* 0\.22\), 0\.046\) h\);/,
   );
 });
 
@@ -228,48 +235,6 @@ test("a framed grid's blurred head follows the frame's rounded corners", () => {
 // Chromium makes an ancestor whose opacity is below 1 the backdrop root of its descendants, so a
 // popup that fades its positioner shows its content's blur only once the fade ends. The glass
 // fades the blurred content itself and keeps the positioner opaque.
-test("a popup fades the blurred content, not its positioner", () => {
-  const select = '[data-ui="select"][data-part="positioner"]';
-  const escaped = select.replace(/[[\]]/g, "\\$&");
-  assert.match(
-    css,
-    new RegExp(
-      `${escaped}\\[data-open\\]\\[data-positioned\\] \\{[^}]*animation: none`,
-    ),
-  );
-  assert.match(
-    css,
-    new RegExp(
-      `${escaped}\\[data-open\\]\\[data-positioned\\] > \\[data-part="content"\\] \\{[^}]*animation: slotted-select-enter-down var\\(--slotted-duration-medium\\) var\\(--slotted-easing-enter\\)`,
-    ),
-  );
-  for (const name of [
-    "menu",
-    "popover",
-    "tooltip",
-    "combobox",
-    "date-picker",
-  ]) {
-    assert.ok(
-      css.includes(`slotted-${name}-enter-down var(--slotted-duration-medium)`),
-      name,
-    );
-  }
-});
-
-// The library unmounts a closing popup when its positioner's transitions end; the positioner keeps
-// a translate transition, which does not suppress the blur, so the content's fade plays out.
-test("a closing popup's positioner slides while its content fades", () => {
-  assert.match(
-    css,
-    /\[data-ui="select"\]\[data-part="positioner"\] \{[^}]*opacity: 1;[^}]*transition: translate var\(--slotted-duration-short\) var\(--slotted-easing-exit\)/,
-  );
-  assert.match(
-    css,
-    /\[data-ui="select"\]\[data-part="positioner"\] > \[data-part="content"\] \{[^}]*opacity: 0;[^}]*transition: opacity var\(--slotted-duration-short\) var\(--slotted-easing-exit\)/,
-  );
-});
-
 test("a chart's tooltip blurs what is behind it", () => {
   assert.match(
     css,

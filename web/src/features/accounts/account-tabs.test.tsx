@@ -132,6 +132,10 @@ describe("Scheduled tab", () => {
     const row = await within(table).findByRole("row", { name: /Aluguel/ });
     expect(within(row).getByText("−R$1,500.00")).toBeInTheDocument();
     expect(within(row).getByText("R$3,740.55")).toBeInTheDocument();
+    // The schedule's name and its kind share one line on a wide screen.
+    expect(
+      within(row).getByText("Aluguel").closest('[data-ui="inline"]'),
+    ).toContainElement(within(row).getByText(catalogEn["scheduled.kind.bill"]));
     await waitFor(() => {
       expect(tos).toContain("2027-01-15");
     });

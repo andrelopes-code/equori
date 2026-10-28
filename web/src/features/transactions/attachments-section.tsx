@@ -98,19 +98,7 @@ export function AttachmentsSection({
                   })}
             >
               {isImage(item.media_type) ? (
-                // Workaround for Slotted finding "Attachment preview thumbnail is not lazy-loaded":
-                // the family draws its own img without loading="lazy", so the page draws it.
-                <AttachmentPreview
-                  render={(props) => (
-                    <span {...props}>
-                      <img
-                        src={contentURL(item.id)}
-                        alt={item.file_name}
-                        loading="lazy"
-                      />
-                    </span>
-                  )}
-                />
+                <AttachmentPreview src={contentURL(item.id)} />
               ) : (
                 <AttachmentPreview />
               )}

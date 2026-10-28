@@ -19,7 +19,6 @@ import type {
 } from "@/features/transactions/use-account-choices";
 import { useT } from "@/i18n/i18n-provider";
 import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
-import { useStableCallback } from "@/ui/use-stable-callback";
 
 // The list of accounts in a drawer: choosing one closes it. A phone takes it as a bottom sheet;
 // a wide screen, where a field opens it in compact mode, takes it as a side panel.
@@ -58,17 +57,14 @@ export function AccountSheet({
             (c.institution !== undefined &&
               fold(c.institution).includes(needle)),
         );
-  // Workaround for Slotted finding "Dialog sends focus back to its opener when onOpenChange
-  // changes identity": the search field would keep only the first key typed.
-  const change = useStableCallback((open: boolean) => {
-    if (!open) onClose();
-  });
   return (
     <Drawer
       open
       side={wide ? "end" : "bottom"}
       size={wide ? "md" : "content"}
-      onOpenChange={change}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
     >
       <DrawerPanel>
         <DrawerHeader>

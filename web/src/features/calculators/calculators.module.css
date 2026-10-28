@@ -29,18 +29,16 @@
     }
 
     /* The results stay in view while the inputs scroll, under the page's stuck header (LA-06);
-       results taller than the view scroll inside. Workaround for Slotted finding "The page
-       publishes no block size of its scrollport for a sticky element's height cap": 100dvh
-       counts the app shell's frame above and below the page's scroller, 12 px each in equori's
-       inset canvas, measured at 1440 × 900. */
+       results taller than the view scroll inside. */
     .results {
       position: sticky;
       inset-block-start: calc(
         var(--slotted-page-sticky-top, 0px) + var(--slotted-space-6)
       );
       max-block-size: calc(
-        100dvh - var(--slotted-page-sticky-top, 0px) - 2 *
-          var(--slotted-space-6) - 24px
+        var(--slotted-page-scrollport-block-size, 100dvh) -
+          var(--slotted-page-sticky-top, 0px) -
+          var(--slotted-page-sticky-bottom, 0px) - 2 * var(--slotted-space-6)
       );
       overflow: auto;
     }

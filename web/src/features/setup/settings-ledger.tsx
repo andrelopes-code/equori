@@ -16,11 +16,10 @@ import { SettingsRow } from "@/features/setup/settings-row";
 import { SettingsSection } from "@/features/setup/settings-section";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
-import { useAppLink } from "@/ui/use-app-link";
+import { routeTo } from "@/ui/route-to";
 
 export function SettingsLedger() {
   const t = useT();
-  const follow = useAppLink();
   const api = useApi();
   const settings = useQuery(settingsQuery(api));
   const instruments = useQuery(instrumentsQuery(api));
@@ -86,8 +85,7 @@ export function SettingsLedger() {
             variant="outline"
             tone="secondary"
             fullWidth
-            href="/instruments"
-            onClick={follow({ to: "/instruments" })}
+            render={routeTo({ to: "/instruments" })}
           >
             {t("settings.ledger.instruments")}
           </ButtonLink>

@@ -14,11 +14,7 @@ import type { CategoryEntry } from "@/features/categories";
 import { useCategorizeTransaction } from "@/features/transactions/api";
 import { currentParts } from "@/features/transactions/categorize";
 import styles from "@/features/transactions/category-section.module.css";
-import {
-  majorFromMinor,
-  minorFromMajor,
-  splitState,
-} from "@/features/transactions/split";
+import { splitState } from "@/features/transactions/split";
 import type { SplitPart } from "@/features/transactions/split";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -157,9 +153,11 @@ export function CategorySection({
             <CurrencyField
               aria-label={t("detail.category.partAmount", { index: index + 1 })}
               currency={currency}
-              value={majorFromMinor(part.amount, digits)}
+              unit="minor"
+              fractionDigits={digits}
+              value={part.amount}
               onValueChange={(value: number | null) => {
-                setPart(index, { amount: minorFromMajor(value ?? 0, digits) });
+                setPart(index, { amount: value ?? 0 });
               }}
             />
           )}

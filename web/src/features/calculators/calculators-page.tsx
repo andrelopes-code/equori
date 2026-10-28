@@ -30,12 +30,11 @@ import {
   calculators,
 } from "@/features/calculators/calculators";
 import { useT } from "@/i18n/i18n-provider";
-import { useAppLink } from "@/ui/use-app-link";
+import { routeTo } from "@/ui/route-to";
 
 // The calculators by group, each with the question it answers (design §4, "Routes").
 export function CalculatorsPage() {
   const t = useT();
-  const follow = useAppLink();
   return (
     <Page width="full">
       <PageHeader size="lg">
@@ -51,7 +50,7 @@ export function CalculatorsPage() {
       <PageBody>
         <Stack gap={6}>
           {calculatorGroups.map((group) => (
-            <Section key={group} divider={false}>
+            <Section key={group}>
               <SectionHeader>
                 <SectionTitle>
                   <SectionHeading>{t(`calc.group.${group}`)}</SectionHeading>
@@ -67,8 +66,7 @@ export function CalculatorsPage() {
                     .map(({ id }) => (
                       <ListItem key={id}>
                         <ListItemLink
-                          href={`/calculators/${id}`}
-                          onClick={follow({
+                          render={routeTo({
                             to: "/calculators/$id",
                             params: { id },
                           })}

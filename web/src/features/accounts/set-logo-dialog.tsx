@@ -81,7 +81,7 @@ export function SetLogoDialog({
           <DialogDescription>{t("institutions.setLogoHint")}</DialogDescription>
         </DialogHeader>
         <DialogBody>
-          {/* Workaround for Slotted finding "dialog has no place for a form around its parts". */}
+          {/* Workaround for Slotted issue #8. */}
           <form
             id={formId}
             onSubmit={(event) => {
@@ -108,8 +108,6 @@ export function SetLogoDialog({
                 openOn="focus"
                 width="anchor"
                 media="none"
-                // Workaround for Slotted finding "entity-picker leaves the browser's spellcheck on its input".
-                spellCheck={false}
                 renderOption={(entity, state) => (
                   <InstitutionOption entity={entity} query={state.query} />
                 )}

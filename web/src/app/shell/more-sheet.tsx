@@ -78,10 +78,6 @@ export function MoreSheet({
   const { language } = useAppLocaleState();
   const chooseLanguage = useChooseLanguage();
   const [open, setOpen] = useState(false);
-  // Workaround for Slotted finding "Closing a drawer to navigate is undone by the drawer's history step back":
-  // the drawer releases its history entry with a step back once it has left, which undoes a
-  // navigation made before. The sheet holds no entry (back="none"), so the navigation runs at
-  // the press while the sheet slides out.
   const { data: me } = useQuery({ ...meQuery(useApi()), staleTime: Infinity });
 
   const change = (next: boolean) => {
@@ -90,7 +86,7 @@ export function MoreSheet({
   };
 
   return (
-    <Drawer side="bottom" open={open} back="none" onOpenChange={change}>
+    <Drawer side="bottom" open={open} onOpenChange={change}>
       <DrawerTrigger render={trigger} />
       <DrawerPanel className={styles.sheet}>
         <DrawerResizer />

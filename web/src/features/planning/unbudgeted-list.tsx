@@ -20,7 +20,7 @@ import { CategoryMark, pathSeparator } from "@/features/categories";
 import type { CategoryEntry } from "@/features/categories";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { useAppLink } from "@/ui/use-app-link";
+import { routeTo } from "@/ui/route-to";
 
 type Money = components["schemas"]["Money"];
 
@@ -37,7 +37,6 @@ export function UnbudgetedList({
 }) {
   const t = useT();
   const fmt = useMoneyFormat();
-  const follow = useAppLink();
   const [all, setAll] = useState(false);
   const shown = all ? rows : rows.slice(0, firstShown);
   const first = rows[0]?.total;
@@ -74,8 +73,7 @@ export function UnbudgetedList({
               <ListItem key={entry.id}>
                 <ListItemLink
                   aria-label={t("budget.createFor", { name: entry.name })}
-                  href={`/planning/budgets/new?${new URLSearchParams(search).toString()}`}
-                  onClick={follow({ to: "/planning/budgets/new", search })}
+                  render={routeTo({ to: "/planning/budgets/new", search })}
                 >
                   <ListItemStart>
                     <CategoryMark

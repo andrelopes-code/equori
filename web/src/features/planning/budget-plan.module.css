@@ -334,37 +334,6 @@
       var(--slotted-easing-standard);
   }
 
-  .review {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--slotted-space-3) var(--slotted-space-4);
-    padding: var(--slotted-space-3) var(--slotted-space-4);
-    border: var(--slotted-border-width-thin) solid
-      var(--slotted-tone-accent-border);
-    border-radius: var(--slotted-radius-md);
-    background: var(--slotted-tone-accent-surface);
-  }
-
-  .reviewMark {
-    display: inline-grid;
-    flex: none;
-    color: var(--slotted-tone-accent-text);
-  }
-
-  .reviewText {
-    flex: 1 1 20rem;
-    min-inline-size: 0;
-  }
-
-  .reviewActions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--slotted-space-2);
-    margin-inline-start: auto;
-  }
-
   .reviewRule {
     align-self: stretch;
     inline-size: var(--slotted-border-width-thin);

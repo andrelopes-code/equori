@@ -1,11 +1,8 @@
 @layer app {
-  /* Workaround for Slotted finding "sparkline animates its path while its container is still
-     being sized": the trend takes a box of its own size, so the table column never resizes it.
-     8rem holds 90 daily points at two pixels each; no token holds a measure. The morph of the
-     path is turned off inside the box, so the first measure draws at once. */
+  /* The trend takes a box of its own size, so the table column never resizes it. 8rem holds 90
+     daily points at two pixels each; no token holds a measure. */
   .trend {
     inline-size: 8rem;
     min-block-size: 20px;
-    --slotted-duration-medium: 0ms;
   }
 }

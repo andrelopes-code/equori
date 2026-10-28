@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 
+import { numberFormatter } from "@/i18n/format";
 import { useAppLocale } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
@@ -9,7 +10,7 @@ export function usePlanFormat(currency: string, scale: number) {
   const fmt = useMoneyFormat();
   const [locale] = useAppLocale();
   return useMemo(() => {
-    const percent = new Intl.NumberFormat(locale, {
+    const percent = numberFormatter(locale, {
       style: "percent",
       minimumFractionDigits: 1,
       maximumFractionDigits: 1,

@@ -233,8 +233,8 @@ describe("settings page", () => {
         }),
       );
       expect(
-        document.documentElement.style.getPropertyValue("--slotted-radius-lg"),
-      ).toBe("16px");
+        document.documentElement.getAttribute("data-slotted-corners"),
+      ).toBe("round");
       expect(localStorage.getItem("equori.corners")).toBe("round");
     });
 

@@ -56,6 +56,12 @@ describe("Instrument page", () => {
       "10/16/2026|38.45|Manual",
       "10/14/2026|38.10|b3_cotahist",
     ]);
+    expect(
+      screen.getByRole("group", { name: catalogEn["instrument.prices.title"] }),
+    ).toBeVisible();
+    expect(
+      document.querySelector('[data-ui="chart"] [data-part="title"]'),
+    ).toBeNull();
     expect(Object.fromEntries(queries[0] ?? [])).toEqual({
       instrument: "PETR4",
       quote_instrument: "BRL",

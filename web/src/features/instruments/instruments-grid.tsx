@@ -151,8 +151,6 @@ export function InstrumentsGrid({
     ],
     [t, typeOptions, subtypeOptions, quoteOptions],
   );
-  // Workaround for Slotted finding "Data-grid re-renders every row when messages or a renderer
-  // changes identity": the renderers keep their identity across renders of the page.
   const cellRenderers = useMemo(
     () => ({
       code: ({ row }: { row: CatalogRow }) => (

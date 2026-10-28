@@ -73,15 +73,6 @@ class VisibleIntersectionObserver implements IntersectionObserver {
 // Testing Library's one second, so a find waits up to four within the 15 s test timeout.
 configure({ asyncUtilTimeout: 4000 });
 
-const seeds = [
-  "--slotted-seed-accent",
-  "--slotted-seed-neutral",
-  "--slotted-seed-success",
-  "--slotted-seed-info",
-  "--slotted-seed-warning",
-  "--slotted-seed-danger",
-];
-
 beforeEach(() => {
   // A test file under the node environment (request bodies Node builds itself) has no window.
   if (typeof window === "undefined") return;
@@ -90,13 +81,6 @@ beforeEach(() => {
   // jsdom does not implement scrollTo; the router restores scroll on navigation.
   window.scrollTo = () => undefined;
   setViewport(1280);
-  // jsdom 30 resolves a custom property that no ancestor declares by walking the chain again
-  // from every ancestor, which doubles the cost with each level: a portal opened from a cell of
-  // a table read its six seeds in 34 s. Declared on the root, the walk stops there.
-  // Workaround for Slotted finding "A portal reads its seeds from the opener's computed style on every open":
-  // the tests load no theme, so nothing declares the seeds.
-  for (const seed of seeds)
-    document.documentElement.style.setProperty(seed, "none");
 });
 
 afterEach(() => {

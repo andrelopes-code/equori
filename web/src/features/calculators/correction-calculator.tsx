@@ -25,7 +25,7 @@ import { roundHalfEven } from "@/features/calculators/round";
 import { useCalculatorMoney } from "@/features/calculators/use-calculator-money";
 import { useIndexes } from "@/features/calculators/use-index-rate";
 import { shiftMonth } from "@/features/overview";
-import { formatReferenceMonth } from "@/i18n/format";
+import { formatReferenceMonth, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { MonthControl } from "@/ui/month-control";
 
@@ -147,7 +147,7 @@ export function CorrectionCalculator() {
           results={[
             {
               label: t("calc.correction.factor"),
-              value: new Intl.NumberFormat(locale, {
+              value: numberFormatter(locale, {
                 minimumFractionDigits: 8,
                 maximumFractionDigits: 8,
               }).format(1 + change),

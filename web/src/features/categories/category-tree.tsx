@@ -11,6 +11,7 @@ import { CategoryRowMenu } from "@/features/categories/category-row-menu";
 import type { CategoryAction } from "@/features/categories/category-row-menu";
 import styles from "@/features/categories/category-tree.module.css";
 import { ShareBar } from "@/features/categories/share-bar";
+import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -25,8 +26,6 @@ export interface TreeRow {
   share: number;
 }
 
-// Workaround for Slotted finding "A new tree object rebuilds every row of a data-grid": a
-// page render, a dialog opening, rendered every row of the tree, so the object is a constant.
 const tree = { parentKey: (row: TreeRow) => row.parentId };
 
 export function CategoryTree({
@@ -106,16 +105,13 @@ export function CategoryTree({
 
   const percent = useMemo(
     () =>
-      new Intl.NumberFormat(locale, {
+      numberFormatter(locale, {
         style: "percent",
         maximumFractionDigits: 1,
       }),
     [locale],
   );
 
-  // Workaround for Slotted finding "Data-grid re-renders every row when messages or a renderer
-  // changes identity": a render of the page around the tree, a dialog opening, would render every
-  // row, so the renderers keep their identity.
   const act = useStableCallback(onAction);
   const renderHeader = useCallback(
     ({ column }: { column: { id: string; label: string } }) =>

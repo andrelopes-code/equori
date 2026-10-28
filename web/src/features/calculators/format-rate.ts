@@ -1,3 +1,5 @@
+import { numberFormatter } from "@/i18n/format";
+
 // A rate as a percentage of the locale with up to 4 decimals (design §3): 0.126825 reads
 // "12.6825%" in en-US. A CET passes 2 decimals, fixed.
 export function formatRate(
@@ -5,7 +7,7 @@ export function formatRate(
   locale: string,
   decimals: { min?: number; max?: number } = {},
 ): string {
-  return new Intl.NumberFormat(locale, {
+  return numberFormatter(locale, {
     style: "percent",
     minimumFractionDigits: decimals.min ?? 0,
     maximumFractionDigits: decimals.max ?? 4,

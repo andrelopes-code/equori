@@ -8,6 +8,7 @@ import { Text } from "@slotted/react/typography";
 
 import type { Goal } from "@/features/goals/goal-line";
 import styles from "@/features/goals/goals.module.css";
+import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
@@ -33,7 +34,7 @@ export function GoalParts({
     (parts.length === 1 && only?.instrument === goal.target.currency)
   )
     return null;
-  const share = new Intl.NumberFormat(locale, { style: "percent" });
+  const share = numberFormatter(locale, { style: "percent" });
   return (
     <Collapsible size="sm" className={styles.partsBlock}>
       <CollapsibleHeader>

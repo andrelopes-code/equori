@@ -11,23 +11,6 @@ const summaryRule = `
 }
 `;
 
-// Workaround for Slotted finding "PageHeader paints its stuck ground without a transition": a
-// plain header swaps its ground between transparent and the surface when it sticks, and the swap
-// is abrupt. The root and the title area, which both paint the ground, fade it over the medium
-// duration; the root keeps the transition on its own offset.
-const pageHeaderGroundRule = `
-[data-ui="page-header"][data-variant="plain"] {
-  transition:
-    inset-block-start var(--slotted-duration-medium) var(--slotted-easing-standard),
-    background-color var(--slotted-duration-medium) var(--slotted-easing-standard);
-}
-
-[data-ui="page-header"][data-variant="plain"] [data-part="title-area"] {
-  transition:
-    background-color var(--slotted-duration-medium) var(--slotted-easing-standard);
-}
-`;
-
 // The family's current edge frames the whole link; the sheet underlines it instead.
 const currentDestinationRule = `
 [data-ui="top-navigation"] [data-part="list"] [data-part="link"][data-current] {
@@ -40,77 +23,19 @@ const currentDestinationRule = `
 }
 `;
 
-// Workaround for Slotted finding "CommandPalette has no backdrop-filter token for a material
-// surface": the family exposes its surface as a token but not the filter behind it. Chromium
-// draws no backdrop filter while the dialog's content runs its opacity transition, so the blur
-// appeared only when the fade ended. The content therefore stays opaque and carries the filter,
-// which grows from no blur as the dialog opens; the palette fades instead. The content takes the
-// palette's corners so the blur does not pass them.
-const paletteMaterialRule = `
-[data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:has(> [data-ui="command-palette"]) {
-  border-radius: var(--slotted-command-palette-radius, var(--slotted-radius-lg));
-  opacity: 1;
-  -webkit-backdrop-filter: saturate(1) blur(0);
-  backdrop-filter: saturate(1) blur(0);
-  transition: backdrop-filter var(--slotted-duration-short) var(--slotted-easing-exit);
-}
-
-[data-ui="dialog"][data-open] > [data-part="viewport"] > [data-part="content"]:has(> [data-ui="command-palette"]) {
-  -webkit-backdrop-filter: var(--slotted-material-backdrop);
-  backdrop-filter: var(--slotted-material-backdrop);
-  transition: backdrop-filter var(--slotted-duration-long) var(--slotted-easing-standard);
-}
-
-[data-ui="dialog"] [data-ui="command-palette"] {
-  opacity: 0;
-  transition: opacity var(--slotted-duration-short) var(--slotted-easing-exit);
-}
-
-[data-ui="dialog"][data-open] [data-ui="command-palette"] {
-  opacity: 1;
-  transition: opacity var(--slotted-duration-long) var(--slotted-easing-standard);
-}
-
-&[data-slotted-scheme="light"] [data-ui="dialog"]:has([data-ui="command-palette"]) {
-  --slotted-dialog-scrim: color-mix(in srgb, var(--slotted-scrim) 30%, transparent);
-}
-
-@media not (prefers-reduced-transparency: reduce) {
-  &[data-slotted-scheme="light"] [data-ui="dialog"][data-open] > [data-part="viewport"] > [data-part="content"]:has(> [data-ui="command-palette"]) {
-    -webkit-backdrop-filter: saturate(1.8) blur(6px);
-    backdrop-filter: saturate(1.8) blur(6px);
-  }
-}
-`;
-
-// The bars held at the bottom edge are materials, as the header is at the top. Workaround for
-// Slotted finding "Dialog content's opacity transition suppresses a descendant's backdrop blur
-// until the fade ends": the page footer fades as it slides, so it keeps opacity 1 and enters
-// by its slide alone, which already carries it past the edge.
-const footerMaterialRule = `
-[data-ui="page"] > [data-part="footer"],
-[data-ui="detail-panel"] > [data-part="footer"] {
-  -webkit-backdrop-filter: var(--slotted-material-backdrop);
-  backdrop-filter: var(--slotted-material-backdrop);
-}
-
-[data-ui="detail-panel"] > [data-part="footer"] {
-  background-color: var(--slotted-surface-material);
-}
-
+// Workaround for Slotted issue #3: the page footer, a material, fades as it slides, so it keeps
+// opacity 1 and enters by its slide alone, which already carries it past the edge.
+const footerEntryRule = `
 [data-ui="page"] > [data-part="footer"][data-status="entering"],
 [data-ui="page"] > [data-part="footer"][data-status="exiting"] {
   opacity: 1;
 }
 `;
 
-// Workaround for Slotted finding "Toast has no backdrop-filter token for a material surface": the
-// family exposes its raised ground as a token but not the filter behind it. A soft or solid toast
-// paints its tone and keeps no blur.
-const toastMaterialRule = `
-[data-ui="toast"] > [data-part="list"] > [data-part="item"][data-variant="raised"] {
-  -webkit-backdrop-filter: var(--slotted-material-backdrop);
-  backdrop-filter: var(--slotted-material-backdrop);
+// A light palette dims the page less: the material already sets it apart.
+const paletteScrimRule = `
+&[data-slotted-scheme="light"] [data-ui="dialog"]:has([data-ui="command-palette"]) {
+  --slotted-dialog-scrim: color-mix(in srgb, var(--slotted-scrim) 30%, transparent);
 }
 `;
 
@@ -134,48 +59,12 @@ const darkNeutral = (l: number) => ({
   c: { scale: 0.22, max: 0.08 },
 });
 
-// Workaround for Slotted finding "A full-screen dialog without a body places its footer in the stretched row": the
-// content grid is header, body (the stretched row), footer. Without a body the footer takes the
-// stretched row and its buttons float mid-screen on a phone. The footer is pinned to its own row.
-const dialogFooterRule = `
-[data-ui="dialog"] > [data-part="viewport"] > [data-part="content"] > [data-part="footer"] {
-  grid-row: 3;
-}
-`;
-
-// Workaround for Slotted finding "An overlay sheet draws side borders at the width of the screen": a
-// bottom or top sheet keeps its side borders while it is as wide as the screen, and the border
-// of size="full" loses to that rule. Below the sheet's own measure no side border shows.
-const sheetBorderRule = `
-@media (max-width: 40rem) {
-  [data-ui="drawer"][data-ui="drawer"][data-mode="overlay"][data-side="bottom"] > [data-part="panel"],
-  [data-ui="drawer"][data-ui="drawer"][data-mode="overlay"][data-side="top"] > [data-part="panel"] {
-    border-inline-width: 0;
-  }
-}
-
-[data-ui="drawer"][data-ui="drawer"][data-size="full"][data-mode="overlay"] > [data-part="panel"] {
-  border-width: 0;
-}
-`;
-
-// Workaround for Slotted finding "A drawer's slide duration has no token": the sheet's slide takes the long
-// duration to open and the medium to close, and the family exposes no token for either. A bottom
-// sheet slides in 240 ms and out in 160 ms; the figures sit between the short and medium steps.
-// A drag keeps its own instant transition.
+// A bottom sheet slides in 240 ms and out in 160 ms, between the short and medium steps; the
+// family's long and medium steps read slow for a sheet the hand pulls.
 const sheetSlideRule = `
-[data-ui="drawer"][data-ui="drawer"][data-mode="overlay"][data-side="bottom"][data-drag]:not([data-dragging]) > [data-part="panel"] {
-  transition:
-    translate 240ms var(--slotted-easing-enter),
-    border-start-start-radius 240ms var(--slotted-easing-enter),
-    border-start-end-radius 240ms var(--slotted-easing-enter);
-}
-
-[data-ui="drawer"][data-ui="drawer"][data-mode="overlay"][data-side="bottom"][data-drag]:not([data-open]):not([data-dragging]) > [data-part="panel"] {
-  transition:
-    translate 160ms var(--slotted-easing-exit),
-    border-start-start-radius 160ms var(--slotted-easing-exit),
-    border-start-end-radius 160ms var(--slotted-easing-exit);
+[data-ui="drawer"][data-mode="overlay"][data-side="bottom"][data-drag] {
+  --slotted-drawer-slide-duration: 240ms;
+  --slotted-drawer-slide-exit-duration: 160ms;
 }
 `;
 
@@ -267,8 +156,6 @@ export default extendTheme(
       "--slotted-top-navigation-color": "var(--slotted-text-muted)",
       "--slotted-top-navigation-current-color": "var(--slotted-text)",
       "--slotted-top-navigation-current-background": "transparent",
-      // The card or the content under a page header separates it; a rule repeated that edge.
-      "--slotted-page-header-border": "transparent",
       // A table is lines on the page, not a surface over it.
       "--slotted-table-surface": "transparent",
       "--slotted-table-header-surface": "transparent",
@@ -278,7 +165,8 @@ export default extendTheme(
         "color-mix(in oklch, var(--slotted-border-subtle) 50%, var(--slotted-border-strong))",
       "--slotted-data-grid-border-color-strong":
         "var(--slotted-table-border-color-strong)",
-      // Workaround for Slotted finding "Autofill tint is painted on the input element, over the frame's border": the tint takes the control's own surface, so no colour change shows. The input's 1px overlap of the border stays until the library paints autofill on the frame.
+      // A saved value is not a state: choosing one keeps the field's own surface instead of the
+      // library's accent tint.
       "--slotted-text-field-autofill-background":
         "var(--slotted-control-surface)",
       "--slotted-combobox-autofill-background":
@@ -291,27 +179,29 @@ export default extendTheme(
         "var(--slotted-control-surface)",
       "--slotted-otp-input-autofill-background":
         "var(--slotted-control-surface)",
-      // Workaround for Slotted finding "PageHeader offers no material ground over scrolling content": the header reads the theme's material, which turns opaque under reduced transparency and forced colours.
-      "--slotted-page-header-background": "var(--slotted-surface-material)",
-      "--slotted-page-header-backdrop-filter":
-        "var(--slotted-material-backdrop)",
+      // The bars held at the bottom edge are materials, as the header is at the top.
       "--slotted-page-footer-background": "var(--slotted-surface-material)",
+      "--slotted-page-footer-backdrop-filter":
+        "var(--slotted-material-backdrop)",
+      "--slotted-detail-panel-footer-background":
+        "var(--slotted-surface-material)",
+      "--slotted-detail-panel-footer-backdrop-filter":
+        "var(--slotted-material-backdrop)",
       // The palette floats over the page as a material; its footer keeps a tint of the sunken
       // layer instead of an opaque band across the glass.
       "--slotted-command-palette-surface": "var(--slotted-surface-material)",
+      "--slotted-command-palette-backdrop-filter":
+        "var(--slotted-material-backdrop)",
       "--slotted-toast-surface": "var(--slotted-surface-material)",
+      "--slotted-toast-backdrop-filter": "var(--slotted-material-backdrop)",
       "--slotted-command-palette-footer-surface":
         "color-mix(in oklab, var(--slotted-surface-sunken) 50%, transparent)",
     },
     rules: [
       summaryRule,
       currentDestinationRule,
-      pageHeaderGroundRule,
-      paletteMaterialRule,
-      footerMaterialRule,
-      toastMaterialRule,
-      dialogFooterRule,
-      sheetBorderRule,
+      paletteScrimRule,
+      footerEntryRule,
       sheetSlideRule,
     ],
   },

@@ -26,7 +26,7 @@ import { IntegrationDeleteDialog } from "@/features/setup/integration-delete-dia
 import { IntegrationDialog } from "@/features/setup/integration-dialog";
 import { SettingsGroup } from "@/features/setup/settings-group";
 import { SettingsSection } from "@/features/setup/settings-section";
-import { formatDate } from "@/i18n/format";
+import { formatDate, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 type Open =
@@ -87,7 +87,7 @@ export function SettingsIntegrations() {
                             ),
                           }),
                           t("settings.integrations.connections", {
-                            count: new Intl.NumberFormat(locale).format(
+                            count: numberFormatter(locale).format(
                               count(integration.id),
                             ),
                           }),

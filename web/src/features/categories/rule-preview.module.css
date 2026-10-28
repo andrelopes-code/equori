@@ -1,11 +1,4 @@
 @layer app {
-  .panel {
-    padding: var(--slotted-space-5);
-    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
-    border-radius: var(--slotted-radius-lg);
-    background: var(--slotted-surface);
-  }
-
   .list {
     display: grid;
     gap: var(--slotted-space-1);

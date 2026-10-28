@@ -5,12 +5,9 @@ import { describe, expect, it } from "vitest";
 import { Presence } from "@/ui/presence";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 
-const seen: string[] = [];
-
 function Probe({ name }: { name: string }) {
   const open = useOverlayOpen();
   const [typed] = useState(() => `fresh ${name}`);
-  seen.push(`${name}:${String(open)}`);
   return <p data-open={String(open)}>{typed}</p>;
 }
 
@@ -19,14 +16,6 @@ function host(value: string | undefined) {
 }
 
 describe("Presence", () => {
-  it("renders the overlay closed first, then open, so it plays its enter", () => {
-    seen.length = 0;
-    const { rerender } = render(host(undefined));
-    rerender(host("plan"));
-    expect(seen[0]).toBe("plan:false");
-    expect(seen.at(-1)).toBe("plan:true");
-  });
-
   it("keeps the last value on screen, closed, while it leaves", () => {
     const { rerender } = render(host("plan"));
     rerender(host(undefined));

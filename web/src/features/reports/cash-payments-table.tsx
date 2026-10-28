@@ -25,7 +25,7 @@ import type { ReportPeriod } from "@/features/reports/report-period";
 import { formatDate, formatReferenceMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { QueryError } from "@/ui/query-error";
-import { useAppLink } from "@/ui/use-app-link";
+import { routeTo } from "@/ui/route-to";
 
 // The card payments that make a category's cash total, each opening its payment and the
 // statement it pays (N20).
@@ -46,7 +46,6 @@ export function CashPaymentsTable({
   const t = useT();
   const api = useApi();
   const [tag] = useAppLocale();
-  const follow = useAppLink();
   const payments = useQuery(
     cashPaymentsQuery(api, categoryId, period.from, period.to),
   );
@@ -99,8 +98,7 @@ export function CashPaymentsTable({
                     <Link
                       variant="neutral"
                       underline="hover"
-                      href={`/transactions/${p.payment_transaction_id}`}
-                      onClick={follow({
+                      render={routeTo({
                         to: "/transactions/$id",
                         params: { id: p.payment_transaction_id },
                       })}
@@ -112,8 +110,7 @@ export function CashPaymentsTable({
                     <Link
                       variant="neutral"
                       underline="hover"
-                      href={`/cards/${p.card_account_id}/statements/${p.statement_id}`}
-                      onClick={follow({
+                      render={routeTo({
                         to: "/cards/$accountId/statements/$statementId",
                         params: {
                           accountId: p.card_account_id,

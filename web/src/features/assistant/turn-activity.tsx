@@ -7,7 +7,6 @@ import {
 import { MessageActivity, MessageActivityStep } from "@slotted/react/message";
 
 import { catalogKey } from "@/features/assistant/proposal-card";
-import styles from "@/features/assistant/turn-activity.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
 // Families read: message (activity), collapsible. The steps of a turn in order: while it runs the
@@ -41,7 +40,7 @@ export function TurnActivity({
   return (
     <Collapsible size="sm">
       <CollapsibleHeader>
-        <CollapsibleTrigger className={styles.trigger}>
+        <CollapsibleTrigger>
           {t("assistant.activity.summary", { count: labels.length })}
         </CollapsibleTrigger>
       </CollapsibleHeader>

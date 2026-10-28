@@ -46,6 +46,21 @@ function numberFormat(
   return format;
 }
 
+// Every number on screen carries the minus sign of an amount; Intl writes U+002D.
+export function numberFormatter(
+  locale: string,
+  options: Intl.NumberFormatOptions = {},
+): { format: (value: number) => string } {
+  const format = numberFormat(locale, options);
+  return {
+    format: (value) =>
+      format
+        .formatToParts(value)
+        .map((part) => (part.type === "minusSign" ? minusSign : part.value))
+        .join(""),
+  };
+}
+
 function dateFormat(
   locale: string,
   options: Intl.DateTimeFormatOptions,
@@ -293,7 +308,7 @@ export function shiftDate(iso: string, days: number): string {
 
 // A share in basis points as a percentage of the locale: 5024 reads "50.24%" in en-US.
 export function formatBasisPoints(bp: number, locale: string): string {
-  return new Intl.NumberFormat(locale, {
+  return numberFormatter(locale, {
     style: "percent",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -302,7 +317,7 @@ export function formatBasisPoints(bp: number, locale: string): string {
 
 // Basis points of a month as months with one decimal: 66915 reads "6.7" in en-US.
 export function formatMonths(bp: number, locale: string): string {
-  return new Intl.NumberFormat(locale, {
+  return numberFormatter(locale, {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   }).format(bp / 10000);
@@ -310,7 +325,7 @@ export function formatMonths(bp: number, locale: string): string {
 
 // A change in basis points as a signed percentage of the locale: 688 reads "+6.88%" in en-US.
 export function formatSignedBasisPoints(bp: number, locale: string): string {
-  return new Intl.NumberFormat(locale, {
+  return numberFormatter(locale, {
     style: "percent",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,

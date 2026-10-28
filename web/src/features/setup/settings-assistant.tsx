@@ -50,6 +50,7 @@ import { UsageChart } from "@/features/setup/usage-chart";
 import { UsePrivacy } from "@/features/setup/use-privacy";
 import { UsageList } from "@/features/setup/usage-list";
 import { mergeUsageRows } from "@/features/setup/usage-rows";
+import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 type Open =
@@ -183,9 +184,7 @@ export function SettingsAssistant() {
                           {check.isPending && t("assistant.key.checking")}
                           {check.isSuccess &&
                             t("assistant.key.ok", {
-                              count: new Intl.NumberFormat(locale).format(
-                                check.data,
-                              ),
+                              count: numberFormatter(locale).format(check.data),
                             })}
                           {check.isError && errorText(check.error, t)}
                         </ListItemDescription>

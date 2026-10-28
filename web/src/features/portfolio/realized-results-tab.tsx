@@ -159,7 +159,7 @@ export function RealizedResultsTab({ year }: { year: number }) {
           rows={items.map((r) => ({
             key: `${r.transaction_id}-${r.instrument}`,
             title: r.instrument,
-            href: `/transactions/${r.transaction_id}`,
+            link: { to: "/transactions/$id", params: { id: r.transaction_id } },
             lines: [
               [formatDate(r.date, tag), accountLabel(byID, r.account_id)].join(
                 " · ",

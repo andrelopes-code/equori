@@ -111,6 +111,7 @@
   }
 
   .panel {
+    border-radius: var(--slotted-radius-lg);
     display: flex;
     box-sizing: border-box;
     inline-size: 100%;
@@ -122,6 +123,7 @@
   }
 
   .field {
+    border-radius: var(--slotted-radius-sm);
     display: flex;
     align-items: center;
     block-size: var(--slotted-space-6);
@@ -138,6 +140,7 @@
   }
 
   .button {
+    border-radius: var(--slotted-radius-sm);
     align-self: flex-end;
     inline-size: 40%;
     block-size: var(--slotted-space-6);

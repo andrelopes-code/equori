@@ -103,8 +103,8 @@ export function PeriodControl({
       >
         <PopoverTrigger
           render={(props) => (
-            // Workaround for Slotted finding "Glyph offsets centre the ink box, not the shape the eye
-            // reads": the calendar glyph reads below the label, so the trigger shows the label alone.
+            // Workaround for Slotted issue #4: the calendar glyph reads below the label, so the
+            // trigger shows the label alone.
             <Button {...props}>{label}</Button>
           )}
         />

@@ -151,7 +151,7 @@ describe("Reports categories", () => {
     expect(rowTexts(table)).toEqual([
       "Category|Total|Direct|Before|Difference|Difference %|Records",
       "Food|R$90.00|R$10.00|R$60.00|+R$30.00|+50.00%|Transactions",
-      "Transport|R$40.00|R$0.00|R$50.00|−R$10.00|-20.00%|Transactions",
+      "Transport|R$40.00|R$0.00|R$50.00|−R$10.00|−20.00%|Transactions",
       `Health|R$25.00|R$25.00|R$0.00|+R$25.00|${none}|Transactions`,
       "Total|R$155.00||R$110.00|+R$45.00|+40.91%|",
     ]);

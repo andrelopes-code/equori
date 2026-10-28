@@ -11,6 +11,7 @@ import {
 
 import type { components } from "@/api/schema.gen";
 import { CategoryPicker } from "@/features/categories/category-picker";
+import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 type SourceCategory = components["schemas"]["SourceCategory"];
@@ -25,7 +26,7 @@ export function SourceCategories({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
-  const count = new Intl.NumberFormat(locale);
+  const count = numberFormatter(locale);
   return (
     <Table columns={3} variant="framed">
       <TableContent>

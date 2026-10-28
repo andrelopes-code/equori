@@ -17,7 +17,7 @@ import { ScheduleActions } from "@/features/planning/schedule-actions";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { useAppLink } from "@/ui/use-app-link";
+import { routeTo } from "@/ui/route-to";
 
 type Money = components["schemas"]["Money"];
 type Schedule = components["schemas"]["Schedule"];
@@ -46,7 +46,6 @@ export function SubscriptionsList({
   const t = useT();
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
-  const follow = useAppLink();
   if (loading || scale === null)
     return (
       <Stack gap={2} aria-busy="true">
@@ -79,8 +78,7 @@ export function SubscriptionsList({
           return (
             <ListItem key={schedule.id}>
               <ListItemLink
-                href={`/planning/schedules/${schedule.id}`}
-                onClick={follow({
+                render={routeTo({
                   to: "/planning/schedules/$id",
                   params: { id: schedule.id },
                 })}

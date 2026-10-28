@@ -137,7 +137,7 @@ export function DefineInstrumentDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogBody>
-          {/* Workaround for Slotted finding "dialog has no place for a form around its parts". */}
+          {/* Workaround for Slotted issue #8. */}
           <form
             id={formId}
             noValidate

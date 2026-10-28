@@ -50,13 +50,13 @@ import { ReportControls } from "@/features/reports/report-controls";
 import { previousPeriod } from "@/features/reports/report-period";
 import type { ReportPeriod } from "@/features/reports/report-period";
 import type { ReportsSearch } from "@/features/reports/reports-search";
-import { useReportLink } from "@/features/reports/use-report-link";
+import { reportLink } from "@/features/reports/report-link";
 import { settingsQuery, useScale } from "@/features/setup";
 import { formatSignedBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { QueryError } from "@/ui/query-error";
-import { useAppLink } from "@/ui/use-app-link";
+import { routeTo } from "@/ui/route-to";
 
 // A ranking draws ten bars (RE-08); the table holds every row.
 const chartRows = 10;
@@ -80,8 +80,6 @@ export function CategoriesTab({
   const [tag] = useAppLocale();
   const fmt = useMoneyFormat();
   const scale = useScale();
-  const reportLink = useReportLink();
-  const follow = useAppLink();
   const cls = search.class ?? "expense";
   const view = search.view ?? "accrual";
   const compare = search.compare === true;
@@ -138,17 +136,11 @@ export function CategoriesTab({
         : entries.find((e) => e.id === parentId);
   }
   const transactions = (row: CategoryRow) => {
-    const query = new URLSearchParams({
-      account_id: row.id,
-      from: period.from,
-      to: period.to,
-    }).toString();
     return (
       <Link
         variant="neutral"
         underline="hover"
-        href={`/transactions?${query}`}
-        onClick={follow({
+        render={routeTo({
           to: "/transactions",
           search: { account_id: row.id, from: period.from, to: period.to },
         })}

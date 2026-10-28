@@ -9,6 +9,7 @@ import {
 import { OverviewRows } from "@/features/overview/overview-rows";
 import { useBase } from "@/features/overview/use-base";
 import { goalsQuery } from "@/features/planning";
+import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
@@ -22,7 +23,7 @@ export function GoalsBlock(placement: Placement) {
   const wide = useMediaQuery(wideQuery);
   const goals = useQuery(goalsQuery(api));
   const loading = goals.data === undefined || scale === null;
-  const percent = new Intl.NumberFormat(locale, {
+  const percent = numberFormatter(locale, {
     style: "percent",
     maximumFractionDigits: 0,
   });

@@ -48,7 +48,7 @@ import {
 } from "@/features/planning/schedule-words";
 import { TermsDialog } from "@/features/planning/terms-dialog";
 import { useScale } from "@/features/setup";
-import { formatDate, shiftDate } from "@/i18n/format";
+import { formatDate, numberFormatter, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -198,7 +198,7 @@ export function SchedulePage() {
                 {t("schedule.tolerance")}
               </DescriptionListTerm>
               <DescriptionListDescription>
-                {new Intl.NumberFormat(locale, {
+                {numberFormatter(locale, {
                   maximumFractionDigits: 2,
                 }).format(s.match_tolerance_bp / 100)}
               </DescriptionListDescription>

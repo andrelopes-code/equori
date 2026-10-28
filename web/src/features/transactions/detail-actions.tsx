@@ -122,11 +122,7 @@ export function DetailActions({
             {t("detail.void")}
           </Button>
         </ToolbarItem>
-        {/* Workaround for Slotted finding "Toolbar's overflow control is named in English
-            whatever the language": the label comes from the app's catalog. */}
-        <ToolbarOverflow
-          label={(hidden) => t("detail.moreActions", { count: hidden })}
-        />
+        <ToolbarOverflow />
       </Toolbar>
     );
   }

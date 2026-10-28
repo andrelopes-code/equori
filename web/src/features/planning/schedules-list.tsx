@@ -21,7 +21,7 @@ import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { useAppLink } from "@/ui/use-app-link";
+import { routeTo } from "@/ui/route-to";
 
 type Schedule = components["schemas"]["Schedule"];
 type ScheduleKind = components["schemas"]["ScheduleKind"];
@@ -47,7 +47,6 @@ export function SchedulesList({
   const [locale] = useAppLocale();
   const today = useToday();
   const fmt = useMoneyFormat();
-  const follow = useAppLink();
   if (loading || scale === null)
     return (
       <Stack gap={2} aria-busy="true">
@@ -76,8 +75,7 @@ export function SchedulesList({
                 return (
                   <ListItem key={s.id}>
                     <ListItemLink
-                      href={`/planning/schedules/${s.id}`}
-                      onClick={follow({
+                      render={routeTo({
                         to: "/planning/schedules/$id",
                         params: { id: s.id },
                       })}

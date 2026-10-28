@@ -30,43 +30,41 @@ export function AssistantComposer({
 }) {
   const t = useT();
   return (
-    <div className={styles.halo} data-busy={busy || undefined}>
-      <PromptComposer
-        value={value}
-        onValueChange={(next) => {
-          onValueChange(next);
-        }}
-        disabled={disabled}
-        status={busy ? "streaming" : "ready"}
-        onStop={onStop}
-        emphasis="ring"
-        className={styles.ring}
-        messages={{
-          send: t("assistant.composer.send"),
-          stop: t("assistant.composer.stop"),
-        }}
-        onValueSubmit={(next, request) => {
-          if (busy || next.trim() === "") {
-            request.cancel();
-            return;
-          }
-          onSend(next.trim());
-        }}
-      >
-        <PromptComposerInput
-          ref={inputRef}
-          aria-label={t("assistant.composer.placeholder")}
-          placeholder={t("assistant.composer.placeholder")}
-          maxLength={4000}
-          maxRows={6}
-        />
-        <PromptComposerFooter>
-          <Text size="xs" tone="muted" className={styles.hint}>
-            {t("assistant.composer.hint")}
-          </Text>
-          <PromptComposerSubmit />
-        </PromptComposerFooter>
-      </PromptComposer>
-    </div>
+    <PromptComposer
+      value={value}
+      onValueChange={(next) => {
+        onValueChange(next);
+      }}
+      disabled={disabled}
+      status={busy ? "streaming" : "ready"}
+      onStop={onStop}
+      emphasis="ring"
+      className={styles.ring}
+      messages={{
+        send: t("assistant.composer.send"),
+        stop: t("assistant.composer.stop"),
+      }}
+      onValueSubmit={(next, request) => {
+        if (busy || next.trim() === "") {
+          request.cancel();
+          return;
+        }
+        onSend(next.trim());
+      }}
+    >
+      <PromptComposerInput
+        ref={inputRef}
+        aria-label={t("assistant.composer.placeholder")}
+        placeholder={t("assistant.composer.placeholder")}
+        maxLength={4000}
+        maxRows={6}
+      />
+      <PromptComposerFooter>
+        <Text size="xs" tone="muted" className={styles.hint}>
+          {t("assistant.composer.hint")}
+        </Text>
+        <PromptComposerSubmit />
+      </PromptComposerFooter>
+    </PromptComposer>
   );
 }

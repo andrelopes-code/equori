@@ -10,7 +10,6 @@ import { PhoneGroup } from "@/ui/phone-group";
 import { useT } from "@/i18n/i18n-provider";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { PhoneList } from "@/ui/phone-list";
-import { useAppLink } from "@/ui/use-app-link";
 
 const statusLabel: Record<LedgerRow["status"], MessageKey> = {
   pending: "posting.status.pending",
@@ -46,7 +45,6 @@ export function AccountLedgerList({
   dayLabel: (day: string) => string;
 }) {
   const t = useT();
-  const follow = useAppLink();
   if (loading || days.length === 0)
     return (
       <PhoneList
@@ -95,11 +93,10 @@ export function AccountLedgerList({
                     {title(row)}
                   </span>
                 ),
-                href: `/transactions/${row.id}`,
-                onOpen: follow({
+                link: {
                   to: "/transactions/$id",
                   params: { id: row.id },
-                }),
+                },
                 lines: [
                   counterparts(row),
                   <Inline key="status" gap={2}>

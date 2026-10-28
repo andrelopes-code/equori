@@ -10,7 +10,7 @@ import { useState } from "react";
 import { goalLine, type Goal } from "@/features/goals/goal-line";
 import { defaultMonthly, monthlyRange } from "@/features/goals/goal-plan";
 import { monthsBetween } from "@/features/goals/goal-plan";
-import { formatReferenceMonth } from "@/i18n/format";
+import { formatReferenceMonth, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -100,7 +100,7 @@ export function GoalWhatIf({
           <Inline justify="between" align="baseline" gap={3}>
             <FieldLabel>{t("goals.return")}</FieldLabel>
             <Text size="sm" weight="medium">
-              {new Intl.NumberFormat(locale, {
+              {numberFormatter(locale, {
                 style: "percent",
                 maximumFractionDigits: 1,
               }).format(percent / 100)}
@@ -111,7 +111,7 @@ export function GoalWhatIf({
               <Text size="sm" tone="muted">
                 {t("goals.trailing", {
                   months: trailing.period_months,
-                  rate: new Intl.NumberFormat(locale, {
+                  rate: numberFormatter(locale, {
                     style: "percent",
                     maximumFractionDigits: 1,
                   }).format(trailing.annual_bp / 10000),

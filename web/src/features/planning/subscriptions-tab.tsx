@@ -113,8 +113,9 @@ export function SubscriptionsTab() {
             </TableColumnHeader>
             <TableColumnHeader>{t("subscriptions.history")}</TableColumnHeader>
             <TableColumnHeader>{t("schedules.ends")}</TableColumnHeader>
-            {/* Workaround for Slotted finding "A pinned table cell has no ground, so the cells that scroll under it show through": the actions column is not pinned. */}
-            <TableColumnHeader>{t("agenda.actions")}</TableColumnHeader>
+            <TableColumnHeader sticky="end">
+              {t("agenda.actions")}
+            </TableColumnHeader>
           </TableRow>
         </TableHead>
         {schedules.isPending || scale === null ? (
@@ -174,7 +175,7 @@ export function SubscriptionsTab() {
                         ? t("schedule.noEnd")
                         : formatDate(schedule.ends_on, locale)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell sticky="end">
                       <ScheduleActions schedule={schedule} name={name} />
                     </TableCell>
                   </TableRow>

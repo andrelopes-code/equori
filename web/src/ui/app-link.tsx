@@ -1,9 +1,8 @@
 import { Link } from "@slotted/react/link";
-import { useRouter } from "@tanstack/react-router";
-import type { NavigateOptions } from "@tanstack/react-router";
+import type { LinkOptions } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
-import { useAppLink } from "@/ui/use-app-link";
+import { routeTo } from "@/ui/route-to";
 
 // A link to a screen of the application, drawn by the Slotted family (O13): a bare router link
 // takes the browser's colour and size.
@@ -13,20 +12,13 @@ export function AppLink({
   underline = "always",
   children,
 }: {
-  to: NavigateOptions;
+  to: LinkOptions;
   variant?: "accent" | "neutral";
   underline?: "always" | "hover";
   children: ReactNode;
 }) {
-  const router = useRouter();
-  const follow = useAppLink();
   return (
-    <Link
-      variant={variant}
-      underline={underline}
-      href={router.buildLocation(to).href}
-      onClick={follow(to)}
-    >
+    <Link variant={variant} underline={underline} render={routeTo(to)}>
       {children}
     </Link>
   );

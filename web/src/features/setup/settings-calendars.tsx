@@ -35,7 +35,7 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { QueryError } from "@/ui/query-error";
 import { StepGlyph } from "@/ui/step-glyph";
-import { useAppLink } from "@/ui/use-app-link";
+import { routeTo } from "@/ui/route-to";
 
 type Holiday = components["schemas"]["Holiday"];
 
@@ -55,7 +55,6 @@ const dayMs = 86_400_000;
 export function SettingsCalendars() {
   const t = useT();
   const api = useApi();
-  const follow = useAppLink();
   const [tag] = useAppLocale();
   const today = useToday();
   const search = useSearch({ from: "/_authed/settings" });
@@ -165,8 +164,7 @@ export function SettingsCalendars() {
                 tone="accent"
               >
                 <ListItemLink
-                  href={`/settings?section=calendars&calendar=${c.id}`}
-                  onClick={follow({
+                  render={routeTo({
                     to: "/settings",
                     search: { ...search, calendar: c.id },
                     replace: true,

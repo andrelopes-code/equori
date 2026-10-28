@@ -1,15 +1,3 @@
-@property --halo-turn {
-  syntax: "<angle>";
-  inherits: false;
-  initial-value: 0deg;
-}
-
-@keyframes halo-turn {
-  to {
-    --halo-turn: 360deg;
-  }
-}
-
 @layer app {
   /* The thread fills the body and scrolls on its own; the composer is the footer (CV-01). */
   .thread {
@@ -20,39 +8,16 @@
   }
 
   /* A bottom sheet sizes its panel to its content, which leaves the footer under a short thread.
-     On a phone the panel keeps the screen's height and its body takes the rest, so the footer's
-     natural place is the screen's foot and the sheet's sticky footer holds it there while a drag
-     slides the panel down. */
+     On a phone the panel keeps the sheet's height (its one stop) and its body takes the rest, so
+     the footer's natural place is the sheet's foot and the sticky footer holds it there while a
+     drag slides the panel down. */
   @media (max-width: 599px) {
     .panel {
-      block-size: 100%;
+      block-size: var(--slotted-drawer-sheet-height, 100%);
       max-block-size: 100%;
       min-block-size: 0;
       grid-template-rows: auto auto minmax(0, 1fr) auto;
     }
-
-    /* Workaround for Slotted finding "A message scroller in a bottom sheet keeps a pull at its top from moving the sheet": the thread's scroll chains to the sheet, so a pull at its top drags the sheet down. */
-    .viewport {
-      overscroll-behavior-block: auto;
-    }
-  }
-
-  /* Workaround for Slotted finding "The app-shell pane resizer sits inside the pane instead of the gutter before it": the resizer is centred in the gutter between the page and the pane, past the pane's border. The gutter and the thickness repeat the library's fallbacks. The pane's own scroll would clip it there; its body keeps the scroll. */
-  .aside {
-    overflow: visible;
-  }
-
-  .asideResizer {
-    inset-inline-start: calc(
-      -1 *
-        (
-          var(
-              --slotted-app-shell-gutter,
-              calc(var(--slotted-control-gap-lg) + var(--slotted-space-2))
-            ) /
-            2 + var(--slotted-border-width-thin) + var(--slotted-space-6) / 2
-        )
-    );
   }
 
   /* In the shell's pane the title and the conversation's name take the row; the actions keep their size. */
@@ -127,68 +92,11 @@
     }
   }
 
-  /* Workaround for Slotted finding "The prompt composer's ring glow is cut by its own mask and overflows its container": the hue ring stays, its glow has no reach and no opacity, and the halo below takes its place. One turn takes four slow loops: the default loop spins a ring the reader keeps in view too fast. */
+  /* One turn takes four slow loops: the default loop spins a ring the reader keeps in view too fast. */
   .ring {
-    --slotted-prompt-composer-ring-glow-reach: 0px;
-    --slotted-prompt-composer-ring-glow-opacity: 0;
-    --slotted-prompt-composer-ring-glow-opacity-focus: 0;
-    --slotted-prompt-composer-ring-glow-opacity-busy: 0;
     --slotted-prompt-composer-ring-duration: calc(
       var(--slotted-duration-loop-slow) * 4
     );
-  }
-
-  /* Families read: prompt-composer, whose glow is the finding above; no other family draws a
-     halo. The halo sits inside the composer's box, so only the blur's ink leaves it and no
-     ancestor gains overflow; it turns with the ring through the data hues the ring draws. */
-  .halo {
-    position: relative;
-    isolation: isolate;
-  }
-
-  .halo::before {
-    content: "";
-    position: absolute;
-    inset-block: var(--slotted-space-4);
-    inset-inline: var(--slotted-space-8);
-    z-index: -1;
-    border-radius: var(--slotted-radius-full);
-    background: conic-gradient(
-      from var(--halo-turn),
-      var(--slotted-data-1),
-      var(--slotted-data-3),
-      var(--slotted-data-5),
-      var(--slotted-data-2),
-      var(--slotted-data-1)
-    );
-    filter: blur(var(--slotted-space-6));
-    /* The halo's strength at rest, while typing and while a turn runs: no token states the
-       strength of a decorative light. */
-    opacity: 0.35;
-    animation: halo-turn calc(var(--slotted-duration-loop-slow) * 4) linear
-      infinite;
-    transition: opacity var(--slotted-duration-medium)
-      var(--slotted-easing-standard);
-  }
-
-  .halo:focus-within::before {
-    opacity: 0.55;
-  }
-
-  .halo[data-busy]::before {
-    opacity: 0.75;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .halo::before {
-      animation: none;
-    }
-  }
-
-  @media (forced-colors: active) {
-    .halo::before {
-      display: none;
-    }
   }
 
   /* An answer takes the thread's width (P10). */

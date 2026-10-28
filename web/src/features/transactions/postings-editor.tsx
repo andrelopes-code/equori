@@ -13,7 +13,6 @@ import { useCategoryEntries } from "@/features/categories";
 import { imbalance } from "@/features/transactions/entry-kind";
 import type { EntryRow } from "@/features/transactions/entry-kind";
 import styles from "@/features/transactions/postings-editor.module.css";
-import { majorFromMinor, minorFromMajor } from "@/features/transactions/split";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
@@ -97,10 +96,12 @@ export function PostingsEditor({
             <CurrencyField
               aria-label={t("entry.row.amount", { index: index + 1 })}
               currency={rowCurrency}
-              value={majorFromMinor(row.amount, digits)}
+              unit="minor"
+              fractionDigits={digits}
+              value={row.amount}
               invalid={amountError !== undefined}
               onValueChange={(value: number | null) => {
-                set(index, { amount: minorFromMajor(value ?? 0, digits) });
+                set(index, { amount: value ?? 0 });
               }}
             />
             <TextField

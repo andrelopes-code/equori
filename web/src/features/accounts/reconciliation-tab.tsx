@@ -47,7 +47,7 @@ import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { PhoneList } from "@/ui/phone-list";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
-import { useAppLink } from "@/ui/use-app-link";
+import { routeTo } from "@/ui/route-to";
 import { Presence } from "@/ui/presence";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
@@ -83,7 +83,6 @@ export function ReconciliationTab({
   const fmt = useMoneyFormat();
   const api = useApi();
   const navigate = useNavigate();
-  const follow = useAppLink();
   const compact = useMediaQuery(compactQuery);
   const status = useQuery(reconciliationQuery(api, account.id));
   const history = useInfiniteQuery(assertionsQuery(api, account.id));
@@ -182,8 +181,7 @@ export function ReconciliationTab({
                 {outcome.transactionId !== undefined && (
                   <AlertActions>
                     <Link
-                      href={`/transactions/${outcome.transactionId}`}
-                      onClick={follow({
+                      render={routeTo({
                         to: "/transactions/$id",
                         params: { id: outcome.transactionId },
                       })}
@@ -369,11 +367,10 @@ export function ReconciliationTab({
                 entry.description === ""
                   ? t("ledger.untitled")
                   : entry.description,
-              href: `/transactions/${entry.transaction_id}`,
-              onOpen: follow({
+              link: {
                 to: "/transactions/$id",
                 params: { id: entry.transaction_id },
-              }),
+              },
               lines: [formatDate(entry.date, locale)],
               end: money(entry.amount),
             }))}
@@ -414,8 +411,7 @@ export function ReconciliationTab({
                         <Link
                           variant="neutral"
                           underline="hover"
-                          href={`/transactions/${entry.transaction_id}`}
-                          onClick={follow({
+                          render={routeTo({
                             to: "/transactions/$id",
                             params: { id: entry.transaction_id },
                           })}

@@ -13,6 +13,7 @@ import { EntryKindPicker } from "@/features/transactions/entry-kind-picker";
 import type { ExchangeDraft } from "@/features/transactions/exchange-draft";
 import formStyles from "@/features/transactions/transaction-form.module.css";
 import type { useExchangeEntry } from "@/features/transactions/use-exchange-entry";
+import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { DateShortcuts } from "@/ui/date-shortcuts";
@@ -44,7 +45,7 @@ export function ExchangeForm({
   };
   const { base, from, to, foreignCode } = view;
   const percent = (bp: number) =>
-    new Intl.NumberFormat(locale, {
+    numberFormatter(locale, {
       style: "percent",
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,

@@ -357,27 +357,51 @@ describe("TransactionsPage queue", () => {
 });
 
 describe("TransactionsPage on a phone", () => {
-  // jsdom lays nothing out; the grid's bottom edge is where the test says it is.
-  let gridBottom = 0;
+  // jsdom lays nothing out; a row is in view when the test says so.
+  let inView = false;
+  const watched = new Map<Element, IntersectionObserverCallback>();
+  const reveal = () => {
+    inView = true;
+    for (const [target, callback] of watched) {
+      callback(
+        [{ target, isIntersecting: true } as IntersectionObserverEntry],
+        {} as IntersectionObserver,
+      );
+    }
+  };
 
   beforeEach(() => {
-    // jsdom measures every other element as an empty box at the origin, as here.
-    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
-      function (this: HTMLElement) {
-        return this.dataset.ui === "data-grid"
-          ? DOMRect.fromRect({ y: gridBottom - 1000, height: 1000 })
-          : new DOMRect();
-      },
-    );
-    return () => {
-      vi.restoreAllMocks();
+    inView = false;
+    watched.clear();
+    globalThis.IntersectionObserver = class {
+      readonly root = null;
+      readonly rootMargin = "0px";
+      readonly scrollMargin = "0px";
+      readonly thresholds = [0];
+      #callback: IntersectionObserverCallback;
+      constructor(callback: IntersectionObserverCallback) {
+        this.#callback = callback;
+      }
+      observe(target: Element) {
+        watched.set(target, this.#callback);
+        if (inView) reveal();
+      }
+      unobserve(target: Element) {
+        watched.delete(target);
+      }
+      disconnect() {
+        for (const [target, callback] of watched) {
+          if (callback === this.#callback) watched.delete(target);
+        }
+      }
+      takeRecords() {
+        return [];
+      }
     };
   });
 
-  // The phone's list grows with the page's scroll, not with the grid's: the grid there is as
-  // tall as its rows, so it holds the next page until its end comes within a screen of the view.
+  // The grid asks for the next page when its last rows come into view, and not before.
   it("asks for the next page only when the end of the rows comes near", async () => {
-    gridBottom = 5000;
     const seen: Seen = { queries: [] };
     await renderApp("/transactions", {
       fetch: api(seen),
@@ -389,8 +413,7 @@ describe("TransactionsPage on a phone", () => {
     expect(seen.queries.map((q) => q.get("cursor"))).toEqual([null]);
     expect(screen.queryByText("Year end")).toBeNull();
 
-    gridBottom = innerHeight + 100;
-    window.dispatchEvent(new Event("scroll"));
+    reveal();
     expect(await screen.findByText("Year end")).toBeInTheDocument();
     expect(seen.queries.map((q) => q.get("cursor"))).toEqual([null, "page-2"]);
   });

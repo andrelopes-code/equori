@@ -9,8 +9,6 @@
     grid-template-columns: 14rem minmax(0, 56rem);
   }
 
-  /* Workaround for Slotted finding "A sticky table of contents has no inset under the page chrome":
-     the column is pinned by its own track, the inset of the pane's padding under the header. */
   @media (max-width: 1023px) {
     .layout {
       gap: var(--slotted-space-7);

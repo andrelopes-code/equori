@@ -1,7 +1,6 @@
 import { Chart } from "@slotted/react/chart";
 import type { ChartSeries } from "@slotted/core/chart";
 
-import styles from "@/features/overview/chart-fill.module.css";
 import {
   OverviewBlock,
   type Placement,
@@ -53,18 +52,14 @@ export function SpendingChart({
       }
     >
       {rows.length > 0 && base !== undefined && (
-        <div className={styles.fill}>
-          <div className={styles.plot}>
-            <Chart
-              orientation="horizontal"
-              title={t("overview.spending.amount")}
-              data={rows.map((row) => ({ name: row.name, amount: row.amount }))}
-              series={series}
-              x={{ field: "name" }}
-              y={{ format: money }}
-            />
-          </div>
-        </div>
+        <Chart
+          orientation="horizontal"
+          aria-label={t("overview.spending.title")}
+          data={rows.map((row) => ({ name: row.name, amount: row.amount }))}
+          series={series}
+          x={{ field: "name" }}
+          y={{ format: money }}
+        />
       )}
     </OverviewBlock>
   );

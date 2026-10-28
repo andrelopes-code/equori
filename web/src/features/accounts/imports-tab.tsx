@@ -26,7 +26,7 @@ import { formatDate } from "@/i18n/format";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { PhoneList } from "@/ui/phone-list";
-import { useAppLink } from "@/ui/use-app-link";
+import { routeTo } from "@/ui/route-to";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
@@ -51,7 +51,6 @@ export function ImportsTab({
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
   const navigate = useNavigate();
-  const follow = useAppLink();
   const batches = useQuery(importBatchesQuery(useApi(), account.id));
   const compact = useMediaQuery(compactQuery);
   const balanceText = (b: ImportBatch) =>
@@ -89,11 +88,10 @@ export function ImportsTab({
           rows={(batches.data ?? []).map((b) => ({
             key: b.id,
             title: name(b),
-            href: `/accounts/${account.id}/imports/${b.id}`,
-            onOpen: follow({
+            link: {
               to: "/accounts/$id/imports/$batchId",
               params: { id: account.id, batchId: b.id },
-            }),
+            },
             lines: [
               [
                 t(sourceLabel[b.source]),
@@ -137,8 +135,7 @@ export function ImportsTab({
                         <Link
                           variant="neutral"
                           underline="hover"
-                          href={`/accounts/${account.id}/imports/${b.id}`}
-                          onClick={follow({
+                          render={routeTo({
                             to: "/accounts/$id/imports/$batchId",
                             params: { id: account.id, batchId: b.id },
                           })}

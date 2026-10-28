@@ -6,8 +6,9 @@ import { ProblemError, problemMessage } from "@/api/problem";
 import { OverviewLink } from "@/features/overview/overview-link";
 import { useT } from "@/i18n/i18n-provider";
 
-// Workaround for Slotted finding "Dashboard grid reads widget props only from its direct children": the page
-// sets these on each block element, and the block hands them to its widget.
+// The page sets these on each block element, and the block hands them to its widget: the grid
+// reads a direct child's props before the first paint, and places a widget declared inside a
+// component only after it.
 export interface Placement {
   value: string;
   title: string;

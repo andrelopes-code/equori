@@ -1,5 +1,5 @@
 import { ButtonLink } from "@slotted/react/button";
-import { Field, FieldLabel } from "@slotted/react/field";
+import { Link } from "@tanstack/react-router";
 import { Inline } from "@slotted/react/inline";
 import { Page, PageBody } from "@slotted/react/page";
 import {
@@ -59,54 +59,38 @@ export function PortfolioPage() {
       replace: true,
     });
   };
+  // A page header's controls carry no visible label; each names itself to assistive technology.
   const controls = (
     <>
-      <Field>
-        <FieldLabel>{t("portfolio.valueIn")}</FieldLabel>
-        <ChoiceSelect
-          label={t("portfolio.valueIn")}
-          choices={currencies}
-          multiple={false}
-          value={valueIn ?? null}
-          onChange={(next) => {
-            if (typeof next === "string")
-              change({ value_in: next === base ? undefined : next });
-          }}
-        />
-      </Field>
-      <Field>
-        <FieldLabel>{t("portfolio.date")}</FieldLabel>
-        <DateInput
-          name="date"
-          value={date}
-          shortcuts={false}
-          onChange={(next) => {
-            change({ date: next === today ? undefined : next });
-          }}
-        />
-      </Field>
+      <ChoiceSelect
+        label={t("portfolio.valueIn")}
+        choices={currencies}
+        multiple={false}
+        value={valueIn ?? null}
+        onChange={(next) => {
+          if (typeof next === "string")
+            change({ value_in: next === base ? undefined : next });
+        }}
+      />
+      <DateInput
+        name="date"
+        value={date}
+        shortcuts={false}
+        messages={{
+          choose: t("portfolio.date"),
+          change: ({ date: day }) => t("portfolio.dateChange", { date: day }),
+        }}
+        onChange={(next) => {
+          change({ date: next === today ? undefined : next });
+        }}
+      />
     </>
   );
   const yearLink = (
     <ButtonLink
       variant="outline"
       tone="secondary"
-      href="/portfolio/year"
-      // Workaround for Slotted finding "ButtonLink render props cannot be spread onto a
-      // router link": the anchor keeps its href for a modified click, and a plain click
-      // navigates inside the application.
-      onClick={(event) => {
-        if (
-          event.button !== 0 ||
-          event.metaKey ||
-          event.ctrlKey ||
-          event.shiftKey ||
-          event.altKey
-        )
-          return;
-        event.preventDefault();
-        void navigate({ to: "/portfolio/year" });
-      }}
+      render={(props) => <Link {...props} to="/portfolio/year" />}
     >
       {t("taxYear.open")}
     </ButtonLink>
@@ -122,7 +106,13 @@ export function PortfolioPage() {
                 {t("portfolio.subtitle")}
               </PageHeaderSubheading>
             </PageHeaderTitle>
-            <PageHeaderActions>{!compact && controls}</PageHeaderActions>
+            <PageHeaderActions>
+              {!compact && (
+                <Inline gap={3} wrap="nowrap">
+                  {controls}
+                </Inline>
+              )}
+            </PageHeaderActions>
           </PageHeaderTitleRow>
         </PageHeaderTitleArea>
       </PageHeader>

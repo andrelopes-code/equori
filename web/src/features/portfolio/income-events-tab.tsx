@@ -163,7 +163,7 @@ export function IncomeEventsTab({ year }: { year: number }) {
           rows={items.map((e) => ({
             key: `${e.transaction_id}-${e.instrument}`,
             title: e.instrument,
-            href: `/transactions/${e.transaction_id}`,
+            link: { to: "/transactions/$id", params: { id: e.transaction_id } },
             lines: [
               [formatDate(e.date, tag), accountLabel(byID, e.account_id)].join(
                 " · ",

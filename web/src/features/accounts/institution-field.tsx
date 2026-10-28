@@ -127,8 +127,6 @@ export function InstitutionField({
       openOn="focus"
       width="anchor"
       media="none"
-      // Workaround for Slotted finding "entity-picker leaves the browser's spellcheck on its input".
-      spellCheck={false}
       renderOption={(entity, state) => (
         <InstitutionOption entity={entity} query={state.query} />
       )}

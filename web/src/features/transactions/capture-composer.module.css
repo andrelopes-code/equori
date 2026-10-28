@@ -6,8 +6,6 @@
     --slotted-prompt-composer-radius: var(--slotted-radius-lg);
     --slotted-prompt-composer-border-color: transparent;
     --slotted-prompt-composer-hover-border-color: transparent;
-    /* Workaround for Slotted finding "Prompt composer's focus outline fades in from the text
-       colour": with no width the outline draws nothing, white flash included. */
     --slotted-focus-ring-width: 0px;
     /* The lift's shadow falls over the ring's lower edge; the glow takes its place. */
     --slotted-prompt-composer-raised-shadow: none;

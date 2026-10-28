@@ -1,9 +1,9 @@
 import type { MarkdownNode } from "@slotted/core/markdown";
 
-// Workaround for Slotted finding "The markdown family needs an outside parser for plain CommonMark":
-// the family draws an mdast tree and ships only an adapter for the `marked` lexer, which this
-// application does not install. This subset parser covers what the assistant is told to write
-// (paragraphs, lists, bold, links to a screen, GFM tables); any other syntax stays literal text.
+// Workaround for Slotted issue #9: the family's own parser leaves a table as a paragraph, and its
+// only table adapter is for the `marked` lexer, which this application does not install. This
+// subset parser covers what the assistant is told to write (paragraphs, lists, bold, links to a
+// screen, GFM tables); any other syntax stays literal text.
 
 const inlinePattern = /\*\*([^*\n]+)\*\*|\[([^\]\n]+)\]\(([^)\s]*)\)/g;
 

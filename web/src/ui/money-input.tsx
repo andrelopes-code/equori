@@ -10,9 +10,8 @@ import { useMoneyFormat } from "@/privacy/use-money-format";
 // The integer part of a safe integer: fifteen digits stay exact in a double.
 const maxDigits = 15;
 
-// Families read: currency-field, number-field. The currency field keeps a float in major units
-// (Slotted finding "currency-field holds the amount as a float in major units") and draws a
-// plain input; money is what this application is about, so its entry is the app's own: the
+// Families read: currency-field, number-field. The currency field draws a plain input; money is
+// what this application is about, so its entry is the app's own: the
 // amount is the page's largest figure, signed and coloured by the kind of entry, typed like a
 // till (money-entry.ts) and held as an integer of minor units (O7).
 export function MoneyInput({

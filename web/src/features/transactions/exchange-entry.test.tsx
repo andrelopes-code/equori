@@ -117,7 +117,7 @@ describe("currency exchange entry", () => {
     const result = await screen.findByRole("region", {
       name: catalogEn["exchange.result"],
     });
-    expect(await within(result).findByText(/-0\.31%/)).toBeInTheDocument();
+    expect(await within(result).findByText(/\u22120\.31%/)).toBeInTheDocument();
   });
 
   it("sends the body of the contract", async () => {

@@ -19,7 +19,7 @@ import {
 } from "@/features/setup/settings-topics";
 import type { SettingsTopic } from "@/features/setup/settings-topics";
 import { useT } from "@/i18n/i18n-provider";
-import { useAppLink } from "@/ui/use-app-link";
+import { routeTo } from "@/ui/route-to";
 
 // The panes of the settings page, grouped. Beside a pane it marks the one on show; on a phone it is
 // the index the reader opens a pane from, so each row says what its pane holds and points onward.
@@ -31,7 +31,6 @@ export function SettingsNavigation({
   index: boolean;
 }) {
   const t = useT();
-  const follow = useAppLink();
   return (
     <SideNavigation
       aria-label={t("settings.contents")}
@@ -53,8 +52,7 @@ export function SettingsNavigation({
               .map((topic) => (
                 <SideNavigationItem key={topic.id} value={topic.id}>
                   <SideNavigationLink
-                    href={`/settings?section=${topic.id}`}
-                    onClick={follow({
+                    render={routeTo({
                       to: "/settings",
                       search: { section: topic.id },
                     })}

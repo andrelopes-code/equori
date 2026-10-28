@@ -706,6 +706,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "statement.reconciled": "Reconciliada",
   "statement.previous": "Fatura anterior",
   "statement.next": "Próxima fatura",
+  "statement.steps": "Faturas",
   "statement.pay": "Pagar",
   "statement.finance": "Financiar",
   "statement.reconcile": "Reconciliar",

@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import type { components } from "@/api/schema.gen";
 import styles from "@/features/transactions/attachment-viewer.module.css";
 import { useViewerGestures } from "@/features/transactions/use-viewer-gestures";
+import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 type Attachment = components["schemas"]["Attachment"];
@@ -171,7 +172,7 @@ export function AttachmentViewer({
               </Icon>
             </IconButton>
             <Text size="sm" className={styles.zoom}>
-              {new Intl.NumberFormat(tag, { style: "percent" }).format(zoom)}
+              {numberFormatter(tag, { style: "percent" }).format(zoom)}
             </Text>
             <IconButton
               aria-label={t("attachment.zoomIn")}

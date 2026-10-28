@@ -3,7 +3,7 @@
 // what is behind them. Adding a family is adding an entry; nothing else changes.
 
 import type { Declarations } from "./css.ts";
-import { child, family, part } from "./css.ts";
+import { family, part } from "./css.ts";
 import { elevation, fill, ringColor as ring } from "./material.ts";
 
 export interface Surface {
@@ -44,7 +44,7 @@ const picker = (name: string): Surface => ({
     [`--slotted-${name}-content-border-color`]: ring,
     [`--slotted-${name}-content-shadow`]: elevation(2),
   },
-  blur: [child(name, "content")],
+  blurToken: `--slotted-${name}-content-backdrop-filter`,
 });
 
 // The command palette is a dialog whose content carries the palette's own material (see the
@@ -84,7 +84,7 @@ export const surfaces: readonly Surface[] = [
       "--slotted-menu-border-color": ring,
       "--slotted-menu-shadow": elevation(2),
     },
-    blur: [child("menu", "content")],
+    blurToken: "--slotted-menu-backdrop-filter",
   },
   {
     family: "popover",
@@ -93,7 +93,7 @@ export const surfaces: readonly Surface[] = [
       "--slotted-popover-border-color": ring,
       "--slotted-popover-shadow": elevation(2),
     },
-    blur: [child("popover", "content")],
+    blurToken: "--slotted-popover-backdrop-filter",
   },
   {
     family: "tooltip",
@@ -102,7 +102,7 @@ export const surfaces: readonly Surface[] = [
       "--slotted-tooltip-border-color": ring,
       "--slotted-tooltip-shadow": elevation(1),
     },
-    blur: [child("tooltip", "content")],
+    blurToken: "--slotted-tooltip-backdrop-filter",
   },
   byToken("listbox", {
     surface: fill("overlay"),
@@ -119,7 +119,7 @@ export const surfaces: readonly Surface[] = [
       "--slotted-date-picker-content-border-color": ring,
       "--slotted-date-picker-content-shadow": elevation(2),
     },
-    blur: [`${family("date-picker")} [data-part="content"]`],
+    blurToken: "--slotted-date-picker-content-backdrop-filter",
   },
   {
     family: "toast",
@@ -157,7 +157,8 @@ export const surfaces: readonly Surface[] = [
         declarations: { "box-shadow": elevation(3) },
       },
     ],
-    blur: [OVERLAY_DRAWER, OVERLAY_DRAWER_FOOTER],
+    blurToken: "--slotted-drawer-backdrop-filter",
+    blur: [OVERLAY_DRAWER_FOOTER],
   },
   {
     family: "action-sheet",
@@ -171,7 +172,7 @@ export const surfaces: readonly Surface[] = [
       "--slotted-action-bar-background": fill("overlay"),
       "--slotted-action-bar-border-color": ring,
     },
-    blur: [`${family("action-bar")}[data-variant="raised"]`],
+    blurToken: "--slotted-action-bar-backdrop-filter",
   },
   byToken("filter-bar", {
     surface: fill("card"),

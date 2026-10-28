@@ -708,6 +708,7 @@ export const accountsEn = {
   "statement.reconciled": "Reconciled",
   "statement.previous": "Previous statement",
   "statement.next": "Next statement",
+  "statement.steps": "Statements",
   "statement.pay": "Pay",
   "statement.finance": "Finance",
   "statement.reconcile": "Reconcile",

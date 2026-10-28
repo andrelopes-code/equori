@@ -473,7 +473,6 @@ export const catalogEn = {
   "detail.correct": "Correct",
   "detail.transfer": "Mark as transfer",
   "detail.void": "Void",
-  "detail.moreActions": "More actions ({count})",
   "detail.notFound": "This transaction does not exist",
   "detail.notFoundHint": "It may belong to another user or the link is wrong.",
   "detail.loadFailed": "The transaction could not be loaded",
@@ -1146,6 +1145,7 @@ export const catalogEn = {
     "A pattern in RE2 syntax, matched against the text as the bank wrote it, case included; start with (?i) to ignore case. Example: (?i)^(uber|99)",
   "ruleEditor.regexPlaceholder": "(?i)^(uber|99)",
   "ruleEditor.stepLabel": "Step {n}",
+  "ruleEditor.reading": "The rule as it reads",
   "capture.title": "Write as text",
   "capture.subheading":
     "One transaction per line. Nothing is recorded until you confirm.",

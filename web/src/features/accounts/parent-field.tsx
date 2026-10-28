@@ -72,8 +72,6 @@ export function ParentField({
       openOn="focus"
       width="anchor"
       media="none"
-      // Workaround for Slotted finding "entity-picker leaves the browser's spellcheck on its input".
-      spellCheck={false}
       placeholder={t("accountForm.topLevel")}
       invalid={invalid}
       renderOption={(entity, state) => {

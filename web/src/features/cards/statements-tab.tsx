@@ -26,7 +26,7 @@ import { formatDate, formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { PhoneList } from "@/ui/phone-list";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
-import { useAppLink } from "@/ui/use-app-link";
+import { routeTo } from "@/ui/route-to";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Statement = components["schemas"]["StatementSummary"];
@@ -49,7 +49,6 @@ export function StatementsTab({
   const t = useT();
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
-  const follow = useAppLink();
   const money = (m: components["schemas"]["Money"]) =>
     fmt.money(m, scale(m.currency));
   const compact = useMediaQuery(compactQuery);
@@ -64,11 +63,10 @@ export function StatementsTab({
           rows={rows.map((s) => ({
             key: s.id,
             title: formatMonthTitle(s.reference, locale),
-            href: `/cards/${accountId}/statements/${s.id}`,
-            onOpen: follow({
+            link: {
               to: "/cards/$accountId/statements/$statementId",
               params: { accountId, statementId: s.id },
-            }),
+            },
             lines: [
               [
                 [t("card.closing"), formatDate(s.closing_date, locale)].join(
@@ -127,8 +125,7 @@ export function StatementsTab({
                         <Link
                           variant="neutral"
                           underline="hover"
-                          href={`/cards/${accountId}/statements/${s.id}`}
-                          onClick={follow({
+                          render={routeTo({
                             to: "/cards/$accountId/statements/$statementId",
                             params: { accountId, statementId: s.id },
                           })}

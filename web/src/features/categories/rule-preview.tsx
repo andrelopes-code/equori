@@ -1,13 +1,20 @@
 import { InlineMessage } from "@slotted/react/inline-message";
 import { Stack } from "@slotted/react/stack";
-import { Heading, Text } from "@slotted/react/typography";
+import {
+  Section,
+  SectionBody,
+  SectionDescription,
+  SectionHeader,
+  SectionHeading,
+  SectionTitle,
+} from "@slotted/react/section";
+import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
 import { ProblemError, unwrap } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { rulePreview } from "@/features/categories/api";
-import styles from "@/features/categories/rule-preview.module.css";
 import { PreviewList } from "@/features/categories/preview-list";
 import { useT } from "@/i18n/i18n-provider";
 import { useDebounced } from "@/ui/use-debounced";
@@ -33,50 +40,50 @@ export function RulePreview({ rule }: { rule: RuleInput | null }) {
     retry: false,
   });
   return (
-    <section className={styles.panel} aria-busy={preview.isFetching}>
-      <Stack gap={4}>
-        <Stack gap={1}>
-          <Heading level={2} size="md">
-            {t("preview.title")}
-          </Heading>
-          <Text size="sm" tone="muted">
-            {t("preview.hint")}
-          </Text>
-        </Stack>
-        {rule === null && <Text tone="muted">{t("preview.waiting")}</Text>}
-        {rule !== null && preview.isError && (
-          <InlineMessage tone="danger">
-            {preview.error instanceof ProblemError
-              ? (preview.error.problem.errors?.[0]?.message ??
-                t("preview.failed"))
-              : t("preview.failed")}
-          </InlineMessage>
-        )}
-        {rule !== null && preview.data != null && (
-          <>
-            {preview.data.would_categorize.count === 0 &&
-              preview.data.conflicts.count === 0 && (
-                <Text tone="muted">{t("preview.none")}</Text>
+    <Section ground="surface" aria-busy={preview.isFetching}>
+      <SectionHeader>
+        <SectionTitle>
+          <SectionHeading>{t("preview.title")}</SectionHeading>
+          <SectionDescription>{t("preview.hint")}</SectionDescription>
+        </SectionTitle>
+      </SectionHeader>
+      <SectionBody>
+        <Stack gap={4}>
+          {rule === null && <Text tone="muted">{t("preview.waiting")}</Text>}
+          {rule !== null && preview.isError && (
+            <InlineMessage tone="danger">
+              {preview.error instanceof ProblemError
+                ? (preview.error.problem.errors?.[0]?.message ??
+                  t("preview.failed"))
+                : t("preview.failed")}
+            </InlineMessage>
+          )}
+          {rule !== null && preview.data != null && (
+            <>
+              {preview.data.would_categorize.count === 0 &&
+                preview.data.conflicts.count === 0 && (
+                  <Text tone="muted">{t("preview.none")}</Text>
+                )}
+              {preview.data.would_categorize.count > 0 && (
+                <PreviewList
+                  title={t("preview.would", {
+                    count: preview.data.would_categorize.count,
+                  })}
+                  set={preview.data.would_categorize}
+                />
               )}
-            {preview.data.would_categorize.count > 0 && (
-              <PreviewList
-                title={t("preview.would", {
-                  count: preview.data.would_categorize.count,
-                })}
-                set={preview.data.would_categorize}
-              />
-            )}
-            {preview.data.conflicts.count > 0 && (
-              <PreviewList
-                title={t("preview.conflicts", {
-                  count: preview.data.conflicts.count,
-                })}
-                set={preview.data.conflicts}
-              />
-            )}
-          </>
-        )}
-      </Stack>
-    </section>
+              {preview.data.conflicts.count > 0 && (
+                <PreviewList
+                  title={t("preview.conflicts", {
+                    count: preview.data.conflicts.count,
+                  })}
+                  set={preview.data.conflicts}
+                />
+              )}
+            </>
+          )}
+        </Stack>
+      </SectionBody>
+    </Section>
   );
 }

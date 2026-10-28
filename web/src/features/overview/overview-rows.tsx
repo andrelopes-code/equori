@@ -9,11 +9,10 @@ import {
   ListItemLabel,
   ListItemLink,
 } from "@slotted/react/list-item";
-import { useRouter } from "@tanstack/react-router";
 import type { NavigateOptions } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
-import { useAppLink } from "@/ui/use-app-link";
+import { routeTo } from "@/ui/route-to";
 
 export interface OverviewRow {
   key: string;
@@ -32,8 +31,6 @@ export function OverviewRows({
   label: string;
   rows: OverviewRow[];
 }) {
-  const router = useRouter();
-  const follow = useAppLink();
   return (
     <List aria-label={label}>
       {rows.map((row) => {
@@ -53,12 +50,7 @@ export function OverviewRows({
             {row.to === undefined ? (
               <ListItemContent>{body}</ListItemContent>
             ) : (
-              <ListItemLink
-                href={router.buildLocation(row.to).href}
-                onClick={follow(row.to)}
-              >
-                {body}
-              </ListItemLink>
+              <ListItemLink render={routeTo(row.to)}>{body}</ListItemLink>
             )}
             {row.actions !== undefined && (
               <ListItemActions>{row.actions}</ListItemActions>

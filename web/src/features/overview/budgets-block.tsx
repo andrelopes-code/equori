@@ -14,6 +14,7 @@ import {
   budgetsQuery,
   startsBy,
 } from "@/features/planning";
+import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
 
@@ -44,7 +45,7 @@ export function BudgetsBlock({
     budgets.data === undefined ||
     accounts.data === undefined ||
     progress.some((query) => query.data === undefined);
-  const percent = new Intl.NumberFormat(locale, {
+  const percent = numberFormatter(locale, {
     style: "percent",
     maximumFractionDigits: 0,
   });

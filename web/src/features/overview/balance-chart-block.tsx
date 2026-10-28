@@ -3,7 +3,6 @@ import type { ChartSeries } from "@slotted/core/chart";
 import { useMemo } from "react";
 
 import { balanceRows } from "@/features/overview/balance-rows";
-import styles from "@/features/overview/chart-fill.module.css";
 import {
   OverviewBlock,
   type Placement,
@@ -63,29 +62,25 @@ export function BalanceChartBlock({
       error={failed}
       onRetry={retry}
     >
-      <div className={styles.fill}>
-        <div className={styles.plot}>
-          <Chart
-            title={t("overview.balance.balance")}
-            data={data}
-            series={series}
-            x={{ field: "label" }}
-            y={{ format: money }}
-            annotations={
-              overview?.current === true
-                ? [
-                    {
-                      kind: "line",
-                      axis: "x",
-                      value: formatDayMonth(today, locale),
-                      label: t("overview.balance.today"),
-                    },
-                  ]
-                : []
-            }
-          />
-        </div>
-      </div>
+      <Chart
+        aria-label={t("overview.balance.title")}
+        data={data}
+        series={series}
+        x={{ field: "label" }}
+        y={{ format: money }}
+        annotations={
+          overview?.current === true
+            ? [
+                {
+                  kind: "line",
+                  axis: "x",
+                  value: formatDayMonth(today, locale),
+                  label: t("overview.balance.today"),
+                },
+              ]
+            : []
+        }
+      />
     </OverviewBlock>
   );
 }

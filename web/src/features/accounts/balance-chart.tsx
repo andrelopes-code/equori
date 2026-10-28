@@ -15,7 +15,6 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
-import styles from "@/features/accounts/balance-chart.module.css";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
@@ -100,32 +99,29 @@ export const BalanceChart = memo(function BalanceChart({
         },
       ]}
       actions={
-        // Workaround for Slotted finding "Chart card actions sit lower than the toolbar beside them".
-        <div className={styles.range}>
-          <SegmentedControl
-            size="sm"
-            aria-label={t("account.chart.range")}
-            value={String(range)}
-            onValueChange={(value) => {
-              const next = Number(value);
-              if (next === 30 || next === 90 || next === 365) onRange(next);
-            }}
-          >
-            <Segment value="30">
-              {t(compact ? "account.chart.daysShort" : "account.chart.days", {
-                count: 30,
-              })}
-            </Segment>
-            <Segment value="90">
-              {t(compact ? "account.chart.daysShort" : "account.chart.days", {
-                count: 90,
-              })}
-            </Segment>
-            <Segment value="365">
-              {t(compact ? "account.chart.yearShort" : "account.chart.year")}
-            </Segment>
-          </SegmentedControl>
-        </div>
+        <SegmentedControl
+          size="sm"
+          aria-label={t("account.chart.range")}
+          value={String(range)}
+          onValueChange={(value) => {
+            const next = Number(value);
+            if (next === 30 || next === 90 || next === 365) onRange(next);
+          }}
+        >
+          <Segment value="30">
+            {t(compact ? "account.chart.daysShort" : "account.chart.days", {
+              count: 30,
+            })}
+          </Segment>
+          <Segment value="90">
+            {t(compact ? "account.chart.daysShort" : "account.chart.days", {
+              count: 90,
+            })}
+          </Segment>
+          <Segment value="365">
+            {t(compact ? "account.chart.yearShort" : "account.chart.year")}
+          </Segment>
+        </SegmentedControl>
       }
     />
   );

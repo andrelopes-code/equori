@@ -1,5 +1,5 @@
-// Workaround for Slotted finding "currency-field holds the amount as a float in major units":
-// the field's number is read through its decimal text so no float reaches the API (O7).
+// A number field holds a float; its number is read through its decimal text so no float reaches
+// the API (O7).
 export function minorFromMajor(major: number, scale: number): number {
   const [whole = "0", fraction = ""] = Math.abs(major)
     .toFixed(scale)

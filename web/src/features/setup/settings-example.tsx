@@ -1,4 +1,4 @@
-import { formatDate } from "@/i18n/format";
+import { formatDate, numberFormatter } from "@/i18n/format";
 import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import styles from "@/features/setup/settings-page.module.css";
@@ -11,7 +11,7 @@ export function SettingsExample() {
   const t = useT();
   const { tag } = useAppLocaleState();
   const today = useToday();
-  const number = new Intl.NumberFormat(tag, {
+  const number = numberFormatter(tag, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(sampleNumber);

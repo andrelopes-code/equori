@@ -11,7 +11,6 @@ import type { Choice } from "@/ui/choice-select";
 import type { RuleCondition } from "@/features/categories/rule-draft";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
-import { majorFromMinor, minorFromMajor } from "@/ui/money-units";
 
 type Money = components["schemas"]["Money"];
 
@@ -169,12 +168,9 @@ export function ConditionValue({
     }
     case "amount":
     case "absolute_amount": {
-      const money = (v: unknown) =>
-        isMoney(v) ? majorFromMinor(v.amount, scale) : null;
-      const toMoney = (major: number | null): Money | null =>
-        major === null
-          ? null
-          : { amount: minorFromMajor(major, scale), currency };
+      const money = (v: unknown) => (isMoney(v) ? v.amount : null);
+      const toMoney = (minor: number | null): Money | null =>
+        minor === null ? null : { amount: minor, currency };
       const one = (
         v: unknown,
         set: (m: Money | null) => void,
@@ -183,6 +179,8 @@ export function ConditionValue({
         <CurrencyField
           aria-label={name}
           currency={currency}
+          unit="minor"
+          fractionDigits={scale}
           value={money(v)}
           invalid={invalid}
           format={{ signDisplay: field === "amount" ? "always" : "auto" }}

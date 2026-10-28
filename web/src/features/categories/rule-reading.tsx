@@ -1,3 +1,10 @@
+import {
+  Section,
+  SectionBody,
+  SectionHeader,
+  SectionHeading,
+  SectionTitle,
+} from "@slotted/react/section";
 import { Text } from "@slotted/react/typography";
 
 import {
@@ -20,33 +27,47 @@ export function RuleReading({
 }) {
   const t = useT();
   return (
-    <div className={styles.sheet} aria-live="polite">
-      <Text weight="semibold" className={styles.label}>
-        {t("ruleEditor.when")}
-      </Text>
-      <ol className={styles.lines}>
-        {draft.conditions.map((condition, i) => (
-          <li key={i} className={styles.line}>
-            <Text tone="muted" className={styles.join}>
-              {i === 0 ? "" : t("ruleEditor.and")}
-            </Text>
-            <Text>{conditionSentence(condition, words)}</Text>
-          </li>
-        ))}
-      </ol>
-      <Text weight="semibold" className={styles.label}>
-        {t("ruleEditor.then")}
-      </Text>
-      <ol className={styles.lines}>
-        {draft.actions.map((action, i) => (
-          <li key={i} className={styles.line}>
-            <Text tone="muted" numeric="tabular" className={styles.join}>
-              {t("ruleEditor.step", { n: i + 1 })}
-            </Text>
-            <Text>{actionSentence(action, words)}</Text>
-          </li>
-        ))}
-      </ol>
-    </div>
+    <Section ground="surface">
+      <SectionHeader>
+        <SectionTitle>
+          <SectionHeading>{t("ruleEditor.reading")}</SectionHeading>
+        </SectionTitle>
+      </SectionHeader>
+      <SectionBody>
+        <div className={styles.sheet} aria-live="polite">
+          <Text size="sm" weight="semibold">
+            {t("ruleEditor.when")}
+          </Text>
+          <ol className={styles.lines}>
+            {draft.conditions.map((condition, i) => (
+              <li key={i} className={styles.line}>
+                <Text size="sm" tone="muted" className={styles.join}>
+                  {i === 0 ? "" : t("ruleEditor.and")}
+                </Text>
+                <Text size="sm">{conditionSentence(condition, words)}</Text>
+              </li>
+            ))}
+          </ol>
+          <Text size="sm" weight="semibold">
+            {t("ruleEditor.then")}
+          </Text>
+          <ol className={styles.lines}>
+            {draft.actions.map((action, i) => (
+              <li key={i} className={styles.line}>
+                <Text
+                  size="sm"
+                  tone="muted"
+                  numeric="tabular"
+                  className={styles.join}
+                >
+                  {t("ruleEditor.step", { n: i + 1 })}
+                </Text>
+                <Text size="sm">{actionSentence(action, words)}</Text>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </SectionBody>
+    </Section>
   );
 }

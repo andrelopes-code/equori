@@ -10,6 +10,7 @@ import {
 import { Button } from "@slotted/react/button";
 import {
   Drawer,
+  DrawerActions,
   DrawerBody,
   DrawerDescription,
   DrawerFooter,
@@ -79,6 +80,9 @@ function usePhone(): boolean {
   return useSyncExternalStore(subscribe, () => matchMedia(PHONE_QUERY).matches);
 }
 
+// A phone's sheet rests at this fraction of the screen's height and cannot be pulled higher.
+const SHEET_STOPS = [0.85];
+
 // The chat state answers these codes; the stored conversation shows a failed turn (P6, P7).
 const stateCodes = new Set([
   "assistant_exhausted",
@@ -87,7 +91,7 @@ const stateCodes = new Set([
 ]);
 
 // The shell's pane beside the page from 1200 px; an overlay without a scrim from 600 px; a
-// full-height bottom sheet on a phone, whose composer is the sheet's footer and stays at the screen's
+// bottom sheet on a phone resting at 85% of the screen, whose composer is the sheet's footer and stays at the screen's
 // foot while the sheet is dragged (P9). Its state outlives closing it and a change of placement.
 export function AssistantPanel({
   open,
@@ -142,10 +146,11 @@ export function AssistantPanel({
   const started = messages.length > 0 || turn.pending !== null;
   const canType = open && !listing && chat.data !== undefined && !blocked;
   // The composer is disabled while the chat state loads, when the drawer moves focus on open.
-  // A move between the drawer and the pane mounts a new composer; it takes focus again.
+  // A move between the drawer and the pane mounts a new composer; it takes focus again. A phone's
+  // sheet leaves it unfocused: the screen keyboard would resize the sheet during its entrance.
   useEffect(() => {
-    if (canType) composerRef.current?.focus();
-  }, [canType, beside]);
+    if (canType && !phone) composerRef.current?.focus();
+  }, [canType, beside, phone]);
   // The pane moves no focus on close; the element focused before opening takes it back (P18).
   const wasOpen = useRef(open);
   useEffect(() => {
@@ -277,7 +282,6 @@ export function AssistantPanel({
           />
         </div>
       ) : !started ? (
-        // Workaround for Slotted finding "A message scroller without items keeps its content hidden": before the first message the notices sit outside the scroller.
         <div className={styles.scroll}>
           <ChatWelcome
             canAsk={!blocked && chat.data !== undefined}
@@ -298,7 +302,7 @@ export function AssistantPanel({
           defaultPosition="end"
           busy={turn.pending !== null}
         >
-          <MessageScrollerViewport className={styles.viewport}>
+          <MessageScrollerViewport>
             <MessageScrollerContent className={styles.feed}>
               {messages.map((m) => (
                 <MessageScrollerItem
@@ -397,7 +401,6 @@ export function AssistantPanel({
     if (!open) return null;
     return (
       <AppShellAside
-        className={styles.aside}
         // An inline pane is not a layer, so the shell leaves Escape alone; the assistant closes on it.
         onKeyDown={(event) => {
           if (event.key === "Escape" && !event.defaultPrevented) {
@@ -405,7 +408,7 @@ export function AssistantPanel({
           }
         }}
       >
-        <AppShellAsideResizer className={styles.asideResizer} />
+        <AppShellAsideResizer />
         <AppShellAsideHeader>
           {/* One child: the pane's header gives each child of its own an equal share of the row. */}
           <div className={styles.asideHeader}>
@@ -438,7 +441,8 @@ export function AssistantPanel({
       // P9: from 600 px the overlay paints no scrim and leaves the page usable.
       scrimFrom={phone ? 0 : 1}
       outsidePress="none"
-      initialFocus={listing ? "first" : composerRef}
+      {...(phone ? { snapPoints: SHEET_STOPS } : {})}
+      initialFocus={phone ? "container" : listing ? "first" : composerRef}
       {...(returnFocus === undefined ? {} : { finalFocus: returnFocus })}
     >
       <DrawerPanel className={styles.panel}>
@@ -448,7 +452,7 @@ export function AssistantPanel({
           <DrawerDescription>
             <Text truncate>{title}</Text>
           </DrawerDescription>
-          {headerActions}
+          <DrawerActions>{headerActions}</DrawerActions>
         </DrawerHeader>
         <DrawerBody>{thread}</DrawerBody>
         {footer !== false && <DrawerFooter>{footer}</DrawerFooter>}

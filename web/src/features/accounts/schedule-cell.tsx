@@ -1,4 +1,4 @@
-import { Stack } from "@slotted/react/stack";
+import { Inline } from "@slotted/react/inline";
 import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
@@ -17,17 +17,15 @@ export function ScheduleCell({ point }: { point: ProjectionPoint }) {
   if (schedule.data === undefined)
     return <Text size="sm">{t("scheduled.loading")}</Text>;
   return (
-    <Stack gap={0}>
+    <Inline gap={2} align="center" wrap="wrap">
       <Text size="sm" weight="medium">
         {schedule.data.description === ""
           ? t("ledger.untitled")
           : schedule.data.description}
       </Text>
-      <span>
-        <Tag size="sm" tone="secondary">
-          {t(kindLabel[schedule.data.kind])}
-        </Tag>
-      </span>
-    </Stack>
+      <Tag size="sm" tone="secondary">
+        {t(kindLabel[schedule.data.kind])}
+      </Tag>
+    </Inline>
   );
 }

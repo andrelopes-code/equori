@@ -29,7 +29,7 @@ import { formatDate } from "@/i18n/format";
 import { formatInstant } from "@/features/accounts/instant";
 import { subtypeWords } from "@/features/accounts/sync-tab";
 import type { MessageKey } from "@/i18n/catalog.en";
-import { useAppLink } from "@/ui/use-app-link";
+import { routeTo } from "@/ui/route-to";
 import { Presence } from "@/ui/presence";
 import { PhoneList } from "@/ui/phone-list";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
@@ -68,7 +68,6 @@ export function ConnectionLinks({
   const t = useT();
   const [locale] = useAppLocale();
   const sync = useSyncConnection();
-  const follow = useAppLink();
   const [batches, setBatches] = useState<ImportBatch[]>([]);
   const [deleting, setDeleting] = useState(false);
   const ignore = useMapExternalAccount();
@@ -221,8 +220,7 @@ export function ConnectionLinks({
               <Link
                 variant="neutral"
                 underline="hover"
-                href={`/accounts/${batch.account_id}/imports/${batch.id}`}
-                onClick={follow({
+                render={routeTo({
                   to: "/accounts/$id/imports/$batchId",
                   params: { id: batch.account_id, batchId: batch.id },
                 })}
