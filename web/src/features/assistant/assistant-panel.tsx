@@ -397,6 +397,7 @@ export function AssistantPanel({
     if (!open) return null;
     return (
       <AppShellAside
+        className={styles.aside}
         // An inline pane is not a layer, so the shell leaves Escape alone; the assistant closes on it.
         onKeyDown={(event) => {
           if (event.key === "Escape" && !event.defaultPrevented) {
@@ -404,7 +405,7 @@ export function AssistantPanel({
           }
         }}
       >
-        <AppShellAsideResizer />
+        <AppShellAsideResizer className={styles.asideResizer} />
         <AppShellAsideHeader>
           {/* One child: the pane's header gives each child of its own an equal share of the row. */}
           <div className={styles.asideHeader}>

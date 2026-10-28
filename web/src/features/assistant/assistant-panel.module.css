@@ -37,6 +37,24 @@
     }
   }
 
+  /* Workaround for Slotted finding "The app-shell pane resizer sits inside the pane instead of the gutter before it": the resizer is centred in the gutter between the page and the pane, past the pane's border. The gutter and the thickness repeat the library's fallbacks. The pane's own scroll would clip it there; its body keeps the scroll. */
+  .aside {
+    overflow: visible;
+  }
+
+  .asideResizer {
+    inset-inline-start: calc(
+      -1 *
+        (
+          var(
+              --slotted-app-shell-gutter,
+              calc(var(--slotted-control-gap-lg) + var(--slotted-space-2))
+            ) /
+            2 + var(--slotted-border-width-thin) + var(--slotted-space-6) / 2
+        )
+    );
+  }
+
   /* In the shell's pane the title and the conversation's name take the row; the actions keep their size. */
   .asideHeader {
     display: flex;
