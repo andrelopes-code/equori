@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # The web output is architecture-independent, so this stage also runs on the host platform.
-FROM --platform=$BUILDPLATFORM node:24.15.0-slim AS web
+FROM --platform=$BUILDPLATFORM node:26.12.0-slim AS web
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 WORKDIR /src/web
 RUN corepack enable
