@@ -14,6 +14,7 @@ import {
   statementFixtures,
 } from "@/testing/account-api";
 import { fakeApi, json, problem } from "@/testing/fake-api";
+import { chooseAccount } from "@/testing/account-choice";
 import { renderApp } from "@/testing/render-app";
 
 type Route = (req: Request) => Response | Promise<Response>;
@@ -282,9 +283,7 @@ describe("StatementPage", () => {
     const sent: Sent[] = [];
     await renderApp(`${path}?pay=true`, { fetch: api(sent) });
     const dialog = await screen.findByRole("dialog");
-    await userEvent.click(
-      await within(dialog).findByRole("radio", { name: /Nubank/ }),
-    );
+    await chooseAccount(catalogEn["pay.from"], "Nubank");
     await userEvent.click(
       within(dialog).getByRole("button", { name: catalogEn["pay.submit"] }),
     );

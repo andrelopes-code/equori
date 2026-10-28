@@ -13,7 +13,6 @@ import type { IncomeDraft } from "@/features/transactions/income-draft";
 import type { useIncomeEntry } from "@/features/transactions/use-income-entry";
 import styles from "@/features/transactions/transaction-form.module.css";
 import { useT } from "@/i18n/i18n-provider";
-import { useMoneyFormat } from "@/privacy/use-money-format";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { DateShortcuts } from "@/ui/date-shortcuts";
 import { FigureCard } from "@/ui/figure-card";
@@ -38,7 +37,6 @@ export function IncomeForm({
   onKind: (kind: EntryKind) => void;
 }) {
   const t = useT();
-  const fmt = useMoneyFormat();
   const set = (patch: Partial<IncomeDraft>) => {
     onChange({ ...draft, ...patch });
   };
@@ -202,7 +200,10 @@ export function IncomeForm({
           value={
             view.net === null || base === undefined
               ? undefined
-              : fmt.money({ amount: view.net, currency: base }, baseScale)
+              : {
+                  money: { amount: view.net, currency: base },
+                  scale: baseScale,
+                }
           }
           note={null}
         />

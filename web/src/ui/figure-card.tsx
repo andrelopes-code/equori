@@ -12,6 +12,9 @@ import {
 } from "@slotted/react/stat-card";
 import type { ReactNode } from "react";
 
+import { MoneyValue } from "@/ui/money-value";
+import type { MoneyAmount } from "@/ui/money-value";
+
 // One figure of the categories page: a label, a value, the line that says what it counts, and
 // optionally the change from the month before and a door to the records.
 export function FigureCard({
@@ -25,8 +28,8 @@ export function FigureCard({
   loading = false,
 }: {
   label: string;
-  // Text as written; undefined draws the family's empty state.
-  value: string | undefined;
+  // Text as written, or an amount drawn with its symbol apart; undefined draws the family's empty state.
+  value: string | MoneyAmount | undefined;
   note: ReactNode;
   action?: ReactNode;
   // A fraction: 0.124 reads "+12.4%".
@@ -52,7 +55,11 @@ export function FigureCard({
         {action !== undefined && <StatCardAction>{action}</StatCardAction>}
       </StatCardHeader>
       <StatCardFigure>
-        <StatCardValue value={value} />
+        {typeof value === "object" ? (
+          <MoneyValue {...value} />
+        ) : (
+          <StatCardValue value={value} />
+        )}
         {delta !== undefined && <StatCardDelta />}
       </StatCardFigure>
       {trend !== undefined && <StatCardTrend>{trend}</StatCardTrend>}

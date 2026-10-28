@@ -1,22 +1,26 @@
-import { ProgressBar } from "@slotted/react/progress-indicator";
 import { useQueries, useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
 import { accountsQuery } from "@/features/accounts";
+import { CategoryMark, categoryEntries } from "@/features/categories";
 import { budgetAlerts } from "@/features/overview/budget-alerts";
+import { MeterHead } from "@/features/overview/meter-head";
+import { MeterLine } from "@/features/overview/meter-line";
 import {
   OverviewBlock,
   type Placement,
 } from "@/features/overview/overview-block";
 import { OverviewRows } from "@/features/overview/overview-rows";
+import { useBase } from "@/features/overview/use-base";
 import {
   budgetProgressQuery,
   budgetsQuery,
   startsBy,
 } from "@/features/planning";
+import type { Figures } from "@/features/planning";
 import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 // The budgets of the month that are over their amount or at 90 % of it, the state the
 // budgets tab of Planning draws.
@@ -27,7 +31,8 @@ export function BudgetsBlock({
   const t = useT();
   const api = useApi();
   const [locale] = useAppLocale();
-  const wide = useMediaQuery(wideQuery);
+  const fmt = useMoneyFormat();
+  const { scale } = useBase();
   const budgets = useQuery(budgetsQuery(api));
   const accounts = useQuery(accountsQuery(api));
   const active = (budgets.data ?? []).filter((budget) =>
@@ -42,6 +47,7 @@ export function BudgetsBlock({
     progress.find((query) => query.error !== null)?.error ??
     null;
   const loading =
+    scale === null ||
     budgets.data === undefined ||
     accounts.data === undefined ||
     progress.some((query) => query.data === undefined);
@@ -49,48 +55,84 @@ export function BudgetsBlock({
     style: "percent",
     maximumFractionDigits: 0,
   });
-  const names = new Map(
-    (accounts.data ?? []).map((account) => [account.id, account.name]),
+  const entries = new Map(
+    categoryEntries(accounts.data ?? [], locale).map((entry) => [
+      entry.id,
+      entry,
+    ]),
   );
+  const figures = new Map<string, Figures>();
+  const money = (m: Figures["spent"]) =>
+    fmt.money(m, scale === null ? 0 : scale(m.currency));
   const rows =
     loading || error !== null
       ? []
       : budgetAlerts(
           active.flatMap((budget, i) => {
             const data = progress[i]?.data;
-            return data === undefined
-              ? []
-              : [
-                  {
-                    id: budget.id,
-                    name: names.get(budget.category_id) ?? "",
-                    progress: data,
-                  },
-                ];
+            if (data === undefined) return [];
+            figures.set(budget.id, data);
+            return [
+              {
+                id: budget.id,
+                name: entries.get(budget.category_id)?.name ?? "",
+                progress: data,
+              },
+            ];
           }),
-        ).map((alert) => ({
-          key: alert.id,
-          title: alert.name,
-          line: (
-            <>
-              {t(
-                alert.state === "over"
-                  ? "overview.budgets.over"
-                  : "overview.budgets.near",
-              )}
-              {wide && (
-                <ProgressBar
-                  size="sm"
-                  hideLabel
-                  label={alert.name}
-                  value={Math.min(alert.share, 100)}
-                  tone={alert.state === "over" ? "danger" : "warning"}
+        ).flatMap((alert) => {
+          const p = figures.get(alert.id);
+          const budget = active.find((b) => b.id === alert.id);
+          if (p === undefined || budget === undefined) return [];
+          const entry = entries.get(budget.category_id);
+          const over = alert.state === "over";
+          const tone = over ? "danger" : "warning";
+          const share = percent.format(alert.share / 100);
+          return [
+            {
+              key: alert.id,
+              to: {
+                to: "/planning/budgets/$id" as const,
+                params: { id: alert.id },
+                search: { month },
+              },
+              start: (
+                <CategoryMark
+                  name={alert.name}
+                  color={entry?.color}
+                  icon={entry?.icon}
                 />
-              )}
-            </>
-          ),
-          end: percent.format(alert.share / 100),
-        }));
+              ),
+              title: <MeterHead name={alert.name} share={share} tone={tone} />,
+              line: (
+                <MeterLine
+                  label={alert.name}
+                  basisPoints={alert.share * 100}
+                  share={share}
+                  tone={tone}
+                  amounts={t("overview.budgets.of", {
+                    spent: money(p.spent),
+                    planned: money({
+                      ...p.planned,
+                      amount: p.planned.amount + p.carried.amount,
+                    }),
+                  })}
+                  status={
+                    over
+                      ? t("budget.over", {
+                          amount: money({
+                            ...p.available,
+                            amount: -p.available.amount,
+                          }),
+                        })
+                      : t("budget.left", { amount: money(p.available) })
+                  }
+                  statusTone={tone}
+                />
+              ),
+            },
+          ];
+        });
   return (
     <OverviewBlock
       placement={placement}

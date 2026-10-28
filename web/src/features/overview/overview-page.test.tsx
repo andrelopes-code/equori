@@ -387,6 +387,32 @@ describe("overview page", () => {
       expect(region).toHaveTextContent("25%");
     });
 
+    it("states each budget's spending against its amount and opens the budget", async () => {
+      await renderApp("/", { fetch: full() });
+      const region = await screen.findByRole("article", { name: "Budgets" });
+      const food = await within(region).findByRole("link", { name: /^Food/ });
+      expect(food).toHaveTextContent("R$1,900.00 of R$1,800.00");
+      expect(food).toHaveTextContent("R$100.00 over the budget");
+      expect(food.getAttribute("href")).toContain(
+        `/planning/budgets/${foodBudget.id}`,
+      );
+      expect(
+        within(region).getByRole("link", { name: /^Fuel/ }),
+      ).toHaveTextContent("R$40.00 left");
+    });
+
+    it("states each goal's saving, its target and the months left", async () => {
+      await renderApp("/", { fetch: full() });
+      const region = await screen.findByRole("article", { name: "Goals" });
+      const trip = await within(region).findByRole("link", { name: /^Trip/ });
+      expect(trip).toHaveTextContent("R$2,500.00 of R$10,000.00");
+      expect(trip).toHaveTextContent("8 months left");
+      expect(within(trip).getByRole("meter", { name: "Trip" })).toHaveAttribute(
+        "aria-valuenow",
+        "25",
+      );
+    });
+
     it("keeps the goals when the occurrences fail", async () => {
       await renderApp("/", {
         fetch: api({

@@ -1,0 +1,50 @@
+@layer app {
+  /* The tile's own box: the same edge, corner and padding as a radio-group tile, so the choice
+     reads as the tile picked a step before. */
+  .summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--slotted-space-4);
+    padding-block: var(--slotted-space-4);
+    padding-inline: var(--slotted-space-5);
+    border: var(--slotted-control-border-width) solid
+      var(--slotted-border-subtle);
+    border-radius: var(--slotted-control-radius);
+    background: var(--slotted-surface-sunken);
+  }
+
+  /* A chosen option is the accent's surface paired with its border (tokens: tone). */
+  .summary[data-chosen] {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    border-color: var(--slotted-tone-accent-border);
+    background: var(--slotted-tone-accent-surface);
+  }
+
+  .mark {
+    color: var(--slotted-tone-accent-text);
+  }
+
+  .text {
+    display: grid;
+    gap: var(--slotted-space-1);
+    min-inline-size: 0;
+  }
+
+  @media (max-width: 599px) {
+    .summary[data-chosen] {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .summary[data-chosen] > :last-child {
+      grid-column: 2;
+      justify-self: start;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .summary[data-chosen] {
+      border-color: Highlight;
+    }
+  }
+}

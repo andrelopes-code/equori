@@ -144,6 +144,21 @@ const figure = (radio: HTMLElement) =>
     .map((c) => c.textContent.replace(/\u00a0/g, " "))
     .join(" ");
 
+const trigger = () =>
+  screen.getByRole("button", {
+    name: new RegExp(`^${catalogEn["entry.payWith"]}`),
+  });
+
+// The field opens its accounts in a drawer at every width.
+async function openSheet() {
+  await userEvent.click(
+    await screen.findByRole("button", {
+      name: new RegExp(`^${catalogEn["entry.payWith"]}`),
+    }),
+  );
+  return screen.findByRole("dialog", { name: catalogEn["entry.payWith"] });
+}
+
 async function typeAmount(digits: string) {
   await userEvent.type(
     await screen.findByRole("textbox", { name: catalogEn["entry.amount"] }),
@@ -159,7 +174,7 @@ beforeEach(() => {
 describe("AccountField on a wide screen", () => {
   it("lists the groups in their fixed order, each sorted by name", async () => {
     await renderApp("/transactions/new", { fetch: fakeApi(routes) });
-    await screen.findByRole("radiogroup", { name: catalogEn["entry.payWith"] });
+    await openSheet();
     expect(
       within(group())
         .getAllByRole("radio")
@@ -175,6 +190,7 @@ describe("AccountField on a wide screen", () => {
   it("states what each account does with the amount", async () => {
     await renderApp("/transactions/new", { fetch: fakeApi(routes) });
     await typeAmount("28640");
+    await openSheet();
     await waitFor(() => {
       expect(figure(option("Itau"))).toBe("leaves R$ 4,025.70");
     });
@@ -199,6 +215,7 @@ describe("AccountField on a wide screen", () => {
       }),
     });
     await typeAmount("28640");
+    await openSheet();
     await waitFor(() => {
       expect(figure(option("Visa"))).toBe("statement 11/05");
     });
@@ -209,6 +226,7 @@ describe("AccountField on a wide screen", () => {
   it("says what the chosen account does, under the field", async () => {
     await renderApp("/transactions/new", { fetch: fakeApi(routes) });
     await typeAmount("28640");
+    await openSheet();
     await userEvent.click(option("Itau"));
     const status = await screen.findByRole("status", {
       name: "",
@@ -218,7 +236,8 @@ describe("AccountField on a wide screen", () => {
         "The account balance becomes R$ 4,025.70.",
       );
     });
-    expect(group().getAttribute("aria-describedby")).toContain(status.id);
+    expect(trigger().getAttribute("aria-describedby")).toContain(status.id);
+    await openSheet();
     await waitFor(() => {
       expect(option("Visa")).toBeEnabled();
     });
@@ -237,6 +256,7 @@ describe("AccountField on a wide screen", () => {
       expect(screen.getAllByRole("option").length).toBeGreaterThan(0);
     });
     await userEvent.keyboard("{ArrowDown}{Enter}");
+    await openSheet();
     await waitFor(() => {
       expect(text(option("Visa"))).toContain("suggested");
     });
@@ -253,6 +273,7 @@ describe("AccountField on a wide screen", () => {
 
   it("draws the institution's logo and the goal ring", async () => {
     await renderApp("/transactions/new", { fetch: fakeApi(routes) });
+    await openSheet();
     await waitFor(() => {
       expect(item(option("Itau"))?.querySelector("img")?.src).toMatch(
         /60701190\.png$/,

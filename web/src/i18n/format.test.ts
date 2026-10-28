@@ -8,6 +8,7 @@ import {
   formatDayMonthNumeric,
   formatMoney,
   formatMoneyParts,
+  formatMoneySegments,
   formatMonthName,
   formatMonthTitle,
   formatSigned,
@@ -250,5 +251,79 @@ describe("Intl-derived formats", () => {
     expect(() =>
       formatMoney({ amount: 123450, currency: "AOA" }, 2, "pt-AO"),
     ).not.toThrow();
+  });
+});
+
+describe("formatMoneySegments", () => {
+  const nbsp = "\u00a0";
+  it.each([
+    [
+      { amount: 123456, currency: "BRL" },
+      2,
+      "pt-BR",
+      [
+        { kind: "symbol", text: "R$" },
+        { kind: "literal", text: nbsp },
+        { kind: "integer", text: "1.234" },
+        { kind: "fraction", text: ",56" },
+      ],
+    ],
+    [
+      { amount: 123456, currency: "EUR" },
+      2,
+      "de-DE",
+      [
+        { kind: "integer", text: "1.234" },
+        { kind: "fraction", text: ",56" },
+        { kind: "literal", text: nbsp },
+        { kind: "symbol", text: "\u20ac" },
+      ],
+    ],
+    [
+      { amount: -5300, currency: "BRL" },
+      2,
+      "pt-BR",
+      [
+        { kind: "sign", text: "\u2212" },
+        { kind: "symbol", text: "R$" },
+        { kind: "literal", text: nbsp },
+        { kind: "integer", text: "53" },
+        { kind: "fraction", text: ",00" },
+      ],
+    ],
+    [
+      { amount: 1500, currency: "JPY" },
+      0,
+      "en",
+      [
+        { kind: "symbol", text: "\u00a5" },
+        { kind: "integer", text: "1,500" },
+      ],
+    ],
+    [
+      { amount: -250, currency: "PETR4" },
+      0,
+      "pt-BR",
+      [
+        { kind: "sign", text: "\u2212" },
+        { kind: "integer", text: "250" },
+        { kind: "literal", text: " " },
+        { kind: "symbol", text: "PETR4" },
+      ],
+    ],
+  ] as const)(
+    "splits %j at scale %d in %s in the order of the locale",
+    (money, scale, locale, want) => {
+      expect(formatMoneySegments(money, scale, locale)).toEqual(want);
+    },
+  );
+
+  it("joins to the same text as formatMoney", () => {
+    const money = { amount: -123456, currency: "BRL" };
+    expect(
+      formatMoneySegments(money, 2, "pt-BR")
+        .map((segment) => segment.text)
+        .join(""),
+    ).toBe(formatMoney(money, 2, "pt-BR"));
   });
 });

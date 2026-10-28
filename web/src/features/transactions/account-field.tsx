@@ -1,4 +1,5 @@
 import { useField } from "@slotted/react/field";
+import { Glyph, Icon } from "@slotted/react/icon";
 import { useEffect, useId, useState } from "react";
 
 import type { components } from "@/api/schema.gen";
@@ -9,19 +10,18 @@ import {
   groupAccounts,
   pickable,
 } from "@/features/transactions/account-groups";
-import { AccountOptionList } from "@/features/transactions/account-option-list";
 import { AccountSheet } from "@/features/transactions/account-sheet";
 import { ConsequenceSentence } from "@/features/transactions/consequence-sentence";
 import { useAccountChoices } from "@/features/transactions/use-account-choices";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 
 // The account an entry moves money through. Each option says what choosing it does with the
-// amount; a wide screen shows them all as tiles, a phone a field that opens them in a sheet.
+// amount. A field opens them in a sheet at every width: a list of every account inline grows
+// the form by its length.
 export function AccountField({
   accounts,
   value,
@@ -58,7 +58,7 @@ export function AccountField({
   currency: string;
   scale: (currency: string) => number;
   // A field that names an account before any amount is known, such as the capture's default
-  // account, opens the sheet at every width and states no consequence.
+  // account, states no consequence.
   compact?: boolean;
   // The sheet's description, in place of the one the amount and kind compose.
   context?: string;
@@ -66,7 +66,6 @@ export function AccountField({
   const t = useT();
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
-  const wide = useMediaQuery(wideQuery);
   const field = useField();
   const register = field?.registerControl;
   useEffect(() => {
@@ -107,24 +106,6 @@ export function AccountField({
       scale={chosen === undefined ? 0 : scale(chosen.account.currency)}
     />
   );
-
-  if (wide && !compact) {
-    return (
-      <div className={styles.field}>
-        <AccountOptionList
-          choices={choices}
-          value={value}
-          name={name}
-          suggestion={suggestion}
-          scale={scale}
-          labelledBy={field?.ids.label}
-          describedBy={describedBy}
-          onChange={onChange}
-        />
-        {sentence}
-      </div>
-    );
-  }
 
   const category = accounts.find((a) => a.id === categoryId)?.name;
   const figure = fmt.money({ amount, currency }, scale(currency));
@@ -181,7 +162,13 @@ export function AccountField({
           </>
         )}
         <span className={styles.change} aria-hidden="true">
-          {t("accountChoice.change")}
+          {chosen === undefined ? (
+            <Icon size="sm">
+              <Glyph name="chevron-right" />
+            </Icon>
+          ) : (
+            t("accountChoice.change")
+          )}
         </span>
       </button>
       {sentence}

@@ -15,6 +15,7 @@ import { useToday } from "@/i18n/today";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import type { MoneyAmount } from "@/ui/money-value";
 
 type Account = components["schemas"]["Account"];
 
@@ -52,6 +53,10 @@ export const AccountFigures = memo(function AccountFigures({
   const goal = goals.data?.find((g) => g.account_ids.includes(account.id));
   const money = (m: components["schemas"]["Money"]) =>
     fmt.money(m, scale(m.currency));
+  const figure = (m: components["schemas"]["Money"]): MoneyAmount => ({
+    money: m,
+    scale: scale(m.currency),
+  });
   const last = reconciliation.data?.last_reconciled_on;
   const open = reconciliation.data?.open_difference;
 
@@ -60,7 +65,7 @@ export const AccountFigures = memo(function AccountFigures({
       <FigureCard
         label={t("account.figure.balance")}
         value={
-          booked.data === undefined ? undefined : money(booked.data.balance)
+          booked.data === undefined ? undefined : figure(booked.data.balance)
         }
         note={
           settled.data === undefined
@@ -77,7 +82,7 @@ export const AccountFigures = memo(function AccountFigures({
           value={
             projection.data === undefined
               ? undefined
-              : money(projection.data.closing)
+              : figure(projection.data.closing)
           }
           note={
             projection.data === undefined

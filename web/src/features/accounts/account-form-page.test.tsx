@@ -121,6 +121,25 @@ describe("New account", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("shows the chosen kind with its hint and returns to the kinds on change", async () => {
+    await renderApp("/accounts/new?kind=reserve", { fetch: api([]) });
+    const kind = await screen.findByRole("group", {
+      name: catalogEn["accountForm.kind"],
+    });
+    expect(kind).toHaveTextContent(catalogEn["kind.title.reserve"]);
+    expect(kind).toHaveTextContent(catalogEn["kind.hint.reserve"]);
+    await userEvent.click(
+      within(kind).getByRole("button", {
+        name: catalogEn["accountForm.changeKind"],
+      }),
+    );
+    expect(
+      await screen.findByRole("group", {
+        name: catalogEn["kind.group.reserves"],
+      }),
+    ).toBeInTheDocument();
+  });
+
   it("offers automatic yield for a reserve only", async () => {
     await renderApp("/accounts/new?kind=reserve", { fetch: api([]) });
     expect(

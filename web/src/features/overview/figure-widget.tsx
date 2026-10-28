@@ -13,6 +13,8 @@ import {
   OverviewBlock,
   type Placement,
 } from "@/features/overview/overview-block";
+import { MoneyValue } from "@/ui/money-value";
+import type { MoneyAmount } from "@/ui/money-value";
 
 // One figure of the overview as a widget of its own: the widget's title is the figure's label
 // and the widget is its only frame, so the card inside is plain and has no header (OV-05).
@@ -33,8 +35,8 @@ export function FigureWidget({
   error: Error | null;
   onRetry: () => void;
   loading: boolean;
-  // Text as written; undefined draws the family's empty state.
-  value: string | undefined;
+  // Text as written, or an amount drawn with its symbol apart; undefined draws the family's empty state.
+  value: string | MoneyAmount | undefined;
   // A fraction: 0.124 reads "+12.4%".
   delta?: number | undefined;
   goodWhen?: "up" | "down" | "none";
@@ -62,7 +64,11 @@ export function FigureWidget({
         {...(delta === undefined ? {} : { delta })}
       >
         <StatCardFigure>
-          <StatCardValue value={value} />
+          {typeof value === "object" ? (
+            <MoneyValue {...value} />
+          ) : (
+            <StatCardValue value={value} />
+          )}
           {delta !== undefined && <StatCardDelta />}
           {/* Inside the figure the comparison wraps to its own line under the value. */}
           <StatCardComparison>{note}</StatCardComparison>

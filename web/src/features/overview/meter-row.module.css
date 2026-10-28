@@ -1,0 +1,48 @@
+@layer app {
+  .head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--slotted-space-4);
+  }
+
+  .name {
+    overflow: hidden;
+    min-inline-size: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The goal meter paints its segments with --goal-tone (goal-meter.module.css). */
+  .line {
+    --goal-tone: var(--slotted-tone-accent-text);
+
+    display: grid;
+    gap: var(--slotted-space-3);
+    margin-block-start: var(--slotted-space-3);
+  }
+
+  .line[data-tone="success"] {
+    --goal-tone: var(--slotted-tone-success-text);
+  }
+
+  .line[data-tone="warning"] {
+    --goal-tone: var(--slotted-tone-warning-text);
+  }
+
+  .line[data-tone="danger"] {
+    --goal-tone: var(--slotted-tone-danger-text);
+  }
+
+  .figures {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--slotted-space-1) var(--slotted-space-4);
+  }
+
+  /* A status that wraps under the amounts keeps to the end, where the shorter ones stand. */
+  .status {
+    margin-inline-start: auto;
+  }
+}

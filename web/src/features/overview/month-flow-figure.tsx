@@ -7,6 +7,7 @@ import { useOverview } from "@/features/overview/use-overview";
 import { formatDayMonth, formatMonthName } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import type { MoneyAmount } from "@/ui/money-value";
 
 export type MonthFlowKind = "income" | "outflow" | "result";
 
@@ -26,6 +27,13 @@ export function MonthFlowFigure({
     overview === undefined || scale === null
       ? undefined
       : fmt.money({ amount, currency: overview.base }, scale(overview.base));
+  const figure = (amount: number): MoneyAmount | undefined =>
+    overview === undefined || scale === null
+      ? undefined
+      : {
+          money: { amount, currency: overview.base },
+          scale: scale(overview.base),
+        };
   const flows = overview?.flows;
   const amounts = {
     income: flows?.income,
@@ -47,7 +55,7 @@ export function MonthFlowFigure({
       onRetry={retry}
       loading={overview === undefined && failed === null}
       goodWhen={kind === "outflow" ? "down" : "up"}
-      value={amount === undefined ? undefined : money(amount)}
+      value={amount === undefined ? undefined : figure(amount)}
       note={
         kind === "result"
           ? t("overview.flows.resultNote")

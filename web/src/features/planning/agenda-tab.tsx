@@ -20,7 +20,6 @@ import { settingsQuery, useScale } from "@/features/setup";
 import { shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { useMoneyFormat } from "@/privacy/use-money-format";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
@@ -51,7 +50,6 @@ export function AgendaTab({
   const [locale] = useAppLocale();
   const api = useApi();
   const today = useToday();
-  const fmt = useMoneyFormat();
   const scale = useScale();
   const wide = useMediaQuery(wideQuery);
   const compact = useMediaQuery(compactQuery);
@@ -108,7 +106,10 @@ export function AgendaTab({
         value={
           totals === undefined || scale === null
             ? undefined
-            : fmt.money(totals.inflow, scale(totals.inflow.currency))
+            : {
+                money: totals.inflow,
+                scale: scale(totals.inflow.currency),
+              }
         }
         note={t("agenda.inflowNote")}
         loading={loading || totals === undefined}
@@ -118,7 +119,10 @@ export function AgendaTab({
         value={
           totals === undefined || scale === null
             ? undefined
-            : fmt.money(totals.outflow, scale(totals.outflow.currency))
+            : {
+                money: totals.outflow,
+                scale: scale(totals.outflow.currency),
+              }
         }
         note={t("agenda.outflowNote")}
         loading={loading || totals === undefined}

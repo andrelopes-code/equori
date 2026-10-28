@@ -1,4 +1,3 @@
-import { Button } from "@slotted/react/button";
 import {
   Field,
   FieldDescription,
@@ -10,7 +9,6 @@ import {
   FieldGroupContent,
   FieldGroupLegend,
 } from "@slotted/react/field-group";
-import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
 import { Switch } from "@slotted/react/switch";
 import { TextField } from "@slotted/react/text-field";
@@ -20,12 +18,12 @@ import type { components } from "@/api/schema.gen";
 import type { AccountDraft } from "@/features/accounts/account-draft";
 import {
   classOf,
-  kindTitle,
   liquidCapable,
   yieldCapable,
 } from "@/features/accounts/account-kinds";
 import { CardSetupSection } from "@/features/accounts/card-setup-section";
 import { InstitutionField } from "@/features/accounts/institution-field";
+import { KindSummary } from "@/features/accounts/kind-summary";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { ColorSwatches } from "@/ui/color-swatches";
@@ -106,23 +104,15 @@ export function AccountForm({
           <Stack gap={4}>
             <Field>
               <FieldLabel>{t("accountForm.kind")}</FieldLabel>
-              <Inline gap={3}>
-                <Text weight="medium">{t(kindTitle[kind])}</Text>
-                {mode === "create" && onChangeKind !== undefined ? (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    tone="secondary"
-                    onClick={onChangeKind}
-                  >
-                    {t("accountForm.changeKind")}
-                  </Button>
-                ) : (
-                  <Text size="sm" tone="muted">
-                    {t("accountForm.kindFixed")}
-                  </Text>
-                )}
-              </Inline>
+              <KindSummary
+                kind={kind}
+                onChange={mode === "create" ? onChangeKind : undefined}
+              />
+              {mode === "edit" && (
+                <FieldDescription>
+                  {t("accountForm.kindFixed")}
+                </FieldDescription>
+              )}
             </Field>
             <Field invalid={error("name") !== undefined} required>
               <FieldLabel>{t("accountForm.name")}</FieldLabel>

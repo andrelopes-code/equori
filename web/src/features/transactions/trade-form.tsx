@@ -25,6 +25,7 @@ import { DateShortcuts } from "@/ui/date-shortcuts";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
 import { MoneyInput } from "@/ui/money-input";
+import type { MoneyAmount } from "@/ui/money-value";
 
 // Families read: segmented-control, field, text-field, stat-card. The side is two exclusive words
 // (a segmented control); the money fields are the application's own MoneyInput (a till-style
@@ -54,13 +55,10 @@ export function TradeForm({
   const instrument = security?.currency;
   const sell = draft.side === "sell";
   const baseScale = base === undefined ? 0 : scale(base);
-  const money = (amount: number, signed = false) =>
+  const figure = (amount: number, signed = false): MoneyAmount | undefined =>
     base === undefined
       ? undefined
-      : (signed ? fmt.signed : fmt.money)(
-          { amount, currency: base },
-          baseScale,
-        );
+      : { money: { amount, currency: base }, scale: baseScale, signed };
   const average = view.held?.average_cost;
 
   return (
@@ -241,13 +239,13 @@ export function TradeForm({
       <FigureGrid label={t("trade.cashEffect")}>
         <FigureCard
           label={t("trade.gross")}
-          value={view.gross === null ? undefined : money(view.gross)}
+          value={view.gross === null ? undefined : figure(view.gross)}
           note={null}
         />
         <FigureCard
           label={t("trade.cashEffect")}
           value={
-            view.cashEffect === null ? undefined : money(view.cashEffect, true)
+            view.cashEffect === null ? undefined : figure(view.cashEffect, true)
           }
           note={null}
         />
@@ -276,7 +274,7 @@ export function TradeForm({
             <FigureCard
               label={t("trade.estimatedResult")}
               value={
-                view.result === null ? undefined : money(view.result, true)
+                view.result === null ? undefined : figure(view.result, true)
               }
               note={null}
             />

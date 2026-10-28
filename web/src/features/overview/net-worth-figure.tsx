@@ -61,7 +61,10 @@ export function NetWorthFigure({
       value={
         now === undefined || base === undefined
           ? undefined
-          : fmt.money({ amount: now[kind].amount, currency: base }, digits)
+          : {
+              money: { amount: now[kind].amount, currency: base },
+              scale: digits,
+            }
       }
       delta={change?.fraction}
       goodWhen={kind === "liabilities" ? "down" : "up"}

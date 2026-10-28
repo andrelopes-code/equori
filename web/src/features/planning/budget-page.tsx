@@ -62,6 +62,7 @@ import { QueryError } from "@/ui/query-error";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 import styles from "@/features/planning/budgets.module.css";
 import { PageBack } from "@/ui/page-back";
+import type { MoneyAmount } from "@/ui/money-value";
 
 // How many months the chart compares, ending at the month the page reads.
 const chartMonths = 6;
@@ -122,6 +123,10 @@ export function BudgetPage() {
   const currency = b.amounts[0]?.amount.currency ?? "";
   const money = (amount: number) =>
     fmt.money({ amount, currency }, scale(currency));
+  const figure = (amount: number): MoneyAmount => ({
+    money: { amount, currency },
+    scale: scale(currency),
+  });
   const records = progress.flatMap((p) =>
     p.data === undefined
       ? []
@@ -250,19 +255,19 @@ export function BudgetPage() {
             <FigureGrid label={t("budget.monthFigures")}>
               <FigureCard
                 label={t("budget.planned")}
-                value={current && money(current.planned.amount)}
+                value={current && figure(current.planned.amount)}
                 note={t("budget.plannedNote")}
                 loading={current === undefined}
               />
               <FigureCard
                 label={t("budget.carried")}
-                value={current && money(current.carried.amount)}
+                value={current && figure(current.carried.amount)}
                 note={t(b.rollover ? "budget.carriedNote" : "budget.noCarry")}
                 loading={current === undefined}
               />
               <FigureCard
                 label={t("budget.spent")}
-                value={current && money(current.spent.amount)}
+                value={current && figure(current.spent.amount)}
                 note={
                   current === undefined
                     ? ""
@@ -274,7 +279,7 @@ export function BudgetPage() {
               />
               <FigureCard
                 label={t("budget.available")}
-                value={current && money(current.available.amount)}
+                value={current && figure(current.available.amount)}
                 note={t(
                   state === "over"
                     ? "budget.overspent"

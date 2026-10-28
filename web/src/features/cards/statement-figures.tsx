@@ -6,6 +6,7 @@ import { useT } from "@/i18n/i18n-provider";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import type { MoneyAmount } from "@/ui/money-value";
 
 type Statement = components["schemas"]["StatementSummary"];
 
@@ -22,33 +23,37 @@ export function StatementFigures({
   const fmt = useMoneyFormat();
   const money = (m: components["schemas"]["Money"]) =>
     fmt.money(m, scale(m.currency));
+  const figure = (m: components["schemas"]["Money"]): MoneyAmount => ({
+    money: m,
+    scale: scale(m.currency),
+  });
   const institution = statement.institution;
   return (
     <Stack gap={3}>
       <FigureGrid label={t("statement.figures")}>
         <FigureCard
           label={t("statement.opening")}
-          value={money(statement.opening)}
+          value={figure(statement.opening)}
           note={t("statement.openingNote")}
         />
         <FigureCard
           label={t("statement.charges")}
-          value={money(statement.charges)}
+          value={figure(statement.charges)}
           note={t("statement.chargesNote")}
         />
         <FigureCard
           label={t("statement.credits")}
-          value={money(statement.credits)}
+          value={figure(statement.credits)}
           note={t("statement.creditsNote")}
         />
         <FigureCard
           label={t("statement.payments")}
-          value={money(statement.payments)}
+          value={figure(statement.payments)}
           note={t("statement.paymentsNote")}
         />
         <FigureCard
           label={t("statement.total")}
-          value={money(statement.amount_due)}
+          value={figure(statement.amount_due)}
           note={
             institution === undefined
               ? t("statement.totalNote")
@@ -65,7 +70,7 @@ export function StatementFigures({
         />
         <FigureCard
           label={t("statement.unpaid")}
-          value={money(statement.unpaid)}
+          value={figure(statement.unpaid)}
           note={
             institution?.minimum === undefined
               ? t("statement.unpaidNote")

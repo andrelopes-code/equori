@@ -11,6 +11,7 @@ import {
   rentID,
   streamingID,
 } from "@/testing/planning-api";
+import { chooseAccount } from "@/testing/account-choice";
 import { renderApp } from "@/testing/render-app";
 
 beforeEach(() => {
@@ -113,11 +114,7 @@ describe("New schedule", () => {
       screen.getByRole("textbox", { name: catalogEn["schedule.amount"] }),
       "210000",
     );
-    await userEvent.click(
-      within(
-        screen.getByRole("radiogroup", { name: catalogEn["schedule.account"] }),
-      ).getByRole("radio", { name: /^Nubank/ }),
-    );
+    await chooseAccount(catalogEn["schedule.account"], "Nubank");
     await pick(catalogEn["schedule.category"], "Mercado");
     await userEvent.click(
       screen.getByRole("combobox", {
@@ -186,11 +183,7 @@ describe("Schedule form calendar", () => {
       screen.getByRole("textbox", { name: catalogEn["schedule.amount"] }),
       "210000",
     );
-    await userEvent.click(
-      within(
-        screen.getByRole("radiogroup", { name: catalogEn["schedule.account"] }),
-      ).getByRole("radio", { name: /^Nubank/ }),
-    );
+    await chooseAccount(catalogEn["schedule.account"], "Nubank");
     await pick(catalogEn["schedule.category"], "Mercado");
     await userEvent.click(
       screen.getByRole("button", { name: catalogEn["schedule.advanced"] }),

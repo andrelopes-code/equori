@@ -8,6 +8,7 @@ import {
   ListItemEnd,
   ListItemLabel,
   ListItemLink,
+  ListItemStart,
 } from "@slotted/react/list-item";
 import type { NavigateOptions } from "@tanstack/react-router";
 import type { ReactNode } from "react";
@@ -16,6 +17,8 @@ import { routeTo } from "@/ui/route-to";
 
 export interface OverviewRow {
   key: string;
+  // A mark before the title; the row then aligns it and the metadata with the title's line.
+  start?: ReactNode;
   title: ReactNode;
   line?: ReactNode;
   end?: ReactNode;
@@ -36,6 +39,9 @@ export function OverviewRows({
       {rows.map((row) => {
         const body = (
           <>
+            {row.start !== undefined && (
+              <ListItemStart>{row.start}</ListItemStart>
+            )}
             <ListItemBody>
               <ListItemLabel>{row.title}</ListItemLabel>
               {row.line !== undefined && (
@@ -46,7 +52,10 @@ export function OverviewRows({
           </>
         );
         return (
-          <ListItem key={row.key}>
+          <ListItem
+            key={row.key}
+            {...(row.start === undefined ? {} : { align: "start" as const })}
+          >
             {row.to === undefined ? (
               <ListItemContent>{body}</ListItemContent>
             ) : (

@@ -13,6 +13,7 @@ import { formatDayMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import type { MoneyAmount } from "@/ui/money-value";
 
 export type DesktopFigureKind = "net" | "result" | "balance" | "committed";
 
@@ -57,6 +58,10 @@ export function DesktopFigure({
     amount === undefined || base === undefined
       ? undefined
       : fmt.money({ amount, currency: base }, digits);
+  const figure = (amount: number | undefined): MoneyAmount | undefined =>
+    amount === undefined || base === undefined
+      ? undefined
+      : { money: { amount, currency: base }, scale: digits };
   const common = { placement, error, onRetry };
   if (kind === "net") {
     const change =
@@ -71,7 +76,7 @@ export function DesktopFigure({
           options: { to: "/reports" },
         }}
         loading={now.data === undefined || before.data === undefined}
-        value={money(now.data?.net.amount)}
+        value={figure(now.data?.net.amount)}
         delta={change?.fraction}
         note={
           change === undefined
@@ -100,7 +105,7 @@ export function DesktopFigure({
           },
         }}
         loading={overview === undefined}
-        value={money(
+        value={figure(
           flows === undefined ? undefined : flows.income - flows.spending,
         )}
         note={
@@ -124,7 +129,7 @@ export function DesktopFigure({
           options: { to: "/planning" },
         }}
         loading={overview === undefined}
-        value={money(overview?.closing)}
+        value={figure(overview?.closing)}
         note={
           lowest === null || lowest === undefined
             ? t("overview.figures.booked")
@@ -145,7 +150,7 @@ export function DesktopFigure({
       }}
       goodWhen="down"
       loading={committed.data === undefined}
-      value={money(committed.data?.total.amount)}
+      value={figure(committed.data?.total.amount)}
       note={
         committed.data === undefined
           ? ""

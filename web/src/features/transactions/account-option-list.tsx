@@ -21,8 +21,6 @@ export function AccountOptionList({
   suggestion,
   scale,
   label,
-  labelledBy,
-  describedBy,
 }: {
   // Already sorted inside each group.
   choices: readonly AccountChoice[];
@@ -31,11 +29,7 @@ export function AccountOptionList({
   name: string;
   suggestion: SuggestionView | null;
   scale: (currency: string) => number;
-  // The group's name outside a field, such as in the sheet.
-  label?: string;
-  // Inside a field: the label that names the group and what describes it.
-  labelledBy?: string | undefined;
-  describedBy?: string | undefined;
+  label: string;
 }) {
   const t = useT();
   const option = (choice: AccountChoice) => (
@@ -52,11 +46,7 @@ export function AccountOptionList({
       variant="tile"
       labelPlacement="start"
       {...(value === null ? {} : { value })}
-      {...(label === undefined ? {} : { "aria-label": label })}
-      {...(labelledBy === undefined ? {} : { "aria-labelledby": labelledBy })}
-      {...(describedBy === undefined
-        ? {}
-        : { "aria-describedby": describedBy })}
+      aria-label={label}
       onValueChange={(next) => {
         onChange(next);
       }}

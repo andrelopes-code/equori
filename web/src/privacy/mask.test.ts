@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { formatMoneyParts } from "@/i18n/format";
-import { MASK, maskParts, maskText } from "@/privacy/mask";
+import { formatMoneyParts, formatMoneySegments } from "@/i18n/format";
+import { MASK, maskParts, maskSegments, maskText } from "@/privacy/mask";
 
 const brl = (amount: number) =>
   formatMoneyParts({ amount, currency: "BRL" }, 2, "pt-BR");
@@ -33,5 +33,33 @@ describe("maskParts", () => {
       integer: MASK,
       fraction: "",
     });
+  });
+});
+
+describe("maskSegments", () => {
+  it("keeps the symbol and its place, drops the sign and the fraction, masks the integer", () => {
+    const nbsp = "\u00a0";
+    expect(
+      maskSegments(
+        formatMoneySegments({ amount: -123450, currency: "BRL" }, 2, "pt-BR"),
+      ),
+    ).toEqual([
+      { kind: "symbol", text: "R$" },
+      { kind: "literal", text: nbsp },
+      { kind: "integer", text: MASK },
+    ]);
+  });
+
+  it("keeps a trailing symbol after the mask", () => {
+    const nbsp = "\u00a0";
+    expect(
+      maskSegments(
+        formatMoneySegments({ amount: 123450, currency: "EUR" }, 2, "de-DE"),
+      ),
+    ).toEqual([
+      { kind: "integer", text: MASK },
+      { kind: "literal", text: nbsp },
+      { kind: "symbol", text: "\u20ac" },
+    ]);
   });
 });

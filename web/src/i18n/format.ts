@@ -130,6 +130,43 @@ export function formatMoneyParts(
   return out;
 }
 
+export interface MoneySegment {
+  kind: "sign" | "symbol" | "integer" | "fraction" | "literal";
+  text: string;
+}
+
+// The amount as runs of one kind, in the order and with the literals of the locale's pattern, so a
+// caller can draw the symbol or the fraction apart without assuming where the symbol sits.
+export function formatMoneySegments(
+  m: Money,
+  scale: number,
+  locale: string,
+): MoneySegment[] {
+  const { parts, iso } = currencyPartList(m, scale, locale);
+  const out: MoneySegment[] = [];
+  const push = (kind: MoneySegment["kind"], text: string) => {
+    const last = out.at(-1);
+    if (last?.kind === kind && (kind === "integer" || kind === "fraction"))
+      last.text += text;
+    else out.push({ kind, text });
+  };
+  for (const part of parts) {
+    if (part.type === "minusSign") {
+      if (m.amount < 0) push("sign", minusSign);
+    } else if (part.type === "currency") push("symbol", part.value);
+    else if (part.type === "integer" || part.type === "group")
+      push("integer", part.value);
+    else if (part.type === "decimal" || part.type === "fraction")
+      push("fraction", part.value);
+    else if (part.type === "literal") push("literal", part.value);
+  }
+  if (!iso) {
+    push("literal", " ");
+    push("symbol", m.currency);
+  }
+  return out;
+}
+
 // Sign, symbol, gap and number come in the order and with the literal of the locale's pattern.
 export function formatMoney(
   m: Money,

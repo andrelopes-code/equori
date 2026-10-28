@@ -37,6 +37,7 @@ import { FigureGrid } from "@/ui/figure-grid";
 import { HeaderAction } from "@/ui/header-action";
 import { QueryError } from "@/ui/query-error";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import type { MoneyAmount } from "@/ui/money-value";
 
 // The credit cards: what each one bills now, what is due and when, and how much limit is free.
 export function CardsPage() {
@@ -68,6 +69,10 @@ export function CardsPage() {
   const sc = scale ?? (() => 2);
   const money = (m: { amount: number; currency: string }) =>
     fmt.money(m, sc(m.currency));
+  const figure = (m: { amount: number; currency: string }): MoneyAmount => ({
+    money: m,
+    scale: sc(m.currency),
+  });
   const loading =
     accounts.isPending || states.some((s) => s.loading) || scale === null;
   const openCount = (accounts.data ?? []).filter(
@@ -140,7 +145,7 @@ export function CardsPage() {
                 value={
                   totals === undefined || loading
                     ? undefined
-                    : money(totals.open)
+                    : figure(totals.open)
                 }
                 note={t("cards.openNote")}
                 loading={loading}
@@ -150,7 +155,7 @@ export function CardsPage() {
                 value={
                   totals === undefined || loading
                     ? undefined
-                    : money(totals.due)
+                    : figure(totals.due)
                 }
                 note={
                   totals?.nearestDue === undefined
@@ -166,7 +171,7 @@ export function CardsPage() {
                 value={
                   totals === undefined || loading
                     ? undefined
-                    : money(totals.available)
+                    : figure(totals.available)
                 }
                 note={
                   totals === undefined

@@ -77,14 +77,18 @@ const rows = [
     code: importFromAccounts("@/app/router"),
     rule: "no-restricted-imports",
   },
-  ...["formatMoney", "formatMoneyParts", "formatSigned", "formatPlain"].map(
-    (name) => ({
-      name: `O9 ${name} in a screen`,
-      filePath: "src/features/accounts/x.ts",
-      code: `import { ${name} } from "@/i18n/format";\nexport { ${name} };\n`,
-      rule: "@typescript-eslint/no-restricted-imports",
-    }),
-  ),
+  ...[
+    "formatMoney",
+    "formatMoneyParts",
+    "formatMoneySegments",
+    "formatSigned",
+    "formatPlain",
+  ].map((name) => ({
+    name: `O9 ${name} in a screen`,
+    filePath: "src/features/accounts/x.ts",
+    code: `import { ${name} } from "@/i18n/format";\nexport { ${name} };\n`,
+    rule: "@typescript-eslint/no-restricted-imports",
+  })),
   {
     name: "O9 formatMoney in a shared component",
     filePath: "src/ui/x.tsx",

@@ -59,11 +59,11 @@ const darkNeutral = (l: number) => ({
   c: { scale: 0.22, max: 0.08 },
 });
 
-// A bottom sheet slides in 240 ms and out in 160 ms, between the short and medium steps; the
-// family's long and medium steps read slow for a sheet the hand pulls.
+// A bottom sheet slides in 280 ms and out in 160 ms; the family's long (320 ms) and medium steps
+// read slow for a sheet the hand pulls, and 240 ms read abrupt on the way in.
 const sheetSlideRule = `
 [data-ui="drawer"][data-mode="overlay"][data-side="bottom"][data-drag] {
-  --slotted-drawer-slide-duration: 240ms;
+  --slotted-drawer-slide-duration: 280ms;
   --slotted-drawer-slide-exit-duration: 160ms;
 }
 `;

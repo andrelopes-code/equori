@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json, problem } from "@/testing/fake-api";
+import { chooseAccount } from "@/testing/account-choice";
 import { renderApp } from "@/testing/render-app";
 import {
   checkingID,
@@ -27,15 +28,6 @@ function api(
       return answer();
     },
   });
-}
-
-// Owner review 2026-10-21, item 16: balance accounts are radio tiles, named by account and kind.
-async function chooseAccount(group: string, account: string) {
-  await userEvent.click(
-    within(screen.getByRole("radiogroup", { name: group })).getByRole("radio", {
-      name: new RegExp(`^${account}`),
-    }),
-  );
 }
 
 async function pick(label: string, text: string) {

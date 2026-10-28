@@ -1837,7 +1837,7 @@
     }
 
     [data-ui="drawer"][data-mode="overlay"][data-side="bottom"][data-drag] {
-      --slotted-drawer-slide-duration: 240ms;
+      --slotted-drawer-slide-duration: 280ms;
       --slotted-drawer-slide-exit-duration: 160ms;
     }
   }

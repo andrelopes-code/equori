@@ -6,6 +6,7 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import type { MoneyAmount } from "@/ui/money-value";
 
 type Account = components["schemas"]["Account"];
 type Money = components["schemas"]["Money"];
@@ -32,6 +33,10 @@ export const CardFigures = memo(function CardFigures({
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
   const money = (m: Money) => fmt.money(m, scale(m.currency));
+  const figure = (m: Money): MoneyAmount => ({
+    money: m,
+    scale: scale(m.currency),
+  });
   const oldest = unpaid[0];
   const owed = unpaid.reduce((sum, s) => sum + s.unpaid.amount, 0);
   const limit = account.card?.credit_limit;
@@ -40,7 +45,7 @@ export const CardFigures = memo(function CardFigures({
     <FigureGrid label={t("card.figures")}>
       <FigureCard
         label={t("card.figure.current")}
-        value={current === undefined ? undefined : money(current.amount_due)}
+        value={current === undefined ? undefined : figure(current.amount_due)}
         note={
           current === undefined
             ? t("cards.noStatement")
@@ -57,7 +62,7 @@ export const CardFigures = memo(function CardFigures({
             ? loading
               ? undefined
               : t("card.nothing")
-            : money({ amount: owed, currency: oldest.unpaid.currency })
+            : figure({ amount: owed, currency: oldest.unpaid.currency })
         }
         note={
           oldest === undefined
@@ -71,7 +76,7 @@ export const CardFigures = memo(function CardFigures({
       />
       <FigureCard
         label={t("cards.figure.available")}
-        value={available === undefined ? undefined : money(available)}
+        value={available === undefined ? undefined : figure(available)}
         note={
           limit === undefined
             ? t("cards.limitNone")
@@ -80,7 +85,7 @@ export const CardFigures = memo(function CardFigures({
       />
       <FigureCard
         label={t("card.figure.committed")}
-        value={committed === undefined ? undefined : money(committed)}
+        value={committed === undefined ? undefined : figure(committed)}
         note={t("card.committedNote")}
         loading={committed === undefined && loading}
       />

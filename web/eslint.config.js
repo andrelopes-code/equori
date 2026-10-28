@@ -29,6 +29,7 @@ const apiClient = {
 const unmaskedMoney = [
   "formatMoney",
   "formatMoneyParts",
+  "formatMoneySegments",
   "formatSigned",
   "formatPlain",
 ].map((importName) => ({

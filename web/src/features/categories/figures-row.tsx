@@ -10,6 +10,7 @@ import { PendingCard } from "@/features/categories/pending-card";
 import { formatMonthName } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import type { MoneyAmount } from "@/ui/money-value";
 
 // OV-05: peer tiles in one grid. Each answers a question the tree and the charts leave to
 // arithmetic: how the month compares with the same days before, what drove it, where it is
@@ -52,6 +53,10 @@ export function FiguresRow({
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
   const money = (amount: number) => fmt.money({ amount, currency }, scale);
+  const figure = (amount: number): MoneyAmount => ({
+    money: { amount, currency },
+    scale,
+  });
   const before = formatMonthName(previousMonth, locale).toLocaleLowerCase(
     locale,
   );
@@ -80,7 +85,7 @@ export function FiguresRow({
         label={t(
           cls === "income" ? "category.kpi.earned" : "category.kpi.spent",
         )}
-        value={money(current.total)}
+        value={figure(current.total)}
         loading={loading || previous === undefined}
         goodWhen={cls === "income" ? "up" : "down"}
         delta={
@@ -93,7 +98,7 @@ export function FiguresRow({
       {projected !== undefined && (
         <FigureCard
           label={t("category.kpi.projection")}
-          value={money(projected)}
+          value={figure(projected)}
           loading={loading}
           note={t("category.kpi.projectionNote", {
             rate: money(Math.round(current.total / days)),

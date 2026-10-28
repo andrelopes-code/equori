@@ -61,7 +61,8 @@ export function AccountSheet({
     <Drawer
       open
       side={wide ? "end" : "bottom"}
-      size={wide ? "md" : "content"}
+      // lg holds an option's kind, its balance and its consequence on one row each.
+      size={wide ? "lg" : "content"}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
