@@ -27,7 +27,7 @@ The **expected date** of a posting is the date by which the institution has repo
 - a posting with a statement: the statement's closing date. The closed statement is the institution's account of a card cycle, and its total confirms or contradicts every posting on it;
 - any other posting: `coalesce(settled_on, booked_on)`.
 
-Two postings **offset** when both are on the same statement and neither carries an external record. They also have opposite amounts, and their transactions are joined by a link of type `cancellation_of` or `anticipation_of`. The pair is a cancelled or anticipated installment and its reversal (M25, M26). The institution reports neither.
+Two postings **offset** when both are on the same statement and neither carries an external record. They also have opposite amounts, and both belong to one purchase or to its reversals: transactions joined to that purchase by a link of type `cancellation_of` or `anticipation_of`. The pair is a cancelled or anticipated installment and its reversal (M25, M26), or an anticipation's charge and the cancellation that reverses it (A135). The institution reports neither.
 
 A posting is **unconfirmed** when all of the following hold:
 1. it is not voided;

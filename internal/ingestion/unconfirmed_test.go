@@ -109,3 +109,23 @@ func TestS170CancelledInstallmentsOffsetTheirReversals(t *testing.T) {
 		t.Fatalf("unconfirmed = %+v, want [%+v]", got, want)
 	}
 }
+
+// S175 (A135): an anticipation's charge offsets the cancellation that reverses it, though
+// neither links to the other; only the credit of the billed installment stays expected.
+func TestS175AnticipationChargeOffsetsItsCancellation(t *testing.T) {
+	t.Parallel()
+	f, card, _, planID := installmentPlanFromLine(t)
+	f.h.MustDo(http.MethodPost, "/api/v1/installment-plans/"+planID+"/anticipation", map[string]any{
+		"date": "2026-09-20", "from_installment": 3, "to_installment": 6, "target_statement": "2026-10", "amount": apitest.BRL(38000),
+	}, http.StatusCreated, nil)
+	var cancellation struct {
+		ID string `json:"id"`
+	}
+	f.h.MustDo(http.MethodPost, "/api/v1/installment-plans/"+planID+"/cancellation", map[string]any{"date": "2026-09-25"}, http.StatusCreated, &cancellation)
+	got := f.unconfirmed(card)
+	want := unconfirmedView{TransactionID: cancellation.ID, Date: "2026-10-03", StatementID: f.statementID(card, "2026-10-01")}
+	want.Amount.Amount = 10000
+	if len(got) != 1 || got[0] != want {
+		t.Fatalf("unconfirmed = %+v, want [%+v]", got, want)
+	}
+}

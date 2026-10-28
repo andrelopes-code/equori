@@ -121,26 +121,23 @@ WITH open AS (
     SELECT p.id, p.transaction_id, p.amount, p.statement_id, p.position, p.status,
         coalesce(s.closing_date, p.settled_on, p.booked_on)::date AS expected_on
     FROM ledger_posting p
-    LEFT JOIN ledger_statement s ON s.id = p.statement_id
+    LEFT JOIN ledger_statement s ON s.user_id = p.user_id AND s.id = p.statement_id
     WHERE p.user_id = $3 AND p.account_id = $4 AND NOT p.voided
       AND p.external_record_id IS NULL
 ), ranked AS (
-    SELECT o.id, o.statement_id, abs(o.amount) AS size, sign(o.amount) AS sign,
-        least(l.from_transaction_id, l.to_transaction_id) AS low,
-        greatest(l.from_transaction_id, l.to_transaction_id) AS high,
-        o.transaction_id = least(l.from_transaction_id, l.to_transaction_id) AS low_side,
-        row_number() OVER (
-            PARTITION BY least(l.from_transaction_id, l.to_transaction_id), greatest(l.from_transaction_id, l.to_transaction_id),
-                o.statement_id, abs(o.amount), sign(o.amount), o.transaction_id = least(l.from_transaction_id, l.to_transaction_id)
-            ORDER BY o.id) AS rank
+    SELECT o.id, o.statement_id, abs(o.amount) AS size, sign(o.amount) AS sign, g.origin,
+        row_number() OVER (PARTITION BY g.origin, o.statement_id, abs(o.amount), sign(o.amount) ORDER BY o.id) AS rank
     FROM open o
-    JOIN ledger_link l ON l.user_id = $3 AND l.link_type IN ('cancellation_of', 'anticipation_of')
-      AND o.transaction_id IN (l.from_transaction_id, l.to_transaction_id)
+    CROSS JOIN LATERAL (
+        SELECT DISTINCT l.to_transaction_id AS origin
+        FROM ledger_link l
+        WHERE l.user_id = $3 AND l.link_type IN ('cancellation_of', 'anticipation_of')
+          AND o.transaction_id IN (l.from_transaction_id, l.to_transaction_id)
+    ) g
     WHERE o.statement_id IS NOT NULL
 ), offset_posting AS (
-    SELECT r.id FROM ranked r JOIN ranked q ON q.low = r.low AND q.high = r.high
-      AND q.statement_id = r.statement_id AND q.size = r.size AND q.sign = -r.sign
-      AND q.low_side <> r.low_side AND q.rank = r.rank
+    SELECT r.id FROM ranked r JOIN ranked q ON q.origin = r.origin AND q.statement_id = r.statement_id
+      AND q.size = r.size AND q.sign = -r.sign AND q.rank = r.rank
 )
 SELECT u.transaction_id, u.expected_on, u.amount, t.payee_id, t.description, u.statement_id FROM (
     SELECT DISTINCT ON (o.transaction_id) o.transaction_id, o.expected_on, o.amount, o.statement_id
@@ -149,7 +146,7 @@ SELECT u.transaction_id, u.expected_on, u.amount, t.payee_id, t.description, u.s
       AND o.id NOT IN (SELECT id FROM offset_posting)
     ORDER BY o.transaction_id, o.expected_on, o.position
 ) u
-JOIN ledger_transaction t ON t.id = u.transaction_id
+JOIN ledger_transaction t ON t.user_id = $3 AND t.id = u.transaction_id
 ORDER BY u.expected_on, u.transaction_id
 `
 
@@ -171,8 +168,8 @@ type ListUnconfirmedPostingsRow struct {
 
 // A133: the first posting of each non-voided transaction on the account that neither a line
 // links nor a balance reconciled, by the date the institution reports its line: a card
-// posting at its statement's closing. An installment and its reversal (cancellation_of,
-// anticipation_of) on one statement offset, one posting with one posting.
+// posting at its statement's closing. On one statement, postings of one purchase and of its
+// reversals (cancellation_of, anticipation_of) with opposite amounts offset one with one (A135).
 func (q *Queries) ListUnconfirmedPostings(ctx context.Context, arg ListUnconfirmedPostingsParams) ([]ListUnconfirmedPostingsRow, error) {
 	rows, err := q.db.Query(ctx, listUnconfirmedPostings,
 		arg.FromDate,
@@ -214,7 +211,7 @@ SELECT u.transaction_id, u.booked_on, u.amount, t.payee_id, t.description FROM (
       AND p.booked_on BETWEEN $3::date AND $4::date
     ORDER BY p.transaction_id, p.position
 ) u
-JOIN ledger_transaction t ON t.id = u.transaction_id
+JOIN ledger_transaction t ON t.user_id = $1 AND t.id = u.transaction_id
 ORDER BY u.booked_on, u.transaction_id
 `
 
