@@ -3,7 +3,6 @@ import { ColorField } from "@slotted/react/color-picker";
 import { Field, FieldLabel } from "@slotted/react/field";
 import { Switch } from "@slotted/react/switch";
 
-import { AppearancePreview } from "@/features/setup/appearance-preview";
 import { CustomTypefaceField } from "@/features/setup/custom-typeface-field";
 import { CornersPreview } from "@/features/setup/corners-preview";
 import { DensityPreview } from "@/features/setup/density-preview";
@@ -69,18 +68,6 @@ export function SettingsAppearance() {
       description={t("settings.summary.appearance")}
       local
     >
-      <SettingsGroup
-        title={t("settings.preview")}
-        description={t("settings.preview.description")}
-        footer={
-          <Button variant="ghost" tone="secondary" onClick={resetAppearance}>
-            {t("settings.appearance.reset")}
-          </Button>
-        }
-      >
-        <AppearancePreview />
-      </SettingsGroup>
-
       <SettingsGroup title={t("settings.appearance.theme")}>
         <SettingsRow
           label={t("more.scheme")}
@@ -231,7 +218,14 @@ export function SettingsAppearance() {
         </SettingsRow>
       </SettingsGroup>
 
-      <SettingsGroup title={t("settings.appearance.motion")}>
+      <SettingsGroup
+        title={t("settings.appearance.motion")}
+        footer={
+          <Button variant="ghost" tone="secondary" onClick={resetAppearance}>
+            {t("settings.appearance.reset")}
+          </Button>
+        }
+      >
         <Switch
           labelPlacement="start"
           checked={motion === "reduced"}
