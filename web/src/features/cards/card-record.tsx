@@ -7,57 +7,47 @@ import {
 import { Button } from "@slotted/react/button";
 import { Page, PageBody } from "@slotted/react/page";
 import { Stack } from "@slotted/react/stack";
-import { toast } from "@slotted/react/toast";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
-import { useDeferredValue, useState } from "react";
+import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
-import {
-  AccountSetupMessage,
-  CloseAccountDialog,
-  ReopenAccountDialog,
-} from "@/features/accounts";
+import { AccountSetupMessage } from "@/features/accounts";
 import {
   billingRulesQuery,
   cardsQuery,
   statementsQuery,
 } from "@/features/cards/api";
+import { CardAnalysis } from "@/features/cards/card-analysis";
+import { CardDialogs } from "@/features/cards/card-dialogs";
+import type { CardDialog } from "@/features/cards/card-dialogs";
 import { CardFigures } from "@/features/cards/card-figures";
 import { CardHeader } from "@/features/cards/card-header";
-import type { CardSearch, CardTab } from "@/features/cards/card-search";
-import { CardSettingsTab } from "@/features/cards/card-settings-tab";
+import type { CardSearch } from "@/features/cards/card-search";
+import { CardTabPanel } from "@/features/cards/card-tab-panel";
 import { currentAndUnpaid } from "@/features/cards/card-totals";
-import { InstallmentPurchaseDialog } from "@/features/cards/installment-purchase-dialog";
-import { PlansTab } from "@/features/cards/plans-tab";
-import { PlasticCardsTab } from "@/features/cards/plastic-cards-tab";
+import { committedTotal } from "@/features/cards/committed-total";
 import { addMonths, currentMonth } from "@/features/cards/reference-months";
-import { CardAnalysis } from "@/features/cards/card-analysis";
 import { StatementsChart } from "@/features/cards/statements-chart";
-import { StatementsTab } from "@/features/cards/statements-tab";
+import { useCardTabs } from "@/features/cards/use-card-tabs";
 import { useCommitments } from "@/features/cards/use-commitments";
 import { institutionsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { Presence } from "@/ui/presence";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 type Account = components["schemas"]["Account"];
 
-export function CardRecord({
-  account,
-  search,
-  scale,
-}: {
+interface CardRecordProps {
   account: Account;
   search: CardSearch;
   scale: (code: string) => number;
-}) {
+}
+
+export function CardRecord({ account, search, scale }: CardRecordProps) {
   const t = useT();
   const api = useApi();
   const today = useToday();
-  const navigate = useNavigate();
   const from = search.from ?? addMonths(currentMonth(today), -12);
   const statements = useQuery(statementsQuery(api, account.id, from));
   const rules = useQuery(billingRulesQuery(api, account.id));
@@ -66,46 +56,18 @@ export function CardRecord({
   const { current, unpaid } = currentAndUnpaid(statements.data ?? []);
   const after = current?.reference ?? currentMonth(today);
   const commitments = useCommitments(account.id, after);
+  const cardTabs = useCardTabs(account.id, search);
+  const compact = useMediaQuery(compactQuery);
+
+  const [dialog, setDialog] = useState<CardDialog | null>(null);
+
   const committed = commitments.pending
     ? undefined
-    : {
-        amount: commitments.months.reduce(
-          (sum, m) => sum + (m.amount?.amount ?? 0),
-          0,
-        ),
-        currency: account.currency,
-      };
-  const [dialog, setDialog] = useState<
-    "installments" | "close" | "reopen" | null
-  >(null);
-  const tab: CardTab = search.tab ?? "statements";
-  const [chosen, setChosen] = useState<CardTab | null>(null);
-  const shown = useDeferredValue(chosen ?? tab);
+    : committedTotal(commitments.months, account.currency);
   const noRule = rules.data?.length === 0;
-
-  const go = (next: { tab?: CardTab; rule?: true; from?: string }) => {
-    const merged: CardSearch = { ...search };
-    if (next.tab !== undefined) {
-      delete merged.tab;
-      delete merged.rule;
-      if (next.tab !== "statements") merged.tab = next.tab;
-    }
-    if (next.rule === true) merged.rule = true;
-    if (next.from !== undefined) merged.from = next.from;
-    void navigate({
-      to: "/cards/$accountId",
-      params: { accountId: account.id },
-      search: merged,
-      replace: true,
-    }).then(() => {
-      setChosen(null);
-    });
-  };
-
   // A phone reads the records under the tabs first, and the figures after them (mobile.md M2, M4).
   // The figures belong to the statements tab: under another tab they would push its content below the fold.
-  const compact = useMediaQuery(compactQuery);
-  const overview = shown === "statements" && (
+  const overview = cardTabs.shown === "statements" && (
     <>
       <CardFigures
         account={account}
@@ -125,6 +87,7 @@ export function CardRecord({
       <CardAnalysis accountId={account.id} scale={scale(account.currency)} />
     </>
   );
+
   return (
     <Page width="full">
       <CardHeader
@@ -137,11 +100,8 @@ export function CardRecord({
           .map((c) => c.last_four)}
         current={current}
         unpaid={unpaid[0]}
-        tab={chosen ?? tab}
-        onTab={(next) => {
-          setChosen(next);
-          go({ tab: next });
-        }}
+        tab={cardTabs.marked}
+        onTab={cardTabs.select}
         onInstallments={() => {
           setDialog("installments");
         }}
@@ -152,6 +112,7 @@ export function CardRecord({
           setDialog("reopen");
         }}
       />
+
       <PageBody>
         <Stack gap={6}>
           <AccountSetupMessage accountId={account.id} />
@@ -160,11 +121,11 @@ export function CardRecord({
               <AlertContent>
                 <AlertDescription>{t("card.ruleMissing")}</AlertDescription>
               </AlertContent>
+
               <AlertActions>
                 <Button
                   onClick={() => {
-                    setChosen("settings");
-                    go({ tab: "settings", rule: true });
+                    cardTabs.select("settings", true);
                   }}
                 >
                   {t("card.setRule")}
@@ -173,102 +134,32 @@ export function CardRecord({
             </Alert>
           )}
           {!compact && overview}
-          <div aria-busy={shown !== (chosen ?? tab) || undefined}>
-            {shown === "statements" && (
-              <StatementsTab
-                accountId={account.id}
-                statements={statements.data ?? []}
-                loading={statements.isPending}
-                onEarlier={() => {
-                  go({ from: addMonths(from, -12) });
-                }}
-                scale={scale}
-              />
-            )}
-            {shown === "plans" && (
-              <PlansTab
-                accountId={account.id}
-                statements={statements.data ?? []}
-                openReference={current?.reference}
-                scale={scale}
-              />
-            )}
-            {shown === "cards" && <PlasticCardsTab accountId={account.id} />}
-            {shown === "settings" && (
-              <CardSettingsTab
-                account={account}
-                ruleOpen={search.rule === true}
-                onRuleOpen={(open) => {
-                  void navigate({
-                    to: "/cards/$accountId",
-                    params: { accountId: account.id },
-                    search: (() => {
-                      const merged: CardSearch = { ...search };
-                      delete merged.rule;
-                      return open ? { ...merged, rule: true as const } : merged;
-                    })(),
-                    replace: true,
-                  });
-                }}
-                scale={scale}
-              />
-            )}
+          <div aria-busy={cardTabs.refreshing || undefined}>
+            <CardTabPanel
+              tab={cardTabs.shown}
+              account={account}
+              search={search}
+              statements={statements.data ?? []}
+              loading={statements.isPending}
+              openReference={current?.reference}
+              onEarlier={() => {
+                cardTabs.earlier(addMonths(from, -12));
+              }}
+              scale={scale}
+            />
           </div>
           {compact && overview}
         </Stack>
       </PageBody>
-      <Presence value={dialog === "installments" ? dialog : undefined}>
-        {() => (
-          <InstallmentPurchaseDialog
-            account={account}
-            scale={scale(account.currency)}
-            onCancel={() => {
-              setDialog(null);
-            }}
-            onDone={() => {
-              setDialog(null);
-              toast.show({ tone: "success", title: t("installments.done") });
-            }}
-          />
-        )}
-      </Presence>
-      <Presence value={dialog === "close" ? dialog : undefined}>
-        {() => (
-          <CloseAccountDialog
-            account={account}
-            descendants={[]}
-            scale={scale}
-            onCancel={() => {
-              setDialog(null);
-            }}
-            onDone={() => {
-              setDialog(null);
-              toast.show({
-                tone: "success",
-                title: t("account.closed", { name: account.name }),
-              });
-            }}
-          />
-        )}
-      </Presence>
-      <Presence value={dialog === "reopen" ? dialog : undefined}>
-        {() => (
-          <ReopenAccountDialog
-            account={account}
-            ancestors={[]}
-            onCancel={() => {
-              setDialog(null);
-            }}
-            onDone={() => {
-              setDialog(null);
-              toast.show({
-                tone: "success",
-                title: t("account.reopened", { name: account.name }),
-              });
-            }}
-          />
-        )}
-      </Presence>
+
+      <CardDialogs
+        dialog={dialog}
+        account={account}
+        scale={scale}
+        onDismiss={() => {
+          setDialog(null);
+        }}
+      />
     </Page>
   );
 }
