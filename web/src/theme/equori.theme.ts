@@ -50,6 +50,22 @@ const darkNeutral = (l: number) => ({
   c: { scale: 0.22, max: 0.08 },
 });
 
+// Workaround for Slotted issue #37: the dialog has no measure per size. A confirmation at 24rem
+// wrapped its sentence to five lines, and a form at 32rem held a column narrower than a form page's.
+const dialogMeasureRule = `
+[data-ui="dialog"][data-size="sm"] {
+  --slotted-dialog-measure: 32rem;
+}
+
+[data-ui="dialog"][data-size="md"] {
+  --slotted-dialog-measure: 42rem;
+}
+
+[data-ui="dialog"][data-size="lg"] {
+  --slotted-dialog-measure: 48rem;
+}
+`;
+
 // A bottom sheet slides in 480 ms and out in 260 ms; 240 ms and 280 ms read abrupt on the way in.
 const sheetSlideRule = `
 [data-ui="drawer"][data-mode="overlay"][data-side="bottom"][data-drag] {
@@ -143,6 +159,9 @@ export default extendTheme(
     // Destinations read muted, the current one in the full text colour over the bar's own
     // ground, underlined.
     components: {
+      // Workaround for Slotted issue #38: at 0.25rem a description or an error touched the
+      // control above it.
+      "--slotted-field-group-message-gap": "var(--slotted-space-4)",
       "--slotted-top-navigation-color": "var(--slotted-text-muted)",
       "--slotted-top-navigation-current-color": "var(--slotted-text)",
       "--slotted-top-navigation-current-background": "transparent",
@@ -192,6 +211,7 @@ export default extendTheme(
       currentDestinationRule,
       paletteScrimRule,
       sheetSlideRule,
+      dialogMeasureRule,
     ],
   },
   { name: "equori" },

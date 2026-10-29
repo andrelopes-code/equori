@@ -43,7 +43,8 @@ A field with no step is `full`.
 
 - A form with more than six fields, or with fields about two or more topics, splits them into `FormSection`s (`ui/form-section`) whose legend names the topic ("Value", "When", "Repetition").
 - Two fields stand 1.5rem apart (`--slotted-space-8`), inside a section or not; a label stands 0.25rem above its control (the family's own). The ratio of 6 to 1 makes each label read with the control under it.
-- Two sections stand 2.5rem apart (`--slotted-space-10`), and a legend 1.25rem above its first field (the family's own). The larger step is what separates topics.
+- A description or an error stands 0.5rem under its control (`--slotted-space-4`, set in the theme).
+- Two sections stand 1.5rem apart, as two fields do, and a legend 1.25rem above its first field (the family's own). The legend is what separates topics.
 - `FormLayout` and `FormSection` write these steps; a form writes no gap, margin, `Stack` or `Grid` of its own between fields. A component that renders several fields for reuse in more than one form (`BillingRuleFields`) spaces them with `Stack gap={8}`, the same 1.5rem, and puts pairs in `FormRow`.
 - A repeated group (each card of an account, each line of a plan) is one block per item: its fields, then its actions (remove, a toggle of the item) in an `Inline` on the item's last line, then the button that adds an item after the last block.
 - A section is named by its legend only. No overline, no step number, no uppercase label.
@@ -84,6 +85,7 @@ A field that is optional and does not change what the record is (a parent accoun
 - A form page has `PageBack`, a title that names the record ("New schedule"), and a subheading that says what the record does.
 - The actions are the page's footer: the primary action names the result ("Create schedule"), the secondary actions stand before it, and the way out is a ghost button before them: "Cancel" when the form keeps nothing, "Discard" when it keeps a draft that the button also clears (FM-05).
 - A form of more than eight fields, or one with an aside, is a page, never a dialog. A dialog form follows F1 to F9 inside the dialog's body.
+- A dialog's measure is set by its `size` in the theme: `sm` 32rem, for a confirmation or a form of one or two fields; `md` 42rem, for a form; `lg` 48rem.
 
 ## F11 · Type in a form has three sizes
 

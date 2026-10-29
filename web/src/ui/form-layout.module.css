@@ -19,9 +19,10 @@
     gap: var(--slotted-space-8);
   }
 
-  /* Workaround for Slotted issue #22: no token separates two sections of a form. */
+  /* Workaround for Slotted issue #22: no token separates two sections of a form. Two sections
+     stand as far apart as two fields; the legend marks the topic (owner review, 2026-10-29). */
   .fields:has(> .section) {
-    gap: var(--slotted-space-10);
+    gap: var(--slotted-space-8);
   }
 
   .section {
