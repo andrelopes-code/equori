@@ -1,22 +1,18 @@
 import { Page, PageBody } from "@slotted/react/page";
 import { Stack } from "@slotted/react/stack";
-import { toast } from "@slotted/react/toast";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useDeferredValue, useState } from "react";
+import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
+import { AccountDialogs } from "@/features/accounts/account-dialogs";
+import type { AccountDialog } from "@/features/accounts/account-dialogs";
 import { AccountFigures } from "@/features/accounts/account-figures";
 import { AccountHeader } from "@/features/accounts/account-header";
-import type { TabEntry } from "@/features/accounts/account-header";
-import { withRange, withTab } from "@/features/accounts/account-search";
-import type {
-  AccountSearch,
-  AccountTab,
-  Range,
-} from "@/features/accounts/account-search";
+import { lineage } from "@/features/accounts/account-lineage";
+import { withRange } from "@/features/accounts/account-search";
+import type { AccountSearch, Range } from "@/features/accounts/account-search";
 import { AccountSetupMessage } from "@/features/accounts/account-setup-message";
 import { AccountTabPanel } from "@/features/accounts/account-tab-panel";
 import {
@@ -27,45 +23,20 @@ import {
   unconfirmedQuery,
 } from "@/features/accounts/api";
 import { BalanceChart } from "@/features/accounts/balance-chart";
-import { CloseAccountDialog } from "@/features/accounts/close-account-dialog";
-import { ReopenAccountDialog } from "@/features/accounts/reopen-account-dialog";
-import { UnlockDialog } from "@/features/accounts/unlock-dialog";
+import { useAccountTabs } from "@/features/accounts/use-account-tabs";
 import { institutionsQuery } from "@/features/setup";
-import { useT } from "@/i18n/i18n-provider";
+import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 import { useStableCallback } from "@/ui/use-stable-callback";
-import { Presence } from "@/ui/presence";
 
 type Account = components["schemas"]["Account"];
 
-function lineage(account: Account, accounts: Account[]) {
-  const byId = new Map(accounts.map((a) => [a.id, a]));
-  const ancestors: Account[] = [];
-  for (let p = account.parent_id; p !== undefined; p = byId.get(p)?.parent_id) {
-    const parent = byId.get(p);
-    if (parent === undefined) break;
-    ancestors.push(parent);
-  }
-  const descendants: Account[] = [];
-  const queue = [account.id];
-  for (let id = queue.shift(); id !== undefined; id = queue.shift()) {
-    for (const child of accounts.filter((a) => a.parent_id === id)) {
-      descendants.push(child);
-      queue.push(child.id);
-    }
-  }
-  return { ancestors, descendants };
-}
-
-export function AccountRecord({
-  account,
-  search,
-  scale,
-}: {
+interface AccountRecordProps {
   account: Account;
   search: AccountSearch;
   scale: (code: string) => number;
-}) {
-  const t = useT();
+}
+
+export function AccountRecord({ account, search, scale }: AccountRecordProps) {
   const api = useApi();
   const navigate = useNavigate();
   const accounts = useQuery(accountsQuery(api));
@@ -87,9 +58,7 @@ export function AccountRecord({
     enabled: leaf,
   });
   const imports = useQuery(importBatchesQuery(api, account.id));
-  const [dialog, setDialog] = useState<"close" | "reopen" | "unlock" | null>(
-    null,
-  );
+  const [dialog, setDialog] = useState<AccountDialog | null>(null);
 
   const institution = institutions.data?.find(
     (i) => i.id === account.institution_id,
@@ -103,39 +72,19 @@ export function AccountRecord({
   const isBrokerage =
     account.kind === "brokerage" && account.parent_id === undefined;
 
-  const current: AccountTab = search.tab ?? "activity";
-  // CP-09: the strip moves at once; the tab's region renders from the deferred value.
-  const [chosen, setChosen] = useState<AccountTab | null>(null);
-  const shownTab = useDeferredValue(chosen ?? current);
-  const count = (n: number | undefined) =>
-    n === undefined ? "" : ` (${String(n)})`;
-  const reconciliationCount =
-    reconciliation.data === undefined || unconfirmed.data === undefined
-      ? undefined
-      : (reconciliation.data.open_difference === undefined ? 0 : 1) +
-        unconfirmed.data.length;
-  const tabs: TabEntry[] = [
-    { tab: "activity", label: t("account.tab.activity") },
-    ...(leaf
-      ? [
-          {
-            tab: "reconciliation" as const,
-            label: t("account.tab.reconciliation") + count(reconciliationCount),
-          },
-        ]
-      : []),
-    {
-      tab: "imports",
-      label: t("account.tab.imports") + count(imports.data?.length),
-    },
-    { tab: "scheduled", label: t("account.tab.scheduled") },
-    ...(isBrokerage
-      ? [{ tab: "positions" as const, label: t("account.tab.positions") }]
-      : []),
-    ...(linked === undefined
-      ? []
-      : [{ tab: "sync" as const, label: t("account.tab.sync") }]),
-  ];
+  const accountTabs = useAccountTabs({
+    accountId: account.id,
+    search,
+    leaf,
+    brokerage: isBrokerage,
+    linked: linked !== undefined,
+    reconciliationCount:
+      reconciliation.data === undefined || unconfirmed.data === undefined
+        ? undefined
+        : (reconciliation.data.open_difference === undefined ? 0 : 1) +
+          unconfirmed.data.length,
+    importCount: imports.data?.length,
+  });
   const range: Range = search.range ?? 90;
   const changeRange = useStableCallback((next: Range) => {
     void navigate({
@@ -149,7 +98,7 @@ export function AccountRecord({
   // A phone reads the records under the tabs first, and the figures after them (mobile.md M2, M4).
   // The figures belong to the activity tab: under another tab they would push its content below the fold.
   const compact = useMediaQuery(compactQuery);
-  const overview = shownTab === "activity" && (
+  const overview = accountTabs.shownTab === "activity" && (
     <>
       <AccountFigures account={account} scale={scale} />
       <BalanceChart
@@ -166,19 +115,9 @@ export function AccountRecord({
         account={account}
         institution={institution}
         external={linked?.external}
-        tabs={tabs}
-        current={chosen ?? current}
-        onTab={(tab) => {
-          setChosen(tab);
-          void navigate({
-            to: "/accounts/$id",
-            params: { id: account.id },
-            search: withTab(search, tab),
-            replace: true,
-          }).then(() => {
-            setChosen(null);
-          });
-        }}
+        tabs={accountTabs.tabs}
+        current={accountTabs.marked}
+        onTab={accountTabs.select}
         onClose={() => {
           setDialog("close");
         }}
@@ -188,16 +127,16 @@ export function AccountRecord({
         onUnlock={() => {
           setDialog("unlock");
         }}
-        refreshing={shownTab !== (chosen ?? current)}
+        refreshing={accountTabs.refreshing}
         scale={scale}
       />
       <PageBody>
         <Stack gap={6}>
           <AccountSetupMessage accountId={account.id} />
           {!compact && overview}
-          <div aria-busy={shownTab !== (chosen ?? current) || undefined}>
+          <div aria-busy={accountTabs.refreshing || undefined}>
             <AccountTabPanel
-              tab={shownTab}
+              tab={accountTabs.shownTab}
               account={account}
               search={search}
               linked={linked}
@@ -210,58 +149,17 @@ export function AccountRecord({
           {compact && overview}
         </Stack>
       </PageBody>
-      <Presence value={dialog === "close" ? dialog : undefined}>
-        {() => (
-          <CloseAccountDialog
-            account={account}
-            descendants={descendants}
-            scale={scale}
-            onCancel={() => {
-              setDialog(null);
-            }}
-            onDone={() => {
-              setDialog(null);
-              toast.show({
-                tone: "success",
-                title: t("account.closed", { name: account.name }),
-              });
-            }}
-          />
-        )}
-      </Presence>
-      <Presence value={dialog === "reopen" ? dialog : undefined}>
-        {() => (
-          <ReopenAccountDialog
-            account={account}
-            ancestors={ancestors}
-            onCancel={() => {
-              setDialog(null);
-            }}
-            onDone={() => {
-              setDialog(null);
-              toast.show({
-                tone: "success",
-                title: t("account.reopened", { name: account.name }),
-              });
-            }}
-          />
-        )}
-      </Presence>
-      <Presence value={dialog === "unlock" ? dialog : undefined}>
-        {() => (
-          <UnlockDialog
-            account={account}
-            lastReconciled={reconciliation.data?.last_reconciled_on}
-            onCancel={() => {
-              setDialog(null);
-            }}
-            onDone={() => {
-              setDialog(null);
-              toast.show({ tone: "success", title: t("unlock.done") });
-            }}
-          />
-        )}
-      </Presence>
+      <AccountDialogs
+        dialog={dialog}
+        account={account}
+        ancestors={ancestors}
+        descendants={descendants}
+        lastReconciled={reconciliation.data?.last_reconciled_on}
+        scale={scale}
+        onDismiss={() => {
+          setDialog(null);
+        }}
+      />
     </Page>
   );
 }
