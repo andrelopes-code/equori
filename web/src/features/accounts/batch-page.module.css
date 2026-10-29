@@ -1,16 +1,10 @@
 @layer app {
-  /* The queue beside the line from 600 px; the line takes the room the candidates need. */
+  /* The queue beside the line; the line takes the room the candidates need. The queue holds a
+     name, a date and an amount per row: 20rem keeps one line each. */
   .workspace {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 20rem minmax(0, 1fr);
     gap: var(--slotted-space-6);
     align-items: start;
-  }
-
-  @media (min-width: 600px) {
-    .workspace {
-      /* The queue holds a name, a date and an amount per row: 20rem keeps one line each. */
-      grid-template-columns: 20rem minmax(0, 1fr);
-    }
   }
 }

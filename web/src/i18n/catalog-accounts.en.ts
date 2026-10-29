@@ -477,7 +477,6 @@ export const accountsEn = {
   "batch.filter.withdrawn": "Withdrawn",
   "batch.queue": "Lines to review",
   "batch.choose": "Choose a line to compare it with its candidates.",
-  "batch.backToQueue": "Back to the lines",
   "batch.reviewDone": "Nothing left to review",
   "batch.reviewDoneHint":
     "Every line of this import found its place in the ledger.",

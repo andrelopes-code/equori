@@ -45,8 +45,6 @@ import {
 import type { MessageKey } from "@/i18n/catalog.en";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { PhoneList } from "@/ui/phone-list";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 import { routeTo } from "@/ui/route-to";
 import { Presence } from "@/ui/presence";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -83,7 +81,6 @@ export function ReconciliationTab({
   const fmt = useMoneyFormat();
   const api = useApi();
   const navigate = useNavigate();
-  const compact = useMediaQuery(compactQuery);
   const status = useQuery(reconciliationQuery(api, account.id));
   const history = useInfiniteQuery(assertionsQuery(api, account.id));
   const unconfirmed = useQuery(unconfirmedQuery(api, account.id));
@@ -255,90 +252,63 @@ export function ReconciliationTab({
       </Card>
 
       <Stack gap={3}>
-        {compact ? (
-          <PhoneList
-            label={t("reconciliation.history")}
-            loading={history.isPending}
-            empty={t("reconciliation.historyEmpty")}
-            rows={assertions.map((a) => ({
-              key: a.id,
-              title: formatDate(a.date, locale),
-              lines: [
-                [
-                  t(sourceLabel[a.source]),
-                  formatDate(a.recorded_at.slice(0, 10), locale),
-                ].join(" · "),
-                a.reconciled ? (
-                  <Tag key="state" size="sm" tone="success">
-                    {t("reconciliation.matched")}
-                  </Tag>
-                ) : (
-                  <Tag key="state" size="sm" tone="warning">
-                    {t("reconciliation.unmatched")}
-                  </Tag>
-                ),
-              ],
-              end: money(a.amount),
-            }))}
-          />
-        ) : (
-          <Table columns={5} variant="framed">
-            <TableContent>
-              <TableCaption>{t("reconciliation.history")}</TableCaption>
-              <TableHead>
-                <TableRow>
-                  <TableColumnHeader>
-                    {t("reconciliation.date")}
-                  </TableColumnHeader>
-                  <TableColumnHeader numeric>
-                    {t("reconciliation.reported")}
-                  </TableColumnHeader>
-                  <TableColumnHeader>
-                    {t("reconciliation.source")}
-                  </TableColumnHeader>
-                  <TableColumnHeader>
-                    {t("reconciliation.recordedAt")}
-                  </TableColumnHeader>
-                  <TableColumnHeader>
-                    {t("reconciliation.state")}
-                  </TableColumnHeader>
-                </TableRow>
-              </TableHead>
-              {history.isPending ? (
-                <TableLoader skeletonRows={3} />
-              ) : (
-                <TableBody>
-                  {assertions.length === 0 && (
-                    <TableEmpty>{t("reconciliation.historyEmpty")}</TableEmpty>
-                  )}
-                  {assertions.map((a) => (
-                    <TableRow key={a.id} value={a.id}>
-                      <TableRowHeader>
-                        {formatDate(a.date, locale)}
-                      </TableRowHeader>
-                      <TableCell numeric>{money(a.amount)}</TableCell>
-                      <TableCell>{t(sourceLabel[a.source])}</TableCell>
-                      <TableCell>
-                        {formatDate(a.recorded_at.slice(0, 10), locale)}
-                      </TableCell>
-                      <TableCell>
-                        {a.reconciled ? (
-                          <Tag size="sm" tone="success">
-                            {t("reconciliation.matched")}
-                          </Tag>
-                        ) : (
-                          <Tag size="sm" tone="warning">
-                            {t("reconciliation.unmatched")}
-                          </Tag>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              )}
-            </TableContent>
-          </Table>
-        )}
+        <Table columns={5} variant="framed">
+          <TableContent>
+            <TableCaption>{t("reconciliation.history")}</TableCaption>
+            <TableHead>
+              <TableRow>
+                <TableColumnHeader>
+                  {t("reconciliation.date")}
+                </TableColumnHeader>
+                <TableColumnHeader numeric>
+                  {t("reconciliation.reported")}
+                </TableColumnHeader>
+                <TableColumnHeader>
+                  {t("reconciliation.source")}
+                </TableColumnHeader>
+                <TableColumnHeader>
+                  {t("reconciliation.recordedAt")}
+                </TableColumnHeader>
+                <TableColumnHeader>
+                  {t("reconciliation.state")}
+                </TableColumnHeader>
+              </TableRow>
+            </TableHead>
+            {history.isPending ? (
+              <TableLoader skeletonRows={3} />
+            ) : (
+              <TableBody>
+                {assertions.length === 0 && (
+                  <TableEmpty>{t("reconciliation.historyEmpty")}</TableEmpty>
+                )}
+                {assertions.map((a) => (
+                  <TableRow key={a.id} value={a.id}>
+                    <TableRowHeader>
+                      {formatDate(a.date, locale)}
+                    </TableRowHeader>
+                    <TableCell numeric>{money(a.amount)}</TableCell>
+                    <TableCell>{t(sourceLabel[a.source])}</TableCell>
+                    <TableCell>
+                      {formatDate(a.recorded_at.slice(0, 10), locale)}
+                    </TableCell>
+                    <TableCell>
+                      {a.reconciled ? (
+                        <Tag size="sm" tone="success">
+                          {t("reconciliation.matched")}
+                        </Tag>
+                      ) : (
+                        <Tag size="sm" tone="warning">
+                          {t("reconciliation.unmatched")}
+                        </Tag>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            )}
+          </TableContent>
+        </Table>
+
         {history.hasNextPage && (
           <div>
             <Button
@@ -354,79 +324,59 @@ export function ReconciliationTab({
       </Stack>
 
       <Stack gap={3}>
-        {compact ? (
-          <PhoneList
-            label={t("reconciliation.unconfirmed")}
-            loading={unconfirmed.isPending}
-            empty={t("reconciliation.unconfirmedEmpty")}
-            rows={(unconfirmed.data ?? []).map((entry) => ({
-              key: entry.transaction_id,
-              title:
-                entry.description === ""
-                  ? t("ledger.untitled")
-                  : entry.description,
-              link: {
-                to: "/transactions/$id",
-                params: { id: entry.transaction_id },
-              },
-              lines: [formatDate(entry.date, locale)],
-              end: money(entry.amount),
-            }))}
-          />
-        ) : (
-          <Table columns={3} variant="framed">
-            <TableContent>
-              <TableCaption>{t("reconciliation.unconfirmed")}</TableCaption>
-              <TableHead>
-                <TableRow>
-                  <TableColumnHeader>
-                    {t("reconciliation.date")}
-                  </TableColumnHeader>
-                  <TableColumnHeader>{t("ledger.movement")}</TableColumnHeader>
-                  <TableColumnHeader numeric>
-                    {t("ledger.amount")}
-                  </TableColumnHeader>
-                </TableRow>
-              </TableHead>
-              {unconfirmed.isPending ? (
-                <TableLoader skeletonRows={2} />
-              ) : (
-                <TableBody>
-                  {(unconfirmed.data ?? []).length === 0 && (
-                    <TableEmpty>
-                      {t("reconciliation.unconfirmedEmpty")}
-                    </TableEmpty>
-                  )}
-                  {(unconfirmed.data ?? []).map((entry) => (
-                    <TableRow
-                      key={entry.transaction_id}
-                      value={entry.transaction_id}
-                    >
-                      <TableRowHeader>
-                        {formatDate(entry.date, locale)}
-                      </TableRowHeader>
-                      <TableCell>
-                        <Link
-                          variant="neutral"
-                          underline="hover"
-                          render={routeTo({
-                            to: "/transactions/$id",
-                            params: { id: entry.transaction_id },
-                          })}
-                        >
-                          {entry.description === ""
-                            ? t("ledger.untitled")
-                            : entry.description}
-                        </Link>
-                      </TableCell>
-                      <TableCell numeric>{money(entry.amount)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              )}
-            </TableContent>
-          </Table>
-        )}
+        <Table columns={3} variant="framed">
+          <TableContent>
+            <TableCaption>{t("reconciliation.unconfirmed")}</TableCaption>
+            <TableHead>
+              <TableRow>
+                <TableColumnHeader>
+                  {t("reconciliation.date")}
+                </TableColumnHeader>
+                <TableColumnHeader>{t("ledger.movement")}</TableColumnHeader>
+                <TableColumnHeader numeric>
+                  {t("ledger.amount")}
+                </TableColumnHeader>
+              </TableRow>
+            </TableHead>
+            {unconfirmed.isPending ? (
+              <TableLoader skeletonRows={2} />
+            ) : (
+              <TableBody>
+                {(unconfirmed.data ?? []).length === 0 && (
+                  <TableEmpty>
+                    {t("reconciliation.unconfirmedEmpty")}
+                  </TableEmpty>
+                )}
+                {(unconfirmed.data ?? []).map((entry) => (
+                  <TableRow
+                    key={entry.transaction_id}
+                    value={entry.transaction_id}
+                  >
+                    <TableRowHeader>
+                      {formatDate(entry.date, locale)}
+                    </TableRowHeader>
+                    <TableCell>
+                      <Link
+                        variant="neutral"
+                        underline="hover"
+                        render={routeTo({
+                          to: "/transactions/$id",
+                          params: { id: entry.transaction_id },
+                        })}
+                      >
+                        {entry.description === ""
+                          ? t("ledger.untitled")
+                          : entry.description}
+                      </Link>
+                    </TableCell>
+                    <TableCell numeric>{money(entry.amount)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            )}
+          </TableContent>
+        </Table>
+
         <Text size="sm" tone="muted">
           {t("reconciliation.unconfirmedNote")}
         </Text>

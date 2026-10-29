@@ -29,8 +29,6 @@ import { CreditLimitForm } from "@/features/cards/credit-limit-form";
 import { PlacementCheck } from "@/features/cards/placement-check";
 import { formatDate, formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { PhoneList } from "@/ui/phone-list";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
@@ -55,7 +53,6 @@ export function CardSettingsTab({
   const rules = useQuery(billingRulesQuery(api, account.id));
   const limits = useQuery(creditLimitsQuery(api, account.id));
   const [limitOpen, setLimitOpen] = useState(false);
-  const compact = useMediaQuery(compactQuery);
   const sortedRules = [...(rules.data ?? [])].sort((a, b) =>
     b.effective_from.localeCompare(a.effective_from),
   );
@@ -97,88 +94,58 @@ export function CardSettingsTab({
             </CardBody>
           </Card>
         )}
-        {compact ? (
-          <PhoneList
-            label={t("card.ruleVersions")}
-            loading={rules.isPending}
-            empty={t("card.noRule")}
-            rows={sortedRules.map((rule) => ({
-              key: rule.effective_from,
-              title: formatMonthTitle(rule.effective_from, locale),
-              lines: [
-                [
-                  rule.closing_mode === "before_due"
-                    ? t("card.closingBefore", {
-                        days: rule.closing_days_before_due ?? 0,
-                      })
-                    : t("card.closingOn", { day: rule.closing_day ?? 0 }),
-                  t("card.dueOn", { day: rule.due_day }),
-                ].join(" · "),
-                t("card.adjustments", {
-                  closing: t(
-                    adjustmentLabel[rule.closing_adjustment ?? "none"],
-                  ),
-                  due: t(adjustmentLabel[rule.due_date_adjustment ?? "none"]),
-                }),
-              ],
-            }))}
-          />
-        ) : (
-          <Table columns={4} variant="framed">
-            <TableContent>
-              <TableCaption>{t("card.ruleVersions")}</TableCaption>
-              <TableHead>
-                <TableRow>
-                  <TableColumnHeader>
-                    {t("card.effectiveFrom")}
-                  </TableColumnHeader>
-                  <TableColumnHeader>{t("card.closing")}</TableColumnHeader>
-                  <TableColumnHeader>{t("card.due")}</TableColumnHeader>
-                  <TableColumnHeader>{t("card.nonBusiness")}</TableColumnHeader>
-                </TableRow>
-              </TableHead>
-              {rules.isPending ? (
-                <TableLoader skeletonRows={1} />
-              ) : (
-                <TableBody>
-                  {sortedRules.length === 0 && (
-                    <TableEmpty>{t("card.noRule")}</TableEmpty>
-                  )}
-                  {sortedRules.map((rule) => (
-                    <TableRow
-                      key={rule.effective_from}
-                      value={rule.effective_from}
-                    >
-                      <TableRowHeader>
-                        {formatMonthTitle(rule.effective_from, locale)}
-                      </TableRowHeader>
-                      <TableCell>
-                        {rule.closing_mode === "before_due"
-                          ? t("card.closingBefore", {
-                              days: rule.closing_days_before_due ?? 0,
-                            })
-                          : t("card.closingOn", { day: rule.closing_day ?? 0 })}
-                      </TableCell>
-                      <TableCell>
-                        {t("card.dueOn", { day: rule.due_day })}
-                      </TableCell>
-                      <TableCell>
-                        {t("card.adjustments", {
-                          closing: t(
-                            adjustmentLabel[rule.closing_adjustment ?? "none"],
-                          ),
-                          due: t(
-                            adjustmentLabel[rule.due_date_adjustment ?? "none"],
-                          ),
-                        })}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              )}
-            </TableContent>
-          </Table>
-        )}
+        <Table columns={4} variant="framed">
+          <TableContent>
+            <TableCaption>{t("card.ruleVersions")}</TableCaption>
+            <TableHead>
+              <TableRow>
+                <TableColumnHeader>{t("card.effectiveFrom")}</TableColumnHeader>
+                <TableColumnHeader>{t("card.closing")}</TableColumnHeader>
+                <TableColumnHeader>{t("card.due")}</TableColumnHeader>
+                <TableColumnHeader>{t("card.nonBusiness")}</TableColumnHeader>
+              </TableRow>
+            </TableHead>
+            {rules.isPending ? (
+              <TableLoader skeletonRows={1} />
+            ) : (
+              <TableBody>
+                {sortedRules.length === 0 && (
+                  <TableEmpty>{t("card.noRule")}</TableEmpty>
+                )}
+                {sortedRules.map((rule) => (
+                  <TableRow
+                    key={rule.effective_from}
+                    value={rule.effective_from}
+                  >
+                    <TableRowHeader>
+                      {formatMonthTitle(rule.effective_from, locale)}
+                    </TableRowHeader>
+                    <TableCell>
+                      {rule.closing_mode === "before_due"
+                        ? t("card.closingBefore", {
+                            days: rule.closing_days_before_due ?? 0,
+                          })
+                        : t("card.closingOn", { day: rule.closing_day ?? 0 })}
+                    </TableCell>
+                    <TableCell>
+                      {t("card.dueOn", { day: rule.due_day })}
+                    </TableCell>
+                    <TableCell>
+                      {t("card.adjustments", {
+                        closing: t(
+                          adjustmentLabel[rule.closing_adjustment ?? "none"],
+                        ),
+                        due: t(
+                          adjustmentLabel[rule.due_date_adjustment ?? "none"],
+                        ),
+                      })}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            )}
+          </TableContent>
+        </Table>
       </Stack>
 
       <Stack gap={3}>
@@ -215,54 +182,41 @@ export function CardSettingsTab({
             </CardBody>
           </Card>
         )}
-        {compact ? (
-          <PhoneList
-            label={t("card.limitVersions")}
-            loading={limits.isPending}
-            empty={t("cards.limitNone")}
-            rows={sortedLimits.map((limit) => ({
-              key: limit.effective_from,
-              title: formatDate(limit.effective_from, locale),
-              end: fmt.money(limit.amount, scale(limit.amount.currency)),
-            }))}
-          />
-        ) : (
-          <Table columns={2} variant="framed">
-            <TableContent>
-              <TableCaption>{t("card.limitVersions")}</TableCaption>
-              <TableHead>
-                <TableRow>
-                  <TableColumnHeader>{t("card.limitFrom")}</TableColumnHeader>
-                  <TableColumnHeader numeric>
-                    {t("accountForm.limit")}
-                  </TableColumnHeader>
-                </TableRow>
-              </TableHead>
-              {limits.isPending ? (
-                <TableLoader skeletonRows={1} />
-              ) : (
-                <TableBody>
-                  {sortedLimits.length === 0 && (
-                    <TableEmpty>{t("cards.limitNone")}</TableEmpty>
-                  )}
-                  {sortedLimits.map((limit) => (
-                    <TableRow
-                      key={limit.effective_from}
-                      value={limit.effective_from}
-                    >
-                      <TableRowHeader>
-                        {formatDate(limit.effective_from, locale)}
-                      </TableRowHeader>
-                      <TableCell numeric>
-                        {fmt.money(limit.amount, scale(limit.amount.currency))}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              )}
-            </TableContent>
-          </Table>
-        )}
+        <Table columns={2} variant="framed">
+          <TableContent>
+            <TableCaption>{t("card.limitVersions")}</TableCaption>
+            <TableHead>
+              <TableRow>
+                <TableColumnHeader>{t("card.limitFrom")}</TableColumnHeader>
+                <TableColumnHeader numeric>
+                  {t("accountForm.limit")}
+                </TableColumnHeader>
+              </TableRow>
+            </TableHead>
+            {limits.isPending ? (
+              <TableLoader skeletonRows={1} />
+            ) : (
+              <TableBody>
+                {sortedLimits.length === 0 && (
+                  <TableEmpty>{t("cards.limitNone")}</TableEmpty>
+                )}
+                {sortedLimits.map((limit) => (
+                  <TableRow
+                    key={limit.effective_from}
+                    value={limit.effective_from}
+                  >
+                    <TableRowHeader>
+                      {formatDate(limit.effective_from, locale)}
+                    </TableRowHeader>
+                    <TableCell numeric>
+                      {fmt.money(limit.amount, scale(limit.amount.currency))}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            )}
+          </TableContent>
+        </Table>
       </Stack>
 
       <Stack gap={3}>

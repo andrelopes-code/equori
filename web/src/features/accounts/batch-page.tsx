@@ -1,4 +1,3 @@
-import { Button } from "@slotted/react/button";
 import { Page, PageBody } from "@slotted/react/page";
 import {
   ResultState,
@@ -33,7 +32,6 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
 import { QueryError } from "@/ui/query-error";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 const filterWords: Record<RecordFilter, MessageKey> = {
@@ -53,7 +51,6 @@ export function BatchPage() {
   const fmt = useMoneyFormat();
   const api = useApi();
   const navigate = useNavigate();
-  const compact = useMediaQuery(compactQuery);
   const scale = useScale();
   const { id, batchId } = useParams({
     from: "/_authed/accounts/$id/imports/$batchId",
@@ -107,8 +104,6 @@ export function BatchPage() {
     "discarded",
     ...(batch.data?.source === "aggregator" ? (["withdrawn"] as const) : []),
   ];
-  const showQueue = !compact || current === undefined;
-  const showRecord = !compact || current !== undefined;
 
   return (
     <Page width="full">
@@ -230,52 +225,32 @@ export function BatchPage() {
                 className={styles.workspace}
                 aria-busy={records.isFetching || undefined}
               >
-                {showQueue && (
-                  <ReviewQueue
-                    accountId={id}
-                    batchId={batchId}
-                    records={rows}
-                    current={current?.id}
+                <ReviewQueue
+                  accountId={id}
+                  batchId={batchId}
+                  records={rows}
+                  current={current?.id}
+                  scale={sc}
+                />
+
+                {current === undefined ? (
+                  <Text size="sm" tone="muted">
+                    {t("batch.choose")}
+                  </Text>
+                ) : (
+                  <ReviewRecord
+                    key={current.id}
+                    record={current}
                     scale={sc}
+                    onStale={() => void records.refetch()}
+                    onResolved={() => {
+                      const index = rows.findIndex((r) => r.id === current.id);
+                      const next = rows[index + 1] ?? rows[index - 1];
+                      setRecord(next?.id, true);
+                      void batch.refetch();
+                    }}
                   />
                 )}
-                {showRecord &&
-                  (current === undefined ? (
-                    <Text size="sm" tone="muted">
-                      {t("batch.choose")}
-                    </Text>
-                  ) : (
-                    <Stack gap={3}>
-                      {compact && (
-                        <div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            tone="secondary"
-                            onClick={() => {
-                              setRecord(undefined);
-                            }}
-                          >
-                            {t("batch.backToQueue")}
-                          </Button>
-                        </div>
-                      )}
-                      <ReviewRecord
-                        key={current.id}
-                        record={current}
-                        scale={sc}
-                        onStale={() => void records.refetch()}
-                        onResolved={() => {
-                          const index = rows.findIndex(
-                            (r) => r.id === current.id,
-                          );
-                          const next = rows[index + 1] ?? rows[index - 1];
-                          setRecord(next?.id, true);
-                          void batch.refetch();
-                        }}
-                      />
-                    </Stack>
-                  ))}
               </div>
             )}
           </Stack>

@@ -475,7 +475,6 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "batch.filter.withdrawn": "Retiradas",
   "batch.queue": "Linhas para revisar",
   "batch.choose": "Escolha uma linha para compará-la com as candidatas.",
-  "batch.backToQueue": "Voltar às linhas",
   "batch.reviewDone": "Nada a revisar",
   "batch.reviewDoneHint":
     "Cada linha desta importação encontrou seu lugar no livro.",

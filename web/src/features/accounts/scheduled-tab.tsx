@@ -1,6 +1,5 @@
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { Stack } from "@slotted/react/stack";
-import { Text } from "@slotted/react/typography";
 import {
   Table,
   TableBody,
@@ -22,8 +21,6 @@ import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { projectionQuery } from "@/features/accounts/api";
 import { ScheduleCell } from "@/features/accounts/schedule-cell";
-import { PhoneList } from "@/ui/phone-list";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 import { OccurrenceActions } from "@/features/planning";
 import { formatDate, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -53,7 +50,6 @@ export function ScheduledTab({
   const money = (m: components["schemas"]["Money"]) =>
     fmt.money(m, scale(m.currency));
   const points = projection.data?.points ?? [];
-  const compact = useMediaQuery(compactQuery);
   const occurrenceOf = (point: (typeof points)[number]) => ({
     id: point.occurrence_id,
     schedule_id: point.schedule_id,
@@ -86,111 +82,78 @@ export function ScheduledTab({
           ))}
         </SegmentedControl>
       </div>
-      {compact ? (
-        <Stack gap={3}>
-          <PhoneList
-            label={t("scheduled.caption")}
-            loading={projection.isPending}
-            empty={t("scheduled.empty")}
-            rows={points.map((point) => ({
-              key: point.occurrence_id,
-              title:
-                point.date === today
-                  ? t("scheduled.dueToday")
-                  : formatDate(point.date, locale),
-              lines: [
-                <ScheduleCell key="schedule" point={point} />,
-                [t("ledger.balanceAfter"), money(point.balance)].join(": "),
-              ],
-              end: fmt.signed(point.amount, scale(point.amount.currency)),
-              actions: <OccurrenceActions occurrence={occurrenceOf(point)} />,
-            }))}
-          />
-          {projection.data !== undefined && (
-            <Text size="sm" tone="muted">
-              {[
-                t("scheduled.closing", {
-                  date: formatDate(projection.data.to, locale),
-                }),
-                money(projection.data.closing),
-              ].join(": ")}
-            </Text>
-          )}
-        </Stack>
-      ) : (
-        <Table
-          columns={5}
-          variant="framed"
-          loading={projection.isFetching && !projection.isPending}
-        >
-          <TableContent>
-            <TableCaption>{t("scheduled.caption")}</TableCaption>
-            <TableHead>
-              <TableRow>
-                <TableColumnHeader>{t("scheduled.date")}</TableColumnHeader>
-                <TableColumnHeader>{t("scheduled.schedule")}</TableColumnHeader>
-                <TableColumnHeader numeric>
-                  {t("ledger.amount")}
-                </TableColumnHeader>
-                <TableColumnHeader numeric>
-                  {t("ledger.balanceAfter")}
-                </TableColumnHeader>
-                <TableColumnHeader sticky="end">
-                  {t("agenda.actions")}
-                </TableColumnHeader>
-              </TableRow>
-            </TableHead>
-            {projection.isPending ? (
-              <TableLoader skeletonRows={4} />
-            ) : (
-              <>
-                <TableBody>
-                  {points.length === 0 && (
-                    <TableEmpty>{t("scheduled.empty")}</TableEmpty>
-                  )}
-                  {points.map((point) => (
-                    <TableRow
-                      key={point.occurrence_id}
-                      value={point.occurrence_id}
-                    >
-                      <TableRowHeader>
-                        {point.date === today
-                          ? t("scheduled.dueToday")
-                          : formatDate(point.date, locale)}
-                      </TableRowHeader>
-                      <TableCell>
-                        <ScheduleCell point={point} />
-                      </TableCell>
-                      <TableCell numeric>
-                        {fmt.signed(point.amount, scale(point.amount.currency))}
-                      </TableCell>
-                      <TableCell numeric>{money(point.balance)}</TableCell>
-                      <TableCell sticky="end">
-                        <OccurrenceActions occurrence={occurrenceOf(point)} />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-                {projection.data !== undefined && (
-                  <TableSummary>
-                    <TableRow>
-                      <TableRowHeader colSpan={3}>
-                        {t("scheduled.closing", {
-                          date: formatDate(projection.data.to, locale),
-                        })}
-                      </TableRowHeader>
-                      <TableCell numeric>
-                        {money(projection.data.closing)}
-                      </TableCell>
-                      <TableCell sticky="end" />
-                    </TableRow>
-                  </TableSummary>
+      <Table
+        columns={5}
+        variant="framed"
+        loading={projection.isFetching && !projection.isPending}
+      >
+        <TableContent>
+          <TableCaption>{t("scheduled.caption")}</TableCaption>
+          <TableHead>
+            <TableRow>
+              <TableColumnHeader>{t("scheduled.date")}</TableColumnHeader>
+              <TableColumnHeader>{t("scheduled.schedule")}</TableColumnHeader>
+              <TableColumnHeader numeric>
+                {t("ledger.amount")}
+              </TableColumnHeader>
+              <TableColumnHeader numeric>
+                {t("ledger.balanceAfter")}
+              </TableColumnHeader>
+              <TableColumnHeader sticky="end">
+                {t("agenda.actions")}
+              </TableColumnHeader>
+            </TableRow>
+          </TableHead>
+          {projection.isPending ? (
+            <TableLoader skeletonRows={4} />
+          ) : (
+            <>
+              <TableBody>
+                {points.length === 0 && (
+                  <TableEmpty>{t("scheduled.empty")}</TableEmpty>
                 )}
-              </>
-            )}
-          </TableContent>
-        </Table>
-      )}
+                {points.map((point) => (
+                  <TableRow
+                    key={point.occurrence_id}
+                    value={point.occurrence_id}
+                  >
+                    <TableRowHeader>
+                      {point.date === today
+                        ? t("scheduled.dueToday")
+                        : formatDate(point.date, locale)}
+                    </TableRowHeader>
+                    <TableCell>
+                      <ScheduleCell point={point} />
+                    </TableCell>
+                    <TableCell numeric>
+                      {fmt.signed(point.amount, scale(point.amount.currency))}
+                    </TableCell>
+                    <TableCell numeric>{money(point.balance)}</TableCell>
+                    <TableCell sticky="end">
+                      <OccurrenceActions occurrence={occurrenceOf(point)} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+              {projection.data !== undefined && (
+                <TableSummary>
+                  <TableRow>
+                    <TableRowHeader colSpan={3}>
+                      {t("scheduled.closing", {
+                        date: formatDate(projection.data.to, locale),
+                      })}
+                    </TableRowHeader>
+                    <TableCell numeric>
+                      {money(projection.data.closing)}
+                    </TableCell>
+                    <TableCell sticky="end" />
+                  </TableRow>
+                </TableSummary>
+              )}
+            </>
+          )}
+        </TableContent>
+      </Table>
     </Stack>
   );
 }

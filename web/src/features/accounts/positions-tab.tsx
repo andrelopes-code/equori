@@ -1,4 +1,3 @@
-import { Stack } from "@slotted/react/stack";
 import {
   Table,
   TableBody,
@@ -23,9 +22,7 @@ import { settingsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { MASK } from "@/privacy/mask";
-import { PhoneList } from "@/ui/phone-list";
-import { PricedValue, usePriceOf } from "@/ui/priced-value";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
+import { PricedValue } from "@/ui/priced-value";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
@@ -41,7 +38,6 @@ export function PositionsTab({
 }) {
   const t = useT();
   const fmt = useMoneyFormat();
-  const priceOf = usePriceOf();
   const api = useApi();
   const today = useToday();
   const positions = useQuery(positionsQuery(api, today));
@@ -57,58 +53,6 @@ export function PositionsTab({
     0,
   );
   const totalCost = valued.reduce((sum, p) => sum + p.cost_basis.amount, 0);
-  const compact = useMediaQuery(compactQuery);
-  const resultOf = (p: (typeof rows)[number]) =>
-    p.market_value === undefined
-      ? undefined
-      : {
-          amount: p.market_value.amount - p.cost_basis.amount,
-          currency: p.market_value.currency,
-        };
-  if (compact)
-    return (
-      <Stack gap={3}>
-        <PhoneList
-          label={t("positions.caption")}
-          loading={positions.isPending}
-          empty={t("positions.empty")}
-          rows={rows.map((p) => {
-            const result = resultOf(p);
-            return {
-              key: `${p.account_id}-${p.instrument}`,
-              title: p.instrument,
-              lines: [
-                [
-                  t("positions.quantity"),
-                  fmt.plain(p.quantity, scale(p.quantity.currency)),
-                ].join(": "),
-                [t("positions.costBasis"), money(p.cost_basis)].join(": "),
-                [
-                  t("positions.marketValue"),
-                  p.market_value === undefined
-                    ? t("positions.noPrice")
-                    : [money(p.market_value), priceOf(p.prices)]
-                        .filter(Boolean)
-                        .join(" · "),
-                ].join(": "),
-              ],
-              end:
-                result === undefined
-                  ? undefined
-                  : fmt.signed(result, scale(result.currency)),
-            };
-          })}
-        />
-        {base !== undefined && valued.length > 0 && (
-          <Text size="sm" tone="muted">
-            {[
-              t("positions.total"),
-              money({ amount: totalValue, currency: base }),
-            ].join(": ")}
-          </Text>
-        )}
-      </Stack>
-    );
   return (
     <Table columns={6} variant="framed">
       <TableContent>

@@ -44,8 +44,6 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { HeaderAction } from "@/ui/header-action";
 import { QueryError } from "@/ui/query-error";
 import { Presence } from "@/ui/presence";
-import { PhoneList } from "@/ui/phone-list";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 type Institution = components["schemas"]["Institution"];
 
@@ -63,7 +61,6 @@ export function InstitutionsPage() {
     null,
   );
 
-  const compact = useMediaQuery(compactQuery);
   const actions = (institution: Institution) => (
     <Menu>
       <MenuTrigger
@@ -159,41 +156,6 @@ export function InstitutionsPage() {
           <QueryError
             error={institutions.error}
             onRetry={() => void institutions.refetch()}
-          />
-        ) : compact ? (
-          <PhoneList
-            label={t("institutions.title")}
-            loading={institutions.isPending}
-            empty={t("institutions.empty")}
-            rows={rows.map((institution) => ({
-              key: institution.id,
-              title: (
-                <Inline gap={3} wrap="nowrap">
-                  <AccountMark
-                    shape="square"
-                    size="sm"
-                    name={institution.name}
-                    logo={logoOf(institution.identifier, index.data)}
-                  />
-                  {institution.name}
-                </Inline>
-              ),
-              lines: [
-                [
-                  institution.code === undefined
-                    ? undefined
-                    : [t("institutions.code"), institution.code].join(": "),
-                  ispbOf(institution),
-                  [
-                    t("institutions.accounts"),
-                    String(counts.get(institution.id) ?? 0),
-                  ].join(": "),
-                ]
-                  .filter((part) => part !== undefined)
-                  .join(" · "),
-              ],
-              actions: actions(institution),
-            }))}
           />
         ) : (
           <Table columns={5} variant="framed">

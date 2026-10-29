@@ -31,17 +31,6 @@
     min-inline-size: 0;
   }
 
-  @media (max-width: 599px) {
-    .summary[data-chosen] {
-      grid-template-columns: auto minmax(0, 1fr);
-    }
-
-    .summary[data-chosen] > :last-child {
-      grid-column: 2;
-      justify-self: start;
-    }
-  }
-
   @media (forced-colors: active) {
     .summary[data-chosen] {
       border-color: Highlight;
