@@ -71,71 +71,38 @@
   }
 
   .caption {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--slotted-space-2);
+    min-inline-size: 0;
+    overflow: hidden;
     padding-inline: var(--slotted-space-1);
-    color: var(--slotted-text);
+    color: var(--slotted-text-muted);
     font-size: var(--slotted-font-size-sm);
     font-weight: var(--slotted-font-weight-medium);
     line-height: var(--slotted-line-height-sm);
-  }
-
-  .label {
-    min-inline-size: 0;
-    overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  /* The mark is an empty ring at rest and the filled accent ring when chosen. */
-  .mark {
-    flex: none;
-    box-sizing: border-box;
-    inline-size: var(--slotted-control-inner-size-md);
-    block-size: var(--slotted-control-inner-size-md);
-    border: var(--slotted-border-width-medium) solid
-      var(--slotted-border-strong);
-    border-radius: var(--slotted-radius-full);
-    transition:
-      background-color var(--slotted-duration-short)
-        var(--slotted-easing-standard),
-      border-color var(--slotted-duration-short) var(--slotted-easing-standard);
+    transition: color var(--slotted-duration-short)
+      var(--slotted-easing-standard);
   }
 
   .option:hover .preview {
     border-color: var(--slotted-border-strong);
   }
 
+  /* The chosen card needs no radio mark: the accent ring on its preview and its caption in the
+     text colour carry the choice, by width as well as by colour. */
   .radio:checked + .card .preview {
     border-color: var(--slotted-tone-accent-text);
     outline-color: var(--slotted-tone-accent-text);
   }
 
-  /* The dot inside the ring is two gradient stops (a 45 % disc with a 5 % edge): no token draws a
-     dot, and a gradient keeps it centred at every density. */
-  .radio:checked + .card .mark {
-    border-color: var(--slotted-tone-accent-text);
-    background: radial-gradient(
-      circle,
-      var(--slotted-tone-accent-text) 45%,
-      transparent 50%
-    );
+  .radio:checked + .card .caption {
+    color: var(--slotted-text);
   }
 
   .radio:focus-visible + .card .preview {
     outline: var(--slotted-focus-ring-width) solid
       var(--slotted-focus-ring-color);
     outline-offset: var(--slotted-focus-ring-offset);
-  }
-
-  /* Three cards in a phone's width leave a label no room beside the ring; the border and the
-     outline of the chosen card carry the choice there. */
-  @container choice-cards (max-width: 30rem) {
-    .mark {
-      display: none;
-    }
   }
 
   @media (pointer: coarse) {
@@ -146,7 +113,7 @@
 
   @media (prefers-reduced-motion: reduce) {
     .preview,
-    .mark {
+    .caption {
       transition: none;
     }
   }
@@ -155,11 +122,6 @@
     .radio:checked + .card .preview {
       border-color: Highlight;
       outline-color: Highlight;
-    }
-
-    .radio:checked + .card .mark {
-      border-color: Highlight;
-      background: Highlight;
     }
   }
 }

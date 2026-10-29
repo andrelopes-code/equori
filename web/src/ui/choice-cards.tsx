@@ -48,10 +48,7 @@ export function ChoiceCards({
               <span className={styles.preview} aria-hidden="true">
                 {choice.preview}
               </span>
-              <span className={styles.caption}>
-                <span className={styles.label}>{choice.label}</span>
-                <span className={styles.mark} aria-hidden="true" />
-              </span>
+              <span className={styles.caption}>{choice.label}</span>
             </span>
           </label>
         ))}
