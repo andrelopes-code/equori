@@ -189,4 +189,4 @@ A ordem das telas segue o uso: transações, contas, cartões, visão geral, dep
 3. Tour: nenhum por ora. A importação de extrato é reavaliada depois da curadoria aplicada.
 4. Slotted: as duas issues (ajuda em cabeçalho de `Table`, ajuda em `StatCard`) são abertas só quando uma tabela aprovada precisar do mecanismo.
 
-Próximo passo: a tabela de curadoria das telas de transações (lista, detalhe, nova transação), para revisão do dono.
+Tabelas de curadoria: `2026-10-29-ui-clarity-curation-transactions.md` (transações; aguarda revisão do dono).
