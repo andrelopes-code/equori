@@ -7,6 +7,7 @@ import {
 } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 
+import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { useDeferStatementPostings } from "@/features/cards/api";
 import { useT } from "@/i18n/i18n-provider";
@@ -61,6 +62,9 @@ export function DifferenceProposal({
             <AlertDescription>
               {t("statement.proposal.description", { names })}
             </AlertDescription>
+            {defer.isError && (
+              <AlertDescription>{errorText(defer.error, t)}</AlertDescription>
+            )}
           </AlertContent>
 
           <AlertActions>

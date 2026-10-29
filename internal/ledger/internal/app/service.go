@@ -467,53 +467,61 @@ func (s *Service) insert(ctx context.Context, r Repository, t domain.Transaction
 func (s *Service) CorrectTransaction(ctx context.Context, userID int64, id uuid.UUID, expectedVersion int, next domain.Transaction, reason string) (domain.Transaction, error) {
 	var corrected domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		prev, err := r.LockTransaction(ctx, userID, id)
-		if err != nil {
-			return err
-		}
-		if prev.Trade != nil || prev.Income != nil {
-			return ErrInvestmentTransaction
-		}
-		if err := checkLaterSales(ctx, r, userID, prev.Date, prev.Postings, id); err != nil {
-			return err
-		}
-		next.ID, next.UserID = id, userID
-		if next.BalancingCurrency == "" {
-			next.BalancingCurrency = prev.BalancingCurrency
-		}
-		accounts, err := s.references(ctx, r, next)
-		if err != nil {
-			return err
-		}
-		if err := s.addAccounts(ctx, r, userID, accounts, prev); err != nil {
-			return err
-		}
-		if prev.HasInstallments() {
-			// The postings keep their rows: the plan and the statements stay as they are.
-			if corrected, err = prev.CorrectDetails(next, expectedVersion); err == nil {
-				err = r.ReplaceCategoryPostings(ctx, prev, corrected, reason)
-			}
-		} else {
-			corrected, err = s.correct(ctx, r, prev, next, expectedVersion, accounts, reason)
-		}
-		if err != nil {
-			return err
-		}
-		// The stored postings carry the ids the database assigned.
-		if corrected, err = r.Transaction(ctx, userID, id); err != nil {
-			return err
-		}
-		return r.Publish(ctx, outbox.Event{
-			Type: EventTransactionCorrected, UserID: userID, AggregateID: id.String(),
-			Payload: func() TransactionEvent {
-				e := newTransactionEvent(corrected, accounts, prev)
-				e.PreviousDate = prev.Date.Format(time.DateOnly)
-				e.CategoriesChanged = domain.CategoriesChanged(prev, corrected, accounts)
-				return e
-			}(),
-		})
+		var err error
+		corrected, err = s.correctIn(ctx, r, userID, id, expectedVersion, next, reason)
+		return err
 	})
 	return corrected, err
+}
+
+// correctIn is CorrectTransaction inside the database transaction of r.
+func (s *Service) correctIn(ctx context.Context, r Repository, userID int64, id uuid.UUID, expectedVersion int, next domain.Transaction, reason string) (domain.Transaction, error) {
+	var corrected domain.Transaction
+	prev, err := r.LockTransaction(ctx, userID, id)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+	if prev.Trade != nil || prev.Income != nil {
+		return domain.Transaction{}, ErrInvestmentTransaction
+	}
+	if err := checkLaterSales(ctx, r, userID, prev.Date, prev.Postings, id); err != nil {
+		return domain.Transaction{}, err
+	}
+	next.ID, next.UserID = id, userID
+	if next.BalancingCurrency == "" {
+		next.BalancingCurrency = prev.BalancingCurrency
+	}
+	accounts, err := s.references(ctx, r, next)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+	if err := s.addAccounts(ctx, r, userID, accounts, prev); err != nil {
+		return domain.Transaction{}, err
+	}
+	if prev.HasInstallments() {
+		// The postings keep their rows: the plan and the statements stay as they are.
+		if corrected, err = prev.CorrectDetails(next, expectedVersion); err == nil {
+			err = r.ReplaceCategoryPostings(ctx, prev, corrected, reason)
+		}
+	} else {
+		corrected, err = s.correct(ctx, r, prev, next, expectedVersion, accounts, reason)
+	}
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+	// The stored postings carry the ids the database assigned.
+	if corrected, err = r.Transaction(ctx, userID, id); err != nil {
+		return domain.Transaction{}, err
+	}
+	return corrected, r.Publish(ctx, outbox.Event{
+		Type: EventTransactionCorrected, UserID: userID, AggregateID: id.String(),
+		Payload: func() TransactionEvent {
+			e := newTransactionEvent(corrected, accounts, prev)
+			e.PreviousDate = prev.Date.Format(time.DateOnly)
+			e.CategoriesChanged = domain.CategoriesChanged(prev, corrected, accounts)
+			return e
+		}(),
+	})
 }
 
 // correct validates, bills and stores next as the version after prev.

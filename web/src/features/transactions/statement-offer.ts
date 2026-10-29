@@ -35,3 +35,22 @@ function nextReference(reference: string): string {
   const next = month === 12 ? [year + 1, 1] : [year, month + 1];
   return `${String(next[0])}-${String(next[1]).padStart(2, "0")}`;
 }
+
+// The statement the request names when the owner picks chosen. null leaves it to the date,
+// which holds only while nothing else was chosen; a correction moving back names it.
+export function statementToSend(
+  chosen: string,
+  value: string | null,
+  offer: StatementOffer,
+): string | null {
+  return value === null && chosen === offer.current ? null : chosen;
+}
+
+// Whether the choice can show value: a statement the bank chose outside the two offered
+// stays as it is, without a choice.
+export function offerHolds(
+  value: string | null,
+  offer: StatementOffer,
+): boolean {
+  return value === null || value === offer.current || value === offer.next;
+}

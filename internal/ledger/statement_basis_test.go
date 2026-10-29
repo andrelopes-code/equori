@@ -193,3 +193,36 @@ func TestCorrectionKeepsDateBasis(t *testing.T) {
 		t.Fatalf("statement after the date moved = %s, want 2026-12", s)
 	}
 }
+
+// A137: a request naming one transaction twice moves it once and answers with the moved
+// statement, not a version conflict over a half-applied move.
+func TestDeferRepeatedTransaction(t *testing.T) {
+	t.Parallel()
+	c, id, manual := differenceSetup(t, 713)
+
+	var after differenceView
+	c.h.MustDo(http.MethodPost, "/api/v1/statements/"+id+"/defer", map[string]any{"transaction_ids": []string{manual, manual}}, http.StatusOK, &after)
+
+	if s := c.h.Transaction(manual).Postings[0].Statement; s != "2026-12" || after.AmountDifference == nil || after.AmountDifference.Amount != 0 {
+		t.Fatalf("statement %s, difference %+v", s, after.AmountDifference)
+	}
+}
+
+// A137: a move that fails on a later transaction leaves the earlier ones where they were.
+func TestDeferIsAllOrNothing(t *testing.T) {
+	t.Parallel()
+	c, id, manual := differenceSetup(t, 713)
+	locked := c.purchase("2026-11-02", 100)
+	if r := c.h.Do(http.MethodPost, "/api/v1/transactions/"+locked+"/void", map[string]string{"reason": "test"}); r.Status != http.StatusOK {
+		t.Fatalf("void status = %d", r.Status)
+	}
+
+	r := c.h.Do(http.MethodPost, "/api/v1/statements/"+id+"/defer", map[string]any{"transaction_ids": []string{manual, locked}})
+
+	if r.Status < 400 {
+		t.Fatalf("status = %d, want a refusal", r.Status)
+	}
+	if s := c.h.Transaction(manual).Postings[0].Statement; s != "2026-11" {
+		t.Fatalf("first transaction moved to %s although the request failed", s)
+	}
+}

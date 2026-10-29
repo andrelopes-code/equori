@@ -3,7 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
 import { statementPlacementQuery } from "@/features/transactions/api";
-import { statementOffer } from "@/features/transactions/statement-offer";
+import {
+  offerHolds,
+  statementOffer,
+  statementToSend,
+} from "@/features/transactions/statement-offer";
 import { formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
@@ -31,7 +35,7 @@ export function StatementChoice({
   const placement = useQuery(statementPlacementQuery(api, cardId, date));
 
   const offer = statementOffer(date, placement.data);
-  if (offer === null) return null;
+  if (offer === null || !offerHolds(value, offer)) return null;
 
   return (
     <Field>
@@ -49,7 +53,7 @@ export function StatementChoice({
         value={value ?? offer.current}
         onChange={(chosen) => {
           if (typeof chosen === "string")
-            onChange(chosen === offer.current ? null : chosen);
+            onChange(statementToSend(chosen, value, offer));
         }}
       />
     </Field>

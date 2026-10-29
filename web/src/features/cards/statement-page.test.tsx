@@ -762,6 +762,36 @@ describe("Statement line actions", () => {
     });
   });
 
+  it("says why a move of the lines a difference names failed", async () => {
+    const differs = detail(closed, {
+      institution: {
+        source: "owner",
+        due_date: "2026-10-25",
+        total: money(170000),
+      },
+      amount_difference: money(10000),
+      difference_proposal: { transaction_ids: ["tx1"], amount: money(10000) },
+    });
+    await renderApp(path, {
+      fetch: api([], {
+        [`GET /api/v1/statements/${closedStatementID}`]: () =>
+          json(200, differs),
+        [`POST /api/v1/statements/${closedStatementID}/defer`]: () =>
+          problem(409, "posting_reconciled"),
+      }),
+    });
+
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["statement.proposal.move"],
+      }),
+    );
+
+    expect(
+      await screen.findByText(catalogEn["problem.posting_reconciled"]),
+    ).toBeInTheDocument();
+  });
+
   it("names a difference no line explains as rounding (S179)", async () => {
     await renderApp(path, {
       fetch: api([], {
