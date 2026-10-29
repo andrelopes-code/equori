@@ -2,7 +2,7 @@
 export const reportsEn = {
   "nav.reports": "Reports",
   "report.subtitle":
-    "Net worth, income and expense, and account flows over time.",
+    "Net worth, income and expense, and money in and out of the accounts over time.",
   "report.tabs": "Reports",
   "report.tab.netWorth": "Net worth",
   "report.tab.categories": "Categories",
@@ -14,9 +14,9 @@ export const reportsEn = {
   "report.indicators.reserve": "Reserve in months of expense",
   "report.indicators.committed": "Committed income",
   "report.indicators.debt": "Debt payments",
-  "report.indicators.liabilities": "Liabilities",
+  "report.indicators.liabilities": "You owe",
   "report.indicators.savingsNote":
-    "Share of income left after expenses each month, cash basis.",
+    "Share of income left after expenses each month, by the money that actually came in and went out.",
   "report.indicators.reserveNote":
     "Months of mean expense covered by checking, savings, cash, wallets and reserves.",
   "report.indicators.committedNote":
@@ -24,7 +24,7 @@ export const reportsEn = {
   "report.indicators.debtNote":
     "Share of mean monthly income taken by loan principal and interest.",
   "report.indicators.liabilitiesNote":
-    "Balance owed on liability accounts at the end of each month.",
+    "What you owed on cards, loans and other debts at the end of each month.",
   "report.valueIn": "Value in",
   "report.none": "—",
   "report.month": "Month",
@@ -33,8 +33,8 @@ export const reportsEn = {
   "report.netWorth.title": "Net worth by month",
   "report.netWorth.span": "Months shown",
   "report.netWorth.months": "{count} months",
-  "report.netWorth.assets": "Assets",
-  "report.netWorth.liabilities": "Liabilities",
+  "report.netWorth.assets": "You own",
+  "report.netWorth.liabilities": "You owe",
   "report.netWorth.net": "Net",
   "report.total": "Total",
   "report.compare": "Compare with the period before",
@@ -64,11 +64,11 @@ export const reportsEn = {
   "report.categories.subtree": "Total",
   "report.categories.direct": "Direct",
   "report.categories.directOf": "{name} (direct)",
-  "report.categories.records": "Records",
+  "report.categories.records": "Transactions",
   "report.categories.transactions": "Transactions",
   "report.categories.trail": "Category path",
   "report.categories.all": "All categories",
-  "report.categories.empty": "Nothing booked in this period.",
+  "report.categories.empty": "Nothing recorded in this period.",
   "report.cash.payments": "Card payments",
   "report.cash.title": "Card payments of {name}",
   "report.cash.payment": "Payment",
@@ -76,7 +76,7 @@ export const reportsEn = {
   "report.cash.amount": "Amount",
   "report.cash.empty": "No card payment counts in {name} in this period.",
   "report.flows.title": "Flows by account",
-  "report.flows.comparison": "Flows against the period before",
+  "report.flows.comparison": "Money in and out against the period before",
   "report.flows.account": "Account",
   "report.flows.by": "Granularity",
   "report.flows.byDay": "By day",

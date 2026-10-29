@@ -3,12 +3,13 @@ import type { instrumentsEn } from "@/i18n/catalog-instruments.en";
 export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "nav.instruments": "Instrumentos",
   "settings.ledger.instruments": "Instrumentos e preços",
-  "instruments.subtitle": "Moedas e ativos com o último preço de cada um.",
+  "instruments.subtitle":
+    "Moedas e investimentos com o último preço de cada um.",
   "instruments.define": "Definir instrumento",
   "instruments.caption": "Instrumentos por tipo",
   "instruments.empty": "Nenhum instrumento ainda",
   "instruments.emptyHint":
-    "Defina os ativos mantidos em contas de corretora para precificá-los.",
+    "Cadastre os investimentos que suas contas de corretora guardam para acompanhar o preço deles.",
   "instruments.type.currency": "Moedas",
   "instruments.type.stock": "Ações",
   "instruments.type.etf": "ETFs",
@@ -48,7 +49,7 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instrument.facts": "Dados do instrumento",
   "instrument.edit": "Editar instrumento",
   "instrument.edit.description":
-    "Código, tipo, casas decimais e moeda de cotação permanecem como definidos. A alteração vale para todas as contas da instância.",
+    "Código, tipo, casas decimais e moeda de cotação permanecem como definidos. A alteração vale para todos os usuários desta instalação.",
   "instrument.edit.save": "Salvar",
   "instrument.prices.title": "Histórico de preços",
   "instrument.prices.caption": "Preços por data",
@@ -86,13 +87,14 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "terms.spread": "Spread anual",
   "terms.dayCount": "Contagem de dias",
   "terms.faceValue": "Valor de face",
-  "terms.none": "Nenhum termo definido. A apropriação de preços depende deles.",
+  "terms.none":
+    "Nenhum termo definido. Sem eles, o preço do título não é calculado dia a dia.",
   "terms.set": "Definir termos",
   "terms.change": "Alterar termos",
   "terms.dialog.description":
     "O valor de face é o preço de uma unidade na data de emissão.",
   "terms.replaceNote":
-    "Salvar substitui os termos anteriores e os preços apropriados a partir deles.",
+    "Salvar substitui os termos anteriores e os preços calculados a partir deles.",
   "terms.save": "Salvar termos",
   "terms.invalid.percent":
     "Informe um percentual com no máximo 2 casas decimais.",

@@ -36,7 +36,7 @@ describe("Tax year income events", () => {
     expect(rowTexts(table)).toEqual([
       [
         "Date",
-        "Security",
+        "Investment",
         "Account",
         "Income type",
         "Tax treatment",

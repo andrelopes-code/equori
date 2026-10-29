@@ -4,12 +4,12 @@ export const instrumentsEn = {
   "nav.instruments": "Instruments",
   "settings.ledger.instruments": "Instruments and prices",
   "instruments.subtitle":
-    "Currencies and securities with the latest price of each.",
+    "Currencies and investments with the latest price of each.",
   "instruments.define": "Define instrument",
   "instruments.caption": "Instruments by type",
   "instruments.empty": "No instruments yet",
   "instruments.emptyHint":
-    "Define the securities held in brokerage accounts to price them.",
+    "Add the investments your brokerage accounts hold to follow their price.",
   "instruments.type.currency": "Currencies",
   "instruments.type.stock": "Stocks",
   "instruments.type.etf": "ETFs",
@@ -49,7 +49,7 @@ export const instrumentsEn = {
   "instrument.facts": "Instrument data",
   "instrument.edit": "Edit instrument",
   "instrument.edit.description":
-    "Code, type, decimal places and quote currency stay as defined. The change applies to every account of the instance.",
+    "Code, type, decimal places and quote currency stay as defined. The change applies to every user of this installation.",
   "instrument.edit.save": "Save",
   "instrument.prices.title": "Price history",
   "instrument.prices.caption": "Prices by date",
@@ -87,13 +87,14 @@ export const instrumentsEn = {
   "terms.spread": "Annual spread",
   "terms.dayCount": "Day count",
   "terms.faceValue": "Face value",
-  "terms.none": "No terms are set. The accrual of prices needs them.",
+  "terms.none":
+    "No terms are set. Without them, the bond's price is not calculated day by day.",
   "terms.set": "Set terms",
   "terms.change": "Change terms",
   "terms.dialog.description":
     "The face value is the price of one unit on the issue date.",
   "terms.replaceNote":
-    "Saving replaces the earlier terms and the prices accrued from them.",
+    "Saving replaces the earlier terms and the prices calculated from them.",
   "terms.save": "Save terms",
   "terms.invalid.percent": "Enter a percent with at most 2 decimal places.",
   "prices.import": "Import prices",

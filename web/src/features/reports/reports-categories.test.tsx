@@ -58,7 +58,7 @@ describe("Reports categories", () => {
     const table = await categoriesTable();
     await within(table).findByText("Food");
     expect(rowTexts(table)).toEqual([
-      "Category|Total|Direct|Records",
+      "Category|Total|Direct|Transactions",
       "Food|R$90.00|R$10.00|Transactions",
       "Transport|R$40.00|R$0.00|Transactions",
       "Health|R$25.00|R$25.00|Transactions",
@@ -84,7 +84,7 @@ describe("Reports categories", () => {
     const children = await categoriesTable();
     await within(children).findByText("Market");
     expect(rowTexts(children)).toEqual([
-      "Category|Total|Direct|Records",
+      "Category|Total|Direct|Transactions",
       "Market|R$50.00|R$50.00|Transactions",
       "Diner|R$30.00|R$30.00|Transactions",
       "Food (direct)|R$10.00|R$10.00|",
@@ -149,7 +149,7 @@ describe("Reports categories", () => {
     const table = await categoriesTable();
     await within(table).findByText("Food");
     expect(rowTexts(table)).toEqual([
-      "Category|Total|Direct|Before|Difference|Difference %|Records",
+      "Category|Total|Direct|Before|Difference|Difference %|Transactions",
       "Food|R$90.00|R$10.00|R$60.00|+R$30.00|+50.00%|Transactions",
       "Transport|R$40.00|R$0.00|R$50.00|−R$10.00|−20.00%|Transactions",
       `Health|R$25.00|R$25.00|R$0.00|+R$25.00|${none}|Transactions`,

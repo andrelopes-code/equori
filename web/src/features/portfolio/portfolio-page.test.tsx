@@ -36,14 +36,14 @@ describe("Portfolio positions", () => {
     await within(table).findAllByText("XP / XP MXRF11");
     expect(rowTexts(table)).toEqual([
       [
-        "Security",
+        "Investment",
         "Account",
         "Quantity",
         "Average cost",
         "Cost",
         "Market value",
-        "Unrealized result",
-        "Share",
+        "Gain or loss now",
+        "% of portfolio",
       ].join("|"),
       "XP",
       "PETR4|XP|1|3.0000|$3.00|R$16.00||11.36%",

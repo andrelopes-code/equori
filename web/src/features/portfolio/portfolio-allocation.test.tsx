@@ -30,7 +30,7 @@ describe("Portfolio allocation", () => {
     const table = await allocationTable("type");
     await within(table).findByText("Currencies");
     expect(rowTexts(table)).toEqual([
-      "Group|Value|Share",
+      "Group|Value|% of portfolio",
       "Currencies|R$900.00|89.55%",
       "REITs|R$105.00|10.45%",
       "Total|R$1,005.00|100.00%",
@@ -63,7 +63,7 @@ describe("Portfolio allocation", () => {
     const table = await allocationTable("institution");
     await within(table).findByText("XP");
     expect(rowTexts(table)).toEqual([
-      "Group|Value|Share",
+      "Group|Value|% of portfolio",
       "XP|R$505.00|50.24%",
       `${catalogEn["portfolio.allocation.noInstitution"]}|R$500.00|49.76%`,
       "Total|R$1,005.00|100.00%",

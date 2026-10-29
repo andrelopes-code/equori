@@ -3,7 +3,7 @@ import type { reportsEn } from "@/i18n/catalog-reports.en";
 export const reportsPtBR: Record<keyof typeof reportsEn, string> = {
   "nav.reports": "Relatórios",
   "report.subtitle":
-    "Patrimônio líquido, receitas e despesas e fluxos das contas ao longo do tempo.",
+    "Patrimônio líquido, receitas, despesas e entradas e saídas das contas ao longo do tempo.",
   "report.tabs": "Relatórios",
   "report.tab.netWorth": "Patrimônio líquido",
   "report.tab.categories": "Categorias",
@@ -15,9 +15,9 @@ export const reportsPtBR: Record<keyof typeof reportsEn, string> = {
   "report.indicators.reserve": "Reserva em meses de despesa",
   "report.indicators.committed": "Renda comprometida",
   "report.indicators.debt": "Prestações de dívida",
-  "report.indicators.liabilities": "Passivos",
+  "report.indicators.liabilities": "Você deve",
   "report.indicators.savingsNote":
-    "Parte da receita que sobra após as despesas em cada mês, visão de caixa.",
+    "Parte da receita que sobra após as despesas em cada mês, pelo dinheiro que de fato entrou e saiu.",
   "report.indicators.reserveNote":
     "Meses de despesa média cobertos por conta corrente, poupança, dinheiro, carteiras e reservas.",
   "report.indicators.committedNote":
@@ -25,7 +25,7 @@ export const reportsPtBR: Record<keyof typeof reportsEn, string> = {
   "report.indicators.debtNote":
     "Parte da receita mensal média tomada por principal e juros de empréstimos.",
   "report.indicators.liabilitiesNote":
-    "Saldo devido nas contas de passivo ao fim de cada mês.",
+    "O que você devia em cartões, empréstimos e outras dívidas ao fim de cada mês.",
   "report.valueIn": "Avaliar em",
   "report.none": "—",
   "report.month": "Mês",
@@ -34,8 +34,8 @@ export const reportsPtBR: Record<keyof typeof reportsEn, string> = {
   "report.netWorth.title": "Patrimônio líquido por mês",
   "report.netWorth.span": "Meses exibidos",
   "report.netWorth.months": "{count} meses",
-  "report.netWorth.assets": "Ativos",
-  "report.netWorth.liabilities": "Passivos",
+  "report.netWorth.assets": "Você tem",
+  "report.netWorth.liabilities": "Você deve",
   "report.netWorth.net": "Líquido",
   "report.total": "Total",
   "report.compare": "Comparar com o período anterior",
@@ -65,11 +65,11 @@ export const reportsPtBR: Record<keyof typeof reportsEn, string> = {
   "report.categories.subtree": "Total",
   "report.categories.direct": "Direto",
   "report.categories.directOf": "{name} (direto)",
-  "report.categories.records": "Lançamentos",
+  "report.categories.records": "Transações",
   "report.categories.transactions": "Transações",
   "report.categories.trail": "Caminho da categoria",
   "report.categories.all": "Todas as categorias",
-  "report.categories.empty": "Nada lançado neste período.",
+  "report.categories.empty": "Nada registrado neste período.",
   "report.cash.payments": "Pagamentos de cartão",
   "report.cash.title": "Pagamentos de cartão de {name}",
   "report.cash.payment": "Pagamento",
@@ -78,7 +78,7 @@ export const reportsPtBR: Record<keyof typeof reportsEn, string> = {
   "report.cash.empty":
     "Nenhum pagamento de cartão conta em {name} neste período.",
   "report.flows.title": "Fluxos por conta",
-  "report.flows.comparison": "Fluxos contra o período anterior",
+  "report.flows.comparison": "Entradas e saídas contra o período anterior",
   "report.flows.account": "Conta",
   "report.flows.by": "Granularidade",
   "report.flows.byDay": "Por dia",

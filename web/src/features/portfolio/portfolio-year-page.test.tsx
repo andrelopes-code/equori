@@ -110,7 +110,7 @@ describe("Tax year of investments", () => {
     expect(rowTexts(table)).toEqual([
       [
         "Date",
-        "Security",
+        "Investment",
         "Account",
         "Quantity",
         "Cost",

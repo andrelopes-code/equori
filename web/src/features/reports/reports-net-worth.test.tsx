@@ -77,7 +77,7 @@ describe("Reports net worth", () => {
     const table = await netWorthTable();
     await within(table).findByText("R$1,005.00");
     expect(rowTexts(table)).toEqual([
-      "Month|Assets|Liabilities|Net|Change|Change %",
+      "Month|You own|You owe|Net|Change|Change %",
       "Oct 2026|R$2,205.00|R$1,200.00|R$1,005.00|+R$150.00|+17.54%",
       "Sep 2026|R$2,055.00|R$1,200.00|R$855.00|+R$55.00|+6.88%",
       "Aug 2026|R$2,000.00|R$1,200.00|R$800.00|R$0.00|0.00%",
