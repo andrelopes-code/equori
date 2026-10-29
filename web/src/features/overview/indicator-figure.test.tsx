@@ -50,6 +50,19 @@ describe("indicator figures", () => {
     ).toBeGreaterThan(0);
   });
 
+  it("draws the 12 months of an indicator that holds two values or more", async () => {
+    renderBlock();
+
+    await screen.findByText("43.00%");
+
+    expect(
+      screen.getByRole("img", {
+        name: /^Savings rate by month: 43\.00%/,
+      }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: /^Reserve/ })).toBeNull();
+  });
+
   it("states why an indicator has no value", async () => {
     renderBlock(indicatorsFixture({ liquidity: { reason: "no_expense" } }));
     expect(

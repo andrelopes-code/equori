@@ -510,7 +510,7 @@ export const catalogEn = {
   "postings.installment": "installment {number} of {count}",
   "posting.status.pending": "Pending",
   "posting.status.cleared": "Cleared",
-  "posting.status.reconciled": "Checked against statement",
+  "posting.status.reconciled": "Reconciled",
   "facts.date": "Date",
   "facts.payee": "Payee",
   "facts.payeeHelp":
@@ -804,7 +804,7 @@ export const catalogEn = {
   "income.withheldTooHigh":
     "The withheld amount must be below the gross amount.",
   "income.created": "Income recorded",
-  "trade.record": "Record trade",
+  "trade.record": "Record a buy or sell",
   "trade.created": "Trade recorded",
   "entry.actions": "Transaction form actions",
   "entry.discard": "Discard",
@@ -1813,6 +1813,7 @@ export const catalogEn = {
   "overview.indicators.open": "Open indicators",
   "overview.indicators.savings": "Savings rate",
   "overview.indicators.reserve": "Reserve",
+  "overview.indicators.trend": "{name} by month",
   "overview.indicators.committed": "Committed income",
   "overview.indicators.debt": "Debt payments",
   "overview.indicators.noDebt": "No loan or financing in the books",

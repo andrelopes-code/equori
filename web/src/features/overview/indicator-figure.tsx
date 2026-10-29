@@ -1,9 +1,11 @@
+import { Sparkline } from "@slotted/react/sparkline";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
 import { indicatorsQuery } from "@/features/overview/api";
 import { FigureWidget } from "@/features/overview/figure-widget";
 import {
+  indicatorSeries,
   lastMonth,
   showsDebt,
   type IndicatorMonth,
@@ -70,6 +72,16 @@ export function IndicatorFigure({
   const noDebt =
     kind === "debt_service_share" && m !== undefined && !showsDebt(m);
   const ratio = noDebt ? undefined : m?.[kind];
+  const series =
+    noDebt || report === undefined ? [] : indicatorSeries(report, kind);
+  const trend =
+    series.length === 0 ? undefined : (
+      <Sparkline
+        data={series}
+        label={t("overview.indicators.trend", { name: placement.title })}
+        valueFormatter={format}
+      />
+    );
   return (
     <FigureWidget
       placement={placement}
@@ -81,6 +93,7 @@ export function IndicatorFigure({
       onRetry={() => void query.refetch()}
       loading={report === undefined}
       goodWhen="none"
+      trend={trend}
       value={ratio?.bp === undefined ? undefined : format(ratio.bp)}
       note={
         noDebt

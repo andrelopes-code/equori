@@ -20,3 +20,22 @@ export function lastMonth(report: Indicators): IndicatorMonth {
 export function showsDebt(month: IndicatorMonth): boolean {
   return month.liabilities.amount > 0 || month.debt_service.amount > 0;
 }
+
+// The fewest months with a value that draw a line; two draw only a straight segment.
+const seriesFloor = 3;
+
+// The ratio of each month from the first one that has a value, in basis points; a later month
+// without one is a gap. Empty below seriesFloor values: months before the first value are not a
+// gap of the reader's history, and drawing them leaves the line squeezed at the right edge.
+export function indicatorSeries(
+  report: Indicators,
+  kind: RatioKey,
+): (number | null)[] {
+  const values = report.months.map((m) => m[kind].bp ?? null);
+  const first = values.findIndex((bp) => bp !== null);
+  const series = first === -1 ? [] : values.slice(first);
+
+  if (series.filter((bp) => bp !== null).length < seriesFloor) return [];
+
+  return series;
+}

@@ -4,6 +4,7 @@ import {
   StatCardDelta,
   StatCardFigure,
   StatCardMessage,
+  StatCardTrend,
   StatCardValue,
 } from "@slotted/react/stat-card";
 import type { NavigateOptions } from "@tanstack/react-router";
@@ -28,6 +29,7 @@ export function FigureWidget({
   delta,
   goodWhen = "up",
   note,
+  trend,
   footer,
 }: {
   placement: Placement;
@@ -41,6 +43,8 @@ export function FigureWidget({
   delta?: number | undefined;
   goodWhen?: "up" | "down" | "none";
   note: ReactNode;
+  // A Sparkline of the figure's recent values.
+  trend?: ReactNode;
   footer?: ReactNode;
 }) {
   return (
@@ -55,8 +59,9 @@ export function FigureWidget({
       <StatCard
         size="md"
         fill="plain"
-        // Stacked keeps no empty trend column beside the figure.
-        layout="stacked"
+        // A trend sits beside the figure, inside the widget's height; with no trend, stacked keeps
+        // no empty trend column.
+        layout={trend === undefined ? "stacked" : "inline"}
         loading={loading}
         status={!loading && value === undefined ? "empty" : "ready"}
         goodWhen={goodWhen}
@@ -73,6 +78,7 @@ export function FigureWidget({
           {/* Inside the figure the comparison wraps to its own line under the value. */}
           <StatCardComparison>{note}</StatCardComparison>
         </StatCardFigure>
+        {trend !== undefined && <StatCardTrend>{trend}</StatCardTrend>}
         {/* A card with no value drops the comparison; the same words stand as its message. */}
         <StatCardMessage>{note}</StatCardMessage>
       </StatCard>
