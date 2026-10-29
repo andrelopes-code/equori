@@ -86,7 +86,9 @@ export function MoreSheet({
   };
 
   return (
-    <Drawer side="bottom" open={open} onOpenChange={change}>
+    // Workaround for Slotted issue #28: the drawer's history step back on close undoes the
+    // navigation started in the same press, so the sheet holds no history entry.
+    <Drawer side="bottom" open={open} back="none" onOpenChange={change}>
       <DrawerTrigger render={trigger} />
       <DrawerPanel className={styles.sheet}>
         <DrawerResizer />
