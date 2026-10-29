@@ -48,6 +48,7 @@ type connectionView struct {
 	State            string                `json:"state"`
 	Name             string                `json:"name"`
 	ProviderStatus   string                `json:"provider_status"`
+	Portal           string                `json:"portal"`
 	LastItemUpdateAt string                `json:"last_item_update_at"`
 	NextItemUpdateAt string                `json:"next_item_update_at"`
 	LastSyncedAt     string                `json:"last_synced_at"`
@@ -181,8 +182,20 @@ func TestConnectItemAndMapAccounts(t *testing.T) {
 	var conn connectionView
 	r.Decode(t, &conn)
 	if r.Header.Get("Location") != "/api/v1/connections/"+conn.ID || conn.IntegrationID != in.ID || conn.ExternalID != nubankItem ||
-		conn.Name != "Nubank" || conn.ProviderStatus != "UPDATED" || conn.State != "ok" || conn.LastItemUpdateAt != "2026-11-12T06:00:00Z" || len(conn.Accounts) != 3 {
+		conn.Name != "Nubank" || conn.ProviderStatus != "UPDATED" || conn.State != "ok" || conn.Portal != "Meu Pluggy" ||
+		conn.LastItemUpdateAt != "2026-11-12T06:00:00Z" || len(conn.Accounts) != 3 {
 		t.Fatalf("connection = %+v", conn)
+	}
+	// The status texts that send the owner to the aggregator name its portal from here, not the
+	// web catalog: the read of a stored connection carries it too.
+	r = a.h.Do(http.MethodGet, "/api/v1/connections/"+conn.ID, nil)
+	if r.Status != http.StatusOK {
+		t.Fatalf("get connection status %d: %s", r.Status, r.Body)
+	}
+	var read connectionView
+	r.Decode(t, &read)
+	if read.Portal != "Meu Pluggy" {
+		t.Fatalf("read portal = %q", read.Portal)
 	}
 	ext := externalAccount(conn, pluggy.SubtypeChecking)
 	want := externalAccountView{ID: ext.ID, Type: "BANK", Subtype: pluggy.SubtypeChecking, Name: "Conta Corrente", NumberLast4: "6789", Currency: "BRL", State: "pending"}

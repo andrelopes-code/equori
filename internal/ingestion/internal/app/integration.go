@@ -51,6 +51,8 @@ type Aggregator interface {
 	MinSyncInterval() time.Duration
 	// State reads the status an aggregator reports for a connection.
 	State(providerStatus string) domain.ConnectionState
+	// Portal names the site or app where the owner acts on an item, empty when there is none.
+	Portal() string
 	// Verify creates an API key from the credentials, replacing any cached one.
 	Verify(ctx context.Context, integrationID uuid.UUID, c domain.Credentials) error
 	// Item returns the item as an unsaved connection with its accounts.

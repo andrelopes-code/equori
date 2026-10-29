@@ -51,6 +51,8 @@ func (p Port) ConnectMethod() string { return "reference" }
 
 func (p Port) MinSyncInterval() time.Duration { return time.Minute }
 
+func (p Port) Portal() string { return "Meu Pluggy" }
+
 // State maps the statuses that need the owner in Meu Pluggy; the item's data is stale until
 // the owner acts (P6 amendment A43).
 func (p Port) State(status string) domain.ConnectionState {

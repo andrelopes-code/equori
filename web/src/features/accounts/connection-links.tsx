@@ -114,6 +114,7 @@ export function ConnectionLinks({
     </Inline>
   );
   const provider = providerWords[connection.provider_status];
+  const portal = connection.portal ?? t("sync.portal.none");
   return (
     <Stack
       gap={8}
@@ -131,7 +132,7 @@ export function ConnectionLinks({
             <Tag size="sm" tone="secondary">
               {provider === undefined
                 ? connection.provider_status
-                : t(provider)}
+                : t(provider, { portal })}
             </Tag>
           </Inline>
         </Stack>
@@ -161,7 +162,7 @@ export function ConnectionLinks({
                     tone: "success",
                     text:
                       answer.batches.length === 0
-                        ? t("sync.notSynced")
+                        ? t("sync.notSynced", { portal })
                         : t("links.synced", { count: answer.batches.length }),
                   });
                 })

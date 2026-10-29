@@ -48,7 +48,7 @@ func (s *Service) CreateConnection(ctx context.Context, userID int64, integratio
 	if err != nil {
 		return domain.Connection{}, err
 	}
-	stored.State = agg.State(stored.ProviderStatus)
+	stored.State, stored.Portal = agg.State(stored.ProviderStatus), agg.Portal()
 	return stored, nil
 }
 
@@ -68,7 +68,7 @@ func (s *Service) withState(ctx context.Context, c *domain.Connection, aggs map[
 		c.State = domain.StateFailed
 		return nil
 	}
-	c.State = agg.State(c.ProviderStatus)
+	c.State, c.Portal = agg.State(c.ProviderStatus), agg.Portal()
 	return nil
 }
 

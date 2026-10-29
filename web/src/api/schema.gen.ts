@@ -3795,6 +3795,8 @@ export interface components {
             state: "ok" | "needs_owner" | "failed";
             /** @description The item status the aggregator reported, verbatim. */
             provider_status: string;
+            /** @description The aggregator's site or app where the owner acts on the item; absent when the aggregator names none. */
+            portal?: string;
             /**
              * Format: date-time
              * @description When the aggregator last updated the item from the institution, as of the last sync; the ledger holds the data of this update.

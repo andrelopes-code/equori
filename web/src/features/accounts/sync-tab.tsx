@@ -57,6 +57,7 @@ export function SyncTab({
   const [dialog, setDialog] = useState<"start" | "stop" | null>(null);
   const { connection, external } = linked;
   const provider = providerWords[connection.provider_status];
+  const portal = connection.portal ?? t("sync.portal.none");
   const subtype = subtypeWords[external.subtype];
   return (
     <Card>
@@ -94,7 +95,7 @@ export function SyncTab({
               <DescriptionListDescription>
                 {provider === undefined
                   ? connection.provider_status
-                  : t(provider)}
+                  : t(provider, { portal })}
               </DescriptionListDescription>
             </DescriptionListItem>
             {external.sync_from !== undefined && (
@@ -165,7 +166,7 @@ export function SyncTab({
                     );
                     setResult(
                       answer.batches.length === 0
-                        ? t("sync.notSynced")
+                        ? t("sync.notSynced", { portal })
                         : t("sync.result", { created, matched }),
                     );
                   })

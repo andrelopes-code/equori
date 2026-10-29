@@ -21,7 +21,9 @@ type Connection struct {
 	Name           string
 	ProviderStatus string
 	// State is the aggregator's reading of ProviderStatus; the repository does not store it.
-	State            ConnectionState
+	State ConnectionState
+	// Portal is the aggregator's site or app where the owner acts on the item; not stored.
+	Portal           string
 	LastItemUpdateAt *time.Time
 	// NextItemUpdateAt is when the aggregator will next update the item, as the last check read
 	// it (A95).

@@ -243,6 +243,31 @@ describe("Account links", () => {
     ).toBeVisible();
   });
 
+  // The portal is the aggregator's to name: the catalog holds no aggregator's site, so an
+  // aggregator without one reads with a neutral phrase.
+  it.each([
+    ["Acme Hub", "Waiting for you in Acme Hub"],
+    [undefined, "Waiting for you in the connection's site"],
+  ])("sends the owner to the portal %s", async (portal, text) => {
+    await renderApp("/accounts/links", {
+      fetch: api([], {
+        "GET /api/v1/connections": () =>
+          json(200, {
+            items: [
+              {
+                ...connectionFixture,
+                state: "needs_owner",
+                provider_status: "WAITING_USER_INPUT",
+                portal,
+              },
+            ],
+          }),
+      }),
+    });
+
+    expect(await screen.findByText(text)).toBeVisible();
+  });
+
   it("links each batch a sync produced to its import page", async () => {
     const batch = {
       id: "e1000000-0000-4000-8000-000000000001",

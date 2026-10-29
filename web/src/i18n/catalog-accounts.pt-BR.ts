@@ -370,8 +370,9 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "sync.lastError": "Último erro: {error}",
   "sync.now": "Sincronizar agora",
   "sync.result": "{created} criadas e {matched} associadas nesta conta.",
+  "sync.portal.none": "site da conexão",
   "sync.notSynced":
-    "O provedor aguarda você no Meu Pluggy; nada foi sincronizado.",
+    "A conexão aguarda você no {portal}; nada foi sincronizado.",
   "sync.changeStart": "Trocar data inicial",
   "sync.changeStartHint": "Linhas datadas antes deste dia não são importadas.",
   "sync.stop": "Parar de sincronizar",
@@ -382,9 +383,9 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "sync.provider.UPDATED": "Atualizada",
   "sync.provider.UPDATING": "Atualizando no banco",
   "sync.provider.LOGIN_ERROR":
-    "Acesso recusado: atualize as credenciais no Meu Pluggy",
-  "sync.provider.OUTDATED": "Desatualizada: abra o Meu Pluggy para atualizar",
-  "sync.provider.WAITING_USER_INPUT": "Aguardando você no Meu Pluggy",
+    "Acesso recusado: atualize as credenciais no {portal}",
+  "sync.provider.OUTDATED": "Desatualizada: abra o {portal} para atualizar",
+  "sync.provider.WAITING_USER_INPUT": "Aguardando você no {portal}",
   "links.subtype.CHECKING_ACCOUNT": "Conta corrente",
   "links.subtype.SAVINGS_ACCOUNT": "Poupança",
   "links.subtype.CREDIT_CARD": "Cartão de crédito",

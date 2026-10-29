@@ -390,6 +390,9 @@ type Connection struct {
 	// NextItemUpdateAt When the aggregator will next update the item, as the last check read it (A95). The owner cannot bring it forward.
 	NextItemUpdateAt *time.Time `json:"next_item_update_at,omitempty"`
 
+	// Portal The aggregator's site or app where the owner acts on the item; absent when the aggregator names none.
+	Portal *string `json:"portal,omitempty"`
+
 	// ProviderStatus The item status the aggregator reported, verbatim.
 	ProviderStatus string `json:"provider_status"`
 

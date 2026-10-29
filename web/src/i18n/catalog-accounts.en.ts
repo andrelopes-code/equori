@@ -371,8 +371,9 @@ export const accountsEn = {
   "sync.lastError": "Last error: {error}",
   "sync.now": "Sync now",
   "sync.result": "{created} created and {matched} matched in this account.",
+  "sync.portal.none": "the connection's site",
   "sync.notSynced":
-    "The provider waits for you in Meu Pluggy; nothing was synced.",
+    "The connection waits for you in {portal}; nothing was synced.",
   "sync.changeStart": "Change start date",
   "sync.changeStartHint": "Lines dated before this day are not imported.",
   "sync.stop": "Stop syncing",
@@ -383,9 +384,9 @@ export const accountsEn = {
   "sync.provider.UPDATED": "Up to date",
   "sync.provider.UPDATING": "Updating at the bank",
   "sync.provider.LOGIN_ERROR":
-    "Sign-in refused: update the credentials in Meu Pluggy",
-  "sync.provider.OUTDATED": "Out of date: open Meu Pluggy to update",
-  "sync.provider.WAITING_USER_INPUT": "Waiting for you in Meu Pluggy",
+    "Sign-in refused: update the credentials in {portal}",
+  "sync.provider.OUTDATED": "Out of date: open {portal} to update",
+  "sync.provider.WAITING_USER_INPUT": "Waiting for you in {portal}",
   "links.subtype.CHECKING_ACCOUNT": "Checking account",
   "links.subtype.SAVINGS_ACCOUNT": "Savings account",
   "links.subtype.CREDIT_CARD": "Credit card",

@@ -197,4 +197,4 @@ A ordem das telas segue o uso: transações, contas, cartões, visão geral, dep
 
 Tabelas de curadoria: `2026-10-29-ui-clarity-curation-transactions.md` (transações), `2026-10-29-ui-clarity-curation-accounts.md` (contas).
 
-Pendência regional: os textos de situação da sincronização citam o portal de um agregador ("Meu Pluggy"). O nome do portal passa a vir da implementação do agregador (ponto de extensão Aggregator) e o catálogo usa `{portal}`.
+Os textos de situação da sincronização citavam o portal de um agregador ("Meu Pluggy"). O nome do portal vem da implementação do agregador (`Aggregator.Portal`, campo `portal` da conexão), e o catálogo usa `{portal}` com uma expressão neutra quando o agregador não informa portal.

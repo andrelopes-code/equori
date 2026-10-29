@@ -6508,6 +6508,9 @@ components:
         provider_status:
           type: string
           description: The item status the aggregator reported, verbatim.
+        portal:
+          type: string
+          description: The aggregator's site or app where the owner acts on the item; absent when the aggregator names none.
         last_item_update_at:
           type: string
           format: date-time
