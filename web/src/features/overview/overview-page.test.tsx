@@ -149,25 +149,28 @@ function block(name: string) {
 
 describe("overview page", () => {
   // Design, Camada 3: the steps a newcomer has left lead to their screens.
-  it("lists the first steps left, each undone one leading to its screen", async () => {
+  it("shows the first steps done and leads to the next one", async () => {
     await renderApp("/", { fetch: api() });
 
-    const steps = await screen.findByRole("region", {
+    const steps = await screen.findByRole("list", {
       name: catalogEn["firstSteps.title"],
     });
 
+    expect(within(steps).getAllByRole("listitem")).toHaveLength(3);
     expect(
-      within(steps).getByRole("link", {
-        name: new RegExp(catalogEn["firstSteps.categories"]),
+      screen.getByText(
+        catalogEn["firstSteps.progress"]
+          .replace("{done}", "2")
+          .replace("{total}", "3"),
+      ),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("link", {
+        name: catalogEn["firstSteps.action.categories"],
       }),
     ).toHaveAttribute("href", "/transactions?uncategorized=true");
     expect(
-      within(steps).getAllByText(catalogEn["firstSteps.done"]),
-    ).toHaveLength(2);
-    expect(
-      within(steps).getByRole("link", {
-        name: catalogEn["firstSteps.guide"],
-      }),
+      screen.getByRole("link", { name: catalogEn["firstSteps.guide"] }),
     ).toHaveAttribute("href", "/help/first-month");
   });
 

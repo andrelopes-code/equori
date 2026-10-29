@@ -1,0 +1,49 @@
+@layer app {
+  /* The pages beside the page on show, as the settings page lays its panes. The column keeps the
+     measure of its longest title; no token holds it. */
+  .layout {
+    display: grid;
+    align-items: start;
+    gap: var(--slotted-space-9);
+    grid-template-columns: 15rem minmax(0, 1fr);
+  }
+
+  .navigation {
+    position: sticky;
+    inset-block-start: calc(
+      var(--slotted-page-sticky-top, 0px) + var(--slotted-space-6)
+    );
+  }
+
+  /* The text keeps the reading line, and from 1280 px the list of its sections stands at its end;
+     below, the list folds above the text. The 13 rem column holds the longest section title. */
+  .article {
+    display: grid;
+    align-items: start;
+    gap: var(--slotted-space-9);
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @media (min-width: 1280px) {
+    .article {
+      grid-template-columns: minmax(0, 1fr) 13rem;
+    }
+  }
+
+  .text {
+    display: flex;
+    min-inline-size: 0;
+    flex-direction: column;
+    gap: var(--slotted-space-9);
+  }
+
+  /* The next page keeps the line's end when no page comes before. */
+  .next {
+    margin-inline-start: auto;
+  }
+
+  /* The lead reads as the page's summary: one step larger than the body, in the muted ink. */
+  .lead {
+    color: var(--slotted-text-muted);
+  }
+}

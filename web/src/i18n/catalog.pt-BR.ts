@@ -62,7 +62,10 @@ export const catalogPtBR: Catalog = {
   "firstSteps.categories": "Dê uma categoria a cada transação",
   "firstSteps.categoriesHint":
     "Assim a visão geral mostra os gastos por categoria.",
-  "firstSteps.done": "Feito",
+  "firstSteps.progress": "{done} de {total} feitos",
+  "firstSteps.action.account": "Cadastrar uma conta",
+  "firstSteps.action.transactions": "Registrar uma transação",
+  "firstSteps.action.categories": "Categorizar transações",
   "firstSteps.guide": "Ver o roteiro do primeiro mês",
   "help.title": "Ajuda",
   "help.subtitle":
@@ -75,6 +78,11 @@ export const catalogPtBR: Catalog = {
   "help.kind.reference.description": "O que cada tela e cada termo significam.",
   "help.kind.explanation": "Como funciona",
   "help.kind.explanation.description": "As ideias por trás das telas.",
+  "help.contents": "Páginas da ajuda",
+  "help.toc": "Nesta página",
+  "help.previous": "Anterior",
+  "help.next": "Próxima",
+  "help.start": "Começar o roteiro",
   "help.screen": "Como funciona esta tela",
   "help.notFound": "Esta página de ajuda não existe",
   "help.notFoundHint":

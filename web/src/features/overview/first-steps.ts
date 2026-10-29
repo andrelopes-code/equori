@@ -1,8 +1,11 @@
+import type { LinkOptions } from "@tanstack/react-router";
+
 export type FirstStepId = "account" | "transactions" | "categories";
 
 export interface FirstStep {
   id: FirstStepId;
   done: boolean;
+  destination: LinkOptions;
 }
 
 export interface FirstStepsFacts {
@@ -15,11 +18,20 @@ export interface FirstStepsFacts {
 // newcomer does them; none once every task is done, so the block leaves the page by itself.
 export function firstSteps(facts: FirstStepsFacts): FirstStep[] {
   const steps: FirstStep[] = [
-    { id: "account", done: facts.hasAccount },
-    { id: "transactions", done: facts.hasTransaction },
+    {
+      id: "account",
+      done: facts.hasAccount,
+      destination: { to: "/accounts/new" },
+    },
+    {
+      id: "transactions",
+      done: facts.hasTransaction,
+      destination: { to: "/transactions/new" },
+    },
     {
       id: "categories",
       done: facts.hasTransaction && !facts.hasUncategorized,
+      destination: { to: "/transactions", search: { uncategorized: true } },
     },
   ];
 

@@ -1,6 +1,8 @@
 # Pagar uma fatura
 
-A fatura reúne as compras de um ciclo do cartão. Ela fecha numa data e vence alguns dias depois. Veja [A tela da fatura](/help/statement).
+A fatura reúne as compras de um ciclo do cartão. Ela fecha numa data e vence alguns dias depois.
+
+O que cada número da fatura significa está em [A tela da fatura](/help/statement).
 
 ## Registrar o pagamento
 

@@ -1,35 +1,44 @@
-import { Button } from "@slotted/react/button";
-import { Markdown } from "@slotted/react/markdown";
 import { Page, PageBody } from "@slotted/react/page";
 import {
   PageHeader,
   PageHeaderHeading,
+  PageHeaderMarks,
   PageHeaderTitle,
   PageHeaderTitleArea,
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
-import {
-  ResultState,
-  ResultStateActions,
-  ResultStateContent,
-  ResultStateDescription,
-  ResultStateTitle,
-} from "@slotted/react/result-state";
+import { Tag } from "@slotted/react/tag";
 import { Link, useParams } from "@tanstack/react-router";
 
-import { splitHelpPage } from "@/features/help/help-pages";
+import { HelpNavigation } from "@/features/help/help-navigation";
+import { HelpPageBody } from "@/features/help/help-page-body";
+import { helpPages, splitHelpPage } from "@/features/help/help-pages";
+import styles from "@/features/help/help-page.module.css";
 import { useHelpPage } from "@/features/help/use-help-page";
 import { useT } from "@/i18n/i18n-provider";
-import { screenLinks } from "@/navigation/screen-links";
 import { PageBack } from "@/ui/page-back";
+import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
 
+// One help page: its title and kind in the header; from 1024 px the pages of the help beside
+// it, as the settings page lays its panes.
 export function HelpPage() {
   const t = useT();
   const { page } = useParams({ from: "/_authed/help/$page" });
   const query = useHelpPage(page);
+  const wide = useMediaQuery(wideQuery);
 
   const text = query.data == null ? null : splitHelpPage(query.data);
-  const missing = query.isSuccess && query.data === null;
+  const kind = helpPages.find((p) => p.id === page)?.kind;
+
+  const body = (
+    <HelpPageBody
+      text={text}
+      missing={query.isSuccess && query.data === null}
+      failed={query.isError}
+      page={page}
+      onRetry={() => void query.refetch()}
+    />
+  );
 
   return (
     <Page width="full">
@@ -43,46 +52,28 @@ export function HelpPage() {
               <PageHeaderHeading>
                 {text?.title ?? t("help.title")}
               </PageHeaderHeading>
+              {kind !== undefined && (
+                <PageHeaderMarks>
+                  <Tag size="sm" tone="secondary">
+                    {t(`help.kind.${kind}`)}
+                  </Tag>
+                </PageHeaderMarks>
+              )}
             </PageHeaderTitle>
           </PageHeaderTitleRow>
         </PageHeaderTitleArea>
       </PageHeader>
       <PageBody>
-        {text !== null && (
-          <Markdown
-            source={text.body}
-            headingOffset={1}
-            renderers={screenLinks}
-          />
+        {wide && (
+          <div className={styles.layout}>
+            <div className={styles.navigation}>
+              <HelpNavigation current={page} />
+            </div>
+            {body}
+          </div>
         )}
 
-        {missing && (
-          <ResultState status="not-found">
-            <ResultStateContent>
-              <ResultStateTitle>{t("help.notFound")}</ResultStateTitle>
-              <ResultStateDescription>
-                {t("help.notFoundHint")}
-              </ResultStateDescription>
-            </ResultStateContent>
-          </ResultState>
-        )}
-
-        {query.isError && (
-          <ResultState status="error">
-            <ResultStateContent>
-              <ResultStateTitle>{t("help.loadFailed")}</ResultStateTitle>
-            </ResultStateContent>
-            <ResultStateActions>
-              <Button
-                variant="outline"
-                tone="secondary"
-                onClick={() => void query.refetch()}
-              >
-                {t("transactions.tryAgain")}
-              </Button>
-            </ResultStateActions>
-          </ResultState>
-        )}
+        {!wide && body}
       </PageBody>
     </Page>
   );

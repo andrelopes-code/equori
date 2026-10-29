@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  helpNeighbours,
   helpPages,
   loadHelpPage,
   splitHelpPage,
@@ -44,14 +45,42 @@ describe("help pages", () => {
 });
 
 describe("splitHelpPage", () => {
-  it("takes the heading as the title and the first paragraph as the lead", () => {
+  it("takes the heading as the title, the first paragraph as the lead and the rest as the body", () => {
     const text =
       "# Pay a statement\n\nA statement gathers.\nIt closes.\n\n## Steps\n\n1. Open.";
 
     expect(splitHelpPage(text)).toEqual({
       title: "Pay a statement",
-      lead: "A statement gathers.\nIt closes.",
-      body: "A statement gathers.\nIt closes.\n\n## Steps\n\n1. Open.",
+      lead: "A statement gathers. It closes.",
+      leadMarkdown: "A statement gathers.\nIt closes.",
+      body: "## Steps\n\n1. Open.",
     });
+  });
+});
+
+describe("splitHelpPage lead", () => {
+  it("keeps the words of a link and drops the marks of emphasis", () => {
+    const text =
+      "# Title\n\nChoose **Pay**. See [The statement](/help/statement).\n\nBody.";
+
+    expect(splitHelpPage(text).lead).toBe("Choose Pay. See The statement.");
+  });
+});
+
+describe("helpNeighbours", () => {
+  it("names the pages around one in the order of the index", () => {
+    expect(helpNeighbours("import-statement")).toEqual({
+      previous: { id: "first-month", kind: "tutorial" },
+      next: { id: "pay-statement", kind: "howto" },
+    });
+  });
+
+  it("names no page before the first nor after the last", () => {
+    expect(helpNeighbours("first-month").previous).toBeUndefined();
+    expect(helpNeighbours("bank-connections").next).toBeUndefined();
+  });
+
+  it("names nothing for an unknown page", () => {
+    expect(helpNeighbours("nope")).toEqual({});
   });
 });

@@ -72,16 +72,53 @@ export async function loadHelpPage(
 
 export interface HelpText {
   title: string;
+  // The lead as plain text, for a list; leadMarkdown keeps its links for the page.
   lead: string;
+  leadMarkdown: string;
   body: string;
 }
 
-// A page opens with its title as a level-one heading; the paragraph after it is the lead the
-// help index shows under the title.
+// A page opens with its title as a level-one heading; the paragraph after it is the lead, which
+// the page sets above the body and the help index shows under the title.
 export function splitHelpPage(text: string): HelpText {
   const [first = "", ...rest] = text.split("\n");
-  const body = rest.join("\n").trim();
-  const lead = body.split(/\n\s*\n/)[0] ?? "";
+  const [lead = "", ...body] = rest
+    .join("\n")
+    .trim()
+    .split(/\n\s*\n/);
 
-  return { title: first.replace(/^#\s+/, ""), lead, body };
+  return {
+    title: first.replace(/^#\s+/, ""),
+    lead: plainText(lead),
+    leadMarkdown: lead,
+    body: body.join("\n\n"),
+  };
+}
+
+export interface HelpNeighbours {
+  previous?: HelpPageEntry;
+  next?: HelpPageEntry;
+}
+
+// The pages before and after one, in the order of the help index.
+export function helpNeighbours(id: string): HelpNeighbours {
+  const index = helpPages.findIndex((p) => p.id === id);
+  if (index === -1) return {};
+
+  const previous = helpPages[index - 1];
+  const next = helpPages[index + 1];
+
+  return {
+    ...(previous === undefined ? {} : { previous }),
+    ...(next === undefined ? {} : { next }),
+  };
+}
+
+// The lead stands in a header and in a list, where Markdown is not drawn: a link keeps its words,
+// emphasis and code lose their marks.
+function plainText(markdown: string): string {
+  return markdown
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/(\*\*|__|\*|_|`)/g, "")
+    .replace(/\s*\n\s*/g, " ");
 }

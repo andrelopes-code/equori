@@ -1,14 +1,16 @@
-import { List } from "@slotted/react/list";
+import { ButtonLink } from "@slotted/react/button";
 import {
-  Section,
-  SectionBody,
-  SectionDescription,
-  SectionHeader,
-  SectionHeading,
-  SectionTitle,
-} from "@slotted/react/section";
+  Card,
+  CardActions,
+  CardBody,
+  CardFooter,
+  CardHeader,
+} from "@slotted/react/card";
+import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
-import { Text } from "@slotted/react/typography";
+import { Stepper, StepperList, StepperStep } from "@slotted/react/stepper";
+import { Tag } from "@slotted/react/tag";
+import { Heading, Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
@@ -17,12 +19,12 @@ import {
   anyTransactionQuery,
   uncategorizedQuery,
 } from "@/features/overview/api";
-import { FirstStepItem } from "@/features/overview/first-step-item";
 import { firstSteps } from "@/features/overview/first-steps";
 import { useT } from "@/i18n/i18n-provider";
-import { AppLink } from "@/ui/app-link";
+import { routeTo } from "@/ui/route-to";
 
-// What a newcomer does before the overview has anything to show; gone once it is done.
+// What a newcomer does before the overview has anything to show, as numbered steps with the next
+// one's action; gone once every step is done.
 export function FirstStepsBlock() {
   const t = useT();
   const api = useApi();
@@ -41,34 +43,60 @@ export function FirstStepsBlock() {
         hasUncategorized: uncategorized.data.count > 0,
       })
     : [];
+  const next = steps.find((s) => !s.done);
 
-  if (steps.length === 0) return null;
+  if (next === undefined) return null;
+
+  const done = steps.filter((s) => s.done).length;
 
   return (
-    <Section>
-      <SectionHeader>
-        <SectionTitle>
-          <SectionHeading>{t("firstSteps.title")}</SectionHeading>
-          <SectionDescription>{t("firstSteps.description")}</SectionDescription>
-        </SectionTitle>
-      </SectionHeader>
-      <SectionBody>
-        <Stack gap={4}>
-          <List variant="framed">
-            {steps.map((step) => (
-              <FirstStepItem key={step.id} step={step} />
-            ))}
-          </List>
-
-          <Text size="sm">
-            <AppLink
-              to={{ to: "/help/$page", params: { page: "first-month" } }}
-            >
-              {t("firstSteps.guide")}
-            </AppLink>
+    <Card>
+      <CardHeader>
+        <Stack gap={1}>
+          <Heading level={2} size="md">
+            {t("firstSteps.title")}
+          </Heading>
+          <Text size="sm" tone="muted">
+            {t("firstSteps.description")}
           </Text>
         </Stack>
-      </SectionBody>
-    </Section>
+        <CardActions>
+          <Tag size="sm" tone="secondary">
+            {t("firstSteps.progress", { done, total: steps.length })}
+          </Tag>
+        </CardActions>
+      </CardHeader>
+      <CardBody>
+        <Stepper step={steps.indexOf(next)} navigation="none">
+          <StepperList aria-label={t("firstSteps.title")}>
+            {steps.map((step) => (
+              <StepperStep
+                key={step.id}
+                label={t(`firstSteps.${step.id}`)}
+                description={t(`firstSteps.${step.id}Hint`)}
+                complete={step.done}
+              />
+            ))}
+          </StepperList>
+        </Stepper>
+      </CardBody>
+      <CardFooter>
+        <Inline gap={3} wrap="wrap">
+          <ButtonLink render={routeTo(next.destination)}>
+            {t(`firstSteps.action.${next.id}`)}
+          </ButtonLink>
+          <ButtonLink
+            variant="ghost"
+            tone="secondary"
+            render={routeTo({
+              to: "/help/$page",
+              params: { page: "first-month" },
+            })}
+          >
+            {t("firstSteps.guide")}
+          </ButtonLink>
+        </Inline>
+      </CardFooter>
+    </Card>
   );
 }

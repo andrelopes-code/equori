@@ -11,9 +11,17 @@ describe("firstSteps", () => {
         hasUncategorized: false,
       }),
     ).toEqual([
-      { id: "account", done: false },
-      { id: "transactions", done: false },
-      { id: "categories", done: false },
+      { id: "account", done: false, destination: { to: "/accounts/new" } },
+      {
+        id: "transactions",
+        done: false,
+        destination: { to: "/transactions/new" },
+      },
+      {
+        id: "categories",
+        done: false,
+        destination: { to: "/transactions", search: { uncategorized: true } },
+      },
     ]);
   });
 
@@ -24,7 +32,7 @@ describe("firstSteps", () => {
         hasTransaction: true,
         hasUncategorized: true,
       }),
-    ).toEqual([
+    ).toMatchObject([
       { id: "account", done: true },
       { id: "transactions", done: true },
       { id: "categories", done: false },

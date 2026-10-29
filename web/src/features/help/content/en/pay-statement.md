@@ -1,6 +1,8 @@
 # Pay a statement
 
-A statement gathers the purchases of one card cycle. It closes on a date and is due a few days later. See [The statement screen](/help/statement).
+A statement gathers the purchases of one card cycle. It closes on a date and is due a few days later.
+
+What each figure of the statement means is in [The statement screen](/help/statement).
 
 ## Record the payment
 
