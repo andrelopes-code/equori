@@ -1,7 +1,6 @@
 # equori
 
 [![ci](https://github.com/andrelopes-code/equori/actions/workflows/ci.yml/badge.svg)](https://github.com/andrelopes-code/equori/actions/workflows/ci.yml)
-[![release](https://img.shields.io/github/v/release/andrelopes-code/equori)](https://github.com/andrelopes-code/equori/releases/latest)
 [![license](https://img.shields.io/github/license/andrelopes-code/equori)](LICENSE)
 
 Self-hosted personal finance manager: one Go binary on PostgreSQL, with the web interface embedded.
@@ -15,6 +14,7 @@ Status: early development. The HTTP API and the web interface cover the ledger, 
 | Domain: vision, language, scenarios, roadmap | [docs/domain/](docs/domain/) |
 | Operations: backup, export, remote access, integrations | [docs/operations/](docs/operations/) |
 | Contributing | [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) |
+| Changes | [CHANGELOG.md](CHANGELOG.md) |
 | Security reports | [SECURITY.md](SECURITY.md) |
 
 ## Run
