@@ -117,7 +117,7 @@ export function StatementLines({
                       value={line.transaction_id}
                     >
                       <TableRowHeader>
-                        <Inline gap={2}>
+                        <Inline gap={4}>
                           <Text size="sm" weight="medium">
                             {line.description === ""
                               ? t("ledger.untitled")
@@ -135,7 +135,7 @@ export function StatementLines({
                             <DisputeTag transactionId={line.transaction_id} />
                           )}
                           {line.provisional && (
-                            <Tag size="sm" tone="info">
+                            <Tag size="sm" tone="info" variant="dashed">
                               {t("statement.provisional")}
                             </Tag>
                           )}
