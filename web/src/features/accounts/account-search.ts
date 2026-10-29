@@ -6,6 +6,9 @@ export type AccountTab =
   | "positions"
   | "sync";
 
+// The tabs an account's page offers below 600 px (ADR 027, S5).
+export const phoneAccountTabs: readonly AccountTab[] = ["activity"];
+
 export type Range = 30 | 90 | 365;
 
 export interface AccountSearch {

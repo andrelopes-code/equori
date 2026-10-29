@@ -317,3 +317,29 @@ describe("Sync tab", () => {
     });
   });
 });
+
+describe("Tabs on a phone (ADR 027, S5)", () => {
+  it("draws no tab strip and shows the activity for a desktop-only tab", async () => {
+    await renderApp(`/accounts/${checkingID}?tab=imports`, {
+      width: 390,
+      fetch: api(),
+    });
+
+    await screen.findByRole("region", { name: catalogEn["account.figures"] });
+    expect(
+      screen.queryByRole("tablist", { name: catalogEn["account.tabs"] }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("table", { name: catalogEn["imports.caption"] }),
+    ).toBeNull();
+  });
+
+  it("keeps the strip with every tab from 600 px", async () => {
+    await renderApp(`/accounts/${checkingID}`, { width: 600, fetch: api() });
+
+    const strip = await screen.findByRole("tablist", {
+      name: catalogEn["account.tabs"],
+    });
+    expect(within(strip).getByRole("tab", { name: /^Imports/ })).toBeVisible();
+  });
+});

@@ -2,12 +2,13 @@ import { useNavigate } from "@tanstack/react-router";
 import { useDeferredValue, useState } from "react";
 
 import type { TabEntry } from "@/features/accounts/account-header";
-import { withTab } from "@/features/accounts/account-search";
+import { phoneAccountTabs, withTab } from "@/features/accounts/account-search";
 import type {
   AccountSearch,
   AccountTab,
 } from "@/features/accounts/account-search";
 import { useT } from "@/i18n/i18n-provider";
+import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 interface AccountTabsInput {
   accountId: string;
@@ -31,14 +32,17 @@ export function useAccountTabs({
 }: AccountTabsInput) {
   const t = useT();
   const navigate = useNavigate();
+  const compact = useMediaQuery(compactQuery);
 
-  const current: AccountTab = search.tab ?? "activity";
+  const asked: AccountTab = search.tab ?? "activity";
+  const current: AccountTab =
+    compact && !phoneAccountTabs.includes(asked) ? "activity" : asked;
   // CP-09: the strip moves at once; the tab's region renders from the deferred value.
   const [chosen, setChosen] = useState<AccountTab | null>(null);
   const shownTab = useDeferredValue(chosen ?? current);
 
   const marked = chosen ?? current;
-  const tabs: TabEntry[] = [
+  const every: TabEntry[] = [
     { tab: "activity", label: t("account.tab.activity") },
     ...(leaf
       ? [
@@ -58,6 +62,9 @@ export function useAccountTabs({
       : []),
     ...(linked ? [{ tab: "sync" as const, label: t("account.tab.sync") }] : []),
   ];
+  const tabs = compact
+    ? every.filter((entry) => phoneAccountTabs.includes(entry.tab))
+    : every;
 
   function select(tab: AccountTab) {
     setChosen(tab);

@@ -13,13 +13,11 @@ import {
   PageHeaderHeading,
   PageHeaderMarks,
   PageHeaderSubheading,
-  PageHeaderTabs,
   PageHeaderTitle,
   PageHeaderTitleArea,
   PageHeaderTitleRow,
   PageHeaderVisual,
 } from "@slotted/react/page-header";
-import { Tab, TabList, Tabs } from "@slotted/react/tabs";
 import { Tag } from "@slotted/react/tag";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -28,6 +26,7 @@ import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { kindTitle } from "@/features/accounts/account-kinds";
 import { AccountAvatar } from "@/features/accounts/account-avatar";
+import { AccountHeaderTabs } from "@/features/accounts/account-header-tabs";
 import { AccountRowStatus } from "@/features/accounts/account-row-status";
 import type { AccountTab } from "@/features/accounts/account-search";
 import { instrumentsQuery, settingsQuery } from "@/features/setup";
@@ -316,23 +315,7 @@ export function AccountHeader({
           </PageHeaderActions>
         </PageHeaderTitleRow>
       </PageHeaderTitleArea>
-      <PageHeaderTabs>
-        <Tabs
-          value={current}
-          onValueChange={(value) => {
-            const entry = tabs.find((e) => e.tab === value);
-            if (entry !== undefined) onTab(entry.tab);
-          }}
-        >
-          <TabList aria-label={t("account.tabs")}>
-            {tabs.map((entry) => (
-              <Tab key={entry.tab} value={entry.tab}>
-                {entry.label}
-              </Tab>
-            ))}
-          </TabList>
-        </Tabs>
-      </PageHeaderTabs>
+      <AccountHeaderTabs tabs={tabs} current={current} onTab={onTab} />
       <HeaderProgress loading={refreshing} />
     </PageHeader>
   );
