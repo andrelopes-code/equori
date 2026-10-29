@@ -343,3 +343,21 @@ describe("Tabs on a phone (ADR 027, S5)", () => {
     expect(within(strip).getByRole("tab", { name: /^Imports/ })).toBeVisible();
   });
 });
+
+describe("Account actions on a phone (ADR 027, S6)", () => {
+  it("leaves editing, importing and recording a balance out of the menu", async () => {
+    await renderApp(`/accounts/${checkingID}`, { width: 390, fetch: api() });
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: catalogEn["account.more"] }),
+    );
+
+    const items = (await screen.findAllByRole("menuitem")).map(
+      (item) => item.textContent,
+    );
+    expect(items).not.toContain(catalogEn["account.edit"]);
+    expect(items).not.toContain(catalogEn["account.import"]);
+    expect(items).not.toContain(catalogEn["account.recordBalance"]);
+    expect(items).toContain(catalogEn["account.viewTransactions"]);
+  });
+});

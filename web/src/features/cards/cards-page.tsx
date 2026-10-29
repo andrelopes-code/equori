@@ -38,14 +38,21 @@ import { HeaderAction } from "@/ui/header-action";
 import { QueryError } from "@/ui/query-error";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import type { MoneyAmount } from "@/ui/money-value";
+import { useServed } from "@/ui/use-served";
 
 // The credit cards: what each one bills now, what is due and when, and how much limit is free.
+const newCard = {
+  to: "/accounts/new",
+  search: { kind: "credit_card" },
+} as const;
+
 export function CardsPage() {
   const t = useT();
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
   const api = useApi();
   const navigate = useNavigate();
+  const served = useServed();
   const queryClient = useQueryClient();
   const scale = useScale();
   const accounts = useQuery(accountsQuery(api));
@@ -101,17 +108,16 @@ export function CardsPage() {
                 refreshing={refresh.refreshing}
                 onRefresh={refresh.refresh}
               />
-              <HeaderAction
-                primary
-                label={t("cards.new")}
-                glyph="plus"
-                onClick={() => {
-                  void navigate({
-                    to: "/accounts/new",
-                    search: { kind: "credit_card" },
-                  });
-                }}
-              />
+              {served(newCard) && (
+                <HeaderAction
+                  primary
+                  label={t("cards.new")}
+                  glyph="plus"
+                  onClick={() => {
+                    void navigate(newCard);
+                  }}
+                />
+              )}
             </PageHeaderActions>
           </PageHeaderTitleRow>
         </PageHeaderTitleArea>

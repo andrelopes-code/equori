@@ -46,7 +46,11 @@ import { useToday } from "@/i18n/today";
 import { HeaderAction } from "@/ui/header-action";
 import { QueryError } from "@/ui/query-error";
 import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
+import { useServed } from "@/ui/use-served";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+
+const newAccount = { to: "/accounts/new" } as const;
+const links = { to: "/accounts/links" } as const;
 
 export function AccountsPage() {
   const t = useT();
@@ -55,6 +59,7 @@ export function AccountsPage() {
   const api = useApi();
   const today = useToday();
   const navigate = useNavigate();
+  const served = useServed();
   const compact = useMediaQuery(compactQuery);
   const search = useSearch({ from: "/_authed/accounts/" });
   const date = search.date ?? today;
@@ -154,14 +159,16 @@ export function AccountsPage() {
             refreshing={refresh.refreshing}
             onRefresh={refresh.refresh}
           />
-          <HeaderAction
-            primary
-            label={t("balanceSheet.new")}
-            glyph="plus"
-            onClick={() => {
-              void navigate({ to: "/accounts/new" });
-            }}
-          />
+          {served(newAccount) && (
+            <HeaderAction
+              primary
+              label={t("balanceSheet.new")}
+              glyph="plus"
+              onClick={() => {
+                void navigate(newAccount);
+              }}
+            />
+          )}
         </>
       </HeaderSlot>
       <PageBody>
@@ -178,15 +185,17 @@ export function AccountsPage() {
                 {t("balanceSheet.emptyHint")}
               </ResultStateDescription>
             </ResultStateContent>
-            <ResultStateActions>
-              <Button
-                onClick={() => {
-                  void navigate({ to: "/accounts/new" });
-                }}
-              >
-                {t("balanceSheet.new")}
-              </Button>
-            </ResultStateActions>
+            {served(newAccount) && (
+              <ResultStateActions>
+                <Button
+                  onClick={() => {
+                    void navigate(newAccount);
+                  }}
+                >
+                  {t("balanceSheet.new")}
+                </Button>
+              </ResultStateActions>
+            )}
           </ResultState>
         ) : (
           <Stack gap={6} aria-busy={busy || undefined}>
@@ -197,15 +206,17 @@ export function AccountsPage() {
                     {t("balanceSheet.pendingLinks", { count: pending })}
                   </AlertDescription>
                 </AlertContent>
-                <AlertActions>
-                  <Button
-                    onClick={() => {
-                      void navigate({ to: "/accounts/links" });
-                    }}
-                  >
-                    {t("balanceSheet.reviewLinks")}
-                  </Button>
-                </AlertActions>
+                {served(links) && (
+                  <AlertActions>
+                    <Button
+                      onClick={() => {
+                        void navigate(links);
+                      }}
+                    >
+                      {t("balanceSheet.reviewLinks")}
+                    </Button>
+                  </AlertActions>
+                )}
               </Alert>
             )}
             <BalanceSheetFigures

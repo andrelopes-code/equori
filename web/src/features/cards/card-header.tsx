@@ -32,6 +32,7 @@ import {
 import { useT } from "@/i18n/i18n-provider";
 import { compactQuery, useMediaQuery, wideQuery } from "@/ui/use-media-query";
 import { PageBack } from "@/ui/page-back";
+import { useServed } from "@/ui/use-served";
 
 type Account = components["schemas"]["Account"];
 type Statement = components["schemas"]["StatementSummary"];
@@ -63,6 +64,11 @@ export function CardHeader({
 }) {
   const t = useT();
   const navigate = useNavigate();
+  const served = useServed();
+  const accountEdit = {
+    to: "/accounts/$id/edit",
+    params: { id: account.id },
+  } as const;
   const wide = useMediaQuery(wideQuery);
   const compact = useMediaQuery(compactQuery);
   const closed = account.closed_on !== undefined;
@@ -163,16 +169,15 @@ export function CardHeader({
                     {t("foreignPurchase.record")}
                   </MenuItem>
                 )}
-                <MenuItem
-                  onSelect={() => {
-                    void navigate({
-                      to: "/accounts/$id/edit",
-                      params: { id: account.id },
-                    });
-                  }}
-                >
-                  {t("account.edit")}
-                </MenuItem>
+                {served(accountEdit) && (
+                  <MenuItem
+                    onSelect={() => {
+                      void navigate(accountEdit);
+                    }}
+                  >
+                    {t("account.edit")}
+                  </MenuItem>
+                )}
                 <MenuItem
                   onSelect={() => {
                     void navigate({

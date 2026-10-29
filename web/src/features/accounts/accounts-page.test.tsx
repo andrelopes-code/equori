@@ -183,3 +183,17 @@ describe("AccountsPage", () => {
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });
 });
+
+describe("AccountsPage on a phone (ADR 027, S6)", () => {
+  it("offers no new account and no strip of desktop-only tabs", async () => {
+    await renderApp("/accounts", { fetch: api(), width: 390 });
+    await screen.findByRole("heading", { level: 1 });
+
+    expect(
+      screen.queryByRole("button", { name: catalogEn["balanceSheet.new"] }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("tablist", { name: catalogEn["nav.accounts"] }),
+    ).toBeNull();
+  });
+});

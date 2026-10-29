@@ -18,6 +18,7 @@ import styles from "@/features/accounts/accounts-header.module.css";
 import { connectionsListQuery } from "@/features/accounts/api";
 import { useT } from "@/i18n/i18n-provider";
 import { HeaderProgress } from "@/ui/header-progress";
+import { useServed } from "@/ui/use-served";
 
 export type AccountsTab = "accounts" | "institutions" | "links";
 
@@ -54,6 +55,11 @@ export function AccountsHeader({
   );
   // CP-09: the strip moves at once; the next tab's page mounts after that frame is painted.
   const [chosen, setChosen] = useState<AccountsTab | null>(null);
+  const served = useServed();
+
+  // Below 600 px the institutions and the links are desktop-only (ADR 027, S6).
+  const institutions = served({ to: routes.institutions });
+  const links = served({ to: routes.links });
   return (
     <PageHeader size="lg">
       <PageHeaderTitleArea>
@@ -69,32 +75,38 @@ export function AccountsHeader({
           </PageHeaderActions>
         </PageHeaderTitleRow>
       </PageHeaderTitleArea>
-      <PageHeaderTabs>
-        <Tabs
-          value={chosen ?? current}
-          onValueChange={(value) => {
-            if (!isTab(value)) return;
-            setChosen(value);
-            requestAnimationFrame(() => {
-              setTimeout(() => {
-                void navigate({ to: routes[value] }).then(() => {
-                  setChosen(null);
-                });
-              }, 0);
-            });
-          }}
-        >
-          <TabList aria-label={t("nav.accounts")}>
-            <Tab value="accounts">{t("accounts.tab.accounts")}</Tab>
-            <Tab value="institutions">{t("accounts.tab.institutions")}</Tab>
-            <Tab value="links">
-              {pending > 0
-                ? t("accounts.tab.linksPending", { count: pending })
-                : t("accounts.tab.links")}
-            </Tab>
-          </TabList>
-        </Tabs>
-      </PageHeaderTabs>
+      {(institutions || links) && (
+        <PageHeaderTabs>
+          <Tabs
+            value={chosen ?? current}
+            onValueChange={(value) => {
+              if (!isTab(value)) return;
+              setChosen(value);
+              requestAnimationFrame(() => {
+                setTimeout(() => {
+                  void navigate({ to: routes[value] }).then(() => {
+                    setChosen(null);
+                  });
+                }, 0);
+              });
+            }}
+          >
+            <TabList aria-label={t("nav.accounts")}>
+              <Tab value="accounts">{t("accounts.tab.accounts")}</Tab>
+              {institutions && (
+                <Tab value="institutions">{t("accounts.tab.institutions")}</Tab>
+              )}
+              {links && (
+                <Tab value="links">
+                  {pending > 0
+                    ? t("accounts.tab.linksPending", { count: pending })
+                    : t("accounts.tab.links")}
+                </Tab>
+              )}
+            </TabList>
+          </Tabs>
+        </PageHeaderTabs>
+      )}
       <HeaderProgress loading={refreshing} delay={0} />
     </PageHeader>
   );

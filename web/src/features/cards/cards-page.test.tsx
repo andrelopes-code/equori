@@ -147,3 +147,14 @@ describe("CardsPage", () => {
     ).toBeInTheDocument();
   });
 });
+
+describe("CardsPage on a phone (ADR 027, S6)", () => {
+  it("offers no new card", async () => {
+    await renderApp("/cards", { fetch: api(), width: 390 });
+    await screen.findByRole("heading", { level: 1 });
+
+    expect(
+      screen.queryByRole("button", { name: catalogEn["cards.new"] }),
+    ).toBeNull();
+  });
+});
