@@ -94,11 +94,14 @@ describe("Reconciliation", () => {
         name: catalogEn["reconciliation.submit"],
       }),
     );
-    expect(
-      await screen.findByText(
-        words("reconciliation.result.yield", { amount: "R$83.41" }),
-      ),
-    ).toBeInTheDocument();
+    const result = await screen.findByText(
+      words("reconciliation.result.yield", { amount: "R$83.41" }),
+    );
+    // A closed difference reads as a success; an open one as a warning.
+    expect(result.closest('[data-ui="alert"]')).toHaveAttribute(
+      "data-tone",
+      "success",
+    );
     expect(bodies).toEqual([
       { date: "2026-10-17", amount: money(1008341), source: "manual" },
     ]);
@@ -282,6 +285,9 @@ describe("Reconciliation", () => {
     expect(
       (await within(table).findAllByText("09/01/2026")).length,
     ).toBeGreaterThan(0);
+    const rows = within(table).getAllByRole("row");
+    expect(rows[1]).toHaveTextContent(catalogEn["reconciliation.matched"]);
+    expect(rows[2]).toHaveTextContent(catalogEn["reconciliation.unmatched"]);
   });
 
   it("lists the entries no institution line confirmed", async () => {

@@ -1,31 +1,9 @@
-import {
-  Alert,
-  AlertActions,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
-} from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import { Card, CardBody } from "@slotted/react/card";
 import { Inline } from "@slotted/react/inline";
-import { Link } from "@slotted/react/link";
 import { Stack } from "@slotted/react/stack";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableColumnHeader,
-  TableContent,
-  TableEmpty,
-  TableHead,
-  TableLoader,
-  TableRow,
-  TableRowHeader,
-} from "@slotted/react/table";
-import { Tag } from "@slotted/react/tag";
 import { Heading, Text } from "@slotted/react/typography";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -33,37 +11,24 @@ import { useApi } from "@/api/api-context";
 import { ProblemError, errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { AssertionDialog } from "@/features/accounts/assertion-dialog";
+import { AssertionHistory } from "@/features/accounts/assertion-history";
+import { AssertionOutcomeAlert } from "@/features/accounts/assertion-outcome-alert";
 import { assertionOutcome } from "@/features/accounts/assertion-result";
 import type { AssertionOutcome } from "@/features/accounts/assertion-result";
 import type { AccountSearch } from "@/features/accounts/account-search";
+import { OpenDifferenceAlert } from "@/features/accounts/open-difference-alert";
+import type { Resolution } from "@/features/accounts/open-difference-alert";
+import { UnconfirmedTable } from "@/features/accounts/unconfirmed-table";
 import {
-  assertionsQuery,
   reconciliationQuery,
-  unconfirmedQuery,
   useResolveAssertion,
 } from "@/features/accounts/api";
-import type { MessageKey } from "@/i18n/catalog.en";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { routeTo } from "@/ui/route-to";
 import { Presence } from "@/ui/presence";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
-
-const sourceLabel: Record<"manual" | "import" | "aggregator", MessageKey> = {
-  manual: "reconciliation.source.manual",
-  import: "reconciliation.source.import",
-  aggregator: "reconciliation.source.aggregator",
-};
-
-const outcomeLabel: Record<AssertionOutcome["kind"], MessageKey> = {
-  reconciled: "reconciliation.result.reconciled",
-  yield: "reconciliation.result.yield",
-  adjustment: "reconciliation.result.adjustment",
-  added: "reconciliation.result.added",
-  open: "reconciliation.result.open",
-};
 
 // F6: the institution's balance against the ledger's, the difference that waits and the two ways
 // to close it, the balances recorded so far, and the entries no institution line confirmed.
@@ -82,8 +47,6 @@ export function ReconciliationTab({
   const api = useApi();
   const navigate = useNavigate();
   const status = useQuery(reconciliationQuery(api, account.id));
-  const history = useInfiniteQuery(assertionsQuery(api, account.id));
-  const unconfirmed = useQuery(unconfirmedQuery(api, account.id));
   const resolve = useResolveAssertion();
   const [outcome, setOutcome] = useState<AssertionOutcome | null>(null);
   const [remains, setRemains] = useState<string | null>(null);
@@ -104,9 +67,7 @@ export function ReconciliationTab({
     });
   };
 
-  const settle = (
-    resolution: "adjustment" | "yield" | "transactions_added",
-  ) => {
+  const settle = (resolution: Resolution) => {
     if (open === undefined) return;
     setRemains(null);
     resolve
@@ -132,8 +93,6 @@ export function ReconciliationTab({
         setRemains(errorText(caught, t));
       });
   };
-
-  const assertions = (history.data?.pages ?? []).flatMap((page) => page.items);
 
   return (
     <Stack gap={8}>
@@ -164,223 +123,25 @@ export function ReconciliationTab({
               </Button>
             </Inline>
             {outcome !== null && (
-              <Alert
-                tone={outcome.kind === "open" ? "warning" : "success"}
-                live="polite"
-              >
-                <AlertContent>
-                  <AlertDescription>
-                    {t(outcomeLabel[outcome.kind], {
-                      amount: money(outcome.difference),
-                    })}
-                  </AlertDescription>
-                </AlertContent>
-                {outcome.transactionId !== undefined && (
-                  <AlertActions>
-                    <Link
-                      render={routeTo({
-                        to: "/transactions/$id",
-                        params: { id: outcome.transactionId },
-                      })}
-                    >
-                      {t("reconciliation.viewTransaction")}
-                    </Link>
-                  </AlertActions>
-                )}
-              </Alert>
+              <AssertionOutcomeAlert outcome={outcome} scale={scale} />
             )}
             {open !== undefined && (
-              <Alert tone="warning">
-                <AlertContent>
-                  <AlertTitle>
-                    {t("reconciliation.open", {
-                      amount: money(open.difference),
-                      date: formatDate(open.date, locale),
-                    })}
-                  </AlertTitle>
-                  <AlertDescription>
-                    {remains ?? t("reconciliation.openHint")}
-                  </AlertDescription>
-                </AlertContent>
-                <AlertActions>
-                  <Button
-                    loading={
-                      resolve.isPending &&
-                      resolve.variables.resolution === "adjustment"
-                    }
-                    onClick={() => {
-                      settle("adjustment");
-                    }}
-                  >
-                    {t("reconciliation.resolve.adjustment", {
-                      amount: money(open.difference),
-                    })}
-                  </Button>
-                  {open.difference.amount > 0 && (
-                    <Button
-                      variant="ghost"
-                      loading={
-                        resolve.isPending &&
-                        resolve.variables.resolution === "yield"
-                      }
-                      onClick={() => {
-                        settle("yield");
-                      }}
-                    >
-                      {t("reconciliation.resolve.yield", {
-                        amount: money(open.difference),
-                      })}
-                    </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    loading={
-                      resolve.isPending &&
-                      resolve.variables.resolution === "transactions_added"
-                    }
-                    onClick={() => {
-                      settle("transactions_added");
-                    }}
-                  >
-                    {t("reconciliation.resolve.added")}
-                  </Button>
-                </AlertActions>
-              </Alert>
+              <OpenDifferenceAlert
+                open={open}
+                remains={remains}
+                pending={
+                  resolve.isPending ? resolve.variables.resolution : undefined
+                }
+                scale={scale}
+                onSettle={settle}
+              />
             )}
           </Stack>
         </CardBody>
       </Card>
 
-      <Stack gap={3}>
-        <Table columns={5} variant="framed">
-          <TableContent>
-            <TableCaption>{t("reconciliation.history")}</TableCaption>
-            <TableHead>
-              <TableRow>
-                <TableColumnHeader>
-                  {t("reconciliation.date")}
-                </TableColumnHeader>
-                <TableColumnHeader numeric>
-                  {t("reconciliation.reported")}
-                </TableColumnHeader>
-                <TableColumnHeader>
-                  {t("reconciliation.source")}
-                </TableColumnHeader>
-                <TableColumnHeader>
-                  {t("reconciliation.recordedAt")}
-                </TableColumnHeader>
-                <TableColumnHeader>
-                  {t("reconciliation.state")}
-                </TableColumnHeader>
-              </TableRow>
-            </TableHead>
-            {history.isPending ? (
-              <TableLoader skeletonRows={3} />
-            ) : (
-              <TableBody>
-                {assertions.length === 0 && (
-                  <TableEmpty>{t("reconciliation.historyEmpty")}</TableEmpty>
-                )}
-                {assertions.map((a) => (
-                  <TableRow key={a.id} value={a.id}>
-                    <TableRowHeader>
-                      {formatDate(a.date, locale)}
-                    </TableRowHeader>
-                    <TableCell numeric>{money(a.amount)}</TableCell>
-                    <TableCell>{t(sourceLabel[a.source])}</TableCell>
-                    <TableCell>
-                      {formatDate(a.recorded_at.slice(0, 10), locale)}
-                    </TableCell>
-                    <TableCell>
-                      {a.reconciled ? (
-                        <Tag size="sm" tone="success">
-                          {t("reconciliation.matched")}
-                        </Tag>
-                      ) : (
-                        <Tag size="sm" tone="warning">
-                          {t("reconciliation.unmatched")}
-                        </Tag>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            )}
-          </TableContent>
-        </Table>
-
-        {history.hasNextPage && (
-          <div>
-            <Button
-              variant="outline"
-              tone="secondary"
-              loading={history.isFetchingNextPage}
-              onClick={() => void history.fetchNextPage()}
-            >
-              {t("reconciliation.more")}
-            </Button>
-          </div>
-        )}
-      </Stack>
-
-      <Stack gap={3}>
-        <Table columns={3} variant="framed">
-          <TableContent>
-            <TableCaption>{t("reconciliation.unconfirmed")}</TableCaption>
-            <TableHead>
-              <TableRow>
-                <TableColumnHeader>
-                  {t("reconciliation.date")}
-                </TableColumnHeader>
-                <TableColumnHeader>{t("ledger.movement")}</TableColumnHeader>
-                <TableColumnHeader numeric>
-                  {t("ledger.amount")}
-                </TableColumnHeader>
-              </TableRow>
-            </TableHead>
-            {unconfirmed.isPending ? (
-              <TableLoader skeletonRows={2} />
-            ) : (
-              <TableBody>
-                {(unconfirmed.data ?? []).length === 0 && (
-                  <TableEmpty>
-                    {t("reconciliation.unconfirmedEmpty")}
-                  </TableEmpty>
-                )}
-                {(unconfirmed.data ?? []).map((entry) => (
-                  <TableRow
-                    key={entry.transaction_id}
-                    value={entry.transaction_id}
-                  >
-                    <TableRowHeader>
-                      {formatDate(entry.date, locale)}
-                    </TableRowHeader>
-                    <TableCell>
-                      <Link
-                        variant="neutral"
-                        underline="hover"
-                        render={routeTo({
-                          to: "/transactions/$id",
-                          params: { id: entry.transaction_id },
-                        })}
-                      >
-                        {entry.description === ""
-                          ? t("ledger.untitled")
-                          : entry.description}
-                      </Link>
-                    </TableCell>
-                    <TableCell numeric>{money(entry.amount)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            )}
-          </TableContent>
-        </Table>
-
-        <Text size="sm" tone="muted">
-          {t("reconciliation.unconfirmedNote")}
-        </Text>
-      </Stack>
+      <AssertionHistory accountId={account.id} scale={scale} />
+      <UnconfirmedTable accountId={account.id} scale={scale} />
       <Presence value={search.assert === true ? true : undefined}>
         {() => (
           <AssertionDialog
