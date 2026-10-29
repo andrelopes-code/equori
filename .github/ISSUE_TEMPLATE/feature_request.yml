@@ -1,0 +1,22 @@
+name: Feature request
+description: A capability equori does not offer.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: Need
+      description: The task that cannot be done today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+    validations:
+      required: true
+  - type: input
+    id: region
+    attributes:
+      label: Region
+      description: The country or language the request depends on, if any (docs/contributing/regions.md).

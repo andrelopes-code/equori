@@ -1,0 +1,40 @@
+name: Bug report
+description: A behavior of equori that differs from its documentation or from the expected result.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Security problems go through a private report (SECURITY.md), never through an issue.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `equori version`.
+    validations:
+      required: true
+  - type: dropdown
+    id: form
+    attributes:
+      label: Installation
+      options: [Container, Archive, Homebrew, Windows installer, Built from source]
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: Include the HTTP status and problem `code` when the API returns an error. Remove personal financial data.
+    validations:
+      required: true
