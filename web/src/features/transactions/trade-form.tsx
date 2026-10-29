@@ -1,5 +1,3 @@
-import { parseISODate, toISODate } from "@slotted/core/date";
-import { DatePicker } from "@slotted/react/date-picker";
 import {
   Field,
   FieldDescription,
@@ -21,7 +19,7 @@ import styles from "@/features/transactions/transaction-form.module.css";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { MASK } from "@/privacy/mask";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { DateShortcuts } from "@/ui/date-shortcuts";
+import { DateInput } from "@/ui/date-input";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
 import { MoneyInput } from "@/ui/money-input";
@@ -100,23 +98,13 @@ export function TradeForm({
 
       <Field invalid={errors.date !== undefined}>
         <FieldLabel>{t("entry.date")}</FieldLabel>
-        <div className={styles.date}>
-          <DatePicker
-            name="date"
-            value={parseISODate(draft.date)}
-            onValueChange={(value) => {
-              if (value !== null && !Array.isArray(value) && "year" in value) {
-                set({ date: toISODate(value) });
-              }
-            }}
-          />
-          <DateShortcuts
-            value={draft.date}
-            onChange={(date) => {
-              set({ date });
-            }}
-          />
-        </div>
+        <DateInput
+          name="date"
+          value={draft.date}
+          onChange={(date) => {
+            set({ date });
+          }}
+        />
         {errors.date !== undefined && <FieldError>{errors.date}</FieldError>}
       </Field>
 

@@ -1,5 +1,3 @@
-import { parseISODate, toISODate } from "@slotted/core/date";
-import { DatePicker } from "@slotted/react/date-picker";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
@@ -14,7 +12,7 @@ import type { useIncomeEntry } from "@/features/transactions/use-income-entry";
 import styles from "@/features/transactions/transaction-form.module.css";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
-import { DateShortcuts } from "@/ui/date-shortcuts";
+import { DateInput } from "@/ui/date-input";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
 import { MoneyInput } from "@/ui/money-input";
@@ -93,23 +91,13 @@ export function IncomeForm({
 
       <Field invalid={errors.date !== undefined}>
         <FieldLabel>{t("entry.date")}</FieldLabel>
-        <div className={styles.date}>
-          <DatePicker
-            name="date"
-            value={parseISODate(draft.date)}
-            onValueChange={(value) => {
-              if (value !== null && !Array.isArray(value) && "year" in value) {
-                set({ date: toISODate(value) });
-              }
-            }}
-          />
-          <DateShortcuts
-            value={draft.date}
-            onChange={(date) => {
-              set({ date });
-            }}
-          />
-        </div>
+        <DateInput
+          name="date"
+          value={draft.date}
+          onChange={(date) => {
+            set({ date });
+          }}
+        />
         {errors.date !== undefined && <FieldError>{errors.date}</FieldError>}
       </Field>
 

@@ -1,6 +1,4 @@
-import { parseISODate, toISODate } from "@slotted/core/date";
 import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
-import { DatePicker } from "@slotted/react/date-picker";
 import {
   Field,
   FieldDescription,
@@ -25,7 +23,7 @@ import { formatDate, formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { ChoiceSelect } from "@/ui/choice-select";
-import { DateShortcuts } from "@/ui/date-shortcuts";
+import { DateInput } from "@/ui/date-input";
 import { MoneyInput } from "@/ui/money-input";
 import type { components } from "@/api/schema.gen";
 
@@ -107,23 +105,13 @@ export function ForeignForm({
 
       <Field invalid={errors.date !== undefined}>
         <FieldLabel>{t("entry.date")}</FieldLabel>
-        <div className={formStyles.date}>
-          <DatePicker
-            name="date"
-            value={parseISODate(draft.date)}
-            onValueChange={(value) => {
-              if (value !== null && !Array.isArray(value) && "year" in value) {
-                set({ date: toISODate(value), rate: null, statement: null });
-              }
-            }}
-          />
-          <DateShortcuts
-            value={draft.date}
-            onChange={(date) => {
-              set({ date, rate: null, statement: null });
-            }}
-          />
-        </div>
+        <DateInput
+          name="date"
+          value={draft.date}
+          onChange={(date) => {
+            set({ date, rate: null, statement: null });
+          }}
+        />
         {errors.date !== undefined && <FieldError>{errors.date}</FieldError>}
       </Field>
 

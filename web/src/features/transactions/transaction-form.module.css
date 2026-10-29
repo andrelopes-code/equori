@@ -11,19 +11,6 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  /* The date picker and the day shortcuts share a line while it holds both. */
-  .date {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--slotted-space-4);
-  }
-
-  .date > :first-child {
-    /* The picker keeps the width of a written date; no token holds a field measure. */
-    flex: 1 1 12rem;
-  }
-
   @media (max-width: 599px) {
     .pair {
       grid-template-columns: minmax(0, 1fr);

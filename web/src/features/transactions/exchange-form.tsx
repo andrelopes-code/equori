@@ -1,5 +1,3 @@
-import { parseISODate, toISODate } from "@slotted/core/date";
-import { DatePicker } from "@slotted/react/date-picker";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
@@ -16,7 +14,7 @@ import type { useExchangeEntry } from "@/features/transactions/use-exchange-entr
 import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { DateShortcuts } from "@/ui/date-shortcuts";
+import { DateInput } from "@/ui/date-input";
 import { MoneyInput } from "@/ui/money-input";
 
 // Families read: field, text-field, date-picker, stat-card. The accounts and the amounts are the
@@ -113,23 +111,13 @@ export function ExchangeForm({
 
       <Field invalid={errors.date !== undefined}>
         <FieldLabel>{t("entry.date")}</FieldLabel>
-        <div className={formStyles.date}>
-          <DatePicker
-            name="date"
-            value={parseISODate(draft.date)}
-            onValueChange={(value) => {
-              if (value !== null && !Array.isArray(value) && "year" in value) {
-                set({ date: toISODate(value) });
-              }
-            }}
-          />
-          <DateShortcuts
-            value={draft.date}
-            onChange={(date) => {
-              set({ date });
-            }}
-          />
-        </div>
+        <DateInput
+          name="date"
+          value={draft.date}
+          onChange={(date) => {
+            set({ date });
+          }}
+        />
         {errors.date !== undefined && <FieldError>{errors.date}</FieldError>}
       </Field>
 

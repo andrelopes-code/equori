@@ -259,8 +259,12 @@ describe("PlanningPage agenda", () => {
       0,
       catalogEn["occurrence.move"],
     );
+    // The shortcuts sit in the calendar's presets column, portalled out of the dialog.
     await user.click(
-      within(dialog).getByRole("button", { name: catalogEn["day.today"] }),
+      within(dialog).getByRole("button", { name: /^(choose|change) date/i }),
+    );
+    await user.click(
+      await screen.findByRole("button", { name: catalogEn["day.today"] }),
     );
     await user.click(
       within(dialog).getByRole("button", {
