@@ -46,7 +46,7 @@ describe("Budget form", () => {
     });
     await fill("Fuel", "40000");
     await userEvent.click(
-      screen.getByRole("switch", { name: catalogEn["budget.rollover"] }),
+      screen.getByRole("checkbox", { name: catalogEn["budget.rollover"] }),
     );
     await userEvent.click(
       screen.getByRole("button", { name: catalogEn["budget.create"] }),

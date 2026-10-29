@@ -4,8 +4,8 @@ import {
   ActionBarActions,
 } from "@slotted/react/action-bar";
 import { Button } from "@slotted/react/button";
+import { Checkbox } from "@slotted/react/checkbox";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
-import { Grid } from "@slotted/react/grid";
 import { InlineMessage } from "@slotted/react/inline-message";
 import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import {
@@ -16,8 +16,6 @@ import {
   PageHeaderTitleArea,
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
-import { Stack } from "@slotted/react/stack";
-import { Switch } from "@slotted/react/switch";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
@@ -29,6 +27,8 @@ import { budgetsQuery, useCreateBudget } from "@/features/planning/api";
 import { settingsQuery, useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import widths from "@/ui/field-width.module.css";
+import { FormLayout } from "@/ui/form-layout";
 import { MoneyInput } from "@/ui/money-input";
 import { MonthControl } from "@/ui/month-control";
 
@@ -141,10 +141,11 @@ export function BudgetFormPage() {
         </PageHeaderTitleArea>
       </PageHeader>
       <PageBody>
-        <Stack gap={6}>
+        <FormLayout>
           {summary !== null && (
             <InlineMessage tone="danger">{summary}</InlineMessage>
           )}
+
           <Field invalid={errors.category_id !== undefined} required>
             <FieldLabel>{t("budget.category")}</FieldLabel>
             <CategoryPicker
@@ -158,42 +159,45 @@ export function BudgetFormPage() {
               <FieldError>{errors.category_id}</FieldError>
             )}
           </Field>
-          <Grid columns={2} gap={4}>
-            <Field invalid={errors.amount !== undefined} required>
-              <FieldLabel>{t("budget.amount")}</FieldLabel>
-              {currency !== undefined && scale !== null && (
-                <MoneyInput
-                  value={amount}
-                  onChange={setAmount}
-                  currency={currency}
-                  scale={scale(currency)}
-                  sign="neutral"
-                />
-              )}
-              {errors.amount !== undefined && (
-                <FieldError>{errors.amount}</FieldError>
-              )}
-            </Field>
-            <Field invalid={errors.effective_from !== undefined} required>
-              <FieldLabel>{t("budget.firstMonth")}</FieldLabel>
-              <MonthControl
-                label={t("budget.firstMonth")}
-                value={from}
-                onChange={setFrom}
+
+          <Field invalid={errors.amount !== undefined} required>
+            <FieldLabel>{t("budget.amount")}</FieldLabel>
+            {currency !== undefined && scale !== null && (
+              <MoneyInput
+                size="field"
+                className={widths.medium}
+                value={amount}
+                onChange={setAmount}
+                currency={currency}
+                scale={scale(currency)}
+                sign="neutral"
               />
-              {errors.effective_from !== undefined && (
-                <FieldError>{errors.effective_from}</FieldError>
-              )}
-            </Field>
-          </Grid>
-          <Switch
+            )}
+            {errors.amount !== undefined && (
+              <FieldError>{errors.amount}</FieldError>
+            )}
+          </Field>
+
+          <Field invalid={errors.effective_from !== undefined} required>
+            <FieldLabel>{t("budget.firstMonth")}</FieldLabel>
+            <MonthControl
+              label={t("budget.firstMonth")}
+              value={from}
+              onChange={setFrom}
+            />
+            {errors.effective_from !== undefined && (
+              <FieldError>{errors.effective_from}</FieldError>
+            )}
+          </Field>
+
+          <Checkbox
             checked={rollover}
             onCheckedChange={setRollover}
             description={t("budget.rolloverHint")}
           >
             {t("budget.rollover")}
-          </Switch>
-        </Stack>
+          </Checkbox>
+        </FormLayout>
       </PageBody>
     </Page>
   );

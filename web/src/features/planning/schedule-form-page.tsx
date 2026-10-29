@@ -16,7 +16,6 @@ import {
   FieldError,
   FieldLabel,
 } from "@slotted/react/field";
-import { Grid } from "@slotted/react/grid";
 import { InlineMessage } from "@slotted/react/inline-message";
 import { NumberField } from "@slotted/react/number-field";
 import { Page, PageBody, PageFooter } from "@slotted/react/page";
@@ -49,6 +48,9 @@ import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { AppLink } from "@/ui/app-link";
 import { ChoiceSelect } from "@/ui/choice-select";
+import widths from "@/ui/field-width.module.css";
+import { FormLayout } from "@/ui/form-layout";
+import { FormSection } from "@/ui/form-section";
 import { MoneyInput } from "@/ui/money-input";
 
 type ScheduleKind = components["schemas"]["ScheduleKind"];
@@ -194,70 +196,76 @@ export function ScheduleFormPage() {
         </PageHeaderTitleArea>
       </PageHeader>
       <PageBody>
-        <Stack gap={6}>
+        <FormLayout>
           {summary !== null && (
             <InlineMessage tone="danger">{summary}</InlineMessage>
           )}
-          <Grid columns={2} gap={4}>
-            <Field required>
-              <FieldLabel>{t("schedule.kind")}</FieldLabel>
-              <ChoiceSelect
-                label={t("schedule.kind")}
-                multiple={false}
-                value={kind}
-                choices={kinds.map((k) => ({
-                  value: k,
-                  label: t(kindLabel[k]),
-                }))}
-                onChange={(next) => {
-                  const chosen = kinds.find((k) => k === next);
-                  if (chosen === undefined) return;
-                  if (takesCategory(chosen) !== category)
-                    setCounterpartID(null);
-                  setKind(chosen);
-                }}
-              />
-            </Field>
-            <Field invalid={errors.description !== undefined} required>
-              <FieldLabel>{t("schedule.description")}</FieldLabel>
-              <TextField
-                name="description"
-                maxLength={200}
-                value={description}
-                onChange={(event) => {
-                  setDescription(event.target.value);
-                }}
-              />
-              {errors.description !== undefined && (
-                <FieldError>{errors.description}</FieldError>
-              )}
-            </Field>
-            <Field invalid={errors.amount !== undefined} required>
-              <FieldLabel>{t("schedule.amount")}</FieldLabel>
-              {currency !== undefined && scale !== null && (
-                <MoneyInput
-                  value={amount}
-                  onChange={setAmount}
-                  currency={currency}
-                  scale={scale(currency)}
-                  sign={income ? "income" : "expense"}
-                />
-              )}
-              {errors.amount !== undefined && (
-                <FieldError>{errors.amount}</FieldError>
-              )}
-            </Field>
-            {category && (
-              <Field>
-                <FieldLabel>{t("schedule.payee")}</FieldLabel>
-                <PayeeField
-                  payees={payees.data ?? []}
-                  value={payeeID}
-                  onChange={setPayeeID}
-                />
-              </Field>
+
+          <Field required>
+            <FieldLabel>{t("schedule.kind")}</FieldLabel>
+            <ChoiceSelect
+              className={widths.medium}
+              label={t("schedule.kind")}
+              multiple={false}
+              value={kind}
+              choices={kinds.map((k) => ({
+                value: k,
+                label: t(kindLabel[k]),
+              }))}
+              onChange={(next) => {
+                const chosen = kinds.find((k) => k === next);
+                if (chosen === undefined) return;
+                if (takesCategory(chosen) !== category) setCounterpartID(null);
+                setKind(chosen);
+              }}
+            />
+          </Field>
+
+          <Field invalid={errors.description !== undefined} required>
+            <FieldLabel>{t("schedule.description")}</FieldLabel>
+            <TextField
+              name="description"
+              maxLength={200}
+              value={description}
+              onChange={(event) => {
+                setDescription(event.target.value);
+              }}
+            />
+            {errors.description !== undefined && (
+              <FieldError>{errors.description}</FieldError>
             )}
-          </Grid>
+          </Field>
+
+          <Field invalid={errors.amount !== undefined} required>
+            <FieldLabel>{t("schedule.amount")}</FieldLabel>
+            {currency !== undefined && scale !== null && (
+              <MoneyInput
+                size="field"
+                className={widths.medium}
+                value={amount}
+                onChange={setAmount}
+                currency={currency}
+                scale={scale(currency)}
+                sign={income ? "income" : "expense"}
+              />
+            )}
+
+            {errors.amount !== undefined && (
+              <FieldError>{errors.amount}</FieldError>
+            )}
+          </Field>
+
+          {category && (
+            <Field>
+              <FieldLabel>{t("schedule.payee")}</FieldLabel>
+              <PayeeField
+                payees={payees.data ?? []}
+                value={payeeID}
+                onChange={setPayeeID}
+              />
+            </Field>
+          )}
+
           {currency !== undefined && scale !== null && (
             <Field invalid={errors.account_id !== undefined} required>
               <FieldLabel>{t("schedule.account")}</FieldLabel>
@@ -282,6 +290,7 @@ export function ScheduleFormPage() {
               )}
             </Field>
           )}
+
           <Field invalid={errors.counterpart_id !== undefined} required>
             <FieldLabel>
               {t(category ? "schedule.category" : "schedule.to")}
@@ -315,20 +324,22 @@ export function ScheduleFormPage() {
                 />
               )
             )}
+
             {errors.counterpart_id !== undefined && (
               <FieldError>{errors.counterpart_id}</FieldError>
             )}
           </Field>
-          <Field>
-            <FieldLabel>{t("schedule.recurrence")}</FieldLabel>
+
+          <FormSection legend={t("schedule.recurrence")}>
             <RecurrenceFields value={recurrence} onChange={setRecurrence} />
-          </Field>
+          </FormSection>
+
           <Collapsible>
             <CollapsibleHeader>
               <CollapsibleTrigger>{t("schedule.advanced")}</CollapsibleTrigger>
             </CollapsibleHeader>
             <CollapsiblePanel>
-              <Grid columns={3} gap={4}>
+              <Stack gap={8}>
                 <Field>
                   <FieldLabel>{t("schedule.calendar")}</FieldLabel>
                   <ChoiceSelect
@@ -361,9 +372,11 @@ export function ScheduleFormPage() {
                     </FieldDescription>
                   )}
                 </Field>
+
                 <Field>
                   <FieldLabel>{t("schedule.tolerance")}</FieldLabel>
                   <NumberField
+                    className={widths.short}
                     name="match_tolerance"
                     value={toleranceBP / 100}
                     min={0}
@@ -377,9 +390,11 @@ export function ScheduleFormPage() {
                     {t("schedule.toleranceHint")}
                   </FieldDescription>
                 </Field>
+
                 <Field>
                   <FieldLabel>{t("schedule.grace")}</FieldLabel>
                   <NumberField
+                    className={widths.short}
                     name="grace_days"
                     value={graceDays}
                     min={0}
@@ -390,10 +405,10 @@ export function ScheduleFormPage() {
                   />
                   <FieldDescription>{t("schedule.graceHint")}</FieldDescription>
                 </Field>
-              </Grid>
+              </Stack>
             </CollapsiblePanel>
           </Collapsible>
-        </Stack>
+        </FormLayout>
       </PageBody>
     </Page>
   );

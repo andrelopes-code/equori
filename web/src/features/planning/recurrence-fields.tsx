@@ -1,9 +1,14 @@
 import { Field, FieldLabel } from "@slotted/react/field";
-import { Grid } from "@slotted/react/grid";
+import {
+  FieldGroup,
+  FieldGroupContent,
+  FieldGroupDescription,
+  FieldGroupLegend,
+} from "@slotted/react/field-group";
+import { Inline } from "@slotted/react/inline";
 import { NumberField } from "@slotted/react/number-field";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { Stack } from "@slotted/react/stack";
-import { Text } from "@slotted/react/typography";
 import type { ReactNode } from "react";
 
 import type { components } from "@/api/schema.gen";
@@ -15,6 +20,8 @@ import {
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { DateInput } from "@/ui/date-input";
+import widths from "@/ui/field-width.module.css";
+import { FormRow } from "@/ui/form-row";
 
 type Recurrence = components["schemas"]["Recurrence"];
 type Mode = "day" | "weekday" | "business";
@@ -81,7 +88,7 @@ export function RecurrenceFields({
   const mode = modeOf(value);
   const end = endOf(value);
   const field = (label: string, control: ReactNode) => (
-    <Field>
+    <Field className={widths.medium}>
       <FieldLabel>{label}</FieldLabel>
       {control}
     </Field>
@@ -131,9 +138,9 @@ export function RecurrenceFields({
     />,
   );
   return (
-    <Stack gap={4}>
-      <Grid columns={2} gap={4}>
-        <Field>
+    <Stack gap={8}>
+      <FormRow>
+        <Field className={widths.medium}>
           <FieldLabel>{t("recurrence.frequency")}</FieldLabel>
           <ChoiceSelect
             label={t("recurrence.frequency")}
@@ -158,7 +165,8 @@ export function RecurrenceFields({
             }}
           />
         </Field>
-        <Field>
+
+        <Field className={widths.short}>
           <FieldLabel>{t("recurrence.interval")}</FieldLabel>
           <NumberField
             name="interval"
@@ -170,133 +178,154 @@ export function RecurrenceFields({
             }}
           />
         </Field>
-      </Grid>
+      </FormRow>
+
       {value.frequency === "monthly" && (
-        <Stack gap={3}>
-          <SegmentedControl
-            aria-label={t("recurrence.mode")}
-            value={mode}
-            onValueChange={(next) => {
-              const base = withoutDay(value);
-              if (next === "day") onChange({ ...base, day_of_month: 1 });
-              if (next === "weekday")
-                onChange({ ...base, weekday: "monday", ordinal: 1 });
-              if (next === "business")
-                onChange({ ...base, business_day_ordinal: 1 });
-            }}
-          >
-            <Segment value="day">{t("recurrence.mode.day")}</Segment>
-            <Segment value="weekday">{t("recurrence.mode.weekday")}</Segment>
-            <Segment value="business">{t("recurrence.mode.business")}</Segment>
-          </SegmentedControl>
-          <Grid columns={2} gap={4}>
-            {mode === "day" && day("day_of_month", 31)}
-            {mode === "business" && day("business_day_ordinal", 23)}
-            {mode === "weekday" && (
-              <>
-                {field(
-                  t("recurrence.ordinal"),
-                  <ChoiceSelect
-                    label={t("recurrence.ordinal")}
-                    multiple={false}
-                    value={String(value.ordinal ?? 1)}
-                    choices={["1", "2", "3", "4", "5", last].map((n) => ({
-                      value: n,
-                      label: t(
-                        n === last
-                          ? "recurrence.ordinal.last"
-                          : `recurrence.ordinal.${n as "1"}`,
-                      ),
-                    }))}
-                    onChange={(next) => {
-                      if (typeof next === "string")
-                        onChange({ ...value, ordinal: Number(next) });
-                    }}
-                  />,
-                )}
-                {weekdayChoice}
-              </>
-            )}
-          </Grid>
-        </Stack>
+        <FieldGroup>
+          <FieldGroupLegend>{t("recurrence.mode")}</FieldGroupLegend>
+          <FieldGroupContent>
+            <Inline>
+              <SegmentedControl
+                aria-label={t("recurrence.mode")}
+                value={mode}
+                onValueChange={(next) => {
+                  const base = withoutDay(value);
+                  if (next === "day") onChange({ ...base, day_of_month: 1 });
+                  if (next === "weekday")
+                    onChange({ ...base, weekday: "monday", ordinal: 1 });
+                  if (next === "business")
+                    onChange({ ...base, business_day_ordinal: 1 });
+                }}
+              >
+                <Segment value="day">{t("recurrence.mode.day")}</Segment>
+                <Segment value="weekday">
+                  {t("recurrence.mode.weekday")}
+                </Segment>
+                <Segment value="business">
+                  {t("recurrence.mode.business")}
+                </Segment>
+              </SegmentedControl>
+            </Inline>
+          </FieldGroupContent>
+        </FieldGroup>
+      )}
+
+      {value.frequency === "monthly" &&
+        mode === "day" &&
+        day("day_of_month", 31)}
+      {value.frequency === "monthly" &&
+        mode === "business" &&
+        day("business_day_ordinal", 23)}
+      {value.frequency === "monthly" && mode === "weekday" && (
+        <FormRow>
+          {field(
+            t("recurrence.ordinal"),
+            <ChoiceSelect
+              label={t("recurrence.ordinal")}
+              multiple={false}
+              value={String(value.ordinal ?? 1)}
+              choices={["1", "2", "3", "4", "5", last].map((n) => ({
+                value: n,
+                label: t(
+                  n === last
+                    ? "recurrence.ordinal.last"
+                    : `recurrence.ordinal.${n as "1"}`,
+                ),
+              }))}
+              onChange={(next) => {
+                if (typeof next === "string")
+                  onChange({ ...value, ordinal: Number(next) });
+              }}
+            />,
+          )}
+          {weekdayChoice}
+        </FormRow>
       )}
       {value.frequency === "weekly" && weekdayChoice}
-      <Grid columns={2} gap={4}>
-        <Field>
-          <FieldLabel>{t("recurrence.adjustment")}</FieldLabel>
-          <ChoiceSelect
-            label={t("recurrence.adjustment")}
-            multiple={false}
-            value={value.adjustment}
-            choices={adjustments.map((a) => ({
-              value: a,
-              label: t(`recurrence.adjustment.${a}`),
-            }))}
-            onChange={(next) => {
-              const adjustment = adjustments.find((a) => a === next);
-              if (adjustment !== undefined) onChange({ ...value, adjustment });
-            }}
-          />
-        </Field>
-        <Field required>
-          <FieldLabel>{t("recurrence.start")}</FieldLabel>
-          <DateInput
-            name="start"
-            value={value.start}
-            shortcuts={false}
-            onChange={(start) => {
-              onChange({ ...value, start });
-            }}
-          />
-        </Field>
-      </Grid>
-      <Stack gap={3}>
-        <SegmentedControl
-          aria-label={t("recurrence.end")}
-          value={end}
-          onValueChange={(next) => {
-            const base = withoutEnd(value);
-            if (next === "never") onChange(base);
-            if (next === "until") onChange({ ...base, until: value.start });
-            if (next === "count") onChange({ ...base, count: 12 });
+
+      <Field>
+        <FieldLabel>{t("recurrence.adjustment")}</FieldLabel>
+        <ChoiceSelect
+          label={t("recurrence.adjustment")}
+          multiple={false}
+          value={value.adjustment}
+          choices={adjustments.map((a) => ({
+            value: a,
+            label: t(`recurrence.adjustment.${a}`),
+          }))}
+          onChange={(next) => {
+            const adjustment = adjustments.find((a) => a === next);
+            if (adjustment !== undefined) onChange({ ...value, adjustment });
           }}
-        >
-          <Segment value="never">{t("recurrence.end.never")}</Segment>
-          <Segment value="until">{t("recurrence.end.until")}</Segment>
-          <Segment value="count">{t("recurrence.end.count")}</Segment>
-        </SegmentedControl>
-        {value.until !== undefined && (
-          <Field>
-            <FieldLabel>{t("recurrence.untilField")}</FieldLabel>
-            <DateInput
-              name="until"
-              value={value.until}
-              min={value.start}
-              shortcuts={false}
-              onChange={(until) => {
-                onChange({ ...value, until });
-              }}
-            />
-          </Field>
-        )}
-        {value.count !== undefined && (
-          <Field>
-            <FieldLabel>{t("recurrence.countField")}</FieldLabel>
-            <NumberField
-              name="count"
-              value={value.count}
-              min={1}
-              max={10000}
+        />
+      </Field>
+
+      <Field required>
+        <FieldLabel>{t("recurrence.start")}</FieldLabel>
+        <DateInput
+          name="start"
+          value={value.start}
+          shortcuts={false}
+          onChange={(start) => {
+            onChange({ ...value, start });
+          }}
+        />
+      </Field>
+
+      <FieldGroup>
+        <FieldGroupLegend>{t("recurrence.end")}</FieldGroupLegend>
+        <FieldGroupContent>
+          <Inline>
+            <SegmentedControl
+              aria-label={t("recurrence.end")}
+              value={end}
               onValueChange={(next) => {
-                if (next !== null) onChange({ ...value, count: next });
+                const base = withoutEnd(value);
+                if (next === "never") onChange(base);
+                if (next === "until") onChange({ ...base, until: value.start });
+                if (next === "count") onChange({ ...base, count: 12 });
               }}
-            />
-          </Field>
-        )}
-      </Stack>
-      <Text size="sm" tone="muted">
-        {recurrenceWords(value, t, locale)}
-      </Text>
+            >
+              <Segment value="never">{t("recurrence.end.never")}</Segment>
+              <Segment value="until">{t("recurrence.end.until")}</Segment>
+              <Segment value="count">{t("recurrence.end.count")}</Segment>
+            </SegmentedControl>
+          </Inline>
+        </FieldGroupContent>
+        <FieldGroupDescription>
+          {recurrenceWords(value, t, locale)}
+        </FieldGroupDescription>
+      </FieldGroup>
+
+      {value.until !== undefined && (
+        <Field>
+          <FieldLabel>{t("recurrence.untilField")}</FieldLabel>
+          <DateInput
+            name="until"
+            value={value.until}
+            min={value.start}
+            shortcuts={false}
+            onChange={(until) => {
+              onChange({ ...value, until });
+            }}
+          />
+        </Field>
+      )}
+
+      {value.count !== undefined && (
+        <Field className={widths.short}>
+          <FieldLabel>{t("recurrence.countField")}</FieldLabel>
+          <NumberField
+            name="count"
+            value={value.count}
+            min={1}
+            max={10000}
+            onValueChange={(next) => {
+              if (next !== null) onChange({ ...value, count: next });
+            }}
+          />
+        </Field>
+      )}
     </Stack>
   );
 }
