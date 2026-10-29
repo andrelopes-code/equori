@@ -179,6 +179,36 @@ describe("NewTransactionPage", () => {
     });
   });
 
+  it("offers income categories first on an income", async () => {
+    await renderApp("/transactions/new", {
+      fetch: fakeApi({
+        ...sharedRoutes,
+        "GET /api/v1/accounts": () =>
+          json(200, {
+            items: [
+              ...accounts,
+              {
+                id: "99999999-9999-4999-8999-999999999999",
+                name: "Salario",
+                class: "income",
+                currency: "BRL",
+              },
+            ],
+          }),
+      }),
+    });
+    await chooseEntryKind(userEvent.setup(), catalogEn["entry.kind.income"]);
+
+    await userEvent.click(
+      await screen.findByRole("combobox", {
+        name: catalogEn["category.label"],
+      }),
+    );
+
+    const options = await screen.findAllByRole("option");
+    expect(options[0]).toHaveTextContent("Salario");
+  });
+
   it("records a transfer between two accounts", async () => {
     const sent: unknown[] = [];
     await renderApp("/transactions/new", { fetch: api(sent) });
