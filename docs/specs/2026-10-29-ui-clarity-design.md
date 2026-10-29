@@ -195,7 +195,7 @@ A ordem das telas segue o uso: transações, contas, cartões, visão geral, dep
 
 5. Aprovação: o dono delegou a aprovação das tabelas de curadoria (5.4, passo 2). Cada tabela é conferida contra as seções 5.1 a 5.3 e contra pesquisa antes do código.
 
-Tabelas de curadoria: `2026-10-29-ui-clarity-curation-transactions.md` (transações), `2026-10-29-ui-clarity-curation-accounts.md` (contas).
+Tabelas de curadoria: `2026-10-29-ui-clarity-curation-transactions.md` (transações), `2026-10-29-ui-clarity-curation-accounts.md` (contas), `2026-10-29-ui-clarity-curation-cards.md` (cartões), `2026-10-29-ui-clarity-curation-planning.md` (visão geral, planejamento, metas, categorias), `2026-10-29-ui-clarity-curation-investments.md` (investimentos, relatórios, varredura dos termos), `2026-10-29-ui-clarity-curation-settings.md` (configurações, cotações, calculadoras, captura).
 
 Camada 4 entregue: 11 páginas em `web/src/features/help/content/` (en e pt), servidas em `/help`, com o trecho regional do Brasil em "Conexões bancárias" e o guia `docs/contributing/help.md`. Camada 2 entregue como link "Como funciona esta tela" na carteira, na aba Orçamentos do planejamento, na importação de extrato e em Vínculos. A fatura e a aba de conferência de saldo receberam o link depois da divisão dos seus componentes (`7d6480b6`, `97c2b1a7`). Camada 3 entregue: o bloco "Primeiros passos" da visão geral lista conta, transações e categorias, e sai sozinho quando os três estão feitos (`overview/first-steps.ts`). Camada 5 entregue em parte: o mapa de navegação lista `/help` e `/help/$page`, e o assistente cita as páginas de ajuda ao responder; uma ferramenta que leia o texto das páginas fica para depois.
 

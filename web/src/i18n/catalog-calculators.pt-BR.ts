@@ -75,8 +75,8 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.floating.basis.expected": "Esperada pelo mercado",
   "calc.floating.form": "Como a taxa segue o índice",
   "calc.floating.percent": "Percentual do índice",
-  "calc.floating.spread": "Índice + spread",
-  "calc.floating.spreadRate": "Spread ao ano",
+  "calc.floating.spread": "Índice + taxa adicional",
+  "calc.floating.spreadRate": "Taxa adicional ao ano",
   "calc.floating.spread.daily":
     "Somado à taxa do índice a cada dia, como 1/360 dele, como acumulam os contratos sobre este índice.",
   "calc.floating.spread.compound":
@@ -162,9 +162,10 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.compound.limit3":
     "Os valores são arredondados para a menor unidade; um contrato pode arredondar de outro modo.",
   "calc.compound.volatility": "Volatilidade anual",
-  "calc.compound.p10": "Cenário desfavorável (percentil 10)",
-  "calc.compound.p50": "Cenário central (mediana)",
-  "calc.compound.p90": "Cenário favorável (percentil 90)",
+  "calc.compound.p10":
+    "Cenário desfavorável: 9 em 10 simulações terminam acima",
+  "calc.compound.p50": "Cenário central: metade das simulações termina acima",
+  "calc.compound.p90": "Cenário favorável: 9 em 10 simulações terminam abaixo",
   "calc.compound.step7":
     "Com uma volatilidade, 2.000 trajetórias de retornos mensais são sorteadas e os percentis 10, 50 e 90 dos seus valores finais são mostrados.",
   "calc.compound.formula5":
@@ -303,10 +304,11 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.cash.first.now": "No ato",
   "calc.cash.rateSource": "Origem da taxa de comparação",
   "calc.cash.compare": "Taxa de comparação",
-  "calc.cash.monthly": "Taxa mensal implícita",
-  "calc.cash.annual": "Taxa anual implícita",
+  "calc.cash.monthly": "Juros por mês embutidos nas parcelas",
+  "calc.cash.annual": "Juros por ano embutidos nas parcelas",
   "calc.cash.total": "Total das parcelas",
-  "calc.cash.presentValue": "Valor presente das parcelas à taxa de comparação",
+  "calc.cash.presentValue":
+    "Quanto as parcelas valem hoje, pela taxa de comparação",
   "calc.cash.cashLower": "O preço à vista é menor em",
   "calc.cash.installmentsLower": "O valor presente das parcelas é menor em",
   "calc.cash.same": "Diferença para o preço à vista",
@@ -338,7 +340,7 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.credit.releaseDate": "Data da liberação",
   "calc.credit.firstDue": "Primeiro vencimento",
   "calc.credit.annual": "Custo efetivo anual",
-  "calc.credit.monthly": "Equivalente mensal",
+  "calc.credit.monthly": "Taxa equivalente por mês",
   "calc.credit.paid": "Total pago",
   "calc.credit.flows": "Fluxos da oferta",
   "calc.credit.col.number": "Prestação",
@@ -382,8 +384,8 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.fixedIncome.net": "Rendimento líquido",
   "calc.fixedIncome.netRate": "Taxa anual líquida",
   "calc.fixedIncome.taxShare": "Alíquota aplicada",
-  "calc.fixedIncome.equivalentTaxable": "Taxa tributada equivalente",
-  "calc.fixedIncome.equivalentExempt": "Taxa isenta equivalente",
+  "calc.fixedIncome.equivalentTaxable": "Taxa com imposto que rende o mesmo",
+  "calc.fixedIncome.equivalentExempt": "Taxa sem imposto que rende o mesmo",
   "calc.fixedIncome.iof":
     "Abaixo de 30 dias incide um imposto sobre o resgate (IOF), que esta calculadora não calcula.",
   "calc.fixedIncome.checked":

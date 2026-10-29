@@ -13,7 +13,7 @@ The [portfolio](/portfolio) shows the investments of your brokerage accounts on 
 - **Gain or loss now**: market value minus cost. It becomes an actual gain or loss only when you sell.
 - **% of portfolio**: the part of the portfolio's total value the investment represents.
 
-An investment without a recorded price stays out of the total and of the percentages. Record a price on the investment's page, in [Instruments](/instruments), or import a price file.
+An investment without a recorded price stays out of the total and of the percentages. Record a price on the investment's page, in [Prices](/instruments), or import a price file.
 
 ## Grouping
 

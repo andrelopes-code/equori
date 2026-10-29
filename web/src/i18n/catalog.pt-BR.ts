@@ -141,7 +141,7 @@ export const catalogPtBR: Catalog = {
   "export.download": "Baixar",
   "import.label": "Importação",
   "import.description":
-    "Restaura um arquivo num equori sem transações; os fatos do arquivo substituem as contas iniciais. Um arquivo desta versão do equori ou de uma anterior é importado; um arquivo de uma versão posterior, não.",
+    "Restaura um arquivo num equori sem transações; os dados do arquivo substituem as contas iniciais. Um arquivo desta versão do equori ou de uma anterior é importado; um arquivo de uma versão posterior, não.",
   "import.blocked": "A importação exige um equori sem transações.",
   "import.choose": "Escolher arquivo",
   "import.done":
@@ -419,7 +419,7 @@ export const catalogPtBR: Catalog = {
   "problem.settings_locked":
     "As configurações não podem ser alteradas após a primeira transação.",
   "problem.mixed_instruments":
-    "A conta e suas subcontas contêm mais de um instrumento.",
+    "A conta e suas subcontas têm mais de uma moeda ou investimento.",
   "problem.statement_not_closed":
     "Somente uma fatura fechada pode ser parcelada.",
   "problem.statement_financed": "Esta fatura já está parcelada.",
@@ -557,7 +557,7 @@ export const catalogPtBR: Catalog = {
   "facts.categorized": "Categorizada por",
   "facts.origin": "Origem",
   "transaction.facts.side": "Lado",
-  "transaction.facts.instrument": "Instrumento",
+  "transaction.facts.instrument": "Investimento",
   "transaction.facts.quantity": "Quantidade",
   "transaction.facts.unitPrice": "Preço unitário",
   "transaction.facts.gross": "Bruto",

@@ -1,13 +1,13 @@
 import type { instrumentsEn } from "@/i18n/catalog-instruments.en";
 
 export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
-  "nav.instruments": "Instrumentos",
-  "settings.ledger.instruments": "Instrumentos e preços",
+  "nav.instruments": "Cotações",
+  "settings.ledger.instruments": "Ver cotações",
   "instruments.subtitle":
     "Moedas e investimentos com o último preço de cada um.",
-  "instruments.define": "Definir instrumento",
-  "instruments.caption": "Instrumentos por tipo",
-  "instruments.empty": "Nenhum instrumento ainda",
+  "instruments.define": "Cadastrar moeda ou investimento",
+  "instruments.caption": "Moedas e investimentos por tipo",
+  "instruments.empty": "Nenhuma moeda ou investimento ainda",
   "instruments.emptyHint":
     "Cadastre os investimentos que suas contas de corretora guardam para acompanhar o preço deles.",
   "instruments.type.currency": "Moedas",
@@ -30,7 +30,7 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instruments.noPrice": "Sem preço",
   "instruments.price.loadFailed": "Preço indisponível",
   "instruments.define.description":
-    "Um instrumento é compartilhado por todas as contas da instância.",
+    "Uma moeda ou um investimento vale para todos os usuários desta instalação.",
   "instruments.field.code": "Código",
   "instruments.field.type": "Tipo",
   "instruments.field.scale": "Casas decimais",
@@ -46,8 +46,8 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instruments.source.manual": "Manual",
   "instruments.source.csv": "Importação CSV",
   "instruments.source.accrual": "Apropriação",
-  "instrument.facts": "Dados do instrumento",
-  "instrument.edit": "Editar instrumento",
+  "instrument.facts": "Cadastro",
+  "instrument.edit": "Editar cadastro",
   "instrument.edit.description":
     "Código, tipo, casas decimais e moeda de cotação permanecem como definidos. A alteração vale para todos os usuários desta instalação.",
   "instrument.edit.save": "Salvar",
@@ -72,8 +72,8 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
     "Informe um preço positivo com no máximo 12 casas decimais.",
   "instrument.price.save": "Registrar",
   "instrument.positions.title": "Posições",
-  "instrument.positions.caption": "Posições que mantêm o instrumento",
-  "instrument.positions.empty": "Nenhuma conta mantém este instrumento.",
+  "instrument.positions.caption": "Contas que têm este item",
+  "instrument.positions.empty": "Nenhuma conta tem este item.",
   "instrument.positions.account": "Conta",
   "instruments.dayCount.bus252": "Dias úteis / 252",
   "instruments.dayCount.act365": "Dias corridos / 365",

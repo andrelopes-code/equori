@@ -11,7 +11,7 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
     "Tema, cores, forma, texto e movimento da interface.",
   "settings.summary.language": "Idioma, e como datas e números são escritos.",
   "settings.summary.privacy": "Valores ocultos na tela.",
-  "settings.summary.finances": "Moeda base e instrumentos.",
+  "settings.summary.finances": "Moeda base e cotações.",
   "settings.summary.calendars": "Feriados que deslocam datas agendadas.",
   "settings.summary.integrations": "Credenciais de agregadores.",
   "settings.summary.assistant":
@@ -62,7 +62,7 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
     "Formatos de data e número, e os catálogos regionais.",
   "settings.language.exampleDescription":
     "A data de hoje e um número, como a região escolhida os escreve.",
-  "settings.ledger.instrumentsTitle": "Instrumentos",
+  "settings.ledger.instrumentsTitle": "Cotações",
   "settings.ledger.instrumentsDescription":
     "Moedas, investimentos e seus preços.",
   "settings.appearance.reset": "Restaurar padrões",

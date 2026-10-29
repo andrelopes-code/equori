@@ -13,7 +13,7 @@ A [carteira](/portfolio) mostra os investimentos das suas contas de corretora nu
 - **Lucro ou prejuízo atual**: valor de mercado menos custo. Ele só vira lucro ou prejuízo de fato quando você vende.
 - **% da carteira**: a parte do valor total da carteira que o investimento representa.
 
-Um investimento sem preço registrado fica fora do total e da porcentagem. Registre um preço na página do investimento, em [Instrumentos](/instruments), ou importe um arquivo de preços.
+Um investimento sem preço registrado fica fora do total e da porcentagem. Registre um preço na página do investimento, em [Cotações](/instruments), ou importe um arquivo de preços.
 
 ## Agrupar
 

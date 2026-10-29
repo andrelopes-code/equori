@@ -1,13 +1,13 @@
 // The words of the instruments screens, spread into catalogEn. A type, subtype or source the
 // catalog does not name reads as its code.
 export const instrumentsEn = {
-  "nav.instruments": "Instruments",
-  "settings.ledger.instruments": "Instruments and prices",
+  "nav.instruments": "Prices",
+  "settings.ledger.instruments": "Open prices",
   "instruments.subtitle":
     "Currencies and investments with the latest price of each.",
-  "instruments.define": "Define instrument",
-  "instruments.caption": "Instruments by type",
-  "instruments.empty": "No instruments yet",
+  "instruments.define": "Add a currency or investment",
+  "instruments.caption": "Currencies and investments by type",
+  "instruments.empty": "No currency or investment yet",
   "instruments.emptyHint":
     "Add the investments your brokerage accounts hold to follow their price.",
   "instruments.type.currency": "Currencies",
@@ -30,7 +30,7 @@ export const instrumentsEn = {
   "instruments.noPrice": "No price",
   "instruments.price.loadFailed": "Price unavailable",
   "instruments.define.description":
-    "An instrument is shared by every account of the instance.",
+    "A currency or an investment is shared by every user of this installation.",
   "instruments.field.code": "Code",
   "instruments.field.type": "Type",
   "instruments.field.scale": "Decimal places",
@@ -46,8 +46,8 @@ export const instrumentsEn = {
   "instruments.source.manual": "Manual",
   "instruments.source.csv": "CSV import",
   "instruments.source.accrual": "Accrual",
-  "instrument.facts": "Instrument data",
-  "instrument.edit": "Edit instrument",
+  "instrument.facts": "Details",
+  "instrument.edit": "Edit details",
   "instrument.edit.description":
     "Code, type, decimal places and quote currency stay as defined. The change applies to every user of this installation.",
   "instrument.edit.save": "Save",
@@ -72,8 +72,8 @@ export const instrumentsEn = {
     "Enter a positive price with at most 12 decimal places.",
   "instrument.price.save": "Record",
   "instrument.positions.title": "Positions",
-  "instrument.positions.caption": "Positions that hold the instrument",
-  "instrument.positions.empty": "No account holds this instrument.",
+  "instrument.positions.caption": "Accounts that hold it",
+  "instrument.positions.empty": "No account holds it.",
   "instrument.positions.account": "Account",
   "instruments.dayCount.bus252": "Business days / 252",
   "instruments.dayCount.act365": "Actual / 365",

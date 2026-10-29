@@ -9,7 +9,7 @@ export const settingsEn = {
     "Theme, colours, shape, text and motion of the interface.",
   "settings.summary.language": "Language, and how dates and numbers read.",
   "settings.summary.privacy": "Amounts hidden on screen.",
-  "settings.summary.finances": "Base currency and instruments.",
+  "settings.summary.finances": "Base currency and prices.",
   "settings.summary.calendars": "Holidays that move scheduled dates.",
   "settings.summary.integrations": "Aggregator credentials.",
   "settings.summary.assistant": "Language model providers, uses and spending.",
@@ -59,7 +59,7 @@ export const settingsEn = {
     "Date and number formats, and the regional catalogues.",
   "settings.language.exampleDescription":
     "Today's date and a number, as the chosen region writes them.",
-  "settings.ledger.instrumentsTitle": "Instruments",
+  "settings.ledger.instrumentsTitle": "Prices",
   "settings.ledger.instrumentsDescription":
     "Currencies, investments and their prices.",
   "settings.appearance.reset": "Restore defaults",

@@ -75,8 +75,8 @@ export const calculatorsEn = {
   "calc.floating.basis.expected": "Expected by the market",
   "calc.floating.form": "How the rate follows the index",
   "calc.floating.percent": "Percent of the index",
-  "calc.floating.spread": "Index + spread",
-  "calc.floating.spreadRate": "Spread a year",
+  "calc.floating.spread": "Index + extra rate",
+  "calc.floating.spreadRate": "Extra rate a year",
   "calc.floating.spread.daily":
     "Added to the index's rate each day, as its 360th, as contracts on this index accrue.",
   "calc.floating.spread.compound":
@@ -161,9 +161,9 @@ export const calculatorsEn = {
   "calc.compound.limit3":
     "Amounts are rounded to the minor unit; a contract may round differently.",
   "calc.compound.volatility": "Annual volatility",
-  "calc.compound.p10": "Unfavourable case (10th percentile)",
-  "calc.compound.p50": "Middle case (median)",
-  "calc.compound.p90": "Favourable case (90th percentile)",
+  "calc.compound.p10": "Unfavourable case: 9 in 10 simulations end above",
+  "calc.compound.p50": "Middle case: half the simulations end above",
+  "calc.compound.p90": "Favourable case: 9 in 10 simulations end below",
   "calc.compound.step7":
     "With a volatility, 2,000 paths of monthly returns are drawn and the 10th, 50th and 90th percentile of their final amounts are shown.",
   "calc.compound.formula5":
@@ -301,11 +301,11 @@ export const calculatorsEn = {
   "calc.cash.first.now": "Now",
   "calc.cash.rateSource": "Comparison rate source",
   "calc.cash.compare": "Comparison rate",
-  "calc.cash.monthly": "Implied monthly rate",
-  "calc.cash.annual": "Implied annual rate",
+  "calc.cash.monthly": "Monthly interest built into the installments",
+  "calc.cash.annual": "Yearly interest built into the installments",
   "calc.cash.total": "Total of the installments",
   "calc.cash.presentValue":
-    "Present value of the installments at the comparison rate",
+    "What the installments are worth today, at the comparison rate",
   "calc.cash.cashLower": "The cash price is lower by",
   "calc.cash.installmentsLower":
     "The present value of the installments is lower by",
@@ -339,7 +339,7 @@ export const calculatorsEn = {
   "calc.credit.releaseDate": "Release date",
   "calc.credit.firstDue": "First due date",
   "calc.credit.annual": "Effective annual cost",
-  "calc.credit.monthly": "Monthly equivalent",
+  "calc.credit.monthly": "Equivalent rate per month",
   "calc.credit.paid": "Total paid",
   "calc.credit.flows": "Flows of the offer",
   "calc.credit.col.number": "Installment",
@@ -382,8 +382,8 @@ export const calculatorsEn = {
   "calc.fixedIncome.net": "Net yield",
   "calc.fixedIncome.netRate": "Net annual rate",
   "calc.fixedIncome.taxShare": "Tax rate applied",
-  "calc.fixedIncome.equivalentTaxable": "Equivalent taxable rate",
-  "calc.fixedIncome.equivalentExempt": "Equivalent exempt rate",
+  "calc.fixedIncome.equivalentTaxable": "Taxed rate that yields the same",
+  "calc.fixedIncome.equivalentExempt": "Tax-free rate that yields the same",
   "calc.fixedIncome.iof":
     "Below 30 days a tax on the redemption (IOF) applies, which this calculator does not compute.",
   "calc.fixedIncome.checked":
