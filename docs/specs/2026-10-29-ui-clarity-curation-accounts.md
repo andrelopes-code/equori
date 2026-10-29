@@ -100,8 +100,12 @@ O perfil de leitura do CSV (separador, linhas de cabeçalho, formato da data) fi
 | `accountForm.openingHint` | Renomear | Registrado contra Saldos iniciais, para seus registros partirem do que a instituição mostra. |
 | `accountForm.openingHelp` | Renomear | O saldo da conta, ou o valor devido nela, no dia em que o equori começa a acompanhá-la. |
 
-## 8. Fora desta rodada
+## 8. Complementos
+
+| Elemento | Remédio | Critério | Proposta |
+|---|---|---|---|
+| Critério de pontuação "Contraparte"; "Esta corretora não tem ativos." | Renomear | termo de contabilidade; termo transversal | Favorecido; Esta corretora não tem investimentos. |
+
+## 9. Fora desta rodada
 
 Posições de investimento, agendamentos da conta, instituições e configuração do cartão entram nas curadorias de investimentos, planejamento e cartões.
-
-| Critério de pontuação "Contraparte"; "Esta corretora não tem ativos." | Renomear | termo de contabilidade; termo transversal | Favorecido; Esta corretora não tem investimentos. |
