@@ -64,6 +64,10 @@ func (s Source) Fetch(ctx context.Context, from, to time.Time) ([]index.Rate, er
 		return nil, fmt.Errorf("%s: %w", s.id, err)
 	}
 	defer resp.Body.Close()
+	// The SGS answers 404 for dates that hold no value: a weekend, or days not yet published.
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, nil
+	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("%s: status %d", s.id, resp.StatusCode)
 	}

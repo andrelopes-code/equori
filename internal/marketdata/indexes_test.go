@@ -15,7 +15,8 @@ import (
 )
 
 // sgsServer answers the BCB SGS series 12 (CDI, percent a day) and 433 (IPCA, percent a month)
-// from fixture rows, keeping the rows inside the dates of the request.
+// from fixture rows, keeping the rows inside the dates of the request. Like the SGS, it answers
+// 404 for a request whose dates hold no row.
 type sgsServer struct {
 	mu       sync.Mutex
 	requests []string
@@ -51,6 +52,11 @@ func (s *sgsServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if !d.Before(from) && !d.After(to) {
 			items = append(items, fmt.Sprintf(`{"data":%q,"valor":%q}`, row[0], row[1]))
 		}
+	}
+	if len(items) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = fmt.Fprint(w, `{"erro":{"statusCode":404,"detail":"Value(s) not found"}}`)
+		return
 	}
 	_, _ = fmt.Fprintf(w, "[%s]", strings.Join(items, ","))
 }
@@ -162,6 +168,16 @@ func TestIndexFeedsIPCA(t *testing.T) {
 	rates := indexRates(t, h, "ipca")
 	if len(rates) != 2 || rates[0] != (indexRateRow{"2026-01-01", "0.004200000000", "br_ipca"}) || rates[1] != (indexRateRow{"2026-02-01", "-0.003000000000", "br_ipca"}) {
 		t.Fatalf("rates = %+v", rates)
+	}
+
+	// The days after the latest rate hold no published rate yet: the SGS answers 404 and the
+	// tick succeeds without a new rate.
+	h.App.Marketdata.TickFeeds(t.Context())
+	if logs := h.Logs(); strings.Contains(logs, "source=br_ipca") {
+		t.Fatalf("logs = %s", logs)
+	}
+	if got := indexRates(t, h, "ipca"); len(got) != 2 {
+		t.Fatalf("rates = %+v", got)
 	}
 }
 
