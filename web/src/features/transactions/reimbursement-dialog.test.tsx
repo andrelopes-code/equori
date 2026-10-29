@@ -77,7 +77,9 @@ describe("reimbursement dialog", () => {
     await userEvent.click(second);
 
     expect(
-      within(dialog).getByText("Allocated R$100.00 of R$100.00 · Left R$0.00"),
+      within(dialog).getByText(
+        "Distributed R$100.00 of R$100.00 · Left R$0.00",
+      ),
     ).toBeInTheDocument();
     await userEvent.click(submit(dialog));
     await waitFor(() => {
