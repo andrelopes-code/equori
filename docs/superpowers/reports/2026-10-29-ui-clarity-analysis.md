@@ -94,9 +94,11 @@ A definição de um termo regional (um identificador de banco, um imposto) vive 
 
 ### Camada 1: ajuda no lugar da pergunta
 
-- Campo: aplicar F8 a todos os módulos. Termo → `FieldHelp`; consequência da resposta → `FieldDescription`.
+A ajuda é escolhida por triagem de cada tela (seção 5), nunca adicionada em lote. Onde a triagem indicar ajuda:
+
+- Campo: termo → `FieldHelp`; consequência da resposta → `FieldDescription` (F8).
 - Coluna: `DataGrid` já aceita `description` e `help` por coluna. `Table` não oferece ajuda no cabeçalho; essa falta é um achado da Slotted (área `family`).
-- Estado: cada etiqueta de estado leva a definição do estado e a próxima ação.
+- Estado: a etiqueta leva a definição do estado e a próxima ação.
 - Número de resumo (cartões de figura da visão geral, do cartão, da carteira): uma linha que diz o que o número soma. `StatCard` não oferece ajuda; segundo achado candidato da Slotted.
 
 ### Camada 2: ajuda da tela
@@ -124,11 +126,52 @@ Os mesmos arquivos são embutidos no binário e servidos em `/help` dentro do ap
 
 O módulo `assistant` responde perguntas sobre os dados. Uma ferramenta de consulta ao glossário e à documentação permite perguntas como "o que é custo médio" no chat, com a resposta citando a página de ajuda.
 
-## 5. Garantia de cobertura
+## 5. Triagem e redação
+
+Texto de ajuda em excesso tem custo: cada ícone de ajuda disputa atenção com o campo, e uma ajuda que repete o rótulo ensina a pessoa a ignorar todas as outras. A ajuda entra só onde a triagem a justifica.
+
+### 5.1 Ordem de remédio
+
+Para cada campo, coluna ou estado que gera dúvida, o primeiro remédio aplicável encerra a triagem:
+
+1. Remover: o campo ou a coluna não é necessário para a tarefa da tela, ou tem valor padrão que serve à maioria.
+2. Renomear: existe palavra comum com o mesmo sentido.
+3. Reestruturar: um controle diferente torna a resposta óbvia (opções nomeadas no lugar de um número, um exemplo no próprio controle, a pergunta reescrita).
+4. Descrever: a dúvida é sobre o formato ou a consequência da resposta → `FieldDescription`.
+5. Definir: a dúvida é sobre o significado de um termo que precisa ficar → `FieldHelp`.
+
+### 5.2 Critérios para definir um termo
+
+Um rótulo recebe `FieldHelp` quando atende a pelo menos um critério:
+
+- O termo tem sentido técnico desconhecido de quem não trabalha com finanças (Custo médio, Valor de face).
+- O termo tem sentido técnico diferente do sentido comum (Resultado, Situação, Compensado).
+- Dois campos da mesma tela podem ser confundidos (Tarifa ao lado de Imposto).
+
+Não recebem ajuda os rótulos que qualquer leitor entende: Data, Valor, Descrição, Nome, Categoria, Conta, Cor, Moeda.
+
+Uma tela em que mais da metade dos campos atende aos critérios volta ao passo 2 ou 3 da ordem de remédio: o problema é o desenho da tela, não a falta de ajuda.
+
+### 5.3 Redação
+
+- Uma definição tem até duas frases. A primeira diz o que é; a segunda, quando existir, dá um exemplo com números.
+- A definição não repete o rótulo e não usa outro termo que também precisaria de definição.
+- Uma descrição tem uma linha (cerca de 90 caracteres na tradução mais longa, F8).
+- Um termo tem uma definição só, no glossário de uso; toda tela que mostra o termo usa a mesma chave do catálogo.
+- O texto em pt-BR e o texto em en são escritos cada um na sua língua, sem tradução literal.
+
+### 5.4 Processo por tela
+
+1. A triagem da tela produz uma tabela: elemento, remédio escolhido (5.1), critério atendido (5.2), texto proposto.
+2. O dono revisa e aprova a tabela antes de qualquer alteração de código.
+3. A implementação aplica só o que a tabela aprovada lista.
+
+A ordem das telas segue o uso: transações, contas, cartões, visão geral, depois as demais.
+
+### 5.5 Verificação
 
 - Um teste falha quando uma rota de `router.tsx` não tem página de referência em pt-BR e en.
-- Um teste falha quando um termo do glossário de uso aparece num rótulo do catálogo e o campo não tem `FieldHelp`.
-- `review-screen` e a revisão de PR passam a conferir F8 e a Camada 2 em toda tela nova.
+- `review-screen` e a revisão de PR conferem, em toda tela nova, a tabela de triagem e a Camada 2.
 
 ## 6. Decisões pendentes do dono
 
