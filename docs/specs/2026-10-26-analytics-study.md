@@ -99,7 +99,7 @@ Monarch Money and Mobills documentation could not be read (section 6). No produc
 
 ### 5.1 Overview and reports
 
-`docs/web-roadmap.md` §7 and §12. The overview draws one block per question: net worth with change against the previous month; month income, spending and moved amount with forecast to month end; top spending categories; upcoming occurrences; cards; budgets; goals; attention list. Desktop figures add the committed amount of the month (`web/src/features/overview/desktop-figures.tsx`). The reports page has three tabs: net worth over time, category totals with period comparison, account flows.
+`docs/web-roadmap.md` (removed; last version at commit `0327214c`) §7 and §12. The overview draws one block per question: net worth with change against the previous month; month income, spending and moved amount with forecast to month end; top spending categories; upcoming occurrences; cards; budgets; goals; attention list. Desktop figures add the committed amount of the month (`web/src/features/overview/desktop-figures.tsx`). The reports page has three tabs: net worth over time, category totals with period comparison, account flows.
 
 ### 5.2 Indicators against stored data
 

@@ -105,7 +105,7 @@ Amended on 2026-10-27 by the owner review: the overview is one Slotted `dashboar
 | Hideable | Each indicator, each net worth and month flow figure of the phone, spending, upcoming, cards, budgets and goals. |
 | Fixed | The attention list, the desk figures and the balance chart cannot be hidden. The attention list holds exceptions, and hiding a block that holds exceptions degrades the outcome (C3). They still move and resize. With nothing to show, the attention list says so in one sentence and keeps its cell. |
 | Storage | Per browser in `localStorage`, as ADR 018 P1 stores the privacy preference, under key `equori.overview.layout`, through `usePersistedDashboardLayout`. A value that cannot be read yields the default layout. |
-| Phone | Below 1024 px the page draws the phone set of blocks in the order of `docs/web-roadmap.md` §7, and the grid flows them in halves from 600 px and in one column below. The same stored layout hides the same blocks. |
+| Phone | Below 1024 px the page draws the phone set of blocks in the order of `docs/web-roadmap.md` (removed; last version at commit `0327214c`) §7, and the grid flows them in halves from 600 px and in one column below. The same stored layout hides the same blocks. |
 
 ## 6. Reports
 
