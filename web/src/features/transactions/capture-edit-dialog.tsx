@@ -23,6 +23,7 @@ import type { LineDraft } from "@/features/transactions/capture-draft";
 import { TransactionForm } from "@/features/transactions/transaction-form";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
+import widths from "@/ui/field-width.module.css";
 
 type Account = components["schemas"]["Account"];
 type Payee = components["schemas"]["Payee"];
@@ -122,6 +123,7 @@ export function CaptureEditDialog({
                 <Field invalid={errors.installments !== undefined}>
                   <FieldLabel>{t("capture.installments")}</FieldLabel>
                   <NumberField
+                    className={widths.short}
                     value={draft.installments === 0 ? 1 : draft.installments}
                     min={1}
                     max={420}

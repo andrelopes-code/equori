@@ -31,6 +31,7 @@ import type { components } from "@/api/schema.gen";
 import styles from "@/features/categories/aliases-drawer.module.css";
 import { useCreateAlias, useDeleteAlias } from "@/features/categories/api";
 import { ChoiceSelect } from "@/ui/choice-select";
+import widths from "@/ui/field-width.module.css";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
 
@@ -111,6 +112,7 @@ export function AliasesDrawer({
               <Field>
                 <FieldLabel>{t("alias.match")}</FieldLabel>
                 <ChoiceSelect
+                  className={widths.medium}
                   label={t("alias.match")}
                   multiple={false}
                   choices={matchTypes.map((type) => ({
