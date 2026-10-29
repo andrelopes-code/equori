@@ -2,7 +2,7 @@ import { parseISODate, toISOYearMonth } from "@slotted/core/date";
 import { Button, IconButton } from "@slotted/react/button";
 import { ButtonGroup } from "@slotted/react/button-group";
 import { Calendar } from "@slotted/react/calendar";
-import { Glyph, Icon } from "@slotted/react/icon";
+import { Icon } from "@slotted/react/icon";
 import {
   Popover,
   PopoverBody,
@@ -53,16 +53,7 @@ export function MonthControl({
       <Popover open={open} onOpenChange={setOpen} align="center">
         <PopoverTrigger
           render={(props) => (
-            <Button
-              {...props}
-              start={
-                <Icon size="sm">
-                  <Glyph name="calendar" />
-                </Icon>
-              }
-            >
-              {formatMonthTitle(value, locale)}
-            </Button>
+            <Button {...props}>{formatMonthTitle(value, locale)}</Button>
           )}
         />
         <PopoverLayer>

@@ -3,7 +3,7 @@ import { Button, IconButton } from "@slotted/react/button";
 import { ButtonGroup } from "@slotted/react/button-group";
 import { Calendar } from "@slotted/react/calendar";
 import type { CalendarValue } from "@slotted/react/calendar";
-import { Glyph, Icon } from "@slotted/react/icon";
+import { Icon } from "@slotted/react/icon";
 import { Inline } from "@slotted/react/inline";
 import {
   Popover,
@@ -102,18 +102,7 @@ export function PeriodControl({
         align="end"
       >
         <PopoverTrigger
-          render={(props) => (
-            <Button
-              {...props}
-              start={
-                <Icon size="sm">
-                  <Glyph name="calendar" />
-                </Icon>
-              }
-            >
-              {label}
-            </Button>
-          )}
+          render={(props) => <Button {...props}>{label}</Button>}
         />
         <PopoverLayer>
           <PopoverContent>
