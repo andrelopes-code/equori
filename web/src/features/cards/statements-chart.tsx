@@ -46,7 +46,7 @@ export const StatementsChart = memo(function StatementsChart({
             {
               month: open.reference,
               label: formatReferenceMonth(open.reference, locale),
-              billed: open.amount_due.amount,
+              billed: open.open_amount.amount,
               committed: null,
             },
           ];

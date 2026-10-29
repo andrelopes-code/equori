@@ -18,6 +18,7 @@ import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
+import { statementAmount } from "@/features/cards/statement-amount";
 import {
   statementStatusTone,
   statementStatusWords,
@@ -87,7 +88,7 @@ export function StatementsTab({
                 </Text>
               ) : null,
             ].filter((line) => line !== null),
-            end: money(s.amount_due),
+            end: money(statementAmount(s)),
           }))}
         />
       ) : (
@@ -144,7 +145,7 @@ export function StatementsTab({
                     </TableRowHeader>
                     <TableCell>{formatDate(s.closing_date, locale)}</TableCell>
                     <TableCell>{formatDate(s.due_date, locale)}</TableCell>
-                    <TableCell numeric>{money(s.amount_due)}</TableCell>
+                    <TableCell numeric>{money(statementAmount(s))}</TableCell>
                     <TableCell numeric>{money(s.settled)}</TableCell>
                     <TableCell numeric>{money(s.unpaid)}</TableCell>
                     <TableCell>

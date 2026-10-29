@@ -1872,6 +1872,7 @@ type StatementDetail struct {
 
 	// Institution What the institution reported for the statement (A85); the owner's facts first.
 	Institution  *StatementFact     `json:"institution,omitempty"`
+	OpenAmount   Money              `json:"open_amount"`
 	Opening      Money              `json:"opening"`
 	Payments     Money              `json:"payments"`
 	Postings     []StatementPosting `json:"postings"`
@@ -1957,7 +1958,7 @@ type StatementReconciliationInput struct {
 	AmountDue Money `json:"amount_due"`
 }
 
-// StatementSummary Amounts are positive when owed by the user. Every card posting is billed on the statement of its cycle (A89). opening is the previous amount_due; credits and payments are those billed on the statement; amount_due = opening + charges − credits − payments, the card balance at closing; settled is the credits and payments of the next statement, up to today, that cover amount_due; unpaid = amount_due − settled, zero for a credit balance; prior_credits are the credits that settled the previous statement; early_payments are the payments beyond what settled it; billed_amount = amount_due + early_payments. institution and amount_difference (amount_due − institution.total) are present when the institution reported the statement (A92).
+// StatementSummary Amounts are positive when owed by the user. Every card posting is billed on the statement of its cycle (A89). opening is the previous amount_due; credits and payments are those billed on the statement; amount_due = opening + charges − credits − payments, the card balance at closing; settled is the credits and payments of the next statement, up to today, that cover amount_due; unpaid = amount_due − settled, zero for a credit balance; prior_credits are the credits that settled the previous statement; early_payments are the payments beyond what settled it; billed_amount = amount_due + early_payments; open_amount = amount_due less the unpaid amount of a previous statement not yet due (closed or partially_paid), the institution's open bill (A138). institution and amount_difference (amount_due − institution.total) are present when the institution reported the statement (A92).
 type StatementSummary struct {
 	AccountId        openapi_types.UUID `json:"account_id"`
 	AmountDifference *Money             `json:"amount_difference,omitempty"`
@@ -1972,6 +1973,7 @@ type StatementSummary struct {
 
 	// Institution What the institution reported for the statement (A85); the owner's facts first.
 	Institution  *StatementFact `json:"institution,omitempty"`
+	OpenAmount   Money          `json:"open_amount"`
 	Opening      Money          `json:"opening"`
 	Payments     Money          `json:"payments"`
 	PriorCredits Money          `json:"prior_credits"`

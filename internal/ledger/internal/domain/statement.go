@@ -48,6 +48,9 @@ type StatementSummary struct {
 	PriorCredits  int64 // credits of the statement that settled the previous one
 	EarlyPayments int64 // payments of the statement beyond what settled the previous one
 	BilledAmount  int64 // AmountDue + EarlyPayments: the bill before early payments
+	// OpenAmount leaves out the previous statement's unpaid amount until it is overdue, as the
+	// institution's open bill does (A138).
+	OpenAmount int64
 }
 
 // Summarize walks consecutive statements of one card in reference order. Each opens with
@@ -91,6 +94,10 @@ func Summarize(in []StatementInput, today time.Time) []StatementSummary {
 	for i, s := range in {
 		out[i].BilledAmount = out[i].AmountDue + out[i].EarlyPayments
 		out[i].Status = status(s, out[i], today)
+		out[i].OpenAmount = out[i].AmountDue
+		if i > 0 && (out[i-1].Status == StatusClosed || out[i-1].Status == StatusPartiallyPaid) {
+			out[i].OpenAmount -= out[i-1].Unpaid
+		}
 	}
 	return out
 }

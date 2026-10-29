@@ -41,6 +41,7 @@ type statementView struct {
 	Prior      brl    `json:"prior_credits"`
 	Early      brl    `json:"early_payments"`
 	Billed     brl    `json:"billed_amount"`
+	Open       brl    `json:"open_amount"`
 	Status     string `json:"status"`
 	Reconciled bool   `json:"reconciled"`
 }
@@ -106,6 +107,26 @@ func TestStatementPartialPaymentCarries(t *testing.T) {
 	}
 	if s := ss["2026-12"]; s.Opening != 150000 || s.AmountDue != 56250 || s.Status != "open" {
 		t.Fatalf("2026-12 = %+v", s)
+	}
+}
+
+// S180 (A138): statement 2026-11 closes on 2026-11-03 and is due on 2026-11-10. The open
+// statement 2026-12 leaves out its unpaid amount until it is overdue.
+func TestStatementOpenAmount_S180(t *testing.T) {
+	t.Parallel()
+	for _, tt := range []struct {
+		today string
+		want  brl
+	}{{"2026-11-05", 35372}, {"2026-11-11", 159237}} {
+		c := newCardSetup(t, tt.today)
+		c.purchase("2026-10-14", 123865)
+		c.purchase("2026-11-04", 35372)
+
+		got := statements(t, c.h, c.card)["2026-12"]
+
+		if got.Open != tt.want || got.AmountDue != 159237 {
+			t.Errorf("on %s: open_amount = %d, amount_due = %d, want %d and 159237", tt.today, got.Open, got.AmountDue, tt.want)
+		}
 	}
 }
 

@@ -4168,7 +4168,7 @@ export interface components {
             month: string;
             amount: components["schemas"]["Money"];
         };
-        /** @description Amounts are positive when owed by the user. Every card posting is billed on the statement of its cycle (A89). opening is the previous amount_due; credits and payments are those billed on the statement; amount_due = opening + charges − credits − payments, the card balance at closing; settled is the credits and payments of the next statement, up to today, that cover amount_due; unpaid = amount_due − settled, zero for a credit balance; prior_credits are the credits that settled the previous statement; early_payments are the payments beyond what settled it; billed_amount = amount_due + early_payments. institution and amount_difference (amount_due − institution.total) are present when the institution reported the statement (A92). */
+        /** @description Amounts are positive when owed by the user. Every card posting is billed on the statement of its cycle (A89). opening is the previous amount_due; credits and payments are those billed on the statement; amount_due = opening + charges − credits − payments, the card balance at closing; settled is the credits and payments of the next statement, up to today, that cover amount_due; unpaid = amount_due − settled, zero for a credit balance; prior_credits are the credits that settled the previous statement; early_payments are the payments beyond what settled it; billed_amount = amount_due + early_payments; open_amount = amount_due less the unpaid amount of a previous statement not yet due (closed or partially_paid), the institution's open bill (A138). institution and amount_difference (amount_due − institution.total) are present when the institution reported the statement (A92). */
         StatementSummary: {
             /** Format: uuid */
             id: string;
@@ -4189,6 +4189,7 @@ export interface components {
             prior_credits: components["schemas"]["Money"];
             early_payments: components["schemas"]["Money"];
             billed_amount: components["schemas"]["Money"];
+            open_amount: components["schemas"]["Money"];
             /** @enum {string} */
             status: "open" | "closed" | "paid" | "partially_paid" | "overdue" | "financed";
             /** @description The institution's amount due was confirmed (POST /statements/{id}/reconcile). */

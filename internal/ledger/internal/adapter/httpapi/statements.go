@@ -22,6 +22,7 @@ func toStatementAPI(v app.StatementView, currency money.Currency) StatementSumma
 		Payments: m(v.Summary.Payments), Unpaid: m(v.Summary.Unpaid), Status: StatementSummaryStatus(v.Summary.Status),
 		Reconciled: v.Reconciled, Settled: m(v.Summary.Settled), PriorCredits: m(v.Summary.PriorCredits),
 		EarlyPayments: m(v.Summary.EarlyPayments), BilledAmount: m(v.Summary.BilledAmount),
+		OpenAmount: m(v.Summary.OpenAmount),
 	}
 	if f := v.Fact; f != nil {
 		fact := StatementFact{Source: StatementFactSource(f.Source), ClosingDate: apiOptDate(f.Closing), DueDate: apiDate(f.Due), Total: m(f.Total)}
@@ -123,6 +124,7 @@ func (s *Server) statementDetail(ctx context.Context, userID int64, id uuid.UUID
 		Status: StatementDetailStatus(summary.Status), Reconciled: summary.Reconciled, Postings: make([]StatementPosting, len(postings)),
 		Settled: summary.Settled, PriorCredits: summary.PriorCredits, EarlyPayments: summary.EarlyPayments,
 		BilledAmount: summary.BilledAmount, Institution: summary.Institution, AmountDifference: summary.AmountDifference,
+		OpenAmount: summary.OpenAmount,
 	}
 	for i, p := range postings {
 		sp := StatementPosting{

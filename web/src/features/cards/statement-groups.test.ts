@@ -21,6 +21,7 @@ function statement(reference: string, status: Statement["status"]): Statement {
     prior_credits: zero,
     early_payments: zero,
     billed_amount: zero,
+    open_amount: zero,
     status,
     reconciled: false,
   };

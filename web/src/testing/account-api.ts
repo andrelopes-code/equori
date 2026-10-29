@@ -281,6 +281,7 @@ export function statement(
     prior_credits: zero,
     early_payments: zero,
     billed_amount: zero,
+    open_amount: zero,
     status,
     reconciled: false,
     ...over,
@@ -307,6 +308,7 @@ export const statementFixtures = [
     amount_due: money(250000),
     unpaid: money(250000),
     billed_amount: money(250000),
+    open_amount: money(250000),
   }),
 ];
 

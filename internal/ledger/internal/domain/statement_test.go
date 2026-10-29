@@ -158,3 +158,61 @@ func TestSummarizeCreditBeforeClosingDoesNotSettle(t *testing.T) {
 		t.Fatalf("2026-12 = %+v", s)
 	}
 }
+
+// A138: statement 2026-12 is open; the unpaid amount of 2026-11 counts in it only once
+// 2026-11 is overdue (after 2026-11-10).
+func TestSummarizeOpenAmount(t *testing.T) {
+	t.Parallel()
+	financed := input("2026-11", charge("2026-10-14", 123865))
+	financed.Financed = true
+	tests := []struct {
+		name  string
+		in    []StatementInput
+		today string
+		want  int64
+	}{
+		{
+			name:  "before payment",
+			in:    []StatementInput{input("2026-11", charge("2026-10-14", 123865)), input("2026-12", charge("2026-11-04", 35372))},
+			today: "2026-11-05", want: 35372,
+		},
+		{
+			name: "full payment",
+			in: []StatementInput{
+				input("2026-11", charge("2026-10-14", 123865)),
+				input("2026-12", charge("2026-11-04", 35372), payment("2026-11-07", 123865)),
+			},
+			today: "2026-11-08", want: 35372,
+		},
+		{
+			name: "partial payment",
+			in: []StatementInput{
+				input("2026-11", charge("2026-10-14", 123865)),
+				input("2026-12", charge("2026-11-04", 35372), payment("2026-11-07", 100000)),
+			},
+			today: "2026-11-08", want: 35372,
+		},
+		{
+			name:  "previous overdue",
+			in:    []StatementInput{input("2026-11", charge("2026-10-14", 123865)), input("2026-12", charge("2026-11-04", 35372))},
+			today: "2026-11-11", want: 159237,
+		},
+		{
+			name:  "previous financed",
+			in:    []StatementInput{financed, input("2026-12", charge("2026-11-04", 35372))},
+			today: "2026-11-05", want: 159237,
+		},
+		{name: "first statement", in: []StatementInput{input("2026-11", charge("2026-10-14", 123865))}, today: "2026-11-01", want: 123865},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := Summarize(tt.in, day(tt.today))
+
+			if s := got[len(got)-1]; s.OpenAmount != tt.want {
+				t.Fatalf("OpenAmount = %d, want %d (%+v)", s.OpenAmount, tt.want, s)
+			}
+		})
+	}
+}
