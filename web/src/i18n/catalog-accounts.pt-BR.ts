@@ -699,6 +699,11 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "statement.role.payment": "Pagamento",
   "statement.installment": "{number}/{count}",
   "statement.unconfirmed": "Sem linha do banco",
+  "statement.unconfirmedTitle": "O banco não informou: {names}",
+  "statement.unconfirmedMatches":
+    "O total desta fatura bate com o do banco, o que confirma estes lançamentos. Use Reconciliar para registrar isso; o aviso sai da visão geral.",
+  "statement.unconfirmedHelp":
+    "Um lançamento duplicado ou digitado errado se resolve anulando ou corrigindo a transação. Um lançamento correto se confirma quando o banco envia a linha dele, ou quando você reconcilia a fatura com o total do banco.",
   "statement.provisional": "Fatura provisória",
   "statement.proposal.title": "Diferença de {amount} com o banco",
   "statement.proposal.description":

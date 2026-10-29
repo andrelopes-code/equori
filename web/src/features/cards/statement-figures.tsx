@@ -3,6 +3,7 @@ import { Stack } from "@slotted/react/stack";
 
 import type { components } from "@/api/schema.gen";
 import { DifferenceProposal } from "@/features/cards/difference-proposal";
+import { UnconfirmedNotice } from "@/features/cards/unconfirmed-notice";
 import { useT } from "@/i18n/i18n-provider";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
@@ -89,6 +90,7 @@ export function StatementFigures({
         })}
       </Text>
       <DifferenceProposal statement={statement} scale={scale} />
+      <UnconfirmedNotice statement={statement} />
     </Stack>
   );
 }

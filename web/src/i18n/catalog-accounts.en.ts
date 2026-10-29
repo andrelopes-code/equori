@@ -701,6 +701,11 @@ export const accountsEn = {
   "statement.role.payment": "Payment",
   "statement.installment": "{number}/{count}",
   "statement.unconfirmed": "No bank line",
+  "statement.unconfirmedTitle": "The bank has not reported: {names}",
+  "statement.unconfirmedMatches":
+    "This statement's total matches the bank's, which confirms these entries. Use Reconcile to record it; the notice leaves the overview.",
+  "statement.unconfirmedHelp":
+    "A duplicated or mistyped entry is settled by voiding or correcting the transaction. A correct entry is confirmed when the bank sends its line, or when you reconcile the statement with the bank's total.",
   "statement.provisional": "Provisional statement",
   "statement.proposal.title": "A {amount} difference from the bank",
   "statement.proposal.description":

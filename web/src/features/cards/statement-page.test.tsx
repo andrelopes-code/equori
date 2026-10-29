@@ -208,6 +208,49 @@ describe("StatementPage", () => {
     ).toBeNull();
   });
 
+  it("explains a line the bank has not reported and how to settle it", async () => {
+    const unconfirmed = {
+      [`GET /api/v1/accounts/${cardID}/unconfirmed`]: () =>
+        json(200, {
+          items: [
+            {
+              transaction_id: "tx2",
+              date: "2026-10-03",
+              amount: { amount: -100000, currency: "BRL" },
+              description: "Geladeira",
+              statement_id: closedStatementID,
+            },
+          ],
+        }),
+    };
+    await renderApp(path, {
+      fetch: api([], {
+        ...unconfirmed,
+        [`GET /api/v1/statements/${closedStatementID}`]: () =>
+          json(
+            200,
+            detail(closed, {
+              institution: {
+                source: "aggregator",
+                due_date: "2026-10-25",
+                total: money(180000),
+              },
+              amount_difference: money(0),
+            }),
+          ),
+      }),
+    });
+
+    expect(
+      await screen.findByText(
+        words("statement.unconfirmedTitle", { names: "Geladeira" }),
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(catalogEn["statement.unconfirmedMatches"]),
+    ).toBeInTheDocument();
+  });
+
   it("leaves a line unmarked when its unconfirmed posting is on another statement", async () => {
     await renderApp(path, {
       fetch: api([], {
