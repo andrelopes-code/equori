@@ -50,34 +50,42 @@ export function ChoiceSelect({
   className?: string | undefined;
 }) {
   return (
-    <Select
-      multiple={multiple}
-      value={multiple ? [...((value ?? []) as readonly string[])] : value}
-      onValueChange={(next) => {
-        onChange(typeof next === "string" || next === null ? next : [...next]);
-      }}
-      {...(invalid === undefined ? {} : { invalid })}
-      {...(readOnly === undefined ? {} : { readOnly })}
-    >
-      <SelectTrigger aria-label={label} className={className}>
-        <SelectValue {...(placeholder === undefined ? {} : { placeholder })} />
-      </SelectTrigger>
-      <SelectContent>
-        {sections(choices).map((section, index) => {
-          const items = section.choices.map((choice) => (
-            <SelectItem key={choice.value} value={choice.value}>
-              {choice.label}
-            </SelectItem>
-          ));
-          return section.group === undefined ? (
-            <Fragment key={index}>{items}</Fragment>
-          ) : (
-            <SelectGroup key={section.group} label={section.group}>
-              {items}
-            </SelectGroup>
+    // Workaround for Slotted issue #27: a className on SelectTrigger sizes the inner button,
+    // not the frame that draws the select, so the width step goes on an element around it.
+    <div className={className}>
+      <Select
+        multiple={multiple}
+        value={multiple ? [...((value ?? []) as readonly string[])] : value}
+        onValueChange={(next) => {
+          onChange(
+            typeof next === "string" || next === null ? next : [...next],
           );
-        })}
-      </SelectContent>
-    </Select>
+        }}
+        {...(invalid === undefined ? {} : { invalid })}
+        {...(readOnly === undefined ? {} : { readOnly })}
+      >
+        <SelectTrigger aria-label={label}>
+          <SelectValue
+            {...(placeholder === undefined ? {} : { placeholder })}
+          />
+        </SelectTrigger>
+        <SelectContent>
+          {sections(choices).map((section, index) => {
+            const items = section.choices.map((choice) => (
+              <SelectItem key={choice.value} value={choice.value}>
+                {choice.label}
+              </SelectItem>
+            ));
+            return section.group === undefined ? (
+              <Fragment key={index}>{items}</Fragment>
+            ) : (
+              <SelectGroup key={section.group} label={section.group}>
+                {items}
+              </SelectGroup>
+            );
+          })}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }

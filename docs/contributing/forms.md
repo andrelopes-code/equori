@@ -21,14 +21,18 @@ Rules marked with a Slotted ID (FM-06, LA-05) are in `web/node_modules/@slotted/
 
 The width of a control follows the length of its expected answer (Baymard, Queensland Government Design System). A class of `ui/field-width.module.css`, set on the control, writes the step:
 
-| Step     | Width            | Holds                                                                              |
-| -------- | ---------------- | ---------------------------------------------------------------------------------- |
-| `short`  | 6rem             | an integer up to 4 digits: a day of the month, an interval, a count, a percentage  |
-| `date`   | the picker's own | a date (`DateInput`)                                                               |
-| `medium` | 15rem            | an amount in a field, a rate, a code, a choice among short words (frequency, kind) |
-| `full`   | the column       | free text, a name, a description, a picker of records (account, category, payee)   |
+| Step     | Width            | Holds                                                                                                                              |
+| -------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `short`  | 6rem             | an integer up to 4 digits: a day of the month, an interval, a count, a percentage                                                  |
+| `date`   | the picker's own | a date (`DateInput`)                                                                                                               |
+| `medium` | 15rem            | an amount in a field, a rate, a currency, a day of the month in a row beside another, a choice among short words (frequency, kind) |
+| `full`   | the column       | free text, a name, a description, a picker of records (account, category, payee)                                                   |
 
 A field with no step is `full`.
+
+- In a column the class goes on the control; in a `FormRow` it goes on the `Field` (F2). A `ChoiceSelect` takes it through its `className`, which reaches the select's frame.
+- A `SegmentedControl` takes the width of its labels: it stands inside an `Inline`, never stretched across the column.
+- A currency is chosen by its name and code, never typed as a code (F14.1); a `Select` of codes is a step on the way.
 
 ## F4 · One control height
 
@@ -40,7 +44,8 @@ A field with no step is `full`.
 - A form with more than six fields, or with fields about two or more topics, splits them into `FormSection`s (`ui/form-section`) whose legend names the topic ("Value", "When", "Repetition").
 - Two fields stand 1.5rem apart (`--slotted-space-8`), inside a section or not; a label stands 0.25rem above its control (the family's own). The ratio of 6 to 1 makes each label read with the control under it.
 - Two sections stand 2.5rem apart (`--slotted-space-10`), and a legend 1.25rem above its first field (the family's own). The larger step is what separates topics.
-- `FormLayout` and `FormSection` write these steps; a form writes no gap, margin or `Stack` of its own between fields.
+- `FormLayout` and `FormSection` write these steps; a form writes no gap, margin, `Stack` or `Grid` of its own between fields. A component that renders several fields for reuse in more than one form (`BillingRuleFields`) spaces them with `Stack gap={8}`, the same 1.5rem, and puts pairs in `FormRow`.
+- A repeated group (each card of an account, each line of a plan) is one block per item: its fields, then its actions (remove, a toggle of the item) in an `Inline` on the item's last line, then the button that adds an item after the last block.
 - A section is named by its legend only. No overline, no step number, no uppercase label.
 
 ## F6 · Every question is labelled
@@ -50,7 +55,7 @@ A field with no step is `full`.
 
 ## F7 · Necessity is said once, the same way
 
-- Required fields carry no mark; an optional field carries "(optional)" (Silver). The application sets `necessity="optional"` once, through `FieldDefaultsProvider`.
+- Required fields carry no mark; an optional field carries "(optional)" (Silver). The application sets `necessity="optional"` once, through `FieldDefaultsProvider` at its root. It is not set yet: it is set once every field the backend requires states `required` (plan of 2026-10-29, slice 7). Until then a form marks its required fields with `required` and the asterisk the family draws.
 - A field the backend requires sets `required` on its `Field`, so the mark and `aria-required` follow from one fact.
 
 ## F8 · Help sits where its question is
@@ -61,8 +66,9 @@ A field with no step is `full`.
 | The definition of a domain term ("business day", "carry over")       | `FieldHelp` beside the label          |
 | What the whole record will do: a preview, a summary, a rule in words | the form's aside (`FormLayout aside`) |
 
-- A description is at most one line at the column's width (about 90 characters).
+- A description is at most one line at the column's width: about 90 characters, measured in the longest translation of the catalog.
 - A label takes `FieldHelp` (through `ui/field-title`) when it is a term of accounting, banking or investing ("payee", "withheld", "basis points", "postings"), or when a reader could take it for another field of the form ("fees" beside "taxes", "security account" beside "cash account"). The help defines the term in at most two sentences and names no regional value. A label every reader knows ("Date", "Category", "Description") takes none.
+- A `Checkbox` has no `FieldLabel`: the definition of the term it names is its own description, under its label.
 - From 62rem of the form's width the aside stands beside the column, 20rem wide, and sticks under the page's chrome (LA-06). Below, it follows the last field.
 
 - A sentence that follows from the answers (the statement a purchase falls on, what a payment leaves unpaid, the total of an installment plan) is the `FieldDescription` of the field whose answer completes it, with `live="polite"`. It is never a `Text` standing between fields: a loose `Text` is 13 px in full ink, reads as a field of its own and is linked to no control.
@@ -71,12 +77,12 @@ A field with no step is `full`.
 
 ## F9 · Rare answers are opened by a choice
 
-A field most records leave empty sits in an optional group opened by a choice (FM-06): "Advanced", "Add a note". It is never shown and empty by default.
+A field that is optional and does not change what the record is (a parent account, a note, an external reference) sits in an optional group opened by a choice (FM-06): "Advanced", "Add a note". It is never shown and empty by default. A field the record's kind needs, even when optional, stays in view.
 
 ## F10 · The frame says where the reader is and what the form makes
 
 - A form page has `PageBack`, a title that names the record ("New schedule"), and a subheading that says what the record does.
-- The actions are the page's footer: the primary action names the result ("Create schedule"), the secondary actions stand before it, and the way out ("Cancel") is a ghost button before them.
+- The actions are the page's footer: the primary action names the result ("Create schedule"), the secondary actions stand before it, and the way out is a ghost button before them: "Cancel" when the form keeps nothing, "Discard" when it keeps a draft that the button also clears (FM-05).
 - A form of more than eight fields, or one with an aside, is a page, never a dialog. A dialog form follows F1 to F9 inside the dialog's body.
 
 ## F11 · Type in a form has three sizes
@@ -89,6 +95,7 @@ A field most records leave empty sits in an optional group opened by a choice (F
 
 - No heading, figure or text of another size stands among the fields. A figure the form computes goes in the aside, drawn by `FigureGrid` and `FigureCard`.
 - A legend is the label's size in semibold; the family draws it.
+- A summary drawn inside a field (the kind chosen, the account a value belongs to) uses the description's size, `xs` muted, or the control's: never `Text size="sm"` between the two.
 
 ## F12 · Text is not cut
 

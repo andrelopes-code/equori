@@ -4,7 +4,7 @@ import {
   FieldError,
   FieldLabel,
 } from "@slotted/react/field";
-import { Grid } from "@slotted/react/grid";
+import { Inline } from "@slotted/react/inline";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { Stack } from "@slotted/react/stack";
 
@@ -15,6 +15,8 @@ import type {
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
+import widths from "@/ui/field-width.module.css";
+import { FormRow } from "@/ui/form-row";
 
 export type BillingFields = Pick<
   CardSetupDraft,
@@ -67,24 +69,31 @@ export function BillingRuleFields({
     label: t(adjustmentLabel[a]),
   }));
   return (
-    <Stack gap={4}>
+    // Fields 1.5rem apart, as FormLayout spaces them (docs/contributing/forms.md, F5).
+    <Stack gap={8}>
       <Field>
         <FieldLabel>{t("accountForm.closingMode")}</FieldLabel>
-        <SegmentedControl
-          aria-label={t("accountForm.closingMode")}
-          value={value.closingMode}
-          onValueChange={(mode) => {
-            if (mode === "day" || mode === "before_due")
-              set({ closingMode: mode });
-          }}
-        >
-          <Segment value="day">{t("billing.mode.day")}</Segment>
-          <Segment value="before_due">{t("billing.mode.before_due")}</Segment>
-        </SegmentedControl>
+        <Inline>
+          <SegmentedControl
+            aria-label={t("accountForm.closingMode")}
+            value={value.closingMode}
+            onValueChange={(mode) => {
+              if (mode === "day" || mode === "before_due")
+                set({ closingMode: mode });
+            }}
+          >
+            <Segment value="day">{t("billing.mode.day")}</Segment>
+            <Segment value="before_due">{t("billing.mode.before_due")}</Segment>
+          </SegmentedControl>
+        </Inline>
       </Field>
-      <Grid columns={2} gap={4} minItemWidth="sm">
+      <FormRow>
         {value.closingMode === "day" ? (
-          <Field invalid={errors.closing_day !== undefined} required>
+          <Field
+            className={widths.medium}
+            invalid={errors.closing_day !== undefined}
+            required
+          >
             <FieldLabel>{t("accountForm.closingDay")}</FieldLabel>
             <ChoiceSelect
               label={t("accountForm.closingDay")}
@@ -106,6 +115,7 @@ export function BillingRuleFields({
           </Field>
         ) : (
           <Field
+            className={widths.medium}
             invalid={errors.closing_days_before_due !== undefined}
             required
           >
@@ -132,7 +142,11 @@ export function BillingRuleFields({
             )}
           </Field>
         )}
-        <Field invalid={errors.due_day !== undefined} required>
+        <Field
+          className={widths.medium}
+          invalid={errors.due_day !== undefined}
+          required
+        >
           <FieldLabel>{t("accountForm.dueDay")}</FieldLabel>
           <ChoiceSelect
             label={t("accountForm.dueDay")}
@@ -148,7 +162,9 @@ export function BillingRuleFields({
             <FieldError>{errors.due_day}</FieldError>
           )}
         </Field>
-        <Field>
+      </FormRow>
+      <FormRow>
+        <Field className={widths.medium}>
           <FieldLabel>{t("accountForm.closingAdjustment")}</FieldLabel>
           <ChoiceSelect
             label={t("accountForm.closingAdjustment")}
@@ -162,7 +178,7 @@ export function BillingRuleFields({
             }}
           />
         </Field>
-        <Field>
+        <Field className={widths.medium}>
           <FieldLabel>{t("accountForm.dueAdjustment")}</FieldLabel>
           <ChoiceSelect
             label={t("accountForm.dueAdjustment")}
@@ -176,20 +192,22 @@ export function BillingRuleFields({
             }}
           />
         </Field>
-      </Grid>
+      </FormRow>
       <Field>
         <FieldLabel>{t("accountForm.assignment")}</FieldLabel>
-        <SegmentedControl
-          aria-label={t("accountForm.assignment")}
-          value={value.assignment}
-          onValueChange={(next) => {
-            if (next === "next" || next === "closing")
-              set({ assignment: next });
-          }}
-        >
-          <Segment value="next">{t("billing.assignment.next")}</Segment>
-          <Segment value="closing">{t("billing.assignment.closing")}</Segment>
-        </SegmentedControl>
+        <Inline>
+          <SegmentedControl
+            aria-label={t("accountForm.assignment")}
+            value={value.assignment}
+            onValueChange={(next) => {
+              if (next === "next" || next === "closing")
+                set({ assignment: next });
+            }}
+          >
+            <Segment value="next">{t("billing.assignment.next")}</Segment>
+            <Segment value="closing">{t("billing.assignment.closing")}</Segment>
+          </SegmentedControl>
+        </Inline>
         <FieldDescription>{t("accountForm.assignmentHint")}</FieldDescription>
       </Field>
     </Stack>
