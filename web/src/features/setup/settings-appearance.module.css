@@ -1,0 +1,39 @@
+@layer app {
+  .tuningHeader {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-2);
+    margin-block-start: var(--slotted-space-4);
+  }
+
+  /* The editor beside the preview from 48 rem of the pane's own width; under it the preview stands
+     above the editor (spec A7). The preview's measure has no token. */
+  .tuning {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: var(--slotted-space-7);
+    container-type: inline-size;
+  }
+
+  .editor {
+    display: flex;
+    min-inline-size: 0;
+    flex-direction: column;
+    gap: var(--slotted-space-7);
+  }
+
+  @container (min-width: 48rem) {
+    .tuning {
+      display: grid;
+      align-items: start;
+      grid-template-columns: minmax(0, 1fr) 19rem;
+    }
+
+    .preview {
+      position: sticky;
+      inset-block-start: calc(
+        var(--slotted-page-sticky-top, 0px) + var(--slotted-space-6)
+      );
+    }
+  }
+}

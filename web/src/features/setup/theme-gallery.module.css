@@ -1,0 +1,102 @@
+@layer app {
+  .gallery {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-4);
+  }
+
+  /* A card's least measure has no token: four stand in a row of the 56 rem pane, two on a phone. */
+  .grid {
+    display: grid;
+    gap: var(--slotted-space-6) var(--slotted-space-5);
+    grid-template-columns: repeat(auto-fill, minmax(min(11rem, 40%), 1fr));
+    margin-block-end: var(--slotted-space-4);
+  }
+
+  .option {
+    position: relative;
+    display: flex;
+    min-inline-size: 0;
+    flex-direction: column;
+    gap: var(--slotted-space-3);
+    cursor: pointer;
+  }
+
+  /* The radio stays in the accessibility tree and takes focus; the drawing is its label. */
+  .radio {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .frame {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-lg);
+    outline: var(--slotted-border-width-medium) solid transparent;
+    box-shadow: var(--slotted-shadow-sm);
+    transition:
+      border-color var(--slotted-duration-short) var(--slotted-easing-standard),
+      outline-color var(--slotted-duration-short) var(--slotted-easing-standard),
+      translate var(--slotted-duration-short) var(--slotted-easing-standard);
+  }
+
+  .option:hover .frame {
+    border-color: var(--slotted-border-strong);
+    translate: 0 -0.125rem;
+  }
+
+  /* The accent ring and the check carry the choice, by shape as well as by colour. */
+  .radio:checked + .frame {
+    border-color: var(--slotted-tone-accent-text);
+    outline-color: var(--slotted-tone-accent-text);
+  }
+
+  .radio:focus-visible + .frame {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  .mark {
+    position: absolute;
+    display: grid;
+    inline-size: 1.375rem;
+    block-size: 1.375rem;
+    place-items: center;
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-tone-accent-solid);
+    color: var(--slotted-tone-accent-on-solid);
+    inset-block-start: var(--slotted-space-3);
+    inset-inline-end: var(--slotted-space-3);
+  }
+
+  .caption {
+    display: flex;
+    min-inline-size: 0;
+    flex-direction: column;
+    gap: var(--slotted-space-1);
+    padding-inline: var(--slotted-space-1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .frame {
+      transition: none;
+    }
+
+    .option:hover .frame {
+      translate: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .radio:checked + .frame {
+      border-color: Highlight;
+      outline-color: Highlight;
+    }
+  }
+}

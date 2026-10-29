@@ -16,7 +16,7 @@ The appearance studio makes the theme the primary decision and the individual co
 - A reader exports a theme as JSON (clipboard and file) and imports one (paste and file).
 - Every theme card draws a miniature of the application with real Slotted components under its own `ThemeScope`, not a schematic.
 - The fine-tuning editor sits beside a live preview of real components: an account figure, a budget meter, transactions with income and expense amounts, a tag, a field and the button variants.
-- New values: the four status seeds `success`, `danger`, `warning` and `info`. Income and expense amounts read the `success` and `danger` tones, so a reader controls their colours.
+- New values: the four status seeds `success`, `danger`, `warning` and `info`. Money in reads the `success` tone and an overspent or negative figure the `danger` tone, so a reader controls their colours.
 
 ## Non-goals
 
@@ -40,7 +40,7 @@ The appearance studio makes the theme the primary decision and the individual co
 | A5  | Saved themes live under `equori.themes` as a JSON array of `{ id, name, ...values }`. A name is 1 to 40 characters after trimming. At most 50 saved themes. A malformed entry is dropped on read. |
 | A6  | The export format is `{ "format": "equori.theme", "version": 1, "name", ...values }`, with every colour written as hex. Import accepts at most 4096 characters, parses JSON, checks `format` and `version`, validates each value with the check its preference uses, and refuses the whole file on the first invalid value with one message. Unknown fields are ignored. The name is rendered as text. |
 | A7  | The pane reads top to bottom: header with the active theme and its actions; the scheme as a segmented control; the theme gallery; the fine-tuning editor beside the live preview. Under 48 rem of the pane's own width the preview sits above the editor. |
-| A8  | The gallery is a radio group named "Theme". A saved theme's card carries a menu: rename, duplicate, export, delete. Delete asks for confirmation. |
+| A8  | The gallery is a radio group named "Theme". The header's actions act on the active theme: save as a new theme, import, export; rename and delete when the active theme is a saved one. Delete asks for confirmation. |
 | A9  | The controls keep their accessible names and storage keys, so `settings-page.test.tsx` keeps passing unchanged. |
 | A10 | Every amount in the preview goes through `useMoneyFormat()` with the profile's base currency (O9, O10). |
 
@@ -63,7 +63,7 @@ Hex seeds; `—` keeps the compiled theme's seed.
 
 ## Region
 
-No value of this design depends on a region. The colour of income and of expense remains the compiled theme's `success` and `danger` seeds; a reader overrides them through A2. A regional default for those colours is outside this design.
+No value of this design depends on a region. The colour of money in and of an overspent figure remains the compiled theme's `success` and `danger` seeds; a reader overrides them through A2. A regional default for those colours is outside this design.
 
 ## Left to the builder
 

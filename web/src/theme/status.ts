@@ -35,7 +35,7 @@ function statusSeed(name: StatusName): Preference<StatusSeed> {
   );
 }
 
-// Income and expense amounts read the success and danger tones, so these seeds colour them.
+// Money in reads the success tone and an overspent figure the danger tone, so these seeds colour them.
 export const statusSeeds: Readonly<Record<StatusName, Preference<StatusSeed>>> =
   {
     success: statusSeed("success"),

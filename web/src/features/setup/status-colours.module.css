@@ -1,0 +1,13 @@
+@layer app {
+  /* Two colours a row in the editor column, four in a wide one. A field's least measure has no
+     token. */
+  .grid {
+    display: grid;
+    gap: var(--slotted-space-5);
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  }
+
+  .colour {
+    min-inline-size: 0;
+  }
+}
