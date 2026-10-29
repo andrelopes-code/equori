@@ -1,255 +1,140 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useRouterState } from "@tanstack/react-router";
-import {
-  Alert,
-  AlertActions,
-  AlertContent,
-  AlertDescription,
-  AlertTitle,
-} from "@slotted/react/alert";
-import { Button } from "@slotted/react/button";
-import {
-  Drawer,
-  DrawerActions,
-  DrawerBody,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerPanel,
-  DrawerResizer,
-  DrawerTitle,
-} from "@slotted/react/drawer";
-import {
-  Bubble,
-  BubbleContent,
-  BubbleTyping,
-  Message,
-  MessageBody,
-} from "@slotted/react/message";
-import {
-  MessageScroller,
-  MessageScrollerContent,
-  MessageScrollerItem,
-  MessageScrollerViewport,
-} from "@slotted/react/message-scroller";
-import { Heading, Text } from "@slotted/react/typography";
-import {
-  AppShellAside,
-  AppShellAsideBody,
-  AppShellAsideFooter,
-  AppShellAsideHeader,
-  AppShellAsideResizer,
-} from "@slotted/react/app-shell";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useRouterState } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
 
 import { useApi } from "@/api/api-context";
-import { ProblemError, problemMessage } from "@/api/problem";
-import styles from "@/features/assistant/assistant-panel.module.css";
+import { ProblemError } from "@/api/problem";
 import {
   assistantKeys,
   chatStateQuery,
   conversationQuery,
 } from "@/features/assistant/api";
+import { AssistantAside } from "@/features/assistant/assistant-aside";
 import { AssistantComposer } from "@/features/assistant/assistant-composer";
+import { AssistantDrawer } from "@/features/assistant/assistant-drawer";
+import styles from "@/features/assistant/assistant-panel.module.css";
+import { BlockedNotice } from "@/features/assistant/blocked-notice";
 import { ChatWelcome } from "@/features/assistant/chat-welcome";
+import { ConversationFeed } from "@/features/assistant/conversation-feed";
 import { ConversationList } from "@/features/assistant/conversation-list";
-import { maskAmountText } from "@/features/assistant/mask-amounts";
-import { MessageItem } from "@/features/assistant/message-item";
 import { HeaderActions } from "@/features/assistant/header-actions";
 import { ProviderNotice } from "@/features/assistant/provider-notice";
-import { useAssistantTurn } from "@/features/assistant/use-assistant-turn";
-import { useFrameValue } from "@/features/assistant/use-frame-value";
-import { TurnActivity } from "@/features/assistant/turn-activity";
+import { retryText } from "@/features/assistant/retry-text";
 import { routeSuggestions } from "@/features/assistant/route-suggestions";
+import { TurnErrorNotice } from "@/features/assistant/turn-error-notice";
+import { useAssistantTurn } from "@/features/assistant/use-assistant-turn";
+import { usePanelFocus } from "@/features/assistant/use-panel-focus";
+import { usePanelTitle } from "@/features/assistant/use-panel-title";
 import { useRetryAt } from "@/features/assistant/use-retry-at";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { usePrivacy } from "@/privacy/privacy-provider";
+import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
-const PHONE_QUERY = "(max-width: 599px)";
-
-function subscribe(onChange: () => void): () => void {
-  const list = matchMedia(PHONE_QUERY);
-  list.addEventListener("change", onChange);
-  return () => {
-    list.removeEventListener("change", onChange);
-  };
-}
-
-function usePhone(): boolean {
-  return useSyncExternalStore(subscribe, () => matchMedia(PHONE_QUERY).matches);
-}
-
-// A phone's sheet rests at this fraction of the screen's height and cannot be pulled higher.
-const SHEET_STOPS = [0.85];
-
-// The chat state answers these codes; the stored conversation shows a failed turn (P6, P7).
-const stateCodes = new Set([
-  "assistant_exhausted",
-  "assistant_unavailable",
-  "assistant_failed",
-]);
-
-// The shell's pane beside the page from 1200 px; an overlay without a scrim from 600 px; a
-// bottom sheet on a phone resting at 85% of the screen, whose composer is the sheet's footer and stays at the screen's
-// foot while the sheet is dragged (P9). Its state outlives closing it and a change of placement.
-export function AssistantPanel({
-  open,
-  onOpenChange,
-  returnFocus,
-  beside = false,
-}: {
+interface AssistantPanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   // The shell's pane holds the panel; the caller renders it inside an AppShell (P9).
   beside?: boolean;
   // The element focused before the panel opened; focus returns to it on close (P18).
   returnFocus?: RefObject<HTMLElement | null>;
-}) {
-  const t = useT();
+}
+
+// The assistant's chat, as the shell's pane beside the page or as a drawer. Its state outlives
+// closing it and a change of placement.
+export function AssistantPanel({
+  open,
+  onOpenChange,
+  returnFocus,
+  beside = false,
+}: AssistantPanelProps) {
   const api = useApi();
-  const [locale] = useAppLocale();
-  const phone = usePhone();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const phone = useMediaQuery(compactQuery);
   const page = useRouterState({ select: (s) => s.location.pathname });
   const turn = useAssistantTurn(page);
-  const [listing, setListing] = useState(false);
-  // The composer's text lives here so that a move between the drawer and the pane keeps it.
-  const [draftText, setDraftText] = useState("");
-  const composerRef = useRef<HTMLTextAreaElement>(null);
-  const { hidden } = usePrivacy();
+
   const chat = useQuery({ ...chatStateQuery(api), enabled: open });
   const stored = useQuery({
     ...conversationQuery(api, turn.conversationId ?? ""),
     enabled: open && turn.conversationId !== undefined && turn.pending === null,
   });
+
+  const [listing, setListing] = useState(false);
+  // The composer's text lives here so that a move between the drawer and the pane keeps it.
+  const [draftText, setDraftText] = useState("");
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+
   // A kept conversation that was deleted, or belongs to another user, opens a new one (P19).
   const gone =
     stored.error instanceof ProblemError && stored.error.status === 404;
   const { reset } = turn;
+
   useEffect(() => {
     if (gone) reset();
   }, [gone, reset]);
 
-  const time = (iso: string) =>
-    new Intl.DateTimeFormat(locale, {
-      hour: "numeric",
-      minute: "2-digit",
-    }).format(new Date(iso));
-  const messages =
-    turn.conversationId === undefined ? [] : (stored.data?.messages ?? []);
   useRetryAt(chat.data?.retry_at, chat.dataUpdatedAt, () => {
     void queryClient.invalidateQueries({ queryKey: assistantKeys.chat() });
   });
+
+  const ready = chat.data !== undefined;
   const blocked = chat.data?.available === false;
+
+  usePanelFocus({
+    open,
+    beside,
+    phone,
+    canType: open && !listing && ready && !blocked,
+    composerRef,
+    returnFocus,
+  });
+
+  const messages =
+    turn.conversationId === undefined ? [] : (stored.data?.messages ?? []);
   const started = messages.length > 0 || turn.pending !== null;
-  const canType = open && !listing && chat.data !== undefined && !blocked;
-  // The composer is disabled while the chat state loads, when the drawer moves focus on open.
-  // A move between the drawer and the pane mounts a new composer; it takes focus again. A phone's
-  // sheet leaves it unfocused: the screen keyboard would resize the sheet during its entrance.
-  useEffect(() => {
-    if (canType && !phone) composerRef.current?.focus();
-  }, [canType, beside, phone]);
-  // The pane moves no focus on close; the element focused before opening takes it back (P18).
-  const wasOpen = useRef(open);
-  useEffect(() => {
-    if (wasOpen.current && !open && beside) returnFocus?.current?.focus();
-    wasOpen.current = open;
-  }, [open, beside, returnFocus]);
-  const retryAt = chat.data?.retry_at;
-  const blockedNotice =
-    chat.data?.available !== false ? null : retryAt !== undefined ? (
-      <Alert tone="warning" live="polite">
-        <AlertContent>
-          <AlertTitle>{t("assistant.exhausted.title")}</AlertTitle>
-          <AlertDescription>
-            {t("assistant.exhausted", { time: time(retryAt) })}
-          </AlertDescription>
-        </AlertContent>
-      </Alert>
-    ) : (
-      <Alert tone="info" live="polite">
-        <AlertContent>
-          <AlertTitle>{t("assistant.unavailable.title")}</AlertTitle>
-          <AlertDescription>{t("assistant.unavailable.body")}</AlertDescription>
-        </AlertContent>
-        <AlertActions>
-          <Button
-            variant="ghost"
-            onClick={() => {
-              onOpenChange(false);
-              void navigate({
-                to: "/settings",
-                search: { section: "assistant" },
-              });
-            }}
-          >
-            {t("assistant.setup")}
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={() => {
-              onOpenChange(false);
-              void navigate({
-                to: "/settings",
-                search: { section: "external_access" },
-              });
-            }}
-          >
-            {t("assistant.use_mcp")}
-          </Button>
-        </AlertActions>
-      </Alert>
-    );
-  const errorNotice = turn.error !== null &&
-    !stateCodes.has(turn.error.code) && (
-      <Alert tone="danger" live="polite">
-        <AlertContent>
-          <AlertTitle>{t("assistant.failed.title")}</AlertTitle>
-          <AlertDescription>{problemMessage(turn.error, t)}</AlertDescription>
-        </AlertContent>
-      </Alert>
-    );
-  const send = (text: string) => {
+  // A question the server stored without any answer (the answer failed to store) reads as failed.
+  const orphan = messages.at(-1)?.role === "user" && turn.pending === null;
+  const retry = retryText(messages, { blocked, orphan });
+  const title = usePanelTitle(listing, stored.data, turn);
+
+  function close() {
+    onOpenChange(false);
+  }
+
+  function send(text: string) {
     if (turn.pending !== null) return;
+
     setListing(false);
     turn.send(text);
-  };
-  const last = messages.at(-1);
-  // A question the server stored without any answer (the answer failed to store) reads as failed.
-  const orphan = last?.role === "user" && turn.pending === null;
-  const retryText = blocked
-    ? undefined
-    : orphan
-      ? last.content
-      : last?.outcome === "failed" || last?.outcome === "canceled"
-        ? messages.at(-2)?.content
-        : undefined;
-  const retry =
-    retryText === undefined
+  }
+
+  function startNew() {
+    turn.reset();
+    setListing(false);
+  }
+
+  function openConversation(id: string) {
+    turn.open(id);
+    setListing(false);
+  }
+
+  const handleRetry =
+    retry === undefined
       ? undefined
       : () => {
-          send(retryText);
+          send(retry);
         };
-  // While the first turn runs, the conversation is named after the question (U13).
-  const storedTitle =
-    stored.data === undefined && turn.pending !== null
-      ? turn.pending
-      : stored.data?.title;
-  const title = listing
-    ? t("assistant.conversations")
-    : storedTitle === undefined ||
-        (turn.conversationId === undefined && turn.pending === null)
-      ? t("assistant.new_conversation")
-      : hidden
-        ? maskAmountText(storedTitle)
-        : storedTitle;
-  const framed = useFrameValue(turn.draft);
-  // A step clears the text at once (E4); only its growth waits for a frame.
-  const draft = turn.draft === "" ? "" : framed;
 
-  const headerActions = (
+  // Each element below is passed to the pane and to the drawer.
+  const notices = (
+    <>
+      {blocked && (
+        <BlockedNotice retryAt={chat.data?.retry_at} onClose={close} />
+      )}
+      <TurnErrorNotice error={turn.error} />
+    </>
+  );
+
+  const actions = (
     <HeaderActions
       listing={listing}
       onBack={() => {
@@ -258,132 +143,54 @@ export function AssistantPanel({
       onHistory={() => {
         setListing(true);
       }}
-      onNew={() => {
-        turn.reset();
-        setListing(false);
-      }}
-      onClose={() => {
-        onOpenChange(false);
-      }}
+      onNew={startNew}
+      onClose={beside ? close : undefined}
     />
   );
-  const thread = (
+
+  const body = (
     <div data-own="assistant-panel" className={styles.thread}>
-      {listing ? (
+      {listing && (
         <div className={styles.scroll}>
           <ConversationList
             current={turn.conversationId}
-            onOpen={(id) => {
-              turn.open(id);
-              setListing(false);
-            }}
+            onOpen={openConversation}
           />
         </div>
-      ) : !started ? (
+      )}
+
+      {!listing && !started && (
         <div className={styles.scroll}>
           <ChatWelcome
-            canAsk={!blocked && chat.data !== undefined}
+            canAsk={ready && !blocked}
             suggestions={routeSuggestions(page)}
             onAsk={send}
             notices={
               <>
-                {blockedNotice}
-                {errorNotice}
+                {notices}
                 {chat.data !== undefined && <ProviderNotice chat={chat.data} />}
               </>
             }
           />
         </div>
-      ) : (
-        <MessageScroller
-          follow
-          defaultPosition="end"
-          busy={turn.pending !== null}
-        >
-          <MessageScrollerViewport>
-            <MessageScrollerContent className={styles.feed}>
-              {messages.map((m) => (
-                <MessageScrollerItem
-                  key={m.id}
-                  messageId={m.id}
-                  anchor={m.role === "user"}
-                >
-                  <MessageItem
-                    message={m}
-                    onRetry={m === last && !orphan ? retry : undefined}
-                    steps={turn.activity[m.id]}
-                    reveal={
-                      m === last &&
-                      m.proposals.some((p) => p.status === "pending")
-                    }
-                  />
-                </MessageScrollerItem>
-              ))}
-              {orphan && (
-                <MessageScrollerItem messageId="unanswered">
-                  <MessageItem
-                    message={{
-                      id: "unanswered",
-                      role: "assistant",
-                      content: "",
-                      outcome: turn.stopped ? "canceled" : "failed",
-                      created_at: last.created_at,
-                      proposals: [],
-                    }}
-                    onRetry={retry}
-                  />
-                </MessageScrollerItem>
-              )}
-              {turn.pending !== null && (
-                <>
-                  <MessageScrollerItem messageId="pending" anchor>
-                    <Message align="end">
-                      <MessageBody>
-                        <Bubble>
-                          <BubbleContent>{turn.pending}</BubbleContent>
-                        </Bubble>
-                      </MessageBody>
-                    </Message>
-                  </MessageScrollerItem>
-                  {(turn.steps.length > 0 || draft === "") && (
-                    <Message status="streaming">
-                      <MessageBody>
-                        {turn.steps.length > 0 ? (
-                          <TurnActivity steps={turn.steps} running />
-                        ) : (
-                          <Bubble>
-                            <BubbleTyping />
-                          </Bubble>
-                        )}
-                      </MessageBody>
-                    </Message>
-                  )}
-                  {draft !== "" && (
-                    <MessageItem
-                      message={{
-                        id: "draft",
-                        role: "assistant",
-                        content: draft,
-                        created_at: "",
-                        proposals: [],
-                      }}
-                      streaming
-                    />
-                  )}
-                </>
-              )}
-            </MessageScrollerContent>
-          </MessageScrollerViewport>
-        </MessageScroller>
+      )}
+
+      {!listing && started && (
+        <ConversationFeed
+          messages={messages}
+          turn={turn}
+          orphan={orphan}
+          onRetry={handleRetry}
+        />
       )}
     </div>
   );
-  const footer = !listing && (
+
+  const footer = listing ? null : (
     <div className={styles.composer}>
-      {started && blockedNotice}
-      {started && errorNotice}
+      {started && notices}
       <AssistantComposer
-        disabled={blocked || chat.data === undefined}
+        disabled={blocked || !ready}
         busy={turn.pending !== null}
         onSend={send}
         onStop={turn.stop}
@@ -397,64 +204,30 @@ export function AssistantPanel({
   if (beside) {
     // A closed pane leaves the layout; its state stays here.
     if (!open) return null;
+
     return (
-      <AppShellAside
-        // An inline pane is not a layer, so the shell leaves Escape alone; the assistant closes on it.
-        onKeyDown={(event) => {
-          if (event.key === "Escape" && !event.defaultPrevented) {
-            onOpenChange(false);
-          }
-        }}
-      >
-        <AppShellAsideResizer />
-        <AppShellAsideHeader>
-          {/* One child: the pane's header gives each child of its own an equal share of the row. */}
-          <div className={styles.asideHeader}>
-            <div className={styles.asideTitle}>
-              <Heading level={2} size="md">
-                {t("assistant.title")}
-              </Heading>
-              <Text size="sm" tone="muted" truncate>
-                {title}
-              </Text>
-            </div>
-            {headerActions}
-          </div>
-        </AppShellAsideHeader>
-        <AppShellAsideBody>{thread}</AppShellAsideBody>
-        {footer !== false && (
-          <AppShellAsideFooter>{footer}</AppShellAsideFooter>
-        )}
-      </AppShellAside>
+      <AssistantAside
+        title={title}
+        actions={actions}
+        body={body}
+        footer={footer}
+        onClose={close}
+      />
     );
   }
 
   return (
-    <Drawer
+    <AssistantDrawer
       open={open}
       onOpenChange={onOpenChange}
-      side={phone ? "bottom" : "end"}
-      size={phone ? "full" : "xl"}
-      modal={phone}
-      // P9: from 600 px the overlay paints no scrim and leaves the page usable.
-      scrimFrom={phone ? 0 : 1}
-      outsidePress="none"
-      {...(phone ? { snapPoints: SHEET_STOPS } : {})}
-      initialFocus={phone ? "container" : listing ? "first" : composerRef}
-      {...(returnFocus === undefined ? {} : { finalFocus: returnFocus })}
-    >
-      <DrawerPanel className={styles.panel}>
-        {phone && <DrawerResizer />}
-        <DrawerHeader>
-          <DrawerTitle>{t("assistant.title")}</DrawerTitle>
-          <DrawerDescription>
-            <Text truncate>{title}</Text>
-          </DrawerDescription>
-          <DrawerActions>{headerActions}</DrawerActions>
-        </DrawerHeader>
-        <DrawerBody>{thread}</DrawerBody>
-        {footer !== false && <DrawerFooter>{footer}</DrawerFooter>}
-      </DrawerPanel>
-    </Drawer>
+      phone={phone}
+      listing={listing}
+      composerRef={composerRef}
+      returnFocus={returnFocus}
+      title={title}
+      actions={actions}
+      body={body}
+      footer={footer}
+    />
   );
 }

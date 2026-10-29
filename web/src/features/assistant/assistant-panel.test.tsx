@@ -334,6 +334,27 @@ describe("AssistantPanel", () => {
     resolveRoute(json(200, detail("You spent **10 items**.")));
   });
 
+  // The header keeps a column for the drawer's own close: a close among the actions leaves that
+  // column empty, and its gap widens the header's end beyond its start.
+  it.each([1280, 390])(
+    "closes the drawer at %i px through the drawer's own close",
+    async (width) => {
+      const { onOpenChange } = setup({}, "/overview", width);
+      const header = await screen.findByText(catalogEn["assistant.title"]);
+      const drawer = header.closest<HTMLElement>('[data-ui="drawer"]');
+      if (drawer === null) throw new Error("no drawer");
+
+      const close = within(drawer).getByRole("button", {
+        name: catalogEn["detail.close"],
+      });
+      await userEvent.click(close);
+
+      expect(close).toHaveAttribute("data-part", "close");
+      expect(close.closest('[data-part="actions"]')).toBeNull();
+      expect(onOpenChange.mock.calls[0]?.[0]).toBe(false);
+    },
+  );
+
   it("names the conversation after the question while the first turn runs (U13)", async () => {
     const stream = turnStream();
     setup({ "POST /api/v1/assistant/turns": () => stream.response() });

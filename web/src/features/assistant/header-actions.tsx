@@ -5,7 +5,8 @@ import { AssistantIcon } from "@/features/assistant/assistant-icon";
 import styles from "@/features/assistant/assistant-panel.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
-// The pane's and the sheet's header actions; the close is the group's last button in both.
+// The header actions of the pane and of the drawer. The pane draws its close here as the group's
+// last button; the drawer draws its own (DrawerClose) and passes no onClose.
 export function HeaderActions({
   listing,
   onBack,
@@ -17,7 +18,7 @@ export function HeaderActions({
   onBack: () => void;
   onHistory: () => void;
   onNew: () => void;
-  onClose: () => void;
+  onClose: (() => void) | undefined;
 }) {
   const t = useT();
   return (
@@ -40,11 +41,13 @@ export function HeaderActions({
           <AssistantIcon name="new" />
         </Icon>
       </IconButton>
-      <IconButton aria-label={t("detail.close")} onClick={onClose}>
-        <Icon>
-          <Glyph name="x" />
-        </Icon>
-      </IconButton>
+      {onClose !== undefined && (
+        <IconButton aria-label={t("detail.close")} onClick={onClose}>
+          <Icon>
+            <Glyph name="x" />
+          </Icon>
+        </IconButton>
+      )}
     </div>
   );
 }

@@ -18,6 +18,11 @@
       min-block-size: 0;
       grid-template-rows: auto auto minmax(0, 1fr) auto;
     }
+
+    /* Workaround for Slotted issue #34: leaving, the footer keeps its row at the panel's foot. */
+    .leaving {
+      position: relative;
+    }
   }
 
   /* In the shell's pane the title and the conversation's name take the row; the actions keep their size. */
