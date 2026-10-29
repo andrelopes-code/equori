@@ -24,6 +24,7 @@ import {
   statementStatusTone,
   statementStatusWords,
 } from "@/features/cards/statement-words";
+import { HelpLink } from "@/features/help";
 import { formatDate, formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { PageBack } from "@/ui/page-back";
@@ -124,6 +125,7 @@ export function StatementHeader({
                 direction="next"
               />
             </ButtonGroup>
+            <HelpLink page="statement" />
             {s !== undefined && owing.has(s.status) && (
               <Button
                 variant="outline"

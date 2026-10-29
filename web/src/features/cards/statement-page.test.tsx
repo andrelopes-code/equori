@@ -118,6 +118,14 @@ async function action(key: keyof typeof catalogEn) {
 }
 
 describe("StatementPage", () => {
+  it("leads to the help page that explains a statement", async () => {
+    await renderApp(path, { fetch: api() });
+
+    expect(
+      await screen.findByRole("link", { name: catalogEn["help.screen"] }),
+    ).toHaveAttribute("href", "/help/statement");
+  });
+
   it("reads the statement's figures and how its total is made", async () => {
     await renderApp(path, { fetch: api() });
     const figures = await screen.findByRole("region", {
