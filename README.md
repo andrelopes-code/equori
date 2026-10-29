@@ -1,10 +1,21 @@
 # equori
 
-Self-hosted personal finance manager.
+[![ci](https://github.com/andrelopes-code/equori/actions/workflows/ci.yml/badge.svg)](https://github.com/andrelopes-code/equori/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/andrelopes-code/equori)](https://github.com/andrelopes-code/equori/releases/latest)
+[![license](https://img.shields.io/github/license/andrelopes-code/equori)](LICENSE)
 
-Status: early development. The HTTP API covers the ledger, credit cards, reconciliation, file import, classification, Pluggy synchronization, planning (schedules, budgets, goals, projections), currencies and investments (prices, trades, income, positions); the web interface is a shell.
+Self-hosted personal finance manager: one Go binary on PostgreSQL, with the web interface embedded.
 
-API contract: [api/openapi.yaml](api/openapi.yaml). Security reports: [SECURITY.md](SECURITY.md).
+Status: early development. The HTTP API and the web interface cover the ledger, credit cards, reconciliation, file import, classification, Pluggy synchronization, planning (schedules, budgets, goals, projections), currencies and investments (prices, trades, income, positions), reports and an assistant over the same tools, also served to external clients through MCP (`docs/operations/mcp.md`).
+
+| Topic | Location |
+|---|---|
+| API contract | [api/openapi.yaml](api/openapi.yaml) |
+| Architecture decisions | [docs/adr/](docs/adr/) |
+| Domain: vision, language, scenarios, roadmap | [docs/domain/](docs/domain/) |
+| Operations: backup, export, remote access, integrations | [docs/operations/](docs/operations/) |
+| Contributing | [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) |
+| Security reports | [SECURITY.md](SECURITY.md) |
 
 ## Run
 
@@ -100,13 +111,12 @@ The Postgres major version is pinned to 18. To upgrade the major version, dump t
 Requirements: Go 1.27, Node.js 24 with Corepack enabled (`corepack enable`), Docker, make.
 
 ```sh
-make hooks    # pre-commit runs make check
-make db-up    # local Postgres on 127.0.0.1:54329 (EQUORI_DEV_DB_PORT)
-make dev      # run the app; API reference at http://localhost:8080/docs
-make web-dev  # Vite dev server for the web interface, proxying /api to make dev
-make gen      # regenerate sqlc and oapi-codegen output
-make check    # format, tidy and codegen checks, lint, web checks, test (starts Postgres)
+make hooks    # git hooks of lefthook.yml
+make run-dev  # PostgreSQL, the app on :8080 (API reference at /docs) and the Vite dev server
+make check    # everything CI runs
 ```
+
+`CONTRIBUTING.md` lists every command and the conventions of the code.
 
 `dev.env` holds the development environment that `make dev` uses. Loaded into a shell, it lets any subcommand run against the local database:
 
