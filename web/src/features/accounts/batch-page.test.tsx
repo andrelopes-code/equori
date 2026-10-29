@@ -243,4 +243,44 @@ describe("Import batch", () => {
       await screen.findByText(catalogEn["batch.resolvedElsewhere"]),
     ).toBeInTheDocument();
   });
+
+  // A140: a discarded line goes back to review.
+  it("reopens a discarded line", async () => {
+    const log: { route: string; body?: unknown; query?: string }[] = [];
+    await renderApp(path, {
+      fetch: api(log, {
+        "GET /api/v1/import-batches/b1/records": (req) => {
+          const state = new URL(req.url).searchParams.get("state") ?? "all";
+          return json(200, {
+            items:
+              state === "needs_review"
+                ? []
+                : [
+                    record("r5", "Estorno de compra", {
+                      state: "discarded",
+                      candidates: [],
+                    }),
+                  ],
+          });
+        },
+        "POST /api/v1/external-records/r5/reopen": () => {
+          log.push({ route: "reopen r5" });
+          return json(200, record("r5", "Estorno de compra"));
+        },
+      }),
+    });
+
+    await userEvent.click(
+      await screen.findByRole("radio", {
+        name: catalogEn["batch.filter.discarded"],
+      }),
+    );
+    await userEvent.click(
+      await screen.findByRole("button", { name: catalogEn["batch.reopen"] }),
+    );
+
+    await waitFor(() => {
+      expect(log.filter((l) => l.route === "reopen r5")).toHaveLength(1);
+    });
+  });
 });

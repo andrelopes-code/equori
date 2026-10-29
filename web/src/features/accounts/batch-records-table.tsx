@@ -1,3 +1,4 @@
+import { Inline } from "@slotted/react/inline";
 import { Link } from "@slotted/react/link";
 import {
   Table,
@@ -15,6 +16,7 @@ import {
 import { Tag } from "@slotted/react/tag";
 
 import type { components } from "@/api/schema.gen";
+import { ReopenRecordButton } from "@/features/accounts/reopen-record-button";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -100,9 +102,14 @@ export function BatchRecordsTable({
                   {fmt.signed(record.amount, scale(record.amount.currency))}
                 </TableCell>
                 <TableCell>
-                  <Tag size="sm" tone={stateTone[record.state]}>
-                    {t(recordStateWords[record.state])}
-                  </Tag>
+                  <Inline gap={4} align="center" wrap="wrap">
+                    <Tag size="sm" tone={stateTone[record.state]}>
+                      {t(recordStateWords[record.state])}
+                    </Tag>
+                    {record.state === "discarded" && (
+                      <ReopenRecordButton recordId={record.id} />
+                    )}
+                  </Inline>
                 </TableCell>
               </TableRow>
             ))}

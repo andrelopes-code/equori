@@ -545,6 +545,16 @@ export function useResolveRecord() {
   );
 }
 
+export function useReopenRecord() {
+  return useApiMutation(async (api, id: string) =>
+    unwrap(
+      await api.POST("/external-records/{id}/reopen", {
+        params: { path: { id } },
+      }),
+    ),
+  );
+}
+
 export function useMapExternalAccount() {
   return useApiMutation(
     async (

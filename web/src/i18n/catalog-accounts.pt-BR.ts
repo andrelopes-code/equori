@@ -496,6 +496,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "batch.unapplied": "Alteração não aplicada: {change}",
   "batch.create": "Criar uma nova transação",
   "batch.discard": "Descartar a linha",
+  "batch.reopen": "Reabrir para revisão",
   "batch.match": "Conciliar com esta transação",
   "batch.candidates": "Candidatas ({count})",
   "batch.bands":

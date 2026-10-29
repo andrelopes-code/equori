@@ -498,6 +498,7 @@ export const accountsEn = {
   "batch.unapplied": "Change not applied: {change}",
   "batch.create": "Create a new transaction",
   "batch.discard": "Discard the line",
+  "batch.reopen": "Reopen for review",
   "batch.match": "Match with this transaction",
   "batch.candidates": "Candidates ({count})",
   "batch.bands":
