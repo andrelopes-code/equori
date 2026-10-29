@@ -504,7 +504,7 @@ func (s *Service) correctIn(ctx context.Context, r Repository, userID int64, id 
 			err = r.ReplaceCategoryPostings(ctx, prev, corrected, reason)
 		}
 	} else {
-		corrected, err = s.correct(ctx, r, prev, next, expectedVersion, accounts, reason)
+		_, err = s.correct(ctx, r, prev, next, expectedVersion, accounts, reason)
 	}
 	if err != nil {
 		return domain.Transaction{}, err
