@@ -121,3 +121,17 @@ func (s *Server) ReconcileStatement(ctx context.Context, req ReconcileStatementR
 	}
 	return ReconcileStatement200JSONResponse(out), nil
 }
+
+func (s *Server) DeferStatementPostings(ctx context.Context, req DeferStatementPostingsRequestObject) (DeferStatementPostingsResponseObject, error) {
+	userID := auth.MustUserID(ctx)
+	if err := s.svc.DeferPostings(ctx, userID, req.Id, req.Body.TransactionIds); err != nil {
+		return nil, err
+	}
+
+	out, err := s.statementDetail(ctx, userID, req.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	return DeferStatementPostings200JSONResponse(out), nil
+}

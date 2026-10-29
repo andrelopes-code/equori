@@ -89,3 +89,84 @@ func provisionalOf(t *testing.T, h *apitest.Harness, statementID string) map[str
 	}
 	return out
 }
+
+type differenceView struct {
+	AmountDifference *struct {
+		Amount int64 `json:"amount"`
+	} `json:"amount_difference"`
+	Proposal *struct {
+		TransactionIDs []string `json:"transaction_ids"`
+		Amount         struct {
+			Amount int64 `json:"amount"`
+		} `json:"amount"`
+	} `json:"difference_proposal"`
+	Rounding bool `json:"rounding_difference"`
+}
+
+// differenceSetup bills on statement 2026-11 (closing 2026-11-03) a charge of 7.13 a line's
+// bill placed and a manual 7.13 of 2026-11-01, and records the institution's total as the
+// amount due less shortBy.
+func differenceSetup(t *testing.T, shortBy int64) (c cardSetup, statementID, manual string) {
+	t.Helper()
+	c = newCardSetup(t, "2026-11-12")
+	line := imported(t, c.card, "2026-10-28", -713)
+	due := time.Date(2026, 11, 10, 0, 0, 0, 0, time.UTC)
+	line.DueDate = &due
+	if _, err := c.h.App.Ledger.RecordImported(t.Context(), c.h.OwnerID(), uuid.New(), line); err != nil {
+		t.Fatal(err)
+	}
+	manual = c.purchase("2026-11-01", 713)
+	s := statements(t, c.h, c.card)["2026-11"]
+	c.h.MustDo(http.MethodPut, "/api/v1/statements/"+s.ID+"/facts",
+		map[string]any{"due_date": "2026-11-10", "total": apitest.BRL(int64(s.AmountDue) - shortBy)}, http.StatusOK, nil)
+	return c, s.ID, manual
+}
+
+// S177 (A137).
+func TestStatementDifferenceProposal_S177(t *testing.T) {
+	t.Parallel()
+	c, id, manual := differenceSetup(t, 713)
+	var before differenceView
+	c.h.MustDo(http.MethodGet, "/api/v1/statements/"+id, nil, http.StatusOK, &before)
+	if p := before.Proposal; p == nil || len(p.TransactionIDs) != 1 || p.TransactionIDs[0] != manual || p.Amount.Amount != 713 {
+		t.Fatalf("proposal = %+v", before.Proposal)
+	}
+
+	var after differenceView
+	c.h.MustDo(http.MethodPost, "/api/v1/statements/"+id+"/defer", map[string]any{"transaction_ids": []string{manual}}, http.StatusOK, &after)
+
+	if after.AmountDifference == nil || after.AmountDifference.Amount != 0 || after.Proposal != nil {
+		t.Fatalf("after the move = %+v", after)
+	}
+	if s := c.h.Transaction(manual).Postings[0].Statement; s != "2026-12" {
+		t.Fatalf("moved charge on %s, want 2026-12", s)
+	}
+}
+
+// S179 (A137).
+func TestStatementRoundingDifference_S179(t *testing.T) {
+	t.Parallel()
+	c, id, _ := differenceSetup(t, 1)
+	var got differenceView
+
+	c.h.MustDo(http.MethodGet, "/api/v1/statements/"+id, nil, http.StatusOK, &got)
+
+	if !got.Rounding || got.Proposal != nil {
+		t.Fatalf("difference = %+v, want a rounding difference without proposal", got)
+	}
+}
+
+func TestDeferStatementPostingsProblems(t *testing.T) {
+	t.Parallel()
+	c, id, manual := differenceSetup(t, 713)
+	other := c.purchase("2026-11-20", 500)
+	c.h.ExpectProblem(c.h.Do(http.MethodPost, "/api/v1/statements/"+id+"/defer", map[string]any{"transaction_ids": []string{other}}),
+		http.StatusUnprocessableEntity, "posting_not_movable", "")
+
+	if r := reconcileStatement(c, "2026-11", int64(statements(t, c.h, c.card)["2026-11"].AmountDue)); r.Status != http.StatusOK {
+		t.Fatalf("reconcile status = %d", r.Status)
+	}
+
+	c.h.ExpectProblem(c.h.Do(http.MethodPost, "/api/v1/statements/"+id+"/defer", map[string]any{"transaction_ids": []string{manual}}),
+		http.StatusConflict, "posting_reconciled", "")
+}

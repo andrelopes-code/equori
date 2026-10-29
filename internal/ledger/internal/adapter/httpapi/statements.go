@@ -126,6 +126,12 @@ func (s *Server) statementDetail(ctx context.Context, userID int64, id uuid.UUID
 		BilledAmount: summary.BilledAmount, Institution: summary.Institution, AmountDifference: summary.AmountDifference,
 		OpenAmount: summary.OpenAmount,
 	}
+	if e := v.Explanation; e.Move != nil {
+		out.DifferenceProposal = &DifferenceProposal{TransactionIds: e.Move, Amount: *summary.AmountDifference}
+	}
+	if v.Explanation.Rounding {
+		out.RoundingDifference = new(true)
+	}
 	for i, p := range postings {
 		sp := StatementPosting{
 			TransactionId: p.TransactionID, Date: apiDate(p.Date), Description: p.Description,

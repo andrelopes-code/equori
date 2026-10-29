@@ -142,6 +142,7 @@ var exposure = map[string]string{
 	"reconcileStatement":               "settle_statement",
 	"setStatementFacts":                "settle_statement",
 	"removeStatementFacts":             "settle_statement",
+	"deferStatementPostings":           "settle_statement",
 	"listAttachments":                  "get_transaction",
 	"createAttachment":                 "-file",
 	"deleteAttachment":                 "-file",

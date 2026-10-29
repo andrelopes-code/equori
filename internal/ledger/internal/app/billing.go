@@ -105,6 +105,8 @@ func (s *Service) ensureStatement(ctx context.Context, r Repository, userID int6
 type StatementView struct {
 	Statement
 	Summary domain.StatementSummary
+	// Explanation is set by Statement on a closed statement that differs from its fact (A137).
+	Explanation domain.DifferenceExplanation
 }
 
 func (s *Service) statementSummaries(ctx context.Context, r Repository, userID int64, accountID uuid.UUID) ([]StatementView, error) {

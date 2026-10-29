@@ -2083,6 +2083,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/statements/{id}/defer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Move card postings of a statement to the next statement, as the owner's choice (A137).
+         * @description Each transaction's card posting on the statement moves to the next statement through a
+         *     correction; every transaction is checked before the first one moves. A transaction with no
+         *     card posting on the statement, or whose posting follows an installment plan, returns
+         *     posting_not_movable; a reconciled posting returns posting_reconciled.
+         */
+        post: operations["deferStatementPostings"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/statements/{id}/facts": {
         parameters: {
             query?: never;
@@ -4236,6 +4259,17 @@ export interface components {
         };
         StatementDetail: components["schemas"]["StatementSummary"] & {
             postings: components["schemas"]["StatementPosting"][];
+            difference_proposal?: components["schemas"]["DifferenceProposal"];
+            /** @description Present and true when no set of provisional postings explains amount_difference and the difference is at most one minor unit per posting: the source likely rounded a line (A137). */
+            rounding_difference?: boolean;
+        };
+        /** @description On a closed statement whose amount due differs from the institution's total, the provisional postings whose move to the next statement closes the difference (A137). */
+        DifferenceProposal: {
+            transaction_ids: string[];
+            amount: components["schemas"]["Money"];
+        };
+        DeferPostingsInput: {
+            transaction_ids: string[];
         };
         /** @description closing_mode day closes on closing_day; before_due closes closing_days_before_due days before the nominal due date. closing_adjustment shifts the closing date, projected or reported by the institution, on the rule's calendar (A87). */
         BillingCycleRule: {
@@ -9170,6 +9204,36 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["StatementReconciliationInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementDetail"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    deferStatementPostings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeferPostingsInput"];
             };
         };
         responses: {

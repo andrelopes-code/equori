@@ -58,7 +58,25 @@ func (s *Service) Statement(ctx context.Context, userID int64, id uuid.UUID) (St
 		for i, p := range postings {
 			postings[i].Provisional = domain.Provisional(p.Basis, p.Date, v.Input.Closing, v.Reconciled, p.Installment != nil)
 		}
+		v.Explanation = s.explain(v, postings)
 		return v, a, postings, nil
 	}
 	return StatementView{}, domain.Account{}, nil, ErrNotFound
+}
+
+// explain searches the provisional postings of a closed, unreconciled statement for the ones
+// that close its difference with the institution's total (A137).
+func (s *Service) explain(v StatementView, postings []StatementPosting) domain.DifferenceExplanation {
+	if v.Fact == nil || v.Reconciled || s.clock.Today().Before(v.Input.Closing) {
+		return domain.DifferenceExplanation{}
+	}
+
+	var candidates []domain.DifferenceCandidate
+	for _, p := range postings {
+		if p.Provisional && p.CardRole != domain.RolePayment {
+			candidates = append(candidates, domain.DifferenceCandidate{TransactionID: p.TransactionID, Date: p.Date, Amount: p.Amount})
+		}
+	}
+
+	return domain.ExplainDifference(v.Summary.AmountDue-v.Fact.Total, len(postings), candidates)
 }

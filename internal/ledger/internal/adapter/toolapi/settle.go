@@ -4,6 +4,8 @@ import (
 	"context"
 	"strconv"
 
+	"github.com/google/uuid"
+
 	"github.com/andrelopes-code/equori/internal/ledger/internal/app"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
@@ -12,7 +14,7 @@ import (
 type settleStatementAction string
 
 func (settleStatementAction) Values() []string {
-	return []string{"pay", "finance", "confirm_amount_due", "set_facts", "remove_facts"}
+	return []string{"pay", "finance", "confirm_amount_due", "set_facts", "remove_facts", "defer_postings"}
 }
 
 type settleStatementIn struct {
@@ -25,6 +27,7 @@ type settleStatementIn struct {
 	InstallmentAmount string                `json:"installment_amount,omitzero" jsonschema:"for finance: positive amount of each installment"`
 	DueDate           tool.Date             `json:"due_date,omitzero" jsonschema:"for set_facts: due date the institution states"`
 	ClosingDate       tool.Date             `json:"closing_date,omitzero" jsonschema:"for set_facts: closing date the institution states"`
+	TransactionIDs    []string              `json:"transaction_ids,omitzero" jsonschema:"for defer_postings: transactions whose card posting moves to the next statement"`
 }
 
 type settleStatementOut struct {
@@ -35,7 +38,7 @@ type settleStatementOut struct {
 func settleStatement(svc *app.Service) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "settle_statement",
-		Description: "Proposes an action on a credit card statement: pay it from an account, finance its unpaid amount in installments, confirm the amount the institution charges, or record or remove the institution's due date and total. " +
+		Description: "Proposes an action on a credit card statement: pay it from an account, finance its unpaid amount in installments, confirm the amount the institution charges, record or remove the institution's due date and total, or move postings the institution billed on the next statement. " +
 			"Use it when the user pays a card bill or reports what the bank's statement says. " +
 			"Do not use it for one purchase: handle_card_purchase does. " +
 			"The user confirms first.",
@@ -66,6 +69,7 @@ func planSettle(ctx context.Context, svc *app.Service, userID int64, in settleSt
 	given := map[string]bool{
 		"statement_id": true, "date": !in.Date.IsZero(), "amount": in.Amount != "", "from_account_id": in.FromAccountID != "",
 		"installment_count": in.InstallmentCount != 0, "installment_amount": in.InstallmentAmount != "", "due_date": !in.DueDate.IsZero(), "closing_date": !in.ClosingDate.IsZero(),
+		"transaction_ids": len(in.TransactionIDs) > 0,
 	}
 	required := []string{"statement_id"}
 	var optional []string
@@ -78,6 +82,8 @@ func planSettle(ctx context.Context, svc *app.Service, userID int64, in settleSt
 		required = append(required, "amount")
 	case "set_facts":
 		required, optional = append(required, "amount", "due_date"), []string{"closing_date"}
+	case "defer_postings":
+		required = append(required, "transaction_ids")
 	}
 	if err := checkFields(action, given, required, optional...); err != nil {
 		return pv, nil, err
@@ -156,6 +162,15 @@ func planSettle(ctx context.Context, svc *app.Service, userID int64, in settleSt
 			pv.Changes = append(pv.Changes, tool.Change{Field: "date", After: tool.DateValue(in.ClosingDate.Time)})
 		}
 		return pv, func() (settleStatementOut, error) { return out, svc.SetOwnerFacts(ctx, userID, id, f) }, nil
+	case "defer_postings":
+		txIDs := make([]uuid.UUID, len(in.TransactionIDs))
+		for i, raw := range in.TransactionIDs {
+			if txIDs[i], err = requiredID(raw, "transaction_ids"); err != nil {
+				return pv, nil, err
+			}
+		}
+		pv.Changes = []tool.Change{{Field: "statement", Before: tool.TextValue(v.Input.Reference.String()), After: tool.TextValue(v.Input.Reference.Add(1).String())}}
+		return pv, func() (settleStatementOut, error) { return out, svc.DeferPostings(ctx, userID, id, txIDs) }, nil
 	default:
 		pv.Changes = []tool.Change{{Field: "due_on", Before: tool.DateValue(v.Input.Due)}}
 		return pv, func() (settleStatementOut, error) { return out, svc.RemoveOwnerFacts(ctx, userID, id) }, nil

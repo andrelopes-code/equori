@@ -6283,7 +6283,7 @@
   },
   {
     "name": "settle_statement",
-    "description": "Proposes an action on a credit card statement: pay it from an account, finance its unpaid amount in installments, confirm the amount the institution charges, or record or remove the institution's due date and total. Use it when the user pays a card bill or reports what the bank's statement says. Do not use it for one purchase: handle_card_purchase does. The user confirms first.",
+    "description": "Proposes an action on a credit card statement: pay it from an account, finance its unpaid amount in installments, confirm the amount the institution charges, record or remove the institution's due date and total, or move postings the institution billed on the next statement. Use it when the user pays a card bill or reports what the bank's statement says. Do not use it for one purchase: handle_card_purchase does. The user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -6301,7 +6301,8 @@
             "finance",
             "confirm_amount_due",
             "set_facts",
-            "remove_facts"
+            "remove_facts",
+            "defer_postings"
           ]
         },
         "date": {
@@ -6334,6 +6335,13 @@
           "type": "string",
           "description": "for set_facts: closing date the institution states",
           "format": "date"
+        },
+        "transaction_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "for defer_postings: transactions whose card posting moves to the next statement"
         }
       },
       "required": [

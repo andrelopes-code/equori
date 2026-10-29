@@ -53,6 +53,8 @@ func ToProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusUnprocessableEntity, "not_categorizable", err.Error()), true
 	case errors.Is(err, domain.ErrReconciled):
 		return problem.New(http.StatusConflict, "posting_reconciled", "the transaction has reconciled postings"), true
+	case errors.Is(err, app.ErrPostingNotMovable):
+		return problem.New(http.StatusUnprocessableEntity, "posting_not_movable", err.Error()), true
 	case errors.Is(err, app.ErrDifferenceRemains):
 		return problem.New(http.StatusConflict, "difference_remains", err.Error()), true
 	case errors.Is(err, domain.ErrAlreadyReconciled):

@@ -1404,6 +1404,17 @@ type CreditLimitList struct {
 	Items []CreditLimit `json:"items"`
 }
 
+// DeferPostingsInput defines model for DeferPostingsInput.
+type DeferPostingsInput struct {
+	TransactionIds []openapi_types.UUID `json:"transaction_ids"`
+}
+
+// DifferenceProposal On a closed statement whose amount due differs from the institution's total, the provisional postings whose move to the next statement closes the difference (A137).
+type DifferenceProposal struct {
+	Amount         Money                `json:"amount"`
+	TransactionIds []openapi_types.UUID `json:"transaction_ids"`
+}
+
 // Dispute defines model for Dispute.
 type Dispute struct {
 	Id                  openapi_types.UUID  `json:"id"`
@@ -1866,9 +1877,12 @@ type StatementDetail struct {
 	Charges          Money              `json:"charges"`
 	ClosingDate      openapi_types.Date `json:"closing_date"`
 	Credits          Money              `json:"credits"`
-	DueDate          openapi_types.Date `json:"due_date"`
-	EarlyPayments    Money              `json:"early_payments"`
-	Id               openapi_types.UUID `json:"id"`
+
+	// DifferenceProposal On a closed statement whose amount due differs from the institution's total, the provisional postings whose move to the next statement closes the difference (A137).
+	DifferenceProposal *DifferenceProposal `json:"difference_proposal,omitempty"`
+	DueDate            openapi_types.Date  `json:"due_date"`
+	EarlyPayments      Money               `json:"early_payments"`
+	Id                 openapi_types.UUID  `json:"id"`
 
 	// Institution What the institution reported for the statement (A85); the owner's facts first.
 	Institution  *StatementFact     `json:"institution,omitempty"`
@@ -1879,11 +1893,14 @@ type StatementDetail struct {
 	PriorCredits Money              `json:"prior_credits"`
 
 	// Reconciled The institution's amount due was confirmed (POST /statements/{id}/reconcile).
-	Reconciled bool                  `json:"reconciled"`
-	Reference  string                `json:"reference"`
-	Settled    Money                 `json:"settled"`
-	Status     StatementDetailStatus `json:"status"`
-	Unpaid     Money                 `json:"unpaid"`
+	Reconciled bool   `json:"reconciled"`
+	Reference  string `json:"reference"`
+
+	// RoundingDifference Present and true when no set of provisional postings explains amount_difference and the difference is at most one minor unit per posting: the source likely rounded a line (A137).
+	RoundingDifference *bool                 `json:"rounding_difference,omitempty"`
+	Settled            Money                 `json:"settled"`
+	Status             StatementDetailStatus `json:"status"`
+	Unpaid             Money                 `json:"unpaid"`
 }
 
 // StatementDetailStatus defines model for StatementDetail.Status.
@@ -2351,6 +2368,9 @@ type MergePayeeJSONRequestBody = MergePayeeInput
 // UpdateSettingsJSONRequestBody defines body for UpdateSettings for application/json ContentType.
 type UpdateSettingsJSONRequestBody = Settings
 
+// DeferStatementPostingsJSONRequestBody defines body for DeferStatementPostings for application/json ContentType.
+type DeferStatementPostingsJSONRequestBody = DeferPostingsInput
+
 // SetStatementFactsJSONRequestBody defines body for SetStatementFacts for application/json ContentType.
 type SetStatementFactsJSONRequestBody = StatementFactsInput
 
@@ -2548,6 +2568,9 @@ type ServerInterface interface {
 	// GetStatement A statement with its postings.
 	// (GET /statements/{id})
 	GetStatement(w http.ResponseWriter, r *http.Request, id ID)
+	// DeferStatementPostings Move card postings of a statement to the next statement, as the owner's choice (A137).
+	// (POST /statements/{id}/defer)
+	DeferStatementPostings(w http.ResponseWriter, r *http.Request, id ID)
 	// RemoveStatementFacts Remove the owner's facts; the statement takes the aggregator's facts or the rule's dates.
 	// (DELETE /statements/{id}/facts)
 	RemoveStatementFacts(w http.ResponseWriter, r *http.Request, id ID)
@@ -4002,6 +4025,32 @@ func (siw *ServerInterfaceWrapper) GetStatement(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
+// DeferStatementPostings operation middleware
+func (siw *ServerInterfaceWrapper) DeferStatementPostings(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeferStatementPostings(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // RemoveStatementFacts operation middleware
 func (siw *ServerInterfaceWrapper) RemoveStatementFacts(w http.ResponseWriter, r *http.Request) {
 
@@ -5058,6 +5107,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/reconciliation", wrapper.GetReconciliationStatus)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/unlock", wrapper.UnlockAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/statements/{id}/reconcile", wrapper.ReconcileStatement)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/statements/{id}/defer", wrapper.DeferStatementPostings)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/statements/{id}/facts", wrapper.RemoveStatementFacts)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/statements/{id}/facts", wrapper.SetStatementFacts)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/transactions/{id}/attachments", wrapper.ListAttachments)
@@ -8029,6 +8079,87 @@ func (response GetStatement404ApplicationProblemPlusJSONResponse) VisitGetStatem
 	return err
 }
 
+type DeferStatementPostingsRequestObject struct {
+	Id   ID `json:"id"`
+	Body *DeferStatementPostingsJSONRequestBody
+}
+
+type DeferStatementPostingsResponseObject interface {
+	VisitDeferStatementPostingsResponse(w http.ResponseWriter) error
+}
+
+type DeferStatementPostings200JSONResponse StatementDetail
+
+func (response DeferStatementPostings200JSONResponse) VisitDeferStatementPostingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeferStatementPostings401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response DeferStatementPostings401ApplicationProblemPlusJSONResponse) VisitDeferStatementPostingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeferStatementPostings404ApplicationProblemPlusJSONResponse Problem
+
+func (response DeferStatementPostings404ApplicationProblemPlusJSONResponse) VisitDeferStatementPostingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeferStatementPostings409ApplicationProblemPlusJSONResponse Problem
+
+func (response DeferStatementPostings409ApplicationProblemPlusJSONResponse) VisitDeferStatementPostingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeferStatementPostings422ApplicationProblemPlusJSONResponse Problem
+
+func (response DeferStatementPostings422ApplicationProblemPlusJSONResponse) VisitDeferStatementPostingsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type RemoveStatementFactsRequestObject struct {
 	Id ID `json:"id"`
 }
@@ -10129,6 +10260,9 @@ type StrictServerInterface interface {
 	// GetStatement A statement with its postings.
 	// (GET /statements/{id})
 	GetStatement(ctx context.Context, request GetStatementRequestObject) (GetStatementResponseObject, error)
+	// DeferStatementPostings Move card postings of a statement to the next statement, as the owner's choice (A137).
+	// (POST /statements/{id}/defer)
+	DeferStatementPostings(ctx context.Context, request DeferStatementPostingsRequestObject) (DeferStatementPostingsResponseObject, error)
 	// RemoveStatementFacts Remove the owner's facts; the statement takes the aggregator's facts or the rule's dates.
 	// (DELETE /statements/{id}/facts)
 	RemoveStatementFacts(ctx context.Context, request RemoveStatementFactsRequestObject) (RemoveStatementFactsResponseObject, error)
@@ -11640,6 +11774,39 @@ func (sh *strictHandler) GetStatement(w http.ResponseWriter, r *http.Request, id
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetStatementResponseObject); ok {
 		if err := validResponse.VisitGetStatementResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeferStatementPostings operation middleware
+func (sh *strictHandler) DeferStatementPostings(w http.ResponseWriter, r *http.Request, id ID) {
+	var request DeferStatementPostingsRequestObject
+
+	request.Id = id
+
+	var body DeferStatementPostingsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeferStatementPostings(ctx, request.(DeferStatementPostingsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeferStatementPostings")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeferStatementPostingsResponseObject); ok {
+		if err := validResponse.VisitDeferStatementPostingsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
