@@ -905,7 +905,6 @@ Profile: layout `DD.MM.YYYY` reads `05.11.2026` as `2026-11-05`; `YYYY/MM/DD` re
 
 ## Phase I: Web
 
-Before each task: read `web/CLAUDE.md` and the Slotted skill it names (compose-screen for Tasks 34 and 35). Report Slotted findings with the template of `web/CLAUDE.md`.
 
 ### Task 30: Language registry and profile-driven locale
 

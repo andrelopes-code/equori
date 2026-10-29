@@ -93,7 +93,7 @@ P house price; r_rf risk-free rate (forgone interest); ω property tax rate; τ 
 
 A tax-exempt rate r_e equals a taxable gross rate r_e / (1 − t) at tax rate t. DERIVED.
 
-The rules of this section changed in 2025 and 2026 or were proposed to change. Every value of this section is region-dependent (CLAUDE.md, Regions).
+The rules of this section changed in 2025 and 2026 or were proposed to change. Every value of this section is region-dependent (CONTRIBUTING.md, Regions).
 
 ### 3.7 Budget shares
 
@@ -142,7 +142,7 @@ Inputs marked "data" come from equori and stay editable.
 | ID | Constraint | Source |
 |---|---|---|
 | K1 | Amounts are integer minor units, rates exact decimals; a floating-point projection is labelled an estimate, as the goal what-if does | ADR 005, `goal-plan.ts` |
-| K2 | No regional value is a literal or a default outside its region; C4, C12 and C13 hold such values | CLAUDE.md, Regions; ADR 016 |
+| K2 | No regional value is a literal or a default outside its region; C4, C12 and C13 hold such values | CONTRIBUTING.md, Regions; ADR 016 |
 | K3 | A tool may not judge a figure as good or bad without a sourced threshold | analytics design §2 |
 | K4 | Privacy mode masks amounts of data-connected tools | ADR 018 |
 | K5 | `br_ipca` and `br_cdi` are fetched only while a security follows them; C6, C7 and C12 need them fetched otherwise | `internal/marketdata/indexes.go`, `TickIndexes` |

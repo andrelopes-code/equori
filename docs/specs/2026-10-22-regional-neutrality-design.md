@@ -30,7 +30,7 @@ This design separates the universal core from regional implementations. After it
 | ID | Anti-goal: the work fails if |
 |---|---|
 | AG-R1 | A regional concern is reached through a `switch` on a region code in universal code. |
-| AG-R2 | A registry is a package-level mutable variable or is filled by `init()` (root `CLAUDE.md`, "No global mutable state"). |
+| AG-R2 | A registry is a package-level mutable variable or is filled by `init()` (`CONTRIBUTING.md`, "No global mutable state"). |
 | AG-R3 | A module imports another module's internal package to register an implementation (ADR 002). |
 | AG-R4 | A value list that grows with regions is enforced by a `CHECK (x IN (...))`. |
 | AG-R5 | The web formats a number, a date or an amount with a branch on a locale tag. |
@@ -38,8 +38,8 @@ This design separates the universal core from regional implementations. After it
 ## 3. Constraints
 
 - ADR 002: each extension point and its implementations live in the module that owns the concern; the composition root (`internal/server`, `cmd/equori`) selects implementations.
-- Root `CLAUDE.md`: standard library first; a new dependency needs an ADR. Section 4.1 adds one, `golang.org/x/text`, through ADR 017.
-- Root `CLAUDE.md`: applied migrations are never edited. Every schema change is a new goose migration from `00038` on.
+- `CONTRIBUTING.md`: standard library first; a new dependency needs an ADR. Section 4.1 adds one, `golang.org/x/text`, through ADR 017.
+- `CONTRIBUTING.md`: applied migrations are never edited. Every schema change is a new goose migration from `00038` on.
 - ADR 007, C3: field-shape rules stay declared in the contract. A value set that grows with regions is declared as a `pattern` in the contract and validated by the registry in the domain, which returns 422 `validation_failed` with the field.
 - Definition of done, item 5: every new or changed operation keeps its entry in `internal/server/tool_exposure_test.go`.
 

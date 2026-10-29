@@ -1,41 +1,10 @@
-# web/
+# Web interface rules
 
-Paths in the Slotted sections are relative to `web/`.
-
-@node_modules/@slotted/react/dist/docs/AGENTS.snippet.md
-
-## Slotted feedback (mandatory)
-
-Slotted is the owner's own library, in beta, and equori is its only consumer: the app is the test bed that calibrates it. The owner fixes the library in its own repository. A defect worked around here and not reported is a defect that stays in Slotted.
-
-A Slotted finding is a bug to fix, an improvement to something that exists, or a feature the library should offer, in any area the library covers:
-
-| Area        | Covers                                                                                                                                                                                                                                                        |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `family`    | a component family or one of its parts: rendering, behaviour, state, focus, keyboard, resize, performance (a slow test caused by the family counts), a missing prop, variant, slot or state                                                                   |
-| `token`     | a theme value the app needed and the theme does not hold, or a token that resolves wrong in a scheme                                                                                                                                                          |
-| `utility`   | a hook or helper the package exports (`useField`, formatting, date, chart engine helpers)                                                                                                                                                                     |
-| `docs`      | a family file under `dist/docs/` that is missing, wrong or misleading                                                                                                                                                                                         |
-| `guideline` | a rule under `dist/docs/guidelines/` that is wrong, missing, contradictory or produces a poor result when followed                                                                                                                                            |
-| `agent`     | the package's instructions for agents (`dist/docs/AGENTS.snippet.md`, `dist/docs/index.md`, `dist/docs/skills/*/SKILL.md`): a missing or unclear instruction that led an agent, here or in a subagent, to a wrong component, a wrong pattern or a wasted pass |
-
-An own element is a finding only when the need is general, one that any app using the family would meet, and the family should answer it. An own element built for equori's visual identity, where a family's look would make the app read like every other app (the navigation), is a deliberate choice and not a finding; its build-own-element comment says so. When such an element had to rebuild what the library could share (focus ring, current-route matching, roving focus, a state layer), that shared piece is the finding, in the `utility` or `token` area, not the element.
-
-The source does not matter: a problem found during the work and a problem the owner points out are both findings once the diagnosis places its cause, in whole or in part, in one of the areas above. Diagnose first; a problem whose cause is in equori's own implementation is fixed in `web/` and is not a finding.
-
-Rules:
-
-1. Every finding is a GitHub issue in `andrelopes-code/slotted`, opened in the task that met it with `gh issue create -R andrelopes-code/slotted --label finding --label area:<area> --label <bug|enhancement|documentation>`. The body follows the repository's form (`.github/ISSUE_TEMPLATE/finding.yml`): Kind, Area, Subject, Version, Problem, Reproduction or proposal, Acceptance. No finding is dropped because the app works around it, and findings are never merged into one issue.
-2. The repository is public. An issue is written in English and stands alone for a reader who knows nothing of this application: it never names equori, its screens, its domain or its files. For a `bug` it states the observed behaviour, the expected behaviour and a minimal reproduction; for an `improvement` or a `feature`, the need, the proposed API and how it composes with what exists; for the `guideline` and `agent` areas, the current text with its file and section, and the replacement. The `Acceptance` section names a test or check that fails before the change.
-3. The reply of the task lists each issue opened, as `#N title` with its link, and says in the conversation's language what the user sees and which workaround the app carries.
-4. A workaround in `web/` (code, CSS, theme rule or test) carries a comment that cites its issue: `Workaround for Slotted issue #N: <why the app does this>`. A second workaround of the same finding cites the same number. `src/testing/slotted-issues.test.ts` checks the form; `make check` runs it.
-5. Before opening an issue, `gh issue list -R andrelopes-code/slotted --label finding --state all --search "<words>"` looks for one that covers the finding; a known finding gets a comment with the new evidence instead of a second issue.
-6. When a new Slotted version is installed, `gh issue list -R andrelopes-code/slotted --label finding --state closed` lists the closed findings; for each number a comment in `web/` cites, check the issue's closing commit is in the installed version and run its `Acceptance` against it. For each one the version fixes, remove the workaround and its comment and any test that exists only for the workaround, in one commit whose body names the issue. A test that exists only for the workaround is removed under this rule, not under the root rule on deleting tests. A closed issue whose fix the version does not carry stays cited until the release that does.
-7. `node_modules/@slotted/*` can hold a local build, written by `pnpm sync:equori` in `../slotted`; `package.json` and the lockfile always name the published version. A check that passes only on a local build does not close a finding. `pnpm install --frozen-lockfile --force` returns `node_modules` to the published version.
+These rules apply to `web/`. Paths are relative to `web/` unless they start with `docs/`. The component library is [Slotted](https://github.com/andrelopes-code/slotted) (`@slotted/react`); its guidelines ship in `node_modules/@slotted/react/dist/docs/`.
 
 ## Rules
 
-File names under `web/src` are kebab-case (O1). This is the only exception to the snake_case rule of Naming in the root `CLAUDE.md`.
+File names under `web/src` are kebab-case (O1). This is the only exception to the snake_case rule of Naming in `CONTRIBUTING.md`.
 
 The application sets `data-slotted-theme="equori"` and loads `@/theme/equori.gen.css` in place of the `default` theme and `@slotted/themes/default.css` of the Slotted UI section.
 
@@ -64,8 +33,8 @@ These rules replace the Slotted guideline they name; the owner review of 2026-10
 - **Domain controls before families.** Money, a period, a month, a day and an account are what this application is about. Each has a control of the app's own (`ui/money-input`, `ui/period-control`, `ui/month-control`, `ui/date-shortcuts`, `transactions/account-field`); a screen that asks for one of them uses it, and a new screen that meets another such value builds its control under CP-04 rather than settling for a family's generic field.
 - **Grids.** A data-grid is `variant="framed"`. An `actions` column is pinned at the end, and a grid holding buttons sets a `rowHeight` that leaves the cursor ring visible around them.
 - **Measure on the production build.** A performance check runs on `make run-prod` at 390 px with the CPU throttled 4×; the development build of React costs about 4.5 times as much (one selection: 12 840 ms against 2 840 ms).
-- **Forms.** A form page, drawer or dialog follows `../docs/contributing/forms.md` (F1 to F14): one column of at most 40rem through `ui/form-layout`, a width per expected answer, sections with a legend, a question above every set of choices.
-- **Phone screens.** Only the routes of ADR 027 (S3) are served below 600 px; any other route is desktop-only, holds no phone code and is tested at desktop width (S7). Below 600 px a phone route follows `../docs/contributing/mobile.md`: a table where the reader compares, `DataList` where the reader works on a record, the records before the figures, and tabs directly above their panel.
+- **Forms.** A form page, drawer or dialog follows `docs/contributing/forms.md` (F1 to F14): one column of at most 40rem through `ui/form-layout`, a width per expected answer, sections with a legend, a question above every set of choices.
+- **Phone screens.** Only the routes of ADR 027 (S3) are served below 600 px; any other route is desktop-only, holds no phone code and is tested at desktop width (S7). Below 600 px a phone route follows `docs/contributing/mobile.md`: a table where the reader compares, `DataList` where the reader works on a record, the records before the figures, and tabs directly above their panel.
 - **Headers.** A destination's header carries a subheading that says what the page is for, its period control when the page reads a period, and its primary action. The page header, the page's own, keeps its rule. A header inside the body (a section, a settings pane) draws none: the cards under it separate it.
 - **Header controls carry no visible label.** A field in `PageHeaderActions` (a currency, a date, a year) has no `FieldLabel`; it names itself through `aria-label`, `label` or the family's `messages`, as `portfolio-page.tsx` does.
 - **A chart under a title draws no caption.** A chart inside a widget, section or card whose heading already names it takes no `title`; it takes `aria-label` with that heading's text. A caption that repeats the heading ("Balance of the month", then "Balance") is noise.
@@ -76,3 +45,7 @@ These rules replace the Slotted guideline they name; the owner review of 2026-10
 - **Way back.** A page below a destination draws its way back with `PageBack` (`ui/page-back`), never `PageHeaderBack` (ESLint). From 1024 px it sits above the title; below, the shell's top app bar carries it and the page draws none.
 - **Alert actions.** The actions of an `Alert` go in the Slotted `AlertActions`; it draws every `Button` in the alert's tone at `sm`. The primary action is the default `solid` Button and every other action is `variant="ghost"`; a lone action is the primary. A button inside an alert sets no `size` or `tone` and is never `outline`: an outline Button draws no fill, so the alert's ground shows through it.
 - **Writes refresh.** Every successful mutation marks all queries stale (`api/query-client.ts`); a screen never needs a reload to show the result of a write.
+
+## Slotted workarounds
+
+A defect whose cause lies in Slotted is reported as an issue in `andrelopes-code/slotted`, and the workaround in `web/` (code, CSS, theme rule or test) carries a comment that cites it: `Workaround for Slotted issue #N: <why the app does this>`. `src/testing/slotted-issues.test.ts` checks the form. When an installed Slotted version fixes the issue, the workaround, its comment and any test that exists only for it are removed in one commit whose body names the issue.

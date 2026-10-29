@@ -8,7 +8,7 @@ Rules marked with a Slotted ID (FM-06, LA-05) are in `web/node_modules/@slotted/
 
 - The fields of a form stand in one column, top to bottom, in the order the reader answers them (Baymard, CXL).
 - The column is at most 40rem wide (equori), drawn by `FormLayout` (`ui/form-layout`). A field never spans the page's whole measure.
-- A form page keeps `width="wide"` for its header and footer (web/CLAUDE.md, "Page width"); the column inside starts at the page's start edge.
+- A form page keeps `width="wide"` for its header and footer (docs/contributing/web.md, "Page width"); the column inside starts at the page's start edge.
 
 ## F2 · Two fields share a row only when they are one answer
 
@@ -135,7 +135,7 @@ A form builds a control of its own (CP-04, `build-own-element`) when one of thes
 1. **The family makes the reader translate.** The reader would type a unit, a code or a scale the backend uses instead of the one they think in: basis points for a percentage, an ISO 4217 code for a currency name, minor units for an amount.
 2. **The answer needs its consequence beside it.** The right choice depends on a fact the family cannot show: an account's balance after the entry, the statement a card purchase falls on, the day a schedule's first occurrence lands.
 3. **The answer is frequent and has a shortcut.** Most entries share a value that one press can set, inside the control: today and the two days before it in the date picker's presets.
-4. **The value is a domain type of the application.** Money, a period, a month and an account have one control each (web/CLAUDE.md, "Domain controls before families").
+4. **The value is a domain type of the application.** Money, a period, a month and an account have one control each (docs/contributing/web.md, "Domain controls before families").
 
 A control of the application's own keeps every state of the family it stands beside: the control height (F4), focus ring, `invalid`, `disabled`, `readOnly`, keyboard, forced colours and the field's label and description wiring (`useField`). A look of its own is not a reason to build one.
 

@@ -4,8 +4,6 @@
 web/node_modules/
 web/dist/*
 !web/dist/.gitkeep
-/.claude/progress/
-/.superpowers/
 
 # TypeScript incremental build state.
 *.tsbuildinfo

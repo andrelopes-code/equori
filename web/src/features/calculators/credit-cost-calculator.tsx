@@ -45,7 +45,7 @@ const sources: Source[] = [
   },
 ];
 
-// The words a region gives this cost (CLAUDE.md, Regions): the name its law gives it, said after
+// The words a region gives this cost (CONTRIBUTING.md, Regions): the name its law gives it, said after
 // the method's steps, and the label of the nominal annual rate its contracts state instead,
 // shown beside the effective cost.
 function regionalTerms(region: string): {

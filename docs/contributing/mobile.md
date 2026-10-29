@@ -24,7 +24,7 @@ A phone grid never scrolls sideways (LP-01). Horizontal scroll is accepted only 
 
 ## M3 · One scroller
 
-Below 600 px the page scrolls and the listing is as tall as its rows. The grid does not scroll itself (LP-12). A grid with `hasMore` gets no `hasMore` on a phone and the page's scroller asks for the next page (`web/CLAUDE.md`, "A phone's list loads by the page's scroll").
+Below 600 px the page scrolls and the listing is as tall as its rows. The grid does not scroll itself (LP-12). A grid with `hasMore` gets no `hasMore` on a phone and the page's scroller asks for the next page.
 
 ## M4 · Tabs change the visible content
 

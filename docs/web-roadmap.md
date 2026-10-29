@@ -1,6 +1,6 @@
 # Web interface roadmap
 
-Sequential guide for the screens of `web/`. Each item names the screens, their functions, the API operations they consume and their dependencies. It is not the source of truth: the implementer of an item reads `api/openapi.yaml`, the ADRs, the scenarios of `docs/domain/06-scenarios.md`, `web/CLAUDE.md` and the existing code before designing the screen. Field lists below are a map of the contract, not a form specification.
+Sequential guide for the screens of `web/`. Each item names the screens, their functions, the API operations they consume and their dependencies. It is not the source of truth: the implementer of an item reads `api/openapi.yaml`, the ADRs, the scenarios of `docs/domain/06-scenarios.md`, `docs/contributing/web.md` and the existing code before designing the screen. Field lists below are a map of the contract, not a form specification.
 
 Status snapshot: 2026-10-25, commit `f6ae62e`.
 

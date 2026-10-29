@@ -54,7 +54,7 @@ Anti-goals:
 | `assistant_message` | `id` uuid PK, `user_id` bigint, `conversation_id` uuid, `seq` int ≥ 1, `role` text IN (`user`, `assistant`), `content` text ≤ 16,000 characters, `outcome` text NULL or one of `answered`, `step_limit`, `failed`, `created_at` timestamptz; FK (`conversation_id`, `user_id`) → `assistant_conversation` (`id`, `user_id`) ON DELETE CASCADE; UNIQUE (`conversation_id`, `seq`) |
 | `assistant_proposal` | `id` uuid PK, `user_id` bigint, `conversation_id` uuid, `message_id` uuid NULL, `tool` text `^[a-z][a-z0-9_]{0,63}$`, `arguments` jsonb, `preview` jsonb, `basis` text, `status` text IN (`pending`, `executing`, `executed`, `failed`, `rejected`, `stale`, `discarded`), `result` jsonb NULL, `created_at`, `expires_at`, `decided_at` timestamptz; FK (`conversation_id`, `user_id`) → `assistant_conversation` ON DELETE CASCADE; index (`user_id`, `conversation_id`) |
 
-`role` and `status` are closed universal sets, so `IN` applies (CLAUDE.md "Regions" concerns value sets that grow with regions). Every query filters by `user_id` (ADR 003).
+`role` and `status` are closed universal sets, so `IN` applies (CONTRIBUTING.md "Regions" concerns value sets that grow with regions). Every query filters by `user_id` (ADR 003).
 
 ### 5.2 What persists
 
@@ -260,7 +260,7 @@ The template takes no text from the user other than the locale codes and the pag
 
 ## 12. Interface
 
-- The panel follows `web/CLAUDE.md` and the Slotted guideline of a conversation (skill `compose-screen`): a side panel beside the current page on desktop, full screen at phone width, opened from the shell (top app bar action, command palette entry, keyboard shortcut of the shell).
+- The panel follows `docs/contributing/web.md` and the Slotted guideline of a conversation (skill `compose-screen`): a side panel beside the current page on desktop, full screen at phone width, opened from the shell (top app bar action, command palette entry, keyboard shortcut of the shell).
 - Before the first message of a conversation the panel shows the notice of `getAssistantChat`: provider and model, and, for `trains`, the sentence that the provider uses the content sent to improve its products and that people may read it. When `available` is false it shows the reason and `retry_at`, and disables the input.
 - During a turn the panel shows the `step` events as a progress line naming the tool's task (`assistant.step.<tool>` in the catalogs).
 - Messages render a Markdown subset: paragraphs, bullet and numbered lists, bold, and links (section 9). While privacy mode is on, every text segment that matches the amount pattern of `expectNoAmounts` is replaced with the mask of `useMoneyFormat()` (audit item 11).

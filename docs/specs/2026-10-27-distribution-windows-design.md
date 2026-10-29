@@ -262,7 +262,7 @@ D1 of the original design gains one row; the row "Windows archive or installer" 
 
 ### W9 Dependency
 
-`golang.org/x/sys` becomes a direct dependency for `windows` and `windows/svc`. It is in `go.sum` today as an indirect dependency (v0.49.0, through `golang.org/x/term`), so the module graph gains no module. ADR 023 records it (CLAUDE.md, "A new dependency needs an ADR").
+`golang.org/x/sys` becomes a direct dependency for `windows` and `windows/svc`. It is in `go.sum` today as an indirect dependency (v0.49.0, through `golang.org/x/term`), so the module graph gains no module. ADR 023 records it (CONTRIBUTING.md, "A new dependency needs an ADR").
 
 ### W10 Documents changed with this design
 

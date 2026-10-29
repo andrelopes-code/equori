@@ -252,6 +252,6 @@ None. The currency comes from settings, and money, percentages and months are fo
 ## 8. Left to the builder
 
 - The module layout of the plan computation inside `internal/planning`, and the ledger query that separates installments by purchase date.
-- Component split of the Plan view under `web/src/features/planning`, within O1 to O14 of `web/CLAUDE.md`, including the Slotted families chosen for the bar, the toggle, the toast and the sticky strip, with Slotted feedback where a family is missing.
+- Component split of the Plan view under `web/src/features/planning`, within O1 to O14 of `docs/contributing/web.md`, including the Slotted families chosen for the bar, the toggle, the toast and the sticky strip, with Slotted feedback where a family is missing.
 - Copy of every string in `en` and `pt-BR`, following the words above.
 - The order of slices. The calls made in this document: one reference choice per user, Track unchanged, income budgets out of the plan, and the assistant tool extensions as the last slice.

@@ -27,7 +27,7 @@ The cards destination (`/cards`) lists each credit card as a plain Slotted card 
 
 ## Constraints
 
-- `web/CLAUDE.md`:
+- `docs/contributing/web.md`:
   - O1: one component per file, kebab-case;
   - O2: cross-feature imports go through `index.ts`;
   - O5: CSS in `*.module.css` inside `@layer app`, `var(--slotted-*)` only;

@@ -11,7 +11,7 @@ One tool contract serves agents inside the binary, through `llm.RunTools` with G
 - `internal/platform/tool`: definition, registry, call, `Set`, `llm` bridge, `Money` and `Date`.
 - Read-only tools in `ledger` and `reporting`, each tested through `internal/apitest`.
 - The exposure table and the golden catalog (T14) in `internal/server`.
-- `CLAUDE.md` names `adapter/toolapi` in the module layout and adds the exposure entry to the definition of done.
+- `CONTRIBUTING.md` names `adapter/toolapi` in the module layout and adds the exposure entry to the definition of done.
 
 ## Non-goals
 

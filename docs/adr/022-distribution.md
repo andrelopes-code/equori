@@ -14,7 +14,7 @@ equori shipped as one form, compose with the application image tagged `latest`. 
 |---|---|
 | D1 | Forms: compose, standalone image, Homebrew formula, binary archive for linux and darwin, and the installed web application on the phone and the computer. F1 delivers compose and the archives; F2 to F4 add the standalone image, Homebrew and the phone. The phone serves the routes of ADR 027. |
 | V1 | Tags follow SemVer: `vMAJOR.MINOR.PATCH`, pre-release suffixes `-alpha.N`, `-beta.N`, `-rc.N`. Versions stay `0.x` until the owner declares 1.0. |
-| V2 | From the first tag on, every release migrates a database of every earlier tag. Migrations only move forward; applied migrations are never edited (CLAUDE.md, definition of done). |
+| V2 | From the first tag on, every release migrates a database of every earlier tag. Migrations only move forward; applied migrations are never edited (CONTRIBUTING.md, definition of done). |
 | V3 | The schema version is the highest applied goose version. `equori version` prints the application version, the schema version of the binary and the minimum PostgreSQL major. |
 | V4 | `serve` refuses a database that holds an applied migration unknown to the binary. The message names the binary's highest version, the database's version and the restore of a backup taken before the upgrade. In managed mode it also names the newest pre-migration file of B3. |
 | V5 | The export archive keeps its own version and import rules (ADR 021). |

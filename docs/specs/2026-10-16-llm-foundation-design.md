@@ -48,8 +48,8 @@ The work fails, even when it runs, if any of these holds:
 | ID | Constraint | Source |
 |---|---|---|
 | C1 | Infrastructure without business rules lives in `internal/platform/`. | ADR 002 |
-| C2 | Standard library first; no SDK dependency. | CLAUDE.md, user decision |
-| C3 | No global mutable state; the cooldown table is an instance passed through constructors. | CLAUDE.md |
+| C2 | Standard library first; no SDK dependency. | CONTRIBUTING.md, user decision |
+| C3 | No global mutable state; the cooldown table is an instance passed through constructors. | CONTRIBUTING.md |
 | C4 | Gemini API rate limits apply per Google Cloud project and per model, in three dimensions (RPM, TPM, RPD); any of them returns HTTP 429 `RESOURCE_EXHAUSTED`. RPD resets at midnight Pacific time. | ai.google.dev/gemini-api/docs/rate-limits |
 | C5 | On unpaid quota, Google uses submitted content and responses to improve its products, and human reviewers may read them. Paid quota excludes that use. | ai.google.dev/gemini-api/terms |
 | C6 | Gemini 3 models attach an opaque `thoughtSignature` to response parts. A stateless client resends every part with its signature unchanged; when the model changes within a conversation, the previous model's signatures are still resent. | ai.google.dev/gemini-api/docs/thinking, section "Stateless mode" |

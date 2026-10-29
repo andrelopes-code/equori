@@ -99,7 +99,7 @@ None of these operations is exposed as a tool: they handle credentials and endpo
 ### Interface
 
 - D16. The settings page gains an "Assistant" section with two parts. Providers: list with name, preset, notice badge and key state; add (preset first, then key), edit, delete, and "list models", which shows the result or the error. Uses: each use with its needs, a notice line when a target's provider has notice `trains` and the use sends financial data, and its chain, ordered and editable, with "restore default".
-- D17. Texts live in `catalog.en.ts` and `catalog.pt-BR.ts`. The screen follows `web/CLAUDE.md`.
+- D17. Texts live in `catalog.en.ts` and `catalog.pt-BR.ts`. The screen follows `docs/contributing/web.md`.
 
 ### Changes to existing code
 

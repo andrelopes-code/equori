@@ -221,7 +221,7 @@ Managed mode is the mode in which `equori` runs its own PostgreSQL server as a c
 | ID | Rule |
 |---|---|
 | V1 | Tags follow SemVer: `vMAJOR.MINOR.PATCH`, pre-release suffixes `-alpha.N`, `-beta.N`, `-rc.N`. Versions stay `0.x` until the owner declares 1.0. |
-| V2 | From the first tag on, every release migrates a database of every earlier tag. Migrations only move forward; applied migrations are never edited (CLAUDE.md, definition of done). |
+| V2 | From the first tag on, every release migrates a database of every earlier tag. Migrations only move forward; applied migrations are never edited (CONTRIBUTING.md, definition of done). |
 | V3 | The schema version is the highest applied goose version. `equori version` prints the application version, the schema version of the binary and the minimum PostgreSQL major. |
 | V4 | `serve` refuses a database that holds an applied migration unknown to the binary. The message names the binary's highest version, the database's version and the restore of a backup taken before the upgrade. In managed mode it also names the newest pre-migration file of B3. |
 | V5 | The export archive keeps its own `format_version`. Import across schema versions stays out of scope (export design). |
