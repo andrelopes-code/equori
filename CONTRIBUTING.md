@@ -34,7 +34,7 @@ Tools are pinned in `tools/go.mod` and built into `bin/`; `web/` tools are pinne
 | `make standalone-smoke` | Builds and checks the standalone image |
 | `make demo` / `make demo-reset` | Create or delete the demo user of the local instance (`make dev` running) |
 
-A commit runs format, lint and the generated-code check on its staged files. A push runs lint, typecheck and the Go and web tests related to the files it sends.
+A commit runs format, lint and the generated-code check on its staged files. A push runs lint, typecheck, the Go tests of the changed packages and the Node tests of the theme; the web suite runs in CI.
 
 ## Layout
 

@@ -66,11 +66,6 @@ pre-push:
       glob: "web/**/*.{ts,tsx}"
       run: pnpm typecheck
 
-    - name: web-test
-      root: web/
-      glob: "web/**/*.{ts,tsx,css}"
-      run: pnpm exec vitest related --run {push_files}
-
     - name: web-node-test
       root: web/
       glob: "web/src/**"

@@ -16,6 +16,7 @@ The pre-commit hook was `.githooks/pre-commit`, a shell script that ran `make ch
 | H3 | `pre-push` checks the files the push sends: `golangci-lint run`, the Go tests (the test cache skips unchanged packages), `tsc`, `vitest related` on the pushed web files and the Node tests of the theme and of the Slotted findings registry. |
 | H4 | `make check` stays the complete gate, with `-race`, the production build and the whole web suite. CI runs it on every pull request. |
 | H5 | A job runs only when the commit or push holds a file its glob matches. |
+| H3a | Amendment of 2026-10-29. `pre-push` no longer runs `vitest related`; the web tests run in `make check` and in CI on every push to `main` and every pull request. Reason: a push of 159 commits sent most of `web/`, and `vitest related` ran for 485 s of a 12-minute hook. |
 
 ## Consequences
 
