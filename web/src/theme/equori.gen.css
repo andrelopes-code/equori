@@ -1851,8 +1851,45 @@
     }
 
     [data-ui="tooltip"] > [data-part="arrow"] {
+      --equori-tooltip-arrow-overlap: 0.5px;
       opacity: 0;
       transition: opacity var(--slotted-duration-short) var(--slotted-easing-exit);
+    }
+
+    [data-ui="tooltip"][data-variant="surface"] > [data-part="arrow"] {
+      --equori-tooltip-arrow-overlap: 1.5px;
+    }
+
+    [data-ui="tooltip"][data-side="bottom"] > [data-part="arrow"] {
+      clip-path: polygon(
+        0 0,
+        calc(100% + var(--equori-tooltip-arrow-overlap)) 0,
+        0 calc(100% + var(--equori-tooltip-arrow-overlap))
+      );
+    }
+
+    [data-ui="tooltip"][data-side="top"] > [data-part="arrow"] {
+      clip-path: polygon(
+        100% 100%,
+        100% calc(0% - var(--equori-tooltip-arrow-overlap)),
+        calc(0% - var(--equori-tooltip-arrow-overlap)) 100%
+      );
+    }
+
+    [data-ui="tooltip"][data-side="left"] > [data-part="arrow"] {
+      clip-path: polygon(
+        100% 0,
+        100% calc(100% + var(--equori-tooltip-arrow-overlap)),
+        calc(0% - var(--equori-tooltip-arrow-overlap)) 0
+      );
+    }
+
+    [data-ui="tooltip"][data-side="right"] > [data-part="arrow"] {
+      clip-path: polygon(
+        0 100%,
+        0 calc(0% - var(--equori-tooltip-arrow-overlap)),
+        calc(100% + var(--equori-tooltip-arrow-overlap)) 100%
+      );
     }
 
     [data-ui="tooltip"][data-open] > [data-part="arrow"] {

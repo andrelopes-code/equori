@@ -68,10 +68,50 @@ const dialogMeasureRule = `
 
 // Workaround for Slotted issue #39: only the tooltip's content fades, so its arrow stays opaque
 // and reads as a separate piece on open and close. The arrow takes the content's three fade rules.
+// Half of the arrow's square lies over the content: while both fade, that half composites twice
+// and the whole diamond shows through. The clip keeps the half outside the content, plus an
+// overlap that covers the content's border under the arrow's base.
 const tooltipArrowFadeRule = `
 [data-ui="tooltip"] > [data-part="arrow"] {
+  --equori-tooltip-arrow-overlap: 0.5px;
   opacity: 0;
   transition: opacity var(--slotted-duration-short) var(--slotted-easing-exit);
+}
+
+[data-ui="tooltip"][data-variant="surface"] > [data-part="arrow"] {
+  --equori-tooltip-arrow-overlap: 1.5px;
+}
+
+[data-ui="tooltip"][data-side="bottom"] > [data-part="arrow"] {
+  clip-path: polygon(
+    0 0,
+    calc(100% + var(--equori-tooltip-arrow-overlap)) 0,
+    0 calc(100% + var(--equori-tooltip-arrow-overlap))
+  );
+}
+
+[data-ui="tooltip"][data-side="top"] > [data-part="arrow"] {
+  clip-path: polygon(
+    100% 100%,
+    100% calc(0% - var(--equori-tooltip-arrow-overlap)),
+    calc(0% - var(--equori-tooltip-arrow-overlap)) 100%
+  );
+}
+
+[data-ui="tooltip"][data-side="left"] > [data-part="arrow"] {
+  clip-path: polygon(
+    100% 0,
+    100% calc(100% + var(--equori-tooltip-arrow-overlap)),
+    calc(0% - var(--equori-tooltip-arrow-overlap)) 0
+  );
+}
+
+[data-ui="tooltip"][data-side="right"] > [data-part="arrow"] {
+  clip-path: polygon(
+    0 100%,
+    0 calc(0% - var(--equori-tooltip-arrow-overlap)),
+    calc(100% + var(--equori-tooltip-arrow-overlap)) 100%
+  );
 }
 
 [data-ui="tooltip"][data-open] > [data-part="arrow"] {
