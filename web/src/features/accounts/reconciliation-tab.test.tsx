@@ -318,7 +318,7 @@ describe("Reconciliation", () => {
     // A133: the note says why an entry is listed and what resolves it.
     expect(
       screen.getByText(
-        "The bank reported no line for these entries. A duplicated or mistyped entry is resolved by voiding or correcting the transaction. A correct entry is confirmed when the balance the bank reports matches.",
+        "These transactions do not appear in the institution's statement. A duplicated or mistyped transaction is resolved by voiding or correcting it. A correct transaction is confirmed when the institution's balance matches.",
       ),
     ).toBeInTheDocument();
   });

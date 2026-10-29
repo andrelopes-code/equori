@@ -61,7 +61,7 @@ describe("accounts with the amounts hidden", () => {
   it("masks the balance sheet and the account cards", async () => {
     hideAmounts();
     const { container } = await renderApp("/accounts", { fetch: api() });
-    await screen.findByRole("region", { name: "Balance sheet figures" });
+    await screen.findByRole("region", { name: "Accounts summary" });
     await settle();
     expect(screen.getAllByText(new RegExp(MASK)).length).toBeGreaterThan(0);
     expectNoAmounts(container, ["15,390.55", "14,500.00", "890.55"]);
