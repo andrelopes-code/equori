@@ -11,7 +11,6 @@ export function PlanStickyStrip({
   figure,
   reference,
   over,
-  compact,
   bar,
 }: {
   shown: boolean;
@@ -19,7 +18,6 @@ export function PlanStickyStrip({
   figure: string;
   reference: string | undefined;
   over: boolean;
-  compact: boolean;
   bar: React.ReactNode;
 }) {
   const t = useT();
@@ -39,8 +37,8 @@ export function PlanStickyStrip({
           {figure}
         </Text>
       </div>
-      {!compact && <div className={styles.stripBar}>{bar}</div>}
-      {!compact && reference !== undefined && (
+      <div className={styles.stripBar}>{bar}</div>
+      {reference !== undefined && (
         <Text size="xs" tone="muted" numeric="tabular">
           {t("plan.ofReference", { amount: reference })}
         </Text>

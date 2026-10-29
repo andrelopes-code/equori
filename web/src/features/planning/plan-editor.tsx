@@ -42,7 +42,7 @@ import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { usePrivacy } from "@/privacy/privacy-provider";
 import { useDebounced } from "@/ui/use-debounced";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
+import { useMediaQuery } from "@/ui/use-media-query";
 
 type BudgetPlan = components["schemas"]["BudgetPlan"];
 
@@ -116,7 +116,6 @@ export function PlanEditor({
 }) {
   const t = useT();
   const today = useToday();
-  const compact = useMediaQuery(compactQuery);
   const reduced = useMediaQuery("(prefers-reduced-motion: reduce)");
   const privacy = usePrivacy();
   const format = usePlanFormat(plan.currency, scale);
@@ -425,7 +424,6 @@ export function PlanEditor({
             committed={committed}
             format={format}
             editable={editable}
-            compact={compact}
             bar={bar}
             onSource={(source, fixed) => {
               draft.setSource(source, fixed);
@@ -440,7 +438,6 @@ export function PlanEditor({
             reference === undefined ? undefined : format.money(reference)
           }
           over={over}
-          compact={compact}
           bar={bar}
         />
         <VisuallyHidden>
@@ -528,7 +525,6 @@ export function PlanEditor({
             editable={editable}
             invalid={failure?.invalid ?? new Set()}
             highlighted={highlighted}
-            compact={compact}
             review={reviewRows}
             onToggle={toggle}
             onHighlight={setHighlighted}

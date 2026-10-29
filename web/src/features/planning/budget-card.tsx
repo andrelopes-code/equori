@@ -33,19 +33,17 @@ type Budget = components["schemas"]["Budget"];
 const tones = { over: "danger", near: "warning", within: "accent" } as const;
 
 // CP-04, after goal-card: one budget of the month in three lines: who, how much of it went, what
-// is left. A card at the desk; on a phone a row of the group's list, with the same words.
+// is left.
 export function BudgetCard({
   row,
   month,
   scale,
-  compact,
   onChangeAmount,
   onDelete,
 }: {
   row: BudgetRow;
   month: string;
   scale: (code: string) => number;
-  compact: boolean;
   onChangeAmount: (budget: Budget) => void;
   onDelete: (budget: Budget, name: string) => void;
 }) {
@@ -186,16 +184,6 @@ export function BudgetCard({
       </Text>
     </div>
   );
-  if (compact)
-    return (
-      <article aria-label={row.label} className={styles.row}>
-        <div className={styles.rowHead}>
-          {title}
-          {actions}
-        </div>
-        {body}
-      </article>
-    );
   return (
     <Card
       render={(props) => <article {...props} aria-label={row.label} />}

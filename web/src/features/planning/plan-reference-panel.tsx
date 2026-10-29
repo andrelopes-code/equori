@@ -33,7 +33,6 @@ export function PlanReferencePanel({
   committed,
   format,
   editable,
-  compact,
   bar,
   onSource,
 }: {
@@ -46,7 +45,6 @@ export function PlanReferencePanel({
   committed: number;
   format: PlanFormat;
   editable: boolean;
-  compact: boolean;
   bar: ReactNode;
   onSource: (source: Source, fixed?: number) => void;
 }) {
@@ -151,11 +149,7 @@ export function PlanReferencePanel({
               {over ? t("plan.over") : t("plan.unassigned")}
             </Text>
             {unassigned === undefined ? (
-              <Text
-                size={compact ? "xl" : "3xl"}
-                weight="semibold"
-                tone="muted"
-              >
+              <Text size="3xl" weight="semibold" tone="muted">
                 {t("plan.dash")}
               </Text>
             ) : (
@@ -163,7 +157,7 @@ export function PlanReferencePanel({
                 amount={Math.abs(unassigned)}
                 format={format.money}
                 tone={over ? "danger" : "default"}
-                size={compact ? "xl" : "3xl"}
+                size="3xl"
               />
             )}
             <Text size="sm" tone={over ? "danger" : "muted"} numeric="tabular">

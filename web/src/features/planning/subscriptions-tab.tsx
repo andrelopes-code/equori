@@ -20,7 +20,6 @@ import { useApi } from "@/api/api-context";
 import { accountsQuery } from "@/features/accounts";
 import styles from "@/features/planning/subscriptions-tab.module.css";
 import { schedulesQuery } from "@/features/planning/api";
-import { SubscriptionsList } from "@/features/planning/subscriptions-list";
 import { ScheduleActions } from "@/features/planning/schedule-actions";
 import {
   currentTerms,
@@ -33,7 +32,6 @@ import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { AppLink } from "@/ui/app-link";
 import { QueryError } from "@/ui/query-error";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 // The subscriptions: what each costs a month and a year at the price in force, and how its price
 // moved from one terms version to the next.
@@ -44,7 +42,6 @@ export function SubscriptionsTab() {
   const today = useToday();
   const fmt = useMoneyFormat();
   const scale = useScale();
-  const compact = useMediaQuery(compactQuery);
   const schedules = useQuery(schedulesQuery(api));
   const accounts = useQuery(accountsQuery(api));
   const settings = useQuery(settingsQuery(api));
@@ -71,23 +68,6 @@ export function SubscriptionsTab() {
       <QueryError
         error={schedules.error}
         onRetry={() => void schedules.refetch()}
-      />
-    );
-  if (compact)
-    return (
-      <SubscriptionsList
-        rows={rows}
-        names={names}
-        scale={scale}
-        loading={schedules.isPending}
-        totals={
-          currency === undefined
-            ? undefined
-            : {
-                monthly: { amount: total("monthly"), currency },
-                yearly: { amount: total("yearly"), currency },
-              }
-        }
       />
     );
   return (

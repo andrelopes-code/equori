@@ -1,13 +1,8 @@
 @layer app {
-  .layout,
-  .phone {
+  .layout {
     display: flex;
     flex-direction: column;
     gap: var(--slotted-space-6);
-  }
-
-  .phone {
-    gap: var(--slotted-space-5);
   }
 
   /* The summary beside where the spending went; 56rem is where each keeps a readable width side
@@ -28,32 +23,6 @@
     display: flex;
     flex-direction: column;
     gap: var(--slotted-space-5);
-  }
-
-  /* A phone's group is one surface of rows, not a stack of cards. */
-  .rows {
-    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
-    border-radius: var(--slotted-radius-lg);
-    background: var(--slotted-surface);
-  }
-
-  .row {
-    display: flex;
-    flex-direction: column;
-    gap: var(--slotted-space-2);
-    padding: var(--slotted-space-3) var(--slotted-space-4);
-  }
-
-  .row + .row {
-    border-block-start: var(--slotted-border-width-thin) solid
-      var(--slotted-border-subtle);
-  }
-
-  .rowHead {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--slotted-space-2);
   }
 
   .title {
@@ -144,21 +113,5 @@
   .value {
     margin: 0;
     overflow-wrap: anywhere;
-  }
-
-  /* The month's four figures in two columns on a phone, one surface instead of four cards. */
-  .facts dl {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--slotted-space-3) var(--slotted-space-4);
-    margin: 0;
-    padding: var(--slotted-space-4);
-    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
-    border-radius: var(--slotted-radius-lg);
-    background: var(--slotted-surface);
-  }
-
-  .facts dd {
-    margin: 0;
   }
 }

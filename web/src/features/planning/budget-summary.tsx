@@ -33,7 +33,6 @@ export function BudgetSummary({
   committed,
   elapsed,
   scale,
-  compact,
 }: {
   // Undefined while the budgets load.
   figures: Figures | undefined;
@@ -42,7 +41,6 @@ export function BudgetSummary({
   // Days gone and days of the month, for the month in course only.
   elapsed: { day: number; days: number } | undefined;
   scale: (code: string) => number;
-  compact: boolean;
 }) {
   const t = useT();
   const [locale] = useAppLocale();
@@ -73,13 +71,11 @@ export function BudgetSummary({
       )}
       fill="outline"
     >
-      {!compact && (
-        <CardHeader>
-          <Heading level={3} size="md">
-            {t("budget.summary")}
-          </Heading>
-        </CardHeader>
-      )}
+      <CardHeader>
+        <Heading level={3} size="md">
+          {t("budget.summary")}
+        </Heading>
+      </CardHeader>
       <CardBody>
         {figures === undefined ? (
           <SkeletonText lines={4} />
@@ -90,11 +86,7 @@ export function BudgetSummary({
                 <Text size="sm" tone="muted">
                   {t("budget.spentInMonth")}
                 </Text>
-                <Text
-                  size={compact ? "xl" : "2xl"}
-                  weight="semibold"
-                  numeric="tabular"
-                >
+                <Text size="2xl" weight="semibold" numeric="tabular">
                   {money(figures.spent)}
                 </Text>
                 <Text size="sm" tone="muted" numeric="tabular">
@@ -148,7 +140,7 @@ export function BudgetSummary({
                 </Text>
               )}
             </div>
-            {!compact && states.over + states.near + states.within > 0 && (
+            {states.over + states.near + states.within > 0 && (
               <Inline gap={4} wrap="wrap">
                 {counts.map(([state, count, one, many]) =>
                   count === 0 ? null : (

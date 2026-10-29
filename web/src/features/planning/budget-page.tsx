@@ -14,7 +14,6 @@ import {
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
 import { SkeletonText } from "@slotted/react/skeleton";
-import { Text } from "@slotted/react/typography";
 import { Stack } from "@slotted/react/stack";
 import {
   Table,
@@ -59,8 +58,6 @@ import { FigureGrid } from "@/ui/figure-grid";
 import { HeaderAction } from "@/ui/header-action";
 import { MonthControl } from "@/ui/month-control";
 import { QueryError } from "@/ui/query-error";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
-import styles from "@/features/planning/budgets.module.css";
 import { PageBack } from "@/ui/page-back";
 import type { MoneyAmount } from "@/ui/money-value";
 
@@ -85,7 +82,6 @@ export function BudgetPage() {
   const entries = useCategoryEntries(accounts.data);
   const [adding, setAdding] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const compact = useMediaQuery(compactQuery);
   const first = budget.data?.amounts[0]?.effective_from;
   const months = Array.from({ length: chartMonths }, (_, i) =>
     addMonths(month, i - chartMonths + 1),
@@ -217,78 +213,40 @@ export function BudgetPage() {
       </PageHeader>
       <PageBody>
         <Stack gap={6}>
-          {compact ? (
-            <section
-              aria-label={t("budget.monthFigures")}
-              className={styles.facts}
-            >
-              <dl>
-                {(
-                  [
-                    ["budget.planned", current?.planned],
-                    ["budget.carried", current?.carried],
-                    ["budget.spent", current?.spent],
-                    ["budget.available", current?.available],
-                  ] as const
-                ).map(([key, value]) => (
-                  <div key={key}>
-                    <Text
-                      size="xs"
-                      tone="muted"
-                      render={(props) => <dt {...props} />}
-                    >
-                      {t(key)}
-                    </Text>
-                    <Text
-                      size="md"
-                      weight="semibold"
-                      numeric="tabular"
-                      render={(props) => <dd {...props} />}
-                    >
-                      {value === undefined ? "" : money(value.amount)}
-                    </Text>
-                  </div>
-                ))}
-              </dl>
-            </section>
-          ) : (
-            <FigureGrid label={t("budget.monthFigures")}>
-              <FigureCard
-                label={t("budget.planned")}
-                value={current && figure(current.planned.amount)}
-                note={t("budget.plannedNote")}
-                loading={current === undefined}
-              />
-              <FigureCard
-                label={t("budget.carried")}
-                value={current && figure(current.carried.amount)}
-                note={t(b.rollover ? "budget.carriedNote" : "budget.noCarry")}
-                loading={current === undefined}
-              />
-              <FigureCard
-                label={t("budget.spent")}
-                value={current && figure(current.spent.amount)}
-                note={
-                  current === undefined
-                    ? ""
-                    : t("budget.usedNote", {
-                        share: percent(usedShare(current)),
-                      })
-                }
-                loading={current === undefined}
-              />
-              <FigureCard
-                label={t("budget.available")}
-                value={current && figure(current.available.amount)}
-                note={t(
-                  state === "over"
-                    ? "budget.overspent"
-                    : "budget.availableNote",
-                )}
-                loading={current === undefined}
-              />
-            </FigureGrid>
-          )}
+          <FigureGrid label={t("budget.monthFigures")}>
+            <FigureCard
+              label={t("budget.planned")}
+              value={current && figure(current.planned.amount)}
+              note={t("budget.plannedNote")}
+              loading={current === undefined}
+            />
+            <FigureCard
+              label={t("budget.carried")}
+              value={current && figure(current.carried.amount)}
+              note={t(b.rollover ? "budget.carriedNote" : "budget.noCarry")}
+              loading={current === undefined}
+            />
+            <FigureCard
+              label={t("budget.spent")}
+              value={current && figure(current.spent.amount)}
+              note={
+                current === undefined
+                  ? ""
+                  : t("budget.usedNote", {
+                      share: percent(usedShare(current)),
+                    })
+              }
+              loading={current === undefined}
+            />
+            <FigureCard
+              label={t("budget.available")}
+              value={current && figure(current.available.amount)}
+              note={t(
+                state === "over" ? "budget.overspent" : "budget.availableNote",
+              )}
+              loading={current === undefined}
+            />
+          </FigureGrid>
           <Chart
             size="md"
             loading={progress.some((p) => p.isPending)}

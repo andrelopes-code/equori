@@ -53,7 +53,6 @@ export function PlanTable({
   editable,
   invalid,
   highlighted,
-  compact,
   review,
   onToggle,
   onHighlight,
@@ -70,14 +69,13 @@ export function PlanTable({
   editable: boolean;
   invalid: ReadonlySet<string>;
   highlighted: string | null;
-  compact: boolean;
   review: ReadonlyMap<string, RowReview> | undefined;
   onToggle: (group: string) => void;
   onHighlight: (group: string | null) => void;
   onChange: (categoryId: string, amount: number | undefined) => void;
 }) {
   const t = useT();
-  const columns = (compact ? 3 : 5) + (review === undefined ? 0 : 1);
+  const columns = 5 + (review === undefined ? 0 : 1);
   return (
     <Table columns={columns} variant="framed">
       <TableContent>
@@ -87,16 +85,14 @@ export function PlanTable({
         <TableHead>
           <TableRow>
             <TableColumnHeader>{t("plan.col.category")}</TableColumnHeader>
-            {!compact && (
-              <TableColumnHeader numeric>
-                {t("plan.col.lastMonth", { month: previousMonth })}
-              </TableColumnHeader>
-            )}
-            {!compact && (
-              <TableColumnHeader numeric>
-                {t("plan.col.average")}
-              </TableColumnHeader>
-            )}
+            <TableColumnHeader numeric>
+              {t("plan.col.lastMonth", { month: previousMonth })}
+            </TableColumnHeader>
+
+            <TableColumnHeader numeric>
+              {t("plan.col.average")}
+            </TableColumnHeader>
+
             <TableColumnHeader numeric>
               {t("plan.col.planned")}
             </TableColumnHeader>
@@ -149,14 +145,10 @@ export function PlanTable({
                       </Text>
                     </button>
                   </TableRowHeader>
-                  {!compact && (
-                    <TableCell numeric>
-                      {format.money(group.lastMonth)}
-                    </TableCell>
-                  )}
-                  {!compact && (
-                    <TableCell numeric>{format.money(group.average)}</TableCell>
-                  )}
+                  <TableCell numeric>{format.money(group.lastMonth)}</TableCell>
+
+                  <TableCell numeric>{format.money(group.average)}</TableCell>
+
                   <TableCell numeric>
                     <Text size="sm" weight="semibold" numeric="tabular">
                       {format.money(group.draft)}
@@ -184,7 +176,6 @@ export function PlanTable({
                       editable={editable}
                       invalid={invalid.has(line.row.category_id)}
                       lit={lit}
-                      compact={compact}
                       reviewing={review !== undefined}
                       review={review?.get(line.row.category_id)}
                       onChange={(amount) => {

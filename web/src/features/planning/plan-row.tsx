@@ -51,7 +51,6 @@ export function PlanRow({
   editable,
   invalid,
   lit,
-  compact,
   reviewing,
   review,
   onChange,
@@ -67,7 +66,6 @@ export function PlanRow({
   editable: boolean;
   invalid: boolean;
   lit: boolean;
-  compact: boolean;
   // A suggestion is under review: every row holds the column, with or without a proposal.
   reviewing: boolean;
   review: RowReview | undefined;
@@ -175,21 +173,12 @@ export function PlanRow({
                 {t("plan.inside", { name: line.inside })}
               </Text>
             )}
-            {compact && (
-              <Text size="xs" tone="muted" numeric="tabular">
-                {t("plan.history", {
-                  last: format.money(row.last_month.amount),
-                  average: format.money(average),
-                })}
-              </Text>
-            )}
           </div>
         </div>
       </TableRowHeader>
-      {!compact && (
-        <TableCell numeric>{format.money(row.last_month.amount)}</TableCell>
-      )}
-      {!compact && <TableCell numeric>{format.money(average)}</TableCell>}
+      <TableCell numeric>{format.money(row.last_month.amount)}</TableCell>
+
+      <TableCell numeric>{format.money(average)}</TableCell>
       <TableCell numeric>
         <div className={styles.planned} data-plan-cell="">
           <div className={styles.plannedInput}>
