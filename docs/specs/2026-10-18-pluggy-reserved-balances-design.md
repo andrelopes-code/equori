@@ -1,7 +1,7 @@
 # Pluggy Reserved Balances Design
 
-Amends phase P6 (`docs/superpowers/plans/2026-10-16-p6-pluggy.md`, amendments A33–A45). Plan:
-`docs/superpowers/plans/2026-10-18-pluggy-reserved-balances.md`.
+Amends phase P6 (`docs/plans/2026-10-16-p6-pluggy.md`, amendments A33–A45). Plan:
+`docs/plans/2026-10-18-pluggy-reserved-balances.md`.
 
 ## Intent
 

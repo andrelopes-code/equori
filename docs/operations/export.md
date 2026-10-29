@@ -1,6 +1,6 @@
 # Export and import
 
-An export is a ZIP archive of every fact of the owner's books (`docs/superpowers/specs/2026-10-26-export-design.md`). It is requested, downloaded and imported in the data section of settings.
+An export is a ZIP archive of every fact of the owner's books (`docs/specs/2026-10-26-export-design.md`). It is requested, downloaded and imported in the data section of settings.
 
 ## Compatibility
 

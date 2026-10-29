@@ -212,7 +212,7 @@ Layout: desktop shows a grid of blocks; phone width shows one column ordered by 
 
 Status: Delivered. `features/instruments/` holds the catalog (`/instruments`), the instrument page (`/instruments/$code`), the price import and the fixed income terms. The ledger section of settings links to the catalog; `defineInstrument` had no screen there. The catalog reads the latest price of each instrument with one `listPrices` call over 366 days, because the contract has no latest-price operation. `listPositions` answers for every account, so the instrument page filters it by instrument code.
 
-Reference: `docs/superpowers/specs/2026-10-23-investments-design.md` sections 4.1 and 4.2, `docs/operations/price-feeds.md`.
+Reference: `docs/specs/2026-10-23-investments-design.md` sections 4.1 and 4.2, `docs/operations/price-feeds.md`.
 
 Route: an instruments destination, for example `/instruments` and `/instruments/$code`.
 
@@ -322,7 +322,7 @@ Status: Delivered. Operations: `suggestTransactionCategories` (ADR 014, L1a), `c
 
 ## 16. Assistant chat
 
-Status: Delivered. ADR 020 and `docs/superpowers/specs/2026-10-23-assistant-chat-design.md`. Operations: `getAssistantChat`, `sendAssistantMessage` (Server-Sent Events), `listAssistantConversations`, `getAssistantConversation`, `deleteAssistantConversation`, `deleteAssistantConversations`, `confirmAssistantProposal`, `rejectAssistantProposal` (`features/assistant/`). The use `assistant.chat` runs over 36 tools that cover every operation of `api/openapi.yaml` or exclude it with a reason (`internal/server/tool_exposure_test.go`).
+Status: Delivered. ADR 020 and `docs/specs/2026-10-23-assistant-chat-design.md`. Operations: `getAssistantChat`, `sendAssistantMessage` (Server-Sent Events), `listAssistantConversations`, `getAssistantConversation`, `deleteAssistantConversation`, `deleteAssistantConversations`, `confirmAssistantProposal`, `rejectAssistantProposal` (`features/assistant/`). The use `assistant.chat` runs over 36 tools that cover every operation of `api/openapi.yaml` or exclude it with a reason (`internal/server/tool_exposure_test.go`).
 
 Functions:
 - Conversation panel: a drawer beside the current page on desktop, full screen at phone width; opened from the top app bar, the desktop column, the command palette and the key A.
@@ -339,4 +339,4 @@ Not delivered: tool results rendered as tables or charts inside an answer.
 
 ## 17. Data export
 
-Status: Delivered. Operations: `requestExport`, `getExport`, `getExportContent`, `importArchive` (`docs/superpowers/specs/2026-10-26-export-design.md`; `features/setup/settings-data.tsx`, the Data section of `/settings`). The section requests an export, reads its status again every 2 seconds while it is pending, downloads a ready archive, and imports an archive while the books hold no transaction.
+Status: Delivered. Operations: `requestExport`, `getExport`, `getExportContent`, `importArchive` (`docs/specs/2026-10-26-export-design.md`; `features/setup/settings-data.tsx`, the Data section of `/settings`). The section requests an export, reads its status again every 2 seconds while it is pending, downloads a ready archive, and imports an archive while the books hold no transaction.

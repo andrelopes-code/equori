@@ -1,4 +1,4 @@
-; Installer of the Windows form (W-I1 to W-I7 of docs/superpowers/specs/2026-10-27-distribution-windows-design.md).
+; Installer of the Windows form (W-I1 to W-I7 of docs/specs/2026-10-27-distribution-windows-design.md).
 ; ISCC /DAppVersion=X.Y.Z /DPayload=<directory holding equori.exe and postgresql\> /O<output directory> equori.iss
 ; With /DSign, ISCC also needs /Ssigntool=<command>, and signs the installer and the uninstaller.
 

@@ -35,7 +35,7 @@ func TestGetHelp(t *testing.T) {
 		return out, ""
 	}
 
-	appendix, err := os.ReadFile("../../../../../docs/superpowers/plans/2026-10-23-assistant-chat/appendix-b-guide.md")
+	appendix, err := os.ReadFile("../../../../../docs/plans/2026-10-23-assistant-chat/appendix-b-guide.md")
 	if err != nil {
 		t.Fatal(err)
 	}

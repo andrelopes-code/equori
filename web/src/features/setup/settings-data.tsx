@@ -30,7 +30,7 @@ import { formatFileSize } from "@/features/transactions";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { QueryError } from "@/ui/query-error";
 
-// Export and import of the books (docs/superpowers/specs/2026-10-26-export-design.md).
+// Export and import of the books (docs/specs/2026-10-26-export-design.md).
 export function SettingsData() {
   const t = useT();
   const api = useApi();

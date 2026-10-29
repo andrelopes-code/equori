@@ -1,14 +1,12 @@
 # Regional Neutrality Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** Separate the universal core of equori from its Brazilian implementations behind module-owned extension points, so a region is added by implementations, registry entries and settings.
 
 **Architecture:** Each regional concern is an interface or data table owned by the consuming module, with an immutable `registry.Registry[T]` built in the module root and selected by the composition root (ADR 016, Task 1). Standard identifiers (ISO 4217, ISO 3166-1, ISO 10383, ISO 9362, BCP 47, IANA charsets) replace Brazilian literals. The user's profile (`locale.Locale{Language, Region}`) drives regional defaults for new records.
 
 **Tech Stack:** Go (stdlib, `golang.org/x/text` via ADR 017), PostgreSQL with goose and sqlc, oapi-codegen, React with TypeScript, Vitest and Intl.
 
-**Spec:** `docs/superpowers/specs/2026-10-22-regional-neutrality-design.md` (read the section a task cites before starting it).
+**Spec:** `docs/specs/2026-10-22-regional-neutrality-design.md` (read the section a task cites before starting it).
 
 ## Global Constraints
 
@@ -22,8 +20,7 @@
 - Each new `Problem.code` is triggered by a test through `internal/apitest`.
 - HTTP tests use `apitest.New`, `h.MustDo(method, path, body, status, &out)` and `h.ExpectProblem(r, status, code, field)` (`internal/apitest/apitest.go:297-335`). Check the status before decoding.
 - Verification per step runs only the changed package: `go test ./internal/<module>/... -run '<TestName>'`, or in `web/`: `pnpm exec vitest run <file>`. Before each commit: `make check-commit`. At the end of each phase: `make check`.
-- Commits: Conventional Commits, module scope, imperative, at most 72 characters; no AI attribution.
-- Slices of at most three tasks; after each slice, overwrite `.claude/progress/current.md` with the checkpoint fields of the root `CLAUDE.md`.
+- Commits: Conventional Commits, module scope, imperative, at most 72 characters.
 - Every Brazilian literal that remains after a task lives in a Brazilian implementation file, in a region default table, in a test fixture, or in a migration that converts existing data.
 
 ## Review Focus

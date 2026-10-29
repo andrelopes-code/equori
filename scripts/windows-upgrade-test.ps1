@@ -1,4 +1,4 @@
-# R7 on Windows (W-R7 of docs/superpowers/specs/2026-10-27-distribution-windows-design.md): the
+# R7 on Windows (W-R7 of docs/specs/2026-10-27-distribution-windows-design.md): the
 # database of the previous release keeps every fact when the new installer upgrades it.
 param(
     [Parameter(Mandatory)][string]$Previous,

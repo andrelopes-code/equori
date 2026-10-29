@@ -2,7 +2,7 @@
 
 - Status: accepted
 - Date: 2026-10-27
-- Design: `docs/superpowers/specs/2026-10-26-mcp-agent-design.md` (sections 2.3 and 3; its "ADR 023" is this record, 023 being taken)
+- Design: `docs/specs/2026-10-26-mcp-agent-design.md` (sections 2.3 and 3; its "ADR 023" is this record, 023 being taken)
 - Amends: ADR 003 (access tokens), ADR 012 (Deferred "MCP transport", T13)
 
 ## Context

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# R7 of docs/superpowers/specs/2026-10-26-distribution-design.md: a database written by the previous
+# R7 of docs/specs/2026-10-26-distribution-design.md: a database written by the previous
 # release keeps every fact when the new release migrates it.
 set -euo pipefail
 

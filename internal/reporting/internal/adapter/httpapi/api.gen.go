@@ -374,7 +374,7 @@ type GetCategoryTotalsParams struct {
 	Class GetCategoryTotalsParamsClass `form:"class" json:"class"`
 
 	// View accrual counts each amount on its transaction date. cash counts a card line when its statement is paid,
-	// in proportion to the payment, and any other amount on its date (docs/superpowers/plans/2026-10-26-p9-cash-view.md,
+	// in proportion to the payment, and any other amount on its date (docs/plans/2026-10-26-p9-cash-view.md,
 	// CV1 to CV10).
 	View *GetCategoryTotalsParamsView `form:"view,omitempty" json:"view,omitempty"`
 }
@@ -411,7 +411,7 @@ type ServerInterface interface {
 	// GetCardStatementAnalytics The 12 latest statements of a card closed on or before today, oldest first, split as in getStatementAnalytics.
 	// (GET /accounts/{id}/statement-analytics)
 	GetCardStatementAnalytics(w http.ResponseWriter, r *http.Request, id ID)
-	// RequestExport Request an archive of every fact of the books (SC6, docs/superpowers/specs/2026-10-26-export-design.md).
+	// RequestExport Request an archive of every fact of the books (SC6, docs/specs/2026-10-26-export-design.md).
 	// (POST /exports)
 	RequestExport(w http.ResponseWriter, r *http.Request)
 	// GetExport The user's export and its status; 404 when none was requested.
@@ -1689,7 +1689,7 @@ type StrictServerInterface interface {
 	// GetCardStatementAnalytics The 12 latest statements of a card closed on or before today, oldest first, split as in getStatementAnalytics.
 	// (GET /accounts/{id}/statement-analytics)
 	GetCardStatementAnalytics(ctx context.Context, request GetCardStatementAnalyticsRequestObject) (GetCardStatementAnalyticsResponseObject, error)
-	// RequestExport Request an archive of every fact of the books (SC6, docs/superpowers/specs/2026-10-26-export-design.md).
+	// RequestExport Request an archive of every fact of the books (SC6, docs/specs/2026-10-26-export-design.md).
 	// (POST /exports)
 	RequestExport(ctx context.Context, request RequestExportRequestObject) (RequestExportResponseObject, error)
 	// GetExport The user's export and its status; 404 when none was requested.

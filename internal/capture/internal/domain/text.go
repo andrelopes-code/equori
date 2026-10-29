@@ -1,4 +1,4 @@
-// Package domain reads capture text into transaction drafts (docs/superpowers/specs/2026-10-21-text-capture-design.md).
+// Package domain reads capture text into transaction drafts (docs/specs/2026-10-21-text-capture-design.md).
 package domain
 
 import (

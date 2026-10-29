@@ -3,7 +3,7 @@
 - Status: accepted
 - Date: 2026-10-23
 - Amends: ADR 009 (M2, M3, M6), ADR 014 (L6)
-- Design: `docs/superpowers/specs/2026-10-23-language-model-providers-design.md`
+- Design: `docs/specs/2026-10-23-language-model-providers-design.md`
 
 ## Context
 

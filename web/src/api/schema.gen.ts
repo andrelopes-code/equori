@@ -887,7 +887,7 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Request an archive of every fact of the books (SC6, docs/superpowers/specs/2026-10-26-export-design.md).
+         * Request an archive of every fact of the books (SC6, docs/specs/2026-10-26-export-design.md).
          * @description The archive is built after the response and replaces the previous export. 409 export_pending while one is
          *     pending.
          */
@@ -966,7 +966,7 @@ export interface paths {
         };
         /**
          * A statement split into purchases, installments, charges and credits, per category (P9).
-         * @description Each category amount of the statement falls in one part (docs/superpowers/plans/2026-10-26-p9-cash-view.md,
+         * @description Each category amount of the statement falls in one part (docs/plans/2026-10-26-p9-cash-view.md,
          *     section Statement analytics); categories are ordered by total, largest first, then by id.
          */
         get: operations["getStatementAnalytics"];
@@ -1062,7 +1062,7 @@ export interface paths {
         };
         /**
          * Card amounts of one category in the cash view of [from, to], at most 366 days, each naming its statement and payment (N20).
-         * @description Each item is the share a card payment gives the category (docs/superpowers/plans/2026-10-26-p9-cash-view.md, CV1 to CV10),
+         * @description Each item is the share a card payment gives the category (docs/plans/2026-10-26-p9-cash-view.md, CV1 to CV10),
          *     signed as the category's postings, in the order the payments apply. Amounts of transactions without a card line are not
          *     listed; they count on their own date. The items of a category sum to the card part of its cash total.
          */
@@ -7400,7 +7400,7 @@ export interface operations {
                 class: "income" | "expense";
                 /**
                  * @description accrual counts each amount on its transaction date. cash counts a card line when its statement is paid,
-                 *     in proportion to the payment, and any other amount on its date (docs/superpowers/plans/2026-10-26-p9-cash-view.md,
+                 *     in proportion to the payment, and any other amount on its date (docs/plans/2026-10-26-p9-cash-view.md,
                  *     CV1 to CV10).
                  */
                 view?: "accrual" | "cash";

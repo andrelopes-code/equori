@@ -440,7 +440,7 @@ An OFX credit card statement for Itaú Visa: −230.00 on 2026-10-14 is a `charg
 | M28 | S02 |
 | M29 | S31 |
 
-The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44 and S98 (amendment A105); the category tree and its tools by S72–S79 (amendments A73–A84 of `docs/superpowers/specs/2026-10-19-categorization-design.md`); transfers from imports by S45–S50; aggregator sync by S51–S59, S68–S71 and S90; matching by score by S91–S97 (amendments A98–A104); card statements from the institution by S80–S89 (amendments A85–A93); schedules (F7) by S27–S29 and the planning views by S60–S63; deleting a budget by S144; the budget plan by S158 to S166 (`docs/superpowers/specs/2026-10-27-budget-plan-design.md`); currencies and investments (F9) by S16, S17, S21, S22 and S64–S67; editing and deleting goals by S119 and S120; goals over brokerage accounts by S121; tax treatment by instrument subtype by S122; editing an instrument by S171; the return of an account tree by S126 and S127 and of a goal by S130; allocation and net worth by S128 and S129; fixed income accrual by S123 to S125; reimbursement of recorded expenses by S113 and S114 (amendment A117); text capture and the transaction batch by S99–S112 and S151–S153 (amendments A106–A116 of `docs/superpowers/specs/2026-10-21-text-capture-design.md`); the assistant by S131–S142 (section 6.20).
+The import flow (F4) is covered by S32–S36; classification (F5) by S37–S44 and S98 (amendment A105); the category tree and its tools by S72–S79 (amendments A73–A84 of `docs/specs/2026-10-19-categorization-design.md`); transfers from imports by S45–S50; aggregator sync by S51–S59, S68–S71 and S90; matching by score by S91–S97 (amendments A98–A104); card statements from the institution by S80–S89 (amendments A85–A93); schedules (F7) by S27–S29 and the planning views by S60–S63; deleting a budget by S144; the budget plan by S158 to S166 (`docs/specs/2026-10-27-budget-plan-design.md`); currencies and investments (F9) by S16, S17, S21, S22 and S64–S67; editing and deleting goals by S119 and S120; goals over brokerage accounts by S121; tax treatment by instrument subtype by S122; editing an instrument by S171; the return of an account tree by S126 and S127 and of a goal by S130; allocation and net worth by S128 and S129; fixed income accrual by S123 to S125; reimbursement of recorded expenses by S113 and S114 (amendment A117); text capture and the transaction batch by S99–S112 and S151–S153 (amendments A106–A116 of `docs/specs/2026-10-21-text-capture-design.md`); the assistant by S131–S142 (section 6.20).
 
 ## 6.13 Classification
 
@@ -600,15 +600,15 @@ With "Cofrinho Mercado Livre" and "Algum dinheiro" mapped from 2026-11-11, check
 
 ### S91–S97 Matching by score (A98–A104)
 
-The scenarios of `docs/superpowers/specs/2026-10-20-record-matching-design.md`: a manual entry linked by identical amount, day and payee (S91); a probable entry corrected to the line's amount on match (S92); two rides of one payee and amount ambiguous (S93); another payee creating a transaction (S94); a hotel entry seven days away linked (S95); a linked line's change corrected or, on a reconciled posting, described (S96); entries no line confirmed listed (S97).
+The scenarios of `docs/specs/2026-10-20-record-matching-design.md`: a manual entry linked by identical amount, day and payee (S91); a probable entry corrected to the line's amount on match (S92); two rides of one payee and amount ambiguous (S93); another payee creating a transaction (S94); a hotel entry seven days away linked (S95); a linked line's change corrected or, on a reconciled posting, described (S96); entries no line confirmed listed (S97).
 
 ### S167–S170 Unconfirmed entries confirmed by line or balance (A133)
 
-The scenarios of `docs/superpowers/specs/2026-10-28-unconfirmed-entries-design.md`: reserve transfers confirmed by the reserve's balance (S167); a manual entry confirmed by the account's balance (S168); an installment expected at its statement's closing (S169); cancelled installments offsetting their reversals (S170).
+The scenarios of `docs/specs/2026-10-28-unconfirmed-entries-design.md`: reserve transfers confirmed by the reserve's balance (S167); a manual entry confirmed by the account's balance (S168); an installment expected at its statement's closing (S169); cancelled installments offsetting their reversals (S170).
 
 ### S172–S175 Plan reversal after anticipation (A135)
 
-The scenarios of `docs/superpowers/specs/2026-10-28-plan-reversal-after-anticipation-design.md`: a cancellation after an anticipation whose statement is open (S172) or closed (S173) reverses each installment once and returns the discount; an installment already anticipated or a cancelled plan is not anticipated (S174); an anticipation's charge offsets the cancellation that reverses it in the unconfirmed list (S175).
+The scenarios of `docs/specs/2026-10-28-plan-reversal-after-anticipation-design.md`: a cancellation after an anticipation whose statement is open (S172) or closed (S173) reverses each installment once and returns the discount; an installment already anticipated or a cancelled plan is not anticipated (S174); an anticipation's charge offsets the cancellation that reverses it in the unconfirmed list (S175).
 
 ### S71 Synced assertion re-evaluated
 
@@ -616,7 +616,7 @@ Nubank checking mapped from 2026-10-01 with the S52 lines and balance 3,834.10, 
 
 ## 6.15b Card statements from the institution
 
-Scenarios of amendments A85–A93 (`docs/superpowers/specs/2026-10-20-card-statements-institution-design.md`). Itaú Visa closes on day 3 and is due on day 10 unless a scenario says otherwise.
+Scenarios of amendments A85–A93 (`docs/specs/2026-10-20-card-statements-institution-design.md`). Itaú Visa closes on day 3 and is due on day 10 unless a scenario says otherwise.
 
 ### S80 Statement facts from a bill
 
@@ -792,11 +792,11 @@ A security issued on 2026-01-01 with a spread of 600 basis points over the IPCA,
 
 ## 6.18 Text capture
 
-The scenarios, their fixture and the grammar they exercise are in `docs/superpowers/specs/2026-10-21-text-capture-design.md`, section Scenarios: S99–S110 read text through `POST /capture/preview` (`internal/capture/preview_test.go`); S111 and S112 record through `POST /transaction-batches` (`internal/ledger/transaction_batch_test.go`). S151–S153 read text against a reference date (amendment A128, `TestPreviewReferenceDate`).
+The scenarios, their fixture and the grammar they exercise are in `docs/specs/2026-10-21-text-capture-design.md`, section Scenarios: S99–S110 read text through `POST /capture/preview` (`internal/capture/preview_test.go`); S111 and S112 record through `POST /transaction-batches` (`internal/ledger/transaction_batch_test.go`). S151–S153 read text against a reference date (amendment A128, `TestPreviewReferenceDate`).
 
 ## 6.19 Daily flows
 
-Amendment A119 of `docs/superpowers/specs/2026-10-21-account-card-design.md`: `GET /reports/flows` returns the booked inflow and outflow of one account per day. Tests in `internal/reporting/flows_test.go`.
+Amendment A119 of `docs/specs/2026-10-21-account-card-design.md`: `GET /reports/flows` returns the booked inflow and outflow of one account per day. Tests in `internal/reporting/flows_test.go`.
 
 ### S115 Inflow and outflow of a checking account
 
@@ -816,7 +816,7 @@ A voided transaction has no flow. `to` before `from`, or a range longer than 366
 
 ## 6.20 Assistant
 
-`docs/superpowers/specs/2026-10-23-assistant-chat-design.md`, section 16, and ADR 020. A scripted `llmtest` provider stands in for the language model. Tests in `internal/assistant`.
+`docs/specs/2026-10-23-assistant-chat-design.md`, section 16, and ADR 020. A scripted `llmtest` provider stands in for the language model. Tests in `internal/assistant`.
 
 ### S131 Read question
 
@@ -868,7 +868,7 @@ A payee named with an instruction to void transactions reaches the model only in
 
 ## 6.21 Cash view and statement analytics
 
-Scenarios of phase P9 (`docs/superpowers/plans/2026-10-26-p9-cash-view.md`, CV1 to CV6). Itaú Visa closes on day 3 and is due on day 10; amounts are BRL; `GET /reports/categories?class=expense&view=cash` reads one month.
+Scenarios of phase P9 (`docs/plans/2026-10-26-p9-cash-view.md`, CV1 to CV6). Itaú Visa closes on day 3 and is due on day 10; amounts are BRL; `GET /reports/categories?class=expense&view=cash` reads one month.
 
 ### S145 Statement paid in two parts
 
@@ -906,7 +906,7 @@ Statement 2026-11 of S145 receives 263.34 on 2026-11-10: November 2026 Food › 
 
 ## 6.22 Financial indicators
 
-`GET /reports/indicators?month=` (`docs/superpowers/specs/2026-10-26-analytics-design.md`, section 4) returns 12 month entries, oldest first, the last one the month asked. Ratios are basis points truncated toward zero.
+`GET /reports/indicators?month=` (`docs/specs/2026-10-26-analytics-design.md`, section 4) returns 12 month entries, oldest first, the last one the month asked. Ratios are basis points truncated toward zero.
 
 ### S154 Indicators of a month
 
@@ -926,8 +926,8 @@ Today 2026-10-20. Salary 5,000.00 on the 5th of 2026-07 to 2026-10, nothing else
 
 ### S176–S181, S184 Card billing certainty (A136–A139, A141)
 
-The scenarios of `docs/superpowers/specs/2026-10-29-card-billing-certainty-design.md`: a reviewed match moves a manual charge to the bill its line states (S176); a closed statement that differs from the institution's total proposes the provisional postings that explain it (S177); a statement the owner chose stays (S178); a difference no posting explains shows as a possible rounding difference of the source (S179); an open statement leaves out the previous statement's unpaid amount until it is overdue (S180); a statement is reconciled as soon as a later entry closes its difference with the institution's total (S181); a pending line stays on its statement whatever the reported total, and moves only by its bill (S184).
+The scenarios of `docs/specs/2026-10-29-card-billing-certainty-design.md`: a reviewed match moves a manual charge to the bill its line states (S176); a closed statement that differs from the institution's total proposes the provisional postings that explain it (S177); a statement the owner chose stays (S178); a difference no posting explains shows as a possible rounding difference of the source (S179); an open statement leaves out the previous statement's unpaid amount until it is overdue (S180); a statement is reconciled as soon as a later entry closes its difference with the institution's total (S181); a pending line stays on its statement whatever the reported total, and moves only by its bill (S184).
 
 ### S182–S183 Review keeps up with the ledger (A140)
 
-The scenarios of `docs/superpowers/specs/2026-10-29-review-reopen-design.md`: the review offers an entry recorded after the import (S182); a discarded line can be reopened and matched (S183).
+The scenarios of `docs/specs/2026-10-29-review-reopen-design.md`: the review offers an entry recorded after the import (S182); a discarded line can be reopened and matched (S183).

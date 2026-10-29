@@ -3,7 +3,7 @@
 - Date: 2026-10-23
 - New ADR: 020 (`docs/adr/020-assistant-conversation.md`)
 - Amends: ADR 004 (problem member `retry_at`), ADR 012 (T9, T10, T14), ADR 019 (P14)
-- Audit: `docs/superpowers/specs/2026-10-23-assistant-infra-audit.md` (cited below as audit item N)
+- Audit: `docs/specs/2026-10-23-assistant-infra-audit.md` (cited below as audit item N)
 - Use: `assistant.chat` (`internal/assistant/assistant.go`)
 
 ## 1. Intent

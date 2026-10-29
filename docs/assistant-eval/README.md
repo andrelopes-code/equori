@@ -1,6 +1,6 @@
 # Assistant evaluation
 
-`TestAssistantEval` (`internal/assistant/eval_test.go`, build tag `eval`) runs the 20 tasks of `internal/assistant/testdata/eval/tasks.json` against a real language model. Each trial seeds a fresh database with the fixture of `internal/assistant/evalseed_test.go`, configures the provider through the HTTP API, sends the task's message, confirms the answer's proposals when the task says so, and grades the answer and the final state in code. Design: spec 13.2 of `docs/superpowers/specs/2026-10-23-assistant-chat-design.md`.
+`TestAssistantEval` (`internal/assistant/eval_test.go`, build tag `eval`) runs the 20 tasks of `internal/assistant/testdata/eval/tasks.json` against a real language model. Each trial seeds a fresh database with the fixture of `internal/assistant/evalseed_test.go`, configures the provider through the HTTP API, sends the task's message, confirms the answer's proposals when the task says so, and grades the answer and the final state in code. Design: spec 13.2 of `docs/specs/2026-10-23-assistant-chat-design.md`.
 
 ## Run
 

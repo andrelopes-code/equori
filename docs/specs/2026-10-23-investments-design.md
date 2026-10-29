@@ -95,7 +95,7 @@ The rows reproduce the rules in force at the date of this document; the implemen
 
 ### 4.3 Return, allocation and net worth (G3, G4)
 
-**Money-weighted return.** Portfolio, which already holds the Ledger and Market data ports (the first plan placed it in Reporting; `docs/superpowers/plans/2026-10-23-investments-i3-return.md` records the move), reads from Ledger: for an account tree and a period, the external flows, the opening value and the closing value, all valued in a currency.
+**Money-weighted return.** Portfolio, which already holds the Ledger and Market data ports (the first plan placed it in Reporting; `docs/plans/2026-10-23-investments-i3-return.md` records the move), reads from Ledger: for an account tree and a period, the external flows, the opening value and the closing value, all valued in a currency.
 
 - The tree is the account and its sub-accounts.
 - An external flow is a posting on a tree account whose transaction has a posting on an asset or liability account outside the tree. Income, expense, tax and realized-result postings are internal: they are performance.

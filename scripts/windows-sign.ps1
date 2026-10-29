@@ -1,5 +1,5 @@
 # Signs PE files with Azure Artifact Signing through signtool and its dlib (W-R5 of
-# docs/superpowers/specs/2026-10-27-distribution-windows-design.md). Inno Setup calls it for the
+# docs/specs/2026-10-27-distribution-windows-design.md). Inno Setup calls it for the
 # installer and the uninstaller; the release job calls it for equori.exe and the PostgreSQL bundle.
 # Credentials come from AZURE_TENANT_ID, AZURE_CLIENT_ID and AZURE_CLIENT_SECRET; the account from
 # ARTIFACT_SIGNING_ENDPOINT, ARTIFACT_SIGNING_ACCOUNT and ARTIFACT_SIGNING_PROFILE.

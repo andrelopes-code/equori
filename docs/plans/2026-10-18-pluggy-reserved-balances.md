@@ -1,20 +1,18 @@
 # Pluggy Reserved Balances Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** Sync Pluggy reserved balances (Mercado Pago "cofrinhos") into ledger reserves: external accounts, balance assertions, bounded yield and recognized transfers; fix the synced assertion that stays open after the missing history is recorded.
 
 **Architecture:** The Pluggy anti-corruption layer (`ingestion/internal/pluggy`) reads `bankData.reservedBalances` and `operationType`. The aggregator adapter (`internal/ingestion/aggregator.go`) lists each reserved balance as an external account with subtype `RESERVED_BALANCE` and reads its amount without a transactions call. The sync (`ingestion/internal/app/sync.go`) orders reserves last, resolves reserve transfer lines to a `TransferTo` decision and calls a new ledger entry point for reserve assertions. The ledger (`ledger/internal/app/reconciliation.go`) gains a synced-assertion path that re-decides an existing open assertion and applies the bounded yield.
 
 **Tech Stack:** Go 1.27, sqlc, oapi-codegen. No new dependency (`math/big` is in the standard library).
 
-**Spec:** `docs/superpowers/specs/2026-10-18-pluggy-reserved-balances-design.md` (D1–D5, amendments A73–A77, scenarios S68–S71). Inherited: `docs/superpowers/plans/2026-10-16-p6-pluggy.md` (A33–A45, Global Constraints).
+**Spec:** `docs/specs/2026-10-18-pluggy-reserved-balances-design.md` (D1–D5, amendments A73–A77, scenarios S68–S71). Inherited: `docs/plans/2026-10-16-p6-pluggy.md` (A33–A45, Global Constraints).
 
 **Start condition:** branch `feat/pluggy-reserves`; `web/vite.config.ts` carries an uncommitted owner edit that no task stages.
 
 ## Global Constraints
 
-- Every Global Constraint of `docs/superpowers/plans/2026-10-16-p6-pluggy.md` applies: N16 (logs, errors and problem details name no item id, account number, reserve identification or Pluggy payload) and N17 (outbound HTTP only to the configured base URL).
+- Every Global Constraint of `docs/plans/2026-10-16-p6-pluggy.md` applies: N16 (logs, errors and problem details name no item id, account number, reserve identification or Pluggy payload) and N17 (outbound HTTP only to the configured base URL).
 - Tests go through the HTTP API (`internal/apitest`) with the fake Pluggy server `internal/ingestion/internal/pluggy/pluggytest`; the fixture of `internal/ingestion/sync_test.go` (`syncFixture`) is the model. Pure functions get table tests next to them. No mock of the repository or of PostgreSQL.
 - Each scenario test carries its ID in the name (`TestS68...`). Fixed clock `apitest.Today("2026-11-12")`. Assert status before decoding; assert exact amounts in minor units.
 - A task starts with its failing test; run it and read the failure before implementing.
@@ -22,7 +20,6 @@
 - Verification: the focused `go test ... -run <Test> -count=1`, then `make check`. The pre-commit hook runs `make check`: `git commit ... >/dev/null 2>&1; echo $?`; on failure `make check 2>&1 | tail -40`.
 - Stage files by name; never `git add -A` (the owner's `web/vite.config.ts` stays unstaged).
 - Commit scope `ingestion` unless a task says otherwise. One commit per task.
-- Execution runs in slices of at most three tasks; each slice ends by writing `.claude/progress/current.md`.
 
 ## Review Focus
 

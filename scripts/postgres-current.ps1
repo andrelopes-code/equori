@@ -1,5 +1,5 @@
 # Fails when the pinned PostgreSQL of the Windows form is older than the current minor of its major
-# (W-P4 of docs/superpowers/specs/2026-10-27-distribution-windows-design.md).
+# (W-P4 of docs/specs/2026-10-27-distribution-windows-design.md).
 param([string]$Versions = 'https://www.postgresql.org/versions.json')
 $ErrorActionPreference = 'Stop'
 

@@ -1,4 +1,4 @@
-// Package capture reads text the owner writes into transaction drafts (docs/superpowers/specs/2026-10-21-text-capture-design.md).
+// Package capture reads text the owner writes into transaction drafts (docs/specs/2026-10-21-text-capture-design.md).
 // It is the only entry point to the module for the rest of the application.
 package capture
 

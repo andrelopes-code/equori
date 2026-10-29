@@ -1,5 +1,5 @@
 # Builds the PostgreSQL bundle of the Windows form from the pinned EDB zip (W-P1, W-P2 of
-# docs/superpowers/specs/2026-10-27-distribution-windows-design.md).
+# docs/specs/2026-10-27-distribution-windows-design.md).
 param([Parameter(Mandatory)][string]$Out)
 $ErrorActionPreference = 'Stop'
 

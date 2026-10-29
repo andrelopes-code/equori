@@ -2,7 +2,7 @@
 
 Status: draft, awaiting owner approval.
 
-Evidence: `docs/superpowers/specs/2026-10-26-tools-study.md`, cited as "study §n" and by its IDs (E, M, W, C, K).
+Evidence: `docs/specs/2026-10-26-tools-study.md`, cited as "study §n" and by its IDs (E, M, W, C, K).
 
 ## 1. Intent
 

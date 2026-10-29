@@ -5,7 +5,7 @@
 
 ## Context
 
-The code base mixes Brazilian rules, data sources and vocabulary into its universal core (`docs/superpowers/specs/2026-10-22-regional-neutrality-design.md`, section 1). A contributor from another country edits Go code, the HTTP contract and the schema of several modules to add a currency, a holiday calendar, a price source, an exchange, an aggregator, a bank identifier, a tax rule or a language.
+The code base mixes Brazilian rules, data sources and vocabulary into its universal core (`docs/specs/2026-10-22-regional-neutrality-design.md`, section 1). A contributor from another country edits Go code, the HTTP contract and the schema of several modules to add a currency, a holiday calendar, a price source, an exchange, an aggregator, a bank identifier, a tax rule or a language.
 
 ## Decision
 

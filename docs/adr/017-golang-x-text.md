@@ -5,7 +5,7 @@
 
 ## Context
 
-File import decodes CSV files in the character set of the issuing institution, and text folding compares words in any script (`docs/superpowers/specs/2026-10-22-regional-neutrality-design.md`, sections 4.1 and 5.12). The standard library has neither legacy character set decoders nor Unicode normalization.
+File import decodes CSV files in the character set of the issuing institution, and text folding compares words in any script (`docs/specs/2026-10-22-regional-neutrality-design.md`, sections 4.1 and 5.12). The standard library has neither legacy character set decoders nor Unicode normalization.
 
 ## Decision
 

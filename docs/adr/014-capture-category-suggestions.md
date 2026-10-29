@@ -5,7 +5,7 @@
 
 ## Context
 
-Text capture (`docs/superpowers/specs/2026-10-21-text-capture-design.md`) decides categories with classification: aliases, rules and payee history (F5). A description that none of them knows, such as the first purchase at a new shop, stays uncategorized. A language model names a category for most such descriptions. The Gemini API free quota (ADR 009) is counted in requests per minute and per day, and the capture preview runs on every pause in typing.
+Text capture (`docs/specs/2026-10-21-text-capture-design.md`) decides categories with classification: aliases, rules and payee history (F5). A description that none of them knows, such as the first purchase at a new shop, stays uncategorized. A language model names a category for most such descriptions. The Gemini API free quota (ADR 009) is counted in requests per minute and per day, and the capture preview runs on every pause in typing.
 
 ## Decision
 

@@ -2,7 +2,7 @@
 
 equori records prices from public sources when the owner enables them. Both are free and
 need no key. Phase P8 of the roadmap describes the rules (amendments A60–A62 of
-`docs/superpowers/plans/2026-10-17-p8-currencies-investments.md`).
+`docs/plans/2026-10-17-p8-currencies-investments.md`).
 
 ## 1. Enabling
 

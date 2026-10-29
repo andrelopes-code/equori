@@ -102,7 +102,7 @@ vuln: $(TOOLS)
 build: web-build
 	CGO_ENABLED=0 go build -trimpath -o $(BIN)/equori ./cmd/equori
 
-# Release archives (R2 of docs/superpowers/specs/2026-10-26-distribution-design.md). The commit
+# Release archives (R2 of docs/specs/2026-10-26-distribution-design.md). The commit
 # time stamps every file and gzip stores no name or time, so two builds of one commit are identical.
 DIST_TARGETS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64
 DIST_VERSION ?= $(shell git describe --tags --exact-match 2>/dev/null || echo dev)
@@ -139,7 +139,7 @@ formula-test:
 dev: db-up
 	$(LOAD_ENV) && go run ./cmd/equori
 
-# The demo user of the local instance (docs/superpowers/plans/2026-10-24-demo-account.md); both targets need make dev running.
+# The demo user of the local instance (docs/plans/2026-10-24-demo-account.md); both targets need make dev running.
 DEMO_EMAIL ?= demo@equori.local
 export EQUORI_DEMO_PASSWORD ?= equori-demo-account
 

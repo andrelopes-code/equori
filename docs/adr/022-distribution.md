@@ -2,7 +2,7 @@
 
 - Status: accepted
 - Date: 2026-10-26
-- Design: `docs/superpowers/specs/2026-10-26-distribution-design.md`
+- Design: `docs/specs/2026-10-26-distribution-design.md`
 
 ## Context
 

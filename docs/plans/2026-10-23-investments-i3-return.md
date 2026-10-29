@@ -1,14 +1,12 @@
 # Investments I3: money-weighted return Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** `GET /reports/return` returns the money-weighted annual return, in basis points, of an account tree over a period.
 
 **Architecture:** A pure function solves the internal rate of return of dated cash flows. Ledger exposes the external flows of an account tree. Portfolio, which already holds the Ledger and Market data ports, values the flows and the opening and closing balances in the requested currency and serves the endpoint.
 
 **Tech Stack:** Go, sqlc, oapi-codegen, `internal/apitest`.
 
-**Spec:** `docs/superpowers/specs/2026-10-23-investments-design.md`, section 4.3 (slice I3). Deviation from the spec: the computation lives in Portfolio, not Reporting, because Portfolio already owns the Ledger and Market data ports and the investment read models; the path stays `/reports/return`.
+**Spec:** `docs/specs/2026-10-23-investments-design.md`, section 4.3 (slice I3). Deviation from the spec: the computation lives in Portfolio, not Reporting, because Portfolio already owns the Ledger and Market data ports and the investment read models; the path stays `/reports/return`.
 
 ## Global Constraints
 

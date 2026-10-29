@@ -141,7 +141,7 @@ Trades and investment income are Ledger transactions. Portfolio derives everythi
 
 | Item | Content |
 |---|---|
-| Responsibility | The grammar that reads a line of text into a transaction draft and its issues (`docs/superpowers/specs/2026-10-21-text-capture-design.md`, A106–A116). No tables. |
+| Responsibility | The grammar that reads a line of text into a transaction draft and its issues (`docs/specs/2026-10-21-text-capture-design.md`, A106–A116). No tables. |
 | Commands | None; `PreviewCapture` is a query. Drafts are recorded with Ledger `RecordBatch` (`POST /transaction-batches`). |
 | Events published | None. |
 | Calls | Ledger `CaptureVocabulary`, `BaseCurrency`, `Today`; Classification `DecideManual`. |

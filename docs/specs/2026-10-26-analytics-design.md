@@ -2,7 +2,7 @@
 
 Status: draft, awaiting owner approval.
 
-Evidence: `docs/superpowers/specs/2026-10-26-analytics-study.md` (cited below as "study §n" and by finding ID: V for visualization, D for dashboard, C for customization).
+Evidence: `docs/specs/2026-10-26-analytics-study.md` (cited below as "study §n" and by finding ID: V for visualization, D for dashboard, C for customization).
 
 ## 1. Intent
 

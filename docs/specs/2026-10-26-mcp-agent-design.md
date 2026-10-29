@@ -1,6 +1,6 @@
 # External MCP access and assistant rework
 
-Study: `docs/superpowers/specs/2026-10-26-mcp-agent-study.md` (defect IDs D*, observation IDs U*, specification IDs M*). Decisions this design changes: ADR 003 (authentication), ADR 012 (tool registry, Deferred), ADR 020 (assistant conversation).
+Study: `docs/specs/2026-10-26-mcp-agent-study.md` (defect IDs D*, observation IDs U*, specification IDs M*). Decisions this design changes: ADR 003 (authentication), ADR 012 (tool registry, Deferred), ADR 020 (assistant conversation).
 
 ## Intent
 

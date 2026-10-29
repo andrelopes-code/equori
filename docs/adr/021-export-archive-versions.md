@@ -2,7 +2,7 @@
 
 - Status: accepted
 - Date: 2026-10-26
-- Amends: export design E1 and E4 (`docs/superpowers/specs/2026-10-26-export-design.md`), ADR 004 (members `archive_version` and `instance_version`)
+- Amends: export design E1 and E4 (`docs/specs/2026-10-26-export-design.md`), ADR 004 (members `archive_version` and `instance_version`)
 
 ## Context
 

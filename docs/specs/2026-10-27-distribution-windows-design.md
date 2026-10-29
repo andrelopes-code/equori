@@ -1,6 +1,6 @@
 # Distribution: the Windows form
 
-Status: draft, 2026-10-27. Amends `docs/superpowers/specs/2026-10-26-distribution-design.md` (the original design below), which stays as written. Each original rule this design changes is cited by its ID next to the new rule.
+Status: draft, 2026-10-27. Amends `docs/specs/2026-10-26-distribution-design.md` (the original design below), which stays as written. Each original rule this design changes is cited by its ID next to the new rule.
 
 ## Intent
 

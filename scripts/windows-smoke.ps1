@@ -1,4 +1,4 @@
-# Smoke test of the Windows installer (W-R3 of docs/superpowers/specs/2026-10-27-distribution-windows-design.md).
+# Smoke test of the Windows installer (W-R3 of docs/specs/2026-10-27-distribution-windows-design.md).
 # Runs elevated on a computer without equori: it installs, uses, restarts and uninstalls the service.
 param(
     [Parameter(Mandatory)][string]$Installer,

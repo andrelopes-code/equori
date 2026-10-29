@@ -27,7 +27,7 @@ jobs:
       - run: make check
       - run: make vuln
 
-  # Managed mode on Windows (docs/superpowers/specs/2026-10-27-distribution-windows-design.md, W-R1).
+  # Managed mode on Windows (docs/specs/2026-10-27-distribution-windows-design.md, W-R1).
   # B4 across operating systems (W-R2): a Linux dump for the windows job, which returns one.
   exchange-linux-dump:
     runs-on: ubuntu-latest

@@ -150,7 +150,7 @@ jobs:
           subject-digest: ${{ steps.push-standalone.outputs.digest }}
           push-to-registry: true
 
-  # The Windows installer (W-R4 to W-R7 of docs/superpowers/specs/2026-10-27-distribution-windows-design.md).
+  # The Windows installer (W-R4 to W-R7 of docs/specs/2026-10-27-distribution-windows-design.md).
   # It is built and tested on every tag and published only when signed (W-R6).
   windows:
     needs: check

@@ -154,7 +154,7 @@ D6 is a decision of ADR 020 C2 (8,000-byte history); changing it changes the eva
 
 ## 7. Open questions
 
-Settled in `docs/superpowers/specs/2026-10-26-mcp-agent-design.md`, section 8.
+Settled in `docs/specs/2026-10-26-mcp-agent-design.md`, section 8.
 
 ## 8. Sources
 

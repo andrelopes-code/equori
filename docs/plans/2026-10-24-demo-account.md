@@ -30,8 +30,6 @@ Mariana Costa Ribeiro, 34, product analyst in São Paulo, CLT employee, renting,
 
 ## Tasks
 
-Each slice is at most three tasks and ends with a checkpoint in `.claude/progress/current.md`.
-
 ### Slice 1: foundation
 
 1. `cmd/demoseed` skeleton: flags, cookie-jar client with typed helpers, login, populated-user guard, `make demo` and `make demo-user` targets.

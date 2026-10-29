@@ -1,7 +1,5 @@
 # P8 Currencies and Investments Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** Deliver roadmap phase P8: securities as instruments, prices with two public feeds, conversion between instruments, valued balances, foreign purchases, currency exchanges, trades with average cost, investment income, the Portfolio derived tables and multi-currency planning (S16, S17, S21, S22, S64–S67).
 
 **Architecture:** `platform/money` generalizes `Money` to any instrument with its scale and adds an exact `Rate` and a single-rounding conversion. `marketdata` owns instruments, prices, feeds behind an anti-corruption layer (`internal/marketdata/internal/feed`) and the conversion service. `ledger` records foreign purchases, exchanges, trades and investment income as transactions with detail rows (D1 data) and computes the cost of a sale from the weights of the security account. A new module `internal/portfolio` rebuilds positions, realized results and income events from Ledger facts on the outbox events (ADR 006) and reads Ledger only through `ledger.Module` methods (ADR 002). `planning` drops the base-currency restriction of A47.
