@@ -86,7 +86,7 @@ export function BalanceGroupTable({
                       <Inline gap={3} wrap="nowrap">
                         <AccountAvatar account={row.account} size="sm" />
                         <Stack gap={0}>
-                          <Inline gap={2}>
+                          <Inline gap={4}>
                             <Text size="sm" weight="medium">
                               <AccountLink account={row.account}>
                                 {row.account.name}

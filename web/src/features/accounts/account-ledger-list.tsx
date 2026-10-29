@@ -99,7 +99,7 @@ export function AccountLedgerList({
                 },
                 lines: [
                   counterparts(row),
-                  <Inline key="status" gap={2}>
+                  <Inline key="status" gap={4}>
                     <Tag size="sm" tone={statusTone[row.status]}>
                       {t(statusLabel[row.status])}
                     </Tag>

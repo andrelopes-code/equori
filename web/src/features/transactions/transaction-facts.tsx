@@ -55,7 +55,7 @@ export function TransactionFacts({
         <DescriptionListTerm>{t("facts.tags")}</DescriptionListTerm>
         <DescriptionListDescription>
           {transaction.tags.length === 0 ? undefined : (
-            <Inline gap={1}>
+            <Inline gap={4}>
               {transaction.tags.map((tag) => (
                 <Tag key={tag} size="sm">
                   {tag}

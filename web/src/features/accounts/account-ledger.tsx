@@ -266,7 +266,7 @@ export function AccountLedger({
                           >
                             <TableRowHeader>
                               <Stack gap={0}>
-                                <Inline gap={2}>
+                                <Inline gap={4}>
                                   <Link
                                     variant="neutral"
                                     underline="hover"

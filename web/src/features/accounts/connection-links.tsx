@@ -124,7 +124,7 @@ export function ConnectionLinks({
     >
       <Inline justify="between" gap={4}>
         <Stack gap={0}>
-          <Inline gap={2} align="center">
+          <Inline gap={4} align="center">
             <Heading level={2} size="md">
               {connection.name}
             </Heading>

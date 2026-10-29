@@ -149,7 +149,7 @@ export function BudgetSummary({
               )}
             </div>
             {!compact && states.over + states.near + states.within > 0 && (
-              <Inline gap={2} wrap="wrap">
+              <Inline gap={4} wrap="wrap">
                 {counts.map(([state, count, one, many]) =>
                   count === 0 ? null : (
                     <Tag key={state} tone={tones[state]} size="sm">

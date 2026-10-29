@@ -17,7 +17,7 @@ export function ScheduleCell({ point }: { point: ProjectionPoint }) {
   if (schedule.data === undefined)
     return <Text size="sm">{t("scheduled.loading")}</Text>;
   return (
-    <Inline gap={2} align="center" wrap="wrap">
+    <Inline gap={4} align="center" wrap="wrap">
       <Text size="sm" weight="medium">
         {schedule.data.description === ""
           ? t("ledger.untitled")

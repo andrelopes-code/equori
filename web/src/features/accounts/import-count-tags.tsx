@@ -23,7 +23,7 @@ const shown: {
 export function ImportCountTags({ counts }: { counts: ImportCounts }) {
   const t = useT();
   return (
-    <Inline gap={2}>
+    <Inline gap={4}>
       {shown
         .filter((entry) => counts[entry.key] > 0)
         .map((entry) => (

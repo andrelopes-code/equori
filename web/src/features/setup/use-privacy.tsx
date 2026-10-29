@@ -23,7 +23,7 @@ export function UsePrivacy({ use }: { use: ModelUse }) {
 
   return (
     <Stack gap={2}>
-      <Inline gap={2} wrap="wrap">
+      <Inline gap={4} wrap="wrap">
         <Tag
           size="sm"
           tone={use.sends_financial_data ? "secondary" : "success"}
