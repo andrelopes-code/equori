@@ -23,6 +23,7 @@ const phoneRoutes = [
   "/transactions/$id",
   "/transactions/$id/correct",
   "/settings",
+  "/settings/appearance",
   "/help",
   "/help/$page",
 ];

@@ -2,9 +2,9 @@ import { ColorField } from "@slotted/react/color-picker";
 import { Field, FieldLabel } from "@slotted/react/field";
 
 import { SeedSwatches } from "@/features/setup/seed-swatches";
-import { SettingsGroup } from "@/features/setup/settings-group";
+import { StudioSection } from "@/features/setup/studio-section";
 import styles from "@/features/setup/settings-page.module.css";
-import { SettingsRow } from "@/features/setup/settings-row";
+import { StudioField } from "@/features/setup/studio-field";
 import { StatusColours } from "@/features/setup/status-colours";
 import { useT } from "@/i18n/i18n-provider";
 import { accentSeed, accentSeeds, accents, useAccent } from "@/theme/accent";
@@ -35,11 +35,10 @@ export function AppearanceColour() {
   };
 
   return (
-    <SettingsGroup title={t("settings.appearance.colour")}>
-      <SettingsRow
+    <StudioSection title={t("settings.appearance.colour")}>
+      <StudioField
         label={t("settings.accent")}
         description={t("settings.accent.description")}
-        stacked
       >
         <SeedSwatches<AccentPreset>
           name="accent"
@@ -62,11 +61,10 @@ export function AppearanceColour() {
             onValueChange={pickAccent}
           />
         </Field>
-      </SettingsRow>
-      <SettingsRow
+      </StudioField>
+      <StudioField
         label={t("settings.tone")}
         description={t("settings.tone.description")}
-        stacked
       >
         <SeedSwatches
           name="tone"
@@ -89,14 +87,13 @@ export function AppearanceColour() {
             onValueChange={pickTone}
           />
         </Field>
-      </SettingsRow>
-      <SettingsRow
+      </StudioField>
+      <StudioField
         label={t("settings.status")}
         description={t("settings.status.description")}
-        stacked
       >
         <StatusColours />
-      </SettingsRow>
-    </SettingsGroup>
+      </StudioField>
+    </StudioSection>
   );
 }

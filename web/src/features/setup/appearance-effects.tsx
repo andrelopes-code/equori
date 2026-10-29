@@ -1,6 +1,6 @@
 import { Switch } from "@slotted/react/switch";
 
-import { SettingsGroup } from "@/features/setup/settings-group";
+import { StudioSection } from "@/features/setup/studio-section";
 import { useT } from "@/i18n/i18n-provider";
 import { useMotion } from "@/theme/motion";
 import { useVisual } from "@/theme/visual";
@@ -11,7 +11,7 @@ export function AppearanceEffects() {
   const [visual, setVisual] = useVisual();
 
   return (
-    <SettingsGroup title={t("settings.appearance.motion")}>
+    <StudioSection title={t("settings.appearance.motion")}>
       <Switch
         labelPlacement="start"
         checked={motion === "reduced"}
@@ -32,6 +32,6 @@ export function AppearanceEffects() {
       >
         {t("settings.experimental.glass")}
       </Switch>
-    </SettingsGroup>
+    </StudioSection>
   );
 }

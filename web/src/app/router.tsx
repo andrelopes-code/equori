@@ -90,7 +90,11 @@ import {
   rememberDeviceUser,
   setupQuery,
 } from "@/features/session";
-import { SettingsPage, validateSettingsSearch } from "@/features/setup";
+import {
+  AppearanceStudio,
+  SettingsPage,
+  validateSettingsSearch,
+} from "@/features/setup";
 import {
   CapturePage,
   CaptureQueuePage,
@@ -209,6 +213,13 @@ const settingsRoute = createRoute({
   path: "settings",
   validateSearch: validateSettingsSearch,
   component: SettingsPage,
+});
+
+const appearanceRoute = createRoute({
+  staticData: { phone: true },
+  getParentRoute: () => authedRoute,
+  path: "settings/appearance",
+  component: AppearanceStudio,
 });
 
 const accountRoute = createRoute({
@@ -570,6 +581,7 @@ export const routeTree = rootRoute.addChildren([
     helpPageRoute,
     instrumentRoute,
     settingsRoute,
+    appearanceRoute,
   ]),
 ]);
 

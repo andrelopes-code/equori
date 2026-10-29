@@ -1,0 +1,89 @@
+@layer app {
+  /* The panel keeps one measure and the canvas takes the rest; under 60 rem of viewport the canvas
+     stands above the panel (spec A7). The panel's measure has no token. */
+  .workspace {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: var(--slotted-space-8);
+  }
+
+  @media (min-width: 60rem) {
+    .workspace {
+      display: grid;
+      align-items: start;
+      grid-template-columns: 26rem minmax(0, 1fr);
+    }
+
+    .canvas {
+      position: sticky;
+      inset-block-start: calc(
+        var(--slotted-page-sticky-top, 0px) + var(--slotted-space-6)
+      );
+    }
+  }
+
+  .panel {
+    display: flex;
+    min-inline-size: 0;
+    flex-direction: column;
+  }
+
+  /* A panel that is not selected keeps the hidden attribute, which display would override. */
+  .tabPanel:not([hidden]) {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-9);
+    padding-block-start: var(--slotted-space-7);
+  }
+
+  .section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-5);
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-3);
+  }
+
+  .fieldText {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-1);
+  }
+
+  .canvas {
+    display: flex;
+    min-inline-size: 0;
+    flex-direction: column;
+    gap: var(--slotted-space-5);
+    padding: var(--slotted-space-5);
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-lg);
+    background-color: var(--slotted-surface-sunken);
+  }
+
+  /* A dotted ground sets the drawing apart from the page it stands on. */
+  .stage {
+    display: flex;
+    justify-content: center;
+    padding: var(--slotted-space-8) var(--slotted-space-6);
+    border-radius: var(--slotted-radius-md);
+    background-image: radial-gradient(
+      var(--slotted-border-subtle) 1px,
+      transparent 1px
+    );
+    background-size: var(--slotted-space-6) var(--slotted-space-6);
+  }
+
+  .device {
+    inline-size: 100%;
+    max-inline-size: 60rem;
+  }
+
+  .device[data-device="phone"] {
+    max-inline-size: 24rem;
+  }
+}

@@ -15,8 +15,47 @@ describe("appearance studio", () => {
     resetAppearance();
   });
 
-  it("applies a curated theme and marks it as the current one", async () => {
+  it("opens from the appearance section of the settings", async () => {
     await renderApp("/settings?section=appearance", { fetch: api() });
+
+    await userEvent.click(
+      await screen.findByRole("link", {
+        name: catalogPtBR["settings.appearance.open"],
+      }),
+    );
+
+    expect(
+      await screen.findByRole("tab", {
+        name: catalogPtBR["studio.tab.surfaces"],
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("sets the depth of the grounds from the surfaces tab", async () => {
+    await renderApp("/settings/appearance", { fetch: api() });
+
+    await userEvent.click(
+      await screen.findByRole("tab", {
+        name: catalogPtBR["studio.tab.surfaces"],
+      }),
+    );
+    await userEvent.click(
+      within(
+        await screen.findByRole("radiogroup", {
+          name: catalogPtBR["studio.depth"],
+        }),
+      ).getByRole("radio", { name: catalogPtBR["studio.depth.oled"] }),
+    );
+
+    expect(document.documentElement).toHaveAttribute(
+      "data-equori-depth",
+      "oled",
+    );
+    expect(localStorage.getItem("equori.depth")).toBe("oled");
+  });
+
+  it("applies a curated theme and marks it as the current one", async () => {
+    await renderApp("/settings/appearance", { fetch: api() });
     const gallery = await screen.findByRole("radiogroup", {
       name: catalogPtBR["settings.theme.gallery"],
     });
@@ -38,7 +77,7 @@ describe("appearance studio", () => {
   });
 
   it("draws each theme card in the theme's own corners and seeds", async () => {
-    await renderApp("/settings?section=appearance", { fetch: api() });
+    await renderApp("/settings/appearance", { fetch: api() });
     const gallery = await screen.findByRole("radiogroup", {
       name: catalogPtBR["settings.theme.gallery"],
     });
@@ -56,7 +95,12 @@ describe("appearance studio", () => {
   });
 
   it("reads a changed value as custom and saves it as a theme", async () => {
-    await renderApp("/settings?section=appearance", { fetch: api() });
+    await renderApp("/settings/appearance", { fetch: api() });
+    await userEvent.click(
+      await screen.findByRole("tab", {
+        name: catalogPtBR["studio.tab.colour"],
+      }),
+    );
     const tones = await screen.findByRole("radiogroup", {
       name: catalogPtBR["settings.tone"],
     });
@@ -85,7 +129,10 @@ describe("appearance studio", () => {
       }),
     );
 
-    const gallery = screen.getByRole("radiogroup", {
+    await userEvent.click(
+      screen.getByRole("tab", { name: catalogPtBR["studio.tab.themes"] }),
+    );
+    const gallery = await screen.findByRole("radiogroup", {
       name: catalogPtBR["settings.theme.gallery"],
     });
     expect(
@@ -95,7 +142,7 @@ describe("appearance studio", () => {
   });
 
   it("imports a theme file and applies it", async () => {
-    await renderApp("/settings?section=appearance", { fetch: api() });
+    await renderApp("/settings/appearance", { fetch: api() });
 
     await userEvent.click(
       await screen.findByRole("button", {
@@ -130,7 +177,7 @@ describe("appearance studio", () => {
   });
 
   it("refuses a file that is not a theme", async () => {
-    await renderApp("/settings?section=appearance", { fetch: api() });
+    await renderApp("/settings/appearance", { fetch: api() });
 
     await userEvent.click(
       await screen.findByRole("button", {

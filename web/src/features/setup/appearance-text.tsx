@@ -1,7 +1,7 @@
 import { CustomTypefaceField } from "@/features/setup/custom-typeface-field";
 import { oneOf } from "@/features/setup/one-of";
-import { SettingsGroup } from "@/features/setup/settings-group";
-import { SettingsRow } from "@/features/setup/settings-row";
+import { StudioSection } from "@/features/setup/studio-section";
+import { StudioField } from "@/features/setup/studio-field";
 import { TextSizeSlider } from "@/features/setup/text-size-slider";
 import { TypefacePreview } from "@/features/setup/typeface-preview";
 import { useT } from "@/i18n/i18n-provider";
@@ -13,18 +13,16 @@ export function AppearanceText() {
   const [typeface, setTypeface] = useTypeface();
 
   return (
-    <SettingsGroup title={t("settings.appearance.text")}>
-      <SettingsRow
+    <StudioSection title={t("settings.appearance.text")}>
+      <StudioField
         label={t("settings.textSize")}
         description={t("settings.textSize.description")}
-        stacked
       >
         <TextSizeSlider />
-      </SettingsRow>
-      <SettingsRow
+      </StudioField>
+      <StudioField
         label={t("settings.typeface")}
         description={t("settings.typeface.description")}
-        stacked
       >
         <ChoiceCards
           name="typeface"
@@ -40,7 +38,7 @@ export function AppearanceText() {
           }}
         />
         <CustomTypefaceField />
-      </SettingsRow>
-    </SettingsGroup>
+      </StudioField>
+    </StudioSection>
   );
 }

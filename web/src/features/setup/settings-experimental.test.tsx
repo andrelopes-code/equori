@@ -32,7 +32,12 @@ const fetch = () =>
 
 describe("experimental glass style", () => {
   it("is off until the reader turns it on", async () => {
-    await renderApp("/settings?section=appearance", { fetch: fetch() });
+    await renderApp("/settings/appearance", { fetch: fetch() });
+    await userEvent.click(
+      await screen.findByRole("tab", {
+        name: catalogPtBR["studio.tab.effects"],
+      }),
+    );
     expect(
       await screen.findByRole("switch", { name: label }),
     ).not.toBeChecked();
@@ -41,7 +46,12 @@ describe("experimental glass style", () => {
   });
 
   it("is kept in this browser and switches the theme when turned on", async () => {
-    await renderApp("/settings?section=appearance", { fetch: fetch() });
+    await renderApp("/settings/appearance", { fetch: fetch() });
+    await userEvent.click(
+      await screen.findByRole("tab", {
+        name: catalogPtBR["studio.tab.effects"],
+      }),
+    );
     await userEvent.click(await screen.findByRole("switch", { name: label }));
     expect(screen.getByRole("switch", { name: label })).toBeChecked();
     expect(localStorage.getItem("equori.visual")).toBe("glass");
@@ -52,7 +62,12 @@ describe("experimental glass style", () => {
 
   it("returns to the standard theme when turned off", async () => {
     localStorage.setItem("equori.visual", "glass");
-    await renderApp("/settings?section=appearance", { fetch: fetch() });
+    await renderApp("/settings/appearance", { fetch: fetch() });
+    await userEvent.click(
+      await screen.findByRole("tab", {
+        name: catalogPtBR["studio.tab.effects"],
+      }),
+    );
     const toggle = await screen.findByRole("switch", { name: label });
     expect(toggle).toBeChecked();
     await userEvent.click(toggle);
