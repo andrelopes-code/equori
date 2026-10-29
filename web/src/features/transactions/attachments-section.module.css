@@ -1,5 +1,11 @@
 @layer app {
-  /* Two thumbnails per row at 390 px: the library's card size would fit three. */
+  /* The library's card (120 px at sm) cuts a receipt's name to a few letters; 12rem holds a
+     name of about 20 characters and a picture large enough to tell one receipt from another. */
+  .group {
+    --slotted-attachment-card-size: 12rem;
+  }
+
+  /* Two thumbnails per row at 390 px. */
   @media (max-width: 599px) {
     .group {
       --slotted-attachment-card-size: 10.5rem;

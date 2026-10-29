@@ -1,14 +1,4 @@
-import {
-  Attachment,
-  AttachmentActions,
-  AttachmentBody,
-  AttachmentDetail,
-  AttachmentGroup,
-  AttachmentLink,
-  AttachmentPreview,
-  AttachmentRemove,
-  AttachmentTrigger,
-} from "@slotted/react/attachment";
+import { AttachmentGroup } from "@slotted/react/attachment";
 import { Button } from "@slotted/react/button";
 import { Glyph, Icon } from "@slotted/react/icon";
 import { InlineMessage } from "@slotted/react/inline-message";
@@ -25,16 +15,10 @@ import {
   useRemoveAttachment,
   useUploadAttachment,
 } from "@/features/transactions/api";
-import {
-  AttachmentViewer,
-  contentURL,
-} from "@/features/transactions/attachment-viewer";
-import {
-  formatFileSize,
-  formatUploaded,
-} from "@/features/transactions/attachment-meta";
+import { AttachmentCard } from "@/features/transactions/attachment-card";
+import { AttachmentViewer } from "@/features/transactions/attachment-viewer";
 import styles from "@/features/transactions/attachments-section.module.css";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useT } from "@/i18n/i18n-provider";
 
 // The media types the server detects and keeps (N26).
 const accepted = "application/pdf,image/jpeg,image/png,image/webp,text/plain";
@@ -47,7 +31,6 @@ export function AttachmentsSection({
   readOnly: boolean;
 }) {
   const t = useT();
-  const [tag] = useAppLocale();
   const api = useApi();
   const files = useQuery(attachmentsQuery(api, transactionId));
   const upload = useUploadAttachment(transactionId);
@@ -78,56 +61,28 @@ export function AttachmentsSection({
           orientation="vertical"
         >
           {items.map((item) => (
-            <Attachment
+            <AttachmentCard
               key={item.id}
-              file={{
-                name: item.file_name,
-                type: item.media_type,
-                size: item.size,
-              }}
-              loading={remove.isPending && remove.variables === item.id}
-              {...(readOnly
-                ? {}
-                : {
-                    onRemove: () => {
+              item={item}
+              removing={remove.isPending && remove.variables === item.id}
+              onView={
+                viewable.includes(item)
+                  ? () => {
+                      setViewing(item.id);
+                    }
+                  : undefined
+              }
+              onRemove={
+                readOnly
+                  ? undefined
+                  : () => {
                       setError(null);
                       remove.mutateAsync(item.id).catch((caught: unknown) => {
                         setError(errorText(caught, t));
                       });
-                    },
-                  })}
-            >
-              {isImage(item.media_type) ? (
-                <AttachmentPreview src={contentURL(item.id)} />
-              ) : (
-                <AttachmentPreview />
-              )}
-              <AttachmentBody>
-                {viewable.includes(item) ? (
-                  <AttachmentTrigger
-                    onClick={() => {
-                      setViewing(item.id);
-                    }}
-                  />
-                ) : (
-                  <AttachmentLink
-                    href={contentURL(item.id)}
-                    download={item.file_name}
-                  />
-                )}
-                <AttachmentDetail className={styles.detail}>
-                  {t("attachment.detail", {
-                    size: formatFileSize(item.size, tag),
-                    uploaded: formatUploaded(item.created_at, tag),
-                  })}
-                </AttachmentDetail>
-              </AttachmentBody>
-              {!readOnly && (
-                <AttachmentActions>
-                  <AttachmentRemove />
-                </AttachmentActions>
-              )}
-            </Attachment>
+                    }
+              }
+            />
           ))}
         </AttachmentGroup>
       )}

@@ -159,6 +159,21 @@ describe("attachments of a transaction", () => {
     expect(screen.getByRole("button", { name: "receipt-1.png" })).toHaveFocus();
   });
 
+  // Slotted issue #48: a press on the picture ends its click on the card itself.
+  it("opens the viewer from a click that lands on the card", async () => {
+    await renderApp(path, { fetch: api() });
+    const trigger = await screen.findByRole("button", {
+      name: "receipt-2.jpg",
+    });
+    const card = trigger.closest('[data-ui="attachment"]');
+    if (card === null) throw new Error("no card around the trigger");
+
+    fireEvent.click(card);
+
+    const dialog = await screen.findByRole("dialog");
+    expect(shown(dialog)).toHaveAttribute("src", content(ids.two));
+  });
+
   it("zooms by button, by key and by wheel", async () => {
     await renderApp(path, { fetch: api() });
     const { user, dialog } = await open("receipt-1.png");
