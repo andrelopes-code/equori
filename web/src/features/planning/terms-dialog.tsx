@@ -1,4 +1,5 @@
 import { Button } from "@slotted/react/button";
+import { Checkbox } from "@slotted/react/checkbox";
 import {
   Dialog,
   DialogBody,
@@ -10,8 +11,6 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
-import { Stack } from "@slotted/react/stack";
-import { Switch } from "@slotted/react/switch";
 import { useId, useState } from "react";
 
 import { errorText } from "@/api/problem";
@@ -23,6 +22,8 @@ import { formatDate, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
+import widths from "@/ui/field-width.module.css";
+import { FormLayout } from "@/ui/form-layout";
 import { MoneyInput } from "@/ui/money-input";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useStableCallback } from "@/ui/use-stable-callback";
@@ -104,10 +105,11 @@ export function TermsDialog({
                 });
             }}
           >
-            <Stack gap={4}>
+            <FormLayout>
               {summary !== null && (
                 <InlineMessage tone="danger">{summary}</InlineMessage>
               )}
+
               <Field invalid={errors.effective_from !== undefined} required>
                 <FieldLabel>{t("schedule.effectiveFrom")}</FieldLabel>
                 <DateInput
@@ -121,10 +123,13 @@ export function TermsDialog({
                   <FieldError>{errors.effective_from}</FieldError>
                 )}
               </Field>
+
               <Field invalid={errors.amount !== undefined}>
                 <FieldLabel>{t("schedule.amount")}</FieldLabel>
                 {currency !== undefined && scale !== null && (
                   <MoneyInput
+                    size="field"
+                    className={widths.medium}
                     value={amount}
                     onChange={setAmount}
                     currency={currency}
@@ -132,20 +137,23 @@ export function TermsDialog({
                     sign={schedule.kind === "income" ? "income" : "expense"}
                   />
                 )}
+
                 {errors.amount !== undefined && (
                   <FieldError>{errors.amount}</FieldError>
                 )}
               </Field>
-              <Switch
+
+              <Checkbox
                 checked={withRecurrence}
                 onCheckedChange={setWithRecurrence}
               >
                 {t("schedule.changeRecurrence")}
-              </Switch>
+              </Checkbox>
+
               {withRecurrence && recurrence !== undefined && (
                 <RecurrenceFields value={recurrence} onChange={setRecurrence} />
               )}
-            </Stack>
+            </FormLayout>
           </form>
         </DialogBody>
         <DialogFooter>

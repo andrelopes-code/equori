@@ -10,7 +10,6 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldLabel } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
-import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 import { useState } from "react";
 
@@ -20,6 +19,7 @@ import { useUnlockAccount } from "@/features/accounts/api";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { DateInput } from "@/ui/date-input";
+import { FormLayout } from "@/ui/form-layout";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 
@@ -55,7 +55,7 @@ export function UnlockDialog({
           <DialogDescription>{t("unlock.hint")}</DialogDescription>
         </DialogHeader>
         <DialogBody>
-          <Stack gap={4}>
+          <FormLayout>
             <Field>
               <FieldLabel>{t("unlock.from")}</FieldLabel>
               <DateInput
@@ -65,15 +65,17 @@ export function UnlockDialog({
                 shortcuts={false}
               />
             </Field>
+
             {from !== "" && (
               <Text size="sm">
                 {t("unlock.consequence", { date: formatDate(from, locale) })}
               </Text>
             )}
+
             {error !== null && (
               <InlineMessage tone="danger">{error}</InlineMessage>
             )}
-          </Stack>
+          </FormLayout>
         </DialogBody>
         <DialogFooter>
           <Button variant="ghost" tone="secondary" onClick={onCancel}>

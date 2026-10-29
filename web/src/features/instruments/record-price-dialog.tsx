@@ -11,7 +11,6 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
-import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import { useId, useState } from "react";
 
@@ -21,6 +20,8 @@ import { parseRate } from "@/features/instruments/rate";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
+import widths from "@/ui/field-width.module.css";
+import { FormLayout } from "@/ui/form-layout";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
@@ -87,7 +88,7 @@ export function RecordPriceDialog({
               submit();
             }}
           >
-            <Stack gap={4}>
+            <FormLayout>
               {summary !== null && (
                 <InlineMessage tone="danger">{summary}</InlineMessage>
               )}
@@ -105,9 +106,11 @@ export function RecordPriceDialog({
                   <FieldError>{errors.date}</FieldError>
                 )}
               </Field>
+
               <Field invalid={errors.value !== undefined} required>
                 <FieldLabel>{t("instrument.price.value")}</FieldLabel>
                 <TextField
+                  className={widths.medium}
                   name="value"
                   inputMode="decimal"
                   value={text}
@@ -119,7 +122,7 @@ export function RecordPriceDialog({
                   <FieldError>{errors.value}</FieldError>
                 )}
               </Field>
-            </Stack>
+            </FormLayout>
           </form>
         </DialogBody>
         <DialogFooter>

@@ -10,7 +10,6 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldLabel } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
-import { Stack } from "@slotted/react/stack";
 import { useState } from "react";
 
 import { errorText } from "@/api/problem";
@@ -20,6 +19,7 @@ import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
+import { FormLayout } from "@/ui/form-layout";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useStableCallback } from "@/ui/use-stable-callback";
 
@@ -58,10 +58,11 @@ export function EndDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogBody>
-          <Stack gap={4}>
+          <FormLayout>
             {error !== null && (
               <InlineMessage tone="danger">{error}</InlineMessage>
             )}
+
             <Field required>
               <FieldLabel>{t("schedule.endFrom")}</FieldLabel>
               <DateInput
@@ -71,7 +72,7 @@ export function EndDialog({
                 onChange={setFrom}
               />
             </Field>
-          </Stack>
+          </FormLayout>
         </DialogBody>
         <DialogFooter>
           <Button variant="ghost" tone="secondary" onClick={onCancel}>

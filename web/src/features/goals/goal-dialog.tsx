@@ -15,7 +15,6 @@ import {
   MultiSelectControl,
   MultiSelectItem,
 } from "@slotted/react/multi-select";
-import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import { useQuery } from "@tanstack/react-query";
 import { useId, useState } from "react";
@@ -31,6 +30,8 @@ import { shiftDate } from "@/i18n/format";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
+import widths from "@/ui/field-width.module.css";
+import { FormLayout } from "@/ui/form-layout";
 import { MoneyInput } from "@/ui/money-input";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useStableCallback } from "@/ui/use-stable-callback";
@@ -123,10 +124,11 @@ export function GoalDialog({
                 });
             }}
           >
-            <Stack gap={4}>
+            <FormLayout>
               {summary !== null && (
                 <InlineMessage tone="danger">{summary}</InlineMessage>
               )}
+
               <Field invalid={errors.name !== undefined} required>
                 <FieldLabel>{t("goals.name")}</FieldLabel>
                 <TextField
@@ -140,10 +142,13 @@ export function GoalDialog({
                   <FieldError>{errors.name}</FieldError>
                 )}
               </Field>
+
               <Field invalid={errors.target !== undefined} required>
                 <FieldLabel>{t("goals.target")}</FieldLabel>
                 {currency !== undefined && scale !== null && (
                   <MoneyInput
+                    size="field"
+                    className={widths.medium}
                     value={target}
                     onChange={setTarget}
                     currency={currency}
@@ -151,10 +156,12 @@ export function GoalDialog({
                     sign="neutral"
                   />
                 )}
+
                 {errors.target !== undefined && (
                   <FieldError>{errors.target}</FieldError>
                 )}
               </Field>
+
               <Field invalid={errors.due_on !== undefined} required>
                 <FieldLabel>{t("goals.due")}</FieldLabel>
                 <DateInput
@@ -168,6 +175,7 @@ export function GoalDialog({
                   <FieldError>{errors.due_on}</FieldError>
                 )}
               </Field>
+
               <Field invalid={errors.account_ids !== undefined} required>
                 <FieldLabel>{t("goals.accounts")}</FieldLabel>
                 <MultiSelect
@@ -188,7 +196,7 @@ export function GoalDialog({
                   <FieldError>{errors.account_ids}</FieldError>
                 )}
               </Field>
-            </Stack>
+            </FormLayout>
           </form>
         </DialogBody>
         <DialogFooter>

@@ -14,7 +14,6 @@ import {
   FieldError,
   FieldLabel,
 } from "@slotted/react/field";
-import { Stack } from "@slotted/react/stack";
 import { useId, useState } from "react";
 
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
@@ -23,6 +22,8 @@ import { useCreateAssertion } from "@/features/accounts/api";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
+import widths from "@/ui/field-width.module.css";
+import { FormLayout } from "@/ui/form-layout";
 import { MoneyInput } from "@/ui/money-input";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useStableCallback } from "@/ui/use-stable-callback";
@@ -91,7 +92,7 @@ export function AssertionDialog({
                 });
             }}
           >
-            <Stack gap={4}>
+            <FormLayout>
               <Field invalid={errors.date !== undefined}>
                 <FieldLabel>{t("reconciliation.date")}</FieldLabel>
                 <DateInput
@@ -104,6 +105,7 @@ export function AssertionDialog({
                   <FieldError>{errors.date}</FieldError>
                 )}
               </Field>
+
               <Field invalid={errors.amount !== undefined || summary !== null}>
                 <FieldLabel>
                   {t(
@@ -113,6 +115,8 @@ export function AssertionDialog({
                   )}
                 </FieldLabel>
                 <MoneyInput
+                  size="field"
+                  className={widths.medium}
                   value={amount}
                   onChange={setAmount}
                   currency={account.currency}
@@ -126,7 +130,7 @@ export function AssertionDialog({
                   <FieldError>{amountError}</FieldError>
                 )}
               </Field>
-            </Stack>
+            </FormLayout>
           </form>
         </DialogBody>
         <DialogFooter>

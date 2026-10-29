@@ -16,7 +16,6 @@ import {
   FieldLabel,
 } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
-import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import { useId, useMemo, useState } from "react";
 
@@ -34,6 +33,9 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { DateInput } from "@/ui/date-input";
+import widths from "@/ui/field-width.module.css";
+import { FormLayout } from "@/ui/form-layout";
+import { FormRow } from "@/ui/form-row";
 import { MoneyInput } from "@/ui/money-input";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useStableCallback } from "@/ui/use-stable-callback";
@@ -149,7 +151,7 @@ export function TermsDialog({
               submit();
             }}
           >
-            <Stack gap={4}>
+            <FormLayout>
               {summary !== null && (
                 <InlineMessage tone="danger">{summary}</InlineMessage>
               )}
@@ -158,30 +160,34 @@ export function TermsDialog({
                   <AlertDescription>{t("terms.replaceNote")}</AlertDescription>
                 </AlertContent>
               </Alert>
-              <Field invalid={errors.issued_on !== undefined} required>
-                <FieldLabel>{t("terms.issuedOn")}</FieldLabel>
-                <DateInput
-                  name="issued_on"
-                  value={issued}
-                  shortcuts={false}
-                  onChange={setIssued}
-                />
-                {errors.issued_on !== undefined && (
-                  <FieldError>{errors.issued_on}</FieldError>
-                )}
-              </Field>
-              <Field invalid={errors.matures_on !== undefined} required>
-                <FieldLabel>{t("terms.maturesOn")}</FieldLabel>
-                <DateInput
-                  name="matures_on"
-                  value={matures}
-                  shortcuts={false}
-                  onChange={setMatures}
-                />
-                {errors.matures_on !== undefined && (
-                  <FieldError>{errors.matures_on}</FieldError>
-                )}
-              </Field>
+              <FormRow>
+                <Field invalid={errors.issued_on !== undefined} required>
+                  <FieldLabel>{t("terms.issuedOn")}</FieldLabel>
+                  <DateInput
+                    name="issued_on"
+                    value={issued}
+                    shortcuts={false}
+                    onChange={setIssued}
+                  />
+                  {errors.issued_on !== undefined && (
+                    <FieldError>{errors.issued_on}</FieldError>
+                  )}
+                </Field>
+
+                <Field invalid={errors.matures_on !== undefined} required>
+                  <FieldLabel>{t("terms.maturesOn")}</FieldLabel>
+                  <DateInput
+                    name="matures_on"
+                    value={matures}
+                    shortcuts={false}
+                    onChange={setMatures}
+                  />
+                  {errors.matures_on !== undefined && (
+                    <FieldError>{errors.matures_on}</FieldError>
+                  )}
+                </Field>
+              </FormRow>
+
               <Field invalid={errors.index_id !== undefined}>
                 <FieldLabel>{t("terms.index")}</FieldLabel>
                 <TextField
@@ -198,12 +204,14 @@ export function TermsDialog({
                   <FieldError>{errors.index_id}</FieldError>
                 )}
               </Field>
+
               <Field
                 invalid={errors.percent_of_index_bp !== undefined}
                 required
               >
                 <FieldLabel>{t("terms.percentOfIndex")}</FieldLabel>
                 <TextField
+                  className={widths.medium}
                   name="percent_of_index"
                   inputMode="decimal"
                   value={percent}
@@ -215,9 +223,11 @@ export function TermsDialog({
                   <FieldError>{errors.percent_of_index_bp}</FieldError>
                 )}
               </Field>
+
               <Field invalid={errors.spread_bp !== undefined} required>
                 <FieldLabel>{t("terms.spread")}</FieldLabel>
                 <TextField
+                  className={widths.medium}
                   name="spread"
                   inputMode="decimal"
                   value={spread}
@@ -229,6 +239,7 @@ export function TermsDialog({
                   <FieldError>{errors.spread_bp}</FieldError>
                 )}
               </Field>
+
               <Field invalid={errors.day_count !== undefined} required>
                 <FieldLabel>{t("terms.dayCount")}</FieldLabel>
                 <ChoiceSelect
@@ -245,9 +256,12 @@ export function TermsDialog({
                   <FieldError>{errors.day_count}</FieldError>
                 )}
               </Field>
+
               <Field invalid={errors.face_value !== undefined} required>
                 <FieldLabel>{t("terms.faceValue")}</FieldLabel>
                 <MoneyInput
+                  size="field"
+                  className={widths.medium}
                   value={face}
                   onChange={setFace}
                   currency={quote}
@@ -258,7 +272,7 @@ export function TermsDialog({
                   <FieldError>{errors.face_value}</FieldError>
                 )}
               </Field>
-            </Stack>
+            </FormLayout>
           </form>
         </DialogBody>
         <DialogFooter>

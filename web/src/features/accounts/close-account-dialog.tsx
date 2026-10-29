@@ -10,7 +10,6 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldLabel } from "@slotted/react/field";
 import { InlineMessage } from "@slotted/react/inline-message";
-import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -23,6 +22,7 @@ import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { DateInput } from "@/ui/date-input";
+import { FormLayout } from "@/ui/form-layout";
 import { useStableCallback } from "@/ui/use-stable-callback";
 import { useOverlayOpen } from "@/ui/use-overlay-open";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -74,11 +74,12 @@ export function CloseAccountDialog({
           <DialogDescription>{t("account.closeHint")}</DialogDescription>
         </DialogHeader>
         <DialogBody>
-          <Stack gap={4}>
+          <FormLayout>
             <Field>
               <FieldLabel>{t("account.closeDate")}</FieldLabel>
               <DateInput name="closed_on" value={date} onChange={setDate} />
             </Field>
+
             {open.length > 0 && (
               <Text size="sm">
                 {t("account.closeDescendants", {
@@ -86,6 +87,7 @@ export function CloseAccountDialog({
                 })}
               </Text>
             )}
+
             {error !== null && (
               <InlineMessage tone="danger">
                 {error.text}
@@ -103,7 +105,7 @@ export function CloseAccountDialog({
                 )}
               </InlineMessage>
             )}
-          </Stack>
+          </FormLayout>
         </DialogBody>
         <DialogFooter>
           <Button variant="ghost" tone="secondary" onClick={onCancel}>
