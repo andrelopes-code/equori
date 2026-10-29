@@ -26,10 +26,8 @@ import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { MASK } from "@/privacy/mask";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { PhoneList } from "@/ui/phone-list";
 import { PricedValue } from "@/ui/priced-value";
 import { QueryError } from "@/ui/query-error";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 type Position = components["schemas"]["Position"];
 
@@ -41,7 +39,6 @@ export function InstrumentPositions({ code }: { code: string }) {
   const today = useToday();
   const fmt = useMoneyFormat();
   const scale = useScale();
-  const compact = useMediaQuery(compactQuery);
   const positions = useQuery(positionsQuery(api, today));
   const accounts = useQuery(accountsQuery(api));
   const byID = new Map((accounts.data ?? []).map((a) => [a.id, a]));
@@ -74,26 +71,6 @@ export function InstrumentPositions({ code }: { code: string }) {
       </Text>
     ) : (
       <PricedValue value={money(p.market_value)} prices={p.prices} />
-    );
-  if (compact)
-    return (
-      <PhoneList
-        label={t("instrument.positions.caption")}
-        loading={pending}
-        empty={t("instrument.positions.empty")}
-        rows={rows.map((p) => ({
-          key: p.account_id,
-          title: account(p),
-          lines: [
-            [
-              t("positions.quantity"),
-              fmt.plain(p.quantity, scale?.(p.quantity.currency) ?? 0),
-            ].join(": "),
-            [t("positions.costBasis"), money(p.cost_basis)].join(": "),
-          ],
-          end: marketValue(p),
-        }))}
-      />
     );
   return (
     <Table columns={5} variant="framed">

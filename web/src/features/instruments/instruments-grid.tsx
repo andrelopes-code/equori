@@ -16,7 +16,6 @@ import { LatestPriceCell } from "@/features/instruments/latest-price-cell";
 import styles from "@/features/instruments/instruments-page.module.css";
 import { useT } from "@/i18n/i18n-provider";
 import { AppLink } from "@/ui/app-link";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 const initialQuery: GridQuery = {
   ...emptyQuery(),
@@ -37,7 +36,6 @@ export function InstrumentsGrid({
   loading: boolean;
 }) {
   const t = useT();
-  const compact = useMediaQuery(compactQuery);
   const navigate = useNavigate();
   const [query, setQuery] = useState<GridQuery>(initialQuery);
   const types = useMemo(() => distinct(rows, "type"), [rows]);
@@ -63,7 +61,7 @@ export function InstrumentsGrid({
         accessor: "code",
         rowHeader: true,
         searchable: true,
-        width: compact ? 110 : 120,
+        width: 120,
       },
       {
         id: "name",
@@ -71,7 +69,7 @@ export function InstrumentsGrid({
         accessor: "name",
         searchable: true,
         flex: 1,
-        minWidth: compact ? 100 : 200,
+        minWidth: 200,
         priority: 3,
       },
       {
@@ -114,7 +112,7 @@ export function InstrumentsGrid({
         accessor: () => "",
         numeric: true,
         sortable: false,
-        width: compact ? 130 : 150,
+        width: 150,
         priority: 1,
       },
       {
@@ -126,7 +124,7 @@ export function InstrumentsGrid({
         priority: 2,
       },
     ],
-    [t, compact, typeOptions, subtypeOptions, quoteOptions],
+    [t, typeOptions, subtypeOptions, quoteOptions],
   );
   const fields = useMemo<FilterBarField[]>(
     () => [
@@ -203,15 +201,8 @@ export function InstrumentsGrid({
           rows={rows}
           rowKey="code"
           rowHeight={44}
-          // The group rows carry the type, so its own column stays out of sight. A phone keeps the
-          // code, the name and the price: the pop-in of the other columns would draw each row
-          // tall with mostly empty facts.
-          key={compact ? "compact" : "wide"}
-          defaultColumnState={{
-            hidden: compact
-              ? ["type", "subtype", "quoteCurrency", "exchange", "priceDate"]
-              : ["type"],
-          }}
+          // The group rows carry the type, so its own column stays out of sight.
+          defaultColumnState={{ hidden: ["type"] }}
           loading={loading}
           query={query}
           onQueryChange={setQuery}

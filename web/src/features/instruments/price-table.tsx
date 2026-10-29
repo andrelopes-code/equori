@@ -19,8 +19,6 @@ import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { MASK } from "@/privacy/mask";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { PhoneList } from "@/ui/phone-list";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
 
 type Price = components["schemas"]["Price"];
 
@@ -35,23 +33,8 @@ export function PriceTable({
   const t = useT();
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
-  const compact = useMediaQuery(compactQuery);
   const rows = [...prices].sort((a, b) => b.date.localeCompare(a.date));
   const value = (p: Price) => (fmt.hidden ? MASK : formatRate(p.value, locale));
-  if (compact)
-    return (
-      <PhoneList
-        label={t("instrument.prices.caption")}
-        loading={loading}
-        empty={t("instrument.prices.empty")}
-        rows={rows.map((p) => ({
-          key: p.date,
-          title: formatDate(p.date, locale),
-          lines: [sourceLabel(t, p.source)],
-          end: value(p),
-        }))}
-      />
-    );
   return (
     <Table columns={3} variant="framed">
       <TableContent>
