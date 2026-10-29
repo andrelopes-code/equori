@@ -26,6 +26,7 @@ export function MoneyInput({
   invalid,
   readOnly,
   onKeyDown,
+  className,
 }: {
   // Minor units, at least zero; the sign belongs to the entry's kind.
   value: number;
@@ -42,6 +43,8 @@ export function MoneyInput({
   invalid?: boolean;
   readOnly?: boolean;
   onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
+  // A width step of ui/field-width for a field-sized input (docs/contributing/forms.md, F3).
+  className?: string | undefined;
 }) {
   const fmt = useMoneyFormat();
   const field = useField();
@@ -65,6 +68,7 @@ export function MoneyInput({
   if (inField)
     return (
       <TextField
+        className={className}
         inputMode="numeric"
         autoComplete="off"
         {...(ariaLabel === undefined ? {} : { "aria-label": ariaLabel })}

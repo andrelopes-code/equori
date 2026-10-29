@@ -1,6 +1,5 @@
 @layer app {
-  /* Four equal tiles in a row while their hints fit; under 44 rem the hints give way and the
-     tiles wrap two by two, glyph beside name. */
+  /* Four equal tiles in a row, glyph beside name. */
   .frame {
     container: kinds / inline-size;
   }
@@ -209,18 +208,33 @@
     white-space: nowrap;
   }
 
+  /* In a form's 40rem column the hints give way and the four tiles keep one row; under
+     30rem they wrap two by two. */
   @container kinds (max-width: 44rem) {
-    .kinds {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
     .kind {
+      grid-template-columns: minmax(0, 1fr);
       gap: var(--slotted-space-3);
       padding-block: var(--slotted-space-3);
     }
 
     .hint {
       display: none;
+    }
+
+    /* The glyph gives way before the name is cut (docs/contributing/forms.md, F12); a name
+       that still does not fit takes a second line. */
+    .glyph {
+      display: none;
+    }
+
+    .label {
+      white-space: normal;
+    }
+  }
+
+  @container kinds (max-width: 30rem) {
+    .kinds {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 

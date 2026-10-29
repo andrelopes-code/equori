@@ -49,8 +49,6 @@ import { IncomeForm } from "@/features/transactions/income-form";
 import { TradeForm } from "@/features/transactions/trade-form";
 import { useIncomeEntry } from "@/features/transactions/use-income-entry";
 import { useExchangeEntry } from "@/features/transactions/use-exchange-entry";
-import styles from "@/features/transactions/foreign-form.module.css";
-import { ResultSlotContext } from "@/features/transactions/result-slot";
 import { useForeignEntry } from "@/features/transactions/use-foreign-entry";
 import { useTradeEntry } from "@/features/transactions/use-trade-entry";
 import {
@@ -106,8 +104,6 @@ export function NewTransactionPage() {
       setDraft({ ...draft, kind: next });
     }
   };
-  // The footer holds the live result of the kinds the server computes.
-  const [resultSlot, setResultSlot] = useState<HTMLDivElement | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [summary, setSummary] = useState<string | null>(null);
   useEffect(() => {
@@ -252,9 +248,6 @@ export function NewTransactionPage() {
       width="wide"
       footer={
         <PageFooter>
-          {(investment === "foreign_purchase" || investment === "exchange") && (
-            <div ref={setResultSlot} className={styles.slot} />
-          )}
           <ActionBar aria-label={t("entry.actions")}>
             <ActionBarActions>
               {/* On a phone the bar keeps one row: Save, and a menu with the other two. */}
@@ -322,87 +315,85 @@ export function NewTransactionPage() {
         </PageHeaderTitleArea>
       </PageHeader>
       <PageBody>
-        <ResultSlotContext value={resultSlot}>
-          <form
-            noValidate
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
-                event.preventDefault();
-                void submit("list");
-              }
-            }}
-            onSubmit={(event) => {
+        <form
+          noValidate
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
               event.preventDefault();
               void submit("list");
-            }}
-          >
-            {(entry?.summary ?? summary) !== null && (
-              <InlineMessage tone="danger">
-                {entry?.summary ?? summary}
-              </InlineMessage>
-            )}
-            {ready && investment === "investment_income" && scale !== null && (
-              <IncomeForm
-                draft={income.draft}
-                onChange={income.setDraft}
-                view={income.view}
-                errors={income.errors}
-                scale={scale}
-                onKind={pickKind}
-              />
-            )}
-            {ready && investment === "exchange" && scale !== null && (
-              <ExchangeForm
-                draft={exchange.draft}
-                onChange={exchange.setDraft}
-                view={exchange.view}
-                errors={exchange.errors}
-                scale={scale}
-                onKind={pickKind}
-              />
-            )}
-            {ready && investment === "foreign_purchase" && scale !== null && (
-              <ForeignForm
-                draft={foreign.draft}
-                onChange={foreign.setDraft}
-                view={foreign.view}
-                errors={foreign.errors}
-                scale={scale}
+            }
+          }}
+          onSubmit={(event) => {
+            event.preventDefault();
+            void submit("list");
+          }}
+        >
+          {(entry?.summary ?? summary) !== null && (
+            <InlineMessage tone="danger">
+              {entry?.summary ?? summary}
+            </InlineMessage>
+          )}
+          {ready && investment === "investment_income" && scale !== null && (
+            <IncomeForm
+              draft={income.draft}
+              onChange={income.setDraft}
+              view={income.view}
+              errors={income.errors}
+              scale={scale}
+              onKind={pickKind}
+            />
+          )}
+          {ready && investment === "exchange" && scale !== null && (
+            <ExchangeForm
+              draft={exchange.draft}
+              onChange={exchange.setDraft}
+              view={exchange.view}
+              errors={exchange.errors}
+              scale={scale}
+              onKind={pickKind}
+            />
+          )}
+          {ready && investment === "foreign_purchase" && scale !== null && (
+            <ForeignForm
+              draft={foreign.draft}
+              onChange={foreign.setDraft}
+              view={foreign.view}
+              errors={foreign.errors}
+              scale={scale}
+              payees={payees.data ?? []}
+              onKind={pickKind}
+            />
+          )}
+          {ready && investment === "trade" && scale !== null && (
+            <TradeForm
+              draft={trade.draft}
+              onChange={trade.setDraft}
+              view={trade.view}
+              errors={trade.errors}
+              scale={scale}
+              onKind={pickKind}
+            />
+          )}
+          {ready &&
+            investment === null &&
+            base !== undefined &&
+            scale !== null &&
+            accounts.data !== undefined && (
+              <TransactionForm
+                draft={draft}
+                onChange={setDraft}
+                accounts={accounts.data}
                 payees={payees.data ?? []}
-                onKind={pickKind}
-              />
-            )}
-            {ready && investment === "trade" && scale !== null && (
-              <TradeForm
-                draft={trade.draft}
-                onChange={trade.setDraft}
-                view={trade.view}
-                errors={trade.errors}
+                tags={tags.data ?? []}
+                baseCurrency={base}
                 scale={scale}
-                onKind={pickKind}
+                errors={errors}
+                // A phone would open its keyboard over the form before the reader chose to type.
+                autoFocusAmount={wide}
+                onInvestment={pickKind}
               />
             )}
-            {ready &&
-              investment === null &&
-              base !== undefined &&
-              scale !== null &&
-              accounts.data !== undefined && (
-                <TransactionForm
-                  draft={draft}
-                  onChange={setDraft}
-                  accounts={accounts.data}
-                  payees={payees.data ?? []}
-                  tags={tags.data ?? []}
-                  baseCurrency={base}
-                  scale={scale}
-                  errors={errors}
-                  // A phone would open its keyboard over the form before the reader chose to type.
-                  autoFocusAmount={wide}
-                  onInvestment={pickKind}
-                />
-              )}
-          </form>
-        </ResultSlotContext>
+        </form>
       </PageBody>
     </Page>
   );

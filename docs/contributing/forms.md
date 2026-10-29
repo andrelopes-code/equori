@@ -32,12 +32,14 @@ A field with no step is `full`.
 ## F4 · One control height
 
 - Every control of a form is drawn at the form's control size (`md`, 34 px in the comfortable density).
-- `MoneyInput size="panel"` is reserved for the entry forms of `features/transactions`, where the amount is the record's first answer (equori). Every other form uses `size="field"` with the `medium` step.
+- `MoneyInput size="panel"` is reserved for the expense, income and transfer form (`transaction-form`), whose one amount is its first answer (equori). Every other amount, in every other form, is `size="field"` with the `medium` step.
 
 ## F5 · Sections group a topic
 
 - A form with more than six fields, or with fields about two or more topics, splits them into `FormSection`s (`ui/form-section`) whose legend names the topic ("Value", "When", "Repetition").
-- Two sections stand 2rem apart (`--slotted-space-9`); two fields inside a section stand `--slotted-form-field-gap` apart. The larger step is what separates topics.
+- Two fields stand 1.5rem apart (`--slotted-space-8`), inside a section or not; a label stands 0.25rem above its control (the family's own). The ratio of 6 to 1 makes each label read with the control under it.
+- Two sections stand 2.5rem apart (`--slotted-space-10`), and a legend 1.25rem above its first field (the family's own). The larger step is what separates topics.
+- `FormLayout` and `FormSection` write these steps; a form writes no gap, margin or `Stack` of its own between fields.
 - A section is named by its legend only. No overline, no step number, no uppercase label.
 
 ## F6 · Every question is labelled
@@ -61,6 +63,9 @@ A field with no step is `full`.
 - A description is at most one line at the column's width (about 90 characters).
 - From 62rem of the form's width the aside stands beside the column, 20rem wide, and sticks under the page's chrome (LA-06). Below, it follows the last field.
 
+- A description and an error under the same control: the error comes first, the description stays.
+- A placeholder shows an example of the format ("Ex.: Mercado"), never the label's words or an instruction.
+
 ## F9 · Rare answers are opened by a choice
 
 A field most records leave empty sits in an optional group opened by a choice (FM-06): "Advanced", "Add a note". It is never shown and empty by default.
@@ -70,6 +75,24 @@ A field most records leave empty sits in an optional group opened by a choice (F
 - A form page has `PageBack`, a title that names the record ("New schedule"), and a subheading that says what the record does.
 - The actions are the page's footer: the primary action names the result ("Create schedule"), the secondary actions stand before it, and the way out ("Cancel") is a ghost button before them.
 - A form of more than eight fields, or one with an aside, is a page, never a dialog. A dialog form follows F1 to F9 inside the dialog's body.
+
+## F11 · Type in a form has three sizes
+
+| Text                                       | Size                                                    |
+| ------------------------------------------ | ------------------------------------------------------- |
+| a label, a legend, a control's value       | the control's (`--slotted-control-font-size-md`, 13 px) |
+| a description, a counter, a figure's label | `xs` (12 px), muted                                     |
+| the amount of `MoneyInput size="panel"`    | `4xl`, the one large figure of an entry form (F4)       |
+
+- No heading, figure or text of another size stands among the fields. A figure the form computes goes in the aside, drawn by `FigureGrid` and `FigureCard`.
+- A legend is the label's size in semibold; the family draws it.
+
+## F12 · Text is not cut
+
+- A label, a legend, a description and the name of a choice wrap to a second line; none is cut with an ellipsis.
+- A control whose value can be longer than its step (a record's name, an account, a category) is `full`. A `short` or `medium` step holds only values whose length is known (F3).
+- A row of tiles or segments that cannot hold its names on one line drops the secondary line (a hint), then wraps the names, then wraps the row. It never cuts a name.
+- A long value that must stay on one line (an account in a trigger) keeps its name and cuts the secondary detail first.
 
 ## Sources
 

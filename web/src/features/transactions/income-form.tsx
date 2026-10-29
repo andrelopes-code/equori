@@ -1,20 +1,21 @@
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
-import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 
 import { CategoryPicker } from "@/features/categories";
 import { catalogLabel } from "@/features/setup";
 import { BrokerageAccountFields } from "@/features/transactions/brokerage-account-fields";
-import { EntryKindPicker } from "@/features/transactions/entry-kind-picker";
 import type { EntryKind } from "@/features/transactions/entry-kind";
+import { EntryKindPicker } from "@/features/transactions/entry-kind-picker";
 import type { IncomeDraft } from "@/features/transactions/income-draft";
 import type { useIncomeEntry } from "@/features/transactions/use-income-entry";
-import styles from "@/features/transactions/transaction-form.module.css";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { DateInput } from "@/ui/date-input";
+import widths from "@/ui/field-width.module.css";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
+import { FormLayout } from "@/ui/form-layout";
+import { FormRow } from "@/ui/form-row";
 import { MoneyInput } from "@/ui/money-input";
 
 // Families read: select, field, text-field, stat-card. The type is a choice from the list the API
@@ -42,7 +43,24 @@ export function IncomeForm({
   const baseScale = base === undefined ? 0 : scale(base);
 
   return (
-    <Stack gap={6}>
+    <FormLayout
+      aside={
+        <FigureGrid label={t("income.net")}>
+          <FigureCard
+            label={t("income.net")}
+            value={
+              view.net === null || base === undefined
+                ? undefined
+                : {
+                    money: { amount: view.net, currency: base },
+                    scale: baseScale,
+                  }
+            }
+            note={null}
+          />
+        </FigureGrid>
+      }
+    >
       <EntryKindPicker
         value="investment_income"
         onChange={onKind}
@@ -71,6 +89,7 @@ export function IncomeForm({
       <Field invalid={errors.income_type !== undefined}>
         <FieldLabel>{t("income.type")}</FieldLabel>
         <ChoiceSelect
+          className={widths.medium}
           label={t("income.type")}
           placeholder={t("income.typePlaceholder")}
           multiple={false}
@@ -101,10 +120,12 @@ export function IncomeForm({
         {errors.date !== undefined && <FieldError>{errors.date}</FieldError>}
       </Field>
 
-      <div className={styles.pair}>
+      <FormRow>
         <Field invalid={errors.gross !== undefined}>
           <FieldLabel>{t("income.gross")}</FieldLabel>
           <MoneyInput
+            size="field"
+            className={widths.medium}
             value={draft.gross}
             currency={base ?? ""}
             scale={baseScale}
@@ -120,6 +141,8 @@ export function IncomeForm({
         <Field invalid={errors.withheld !== undefined}>
           <FieldLabel>{t("income.withheld")}</FieldLabel>
           <MoneyInput
+            size="field"
+            className={widths.medium}
             value={draft.withheld}
             currency={base ?? ""}
             scale={baseScale}
@@ -132,40 +155,39 @@ export function IncomeForm({
             <FieldError>{errors.withheld}</FieldError>
           )}
         </Field>
-      </div>
+      </FormRow>
 
-      <div className={styles.pair}>
-        <Field invalid={errors.category_id !== undefined}>
-          <FieldLabel>{t("income.category")}</FieldLabel>
+      <Field invalid={errors.category_id !== undefined}>
+        <FieldLabel>{t("income.category")}</FieldLabel>
+        <CategoryPicker
+          placeholder={t("entry.categoryPlaceholder")}
+          value={draft.categoryId}
+          amount={1}
+          onChange={(id) => {
+            set({ categoryId: id });
+          }}
+        />
+        {errors.category_id !== undefined && (
+          <FieldError>{errors.category_id}</FieldError>
+        )}
+      </Field>
+
+      {draft.withheld > 0 && (
+        <Field invalid={errors.withheld_category_id !== undefined}>
+          <FieldLabel>{t("income.withheldCategory")}</FieldLabel>
           <CategoryPicker
-            placeholder={t("entry.categoryPlaceholder")}
-            value={draft.categoryId}
-            amount={1}
+            placeholder={t("income.withheldCategoryPlaceholder")}
+            value={draft.withheldCategoryId}
+            amount={-1}
             onChange={(id) => {
-              set({ categoryId: id });
+              set({ withheldCategoryId: id });
             }}
           />
-          {errors.category_id !== undefined && (
-            <FieldError>{errors.category_id}</FieldError>
+          {errors.withheld_category_id !== undefined && (
+            <FieldError>{errors.withheld_category_id}</FieldError>
           )}
         </Field>
-        {draft.withheld > 0 && (
-          <Field invalid={errors.withheld_category_id !== undefined}>
-            <FieldLabel>{t("income.withheldCategory")}</FieldLabel>
-            <CategoryPicker
-              placeholder={t("income.withheldCategoryPlaceholder")}
-              value={draft.withheldCategoryId}
-              amount={-1}
-              onChange={(id) => {
-                set({ withheldCategoryId: id });
-              }}
-            />
-            {errors.withheld_category_id !== undefined && (
-              <FieldError>{errors.withheld_category_id}</FieldError>
-            )}
-          </Field>
-        )}
-      </div>
+      )}
 
       <Field invalid={errors.description !== undefined}>
         <FieldLabel>{t("facts.description")}</FieldLabel>
@@ -181,21 +203,6 @@ export function IncomeForm({
           <FieldError>{errors.description}</FieldError>
         )}
       </Field>
-
-      <FigureGrid label={t("income.net")}>
-        <FigureCard
-          label={t("income.net")}
-          value={
-            view.net === null || base === undefined
-              ? undefined
-              : {
-                  money: { amount: view.net, currency: base },
-                  scale: baseScale,
-                }
-          }
-          note={null}
-        />
-      </FigureGrid>
-    </Stack>
+    </FormLayout>
   );
 }

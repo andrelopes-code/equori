@@ -36,6 +36,7 @@ export function ChoiceSelect({
   readOnly,
   placeholder,
   onChange,
+  className,
 }: {
   label: string;
   choices: readonly Choice[];
@@ -45,6 +46,8 @@ export function ChoiceSelect({
   readOnly?: boolean;
   placeholder?: string;
   onChange: (value: string | string[] | null) => void;
+  // A width step of ui/field-width (docs/contributing/forms.md, F3).
+  className?: string | undefined;
 }) {
   return (
     <Select
@@ -56,7 +59,7 @@ export function ChoiceSelect({
       {...(invalid === undefined ? {} : { invalid })}
       {...(readOnly === undefined ? {} : { readOnly })}
     >
-      <SelectTrigger aria-label={label}>
+      <SelectTrigger aria-label={label} className={className}>
         <SelectValue {...(placeholder === undefined ? {} : { placeholder })} />
       </SelectTrigger>
       <SelectContent>

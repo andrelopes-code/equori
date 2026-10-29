@@ -5,23 +5,24 @@ import {
   FieldLabel,
 } from "@slotted/react/field";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
-import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 
 import { CategoryPicker } from "@/features/categories";
 import { formatRate } from "@/features/instruments";
 import { BrokerageAccountFields } from "@/features/transactions/brokerage-account-fields";
-import { EntryKindPicker } from "@/features/transactions/entry-kind-picker";
 import type { EntryKind } from "@/features/transactions/entry-kind";
+import { EntryKindPicker } from "@/features/transactions/entry-kind-picker";
 import type { TradeDraft } from "@/features/transactions/trade-draft";
 import type { TradeView } from "@/features/transactions/use-trade-entry";
-import styles from "@/features/transactions/transaction-form.module.css";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { MASK } from "@/privacy/mask";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { DateInput } from "@/ui/date-input";
+import widths from "@/ui/field-width.module.css";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
+import { FormLayout } from "@/ui/form-layout";
+import { FormRow } from "@/ui/form-row";
 import { MoneyInput } from "@/ui/money-input";
 import type { MoneyAmount } from "@/ui/money-value";
 
@@ -60,7 +61,57 @@ export function TradeForm({
   const average = view.held?.average_cost;
 
   return (
-    <Stack gap={6}>
+    <FormLayout
+      aside={
+        <FigureGrid label={t("trade.cashEffect")}>
+          <FigureCard
+            label={t("trade.gross")}
+            value={view.gross === null ? undefined : figure(view.gross)}
+            note={null}
+          />
+          <FigureCard
+            label={t("trade.cashEffect")}
+            value={
+              view.cashEffect === null
+                ? undefined
+                : figure(view.cashEffect, true)
+            }
+            note={null}
+          />
+          {sell && (
+            <>
+              <FigureCard
+                label={t("trade.position")}
+                value={
+                  view.held === undefined || instrument === undefined
+                    ? undefined
+                    : `${fmt.plain(view.held.quantity, scale(instrument))} ${instrument}`
+                }
+                note={view.held === undefined ? t("trade.noPosition") : null}
+              />
+              <FigureCard
+                label={t("trade.averageCost")}
+                value={
+                  average === undefined
+                    ? undefined
+                    : fmt.hidden
+                      ? MASK
+                      : formatRate(average, locale)
+                }
+                note={null}
+              />
+              <FigureCard
+                label={t("trade.estimatedResult")}
+                value={
+                  view.result === null ? undefined : figure(view.result, true)
+                }
+                note={null}
+              />
+            </>
+          )}
+        </FigureGrid>
+      }
+    >
       <EntryKindPicker value="trade" onChange={onKind} investments />
 
       <Field>
@@ -108,10 +159,12 @@ export function TradeForm({
         {errors.date !== undefined && <FieldError>{errors.date}</FieldError>}
       </Field>
 
-      <div className={styles.pair}>
+      <FormRow>
         <Field invalid={errors.quantity !== undefined}>
           <FieldLabel>{t("trade.quantity")}</FieldLabel>
           <MoneyInput
+            size="field"
+            className={widths.medium}
             value={draft.quantity}
             currency={instrument ?? ""}
             scale={instrument === undefined ? 0 : scale(instrument)}
@@ -127,6 +180,7 @@ export function TradeForm({
         <Field invalid={errors.unit_price !== undefined}>
           <FieldLabel>{t("trade.unitPrice")}</FieldLabel>
           <TextField
+            className={widths.medium}
             name="unit_price"
             inputMode="decimal"
             autoComplete="off"
@@ -157,12 +211,14 @@ export function TradeForm({
             <FieldError>{errors.unit_price}</FieldError>
           )}
         </Field>
-      </div>
+      </FormRow>
 
-      <div className={styles.pair}>
+      <FormRow>
         <Field invalid={errors.fees !== undefined}>
           <FieldLabel>{t("trade.fees")}</FieldLabel>
           <MoneyInput
+            size="field"
+            className={widths.medium}
             value={draft.fees}
             currency={base ?? ""}
             scale={baseScale}
@@ -177,6 +233,8 @@ export function TradeForm({
           <Field invalid={errors.taxes !== undefined}>
             <FieldLabel>{t("trade.taxes")}</FieldLabel>
             <MoneyInput
+              size="field"
+              className={widths.medium}
               value={draft.taxes}
               currency={base ?? ""}
               scale={baseScale}
@@ -190,7 +248,7 @@ export function TradeForm({
             )}
           </Field>
         )}
-      </div>
+      </FormRow>
 
       {sell && draft.taxes > 0 && (
         <Field invalid={errors.taxes_category_id !== undefined}>
@@ -223,52 +281,6 @@ export function TradeForm({
           <FieldError>{errors.description}</FieldError>
         )}
       </Field>
-
-      <FigureGrid label={t("trade.cashEffect")}>
-        <FigureCard
-          label={t("trade.gross")}
-          value={view.gross === null ? undefined : figure(view.gross)}
-          note={null}
-        />
-        <FigureCard
-          label={t("trade.cashEffect")}
-          value={
-            view.cashEffect === null ? undefined : figure(view.cashEffect, true)
-          }
-          note={null}
-        />
-        {sell && (
-          <>
-            <FigureCard
-              label={t("trade.position")}
-              value={
-                view.held === undefined || instrument === undefined
-                  ? undefined
-                  : `${fmt.plain(view.held.quantity, scale(instrument))} ${instrument}`
-              }
-              note={view.held === undefined ? t("trade.noPosition") : null}
-            />
-            <FigureCard
-              label={t("trade.averageCost")}
-              value={
-                average === undefined
-                  ? undefined
-                  : fmt.hidden
-                    ? MASK
-                    : formatRate(average, locale)
-              }
-              note={null}
-            />
-            <FigureCard
-              label={t("trade.estimatedResult")}
-              value={
-                view.result === null ? undefined : figure(view.result, true)
-              }
-              note={null}
-            />
-          </>
-        )}
-      </FigureGrid>
-    </Stack>
+    </FormLayout>
   );
 }

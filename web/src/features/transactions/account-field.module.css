@@ -4,17 +4,15 @@
     gap: var(--slotted-space-4);
   }
 
-  /* A field that opens the sheet: it stands with the form's controls, at the row height of an
-     option so the chosen account reads the same here and in the list. */
+  /* A field that opens the sheet: it stands with the form's controls at their height
+     (docs/contributing/forms.md, F4), the account's name and balance on one line. */
   .trigger {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
-    gap: var(--slotted-space-5);
-    min-block-size: calc(
-      var(--slotted-target-comfortable) + var(--slotted-space-7)
-    );
-    padding-block: var(--slotted-space-4);
+    gap: var(--slotted-space-4);
+    min-block-size: var(--slotted-control-height-md);
+    padding-block: var(--slotted-space-2);
     padding-inline: var(--slotted-space-5);
     border: var(--slotted-control-border-width) solid
       var(--slotted-control-border-color);
@@ -22,6 +20,7 @@
     background: var(--slotted-control-surface);
     color: var(--slotted-text);
     font: inherit;
+    font-size: var(--slotted-control-font-size-md);
     text-align: start;
     cursor: pointer;
     transition: border-color var(--slotted-control-transition-duration)
@@ -50,11 +49,14 @@
   }
 
   .text {
-    display: grid;
+    display: flex;
+    align-items: baseline;
+    gap: var(--slotted-space-4);
     min-inline-size: 0;
   }
 
   .name {
+    flex: 0 1 auto;
     overflow: hidden;
     font-weight: var(--slotted-font-weight-semibold);
     text-overflow: ellipsis;
@@ -62,6 +64,8 @@
   }
 
   .detail {
+    flex: 0 1000 auto;
+    min-inline-size: 0;
     overflow: hidden;
     color: var(--slotted-text-muted);
     font-size: var(--slotted-font-size-sm);

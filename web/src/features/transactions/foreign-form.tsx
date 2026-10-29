@@ -5,27 +5,28 @@ import {
   FieldError,
   FieldLabel,
 } from "@slotted/react/field";
-import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 import { TextField } from "@slotted/react/text-field";
 
+import type { components } from "@/api/schema.gen";
 import { CategoryPicker } from "@/features/categories";
 import { sourceLabel, formatRate } from "@/features/instruments";
-import { EntryResult } from "@/features/transactions/entry-result";
 import { AccountField } from "@/features/transactions/account-field";
 import type { EntryKind } from "@/features/transactions/entry-kind";
 import { EntryKindPicker } from "@/features/transactions/entry-kind-picker";
+import { EntryResult } from "@/features/transactions/entry-result";
 import type { ForeignDraft } from "@/features/transactions/foreign-draft";
 import { PayeeField } from "@/features/transactions/payee-field";
-import formStyles from "@/features/transactions/transaction-form.module.css";
 import type { useForeignEntry } from "@/features/transactions/use-foreign-entry";
 import { formatDate, formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { ChoiceSelect } from "@/ui/choice-select";
 import { DateInput } from "@/ui/date-input";
+import widths from "@/ui/field-width.module.css";
+import { FormLayout } from "@/ui/form-layout";
+import { FormRow } from "@/ui/form-row";
 import { MoneyInput } from "@/ui/money-input";
-import type { components } from "@/api/schema.gen";
 
 type Payee = components["schemas"]["Payee"];
 
@@ -64,7 +65,21 @@ export function ForeignForm({
       : fmt.money({ amount, currency: base }, view.baseScale);
 
   return (
-    <Stack gap={6}>
+    <FormLayout
+      aside={
+        <EntryResult
+          label={t("foreignPurchase.result")}
+          figures={[
+            {
+              label: t("foreignPurchase.converted"),
+              value: money(view.converted),
+            },
+            { label: t("foreignPurchase.charge"), value: money(view.charge) },
+            { label: t("foreignPurchase.total"), value: money(view.total) },
+          ]}
+        />
+      }
+    >
       <EntryKindPicker value="foreign_purchase" onChange={onKind} investments />
 
       {view.ready && view.cards.length === 0 && (
@@ -115,10 +130,12 @@ export function ForeignForm({
         {errors.date !== undefined && <FieldError>{errors.date}</FieldError>}
       </Field>
 
-      <div className={formStyles.pair}>
+      <FormRow>
         <Field invalid={errors.original !== undefined}>
           <FieldLabel>{t("foreignPurchase.original")}</FieldLabel>
           <MoneyInput
+            size="field"
+            className={widths.medium}
             value={draft.original}
             currency={currency ?? ""}
             scale={view.originalScale}
@@ -148,11 +165,12 @@ export function ForeignForm({
             }}
           />
         </Field>
-      </div>
+      </FormRow>
 
       <Field invalid={view.otherInvalid}>
         <FieldLabel>{t("foreignPurchase.otherCurrency")}</FieldLabel>
         <TextField
+          className={widths.short}
           name="other-currency"
           value={draft.otherCurrency}
           maxLength={3}
@@ -171,6 +189,7 @@ export function ForeignForm({
       <Field invalid={errors.rate !== undefined}>
         <FieldLabel>{t("foreignPurchase.rate")}</FieldLabel>
         <TextField
+          className={widths.medium}
           name="rate"
           inputMode="decimal"
           value={view.rateText}
@@ -212,63 +231,62 @@ export function ForeignForm({
         )}
       </Field>
 
-      <div className={formStyles.pair}>
-        <Field invalid={errors.foreign_charge_rate_bp !== undefined}>
-          <FieldLabel>{t("foreignPurchase.chargeRate")}</FieldLabel>
-          <TextField
-            name="charge-rate"
-            inputMode="numeric"
-            value={view.chargeText}
-            onChange={(event) => {
-              set({ chargeBP: event.target.value });
+      <Field invalid={errors.foreign_charge_rate_bp !== undefined}>
+        <FieldLabel>{t("foreignPurchase.chargeRate")}</FieldLabel>
+        <TextField
+          className={widths.short}
+          name="charge-rate"
+          inputMode="numeric"
+          value={view.chargeText}
+          onChange={(event) => {
+            set({ chargeBP: event.target.value });
+          }}
+        />
+        {errors.foreign_charge_rate_bp !== undefined && (
+          <FieldError>{errors.foreign_charge_rate_bp}</FieldError>
+        )}
+      </Field>
+
+      {(view.chargeBP ?? 0) > 0 && (
+        <Field invalid={errors.foreign_charge_category_id !== undefined}>
+          <FieldLabel>{t("foreignPurchase.chargeCategory")}</FieldLabel>
+          <CategoryPicker
+            placeholder={t("foreignPurchase.chargeCategoryPlaceholder")}
+            value={draft.chargeCategoryId}
+            amount={-1}
+            onChange={(id) => {
+              set({ chargeCategoryId: id });
             }}
           />
-          {errors.foreign_charge_rate_bp !== undefined && (
-            <FieldError>{errors.foreign_charge_rate_bp}</FieldError>
+          {errors.foreign_charge_category_id !== undefined && (
+            <FieldError>{errors.foreign_charge_category_id}</FieldError>
           )}
         </Field>
-        {(view.chargeBP ?? 0) > 0 && (
-          <Field invalid={errors.foreign_charge_category_id !== undefined}>
-            <FieldLabel>{t("foreignPurchase.chargeCategory")}</FieldLabel>
-            <CategoryPicker
-              placeholder={t("foreignPurchase.chargeCategoryPlaceholder")}
-              value={draft.chargeCategoryId}
-              amount={-1}
-              onChange={(id) => {
-                set({ chargeCategoryId: id });
-              }}
-            />
-            {errors.foreign_charge_category_id !== undefined && (
-              <FieldError>{errors.foreign_charge_category_id}</FieldError>
-            )}
-          </Field>
-        )}
-      </div>
+      )}
 
-      <div className={formStyles.pair}>
-        <Field invalid={errors.payee_id !== undefined}>
-          <FieldLabel>{t("facts.payee")}</FieldLabel>
-          <PayeeField
-            placeholder={t("entry.payeePlaceholder")}
-            payees={payees}
-            value={draft.payeeId}
-            onChange={(id) => {
-              set({ payeeId: id });
-            }}
-          />
-        </Field>
-        <Field invalid={errors.description !== undefined}>
-          <FieldLabel>{t("facts.description")}</FieldLabel>
-          <TextField
-            name="description"
-            value={draft.description}
-            maxLength={500}
-            onChange={(event) => {
-              set({ description: event.target.value });
-            }}
-          />
-        </Field>
-      </div>
+      <Field invalid={errors.payee_id !== undefined}>
+        <FieldLabel>{t("facts.payee")}</FieldLabel>
+        <PayeeField
+          placeholder={t("entry.payeePlaceholder")}
+          payees={payees}
+          value={draft.payeeId}
+          onChange={(id) => {
+            set({ payeeId: id });
+          }}
+        />
+      </Field>
+
+      <Field invalid={errors.description !== undefined}>
+        <FieldLabel>{t("facts.description")}</FieldLabel>
+        <TextField
+          name="description"
+          value={draft.description}
+          maxLength={500}
+          onChange={(event) => {
+            set({ description: event.target.value });
+          }}
+        />
+      </Field>
 
       <Field invalid={errors.statement !== undefined}>
         <FieldLabel>{t("foreignPurchase.statement")}</FieldLabel>
@@ -303,18 +321,6 @@ export function ForeignForm({
           <FieldError>{errors.statement}</FieldError>
         )}
       </Field>
-
-      <EntryResult
-        label={t("foreignPurchase.result")}
-        figures={[
-          {
-            label: t("foreignPurchase.converted"),
-            value: money(view.converted),
-          },
-          { label: t("foreignPurchase.charge"), value: money(view.charge) },
-          { label: t("foreignPurchase.total"), value: money(view.total) },
-        ]}
-      />
-    </Stack>
+    </FormLayout>
   );
 }

@@ -148,7 +148,7 @@ export function AccountField({
               color={chosen.account.color}
               logo={chosen.logo}
               progress={chosen.progress}
-              size="md"
+              size="sm"
             />
             <span id={triggerId} className={styles.text}>
               <span className={styles.name}>{chosen.account.name}</span>

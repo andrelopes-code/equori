@@ -11,18 +11,22 @@
     align-items: start;
   }
 
+  /* Two fields stand 1.5rem apart, so a label reads with the control under it and not with
+     the control above it (docs/contributing/forms.md, F5). */
   .fields {
     display: flex;
     flex-direction: column;
-    gap: var(--slotted-form-field-gap, var(--slotted-space-6));
+    gap: var(--slotted-space-8);
   }
 
   /* Workaround for Slotted issue #22: no token separates two sections of a form. */
   .fields:has(> .section) {
-    gap: var(--slotted-space-9);
+    gap: var(--slotted-space-10);
   }
 
   .section {
+    --slotted-field-group-field-gap: var(--slotted-space-8);
+
     min-inline-size: 0;
   }
 
@@ -30,7 +34,7 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
-    gap: var(--slotted-space-5);
+    gap: var(--slotted-space-6);
   }
 
   /* The aside stands beside the column once both fit: 40rem, the gap and 20rem. */

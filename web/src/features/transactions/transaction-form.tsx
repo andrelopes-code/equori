@@ -1,14 +1,12 @@
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
-import { Stack } from "@slotted/react/stack";
 import { TextField } from "@slotted/react/text-field";
 import type { ReactNode } from "react";
 
 import type { components } from "@/api/schema.gen";
 import { CategoryPicker } from "@/features/categories";
 import { AccountField } from "@/features/transactions/account-field";
-import { DateInput } from "@/ui/date-input";
-import { EntryKindPicker } from "@/features/transactions/entry-kind-picker";
 import { isBuiltKind } from "@/features/transactions/entry-kind";
+import { EntryKindPicker } from "@/features/transactions/entry-kind-picker";
 import type {
   EntryDraft,
   EntryKind,
@@ -17,8 +15,9 @@ import type {
 import { PayeeField } from "@/features/transactions/payee-field";
 import { PostingsEditor } from "@/features/transactions/postings-editor";
 import { TagsField } from "@/features/transactions/tags-field";
-import styles from "@/features/transactions/transaction-form.module.css";
 import { useT } from "@/i18n/i18n-provider";
+import { DateInput } from "@/ui/date-input";
+import { FormLayout } from "@/ui/form-layout";
 import { MoneyInput } from "@/ui/money-input";
 
 type Account = components["schemas"]["Account"];
@@ -83,7 +82,7 @@ export function TransactionForm({
         : t("entry.payWith");
 
   return (
-    <Stack gap={6}>
+    <FormLayout>
       <EntryKindPicker
         value={draft.kind}
         investments={onInvestment !== undefined}
@@ -188,36 +187,37 @@ export function TransactionForm({
       </Field>
 
       {(draft.kind === "expense" || draft.kind === "income") && (
-        <div className={styles.pair}>
-          <Field invalid={error("category") !== undefined}>
-            <FieldLabel>{t("category.label")}</FieldLabel>
-            <CategoryPicker
-              placeholder={t("entry.categoryPlaceholder")}
-              value={draft.categoryId}
-              amount={draft.kind === "income" ? 1 : -1}
-              onChange={(id) => {
-                set({ categoryId: id });
-              }}
-            />
-            {error("category") !== undefined && (
-              <FieldError>{error("category")}</FieldError>
-            )}
-          </Field>
-          <Field invalid={error("payee_id") !== undefined}>
-            <FieldLabel>{t("facts.payee")}</FieldLabel>
-            <PayeeField
-              placeholder={t("entry.payeePlaceholder")}
-              payees={payees}
-              value={draft.payeeId}
-              onChange={(id) => {
-                set({ payeeId: id });
-              }}
-            />
-            {error("payee_id") !== undefined && (
-              <FieldError>{error("payee_id")}</FieldError>
-            )}
-          </Field>
-        </div>
+        <Field invalid={error("category") !== undefined}>
+          <FieldLabel>{t("category.label")}</FieldLabel>
+          <CategoryPicker
+            placeholder={t("entry.categoryPlaceholder")}
+            value={draft.categoryId}
+            amount={draft.kind === "income" ? 1 : -1}
+            onChange={(id) => {
+              set({ categoryId: id });
+            }}
+          />
+          {error("category") !== undefined && (
+            <FieldError>{error("category")}</FieldError>
+          )}
+        </Field>
+      )}
+
+      {(draft.kind === "expense" || draft.kind === "income") && (
+        <Field invalid={error("payee_id") !== undefined}>
+          <FieldLabel>{t("facts.payee")}</FieldLabel>
+          <PayeeField
+            placeholder={t("entry.payeePlaceholder")}
+            payees={payees}
+            value={draft.payeeId}
+            onChange={(id) => {
+              set({ payeeId: id });
+            }}
+          />
+          {error("payee_id") !== undefined && (
+            <FieldError>{error("payee_id")}</FieldError>
+          )}
+        </Field>
       )}
 
       {draft.kind === "advanced" && (
@@ -267,6 +267,6 @@ export function TransactionForm({
       </Field>
 
       {children}
-    </Stack>
+    </FormLayout>
   );
 }
