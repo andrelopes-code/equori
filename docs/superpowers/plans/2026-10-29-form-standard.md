@@ -1,6 +1,6 @@
 # Form standard
 
-Goal: every form of `web/` follows `docs/contributing/forms.md` (F1 to F12). Slotted carries the general rules and the layout primitives (issues #19 to #22).
+Goal: every form of `web/` follows `docs/contributing/forms.md` (F1 to F14). Slotted carries the general rules and the layout primitives (issues #19 to #22).
 
 Evidence of the defects (screenshots at 1440 px, 2026-10-29): fields span 1120 px; a day-of-month select and a one-digit interval are 555 px wide; one form mixes control heights of 80, 60 and 34 px; unrelated fields are paired in two columns; choice sets carry no question; topics are separated by the same 1rem as fields.
 

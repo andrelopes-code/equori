@@ -94,6 +94,37 @@ A field most records leave empty sits in an optional group opened by a choice (F
 - A row of tiles or segments that cannot hold its names on one line drops the secondary line (a hint), then wraps the names, then wraps the row. It never cuts a name.
 - A long value that must stay on one line (an account in a trigger) keeps its name and cuts the secondary detail first.
 
+## F13 · The control follows the answer
+
+| The answer                                                  | Control                                                                                           |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| one of 2 or 3 short options, each read at a glance          | `SegmentedControl` inside a `FieldGroup` with a legend (F6)                                       |
+| one of 2 to 6 options that need a sentence each             | `RadioGroup` with a description per option                                                        |
+| one of 7 to 15 options from a fixed set                     | `Select` (`ChoiceSelect`)                                                                         |
+| one of more than 15 options, or a set that grows (a record) | `Combobox` with search, and creation where the backend allows it (`CategoryPicker`, `PayeeField`) |
+| several of a fixed set up to 7                              | `CheckboxGroup`                                                                                   |
+| several of a set that grows                                 | a tags field (`TagsField`)                                                                        |
+| yes or no, saved with the form                              | `Checkbox` with its consequence as the description                                                |
+| yes or no that applies at once, outside a submitted form    | `Switch`                                                                                          |
+| a count or a small integer                                  | `NumberField` with the `short` step                                                               |
+| a line of free text                                         | `TextField`; several lines expected: `Textarea`                                                   |
+| an amount, a date, a month, a period, an account            | the domain control (F14)                                                                          |
+| the kind of record, which changes the fields that follow    | choice tiles (`ui/choice-cards`, `EntryKindPicker`) above the fields                              |
+
+- A `Select` hides its options behind a press; with 6 options or fewer that each fit a line, radios or a segmented control show them at once (GOV.UK Design System, Select and Radios).
+- A switch inside a form that is submitted by a button is a checkbox: a switch says the change applies when it moves (NN/g).
+
+## F14 · A control of the application's own answers what a family cannot
+
+A form builds a control of its own (CP-04, `build-own-element`) when one of these holds, and names it in a comment above the component:
+
+1. **The family makes the reader translate.** The reader would type a unit, a code or a scale the backend uses instead of the one they think in: basis points for a percentage, an ISO 4217 code for a currency name, minor units for an amount.
+2. **The answer needs its consequence beside it.** The right choice depends on a fact the family cannot show: an account's balance after the entry, the statement a card purchase falls on, the day a schedule's first occurrence lands.
+3. **The answer is frequent and has a shortcut.** Most entries share a value that one press can set, inside the control: today and the two days before it in the date picker's presets.
+4. **The value is a domain type of the application.** Money, a period, a month and an account have one control each (web/CLAUDE.md, "Domain controls before families").
+
+A control of the application's own keeps every state of the family it stands beside: the control height (F4), focus ring, `invalid`, `disabled`, `readOnly`, keyboard, forced colours and the field's label and description wiring (`useField`). A look of its own is not a reason to build one.
+
 ## Sources
 
 - Baymard Institute, "Avoid Multi-Column Forms": https://baymard.com/blog/avoid-multi-column-forms
@@ -103,3 +134,6 @@ A field most records leave empty sits in an optional group opened by a choice (F
 - GOV.UK Design System, Question pages: https://design-system.service.gov.uk/patterns/question-pages
 - Matteo Penzo, "Label Placement in Forms", UXmatters, 2006: https://www.uxmatters.com/mt/archives/2006/07/label-placement-in-forms.php
 - Adam Silver, "Don't mark required fields with an asterisk": https://adamsilver.io/blog/how-to-highlight-required-and-optional-form-fields/
+- GOV.UK Design System, Select: https://design-system.service.gov.uk/components/select/
+- GOV.UK Design System, Radios: https://design-system.service.gov.uk/components/radios/
+- Nielsen Norman Group, "Toggle-Switch Guidelines": https://www.nngroup.com/articles/toggle-switch-guidelines/
