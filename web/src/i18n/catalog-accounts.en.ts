@@ -96,7 +96,7 @@ export const accountsEn = {
   "accountForm.dueAdjustment": "Due date on a non-business day",
   "accountForm.assignment": "A purchase on the closing day goes",
   "accountForm.assignmentHint":
-    "Most Brazilian cards bill a purchase made on the closing day on the next statement.",
+    "Decides which statement bills a purchase made on the closing day.",
   "accountForm.billing": "Billing cycle",
   "accountForm.limitGroup": "Limit",
   "accountForm.limit": "Credit limit",
@@ -129,7 +129,7 @@ export const accountsEn = {
     "When the institution reports a higher balance, the difference is recorded as yield.",
   "accountForm.excludeFromLiquidity": "Leave out of the reserve",
   "accountForm.excludeFromLiquidityHint":
-    "The reserve indicator stops counting this balance, for money that cannot be withdrawn at once.",
+    "The reserve stops counting this balance, for money that cannot be withdrawn at once.",
   "accountForm.color": "Colour",
   "accountForm.colorHint":
     "Drawn behind the account's initials when its institution has no logo.",
@@ -139,6 +139,8 @@ export const accountsEn = {
   "accountForm.openingCard": "Owed on the open statement",
   "accountForm.openingHint":
     "Recorded against Opening balances, so the ledger starts from what the institution shows.",
+  "accountForm.openingHelp":
+    "The balance the account holds, or the amount owed on it, on the day the ledger starts following it.",
   "accountForm.unnamed": "New account",
   "accountForm.newTitle": "New account or card",
   "accountForm.newSubtitle":

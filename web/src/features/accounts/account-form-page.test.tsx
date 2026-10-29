@@ -117,7 +117,7 @@ describe("New account", () => {
       }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("switch", { name: catalogEn["accountForm.yield"] }),
+      screen.queryByRole("checkbox", { name: catalogEn["accountForm.yield"] }),
     ).not.toBeInTheDocument();
   });
 
@@ -143,7 +143,7 @@ describe("New account", () => {
   it("offers automatic yield for a reserve only", async () => {
     await renderApp("/accounts/new?kind=reserve", { fetch: api([]) });
     expect(
-      await screen.findByRole("switch", {
+      await screen.findByRole("checkbox", {
         name: catalogEn["accountForm.yield"],
       }),
     ).toBeInTheDocument();
@@ -302,7 +302,7 @@ describe("Edit account", () => {
   it("leaves the account out of the reserve", async () => {
     const sent: Sent[] = [];
     await renderApp(`/accounts/${checkingID}/edit`, { fetch: api(sent) });
-    const exclude = await screen.findByRole("switch", {
+    const exclude = await screen.findByRole("checkbox", {
       name: catalogEn["accountForm.excludeFromLiquidity"],
     });
     expect(exclude).not.toBeChecked();

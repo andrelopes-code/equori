@@ -95,7 +95,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "accountForm.dueAdjustment": "Vencimento em dia não útil",
   "accountForm.assignment": "Uma compra no dia do fechamento entra",
   "accountForm.assignmentHint":
-    "A maioria dos cartões brasileiros cobra a compra do dia do fechamento na fatura seguinte.",
+    "Define em qual fatura entra a compra feita no dia do fechamento.",
   "accountForm.billing": "Ciclo da fatura",
   "accountForm.limitGroup": "Limite",
   "accountForm.limit": "Limite de crédito",
@@ -128,7 +128,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
     "Quando a instituição informa um saldo maior, a diferença é registrada como rendimento.",
   "accountForm.excludeFromLiquidity": "Deixar fora da reserva",
   "accountForm.excludeFromLiquidityHint":
-    "O indicador de reserva deixa de contar este saldo, para dinheiro que não pode ser sacado na hora.",
+    "A reserva deixa de contar este saldo, para dinheiro que não pode ser sacado na hora.",
   "accountForm.color": "Cor",
   "accountForm.colorHint":
     "Pintada atrás das iniciais da conta quando a instituição não tem logo.",
@@ -138,6 +138,8 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "accountForm.openingCard": "Devido na fatura aberta",
   "accountForm.openingHint":
     "Registrado contra Saldos iniciais, para o livro partir do que a instituição mostra.",
+  "accountForm.openingHelp":
+    "O saldo da conta, ou o valor devido nela, no dia em que o livro começa a acompanhá-la.",
   "accountForm.unnamed": "Nova conta",
   "accountForm.newTitle": "Nova conta ou cartão",
   "accountForm.newSubtitle": "Escolha o que é, depois onde fica e como começa.",

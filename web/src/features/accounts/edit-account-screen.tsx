@@ -20,7 +20,6 @@ import {
 import type { AccountDraft } from "@/features/accounts/account-draft";
 import { AccountForm } from "@/features/accounts/account-form";
 import { AccountFormHeader } from "@/features/accounts/account-form-header";
-import styles from "@/features/accounts/account-form.module.css";
 import { AccountPreview } from "@/features/accounts/account-preview";
 import {
   useSetAppearance,
@@ -29,6 +28,7 @@ import {
 } from "@/features/accounts/api";
 import { yieldCapable } from "@/features/accounts/account-kinds";
 import { useT } from "@/i18n/i18n-provider";
+import { FormLayout } from "@/ui/form-layout";
 
 type Account = components["schemas"]["Account"];
 type AccountPatch = components["schemas"]["AccountPatch"];
@@ -167,7 +167,7 @@ export function EditAccountScreen({
             {summary !== null && (
               <InlineMessage tone="danger">{summary}</InlineMessage>
             )}
-            <div className={styles.layout}>
+            <FormLayout aside={<AccountPreview draft={draft} scale={scale} />}>
               <AccountForm
                 mode="edit"
                 draft={draft}
@@ -178,10 +178,7 @@ export function EditAccountScreen({
                 scale={scale}
                 errors={errors}
               />
-              <div className={styles.aside}>
-                <AccountPreview draft={draft} scale={scale} />
-              </div>
-            </div>
+            </FormLayout>
           </Stack>
         </form>
       </PageBody>
