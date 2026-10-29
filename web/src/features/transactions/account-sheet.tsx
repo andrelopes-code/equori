@@ -5,6 +5,7 @@ import {
   DrawerDescription,
   DrawerHeader,
   DrawerPanel,
+  DrawerResizer,
   DrawerTitle,
 } from "@slotted/react/drawer";
 import { Stack } from "@slotted/react/stack";
@@ -68,6 +69,8 @@ export function AccountSheet({
       }}
     >
       <DrawerPanel>
+        {!wide && <DrawerResizer />}
+
         <DrawerHeader>
           <DrawerTitle>{title}</DrawerTitle>
           <DrawerDescription>{context}</DrawerDescription>

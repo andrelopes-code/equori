@@ -309,6 +309,7 @@ describe("AccountField on a phone", () => {
       name: catalogEn["entry.payWith"],
     });
     expect(within(sheet).getByText("Expense of R$286.40")).toBeVisible();
+    expect(within(sheet).getByRole("separator")).toBeInTheDocument();
     await userEvent.type(
       within(sheet).getByRole("searchbox", {
         name: catalogEn["accountChoice.search"],
