@@ -16,7 +16,7 @@ const THEME: Readonly<Record<Visual, string>> = {
   glass: "equori-glass",
 };
 
-function isVisual(value: unknown): value is Visual {
+export function isVisual(value: unknown): value is Visual {
   return value === "standard" || value === "glass";
 }
 

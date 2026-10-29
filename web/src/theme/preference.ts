@@ -3,6 +3,7 @@
 // paint puts the value on the page; it runs on every apply, the start of the page included.
 export interface Preference<T extends string> {
   fallback: T;
+  accepts: (value: string) => value is T;
   read: () => T;
   snapshot: () => T;
   subscribe: (listener: () => void) => () => void;
@@ -33,6 +34,7 @@ export function preference<T extends string>(
   };
   return {
     fallback,
+    accepts: isValue,
     read,
     snapshot: () => held ?? read(),
     subscribe: (listener) => {

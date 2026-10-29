@@ -3,6 +3,7 @@ import { applyCorners, defaultCorners } from "@/theme/corners";
 import { applyDensity, defaultDensity } from "@/theme/density";
 import { motion } from "@/theme/motion";
 import { applyScheme, defaultScheme } from "@/theme/scheme";
+import { statusSeeds } from "@/theme/status";
 import { textSize } from "@/theme/text-size";
 import { tone } from "@/theme/tone";
 import { typeface } from "@/theme/typeface";
@@ -13,6 +14,7 @@ export function resetAppearance(): void {
   applyScheme(defaultScheme);
   applyAccent(defaultAccent);
   tone.apply(tone.fallback);
+  for (const seed of Object.values(statusSeeds)) seed.apply(seed.fallback);
   applyCorners(defaultCorners);
   applyDensity(defaultDensity);
   textSize.apply(textSize.fallback);

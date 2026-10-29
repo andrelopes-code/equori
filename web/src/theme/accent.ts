@@ -36,7 +36,7 @@ function isPreset(value: unknown): value is AccentPreset {
   return (accents as readonly unknown[]).includes(value);
 }
 
-function isAccent(value: unknown): value is Accent {
+export function isAccent(value: unknown): value is Accent {
   return (
     isPreset(value) ||
     (typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value))
