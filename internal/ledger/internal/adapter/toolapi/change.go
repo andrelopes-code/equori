@@ -26,7 +26,7 @@ type changeTransactionAllocationsItem struct {
 
 type changeTransactionIn struct {
 	TransactionID string                             `json:"transaction_id" jsonschema:"ID of the transaction, from search_transactions"`
-	Action        changeTransactionAction            `json:"action" jsonschema:"correct changes the fields given; make_transfer replaces the category side with another own account; reimburse links this incoming transaction to the expenses it repays"`
+	Action        changeTransactionAction            `json:"action" jsonschema:"correct changes the fields given, and on an installment purchase only description, payee_id and tags; make_transfer replaces the category side with another own account; reimburse links this incoming transaction to the expenses it repays"`
 	Reason        string                             `json:"reason,omitzero" jsonschema:"for correct: why the transaction changes, kept in its history"`
 	Date          tool.Date                          `json:"date,omitzero" jsonschema:"for correct: new date"`
 	Description   string                             `json:"description,omitzero" jsonschema:"for correct: new description"`
@@ -55,7 +55,7 @@ type changePlan struct {
 func changeTransaction(svc *app.Service) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "change_transaction",
-		Description: "Proposes a change to an existing transaction: correct its date, description, payee, tags, amount or accounts; " +
+		Description: "Proposes a change to an existing transaction: correct its date, description, payee, tags, amount or accounts, and on an installment purchase only its description, payee or tags; " +
 			"turn its category side into a transfer to another own account; or make this incoming transaction the reimbursement of recorded expenses. " +
 			"Use it when the user asks to fix, edit or relink a transaction. " +
 			"Do not use it to set a category: categorize_transactions does; nor to void: void_transaction does; nor for card refunds: handle_card_purchase does. " +
@@ -165,6 +165,9 @@ func planChange(ctx context.Context, svc *app.Service, userID int64, in changeTr
 		if in.Reason == "" {
 			return p, tool.InvalidArgument("reason", "is required for correct")
 		}
+		if err := installmentFields(p.current, given); err != nil {
+			return p, err
+		}
 		p.next, err = correctedTransaction(ctx, svc, userID, p.current, in)
 	case "make_transfer":
 		if err := unusedFields("make_transfer", given, "to_account_id"); err != nil {
@@ -205,6 +208,24 @@ func planChange(ctx context.Context, svc *app.Service, userID int64, in changeTr
 		}
 	}
 	return p, err
+}
+
+// installmentFields rejects the correct arguments an installment purchase does not take.
+func installmentFields(cur domain.Transaction, given map[string]bool) error {
+	if !cur.HasInstallments() {
+		return nil
+	}
+	var blocked []string
+	for _, f := range []string{"date", "amount", "from_account_id", "to_account_id"} {
+		if given[f] {
+			blocked = append(blocked, f)
+		}
+	}
+	if len(blocked) == 0 {
+		return nil
+	}
+	return tool.InvalidArgument(blocked[0], strings.Join(blocked, ", ")+
+		" of an installment purchase change through refunds, cancellation or anticipation: handle_card_purchase does")
 }
 
 // sides returns the indexes of the source and the destination of a two-posting transaction.

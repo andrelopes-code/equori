@@ -61,7 +61,7 @@
   },
   {
     "name": "change_transaction",
-    "description": "Proposes a change to an existing transaction: correct its date, description, payee, tags, amount or accounts; turn its category side into a transfer to another own account; or make this incoming transaction the reimbursement of recorded expenses. Use it when the user asks to fix, edit or relink a transaction. Do not use it to set a category: categorize_transactions does; nor to void: void_transaction does; nor for card refunds: handle_card_purchase does. The user confirms before the change applies.",
+    "description": "Proposes a change to an existing transaction: correct its date, description, payee, tags, amount or accounts, and on an installment purchase only its description, payee or tags; turn its category side into a transfer to another own account; or make this incoming transaction the reimbursement of recorded expenses. Use it when the user asks to fix, edit or relink a transaction. Do not use it to set a category: categorize_transactions does; nor to void: void_transaction does; nor for card refunds: handle_card_purchase does. The user confirms before the change applies.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -73,7 +73,7 @@
         },
         "action": {
           "type": "string",
-          "description": "correct changes the fields given; make_transfer replaces the category side with another own account; reimburse links this incoming transaction to the expenses it repays",
+          "description": "correct changes the fields given, and on an installment purchase only description, payee_id and tags; make_transfer replaces the category side with another own account; reimburse links this incoming transaction to the expenses it repays",
           "enum": [
             "correct",
             "make_transfer",

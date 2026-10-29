@@ -358,7 +358,7 @@ type Repository interface {
 	InsertTransactionRows(ctx context.Context, t domain.Transaction) error
 	ReplaceTransaction(ctx context.Context, prev, next domain.Transaction, reason string) error
 	// ReplaceCategoryPostings stores next, which differs from prev only in its category
-	// postings, payee, tags and version; other postings keep their rows.
+	// postings, description, payee, tags and version; other postings keep their rows.
 	ReplaceCategoryPostings(ctx context.Context, prev, next domain.Transaction, reason string) error
 	TransactionsByIDs(ctx context.Context, userID int64, ids []uuid.UUID) ([]domain.Transaction, error)
 	// RawDescriptions returns the version 1 description of the given transactions that have later versions.

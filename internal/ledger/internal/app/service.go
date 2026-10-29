@@ -471,11 +471,6 @@ func (s *Service) CorrectTransaction(ctx context.Context, userID int64, id uuid.
 		if err != nil {
 			return err
 		}
-		for _, p := range prev.Postings {
-			if p.Installment != nil {
-				return validationError("transaction_id", "installment transactions change through refunds, cancellation or anticipation")
-			}
-		}
 		if prev.Trade != nil || prev.Income != nil {
 			return ErrInvestmentTransaction
 		}
@@ -493,16 +488,15 @@ func (s *Service) CorrectTransaction(ctx context.Context, userID int64, id uuid.
 		if err := s.addAccounts(ctx, r, userID, accounts, prev); err != nil {
 			return err
 		}
-		if corrected, err = prev.Correct(next, expectedVersion, accounts); err != nil {
-			return err
+		if prev.HasInstallments() {
+			// The postings keep their rows: the plan and the statements stay as they are.
+			if corrected, err = prev.CorrectDetails(next, expectedVersion); err == nil {
+				err = r.ReplaceCategoryPostings(ctx, prev, corrected, reason)
+			}
+		} else {
+			corrected, err = s.correct(ctx, r, prev, next, expectedVersion, accounts, reason)
 		}
-		if err := checkLaterSales(ctx, r, userID, corrected.Date, corrected.Postings, id); err != nil {
-			return err
-		}
-		if err := s.bill(ctx, r, &corrected); err != nil {
-			return err
-		}
-		if err := r.ReplaceTransaction(ctx, prev, corrected, reason); err != nil {
+		if err != nil {
 			return err
 		}
 		// The stored postings carry the ids the database assigned.
@@ -520,6 +514,21 @@ func (s *Service) CorrectTransaction(ctx context.Context, userID int64, id uuid.
 		})
 	})
 	return corrected, err
+}
+
+// correct validates, bills and stores next as the version after prev.
+func (s *Service) correct(ctx context.Context, r Repository, prev, next domain.Transaction, expectedVersion int, accounts map[uuid.UUID]domain.Account, reason string) (domain.Transaction, error) {
+	corrected, err := prev.Correct(next, expectedVersion, accounts)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+	if err := checkLaterSales(ctx, r, prev.UserID, corrected.Date, corrected.Postings, prev.ID); err != nil {
+		return domain.Transaction{}, err
+	}
+	if err := s.bill(ctx, r, &corrected); err != nil {
+		return domain.Transaction{}, err
+	}
+	return corrected, r.ReplaceTransaction(ctx, prev, corrected, reason)
 }
 
 func (s *Service) VoidTransaction(ctx context.Context, userID int64, id uuid.UUID, reason string) error {

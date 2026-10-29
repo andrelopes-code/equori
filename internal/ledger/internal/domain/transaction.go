@@ -286,6 +286,51 @@ func (t Transaction) Correct(next Transaction, expectedVersion int, accounts map
 	return NewTransaction(next, accounts)
 }
 
+// HasInstallments reports whether a posting of t belongs to an installment plan.
+func (t Transaction) HasInstallments() bool {
+	return slices.ContainsFunc(t.Postings, func(p Posting) bool { return p.Installment != nil })
+}
+
+// CorrectDetails returns the next version of an installment purchase with the description,
+// payee and tags of next. Its date and postings change only through refunds, cancellation
+// or anticipation, so a next that changes them is refused whole.
+func (t Transaction) CorrectDetails(next Transaction, expectedVersion int) (Transaction, error) {
+	if err := t.checkMutable(); err != nil {
+		return Transaction{}, err
+	}
+	if expectedVersion != t.Version {
+		return Transaction{}, ErrVersionConflict
+	}
+
+	var blocked []string
+	if !next.Date.Equal(t.Date) {
+		blocked = append(blocked, "date")
+	}
+	same := func(a, b Posting) bool { return a.AccountID == b.AccountID && a.Amount == b.Amount && a.Memo == b.Memo }
+	if !slices.EqualFunc(t.Postings, next.Postings, same) {
+		blocked = append(blocked, "postings")
+	}
+	if len(blocked) > 0 {
+		return Transaction{}, invalid("transaction_id", "the "+strings.Join(blocked, " and ")+
+			" of installment transactions change through refunds, cancellation or anticipation")
+	}
+
+	t.Description = strings.TrimSpace(next.Description)
+	if utf8.RuneCountInString(t.Description) > maxTextLength {
+		return Transaction{}, invalid("description", "must have at most 500 characters")
+	}
+
+	tags, err := normalizeTags(next.Tags)
+	if err != nil {
+		return Transaction{}, err
+	}
+
+	t.PayeeID, t.Tags = next.PayeeID, tags
+	t.Version++
+
+	return t, nil
+}
+
 // keepRecordLinks moves each record link of prev to the first posting of next on the same
 // account (P5b amendment A27).
 func keepRecordLinks(prev, next []Posting) ([]Posting, error) {
