@@ -11,6 +11,7 @@ import {
   investmentApi as api,
   securityID,
 } from "@/testing/investment-api";
+import { moneyValue } from "@/testing/money-value";
 import { optionalName } from "@/testing/optional-name";
 import { renderApp } from "@/testing/render-app";
 import { txID } from "@/testing/transaction-api";
@@ -74,8 +75,10 @@ describe("trade entry", () => {
     await type(catalogEn["trade.quantity"], "150");
     await type(catalogEn["trade.unitPrice"], "10.05");
     await type(optionalName(catalogEn["trade.fees"]), "490");
-    expect(await screen.findByText(/1,507\.50/)).toBeInTheDocument();
-    expect(screen.getByText(/1,512\.40/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(moneyValue(/1,507\.50/)),
+    ).toBeInTheDocument();
+    expect(screen.getByText(moneyValue(/1,512\.40/))).toBeInTheDocument();
     await userEvent.click(
       screen.getByRole("button", { name: catalogEn["entry.save"] }),
     );
@@ -130,10 +133,10 @@ describe("trade entry", () => {
     await type(catalogEn["trade.quantity"], "50");
     await type(catalogEn["trade.unitPrice"], "10.80");
     await type(optionalName(catalogEn["trade.fees"]), "210");
-    expect(await screen.findByText(/540\.00/)).toBeInTheDocument();
-    expect(screen.getByText(/537\.90/)).toBeInTheDocument();
+    expect(await screen.findByText(moneyValue(/540\.00/))).toBeInTheDocument();
+    expect(screen.getByText(moneyValue(/537\.90/))).toBeInTheDocument();
     expect(screen.getByText(/10\.0827/)).toBeInTheDocument();
-    expect(screen.getByText(/33\.77/)).toBeInTheDocument();
+    expect(screen.getByText(moneyValue(/33\.77/))).toBeInTheDocument();
     await userEvent.click(
       screen.getByRole("button", { name: catalogEn["entry.save"] }),
     );

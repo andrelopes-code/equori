@@ -13,6 +13,7 @@ import {
   securityID,
   taxID,
 } from "@/testing/investment-api";
+import { moneyValue } from "@/testing/money-value";
 import { optionalName } from "@/testing/optional-name";
 import { renderApp } from "@/testing/render-app";
 import { txID } from "@/testing/transaction-api";
@@ -80,7 +81,9 @@ describe("investment income entry", () => {
     const { router } = await renderApp(path, { fetch: api(sent) });
     await chooseType(catalogEn["income.type.dividend"]);
     await type(catalogEn["income.gross"], "1000");
-    expect(await screen.findAllByText(/10\.00/)).not.toHaveLength(0);
+    expect(await screen.findAllByText(moneyValue(/10\.00/))).not.toHaveLength(
+      0,
+    );
     await pick(catalogEn["income.category"], "Dividends");
     await userEvent.click(
       screen.getByRole("button", { name: catalogEn["entry.save"] }),
@@ -110,9 +113,12 @@ describe("investment income entry", () => {
     await chooseType(catalogEn["income.type.jcp"]);
     await type(catalogEn["income.gross"], "4500");
     await type(optionalName(catalogEn["income.withheld"]), "675");
-    expect(await screen.findByText(/38\.25/)).toBeInTheDocument();
+    expect(await screen.findByText(moneyValue(/38\.25/))).toBeInTheDocument();
     await pick(catalogEn["income.category"], "Dividends");
-    await pick(catalogEn["income.withheldCategory"], "Income tax");
+    await pick(
+      optionalName(catalogEn["income.withheldCategory"]),
+      "Income tax",
+    );
     await userEvent.click(
       screen.getByRole("button", { name: catalogEn["entry.save"] }),
     );

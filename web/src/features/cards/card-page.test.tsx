@@ -15,6 +15,7 @@ import {
   statementFixtures,
 } from "@/testing/account-api";
 import { fakeApi, json, problem } from "@/testing/fake-api";
+import { moneyValue } from "@/testing/money-value";
 import { optionalName } from "@/testing/optional-name";
 import { renderApp } from "@/testing/render-app";
 
@@ -79,11 +80,19 @@ describe("CardPage", () => {
     const figures = await screen.findByRole("region", {
       name: catalogEn["card.figures"],
     });
-    expect(await within(figures).findByText("R$2,500.00")).toBeInTheDocument();
-    expect(within(figures).getByText("R$1,800.00")).toBeInTheDocument();
-    expect(within(figures).getByText("R$5,500.00")).toBeInTheDocument();
+    expect(
+      await within(figures).findByText(moneyValue("R$2,500.00")),
+    ).toBeInTheDocument();
+    expect(
+      within(figures).getByText(moneyValue("R$1,800.00")),
+    ).toBeInTheDocument();
+    expect(
+      within(figures).getByText(moneyValue("R$5,500.00")),
+    ).toBeInTheDocument();
     // December and January hold R$ 400,00 of installments each in the fixtures.
-    expect(await within(figures).findByText("R$800.00")).toBeInTheDocument();
+    expect(
+      await within(figures).findByText(moneyValue("R$800.00")),
+    ).toBeInTheDocument();
   });
 
   it("lists the statements and opens one", async () => {

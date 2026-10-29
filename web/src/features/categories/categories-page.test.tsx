@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json, problem } from "@/testing/fake-api";
+import { moneyValue } from "@/testing/money-value";
 import { renderApp } from "@/testing/render-app";
 import { sharedRoutes } from "@/testing/transaction-api";
 
@@ -272,7 +273,7 @@ describe("CategoriesPage", () => {
     expect(within(rowOf("Food")).getByText("62.5%")).toBeInTheDocument();
     expect(within(rowOf("Fun")).getByText("20.8%")).toBeInTheDocument();
     const card = await figureCard(catalogEn["category.pending"]);
-    expect(within(card).getByText("R$80.00")).toBeInTheDocument();
+    expect(within(card).getByText(moneyValue("R$80.00"))).toBeInTheDocument();
     expect(
       within(card).getByText("16.7% of the month's spending"),
     ).toBeInTheDocument();
@@ -332,7 +333,7 @@ describe("CategoriesPage", () => {
       today: "2026-10-17",
     });
     const card = await figureCard(catalogEn["category.kpi.spent"]);
-    expect(within(card).getByText("R$400.00")).toBeInTheDocument();
+    expect(within(card).getByText(moneyValue("R$400.00"))).toBeInTheDocument();
     expect(within(card).getByText("+33.3%")).toBeInTheDocument();
     expect(
       within(card).getByText("R$300.00 in september, up to day 17"),
@@ -358,7 +359,7 @@ describe("CategoriesPage", () => {
       today: "2026-10-17",
     });
     const card = await figureCard(catalogEn["category.kpi.spent"]);
-    expect(within(card).getByText("R$400.00")).toBeInTheDocument();
+    expect(within(card).getByText(moneyValue("R$400.00"))).toBeInTheDocument();
     expect(within(card).getByText("-20%")).toBeInTheDocument();
     expect(within(card).getByText("R$500.00 in august")).toBeInTheDocument();
   });
@@ -369,7 +370,7 @@ describe("CategoriesPage", () => {
       today: "2026-10-17",
     });
     const card = await figureCard(catalogEn["category.kpi.spent"]);
-    expect(within(card).getByText("R$400.00")).toBeInTheDocument();
+    expect(within(card).getByText(moneyValue("R$400.00"))).toBeInTheDocument();
     expect(
       within(card).getByText("Nothing recorded in september"),
     ).toBeInTheDocument();
@@ -379,7 +380,7 @@ describe("CategoriesPage", () => {
   it("projects the month at the pace of the days gone by", async () => {
     await renderApp("/categories", { fetch: api([]), today: "2026-10-17" });
     const card = await figureCard(catalogEn["category.kpi.projection"]);
-    expect(within(card).getByText("R$729.41")).toBeInTheDocument();
+    expect(within(card).getByText(moneyValue("R$729.41"))).toBeInTheDocument();
     expect(
       within(card).getByText("R$23.53 per day so far"),
     ).toBeInTheDocument();
@@ -490,7 +491,9 @@ describe("CategoriesPage", () => {
       today: "2026-10-17",
     });
     const card = await figureCard(catalogEn["category.kpi.earned"]);
-    expect(within(card).getByText("R$2,000.00")).toBeInTheDocument();
+    expect(
+      within(card).getByText(moneyValue("R$2,000.00")),
+    ).toBeInTheDocument();
     const row = await findRow("Salary");
     expect(within(row).getAllByText("R$2,000.00")).toHaveLength(2);
     expect(within(row).getByText("100%")).toBeInTheDocument();

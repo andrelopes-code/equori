@@ -15,6 +15,7 @@ import {
 } from "@/testing/account-api";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { chooseAccount } from "@/testing/account-choice";
+import { moneyValue } from "@/testing/money-value";
 import { renderApp } from "@/testing/render-app";
 
 type Route = (req: Request) => Response | Promise<Response>;
@@ -123,7 +124,9 @@ describe("StatementPage", () => {
       name: catalogEn["statement.figures"],
     });
     // The previous balance and the payments are both R$ 900,00.
-    expect(await within(figures).findAllByText("R$900.00")).toHaveLength(2);
+    expect(
+      await within(figures).findAllByText(moneyValue("R$900.00")),
+    ).toHaveLength(2);
     expect(
       screen.getByText(
         words("statement.breakdown", {

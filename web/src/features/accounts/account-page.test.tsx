@@ -16,6 +16,7 @@ import {
   usdID,
 } from "@/testing/account-api";
 import { fakeApi, json, problem } from "@/testing/fake-api";
+import { moneyValue } from "@/testing/money-value";
 import { renderApp } from "@/testing/render-app";
 
 type Route = (req: Request) => Response | Promise<Response>;
@@ -140,11 +141,15 @@ describe("AccountPage", () => {
     const figures = await screen.findByRole("region", {
       name: catalogEn["account.figures"],
     });
-    expect(await within(figures).findByText("R$5,240.55")).toBeInTheDocument();
+    expect(
+      await within(figures).findByText(moneyValue("R$5,240.55")),
+    ).toBeInTheDocument();
     expect(
       await within(figures).findByText(/R\$5,000\.00/),
     ).toBeInTheDocument();
-    expect(await within(figures).findByText("R$3,740.55")).toBeInTheDocument();
+    expect(
+      await within(figures).findByText(moneyValue("R$3,740.55")),
+    ).toBeInTheDocument();
     expect(tos).toContain("2026-11-16");
   });
 

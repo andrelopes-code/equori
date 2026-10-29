@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { catalogEn } from "@/i18n/catalog.en";
 import { formatDayHeader } from "@/i18n/format";
 import { json, problem } from "@/testing/fake-api";
+import { moneyValue } from "@/testing/money-value";
 import {
   exactID,
   planningApi as api,
@@ -124,9 +125,13 @@ describe("PlanningPage agenda", () => {
       name: catalogEn["agenda.figures"],
     });
     await waitFor(() => {
-      expect(within(figures).getByText("R$5,000.00")).toBeInTheDocument();
+      expect(
+        within(figures).getByText(moneyValue("R$5,000.00")),
+      ).toBeInTheDocument();
     });
-    expect(within(figures).getByText("R$2,139.90")).toBeInTheDocument();
+    expect(
+      within(figures).getByText(moneyValue("R$2,139.90")),
+    ).toBeInTheDocument();
   });
 
   it("filters the agenda by kind", async () => {
