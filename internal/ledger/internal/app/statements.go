@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"slices"
 
 	"github.com/andrelopes-code/equori/internal/platform/page"
 
@@ -71,11 +72,19 @@ func (s *Service) explain(v StatementView, postings []StatementPosting) domain.D
 		return domain.DifferenceExplanation{}
 	}
 
+	// A transaction moves whole: its provisional postings on the statement are one candidate.
 	var candidates []domain.DifferenceCandidate
 	for _, p := range postings {
-		if p.Provisional && p.CardRole != domain.RolePayment {
-			candidates = append(candidates, domain.DifferenceCandidate{TransactionID: p.TransactionID, Date: p.Date, Amount: p.Amount})
+		if !p.Provisional || p.CardRole == domain.RolePayment {
+			continue
 		}
+
+		i := slices.IndexFunc(candidates, func(c domain.DifferenceCandidate) bool { return c.TransactionID == p.TransactionID })
+		if i < 0 {
+			candidates = append(candidates, domain.DifferenceCandidate{TransactionID: p.TransactionID, Date: p.Date})
+			i = len(candidates) - 1
+		}
+		candidates[i].Amount += p.Amount
 	}
 
 	return domain.ExplainDifference(v.Summary.AmountDue-v.Fact.Total, len(postings), candidates)

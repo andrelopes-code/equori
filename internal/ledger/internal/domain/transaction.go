@@ -355,11 +355,11 @@ func keepRecordLinks(prev, next []Posting) ([]Posting, error) {
 // statement, and the statement an owner or a line chose when the correction names none; a
 // statement left to the date is derived again (A136).
 func keepStatementBasis(prev, next []Posting) []Posting {
-	for _, p := range prev {
+	for k, p := range prev {
 		if p.Statement == nil {
 			continue
 		}
-		i := slices.IndexFunc(next, func(n Posting) bool { return n.AccountID == p.AccountID })
+		i := nthOnAccount(next, p.AccountID, ordinalOnAccount(prev, k))
 		if i < 0 {
 			continue
 		}
@@ -372,6 +372,31 @@ func keepStatementBasis(prev, next []Posting) []Posting {
 		}
 	}
 	return next
+}
+
+// ordinalOnAccount is how many postings of ps before index k share the account of ps[k].
+func ordinalOnAccount(ps []Posting, k int) int {
+	n := 0
+	for _, p := range ps[:k] {
+		if p.AccountID == ps[k].AccountID {
+			n++
+		}
+	}
+	return n
+}
+
+// nthOnAccount is the index of the n-th posting of ps on account, or -1.
+func nthOnAccount(ps []Posting, account uuid.UUID, n int) int {
+	for i, p := range ps {
+		if p.AccountID != account {
+			continue
+		}
+		if n == 0 {
+			return i
+		}
+		n--
+	}
+	return -1
 }
 
 func (t Transaction) Void(at time.Time, reason string) (Transaction, error) {

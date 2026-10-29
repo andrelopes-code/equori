@@ -47,21 +47,31 @@ func (s *Service) DeferPostings(ctx context.Context, userID int64, statementID u
 	})
 }
 
-// deferred is the correction of t that bills its posting on statementID on the next statement.
+// deferred is the correction of t that bills its card postings on statementID on the next
+// statement.
 func deferred(t domain.Transaction, statementID uuid.UUID) (domain.Transaction, error) {
-	k := slices.IndexFunc(t.Postings, func(p domain.Posting) bool { return p.StatementID == statementID })
-	if k < 0 || t.Postings[k].Installment != nil || t.Postings[k].Statement == nil {
-		return domain.Transaction{}, ErrPostingNotMovable
-	}
-
 	next := t
 	next.Postings = slices.Clone(t.Postings)
-	for i := range next.Postings {
+	moved := false
+	for i, p := range next.Postings {
 		// The correction carries the record links over itself (A27).
 		next.Postings[i].ExternalRecordID = uuid.Nil
+		if p.StatementID != statementID {
+			continue
+		}
+
+		if p.Installment != nil || p.Statement == nil {
+			return domain.Transaction{}, ErrPostingNotMovable
+		}
+
+		later := p.Statement.Add(1)
+		next.Postings[i].Statement, next.Postings[i].StatementBasis = &later, domain.BasisOwner
+		moved = true
 	}
-	later := next.Postings[k].Statement.Add(1)
-	next.Postings[k].Statement, next.Postings[k].StatementBasis = &later, domain.BasisOwner
+
+	if !moved {
+		return domain.Transaction{}, ErrPostingNotMovable
+	}
 
 	return next, nil
 }

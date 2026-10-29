@@ -2,6 +2,7 @@ package ledger_test
 
 import (
 	"net/http"
+	"slices"
 	"testing"
 	"time"
 
@@ -224,5 +225,34 @@ func TestDeferIsAllOrNothing(t *testing.T) {
 	}
 	if s := c.h.Transaction(manual).Postings[0].Statement; s != "2026-11" {
 		t.Fatalf("first transaction moved to %s although the request failed", s)
+	}
+}
+
+// A137: a transaction with two provisional card postings on the statement is one candidate
+// whose move carries both postings.
+func TestDeferTransactionWithTwoCardPostings(t *testing.T) {
+	t.Parallel()
+	c, id, manual := differenceSetup(t, 713+500)
+	split := c.h.Record("2026-11-01", apitest.Posting(c.card, -300), apitest.Posting(c.card, -200), apitest.Posting(c.food, 500))
+	s := statements(t, c.h, c.card)["2026-11"]
+	c.h.MustDo(http.MethodPut, "/api/v1/statements/"+id+"/facts",
+		map[string]any{"due_date": "2026-11-10", "total": apitest.BRL(int64(s.AmountDue) - 713 - 500)}, http.StatusOK, nil)
+
+	var before differenceView
+	c.h.MustDo(http.MethodGet, "/api/v1/statements/"+id, nil, http.StatusOK, &before)
+	if p := before.Proposal; p == nil || len(p.TransactionIDs) != 2 || !slices.Contains(p.TransactionIDs, split) || !slices.Contains(p.TransactionIDs, manual) {
+		t.Fatalf("proposal = %+v", before.Proposal)
+	}
+
+	var after differenceView
+	c.h.MustDo(http.MethodPost, "/api/v1/statements/"+id+"/defer", map[string]any{"transaction_ids": before.Proposal.TransactionIDs}, http.StatusOK, &after)
+
+	if after.AmountDifference == nil || after.AmountDifference.Amount != 0 {
+		t.Fatalf("difference after the move = %+v", after.AmountDifference)
+	}
+	for _, p := range c.h.Transaction(split).Postings {
+		if p.AccountID == c.card && p.Statement != "2026-12" {
+			t.Fatalf("split posting on %s, want 2026-12", p.Statement)
+		}
 	}
 }
