@@ -176,6 +176,7 @@ export function draftFromTransaction(
       amount: Math.abs(a.amount.amount),
       accountId: a.account_id,
       categoryId: b.account_id,
+      statement: a.statement ?? null,
     };
   }
   if (isBalance(accountA) && isBalance(accountB)) {

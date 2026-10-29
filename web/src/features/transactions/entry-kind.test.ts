@@ -134,6 +134,23 @@ describe("imbalance", () => {
 });
 
 describe("draftFromTransaction", () => {
+  // A136: a correction shows the statement the card posting is billed on.
+  it("reads the statement of a card expense back", () => {
+    const purchase = tx([
+      ["checking", -713],
+      ["food", 713],
+    ]);
+    const [card, category] = purchase.postings;
+    if (card === undefined || category === undefined)
+      throw new Error("postings");
+    const draft = draftFromTransaction(
+      { ...purchase, postings: [{ ...card, statement: "2026-12" }, category] },
+      accounts,
+    );
+
+    expect(draft.statement).toBe("2026-12");
+  });
+
   it("reads the three simple shapes back", () => {
     expect(
       draftFromTransaction(

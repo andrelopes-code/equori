@@ -170,3 +170,26 @@ func TestDeferStatementPostingsProblems(t *testing.T) {
 	c.h.ExpectProblem(c.h.Do(http.MethodPost, "/api/v1/statements/"+id+"/defer", map[string]any{"transaction_ids": []string{manual}}),
 		http.StatusConflict, "posting_reconciled", "")
 }
+
+// A136: a correction that sends the statement a posting already has keeps its basis; a
+// statement the date chose is chosen again by a later date.
+func TestCorrectionKeepsDateBasis(t *testing.T) {
+	t.Parallel()
+	c := newCardSetup(t, "2026-11-12")
+	id := c.purchase("2026-11-01", 713)
+	tx := c.h.Transaction(id)
+	c.h.MustDo(http.MethodPut, "/api/v1/transactions/"+id, map[string]any{
+		"date": "2026-11-01", "description": "same statement", "expected_version": tx.Version, "reason": "edit",
+		"postings": []map[string]any{ownerStatement(apitest.Posting(c.card, -713), "2026-11"), apitest.Posting(c.food, 713)},
+	}, http.StatusOK, nil)
+
+	tx = c.h.Transaction(id)
+	c.h.MustDo(http.MethodPut, "/api/v1/transactions/"+id, map[string]any{
+		"date": "2026-11-05", "description": "later", "expected_version": tx.Version, "reason": "edit",
+		"postings": []map[string]any{apitest.Posting(c.card, -713), apitest.Posting(c.food, 713)},
+	}, http.StatusOK, nil)
+
+	if s := c.h.Transaction(id).Postings[0].Statement; s != "2026-12" {
+		t.Fatalf("statement after the date moved = %s, want 2026-12", s)
+	}
+}

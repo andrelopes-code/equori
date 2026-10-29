@@ -351,19 +351,23 @@ func keepRecordLinks(prev, next []Posting) ([]Posting, error) {
 	return next, nil
 }
 
-// keepStatementBasis keeps the statement an owner or a line chose for a card posting when
-// the correction names none or the same one (A136); a statement left to the date is derived
-// again.
+// keepStatementBasis keeps the basis of a card posting whose correction names the same
+// statement, and the statement an owner or a line chose when the correction names none; a
+// statement left to the date is derived again (A136).
 func keepStatementBasis(prev, next []Posting) []Posting {
 	for _, p := range prev {
-		if p.Statement == nil || p.StatementBasis == BasisDate || p.StatementBasis == "" {
+		if p.Statement == nil {
 			continue
 		}
 		i := slices.IndexFunc(next, func(n Posting) bool { return n.AccountID == p.AccountID })
 		if i < 0 {
 			continue
 		}
-		if s := next[i].Statement; s == nil || *s == *p.Statement {
+		s := next[i].Statement
+		switch {
+		case s != nil && *s == *p.Statement:
+			next[i].StatementBasis = p.StatementBasis
+		case s == nil && p.StatementBasis != BasisDate && p.StatementBasis != "":
 			next[i].Statement, next[i].StatementBasis = p.Statement, p.StatementBasis
 		}
 	}
