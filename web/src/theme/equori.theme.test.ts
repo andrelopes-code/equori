@@ -127,3 +127,20 @@ test("a raised toast and the palette are materials over the page", () => {
     /--slotted-command-palette-backdrop-filter:\s*var\(--slotted-material-backdrop\)/,
   );
 });
+
+// Under round corners a 16px panel around 8px items left the items' corners against its curve.
+test("an item inside an overlay follows the overlay's curve, less the inset", () => {
+  for (const token of [
+    "--slotted-menu-item-radius",
+    "--slotted-select-item-radius",
+    "--slotted-combobox-item-radius",
+    "--slotted-multi-select-item-radius",
+    "--slotted-command-palette-item-radius",
+  ]) {
+    assert.equal(
+      theme.components[token],
+      "max(0px, calc(var(--slotted-radius-lg) - var(--slotted-space-2)))",
+      token,
+    );
+  }
+});
