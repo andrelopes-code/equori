@@ -90,7 +90,7 @@ Um glossário de uso, separado do glossário de domínio, é a fonte única dos 
 2. Onde o termo é necessário (Custo médio, Fatura), o rótulo fica e recebe ajuda.
 3. Um conceito, um nome: "lançamento" deixa de nomear a ação de criar transação.
 
-A definição de um termo regional (um identificador de banco, um imposto) vive na implementação da região, conforme ADR 016.
+Idioma e região são independentes (`docs/contributing/regions.md`): o catálogo pt-BR atende um usuário de qualquer país que escolha esse idioma. O glossário de uso e todo texto de ajuda são neutros: não citam moeda, instituição, imposto, índice, meio de pagamento, bolsa ou esquema de identificador. Um termo que só existe em uma região (um identificador de banco, um imposto sobre compra no exterior) tem a definição na implementação da região, conforme ADR 016; uma região sem definição mostra o termo neutro.
 
 ### Camada 1: ajuda no lugar da pergunta
 
@@ -121,6 +121,8 @@ Arquivos Markdown em pt-BR e en, no repositório, organizados por Diátaxis:
 | Explicação | Como o equori registra dinheiro (partidas dobradas em linguagem leiga); como a fatura é calculada; o que é conciliação |
 
 Os mesmos arquivos são embutidos no binário e servidos em `/help` dentro do app, o que funciona sem internet numa instalação auto-hospedada. Um site público gerado dos mesmos arquivos é opcional e posterior.
+
+Os arquivos são separados por idioma e têm conteúdo neutro. Um trecho que vale só para uma região (o imposto de uma compra no exterior, o identificador de banco de um país) é um arquivo da região, incluído na página quando a região do perfil o tem. Esse mecanismo é um ponto de extensão novo: a sua linha entra em `docs/contributing/regions.md` na mesma mudança que o cria.
 
 ### Camada 5: assistente
 
@@ -169,6 +171,8 @@ Uma tela em que mais da metade dos campos atende aos critérios volta ao passo 2
 - Uma descrição tem uma linha (cerca de 90 caracteres na tradução mais longa, F8).
 - Um termo tem uma definição só, no glossário de uso; toda tela que mostra o termo usa a mesma chave do catálogo.
 - O texto em pt-BR e o texto em en são escritos cada um na sua língua, sem tradução literal.
+- O texto não cita valor regional (seção 4, Camada 0) e não pressupõe o sistema financeiro de um país: um leitor de pt-BR pode estar em Portugal, Angola ou Moçambique; um leitor de en, em qualquer país.
+- Frases de até 20 palavras; o termo inevitável é explicado logo em seguida (guias de linguagem simples: [CJF](https://cjf.jus.br/cjf/ipe-lab/Guia_de_Linguagem_Simples.pdf), [Saúde DF](https://info.saude.df.gov.br/wp-content/uploads/2023/07/Linguagem-Simples-em-10-passos.pdf)).
 
 ### 5.4 Processo por tela
 
@@ -189,4 +193,6 @@ A ordem das telas segue o uso: transações, contas, cartões, visão geral, dep
 3. Tour: nenhum por ora. A importação de extrato é reavaliada depois da curadoria aplicada.
 4. Slotted: as duas issues (ajuda em cabeçalho de `Table`, ajuda em `StatCard`) são abertas só quando uma tabela aprovada precisar do mecanismo.
 
-Tabelas de curadoria: `2026-10-29-ui-clarity-curation-transactions.md` (transações; aguarda revisão do dono).
+5. Aprovação: o dono delegou a aprovação das tabelas de curadoria (5.4, passo 2). Cada tabela é conferida contra as seções 5.1 a 5.3 e contra pesquisa antes do código.
+
+Tabelas de curadoria: `2026-10-29-ui-clarity-curation-transactions.md` (transações).

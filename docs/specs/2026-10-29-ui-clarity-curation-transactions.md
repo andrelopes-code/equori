@@ -101,6 +101,10 @@ Duas propostas mudam o que a tela desenha, não só o texto; cada uma começa po
 1. A tabela de contas movimentadas omite as partidas de categoria (3.1).
 2. Os fatos omitem "Versão" (3.2).
 
-## 6. Slotted
+## 6. Regiões
+
+Cada texto proposto foi conferido contra a regra de neutralidade (design, seção 5.3): nenhum cita moeda, instituição, imposto, índice, meio de pagamento ou esquema de identificador. "Ações, fundos, títulos" e "Dividendos ou juros" nomeiam classes que existem em qualquer mercado. "Fatura", "Favorecido" e "Efetivado" são palavras do idioma pt-BR, não do sistema financeiro de um país.
+
+## 7. Slotted
 
 Nenhuma proposta usa ajuda em cabeçalho de `Table` ou em `StatCard`. Nenhuma issue é aberta.
