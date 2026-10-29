@@ -197,8 +197,7 @@ export const settingsEn = {
   "settings.appearance.open": "Open the appearance studio",
   "settings.appearance.openHint":
     "Themes, colours, surfaces, shape and text, with the app drawn beside them.",
-  "studio.subheading":
-    "Each change shows in the app beside it and across equori.",
+  "studio.current": "Theme: {name}.",
   "studio.back": "Settings",
   "studio.tabs": "Appearance settings",
   "studio.tab.themes": "Themes",

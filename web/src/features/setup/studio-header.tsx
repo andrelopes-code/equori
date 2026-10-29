@@ -10,6 +10,7 @@ import {
 } from "@slotted/react/page-header";
 import { Link } from "@tanstack/react-router";
 
+import styles from "@/features/setup/appearance-studio.module.css";
 import { AppearanceToolbar } from "@/features/setup/appearance-toolbar";
 import type { ThemeLibrary } from "@/features/setup/use-theme-library";
 import { useT } from "@/i18n/i18n-provider";
@@ -22,6 +23,9 @@ export interface StudioHeaderProps {
 
 export function StudioHeader({ library }: StudioHeaderProps) {
   const t = useT();
+
+  const custom = library.activeName === null;
+  const name = library.activeName ?? t("settings.theme.custom");
 
   return (
     <PageHeader size="lg">
@@ -43,14 +47,19 @@ export function StudioHeader({ library }: StudioHeaderProps) {
               {t("settings.appearance.title")}
             </PageHeaderHeading>
             <PageHeaderSubheading>
-              {t("studio.subheading")}
+              {t("studio.current", { name })}
+              {custom && (
+                <span className={styles.hint}>
+                  {t("settings.theme.customHint")}
+                </span>
+              )}
             </PageHeaderSubheading>
           </PageHeaderTitle>
           <PageHeaderActions>
-            <AppearanceToolbar library={library} />
             <Button variant="ghost" tone="secondary" onClick={resetAppearance}>
               {t("settings.appearance.reset")}
             </Button>
+            <AppearanceToolbar library={library} />
           </PageHeaderActions>
         </PageHeaderTitleRow>
       </PageHeaderTitleArea>

@@ -201,8 +201,7 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "settings.appearance.open": "Abrir o estúdio de aparência",
   "settings.appearance.openHint":
     "Temas, cores, superfícies, forma e texto, com o app desenhado ao lado.",
-  "studio.subheading":
-    "Cada mudança aparece no app ao lado e em todo o equori.",
+  "studio.current": "Tema: {name}.",
   "studio.back": "Configurações",
   "studio.tabs": "Ajustes de aparência",
   "studio.tab.themes": "Temas",

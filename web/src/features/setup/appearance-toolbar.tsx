@@ -8,10 +8,8 @@ import {
   MenuTrigger,
 } from "@slotted/react/menu";
 import { toast } from "@slotted/react/toast";
-import { Text } from "@slotted/react/typography";
 import { useState } from "react";
 
-import styles from "@/features/setup/appearance-toolbar.module.css";
 import { ThemeDeleteDialog } from "@/features/setup/theme-delete-dialog";
 import { ThemeImportDialog } from "@/features/setup/theme-import-dialog";
 import { ThemeNameDialog } from "@/features/setup/theme-name-dialog";
@@ -26,7 +24,8 @@ export interface AppearanceToolbarProps {
 
 type Open = "save" | "rename" | "delete" | "import" | null;
 
-// The active theme and the actions on it: save, import, export, rename and delete.
+// The actions on the active theme, as buttons of the page header: save, import, export, rename
+// and delete.
 export function AppearanceToolbar({ library }: AppearanceToolbarProps) {
   const t = useT();
 
@@ -72,87 +71,69 @@ export function AppearanceToolbar({ library }: AppearanceToolbarProps) {
   };
 
   return (
-    <div className={styles.toolbar}>
-      <div className={styles.current}>
-        <Text size="xs" tone="muted">
-          {t("settings.theme.current")}
-        </Text>
-        <Text size="lg" weight="semibold">
-          {exportName}
-        </Text>
-        {custom && (
-          <Text size="xs" tone="muted">
-            {t("settings.theme.customHint")}
-          </Text>
-        )}
-      </div>
-
-      <div className={styles.actions}>
-        <Button
-          variant={custom ? "solid" : "outline"}
-          tone={custom ? "accent" : "secondary"}
-          onClick={handleSave}
-        >
-          {t("settings.theme.save")}
-        </Button>
-        <Button
-          variant="outline"
-          tone="secondary"
-          onClick={() => {
-            setOpen("import");
-          }}
-        >
-          {t("settings.theme.import")}
-        </Button>
-        <Menu>
-          <MenuTrigger
-            render={(props) => (
-              <IconButton
-                {...props}
-                variant="ghost"
-                tone="secondary"
-                aria-label={t("settings.theme.more")}
-              >
-                <Icon>
-                  <Glyph name="ellipsis" />
-                </Icon>
-              </IconButton>
-            )}
-          />
-          <MenuContent>
-            <MenuItem onSelect={handleCopy}>
-              {t("settings.theme.copy")}
-            </MenuItem>
-            <MenuItem
-              onSelect={() => {
-                download(exportName, exportTheme(exportName, library.values));
-              }}
+    <>
+      <Menu>
+        <MenuTrigger
+          render={(props) => (
+            <IconButton
+              {...props}
+              variant="ghost"
+              tone="secondary"
+              aria-label={t("settings.theme.more")}
             >
-              {t("settings.theme.download")}
-            </MenuItem>
-            {saved !== null && (
-              <>
-                <MenuSeparator />
-                <MenuItem
-                  onSelect={() => {
-                    setOpen("rename");
-                  }}
-                >
-                  {t("settings.theme.rename")}
-                </MenuItem>
-                <MenuItem
-                  tone="danger"
-                  onSelect={() => {
-                    setOpen("delete");
-                  }}
-                >
-                  {t("settings.theme.delete")}
-                </MenuItem>
-              </>
-            )}
-          </MenuContent>
-        </Menu>
-      </div>
+              <Icon>
+                <Glyph name="ellipsis" />
+              </Icon>
+            </IconButton>
+          )}
+        />
+        <MenuContent>
+          <MenuItem onSelect={handleCopy}>{t("settings.theme.copy")}</MenuItem>
+          <MenuItem
+            onSelect={() => {
+              download(exportName, exportTheme(exportName, library.values));
+            }}
+          >
+            {t("settings.theme.download")}
+          </MenuItem>
+          {saved !== null && (
+            <>
+              <MenuSeparator />
+              <MenuItem
+                onSelect={() => {
+                  setOpen("rename");
+                }}
+              >
+                {t("settings.theme.rename")}
+              </MenuItem>
+              <MenuItem
+                tone="danger"
+                onSelect={() => {
+                  setOpen("delete");
+                }}
+              >
+                {t("settings.theme.delete")}
+              </MenuItem>
+            </>
+          )}
+        </MenuContent>
+      </Menu>
+      <Button
+        variant="outline"
+        tone="secondary"
+        onClick={() => {
+          setOpen("import");
+        }}
+      >
+        {t("settings.theme.import")}
+      </Button>
+      <Button
+        variant={custom ? "solid" : "outline"}
+        tone={custom ? "accent" : "secondary"}
+        onClick={handleSave}
+      >
+        {t("settings.theme.save")}
+      </Button>
 
       {open === "save" && (
         <ThemeNameDialog
@@ -187,7 +168,7 @@ export function AppearanceToolbar({ library }: AppearanceToolbarProps) {
       {open === "import" && (
         <ThemeImportDialog onImport={handleImport} onClose={close} />
       )}
-    </div>
+    </>
   );
 }
 

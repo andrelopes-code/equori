@@ -22,6 +22,10 @@
     }
   }
 
+  .hint {
+    margin-inline-start: var(--slotted-space-2);
+  }
+
   .panel {
     display: flex;
     min-inline-size: 0;
