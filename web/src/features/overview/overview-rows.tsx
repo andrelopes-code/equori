@@ -8,7 +8,6 @@ import {
   ListItemEnd,
   ListItemLabel,
   ListItemLink,
-  ListItemStart,
 } from "@slotted/react/list-item";
 import type { NavigateOptions } from "@tanstack/react-router";
 import type { ReactNode } from "react";
@@ -18,8 +17,6 @@ import { useServed } from "@/ui/use-served";
 
 export interface OverviewRow {
   key: string;
-  // A mark before the title; the row centres it on its lines, where a meter row draws its bar.
-  start?: ReactNode;
   title: ReactNode;
   line?: ReactNode;
   end?: ReactNode;
@@ -42,9 +39,6 @@ export function OverviewRows({
       {rows.map((row) => {
         const body = (
           <>
-            {row.start !== undefined && (
-              <ListItemStart>{row.start}</ListItemStart>
-            )}
             <ListItemBody>
               <ListItemLabel>{row.title}</ListItemLabel>
               {row.line !== undefined && (

@@ -2,7 +2,7 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
 import { accountsQuery } from "@/features/accounts";
-import { CategoryMark, categoryEntries } from "@/features/categories";
+import { categoryEntries } from "@/features/categories";
 import { budgetAlerts } from "@/features/overview/budget-alerts";
 import { MeterHead } from "@/features/overview/meter-head";
 import { MeterLine } from "@/features/overview/meter-line";
@@ -84,7 +84,6 @@ export function BudgetsBlock({
           const p = figures.get(alert.id);
           const budget = active.find((b) => b.id === alert.id);
           if (p === undefined || budget === undefined) return [];
-          const entry = entries.get(budget.category_id);
           const over = alert.state === "over";
           const tone = over ? "danger" : "warning";
           const share = percent.format(alert.share / 100);
@@ -96,13 +95,6 @@ export function BudgetsBlock({
                 params: { id: alert.id },
                 search: { month },
               },
-              start: (
-                <CategoryMark
-                  name={alert.name}
-                  color={entry?.color}
-                  icon={entry?.icon}
-                />
-              ),
               title: <MeterHead name={alert.name} share={share} tone={tone} />,
               line: (
                 <MeterLine
