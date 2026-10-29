@@ -1849,5 +1849,19 @@
     [data-ui="dialog"][data-size="lg"] {
       --slotted-dialog-measure: 48rem;
     }
+
+    [data-ui="tooltip"] > [data-part="arrow"] {
+      opacity: 0;
+      transition: opacity var(--slotted-duration-short) var(--slotted-easing-exit);
+    }
+
+    [data-ui="tooltip"][data-open] > [data-part="arrow"] {
+      opacity: 1;
+      transition: none;
+    }
+
+    [data-ui="tooltip"][data-open][data-positioned] > [data-part="arrow"] {
+      animation: slotted-tooltip-fade var(--slotted-duration-medium) var(--slotted-easing-enter);
+    }
   }
 }

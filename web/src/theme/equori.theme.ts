@@ -66,6 +66,24 @@ const dialogMeasureRule = `
 }
 `;
 
+// Workaround for Slotted issue #39: only the tooltip's content fades, so its arrow stays opaque
+// and reads as a separate piece on open and close. The arrow takes the content's three fade rules.
+const tooltipArrowFadeRule = `
+[data-ui="tooltip"] > [data-part="arrow"] {
+  opacity: 0;
+  transition: opacity var(--slotted-duration-short) var(--slotted-easing-exit);
+}
+
+[data-ui="tooltip"][data-open] > [data-part="arrow"] {
+  opacity: 1;
+  transition: none;
+}
+
+[data-ui="tooltip"][data-open][data-positioned] > [data-part="arrow"] {
+  animation: slotted-tooltip-fade var(--slotted-duration-medium) var(--slotted-easing-enter);
+}
+`;
+
 // A bottom sheet slides in 480 ms and out in 260 ms; 240 ms and 280 ms read abrupt on the way in.
 const sheetSlideRule = `
 [data-ui="drawer"][data-mode="overlay"][data-side="bottom"][data-drag] {
@@ -212,6 +230,7 @@ export default extendTheme(
       paletteScrimRule,
       sheetSlideRule,
       dialogMeasureRule,
+      tooltipArrowFadeRule,
     ],
   },
   { name: "equori" },
