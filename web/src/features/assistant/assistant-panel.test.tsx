@@ -334,10 +334,9 @@ describe("AssistantPanel", () => {
     resolveRoute(json(200, detail("You spent **10 items**.")));
   });
 
-  // The header keeps a column for the drawer's own close: a close among the actions leaves that
-  // column empty, and its gap widens the header's end beyond its start.
+  // The close is the last button of the header's actions, drawn at their size and on their row.
   it.each([1280, 390])(
-    "closes the drawer at %i px through the drawer's own close",
+    "closes the drawer at %i px through the last of its header actions",
     async (width) => {
       const { onOpenChange } = setup({}, "/overview", width);
       const header = await screen.findByText(catalogEn["assistant.title"]);
@@ -349,8 +348,13 @@ describe("AssistantPanel", () => {
       });
       await userEvent.click(close);
 
-      expect(close).toHaveAttribute("data-part", "close");
-      expect(close.closest('[data-part="actions"]')).toBeNull();
+      const actions = close.closest<HTMLElement>('[data-part="actions"]');
+      expect(actions).not.toBeNull();
+      expect(
+        within(actions ?? drawer)
+          .getAllByRole("button")
+          .at(-1),
+      ).toBe(close);
       expect(onOpenChange.mock.calls[0]?.[0]).toBe(false);
     },
   );

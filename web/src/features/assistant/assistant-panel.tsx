@@ -144,7 +144,7 @@ export function AssistantPanel({
         setListing(true);
       }}
       onNew={startNew}
-      onClose={beside ? close : undefined}
+      onClose={close}
     />
   );
 

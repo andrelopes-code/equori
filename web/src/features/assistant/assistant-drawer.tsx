@@ -2,7 +2,6 @@ import {
   Drawer,
   DrawerActions,
   DrawerBody,
-  DrawerClose,
   DrawerDescription,
   DrawerFooter,
   DrawerHeader,
@@ -80,9 +79,6 @@ export function AssistantDrawer({
             <Text truncate>{title}</Text>
           </DrawerDescription>
           <DrawerActions>{actions}</DrawerActions>
-          {/* Workaround for Slotted issue #30: a close inside DrawerActions leaves the header's end
-              column empty, and its gap widens the end inset beyond the start inset. */}
-          <DrawerClose aria-label={t("detail.close")} />
         </DrawerHeader>
 
         <DrawerBody>{body}</DrawerBody>
