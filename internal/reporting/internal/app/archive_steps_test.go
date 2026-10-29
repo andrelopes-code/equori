@@ -92,7 +92,32 @@ func TestAddBudgetReference(t *testing.T) {
 	if len(got) != 1 || got[0].Name != "planning_budget" || string(got[0].Rows[0]) != `{"id":"a"}` {
 		t.Fatalf("tables = %+v", got)
 	}
-	if ArchiveVersion != 3 {
-		t.Fatalf("ArchiveVersion = %d, want 3", ArchiveVersion)
+	if ArchiveVersion < 3 {
+		t.Fatalf("ArchiveVersion = %d, want at least 3", ArchiveVersion)
+	}
+}
+
+// Card billing amendment A136, ADR 021 V2: version 3 rows of ledger_posting gain
+// statement_basis "date", the basis the ledger gives every posting it cannot place otherwise.
+func TestAddStatementBasis(t *testing.T) {
+	t.Parallel()
+	v3 := []ArchiveTable{
+		{Name: "ledger_posting", Rows: [][]byte{[]byte(`{"amount":-713,"id":"a"}`)}},
+		{Name: "ledger_payee", Rows: [][]byte{[]byte(`{"id":"b"}`)}},
+	}
+
+	got, err := addStatementBasis(v3)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got[0].Rows[0]) != `{"amount":-713,"id":"a","statement_basis":"date"}` {
+		t.Fatalf("ledger_posting row = %s", got[0].Rows[0])
+	}
+	if string(got[1].Rows[0]) != `{"id":"b"}` || string(v3[0].Rows[0]) != `{"amount":-713,"id":"a"}` {
+		t.Fatalf("other table %s, input %s", got[1].Rows[0], v3[0].Rows[0])
+	}
+	if ArchiveVersion != 4 {
+		t.Fatalf("ArchiveVersion = %d, want 4", ArchiveVersion)
 	}
 }
