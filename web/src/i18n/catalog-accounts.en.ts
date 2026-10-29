@@ -709,16 +709,16 @@ export const accountsEn = {
   "statement.unconfirmed": "No bank line",
   "statement.unconfirmedTitle": "The bank has not reported: {names}",
   "statement.unconfirmedMatches":
-    "This statement's total matches the bank's, which confirms these entries. Use Reconcile to record it; the notice leaves the overview.",
+    "This statement's total matches the bank's, which confirms these transactions. Use Reconcile to record it; the notice leaves the overview.",
   "statement.unconfirmedHelp":
-    "A duplicated or mistyped entry is settled by voiding or correcting the transaction. A correct entry is confirmed when the bank sends its line, or when you reconcile the statement with the bank's total.",
+    "A duplicated or mistyped transaction is resolved by voiding or correcting it. A correct transaction is confirmed when the bank sends its line, or when you reconcile the statement with the bank's total.",
   "statement.provisional": "Provisional statement",
   "statement.proposal.title": "A {amount} difference from the bank",
   "statement.proposal.description":
-    "These entries were made close to the closing date and the bank likely billed them on the next statement: {names}.",
+    "These transactions were recorded close to the closing date and the bank likely billed them on the next statement: {names}.",
   "statement.proposal.move": "Move to the next statement",
   "statement.rounding":
-    "A {amount} difference no entry explains: likely a rounding by the bank.",
+    "A {amount} difference no transaction explains: likely a rounding by the bank.",
   "statement.lineActions": "Actions for {name}",
   "statement.openTransaction": "Open transaction",
   "statement.title": "Statement",
@@ -734,7 +734,7 @@ export const accountsEn = {
   "statement.removeFacts": "Remove the facts I recorded",
   "pay.title": "Pay the {month} statement",
   "pay.hint":
-    "The payment comes out of a balance account and is billed on the next statement.",
+    "The payment comes out of one of your accounts and shows as a credit on the next statement.",
   "pay.amount": "Amount",
   "pay.preset.unpaid": "Open",
   "pay.preset.minimum": "Minimum",
@@ -762,7 +762,7 @@ export const accountsEn = {
     "The institution's total differs by {amount}. Record its facts so the dates and lines follow it.",
   "facts.title": "Institution's facts",
   "facts.moveHint":
-    "Your facts win over the provider's. Purchases the new dates move go to the statement they now fall on.",
+    "Your facts win over the bank connection's. Purchases the new dates move go to the statement they now fall on.",
   "facts.total": "Total on the bill",
   "facts.minimum": "Minimum payment",
   "facts.closing": "Closing date",
