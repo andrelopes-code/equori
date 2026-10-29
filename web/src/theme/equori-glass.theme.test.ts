@@ -234,16 +234,16 @@ test("a chart's overlays blur what is behind them", () => {
 });
 
 // The table view of a chart covers the plot: the page shows through it as through the chart's
-// card, and its sticky header, which reads the chart's surface, takes the fill of every other
-// sticky table header. A full-screen chart covers the page and keeps its opaque surface.
-test("a chart's table view is glass and its header is filled", () => {
+// card. Its sticky header reads the chart's surface and no blur reaches it, so it is opaque: a
+// translucent header shows the rows that pass under it. A full-screen chart keeps its surface.
+test("a chart's table view is glass and its header is opaque", () => {
   assert.match(
     css,
     /\[data-ui="chart"\] \[data-part="table-region"\] \{\s*background-color: transparent;/,
   );
   assert.match(
     css,
-    /\[data-ui="chart"\]:not\(\[data-fullscreen\]\):has\(\[data-part="table-region"\]\) \{\s*--slotted-chart-surface: var\(--glass-fill-sticky\);/,
+    /\[data-ui="chart"\]:not\(\[data-fullscreen\]\):has\(\[data-part="table-region"\]\) \{\s*--slotted-chart-surface: var\(--slotted-surface-raised\);/,
   );
 });
 

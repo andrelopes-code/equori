@@ -2052,7 +2052,7 @@
     }
 
     &[data-slotted-scheme="dark"] [data-ui="chart"]:not([data-fullscreen]):has([data-part="table-region"]) {
-      --slotted-chart-surface: var(--glass-fill-sticky);
+      --slotted-chart-surface: var(--slotted-surface-raised);
     }
 
     &[data-slotted-scheme="dark"] [data-ui="chart"] [data-part="menu"] {
