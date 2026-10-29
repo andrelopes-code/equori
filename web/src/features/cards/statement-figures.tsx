@@ -4,7 +4,8 @@ import { Stack } from "@slotted/react/stack";
 import type { components } from "@/api/schema.gen";
 import { DifferenceProposal } from "@/features/cards/difference-proposal";
 import { UnconfirmedNotice } from "@/features/cards/unconfirmed-notice";
-import { useT } from "@/i18n/i18n-provider";
+import { formatDate } from "@/i18n/format";
+import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -22,6 +23,7 @@ export function StatementFigures({
   scale: (code: string) => number;
 }) {
   const t = useT();
+  const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
   const money = (m: components["schemas"]["Money"]) =>
     fmt.money(m, scale(m.currency));
@@ -30,6 +32,16 @@ export function StatementFigures({
     scale: scale(m.currency),
   });
   const institution = statement.institution;
+  const overdue = statement.status === "overdue";
+  const minimumNote =
+    institution?.minimum === undefined
+      ? t("statement.unpaidNote")
+      : t("statement.minimum", { amount: money(institution.minimum) });
+  const unpaidNote = overdue
+    ? t("statement.overdueSince", {
+        date: formatDate(statement.due_date, locale),
+      })
+    : minimumNote;
   return (
     <Stack gap={3}>
       <FigureGrid label={t("statement.figures")}>
@@ -73,11 +85,8 @@ export function StatementFigures({
         <FigureCard
           label={t("statement.unpaid")}
           value={figure(statement.unpaid)}
-          note={
-            institution?.minimum === undefined
-              ? t("statement.unpaidNote")
-              : t("statement.minimum", { amount: money(institution.minimum) })
-          }
+          note={unpaidNote}
+          attention={overdue ? "danger" : undefined}
         />
       </FigureGrid>
       <Text size="sm" tone="muted">

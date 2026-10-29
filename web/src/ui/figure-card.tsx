@@ -12,11 +12,12 @@ import {
 } from "@slotted/react/stat-card";
 import type { ReactNode } from "react";
 
+import styles from "@/ui/figure-card.module.css";
 import { MoneyValue } from "@/ui/money-value";
 import type { MoneyAmount } from "@/ui/money-value";
 
-// One figure of the categories page: a label, a value, the line that says what it counts, and
-// optionally the change from the month before and a door to the records.
+// One figure of a page: a label, a value, the line that says what it counts, and optionally the
+// change from the month before, a trend, and a door to the records.
 export function FigureCard({
   label,
   value,
@@ -25,6 +26,7 @@ export function FigureCard({
   delta,
   trend,
   goodWhen = "up",
+  attention,
   loading = false,
 }: {
   label: string;
@@ -38,6 +40,9 @@ export function FigureCard({
   trend?: ReactNode;
   // "none" for a figure with no good direction.
   goodWhen?: "up" | "down" | "none";
+  // A figure past a threshold the page states. The note says which one: colour is never the only
+  // channel (OV-04).
+  attention?: "warning" | "danger" | undefined;
   loading?: boolean;
 }) {
   return (
@@ -48,6 +53,8 @@ export function FigureCard({
       status={!loading && value === undefined ? "empty" : "ready"}
       goodWhen={goodWhen}
       formatOptions={{ maximumFractionDigits: 1 }}
+      className={styles.card}
+      data-attention={attention}
       {...(delta === undefined ? {} : { delta })}
     >
       <StatCardHeader>

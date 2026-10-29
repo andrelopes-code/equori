@@ -27,6 +27,8 @@ export interface CardTotals {
   open: Money;
   due: Money;
   nearestDue: string | undefined;
+  // The due date of the oldest statement past it; undefined when none is.
+  overdueSince: string | undefined;
   available: Money;
   limit: Money;
 }
@@ -48,6 +50,10 @@ export function cardTotals(
     );
   const unpaid = cards.flatMap((c) => c.unpaid);
   const nearestDue = unpaid.map((s) => s.due_date).sort()[0];
+  const overdueSince = unpaid
+    .filter((s) => s.status === "overdue")
+    .map((s) => s.due_date)
+    .sort()[0];
   return {
     open: {
       amount: sum(cards.map((c) => c.current?.open_amount)),
@@ -55,6 +61,7 @@ export function cardTotals(
     },
     due: { amount: sum(unpaid.map((s) => s.unpaid)), currency: base },
     nearestDue,
+    overdueSince,
     available: {
       amount: sum(cards.map((c) => c.account.card?.available_limit)),
       currency: base,

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import {
+  accountFixtures,
   accountRoutes,
   cardID,
   cardRoutes,
@@ -93,6 +94,66 @@ describe("CardPage", () => {
     expect(
       await within(figures).findByText(moneyValue("R$800.00")),
     ).toBeInTheDocument();
+  });
+
+  it("flags a free limit past the card's limit and a statement overdue", async () => {
+    const card = accountFixtures.find((a) => a.id === cardID);
+    await renderApp(`/cards/${cardID}`, {
+      fetch: api([], {
+        [`GET /api/v1/accounts/${cardID}`]: () =>
+          json(200, {
+            ...card,
+            card: {
+              credit_limit: money(800000),
+              available_limit: money(-40000),
+            },
+          }),
+        [`GET /api/v1/accounts/${cardID}/statements`]: () =>
+          json(200, {
+            items: statementFixtures.map((s) =>
+              s.reference === "2026-10" ? { ...s, status: "overdue" } : s,
+            ),
+          }),
+      }),
+    });
+
+    const figures = await screen.findByRole("region", {
+      name: catalogEn["card.figures"],
+    });
+    const free = within(figures).getByRole("group", {
+      name: catalogEn["cards.figure.available"],
+    });
+    const next = within(figures).getByRole("group", {
+      name: catalogEn["card.figure.next"],
+    });
+
+    await waitFor(() => {
+      expect(free).toHaveAttribute("data-attention", "danger");
+    });
+    expect(
+      within(free).getByText(
+        words("accountCard.meter.credit.over", { amount: "R$400.00" }),
+      ),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(next).toHaveAttribute("data-attention", "danger");
+    });
+    expect(
+      within(next).getByText(
+        words("card.overdueNote", { count: "1", date: "10/25/2026" }),
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("flags nothing on a card within its limit and with nothing overdue", async () => {
+    await renderApp(`/cards/${cardID}`, { fetch: api() });
+
+    const figures = await screen.findByRole("region", {
+      name: catalogEn["card.figures"],
+    });
+    await within(figures).findByText(moneyValue("R$5,500.00"));
+
+    expect(figures.querySelectorAll("[data-attention]")).toHaveLength(0);
   });
 
   it("lists the statements and opens one", async () => {

@@ -562,6 +562,7 @@ export const accountsEn = {
   "statement.status.paid": "Paid",
   "statement.status.partially_paid": "Partly paid",
   "statement.status.overdue": "Overdue",
+  "statement.overdueSince": "Overdue since {date}",
   "statement.status.financed": "Financed",
   "cards.subtitle":
     "{count} cards: what each bills now, what is due and the limit left.",
@@ -780,6 +781,7 @@ export const accountsEn = {
   "kind.title.loan": "Loan",
   "kind.title.payable": "Payable",
   "card.owedNote": "{count} statements open; the oldest was due on {date}",
+  "card.overdueNote": "{count} statements open; overdue since {date}",
   "cards.subtitleOne":
     "1 card: what it bills now, what is due and the limit left.",
   "account.figure.neverNote":

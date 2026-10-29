@@ -140,6 +140,30 @@ describe("StatementPage", () => {
     ).toBeInTheDocument();
   });
 
+  it("flags what an overdue statement still owes", async () => {
+    await renderApp(path, {
+      fetch: api([], {
+        [`GET /api/v1/statements/${closedStatementID}`]: () =>
+          json(200, detail(closed, { status: "overdue" })),
+      }),
+    });
+
+    const figures = await screen.findByRole("region", {
+      name: catalogEn["statement.figures"],
+    });
+    const unpaid = await within(figures).findByRole("group", {
+      name: catalogEn["statement.unpaid"],
+    });
+
+    expect(unpaid).toHaveAttribute("data-attention", "danger");
+    expect(
+      within(unpaid).getByText(
+        words("statement.overdueSince", { date: "10/25/2026" }),
+      ),
+    ).toBeInTheDocument();
+    expect(figures.querySelectorAll("[data-attention]")).toHaveLength(1);
+  });
+
   it("compares the total with what the institution reported", async () => {
     await renderApp(path, {
       fetch: api([], {

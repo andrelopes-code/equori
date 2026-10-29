@@ -3,6 +3,7 @@ import { memo } from "react";
 import type { components } from "@/api/schema.gen";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import type { TFunction } from "@/i18n/i18n-provider";
 import { FigureCard } from "@/ui/figure-card";
 import { FigureGrid } from "@/ui/figure-grid";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -39,8 +40,19 @@ export const CardFigures = memo(function CardFigures({
   });
   const oldest = unpaid[0];
   const owed = unpaid.reduce((sum, s) => sum + s.unpaid.amount, 0);
+  const overdue = unpaid.find((s) => s.status === "overdue");
   const limit = account.card?.credit_limit;
   const available = account.card?.available_limit;
+  const overLimit = available !== undefined && available.amount < 0;
+  const limitNote =
+    limit === undefined
+      ? t("cards.limitNone")
+      : t("cards.limitOf", { limit: money(limit) });
+  const availableNote = overLimit
+    ? t("accountCard.meter.credit.over", {
+        amount: money({ ...available, amount: -available.amount }),
+      })
+    : limitNote;
   return (
     <FigureGrid label={t("card.figures")}>
       <FigureCard
@@ -64,24 +76,15 @@ export const CardFigures = memo(function CardFigures({
               : t("card.nothing")
             : figure({ amount: owed, currency: oldest.unpaid.currency })
         }
-        note={
-          oldest === undefined
-            ? t("cards.nothingDue")
-            : t("card.owedNote", {
-                count: unpaid.length,
-                date: formatDate(oldest.due_date, locale),
-              })
-        }
+        note={owedNoteOf(unpaid, t, locale)}
+        attention={overdue === undefined ? undefined : "danger"}
         loading={loading}
       />
       <FigureCard
         label={t("cards.figure.available")}
         value={available === undefined ? undefined : figure(available)}
-        note={
-          limit === undefined
-            ? t("cards.limitNone")
-            : t("cards.limitOf", { limit: money(limit) })
-        }
+        note={availableNote}
+        attention={overLimit ? "danger" : undefined}
       />
       <FigureCard
         label={t("card.figure.committed")}
@@ -92,3 +95,21 @@ export const CardFigures = memo(function CardFigures({
     </FigureGrid>
   );
 });
+
+// What the closed statements owe: the date the oldest one is overdue since, or the date it was
+// due.
+function owedNoteOf(
+  unpaid: readonly Statement[],
+  t: TFunction,
+  locale: string,
+): string {
+  const oldest = unpaid[0];
+  const overdue = unpaid.find((s) => s.status === "overdue");
+
+  if (oldest === undefined) return t("cards.nothingDue");
+
+  return t(overdue === undefined ? "card.owedNote" : "card.overdueNote", {
+    count: unpaid.length,
+    date: formatDate((overdue ?? oldest).due_date, locale),
+  });
+}

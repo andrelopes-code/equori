@@ -27,17 +27,13 @@ import { useApi } from "@/api/api-context";
 import { accountsQuery } from "@/features/accounts";
 import { cardTotals } from "@/features/cards/card-totals";
 import { CardTile } from "@/features/cards/card-tile";
+import { CardsFigures } from "@/features/cards/cards-figures";
 import styles from "@/features/cards/card-tile.module.css";
 import { useCardStatements } from "@/features/cards/use-card-statements";
 import { institutionsQuery, settingsQuery, useScale } from "@/features/setup";
-import { formatDate } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { FigureCard } from "@/ui/figure-card";
-import { FigureGrid } from "@/ui/figure-grid";
+import { useT } from "@/i18n/i18n-provider";
 import { HeaderAction } from "@/ui/header-action";
 import { QueryError } from "@/ui/query-error";
-import { useMoneyFormat } from "@/privacy/use-money-format";
-import type { MoneyAmount } from "@/ui/money-value";
 import { useServed } from "@/ui/use-served";
 
 // The credit cards: what each one bills now, what is due and when, and how much limit is free.
@@ -48,8 +44,6 @@ const newCard = {
 
 export function CardsPage() {
   const t = useT();
-  const [locale] = useAppLocale();
-  const fmt = useMoneyFormat();
   const api = useApi();
   const navigate = useNavigate();
   const served = useServed();
@@ -74,12 +68,6 @@ export function CardsPage() {
           base,
         );
   const sc = scale ?? (() => 2);
-  const money = (m: { amount: number; currency: string }) =>
-    fmt.money(m, sc(m.currency));
-  const figure = (m: { amount: number; currency: string }): MoneyAmount => ({
-    money: m,
-    scale: sc(m.currency),
-  });
   const loading =
     accounts.isPending || states.some((s) => s.loading) || scale === null;
   const openCount = (accounts.data ?? []).filter(
@@ -145,48 +133,7 @@ export function CardsPage() {
           </ResultState>
         ) : (
           <Stack gap={6}>
-            <FigureGrid label={t("cards.figures")}>
-              <FigureCard
-                label={t("cards.figure.open")}
-                value={
-                  totals === undefined || loading
-                    ? undefined
-                    : figure(totals.open)
-                }
-                note={t("cards.openNote")}
-                loading={loading}
-              />
-              <FigureCard
-                label={t("cards.figure.due")}
-                value={
-                  totals === undefined || loading
-                    ? undefined
-                    : figure(totals.due)
-                }
-                note={
-                  totals?.nearestDue === undefined
-                    ? t("cards.nothingDue")
-                    : t("cards.dueNote", {
-                        date: formatDate(totals.nearestDue, locale),
-                      })
-                }
-                loading={loading}
-              />
-              <FigureCard
-                label={t("cards.figure.available")}
-                value={
-                  totals === undefined || loading
-                    ? undefined
-                    : figure(totals.available)
-                }
-                note={
-                  totals === undefined
-                    ? t("cards.limitNone")
-                    : t("cards.limitOf", { limit: money(totals.limit) })
-                }
-                loading={loading}
-              />
-            </FigureGrid>
+            <CardsFigures totals={totals} loading={loading} />
             <Switch checked={showClosed} onCheckedChange={setShowClosed}>
               {t("cards.showClosed")}
             </Switch>

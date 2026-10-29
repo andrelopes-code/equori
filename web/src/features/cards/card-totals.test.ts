@@ -42,6 +42,27 @@ describe("cardTotals", () => {
   });
 });
 
+describe("cardTotals overdue", () => {
+  it("dates the oldest statement past its due date", () => {
+    const statements = statementFixtures.map((s) =>
+      s.reference === "2026-10" ? { ...s, status: "overdue" } : s,
+    );
+    const { current, unpaid } = currentAndUnpaid(statements as never);
+
+    const totals = cardTotals([{ account: card, current, unpaid }], "BRL");
+
+    expect(totals.overdueSince).toBe("2026-10-25");
+  });
+
+  it("dates nothing when no statement is overdue", () => {
+    const { current, unpaid } = currentAndUnpaid(statementFixtures as never);
+
+    const totals = cardTotals([{ account: card, current, unpaid }], "BRL");
+
+    expect(totals.overdueSince).toBeUndefined();
+  });
+});
+
 describe("owedAmount", () => {
   it("adds what each closed statement still owes", () => {
     const unpaid = [

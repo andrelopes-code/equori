@@ -560,6 +560,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "statement.status.paid": "Paga",
   "statement.status.partially_paid": "Paga em parte",
   "statement.status.overdue": "Vencida",
+  "statement.overdueSince": "Vencida desde {date}",
   "statement.status.financed": "Financiada",
   "cards.subtitle":
     "{count} cartões: o que cada um cobra agora, o que vence e o limite livre.",
@@ -778,6 +779,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "kind.title.loan": "Empréstimo",
   "kind.title.payable": "A pagar",
   "card.owedNote": "{count} faturas em aberto; a mais antiga venceu em {date}",
+  "card.overdueNote": "{count} faturas em aberto; vencida desde {date}",
   "cards.subtitleOne":
     "1 cartão: o que cobra agora, o que vence e o limite livre.",
   "account.figure.neverNote":

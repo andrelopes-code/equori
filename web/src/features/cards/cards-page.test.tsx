@@ -9,6 +9,8 @@ import {
   cardID,
   cardRoutes,
   closedStatementID,
+  money,
+  statementFixtures,
 } from "@/testing/account-api";
 import { fakeApi, json } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
@@ -45,6 +47,63 @@ describe("CardsPage", () => {
     expect(
       within(figures).getByText(words("cards.dueNote", { date: "10/25/2026" })),
     ).toBeInTheDocument();
+  });
+
+  it("flags what is due past its date and a free limit below zero", async () => {
+    await renderApp("/cards", {
+      fetch: api({
+        "GET /api/v1/accounts": () =>
+          json(200, {
+            items: accountFixtures.map((a) =>
+              a.id === cardID
+                ? {
+                    ...a,
+                    card: {
+                      credit_limit: money(800000),
+                      available_limit: money(-40000),
+                    },
+                  }
+                : a,
+            ),
+          }),
+        [`GET /api/v1/accounts/${cardID}/statements`]: () =>
+          json(200, {
+            items: statementFixtures.map((s) =>
+              s.reference === "2026-10" ? { ...s, status: "overdue" } : s,
+            ),
+          }),
+      }),
+    });
+
+    const figures = await screen.findByRole("region", {
+      name: catalogEn["cards.figures"],
+    });
+    const due = within(figures).getByRole("group", {
+      name: catalogEn["cards.figure.due"],
+    });
+    const free = within(figures).getByRole("group", {
+      name: catalogEn["cards.figure.available"],
+    });
+
+    await waitFor(() => {
+      expect(due).toHaveAttribute("data-attention", "danger");
+    });
+    expect(
+      within(due).getByText(
+        words("statement.overdueSince", { date: "10/25/2026" }),
+      ),
+    ).toBeInTheDocument();
+    expect(free).toHaveAttribute("data-attention", "danger");
+    expect(
+      within(free).getByText(
+        words("accountCard.meter.credit.over", { amount: "R$400.00" }),
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(figures).getByRole("group", {
+        name: catalogEn["cards.figure.open"],
+      }),
+    ).not.toHaveAttribute("data-attention");
   });
 
   it("shows each card's statement and limit on the card face only", async () => {
