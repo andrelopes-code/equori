@@ -35,7 +35,7 @@ import { AttachmentsSection } from "@/features/transactions/attachments-section"
 import { CategorySection } from "@/features/transactions/category-section";
 import { HistorySection } from "@/features/transactions/history-section";
 import { LinksSection } from "@/features/transactions/links-section";
-import { PostingsTable } from "@/features/transactions/postings-table";
+import { MovedAccountsSection } from "@/features/transactions/moved-accounts-section";
 import { ReimbursementDialog } from "@/features/transactions/reimbursement-dialog";
 import {
   expenseState,
@@ -271,18 +271,12 @@ export function TransactionDetail({
               />
             </DetailPanelSection>
           )}
-          <DetailPanelSection
-            name="postings"
-            label={t("detail.postings")}
-            count={tx.postings.length}
-          >
-            <PostingsTable
-              postings={tx.postings}
-              accounts={accounts}
-              categories={categories}
-              scale={ready.scale}
-            />
-          </DetailPanelSection>
+          <MovedAccountsSection
+            postings={tx.postings}
+            accounts={accounts}
+            categories={categories}
+            scale={ready.scale}
+          />
           {hasLinks && (
             <DetailPanelSection name="links" label={t("detail.links")}>
               <LinksSection transaction={tx} />

@@ -161,12 +161,16 @@ describe("transaction detail", () => {
     expect(
       await screen.findByRole("heading", { level: 1, name: "Padaria" }),
     ).toBeInTheDocument();
-    const postings = screen.getByRole("table", {
+    const moved = screen.getByRole("region", {
+      name: catalogEn["detail.accounts"],
+    });
+    const postings = within(moved).getByRole("table", {
       name: catalogEn["postings.caption"],
     });
     expect(within(postings).getByText("Itau")).toBeInTheDocument();
-    expect(within(postings).getByText("Mercado")).toBeInTheDocument();
     expect(within(postings).getByText("−R$120.00")).toBeInTheDocument();
+    // The category side is the category section's; a +120.00 beside it read as money received.
+    expect(within(postings).queryByText("Mercado")).not.toBeInTheDocument();
     expect(
       await screen.findByText(catalogEn["method.manual"]),
     ).toBeInTheDocument();
@@ -175,6 +179,38 @@ describe("transaction detail", () => {
     expect(
       await screen.findByText(catalogEn["attachments.none"]),
     ).toBeInTheDocument();
+  });
+
+  it("draws no accounts section when every posting is on a category", async () => {
+    const brl = (amount: number) => ({ amount, currency: "BRL" });
+    const recategorized = transactionFixture({
+      postings: [
+        {
+          id: "p1",
+          account_id: leisureID,
+          amount: brl(-12000),
+          weight: brl(-12000),
+          status: "cleared",
+        },
+        {
+          id: "p2",
+          account_id: foodID,
+          amount: brl(12000),
+          weight: brl(12000),
+          status: "cleared",
+        },
+      ],
+    });
+    await renderApp(`/transactions/${txID}`, {
+      width: 390,
+      fetch: api([], () => json(200, recategorized)),
+    });
+
+    await screen.findByRole("region", { name: catalogEn["detail.category"] });
+
+    expect(
+      screen.queryByRole("region", { name: catalogEn["detail.accounts"] }),
+    ).not.toBeInTheDocument();
   });
 
   // Owner review 2026-10-22: on a phone the four labelled actions squeezed into one row and broke
@@ -280,7 +316,7 @@ describe("transaction detail", () => {
     });
     const heading = await screen.findByRole("heading", {
       level: 3,
-      name: new RegExp(`^${catalogEn["detail.postings"]}`),
+      name: new RegExp(`^${catalogEn["detail.accounts"]}`),
     });
     const panel = heading.closest('[data-ui="detail-panel"]');
     expect(panel).not.toBeNull();

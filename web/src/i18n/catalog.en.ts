@@ -481,6 +481,7 @@ export const catalogEn = {
   "detail.loadFailed": "The transaction could not be loaded",
   "detail.category": "Category",
   "detail.postings": "Postings",
+  "detail.accounts": "Accounts involved",
   "detail.postingsHelp":
     "Each line moves an amount into or out of an account or a category. What leaves on one side enters on another, so the lines balance.",
   "detail.links": "Linked transactions",
@@ -498,7 +499,7 @@ export const catalogEn = {
   "detail.category.addPart": "Add category",
   "detail.category.balanced": "Fully distributed",
   "detail.category.remaining": "{amount} left to distribute",
-  "postings.caption": "Postings of the transaction",
+  "postings.caption": "Accounts involved in the transaction",
   "postings.account": "Account",
   "postings.amount": "Amount",
   "postings.status": "Status",

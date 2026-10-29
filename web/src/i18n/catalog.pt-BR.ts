@@ -486,6 +486,7 @@ export const catalogPtBR: Catalog = {
   "detail.loadFailed": "Não foi possível carregar a transação",
   "detail.category": "Categoria",
   "detail.postings": "Lançamentos",
+  "detail.accounts": "Contas movimentadas",
   "detail.postingsHelp":
     "Cada linha move um valor para dentro ou para fora de uma conta ou categoria. O que sai de um lado entra em outro, então as linhas se equilibram.",
   "detail.links": "Transações vinculadas",
@@ -503,7 +504,7 @@ export const catalogPtBR: Catalog = {
   "detail.category.addPart": "Adicionar categoria",
   "detail.category.balanced": "Tudo distribuído",
   "detail.category.remaining": "Faltam {amount} para distribuir",
-  "postings.caption": "Lançamentos da transação",
+  "postings.caption": "Contas movimentadas pela transação",
   "postings.account": "Conta",
   "postings.amount": "Valor",
   "postings.status": "Situação",

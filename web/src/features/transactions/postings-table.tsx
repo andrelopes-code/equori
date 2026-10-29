@@ -11,7 +11,6 @@ import {
 import { Tag } from "@slotted/react/tag";
 
 import type { components } from "@/api/schema.gen";
-import type { CategoryEntry } from "@/features/categories";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { OriginalAmount } from "@/features/transactions/original-amount";
 import { formatDate, formatReferenceMonth } from "@/i18n/format";
@@ -37,12 +36,10 @@ const statusTone = {
 export function PostingsTable({
   postings,
   accounts,
-  categories,
   scale,
 }: {
   postings: readonly Posting[];
   accounts: Map<string, Account>;
-  categories: Map<string, CategoryEntry>;
   scale: (code: string) => number;
 }) {
   const t = useT();
@@ -66,7 +63,6 @@ export function PostingsTable({
         <TableBody>
           {postings.map((posting) => {
             const name =
-              categories.get(posting.account_id)?.path ??
               accounts.get(posting.account_id)?.name ??
               t("postings.unknownAccount");
             return (
