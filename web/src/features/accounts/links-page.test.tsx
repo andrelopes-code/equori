@@ -198,13 +198,15 @@ describe("Account links", () => {
       within(detail).getByText(catalogEn["links.connectionState.ok"]),
     ).toBeVisible();
     expect(
-      within(detail).getByText(new RegExp(catalogEn["sync.provider.UPDATED"])),
+      within(detail).getByText(catalogEn["sync.provider.UPDATED"]),
     ).toBeVisible();
-    expect(
-      within(detail).getByText(
-        new RegExp(words("links.itemUpdate", { time: "" }).trim()),
-      ),
-    ).toBeVisible();
+    for (const term of [
+      "sync.bankData",
+      "sync.appRead",
+      "sync.nextFetch",
+    ] as const) {
+      expect(within(detail).getByText(catalogEn[term])).toBeVisible();
+    }
     const linked = await row("Conta Corrente");
     expect(
       within(linked).getByText(formatDate("2026-09-01", "en")),

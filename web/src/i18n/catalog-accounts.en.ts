@@ -542,7 +542,6 @@ export const accountsEn = {
   "links.connectionState.failed": "Failed",
   "links.needsOwner":
     "The aggregator waits for an action only the owner can take. Complete it at the aggregator, then sync again.",
-  "links.itemUpdate": "bank data from {time}",
   "links.syncFrom": "Imports from",
   "links.batches": "Imports created",
   "links.batch": "Import of {account}",
@@ -553,8 +552,6 @@ export const accountsEn = {
   "links.deleteConfirm": "Delete connection",
   "links.syncOf": "Sync {name} now",
   "links.synced": "{count} accounts synced.",
-  "links.syncedAt": "read on {time}",
-  "links.nextUpdate": "bank fetch on {time}",
   "links.empty": "No Open Finance connection",
   "links.emptyHint":
     "Connections are created in the settings; their accounts appear here to be linked.",

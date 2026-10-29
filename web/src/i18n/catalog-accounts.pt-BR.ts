@@ -540,7 +540,6 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "links.connectionState.failed": "Com falha",
   "links.needsOwner":
     "O agregador aguarda uma ação que só o titular pode fazer. Conclua-a no agregador e sincronize de novo.",
-  "links.itemUpdate": "dados do banco de {time}",
   "links.syncFrom": "Importa a partir de",
   "links.batches": "Importações criadas",
   "links.batch": "Importação de {account}",
@@ -551,8 +550,6 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "links.deleteConfirm": "Excluir conexão",
   "links.syncOf": "Sincronizar {name} agora",
   "links.synced": "{count} contas sincronizadas.",
-  "links.syncedAt": "lida em {time}",
-  "links.nextUpdate": "busca no banco em {time}",
   "links.empty": "Nenhuma conexão Open Finance",
   "links.emptyHint":
     "Conexões são criadas nas configurações; as contas delas aparecem aqui para vincular.",

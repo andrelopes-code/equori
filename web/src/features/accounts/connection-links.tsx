@@ -25,8 +25,8 @@ import {
   useSyncConnection,
 } from "@/features/accounts/api";
 import { ConnectionDeleteDialog } from "@/features/accounts/connection-delete-dialog";
+import { ConnectionTimesList } from "@/features/accounts/connection-times-list";
 import { formatDate } from "@/i18n/format";
-import { formatInstant } from "@/features/accounts/instant";
 import { subtypeWords } from "@/features/accounts/sync-tab";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { routeTo } from "@/ui/route-to";
@@ -117,24 +117,6 @@ export function ConnectionLinks({
     </Inline>
   );
   const provider = providerWords[connection.provider_status];
-  const facts = [
-    provider === undefined ? connection.provider_status : t(provider),
-    connection.last_item_update_at === undefined
-      ? undefined
-      : t("links.itemUpdate", {
-          time: formatInstant(connection.last_item_update_at, locale),
-        }),
-    connection.last_synced_at === undefined
-      ? undefined
-      : t("links.syncedAt", {
-          time: formatInstant(connection.last_synced_at, locale),
-        }),
-    connection.next_item_update_at === undefined
-      ? undefined
-      : t("links.nextUpdate", {
-          time: formatInstant(connection.next_item_update_at, locale),
-        }),
-  ].filter((p) => p !== undefined);
   return (
     <Stack
       gap={3}
@@ -149,10 +131,12 @@ export function ConnectionLinks({
             <Tag size="sm" tone={stateTones[connection.state]}>
               {t(`links.connectionState.${connection.state}`)}
             </Tag>
+            <Tag size="sm" tone="secondary">
+              {provider === undefined
+                ? connection.provider_status
+                : t(provider)}
+            </Tag>
           </Inline>
-          <Text size="sm" tone="muted">
-            {facts.join(" · ")}
-          </Text>
         </Stack>
         <Inline gap={2}>
           <Button
@@ -193,6 +177,7 @@ export function ConnectionLinks({
           </Button>
         </Inline>
       </Inline>
+      <ConnectionTimesList connection={connection} />
       {connection.state === "needs_owner" && (
         <Alert tone="warning">
           <AlertContent>
