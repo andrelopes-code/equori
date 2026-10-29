@@ -65,6 +65,16 @@ async function openForm() {
 }
 
 describe("Reconciliation", () => {
+  it("leads to the help page on checking a balance", async () => {
+    await renderApp(`/accounts/${reserveID}?tab=reconciliation`, {
+      fetch: api(reserveID),
+    });
+
+    expect(
+      await screen.findByRole("link", { name: catalogEn["help.screen"] }),
+    ).toHaveAttribute("href", "/help/check-balance");
+  });
+
   it("records the institution's balance as a manual assertion", async () => {
     const bodies: unknown[] = [];
     await renderApp(`/accounts/${reserveID}?tab=reconciliation`, {

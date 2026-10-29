@@ -19,6 +19,7 @@ import type { AccountSearch } from "@/features/accounts/account-search";
 import { OpenDifferenceAlert } from "@/features/accounts/open-difference-alert";
 import type { Resolution } from "@/features/accounts/open-difference-alert";
 import { UnconfirmedTable } from "@/features/accounts/unconfirmed-table";
+import { HelpLink } from "@/features/help";
 import {
   reconciliationQuery,
   useResolveAssertion,
@@ -112,15 +113,18 @@ export function ReconciliationTab({
                       })}
                 </Text>
               </Stack>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setOutcome(null);
-                  setForm(true);
-                }}
-              >
-                {t("reconciliation.record")}
-              </Button>
+              <Inline gap={3}>
+                <HelpLink page="check-balance" />
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setOutcome(null);
+                    setForm(true);
+                  }}
+                >
+                  {t("reconciliation.record")}
+                </Button>
+              </Inline>
             </Inline>
             {outcome !== null && (
               <AssertionOutcomeAlert outcome={outcome} scale={scale} />
