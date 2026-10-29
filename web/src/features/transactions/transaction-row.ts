@@ -52,14 +52,13 @@ export function transactionRow(
   const category = named.map(({ account }) => account.name).join(", ");
   let accounts: string;
   if (transfer) {
-    const from = balance.filter((p) => p.amount < 0).map((p) => p.account.name);
-    const to = balance.filter((p) => p.amount > 0).map((p) => p.account.name);
-    accounts = `${from.join(", ")} → ${to.join(", ")}`;
+    const from = names(balance.filter((p) => p.amount < 0));
+    const to = names(balance.filter((p) => p.amount > 0));
+    accounts = `${from} → ${to}`;
   } else {
-    accounts = balance
-      .filter(({ account }) => account.id !== filterAccountId)
-      .map(({ account }) => account.name)
-      .join(", ");
+    accounts = names(
+      balance.filter(({ account }) => account.id !== filterAccountId),
+    );
   }
   const payee =
     tx.payee_id === undefined ? undefined : payeeNames.get(tx.payee_id);
@@ -78,4 +77,9 @@ export function transactionRow(
     money,
     voided: tx.voided_at !== undefined,
   };
+}
+
+// An installment purchase holds one card posting per installment; the card is named once.
+function names(posted: { account: Account }[]): string {
+  return [...new Set(posted.map(({ account }) => account.name))].join(", ");
 }
