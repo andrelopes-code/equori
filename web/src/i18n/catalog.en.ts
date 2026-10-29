@@ -1178,7 +1178,6 @@ export const catalogEn = {
   "ruleEditor.regexHint":
     "A pattern in RE2 syntax, matched against the text as the bank wrote it, case included; start with (?i) to ignore case. Example: (?i)^(uber|99)",
   "ruleEditor.regexPlaceholder": "(?i)^(uber|99)",
-  "ruleEditor.stepLabel": "Step {n}",
   "ruleEditor.reading": "The rule as it reads",
   "capture.title": "Write as text",
   "capture.subheading":

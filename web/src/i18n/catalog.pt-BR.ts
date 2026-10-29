@@ -1180,7 +1180,6 @@ export const catalogPtBR: Catalog = {
   "ruleEditor.regexHint":
     "Um padrão na sintaxe RE2, comparado ao texto como o banco escreveu, com maiúsculas; comece com (?i) para ignorá-las. Exemplo: (?i)^(uber|99)",
   "ruleEditor.regexPlaceholder": "(?i)^(uber|99)",
-  "ruleEditor.stepLabel": "Passo {n}",
   "ruleEditor.reading": "A regra por extenso",
   "capture.title": "Lançar por texto",
   "capture.subheading":
