@@ -51,6 +51,19 @@ export const catalogPtBR: Catalog = {
   "sync.nextFetch": "Próxima busca no banco",
   "sync.notReported": "Não informado",
   "more.title": "Mais",
+  "firstSteps.title": "Primeiros passos",
+  "firstSteps.description":
+    "Três passos para a visão geral mostrar para onde vai o seu dinheiro.",
+  "firstSteps.account": "Cadastre uma conta ou um cartão",
+  "firstSteps.accountHint": "Com o saldo que a instituição mostra hoje.",
+  "firstSteps.transactions": "Registre ou importe transações",
+  "firstSteps.transactionsHint":
+    "À mão, por um extrato ou por uma conexão bancária.",
+  "firstSteps.categories": "Dê uma categoria a cada transação",
+  "firstSteps.categoriesHint":
+    "Assim a visão geral mostra os gastos por categoria.",
+  "firstSteps.done": "Feito",
+  "firstSteps.guide": "Ver o roteiro do primeiro mês",
   "help.title": "Ajuda",
   "help.subtitle":
     "Roteiros, passos, referências e explicações sobre o equori.",

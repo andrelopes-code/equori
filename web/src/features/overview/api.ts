@@ -54,3 +54,16 @@ export function uncategorizedQuery(api: Client<paths>) {
     },
   });
 }
+
+// One transaction is enough to say the records hold some.
+export function anyTransactionQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: ["transactions", "any"] as const,
+    queryFn: async () => {
+      const page = await unwrap(
+        await api.GET("/transactions", { params: { query: { limit: 1 } } }),
+      );
+      return page.items.length > 0;
+    },
+  });
+}

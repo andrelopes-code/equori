@@ -4,6 +4,7 @@ import {
   usePersistedDashboardLayout,
 } from "@slotted/react/dashboard-grid";
 import { Page, PageBody } from "@slotted/react/page";
+import { Stack } from "@slotted/react/stack";
 import {
   PageHeader,
   PageHeaderActions,
@@ -19,6 +20,7 @@ import { AttentionBlock } from "@/features/overview/attention-block";
 import { BalanceChartBlock } from "@/features/overview/balance-chart-block";
 import { BudgetsBlock } from "@/features/overview/budgets-block";
 import { CardsBlock } from "@/features/overview/cards-block";
+import { FirstStepsBlock } from "@/features/overview/first-steps-block";
 import {
   DesktopFigure,
   type DesktopFigureKind,
@@ -117,68 +119,84 @@ export function OverviewPage() {
         </PageHeaderTitleArea>
       </PageHeader>
       <PageBody>
-        <DashboardGrid
-          aria-label={t("overview.block.label")}
-          editing={editing}
-          onEditingChange={setEditing}
-          layout={persisted.layout}
-          onLayoutChange={persisted.onLayoutChange}
-        >
-          {wide
-            ? [
-                ...desk.map(([kind, key]) => (
-                  <DesktopFigure
-                    key={kind}
+        <Stack gap={6}>
+          <FirstStepsBlock />
+
+          <DashboardGrid
+            aria-label={t("overview.block.label")}
+            editing={editing}
+            onEditingChange={setEditing}
+            layout={persisted.layout}
+            onLayoutChange={persisted.onLayoutChange}
+          >
+            {wide
+              ? [
+                  ...desk.map(([kind, key]) => (
+                    <DesktopFigure
+                      key={kind}
+                      month={month}
+                      kind={kind}
+                      {...placement(`figure-${kind}`, t(key), 3, 2, false)}
+                    />
+                  )),
+                  ...indicators,
+                  <BalanceChartBlock
+                    key="balance"
                     month={month}
-                    kind={kind}
-                    {...placement(`figure-${kind}`, t(key), 3, 2, false)}
-                  />
-                )),
-                ...indicators,
-                <BalanceChartBlock
-                  key="balance"
-                  month={month}
-                  {...placement(
-                    "balance",
-                    t("overview.balance.title"),
-                    8,
-                    4,
-                    false,
-                  )}
-                />,
-                <AttentionBlock key="attention" limit={4} {...at.attention} />,
-                <SpendingChart key="spending" month={month} {...at.spending} />,
-                <UpcomingBlock key="upcoming" {...at.upcoming} />,
-                <BudgetsBlock key="budgets" month={month} {...at.budgets} />,
-                <CardsBlock key="cards" {...at.cards} />,
-                <GoalsBlock key="goals" {...at.goals} />,
-              ]
-            : [
-                <AttentionBlock key="attention" {...at.attention} />,
-                ...worth.map(([kind, key]) => (
-                  <NetWorthFigure
-                    key={kind}
+                    {...placement(
+                      "balance",
+                      t("overview.balance.title"),
+                      8,
+                      4,
+                      false,
+                    )}
+                  />,
+                  <AttentionBlock
+                    key="attention"
+                    limit={4}
+                    {...at.attention}
+                  />,
+                  <SpendingChart
+                    key="spending"
                     month={month}
-                    kind={kind}
-                    {...placement(kind, t(key), 4, 2)}
-                  />
-                )),
-                ...indicators,
-                ...flows.map(([kind, key]) => (
-                  <MonthFlowFigure
-                    key={kind}
+                    {...at.spending}
+                  />,
+                  <UpcomingBlock key="upcoming" {...at.upcoming} />,
+                  <BudgetsBlock key="budgets" month={month} {...at.budgets} />,
+                  <CardsBlock key="cards" {...at.cards} />,
+                  <GoalsBlock key="goals" {...at.goals} />,
+                ]
+              : [
+                  <AttentionBlock key="attention" {...at.attention} />,
+                  ...worth.map(([kind, key]) => (
+                    <NetWorthFigure
+                      key={kind}
+                      month={month}
+                      kind={kind}
+                      {...placement(kind, t(key), 4, 2)}
+                    />
+                  )),
+                  ...indicators,
+                  ...flows.map(([kind, key]) => (
+                    <MonthFlowFigure
+                      key={kind}
+                      month={month}
+                      kind={kind}
+                      {...placement(`flow-${kind}`, t(key), 4, 2)}
+                    />
+                  )),
+                  <SpendingBlock
+                    key="spending"
                     month={month}
-                    kind={kind}
-                    {...placement(`flow-${kind}`, t(key), 4, 2)}
-                  />
-                )),
-                <SpendingBlock key="spending" month={month} {...at.spending} />,
-                <UpcomingBlock key="upcoming" {...at.upcoming} />,
-                <CardsBlock key="cards" {...at.cards} />,
-                <BudgetsBlock key="budgets" month={month} {...at.budgets} />,
-                <GoalsBlock key="goals" {...at.goals} />,
-              ]}
-        </DashboardGrid>
+                    {...at.spending}
+                  />,
+                  <UpcomingBlock key="upcoming" {...at.upcoming} />,
+                  <CardsBlock key="cards" {...at.cards} />,
+                  <BudgetsBlock key="budgets" month={month} {...at.budgets} />,
+                  <GoalsBlock key="goals" {...at.goals} />,
+                ]}
+          </DashboardGrid>
+        </Stack>
       </PageBody>
     </Page>
   );

@@ -50,6 +50,18 @@ export const catalogEn = {
   "sync.nextFetch": "Next bank fetch",
   "sync.notReported": "Not reported",
   "more.title": "More",
+  "firstSteps.title": "First steps",
+  "firstSteps.description":
+    "Three steps for the overview to show where your money goes.",
+  "firstSteps.account": "Add an account or a card",
+  "firstSteps.accountHint": "With the balance the institution shows today.",
+  "firstSteps.transactions": "Record or import transactions",
+  "firstSteps.transactionsHint":
+    "By hand, from a statement or through a bank connection.",
+  "firstSteps.categories": "Give each transaction a category",
+  "firstSteps.categoriesHint": "Then the overview shows spending by category.",
+  "firstSteps.done": "Done",
+  "firstSteps.guide": "See the first-month walkthrough",
   "help.title": "Help",
   "help.subtitle":
     "Walkthroughs, steps, references and explanations about equori.",
