@@ -26,6 +26,7 @@ import { toneSeed, toneSeeds, tones, useTone } from "@/theme/tone";
 import { typefaces, useTypeface } from "@/theme/typeface";
 import { useVisual } from "@/theme/visual";
 import { ChoiceCards } from "@/ui/choice-cards";
+import { Inline } from "@slotted/react";
 
 function oneOf<T extends string>(
   values: readonly T[],
@@ -218,14 +219,7 @@ export function SettingsAppearance() {
         </SettingsRow>
       </SettingsGroup>
 
-      <SettingsGroup
-        title={t("settings.appearance.motion")}
-        footer={
-          <Button variant="ghost" tone="secondary" onClick={resetAppearance}>
-            {t("settings.appearance.reset")}
-          </Button>
-        }
-      >
+      <SettingsGroup title={t("settings.appearance.motion")}>
         <Switch
           labelPlacement="start"
           checked={motion === "reduced"}
@@ -247,6 +241,11 @@ export function SettingsAppearance() {
           {t("settings.experimental.glass")}
         </Switch>
       </SettingsGroup>
+      <Inline justify="end">
+        <Button variant="ghost" tone="secondary" onClick={resetAppearance}>
+          {t("settings.appearance.reset")}
+        </Button>
+      </Inline>
     </SettingsSection>
   );
 }
