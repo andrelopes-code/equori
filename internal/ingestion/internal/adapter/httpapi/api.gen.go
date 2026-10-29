@@ -809,6 +809,9 @@ type ServerInterface interface {
 	// SyncConnection Sync every mapped account of the connection now (P6 amendment A43).
 	// (POST /connections/{id}/sync)
 	SyncConnection(w http.ResponseWriter, r *http.Request, id ID)
+	// ReopenExternalRecord Return a discarded record to review (A140).
+	// (POST /external-records/{id}/reopen)
+	ReopenExternalRecord(w http.ResponseWriter, r *http.Request, id ID)
 	// ResolveExternalRecord Resolve a record that needs review.
 	// (POST /external-records/{id}/resolve)
 	ResolveExternalRecord(w http.ResponseWriter, r *http.Request, id ID)
@@ -1129,6 +1132,32 @@ func (siw *ServerInterfaceWrapper) SyncConnection(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.SyncConnection(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ReopenExternalRecord operation middleware
+func (siw *ServerInterfaceWrapper) ReopenExternalRecord(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReopenExternalRecord(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1569,6 +1598,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/import-batches/{id}", wrapper.GetImportBatch)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/import-batches/{id}/records", wrapper.ListBatchRecords)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/unconfirmed", wrapper.ListUnconfirmed)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/external-records/{id}/reopen", wrapper.ReopenExternalRecord)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/external-records/{id}/resolve", wrapper.ResolveExternalRecord)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/aggregators", wrapper.ListAggregators)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/integrations", wrapper.ListIntegrations)
@@ -2345,6 +2375,72 @@ func (response SyncConnection502ApplicationProblemPlusJSONResponse) VisitSyncCon
 	return err
 }
 
+type ReopenExternalRecordRequestObject struct {
+	Id ID `json:"id"`
+}
+
+type ReopenExternalRecordResponseObject interface {
+	VisitReopenExternalRecordResponse(w http.ResponseWriter) error
+}
+
+type ReopenExternalRecord200JSONResponse ExternalRecord
+
+func (response ReopenExternalRecord200JSONResponse) VisitReopenExternalRecordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReopenExternalRecord401ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ReopenExternalRecord401ApplicationProblemPlusJSONResponse) VisitReopenExternalRecordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReopenExternalRecord404ApplicationProblemPlusJSONResponse Problem
+
+func (response ReopenExternalRecord404ApplicationProblemPlusJSONResponse) VisitReopenExternalRecordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReopenExternalRecord409ApplicationProblemPlusJSONResponse Problem
+
+func (response ReopenExternalRecord409ApplicationProblemPlusJSONResponse) VisitReopenExternalRecordResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ResolveExternalRecordRequestObject struct {
 	Id   ID `json:"id"`
 	Body *ResolveExternalRecordJSONRequestBody
@@ -2967,6 +3063,9 @@ type StrictServerInterface interface {
 	// SyncConnection Sync every mapped account of the connection now (P6 amendment A43).
 	// (POST /connections/{id}/sync)
 	SyncConnection(ctx context.Context, request SyncConnectionRequestObject) (SyncConnectionResponseObject, error)
+	// ReopenExternalRecord Return a discarded record to review (A140).
+	// (POST /external-records/{id}/reopen)
+	ReopenExternalRecord(ctx context.Context, request ReopenExternalRecordRequestObject) (ReopenExternalRecordResponseObject, error)
 	// ResolveExternalRecord Resolve a record that needs review.
 	// (POST /external-records/{id}/resolve)
 	ResolveExternalRecord(ctx context.Context, request ResolveExternalRecordRequestObject) (ResolveExternalRecordResponseObject, error)
@@ -3339,6 +3438,32 @@ func (sh *strictHandler) SyncConnection(w http.ResponseWriter, r *http.Request, 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SyncConnectionResponseObject); ok {
 		if err := validResponse.VisitSyncConnectionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReopenExternalRecord operation middleware
+func (sh *strictHandler) ReopenExternalRecord(w http.ResponseWriter, r *http.Request, id ID) {
+	var request ReopenExternalRecordRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReopenExternalRecord(ctx, request.(ReopenExternalRecordRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReopenExternalRecord")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReopenExternalRecordResponseObject); ok {
+		if err := validResponse.VisitReopenExternalRecordResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

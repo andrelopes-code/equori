@@ -37,6 +37,15 @@ UPDATE ingestion_batch SET
     discarded = discarded + (@state::text = 'discarded')::int
 WHERE user_id = @user_id AND id = @id;
 
+-- name: ReopenRecord :execrows
+-- A140: a discarded record returns to review.
+UPDATE ingestion_external_record SET state = 'needs_review'
+WHERE user_id = @user_id AND id = @id AND state = 'discarded';
+
+-- name: MoveReopenedCount :exec
+UPDATE ingestion_batch SET discarded = discarded - 1, needs_review = needs_review + 1
+WHERE user_id = @user_id AND id = @id;
+
 -- name: MoveRecords :exec
 -- P5b amendment A32: records follow the transaction that kept them after a pairing.
 UPDATE ingestion_external_record SET transaction_id = @transaction_id

@@ -16,7 +16,7 @@ import (
 type manageImportsAction string
 
 func (manageImportsAction) Values() []string {
-	return []string{"sync", "map_account", "resolve_record", "delete_connection", "delete_integration"}
+	return []string{"sync", "map_account", "resolve_record", "reopen_record", "delete_connection", "delete_integration"}
 }
 
 type resolution string
@@ -32,7 +32,7 @@ type manageImportsIn struct {
 	AccountID         string              `json:"account_id,omitzero" jsonschema:"for map_account: ledger account receiving the bank account's lines; absent with ignore"`
 	Ignore            bool                `json:"ignore,omitzero" jsonschema:"for map_account: stop importing this bank account"`
 	SyncFrom          tool.Date           `json:"sync_from,omitzero" jsonschema:"for map_account: first date imported"`
-	RecordID          string              `json:"record_id,omitzero" jsonschema:"for resolve_record: record from get_imports"`
+	RecordID          string              `json:"record_id,omitzero" jsonschema:"for resolve_record and reopen_record: record from get_imports"`
 	Resolution        resolution          `json:"resolution,omitzero" jsonschema:"for resolve_record: match links it to transaction_id, create records a new transaction, discard drops it"`
 	TransactionID     string              `json:"transaction_id,omitzero" jsonschema:"for resolve_record with match: transaction from search_transactions"`
 	IntegrationID     string              `json:"integration_id,omitzero" jsonschema:"for delete_integration: integration from get_imports"`
@@ -82,6 +82,8 @@ func parseImportsAction(in manageImportsIn) (importsAction, error) {
 		} else {
 			err = required(name+" with "+string(in.Resolution), fields, "record_id", "resolution")
 		}
+	case "reopen_record":
+		err = required(name, fields, "record_id")
 	case "delete_integration":
 		err = required(name, fields, "integration_id")
 	}
@@ -119,7 +121,7 @@ func manageImports(svc *app.Service, names AccountNames) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_imports",
 		Description: "Proposes an action on imports and bank connections: sync a connection now, map a bank account of a connection " +
-			"to a ledger account or ignore it, resolve a record that needs review, delete a connection, or delete an integration without connections. " +
+			"to a ledger account or ignore it, resolve a record that needs review, reopen a discarded record, delete a connection, or delete an integration without connections. " +
 			"Use it when the user asks to sync, map, review or remove a bank link. " +
 			"Do not use it to add credentials or a new connection: the user does that on the Links screen, and get_help explains it. " +
 			"The user confirms first.",
@@ -160,6 +162,16 @@ func manageImports(svc *app.Service, names AccountNames) tool.Tool {
 				}
 				p.Changes = append(p.Changes, tool.Change{Field: "transaction", After: tool.TextValue(in.TransactionID)})
 			}
+		case "reopen_record":
+			rec, err := svc.Record(ctx, userID, a.record)
+			if err != nil {
+				return tool.Preview{}, err
+			}
+			if rec.State != domain.StateDiscarded {
+				return tool.Preview{}, app.ErrRecordNotDiscarded
+			}
+			p.Target = "Bank line " + rec.Description + " of " + rec.Date.Format(time.DateOnly)
+			p.Changes = []tool.Change{{Field: "status", Before: tool.TextValue(string(rec.State)), After: tool.TextValue(string(domain.StateNeedsReview))}}
 		case "delete_integration":
 			i, err := svc.Integration(ctx, userID, a.integration)
 			if err != nil {
@@ -218,6 +230,12 @@ func manageImports(svc *app.Service, names AccountNames) tool.Tool {
 				out.TransactionID = rec.TransactionID.String()
 			}
 			return out, nil
+		case "reopen_record":
+			rec, _, err := svc.Reopen(ctx, userID, a.record)
+			if err != nil {
+				return manageImportsOut{}, err
+			}
+			return manageImportsOut{RecordID: rec.ID.String(), State: string(rec.State)}, nil
 		case "delete_connection":
 			return manageImportsOut{Deleted: true}, svc.DeleteConnection(ctx, userID, a.connection)
 		}

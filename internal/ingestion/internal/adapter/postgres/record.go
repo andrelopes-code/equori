@@ -262,3 +262,20 @@ func (r *Repository) ResolveRecord(ctx context.Context, rec domain.ExternalRecor
 		return q.MoveReviewCount(ctx, MoveReviewCountParams{UserID: rec.UserID, ID: rec.BatchID, State: string(rec.State)})
 	})
 }
+
+// ReopenRecord returns a discarded record to review and moves it between the batch counts; it
+// reports false when the record is not discarded (A140).
+func (r *Repository) ReopenRecord(ctx context.Context, userID int64, id, batchID uuid.UUID) (bool, error) {
+	reopened := false
+	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
+		q := r.q.WithTx(tx)
+		n, err := q.ReopenRecord(ctx, ReopenRecordParams{UserID: userID, ID: id})
+		if err != nil || n == 0 {
+			return err
+		}
+
+		reopened = true
+		return q.MoveReopenedCount(ctx, MoveReopenedCountParams{UserID: userID, ID: batchID})
+	})
+	return reopened, err
+}

@@ -99,3 +99,44 @@ func TestResolveAnotherUsersRecordIs404(t *testing.T) {
 	h.ExpectProblem(h.Call(other, http.MethodPost, "/api/v1/external-records/"+record.ID+"/resolve", map[string]any{"action": "discard"}),
 		http.StatusNotFound, "not_found", "")
 }
+
+// S182 (A140): a transaction recorded after the import is offered to the line in review.
+func TestReviewOffersALaterTransaction_S182(t *testing.T) {
+	t.Parallel()
+	h, batch, record, first, _ := ambiguous(t)
+	tx := h.Transaction(first)
+	later := h.Record("2026-10-10", apitest.Posting(tx.Postings[0].AccountID, -5000), apitest.Posting(tx.Postings[1].AccountID, 5000))
+
+	queued := records(t, h, batch, "needs_review")
+
+	if len(queued) != 1 || !slices.Contains(queued[0].Candidates, later) {
+		t.Fatalf("review queue = %+v, want the later transaction %s among the candidates", queued, later)
+	}
+	var resolved recordView
+	h.MustDo(http.MethodPost, "/api/v1/external-records/"+record.ID+"/resolve", map[string]any{"action": "match", "transaction_id": later}, http.StatusOK, &resolved)
+	if resolved.State != "matched" || resolved.TransactionID != later {
+		t.Fatalf("resolved = %+v", resolved)
+	}
+}
+
+// S183 (A140): a discarded line can be reopened and matched; a line that is not discarded
+// cannot be reopened.
+func TestReopenADiscardedLine_S183(t *testing.T) {
+	t.Parallel()
+	h, batch, record, _, second := ambiguous(t)
+	h.MustDo(http.MethodPost, "/api/v1/external-records/"+record.ID+"/resolve", map[string]any{"action": "discard"}, http.StatusOK, nil)
+
+	var reopened recordView
+	h.MustDo(http.MethodPost, "/api/v1/external-records/"+record.ID+"/reopen", nil, http.StatusOK, &reopened)
+
+	if reopened.State != "needs_review" || !slices.Contains(reopened.Candidates, second) {
+		t.Fatalf("reopened = %+v", reopened)
+	}
+	var b batchView
+	h.MustDo(http.MethodGet, "/api/v1/import-batches/"+batch, nil, http.StatusOK, &b)
+	if got := counts(b); got != "received 1 ignored 0 matched 0 created 0 review 1" {
+		t.Fatalf("batch after reopening: %s", got)
+	}
+	h.MustDo(http.MethodPost, "/api/v1/external-records/"+record.ID+"/resolve", map[string]any{"action": "match", "transaction_id": second}, http.StatusOK, nil)
+	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/external-records/"+record.ID+"/reopen", nil), http.StatusConflict, "record_not_discarded", "")
+}

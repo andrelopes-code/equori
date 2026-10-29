@@ -64,6 +64,8 @@ func ToProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusNotFound, "not_found", "resource not found"), true
 	case errors.Is(err, app.ErrRecordResolved):
 		return problem.New(http.StatusConflict, "record_resolved", err.Error()), true
+	case errors.Is(err, app.ErrRecordNotDiscarded):
+		return problem.New(http.StatusConflict, "record_not_discarded", err.Error()), true
 	case errors.Is(err, app.ErrAlreadyMatched):
 		return problem.New(http.StatusConflict, "already_matched", err.Error()), true
 	case errors.Is(err, app.ErrTransactionVoided):

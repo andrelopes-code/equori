@@ -4283,6 +4283,29 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /external-records/{id}/reopen:
+    post:
+      tags: [ingestion]
+      operationId: reopenExternalRecord
+      summary: Return a discarded record to review (A140).
+      description: |
+        The record waits for review again, with the candidates the ledger holds now; a record that
+        is not discarded returns record_not_discarded.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalRecord"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
   /external-records/{id}/resolve:
     post:
       tags: [ingestion]

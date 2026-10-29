@@ -253,6 +253,21 @@ func (q *Queries) MoveRecords(ctx context.Context, arg MoveRecordsParams) error 
 	return err
 }
 
+const moveReopenedCount = `-- name: MoveReopenedCount :exec
+UPDATE ingestion_batch SET discarded = discarded - 1, needs_review = needs_review + 1
+WHERE user_id = $1 AND id = $2
+`
+
+type MoveReopenedCountParams struct {
+	UserID int64
+	ID     uuid.UUID
+}
+
+func (q *Queries) MoveReopenedCount(ctx context.Context, arg MoveReopenedCountParams) error {
+	_, err := q.db.Exec(ctx, moveReopenedCount, arg.UserID, arg.ID)
+	return err
+}
+
 const moveReviewCount = `-- name: MoveReviewCount :exec
 UPDATE ingestion_batch SET
     needs_review = needs_review - 1,
@@ -272,6 +287,25 @@ type MoveReviewCountParams struct {
 func (q *Queries) MoveReviewCount(ctx context.Context, arg MoveReviewCountParams) error {
 	_, err := q.db.Exec(ctx, moveReviewCount, arg.State, arg.UserID, arg.ID)
 	return err
+}
+
+const reopenRecord = `-- name: ReopenRecord :execrows
+UPDATE ingestion_external_record SET state = 'needs_review'
+WHERE user_id = $1 AND id = $2 AND state = 'discarded'
+`
+
+type ReopenRecordParams struct {
+	UserID int64
+	ID     uuid.UUID
+}
+
+// A140: a discarded record returns to review.
+func (q *Queries) ReopenRecord(ctx context.Context, arg ReopenRecordParams) (int64, error) {
+	result, err := q.db.Exec(ctx, reopenRecord, arg.UserID, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const withdrawRecords = `-- name: WithdrawRecords :exec

@@ -927,3 +927,7 @@ Today 2026-10-20. Salary 5,000.00 on the 5th of 2026-07 to 2026-10, nothing else
 ### S176–S181 Card billing certainty (A136–A139)
 
 The scenarios of `docs/superpowers/specs/2026-10-29-card-billing-certainty-design.md`: a reviewed match moves a manual charge to the bill its line states (S176); a closed statement that differs from the institution's total proposes the provisional postings that explain it (S177); a statement the owner chose stays (S178); a difference no posting explains shows as a possible rounding difference of the source (S179); an open statement leaves out the previous statement's unpaid amount until it is overdue (S180); a statement is reconciled as soon as a later entry closes its difference with the institution's total (S181).
+
+### S182–S183 Review keeps up with the ledger (A140)
+
+The scenarios of `docs/superpowers/specs/2026-10-29-review-reopen-design.md`: the review offers an entry recorded after the import (S182); a discarded line can be reopened and matched (S183).

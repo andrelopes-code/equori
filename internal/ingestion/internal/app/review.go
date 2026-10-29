@@ -14,6 +14,9 @@ import (
 
 var ErrRecordResolved = errors.New("the record does not need review")
 
+// ErrRecordNotDiscarded: only a discarded record can be reopened (A140).
+var ErrRecordNotDiscarded = errors.New("the record is not discarded")
+
 type RecordKey struct {
 	ID uuid.UUID `json:"ri"`
 }
@@ -31,14 +34,34 @@ func (s *Service) Records(ctx context.Context, userID int64, batchID uuid.UUID, 
 		return nil, nil, domain.Batch{}, err
 	}
 	recs, next, err := s.repo.Records(ctx, userID, batchID, state, p)
-	return recs, next, b, err
+	if err != nil {
+		return nil, nil, domain.Batch{}, err
+	}
+
+	for i := range recs {
+		if err := s.refreshCandidates(ctx, &recs[i], currencyOf(b)); err != nil {
+			return nil, nil, domain.Batch{}, err
+		}
+	}
+
+	return recs, next, b, nil
 }
 
 // Resolve settles a record that needs review with the owner's choice (chapter 4, 4.3.3,
 // ResolveMatch) and moves it between the batch counts.
 // Record returns one of the user's external records.
 func (s *Service) Record(ctx context.Context, userID int64, id uuid.UUID) (domain.ExternalRecord, error) {
-	return s.repo.Record(ctx, userID, id)
+	rec, err := s.repo.Record(ctx, userID, id)
+	if err != nil {
+		return domain.ExternalRecord{}, err
+	}
+
+	b, err := s.repo.Batch(ctx, userID, rec.BatchID)
+	if err != nil {
+		return domain.ExternalRecord{}, err
+	}
+
+	return rec, s.refreshCandidates(ctx, &rec, currencyOf(b))
 }
 
 func (s *Service) Resolve(ctx context.Context, userID int64, recordID uuid.UUID, action string, txID uuid.UUID) (domain.ExternalRecord, domain.Batch, error) {
@@ -64,6 +87,17 @@ func (s *Service) Resolve(ctx context.Context, userID int64, recordID uuid.UUID,
 	b, err := s.repo.Batch(ctx, userID, rec.BatchID)
 	if err != nil {
 		return domain.ExternalRecord{}, domain.Batch{}, err
+	}
+	// The candidates stored at import stay accepted, so a choice the ledger now refuses (a voided
+	// or reconciled entry) is refused by its own rule.
+	stored := rec.Candidates
+	if err := s.refreshCandidates(ctx, &rec, currencyOf(b)); err != nil {
+		return domain.ExternalRecord{}, domain.Batch{}, err
+	}
+	for _, id := range stored {
+		if !slices.Contains(rec.Candidates, id) {
+			rec.Candidates = append(rec.Candidates, id)
+		}
 	}
 	switch action {
 	case ActionMatch:
@@ -124,4 +158,68 @@ func (s *Service) Unconfirmed(ctx context.Context, userID int64, accountID uuid.
 	}
 	ps, err := s.ledger.UnconfirmedPostings(ctx, userID, accountID, *feed.From, to)
 	return ps, target.Currency, err
+}
+
+// Reopen returns a discarded record to review with the candidates the ledger holds now, so a
+// line discarded before the entry it confirms existed can still confirm it (A140).
+func (s *Service) Reopen(ctx context.Context, userID int64, recordID uuid.UUID) (domain.ExternalRecord, domain.Batch, error) {
+	found, err := s.repo.Record(ctx, userID, recordID)
+	if err != nil {
+		return domain.ExternalRecord{}, domain.Batch{}, err
+	}
+
+	unlock, err := s.repo.LockAccountImports(ctx, found.AccountID)
+	if err != nil {
+		return domain.ExternalRecord{}, domain.Batch{}, err
+	}
+	defer unlock()
+
+	reopened, err := s.repo.ReopenRecord(ctx, userID, recordID, found.BatchID)
+	if err != nil {
+		return domain.ExternalRecord{}, domain.Batch{}, err
+	}
+	if !reopened {
+		return domain.ExternalRecord{}, domain.Batch{}, ErrRecordNotDiscarded
+	}
+
+	b, err := s.repo.Batch(ctx, userID, found.BatchID)
+	if err != nil {
+		return domain.ExternalRecord{}, domain.Batch{}, err
+	}
+
+	rec, err := s.repo.Record(ctx, userID, recordID)
+	if err != nil {
+		return domain.ExternalRecord{}, domain.Batch{}, err
+	}
+
+	return rec, b, s.refreshCandidates(ctx, &rec, currencyOf(b))
+}
+
+// refreshCandidates scores a record in review against the postings of its account that no
+// record links now, so a transaction recorded after the import is offered and one linked
+// since is not (A140).
+func (s *Service) refreshCandidates(ctx context.Context, rec *domain.ExternalRecord, currency money.Currency) error {
+	if rec.State != domain.StateNeedsReview {
+		return nil
+	}
+
+	postings, err := s.ledger.UnlinkedPostings(ctx, rec.UserID, rec.AccountID,
+		rec.Date.AddDate(0, 0, -domain.MatchHardLimit), rec.Date.AddDate(0, 0, domain.MatchHardLimit))
+	if err != nil {
+		return err
+	}
+
+	line := Line{AccountID: rec.AccountID, Currency: currency, Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description)}
+	assigned, err := s.assign(ctx, rec.UserID, []scoredLine{{rec: rec, line: line}}, postings)
+	if err != nil {
+		return err
+	}
+
+	rec.Scores = assigned[0].Candidates
+	rec.Candidates = make([]uuid.UUID, len(rec.Scores))
+	for i, c := range rec.Scores {
+		rec.Candidates[i] = c.TransactionID
+	}
+
+	return nil
 }

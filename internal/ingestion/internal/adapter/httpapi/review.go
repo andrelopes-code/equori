@@ -73,6 +73,15 @@ func (s *Server) ResolveExternalRecord(ctx context.Context, req ResolveExternalR
 	return ResolveExternalRecord200JSONResponse(toRecordAPI(rec, b.Currency)), nil
 }
 
+func (s *Server) ReopenExternalRecord(ctx context.Context, req ReopenExternalRecordRequestObject) (ReopenExternalRecordResponseObject, error) {
+	rec, b, err := s.svc.Reopen(ctx, auth.MustUserID(ctx), req.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	return ReopenExternalRecord200JSONResponse(toRecordAPI(rec, b.Currency)), nil
+}
+
 func (s *Server) ListUnconfirmed(ctx context.Context, req ListUnconfirmedRequestObject) (ListUnconfirmedResponseObject, error) {
 	ps, currency, err := s.svc.Unconfirmed(ctx, auth.MustUserID(ctx), req.Id)
 	if err != nil {

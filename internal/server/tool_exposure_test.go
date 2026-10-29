@@ -176,6 +176,7 @@ var exposure = map[string]string{
 	"listBatchRecords":                 "get_imports",
 	"listUnconfirmed":                  "get_imports",
 	"resolveExternalRecord":            "manage_imports",
+	"reopenExternalRecord":             "manage_imports",
 	"listAggregators":                  "get_imports",
 	"listIntegrations":                 "get_imports",
 	"createIntegration":                "-secret",
